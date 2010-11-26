@@ -1,0 +1,3637 @@
+RESOURCE _PrintDialog DIALOGEX  16, 30, 346, 134
+STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Report"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", _PRINTDIALOG_PRINTERTEXT, "Static", WS_CHILD, 70, 19, 190, 21
+	CONTROL	"Destination", _PRINTDIALOG_DESTINATION, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 16, 11, 256, 61
+	CONTROL	"&Printer", _PRINTDIALOG_PRINTERRADIOBUTTON, "Button", BS_RADIOBUTTON|WS_TABSTOP|WS_CHILD, 20, 19, 40, 11
+	CONTROL	"&Screen", _PRINTDIALOG_SCREENRADIOBUTTON, "Button", BS_RADIOBUTTON|WS_TABSTOP|WS_CHILD, 20, 36, 43, 12
+	CONTROL	"&File", _PRINTDIALOG_TOFILERADIOBUTTON, "Button", BS_RADIOBUTTON|WS_TABSTOP|WS_CHILD, 20, 53, 30, 11
+	CONTROL	"File type", _PRINTDIALOG_FILETYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 70, 44, 104, 22
+	CONTROL	"Text file", _PRINTDIALOG_FILETYPE1, "Button", BS_RADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 76, 53, 40, 11
+	CONTROL	"Spreadsheet", _PRINTDIALOG_FILETYPE2, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 120, 53, 53, 11
+	CONTROL	"Page Range", _PRINTDIALOG_PAGERANGE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 16, 77, 148, 49
+	CONTROL	"All", _PRINTDIALOG_ALLBUTTON, "Button", BS_RADIOBUTTON|WS_TABSTOP|WS_CHILD, 25, 88, 80, 11
+	CONTROL	"Selection", _PRINTDIALOG_SELECTIONBUTTON, "Button", BS_RADIOBUTTON|WS_TABSTOP|WS_CHILD, 25, 106, 48, 11
+	CONTROL	"", _PRINTDIALOG_FROMPAGE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 105, 28, 12
+	CONTROL	"", _PRINTDIALOG_TOPAGE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 124, 105, 28, 12
+	CONTROL	"O&K", _PRINTDIALOG_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 284, 16, 54, 13
+	CONTROL	"Can&cel", _PRINTDIALOG_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 35, 54, 14
+	CONTROL	"Set&up", _PRINTDIALOG_SETUPBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 55, 54, 13
+	CONTROL	"__", _PRINTDIALOG_FIXEDTEXT1, "Static", WS_CHILD, 110, 103, 10, 12
+	CONTROL	"Choose Font", _PRINTDIALOG_FONTDIALOGBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 77, 54, 12
+END
+
+CLASS _PrintDialog INHERIT DialogWinDowExtra 
+
+	PROTECT oDCPrinterText AS FIXEDTEXT
+	PROTECT oDCDestination AS RADIOBUTTONGROUP
+	PROTECT oCCPrinterRadioButton AS RADIOBUTTON
+	PROTECT oCCScreenRadioButton AS RADIOBUTTON
+	PROTECT oCCToFileRadioButton AS RADIOBUTTON
+	PROTECT oDCFileType AS RADIOBUTTONGROUP
+	PROTECT oCCfiletype1 AS RADIOBUTTON
+	PROTECT oCCfiletype2 AS RADIOBUTTON
+	PROTECT oDCPageRange AS RADIOBUTTONGROUP
+	PROTECT oCCAllButton AS RADIOBUTTON
+	PROTECT oCCSelectionButton AS RADIOBUTTON
+	PROTECT oDCFromPage AS SINGLELINEEDIT
+	PROTECT oDCToPage AS SINGLELINEEDIT
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCSetupButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oCCFontDialogButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	PROTECT oDialFont AS myDialFontDialog
+	EXPORT lPrintOk AS LOGIC
+	EXPORT MaxWidth := 79 as int
+METHOD ButtonClick(oControlEvent) CLASS _PrintDialog
+	LOCAL oControl AS Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	SUPER:ButtonClick(oControlEvent)
+	//Put your changes here
+	IF oControl:NameSym == #SelectionButton
+		oDCFromPage:Show()
+		oDCToPage:Show()
+		oDCFixedText1:Show()
+	ELSEIF oControl:NameSym == #AllButton
+		oDCFromPage:Hide()
+		oDCToPage:Hide()
+		oDCFixedText1:Hide()
+	ELSEIF oControl:NameSym == #ScreenRadioButton
+		oCCFontDialogButton:Show()
+		self:ShowFileType()
+	ELSEIF oControl:NameSym == #PrinterRadioButton
+		oCCFontDialogButton:Hide()
+		self:ShowFileType()
+	ELSEIF oControl:NameSym == #ToFileRadioButton
+		oCCFontDialogButton:Hide() 
+		self:ShowFileType()		
+	ENDIF
+	
+	RETURN NIL
+METHOD Close(oEvent) CLASS _PrintDialog
+	SUPER:Close(oEvent)
+	//Put your changes here
+SELF:Destroy()
+	RETURN NIL
+
+METHOD FontDialogbutton( ) CLASS _PrintDialog
+LOCAL nRet AS INT	
+	(nRet:=oDialFont:Show())
+	IF nRet=0
+		SELF:lPrintOk := FALSE
+	ELSE
+	 	oDialFont:Font:PitchFixed := TRUE
+	ENDIF
+RETURN NIL
+METHOD Init(oParent,uExtra) CLASS _PrintDialog 
+
+self:PreInit(oParent,uExtra)
+
+SUPER:Init(oParent,ResourceID{"_PrintDialog",_GetInst()},TRUE)
+
+oDCPrinterText := FixedText{SELF,ResourceID{_PRINTDIALOG_PRINTERTEXT,_GetInst()}}
+oDCPrinterText:HyperLabel := HyperLabel{#PrinterText,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCPrinterRadioButton := RadioButton{SELF,ResourceID{_PRINTDIALOG_PRINTERRADIOBUTTON,_GetInst()}}
+oCCPrinterRadioButton:HyperLabel := HyperLabel{#PrinterRadioButton,_chr(38)+"Printer",NULL_STRING,NULL_STRING}
+
+oCCScreenRadioButton := RadioButton{SELF,ResourceID{_PRINTDIALOG_SCREENRADIOBUTTON,_GetInst()}}
+oCCScreenRadioButton:HyperLabel := HyperLabel{#ScreenRadioButton,_chr(38)+"Screen",NULL_STRING,NULL_STRING}
+
+oCCToFileRadioButton := RadioButton{SELF,ResourceID{_PRINTDIALOG_TOFILERADIOBUTTON,_GetInst()}}
+oCCToFileRadioButton:HyperLabel := HyperLabel{#ToFileRadioButton,_chr(38)+"File",NULL_STRING,NULL_STRING}
+
+oCCfiletype1 := RadioButton{SELF,ResourceID{_PRINTDIALOG_FILETYPE1,_GetInst()}}
+oCCfiletype1:HyperLabel := HyperLabel{#filetype1,"Text file",NULL_STRING,NULL_STRING}
+
+oCCfiletype2 := RadioButton{SELF,ResourceID{_PRINTDIALOG_FILETYPE2,_GetInst()}}
+oCCfiletype2:HyperLabel := HyperLabel{#filetype2,"Spreadsheet",NULL_STRING,NULL_STRING}
+
+oCCAllButton := RadioButton{SELF,ResourceID{_PRINTDIALOG_ALLBUTTON,_GetInst()}}
+oCCAllButton:HyperLabel := HyperLabel{#AllButton,"All",NULL_STRING,NULL_STRING}
+
+oCCSelectionButton := RadioButton{SELF,ResourceID{_PRINTDIALOG_SELECTIONBUTTON,_GetInst()}}
+oCCSelectionButton:HyperLabel := HyperLabel{#SelectionButton,"Selection",NULL_STRING,NULL_STRING}
+
+oDCFromPage := SingleLineEdit{SELF,ResourceID{_PRINTDIALOG_FROMPAGE,_GetInst()}}
+oDCFromPage:Picture := "9999"
+oDCFromPage:HyperLabel := HyperLabel{#FromPage,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCToPage := SingleLineEdit{SELF,ResourceID{_PRINTDIALOG_TOPAGE,_GetInst()}}
+oDCToPage:Picture := "9999"
+oDCToPage:HyperLabel := HyperLabel{#ToPage,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCOkButton := PushButton{SELF,ResourceID{_PRINTDIALOG_OKBUTTON,_GetInst()}}
+oCCOkButton:HyperLabel := HyperLabel{#OkButton,"O"+_chr(38)+"K",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{_PRINTDIALOG_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Can"+_chr(38)+"cel",NULL_STRING,NULL_STRING}
+
+oCCSetupButton := PushButton{SELF,ResourceID{_PRINTDIALOG_SETUPBUTTON,_GetInst()}}
+oCCSetupButton:HyperLabel := HyperLabel{#SetupButton,"Set"+_chr(38)+"up",NULL_STRING,NULL_STRING}
+
+oDCFixedText1 := FixedText{SELF,ResourceID{_PRINTDIALOG_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"__",NULL_STRING,NULL_STRING}
+
+oCCFontDialogButton := PushButton{SELF,ResourceID{_PRINTDIALOG_FONTDIALOGBUTTON,_GetInst()}}
+oCCFontDialogButton:HyperLabel := HyperLabel{#FontDialogButton,"Choose Font",NULL_STRING,NULL_STRING}
+
+oDCDestination := RadioButtonGroup{SELF,ResourceID{_PRINTDIALOG_DESTINATION,_GetInst()}}
+oDCDestination:FillUsing({ ;
+							{oCCPrinterRadioButton,"Printer"}, ;
+							{oCCScreenRadioButton,"Screen"}, ;
+							{oCCToFileRadioButton,"File"}, ;
+							{oCCfiletype1,"txt"}, ;
+							{oCCfiletype2,"xls"} ;
+							})
+oDCDestination:HyperLabel := HyperLabel{#Destination,"Destination",NULL_STRING,NULL_STRING}
+
+oDCFileType := RadioButtonGroup{SELF,ResourceID{_PRINTDIALOG_FILETYPE,_GetInst()}}
+oDCFileType:FillUsing({ ;
+						{oCCfiletype1,"txt"}, ;
+						{oCCfiletype2,"xls"} ;
+						})
+oDCFileType:HyperLabel := HyperLabel{#FileType,"File type",NULL_STRING,NULL_STRING}
+
+oDCPageRange := RadioButtonGroup{SELF,ResourceID{_PRINTDIALOG_PAGERANGE,_GetInst()}}
+oDCPageRange:FillUsing({ ;
+							{oCCAllButton,"All"}, ;
+							{oCCSelectionButton,"Selection"} ;
+							})
+oDCPageRange:HyperLabel := HyperLabel{#PageRange,"Page Range",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Report"
+SELF:HyperLabel := HyperLabel{#_PrintDialog,"Report",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+METHOD OkButton( ) CLASS _PrintDialog 
+METHOD PostInit() CLASS _PrintDialog
+	//Put your PostInit additions here
+	LOCAL scrFont as myFont 
+	self:SetTexts()
+	/*	if self:Label
+	oDCDestination:Value := "Printer"
+	else		
+	oDCDestination:Value := "Screen"
+	endif  */
+	self:oCCScreenRadioButton:Value:=true
+	oDCPageRange:Value := "All"
+	oDCFromPage:Hide()
+	oDCToPage:Hide()
+	oDCFixedText1:Hide()
+	oDialFont:=myDialFontDialog{SELF}
+	oDialFont:EnableFixedPitch(TRUE)
+	//scrFont:=myFont{,10}
+	scrFont:=myFont{FONTMODERN,10,"Courier New"}
+	//scrFont:SetPointSize(Round((80/SELF:MaxWidth)*10,0))
+	scrFont:SetCharSet(1)
+	//scrFont:Bold:=TRUE
+	scrFont:PitchFixed := TRUE
+	oDialFont:SetFont(scrFont)
+	self:oDCFileType:FillUsing({{self:oCCfiletype1,"txt"},{self:oCCfiletype2,"xls"}}) 
+	self:oDCDestination:FillUsing({{self:oCCPrinterRadioButton,"Printer"},{self:oCCScreenRadioButton,"Screen"},{self:oCCToFileRadioButton,"File"}})
+	RETURN NIL
+STATIC DEFINE _PRINTDIALOG_ALLBUTTON := 109 
+STATIC DEFINE _PRINTDIALOG_CANCELBUTTON := 114 
+STATIC DEFINE _PRINTDIALOG_DESTINATION := 101 
+STATIC DEFINE _PRINTDIALOG_FILETYPE := 105 
+STATIC DEFINE _PRINTDIALOG_FILETYPE1 := 106 
+STATIC DEFINE _PRINTDIALOG_FILETYPE2 := 107 
+STATIC DEFINE _PRINTDIALOG_FIXEDTEXT1 := 116 
+STATIC DEFINE _PRINTDIALOG_FONTDIALOGBUTTON := 117 
+STATIC DEFINE _PRINTDIALOG_FROMPAGE := 111 
+STATIC DEFINE _PRINTDIALOG_OKBUTTON := 113 
+STATIC DEFINE _PRINTDIALOG_PAGERANGE := 108 
+STATIC DEFINE _PRINTDIALOG_PRINTERRADIOBUTTON := 102 
+STATIC DEFINE _PRINTDIALOG_PRINTERTEXT := 100 
+STATIC DEFINE _PRINTDIALOG_SCREENRADIOBUTTON := 103 
+STATIC DEFINE _PRINTDIALOG_SELECTIONBUTTON := 110 
+STATIC DEFINE _PRINTDIALOG_SETUPBUTTON := 115 
+STATIC DEFINE _PRINTDIALOG_TOFILERADIOBUTTON := 104 
+STATIC DEFINE _PRINTDIALOG_TOPAGE := 112 
+STATIC DEFINE _PRINTERDIALOG_CANCELBUTTON := 105 
+STATIC DEFINE _PRINTERDIALOG_CURRENTPRINTERTEXT := 101 
+STATIC DEFINE _PRINTERDIALOG_OKBUTTON := 104 
+STATIC DEFINE _PRINTERDIALOG_PRINTERLISTBOX := 103 
+STATIC DEFINE _PRINTERDIALOG_SETUPBUTTON := 106 
+STATIC DEFINE _PRINTERDIALOG_THEFIXEDTEXT1 := 100
+STATIC DEFINE _PRINTERDIALOG_THEGROUPBOX1 := 102 
+DEFINE ACCEPT_START := "#22#"
+RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
+	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
+	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
+	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
+	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
+	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
+	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
+	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
+END
+
+class AcceptFormat inherit DataDialogMine 
+
+	protect oCCNewButton as PUSHBUTTON
+	protect oCCEditButton as PUSHBUTTON
+	protect oDCGroupBox3 as GROUPBOX
+	protect oCCOKButton as PUSHBUTTON
+	protect oCCCancelButton as PUSHBUTTON
+	protect oDCBrieven as COMBOBOX
+	protect oDCGroupBox1 as GROUPBOX
+	protect oDCm12_bd as CHECKBOX
+	instance Brieven 
+	instance m12_bd 
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT lCancel AS LOGIC
+  EXPORT brief AS STRING
+  EXPORT Lettername AS STRING
+access Brieven() class AcceptFormat
+return self:FieldGet(#Brieven)
+
+assign Brieven(uValue) class AcceptFormat
+self:FieldPut(#Brieven, uValue)
+return Brieven := uValue
+
+METHOD CancelButton( ) CLASS AcceptFormat
+	SELF:EndWindow()
+	lCancel := TRUE
+	RETURN SELF
+METHOD EditButton( ) CLASS AcceptFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{SELF,brieven}
+oMark:Show()
+	
+RETURN
+method Init(oWindow,iCtlID,oServer,uExtra) class AcceptFormat 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+super:Init(oWindow,ResourceID{"AcceptFormat",_GetInst()},iCtlID)
+
+oCCNewButton := PushButton{self,ResourceID{ACCEPTFORMAT_NEWBUTTON,_GetInst()}}
+oCCNewButton:HyperLabel := HyperLabel{#NewButton,"New",NULL_STRING,NULL_STRING}
+oCCNewButton:TooltipText := "Add new text"
+
+oCCEditButton := PushButton{self,ResourceID{ACCEPTFORMAT_EDITBUTTON,_GetInst()}}
+oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
+oCCEditButton:TooltipText := "Edit a letter"
+
+oDCGroupBox3 := GroupBox{self,ResourceID{ACCEPTFORMAT_GROUPBOX3,_GetInst()}}
+oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Specifation text",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{self,ResourceID{ACCEPTFORMAT_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{self,ResourceID{ACCEPTFORMAT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCBrieven := combobox{self,ResourceID{ACCEPTFORMAT_BRIEVEN,_GetInst()}}
+oDCBrieven:HyperLabel := HyperLabel{#Brieven,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCBrieven:FillUsing(Self:ListFiles( ))
+
+oDCGroupBox1 := GroupBox{self,ResourceID{ACCEPTFORMAT_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Contents",NULL_STRING,NULL_STRING}
+
+oDCm12_bd := CheckBox{self,ResourceID{ACCEPTFORMAT_M12_BD,_GetInst()}}
+oDCm12_bd:HyperLabel := HyperLabel{#m12_bd,"Amount on OLA",NULL_STRING,NULL_STRING}
+
+self:Caption := "Specification of acceptgiro"
+self:HyperLabel := HyperLabel{#AcceptFormat,"Specification of acceptgiro",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	self:Use(oServer)
+endif
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+METHOD ListFiles(mExt) CLASS AcceptFormat
+LOCAL brieven:={} AS ARRAY
+Default(@mExt,"acc")
+AEval(Directory(CurPath+"\*."+mExt),{|x| AAdd(brieven,{SubStr(x[F_NAME],1,RAt(".",x[F_NAME])-1),x[F_NAME]})})
+
+RETURN brieven
+access m12_bd() class AcceptFormat
+return self:FieldGet(#m12_bd)
+
+assign m12_bd(uValue) class AcceptFormat
+self:FieldPut(#m12_bd, uValue)
+return m12_bd := uValue
+
+METHOD NewButton( ) CLASS AcceptFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{SELF,".acc"}
+oMark:Show()
+
+oDCBrieven:FillUsing(SELF:ListFiles("acc"))
+SELF:oDCBrieven:Value:=SELF:LetterName
+RETURN
+METHOD OKButton( ) CLASS AcceptFormat
+	LOCAL cRoot := "WYC\Runtime" AS STRING
+	LOCAL m96_regels AS INT
+	LOCAL brief_breedte:= 35 AS INT
+	IF !Empty(oDCBrieven:TextValue)
+
+		brief:=MemoRead(brieven)
+		m96_regels:=MLCount(brief,brief_breedte)
+		IF m96_regels > 3
+   			(errorbox{SELF,'Too many lines in message text'}):show()
+			RETURN
+		ENDIF
+	ELSE
+		brief:=NULL_STRING
+	ENDIF
+	* save stettings in the registry:
+	SetRTRegInt( cRoot, "AccAmount", if(m12_bd,1,0) )
+	SetRTRegString( cRoot, "AccBrief", oDCBrieven:Value )
+	SELF:EndWindow()
+RETURN NIL
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS AcceptFormat
+	//Put your PostInit additions here
+*    SELF:oDCBrieven:ListFiles("*.brf")
+	self:SetTexts()
+	m12_bd := if(WycIniFS:GetInt( "Runtime", "AccAmount" )==1,true,FALSE)
+	Brieven := WycIniFS:Getstring("Runtime", "AccBrief" )
+	IF Empty(Brieven)
+	    SELF:oDCBrieven:CurrentItemNo:=1
+	ELSE
+	    SELF:oDCBrieven:value:=Brieven
+		IF SELF:oDCBrieven:CurrentItemNo==0
+		    SELF:oDCBrieven:CurrentItemNo:=1
+		ENDIF
+	ENDIF
+	RETURN NIL
+STATIC DEFINE ACCEPTFORMAT_BRIEVEN := 105 
+STATIC DEFINE ACCEPTFORMAT_CANCELBUTTON := 104 
+STATIC DEFINE ACCEPTFORMAT_EDITBUTTON := 101 
+STATIC DEFINE ACCEPTFORMAT_GROUPBOX1 := 106 
+STATIC DEFINE ACCEPTFORMAT_GROUPBOX3 := 102 
+STATIC DEFINE ACCEPTFORMAT_M12_BD := 107 
+STATIC DEFINE ACCEPTFORMAT_NEWBUTTON := 100 
+STATIC DEFINE ACCEPTFORMAT_OKBUTTON := 103 
+class AskLetterName inherit DialogWinDowExtra 
+
+	protect oDCLettername as SINGLELINEEDIT
+	protect oDCFixedText1 as FIXEDTEXT
+	protect oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT cName AS STRING
+  PROTECT cExt AS STRING
+RESOURCE AskLetterName DIALOGEX  19, 50, 263, 33
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Give name of textformat to save"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", ASKLETTERNAME_LETTERNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 11, 132, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Format name:", ASKLETTERNAME_FIXEDTEXT1, "Static", WS_CHILD, 7, 12, 45, 12
+	CONTROL	"OK", ASKLETTERNAME_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 11, 53, 13
+END
+
+METHOD Close(oEvent) CLASS AskLetterName
+	SUPER:Close(oEvent)
+	//Put your changes here
+SELF:Destroy()
+	RETURN NIL
+
+method Init(oParent,uExtra) class AskLetterName 
+
+self:PreInit(oParent,uExtra)
+
+super:Init(oParent,ResourceID{"AskLetterName",_GetInst()},TRUE)
+
+oDCLettername := SingleLineEdit{self,ResourceID{ASKLETTERNAME_LETTERNAME,_GetInst()}}
+oDCLettername:HyperLabel := HyperLabel{#Lettername,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText1 := FixedText{self,ResourceID{ASKLETTERNAME_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Format name:",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{self,ResourceID{ASKLETTERNAME_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+self:Caption := "Give name of textformat to save"
+self:HyperLabel := HyperLabel{#AskLetterName,"Give name of textformat to save",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+METHOD OKButton( ) CLASS AskLetterName
+	IF Empty(oDCLettername:TEXTValue)
+		(Errorbox{SELF,"Name of letter is mandatory!"}):Show()
+		RETURN
+	ENDIF
+	cName:=StrTran(AllTrim(oDCLettername:TEXTValue)," ","_")
+	
+	IF At(".",cName)>0
+		cName:=SubStr(cName,1,At(".",cName)-1)
+	ENDIF
+	cName:=cName+"."+cExt
+	SELF:EndDialog()
+METHOD PostInit(oParent,uExtra) CLASS AskLetterName
+	//Put your PostInit additions here
+	self:SetTexts()
+	Default(@uExtra,"brf")
+	cExt:=uExtra
+	RETURN NIL
+STATIC DEFINE ASKLETTERNAME_FIXEDTEXT1 := 101 
+STATIC DEFINE ASKLETTERNAME_LETTERNAME := 100 
+STATIC DEFINE ASKLETTERNAME_OKBUTTON := 102 
+CLASS brfrega INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS brfrega
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL   
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL  
+
+    symHlName   := #brfrega 
+
+    cPict       := ""
+    cTypeDiag   := "" 
+    cTypeHelp   := "" 
+    cLenDiag    := "" 
+    cLenHelp    := "" 
+    cMinLenDiag := "" 
+    cMinLenHelp := "" 
+    cRangeDiag  := "City and date should start on a line between 1 and 50" 
+    cRangeHelp  := "" 
+    cValidDiag  := "" 
+    cValidHelp  := "" 
+    cReqDiag    := "" 
+    cReqHelp    := "" 
+
+    nMinLen     := -1
+    nMinRange   := 1
+    nMaxRange   := 50
+    xValidation := NIL              
+    lRequired   := .F.   
+
+
+    SUPER:Init( HyperLabel{symHlName, "", "", "" },  "N", 12, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS brfregn INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS brfregn
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL   
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL  
+
+    symHlName   := #brfregn 
+
+    cPict       := ""
+    cTypeDiag   := "" 
+    cTypeHelp   := "" 
+    cLenDiag    := "" 
+    cLenHelp    := "" 
+    cMinLenDiag := "" 
+    cMinLenHelp := "" 
+    cRangeDiag  := "Name and address should start on a line between 1 and 50" 
+    cRangeHelp  := "" 
+    cValidDiag  := "" 
+    cValidHelp  := "" 
+    cReqDiag    := "" 
+    cReqHelp    := "" 
+
+    nMinLen     := -1
+    nMinRange   := 1
+    nMaxRange   := 50
+    xValidation := NIL              
+    lRequired   := .F.   
+
+
+    SUPER:Init( HyperLabel{symHlName, "", "", "" },  "N", 12, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS brfWidth INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS brfWidth
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL   
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL  
+
+    symHlName   := #brfWidth 
+
+    cPict       := "999"
+    cTypeDiag   := "" 
+    cTypeHelp   := "" 
+    cLenDiag    := "" 
+    cLenHelp    := "" 
+    cMinLenDiag := "" 
+    cMinLenHelp := "" 
+    cRangeDiag  := "Width of letter should be in range 10 - 200" 
+    cRangeHelp  := "" 
+    cValidDiag  := "" 
+    cValidHelp  := "" 
+    cReqDiag    := "" 
+    cReqHelp    := "" 
+
+    nMinLen     := -1
+    nMinRange   := 10
+    nMaxRange   := 200
+    xValidation := NIL              
+    lRequired   := .F.   
+
+
+    SUPER:Init( HyperLabel{symHlName, "", "", "" },  "N", 12, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+DEFINE CRLF := _Chr(ASC_CR) + _Chr(ASC_LF)
+CLASS eMailFormat INHERIT DataDialogMine 
+
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCGroupBox AS GROUPBOX
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oDCTemplates AS COMBOBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+    EXPORT lCancel:=true as LOGIC
+    EXPORT Template as STRING
+    EXPORT Templatename as STRING
+RESOURCE eMailFormat DIALOGEX  8, 7, 265, 88
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Cancel", EMAILFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 28, 53, 12
+	CONTROL	"OK", EMAILFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 204, 11, 53, 12
+	CONTROL	"eMail Content text", EMAILFORMAT_GROUPBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 184, 53
+	CONTROL	"New", EMAILFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 11, 53, 12
+	CONTROL	"Edit", EMAILFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 30, 53, 13
+	CONTROL	"", EMAILFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 16, 11, 100, 72
+END
+
+ACCESS Brieven() CLASS eMailFormat
+RETURN SELF:FieldGet(#Brieven)
+
+ASSIGN Brieven(uValue) CLASS eMailFormat
+SELF:FieldPut(#Brieven, uValue)
+RETURN uValue
+
+METHOD CancelButton( ) CLASS eMailFormat
+	SELF:EndWindow()
+	lCancel := TRUE
+	RETURN SELF
+
+METHOD EditButton( ) CLASS eMailFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{self,self:Templates}
+oMark:Show()
+	
+RETURN
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS eMailFormat 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"eMailFormat",_GetInst()},iCtlID)
+
+oCCCancelButton := PushButton{SELF,ResourceID{EMAILFORMAT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{SELF,ResourceID{EMAILFORMAT_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oDCGroupBox := GroupBox{SELF,ResourceID{EMAILFORMAT_GROUPBOX,_GetInst()}}
+oDCGroupBox:HyperLabel := HyperLabel{#GroupBox,"eMail Content text",NULL_STRING,NULL_STRING}
+
+oCCNewButton := PushButton{SELF,ResourceID{EMAILFORMAT_NEWBUTTON,_GetInst()}}
+oCCNewButton:HyperLabel := HyperLabel{#NewButton,"New",NULL_STRING,NULL_STRING}
+oCCNewButton:TooltipText := "Add new text"
+
+oCCEditButton := PushButton{SELF,ResourceID{EMAILFORMAT_EDITBUTTON,_GetInst()}}
+oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
+oCCEditButton:TooltipText := "Edit a letter"
+
+oDCTemplates := combobox{SELF,ResourceID{EMAILFORMAT_TEMPLATES,_GetInst()}}
+oDCTemplates:HyperLabel := HyperLabel{#Templates,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCTemplates:FillUsing(Self:ListFiles( ))
+
+SELF:Caption := "eMail Template"
+SELF:HyperLabel := HyperLabel{#eMailFormat,"eMail Template",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+METHOD ListFiles(mExt) CLASS eMailFormat
+LOCAL brieven:={{"<None>", ""}} AS ARRAY
+Default(@mExt,"eMl")
+AEval(Directory(CurPath+"\*."+mExt),{|x| AAdd(brieven,{SubStr(x[F_NAME],1,RAt(".",x[F_NAME])-1),x[F_NAME]})})
+	
+RETURN brieven
+METHOD NewButton( ) CLASS eMailFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{SELF,".eMl"}
+oMark:Show()
+
+self:oDCTemplates:FillUsing(self:ListFiles("eMl"))
+self:oDCTemplates:Value:=self:Templatename
+RETURN
+
+METHOD OKButton( ) CLASS eMailFormat
+	LOCAL cRoot := "WYC\Runtime" AS STRING
+	LOCAL LineCount as int
+	LOCAL templateWidth:= 60 as int
+	IF !Empty(self:oDCTemplates:VALUE)
+
+		self:Template:=MemoRead(CURPATH+"\"+self:oDCTemplates:VALUE)
+		LineCount:=MLCount(self:Template,templateWidth)
+	ELSE
+		self:Template:=null_string
+	ENDIF
+	* save stettings in the registry:
+	SetRTRegString( cRoot, "eMlContent", self:oDCTemplates:TextValue)
+	lCancel:=false
+	SELF:EndWindow()
+RETURN NIL
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS eMailFormat
+	//Put your PostInit additions here
+*    SELF:oDCBrieven:ListFiles("*.eMl")
+	self:SetTexts()
+	self:Templates := WycIniFS:Getstring("Runtime", "eMlContent" )
+	IF Empty(self:Templates)
+	    self:oDCTemplates:CurrentItemNo:=1
+	ELSE
+	   self:oDCTemplates:TextValue:=self:Templates
+		IF self:oDCTemplates:CurrentItemNo==0
+		    self:oDCTemplates:CurrentItemNo:=1
+		ENDIF
+	ENDIF
+
+	RETURN NIL
+ACCESS Templates() CLASS eMailFormat
+RETURN SELF:FieldGet(#Templates)
+
+ASSIGN Templates(uValue) CLASS eMailFormat
+SELF:FieldPut(#Templates, uValue)
+RETURN uValue
+
+STATIC DEFINE EMAILFORMAT_BRIEVEN := 105 
+STATIC DEFINE EMAILFORMAT_CANCELBUTTON := 100 
+STATIC DEFINE EMAILFORMAT_EDITBUTTON := 104 
+STATIC DEFINE EMAILFORMAT_GROUPBOX := 102 
+STATIC DEFINE EMAILFORMAT_NEWBUTTON := 103 
+STATIC DEFINE EMAILFORMAT_OKBUTTON := 101 
+STATIC DEFINE EMAILFORMAT_TEMPLATES := 105 
+FUNCTION GenKeyword()
+* Soort(3e elemetnt:
+* n: NAW
+* c: Compleet NAW
+* g: gift
+* b: Bestemming (=g,d)
+* o: Openpost 
+* d: department
+* 
+RETURN {;
+{"Salutation","%SALUTATION","n"},;
+{"Title","%TITLE","n"},;
+{"Initials","%INITIALS","n"},;
+{"Prefix","%PREFIX","n"},;
+{"Lastname","%LASTNAME","n"},;
+{"Firstnames","%FIRSTNAME","n"},;
+{"Name extension","%NAMEEXTENSION","n"},;
+{"Address","%ADDRESS","n"},;
+{"Zipcode","%ZIPCODE","n"},;
+{"City","%CITYNAME","n"},;
+{"Country","%COUNTRY","n"},;
+{"Attention","%ATTENTION","n"},;
+{"Bank account","%BANKACCOUNT","o"},;
+{"Date last gift","%DATELSTGIFT","g"},;
+{"Date gift","%DATEGIFT","g"},;
+{"Report month","%REPORTMONTH","b"},;
+{"Transaction ID","%TRANSID","g"},;
+{"Document ID","%DOCID","b"},;
+{"Amount due","%AMOUNTDUE","o"},;
+{"Amount gift","%AMOUNTGIFT","g"},;
+{"Total gift/payments","%TOTALAMOUNT","b"},;
+{"Date amount due","%DUEDATE","o"},;
+{"Identifier amount due","%DUEIDENTIFIER","o"},;
+{"Invoice id/KID","%INVOICEID","o"},;
+{"Destination gift/ due amounts","%DESTINATION","b"},;
+{"Firstname member destination","%FRSTNAMEDESTINATION","g"},;
+{"Lastname member destination","%LSTNAMEDESTINATION","g"},;
+{"Salutation member destination","%SALUTDESTINATION","g"},;
+{"Complete name and address (6 lines)","%NAMEADDRESS","c"},; 
+{"Department name","%DEPRMNTNAME","d"},;
+{"Page skip","%PAGESKIP","b"}}
+CLASS LabelBottom INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS LabelBottom
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #LabelBottom
+
+    cPict       := ""
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := ""
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := NIL
+    nMaxRange   := NIL
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "LabelBottom", "", "" },  "N", 5, 2 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS LabelColCnt INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS LabelColCnt
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #LabelColCnt
+
+    cPict       := "9"
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := "Enter a value between 1 and 9"
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := 1
+    nMaxRange   := 9
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "Number of columns", "", "" },  "N", 1, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Label format:", LABELFORMAT_FIXEDTEXT1, "Static", WS_CHILD, 20, 4, 100, 12
+	CONTROL	"Height:", LABELFORMAT_STCKR_HEIGHT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LABELFORMAT_STCKR_WIDTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 42, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Height label:", LABELFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 10, 21, 56, 12
+	CONTROL	"Width label:", LABELFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 10, 42, 57, 12
+	CONTROL	"", LABELFORMAT_STCKR_TOPMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 64, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Top margin page:", LABELFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 10, 63, 72, 12
+	CONTROL	"", LABELFORMAT_STCKR_LEFTMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 83, 40, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Left margin page:", LABELFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 10, 83, 58, 13
+	CONTROL	"", LABELFORMAT_STCKR_POINTSIZE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 102, 105, 54, 47
+	CONTROL	"OK", LABELFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 177, 20, 53, 13
+	CONTROL	"Cancel", LABELFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 177, 39, 53, 12
+	CONTROL	"Font pointsize", LABELFORMAT_FIXEDTEXT8, "Static", WS_CHILD, 10, 104, 54, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT9, "Static", WS_CHILD, 152, 22, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT10, "Static", WS_CHILD, 152, 43, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT12, "Static", WS_CHILD, 152, 65, 16, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
+END
+
+CLASS LabelFormat INHERIT DataDialogMine 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCstckr_height AS SINGLELINEEDIT
+	PROTECT oDCstckr_width AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCstckr_TopMargin AS SINGLELINEEDIT
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCstckr_LeftMargin AS SINGLELINEEDIT
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oDCstckr_PointSize AS COMBOBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oDCFixedText12 AS FIXEDTEXT
+	PROTECT oDCFixedText13 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT Pretesting AS LOGIC
+  EXPORT lCancel AS LOGIC
+METHOD CancelButton( ) CLASS LabelFormat
+	SELF:EndWindow()
+	lCancel := TRUE
+	RETURN SELF
+METHOD Close(oEvent) CLASS LabelFormat
+	SUPER:Close(oEvent)
+	//Put your changes here
+SELF:Destroy()
+	RETURN NIL
+
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS LabelFormat 
+LOCAL DIM aFonts[1] AS OBJECT
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"LabelFormat",_GetInst()},iCtlID)
+
+aFonts[1] := Font{,12,"MS Sans Serif"}
+aFonts[1]:Bold := TRUE
+
+oDCFixedText1 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Label format:",NULL_STRING,NULL_STRING}
+oDCFixedText1:Font(aFonts[1], FALSE)
+
+oDCstckr_height := SingleLineEdit{SELF,ResourceID{LABELFORMAT_STCKR_HEIGHT,_GetInst()}}
+oDCstckr_height:HyperLabel := HyperLabel{#stckr_height,"Height:",NULL_STRING,NULL_STRING}
+oDCstckr_height:FieldSpec := LabelHeight{}
+
+oDCstckr_width := SingleLineEdit{SELF,ResourceID{LABELFORMAT_STCKR_WIDTH,_GetInst()}}
+oDCstckr_width:FieldSpec := LABELWIDTH{}
+oDCstckr_width:HyperLabel := HyperLabel{#stckr_width,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText2 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Height label:",NULL_STRING,NULL_STRING}
+
+oDCFixedText3 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Width label:",NULL_STRING,NULL_STRING}
+
+oDCstckr_TopMargin := SingleLineEdit{SELF,ResourceID{LABELFORMAT_STCKR_TOPMARGIN,_GetInst()}}
+oDCstckr_TopMargin:FieldSpec := SYSPARMS_TOPMARGIN{}
+oDCstckr_TopMargin:HyperLabel := HyperLabel{#stckr_TopMargin,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText6 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Top margin page:",NULL_STRING,NULL_STRING}
+
+oDCstckr_LeftMargin := SingleLineEdit{SELF,ResourceID{LABELFORMAT_STCKR_LEFTMARGIN,_GetInst()}}
+oDCstckr_LeftMargin:FieldSpec := SYSPARMS_LEFTMARGIN{}
+oDCstckr_LeftMargin:HyperLabel := HyperLabel{#stckr_LeftMargin,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText7 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Left margin page:",NULL_STRING,NULL_STRING}
+
+oDCstckr_PointSize := combobox{SELF,ResourceID{LABELFORMAT_STCKR_POINTSIZE,_GetInst()}}
+oDCstckr_PointSize:FillUsing(Self:PointSizes( ))
+oDCstckr_PointSize:HyperLabel := HyperLabel{#stckr_PointSize,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCstckr_PointSize:FieldSpec := PointSize{}
+
+oCCOKButton := PushButton{SELF,ResourceID{LABELFORMAT_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{LABELFORMAT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCFixedText8 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT8,_GetInst()}}
+oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"Font pointsize",NULL_STRING,NULL_STRING}
+
+oDCFixedText9 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT9,_GetInst()}}
+oDCFixedText9:HyperLabel := HyperLabel{#FixedText9,"mm",NULL_STRING,NULL_STRING}
+
+oDCFixedText10 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT10,_GetInst()}}
+oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"mm",NULL_STRING,NULL_STRING}
+
+oDCFixedText12 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT12,_GetInst()}}
+oDCFixedText12:HyperLabel := HyperLabel{#FixedText12,"mm",NULL_STRING,NULL_STRING}
+
+oDCFixedText13 := FixedText{SELF,ResourceID{LABELFORMAT_FIXEDTEXT13,_GetInst()}}
+oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"mm",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Label format"
+SELF:HyperLabel := HyperLabel{#LabelFormat,"Label format",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+METHOD OKButton( ) CLASS LabelFormat
+	LOCAL lError AS LOGIC
+	LOCAL nPoint:= 254/10 AS FLOAT
+	LOCAL cRoot := "WYC\Runtime" AS STRING
+	IF ValidateControls( SELF:Owner, SELF:AControls )
+		IF IsNil(self:stckr_PointSize).or.Empty(self:stckr_PointSize).or.!IsNumeric(self:stckr_PointSize)
+			(ErrorBox{self,self:oLan:Wget("Pointsize is mandatory")+"!"}):show()
+			RETURN TRUE
+		ENDIF
+		
+		* Check if number of rows below minimum (4 of 3 +KIXcode-row):
+		IF CountryCode="31"
+			IF Integer((self:stckr_height - 7 ) / ( self:stckr_PointSize * nPoint / 72)) < 3
+				* fout
+				lError := TRUE
+			ENDIF
+		ELSE
+			IF Integer(self:stckr_height  / ( self:stckr_PointSize * nPoint / 72)) < 4
+				* fout
+				lError := TRUE
+			ENDIF
+		ENDIF
+		IF lError
+			(errorbox{SELF,"Too less lines per label"}):show()
+		ELSE
+
+			SetRTRegInt( cRoot, "stckr_height", self:stckr_height )
+			SetRTRegInt( cRoot, "stckr_width", self:stckr_width)
+			SetRTRegInt( cRoot, "stckr_TopMargin", self:stckr_TopMargin )
+			SetRTRegInt( cRoot, "stckr_LeftMargin", self:stckr_LeftMargin )
+			SetRTRegInt( cRoot, "stckr_PointSize", self:stckr_PointSize )
+			SELF:EndWindow()
+		ENDIF
+	ENDIF
+
+	RETURN TRUE
+	
+
+
+METHOD PointSizes() CLASS LabelFormat
+RETURN {8,9,10,11,12}
+METHOD PostInit() CLASS LabelFormat
+	//Put your PostInit additions here
+	self:SetTexts()
+	self:stckr_height := WycIniFS:GetInt( "Runtime", "stckr_height" )
+	self:stckr_width := WycIniFS:GetInt( "Runtime", "stckr_width" )
+	self:stckr_TopMargin := WycIniFS:GetInt( "Runtime", "stckr_TopMargin" )
+	self:stckr_LeftMargin  := WycIniFS:GetInt( "Runtime", "stckr_LeftMargin" )
+	self:stckr_PointSize := WycIniFS:GetInt( "Runtime", "stckr_PointSize" )
+	IF Empty(self:stckr_height).or.IsNil(self:stckr_height)
+		self:stckr_height:=36
+		self:stckr_width:=70
+		self:stckr_TopMargin := 0
+		self:stckr_LeftMargin := 0
+	ENDIF	
+	IF Empty(self:stckr_PointSize).or.IsNil(self:stckr_PointSize)
+		self:stckr_PointSize := 11
+	ENDIF
+
+	RETURN NIL
+ACCESS stckr_height() CLASS LabelFormat
+RETURN SELF:FieldGet(#stckr_height)
+
+ASSIGN stckr_height(uValue) CLASS LabelFormat
+SELF:FieldPut(#stckr_height, uValue)
+RETURN uValue
+
+ACCESS stckr_LeftMargin() CLASS LabelFormat
+RETURN SELF:FieldGet(#stckr_LeftMargin)
+
+ASSIGN stckr_LeftMargin(uValue) CLASS LabelFormat
+SELF:FieldPut(#stckr_LeftMargin, uValue)
+RETURN uValue
+
+ACCESS stckr_PointSize() CLASS LabelFormat
+RETURN SELF:FieldGet(#stckr_PointSize)
+
+ASSIGN stckr_PointSize(uValue) CLASS LabelFormat
+SELF:FieldPut(#stckr_PointSize, uValue)
+RETURN uValue
+
+ACCESS stckr_TopMargin() CLASS LabelFormat
+RETURN SELF:FieldGet(#stckr_TopMargin)
+
+ASSIGN stckr_TopMargin(uValue) CLASS LabelFormat
+SELF:FieldPut(#stckr_TopMargin, uValue)
+RETURN uValue
+
+ACCESS stckr_width() CLASS LabelFormat
+RETURN SELF:FieldGet(#stckr_width)
+
+ASSIGN stckr_width(uValue) CLASS LabelFormat
+SELF:FieldPut(#stckr_width, uValue)
+RETURN uValue
+
+STATIC DEFINE LABELFORMAT_CANCELBUTTON := 111 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT1 := 100 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT10 := 114 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT12 := 115 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT13 := 116 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT2 := 103 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT3 := 104 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT6 := 106 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT7 := 108 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT8 := 112 
+STATIC DEFINE LABELFORMAT_FIXEDTEXT9 := 113 
+STATIC DEFINE LABELFORMAT_OKBUTTON := 110 
+STATIC DEFINE LABELFORMAT_STCKR_HEIGHT := 101 
+STATIC DEFINE LABELFORMAT_STCKR_HOOGTE := 101 
+STATIC DEFINE LABELFORMAT_STCKR_LEFTMARGIN := 107 
+STATIC DEFINE LABELFORMAT_STCKR_POINTSIZE := 109 
+STATIC DEFINE LABELFORMAT_STCKR_TOPMARGIN := 105 
+STATIC DEFINE LABELFORMAT_STCKR_WIDTH := 102 
+CLASS LabelHeight INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS LabelHeight
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #LabelHeight
+
+    cPict       := "999.99"
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := "Enter a value between 6 and 150"
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := 6
+    nMaxRange   := 150
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "LabelHeight", "Height of a Label", "" },  "N", 5, 2 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS LabelMargin INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS LabelMargin
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #LabelMargin
+
+    cPict       := "99.99"
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := "Enter a value between 0 and 20"
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := 0
+    nMaxRange   := 20
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "Left Margin within label", "", "" },  "N", 4, 2 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS LabelWidth INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS LabelWidth
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #LabelWidth
+
+    cPict       := "999.99"
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := "Enter a value between 20 and 250"
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := 20
+    nMaxRange   := 250
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "LabelWidth", "", "" },  "N", 5, 2 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+RESOURCE LetterFormat DIALOGEX  9, 8, 247, 251
+STYLE	WS_CHILD
+FONT	8, "MS Sans Serif"
+BEGIN
+	CONTROL	"", LETTERFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 81, 72
+	CONTROL	"Name/address on top", LETTERFORMAT_BRFNAW, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 73, 92, 11
+	CONTROL	"City and date", LETTERFORMAT_BRFDAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 14, 92, 80, 11
+	CONTROL	"Heading", LETTERFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 60, 164, 53
+	CONTROL	"Width of letter:", LETTERFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 12, 131, 53, 13
+	CONTROL	"Name/address starts at column:", LETTERFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 12, 148, 102, 13
+	CONTROL	"Text starts at column:", LETTERFORMAT_FIXEDTEXT4, "Static", WS_CHILD, 12, 182, 82, 13
+	CONTROL	"City and date starts at column:", LETTERFORMAT_FIXEDTEXT5, "Static", WS_CHILD, 12, 199, 104, 12
+	CONTROL	"City and date starts at row:", LETTERFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 12, 216, 95, 12
+	CONTROL	"", LETTERFORMAT_BRFWIDTH, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 131, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOL, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 148, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGN, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 166, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLT, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 182, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLA, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 199, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGA, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 216, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Name/address starts at row:", LETTERFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 12, 166, 104, 12
+	CONTROL	"Positions", LETTERFORMAT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 120, 164, 119
+	CONTROL	"OK", LETTERFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 180, 208, 54, 12
+	CONTROL	"Cancel", LETTERFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 180, 227, 54, 12
+	CONTROL	"New", LETTERFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 12
+	CONTROL	"Edit", LETTERFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 31, 53, 12
+	CONTROL	"Letter", LETTERFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 164, 53
+END
+
+CLASS LetterFormat INHERIT DataDialogMine
+
+	PROTECT oDCBrieven AS COMBOBOX
+	PROTECT oDCbrfNAW AS CHECKBOX
+	PROTECT oDCbrfDAT AS CHECKBOX
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oDCFixedText5 AS FIXEDTEXT
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCbrfWidth AS SINGLELINEEDIT
+	PROTECT oDCbrfCol AS SINGLELINEEDIT
+	PROTECT oDCbrfregn AS SINGLELINEEDIT
+	PROTECT oDCbrfColt AS SINGLELINEEDIT
+	PROTECT oDCbrfCola AS SINGLELINEEDIT
+	PROTECT oDCbrfrega AS SINGLELINEEDIT
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oDCGroupBox2 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oDCGroupBox3 AS GROUPBOX
+	INSTANCE Brieven
+	INSTANCE brfNAW
+	INSTANCE brfDAT
+	INSTANCE brfWidth
+	INSTANCE brfCol
+	INSTANCE brfregn
+	INSTANCE brfColt
+	INSTANCE brfCola
+	INSTANCE brfrega
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT lCancel AS LOGIC
+  EXPORT brief AS STRING
+  EXPORT Lettername AS STRING
+  EXPORT lAcceptNorway AS LOGIC
+access brfCol() class LetterFormat
+return self:FieldGet(#brfCol)
+
+assign brfCol(uValue) class LetterFormat
+self:FieldPut(#brfCol, uValue)
+return brfCol := uValue
+
+access brfCola() class LetterFormat
+return self:FieldGet(#brfCola)
+
+assign brfCola(uValue) class LetterFormat
+self:FieldPut(#brfCola, uValue)
+return brfCola := uValue
+
+access brfColt() class LetterFormat
+return self:FieldGet(#brfColt)
+
+assign brfColt(uValue) class LetterFormat
+self:FieldPut(#brfColt, uValue)
+return brfColt := uValue
+
+access brfDAT() class LetterFormat
+return self:FieldGet(#brfDAT)
+
+assign brfDAT(uValue) class LetterFormat
+self:FieldPut(#brfDAT, uValue)
+return brfDAT := uValue
+
+access brfNAW() class LetterFormat
+return self:FieldGet(#brfNAW)
+
+assign brfNAW(uValue) class LetterFormat
+self:FieldPut(#brfNAW, uValue)
+return brfNAW := uValue
+
+access brfrega() class LetterFormat
+return self:FieldGet(#brfrega)
+
+assign brfrega(uValue) class LetterFormat
+self:FieldPut(#brfrega, uValue)
+return brfrega := uValue
+
+access brfregn() class LetterFormat
+return self:FieldGet(#brfregn)
+
+assign brfregn(uValue) class LetterFormat
+self:FieldPut(#brfregn, uValue)
+return brfregn := uValue
+
+access brfWidth() class LetterFormat
+return self:FieldGet(#brfWidth)
+
+assign brfWidth(uValue) class LetterFormat
+self:FieldPut(#brfWidth, uValue)
+return brfWidth := uValue
+
+access Brieven() class LetterFormat
+return self:FieldGet(#Brieven)
+
+assign Brieven(uValue) class LetterFormat
+self:FieldPut(#Brieven, uValue)
+return Brieven := uValue
+
+METHOD ButtonClick(oControlEvent) CLASS LetterFormat
+	LOCAL oControl AS Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	SUPER:ButtonClick(oControlEvent)
+	//Put your changes here
+	IF oControl:NameSym == #brfNAW
+		IF brfNAW
+			oDCbrfCol:Enable()
+			oDCbrfregn:Enable()
+		ELSE
+			oDCbrfCol:Disable()
+			oDCbrfregn:Disable()
+		ENDIF
+	ENDIF
+
+	IF oControl:NameSym == #brfDAT
+		IF brfDAT
+			oDCbrfCola:Enable()
+			oDCbrfrega:Enable()
+		ELSE
+			oDCbrfCola:Disable()
+			oDCbrfrega:Disable()
+		ENDIF
+	ENDIF
+	
+	RETURN NIL
+
+METHOD CancelButton( ) CLASS LetterFormat
+	SELF:EndWindow()
+	lCancel := TRUE
+	RETURN SELF
+METHOD Close(oEvent) CLASS LetterFormat
+	SUPER:Close(oEvent)
+	//Put your changes here
+SELF:destroy()
+	RETURN NIL
+
+METHOD EditButton( ) CLASS LetterFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{SELF,brieven}
+oMark:Show()
+	
+	RETURN
+method Init(oWindow,iCtlID,oServer,uExtra) class LetterFormat 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+super:Init(oWindow,ResourceID{"LetterFormat",_GetInst()},iCtlID)
+
+oDCBrieven := combobox{self,ResourceID{LETTERFORMAT_BRIEVEN,_GetInst()}}
+oDCBrieven:HyperLabel := HyperLabel{#Brieven,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCBrieven:FillUsing(Self:ListFiles( ))
+
+oDCbrfNAW := CheckBox{self,ResourceID{LETTERFORMAT_BRFNAW,_GetInst()}}
+oDCbrfNAW:HyperLabel := HyperLabel{#brfNAW,"Name/address on top",NULL_STRING,NULL_STRING}
+
+oDCbrfDAT := CheckBox{self,ResourceID{LETTERFORMAT_BRFDAT,_GetInst()}}
+oDCbrfDAT:HyperLabel := HyperLabel{#brfDAT,"City and date",NULL_STRING,NULL_STRING}
+
+oDCGroupBox1 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Heading",NULL_STRING,NULL_STRING}
+
+oDCFixedText2 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Width of letter:",NULL_STRING,NULL_STRING}
+
+oDCFixedText3 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Name/address starts at column:",NULL_STRING,NULL_STRING}
+
+oDCFixedText4 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Text starts at column:",NULL_STRING,NULL_STRING}
+
+oDCFixedText5 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"City and date starts at column:",NULL_STRING,NULL_STRING}
+
+oDCFixedText6 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"City and date starts at row:",NULL_STRING,NULL_STRING}
+
+oDCbrfWidth := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFWIDTH,_GetInst()}}
+oDCbrfWidth:Picture := "999"
+oDCbrfWidth:HyperLabel := HyperLabel{#brfWidth,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCbrfWidth:FieldSpec := BRFWIDTH{}
+
+oDCbrfCol := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOL,_GetInst()}}
+oDCbrfCol:Picture := "99"
+oDCbrfCol:HyperLabel := HyperLabel{#brfCol,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCbrfregn := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFREGN,_GetInst()}}
+oDCbrfregn:Picture := "99"
+oDCbrfregn:UseHLforToolTip := False
+oDCbrfregn:HyperLabel := HyperLabel{#brfregn,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCbrfColt := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOLT,_GetInst()}}
+oDCbrfColt:Picture := "99"
+oDCbrfColt:UseHLforToolTip := False
+oDCbrfColt:HyperLabel := HyperLabel{#brfColt,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCbrfCola := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOLA,_GetInst()}}
+oDCbrfCola:Picture := "99"
+oDCbrfCola:HyperLabel := HyperLabel{#brfCola,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCbrfrega := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFREGA,_GetInst()}}
+oDCbrfrega:Picture := "99"
+oDCbrfrega:HyperLabel := HyperLabel{#brfrega,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText7 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Name/address starts at row:",NULL_STRING,NULL_STRING}
+
+oDCGroupBox2 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX2,_GetInst()}}
+oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Positions",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{self,ResourceID{LETTERFORMAT_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{self,ResourceID{LETTERFORMAT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oCCNewButton := PushButton{self,ResourceID{LETTERFORMAT_NEWBUTTON,_GetInst()}}
+oCCNewButton:HyperLabel := HyperLabel{#NewButton,"New",NULL_STRING,NULL_STRING}
+oCCNewButton:TooltipText := "Add new letter"
+
+oCCEditButton := PushButton{self,ResourceID{LETTERFORMAT_EDITBUTTON,_GetInst()}}
+oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
+oCCEditButton:TooltipText := "Edit a letter"
+
+oDCGroupBox3 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX3,_GetInst()}}
+oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Letter",NULL_STRING,NULL_STRING}
+
+self:Caption := "Specification of Letter format"
+self:HyperLabel := HyperLabel{#LetterFormat,"Specification of Letter format",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	self:Use(oServer)
+endif
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+METHOD ListFiles(mExt) CLASS LetterFormat
+LOCAL brieven:={} AS ARRAY
+Default(@mExt,"brf")
+AEval(Directory(CurPath+"\*."+mExt),{|x| AAdd(brieven,{SubStr(x[F_NAME],1,RAt(".",x[F_NAME])-1),x[F_NAME]})})
+
+RETURN brieven
+METHOD NewButton( ) CLASS LetterFormat
+LOCAL oMark AS MarkupLetter
+oMark:= MarkupLetter{SELF,".brf"}
+oMark:Show()
+SELF:oDCBrieven:FillUsing(SELF:ListFiles( ))
+SELF:oDCBrieven:Value:=SELF:LetterName
+RETURN
+METHOD OKButton( ) CLASS LetterFormat
+LOCAL m96_regels AS INT
+LOCAL cRoot := "WYC\Runtime" AS STRING
+	IF ValidateControls( SELF:Owner, SELF:AControls )
+		IF Empty(oDCBrieven:TextValue)
+   			(errorbox{SELF,"No letter selected"}):show()
+			RETURN
+		ENDIF
+
+		IF brfNAW .and.(brfCol < 1 .or. brfCol > brfWidth)
+			(errorbox{SELF,"Name/address start column must be within range of letter"}):show()
+			RETURN
+		ENDIF	
+		IF brfColt < 1 .or. brfColt > brfWidth-10
+			(errorbox{SELF,"Text start column must be within range of lettermargins"}):show()
+			RETURN
+		ENDIF	
+		IF brfDAT.and.(brfCola < 1 .or. brfCola > brfWidth-10)
+			(errorbox{SELF,"City and date start column must be within range of lettermargins"}):show()
+			RETURN
+		ENDIF	
+		IF brfDAT.and.brfNAW.and.brfCola==brfCol.and.brfregn==brfrega
+			(errorbox{SELF,"Name and City and date cannot be on the same position"}):show()
+			RETURN
+		ENDIF
+		// check number of lines in case of AcceptNorway:
+		IF SELF:lAcceptNorway
+			SELF:brief:=MemoRead(brieven)
+			m96_regels:=MLCount(brief,brfWidth)
+			IF m96_regels > 36-Max(if(brfNAW,brfregn+5,0),if(brfDAT,brfrega,0))-4  // extra 4 for repeating lines
+   				(errorbox{SELF,'Too many lines in message text'}):show()
+				RETURN
+			ENDIF
+		ELSE
+			brief:=NULL_STRING		
+		ENDIF	
+		* save stettings in the registry:
+		SetRTRegInt( cRoot, "brfNAW", if(brfNAW,1,0) )
+		SetRTRegInt( cRoot, "brfDAT", if(brfDAT,1,0))
+		SetRTRegInt( cRoot, "brfWidth", brfWidth )
+		SetRTRegInt( cRoot, "brfCol", brfCol )
+		SetRTRegInt( cRoot, "brfregn", brfregn )
+		SetRTRegInt( cRoot, "brfrega", brfrega )
+		SetRTRegInt( cRoot, "brfCola", brfCola )
+		SetRTRegInt( cRoot, "brfColt", brfColt )
+		brief:=MemoRead(oDCBrieven:Value)
+		SetRTRegString( cRoot, "LetterName", oDCBrieven:TextValue)
+
+		SELF:EndWindow()
+	ENDIF
+
+RETURN TRUE
+		
+
+
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
+	//Put your PostInit additions here
+	self:SetTexts()
+	brfNAW := if(WycIniFS:GetInt( "Runtime", "brfNAW" )==1,true,FALSE)
+	brfDAT := if(WycIniFS:GetInt( "Runtime", "brfDAT" )==1,TRUE,FALSE)
+	brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
+	brfCol := WycIniFS:GetInt( "Runtime", "brfCol" )
+	brfregn := WycIniFS:GetInt( "Runtime", "brfregn" )
+	brfrega := WycIniFS:GetInt( "Runtime", "brfrega" )
+	brfCola := WycIniFS:GetInt( "Runtime", "brfCola" )
+	brfColt := WycIniFS:GetInt( "Runtime", "brfColt" )
+	IF IsLogic(uExtra)
+		lAcceptNorway:=uExtra
+	ENDIF
+	IF lAcceptNorway
+		self:Caption:=(Language{}):WGet("Specification of Accept GIRO format")
+	ENDIF
+	* Set default values:
+	IF Empty( brfWidth)
+		brfWidth:=80
+	ENDIF
+	IF Empty( brfCol)
+		brfCol:=1
+	ENDIF
+	IF Empty( brfregn)
+		brfregn:=1
+	ENDIF
+	IF Empty( brfColt)
+		brfColt:=8
+	ENDIF
+	IF Empty( brfCola)
+		brfCola:= 50
+	ENDIF
+	IF Empty( brfrega)
+		brfrega:=6
+	ENDIF
+	
+	IF brfNAW
+		oDCbrfCol:Enable()
+		oDCbrfregn:Enable()
+	ELSE
+		oDCbrfCol:Disable()
+		oDCbrfregn:Disable()
+	ENDIF
+
+	IF brfDAT
+		oDCbrfCola:Enable()
+		oDCbrfrega:Enable()
+	ELSE
+		oDCbrfCola:Disable()
+		oDCbrfrega:Disable()
+	ENDIF
+
+*    SELF:oDCBrieven:ListFiles("*.brf")
+	Brieven := WycIniFS:Getstring("Runtime", "LetterName" )
+	IF Empty(Brieven)
+	    SELF:oDCBrieven:CurrentItemNo:=1
+	ELSE
+	    SELF:oDCBrieven:TextValue:=Brieven
+		IF SELF:oDCBrieven:CurrentItemNo==0
+		    SELF:oDCBrieven:CurrentItemNo:=1
+		ENDIF
+	ENDIF
+
+	RETURN NIL
+STATIC DEFINE LETTERFORMAT_BRFCOL := 110 
+STATIC DEFINE LETTERFORMAT_BRFCOLA := 113 
+STATIC DEFINE LETTERFORMAT_BRFCOLT := 112 
+STATIC DEFINE LETTERFORMAT_BRFDAT := 102 
+STATIC DEFINE LETTERFORMAT_BRFNAW := 101 
+STATIC DEFINE LETTERFORMAT_BRFREGA := 114 
+STATIC DEFINE LETTERFORMAT_BRFREGN := 111 
+STATIC DEFINE LETTERFORMAT_BRFWIDTH := 109 
+STATIC DEFINE LETTERFORMAT_BRIEVEN := 100 
+STATIC DEFINE LETTERFORMAT_CANCELBUTTON := 118 
+STATIC DEFINE LETTERFORMAT_EDITBUTTON := 120 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT2 := 104 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT3 := 105 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT4 := 106 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT5 := 107 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT6 := 108 
+STATIC DEFINE LETTERFORMAT_FIXEDTEXT7 := 115 
+STATIC DEFINE LETTERFORMAT_GROUPBOX1 := 103 
+STATIC DEFINE LETTERFORMAT_GROUPBOX2 := 116 
+STATIC DEFINE LETTERFORMAT_GROUPBOX3 := 121 
+STATIC DEFINE LETTERFORMAT_NEWBUTTON := 119 
+STATIC DEFINE LETTERFORMAT_OKBUTTON := 117 
+CLASS MarkupGiftsGroup INHERIT DialogWinDowExtra 
+
+	PROTECT oDCEditLetter AS MULTILINEEDIT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCKeyword AS COMBOBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oCaller as OBJECT
+RESOURCE MarkupGiftsGroup DIALOGEX  5, 17, 372, 79
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Markup Gifts Group"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", MARKUPGIFTSGROUP_EDITLETTER, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|WS_TABSTOP|WS_CHILD|WS_BORDER, 6, 22, 355, 40, WS_EX_CLIENTEDGE
+	CONTROL	"OK", MARKUPGIFTSGROUP_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 306, 3, 54, 14
+	CONTROL	"", MARKUPGIFTSGROUP_KEYWORD, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 8, 4, 147, 210
+END
+
+method EditFocusChange(oEditFocusChangeEvent) class MarkupGiftsGroup
+	local oControl as Control
+	local lGotFocus as logic
+	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
+	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	super:EditFocusChange(oEditFocusChangeEvent)
+	//Put your changes here
+	IF !lGotFocus
+		IF oControl:Name == "KEYWORD".and.!Empty(oControl:VALUE)
+			self:oDCEditLetter:paste(AllTrim(oControl:VALUE))
+		ENDIF
+	ENDIF
+	return nil
+METHOD GenKeywords() CLASS MarkupGiftsGroup 
+return {{"Amount gift","%AMOUNTGIFT"},{"Date gift","%DATEGIFT"},{"Reference Gift","%REFERENCEGIFT"},{"Document ID","%DOCUMENTID"},{"Destination", "%DESTINATION"}} 
+METHOD Init(oParent,uExtra) CLASS MarkupGiftsGroup 
+
+self:PreInit(oParent,uExtra)
+
+SUPER:Init(oParent,ResourceID{"MarkupGiftsGroup",_GetInst()},TRUE)
+
+oDCEditLetter := MultiLineEdit{SELF,ResourceID{MARKUPGIFTSGROUP_EDITLETTER,_GetInst()}}
+oDCEditLetter:HyperLabel := HyperLabel{#EditLetter,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{SELF,ResourceID{MARKUPGIFTSGROUP_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oDCKeyword := combobox{SELF,ResourceID{MARKUPGIFTSGROUP_KEYWORD,_GetInst()}}
+oDCKeyword:TooltipText := "Insert a keyword into the gifts group text"
+oDCKeyword:HyperLabel := HyperLabel{#Keyword,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCKeyword:FillUsing(Self:GenKeywords( ))
+
+SELF:Caption := "Markup Gifts Group"
+SELF:HyperLabel := HyperLabel{#MarkupGiftsGroup,"Markup Gifts Group",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+METHOD OKButton( ) CLASS MarkupGiftsGroup 
+LOCAL ptrhandle as USUAL
+SetPath(CurPath)
+ptrhandle := FCreate(CurPath+"\GiftsGroup.grp")
+if Right(self:oDCEditLetter:Currenttext,2)<>CRLF
+	self:oDCEditLetter:Currenttext+=CRLF
+endif
+FWrite(ptrhandle, self:oDCEditLetter:Currenttext )
+FClose(ptrhandle) 
+self:oCaller:GrpFormat:=StrTran(self:oDCEditLetter:Currenttext,CRLF,LF) 
+self:EndDialog()
+RETURN NIL
+method PostInit(oWindow,iCtlID,oServer,uExtra) class MarkupGiftsGroup
+	//Put your PostInit additions here
+	LOCAL Ptrhandle as USUAL, cContents as STRING
+	self:SetTexts()
+	Ptrhandle:=FOpen(CurPath+"\GiftsGroup.grp")
+	FRead(Ptrhandle,@cContents,32768)
+	FClose(ptrhandle) 
+	self:oCaller:=oWindow
+	if Empty(cContents)
+		cContents:="%DATEGIFT "+sCurrname+"%AMOUNTGIFT: %DESTINATION"
+	endif
+	oDCEditLetter:Value:=cContents
+	oDCEditLetter:SetFocus()
+return nil
+STATIC DEFINE MARKUPGIFTSGROUP_EDITLETTER := 100 
+STATIC DEFINE MARKUPGIFTSGROUP_KEYWORD := 102 
+STATIC DEFINE MARKUPGIFTSGROUP_OKBUTTON := 101 
+STATIC DEFINE MARKUPGIFTSGROUPOLD_EDITLETTER := 100 
+STATIC DEFINE MARKUPGIFTSGROUPOLD_KEYWORD := 102 
+STATIC DEFINE MARKUPGIFTSGROUPOLD_SAVEBUTTON := 101 
+RESOURCE MarkupLetter DIALOGEX  13, 24, 366, 227
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Markup Letter"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", MARKUPLETTER_EDITLETTER, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 6, 22, 355, 199, WS_EX_CLIENTEDGE
+	CONTROL	"Save", MARKUPLETTER_SAVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 308, 3, 53, 13
+	CONTROL	"", MARKUPLETTER_KEYWORD, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 8, 3, 144, 209
+	CONTROL	"Repeating group", MARKUPLETTER_REPEATBUTTON, "Button", WS_TABSTOP|WS_CHILD, 164, 3, 61, 13
+END
+
+CLASS MarkupLetter INHERIT DialogWinDowExtra 
+
+	PROTECT oDCEditLetter AS MULTILINEEDIT
+	PROTECT oCCSaveButton AS PUSHBUTTON
+	PROTECT oDCKeyword AS COMBOBOX
+	PROTECT oCCRepeatButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	PROTECT LetterName AS STRING
+  	PROTECT cExt AS STRING
+METHOD Close(oEvent) CLASS MarkupLetter
+	SUPER:Close(oEvent)
+	//Put your changes here
+SELF:Destroy()
+	RETURN NIL
+
+METHOD EditFocusChange(oEditFocusChangeEvent) CLASS MarkupLetter
+	LOCAL oControl AS Control
+	LOCAL lGotFocus AS LOGIC
+	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
+	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	SUPER:EditFocusChange(oEditFocusChangeEvent)
+	//Put your changes here
+	IF !lGotFocus
+		IF oControl:Name == "KEYWORD".and.!Empty(oControl:Value)
+			SELF:oDCEditLetter:paste(AllTrim(oControl:Value))
+		ENDIF
+	ENDIF
+
+	RETURN NIL
+METHOD GenKeywords() CLASS MarkupLetter
+RETURN AEvalA(GenKeyword(),{|x| {x[1],x[2]}})
+METHOD Init(oParent,uExtra) CLASS MarkupLetter 
+
+self:PreInit(oParent,uExtra)
+
+SUPER:Init(oParent,ResourceID{"MarkupLetter",_GetInst()},TRUE)
+
+oDCEditLetter := MultiLineEdit{SELF,ResourceID{MARKUPLETTER_EDITLETTER,_GetInst()}}
+oDCEditLetter:HyperLabel := HyperLabel{#EditLetter,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCSaveButton := PushButton{SELF,ResourceID{MARKUPLETTER_SAVEBUTTON,_GetInst()}}
+oCCSaveButton:HyperLabel := HyperLabel{#SaveButton,"Save",NULL_STRING,NULL_STRING}
+
+oDCKeyword := combobox{SELF,ResourceID{MARKUPLETTER_KEYWORD,_GetInst()}}
+oDCKeyword:TooltipText := "Insert a keyword into the letter text"
+oDCKeyword:HyperLabel := HyperLabel{#Keyword,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCKeyword:FillUsing(Self:GenKeywords( ))
+
+oCCRepeatButton := PushButton{SELF,ResourceID{MARKUPLETTER_REPEATBUTTON,_GetInst()}}
+oCCRepeatButton:HyperLabel := HyperLabel{#RepeatButton,"Repeating group",NULL_STRING,NULL_STRING}
+oCCRepeatButton:TooltipText := "Mark selected text as repeating group, e.g. gift in a period"
+
+SELF:Caption := "Markup Letter"
+SELF:HyperLabel := HyperLabel{#MarkupLetter,"Markup Letter",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+METHOD PostInit(oParent,uExtra) CLASS MarkupLetter
+	//Put your PostInit additions here
+	LOCAL Ptrhandle AS USUAL, cContents AS STRING
+	LOCAL cType AS STRING
+	self:SetTexts()
+	if !Empty(uExtra)
+		IF uExtra="."
+			* Only extension for new letter:
+			cExt:=SubStr(uExtra,2)
+			cType := cExt
+		ELSE
+			LetterName:=uExtra
+			cType := Split(LetterName,".")[1]
+			Ptrhandle:=FOpen(CurPath+"\"+LetterName)
+			FRead(ptrHandle,@cContents,32768)
+			FClose(PTRhandle)
+			oDCEditLetter:Value:=cContents
+			oDCEditLetter:SetFocus()
+		ENDIF
+	ENDIF
+	IF !Empty(cType).and. !cType=="brf"
+		self:Caption:=(Language{}):WGet("Markup " + iif(cType="acc","AcceptGiro remarks","eMail content") )
+	END IF
+	RETURN NIL
+METHOD RepeatButton( ) CLASS MarkupLetter
+SELF:oDCEditLetter:Paste("["+SELF:oDCEditLetter:SelectedText+"]")
+RETURN NIL
+METHOD SaveButton( ) CLASS MarkupLetter
+LOCAL oAskname AS AskLetterName
+LOCAL ptrhandle AS USUAL
+IF Empty(LetterName)
+	* Ask for name for Letter:
+	(oAskname := AskLetterName{SELF,cExt}):Show()
+	Lettername:=oAskName:cName
+ENDIF
+SetPath(CurPath)
+ptrHandle := FCreate(CurPath+"\"+Lettername)
+FWrite(ptrHandle, SELF:oDCEditLetter:Currenttext)
+FClose(ptrHandle)
+SELF:Owner:Lettername:=Lettername
+SELF:EndDialog()
+RETURN
+STATIC DEFINE MARKUPLETTER_EDITLETTER := 100 
+STATIC DEFINE MARKUPLETTER_KEYWORD := 102 
+STATIC DEFINE MARKUPLETTER_REPEATBUTTON := 103 
+STATIC DEFINE MARKUPLETTER_SAVEBUTTON := 101 
+STATIC DEFINE MARKUPLETTERRICH_EDITLETTER := 103 
+STATIC DEFINE MARKUPLETTERRICH_KEYWORD := 102 
+STATIC DEFINE MARKUPLETTERRICH_REPEATBUTTON := 101 
+STATIC DEFINE MARKUPLETTERRICH_SAVEBUTTON := 100 
+DEFINE MEMBER_START := "#22#"
+	CLASS myDialFontDialog INHERIT StandardFontDialog
+METHOD SetFont(prFont) CLASS myDialFontDialog
+	SELF:Font:=prFont
+RETURN
+
+CLASS MyFont INHERIT Font
+METHOD GetHeight() CLASS MyFont
+	RETURN SELF:LFHeight
+METHOD GetPointSize() CLASS MyFONT
+	RETURN iPointSize
+METHOD SetCharSet(iCh) CLASS MyFont
+	SELF:LFCharSet:=iCh
+	RETURN
+METHOD SetHeight(iHt) CLASS MyFont
+	SELF:LFHeight:=iHt
+	RETURN
+METHOD SetPointSize(nPnt) CLASS MyFONT
+	SELF:iPointSize:=nPnt
+	SELF:SetHeight(Round(-(nPnt*96)/72,0))
+	RETURN
+DEFINE PAGE_END := "#20#"
+CLASS PointSize INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS PointSize
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #PonitSize
+
+    cPict       := ""
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := ""
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := NIL
+    nMaxRange   := NIL
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "Size of a point", "", "" },  "N", 12, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+CLASS PointsSize INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS PointsSize
+
+    LOCAL   oHlTemp                 AS OBJECT
+    LOCAL   cPict                   AS STRING
+    LOCAL   nMinLen                 AS INT
+    LOCAL   lRequired               AS LOGIC
+    LOCAL   symHlName               AS SYMBOL
+    LOCAL   cTypeDiag               AS STRING
+    LOCAL   cTypeHelp               AS STRING
+    LOCAL   cLenDiag                AS STRING
+    LOCAL   cLenHelp                AS STRING
+    LOCAL   cMinLenDiag             AS STRING
+    LOCAL   cMinLenHelp             AS STRING
+    LOCAL   cRangeDiag              AS STRING
+    LOCAL   cRangeHelp              AS STRING
+    LOCAL   cReqDiag                AS STRING
+    LOCAL   cReqHelp                AS STRING
+    LOCAL   cValidDiag              AS STRING
+    LOCAL   cValidHelp              AS STRING
+    LOCAL   nMinRange               AS USUAL
+    LOCAL   nMaxRange               AS USUAL
+    LOCAL   xValidation             AS USUAL
+
+    symHlName   := #PoitnSize
+
+    cPict       := ""
+    cTypeDiag   := ""
+    cTypeHelp   := ""
+    cLenDiag    := ""
+    cLenHelp    := ""
+    cMinLenDiag := ""
+    cMinLenHelp := ""
+    cRangeDiag  := ""
+    cRangeHelp  := ""
+    cValidDiag  := ""
+    cValidHelp  := ""
+    cReqDiag    := ""
+    cReqHelp    := ""
+
+    nMinLen     := -1
+    nMinRange   := NIL
+    nMaxRange   := NIL
+    xValidation := NIL
+    lRequired   := .F.
+
+
+    SUPER:Init( HyperLabel{symHlName, "Size of a point", "", "" },  "N", 12, 0 )
+
+
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+
+    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
+        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
+    ENDIF
+
+
+    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
+        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
+    ENDIF
+
+
+    IF nMinLen != -1
+        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
+
+            SELF:SetMinLength(nMinLen, oHlTemp)
+        ELSE
+            SELF:SetMinLength(nMinLen)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
+        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
+            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
+            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
+        ELSE
+            SELF:SetRange(nMinRange, nMaxRange)
+        ENDIF
+    ENDIF
+
+
+    IF !IsNIL(xValidation)
+        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
+            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
+
+            SELF:SetValidation(xValidation, SELF:oHLValidation)
+        ELSE
+            SELF:SetValidation(xValidation)
+        ENDIF
+    ENDIF
+
+
+    IF lRequired
+        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
+            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
+
+            SELF:SetRequired(lRequired, oHLTemp)
+        ELSE
+            SELF:SetRequired(lRequired)
+        ENDIF
+    ENDIF
+
+
+    RETURN SELF
+
+
+
+
+DEFINE PRINT_END := "#21#"
+CLASS PrintDialog INHERIT _PrintDialog
+	EXPORT ToFileFS AS FileSpec
+	EXPORT oPrinter	AS PrintingDevice
+	EXPORT oPrintJob AS PrintJob
+	EXPORT Heading AS STRING
+	EXPORT Label AS LOGIC
+	EXPORT Destination AS STRING
+	EXPORT oRange, oOrigRange AS Range
+	EXPORT Pagetext AS STRING
+	PROTECT _Beginreport:=FALSE AS LOGIC
+	PROTECT row:=0 AS INT
+	EXPORT Extension as STRING 
+	
+	declare method prstart
+ACCESS Beginreport() CLASS PrintDialog
+RETURN SELF:FIELDGET(#_Beginreport)
+
+ASSIGN Beginreport(uValue) CLASS PrintDialog
+RETURN _Beginreport := uValue
+
+
+METHOD CancelButton() CLASS PrintDialog
+
+	SELF:lPrintOk := FALSE
+	SELF:EndDialog()
+	
+	RETURN SELF
+METHOD CopyPers(aNN,oPerson) CLASS PrintDialog
+	* Copy of array with record-id in database Person (oPers)
+	LOCAL i AS INT
+	SELF:oPrintJob:aFifo := {}
+	SELF:oPrintJob:oPers := oPerson
+	FOR i = 1 TO Len(aNN)
+		AAdd(SELF:oPrintJob:aFifo,aNN[i,2])
+	NEXT
+	RETURN TRUE
+
+METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS PrintDialog
+	* lLabel: true: printing of labels
+	* nMaxWidth: maximum width of a line in the report (not applicable for labels)
+	Default(@nOrientation,0)
+	Default(@lLabel,FALSE)
+	Default(@nMaxWidth,0)
+	Default(@cExtension,"txt")
+
+	SUPER:INIT( oOwner )
+
+	// Allow for a window title	
+	IF cCaption != NIL
+		SELF:Heading := cCaption
+		SELF:Caption := "Print " + cCaption
+	ENDIF
+	self:Extension:=cExtension 
+	self:oDCFileType:Value:=cExtension
+	SELF:Label := lLabel
+	SELF:MaxWidth := nMaxWidth
+	SELF:lPrintOk := FALSE
+	SELF:ToFileFS := FileSpec{}
+
+	oPrinter	:= PrintingDevice{}
+	IF Empty(nOrientation)
+		nOrientation := WycIniFS:GetInt("Runtime", "PrintOrientation" )
+	ENDIF
+	IF !Empty(nOrientation)
+		oPrinter:Orientation:=nOrientation
+	ELSE	
+		oPrinter:Orientation:= DMORIENT_PORTRAIT  // default portrait
+	ENDIF
+
+	oDCPrinterText:Value := "Default Printer - ( " + AllTrim( oPrinter:Device ) + ;
+		" on " + AllTrim( oPrinter:Port ) + " )"
+	SetPath(CurPath)
+	IF Label
+		oDCPrinterText:Hide()
+		oCCPrinterRadioButton:Hide()
+		oCCScreenRadioButton:Hide()
+		oCCToFileRadioButton:Hide()
+		oDCDestination:Hide() 
+		self:oDCDestination:Value := "Printer"
+	else 	
+		self:oDCDestination:Value := "Screen"
+	ENDIF
+	IF MaxWidth > 0
+		oDialFont:Font:SetPointSize(Min(10,Round((900*WinScale)/SELF:MaxWidth,0)))
+	ENDIF
+
+	
+	RETURN SELF
+METHOD InitRange(mRange) CLASS PrintDialog
+	IF !Empty(mRange)
+		oDCPageRange:Value := "Selection"
+		oDCFromPage:Value := mRange:Min
+		oDCToPage:Value := mRange:Max
+		oOrigRange:=mRange
+		oDCFixedText1:Show()
+		oDCFromPage:Show()
+		oDCToPage:Show()
+	ENDIF
+	
+	RETURN NIL
+
+METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
+
+	LOCAL nMax, nMin,nRet AS INT
+	Local oSys as SysParms
+	Local cDefFolder as string 
+	local lError as logic
+	Default(@SendToMail,FALSE)
+
+	IF IsNil(cDest)
+		Destination := SELF:oDcDestination:Value
+	ELSE
+		Destination:=cDest
+	ENDIF
+	if self:Destination # "File"
+		self:Extension:=""
+	elseif self:Extension="xls"
+		if self:oDCFileType:Value="txt"
+			self:Extension:="txt"
+		endif
+	endif
+	IF oDCPageRange:Value == "Selection"
+		nMin := Integer(Val(oDCFromPage:TextValue))
+		nMax := Integer(Val(oDCToPage:TextValue))
+		IF Empty(nMax)
+			nMax := 99999
+		ENDIF
+		oRange := Range{nMin,nMax }
+	ELSE
+		IF !Empty(oOrigRange)
+			oRange := Range{1,oOrigRange:Max}
+		ENDIF
+	ENDIF
+
+	oPrintJob := PrintJob{cCaption,oPrinter,Label,MaxWidth,Destination,SendToMail}
+	SELF:lPrintOk := TRUE
+
+	IF Destination == "File" 
+		// 		cDefFolder:=(oSys:=Sysparms{}):DOCPATH
+		//       if Empty(cDefFolder)
+		//       	cDefFolder:=CurPath+"\"
+		//       endif
+		ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
+		
+		IF ToFileFs==NULL_OBJECT
+			self:lPrintOk := FALSE 
+			// 		else
+			// 			if !cDefFolder==ToFileFS:Drive+ ToFileFS:Path
+			// 				if ToFileFS:Drive == SubStr(WorkDir(),1,2) .or.ToFileFS:Drive == CurDrive()+":"
+			// 					// save current location:
+			// 					oSys:RecLock()
+			// 					oSys:DOCPATH:=ToFileFS:Drive+ ToFileFS:Path
+			// 					oSys:Commit()
+			// 					oSys:Close()
+			// 					oSys:=null_object
+			// 				endif
+			// 			endif
+		ENDIF
+	ENDIF
+	if self:Label
+		* Check if number of rows below minimum (4 of 3 +KIXcode-row):
+		IF CountryCode="31"
+			IF self:oPrintJob:nLblLines < 3
+				lError := true
+			ENDIF
+		ELSE
+			IF self:oPrintJob:nLblLines < 4
+				lError := true
+			ENDIF
+		ENDIF
+		IF lError
+			(ErrorBox{self,"Too less lines per label"}):Show()
+			self:lPrintOk := FALSE 
+			return false
+		endif
+
+	endif
+	IF Empty(Pagetext)
+		Pagetext:=oLan:Get('Page',,"!")
+	END IF
+
+	
+	SELF:EndDialog()
+	
+	RETURN
+METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipaant)  CLASS PrintDialog
+* Afdrukken op printer of scherm van een LineContent
+*
+* Aanroep met: PrintLine(@LineNbr,@PageNbr,LineContent,{kop1,kop2,...},skipaant)
+* Parameters:
+* LineNbr: nieuwe waarde wordt teruggegeven; terugzetten naar 0 geeft bladskip 
+*          gelijk aan vorig LineNbr: voeg tekst achteraan LineContent
+* PageNbr : idem
+* LineContent  : Inhoud van af te drukken LineContent; indien NIL, alleen test bladskip
+* HeadingLines: Array met HeadingLines; 1st niet langer dan 60 vanwege datum+pagina
+* Skipaant: Optioneel aantal extra LineContents vooruit te testen voor bladskip
+* Beginreport: optionele aanduiding of dit het begin van het report betreft; indien
+*				niet naar nieuwe pagina gesprongen wordt, worden toch de HeadingLines afgedrukt
+*				Deze waarde kan via PrintDialog:Beginreport:=true gezet worden
+* Benodigde global variabelen:
+* - self:PaperHeight
+* - alg_prdev
+* - alg_papier
+*
+
+LOCAL i AS INT,kopdate AS STRING
+LOCAL skippage:=FALSE AS LOGIC
+LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
+LOCAL lXls:=FALSE AS LOGIC
+Default(@skipaant,0)
+if !Empty(LineNbr).and.LineNbr==(row-1)
+	self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
+	LineNbr++
+	return
+endif
+IF SELF:Extension=="xls" .and. SELF:Destination="File"
+	lXls:=TRUE
+ENDIF
+IF self:_Beginreport
+	IF !lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipaant,4)> Integer(self:oPrintJob:PaperHeight)
+		// niet eerste pagina en meer dan halve pagina bedrukt:
+		skippage:=TRUE
+		IF Destination == "Printer".or.;
+		Destination == "File"
+			AAdd(SELF:oPrintJob:aFIFO,PAGE_END)
+		ENDIF
+	ENDIF
+	LineNbr:=self:row // zet weer terug op oorspronkelijke waarde
+ELSEIF (Empty(PageNbr) .or. ((self:row+skipaant+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!lXls)
+	skippage:=TRUE
+	IF (PageNbr>0.or.LineNbr>0).and.(Destination == "Printer".or.;
+		Destination == "File")
+		AAdd(SELF:oPrintJob:aFIFO,PAGE_END)
+    ENDIF
+ENDIF
+IF skippage .or. self:_Beginreport.or.PageNbr=0 .or. lXls.and.Empty(LineNbr)
+	IF skippage.or.PageNbr=0
+		++PageNbr
+		LineNbr := 0
+	ELSEIF LineNbr>0
+		// voeg 2 spatieLineContents toe:
+		AAdd(SELF:oPrintJob:aFIFO," ")
+		AAdd(SELF:oPrintJob:aFIFO," ")
+		LineNbr+=2
+	ENDIF
+	IF .not.Empty(HeadingLines)
+		FOR i = 1 to Len(HeadingLines)
+			IF lXls
+				AAdd(self:oPrintJob:aFIFO,HeadingLines[i])					
+			ELSE
+				IF LineNbr=0
+					kopdate:="  "+DToC(DATE())+' '+PageText+' '+;
+					LTrim(Str(PageNbr,4))
+					AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate)
+				ELSE
+					AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))	
+				ENDIF
+			ENDIF
+			++LineNbr
+		NEXT
+	ENDIF
+ENDIF
+self:_Beginreport:=FALSE
+IF !IsNil(LineContent)
+	IF lXls
+		AAdd(self:oPrintJob:aFIFO,LineContent)
+	ELSE	
+		AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
+	ENDIF
+   ++LineNbr
+ENDIF
+self:row:=LineNbr
+RETURN
+METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS PrintDialog
+* lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
+* cRTFHeading: start rtf-text for specifying format
+	LOCAL oPrintShow as Window
+	LOCAL i AS INT
+	LOCAL MyFileName, RetFileName,cFileName as STRING
+	LOCAL ptrHandle
+	LOCAL scrFont as myFont
+	local mySize as dimension
+/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}}"+;
+	"{\colortbl ;\red0\green0\blue0;}\viewkind4\uc1\pard\cf1\lang1043\viewkind1\paperw16838\paperh11906"+;
+	"\lndscpsxn\margl1400\margr1200\margt600\margb600\f0\fs"   */
+/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+	"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"+;
+	"{\colortbl ;\red0\green0\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs" */
+	LOCAL LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
+	LOCAL LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+	"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
+	LOCAL LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+	"{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
+	Local LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
+	LOCAL cRTFHeader AS STRING
+	LOCAL RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
+    IF sEntity=="RUS"
+    	cRTFHeader:=LanguageRus+RTFFormat
+    ELSEIF sEntity=="JPN"
+    	cRTFHeader:=LanguageJap+RTFFormat
+    ELSEIF sEntity=="CZR" .or. sEntity=="POL" .or. sEntity=="SKD"
+    	cRTFHeader:=LanguageCZ+RTFFormat
+    ELSE
+    	cRTFHeader:=LanguageDefault+RTFFormat
+	ENDIF
+
+// 	Default(@lRTF,FALSE)
+// 	Default(@lModeless,false)
+	self:Pointer := Pointer{POINTERHOURGLASS}
+* Starten van printer
+	IF SELF:Destination == "Printer"
+		oPrintJob:oWaitPrint := Wait_for_printer{SELF}
+		oPrintJob:oWaitPrint:Caption := SELF:Caption
+		oPrintJob:oWaitPrint:Show()
+		oPrintJob:Idle()
+		oPrintJob:Start(SELF:oRange)
+		SELF:Pointer := Pointer{POINTERARROW}
+		
+		RetFileName:= "1"
+	ELSEIF self:Destination == "Screen" 
+
+		if lModeless
+			oPrintShow:= PrintShow2{oMainWindow,{self:oDialFont:Font,lModeless,self}}
+		else
+			oPrintShow := PRINTSHOW{oMainWindow,{self:oDialFont:Font,lModeless,self}} 
+		endif
+		self:Pointer := Pointer{POINTERARROW}
+		mySize:=oPrintShow:Size
+		mySize:Width:=oMainWindow:Size:width
+		mySize:Height:=0.8*oMainWindow:Size:Height
+		oPrintShow:Size:=mySize
+		oPrintShow:Show(SHOWCENTERED)
+// 		oPrintShow:Show(SHOWZOOMED)
+		
+		RetFileName:= "2"
+		RETURN oPrintShow
+	ELSEIF Len(SELF:oPrintJob:aFIFO)>0
+*		write to file?
+		
+		IF SELF:oPrintJob:aFIFO[1] = MEMBER_START
+			IF lRTF
+				//SELF:ToFileFS:Extension:="rtf"
+				SELF:ToFileFS:Extension:="doc"
+			ENDIF
+			MyFileName:= AllTrim(SELF:ToFileFS:FileName)
+			RETFileName:=SELF:ToFileFS:FullPath
+			SELF:ToFileFS:FileName:=MyFileName+" "+StrTran(SELF:oPrintJob:aFIFO[1],MEMBER_START,,1,1)
+		ENDIF
+*		ptrHandle := FCreate(SELF:ToFileFS:FullPath)
+*	    IF ptrHandle = F_ERROR
+*			(WarningBox{,,"Printing to file","Error: "+DosErrString(FError())+" when creating file "+SELF:ToFileFS:FullPath}):Show() 
+		cFileName:= self:ToFileFS:FullPath
+		ptrHandle:=MakeFile(,@cFileName,"Printing to file")
+		IF ptrHandle==NIL
+			RETURN FALSE
+		ELSEIF ptrHandle = F_ERROR
+			RETURN TRUE
+		ELSE
+			FOR i = 1 to Len(self:oPrintJob:aFIFO)
+				IF SELF:oPrintJob:aFIFO[i] == PAGE_END
+					IF lRTF
+						FWriteLine(ptrHandle,"\page")
+					ELSE						
+						FWriteLine(ptrHandle,CHR(ASC_FF ))
+					ENDIF
+				ELSEIF SELF:oPrintJob:aFIFO[i] = MEMBER_START
+					IF lRTF
+						FWriteLine(ptrHandle,"\par }")
+					ENDIF						
+					SELF:ToFileFS:FileName:=MyFileName+" "+StrTran(SELF:oPrintJob:aFIFO[i],MEMBER_START,,1,1)
+					FClose(ptrHandle)
+					ptrHandle := FCreate(SELF:ToFileFS:FullPath)
+					IF lRTF
+						FWriteLine(ptrHandle,cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
+					ENDIF						
+				ELSE
+					IF lRTF
+						FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i]+"\par")
+					else
+						FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i])
+					endif
+				ENDIF
+			NEXT
+			IF lRTF
+				FWriteLine(ptrHandle,"\par }")
+			ENDIF						
+			SELF:oPrintJob:lLblFinish:=TRUE
+			FClose(ptrHandle)
+		ENDIF
+		SELF:Pointer := Pointer{POINTERARROW}
+	ENDIF
+
+RETURN(RetFileName)
+METHOD prstop(Noskip) CLASS PrintDialog
+
+IF IsObject(oPrintJob)
+	IF !OprintJob==NULL_OBJECT
+		oPrintJob:Destroy()
+	ENDIF
+ENDIF
+RETURN TRUE
+
+
+METHOD ReInitPrint(SendToMail) CLASS PrintDialog
+Default(@SendToMail,FALSE)
+SELF:oPrintJob:= NULL_OBJECT
+SELF:oPrintJob := Printjob{cCaption,SELF:oPrinter,SELF:Label,SELF:MaxWidth,,SendToMail}
+RETURN TRUE
+METHOD SetupButton( ) CLASS PrintDialog
+LOCAL structDevMode AS _WINDevMode
+	IF oPrinter:IsValid()
+		oPrinter:Setup()
+		WycIniFS:WriteInt( "Runtime", "PrintOrientation", oPrinter:Orientation)
+	ENDIF
+	oDCPrinterText:Value := "Default Printer - ( " + AllTrim( oPrinter:Device ) + ;
+	" on " + AllTrim( oPrinter:Port ) + " )"
+
+	RETURN SELF
+method ShowFileType() class PrintDialog
+	if self:oCCToFileRadioButton:Value==true .and. self:Extension="xls"
+			self:oCCfiletype1:Show()
+			self:oCCfiletype2:Show()
+			self:oDCFileType:Show()
+	else
+		self:oCCfiletype1:Hide()
+		self:oCCfiletype2:Hide()
+		self:oDCFileType:Hide()
+		
+	endif 
+return	
+METHOD GetResolution() CLASS PrintingDevice
+LOCAL structDevMode	AS _WINDEVMODE
+LOCAL nResolution AS USUAL
+
+structDevMode := SELF:GetDevMode()	
+nResolution:=structDevMode.dmPrintQuality
+IF IsNumeric(nResolution)
+	IF nResolution>8
+		RETURN nResolution
+	ENDIF
+ENDIF
+nResolution:=structDevMode.dmyResolution
+IF IsNumeric(nResolution)
+	IF nResolution>8
+		RETURN nResolution
+	ENDIF
+ENDIF
+RETURN 0
+
+
+CLASS Printjob INHERIT Printer
+	EXPORT PaperHeight AS INT
+	EXPORT PaperWidth AS INT
+	EXPORT LineHeight AS INT
+	EXPORT nLeft AS INT
+	EXPORT nTop AS INT
+	EXPORT nBottom AS INT
+	EXPORT iPointSize := 12 as int  // character size in points (1/120 inch)
+	EXPORT Resolution AS INT // resolution in dots per innch (default 600)
+ 	EXPORT aFIFO := {}
+ 	EXPORT nFifoPntr := 1 AS INT
+	EXPORT oKixFont AS Font
+	EXPORT oRange AS Range
+	EXPORT nCurPage AS INT
+	EXPORT Label AS LOGIC
+	EXPORT SendToMail AS LOGIC
+	EXPORT lLblFinish AS LOGIC
+	EXPORT oPers AS Person
+	EXPORT oWaitPrint AS wait_for_printer
+	EXPORT nLblHeight as int // height label in canvascordinates
+	EXPORT nLblWidth as int  // width label in canvascordinates
+	EXPORT nLblBottom as int  // bottom margin label in canvascordinates
+	EXPORT nLblMargin as int  // left margin label in canvascordinates
+	EXPORT nLblLines as int // nbr of lines per label
+	EXPORT nLblChars as int  // nbr of characters per label-line
+	EXPORT nLblColCnt as int // nbr of columns of labels
+	EXPORT nLblVertical as int // nbr of labels vertically on a page
+	EXPORT nLblKIXHeight as int // height TXkode line in canvascordinates  
+	
+	declare method Stckrprt
+
+METHOD GetFont()  CLASS Printjob
+RETURN SELF:Font
+METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,SendToMail) CLASS Printjob
+	LOCAL oSize AS Dimension
+	LOCAL oKixSize AS Dimension
+	LOCAL oSys AS Sysparms
+	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH AS INT
+	LOCAL nResolution:=600 // dots per inch
+	Default(@SendToMail,FALSE)
+	iPointSize:=12
+   self:SendToMail:=SendToMail
+	SUPER:INIT(cJobname,oPrintingDev)
+	self:Label := lLabel
+
+	IF !Empty(SELF:Font)
+		 SELF:Font := NULL_OBJECT
+	ENDIF
+*	Bepaal resolutie:
+	IF !oPrintingDev==NULL_OBJECT
+		IF oPrintingDev:ISValid()
+			nResolution:= oPrintingDev:GetResolution()
+		ENDIF
+	ENDIF
+	SELF:Font := Font{FONTMODERN,12,"Courier New"}
+//	SELF:Font := Font{,12,"Courier New"}
+	SELF:Font:PitchFixed := TRUE
+	oSize := SELF:SizeText("X")
+	IF Empty(nResolution)
+		nResolution := oSize:Width*10
+	ENDIF
+	SELF:Resolution:=nResolution  // save in object
+
+	* Bepaal dimensie voor default font (12 point)
+	* Bepaal margins: 
+	self:Initialize(nMaxWidth)
+
+	RETURN SELF
+	
+METHOD Initialize( nMaxWidth) CLASS Printjob
+	LOCAL oSize:=self:SizeText("X") as Dimension
+	LOCAL oKixSize as Dimension
+	LOCAL oSys as SQLSelect
+	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH as int
+	LOCAL nResolution:=self:Resolution // dots per inch 
+	
+	IF self:Label
+		nTopM:=Round((WycIniFS:GetInt( "Runtime", "stckr_TopMargin")*nResolution)/25.4,0)
+		nLeft:=Round((WycIniFS:GetInt( "Runtime", "stckr_LeftMargin")*nResolution)/25.4,0)
+		iPointSize := WycIniFS:GetInt( "Runtime", "stckr_PointSize")
+		* Bepaal hoogte van regel met KIXkode in canvascoordinaten:
+		IF CountryCode="31"
+			* In Nederland Kix Barkode font bepalen (5 mm hoog, 6 chars/inch):
+			oKixSize := Dimension{Round(oSize:Width*20/12,0),;
+			Round((5*nResolution)/25.4,0)}
+			self:oKixFont := Font{,oKixSize,"KIX Barcode"}
+			* 2 mm extra reserveren voor boven barcode:
+			self:nLblKIXHeight := oKixSize:Height+Round((2*nResolution)/25.4,0)
+		ENDIF
+	ELSE
+		IF self:SendToMail .or. self:CanvasArea==null_object .or.Empty(self:CanvasArea:Height)
+			// Fixed A4-size landscape when sending print by e-mail:
+			// In Twips (rtf): paperw16838\paperh11906margl1400\margr1200\margt600\margb600
+			// twips=1/20 pt, 1pt=1/1440 inch=2,54/1440cm
+			// \fsN : font size in half-points
+			nTopM:=Round((600*nResolution)/1440,0)
+			nLeft:=Round((1400*nResolution)/1440,0)
+			nRightM:=Round((1200*nResolution)/1440,0)
+			nBottom:=nTopM
+			nWidth:=Round((16838*nResolution)/1440,0)
+			nHeight:=Round((11906*nResolution)/1440,0)
+		ELSE
+			oSys := SQLSelect{"select TopMargin,LeftMargin,RightMargn,BottomMarg",oConn}
+			IF oSys:RecCount>0
+				nTopM := Round((oSys:TopMargin*nResolution)/25.4,0)
+				nLeft := Round((oSys:LeftMargin*nResolution)/25.4,0)
+				nRightM := Round((oSys:RightMargn*nResolution)/25.4,0)
+				nBottom := Round((oSys:BottomMarg*nResolution)/25.4,0)
+				oSys:Close()
+			ENDIF
+			nWidth:=self:CanvasArea:Width
+			nHeight:=self:CanvasArea:Height
+		ENDIF
+		* Maak pointsize passend bij MaxWidth:
+			* breedte in letters:
+			* (breedte in dots - marges links en rechts) / letterbreedte :
+		nHelpW:=oSize:Width
+		IF Empty(nHelpW)
+			nHelpW:=20
+		ENDIF
+		self:PaperWidth:=Integer((nWidth-nLeft-nRightM)/nHelpW)
+		IF nMaxWidth > self:PaperWidth
+			iPointSize := Integer((self:PaperWidth  * 12) / nMaxWidth)
+		ENDIF
+	ENDIF
+
+	* Bepaal nieuwe dimensie, horend bij de PointSize:
+	oSize:Height := Round((iPointSize*oSize:Height/12)*1.07,0)
+	oSize:Width := Round(iPointSize*oSize:Width/12,0)
+	* Stel font in op bepaalde Pointsize:
+	self:Font := null_object
+	self:Font := Font{FONTMODERN,iPointSize,"Courier New"}
+	self:Font:PitchFixed := true
+	
+	* Bepaal uiteindelijke dimensie:
+*	oSize := SELF:SizeText("X")
+	* Bepaal regelhoogte in dots:
+	nHelpH:=oSize:Height
+	IF Empty(nHelpH)
+		nHelpH:=36
+	ENDIF
+	self:LineHeight := nHelpH
+	* Set toppositie voor start printen in dots:
+	IF self:Label
+		nTop := self:CanvasArea:Height - nTopM
+		* bepaal hoogte,breedte en marge sticker in canvas coordinaten:
+		nLblHeight := Round((WycIniFS:GetInt( "Runtime", "stckr_height" )*nResolution)/25.4,0)
+		nLblWidth  := Round((WycIniFS:GetInt( "Runtime", "stckr_width" )*nResolution)/25.4,0)
+		* bepaal aantal rijen en kolommen:
+	    nLblVertical := Round((self:CanvasArea:Height-nTopM)/nLblHeight,0)
+	    nLblColCnt := Round((self:CanvasArea:Width-nLeft)/nLblWidth,0)
+	    * bepaal margins binnen label:
+	    nLblBottom := Round((nLblVertical*nLblHeight)-(self:CanvasArea:Height-nTopM),0)
+	    nLblBottom := Max(nLblBottom,nResolution/25.4) && minimaal 1 mm ondermarge
+	    nLblMargin := Round((nLblColCnt*nLblWidth)-(self:CanvasArea:Width-nLeft),0)
+	    nLblMargin := Max(nLblMargin,nResolution/25.4) && minimaal 1 mm rechtermarge
+		* bepaal hoogte sticker in lines en breedte in chars:
+		nLblLines := Min(Integer((nLblHeight-nLblKIXHeight-nLblBottom) / self:LineHeight),6)
+		nLblChars := Integer((nLblWidth-nLblMargin) / oSize:Width)
+	ELSE
+		//nTop := SELF:CanvasArea:Height - nTopM
+		nTop := nHeight - nTopM
+		* hoogte in regels: (hoogte in dots - marge boven en onder)/regelhoogte :
+
+		self:PaperHeight := Integer((nHeight-nTopM-nBottom)/self:LineHeight)
+		* breedte in letters:
+		* (breedte in dots - marges links en rechts) / letterbreedte :
+		IF !Empty(nMaxWidth)
+			self:PaperWidth := nMaxWidth
+		ELSE
+			self:PaperWidth  := Integer((nWidth-nLeft-nRightM) /oSize:Width)
+		ENDIF
+	ENDIF
+return
+METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
+	* Printing of buffer self:aFiFo or buffer aNN with address-record-ids
+	* self:aFiFo can has two kinds of contents
+	*	-	flat text lines to be printed as fifo-buffer,
+	*	-	record-id pointing to persons of which addresslabels has to be printed
+	*
+	LOCAL iX AS INT, iY AS INT
+	LOCAL i, j as longint
+
+	iX := nLeft
+	iY := Min(self:nTop,oExposeEvent:ExposedArea:Top)
+
+	IF SELF:Label
+		FOR i = self:nFifoPntr to Len(self:aFiFo) step self:nLblColCnt
+			IF iY >= self:nLblHeight-self:nLblBottom // Sufficient space for one row of labels left?
+				IF Empty(self:oRange).or.(self:nCurPage >= self:oRange:Min .and. self:nCurPage <= self:oRange:Max)
+					self:stckrprt(self:aFiFo,i,iY)
+				ENDIF
+				iY := iY - self:nLblHeight
+			ELSE
+				self:nFifoPntr := i
+				++self:nCurPage
+				IF Empty(self:oRange)
+					RETURN TRUE
+				ENDIF
+				IF self:nCurPage > self:oRange:Max
+					self:lLblFinish := FALSE  // All lables have not been printed yet
+					EXIT
+				ELSEIF self:nCurPage > self:oRange:Min
+					RETURN TRUE
+				ENDIF
+				* pagina's overgeslagen, volgende opnieuw proberen:
+				iY := Min(self:nTop,oExposeEvent:ExposedArea:Top)
+				i := i - self:nLblColCnt // i terugzetten
+			ENDIF
+			IF i + self:nLblColCnt > Len(self:aFiFo)
+				++self:nCurPage
+				self:nFifoPntr := i+self:nLblColCnt
+				RETURN TRUE // forces last pageskip
+			ENDIF
+		NEXT
+		IF i > Len(self:aFiFo)
+			self:lLblFinish := true // All labels have been printed
+		ENDIF
+	ELSE
+		FOR i = self:nFifoPntr to Len(self:aFiFo)
+			IF self:aFiFo[i] == ACCEPT_START
+				IF CountryCode=="47"
+					// position on 5/6 inch above bottom,
+					iY:=Round((5*SELF:Resolution)/6,0) // in dots
+				ENDIF
+				LOOP
+			ENDIF
+			IF self:aFiFo[i] == PAGE_END
+				++self:nCurPage
+				self:nFifoPntr := i+1
+				IF Empty(self:oRange)
+					RETURN TRUE
+				ELSEIF self:nCurPage > self:oRange:Max
+					self:lLblFinish := FALSE  // All pages have not been printed yet
+					EXIT
+				ELSEIF self:nCurPage > self:oRange:Min
+					RETURN TRUE
+				ELSE
+					* pagina's overgeslagen, volgende opnieuw proberen:
+					iY := Min(self:nTop,oExposeEvent:ExposedArea:Top)
+					LOOP
+				ENDIF
+			ENDIF
+			iY := iY - SELF:LineHeight
+			IF iY > self:nBottom
+				IF Empty(self:oRange).or.(self:nCurPage >= self:oRange:Min .and. self:nCurPage <= self:oRange:Max)
+					self:TEXTprint(self:aFiFo[i],Point{iX,iY})
+				ENDIF
+			ENDIF
+			IF i == Len(self:aFiFo)
+				++self:nCurPage
+				self:nFifoPntr := i+1
+*				RETURN TRUE // forces last pageskip
+			ENDIF
+		NEXT
+		IF i > Len(self:aFiFo)
+			self:lLblFinish := true // All pages have been printed
+		ENDIF
+	ENDIF
+	SELF:oWaitPrint:EndDialog()
+	RETURN FALSE
+		
+METHOD Start(oRangeV,oFont) CLASS Printjob
+	IF !Empty(oRangeV)
+		self:oRange := oRangeV
+	ENDIF
+	self:nCurPage := 1
+	self:nFifoPntr := 1
+	SUPER:Start()
+	RETURN TRUE
+METHOD Stckrprt(aNN as array,nDisp as int,iY as int) as void pascal CLASS PrintJob
+*****************************************************************************)
+*  Name      : STCKRPRT.PRG
+*              Printing of a row labels
+*  Author    : K. Kuijpers
+*  Date      : 01-01-1991
+******************************************************************************
+
+
+************** PARAMETERS  ***********************
+* aNN   		: array with recno's of persons to print from left to right
+*             with  displacement nDisp in array
+* iY	      : current Y-coordinate
+LOCAL m_rectel:=0
+LOCAL m_adressen := {}
+LOCAL oPrintFont := SELF:font AS font
+LOCAL oSize AS Dimension
+LOCAL i,j as int
+LOCAL iX AS INT
+IF Empty(aNN[nDisp])
+   RETURN
+ENDIF
+FOR m_rectel = nDisp to Min(nDisp+self:nLblColCnt,Len(aNN))
+   IF Empty(aNN[m_rectel])   && stop when no more recno's
+      EXIT
+   ENDIF
+   AAdd(m_adressen,MarkUpAddress(self:oPers,aNN[m_rectel],self:nLblChars,self:nLblLines))
+NEXT
+FOR j =1 TO nLblLines
+	iY := iY - SELF:LineHeight
+	FOR i = 1 to Min(self:nLblColCnt,Len(m_adressen))
+		iX := nLeft+(i-1)*self:nLblWidth
+		SELF:TEXTprint(m_adressen[i,j],Point{iX,iY})
+	NEXT
+NEXT
+IF sEntity == "NED"
+	SELF:Font := NULL_OBJECT
+	SELF:Font := SELF:oKixFont
+	iY := iY - SELF:nLblKIXHeight
+	FOR i = 1 to Min(self:nLblColCnt,Len(m_adressen))
+		iX := self:nLeft+(i-1)*self:nLblWidth
+		SELF:TEXTprint(m_adressen[i,j],Point{iX,iY})
+	NEXT
+	SELF:Font := NULL_OBJECT
+	SELF:Font := oPrintFont
+ENDIF
+RETURN
+
+STATIC DEFINE PRINTSCREEN_LISTPRINT := 100 
+CLASS PRINTSHOW INHERIT DIALOGWINDOW 
+
+	PROTECT oDCListPrint AS LISTBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  protect oOwner as Window
+RESOURCE PRINTSHOW DIALOGEX  14, 22, 528, 350
+STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
+CAPTION	"Preview Print"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Preview Print", PRINTSHOW_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 0, 538, 345
+END
+
+RESOURCE PrintShow2 DIALOGEX  4, 3, 537, 373
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Preview Print", PRINTSHOW2_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 11, 538, 345
+END
+
+CLASS PrintShow2 INHERIT DATAWINDOW 
+
+	PROTECT oDCListPrint AS LISTBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oOwner as Window
+METHOD Close(oEvent) CLASS PRINTSHOW2
+	SUPER:Close(oEvent)
+	//Put your changes here
+	CollectForced()
+	//SELF:Destroy()
+	RETURN nil
+
+METHOD FillPrint() CLASS PRINTSHOW2
+	RETURN self:oOwner:oPrintJob:aFIFO
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS PrintShow2 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"PrintShow2",_GetInst()},iCtlID)
+
+oDCListPrint := ListBox{SELF,ResourceID{PRINTSHOW2_LISTPRINT,_GetInst()}}
+oDCListPrint:FillUsing(Self:FillPrint( ))
+oDCListPrint:HyperLabel := HyperLabel{#ListPrint,"Preview Print",NULL_STRING,NULL_STRING}
+oDCListPrint:OwnerAlignment := OA_FULL_SIZE
+
+SELF:Caption := "Preview Print"
+SELF:HyperLabel := HyperLabel{#PrintShow2,"Preview Print",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS ListPrint() CLASS PrintShow2
+RETURN SELF:FieldGet(#ListPrint)
+
+ASSIGN ListPrint(uValue) CLASS PrintShow2
+SELF:FieldPut(#ListPrint, uValue)
+RETURN uValue
+
+METHOD PostInit(oParent,uExtra) CLASS PRINTSHOW2
+	//Put your PostInit additions here
+	self:Caption := self:oParent:Caption
+	oDCListPrint:Font(uExtra[1],FALSE)
+	oDCListPrint:Font:PitchFixed := true 
+	SendMessage( oDCListPrint:Handle(),LB_SETHORIZONTALEXTENT,oMainWindow:Size:Width,0L )
+	RETURN nil
+method PreInit(oParent,uExtra) class PRINTSHOW2
+	//Put your PreInit additions here 
+	self:oOwner:=uExtra[3]
+	return nil
+
+STATIC DEFINE PRINTSHOW2_LISTPRINT := 100 
+METHOD Close(oEvent) CLASS PRINTSHOW
+	SUPER:Close(oEvent)
+	//Put your changes here
+	CollectForced()
+	//SELF:Destroy()
+	RETURN NIL
+
+METHOD FillPrint() CLASS PrintShow
+	RETURN self:oOwner:oPrintJob:aFIFO
+METHOD Init(oParent,uExtra) CLASS PRINTSHOW 
+
+self:PreInit(oParent,uExtra)
+
+SUPER:Init(oParent,ResourceID{"PRINTSHOW",_GetInst()},FALSE)
+
+oDCListPrint := ListBox{SELF,ResourceID{PRINTSHOW_LISTPRINT,_GetInst()}}
+oDCListPrint:FillUsing(Self:FillPrint( ))
+oDCListPrint:HyperLabel := HyperLabel{#ListPrint,"Preview Print",NULL_STRING,NULL_STRING}
+oDCListPrint:OwnerAlignment := OA_FULL_SIZE
+
+SELF:Caption := "Preview Print"
+SELF:HyperLabel := HyperLabel{#PRINTSHOW,"Preview Print","Preview Print",NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+METHOD PostInit(oParent,uExtra) CLASS PRINTSHOW
+	//Put your PostInit additions here
+	self:Caption := self:oParent:Caption
+*	oDCListPrint:Font:=NULL_OBJECT
+	oDCListPrint:Font(uExtra[1],FALSE)
+	oDCListPrint:Font:PitchFixed := true 
+	SendMessage( oDCListPrint:Handle(),LB_SETHORIZONTALEXTENT,oMainWindow:Size:Width,0L )
+	self:bModal:=uExtra[2]
+	RETURN NIL
+method PreInit(oParent,uExtra) class PRINTSHOW
+	//Put your PreInit additions here 
+	self:oOwner:=uExtra[3]
+	return NIL
+
+STATIC DEFINE PRINTSHOW_LISTPRINT := 100 
+STATIC DEFINE SHOWPRINT_LISTPRINT := 100 
+FUNCTION StringdmOrientation(nO as int) as STRING
+IF nO = DMORIENT_LANDSCAPE
+	RETURN "Landscape"
+ELSEIF nO = DMORIENT_PORTRAIT
+	RETURN "Portrait"
+ELSE
+	RETURN "Unknown"
+ENDIF
+
+RESOURCE Wait_for_printer DIALOGEX  38, 28, 262, 39
+STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION
+CAPTION	"Printing"
+FONT	8, "MS Sans Serif"
+BEGIN
+	CONTROL	"Cancel", WAIT_FOR_PRINTER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 13
+END
+
+class Wait_for_printer inherit DialogWinDowExtra 
+
+	protect oCCCancelButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+METHOD CancelButton( ) CLASS Wait_for_printer
+	SELF:owner:oPrintjob:Abort()
+	ASize(SELF:owner:oPrintjob:aFiFO,0)
+	SELF:EndDialog()
+	RETURN SELF
+METHOD Close(oEvent) CLASS Wait_for_printer
+	SUPER:Close(oEvent)
+	//Put your changes here
+	SELF:Destroy()
+	RETURN NIL
+
+method Init(oParent,uExtra) class Wait_for_printer 
+
+self:PreInit(oParent,uExtra)
+
+super:Init(oParent,ResourceID{"Wait_for_printer",_GetInst()},FALSE)
+
+oCCCancelButton := PushButton{self,ResourceID{WAIT_FOR_PRINTER_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+self:Caption := "Printing"
+self:HyperLabel := HyperLabel{#Wait_for_printer,"Printing",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+STATIC DEFINE WAIT_FOR_PRINTER_CANCELBUTTON := 100 
