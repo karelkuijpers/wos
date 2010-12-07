@@ -1,3 +1,24 @@
+function CalcCheckDigit(myConn as SQLConnection) as string 
+// calculate checkdigit of all employees to check on corruption / misuse of employee.dbf
+local maxRec as int
+local oSQL as SQLSelect
+local fSumID,fSumCLN,fId:=0.00,fCLN:=0.00 as float
+local aKey:={} as array
+oSQL:=SQLSelect{"select empid, persid from employee",myConn} 
+maxRec:=oSQL:RecCount
+oSQL:GoTop() 
+do while !oSQL:eof
+	fId := oSQL:EMPID
+	fCLN:=Val(Crypt_CLN(oSQL:EMPID,oSQL:persid))
+	fSumID+=fId
+	fSumCLN+=fCLN
+	oSQL:skip()
+enddo
+aKey:=ScrambleCheckDidit(maxRec,fSumID,fSumCLN)
+return AESEncrypt(aKey[1],aKey[2]) 
+
+                                                                                          
+                                                                                          
 Function CheckPassword(cPW as string, Empid:=0 as int ) as logic 
 	// check if given password is correct
 	//
@@ -115,9 +136,6 @@ if !cCheckEmp== mChecpEmp
 	return false
 endif 
 return true
-
-                                                                                          
-                                                                                          
 FUNCTION GetUserMenu(cUserName as string) as logic
 	* Determine menu array for given user
 	LOCAL oEmp as SQLSelect
@@ -177,6 +195,8 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		logonOk:=false
 	endif
 	RETURN logonOk 
+Function HashPassword(EMPID as int,uValue as string) as string
+	return sha2(Scramblepassword(EMPID,uValue)) 
 Function IsFirstUse( ) as logic 
 	// determine if this is the first use of the system
 	IF SQLSelect{"select count(*) as total from Employee",oConn}:total='0' .and.;
