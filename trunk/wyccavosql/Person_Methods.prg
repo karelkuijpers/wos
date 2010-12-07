@@ -905,14 +905,14 @@ LOCAL oSingle AS SingleLineEdit
 LOCAL oCheck AS CheckBox
 LOCAL oDropDown AS COMBOBOX
 LOCAL oFix AS FixedText
-LOCAL Name AS STRING,Type, ID AS INT, Values AS STRING
+LOCAL Name as STRING,nType, ID as int, Values as STRING
 LOCAL myDim AS Dimension
 LOCAL myOrg AS Point
 LOCAL aValues AS ARRAY
 LOCAL EditX:=152, FixX:=17 AS INT
 Default(@Left,TRUE)
 Name:=pers_propextra[Count,1]
-Type:=pers_propextra[Count,3]
+nType:=pers_propextra[Count,3]
 Values:=pers_propextra[Count,4]
 ID := pers_propextra[Count,2]
 IF Left
@@ -979,28 +979,28 @@ ELSE
 ENDIF
 	//
 //	insert extra properties in group personal:
-	IF Type==TEXTBX
+	IF nType==TEXTBX
 		oSingle:=SingleLineEdit{self,Count,Point{EditX,myOrg:y+13},Dimension{215,20} }
 		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name+":"}
 		oSingle:FocusSelect := FSEL_HOME
 		oSingle:Show()
 		AAdd(aPropEx,oSingle)
-	ELSEIF Type==CHECKBX
+	ELSEIF nType==CHECKBX
 //		oCheck:=CheckBox{SELF,Count,Point{99,88},Dimension{215,20},Name}
 		oCheck:=CheckBox{SELF,Count,Point{EditX,myOrg:Y+13},Dimension{215,20},Name}
 		oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,Name}
 		AAdd(aPropEx,oCheck)
 		oCheck:Show()
-	ELSEIF Type==DROPDOWN
+	ELSEIF nType==DROPDOWN
 //		oDropDown:=Combobox{SELF,Count,Point{99,28},Dimension{215,80},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
-		oDropDown:=Combobox{SELF,Count,Point{EditX,myOrg:Y-47},Dimension{215,80},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
+		oDropDown:=Combobox{self,Count,Point{EditX,myOrg:Y-127},Dimension{215,160},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
 		oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,NULL_STRING,NULL_STRING}
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
 		AAdd(aPropEx,oDropDown)
 		oDropDown:Show()
 	ENDIF
-	IF Type#CHECKBX
+	IF nType#CHECKBX
 //		oFix:=FixedText{SELF,Count,Point{17,88}, Dimension{82,20},Name+":"}
 		oFix:=FixedText{SELF,Count,Point{FixX,myOrg:Y+13}, Dimension{135,20},Name+":"}
 		oFix:Show()
@@ -3816,17 +3816,17 @@ METHOD SetPropExtra( Count, Left) CLASS SelPersMailCd
 LOCAL oDropDown as Listbox
 LOCAL oFix AS FixedText
 // LOCAL oDCGroupBoxExtra	AS GroupBox
-LOCAL Name AS STRING,Type, ID AS INT, Values AS STRING
+LOCAL Name as STRING,nType, ID as int, Values as STRING
 LOCAL myDim AS Dimension
 LOCAL myOrg AS Point
 LOCAL aValues AS ARRAY
 LOCAL EditX:=152, FixX:=17 as int, vertDist:=41 as int
 Default(@Left,1)
 Name:=pers_propextra[Count,1]
-Type:=pers_propextra[Count,3]
+nType:=pers_propextra[Count,3]
 Values:=pers_propextra[Count,4]
 ID := pers_propextra[Count,2]
-IF Type==TEXTBX
+IF nType==TEXTBX
 	RETURN NIL
 ENDIF
 IF Left==1
@@ -3853,10 +3853,10 @@ ELSE
 ENDIF
 	//
 //	insert extra properties in group extra properties:	
-IF Type==DROPDOWN .or. Type==CHECKBX
+IF nType==DROPDOWN .or. nType==CHECKBX
 	oDropDown:=ListBox{self,Count,Point{EditX,myOrg:y+8},Dimension{185,40},LBS_SORT+LBS_MULTIPLESEL}
 	oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
-	IF Type==DROPDOWN
+	IF nType==DROPDOWN
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
 	else
