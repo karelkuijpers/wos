@@ -1,20 +1,3 @@
-function CalcCheckDigit() as string 
-// calculate checkdigit of all employees to check on corruption / misuse of employee.dbf
-local maxRec as int
-local oSQL as SQLSelect
-local fSumID,fSumCLN,fId:=0.00,fCLN:=0.00 as float
-oSQL:=SQLSelect{"select empid, persid from employee",oConn} 
-maxRec:=oSQL:RecCount
-oSQL:GoTop() 
-do while !oSQL:eof
-	fId := oSQL:EMPID
-	fCLN:=Val(Crypt_CLN(oSQL:EMPID,oSQL:persid))
-	fSumID+=fId
-	fSumCLN+=fCLN
-	oSQL:skip()
-enddo
-return AESEncrypt("ihgt75[I4"+Str(maxRec,-1) +"=KQP49}8",Str((fSumID *fSumCLN)+666307205,-1))
-
 Function CheckPassword(cPW as string, Empid:=0 as int ) as logic 
 	// check if given password is correct
 	//
@@ -65,67 +48,6 @@ Function CheckPassword(cPW as string, Empid:=0 as int ) as logic
 		RETURN false
 	endif
 	Return true
-Function Crypt_CLN(EMPID:=0 as int,CLN_Emp:='' as string ) as string 
-local cReturn as string
-// Default(@CLN_Emp,null_string)
-// Default(@EMPID,0)
-cReturn:= Crypt(CLN_Emp,Str(EMPID,-1)+"er45pofDOIoiijodsoi*)mxcd&eDFP456^)_fghj=") 
-return cReturn
-Function Crypt_Emp(Encrypt as logic,FieldName as string,FieldValue:="" as strin,EMPID:=0 as int) as string
-/* En/Decryption of employee field FieldName with values of EmpID and persid
- return string to be used in SQL statement 
-FieldName: depid, persid, type or loginname
-In case of Encrypt: give values of field, EMPID (only for persid)
-In case of Decrypt: fieldname is sufficient 
-*/
-local cReturn, cFieldname, cTable as string, aFld as array
-aFld:=Split(FieldName,".")
-if Len(aFld)=2
-	cFieldname:=aFld[2]
-	cTable:=aFld[1]+"."
-else
-	cFieldname:=FieldName
-endif
-do Case 
-case cFieldname="depid"
-	if Encrypt
-		cReturn:='AES_EnCrypt("'+AllTrim(FieldValue)+'",Concat("H:8$v#PW4(M",cast('+cTable+'empid as char),"7€0(<?!dg9W5Ic",'+cTable+'persid,"]}\|7(@hlbz"))'	
-	else
-		cReturn:='AES_Decrypt('+FieldName+',Concat("H:8$v#PW4(M",cast('+cTable+'empid as char),"7€0(<?!dg9W5Ic",cast('+cTable+'persid as char),"]}\|7(@hlbz"))'
-	endif
-case cFieldname="persid"
-	if Encrypt
-		cReturn:='AES_EnCrypt('+AllTrim(FieldValue)+',Concat("er45pOofDOIoiijodsoi*)",'+iif(Empty(EMPID),'cast('+cTable+'empid as char)',Str(EMPID,-1))+',"mxcd_eDFP456^)_fghj=&)"))'	
-	else
-		cReturn:='AES_Decrypt('+FieldName+',Concat("er45pOofDOIoiijodsoi*)",cast('+cTable+'empid as char),"mxcd_eDFP456^)_fghj=&)"))'
-	endif
-case cFieldname="type"
-	if Encrypt
-		cReturn:='AES_EnCrypt("'+AllTrim(FieldValue)+'",Concat("W0éLp6%*mBA",cast('+cTable+'empid as char),"5€0(>!dg9W5~c",'+cTable+'persid,"Hg'+"'LKAeTq&aspd["+'"))'	
-	else
-		cReturn:='AES_Decrypt('+FieldName+',Concat("W0éLp6%*mBA",cast('+cTable+'empid as char),"5€0(>!dg9W5~c",cast('+cTable+'persid as char),"Hg'+"'LKAeTq&aspd["+'"))'
-	endif
-case cFieldname="loginname"
-	if Encrypt
-		cReturn:='AES_EnCrypt("'+AllTrim(FieldValue)+'",Concat("1Lp6%*mBA",'+cTable+'persid,"190(>?dg9W5~c",cast('+cTable+'empid as char),"HLKAmUq&aspd["))'	
-	else
-		cReturn:='AES_Decrypt('+FieldName+',Concat("1Lp6%*mBA",cast('+cTable+'persid as char),"190(>?dg9W5~c",cast('+cTable+'empid as char),"HLKAmUq&aspd["))'
-	endif
-case cFieldname = "funcname"
-	if Encrypt
-		cReturn:='AES_EnCrypt("'+AllTrim(FieldValue)+'","7€0(<?!dg9W5Ic]}\|7(@hlbz'+Str(EMPID,-1)+'H:8$v#PW4(M")'	
-	else
-		cReturn:='AES_Decrypt('+FieldName+',Concat("7€0(<?!dg9W5Ic]}\|7(@hlbz",cast('+cTable+'empid as char),"H:8$v#PW4(M"))'
-	endif
-endcase
-return cReturn	
-Function DeCrypt_DEPID(EMPID as int,CLN_Emp as string,DEPID_Emp as string) as string
-return ZeroTrim(AESDecrypt("H:8$v#PW4(M"+Str(EMPID,-1)+"7€0(<?!dg9W5Ic"+CLN_Emp+"]}\|7(@hlbz",AllTrim(DEPID_Emp)))
-
-Function DeCrypt_LOGINNAME(EMPID as int,CLN_Emp as string,LOGINNAME_Emp as string) as string
-return AESDecrypt("1Lp6%*mBA"+CLN_Emp+"190(>?dg9W5~c"+Str(EMPID,-1)+"HLKAmUq&aspd[",AllTrim(LOGINNAME_Emp))
-Function DeCrypt_TYPE(EMPID as int,CLN_Emp as string,TYPE_Emp as string) as string
-return AESDecrypt("W0éLp6%*mBA"+Str(EMPID,-1)+"5€0(>!dg9W5~c"+CLN_Emp+"Hg'LKAeTq&aspd[",AllTrim(TYPE_Emp))
 METHOD GetMenuItems(myType)  CLASS EditEmployeeWindow
 	* get menu items corresponding with myType (A, F, P, M or empty==A)
 	LOCAL aAllItems, aReturn:={} AS ARRAY
@@ -183,16 +105,10 @@ IF !Empty(oCLN)
 	SELF:oDCmPerson:TEXTValue := SELF:cMemberName
 ENDIF
 RETURN TRUE	
-Function EnCrypt_DEPID(EMPID as int,CLN_Emp as string,DEPID_Emp as string) as string
-return AESEncrypt("H:8$v#PW4(M"+Str(EMPID,-1)+"7€0(<?!dg9W5Ic"+CLN_Emp+"]}\|7(@hlbz",iif(Empty(AllTrim(DEPID_Emp)),"00000",AllTrim(DEPID_Emp)))
-Function EnCrypt_LOGINNAME(EMPID as int,CLN_Emp as string,LOGINNAME_Emp as string) as string
-return AESEncrypt("1Lp6%*mBA"+CLN_Emp+"190(>?dg9W5~c"+Str(EMPID,-1)+"HLKAmUq&aspd[",AllTrim(LOGINNAME_Emp))
-Function EnCrypt_TYPE(EMPID as int,CLN_Emp as string,TYPE_Emp as string) as string
-return AESEncrypt("W0éLp6%*mBA"+Str(EMPID,-1)+"5€0(>!dg9W5~c"+CLN_Emp+"Hg'LKAeTq&aspd[",AllTrim(TYPE_Emp))
 function EvalCheckDigit() as logic
 local cCheckEmp as string 
 Local mChecpEmp as string
-cCheckEmp:=CalcCheckDigit() 
+cCheckEmp:=CalcCheckDigit(oConn) 
 mChecpEmp:= (SQLSelect{"select checkemp from sysparms",oConn}):CHECKEMP 
 
 if !cCheckEmp== mChecpEmp
@@ -261,8 +177,6 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		logonOk:=false
 	endif
 	RETURN logonOk 
-Function HashPassword(EMPID as int,uValue as string) as string
-	return sha2(Str(EMPID,-1)+"er45pRfDOIoW$jods"+AllTrim(uValue)+"oi*)mYcd@%;eDFP456^)_fUhj=") 
 Function IsFirstUse( ) as logic 
 	// determine if this is the first use of the system
 	IF SQLSelect{"select count(*) as total from Employee",oConn}:total='0' .and.;
@@ -277,7 +191,7 @@ function SaveCheckDigit()
 local oStmnt as SQLStatement
 SQLStatement{"start transaction",oConn}:Execute()
 SQLStatement{"select sysparms for update",oConn}:Execute()
-oStmnt:= SQLStatement{'update sysparms set checkemp="'+CalcCheckDigit()+'"',oConn}
+oStmnt:= SQLStatement{'update sysparms set checkemp="'+CalcCheckDigit(oConn)+'"',oConn}
 oStmnt:Execute()
 if !Empty(oStmnt:Status)
 	LogEvent(,"Error:"+oStmnt:Status:Description)
