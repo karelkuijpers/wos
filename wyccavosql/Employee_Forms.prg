@@ -1879,7 +1879,7 @@ METHOD OkButton() CLASS LogonDialog
 				ENDIF
 			ENDIF
 		ELSE
-			if cUser=="wyccavoadmin" .and. AllTrim( oDCPassword:Textvalue )=="Glarek7573"
+			if cUser=="root" .and. AllTrim( oDCPassword:Textvalue )=="root"
 			   cEmpStmnt:="select empid,"+Crypt_Emp(false,"loginname")+" as loginname from employee where ";
 				+ Crypt_Emp(false,"type")+'="A"'
 				oEmp := SQLSelect{cEmpStmnt,oConn} 
