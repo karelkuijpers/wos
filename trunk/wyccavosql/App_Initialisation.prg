@@ -626,7 +626,7 @@ method init(oMainWindow) class Initialize
 		dbname:=SubStr(dbname,RAt('\',dbname)+1)
 	endif 
 	cServer:=GetServername(CurPath)
-	if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+";UID=parousia_typ31;PWD=7o4JDp07iyHx")
+	if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW())
 		// if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+";UID=root;PWD=root")
 		ShowError(oConn:ERRINFO)
 		Break
