@@ -281,13 +281,13 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		d_netnum:={} as array
 
 	* Arrays for values per department per balance item:
-	LOCAL rd_salvjtot:={},;  // two dimenional array: X: department, Y: balance item
-	rd_BalPrvYrYtD:={},;  // idem
-	rd_salvrg:={},;  // idem
-	rd_salper:={},;  // idem
-	rd_bud:={},;  // idem
-	rd_budper:={},;  // idem
-	rd_budytd:={} as array // idem
+	LOCAL rd_BalPrvYr:={},;  // two dimenional array: X: department, Y: balance item
+			rd_BalPrvYrYtD:={},;  // idem
+			rd_BalPrvPer:={},;  // idem
+			rd_BalPer:={},;  // idem
+			rd_bud:={},;  // idem
+			rd_budper:={},;  // idem
+			rd_budytd:={} as array // idem
 	// LOCAL BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff as STRING
 	IF self:SendToMail
 		BoldOn:="{\b "
@@ -338,15 +338,15 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	self:BalSt:=BalYear*12+BalMonth
 	self:BalEnd:=self:YEAREND*12+aBalYr[4]
 	IF self:CurSt>self:CurEnd
-		(ErrorBox{self:OWNER,self:oLan:WGet('Starting month must precede ending month')}):show()
+		(ErrorBox{self:OWNER,self:oLan:WGet('Starting month must precede ending month')}):Show()
 		RETURN
 	ENDIF
 	IF self:CurSt > self:BalEnd .or. self:CurSt < self:BalSt
-		(ErrorBox{self:OWNER,self:oLan:WGet('Starting month out of range')}):show()
+		(ErrorBox{self:OWNER,self:oLan:WGet('Starting month out of range')}):Show()
 		RETURN
 	ENDIF
 	IF self:CurEnd < self:BalSt .or. self:CurEnd > self:BalEnd
-		(ErrorBox{self:OWNER,self:oLan:WGet('Ending month out of range')}):show()
+		(ErrorBox{self:OWNER,self:oLan:WGet('Ending month out of range')}):Show()
 		RETURN
 	ENDIF
 	self:PrvYearNotClosed:=(self:BalSt>(Year(LstYearClosed)*12+Month(LstYearClosed)))
@@ -355,8 +355,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	iPage:=0
 	TopWhatPtr:=0
 	TopWhoPtr:=0
-	IF Empty(SKAP)
-		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):show()
+	IF Empty(skap)
+		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):Show()
 		self:EndWindow()
 		RETURN
 	ENDIF
@@ -366,7 +366,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		self:STATUSMESSAGE(self:oLan:WGet("Checking and collecting data, moment please"))
 	ELSE
 		IF IsAccess(self,#Owner)
-			IF IsMethod(self:OWNER,#StatusMessage)
+			IF IsMethod(self:Owner,#StatusMessage)
 				self:OWNER:STATUSMESSAGE(self:oLan:WGet("Checking and collecting balance data , moment please"))
 			ENDIF
 		ENDIF
@@ -379,7 +379,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		* Top department is WO Office:
 		oAcc:= SQLSelect{"select balitemid from account where accid='"+skap+"'",oConn}
 		if oAcc:reccount<1
-			(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):show()
+			(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):Show()
 			self:EndWindow()
 			RETURN 
 		ENDIF
@@ -408,7 +408,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	aItem:={}
 	DO WHILE true
 		nCurRec:=self:AddSubDep(self:WhoFrom,nCurRec,aItem,d_dep,d_parentdep,d_indmaindep,d_depname,d_acc,d_netasset,d_netnum)
-		IF Empty(nCurRec)
+		IF Empty(nCurrec)
 			exit
 		ENDIF
 	ENDDO
@@ -437,13 +437,13 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	aItem:={}
 	DO WHILE true
 		nCurRec:=self:AddSubBal(self:WhatFrom,nCurRec,aItem,0,r_indmain,r_parentid,r_balid,r_balnbr,r_cat,r_heading,r_footer)
-		IF Empty(nCurRec)
+		IF Empty(nCurrec)
 			exit
 		ENDIF
 	ENDDO
 	self:BalCount:=Len(r_balid) 
 	if self:BalCount=0
-		(ErrorBox{self:OWNER,self:oLan:WGet('No report structure defined yet')}):show()
+		(ErrorBox{self:OWNER,self:oLan:WGet('No report structure defined yet')}):Show()
 		self:EndWindow()
 		RETURN
 	ENDIF
@@ -452,9 +452,9 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	self:TotalWidth:=self:BalColWidth+88 
 	// self:Maxlevel++
 	* Initialize value arrays with NILvalues:
-	rd_salvjtot:=ArrayNew(DepCount,BalCount)
-	rd_salvrg:=ArrayNew(DepCount,BalCount)
-	rd_salper:=ArrayNew(DepCount,BalCount)
+	rd_BalPrvYr:=ArrayNew(DepCount,BalCount)
+	rd_BalPrvPer:=ArrayNew(DepCount,BalCount)
+	rd_BalPer:=ArrayNew(DepCount,BalCount)
 	rd_BalPrvYrYtD:=ArrayNew(DepCount,BalCount)
 	rd_bud:=ArrayNew(DepCount,BalCount)
 	rd_budper:=ArrayNew(DepCount,BalCount)
@@ -479,14 +479,14 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 
 	* Add balances of accounts to the balance item values: 
 	oAcc:GoTop() 
-	DO WHILE !oAcc:EoF
+	DO WHILE !oAcc:EOF
 		Bal_Ptr:=AScan(r_balid,oAcc:balitemid) 
 		m_accid:=Str(oAcc:accid,-1)
 		IF Bal_Ptr=0
 			*  No requested balance item:
 			IF Empty(self:WhatFrom)  // total structure specified?
 				self:Pointer := Pointer{POINTERARROW}
-				(ErrorBox{self:OWNER,self:oLan:WGet('Not defined balance item in account')+':'+oAcc:AccNumber}):show()
+				(errorbox{self:OWNER,self:oLan:WGet('Not defined balance item in account')+':'+oAcc:AccNumber}):show()
 				RETURN 
 			ENDIF
 			oAcc:Skip()
@@ -497,7 +497,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			* No requested department:
 			IF Empty(self:WhoFrom)  // total hierarchy specified?
 				self:Pointer := Pointer{POINTERARROW}
-				(ErrorBox{self:OWNER,self:oLan:WGet('Not defined department in account')+':'+oAcc:AccNumber}):show()
+				(errorbox{self:OWNER,self:oLan:WGet('Not defined department in account')+':'+oAcc:AccNumber}):show()
 				RETURN 
 			ENDIF
 			oAcc:Skip()
@@ -508,10 +508,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 // 		endif
 		// 		oMbal:GetBalance(m_accid,oAcc:category,self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MonthEnd)  && balance year
 
-		rd_salvjtot[Dep_Ptr,Bal_Ptr]:=if(Empty(rd_salvjtot[Dep_Ptr,Bal_Ptr]),0,rd_salvjtot[Dep_Ptr,Bal_Ptr])+oAcc:PrvYr_deb-oAcc:PrvYr_cre
-		rd_salvrg[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_salvrg[Dep_Ptr,Bal_Ptr]),0,rd_salvrg[Dep_Ptr,Bal_Ptr])+oAcc:PrvPer_deb-oAcc:PrvPer_cre +;
+		rd_BalPrvYr[Dep_Ptr,Bal_Ptr]:=if(Empty(rd_BalPrvYr[Dep_Ptr,Bal_Ptr]),0,rd_BalPrvYr[Dep_Ptr,Bal_Ptr])+oAcc:PrvYr_deb-oAcc:PrvYr_cre
+		rd_BalPrvPer[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_BalPrvPer[Dep_Ptr,Bal_Ptr]),0,rd_BalPrvPer[Dep_Ptr,Bal_Ptr])+oAcc:PrvPer_deb-oAcc:PrvPer_cre +;
 		 iif(oAcc:category=LIABILITY.or.oAcc:category=ASSET,oAcc:PrvYrYtD_deb-oAcc:PrvYrYtD_cre,0)  // add balance previous year
-		rd_salper[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_salper[Dep_Ptr,Bal_Ptr]),0,rd_salper[Dep_Ptr,Bal_Ptr])+oAcc:per_deb - oAcc:per_cre
+		rd_BalPer[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_BalPer[Dep_Ptr,Bal_Ptr]),0,rd_BalPer[Dep_Ptr,Bal_Ptr])+oAcc:per_deb - oAcc:per_cre
 		rd_bud[Dep_Ptr,Bal_Ptr]     :=if(Empty(rd_bud[Dep_Ptr,Bal_Ptr]),0,rd_bud[Dep_Ptr,Bal_Ptr]) +oAcc:Yr_Bud
 		rd_budper[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_budper[Dep_Ptr,Bal_Ptr]),0,rd_budper[Dep_Ptr,Bal_Ptr]) +oAcc:Per_Bud
 		rd_budytd[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_budytd[Dep_Ptr,Bal_Ptr]),0,rd_budytd[Dep_Ptr,Bal_Ptr]) +oAcc:Per_Bud+oAcc:PrvPer_bud
@@ -530,12 +530,16 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			cBalName:=r_footer[Bal_Ptr]
 		ENDIF
 		AAdd(d_acc[Dep_Ptr],balsoort+Pad(cBalName,25)+Str(oAcc:balitemid,11,0)+Str(oAcc:recno,11,0)+"P")
-		* 	Indien voorgaande jaar nog niet afgesloten, dan som van V&W bepalen om
-		* 	bij kapitaal op te tellen (immers nog niet bijgeboekt):
+		* 	When previous year not yet closed calculated sum of all income and expense accounts uptill end of previous year
+		* 	and add it to the corresponding netasset accounts (because not yet added by year balancing)
 		IF balsoort == '1' .or. balsoort == '2'
 			IF self:PrvYearNotClosed
-				d_PLdeb[Dep_Ptr]:=Round(if(IsNil(d_PLdeb[Dep_Ptr]),0,d_PLdeb[Dep_Ptr]) + oAcc:PrvYrPL_deb,DecAantal)
-				d_PLcre[Dep_Ptr]:=Round(if(IsNil(d_PLcre[Dep_Ptr]),0,d_PLcre[Dep_Ptr]) + oAcc:PrvYrPL_cre,DecAantal)
+				d_PLdeb[Dep_Ptr]:=Round(if(IsNil(d_PLdeb[Dep_Ptr]),0,d_PLdeb[Dep_Ptr]) + oAcc:PL_deb,DecAantal)
+				d_PLcre[Dep_Ptr]:=Round(if(IsNil(d_PLcre[Dep_Ptr]),0,d_PLcre[Dep_Ptr]) + oAcc:PL_cre,DecAantal)
+				IF YearBeforePrvNotClosed
+					* When year before previous year also not closed do the same for net asset account balances of previous year
+					d_PrfLssPrYr[Dep_Ptr]:=Round(if(IsNil(d_PrfLssPrYr[Dep_Ptr]),0,d_PrfLssPrYr[Dep_Ptr]) + oAcc:PrvYrPL_deb - oAcc:PrvYrPL_cre,DecAantal)
+				ENDIF
 			ENDIF
 		ENDIF
 		// 		oMbal:GetBalance(m_accid,oAcc:category,(self:YEARSTART-1)*100+self:MONTHSTART,(self:YEAREND-1)*100+MonthEnd) && zelfde periode een jaar eerder
@@ -543,42 +547,41 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		if oAcc:recno%50=1
 			nCurAcc:=nCurAcc
 		endif
-		oAcc:Skip()
+		oAcc:skip()
 	ENDDO
 
 	* Indien voorgaande jaar nog niet afgesloten, dan som van V&W optellen bij
 	* bij kapitaalrekeningen :
 	IF self:PrvYearNotClosed
-		FOR Dep_Ptr:=1 to DepCount
+		FOR dep_ptr:=1 to DepCount
 			* Determine pointer to balance item for capital: (can be empty)
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			IF !IsNil(d_PLdeb[Dep_Ptr]).and.!Empty(kap_num)
-				IF IsNil(rd_salper[Dep_Ptr,kap_num])
-					rd_salper[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_BalPer[Dep_Ptr,kap_num])
+					rd_BalPer[Dep_Ptr,kap_num]:=0
 				ENDIF
-				IF IsNil(rd_salvjtot[Dep_Ptr,kap_num])
-					rd_salvjtot[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_BalPrvYr[Dep_Ptr,kap_num])
+					rd_BalPrvYr[Dep_Ptr,kap_num]:=0
 				ENDIF
 				IF IsNil(rd_BalPrvYrYtD[Dep_Ptr,kap_num])
 					rd_BalPrvYrYtD[Dep_Ptr,kap_num]:=0
 				ENDIF
-				IF IsNil(rd_salvrg[Dep_Ptr,kap_num])
-					rd_salvrg[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_BalPrvPer[Dep_Ptr,kap_num])
+					rd_BalPrvPer[Dep_Ptr,kap_num]:=0
 				ENDIF
-				IF IsNil(rd_bud[Dep_Ptr,kap_num])
-					rd_bud[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_bud[dep_ptr,kap_num])
+					rd_bud[dep_ptr,kap_num]:=0
 				ENDIF
-				IF IsNil(rd_budper[Dep_Ptr,kap_num])
-					rd_budper[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_budper[dep_ptr,kap_num])
+					rd_budper[dep_ptr,kap_num]:=0
 				ENDIF
-				IF IsNil(rd_budytd[Dep_Ptr,kap_num])
-					rd_budytd[Dep_Ptr,kap_num]:=0
+				IF IsNil(rd_budytd[dep_ptr,kap_num])
+					rd_budytd[dep_ptr,kap_num]:=0
 				ENDIF
-				rd_salper[Dep_Ptr,kap_num]  := Round(rd_salper[Dep_Ptr,kap_num] + d_PLdeb[Dep_Ptr] - d_PLcre[Dep_Ptr],DecAantal)
-				// 				IF self:YearBeforePrvNotClosed
-				// 					rd_salvjper[Dep_Ptr,kap_num]:=Round(if(Empty(rd_salvjper[Dep_Ptr,kap_num]),0,rd_salvjper[Dep_Ptr,kap_num])+ d_PrfLssPrYr[Dep_Ptr],DecAantal)
-				// 					*				rd_salvjper[dep_ptr,kap_num]:=Round(rd_salvjper[dep_ptr,kap_num] + d_PrfLssPrYr[Dep_Ptr],decaantal)
-				// 				ENDIF
+				rd_BalPer[Dep_Ptr,kap_num]  := Round(rd_BalPer[Dep_Ptr,kap_num] + d_PLdeb[Dep_Ptr] - d_PLcre[Dep_Ptr],DecAantal)
+				IF self:YearBeforePrvNotClosed
+					rd_BalPrvYrYtD[Dep_Ptr,kap_num]:=Round(if(Empty(rd_BalPrvYrYtD[Dep_Ptr,kap_num]),0,rd_BalPrvYrYtD[Dep_Ptr,kap_num])+ d_PrfLssPrYr[Dep_Ptr],DecAantal)
+				ENDIF
 			ENDIF
 		NEXT
 	ENDIF
@@ -595,26 +598,26 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		r_balid,r_heading,r_footer,r_parentid)
 	hfdkop[1]:= BoldOn+YellowOn+ hfdkop[1]+YellowOff+BoldOff
 
-	self:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentdep,d_dep,;
+	self:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 		r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,;
 		r_heading,r_footer,r_balnbr,r_balid,r_bud,r_budper,r_budytd,;
-		rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+		rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,rd_BalPer,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
 
 	* Toelichting op de balans afdrukken:
 	IF ind_toel
 		self:STATUSMESSAGE(self:oLan:WGet("Printing details, moment please"))
 		* reset What/Who:
 		lSaveWhat:=WhatDetails
-		lSaveWho:=WhoDetails
+		lsaveWho:=WhoDetails
 		self:WhatDetails:=true
 		self:WhoDetails:=true
 		* Enforce order on department name:
 		FOR i:=1 to DepCount
-			AAdd(d_sort,{Upper(d_depname[i]),i})
+			AAdd(d_sort,{Upper(d_depName[i]),i})
 		NEXT
 		ASort(d_sort,,,{|x,y| x[1]<=y[1]})
 		FOR i:= 1 to DepCount
-			Dep_Ptr:=d_sort[i,2]
+			Dep_Ptr:=d_Sort[i,2]
 			accnts:=d_acc[Dep_Ptr]
 			ASort(accnts)
 			m_balId:=Space(11)
@@ -626,10 +629,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 					IF Totalize
 						IF aant_gev>1
 							self:prtotaal(m_cat,@iLine,@iPage)
-							self:prAmounts(m_cat,rd_salvjtot[Dep_Ptr,bal_ptr],;
+							self:prAmounts(m_cat,rd_BalPrvYr[Dep_Ptr,Bal_Ptr],;
 								rd_BalPrvYrYtD[Dep_Ptr,Bal_Ptr],;
-								rd_salvrg[Dep_Ptr,Bal_Ptr],rd_salper[Dep_Ptr,Bal_Ptr],;
-								rd_bud[Dep_Ptr,Bal_Ptr],rd_budper[Dep_Ptr,Bal_Ptr],rd_budytd[Dep_Ptr,Bal_Ptr],0,r_footer[Bal_Ptr],r_heading,0.00,0.00,@iLine,@iPage)
+								rd_BalPrvPer[Dep_Ptr,Bal_Ptr],rd_BalPer[Dep_Ptr,Bal_Ptr],;
+								rd_bud[dep_ptr,bal_ptr],rd_budper[dep_ptr,bal_ptr],rd_budytd[dep_ptr,bal_ptr],0,r_footer[bal_ptr],r_heading,0.00,0.00,@iLine,@iPage)
 						ENDIF
 					ENDIF
 					IF SubStr(accnts[rektel],1,1) # mType
@@ -645,7 +648,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 							kop:=oLan:Get('ASSETS',,"@!")
 						ELSE
 							m_cat:=LIABILITY 
-							kop:=oLan:Get('LIABILITIES AND FUNDS',,"@!")
+							kop:=oLan:get('LIABILITIES AND FUNDS',,"@!")
 						ENDIF
 						hfdkop:=self:prkop(oLan:Get('DETAILED',,"@!"),m_cat,Dep_Ptr,,d_dep,d_parentdep,d_depname,;
 							r_balid,r_heading,r_footer,r_parentid)
@@ -684,9 +687,9 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			NEXT
 			IF Totalize .and. aant_gev>1
 				self:prtotaal(m_cat,@iLine,@iPage)
-				self:prAmounts(m_cat,rd_salvjtot[Dep_Ptr,bal_ptr],;
+				self:prAmounts(m_cat,rd_BalPrvYr[Dep_Ptr,Bal_Ptr],;
 					rd_BalPrvYrYtD[Dep_Ptr,Bal_Ptr],;
-					rd_salvrg[Dep_Ptr,Bal_Ptr],rd_salper[Dep_Ptr,Bal_Ptr],;
+					rd_BalPrvPer[Dep_Ptr,Bal_Ptr],rd_BalPer[Dep_Ptr,Bal_Ptr],;
 					rd_bud[Dep_Ptr,Bal_Ptr],rd_budper[Dep_Ptr,Bal_Ptr],rd_budytd[Dep_Ptr,Bal_Ptr],1,r_footer[Bal_Ptr],r_heading,0.00,0.00,@iLine,@iPage)
 				self:oReport:PrintLine(@iLine,@iPage,' ',hfdkop,1)
 				self:oReport:PrintLine(@iLine,@iPage,' ',hfdkop,0)
@@ -715,10 +718,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	d_acc:={}
 	d_netasset:={}
 	d_netnum:={}
-	rd_salvjtot:={}
+	rd_BalPrvYr:={}
 	rd_BalPrvYrYtD:={}
-	rd_salvrg:={}
-	rd_salper:={}
+	rd_BalPrvPer:={}
+	rd_BalPer:={}
 	rd_bud:={}
 	rd_budper:={}
 	rd_budytd:={}
@@ -1454,7 +1457,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 	IF r_indmain[Bal_Ptr]
 		IF WhatDetails
 			IF .not.Empty(r_heading[Bal_Ptr])
-				AAdd(HeadingCache,{level,bal_ptr})
+				AAdd(HeadingCache,{level,Bal_Ptr})
 				CachePtr:=Len(HeadingCache)
 				*			oReport:PrintLine(@iLine,@iPage,Space(level*2)+r_heading[bal_ptr],hfdkop,0)
 			ENDIF
@@ -1491,17 +1494,17 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					TotalFound:=TotalFound+1
 					r_balpryrtot[bal_ptr]:=if(Empty(r_balpryrtot[bal_ptr]),0.00,r_balpryrtot[bal_ptr])+r_balpryrtot[SubBalPtr]
 					r_balPrvYrYtD[bal_ptr]:=if(Empty(r_balPrvYrYtD[bal_ptr]),0.00,r_balPrvYrYtD[bal_ptr])+r_balPrvYrYtD[SubBalPtr]
-					r_balPrvPer[bal_ptr]:=if(Empty(r_balPrvPer[bal_ptr]),0.00,r_balPrvPer[bal_ptr])+r_balPrvPer[SubBalPtr]
+					r_balPrvPer[Bal_Ptr]:=if(Empty(r_balPrvPer[Bal_Ptr]),0.00,r_balPrvPer[Bal_Ptr])+r_balPrvPer[SubBalPtr]
 					r_balPer[Bal_Ptr]  :=if(Empty(r_balPer[Bal_Ptr]),0.00,r_balPer[Bal_Ptr])  +r_balPer[SubBalPtr]
 					IF r_cat[SubBalPtr]== 'BA' .or. r_cat[SubBalPtr]== 'PA';
 							.or. r_cat[Bal_Ptr]== r_cat[SubBalPtr]
 						r_bud[bal_ptr] :=if(Empty(r_bud[bal_ptr]),0.00,r_bud[bal_ptr]) +r_bud[SubBalPtr]
-						r_budper[bal_ptr] :=if(Empty(r_budper[bal_ptr]),0.00,r_budper[bal_ptr]) +r_budper[SubBalPtr]
-						r_budytd[bal_ptr] :=if(Empty(r_budytd[bal_ptr]),0.00,r_budytd[bal_ptr]) +r_budytd[SubBalPtr]
+						r_budper[Bal_Ptr] :=if(Empty(r_budper[Bal_Ptr]),0.00,r_budper[Bal_Ptr]) +r_budper[SubBalPtr]
+						r_budytd[Bal_Ptr] :=if(Empty(r_budytd[Bal_Ptr]),0.00,r_budytd[Bal_Ptr]) +r_budytd[SubBalPtr]
 					ELSE
 						r_bud[bal_ptr] :=if(Empty(r_bud[bal_ptr]),0.00,r_bud[bal_ptr]) -r_bud[SubBalPtr]
-						r_budper[bal_ptr] :=if(Empty(r_budper[bal_ptr]),0.00,r_budper[bal_ptr]) -r_budper[SubBalPtr]
-						r_budytd[bal_ptr] :=if(Empty(r_budytd[bal_ptr]),0.00,r_budytd[bal_ptr]) -r_budytd[SubBalPtr]
+						r_budper[Bal_Ptr] :=if(Empty(r_budper[Bal_Ptr]),0.00,r_budper[Bal_Ptr]) -r_budper[SubBalPtr]
+						r_budytd[Bal_Ptr] :=if(Empty(r_budytd[Bal_Ptr]),0.00,r_budytd[Bal_Ptr]) -r_budytd[SubBalPtr]
 					ENDIF
 				ENDIF
 			ENDIF
@@ -1519,11 +1522,11 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				ELSE
 					pr_oms:=r_footer[Bal_Ptr]
 				ENDIF
-				self:prAmounts(m_soort,r_balpryrtot[bal_ptr],;
+				self:prAmounts(m_soort,r_balpryrtot[Bal_Ptr],;
 					r_balPrvYrYtD[Bal_Ptr],r_balPrvPer[Bal_Ptr],;
 					r_balPer[Bal_Ptr],r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,0.00,0.00,@iLine,@iPage)
 			ENDIF
-			IF	TotalFound>1 && extra spatieregel na total
+			IF	TotalFound>1 && extra space after total
 				oReport:PrintLine(@iLine,@iPage,' ',hfdkop,0)
 			ENDIF
 		endif
@@ -1535,7 +1538,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 		ENDIF
 	ENDIF
 	IF self:showopeningclosingfund .or.!WhatDetails
-		// toevoeging voor summary lines voor BTA: opening fund balance, end closing balance :
+		// add for summary lines for BTA: opening fund balance, end closing balance :
 		m_soort:=Upper(r_cat[Bal_Ptr])
 		IF !IsNil(r_balPer[Bal_Ptr]).and.!Empty(r_balPer[Bal_Ptr])
 			AAdd(aTot,{m_soort,level,r_balPer[Bal_Ptr]})
@@ -1543,7 +1546,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 		IF !IsNil(r_balpryrtot[Bal_Ptr]).and.!Empty(r_balpryrtot[Bal_Ptr])
 			AAdd(aTotprv,{m_soort,level,r_balpryrtot[Bal_Ptr]})
 		ENDIF
-		IF level==0 .and. (!Empty(self:WhatFrom).or.bal_ptr>1) && bij 2e keer "beneden": surplus BA of AK
+		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			clbalvj:=0
 			clbal:=0
@@ -1551,13 +1554,13 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				clbalvj:=r_balpryrtot[kap_num]
 				clbal:=r_balPer[kap_num]
 			ENDIF
-			IF !IsNil(r_balpryrtot[Bal_Ptr]) .and.!IsNil(r_balPer[Bal_Ptr])  .and.!IsNil(r_balPrvPer[Bal_Ptr])   //toegevoegd: +r_balPrvPer[1] vanwege startmaand > 1
+			IF !IsNil(r_balpryrtot[Bal_Ptr]) .and.!IsNil(r_balPer[Bal_Ptr])  .and.!IsNil(r_balPrvPer[Bal_Ptr])   //added: +r_balPrvPer[1] because starting month > 1
 				IF m_soort=="BA".or.m_soort=="PA"
 					surplusvj:=-r_balpryrtot[Bal_Ptr]-r_balPrvPer[Bal_Ptr]
-					surplus:=-r_balPer[Bal_Ptr] - r_balPrvPer[Bal_Ptr]     //toegevoegd: -r_balPrvPer[bal_ptr] vanwege startmaand > 1
+					surplus:=-r_balPer[Bal_Ptr] - r_balPrvPer[Bal_Ptr]     //added: -r_balPrvPer[bal_ptr] because starting month > 1
 				ELSE
 					surplusvj:=r_balpryrtot[Bal_Ptr]+r_balPrvPer[Bal_Ptr]
-					surplus:=r_balPer[bal_ptr] +r_balPrvPer[bal_ptr]     //toegevoegd: +r_balPrvPer[bal_ptr] vanwege startmaand > 1
+					surplus:=r_balPer[bal_ptr] +r_balPrvPer[bal_ptr]     //added: +r_balPrvPer[bal_ptr] because starting month > 1
 				ENDIF
 				//IF clbalvj#surplusvj .or. clbal#surplus
 				SDgevonden:=true
@@ -1566,13 +1569,13 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 			IF !SDgevonden
 				// 1e keer proberen:
 				m_soort:=Upper(r_cat[1])
-				IF !IsNil(r_balpryrtot[1]) .and.!IsNil(r_balPer[1]) .and.!IsNil(r_balPrvPer[1])     //toegevoegd: +r_balPrvPer[1] vanwege startmaand > 1
+				IF !IsNil(r_balpryrtot[1]) .and.!IsNil(r_balPer[1]) .and.!IsNil(r_balPrvPer[1])     //added: +r_balPrvPer[1] because starting month > 1
 					IF m_soort=="BA".or.m_soort=="PA"
 						surplusvj:=-r_balpryrtot[1]-r_balPrvPer[1]
-						surplus:=-r_balPer[1]-r_balPrvPer[1]     //toegevoegd: -r_balPrvPer[1] vanwege startmaand > 1
+						surplus:=-r_balPer[1]-r_balPrvPer[1]     //added: -r_balPrvPer[1] because starting month > 1
 					ELSE
 						surplusvj:=r_balPrvYrYtD[1]+r_balPrvPer[1]
-						surplus:=r_balPer[1]+r_balPrvPer[1]     //toegevoegd: +r_balPrvPer[1] vanwege startmaand > 1
+						surplus:=r_balPer[1]+r_balPrvPer[1]     //added: +r_balPrvPer[1] because starting month > 1
 					ENDIF
 					//IF clbalvj#surplusvj .or. clbal#surplus
 					SDgevonden:=true
@@ -1598,17 +1601,19 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					fInc:=fAmnt[1]
 					fExp:=fAmnt[2]
 					fAmnt:=self:BalFishTot("B",aTot)
-					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, decaantal)
+					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, DecAantal)
 					fAmnt:=self:BalFishTot("B",aTotprv)
 					clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
-					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,oLan:Get("Direct on",,"!")+" ","")+d_depname[dep_ptr]
-					self:prAmounts("SD",clbalvj,r_balPrvYrYtD[bal_ptr],;
-						surplus,clbal,r_bud[bal_ptr],r_budper[bal_ptr],r_budytd[bal_ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
+					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,oLan:Get("Direct on",,"!")+" ","")+d_depname[Dep_Ptr]
+// 					self:prAmounts("SD",clbalvj,r_balPrvYrYtD[Bal_Ptr],;
+// 						surplus,clbal,r_bud[bal_ptr],r_budper[bal_ptr],r_budytd[bal_ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
+					self:prAmounts("SD",clbalvj,surplusvj,;
+						surplus,clbal,r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
 				ENDIF
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN(bal_ptr)
+	RETURN(Bal_Ptr)
 METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep as array,d_depname as array,d_parentdep as array,d_dep as array,;
 		r_cat as array,r_balpryrtot as array,r_balPrYrYtD as array,r_balPrvPer as array,r_balPer as array,r_indmain as array,r_parentid as array,;
 		r_heading as array,r_footer as array,r_balnbr as array,r_balid as array,r_bud as array,r_budper as array,r_budytd as array,;
