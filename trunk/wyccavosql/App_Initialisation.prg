@@ -220,11 +220,11 @@ aFileDB:=Directory(CurPath+"\tr??????.dbf")
 
 for i:=1 to Len(aFileDB)
 	oDF:=FileSpec{aFileDB[i,F_NAME]} 
-	if Upper(oDF:FileName)="TRANSACT"
+	if Upper(oDF:FileName)="TRAN"
 		loop
 	endif
-	if ascan(self:aCurTable,{|x|upper(x[1])==upper(alltrim(oDF:FileName))})=0
-		self:create_table("transaction",AllTrim(oDF:FileName),,,aColumn,aIndex)
+	if AScan(self:aCurTable,{|x|Upper(x[1])==Upper(AllTrim(oDF:FileName))})=0
+		self:create_table("transaction",Lower(AllTrim(oDF:FileName)),,,aColumn,aIndex)
 		Indbestand:="TRANSNR"+SubStr(oDF:FileName,3,6)
 		IF !(FileSpec{Indbestand+'.cdx'}):Find()
 			oDbsvr:=DbServer{oDF:FullPath,true,true,"DBFCDX"}
@@ -707,10 +707,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		endif
 		// Initialize db 
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-// 		self:InitializeDB()
+		self:InitializeDB()
  
 	endif
-		self:InitializeDB()
+// 		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
