@@ -545,7 +545,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 		CurStOrdrid:=CurStOrdrid
 	endif 
 
-	do while !oStOrdL:EOF .and. oStOrdL:STORDRID==CurStOrdrid
+	do while !oStOrdL:EOF .and. oStOrdL:stordrid==CurStOrdrid
 		if !lError
 			IF !Empty(dat_controle(datum,true))
 				lError:=true
@@ -608,7 +608,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif	
 			// save in aTrans: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank},...}
 			AAdd(aTrans,{Str(oStOrdL:ACCOUNTID,-1),datum,oStOrdL:DESCRIPTN,oStOrdL:docid,deb,cre,DEBFORGN,CREFORGN,TransCurr,oStOrdL:GC,;
-				iif(oStOrdL:GIFTALWD==1.and. !Empty(oStOrdL:persid).and. cre > Deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank} )
+				iif(oStOrdL:GIFTALWD==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank} )
 		endif
 		oStOrdL:skip()
 	enddo
@@ -631,7 +631,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			if Empty(cTrans)
 				cTrans:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 			endif
-			if !ChgBalance(aTrans[i,1], datum, deb, cre, DEBFORGN, CREFORGN,aTrans[i,9])
+			if !ChgBalance(aTrans[i,1], datum, aTrans[i,5], aTrans[i,6], aTrans[i,7], aTrans[i,8],aTrans[i,9])
 				lError:=true
 				exit
 			endif
