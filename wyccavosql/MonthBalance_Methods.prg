@@ -1079,12 +1079,16 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	* PrvYr_deb (+PrvYr_debF)  	: calculated debit balance value during previous year
 	* PrvYr_cre (+PrvYr_creF)  	: idem for credit
 	* Optional:
-	* PrvYrYtD_deb,PrvYrYtD_cre: previous year YtD   (if lPrvYrYtD true)
-	* PrvYrPL_deb (PrvYrPL_debF)	: Profit/Loss       (if lPrvYrYtD true) 
-	* PrvPer_bud		: budget during prev.period      (if lBudget true)
-	* Per_bud			: budget during required period  (if lBudget true)
-	* Yr_bud				: budget during whole balance year (if lBudget true)
-	* accnumber and description of account  (if lDetails true)  
+	* If lPrvYrYtD true: 
+	* - PrvYrYtD_deb,PrvYrYtD_cre: previous year YtD 
+	* - PL_deb (PL_debF)	: Profit/Loss from previous year to add to netasset accounts 
+	* - PrvYrPL_deb (PrvYrPL_debF)	: Profit/Loss from year before previous year to add to balances of previous year of net aset accounts 
+	*                                  (If year before previous year not closed)  
+	* if lBudget true:
+	* - PrvPer_bud		: budget during prev.period
+	* - Per_bud			: budget during required period 
+	* - Yr_bud				: budget during whole balance year
+	* accnumber and description of account   
 	* All these values have the following meaning:
 	* in case of Cost/profit       : sum of transactions during the specifief period,
 	* in case of liabilities/assets: actual balance value at end of the specified period)   
@@ -1122,7 +1126,8 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	local cFields, cFrom, cWhere, cGroup as string
 	local cPrvYrCondition as string  // condition to select mbalance row into sum of Previous Year 
 	local cPrvYrYtDCondition as string  // condition to select mbalance row into sum of Previous YtD Year 
-	local cPrvYrPLCondition as string  // condition to select mbalance row into sum of profit/loss Previous Year 
+	local cPLCondition as string  // condition to select mbalance row into sum of profit/loss Previous Year 
+	local cPrvYrPLCondition as string  // condition to select mbalance row into sum of profit/loss Year before previous Year 
 	local cPrvPerCondition as string  // condition to select mbalance row into sum of Previous Period 
 	local cPerCondition as string  // condition to select mbalance row into sum of Required Period 
 	local cPrvPerConditionBud as string  // condition to select budget row into sum of Previous Period 
@@ -1132,7 +1137,8 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	local cAccBalYrCondition as string  // condition to select accountbalanceyear a2
 	local cAccBalYrYtDCondition as string // condition to select accountbalanceyear a3
 	local cBudgetCondition as string // condition to select budget
-	local lPrvYrYtDReal as logic
+	local PrvYearNotClosed as logic
+	local YearBeforePrvNotClosed as logic
 	local cStatement as string 
 
 	LastClose := Round(Year(MinDate)*12,0)+Month(MinDate) 
@@ -1175,11 +1181,11 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	CurrStartYear := YearBeginEnd[1]
 	CurrStartMonth:= YearBeginEnd[2]
 	PrvYearBeginEnd:=GetBalYear(CurrStartYear-1,CurrStartMonth)
-	if lPrvYrYtD .and. PeriodEndMonth<YearBeginEnd[4]  // not period till end of balance year?
-		lPrvYrYtDReal:=true   // calculate YtD in previous year
-	endif
 	PrevPeriodStart:=Integer(CurrStartYear*12)+CurrStartMonth  // i.e. beginning of corresponding balance year
-	IF PrevPeriodStart > LastClose
+	PrvYearNotClosed:=(PrevPeriodStart>LastClose)
+	YearBeforePrvNotClosed:=((PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2])>LastClose)
+
+	IF PrvYearNotClosed
 		*	start at first non closed year to cumulate from last svjd/c for assets/liability:
 		PrvYearStartYr:=Year(MinDate)
 		PrvYearStartMn:=Month(MinDate)
@@ -1191,7 +1197,7 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	if PrvYearStartYr==CurrStartYear-1 .and.PrvYearStartMn==CurrStartMonth
 		// same period for costprofit as assets/liablities:
 		cPrvYrCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrevPeriodStart-1,-1)
-	elseIF PrevPeriodStart > LastClose  // get also mbalance for previous year 
+	elseIF PrvYearNotClosed  // get also mbalance for previous year 
 		cPrvYrCondition:="if((mb.year*12+mb.month) between if(b.category between '"+income+"' and '"+expense+"',"+;
 			Str((CurrStartYear-1)*12+CurrStartMonth,-1)+","+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+") and "+Str(PrevPeriodStart-1,-1)			
 	else
@@ -1201,9 +1207,23 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	
 	// condition for selecting mbalance into sum last months for previous YtD year: 
 	if lPrvYrYtD
-		cPrvYrYtDCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd-12,-1)
-		cPrvYrPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd-12,-1)+;
-		" and category between '"+income+"' and '"+expense+"'" 
+		if PrvYearNotClosed
+			cPrvYrYtDCondition:="if((mb.year*12+mb.month) between if(b.category between '"+income+"' and '"+expense+"',"+;
+			Str((CurrStartYear-1)*12+CurrStartMonth,-1)+","+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+") and "+Str(PeriodEnd-12,-1)			
+			cPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrevPeriodStart-1,-1)+;
+			" and category between '"+income+"' and '"+expense+"'"
+			if YearBeforePrvNotClosed 
+				cPrvYrPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2]-1,-1)+;
+				" and category between '"+income+"' and '"+expense+"'"
+			else
+				cPrvYrPLCondition:="if(mb.year<0"      // always false  // not needed			
+			endif
+		else
+			cPrvYrYtDCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd-12,-1)
+			cPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PrevPeriodStart-1,-1)+;
+			" and category between '"+income+"' and '"+expense+"'"
+			cPrvYrPLCondition:="if(mb.year<0"      // always false  // not needed
+		endif 
 	endif
 	
 	// condition for selecting mbalance into sum previous period: 
@@ -1215,7 +1235,7 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	endif
 	
 	// condition for selecting mbalance mb:
-	IF PrevPeriodStart > LastClose 
+	IF PrvYearNotClosed 
 		cmBalCondition:="(mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PeriodEnd,-1)			
 	elseif lPrvYrYtD
 		cmBalCondition:="(mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd,-1)				
@@ -1241,7 +1261,7 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	endif
 
 	// condition for selecting accountbalanceyear a3: 
-	IF PrevPeriodStart > LastClose
+	IF PrvYearNotClosed
 		// go to last closed year for assets/liabilities
 		cAccBalYrCondition:="a3.yearstart="+Str(PrvYearStartYr,-1)+" and a3.monthstart="+Str(PrvYearStartMn,-1) +" and (b.category='"+LIABILITY+"' or b.category='"+ASSET+"')"
 	else
@@ -1251,7 +1271,7 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	cAccBalYrCondition+=" and a3.currency='"+sCURR+"'"
 
 	// condition for selecting accountbalanceyear a2: 
-	IF PrevPeriodStart > LastClose
+	IF PrvYearNotClosed
 		// go to last closed year for assets/liabilities
 		cAccBalYrYtDCondition:="a2.yearstart="+Str(PrvYearStartYr,-1)+" and a2.monthstart="+Str(PrvYearStartMn,-1) +" and (z.category='"+LIABILITY+"' or z.category='"+ASSET+"')"
 	else
@@ -1265,13 +1285,14 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 		"sum("+cPrvPerCondition+",mb.deb,0)) as PrvPer_deby,sum("+cPrvPerCondition+",mb.cre,0)) as PrvPer_crey," +;
 		"sum("+cPerCondition+",mb.deb,0)) as Per_deby,sum("+cPerCondition+",mb.cre,0)) as Per_crey"+;
 		iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+",mb.deb,0)) as PrvYrYtD_deby,sum("+cPrvYrYtDCondition+",mb.cre,0)) as PrvYrYtD_crey",",0.00 as PrvYrYtD_deby,0.00 as PrvYrYtD_crey")+;
+		iif(lPrvYrYtD,",sum("+cPLCondition+",mb.deb,0)) as PL_deb,sum("+cPLCondition+",mb.cre,0)) as PL_cre",",0.00 as PL_deb,0.00 as PL_cre")+;
 		iif(lPrvYrYtD,",sum("+cPrvYrPLCondition+",mb.deb,0)) as PrvYrPL_deb,sum("+cPrvYrPLCondition+",mb.cre,0)) as PrvYrPL_cre",",0.00 as PrvYrPL_deb,0.00 as PrvYrPL_cre")
 	cFrom:=" from (account a, balanceitem b ) left join AccountBalanceYear a3 ON (a3.accid=a.accid and "+cAccBalYrCondition+")"+;
 		" left join mbalance as mb on (mb.accid=a.accid and "+cmBalCondition+" and mb.currency='"+sCURR+"')"
 	cWhere:="a.balitemid=b.balitemid"+iif(Empty(cAccSelection),""," and "+cAccSelection) 
 	cGroup:=" group by a.accid"   
 	cStatement:="select z.accid,balitemid,department"+iif(lDetails,",accnumber,description","")+",category"+;
-	",PrvYr_deb,PrvYr_cre,PrvPer_deb,PrvPer_cre,Per_deb,Per_cre,PrvYrPL_deb,PrvYrPL_cre,"+;
+	",PrvYr_deb,PrvYr_cre,PrvPer_deb,PrvPer_cre,Per_deb,Per_cre,PL_deb,PL_cre,PrvYrPL_deb,PrvYrPL_cre,"+;
 	"PrvYrYtD_deby+IF(ISNULL(a2.svjd),0,a2.svjd) as PrvYrYtD_deb,PrvYrYtD_crey+IF(ISNULL(a2.svjc),0,a2.svjc) as PrvYrYtD_cre"+;
 	iif(lBudget,",PrvPer_bud,Per_bud,Yr_bud","")+;	
 	" from ("+;
@@ -1281,13 +1302,13 @@ Function SQLGetBalance( dPeriodStart:=nil as usual ,dPeriodEnd:=nil as usual,cAc
 	"PrvPer_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',PrvYr_cre,0) as PrvPer_cre,"+;
 	"Per_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',PrvYr_deb+PrvPer_deby,0) as Per_deb,"+;
 	"Per_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',PrvYr_cre+PrvPer_crey,0) as Per_cre,"+;
-	"PrvYrYtD_deby,PrvYrYtD_crey,PrvYrPL_deb,PrvYrPL_cre"+;
+	"PrvYrYtD_deby,PrvYrYtD_crey,PL_deb,PL_cre,PrvYrPL_deb,PrvYrPL_cre"+;
 	iif(lBudget,",sum("+cPrvPerConditionBud+",bu.amount,0)) as PrvPer_bud,sum("+cPerConditionBud+",bu.amount,0)) as Per_bud,sum("+cYrConditionBud+",bu.amount,0)) as Yr_bud","")+" from ("+;
 	"select "+cFields+cFrom+" where "+cWhere+cGroup +") as y "+;
 	iif(lBudget," left join budget bu ON (y.accid=bu.accid and "+cBudgetCondition+") group by y.accid","") +;
 	") as z left join Accountbalanceyear a2 on (z.accid=a2.accid and "+cAccBalYrYtDCondition+")"
 	
-// 	LogEvent(,cStatement,"logsql")
+	LogEvent(,cStatement,"logsql")
 
 	RETURN cStatement
 
