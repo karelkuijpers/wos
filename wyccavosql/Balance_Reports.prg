@@ -109,7 +109,7 @@ Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,Re
 Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
 export SimpleDepStmnt as logic
 
-declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal
+declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, level as int,r_indmain as array,r_parentid as array,r_balid as array,r_balnbr as array,r_cat as array,r_heading as array,r_footer) as int  CLASS BalanceReport
 * Find subbalance items and add to arrays withbalance Items
 	LOCAL nChildRec, iWidth, p	as int
@@ -241,7 +241,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	LOCAL BalYear,BalMonth as int
 	LOCAL PrvYr_YtD as FLOAT
 	LOCAL TopWhatPtr, TopWhoPtr as int
-	LOCAL nCurRec, Bal_Ptr,Dep_Ptr,kap_num,nCurAcc,nRecno as int
+	LOCAL nCurRec, Bal_Ptr,Dep_Ptr,net_ptr,nCurAcc,nRecno as int
 	LOCAL d_sort:={},accnts:={}, d_PrfLssPrYr:={} as ARRAY
 	LOCAL lSaveWho, lSaveWhat as LOGIC
 	LOCAL YearGranularity as LOGIC 
@@ -355,7 +355,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	iPage:=0
 	TopWhatPtr:=0
 	TopWhoPtr:=0
-	IF Empty(skap)
+	IF Empty(SKAP)
 		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):Show()
 		self:EndWindow()
 		RETURN
@@ -408,15 +408,15 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	aItem:={}
 	DO WHILE true
 		nCurRec:=self:AddSubDep(self:WhoFrom,nCurRec,aItem,d_dep,d_parentdep,d_indmaindep,d_depname,d_acc,d_netasset,d_netnum)
-		IF Empty(nCurrec)
+		IF Empty(nCurRec)
 			exit
 		ENDIF
 	ENDDO
 	*SELF:AddSubDep(self:WhoFrom)
 	DepCount:=Len(d_dep)
-	ASize(d_PLdeb,DepCount)
-	ASize(d_PLcre,DepCount)
-	ASize(d_PrfLssPrYr,DepCount)
+	d_PLdeb:=AReplicate(0,DepCount)
+	d_PLcre:=AReplicate(0,DepCount)
+	d_PrfLssPrYr:=AReplicate(0,DepCount)
 
 	* Fill all requested balance items:
 	IF !Empty(self:WhatFrom) 
@@ -437,7 +437,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	aItem:={}
 	DO WHILE true
 		nCurRec:=self:AddSubBal(self:WhatFrom,nCurRec,aItem,0,r_indmain,r_parentid,r_balid,r_balnbr,r_cat,r_heading,r_footer)
-		IF Empty(nCurrec)
+		IF Empty(nCurRec)
 			exit
 		ENDIF
 	ENDDO
@@ -503,10 +503,6 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			oAcc:Skip()
 			loop
 		ENDIF
-// 		IF ind_toel
-// 			AAdd(aAcc,{oAcc:accid,oAcc:AccNumber,oAcc:Description})
-// 		endif
-		// 		oMbal:GetBalance(m_accid,oAcc:category,self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MonthEnd)  && balance year
 
 		rd_BalPrvYr[Dep_Ptr,Bal_Ptr]:=if(Empty(rd_BalPrvYr[Dep_Ptr,Bal_Ptr]),0,rd_BalPrvYr[Dep_Ptr,Bal_Ptr])+oAcc:PrvYr_deb-oAcc:PrvYr_cre
 		rd_BalPrvPer[Dep_Ptr,Bal_Ptr]  :=if(Empty(rd_BalPrvPer[Dep_Ptr,Bal_Ptr]),0,rd_BalPrvPer[Dep_Ptr,Bal_Ptr])+oAcc:PrvPer_deb-oAcc:PrvPer_cre +;
@@ -550,40 +546,43 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		oAcc:skip()
 	ENDDO
 
-	* Indien voorgaande jaar nog niet afgesloten, dan som van V&W optellen bij
-	* bij kapitaalrekeningen :
+	* When previous year not closed add sum of profit/loss previous year to netasset accounts
 	IF self:PrvYearNotClosed
-		FOR dep_ptr:=1 to DepCount
-			* Determine pointer to balance item for capital: (can be empty)
-			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
-			IF !IsNil(d_PLdeb[Dep_Ptr]).and.!Empty(kap_num)
-				IF IsNil(rd_BalPer[Dep_Ptr,kap_num])
-					rd_BalPer[Dep_Ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_BalPrvYr[Dep_Ptr,kap_num])
-					rd_BalPrvYr[Dep_Ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_BalPrvYrYtD[Dep_Ptr,kap_num])
-					rd_BalPrvYrYtD[Dep_Ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_BalPrvPer[Dep_Ptr,kap_num])
-					rd_BalPrvPer[Dep_Ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_bud[dep_ptr,kap_num])
-					rd_bud[dep_ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_budper[dep_ptr,kap_num])
-					rd_budper[dep_ptr,kap_num]:=0
-				ENDIF
-				IF IsNil(rd_budytd[dep_ptr,kap_num])
-					rd_budytd[dep_ptr,kap_num]:=0
-				ENDIF
-				rd_BalPer[Dep_Ptr,kap_num]  := Round(rd_BalPer[Dep_Ptr,kap_num] + d_PLdeb[Dep_Ptr] - d_PLcre[Dep_Ptr],DecAantal)
-				IF self:YearBeforePrvNotClosed
-					rd_BalPrvYrYtD[Dep_Ptr,kap_num]:=Round(if(Empty(rd_BalPrvYrYtD[Dep_Ptr,kap_num]),0,rd_BalPrvYrYtD[Dep_Ptr,kap_num])+ d_PrfLssPrYr[Dep_Ptr],DecAantal)
-				ENDIF
-			ENDIF
-		NEXT
+// 		FOR dep_ptr:=1 TO DepCount
+// 			* Determine pointer to balance item for netasset: (can be empty)
+// 			net_ptr:=AScan(r_balid, d_netnum[Dep_Ptr])
+// 			IF !IsNil(d_PLdeb[Dep_Ptr]).and.!Empty(net_ptr)
+// 				IF IsNil(rd_BalPer[Dep_Ptr,net_ptr])
+// 					rd_BalPer[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_BalPrvYr[Dep_Ptr,net_ptr])
+// 					rd_BalPrvYr[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_BalPrvYrYtD[Dep_Ptr,net_ptr])
+// 					rd_BalPrvYrYtD[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_BalPrvPer[Dep_Ptr,net_ptr])
+// 					rd_BalPrvPer[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_bud[Dep_Ptr,net_ptr])
+// 					rd_bud[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_budper[Dep_Ptr,net_ptr])
+// 					rd_budper[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				IF IsNil(rd_budytd[Dep_Ptr,net_ptr])
+// 					rd_budytd[Dep_Ptr,net_ptr]:=0
+// 				ENDIF
+// 				rd_BalPer[Dep_Ptr,net_ptr]  := Round(rd_BalPer[Dep_Ptr,net_ptr] + d_PLdeb[Dep_Ptr] - d_PLcre[Dep_Ptr],DecAantal)
+// 				IF self:YearBeforePrvNotClosed
+// 					rd_BalPrvYrYtD[Dep_Ptr,net_ptr]:=Round(if(Empty(rd_BalPrvYrYtD[Dep_Ptr,net_ptr]),0,rd_BalPrvYrYtD[Dep_Ptr,net_ptr])+ d_PrfLssPrYr[Dep_Ptr],DecAantal)
+// 				ENDIF
+// 			ENDIF
+// 		NEXT 
+		d_PLdeb
+		self:SubNetDepartment(1,d_parentdep,d_dep,d_PLdeb,d_PLcre,d_netnum,r_balid,rd_BalPer,rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,;
+		rd_bud,rd_budper,rd_budytd,d_PrfLssPrYr)
+
 	ENDIF
 
 	********************************************************************************************************************************************************************
@@ -1732,6 +1731,62 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 		ENDIF
 	ENDIF
 	RETURN(p_depptr)
+METHOD SubNetDepartment(p_depptr as int,d_parentdep as array,d_dep as array,d_PLdeb as array,d_PLcre as array,d_netnum as array,;
+r_balid as array,rd_BalPer as array,rd_BalPrvYr as array,rd_BalPrvYrYtD as array,rd_BalPrvPer as array,rd_bud as array,rd_budper as array,;
+rd_budytd as array,d_PrfLssPrYr as array) as void pascal CLASS BalanceReport
+* Recursive processing of netasset balances of a department with its subdeparments
+*
+LOCAL subDepPtr,net_ptr as int
+
+DO WHILE true
+	subDepPtr:=AScan(d_parentdep,d_dep[p_depptr],subDepPtr+1)
+	IF Empty(subDepPtr)
+		exit
+	ELSE
+		self:SubNetDepartment(subDepPtr,d_parentdep,d_dep,d_PLdeb,d_PLcre,d_netnum,r_balid,rd_BalPer,rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,;
+		rd_bud,rd_budper,rd_budytd,d_PrfLssPrYr)
+		* consolidate values of subdepartment into itself:
+		d_PLdeb[p_depptr]:=Round(d_PLdeb[p_depptr]+d_PLdeb[subDepPtr],DecAantal)
+		d_PLcre[p_depptr]:=Round(d_PLcre[p_depptr]+d_PLcre[subDepPtr],DecAantal)
+	ENDIF
+ENDDO
+*
+* Add Profit/loss to netassetaccount of the  department:
+IF !Empty(d_netnum[p_depptr])
+	* Determine pointer to balance item for netasset: (can be empty)
+	net_ptr:=AScan(r_balid, d_netnum[p_depptr])
+	IF !Empty(net_ptr)
+		IF IsNil(rd_BalPer[p_depptr,net_ptr])
+			rd_BalPer[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_BalPrvYr[p_depptr,net_ptr])
+			rd_BalPrvYr[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_BalPrvYrYtD[p_depptr,net_ptr])
+			rd_BalPrvYrYtD[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_BalPrvPer[p_depptr,net_ptr])
+			rd_BalPrvPer[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_bud[p_depptr,net_ptr])
+			rd_bud[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_budper[p_depptr,net_ptr])
+			rd_budper[p_depptr,net_ptr]:=0
+		ENDIF
+		IF IsNil(rd_budytd[p_depptr,net_ptr])
+			rd_budytd[p_depptr,net_ptr]:=0
+		ENDIF
+		rd_BalPer[p_depptr,net_ptr]  := Round(rd_BalPer[p_depptr,net_ptr] + d_PLdeb[p_depptr] - d_PLcre[p_depptr],DecAantal)
+		IF self:YearBeforePrvNotClosed
+			rd_BalPrvYrYtD[p_depptr,net_ptr]:=Round(if(Empty(rd_BalPrvYrYtD[p_depptr,net_ptr]),0,rd_BalPrvYrYtD[p_depptr,net_ptr])+ d_PrfLssPrYr[p_depptr],DecAantal)
+		ENDIF
+		* Clear d_PLdeb/cre:
+		d_PLdeb[p_depptr]:=0
+		d_PLcre[p_depptr]:=0
+	ENDIF
+ENDIF
+RETURN
 access WhatDetails() class BalanceReport
 return self:FieldGet(#WhatDetails)
 
@@ -3115,9 +3170,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		ENDIF
 		if !Alg_taal==CurLanguage
 			aTrType:={{"AG",oLan:Get("Assessed Gifts (-10%)",,"!")},{"CH",oLan:Get("Charges",,"!")},{"MG",oLan:Get("Member Gifts",,"!")},{"PF",oLan:Get("Personal Funds",,"!")}}
-			cHeading1:=oLan:Get("Year",,"!")+Space(1)+;
-			+Str(ReportYear,4)+Space(1)+iif(ASsStart # ReportMonth,oLan:Get(MonthEn[1],,"!")+Space(1)+oLan:Get("up incl")+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")+Space(1),;
-			oLan:Get(MonthEn[ReportMonth],,"!")+Space(9))+oLan:Get('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
+			cHeading1:=Str(ReportYear,4)+Space(1)+iif(ASsStart # ReportMonth,oLan:Get(MonthEn[1],,"!")+Space(1)+oLan:Get("up incl")+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")+Space(1),;
+			oLan:Get(MonthEn[ReportMonth],,"!")+Space(2))+oLan:Get('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
 			* Compose heading:
 			aHeading:={Space(1),Space(1),oLan:Get("Doc-id",10,"!")+Space(1)+oLan:Get("Date",10,"!")+Space(1)+;
 			oLan:Get("Description",75,"!")+oLan:Get("Debit",12,"!","R")+Space(1)+;
@@ -3127,7 +3181,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			cFrom:=oLan:Get("from",,"!")
 			CurLanguage:=Alg_taal
 		endif
-		aHeading[1]:=StrTran(cHeading1,'%description%',oAcc:ACCNUMBER+Space(1)+oAcc:description+Space(1)+self:Country+' HOUSECD:'+me_hbn)
+		aHeading[1]:=StrTran(cHeading1,'%description%',oAcc:ACCNUMBER+Space(1)+oAcc:description+Space(1)+iif(empty(me_hbn),'',' HOUSECD:'+me_hbn+space(1))+self:Country)
 		*	Fill array aGivers with data of givers and gifts of corresponding destination and totalize them
 		*	Print statement report
 
@@ -3497,6 +3551,7 @@ oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Print up to which month?",NU
 oDCSubSet := ListboxGiftReport{SELF,ResourceID{GIFTREPORT_SUBSET,_GetInst()}}
 oDCSubSet:TooltipText := "Select subset of given range of member/funds"
 oDCSubSet:HyperLabel := HyperLabel{#SubSet,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCSubSet:OwnerAlignment := OA_WIDTH_HEIGHT
 
 oDCPeilJaar := SingleLineEdit{SELF,ResourceID{GIFTREPORT_PEILJAAR,_GetInst()}}
 oDCPeilJaar:HyperLabel := HyperLabel{#PeilJaar,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -3514,9 +3569,11 @@ oCCAllMonths1:HyperLabel := HyperLabel{#AllMonths1,"All months",NULL_STRING,NULL
 
 oDCGroupBox1 := GroupBox{SELF,ResourceID{GIFTREPORT_GROUPBOX1,_GetInst()}}
 oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Members/funds",NULL_STRING,NULL_STRING}
+oDCGroupBox1:OwnerAlignment := OA_WIDTH
 
 oCCCancelButton := PushButton{SELF,ResourceID{GIFTREPORT_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+oCCCancelButton:OwnerAlignment := OA_Y
 
 oDCFixedText1 := FixedText{SELF,ResourceID{GIFTREPORT_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"From:",NULL_STRING,NULL_STRING}
@@ -4724,6 +4781,24 @@ STATIC DEFINE TAXREPORT_FIXEDTEXT2 := 104
 STATIC DEFINE TAXREPORT_OKBUTTON := 102 
 STATIC DEFINE TAXREPORT_THRESHOLD := 105 
 STATIC DEFINE TAXREPORT_YEARTAX := 100 
+RESOURCE TrialBalance DIALOGEX  20, 18, 266, 153
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TRIALBALANCE_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 22, 93, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TRIALBALANCE_DEPBUTTON, "Button", WS_CHILD, 163, 22, 15, 12
+	CONTROL	"", TRIALBALANCE_YEARTRIAL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 72, 44, 88, 72
+	CONTROL	"", TRIALBALANCE_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 64, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TRIALBALANCE_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 182, 64, 54, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Condense", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
+	CONTROL	"OK", TRIALBALANCE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 184, 96, 54, 12
+	CONTROL	"Cancel", TRIALBALANCE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 184, 116, 53, 12
+	CONTROL	"Financial year", TRIALBALANCE_FIXEDTEXT1, "Static", WS_CHILD, 16, 44, 53, 12
+	CONTROL	"From month:", TRIALBALANCE_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 53, 12
+	CONTROL	"To month:", TRIALBALANCE_FIXEDTEXT3, "Static", WS_CHILD, 137, 64, 41, 12
+	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
+END
+
 class TrialBalance inherit DataWindowMine 
 
 	protect oDCmDepartment as SINGLELINEEDIT
@@ -4753,24 +4828,6 @@ class TrialBalance inherit DataWindowMine
 	PROTECT WhoFrom AS STRING
 	PROTECT	d_dep:={} AS ARRAY
 	PROTECT cCurDep AS STRING
-RESOURCE TrialBalance DIALOGEX  20, 18, 266, 153
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TRIALBALANCE_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 22, 93, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TRIALBALANCE_DEPBUTTON, "Button", WS_CHILD, 163, 22, 15, 12
-	CONTROL	"", TRIALBALANCE_YEARTRIAL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 72, 44, 88, 72
-	CONTROL	"", TRIALBALANCE_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 64, 53, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TRIALBALANCE_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 182, 64, 54, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Condense", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
-	CONTROL	"OK", TRIALBALANCE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 184, 96, 54, 12
-	CONTROL	"Cancel", TRIALBALANCE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 184, 116, 53, 12
-	CONTROL	"Financial year", TRIALBALANCE_FIXEDTEXT1, "Static", WS_CHILD, 16, 44, 53, 12
-	CONTROL	"From month:", TRIALBALANCE_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 53, 12
-	CONTROL	"To month:", TRIALBALANCE_FIXEDTEXT3, "Static", WS_CHILD, 137, 64, 41, 12
-	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
-END
-
 METHOD AddSubDep(ParentNum, nCurrentRec)  CLASS TrialBalance
 * Find subdepartments and add to arrays with departments
 	LOCAL nChildRec			AS INT
