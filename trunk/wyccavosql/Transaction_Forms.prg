@@ -1806,15 +1806,15 @@ METHOD OKButton( ) CLASS InquirySelection
 local nAcc as string
 	IF !Empty(self:FromAmount)
 		self:FromAmount:=AllTrim(Str(Val(StrTran(self:FromAmount,",","."))))
-		SELF:FromAmount:=StrTran(SELF:FromAmount,",",".")
+		self:FromAmount:=StrTran(self:FromAmount,",",".")
 	ELSE
-		SELF:FromAmount:=NULL_STRING
+		self:FromAmount:=null_string
 	ENDIF
-	IF !Empty(SELF:ToAmount)
+	IF !Empty(self:ToAmount)
 		self:ToAmount:=AllTrim(Str(Val(StrTran(self:ToAmount,",","."))))
 		self:ToAmount:=StrTran(self:ToAmount,",",".")
 	ELSE
-		SELF:ToAmount:=NULL_STRING
+		self:ToAmount:=null_string
 	ENDIF
 	IF Empty(self:cAccNumberTo)
 		self:cAccNumberTo := self:cAccNumber
@@ -1829,8 +1829,8 @@ local nAcc as string
 	self:oOwner:ToAccNbr:=if(Empty(self:cAccNumberTo),null_string,AllTrim(self:cAccNumberTo))
 	self:oOwner:DepIdSelected:=if(Empty(self:cFromDepId),null_string,AllTrim(self:cFromDepId))
 	self:oOwner:PersIdSelected:=if(Empty(self:mCLNGiver),null_string,AllTrim(self:mCLNGiver))
- 	self:oOwner:StartTransNbr:=if(Empty(self:FromTransnr),null_string,PadL(AllTrim(self:FromTransnr),Max(7,Len(AllTrim(self:FromTransnr))),"0")) 
- 	self:oOwner:EndTransNbr:=if(Empty(self:ToTransnr),null_string,PadL(AllTrim(self:ToTransnr),Max(7,Len(AllTrim(self:ToTransnr))),"0")) 
+ 	self:oOwner:StartTransNbr:=if(Empty(self:FromTransnr),null_string,Transform(self:FromTransnr,"")) 
+ 	self:oOwner:EndTransNbr:=if(Empty(self:ToTransnr),null_string,Transform(self:ToTransnr,"")) 
  	self:oOwner:DocIdSelected:=if(Empty(self:DOCID),null_string,AllTrim(self:DOCID))
  	self:oOwner:DescrpSelected:=if(Empty(self:Description),null_string,AllTrim(self:Description))
  	self:oOwner:ReferenceSelected:=if(Empty(self:Reference),null_string,AllTrim(self:Reference))
@@ -1864,8 +1864,8 @@ local nAcc as string
 			RETURN
 		ENDIF
 	ENDIF
-	SELF:oOwner:ShowSelection()
-	SELF:EndWindow()
+	self:oOwner:ShowSelection()
+	self:EndWindow()
 	RETURN
 METHOD PersonButton(lUnique) CLASS InquirySelection
 LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) AS STRING
