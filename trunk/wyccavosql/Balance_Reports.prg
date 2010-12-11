@@ -366,7 +366,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		self:STATUSMESSAGE(self:oLan:WGet("Checking and collecting data, moment please"))
 	ELSE
 		IF IsAccess(self,#Owner)
-			IF IsMethod(self:Owner,#StatusMessage)
+			IF IsMethod(self:OWNER,#StatusMessage)
 				self:OWNER:STATUSMESSAGE(self:oLan:WGet("Checking and collecting balance data , moment please"))
 			ENDIF
 		ENDIF
@@ -437,7 +437,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	aItem:={}
 	DO WHILE true
 		nCurRec:=self:AddSubBal(self:WhatFrom,nCurRec,aItem,0,r_indmain,r_parentid,r_balid,r_balnbr,r_cat,r_heading,r_footer)
-		IF Empty(nCurRec)
+		IF Empty(nCurrec)
 			exit
 		ENDIF
 	ENDDO
@@ -548,41 +548,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 
 	* When previous year not closed add sum of profit/loss previous year to netasset accounts
 	IF self:PrvYearNotClosed
-// 		FOR dep_ptr:=1 TO DepCount
-// 			* Determine pointer to balance item for netasset: (can be empty)
-// 			net_ptr:=AScan(r_balid, d_netnum[Dep_Ptr])
-// 			IF !IsNil(d_PLdeb[Dep_Ptr]).and.!Empty(net_ptr)
-// 				IF IsNil(rd_BalPer[Dep_Ptr,net_ptr])
-// 					rd_BalPer[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_BalPrvYr[Dep_Ptr,net_ptr])
-// 					rd_BalPrvYr[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_BalPrvYrYtD[Dep_Ptr,net_ptr])
-// 					rd_BalPrvYrYtD[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_BalPrvPer[Dep_Ptr,net_ptr])
-// 					rd_BalPrvPer[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_bud[Dep_Ptr,net_ptr])
-// 					rd_bud[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_budper[Dep_Ptr,net_ptr])
-// 					rd_budper[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				IF IsNil(rd_budytd[Dep_Ptr,net_ptr])
-// 					rd_budytd[Dep_Ptr,net_ptr]:=0
-// 				ENDIF
-// 				rd_BalPer[Dep_Ptr,net_ptr]  := Round(rd_BalPer[Dep_Ptr,net_ptr] + d_PLdeb[Dep_Ptr] - d_PLcre[Dep_Ptr],DecAantal)
-// 				IF self:YearBeforePrvNotClosed
-// 					rd_BalPrvYrYtD[Dep_Ptr,net_ptr]:=Round(if(Empty(rd_BalPrvYrYtD[Dep_Ptr,net_ptr]),0,rd_BalPrvYrYtD[Dep_Ptr,net_ptr])+ d_PrfLssPrYr[Dep_Ptr],DecAantal)
-// 				ENDIF
-// 			ENDIF
-// 		NEXT 
-		d_PLdeb
 		self:SubNetDepartment(1,d_parentdep,d_dep,d_PLdeb,d_PLcre,d_netnum,r_balid,rd_BalPer,rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,;
 		rd_bud,rd_budper,rd_budytd,d_PrfLssPrYr)
-
 	ENDIF
 
 	********************************************************************************************************************************************************************
