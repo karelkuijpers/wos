@@ -427,14 +427,14 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 								CurSeqnr++
 								cDBValue:=Str(CurSeqnr,-1)
 							elseif dbasename="tr" .and. fieldname==#DEBFORGN
-								if Val(cDBValue)=0
+								if Val(cDBValue)=0 .and. Empty(oDbsvr:FIELDGET(#CURRENCY))
 									fDeb:=oDbsvr:FIELDGET(#DEB)
 									if !Empty(fDeb)
 										cDBValue:=Str(fDeb,-1)    // default debforgn to deb
 									endif
 								endif
 							elseif dbasename="tr" .and. fieldname==#CREFORGN
-								if Val(cDBValue)=0
+								if Val(cDBValue)=0 .and. Empty(oDbsvr:FIELDGET(#CURRENCY) )
 									fCre:=oDbsvr:FIELDGET(#CRE)
 									if !Empty(fCre)
 										cDBValue:=Str(fCre,-1)   // default creforgn to cre
@@ -707,10 +707,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		endif
 		// Initialize db 
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-		self:InitializeDB()
+// 		self:InitializeDB()
  
 	endif
-// 		self:InitializeDB()
+		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1645,7 +1645,7 @@ method InitializeDB() as void Pascal  class Initialize
 		"WHERE table_schema = '"+dbname+"' order by TABLE_NAME",oConn}
 	if oSel:RecCount>0
 		do while !oSel:EoF
-			AAdd(self:aCurTable,{oSel:table_name,Upper(oSel:engine),oSel:table_collation})
+			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),oSel:table_collation})
 			oSel:Skip()
 		enddo
 	endif
@@ -1760,10 +1760,11 @@ method InitializeDB() as void Pascal  class Initialize
 	if SQLSelect{"select importfile from ImportLock where importfile='batchlock'",oConn}:RecCount<1
 		SQLStatement{"insert into ImportLock set importfile='batchlock'",oConn}:Execute()
 	endif 
-	// fill tables from old database:
-// 	if self:lNewDb
+	// fill tables from old database: 
+   self:lNewDb:=true
+	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
-// 	endif
+	endif
 	return
 Method Matchunequalgaps(aStatReq as array,aStatCur as array,aReqColumn as array,aCurColumn as array,nStartCurrent as int,nEndCurrent as int,nStartRequired as int,nEndRequired as int) as int class Initialize
 	// score each possible mapping of columns within required gap on columns of current gap and map column with highest score
