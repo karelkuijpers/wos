@@ -1737,6 +1737,8 @@ ASSIGN Server(oAcc) CLASS ListBoxExtra
 oAccount:=null_object
 oAccount:=oAcc
 RETURN oAccount
+Access MyImageIndex() class ListViewItem
+RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
 *	Logging of info to file <Logname>.txt
 LOCAL ToFileFS as FileSpec
