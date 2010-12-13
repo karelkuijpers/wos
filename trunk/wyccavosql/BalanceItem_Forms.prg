@@ -1574,10 +1574,10 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute() 
 	if oStmnt:NumSuccessfulRows>0
-		oCaller:Refresh()
 		IF self:lNew
 			self:mBalId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 			oCaller:Treeview:AddTreeItem(Val(self:cMainId),Val(self:mBalId),AllTrim(self:mNum)+":"+self:mKopTekst, false)
+			oCaller:Refresh()
 		else
 			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNUM 
 				oCaller:RefreshTree()
