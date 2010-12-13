@@ -559,11 +559,11 @@ METHOD Append ()  CLASS CustomExplorer
 METHOD AppendAccount ()  CLASS CustomExplorer
 	self:EditButton(true,true,false)
 	RETURN
-METHOD BuildListViewColumns(oServer) CLASS CustomExplorer
-	LOCAL oListView			AS BalanceListView
+METHOD BuildListViewColumns() CLASS CustomExplorer
+	LOCAL oListView			as BalanceListView
 
 	// store list view locally for faster access
-	oListView := SELF:ListView
+	oListView := self:ListView
 	oListView:DeleteAllColumns()
 
 	// for each field in the balance item server, create a
@@ -573,26 +573,27 @@ METHOD BuildListViewColumns(oServer) CLASS CustomExplorer
 	oListView:AddColumn(ListViewColumn{14,"Type"})
 
 
-	RETURN NIL
+	RETURN nil
 
 METHOD BuildTreeViewItems() as void pascal CLASS CustomExplorer
-	LOCAL oTreeView			AS BalanceTreeView
-	LOCAL oTreeViewItem		AS TreeViewItem
-	LOCAL lSuccess			AS LOGIC
+	LOCAL oTreeView			as BalanceTreeView
+	LOCAL oTreeViewItem		as TreeViewItem
+	LOCAL lSuccess			as LOGIC
 	LOCAL nCurrRec			as int
 
 	// store tree view locally for faster access
-	oTreeView := SELF:TreeView
+	oTreeView := self:TreeView
 
 	// add the master tree view item
 	oTreeViewItem			:= TreeViewItem{}
 	oTreeViewItem:NameSym	:= String2Symbol("Parent_"+Str(cRootValue,-1))
 	oTreeViewItem:TextValue	:=cRootName
-	oTreeViewItem:Bold		:= TRUE
+	oTreeViewItem:Bold		:= true
 	lSuccess:=oTreeView:AddItem(#Root, oTreeViewItem)
 	* Save symbolic name in array for search:
 	self:aSearch:={{Upper(cRootName),oTreeViewItem:NameSym}}
-	self:aItem:={} 
+	self:aItem:={}
+	self:aAccnts:={} 
 	do WHILE true
 		nCurrRec:=oTreeView:AddSubItem(self:cRootValue,self:lShowAccount,self:aItem,self:aAccnts,nCurrRec)
 		IF Empty(nCurrRec)
@@ -645,25 +646,25 @@ METHOD Cut()  CLASS CustomExplorer
 		ENDIF
 	ENDIF
 RETURN
-METHOD Delete() CLASS CustomExplorer
-	LOCAL oTextbox AS TextBox
-	LOCAL oListView			AS BalanceListView
-	LOCAL oListViewItem		AS ListViewItem
-	LOCAL nNum, cNumber AS STRING
+METHOD DELETE() CLASS CustomExplorer
+	LOCAL oTextbox as TextBox
+	LOCAL oListView			as BalanceListView
+	LOCAL oListViewItem		as ListViewItem
+	LOCAL nNum, cNumber as STRING
 	LOCAL lAccount as LOGIC
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local lBalance:=(ClassName(self)==#BALANCEITEMEXPLORER) as logic 
 
-	oListView := SELF:ListView
+	oListView := self:ListView
 	oListViewItem:=oListView:GetSelectedItem()
 	IF !Empty(oListViewItem)
 		nNum:=Str(oListViewItem:GetValue(#Identifier),-1)
 		cNumber:=oListViewItem:GetText(#Identifier)
-		lAccount:=(oListViewItem:GetValue(#Type)=="Account")
+		lAccount:=(oListViewItem:MyImageIndex==3)
 	ENDIF
 	IF Empty(nNum)
-		(Errorbox{,self:oLan:WGet('Select a record within the right pane first')}):Show()
+		(ErrorBox{,self:oLan:WGet('Select a record within the right pane first')}):Show()
 		RETURN
 	ENDIF
 	IF lAccount
@@ -676,22 +677,22 @@ METHOD Delete() CLASS CustomExplorer
 			ENDIF
 		ENDIF
 	ELSE
-		oTextBox := TextBox{ SELF, "Delete Record",;
-			self:oLan:Wget('Delete item')+' '+AllTrim(cNumber)+"?" }
-		oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
+		oTextbox := TextBox{ self, "Delete Record",;
+			self:oLan:WGet('Delete item')+' '+AllTrim(cNumber)+"?" }
+		oTextbox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 
 		IF ( oTextbox:Show() == BOXREPLYYES ) 
 
 			* Check presence of childitems:
 			oSel:=SQLSelect{"select	* from "+self:cSubitemserver+" where "+ Symbol2String(self:sColumnmain)+"='"+nNum+"'",oConn}
 			if	oSel:RecCount>0
-				(ErrorBox{,self:oLan:Wget('Remove child items first')}):Show()
+				(ErrorBox{,self:oLan:WGet('Remove child items first')}):Show()
 				RETURN
 			ELSE
 				* check presence of accounts:
 				IF	SQLSelect{"select	accid from	account where balitemid='"+nNum+"'",oConn}:RecCount>0
 //							oAccount:Seek(#NUM,nNum)
-					(ErrorBox{,self:oLan:Wget('Remove/replace child accounts first')}):Show()
+					(ErrorBox{,self:oLan:WGet('Remove/replace child accounts first')}):Show()
 					RETURN
 				ENDIF
 			ENDIF
@@ -704,7 +705,7 @@ METHOD Delete() CLASS CustomExplorer
 		ENDIF
 	ENDIF
 
-RETURN NIL
+RETURN nil
 METHOD DeleteListViewItems() CLASS CustomExplorer
 	RETURN SELF:ListView:DeleteAll()
 METHOD DeleteTreeViewItems() CLASS CustomExplorer
@@ -747,13 +748,13 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 	*	returns as array:	 nNum: identification of selected record
 	*			nMain: identification of parent item
 	*
-	LOCAL oTreeView			AS BalanceTreeView
-	LOCAL oTreeViewItem		AS TreeViewItem
-	LOCAL oListView			AS BalanceListView
-	LOCAL oListViewItem		AS ListViewItem
+	LOCAL oTreeView			as BalanceTreeView
+	LOCAL oTreeViewItem		as TreeViewItem
+	LOCAL oListView			as BalanceListView
+	LOCAL oListViewItem		as ListViewItem
 	LOCAL nNum:="0" 		as STRING
 	LOCAL nMain:="0" as STRING 
-	local oSel as SQLSelect
+	local oSel as SQLSelect 
 
 	Default(@lNew,FALSE)
 	Default(@lAccount,FALSE)
@@ -765,7 +766,7 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 			IF !Empty(oListViewItem)
 				nNum:=Str(oListViewItem:GetValue(#Identifier),-1)
 				// 				nNum:=oListViewItem:GetValue(#Identifier)
-				lAccount:=(oListViewItem:GetValue(#Type)=="Account")
+				lAccount:=(oListViewItem:MyImageIndex==3)
 			else
 				oTreeView:=self:TreeView
 				oTreeViewItem:=oTreeView:GetSelectedItem()
@@ -779,11 +780,11 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 			lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
 		endif
 		IF Empty(nNum)
-			(Errorbox{,"Select a record within the right pane first"}):Show()
+			(ErrorBox{,"Select a record within the right pane first"}):Show()
 			RETURN {}
 		ENDIF
 	ELSE
-		oTreeView:=SELF:TreeView
+		oTreeView:=self:TreeView
 		oTreeViewItem:=oTreeView:GetSelectedItem()
 		nMain:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
 	ENDIF
@@ -1006,34 +1007,34 @@ METHOD Refresh() CLASS CustomExplorer
 *	SELF:BuildTreeViewItems()
 	self:DeleteListViewItems() 
 	self:aItem:={}
-	Send(self,#BuildListViewItems,Val(uCurrentMain))
+	Send(self,#BuildListViewItems,Val(self:uCurrentMain))
 RETURN
 METHOD RefreshTree()  CLASS CustomExplorer
 	// clear and rebuild the tree view items
-	LOCAL cursym AS SYMBOL
-	LOCAL oTreeViewItem, oCurItem AS TreeViewItem
-	LOCAL oTreeView AS BalanceTreeView
-	oTreeView:=SELF:TreeView
+	LOCAL cursym as SYMBOL
+	LOCAL oTreeViewItem, oCurItem as TreeViewItem
+	LOCAL oTreeView as BalanceTreeView
+	oTreeView:=self:TreeView
 	oCurItem:=oTreeView:GetSelectedItem()
 	self:DeleteTreeViewItems()
-	self:aItem:={}
 	self:BuildTreeViewItems()
-	cursym:=String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))
-	DO WHILE TRUE
-		self:TreeView:Expand(cursym)
-		oTreeViewItem:=SELF:TreeView:GetParentItem(cursym)
-		IF Empty(oTreeViewItem)
-			EXIT
-		ENDIF
-		cursym:=oTreeViewItem:NameSym
-	ENDDO
+// 	cursym:=String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))
+// 	DO WHILE TRUE
+// 		self:TreeView:Expand(cursym)
+// 		oTreeViewItem:=SELF:TreeView:GetParentItem(cursym)
+// 		IF Empty(oTreeViewItem)
+// 			EXIT
+// 		ENDIF
+// 		cursym:=oTreeViewItem:NameSym
+// 	ENDDO
 	*	oTreeView:SelectItem(String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))) 
 	if oCurItem==null_object
 		oCurItem:=oTreeView:GetRootItem()
 		oTreeView:ExpandTree(oCurItem,0,nMaxLevel)
 	else
-		oTreeView:SelectItem(oCurItem)
-	endif
+		self:oTreeView:SelectItem(oCurItem)
+		self:TreeView:Expand(oCurItem)
+	endif 
 	RETURN
 METHOD Search(lFirst,cSearchText) CLASS  CustomExplorer
 * Search of an item within the tree
@@ -1538,13 +1539,14 @@ SELF:FieldPut(#mVOETTEKST, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditBalanceItem
-	LOCAL cMainId, mParentClass:="" AS STRING
+	LOCAL cMainId, mParentClass:="" as STRING
 	LOCAL cError as STRING 
 	local cSQLStatement as string
 	local oStmnt as SQLStatement
+	local mType:=self:mSoort,mParent:=self:cMainId as string
 
 	IF Empty(self:mNum)
-		(Errorbox{,"Please fill number of item"}):Show()
+		(ErrorBox{,"Please fill number of item"}):Show()
 		RETURN
 	ENDIF
 	IF lNew.or.!AllTrim(self:mNum)==AllTrim(OrgNum)
@@ -1554,12 +1556,13 @@ METHOD OKButton( ) CLASS EditBalanceItem
 			RETURN
 		ENDIF
 	ENDIF
-	cError:=ValidateBalanceTransition(,self:mHFDRBRNUM,self:mBalId,self:mSoort)
+	cError:=ValidateBalanceTransition(@mParent,self:mHFDRBRNUM,self:mBalId,@mType)
 	IF !Empty(cError)
 		(ErrorBox{,cError}):Show()
 		RETURN
 	ENDIF
-
+   self:mSoort:=mType
+   self:cMainId:=mParent
 
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+"balanceitem set "+;
 		"Number='"+AllTrim(self:mNum)+"'"+;
@@ -1576,12 +1579,12 @@ METHOD OKButton( ) CLASS EditBalanceItem
 			self:mBalId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 			oCaller:Treeview:AddTreeItem(Val(self:cMainId),Val(self:mBalId),AllTrim(self:mNum)+":"+self:mKopTekst, false)
 		else
-			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNUM
+			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNUM 
 				oCaller:RefreshTree()
 			ENDIF
 		endif
 	endif
-	SELF:EndWindow()
+	self:EndWindow()
 
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBalanceItem
@@ -1850,7 +1853,7 @@ IF Empty(cError)
 	ENDIF
 ENDIF
 RETURN cError
-Function ValidateBalanceTransition(cNewParentId:="0" as string,cNewParentNbr:="0" as string,CurBalId:="0" as string,cNewType:="" as string) as string 
+Function ValidateBalanceTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as string,CurBalId:="0" as string,cNewType:="" ref string) as string 
 * Check if transition of current balance item to new parent is allowed
 *
 * If not allowed: returns errormessage text
@@ -1862,12 +1865,12 @@ Function ValidateBalanceTransition(cNewParentId:="0" as string,cNewParentNbr:="0
 * Output: cNewClassification of the parent
 *
 LOCAL cError as STRING
-LOCAL CurType as string
+LOCAL CurType,CurParentId as string
 local oBalCur,oBalPar as SQLSelect
 IF cNewParentNbr=="0" .and. cNewParentId="0"
 	RETURN ""
 ENDIF
-oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+iif(cNewParentId="0","number="+cNewParentNbr,"balitemid="+cNewParentId),oConn}
+oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+"number='"+cNewParentNbr+"'",oConn}
 IF Str(oBalPar:balitemid,-1)==CurBalId
 	cError:="Parent must be unqual to self"
 	RETURN cError
@@ -1875,6 +1878,7 @@ ENDIF
 IF Empty(cNewType)
 	cNewType:=oBalPar:category
 ENDIF
+CurParentId:=Str(oBalPar:balitemid,-1)
 if CurBalId=="0" .or.Empty(CurBalId)
 	IF Empty(cNewType)
 		CurType:=oBalPar:category
@@ -1900,5 +1904,8 @@ endif
 if Empty(cError) .and.cNewType # CurType
 	// check correspondence with child types 
 	cError:=ValidateBalanceChilds(cNewType,CurType,CurBalId)
+endif
+if Empty(cError)
+	cNewParentId:=CurParentId
 endif
 RETURN cError
