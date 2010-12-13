@@ -1426,8 +1426,8 @@ METHOD OkButton CLASS EditAccount
 		", MULTCURR="+ iif(self:mMultCurr,"1","0")+; 
 		iif(!self:mMultCurr,;
 			iif(self:mCurrency # sCURR,", Currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1","0")+",GAINLSACC="+self:mGainLsacc,;
-				", Currency='"+sCurr+"',reevaluate=0,GAINLSACC=0"),;
-			", Currency='"+sCurr+"',reevaluate=0,GAINLSACC=0")+;
+				", Currency='"+sCURR+"',reevaluate=0,GAINLSACC=0"),;
+			", Currency='"+sCURR+"',reevaluate=0,GAINLSACC=0")+;
 		iif(self:lNew,""," where accid="+self:mAccId)
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
@@ -1486,17 +1486,20 @@ METHOD OkButton CLASS EditAccount
 					ELSEIF Empty(self:nCurDep).and.!Empty(self:nCurNum)
 						cCurId:=self:mNumSave
 					ENDIF
-					IF !Empty(cCurId)					
-						oCaller:Treeview:AddTreeItem(Val(cCurId),Val(self:mAccId),AllTrim(self:mAccNumber)+":"+self:mDescription,true)
-						IF cCurId==self:nCurNum.or.cCurId==self:nCurDep
-							oListViewItem := ListViewItem{}
-							oListViewItem:ImageIndex	:= 3
-							// for each field, set the value in the item 
-							oListViewItem:SetValue(self:mAccId, #Identifier)
-							oListViewItem:SetText(self:mAccNumber,	#Identifier)
-							oListViewItem:SetValue(self:mDescription, #Description)
-							oListViewItem:SetValue("Account", #Type)
-							oCaller:ListView:AddItem(oListViewItem)
+					IF !Empty(cCurId)
+						AAdd(self:oCaller:aAccnts,{Val(self:mAccId),Val(cCurId),self:mDescription,AllTrim(self:mAccNumber),self:mSoort}) 
+						self:oCaller:Treeview:AddTreeItem(Val(cCurId),Val(self:mAccId),AllTrim(self:mAccNumber)+":"+self:mDescription,true) 
+						self:oCaller:Treeview:expand(String2Symbol("Parent_" + cCurId))
+						IF cCurId==self:nCurNum.or.cCurId==self:nCurDep 
+							self:oCaller:Refresh()
+// 							oListViewItem := ListViewItem{}
+// 							oListViewItem:ImageIndex	:= 3
+// 							// for each field, set the value in the item 
+// 							oListViewItem:SetValue(self:mAccId, #Identifier)
+// 							oListViewItem:SetText(self:mAccNumber,	#Identifier)
+// 							oListViewItem:SetValue(self:mDescription, #Description)
+// 							oListViewItem:SetValue("Account", #Type)
+// 							oCaller:ListView:AddItem(oListViewItem)
 						ENDIF
 					ENDIF
 				ELSE
@@ -1504,7 +1507,7 @@ METHOD OkButton CLASS EditAccount
 	*					IF IsMethod(oCaller,#TransferItem)
 *							oCaller:TransferItem(oItemDrag , oItemDrop)
 *						endif
-						oCaller:Refresh()
+// 						oCaller:Refresh()
 						oCaller:RefreshTree()
 *					ENDIF
 				ENDIF
@@ -1553,7 +1556,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 	// 		RETURN FALSE
 	// 	ENDIF
 	self:oDCBalYears:CurrentItemNo:=3
-	self:oDCBudgetGranularity:Value:="Year"
+	self:oDCBudgetGranularity:VALUE:="Year"
 	FOR i:=1 to oDCBalYears:ItemCount
 		rYear:=Round(Val(oDCBalYears:GetItemValue(i)),0)
 		IF rYear-CurYear<= 2
@@ -1586,7 +1589,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		self:oDCBalanceDate:Disable()
 		// 		self:mGIFTALWD:=FALSE 
 		// 		mDep:=" "
-		self:mCurrency:=sCurr 
+		self:mCurrency:=sCURR 
 		self:mCLN:="0"
 		// 		mNumSave:=self:oDCmNum:textValue
 		IF !Empty(self:oCaller)
@@ -1606,7 +1609,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				ENDIF
 			ENDIF
 		ENDIF
-		self:mActive:=true
+		self:mactive:=true
 		if empty(self:mDescription) .and.!empty(self:oAccCnt:m51_description)
 			self:mDescription:=self:oAccCnt:m51_description
 		endif
@@ -1621,7 +1624,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		else
 			osel:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN,IPCPROJECT from department where depid="+self:mDep,oConn}
 			self:mDepartment:=osel:DEPTMNTNBR+":"+osel:DESCRIPTN
-			self:ShowIPC(oAcc:IPCPROJECT)
+			self:ShowIPC(osel:IPCPROJECT)
 		ENDIF
 		self:cCurDep:=self:mDepartment
 	ELSE
