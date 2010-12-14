@@ -707,10 +707,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		endif
 		// Initialize db 
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-// 		self:InitializeDB()
+		self:InitializeDB()
  
 	endif
-		self:InitializeDB()
+// 		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1623,14 +1623,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","1","accid","1","accid"},;
 		{"transaction","1","accid","2","DAT"},;
 		{"transaction","1","accid","3","BFM"},;
-		{"transaction","1","description","1","description"},;
 		{"transaction","1","docid","1","docid"},;
 		{"transaction","1","reference","1","reference"},;
 		{"transaction","1","transdate","1","DAT"},;
-		{"transaction","1","amountdeb","1","deb"},;
-		{"transaction","1","amountcre","1","cre"},;
 		{"transaction","1","person","1","persid"};
 		} as array 
+
+// 		{"transaction","1","amountdeb","1","deb"},;
+// 		{"transaction","1","amountcre","1","cre"},;
+// 		{"transaction","1","description","1","description"},;
+
 	
 	// add to total collection of columns:
 	nTargetPos:=Len(aColumn)+1 
@@ -1761,7 +1763,6 @@ method InitializeDB() as void Pascal  class Initialize
 		SQLStatement{"insert into ImportLock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
-   self:lNewDb:=true
 	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
 	endif
