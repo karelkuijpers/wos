@@ -3815,6 +3815,7 @@ METHOD ShowSelection() CLASS TransInquiry
 	local aPost:={"Not","Ready","Yes"} as array 
 	local aKeyw:={} as array
 	local i as int
+	local fSecStart as float
 	self:PersIdSelected:=AllTrim(self:PersIdSelected)
 	self:DocIdSelected:=AllTrim(self:DocIdSelected)
 	IF oPsbw==null_object
@@ -3953,9 +3954,10 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:cWhereSpec:=cFilter
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec  
 	self:cSelectStmnt:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
-	LogEvent(,self:cSelectStmnt,"logsql") 
-	self:oTrans:SQLString:=self:cSelectStmnt
+	self:oTrans:SQLString:=self:cSelectStmnt 
+// 	fSecStart:=Seconds()
 	self:oTrans:Execute()
+// 	LogEvent(self,Str(Seconds()-fSecStart,-1)+" sec for "+Str(self:oTrans:Reccount,-1)+" records with:"+self:oTrans:SQLString+CRLF+"explain:"+CRLF+GetExplain(self:oTrans:SQLString),"LogSql")
 	self:GoTop()
 	if self:oTrans:Reccount<1
 		self:oSFTransInquiry_DETAIL:Browser:refresh()
