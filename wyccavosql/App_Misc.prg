@@ -1077,7 +1077,7 @@ cText+=CRLF
 
 do while !oSel:Eof
 	for i:=1 to oSel:FCount 
-		cText+=Transform(oSel:Getdata(i),"")+Tab
+		cText+=Transform(oSel:Getdata(i),"")+iif(i<oSel:FCount,Tab,"")
 	next
 	cText+=CRLF
 	oSel:Skip()
