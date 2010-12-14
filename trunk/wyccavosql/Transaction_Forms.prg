@@ -1867,10 +1867,11 @@ local nAcc as string
 	self:oOwner:ShowSelection()
 	self:EndWindow()
 	RETURN
-METHOD PersonButton(lUnique) CLASS InquirySelection
-LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) AS STRING
+METHOD PersonButton(lUnique)  CLASS InquirySelection
+LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
+Default(@lUnique,false)
 	PersonSelect(self,cValue,lUnique)
-	RETURN TRUE
+	RETURN 
 ACCESS PostingStatus() CLASS InquirySelection
 RETURN SELF:FieldGet(#PostingStatus)
 
@@ -1983,19 +1984,22 @@ RETURN uValue
 
 METHOD ResetButton( ) CLASS InquirySelection
 	self:odcfromdate:SelectedDate:=LstYearClosed
-	SELF:oDCTodate:SelectedDate:=Today()+30
+	self:oDCTodate:SelectedDate:=Today()+30
 	self:RegAccount(,"AccountFrom")
 	self:RegAccount(,"AccountTo")
+	self:RegDepartment(,"From Department")
 	self:RegPerson()
- 	SELF:FromTransnr:=""
-	SELF:ToTransnr:=""
-	SELF:DOcID:=""
- 	SELF:FromAmount:=""
-	SELF:ToAmount:=""
+ 	self:FromTransnr:=""
+	self:ToTransnr:=""
+	self:DOcID:=""
+ 	self:FromAmount:=""
+	self:ToAmount:=""
 	self:AmountType:="A" 
 	self:Description:="" 
 	self:Reference:=""
 	self:PostingStatus:=4
+	self:cFromDepId:=""
+	self:oDCFromDep:TEXTValue:=""
 	RETURN
 ACCESS ToAmount() CLASS InquirySelection
 RETURN SELF:FieldGet(#ToAmount)
