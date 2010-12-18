@@ -692,9 +692,11 @@ ENDIF
 IF !Empty(cIncl)
 	cFilter+=' or '+cIncl 
 ENDIF
-// bFilter:=&("{|accid,persid,category,GIFTALWD,subscriptionprice|"+ cFilter+"}")
-// RETURN {bFilter,cFilter} 
-Return "("+cFilter +")"
+if !Empty(cFilter) 
+	Return "("+cFilter +")"
+else
+	Return ''
+endif
 function SetDepFilter(WhoFrom as int) as string 
 	// compose filter for department branch from given WhoFrom depid 
 	LOCAL i,j			as int
