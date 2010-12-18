@@ -1829,8 +1829,8 @@ local nAcc as string
 	self:oOwner:ToAccNbr:=if(Empty(self:cAccNumberTo),null_string,AllTrim(self:cAccNumberTo))
 	self:oOwner:DepIdSelected:=if(Empty(self:cFromDepId),null_string,AllTrim(self:cFromDepId))
 	self:oOwner:PersIdSelected:=if(Empty(self:mCLNGiver),null_string,AllTrim(self:mCLNGiver))
- 	self:oOwner:StartTransNbr:=if(Empty(self:FromTransnr),null_string,Transform(self:FromTransnr,"")) 
- 	self:oOwner:EndTransNbr:=if(Empty(self:ToTransnr),null_string,Transform(self:ToTransnr,"")) 
+ 	self:oOwner:StartTransNbr:=if(Empty(self:FromTransnr),null_string,AllTrim(Transform(self:FromTransnr,""))) 
+ 	self:oOwner:EndTransNbr:=if(Empty(self:ToTransnr),null_string,AllTrim(Transform(self:ToTransnr,""))) 
  	self:oOwner:DocIdSelected:=if(Empty(self:DOCID),null_string,AllTrim(self:DOCID))
  	self:oOwner:DescrpSelected:=if(Empty(self:Description),null_string,AllTrim(self:Description))
  	self:oOwner:ReferenceSelected:=if(Empty(self:Reference),null_string,AllTrim(self:Reference))
@@ -2951,15 +2951,15 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
-	LOCAL oControl AS Control
-	LOCAL uValue AS USUAL
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	LOCAL oControl as Control
+	LOCAL uValue as USUAL
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	IF oControlEvent:Name == "DEBITACCOUNT"
 		GiftsAutomatic:=FALSE
 		DueAutomatic:=FALSE
-		IF oControlEvent:Control:value == "00000"
+		IF Empty(oControlEvent:Control:VALUE)
 // 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter)
 			self:ShowDebBal()
@@ -2970,8 +2970,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 				self:DefGc := ""
 			endif
 		ELSE
-			SELF:DebAccId := oControlEvent:Control:value
-			SELF:ShowDebBal()
+			self:DebAccId := AllTrim(Transform(oControlEvent:Control:value,""))
+			self:ShowDebBal()
 		   self:lMemberGiver := FALSE
 		   self:bankanalyze()
 		ENDIF
@@ -3192,7 +3192,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	ENDIF
 	
 	oSel:=SQLSelect{"select accid from bankaccount where Telebankng=1",oConn}
-	DO WHILE !oSel:EOF
+	DO WHILE oSel:reccount>0
 		self:cAccFilter:=if(Empty(self:cAccFilter),"",self:cAccFilter+',')+Str(oSel:AccID,-1)
 		oSel:Skip()
 	ENDDO
@@ -4226,28 +4226,28 @@ RETURN uValue
 
 METHOD Transfer( ) CLASS TransInquiry
 LOCAL oTrans as SQLSelect
-LOCAL lSucc AS LOGIC
+LOCAL lError as LOGIC
 LOCAL nCurRec, nNextRec as int
 local oAccFrom,oAccTo as SQLSelect
 local cCurrorg,cCurrDest as string, lMultiOrg, lMultiDest as logic
 local cFromText, cToText as string 
 local oStmnt as SQLStatement
-oTrans:=SELF:Server
+oTrans:=self:Server
 oTrans:GoTop()
-IF oTrans:EoF
+IF oTrans:EOF
 	RETURN
 ENDIF
 IF Empty(self:cTransferAcc)
 	RETURN
 ENDIF
 oAccFrom:=SQLSelect{"select a.multcurr,a.currency,b.category from Account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:FromAccId,oConn} 
-if oAccFrom:RecCount<1
+if oAccFrom:reccount<1
 	return
 endif
 cCurrorg:=iif(Empty(oAccFrom:Currency),sCurr,oAccFrom:Currency)
 lMultiOrg:=iif(oAccFrom:MULTCURR=1,true,false)
 oAccTo:=SQLSelect{"select a.multcurr,a.currency,b.category from Account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:cTransferAcc,oConn} 
-if oAccTo:RecCount<1
+if oAccTo:reccount<1
 	return
 endif
 cCurrDest:=iif(Empty(oAccTo:Currency),sCurr,oAccTo:Currency)
@@ -4262,45 +4262,60 @@ if !lMultiDest
 	endif
 endif
 IF self:cSoortOrg # self:cSoort
-	IF (TEXTbox{SELF,"Transfer of transactions",;
+	IF (TextBox{self,"Transfer of transactions",;
 	"Do you want to transfer these "+cFromText+GetBalType(cSoortOrg)+" transactions to "+cToText+GetBalType(cSoort)+" account: "+;
-		AllTrim(SELF:cTransferAccName)+"?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
+		AllTrim(self:cTransferAccName)+"?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
 		RETURN
 	ENDIF
 ELSE
 	IF (TextBox{self,"Transfer of transaction to other account","Should all selected "+cFromText+"transactions be transfered to "+cToText+"account: "+;
-		AllTrim(SELF:cTransferAccName)+"?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
+		AllTrim(self:cTransferAccName)+"?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
 		RETURN
 	ENDIF
 ENDIF	
 oTrans:SuspendNotification()
-SELF:StatusMessage("Transfering data, moment please")
-self:Pointer := Pointer{POINTERHOURGLASS} 
-oStmnt:=SQLStatement{"update transaction t set t.accid="+self:cTransferAcc+" and t.USERID='"+LOGON_EMP_ID+"'"+;
-iif(cCurrDest==sCurr .and.!lMultiDest,",t.DEBFORGN=t.DEB,t.CREFORGN=t.Cre,t.Currency='"+sCurr+"'","")+;
-" where "+self:cWhereSpec,oConn} 
+self:STATUSMESSAGE("Transfering data, moment please")
+self:Pointer := Pointer{POINTERHOURGLASS}
+SQLStatement{"start transaction",oConn}:Execute() 
+oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',USERID='"+LOGON_EMP_ID+"'"+;
+iif(cCurrDest==sCurr .and.!lMultiDest,",DEBFORGN=DEB,CREFORGN=Cre,Currency='"+sCurr+"'","")+;
+" where "+self:cWhereSpec,oConn}
+LogEvent(self,oStmnt:sqlstring,"logsql") 
 oStmnt:Execute()
 if oStmnt:NumSuccessfulRows>0
-// 	if cCurrDest==sCurr .and.!lMultiDest
-// 		oTrans:DEBFORGN:=oTrans:DEB
-// 		oTrans:CREFORGN:=oTrans:Cre
-// 		oTrans:CURRENCY:=sCurr
-// 	endif
-	DO WHILE !oTrans:EoF
- 
-		ChgBalance(FromAccId,oTrans:DAT,-oTrans:DEB,-oTrans:Cre,-oTrans:DEBFORGN,-oTrans:CREFORGN,oTrans:Currency)
-		ChgBalance(cTransferAcc,oTrans:DAT,oTrans:DEB,oTrans:Cre,oTrans:DEBFORGN,oTrans:CREFORGN,oTrans:Currency)
+	DO WHILE !oTrans:EOF
+		if ChgBalance(FromAccId,oTrans:DAT,-oTrans:DEB,-oTrans:Cre,-oTrans:DEBFORGN,-oTrans:CREFORGN,oTrans:Currency)
+			if ChgBalance(cTransferAcc,oTrans:DAT,oTrans:DEB,oTrans:Cre,oTrans:DEBFORGN,oTrans:CREFORGN,oTrans:Currency)
+			else
+				lError:=true
+				exit
+			endif
+		else
+			lError:=true
+			exit
+		endif
 		oTrans:Skip()
-	ENDDO 
+	ENDDO
+else
+	lError:=true
+	LogEvent(self,"error:"+oStmnt:status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+endif
+if lError
+	SQLStatement{"rollback",oConn}:Execute()
+	ErrorBox{self,self:oLan:WGet("Transfer failed")}:Show() 
+	oTrans:ResetNotification()
+	return
+else
+	SQLStatement{"commit",oConn}:Execute()
 endif
 self:Pointer := Pointer{POINTERARROW} 
 // refresh screen:
 oTrans:Execute()
 oTrans:ResetNotification()
 oTrans:GoTop()
-SELF:oSFTransInquiry_DETAIL:Browser:Refresh()
-SELF:oSFTransInquiry_DETAIL:GoTop()
-SELF:oCCTransferButton:Hide()
+self:oSFTransInquiry_DETAIL:Browser:Refresh()
+self:oSFTransInquiry_DETAIL:GoTop()
+self:oCCTransferButton:Hide()
 
 RETURN
 
