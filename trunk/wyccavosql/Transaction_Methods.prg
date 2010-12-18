@@ -572,7 +572,8 @@ METHOD AccntProc(cAccValue) CLASS General_Journal
 			RETURN FALSE
 		ENDIF
 	ENDIF
-	cFilter:=MakeFilter(,,,,true,oHm:aTeleAcc)+" and a.active=1"		
+	cFilter:=MakeFilter(,,,,true,oHm:aTeleAcc)
+	cFilter+=iif(Empty(cFilter),''," and ")+"a.active=1"		
 	AccountSelect(self,AllTrim(cAccValue),"Account",true,cFilter)
 	RETURN nil
 METHOD append() CLASS General_Journal
@@ -3870,7 +3871,7 @@ METHOD ShowSelection() CLASS TransInquiry
 		self:cOrder:="t.TransId desc" 
 	ENDIF
 	IF !Empty(self:EndTransNbr)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'TransId<="'+self:EndTransNbr+'"'
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.TransId<="'+self:EndTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction<="+self:EndTransNbr
 		self:cOrder:="t.TransId desc" 
 	ENDIF
