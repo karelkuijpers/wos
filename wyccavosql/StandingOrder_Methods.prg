@@ -149,7 +149,7 @@ method ShowAssGift() class EditPeriodic
 				self:mCLN:=SIDORG
 			endif
 			if !Empty(self:mCLN)
-				self:oDCmPerson:Value:=oPers:GetFullName(self:mCLN)
+				self:oDCmPerson:Value:=GetFullName(self:mCLN)
 			endif
 		else                 // member gift? 
 // 			if AScan(oOrdLnH:aMirror,{|x|x[4]=="MG"})>0 
@@ -618,7 +618,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 		cTrans:= ""
 		for i:=1 to Len(aTrans) 
 			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr"+iif(i==1,"",",TransId")+;
-				") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+aTrans[i,3]+"','"+aTrans[i,4]+;
+				") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
 				"','"+Str(aTrans[i,5],-1)+"','"+Str(aTrans[i,6],-1)+;
 				"','"+Str(aTrans[i,7],-1)+"','"+Str(aTrans[i,8],-1)+;
 				"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+iif(i==1,"","','"+cTrans)+"')",oConn}
@@ -640,7 +640,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 				if CountryCode="31"  
 					// make bankorder:
 					oBord:=SQLStatement{"insert into bankorder (ACCNTFROM,AMOUNT,description,BANKNBRCRE,DATEDUE,stordrid) values ('"+sCRE+"','"+;
-						Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+aTrans[i,3]+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
+						Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+AddSlashes(aTrans[i,3])+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
 					oBord:execute()
 					if oBord:NumSuccessfulRows<1
 						lError:=true
