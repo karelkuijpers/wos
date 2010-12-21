@@ -2279,20 +2279,20 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD OKButton( ) CLASS SelPersExport
-	LOCAL i AS INT
-	LOCAL cRoot := "WYC\Runtime", cFields AS STRING
+	LOCAL i as int
+	LOCAL cRoot := "WYC\Runtime", cFields as STRING
 	
 	myParent:myFields:={}
-	FOR i = 1 TO oDCSubSet:ItemCount	
+	FOR i = 1 to oDCSubSet:ItemCount	
 		IF oDCSubSet:IsSelected(i)
-			AAdd(myParent:myFields,SELF:myFields[i])
-			cFields := cFields+ IF(Empty(cFields),"",",") + AllTrim(Str(i))
+			AAdd(myParent:myFields,self:myFields[i])
+			cFields := cFields+ if(Empty(cFields),"",",") + AllTrim(Str(i))
 		ENDIF
 	NEXT
 	SetRTRegString(cRoot,"ExpFields", cFields)
 	myParent:ExportFormat:=self:oDCExportFormat:Value		
 
-SELF:EndDialog(0)
+self:EndDialog(0)
 	RETURN	
 METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	//Put your PostInit additions here
@@ -2303,7 +2303,7 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	cFields:=QueryRTRegString( cRoot, "ExpFields")
 	
 	FOR i = 1 TO Len(myFields)
-		AAdd(aFill,{myFields[i,3]:Hyperlabel:Description})
+		AAdd(afill,{myFields[i,3]:Hyperlabel:Description})
 	NEXT
 	SELF:oDCSubSet:FillUsing(aFill)
 	IF Empty(cFields)
@@ -2570,7 +2570,7 @@ STATIC DEFINE SELPERSINVOICE_EIND_VERV := 103
 STATIC DEFINE SELPERSINVOICE_FIXEDTEXT1 := 100 
 STATIC DEFINE SELPERSINVOICE_FIXEDTEXT2 := 101 
 STATIC DEFINE SELPERSINVOICE_OKBUTTON := 104 
-RESOURCE SelPersMailCd DIALOGEX  68, 51, 468, 334
+RESOURCE SelPersMailCd DIALOGEX  68, 52, 468, 333
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Selection of people by person parameters"
 FONT	8, "MS Shell Dlg"
@@ -2584,7 +2584,7 @@ BEGIN
 	CONTROL	"", SELPERSMAILCD_EERSTE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 41, 182, 65, 12
 	CONTROL	"", SELPERSMAILCD_LAATSTE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 41, 197, 65, 12
 	CONTROL	"Sort on:", SELPERSMAILCD_SORTORDER, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 398, 148, 61, 39
-	CONTROL	"Postal code", SELPERSMAILCD_SORTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 402, 159, 54, 11
+	CONTROL	"Postal code", SELPERSMAILCD_SORTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 400, 158, 54, 11
 	CONTROL	"Name", SELPERSMAILCD_SORTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 402, 172, 56, 11
 	CONTROL	"up to:", SELPERSMAILCD_FIXEDTEXT1, "Static", WS_CHILD, 10, 197, 20, 12
 	CONTROL	"From:", SELPERSMAILCD_FIXEDTEXT2, "Static", WS_CHILD, 10, 182, 19, 12
@@ -2617,9 +2617,9 @@ BEGIN
 	CONTROL	"&Extended Person List", SELPERSMAILCD_ACTION2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 62, 80, 11
 	CONTROL	"&Labels", SELPERSMAILCD_ACTION3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 73, 80, 11
 	CONTROL	"Le&tters", SELPERSMAILCD_ACTION4, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 84, 80, 12
-	CONTROL	"&Giro Accepts", SELPERSMAILCD_ACTION5, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 96, 80, 11
-	CONTROL	"&Spreadsheet file (Excel)", SELPERSMAILCD_ACTION6, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 107, 86, 11
-	CONTROL	"Change &mailing codes", SELPERSMAILCD_ACTION7, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 118, 80, 11
+	CONTROL	"&Giro Accepts", SELPERSMAILCD_ACTION5, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 368, 118, 80, 11
+	CONTROL	"&Spreadsheet file (Excel)", SELPERSMAILCD_ACTION6, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 96, 86, 11
+	CONTROL	"Change &mailing codes", SELPERSMAILCD_ACTION7, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 107, 80, 11
 END
 
 CLASS SelPersMailCd INHERIT DialogWinDowExtra 
@@ -2637,13 +2637,6 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
 	PROTECT oCCSortButton2 AS RADIOBUTTON
 	PROTECT oDCFixedText1 AS FIXEDTEXT
 	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCGroupBox5 AS GROUPBOX
-	PROTECT oDCReport1 AS CHECKBOX
-	PROTECT oDCReport2 AS CHECKBOX
-	PROTECT oDCReport3 AS CHECKBOX
-	PROTECT oDCReport4 AS CHECKBOX
-	PROTECT oDCReport5 AS CHECKBOX
-	PROTECT oDCReport6 AS CHECKBOX
 	PROTECT oDCGroupBox6 AS GROUPBOX
 	PROTECT oDCGroupBox4 AS GROUPBOX
 	PROTECT oDCGroupBox3 AS GROUPBOX
@@ -2663,7 +2656,6 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
 	PROTECT oDCOrCod AS LISTBOXEXTRA
 	PROTECT oDCNonCod AS LISTBOXEXTRA
 	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oDCReport7 AS CHECKBOX
 	PROTECT oDCTypes AS LISTBOXEXTRA
 	PROTECT oDCGroupBox9 AS GROUPBOX
 	PROTECT oDCGroupBox10 AS GROUPBOX
@@ -2899,7 +2891,7 @@ METHOD OKButton( ) CLASS SelPersMailCd
 			IF myCombo:SelectedCount>0
 				nSel:=myCombo:FirstSelected()
 				do while nSel>0
-					AAdd(aCurVal,myCombo:GetItemValue(nSel))
+					AAdd(aCurVal,AddSlashes(myCombo:GetItemValue(nSel)))
 					nSel:=myCombo:NextSelected()
 				enddo
 				AAdd(aPropExValues,{myCombo:Name,DROPDOWN,aCurVal})
@@ -2916,12 +2908,12 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	IF !Empty(oDCeerste:TEXTvalue)
 		oCaller:cWherep := oCaller:cWherep+;
 		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.postalcode>="';
-		+oPers:StandardZip(oDCeerste:TEXTvalue)+'"'
+		+StandardZip(oDCeerste:TEXTvalue)+'%"'
 	ENDIF
 	IF !Empty(oDClaatste:TEXTvalue)
 		oCaller:cWherep := oCaller:cWherep+;
 		iif(.not.Empty(oCaller:cWherep),' and ',"")+'p.postalcode<="';
-		+oPers:StandardZip(oDClaatste:TEXTValue)+'"'
+		+StandardZip(oDClaatste:TEXTvalue)+'%"'
 	ENDIF
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
@@ -3035,7 +3027,7 @@ self:SetTexts()
 		self:oDCOutputAction:Value:="4"
 	ELSEIF cType=="THANKYOU"
 // 		oDCReport4:Checked:=TRUE
-		self:oDCOutputAction:Value:="4"
+		self:oDCOutputAction:Value:="6"
 	ELSEIF cType=="CHANGEMAILINGCODE"
 // 		oDCReport7:Checked:=TRUE
 		self:oDCOutputAction:Value:="7"
