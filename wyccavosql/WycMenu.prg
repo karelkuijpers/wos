@@ -294,13 +294,13 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			IF !Admin=="HO"
 				AAdd(aMenu,{4,11, oLan:MGet("First &non-designated Givers Letters mailing"),"FirstNonEarmarked","",0,33,"PF"})
 			ENDIF
-			AAdd(aMenu,{4,12, oLan:MGet("Regular Gi&vers mailing"),"StandardGiversMail","",0,11,"F"})
+// 			AAdd(aMenu,{4,12, oLan:MGet("Regular Gi&vers mailing"),"StandardGiversMail","",0,11,"F"})
 			AAdd(aMenu,{4,13,,,,,})           // separator
 		ENDIF
 		AAdd(aMenu,{4,14, oLan:MGet("Mail Selection via &Person parameters"),"MailViaCode","",0,66,"PFM"})
-		IF Admin=="WO".or.Admin=="GI"
-			AAdd(aMenu,{4,15, oLan:MGet("Mail to &General Selection of Persons"),"Selpers","",0,55,"FM"})
-		ENDIF
+// 		IF Admin=="WO".or.Admin=="GI"
+// 			AAdd(aMenu,{4,15, oLan:MGet("Mail to &General Selection of Persons"),"Selpers","",0,55,"FM"})
+// 		ENDIF
 		AAdd(aMenu,{4,16,,,,,})           // separator
 		AAdd(aMenu,{4,17, oLan:MGet("&Add/Remove Mailing Codes of Selection of Persons"),"ChangeMailCode","",0,79,"P"})
 		IF Admin=="WO".or.Admin=="GI".or.Admin=="HO"
