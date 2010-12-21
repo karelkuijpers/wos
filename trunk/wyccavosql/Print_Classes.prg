@@ -947,6 +947,20 @@ FUNCTION GenKeyword()
 * o: Openpost 
 * d: department
 * 
+/*
+{"Bank account","%BANKACCOUNT","o"},;
+{"Amount due","%AMOUNTDUE","o"},;
+{"Date amount due","%DUEDATE","o"},;
+{"Identifier amount due","%DUEIDENTIFIER","o"},;
+{"Invoice id/KID","%INVOICEID","o"},;
+{"Firstname member destination","%FRSTNAMEDESTINATION","g"},;
+{"Lastname member destination","%LSTNAMEDESTINATION","g"},;
+{"Salutation member destination","%SALUTDESTINATION","g"},;
+{"Department name","%DEPRMNTNAME","d"},;
+{"Report month","%REPORTMONTH","b"},;
+
+*/
+
 RETURN {;
 {"Salutation","%SALUTATION","n"},;
 {"Title","%TITLE","n"},;
@@ -960,25 +974,17 @@ RETURN {;
 {"City","%CITYNAME","n"},;
 {"Country","%COUNTRY","n"},;
 {"Attention","%ATTENTION","n"},;
-{"Bank account","%BANKACCOUNT","o"},;
 {"Date last gift","%DATELSTGIFT","g"},;
 {"Date gift","%DATEGIFT","g"},;
-{"Report month","%REPORTMONTH","b"},;
 {"Transaction ID","%TRANSID","g"},;
 {"Document ID","%DOCID","b"},;
-{"Amount due","%AMOUNTDUE","o"},;
+{"Reference","%REFERENCE","b"},;
 {"Amount gift","%AMOUNTGIFT","g"},;
 {"Total gift/payments","%TOTALAMOUNT","b"},;
-{"Date amount due","%DUEDATE","o"},;
-{"Identifier amount due","%DUEIDENTIFIER","o"},;
-{"Invoice id/KID","%INVOICEID","o"},;
 {"Destination gift/ due amounts","%DESTINATION","b"},;
-{"Firstname member destination","%FRSTNAMEDESTINATION","g"},;
-{"Lastname member destination","%LSTNAMEDESTINATION","g"},;
-{"Salutation member destination","%SALUTDESTINATION","g"},;
 {"Complete name and address (6 lines)","%NAMEADDRESS","c"},; 
-{"Department name","%DEPRMNTNAME","d"},;
 {"Page skip","%PAGESKIP","b"}}
+
 CLASS LabelBottom INHERIT FIELDSPEC
 
 
@@ -2722,14 +2728,14 @@ METHOD CancelButton() CLASS PrintDialog
 	SELF:EndDialog()
 	
 	RETURN SELF
-METHOD CopyPers(aNN,oPerson) CLASS PrintDialog
+METHOD CopyPers(oPerson) CLASS PrintDialog
 	* Copy of array with record-id in database Person (oPers)
 	LOCAL i AS INT
-	SELF:oPrintJob:aFifo := {}
+// 	SELF:oPrintJob:aFifo := {}
 	SELF:oPrintJob:oPers := oPerson
-	FOR i = 1 TO Len(aNN)
-		AAdd(SELF:oPrintJob:aFifo,aNN[i,2])
-	NEXT
+// 	FOR i = 1 TO Len(aNN)
+// 		AAdd(SELF:oPrintJob:aFifo,aNN[i,2])
+// 	NEXT
 	RETURN TRUE
 
 METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS PrintDialog
@@ -2774,6 +2780,7 @@ METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS
 		oCCToFileRadioButton:Hide()
 		oDCDestination:Hide() 
 		self:oDCDestination:Value := "Printer"
+		self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,false}
 	else 	
 		self:oDCDestination:Value := "Screen"
 	ENDIF
@@ -2805,9 +2812,9 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 	Default(@SendToMail,FALSE)
 
 	IF IsNil(cDest)
-		Destination := SELF:oDcDestination:Value
+		self:Destination := self:oDCDestination:Value
 	ELSE
-		Destination:=cDest
+		self:Destination:=cDest
 	ENDIF
 	if self:Destination # "File"
 		self:Extension:=""
@@ -2816,23 +2823,23 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 			self:Extension:="txt"
 		endif
 	endif
-	IF oDCPageRange:Value == "Selection"
-		nMin := Integer(Val(oDCFromPage:TextValue))
-		nMax := Integer(Val(oDCToPage:TextValue))
+	self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,SendToMail}
+	IF self:oDCPageRange:Value == "Selection"
+		nMin := Integer(Val(self:oDCFromPage:TextValue))
+		nMax := Integer(Val(self:oDCToPage:TextValue))
 		IF Empty(nMax)
 			nMax := 99999
 		ENDIF
-		oRange := Range{nMin,nMax }
+		self:oRange := Range{nMin,nMax }
 	ELSE
-		IF !Empty(oOrigRange)
-			oRange := Range{1,oOrigRange:Max}
+		IF !Empty(self:oOrigRange)
+			self:oRange := Range{1,self:oOrigRange:Max}
 		ENDIF
 	ENDIF
 
-	oPrintJob := PrintJob{cCaption,oPrinter,Label,MaxWidth,Destination,SendToMail}
 	SELF:lPrintOk := TRUE
 
-	IF Destination == "File" 
+	IF self:Destination == "File" 
 		// 		cDefFolder:=(oSys:=Sysparms{}):DOCPATH
 		//       if Empty(cDefFolder)
 		//       	cDefFolder:=CurPath+"\"
@@ -3105,14 +3112,14 @@ SELF:oPrintJob := Printjob{cCaption,SELF:oPrinter,SELF:Label,SELF:MaxWidth,,Send
 RETURN TRUE
 METHOD SetupButton( ) CLASS PrintDialog
 LOCAL structDevMode AS _WINDevMode
-	IF oPrinter:IsValid()
-		oPrinter:Setup()
-		WycIniFS:WriteInt( "Runtime", "PrintOrientation", oPrinter:Orientation)
+	IF self:oPrinter:IsValid()
+		self:oPrinter:Setup()
+		WycIniFS:WriteInt( "Runtime", "PrintOrientation", self:oPrinter:Orientation)
 	ENDIF
-	oDCPrinterText:Value := "Default Printer - ( " + AllTrim( oPrinter:Device ) + ;
-	" on " + AllTrim( oPrinter:Port ) + " )"
+	self:oDCPrinterText:Value := "Default Printer - ( " + AllTrim( self:oPrinter:Device ) + ;
+	" on " + AllTrim( self:oPrinter:Port ) + " )"
 
-	RETURN SELF
+	RETURN 
 method ShowFileType() class PrintDialog
 	if self:oCCToFileRadioButton:Value==true .and. self:Extension="xls"
 			self:oCCfiletype1:Show()
@@ -3162,7 +3169,7 @@ CLASS Printjob INHERIT Printer
 	EXPORT Label AS LOGIC
 	EXPORT SendToMail AS LOGIC
 	EXPORT lLblFinish AS LOGIC
-	EXPORT oPers AS Person
+	EXPORT oPers as SQLSelect
 	EXPORT oWaitPrint AS wait_for_printer
 	EXPORT nLblHeight as int // height label in canvascordinates
 	EXPORT nLblWidth as int  // width label in canvascordinates
@@ -3332,10 +3339,10 @@ METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
 	iY := Min(self:nTop,oExposeEvent:ExposedArea:Top)
 
 	IF SELF:Label
-		FOR i = self:nFifoPntr to Len(self:aFiFo) step self:nLblColCnt
+		FOR i = self:nFifoPntr to self:oPers:RECCOUNT step self:nLblColCnt
 			IF iY >= self:nLblHeight-self:nLblBottom // Sufficient space for one row of labels left?
 				IF Empty(self:oRange).or.(self:nCurPage >= self:oRange:Min .and. self:nCurPage <= self:oRange:Max)
-					self:stckrprt(self:aFiFo,i,iY)
+					self:Stckrprt(i,iY)
 				ENDIF
 				iY := iY - self:nLblHeight
 			ELSE
@@ -3350,17 +3357,17 @@ METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
 				ELSEIF self:nCurPage > self:oRange:Min
 					RETURN TRUE
 				ENDIF
-				* pagina's overgeslagen, volgende opnieuw proberen:
+				* pages skipped, try next page:
 				iY := Min(self:nTop,oExposeEvent:ExposedArea:Top)
-				i := i - self:nLblColCnt // i terugzetten
+				i := i - self:nLblColCnt // reset i 
 			ENDIF
-			IF i + self:nLblColCnt > Len(self:aFiFo)
+			IF i + self:nLblColCnt > self:oPers:RECCOUNT
 				++self:nCurPage
 				self:nFifoPntr := i+self:nLblColCnt
 				RETURN TRUE // forces last pageskip
 			ENDIF
 		NEXT
-		IF i > Len(self:aFiFo)
+		IF i > self:oPers:RECCOUNT
 			self:lLblFinish := true // All labels have been printed
 		ENDIF
 	ELSE
@@ -3415,7 +3422,7 @@ METHOD Start(oRangeV,oFont) CLASS Printjob
 	self:nFifoPntr := 1
 	SUPER:Start()
 	RETURN TRUE
-METHOD Stckrprt(aNN as array,nDisp as int,iY as int) as void pascal CLASS PrintJob
+METHOD Stckrprt(nDisp as int,iY as int) as void pascal CLASS PrintJob
 *****************************************************************************)
 *  Name      : STCKRPRT.PRG
 *              Printing of a row labels
@@ -3434,14 +3441,21 @@ LOCAL oPrintFont := SELF:font AS font
 LOCAL oSize AS Dimension
 LOCAL i,j as int
 LOCAL iX AS INT
-IF Empty(aNN[nDisp])
-   RETURN
-ENDIF
-FOR m_rectel = nDisp to Min(nDisp+self:nLblColCnt,Len(aNN))
-   IF Empty(aNN[m_rectel])   && stop when no more recno's
-      EXIT
-   ENDIF
-   AAdd(m_adressen,MarkUpAddress(self:oPers,aNN[m_rectel],self:nLblChars,self:nLblLines))
+// IF Empty(aNN[nDisp])
+//    RETURN
+// ENDIF
+if self:oPers:RECCOUNT<1
+	return
+endif
+FOR m_rectel = nDisp to Min(nDisp+self:nLblColCnt-1,self:oPers:RECCOUNT)
+//    IF Empty(aNN[m_rectel])   && stop when no more recno's
+//       EXIT
+//    ENDIF 
+	if self:oPers:EoF
+		exit
+	endif
+   AAdd(m_adressen,MarkUpAddress(self:oPers,,self:nLblChars,self:nLblLines))
+   self:oPers:Skip()
 NEXT
 FOR j =1 TO nLblLines
 	iY := iY - SELF:LineHeight
