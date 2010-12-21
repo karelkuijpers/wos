@@ -33,7 +33,7 @@ METHOD Init() CLASS ExportPerson_AD1
 
 
 
-
+
 CLASS ExportPerson_BDAT INHERIT FIELDSPEC
 
 
@@ -41,7 +41,7 @@ CLASS ExportPerson_BDAT INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_BDAT
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#bdat, "Creation date", "Date of first registration", "Person_BDAT" },  "D", 8, 0 )
+    SUPER:Init( HyperLabel{#birthdate, "Creation date", "Date of first registration", "Person_BDAT" },  "D", 8, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -59,7 +59,7 @@ CLASS ExportPerson_BIRTHDAT INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_BIRTHDAT
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#BIRTHDAT, "Birthdate", "Birthdate of a person", "Person_BIRTHDAT" },  "D", 8, 0 )
+    SUPER:Init( HyperLabel{#birthdate, "Birthdate", "Birthdate of a person", "Person_BIRTHDAT" },  "D", 8, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -95,7 +95,7 @@ CLASS ExportPerson_DLG INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_DLG
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#DLG, "Date last gift", "Date of last gift", "Person_DLG" },  "D", 8, 0 )
+    SUPER:Init( HyperLabel{#datelastgift, "Date last gift", "Date of last gift", "Person_DLG" },  "D", 8, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -183,7 +183,7 @@ CLASS ExportPerson_LAN INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_LAN
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#COUNTRY, "Country", "Country where the person lives", "Person_LAN" },  "C", 20, 0 )
+    SUPER:Init( HyperLabel{#country, "Country", "Country where the person lives", "Person_LAN" },  "C", 20, 0 )
     cPict       := "!XXXXXXXXXXXXXXXXXXX"
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -193,7 +193,7 @@ METHOD Init() CLASS ExportPerson_LAN
 
 
 
-
+
 CLASS ExportPerson_MAILABBR INHERIT FIELDSPEC
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS ExportPerson_MAILABBR
@@ -243,7 +243,7 @@ CLASS ExportPerson_MUTD INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_MUTD
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#MUTD, "Date altered", "Date of last update", "Person_MUTD" },  "D", 8, 0 )
+    SUPER:Init( HyperLabel{#alterdate, "Date altered", "Date of last update", "Person_MUTD" },  "D", 8, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -349,7 +349,7 @@ CLASS ExportPerson_POS INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_POS
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#POS, "Zip code", "Postal code", "Person_POS" },  "C", 14, 0 )
+    SUPER:Init( HyperLabel{#postalcode, "Zip code", "Postal code", "Person_POS" },  "C", 14, 0 )
     cPict       := "@!"
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -397,7 +397,7 @@ CLASS ExportPerson_TEL1 INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_TEL1
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#TEL1, "Tel.business", "Telephone# business", "Person_TEL1" },  "C", 18, 0 )
+    SUPER:Init( HyperLabel{#telbusiness, "Tel.business", "Telephone# business", "Person_TEL1" },  "C", 18, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -415,7 +415,7 @@ CLASS ExportPerson_TEL2 INHERIT FIELDSPEC
 METHOD Init() CLASS ExportPerson_TEL2
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#TEL2, "Tel.home", "Telephone# at home", "Person_TEL2" },  "C", 18, 0 )
+    SUPER:Init( HyperLabel{#telhome, "Tel.home", "Telephone# at home", "Person_TEL2" },  "C", 18, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
