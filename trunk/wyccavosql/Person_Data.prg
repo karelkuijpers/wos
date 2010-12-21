@@ -1,3 +1,21 @@
+CLASS Bank INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS Bank
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#banknumber, "Bank accounts", "Number of bankaccount", "" },  "C", 25, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 Define IDM_PERSON_NAME := "Person"
 Define IDM_Person_USERID := "parous…ew@™=w"
 Define IDM_PERSONBANK_NAME := "PersonBank"
