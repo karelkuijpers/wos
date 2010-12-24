@@ -300,21 +300,21 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 * if lDBUpfate true: Update corresponding database items
 *
 
-	LOCAL nNum AS USUAL
-	LOCAL nMain as STRING 
-	LOCAL cError AS STRING
+	LOCAL nNum as USUAL
+	LOCAL nMain,cType as STRING 
+	LOCAL cError as STRING
    local oBal as SQLStatement
 	Default(@lDBUpdate,FALSE)
 
 	* determine new main identifier:
-	nMain:=SELF:GetIdFromSymbol(oItemDrop:NameSym)
+	nMain:=self:GetIdFromSymbol(oItemDrop:NameSym)
 
 	IF lDBUpdate
 		* Update database first:
 		* Dragged item identifier:
-		nNum:=SELF:GetIdFromSymbol(sItemDrag)
+		nNum:=self:GetIdFromSymbol(sItemDrag)
 
-		IF SELF:IsAccountSymbol(sItemDrag)
+		IF self:IsAccountSymbol(sItemDrag)
 			* update account:
 				* check transfer allowed:
 				cError:=ValidateAccTransfer(nMain,nNum)
@@ -327,7 +327,7 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 // 			ENDIF
 		ELSE
 			* update balance item:
-				cError:=ValidateBalanceTransition(nMain,,nNum,)
+				cError:=ValidateBalanceTransition(@nMain,,nNum,@cType)
 				IF !Empty(cError)
 					(ErrorBox{,cError}):Show()
 					RETURN cError
