@@ -1064,11 +1064,11 @@ method InitializeDB() as void Pascal  class Initialize
 	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array 
 	local aTable:={;
 		{"account","MyIsam","utf8_unicode_ci"},;
-		{"accountbalanceyear","MyIsam","utf8_unicode_ci"},;
+		{"accountbalanceyear","InnoDB","utf8_unicode_ci"},;
 		{"article","MyIsam","utf8_unicode_ci"},;
 		{"authfunc","MyIsam","latin1_swedish_ci"},;
 		{"balanceitem","MyIsam","utf8_unicode_ci"},;
-		{"balanceyear","MyIsam","utf8_unicode_ci"},;
+		{"balanceyear","InnoDB","utf8_unicode_ci"},;
 		{"bankaccount","MyIsam","utf8_unicode_ci"},;
 		{"bankorder","InnoDB","utf8_unicode_ci"},;
 		{"budget","MyIsam","utf8_unicode_ci"},;
