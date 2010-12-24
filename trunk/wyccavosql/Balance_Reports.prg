@@ -44,29 +44,29 @@ END
 
 CLASS BalanceReport INHERIT DataWindowMine
 
-	PROTECT oDCFixedText1 as FIXEDTEXT
-	PROTECT oDCFixedText2 as FIXEDTEXT
-	PROTECT oDCBalYears as COMBOBOX
-	PROTECT oDCMONTHSTART as SINGLELINEEDIT
-	PROTECT oDCFixedText3 as FIXEDTEXT
-	PROTECT oDCMONTHEND as SINGLELINEEDIT
-	PROTECT oDCmBalNumber as SINGLELINEEDIT
-	PROTECT oCCBalButton as PUSHBUTTON
-	PROTECT oDCWhatDetails as CHECKBOX
-	PROTECT oDCmDepartment as SINGLELINEEDIT
-	PROTECT oCCDepButton as PUSHBUTTON
-	PROTECT oDCWhoDetails as CHECKBOX
-	PROTECT oDCNumbers as CHECKBOX
-	PROTECT oDCind_toel as CHECKBOX
-	PROTECT oDClCondense as CHECKBOX
-	PROTECT oDCind_accstmnt as CHECKBOX
-	PROTECT oCCOKButton as PUSHBUTTON
-	PROTECT oCCCancelButton as PUSHBUTTON
-	PROTECT oDCFixedText4 as FIXEDTEXT
-	PROTECT oDCGroupBox1 as GROUPBOX
-	PROTECT oDCGroupBox2 as GROUPBOX
-	PROTECT oDCFixedText5 as FIXEDTEXT
-	PROTECT oDCGroupBox3 as GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCBalYears AS COMBOBOX
+	PROTECT oDCMONTHSTART AS SINGLELINEEDIT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCMONTHEND AS SINGLELINEEDIT
+	PROTECT oDCmBalNumber AS SINGLELINEEDIT
+	PROTECT oCCBalButton AS PUSHBUTTON
+	PROTECT oDCWhatDetails AS CHECKBOX
+	PROTECT oDCmDepartment AS SINGLELINEEDIT
+	PROTECT oCCDepButton AS PUSHBUTTON
+	PROTECT oDCWhoDetails AS CHECKBOX
+	PROTECT oDCNumbers AS CHECKBOX
+	PROTECT oDCind_toel AS CHECKBOX
+	PROTECT oDClCondense AS CHECKBOX
+	PROTECT oDCind_accstmnt AS CHECKBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCGroupBox2 AS GROUPBOX
+	PROTECT oDCFixedText5 AS FIXEDTEXT
+	PROTECT oDCGroupBox3 AS GROUPBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE BalYears
@@ -81,28 +81,28 @@ CLASS BalanceReport INHERIT DataWindowMine
 	INSTANCE lCondense
 	INSTANCE ind_accstmnt
 	PROTECT balsoort, cCurBal, cCurDep as STRING
-	PROTECT BalCount, DepCount as int
-	PROTECT oTransMonth as AccountStatements
+	PROTECT BalCount, DepCount AS INT
+	PROTECT oTransMonth AS AccountStatements
 
 PROTECT hfdkop:={},;
-		HeadingCache:={} as ARRAY
+		HeadingCache:={} AS ARRAY
 PROTECT TAB:=" " as STRING, lXls as logic
-PROTECT mbud  as FLOAT
-EXPORT oReport as PrintDialog
-EXPORT iLine,iPage as int
-EXPORT BeginReport:=FALSE as LOGIC
-PROTECT oBal as BalanceItem
-PROTECT oDep as Department
-EXPORT oAcc as Account
+PROTECT mbud  AS FLOAT
+EXPORT oReport AS PrintDialog
+EXPORT iLine,iPage AS INT
+EXPORT BeginReport:=FALSE AS LOGIC
+PROTECT oBal AS BalanceItem
+PROTECT oDep AS Department
+EXPORT oAcc AS Account
 EXPORT oMBal as MBalance
-EXPORT oTrans as TransHistory
-EXPORT YEARSTART,YEAREND as int
-PROTECT BalSt, BalEnd, CurSt, CurEnd as int
+EXPORT oTrans AS TransHistory
+EXPORT YEARSTART,YEAREND AS INT
+PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
 * Options for report type:
 //EXPORT WhatFrom:=Space(11), WhoFrom:=Space(11) AS STRING
 EXPORT WhatFrom, WhoFrom as int
 PROTECT BalColWidth, TotalWidth, maxlevel as int
-EXPORT SendToMail as LOGIC
+EXPORT SendToMail AS LOGIC
 EXPORT  netassBalId as int
 EXPORT showopeningclosingfund:=FALSE as LOGIC 
 Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,RedCharOn,RedCharOff as STRING 
@@ -112,7 +112,7 @@ export SimpleDepStmnt as logic
 declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, level as int,r_indmain as array,r_parentid as array,r_balid as array,r_balnbr as array,r_cat as array,r_heading as array,r_footer) as int  CLASS BalanceReport
 * Find subbalance items and add to arrays withbalance Items
-	LOCAL nChildRec, iWidth, p	as int
+	LOCAL nChildRec, iWidth, p	AS INT
 	LOCAL nCurNum		as int 
 	local oBal 			as SQLSelect
 	local lFirst		as logic
@@ -140,7 +140,7 @@ METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, leve
 	IF level>25
 		(ErrorBox{self:OWNER,self:oLan:WGet('Hierarchy of referred items too large or recursive')+":"+;
 		oBal:number}):show()
-		self:EndWindow()
+		SELF:EndWindow()
 	ENDIF
 	// add sub balance item:
 	nCurNum:= aItem[nCurrentRec,1]
@@ -157,14 +157,14 @@ METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, leve
 		self:BalColWidth:=iWidth
 	ENDIF
 	if level> self:Maxlevel
-		self:Maxlevel:=level
+		self:MaxLevel:=level
 	endif
 
 	// add all child balance items of this sub balance item:
-	DO WHILE true
+	DO WHILE TRUE
 		nChildRec:=self:AddSubBal(nCurNum, nChildRec,aItem, level+1,r_indmain,r_parentid,r_balid,r_balnbr,r_cat,r_heading,r_footer)
 		IF Empty(nChildRec)
-			exit
+			EXIT
 		ENDIF
 	ENDDO
 RETURN nCurrentRec
@@ -235,15 +235,15 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	*	FileInit: first line for output																						 *
 	**********************************************************************************************
 	*
-	LOCAL aant_gev,rektel, i  as int
+	LOCAL aant_gev,rektel, i  AS INT
 	LOCAL mType,m_cat:="",kop,m_accid,m_balId, cBalName as STRING
 	LOCAL Totalize as LOGIC
 	LOCAL BalYear,BalMonth as int
 	LOCAL PrvYr_YtD as FLOAT
-	LOCAL TopWhatPtr, TopWhoPtr as int
+	LOCAL TopWhatPtr, TopWhoPtr AS INT
 	LOCAL nCurRec, Bal_Ptr,Dep_Ptr,net_ptr,nCurAcc,nRecno as int
 	LOCAL d_sort:={},accnts:={}, d_PrfLssPrYr:={} as ARRAY
-	LOCAL lSaveWho, lSaveWhat as LOGIC
+	LOCAL lSaveWho, lSaveWhat AS LOGIC
 	LOCAL YearGranularity as LOGIC 
 	Local iLine:=self:iLine, iPage:=self:iPage as int 
 	local aBalYr:={} as array 
@@ -314,7 +314,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	ENDIF
 
 	// Check input data:
-	IF !ValidateControls( self, self:AControls )
+	IF !ValidateControls( SELF, SELF:AControls )
 		RETURN
 	END
 
@@ -355,23 +355,23 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	iPage:=0
 	TopWhatPtr:=0
 	TopWhoPtr:=0
-	IF Empty(SKAP)
+	IF Empty(skap)
 		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):Show()
-		self:EndWindow()
+		SELF:EndWindow()
 		RETURN
 	ENDIF
 
 	* Reading Departments and Balance Items:
-	IF IsMethod(self,#StatusMessage)
+	IF IsMethod(SELF,#StatusMessage)
 		self:STATUSMESSAGE(self:oLan:WGet("Checking and collecting data, moment please"))
 	ELSE
-		IF IsAccess(self,#Owner)
-			IF IsMethod(self:OWNER,#StatusMessage)
+		IF IsAccess(SELF,#Owner)
+			IF IsMethod(SELF:Owner,#StatusMessage)
 				self:OWNER:STATUSMESSAGE(self:oLan:WGet("Checking and collecting balance data , moment please"))
 			ENDIF
 		ENDIF
 	ENDIF
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	SELF:Pointer := Pointer{POINTERHOURGLASS}
 
 
 	* Check and fill requested Departments:
@@ -397,7 +397,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			AAdd(d_dep,oDep:DepId)
 			AAdd(d_parentdep,oDep:ParentDep)
 			AAdd(d_indmaindep,FALSE)
-			AAdd(d_depname,if(Numbers,AllTrim(oDep:DEPTMNTNBR)+self:TAB,"")+AllTrim(oDep:Descriptn))
+			AAdd(d_depname,if(Numbers,AllTrim(oDep:DEPTMNTNBR)+SELF:TAB,"")+AllTrim(oDep:Descriptn))
 			AAdd(d_acc,{})
 			AAdd(d_netasset,oDep:NETASSET)
 			AAdd(d_netnum,oDep:balitemid)
@@ -406,10 +406,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 
 	* Add all subdepartments down from self:WhoFrom:  
 	aItem:={}
-	DO WHILE true
+	DO WHILE TRUE
 		nCurRec:=self:AddSubDep(self:WhoFrom,nCurRec,aItem,d_dep,d_parentdep,d_indmaindep,d_depname,d_acc,d_netasset,d_netnum)
-		IF Empty(nCurRec)
-			exit
+		IF Empty(nCurrec)
+			EXIT
 		ENDIF
 	ENDDO
 	*SELF:AddSubDep(self:WhoFrom)
@@ -435,10 +435,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	* Add all child balance items:
 	nCurRec:=0 
 	aItem:={}
-	DO WHILE true
+	DO WHILE TRUE
 		nCurRec:=self:AddSubBal(self:WhatFrom,nCurRec,aItem,0,r_indmain,r_parentid,r_balid,r_balnbr,r_cat,r_heading,r_footer)
 		IF Empty(nCurrec)
-			exit
+			EXIT
 		ENDIF
 	ENDDO
 	self:BalCount:=Len(r_balid) 
@@ -467,10 +467,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	ENDIF
 	IF !Empty(FileInit)
 		AAdd(self:oReport:oPrintJob:aFiFo,FileInit)
-		self:iLine := 0
+		SELF:iLine := 0
 	ENDIF
 	self:STATUSMESSAGE(self:oLan:WGet("Producing report, moment please"))
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	SELF:Pointer := Pointer{POINTERHOURGLASS}
 	cStatement:=SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MONTHEND,;
 	iif(Empty(self:WhatFrom),"","a.balitemid in ("+Implode(r_balid,",")+")")+;
 	iif(Empty(self:WhoFrom),"",iif(Empty(self:WhatFrom),""," and ")+"a.department in ("+Implode(d_dep,",")+")"),;
@@ -485,23 +485,23 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		IF Bal_Ptr=0
 			*  No requested balance item:
 			IF Empty(self:WhatFrom)  // total structure specified?
-				self:Pointer := Pointer{POINTERARROW}
+				SELF:Pointer := Pointer{POINTERARROW}
 				(errorbox{self:OWNER,self:oLan:WGet('Not defined balance item in account')+':'+oAcc:AccNumber}):show()
 				RETURN 
 			ENDIF
 			oAcc:Skip()
-			loop
+			LOOP
 		ENDIF
 		Dep_Ptr:=AScan(d_dep,oAcc:Department)
 		IF Dep_Ptr=0
 			* No requested department:
 			IF Empty(self:WhoFrom)  // total hierarchy specified?
-				self:Pointer := Pointer{POINTERARROW}
+				SELF:Pointer := Pointer{POINTERARROW}
 				(errorbox{self:OWNER,self:oLan:WGet('Not defined department in account')+':'+oAcc:AccNumber}):show()
 				RETURN 
 			ENDIF
 			oAcc:Skip()
-			loop
+			LOOP
 		ENDIF
 
 		rd_BalPrvYr[Dep_Ptr,Bal_Ptr]:=if(Empty(rd_BalPrvYr[Dep_Ptr,Bal_Ptr]),0,rd_BalPrvYr[Dep_Ptr,Bal_Ptr])+oAcc:PrvYr_deb-oAcc:PrvYr_cre
@@ -564,7 +564,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		r_balid,r_heading,r_footer,r_parentid)
 	hfdkop[1]:= BoldOn+YellowOn+ hfdkop[1]+YellowOff+BoldOff
 
-	self:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
+	SELF:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 		r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,;
 		r_heading,r_footer,r_balnbr,r_balid,r_bud,r_budper,r_budytd,;
 		rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,rd_BalPer,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
@@ -578,11 +578,11 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		self:WhatDetails:=true
 		self:WhoDetails:=true
 		* Enforce order on department name:
-		FOR i:=1 to DepCount
+		FOR i:=1 TO DepCount
 			AAdd(d_sort,{Upper(d_depName[i]),i})
 		NEXT
 		ASort(d_sort,,,{|x,y| x[1]<=y[1]})
-		FOR i:= 1 to DepCount
+		FOR i:= 1 TO DepCount
 			Dep_Ptr:=d_Sort[i,2]
 			accnts:=d_acc[Dep_Ptr]
 			ASort(accnts)
@@ -665,7 +665,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		self:WhatDetails:=lSaveWhat
 		self:WhoDetails:=lSaveWho
 	ENDIF
-	self:Pointer := Pointer{POINTERARROW}
+	SELF:Pointer := Pointer{POINTERARROW}
 	* Reset arrays to free memory:
 	r_balid:={}
 	r_balnbr:={}
@@ -699,16 +699,16 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 
 	RETURN
 METHOD BalButton( ) CLASS BalanceReport
-	LOCAL cBalValue as STRING
-	LOCAL nPntr as int
+	LOCAL cBalValue AS STRING
+	LOCAL nPntr AS INT
 
 	cBalValue:=AllTrim(oDCmBalNumber:TextValue)
 	nPntr:=At(":",cBalValue)
 	IF nPntr>1
 		cBalValue:=SubStr(cBalValue,1,nPntr-1)
 	ENDIF
-	(BalanceItemExplorer{self:OWNER,"Balance Item",Str(self:WhatFrom,-1),self,cBalValue}):show()
-RETURN nil
+	(BalanceItemExplorer{self:OWNER,"Balance Item",str(self:WhatFrom,-1),self,cBalValue}):show()
+RETURN NIL
 METHOD BalFishTot(Type,aTot) CLASS BalanceReport
 	// determine totals of income and expense or of assets and liabilities and funds
 	// Type:	I: income and expense
@@ -840,16 +840,16 @@ SELF:Destroy()
 	RETURN
 
 METHOD DepButton( ) CLASS BalanceReport
-	LOCAL cCurValue as STRING
-	LOCAL nPntr as int
+	LOCAL cCurValue AS STRING
+	LOCAL nPntr AS INT
 
 	cCurValue:=AllTrim(oDCmDepartment:TextValue)
 	nPntr:=At(":",cCurValue)
 	IF nPntr>1
 		cCurValue:=SubStr(cCurValue,1,nPntr-1)
 	ENDIF
-	(DepartmentExplorer{self:OWNER,"Department",Str(self:WhoFrom,-1),self,cCurValue}):show()
-RETURN nil
+	(DepartmentExplorer{self:OWNER,"Department",Str(self:WhoFrom,-1),self,cCurValue}):Show()
+RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS BalanceReport
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
@@ -1108,7 +1108,7 @@ self:oDCBalYears:CurrentItemNo:=1
 self:WhatDetails:=true
 self:WhoDetails:=true
 self:mBalNumber:="0: Balance Structure"
-self:mDepartment:="0:"+sEntity+" "+SLAND
+self:mDepartment:="0:"+sEntity+" "+sLand
 self:cCurBal:=mBalNumber
 self:cCurDep:=mDepartment
 self:WhatFrom:=0
@@ -1122,7 +1122,7 @@ IF !Departments
 	oDCWhoDetails:Hide()
 ENDIF
 
-RETURN nil
+RETURN NIL
 		
 METHOD prAmounts(pr_soort,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 		pr_bud,pr_budper,pr_budytd,pr_level,pr_oms,r_koptekst,pr_inc,pr_exp,iLine,iPage) CLASS BalanceReport
@@ -1303,8 +1303,8 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 		r_cat as array,r_balpryrtot as array,r_balPrYrYtD as array,r_balPrvPer as array,r_balPer as array,r_indmain as array,r_parentid as array,r_heading as array,r_footer as array,r_bud as array,r_budper as array,r_budytd as array,r_balid as array,;
 		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int) as void pascal CLASS BalanceReport
 	* Process all balance items FOR given department: p_depptr
-	LOCAL TopWhatPtr as int
-	LOCAL aTot:={},aTotprv:={} as ARRAY  // arrays with: type, level, amount for !Whatdetails .and. WhoDetails
+	LOCAL TopWhatPtr AS INT
+	LOCAL aTot:={},aTotprv:={} AS ARRAY  // arrays with: type, level, amount for !Whatdetails .and. WhoDetails
 	IF IsNil(lDirect)
 		lDirect:=FALSE
 	ENDIF
@@ -1336,7 +1336,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 		DO WHILE TopWhatPtr<self:BalCount
 			TopWhatPtr:=AScan(r_parentid,0,TopWhatPtr+1)
 			IF TopWhatPtr=0
-				exit
+				EXIT
 			ENDIF
 			self:hfdkop:=self:prkop(oLan:Get("SUMMARY",,"@!"),r_cat[TopWhatPtr],p_depptr,if(lDirect,"("+oLan:Get("Direct Records",,"!")+")",""),d_dep,d_parentdep,d_depname,;
 				r_balid,r_heading,r_footer,r_parentid)
@@ -1353,7 +1353,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 		IF self:WhatDetails
 			* Force pageskip:
 			iLine:=0
-			oReport:Beginreport:=self:BeginReport
+			oReport:Beginreport:=SELF:BeginReport
 		ENDIF
 		self:SUBBALITEM(1,0,p_depptr,lDirect,dLevel,r_parentid,r_indmain,r_heading,r_footer,r_balpryrtot,;
 			r_balPrYrYtD,r_balPrvPer,r_balPer,r_bud,r_budper,r_budytd,r_cat,r_balid,d_netnum,d_depname,aTot,aTotprv,@iLine,@iPage)
@@ -1407,11 +1407,11 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 		r_balPrvYrYtD as array,r_balPrvPer as array,r_balPer as array,r_bud as array,r_budper as array,r_budytd as array,r_cat as array,r_balid as array,d_netnum as array,d_depname as array,aTot as array,aTotprv as array,iLine ref int,iPage ref int) as int CLASS BalanceReport
 	* Recursive processing of a balance item with its subbalance items
 	*
-	LOCAL TotalFound,SubBalPtr, CachePtr,kap_num as int
-	LOCAL m_soort, pr_oms as STRING
-	LOCAL openfund, surplusvj,surplus,clbalvj,clbal as FLOAT
-	LOCAL SDgevonden:=FALSE as LOGIC
-	LOCAL i,j as int, fInc, fExp as FLOAT, fAmnt:={} as ARRAY
+	LOCAL TotalFound,SubBalPtr, CachePtr,kap_num AS INT
+	LOCAL m_soort, pr_oms AS STRING
+	LOCAL openfund, surplusvj,surplus,clbalvj,clbal AS FLOAT
+	LOCAL SDgevonden:=FALSE AS LOGIC
+	LOCAL i,j AS INT, fInc, fExp AS FLOAT, fAmnt:={} AS ARRAY
 
 	IF IsNil(lDirect)
 		lDirect:=FALSE
@@ -1423,7 +1423,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 	IF r_indmain[Bal_Ptr]
 		IF WhatDetails
 			IF .not.Empty(r_heading[Bal_Ptr])
-				AAdd(HeadingCache,{level,Bal_Ptr})
+				AAdd(HeadingCache,{level,bal_ptr})
 				CachePtr:=Len(HeadingCache)
 				*			oReport:PrintLine(@iLine,@iPage,Space(level*2)+r_heading[bal_ptr],hfdkop,0)
 			ENDIF
@@ -1449,10 +1449,10 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 			ENDIF
 		ENDIF
 		SubBalPtr:=0
-		DO WHILE true
+		DO WHILE TRUE
 			SubBalPtr:=AScan(r_parentid,r_balid[Bal_Ptr],SubBalPtr+1)
 			IF Empty(SubBalPtr)
-				exit
+				EXIT
 			ELSE
 				SubBalPtr:=self:SUBBALITEM(SubBalPtr,level+1,Dep_Ptr,lDirect,dLevel,r_parentid,r_indmain,r_heading,r_footer,r_balpryrtot,;
 					r_balPrvYrYtD,r_balPrvPer,r_balPer,r_bud,r_budper,r_budytd,r_cat,r_balid,d_netnum,d_depname,aTot,aTotprv,@iLine,@iPage)
@@ -1460,17 +1460,17 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					TotalFound:=TotalFound+1
 					r_balpryrtot[bal_ptr]:=if(Empty(r_balpryrtot[bal_ptr]),0.00,r_balpryrtot[bal_ptr])+r_balpryrtot[SubBalPtr]
 					r_balPrvYrYtD[bal_ptr]:=if(Empty(r_balPrvYrYtD[bal_ptr]),0.00,r_balPrvYrYtD[bal_ptr])+r_balPrvYrYtD[SubBalPtr]
-					r_balPrvPer[Bal_Ptr]:=if(Empty(r_balPrvPer[Bal_Ptr]),0.00,r_balPrvPer[Bal_Ptr])+r_balPrvPer[SubBalPtr]
+					r_balPrvPer[bal_ptr]:=if(Empty(r_balPrvPer[bal_ptr]),0.00,r_balPrvPer[bal_ptr])+r_balPrvPer[SubBalPtr]
 					r_balPer[Bal_Ptr]  :=if(Empty(r_balPer[Bal_Ptr]),0.00,r_balPer[Bal_Ptr])  +r_balPer[SubBalPtr]
 					IF r_cat[SubBalPtr]== 'BA' .or. r_cat[SubBalPtr]== 'PA';
 							.or. r_cat[Bal_Ptr]== r_cat[SubBalPtr]
 						r_bud[bal_ptr] :=if(Empty(r_bud[bal_ptr]),0.00,r_bud[bal_ptr]) +r_bud[SubBalPtr]
-						r_budper[Bal_Ptr] :=if(Empty(r_budper[Bal_Ptr]),0.00,r_budper[Bal_Ptr]) +r_budper[SubBalPtr]
-						r_budytd[Bal_Ptr] :=if(Empty(r_budytd[Bal_Ptr]),0.00,r_budytd[Bal_Ptr]) +r_budytd[SubBalPtr]
+						r_budper[bal_ptr] :=if(Empty(r_budper[bal_ptr]),0.00,r_budper[bal_ptr]) +r_budper[SubBalPtr]
+						r_budytd[bal_ptr] :=if(Empty(r_budytd[bal_ptr]),0.00,r_budytd[bal_ptr]) +r_budytd[SubBalPtr]
 					ELSE
 						r_bud[bal_ptr] :=if(Empty(r_bud[bal_ptr]),0.00,r_bud[bal_ptr]) -r_bud[SubBalPtr]
-						r_budper[Bal_Ptr] :=if(Empty(r_budper[Bal_Ptr]),0.00,r_budper[Bal_Ptr]) -r_budper[SubBalPtr]
-						r_budytd[Bal_Ptr] :=if(Empty(r_budytd[Bal_Ptr]),0.00,r_budytd[Bal_Ptr]) -r_budytd[SubBalPtr]
+						r_budper[bal_ptr] :=if(Empty(r_budper[bal_ptr]),0.00,r_budper[bal_ptr]) -r_budper[SubBalPtr]
+						r_budytd[bal_ptr] :=if(Empty(r_budytd[bal_ptr]),0.00,r_budytd[bal_ptr]) -r_budytd[SubBalPtr]
 					ENDIF
 				ENDIF
 			ENDIF
@@ -1488,7 +1488,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				ELSE
 					pr_oms:=r_footer[Bal_Ptr]
 				ENDIF
-				self:prAmounts(m_soort,r_balpryrtot[Bal_Ptr],;
+				self:prAmounts(m_soort,r_balpryrtot[bal_ptr],;
 					r_balPrvYrYtD[Bal_Ptr],r_balPrvPer[Bal_Ptr],;
 					r_balPer[Bal_Ptr],r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,0.00,0.00,@iLine,@iPage)
 			ENDIF
@@ -1503,7 +1503,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 			ENDIF
 		ENDIF
 	ENDIF
-	IF self:showopeningclosingfund .or.!WhatDetails
+	IF SELF:showopeningclosingfund .or.!WhatDetails
 		// add for summary lines for BTA: opening fund balance, end closing balance :
 		m_soort:=Upper(r_cat[Bal_Ptr])
 		IF !IsNil(r_balPer[Bal_Ptr]).and.!Empty(r_balPer[Bal_Ptr])
@@ -1529,7 +1529,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					surplus:=r_balPer[bal_ptr] +r_balPrvPer[bal_ptr]     //added: +r_balPrvPer[bal_ptr] because starting month > 1
 				ENDIF
 				//IF clbalvj#surplusvj .or. clbal#surplus
-				SDgevonden:=true
+				SDgevonden:=TRUE
 				//ENDIF
 			ENDIF
 			IF !SDgevonden
@@ -1544,7 +1544,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 						surplus:=r_balPer[1]+r_balPrvPer[1]     //added: +r_balPrvPer[1] because starting month > 1
 					ENDIF
 					//IF clbalvj#surplusvj .or. clbal#surplus
-					SDgevonden:=true
+					SDgevonden:=TRUE
 					//ENDIF
 				ENDIF
 			ENDIF
@@ -1555,22 +1555,22 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					//				clbalvj:=-(r_balpryrtot[kap_num]-surplusvj)
 					clbalvj:=-r_balpryrtot[kap_num]
 					clbal:=-(r_balPer[kap_num]-surplus)
-					IF self:showopeningclosingfund
+					IF SELF:showopeningclosingfund
 						oReport:PrintLine(@iLine,@iPage,' ',hfdkop,2)
 						oReport:PrintLine(@iLine,@iPage,Pad(oLan:Get('OPENING FUND BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbalvj,11,DecAantal),hfdkop,0)
 						oReport:PrintLine(@iLine,@iPage,BoldOn+Pad(iif(clbal<0,RedOn+oLan:Get('Negative',,"!"),GreenOn+oLan:Get('Positive',,"!"))+" "+oLan:Get('CLOSING BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,hfdkop,0)
 					ENDIF
 				ENDIF
-				IF !self:showopeningclosingfund
+				IF !SELF:showopeningclosingfund
 					// determine highest level Income and expenses:
-					fAmnt:=self:BalFishTot("I",aTot)
+					fAmnt:=SELF:BalFishTot("I",aTot)
 					fInc:=fAmnt[1]
 					fExp:=fAmnt[2]
-					fAmnt:=self:BalFishTot("B",aTot)
-					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, DecAantal)
-					fAmnt:=self:BalFishTot("B",aTotprv)
+					fAmnt:=SELF:BalFishTot("B",aTot)
+					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, decaantal)
+					fAmnt:=SELF:BalFishTot("B",aTotprv)
 					clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
-					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,oLan:Get("Direct on",,"!")+" ","")+d_depname[Dep_Ptr]
+					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,oLan:Get("Direct on",,"!")+" ","")+d_depname[dep_ptr]
 // 					self:prAmounts("SD",clbalvj,r_balPrvYrYtD[Bal_Ptr],;
 // 						surplus,clbal,r_bud[bal_ptr],r_budper[bal_ptr],r_budytd[bal_ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
 					self:prAmounts("SD",clbalvj,surplusvj,;
@@ -1579,15 +1579,15 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN(Bal_Ptr)
+	RETURN(bal_ptr)
 METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep as array,d_depname as array,d_parentdep as array,d_dep as array,;
 		r_cat as array,r_balpryrtot as array,r_balPrYrYtD as array,r_balPrvPer as array,r_balPer as array,r_indmain as array,r_parentid as array,;
 		r_heading as array,r_footer as array,r_balnbr as array,r_balid as array,r_bud as array,r_budper as array,r_budytd as array,;
 		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int) as int CLASS BalanceReport
 	* Recursive processing of a department with its subdeparments
 	*
-	LOCAL TotalFound,subDepPtr as int
-	LOCAL TopWhatPtr as int
+	LOCAL TotalFound,subDepPtr AS INT
+	LOCAL TopWhatPtr AS INT
 	IF d_indmaindep[p_depptr]
 		IF self:WhoDetails
 			IF !self:WhatDetails
@@ -1599,7 +1599,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 					AScan( rd_salvrg[p_depptr], {|x| !IsNil(x)})>0 .or.;
 					AScan( rd_salper[p_depptr], {|x| !IsNil(x)})>0
 				* Process directly recorded amounts:
-				self:ProcessDepBal(p_depptr,true,level+1,d_netnum,d_depname,d_parentDep,d_dep,;
+				SELF:ProcessDepBal(p_depptr,TRUE,level+1,d_netnum,d_depname,d_parentDep,d_dep,;
 					r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,r_heading,r_footer,r_bud,r_budper,r_budytd,r_balid,;
 					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
 				IF !self:WhatDetails
@@ -1608,18 +1608,18 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 			ENDIF
 		ENDIF
 		subDepPtr:=0
-		DO WHILE true
+		DO WHILE TRUE
 			subDepPtr:=AScan(d_parentdep,d_dep[p_depptr],subDepPtr+1)
 			IF Empty(subDepPtr)
-				exit
+				EXIT
 			ELSE
 				TotalFound:=TotalFound+1
 				IF level>25
-					(errorbox{self:OWNER,'Hierarchy of referred departments too large or recursive'+;
+					(errorbox{SELF:OWNER,'Hierarchy of referred departments too large or recursive'+;
 						r_balnbr[p_depptr]}):show()
-					self:EndWindow()
+					SELF:EndWindow()
 				ENDIF
-				subDepPtr:=self:SubDepartment(subDepPtr,level+1,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
+				subDepPtr:=SELF:SubDepartment(subDepPtr,level+1,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 					r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,;
 					r_heading,r_footer,r_balnbr,r_balid,r_bud,r_budper,r_budytd,;
 					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
@@ -1684,7 +1684,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 				self:prtotaal("SD",@iLine,@iPage)
 			ENDIF
 			IF (!d_indmaindep[p_depptr] .or. TotalFound>1)
-				self:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
+				SELF:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
 					r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,r_heading,r_footer,r_bud,r_budper,r_budytd,r_balid,;
 					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
 			ENDIF
@@ -1692,7 +1692,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 				oReport:PrintLine(@iLine,@iPage,' ',hfdkop,0)
 			ENDIF
 		ELSE
-			self:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
+			SELF:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
 				r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,r_heading,r_footer,r_bud,r_budper,r_budytd,r_balid,;
 				rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
 		ENDIF
@@ -1997,21 +1997,21 @@ SELF:destroy()
 	RETURN NIL
 
 METHOD DepstmntPrint() CLASS DeptReport
-LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth as LOGIC
+LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth AS LOGIC
 LOCAL scheiding = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
 '-------|-------|-------|-------|-------|-------|-------|'
 LOCAL regtel,medtel,GClen,i,nRow,nPage as int
-LOCAL aDep:={} as ARRAY
-LOCAL mDep,jaarmaand, mailname as STRING
-LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh as LOGIC
-LOCAL brieftxt as STRING
-LOCAL oSelpers as Selpers
-LOCAL oMapi as MAPISession
-LOCAL oRecip,oRecip2 as MAPIRecip
-LOCAL aMailDepartment:={} as ARRAY
-LOCAL cFileName as USUAL, oFileSpec as FileSpec
-LOCAL oEMLFrm as eMailFormat
-LOCAL aASS,aAcc as ARRAY
+LOCAL aDep:={} AS ARRAY
+LOCAL mDep,jaarmaand, mailname AS STRING
+LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh AS LOGIC
+LOCAL brieftxt AS STRING
+LOCAL oSelpers AS Selpers
+LOCAL oMapi AS MAPISession
+LOCAL oRecip,oRecip2 AS MAPIRecip
+LOCAL aMailDepartment:={} AS ARRAY
+LOCAL cFileName AS USUAL, oFileSpec AS FileSpec
+LOCAL oEMLFrm AS eMailFormat
+LOCAL aASS,aAcc AS ARRAY
 LOCAL FileInit, cDepName as STRING 
 local oBal as BalanceItem 
 local nCurFifo as int
@@ -2020,10 +2020,10 @@ local addHeading as string
 // IF !oLan:Used
 // 	SELF:EndWindow()
 // ENDIF
-IF oPers == null_object
+IF oPers == NULL_OBJECT
 	oPers := Person{}
 	IF !oPers:Used
-		self:EndWindow()
+		SELF:EndWindow()
 	ENDIF
 ENDIF
 jaarmaand:=Str(YEARSTART,4)+' '+maand[MONTHSTART]+" "+oLan:Get('up incl')+Str(YEAREND,4)+' '+maand[MONTHEND]
@@ -2036,8 +2036,8 @@ IF SendingMethod=="SeperateFileMail"
 	ENDIF
 ENDIF
 
-self:Pointer := Pointer{POINTERHOURGLASS}
-self:Statusmessage("Collecting data for the report, please wait...")
+SELF:Pointer := Pointer{POINTERHOURGLASS}
+SELF:Statusmessage("Collecting data for the report, please wait...")
 IF SendingMethod=="SeperateFileMail"
 	oMAPI := MAPISession{}	
 	IF !oMAPI:Open( "" , "" )
@@ -2049,11 +2049,11 @@ IF SendingMethod=="SeperateFileMail"
 	oSelpers:=SelPers{,,oPers,oDep}
 	oSelpers:AnalyseTxt(oEMLFrm:Template,@ind_openpost,@ind_gift,@ind_naw,@ind_herh,1)
 ENDIF
-aDep:=self:oDCSubSet:GetSelectedItems()
-IF oDep == null_object
+aDep:=SELF:oDCSubSet:GetSelectedItems()
+IF oDep == NULL_OBJECT
 	oDep := Department{}
 	IF !oDep:Used
-		self:EndWindow()
+		SELF:EndWindow()
 	ENDIF
 ENDIF
 IF !oDep:OrderInfo(DBOI_NAME)=="DEPNBR"
@@ -2061,19 +2061,19 @@ IF !oDep:OrderInfo(DBOI_NAME)=="DEPNBR"
 ENDIF
 oDep:GoTop()
 oPers:SetOrder("Assre")
-IF oBalReport==null_object
+IF oBalReport==NULL_OBJECT
 	oBalReport:=BalanceReport{}
 ENDIF 
 		
 oBalReport:BalYears:=BalYears
-oBalReport:lCondense:=true
+oBalReport:lCondense:=TRUE
 oBalReport:ind_accstmnt:=FALSE
 oBalReport:ind_toel:=FALSE
-oBalReport:WhatDetails:=true
+oBalReport:WhatDetails:=TRUE
 oBalReport:WhoDetails:=FALSE
 oBalReport:WhatFrom:=0
-oBalReport:MONTHEND:=self:MONTHEND
-oBalReport:MONTHSTART:=self:MONTHSTART
+oBalReport:MONTHEND:=SELF:MONTHEND
+oBalReport:MONTHSTART:=SELF:MONTHSTART
 oBalReport:oReport:=oReport
 oBalReport:showopeningclosingfund:=true 
 oBalReport:SimpleDepStmnt:= self:oDCSimpleDepStmnt:Checked
@@ -2095,14 +2095,14 @@ IF SendingMethod="SeperateFile"
 else
 	oBalReport:SendToMail:=false	
 ENDIF
-oBalReport:BeginReport:=self:BeginReport	
+oBalReport:BeginReport:=SELF:BeginReport	
 //DO WHILE oDep:DEPTMNTNBR <= ToDep .and. !oDep:EOF
 DO WHILE !oDep:EOF
 	mdep:=oDep:DepId
 	IF !Empty(aDep)
 		IF AScan(aDep,mdep)=0
 			oDep:Skip()
-			loop
+			LOOP
 		ENDIF
 	ENDIF
 	cDepName:=CleanFileName(AllTrim(StrTran(oDep:DESCRIPTN,"."," ")))
@@ -2120,16 +2120,16 @@ DO WHILE !oDep:EOF
 	oBalReport:BalancePrint(FileInit)
 	self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
 
-   	IF oTransMonth==null_object
+   	IF oTransMonth==NULL_OBJECT
    		oTransMonth:=AccountStatements{60}
    	ENDIF
-	oTransMonth:oReport:=self:oReport
+	oTransMonth:oReport:=SELF:oReport
 	oTransMonth:BeginReport:=self:BeginReport
 	oTransMonth:SendingMethod:=SendingMethod
-    IF oAcc == null_object
+    IF oAcc == NULL_OBJECT
 		oAcc := Account{}
 		IF !oAcc:Used
-			self:EndWindow()
+			SELF:EndWindow()
 		ENDIF
 	ENDIF
 	// Print accountstatements of all department accounts:
@@ -2144,7 +2144,7 @@ DO WHILE !oDep:EOF
 	ENDDO
 	ASort(aAcc,,,{|x,y|x[1]<=y[1]})
 
-	FOR i=1 to Len(aAcc)
+	FOR i=1 TO Len(aAcc)
 		self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+" - "+aAcc[i,2]+", please wait...")
 		nRow:=0  && forceer bladskip
 		oTransMonth:MonthPrint(aAcc[i,1],aAcc[i,1],YEARSTART,MonthStart,YEAREND,MonthEnd,@nRow,@nPage,addHeading,self:oLan)
@@ -2157,13 +2157,13 @@ DO WHILE !oDep:EOF
 			oAcc:setOrder("accid")
 		ENDIF
 		aASS:={oDep:ASSACC1,oDep:ASSACC2,oDep:ASSACC3}
-		FOR i:=1 to 3
+		FOR i:=1 TO 3
 	   		IF !Empty(aASS[i])
 				IF !oAcc:OrderInfo(DBOI_NAME)=="accid"
 					oAcc:setOrder("accid")
 				ENDIF
 				oAcc:Seek(aASS[i])
-				self:Statusmessage("Printing Associated Accountstatements for "+cDepName+" - "+AllTrim(oAcc:description)+", please wait...")
+				SELF:Statusmessage("Printing Associated Accountstatements for "+cDepName+" - "+AllTrim(oAcc:description)+", please wait...")
 				oTransMonth:MonthPrint(oAcc:ACCNUMBER,oAcc:ACCNUMBER,YEARSTART,MonthStart,YEAREND,MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:Get("Associated",,"@!"),self:oLan)
 				nRow:=0  && forceer bladskip
 	   		ENDIF
@@ -2196,8 +2196,8 @@ IF IsString(cFileName)
 	oPers:SetOrder("Assre")
 	IF SendingMethod=="SeperateFileMail" 
 		oDep:SetOrder("DEPID")
-		FOR i:=1 to Len(aMailDepartment)
-			self:Statusmessage("Placing mail messages in outbox of mailing system, please wait...")
+		FOR i:=1 TO Len(aMailDepartment)
+			SELF:Statusmessage("Placing mail messages in outbox of mailing system, please wait...")
 			oPers:Seek(aMailDepartment[i,2])
 			IF oPers:EoF
 				MessageBox( 0 , "Contact person for "+aMailDepartment[i,1]+" not found; no report send" , "Problem" , MB_ICONEXCLAMATION )
@@ -2205,7 +2205,7 @@ IF IsString(cFileName)
 				* Resolve department responsible person name:
 				oRecip := oMapi:ResolveName( AllTrim(oPers:lastname),oPers:persid,oPers:lastname,oPers:email)
 
-				IF oRecip != null_object
+				IF oRecip != NULL_OBJECT
 					IF !Empty(oEMLFrm:Template) 
 						oDep:Seek(aMailDepartment[i,3])
 						brieftxt:=oSelpers:FillText(oEMLFrm:Template,1,ind_openpost,ind_gift,ind_naw,ind_herh,60)
@@ -2222,7 +2222,7 @@ IF IsString(cFileName)
 	ENDIF
 ENDIF
 
-self:Pointer := Pointer{POINTERARROW}
+SELF:Pointer := Pointer{POINTERARROW}
 
 RETURN
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DeptReport
@@ -2615,8 +2615,8 @@ METHOD RegDepartment(MyNum,ItemName) CLASS DeptReport
 	LOCAL  deptxt:="",deporder  as STRING
 	local depnr as int 
 	local oDep as SQLSelect
-	Default(@MyNum,null_string)
-	Default(@Itemname,null_string)
+	Default(@MyNum,NULL_STRING)
+	Default(@Itemname,NULL_STRING)
 	IF Empty(myNum)
 		depnr:=0
 		deptxt:=sEntity+" "+sLand
@@ -2628,14 +2628,14 @@ METHOD RegDepartment(MyNum,ItemName) CLASS DeptReport
 		ENDIF
 	ENDIF	
 	IF ItemName == "From Department"
-		self:FromDep:= depnr
-		self:oDCFromDep:TEXTValue := deptxt
-		self:cFromDepName := deptxt
-		self:oDCSubSet:DepNameStart:=deptxt
+		SELF:FromDep:= depnr
+		SELF:oDCFromDep:TEXTValue := deptxt
+		SELF:cFromDepName := deptxt
+		SELF:oDCSubSet:DepNameStart:=deptxt
 		self:oDCSubSet:DepNbrStart:=depnr
 	ENDIF
 		
-RETURN true
+RETURN TRUE
 ACCESS SendingMethod() CLASS DeptReport
 RETURN SELF:FieldGet(#SendingMethod)
 
@@ -3536,7 +3536,6 @@ oCCAllMonths1:HyperLabel := HyperLabel{#AllMonths1,"All months",NULL_STRING,NULL
 
 oDCGroupBox1 := GroupBox{SELF,ResourceID{GIFTREPORT_GROUPBOX1,_GetInst()}}
 oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Members/funds",NULL_STRING,NULL_STRING}
-oDCGroupBox1:OwnerAlignment := OA_WIDTH
 
 oCCCancelButton := PushButton{SELF,ResourceID{GIFTREPORT_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
@@ -5301,41 +5300,33 @@ STATIC DEFINE TRIALBALANCE_MONTHEND := 104
 STATIC DEFINE TRIALBALANCE_MONTHSTART := 103 
 STATIC DEFINE TRIALBALANCE_OKBUTTON := 106 
 STATIC DEFINE TRIALBALANCE_YEARTRIAL := 102 
-class YearClosing inherit DataWindowMine 
+CLASS YearClosing INHERIT DataWindowMine 
 
-	protect oCCOKButton as PUSHBUTTON
-	protect oCCCancelButton as PUSHBUTTON
-	protect oDCFixedText2 as FIXEDTEXT
-	protect oDCStartYearText as FIXEDTEXT
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCStartYearText as FIXEDTEXT
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT YearClose, MonthClose, BalanceYearEnd, YearStart, MonthStart AS INT
-  	EXPORT BalanceEndDate AS DATE
-  	PROTECT oTrans AS Transaction
-	PROTECT oAcc AS Account
-	PROTECT oDep AS Department
-	PROTECT oMember AS Members
-	PROTECT oMBal as MBalance
-	PROTECT oAccBal AS AccountBalanceYear
-	PROTECT oBalYear AS BalanceYear
-	PROTECT oSys AS Sysparms
-	PROTECT oDue AS DueAmount
-	PROTECT YearBalance AS STRING
-PROTECT d_netasset:={},;
-	 d_dep:={},;
-	 d_depnbr:={},;
-	 d_depname:={},;
-	d_parentdep:={},;
-	d_PLdeb:={},;
-	d_PLcre:={}	   as ARRAY 
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT YearClose, MonthClose, BalanceYearEnd, YearStart, MonthStart as int
+	EXPORT BalanceEndDate as date
+	PROTECT YearBalance as STRING
+	Protect cError as string 
+	PROTECT d_netasset:={},;
+		d_dep:={},;
+		d_depnbr:={},;
+		d_depname:={},;
+		d_parentdep:={},;
+		d_PLdeb:={},;
+		d_PLcre:={}	   as ARRAY 
 	
 	declare method SubDepartment
-RESOURCE YearClosing DIALOGEX  14, 13, 279, 88
+RESOURCE YearClosing DIALOGEX  16, 14, 278, 88
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"OK", YEARCLOSING_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 14, 53, 12
-	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 36, 53, 13
+	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 36, 53, 13
 	CONTROL	"Balance Year:", YEARCLOSING_FIXEDTEXT2, "Static", WS_CHILD, 22, 19, 64, 13
 	CONTROL	"", YEARCLOSING_STARTYEARTEXT, "Static", WS_CHILD, 77, 19, 109, 13
 END
@@ -5346,634 +5337,547 @@ METHOD CancelButton( ) CLASS YearClosing
 METHOD Close(oEvent) CLASS YearClosing
 	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oTrans==NULL_OBJECT
-	IF oTrans:Used
-		oTrans:Close()
-	ENDIF
-	oTrans:=NULL_OBJECT
-ENDIF
-IF !oAcc==NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
-IF !oDep==NULL_OBJECT
-	IF oDep:Used
-		oDep:Close()
-	ENDIF
-	oDep:=NULL_OBJECT
-ENDIF
-IF !oMember==NULL_OBJECT
-	IF oMember:Used
-		oMember:Close()
-	ENDIF
-	oMember:=NULL_OBJECT
-ENDIF
-IF !oMBal==NULL_OBJECT
-	IF oMBal:Used
-		oMBal:Close()
-	ENDIF
-	oMBal:=NULL_OBJECT
-ENDIF
-IF !oAccBal==NULL_OBJECT
-	IF oAccBal:Used
-		oAccBal:Close()
-	ENDIF
-	oAccBal:=NULL_OBJECT
-ENDIF
-IF !oBalYear==NULL_OBJECT
-	IF oBalYear:Used
-		oBalYear:Close()
-	ENDIF
-	oBalYear:=NULL_OBJECT
-ENDIF
-IF !oSys==NULL_OBJECT
-	IF oSys:Used
-		oSys:Close()
-	ENDIF
-	oSys:=NULL_OBJECT
-ENDIF
-IF !oDue==NULL_OBJECT
-	IF oDue:Used
-		oDue:Close()
-	ENDIF
-	oDue:=NULL_OBJECT
-ENDIF
 SELF:Destroy()
 	RETURN
 
-method Init(oWindow,iCtlID,oServer,uExtra) class YearClosing 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS YearClosing 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"YearClosing",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"YearClosing",_GetInst()},iCtlID)
 
-oCCOKButton := PushButton{self,ResourceID{YEARCLOSING_OKBUTTON,_GetInst()}}
+oCCOKButton := PushButton{SELF,ResourceID{YEARCLOSING_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
-oCCCancelButton := PushButton{self,ResourceID{YEARCLOSING_CANCELBUTTON,_GetInst()}}
+oCCCancelButton := PushButton{SELF,ResourceID{YEARCLOSING_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 
-oDCFixedText2 := FixedText{self,ResourceID{YEARCLOSING_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2 := FixedText{SELF,ResourceID{YEARCLOSING_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Balance Year:",NULL_STRING,NULL_STRING}
 
-oDCStartYearText := FixedText{self,ResourceID{YEARCLOSING_STARTYEARTEXT,_GetInst()}}
+oDCStartYearText := FixedText{SELF,ResourceID{YEARCLOSING_STARTYEARTEXT,_GetInst()}}
 oDCStartYearText:HyperLabel := HyperLabel{#StartYearText,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCStartYearText:TextColor := Color{0,0,128}
 
-self:Caption := "Year closing and balancing"
-self:HyperLabel := HyperLabel{#YearClosing,"Year closing and balancing",NULL_STRING,NULL_STRING}
+SELF:Caption := "Year closing and balancing"
+SELF:HyperLabel := HyperLabel{#YearClosing,"Year closing and balancing",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
-	self:Use(oServer)
-endif
+	SELF:Use(oServer)
+ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
 METHOD OKButton( ) CLASS YearClosing
-* Balancing and closing a year
-*LOCAL afsldatum AS DATE
-LOCAL oWarn AS warningbox, lSuc AS LOGIC
-// LOCAL oDebugBal AS DebugTransBal
-// LOCAL oTrialBal AS DebugAccBal
-LOCAL VWcre:={}, VWdeb:={},  VWrek:={} AS ARRAY
-LOCAL VWcreF:={}, VWdebF:={},  VWCurr:={} as ARRAY  // deficit/profit foreign currency
+	* Balancing and closing a year
+	LOCAL oWarn as warningbox, lSuc as LOGIC
+	LOCAL ProfitLossCre:={}, ProfitLossDeb:={},  ProfitLossAccount:={} as ARRAY
+	LOCAL ProfitLossCreF:={}, ProfitLossDebF:={},  ProfitLossCurrency:={} as ARRAY  // deficit/profit foreign currency
 
-LOCAL cTransnr,backup AS STRING
-LOCAL min_saldo AS FLOAT
-LOCAL i, Dep_Ptr AS INT
-LOCAL pFilter as _CODEBLOCK, cFilter, cCurrency as STRING
-LOCAL AfterBalance as int
-Local oBord as BankOrder
-local nMindate as int
+	LOCAL cTransnr,backup,cWarning as STRING
+	LOCAL min_balance as FLOAT
+	LOCAL i, Dep_Ptr as int
+	LOCAL cCurrency as STRING
+	LOCAL AfterBalance as int
+	Local oBord as SQLSelect
+	local nMindate as int
+	local oSel as SQLSelect
+	local oTrans as SQLSelect
+	local oDep as SQLSelect
+	local oMBal as SQLSelect
+	local cName as string
+	local cStatement as string
+	local oStmnt as SQLStatement
+	local nSeqNbr as int // sequence number of generated transaction lines 
+	local fTotal as float  // to check if year is correct in balance
 
-IF Today() <= BalanceEndDate
-   (errorbox{SELF:OWNER,'End of year not yet reached'}):Show()
-   SELF:EndWindow()
-   RETURN TRUE
-ENDIF
-* kijken of er onbestemde giften aanwezig zijn
-oTrans := Transaction{}
-IF !oTrans:Used
-	SELF:EndWindow()
-ENDIF
-oTrans:setOrder("balitemid") 
-oTrans:Clearfilter()
-lSuc:=oTrans:SetFilter('BFM="O".and.CRE>DEB')
-oTrans:Seek(sproj)
-*afsldatum:=SToD(Str(YearClose,4)+'1231')
-IF !oTrans:EOF .and. oTrans:dat <=BalanceEndDate
-   (ErrorBox{self:OWNER,self:oLan:WGet('Allot first non-designated gifts in year')+':'+YearBalance}):Show()
-   SELF:EndWindow()
-   RETURN TRUE
-   RETURN
-ENDIF
-oTrans:ClearFilter()
-IF Empty(sCURR) 
-   (ErrorBox{self:OWNER,self:oLan:WGet('First specify the currency in System parameters')}):Show()
-   self:EndWindow()
-   RETURN true
-ENDIF
-
-* Controleer of af te sluiten jaar nog niet gerapporteerde giften bevat:
-self:Pointer := Pointer{POINTERHOURGLASS}
-oTrans:Clearfilter()
-lSuc:=oTrans:setfilter("empty(BFM)")
-IF !oTrans:OrderInfo(DBOI_NAME)=="balitemid"
-	oTrans:setOrder("balitemid")
-ENDIF
-*oTrans:Setfilter("BFM==' '")
-oMember:=Members{}
-IF !oMember:Used
-	SELF:EndWindow()
-ENDIF
-oMember:SetOrder("MBRREK")
-lSuc:=oMember:setfilter("!Empty(householdid)")
-oMember:gotop()
-oAcc:=Account{}
-IF !oAcc:Used
-	SELF:EndWindow()
-ENDIF
-oAcc:setOrder("accid")
-DO WHILE !oMember:EOF
-	IF !Empty(oMember:householdid).and. oMember:GRADE#"Staf"   && medewerkers zonder HB-account overslaan
-		IF oTrans:seek(oMember:accid)
-   			IF oTrans:dat<= BalanceEndDate
-*   			oAcc:Seek(oTrans:accid)
-				oAcc:seek(oMember:accid)
-			   (errorbox{SELF:OWNER,'Trnsnr '+oTrans:TransId+' with date '+DToC(oTrans:DAT);
-				+' to '+AllTrim(oAcc:ACCNUMBER)+'-'+AllTrim(oAcc:Description)+' has TO be send to PMC first'}):Show()
-				SELF:EndWindow()
-				RETURN TRUE
-			ENDIF
-		ENDIF
-	ENDIF
-	oMember:skip()
-ENDDO
-oTrans:ClearFilter()
-oTrans:Close()
-
-oMember:Close()
-
-// Check if all reevaluations has been done: 
-if Sysparms{}:LSTREEVAL <  BalanceEndDate
-	oAcc:SetFilter("!MultiCurr .and. !Currency=='"+sCURR+"'")
-	oAcc:gotop()
-	if !oAcc:EOF
-	   (ErrorBox{self:OWNER,self:oLan:WGet('perform first required reevaluations')}):Show()
+	IF Today() <= self:BalanceEndDate
+		(ErrorBox{self:OWNER,self:oLan:WGet('End of year not yet reached')}):Show()
 		self:EndWindow()
-	   RETURN true
+		RETURN true
 	ENDIF
-	oAcc:Clearfilter()
-endif		
-
-
-IF Empty(skap)
-   (ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):Show()
-	SELF:EndWindow()
-   RETURN TRUE
-ENDIF
-oAcc:Seek(skap)
-IF !oAcc:FOUND
-   (ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):Show()
-	SELF:EndWindow()
-	RETURN TRUE
-ENDIF
-* Read departments into arrays:
-oDep:=Department{}
-IF !oDep:Used
-	SELF:EndWindow()
-	RETURN
-ENDIF
-d_dep:={Space(11)}
-*d_depnbr:={"0"}
-d_netasset:={skap}
-d_parentdep:={""}
-d_depname:={sEntity+" "+AllTrim(sLand)}
-d_PLdeb:={0}
-d_PLcre:={0}
-DO WHILE !oDep:EoF
-	AAdd(d_dep,oDep:DepId)
-*	AAdd(d_depnbr,AllTrim(oDep:DEPTMNTNBR))
-	AAdd(d_netasset,oDep:netasset)
-	AAdd(d_parentdep,oDep:ParentDep)
-	AAdd(d_depname,AllTrim(oDep:Descriptn))
-	AAdd(d_PLdeb,0)
-	AAdd(d_PLcre,0)
-	IF Empty(oDep:NetAsset)
-		SELF:Pointer := Pointer{POINTERARROW}
-		IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Department')+': '+oDep:DEPTMNTNBR+":";
-		+oDep:Descriptn,BUTTONOKAYCANCEL+BOXICONHAND}):show()==BOXREPLYCANCEL
-			RETURN FALSE
+	if !Empty(SPROJ)
+		* Are there sill non-earmarekd gifts?
+		if SQLSelect{"select transid from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:BalanceEndDate)+"' and accid='"+SPROJ+"'",oConn}:reccount>0
+			(ErrorBox{self:OWNER,self:oLan:WGet('Allot first non-designated gifts in year')+':'+YearBalance}):Show()
+			self:EndWindow()
+			RETURN true
 		ENDIF
+	endif
+	IF Empty(sCURR) 
+		(ErrorBox{self:OWNER,self:oLan:WGet('First specify the currency in System parameters')}):Show()
+		self:EndWindow()
+		RETURN true
+	ENDIF
+
+	* Are there gifts to be send to PMC?
+	if ADMIN=='WO'
+		oTrans:=SQLSelect{"select t.transid,t.dat,a.accnumber,a.description from transaction t, account a "+;
+			",member m where a.accid=m.accid and m.householdid<>'' and grade<>'staf' and "+;
+			" a.accid=t.accid and t.bfm='' and t.dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn}
+		if oTrans:reccount>0
+			do while !oTrans:EOF
+				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+' to '+oTrans:ACCNUMBER+'-'+oTrans:Description
+				oTrans:skip()
+			enddo
+			ErrorBox{self:OWNER,self:oLan:WGet("The following transactions have to be send to PMC first")+":"+self:cError}:Show()
+			self:EndWindow()
+			return true
+		endif
+	endif
+
+	// Check if all reevaluations has been done: 
+	if SQLSelect{"select LSTREEVAL from Sysparms",oConn}:LSTREEVAL <  self:BalanceEndDate 
+		if SQLSelect{"select accid from account where multicurr=0 and currency<>'"+sCURR+"'",oConn}:reccount>0
+			(ErrorBox{self:OWNER,self:oLan:WGet('perform first required reevaluations')}):Show()
+			self:EndWindow()
+			RETURN true
+		ENDIF
+	endif		
+
+
+	IF Empty(SKAP)
+		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not specified in system data')}):Show()
+		self:EndWindow()
+		RETURN true
+	ENDIF
+	IF SQLSelect{"select accid from account where accid='"+skap+"'",oConn}:reccount<1
+		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):Show()
+		self:EndWindow()
+		RETURN true
+	ENDIF
+	* Read departments into arrays:
+	self:d_dep:={0}
+	self:d_netasset:={Val(SKAP)}
+	self:d_parentdep:={nil}
+	self:d_depname:={sEntity+" "+AllTrim(SLAND)}
+	self:d_depnbr:={''}     	
+	self:d_PLdeb:={0.00}
+	self:d_PLcre:={0.00}
+	oDep:=SQLSelect{"select d.ParentDep,d.DEPTMNTNBR,d.Descriptn,d.depid,d.netasset,b.category from department d "+;
+		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}
+	if oDep:reccount>0
+		
+		DO WHILE !oDep:EOF
+			AAdd(self:d_dep,oDep:DepId)
+			AAdd(self:d_netasset,oDep:netasset)
+			AAdd(self:d_parentdep,oDep:ParentDep)
+			AAdd(self:d_depname,oDep:Descriptn) 
+			AAdd(self:d_depnbr,oDep:DEPTMNTNBR)
+			AAdd(self:d_PLdeb,0.00)
+			AAdd(self:d_PLcre,0.00)
+			IF !Empty(oDep:netasset)
+				if Empty(oDep:category)
+					(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets for department')+' '+oDep:DEPTMNTNBR+' '+self:oLan:WGet('not found')}):Show()
+					self:EndWindow()
+					RETURN true 
+				elseif !oDep:category==Liability
+					(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets for department')+' '+oDep:DEPTMNTNBR+' '+self:oLan:WGet('should be liablity/fund')}):Show()
+					self:EndWindow()
+					RETURN true 			
+				ENDIF
+			ENDIF
+			oDep:skip()
+		ENDDO 
+	endif
+
+	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),;
+		self:oLan:WGet('Certificate of auditing accountant given for year')+' '+self:YearBalance+'?'}
+	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
+	IF (oWarn:Show() = BOXREPLYNO)
+		self:EndWindow()
+		RETURN true
+	ENDIF
+
+	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
+	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
+	IF (oWarn:Show() = BOXREPLYNO)
+		self:EndWindow()
+		RETURN true
+	ENDIF
+	oWarn := WarningBox{self:OWNER,"Year Balancing",;
+		'Closing of the year is irrevocable, are you sure?'}
+	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
+	IF (oWarn:Show() = BOXREPLYNO)
+		self:EndWindow()
+		RETURN true
+	ENDIF
+
+	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet("Everyone else is locked out from the system")}
+	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
+	IF (oWarn:Show() = BOXREPLYNO)
+		self:EndWindow()
+		RETURN true
+	ENDIF 
+	// check if there is someone else in the system: 
+	oSel:=SQLSelect{'select e.empid,'+SQLFullName(2)+' as fullname';
+	+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+" and online=1" + ;
+	" and "+Crypt_Emp(false,"e.loginname")+"<>'"+LOGON_EMP_ID+"' order by lastname",oConn}
+	do while oSel:reccount>0
+		cWarning:=""
+		do while !oSel:EOF
+			cWarning+=CRLF+oSel:fullname
+			oSel:skip()
+		enddo
+		ErrorBox{self:OWNER,self:oLan:WGet("following employees are still in the system")+":"+cWarning}:Show()
+		oSel:Execute()  // reread
+		oSel:Gotop()
+	enddo
+   SQLStatement{"start transaction",oConn}:Execute()
+	// lock employee table:
+	oStmnt:=SQLStatement{"select empid from employee for update",oConn}
+	oStmnt:Execute()
+	if !Empty(oStmnt:Status)
+		SQLStatement{"rollback",oConn}:Execute()
+		ErrorBox{self,self:oLan:WGet("can't lock others out")}:Show()
+		return
+	endif 	
+	
+	self:Pointer := Pointer{POINTERHOURGLASS}
+
+	self:OWNER:STATUSMESSAGE(self:oLan:WGet("Collecting balance data, please wait")+"...")
+	* save balances of profit/loss accounts over year to be closed into arrays ProfitLossDeb/Cre
+	AfterBalance :=Year(self:BalanceEndDate+1)*100+Month(self:BalanceEndDate+1) 
+
+   oMBal:=SQLSelect{SQLGetBalance(self:YearStart*100+self:MonthStart,self:YearClose*100+self:MonthClose,'',false,true,,true),oConn}
+   oMBal:Gotop()
+   self:cError:=""
+	DO WHILE !oMBal:EOF 
+		cCurrency:=oMBal:Currency
+
+		* balance of year to be closed = balance of previous versus following year:
+		* balances of expense and income accounts have to be added to corresponding netassets and zero balanced:
+		IF oMBal:category == Expense .or. oMBal:category == Income
+			* saldo van V&W verminderen met stand afgelopen jaar:
+			AAdd(ProfitLossAccount,oMBal:accid)
+			Dep_Ptr:=AScan(self:d_dep,oMBal:Department)
+			IF Dep_Ptr=0
+				* No requested department: 
+				self:cError:=self:oLan:WGet("Not defined department in account")+":"+oMBal:ACCNUMBER
+				exit
+			ENDIF
+			AAdd(ProfitLossDeb,oMBal:per_deb)
+			AAdd(ProfitLossCre,oMBal:per_cre)
+			AAdd(ProfitLossDebF,oMBal:per_debF)        // reserve place for foreign currency
+			AAdd(ProfitLossCreF,oMBal:per_creF) 
+			AAdd(ProfitLossCurrency,oMBal:Currency)
+			self:d_PLdeb[Dep_Ptr]:=Round(self:d_PLdeb[Dep_Ptr]+oMBal:per_deb,DecAantal)
+			self:d_PLcre[Dep_Ptr]:=Round(self:d_PLcre[Dep_Ptr]+oMBal:per_cre,DecAantal) 
+			fTotal:=Round(fTotal+oMBal:per_cre-oMBal:per_deb,DecAantal)
+		else
+			fTotal:=Round(fTotal+oMBal:per_cre-oMBal:per_deb+oMBal:PrvPer_cre-oMBal:PrvPer_deb,DecAantal)
+		ENDIF
+
+		IF oMBal:per_deb#0.or.oMBal:per_cre#0 .or. oMBal:per_debF # 0 .or. oMBal:per_creF # 0
+			* Save per_deb and per_cre AccountBalanceYear next year:
+			IF oMBal:category == Expense .or. oMBal:category == Income
+				min_balance:=0
+			else
+				min_balance:=Min(oMBal:per_deb,oMBal:per_cre)
+			endif
+			oStmnt:=SQLStatement{"insert into accountbalanceyear set "+;
+			"accid='"+Str(oMBal:accid,-1)+"'"+;
+			",YearStart="+Str(AfterBalance/100,4,0)+;
+			",MonthStart="+Str(AfterBalance%100,2,0)+; 
+			",CURRENCY='"+sCURR+"'"+;
+			",svjd='"+Str(Round(oMBal:per_deb - min_balance,DecAantal),-1)+"',svjc='"+Str(Round(oMBal:per_cre - min_balance,DecAantal),-1)+"'",oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows>0
+				if oMBal:Currency # sCURR
+					// also foreign currency balance: 
+					if oMBal:category == Expense .or. oMBal:category == Income
+						min_balance:=0
+					else
+						min_balance:=Min(oMBal:per_debF,oMBal:per_creF)
+					endif
+					oStmnt:=SQLStatement{"insert into accountbalanceyear	set "+;
+					"accid='"+Str(oMBal:accid,-1)+"'"+;
+					",YearStart="+Str(AfterBalance/100,4,0)+;
+					",MonthStart="+Str(AfterBalance%100,2,0)+;	
+					",CURRENCY='"+oMBal:Currency+"'"+;
+					",svjd='"+Str(Round(oMBal:per_debF - min_balance,DecAantal),-1)+"',svjc='"+Str(Round(oMBal:per_creF - min_balance,DecAantal),-1)+"'",oConn}
+					oStmnt:Execute()
+					if	!Empty(oStmnt:Status)
+						self:cError:=self:oLan:WGet("could	not update accountbalanceyear")+":"+oMBal:ACCNUMBER+"	- "+oMBal:Description
+						LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+						exit
+					endif
+				endif
+			else
+				self:cError:=self:oLan:WGet("could	not update accountbalanceyear")+":"+oMBal:ACCNUMBER+"	- "+oMBal:Description 
+				LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+				exit			
+			ENDIF
+		endif
+		oMBal:skip()
+	ENDDO
+	if !Empty(self:cError)
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+	if fTotal<>0.00
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:oLan:WGet("balance year is not in balance")}):Show()
+		return
+	endif
+		
+	* Make records to netassetaccounts per department:
+	self:STATUSMESSAGE(self:oLan:WGet("Recording to netasset accounts, moment please"))
+	if !self:SubDepartment(1,@cTransnr,@nSeqNbr,AfterBalance)
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		if !Empty(self:cError)
+			(ErrorBox{self:OWNER,self:cError}):Show()
+		endif
+		return
+	ENDIF
+
+	* Record transfer of profit/Loss to netasset accounts:
+	self:STATUSMESSAGE(self:oLan:WGet("Recording profit/loss transactions, moment please"))
+
+	FOR i = 1 to Len(ProfitLossAccount)
+		IF ProfitLossDeb[i]#0 .or. ProfitLossCre[i]#0
+			nSeqNbr++
+			cStatement:="insert into Transaction set "+;
+			"TransId="+cTransnr+;
+			",DAT='"+SQLdate(self:BalanceEndDate)+"'"+;
+			",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
+			",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
+			",accid='"+Str(ProfitLossAccount[i],-1)+"'"+;
+			",Deb="+Str(-ProfitLossDeb[i],-1)+;
+			",Cre="+Str(-ProfitLossCre[i],-1)+;
+			",USERID='"+LOGON_EMP_ID +"'"+;
+			",CURRENCY='"+ProfitLossCurrency[i] +"'"+;
+			",DEBFORGN="+Str(-ProfitLossDebF[i],-1)+;
+			",CREFORGN="+Str(-ProfitLossCreF[i],-1)+;
+			",SEQNR="+Str(nSeqNbr,-1)+;
+			",POSTSTATUS=2"	
+			oStmnt:=SQLStatement{cStatement,oConn}
+			oStmnt:Execute()
+			if	oStmnt:NumSuccessfulRows<1
+				self:cError:=self:oLan:WGet("could not add transaction")+";Error:"+oStmnt:ErrInfo:ErrorMessage
+				LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+				SQLStatement{"rollback",oConn}:Execute()
+				self:Pointer := Pointer{POINTERARROW}
+				(ErrorBox{self:OWNER,self:cError}):Show()
+				return
+			endif
+		ENDIF
+	NEXT
+
+
+	* Update closed year:
+	oStmnt:=SQLStatement{"insert into balanceyear set "+;
+	"YEARSTART="+Str(Year(LstYearClosed),-1)+;
+	",MONTHSTART="+Str(Month(LstYearClosed),-1)+;
+	",YEARLENGTH="+Str(self:YearClose*12+self:MonthClose+1-Year(LstYearClosed)*12-Month(LstYearClosed),-1)+;
+	",STATE='C'",oConn}
+	oStmnt:Execute()
+	if oStmnt:NumSuccessfulRows<1
+		self:cError:=self:oLan:WGet("could not add transaction")+";Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+	oStmnt:=SQLStatement{"update sysparms set yearclosed="+Str(self:YearClose,-1)+",mindate='"+SQLdate(self:BalanceEndDate+1)+"'",oConn}
+	oStmnt:Execute()	
+	if !Empty(oStmnt:Status)
+		self:cError:=self:oLan:WGet("could not change sysparms")+";Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+
+	* Clearing of the database:
+	* Archiving Transactions: 
+	// create archive table: 
+	self:STATUSMESSAGE(self:oLan:WGet("Creating archive file, moment please"))
+	cName:= 'Tr'+Str(self:YearStart,4)+StrZero(self:MonthStart,2)
+	oStmnt:=SQLStatement{"create table "+cName+" (primary key (transid,seqnr)) engine=MyIsam select * from transaction where dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn} 
+	oStmnt:Execute()                        
+	if Empty(oStmnt:Status)
+		// create other indexes:
+		
+	endif		
+	
+	if !Empty(oStmnt:Status)
+		self:cError:=self:oLan:WGet("could not create archive file")+": "+cName+"; Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+	// remove old transactions from transaction table:
+	self:STATUSMESSAGE(self:oLan:WGet("Removing of transactions, moment please"))
+	oStmnt:=SQLStatement{"delete from transaction where dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn} 
+	oStmnt:Execute() 
+	if !Empty(oStmnt:Status)
+		self:cError:=self:oLan:WGet("could not clear old transactions")+"; Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+
+	* Clearing Due Amounts:
+	self:STATUSMESSAGE(self:oLan:WGet("Removing of received invoiced amounts, moment please"))
+	oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(curdate(),120) and AmountRecvd >=AmountInvoice or invoicedate<subdate(curdate(), interval 1 year)",oConn} 
+	oStmnt:Execute()
+  	if !Empty(oStmnt:Status)
+		self:cError:=self:oLan:WGet("could not clear old dueamounts")+"; Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+
+	* Clearing Bank orders:
+	self:STATUSMESSAGE(self:oLan:WGet("Removing of payable amounts, moment please"))
+	oStmnt:=SQLStatement{"delete from bankorder where datepayed>'000-00-00' and datepayed<subdate(Curdate(),200)",oConn} 
+	oStmnt:Execute()
+  	if !Empty(oStmnt:Status)
+		self:cError:=self:oLan:WGet("could not clear old bank orders")+"; Error:"+oStmnt:ErrInfo:ErrorMessage
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+		SQLStatement{"rollback",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
+		(ErrorBox{self:OWNER,self:cError}):Show()
+		return
+	endif
+	oStmnt:=SQLStatement{"commit",oConn}
+	oStmnt:Execute()
+	self:Pointer := Pointer{POINTERARROW}
+	if empty(oStmnt:status)
+		TextBox{self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+space(1)+self:YearBalance+space(1)+self:oLan:WGet("successfully closed")}:Show()
+		LstYearClosed	:=self:BalanceEndDate+1
 	else
-		if !oAcc:Seek(oDep:netasset)
-		   (ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets for department')+' '+oDep:DEPTMNTNBR+' '+self:oLan:WGet('not found')}):Show()
-			self:EndWindow()
-			RETURN true 
-		elseif !oAcc:Type=="PA"
-		   (ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets for department')+' '+oDep:DEPTMNTNBR+' '+self:oLan:WGet('should be liablity/fund')}):Show()
-			self:EndWindow()
-			RETURN true 			
-		ENDIF
-	ENDIF
-	oDep:Skip()
-ENDDO
+		TextBox{self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+space(1)+self:YearBalance+space(1)+self:oLan:WGet("not closed")}:Show()
+		return		
+	endif
+	FillBalYears()  // refill GLBalYears
+	self:EndWindow() 
+	self:Close()
+	RETURN
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS YearClosing
+	//Put your PostInit additions here 
+	local aYear:={} as array
+self:SetTexts()
+	aYear:=GetBalYear(Year(LstYearClosed),Month(LstYearClosed))
+	self:YearStart:=aYear[1]
+	self:MonthStart:=aYear[2]
+	self:YearClose :=aYear[3]
+	self:MonthClose:=aYear[4]
+	self:BalanceYearEnd:=self:YearClose*12+self:MonthClose
+	self:BalanceEndDate:=SToD(Str(self:YearClose,4)+StrZero(self:MonthClose,2)+StrZero(MonthEnd(self:MonthClose,self:YearClose),2))
+	self:oDCStartYearText:TextValue:=Str(self:YearStart,4)+":"+StrZero(self:MonthStart,2)+"  -  "+;
+	Str(self:YearClose,4)+":"+StrZero(self:MonthClose,2)
+	self:YearBalance := self:oDCStartYearText:TextValue
+	RETURN NIL
+METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterBalance as int) as logic pascal CLASS YearClosing
+	* Recursive processing of a department with its subdeparments
+	*
+	LOCAL subDepPtr AS INT
+	LOCAL min_balance, PL_totdeb, PL_totcre as FLOAT
+	local cStatement as string
+	local oStmnt as SQLStatement
 
-SELF:Pointer := Pointer{POINTERARROW}
-oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),;
-self:oLan:WGet('Certificate of accountant given for year')+' '+YearBalance+'?'}
-oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-IF (oWarn:Show() = BOXREPLYNO)
-	SELF:EndWindow()
-	RETURN TRUE
-ENDIF
-
-oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
-oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-IF (oWarn:Show() = BOXREPLYNO)
-	SELF:EndWindow()
-	RETURN TRUE
-ENDIF
-oWarn := Warningbox{SELF:OWNER,"Year Balancing",;
-'Closing of the year is irrevocable, are you sure?'}
-oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-IF (oWarn:Show() = BOXREPLYNO)
-	SELF:EndWindow()
-	RETURN TRUE
-ENDIF
-
-oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet("Everyone else is locked out from the system")}
-oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-IF (oWarn:Show() = BOXREPLYNO)
-	SELF:EndWindow()
-	RETURN TRUE
-ENDIF
-SELF:Pointer := Pointer{POINTERHOURGLASS}
-
-// * Check correctness transactions first:
-// self:OWNER:STATUSMESSAGE(self:oLan:WGet("Checking correctness transactions, please wait")+"...")
-// CrIndexes(Transaction{,TRUE,TRUE},,TRUE)
-// CrIndexes(MBalance{,true,true},,true)
-// oDebugBal:=DebugTransBal{,,,TRUE}
-// IF !oDebugBal:OKButton()
-// 	oDebugBal:Close()
-// 	SELF:EndWindow()
-// 	RETURN
-// ENDIF
-// oDebugBal:Close()
-
-// * Check if accounts are balanced:
-// self:OWNER:STATUSMESSAGE(self:oLan:WGet("Checking accounts are balanced, please wait")+"...")
-// oAcc:Close()
-// CrIndexes(Account{,TRUE,TRUE},,TRUE)
-// oTrialBal:=DebugAccBal{,,,TRUE}
-// IF !Empty(oTrialBal:OKButton())
-// 	(InfoBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet("Accounts are not balanced, please correct first")}):Show()
-// 	oTrialBal:Close()
-// 	SELF:EndWindow()
-// 	RETURN
-// ENDIF
-// oTrialBal:Close()
-
-* Open database files exclusive:
-*use accid index accid, rekoms exclusive new
-oAcc:=Account{}
-IF !oAcc:Used
-	SELF:EndWindow()
-ENDIF
-oAcc:setOrder("accid")
-oMBal:=MBalance{,FALSE}
-IF !oMBal:Used
-	SELF:EndWindow()
-ENDIF
-oMBal:FileLock()
-oTrans:=Transaction{,FALSE}
-IF !oTrans:Used
-	SELF:EndWindow()
-ENDIF
-oTrans:FileLock()
-
-oAcc:GoTop()
-oLan:=Language{}
-IF !oLan:Used
-	SELF:EndWindow()
-ENDIF
-oDue:=DueAmount{,FALSE}
-IF !oDue:Used
-	SELF:EndWindow()
-ENDIF
-oBord:=BankOrder{,FALSE}
-IF !oBord:Used
-	self:EndWindow()
-ENDIF
-oSys:= Sysparms{}
-IF !oSys:Used
-	SELF:EndWindow()
-ENDIF
-
-oAccBal:=AccountBalanceYear{}
-IF !oAccBal:Used
-	SELF:EndWindow()
-ENDIF
-
-oBalYear:=BalanceYear{}
-IF !oBalYear:Used
-	SELF:EndWindow()
-ENDIF
-
-* Saldi van rekeningen over af te sluiten jaar opnemen in vjsd/c van
-* nieuwe jaar:
-AfterBalance :=Year(BalanceEndDate+1)*100+Month(BalanceEndDate+1)
-
-
-DO WHILE !oAcc:EOF 
-	cCurrency:=iif(Empty(oAcc:Currency),sCurr,oAcc:Currency)
-
-	 * balance of year to be closed = balance of previous versus following year:
-// 	oMbal:GetBalance(oAcc:accid,oAcc:balitemid,LstYearClosed,BalanceEndDate,sCURR )
-	oMbal:GetBalance(oAcc:accid,oAcc:balitemid,LstYearClosed,BalanceEndDate,cCurrency )
-	* Indien V&W, dan total saldo bepalen voor boeken naar kapitaal en alvast
-	* rekeningsaldo aanpassen:
-	IF oMBal:cRubrSoort == "KO" .or. oMBal:cRubrSoort == "BA"
-		* saldo van V&W verminderen met stand afgelopen jaar:
-		AAdd(VWrek,oAcc:accid)
-		Dep_Ptr:=AScan(d_dep,oAcc:Department)
-		IF Dep_Ptr=0
-			* No requested department:
-			SELF:Pointer := Pointer{POINTERARROW}
-			(ErrorBox{self:OWNER,self:oLan:WGet("Not defined department in account")+":"+oAcc:ACCNUMBER}):Show()
-			RETURN FALSE
-		ENDIF
-		AAdd(VWdeb,oMBal:per_deb)
-		AAdd(VWcre,oMBal:per_cre)
-		AAdd(VWdebF,oMBal:per_debF)        // reserve place for foreign currency
-		AAdd(VWcreF,oMBal:per_creF) 
-		AAdd(VWCurr,cCurrency)
-		IF IsNil(d_PLdeb[Dep_Ptr])
-			d_PLdeb[Dep_Ptr]:=oMbal:per_deb
+	subDepPtr:=0
+	DO WHILE TRUE
+		subDepPtr:=AScan(self:d_parentdep,self:d_dep[p_depptr],subDepPtr+1)
+		IF Empty(subDepPtr)
+			EXIT
 		ELSE
-			d_PLdeb[Dep_Ptr]:=Round(d_PLdeb[Dep_Ptr]+oMbal:per_deb,DecAantal)
+			if self:SubDepartment(subDepPtr,@cTransnr,@nSeqNbr,AfterBalance)
+				* consolidate values of subdepartment into itself:
+				self:d_PLdeb[p_depptr]:=Round(self:d_PLdeb[p_depptr]+self:d_PLdeb[subDepPtr],DecAantal)
+				self:d_PLcre[p_depptr]:=Round(self:d_PLcre[p_depptr]+self:d_PLcre[subDepPtr],DecAantal)
+			else
+				return false
+			endif
 		ENDIF
-		IF IsNil(d_PLcre[Dep_Ptr])
-			d_PLcre[Dep_Ptr]:=oMbal:per_cre
-		ELSE		
-			d_PLcre[Dep_Ptr]:=Round(d_PLcre[Dep_Ptr]+oMbal:per_cre,DecAantal)
-		ENDIF
-	ELSE
-   		* Bij AK/PA afletteren deb - cre jaarsaldo:
-		min_saldo:=Min(oMBal:per_deb,oMBal:per_cre)
-		oMBal:per_deb := Round(oMBal:per_deb - min_saldo,DecAantal)
-		oMBal:per_cre := Round(oMBal:per_cre - min_saldo,DecAantal)
-		min_saldo:=Min(oMBal:per_debF,oMBal:per_creF)
-		oMBal:per_debF := Round(oMBal:per_debF - min_saldo,DecAantal)
-		oMBal:per_creF := Round(oMBal:per_creF - min_saldo,DecAantal)
-	ENDIF
-
-	IF oMBal:per_deb#0.or.oMBal:per_cre#0 .or. oMBal:per_debF # 0 .or. oMBal:per_creF # 0
-	* per_deb en per_cre bewaren in AccountBalanceYear van volgende jaar:
-		oAccBal:seek(oAcc:accid+Str(AfterBalance,6)+sCURR)
-		IF oAccBal:EOF
-			oAccBal:Append()
-			oAccBal:accid := oAcc:accid
-			oAccBal:YearStart := AfterBalance/100
-		 	oAccBal:MonthStart := AfterBalance%100 
-		 	oAccBal:CURRENCY:=sCurr
-		ENDIF
-		oAccBal:svjd := oMBal:per_deb
-		oAccBal:svjc := oMBal:per_cre
-		if oAcc:Currency # sCURR
-			oAccBal:seek(oAcc:accid+Str(AfterBalance,6)+oAcc:Currency)
-			IF	oAccBal:EOF
-				oAccBal:Append()
-				oAccBal:accid	:=	oAcc:accid
-				oAccBal:YearStart	:=	AfterBalance/100
-				oAccBal:MonthStart := AfterBalance%100	
-				oAccBal:Currency:=oAcc:Currency
-			ENDIF			
-			oAccBal:svjd := oMBal:per_debF
-			oAccBal:svjc := oMBal:per_creF
+	ENDDO
+	*
+	* Make records to netassetaccount of the  department:
+	if !Round(self:d_PLcre[p_depptr]-self:d_PLdeb[p_depptr],DecAantal)==0.00
+		IF Empty(self:d_netasset[p_depptr])
+			self:Pointer := Pointer{POINTERARROW}
+			IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Department')+': '+self:d_depnbr[p_depptr]+":";
+				+self:d_depname[p_depptr]+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
+				RETURN FALSE
+			else
+				self:Pointer := Pointer{POINTERHOURGLASS}
+			endif
+		else
+			PL_totdeb:=self:d_PLdeb[p_depptr]
+			PL_totcre:=self:d_PLcre[p_depptr]
+			min_balance:=Min(PL_totdeb,PL_totcre)	 && afletteren	deb -	cre
+			PL_totdeb := Round(PL_totdeb - min_balance,DecAantal)
+			PL_totcre := Round(PL_totcre - min_balance,DecAantal)
+			nSeqNbr++
+			cStatement:="insert into Transaction set "+;
+				iif(Empty(cTransnr),'',"TransId="+cTransnr+",")+;
+				"DAT='"+SQLdate(self:BalanceEndDate)+"'"+;
+				",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
+				",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
+				",accid='"+Str(self:d_netasset[p_depptr],-1)+"'"+;
+				",Deb="+Str(PL_totdeb,-1)+;
+				",Cre="+Str(PL_totcre,-1)+;
+				",USERID='"+LOGON_EMP_ID +"'"+;
+				",CURRENCY='"+sCURR +"'"+;
+				",DEBFORGN="+Str(PL_totdeb,-1)+;
+				",CREFORGN="+Str(PL_totcre,-1)+;
+				",SEQNR="+Str(nSeqNbr,-1)+;
+				",POSTSTATUS=2"	
+				oStmnt:=SQLStatement{cStatement,oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows>0
+					if	Empty(cTransnr)
+						cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+					endif
+					* adapt last year	balance of net	asset	account: 
+					oStmnt:=SQLStatement{"insert into accountbalanceyear set "+;
+						"accid='"+Str(self:d_netasset[p_depptr],-1)+"'"+;
+						",YearStart="+Str(AfterBalance/100,4,0)+;
+						",MonthStart="+Str(AfterBalance%100,2,0)+; 
+						",CURRENCY='"+sCURR+"'"+;
+						",svjd='"+Str(PL_totdeb,-1)+"',svjc='"+Str(PL_totcre,-1)+"'",oConn}
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows<1
+						oStmnt:=SQLStatement{"update accountbalanceyear	set "+;
+						"svjd=svjd+"+Str(PL_totdeb,-1)+",svjc=svjc+"+Str(PL_totcre,-1)+;
+						" where accid='"+Str(self:d_netasset[p_depptr],-1)+"' and "+;
+						" YearStart="+Str(AfterBalance/100,4,0)+;
+						" and	MonthStart="+Str(AfterBalance%100,2,0)+; 
+						" and	CURRENCY='"+sCURR+"'",oConn}
+						oStmnt:Execute()
+						if	!Empty(oStmnt:Status)
+							self:cError:=self:oLan:WGet("could not	update accountbalanceyear")+";Error:"+oStmnt:ErrInfo:ErrorMessage
+							LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+							return false
+						endif
+					endif
+					* Clear self:d_PLdeb/cre:
+					self:d_PLdeb[p_depptr]:=0.00
+					self:d_PLcre[p_depptr]:=0.00 
+				else
+					self:cError:=self:oLan:WGet("could not add transaction")+";Error:"+oStmnt:ErrInfo:ErrorMessage
+					LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+					return false
+				endif
 		endif
 	ENDIF
-// 	if !cCurrency==sCurr
-// 		// also foreign currency balance: 
-// 		IF oMBal:cRubrSoort == "KO" .or. oMBal:cRubrSoort == "BA"
-// 			i:=Len(VWCurr)				
-// 			VWdebF[i]:=oMbal:per_debF
-// 			VWcreF[i]:=oMbal:per_creF
-// 		else
-// 			min_saldo:=Min(oMbal:per_debF,oMbal:per_creF)
-// 			oMBal:per_debF := Round(oMBal:per_debF - min_saldo,DecAantal)
-// 			oMBal:per_creF := Round(oMBal:per_creF - min_saldo,DecAantal)
-// 		endif	
-// 		IF oMbal:per_debF # 0.or.oMbal:per_creF # 0
-// 			* per_deb en per_cre bewaren in AccountBalanceYear van volgende jaar:
-// 			oAccBal:Seek(oAcc:accid+Str(AfterBalance,6))+cCurrency
-// 			IF oAccBal:EOF
-// 				oAccBal:Append()
-// 				oAccBal:accid := oAcc:accid
-// 				oAccBal:YearStart := AfterBalance/100
-// 			 	oAccBal:MonthStart := AfterBalance%100 
-// 			 	oAccBal:CURRENCY:=cCurrency
-// 			ENDIF
-// 			oAccBal:svjd := oMbal:per_debF
-// 			oAccBal:svjc := oMbal:per_creF
-// 		endif
-// 	ENDIF
-	oAcc:skip()
-ENDDO
-oAcc:Close()
-
-
-* Maak boekingen aan voor wegboeken van V&W-saldi naar kapitaal:
-cTransnr := TransKey{}:KeyValue
-
-FOR i = 1 TO Len(VWrek)
-	IF VWdeb[i]#0 .or. VWcre[i]#0
-		oTrans:append()
-		oTrans:docid := 'CL'+StrZero(YearClose%100,2)+StrZero(MonthClose,2)
-		oTrans:accid := VWrek[i]
-		oTrans:description := oLan:RGet('Closing year',,"!")+' '+YearBalance
-		oTrans:deb := -VWdeb[i]
-		oTrans:cre := -VWcre[i]
-		oTrans:CURRENCY:=VWCurr[i]
-		oTrans:DEBFORGN:=-VWdebF[i]
-		oTrans:CREFORGN:=-VWcreF[i] 
-		oTrans:Currency:=VWCurr[i]
-		oTrans:dat := BalanceEndDate
-		oTrans:USERID := LOGON_EMP_ID
-		oTrans:TransId := cTransnr
-	ENDIF
-NEXT
-* Make records to netassetaccounts per department:
-self:SubDepartment(1,cTransnr,AfterBalance)
-
-
-* Wijzig afgesloten jaar:
-oBalYear:Append()
-oBalYear:YEARSTART:=Year(LstYearClosed)
-oBalYear:MONTHSTART:=Month(LstYearClosed)
-oBalYear:YEARLENGTH:=YearClose*12+MonthClose+1-Year(LstYearClosed)*12-Month(LstYearClosed)
-oBalYear:STATE:="C"
-oBalYear:Commit()
-LstyearClosed	:=BalanceEndDate+1
-
-oSys:GoTO(1)
-oSys:Reclock()
-oSys:yearclosed := YearClose
-if oSys:MinDate < LstyearClosed 
-	oSys:MinDate := LstyearClosed
-	MinDate:=LstyearClosed 
-endif
-oSys:commit()
-oSys:unLock()
-oSys:Close()
-
-* Schoning:
-* Openstaande posten schonen:
-
-cFilter:='(DToS(invoicedate)<"'+DToS(Today()-120)+'".and.AmountRecvd >=AmountInvoice).or.Year(invoicedate)<'+Str(Year(Today())-1,4,0)
-pFilter:=&("{||"+ cFilter+"}")
-lSuc:=oDue:SetFilter(pFilter,cFilter)
-oDue:Gotop()
-IF !oDue:EOF
-	self:STATUSMESSAGE(self:oLan:WGet("Removing of received invoiced amounts, moment please"))
-	lSuc:=oDue:FileLock()
-	lSuc:=oDue:DeleteAll()
-	lSuc:=oDue:pack()
-ENDIF
-oDue:Close()
-
-* Schoning:
-* Bank orders schonen:
-
-cFilter:='!empty(datepayed).and.(DToS(DATEPAYED)<"'+DToS(Today()-200)+'")'
-pFilter:=&("{||"+ cFilter+"}")
-lSuc:=oBord:SetFilter(pFilter,cFilter)
-oBord:gotop()
-IF !oBord:EOF
-	self:STATUSMESSAGE(self:oLan:WGet("Removing of payable amounts, moment please"))
-	lSuc:=oBord:FileLock()
-	lSuc:=oBord:DeleteAll()
-	lSuc:=oBord:pack()
-ENDIF
-oBord:Close()
-
-* Maandsaldi schonen:
-/*oMBal:ClearFilter()
-lSuc:= oMBal:SetFilter("YEAR<="+Str(YearStart-9,4,0))
-oMBal:Gotop()
-IF !oMBal:EOF
-   backup:='mnds'+Str(YearStart-9,4)
-	SELF:StatusMessage( ;
-   "Archiving of month balance values older than 10 years to file "+backup+", moment please")
-   lSuc:=oMBal:copyDB(backup)
-	SELF:StatusMessage("Removing of month balance values, moment please")
-   oMBal:GoTop()
-   lSuc:=oMBal:DeleteAll()
-   lSuc:=oMBal:Pack()
-ENDIF            */
-oMBal:Commit()
-oMBal:Close()    
-
-* Mutaties schonen:
-lSuc:=oTrans:ClearIndex()
-lSuc:= oTrans:ClearFilter()
-lSuc:= oTrans:SetFilter('DTOS(dat)<="'+DToS(BalanceEndDate)+'"')
-oTrans:GoTop()
-backup:='Tr'+Str(YearStart,4)+StrZero(MonthStart,2)
-self:STATUSMESSAGE(self:oLan:WGet("Archiving of transactions to file")+" "+backup+", "+self:oLan:WGet("moment please"))
-oTrans:CopyDB(backup)
-self:STATUSMESSAGE(self:oLan:WGet("Removing of transactions, moment please"))
-lSuc:=oTrans:Gotop()
-lSuc:=oTrans:DeleteAll()
-*
-lSuc:=oTrans:SetIndex()
-oTrans:Unlock()
-oTrans:Close()
-oTrans:=NULL_OBJECT
-self:STATUSMESSAGE(self:oLan:WGet("Compacting other data, moment please"))
-
-SELF:Pointer := Pointer{POINTERARROW}
-SELF:EndWindow()
-RETURN
-METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS YearClosing
-	//Put your PostInit additions here
-self:SetTexts()
-	oMBal:=MBalance{}
-	oMbal:GetBalYear(Year(LstYearClosed),Month(LstYearClosed))
-	YearStart:=oMbal:YEARSTART
-	MonthStart:=oMBal:MONTHSTART
-	YearClose :=oMBal:YEAREND
-	MonthClose:=oMBal:MONTHEND
-	BalanceYearEnd:=YearClose*12+MonthClose
-	BalanceEndDate:=SToD(Str(YearClose,4)+StrZero(MonthClose,2)+StrZero(MonthEnd(MonthClose,YearClose),2))
-	oDCStartYearText:TextValue:=Str(YearStart,4)+":"+StrZero(MonthStart,2)+"  -  "+;
-	Str(YearClose,4)+":"+StrZero(MonthClose,2)
-*	oDCEndYearText:TextValue:=Str(YearClose,4)+"  "+Str(MonthClose,2)
-	YearBalance := oDCStartYearText:TextValue
-	oMBal:Close()
-	RETURN NIL
-METHOD SubDepartment(p_depptr as int, cTransnr as string,AfterBalance as int) as void pascal CLASS YearClosing
-* Recursive processing of a department with its subdeparments
-*
-LOCAL subDepPtr AS INT
-LOCAL min_saldo, VW_totdeb, VW_totcre as FLOAT
-
-subDepPtr:=0
-DO WHILE TRUE
-	subDepPtr:=AScan(d_parentdep,d_dep[p_depptr],subDepPtr+1)
-	IF Empty(subDepPtr)
-		EXIT
-	ELSE
-		SELF:SubDepartment(subDepPtr,cTransnr,AfterBalance)
-		* consolidate values of subdepartment into itself:
-		d_PLdeb[p_depptr]:=Round(d_PLdeb[p_depptr]+d_PLdeb[subDepPtr],DecAantal)
-		d_PLcre[p_depptr]:=Round(d_PLcre[p_depptr]+d_PLcre[subDepPtr],DecAantal)
-	ENDIF
-ENDDO
-*
-* Make records to netassetaccount of the  department:
-IF !Empty(d_netasset[p_depptr])
-	VW_totdeb:=d_PLdeb[p_depptr]
-	VW_totcre:=d_PLcre[p_depptr]
-	min_saldo:=Min(VW_totdeb,VW_totcre)   && afletteren deb - cre
-	VW_totdeb := Round(VW_totdeb - min_saldo,DecAantal)
-	VW_totcre := Round(VW_totcre - min_saldo,DecAantal)
-	oTrans:Append()
-	oTrans:docid := 'CL'+YearBalance
-	oTrans:accid :=d_netasset[p_depptr]
-	oTrans:description := oLan:Get('Closing year',,"!")+' '+oDCStartYearText:TEXTvalue
-	oTrans:deb := VW_totdeb
-	oTrans:cre := VW_totcre
-	oTrans:DEBFORGN := VW_totdeb
-	oTrans:CREFORGN := VW_totcre
-	oTrans:dat := BalanceEndDate
-	oTrans:USERID := LOGON_EMP_ID
-	oTrans:TransId := cTransnr
-	oTrans:Currency := sCURR
-	* adapt last year balance of net asset account:
-	oAccBal:Seek(d_netasset[p_depptr]+Str(AfterBalance,6)+sCURR)
-	IF oAccBal:EOF
-		oAccBal:Append()
-		oAccBal:accid := d_netasset[p_depptr]
-		oAccBal:YearStart := AfterBalance/100
-	 	oAccBal:MonthStart := AfterBalance%100 
-	 	oAccBal:Currency:=sCURR
-	ENDIF
-	oAccBal:svjd := Round(oAccBal:svjd + VW_totdeb,decaantal)
-	oAccBal:svjc := Round(oAccBal:svjc + VW_totcre,decaantal)
-
-/*	* maandsaldo van kapitaal aanpassen: (first month IN NEXT balance year)
-	oMBal:ChgBalance(d_netasset[p_depptr],BalanceEndDate+1,VW_totdeb,VW_totcre)   */
-	* Clear d_PLdeb/cre:
-	d_PLdeb[p_depptr]:=0
-	d_PLcre[p_depptr]:=0
-ENDIF
-RETURN
+	RETURN true
 STATIC DEFINE YEARCLOSING_CANCELBUTTON := 101 
 STATIC DEFINE YEARCLOSING_FIXEDTEXT2 := 102 
 STATIC DEFINE YEARCLOSING_OKBUTTON := 100 
