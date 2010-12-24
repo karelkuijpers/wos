@@ -2441,7 +2441,7 @@ FUNCTION ValidateControls( oDW, aControls )
 
 		oCurrentControl := aControls[ i ]	
 		IF !oCurrentControl:PerformValidations()
-			(ErrorBox{,oCurrentControl:Name+": "+oCurrentControl:Status}):Show()			
+			(ErrorBox{,oCurrentControl:Name+": "+Transform(oCurrentControl:Status,"")}):Show()			
 			// Set focus to invalid control
 			oCurrentControl:SetFocus()
 			exit
