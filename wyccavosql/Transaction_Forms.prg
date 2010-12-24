@@ -1883,15 +1883,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS InquirySelection
 	//Put your PostInit additions here 
 	local OldestYear as date
 	self:SetTexts()
-	SELF:oOwner:=uExtra[1]
+	self:oOwner:=uExtra[1]
 	self:odcfromdate:SelectedDate:=MinDate
+// 	FillBalYears()
 	if !Empty(GlBalYears)
 		OldestYear:=GlBalYears[Len(GlBalYears),1] 
 	else
 		OldestYear:=MinDate
 	endif
 	self:odcfromdate:DateRange:=DateRange{OldestYear,Today()+31}
-	SELF:oDCTodate:SelectedDate:=Today()+30
+	self:oDCTodate:SelectedDate:=Today()+30
 	self:oDCTodate:DateRange:=DateRange{OldestYear,Today()+31}
 	self:AmountType:= self:oOwner:TransTypeSelected
 	if Posting
@@ -1943,7 +1944,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS InquirySelection
 		self:DOcID:=self:oOwner:DocIdSelected
 	ENDIF
 	IF !Empty(self:oOwner:StartDate)
-		self:oDCFromdate:SelectedDate:=self:oOwner:StartDate
+		self:odcfromdate:SelectedDate:=self:oOwner:StartDate
 	ENDIF
 	IF !Empty(self:oOwner:EndDate)
 		self:oDCTodate:SelectedDate:=self:oOwner:EndDate
