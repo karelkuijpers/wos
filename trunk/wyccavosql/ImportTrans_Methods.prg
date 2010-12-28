@@ -544,7 +544,7 @@ DO WHILE Len(AFields)>1
 		cStatement:=iif(Empty(impDat),"",",Transdate='"+SQLdate(impDat) +"'")+;
 		",DOCID='Import'"+; 
 		iif(ptTrans<= Len(AFields),",TRANSACTNR='"+AFields[ptTrans]+"'","")+;
-		iif(ptDesc<= Len(AFields),",DESCRIPTN='"+AFields[ptDesc]+"'","")+;
+		",DESCRIPTN='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
 		iif(ptDoc<= Len(AFields),",GIVER='"+AFields[ptDoc]+"'","")+;
 		iif(ptCre<= Len(AFields),",DEBITAMNT="+StrTran(AFields[ptCre],"."),"")+;
 		",ACCOUNTNR='"+cBank+"'"+;
