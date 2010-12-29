@@ -1013,18 +1013,18 @@ SELF:FieldPut(#mType, uValue)
 RETURN uValue
 
 METHOD OkButton CLASS NewPersonWindow
-	LOCAL oTextBox AS TextBox
+	LOCAL oTextBox as TextBox
 	LOCAL oPers,oStmnt as SQLStatement
 	LOCAL i, nCLN, nCurRec as int
 	LOCAL cExtra, cTit as STRING, contvalue as usual
-	LOCAL oContr AS Control
+	LOCAL oContr as Control
 	LOCAL myCombo as COMBOBOX
 	local lSuccess as logic
 	local cStmnt as string 
 
 	self:mCodInt := MakeCod({self:mCod1,self:mCod2,self:mCod3,self:mCod4,self:mCod5,self:mCod6,self:mCod7,self:mCod8,self:mCod9,self:mCod10})
 	//	IF ValidateControls( SELF, SELF:AControls ) .and. ;
-	IF SELF:ValidatePerson()
+	IF self:ValidatePerson()
 		IF self:lNew 
 			cStmnt:="insert into person set "
 			IF Empty(self:mCreationDate)
@@ -1066,10 +1066,10 @@ METHOD OkButton CLASS NewPersonWindow
 
 		IF Empty(self:mTIT)
 			cTit:="1"  
-		ELSEIF IsNumeric(self:mTit)
-			cTit:=Str(self:mTit,-1)  
+		ELSEIF IsNumeric(self:mTIT)
+			cTit:=Str(self:mTIT,-1)  
 		ELSE
-			IF SELF:oDCmTit:CurrentItemNo>0
+			IF self:oDCmTit:CurrentItemNo>0
 				cTit:=Str(self:oDCmTit:GetItemValue(self:oDCmTit:CurrentItemNo),-1)  
 			ENDIF
 		ENDIF
@@ -1090,7 +1090,8 @@ METHOD OkButton CLASS NewPersonWindow
 			",fax='"+AllTrim(self:mFAX)+"'"+;
 			",mobile='"+AllTrim(self:mMobile)+"'"+;
 			",city='"+AddSlashes(iif(CITYUPC,Upper(AllTrim(self:mCity)),AllTrim(self:mCity)))+"'"+;
-			iif(!self:lNew.or.!Empty(self:mRemarks),",remarks='"+AddSlashes(self:mEmail)+"'","")+;
+			",email='"+AddSlashes(AllTrim(self:mEmail))+"'"+;
+			iif(!self:lNew.or.!Empty(self:mRemarks),",remarks='"+AddSlashes(self:mRemarks)+"'","")+;
 			",opc='"+LOGON_EMP_ID+"'"+;
 			",creationdate='"+SQLdate(self:mCreationDate)+"'"+;
 			iif(self:oDCmType:CurrentItemNo>0,",type='"+Str(self:oDCmType:GetItemValue(self:oDCmType:CurrentItemNo),-1)+"'","")+;
@@ -1117,25 +1118,25 @@ METHOD OkButton CLASS NewPersonWindow
 // 		ELSE
 			// 			IF !self:lNew .and.!Empty(self:mrek)
 			if self:lNew
-				self:mPersid:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+				self:mPersId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGet(1)
 			elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
 				// in case of member update name of corresponding account:
-				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(Str(self:mPersid,-1)),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+Str(self:mPersid,-1)+")",oConn}
+				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(Str(self:mPersId,-1)),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+Str(self:mPersid,-1)+")",oConn}
 				oStmnt:Execute()
 			ENDIF
 // 		ENDIF
-		FOR i=1 TO Len(aBankAcc)
+		FOR i=1 to Len(aBankAcc)
 			IF i<=Len(OrigaBank)
 				IF !aBankAcc[i,2] ==OrigaBank[i] // change of value? 
 					IF Empty(aBankAcc[i,2]).or.Empty(aBankAcc[i,2])  // removed?
 						oStmnt:=SQLStatement{"delete from personbank where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					else   // changed
-						oStmnt:=SQLStatement{"update personbank set persid='"+Str(self:mPersid,-1)+"',banknumber='"+aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
+						oStmnt:=SQLStatement{"update personbank set persid='"+Str(self:mPersId,-1)+"',banknumber='"+aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					endif
 					oStmnt:Execute()
 				ENDIF
 			ELSEIF Len(aBankAcc[i,2])>1 
-				oStmnt:=SQLStatement{"Insert into personbank set persid="+Str(self:mPersid,-1)+",banknumber='"+aBankAcc[i,2]+"'",oConn}
+				oStmnt:=SQLStatement{"Insert into personbank set persid="+Str(self:mPersId,-1)+",banknumber='"+aBankAcc[i,2]+"'",oConn}
 				oStmnt:Execute() 
 			ENDIF
 		NEXT
@@ -1152,7 +1153,7 @@ METHOD OkButton CLASS NewPersonWindow
 			self:oCaller:oPers:SuspendNotification() 
 			// repostion owner at current person:
 			self:oCaller:gotop()
-			do while !self:oCaller:oPers:EOF .and. !self:oCaller:oPers:persid==self:mPersid
+			do while !self:oCaller:oPers:EOF .and. !self:oCaller:oPers:persid==self:mPersId
 				self:oCaller:oPers:Skip()
 			enddo
 			nCurRec:=self:oCaller:oPers:Recno
@@ -1162,13 +1163,13 @@ METHOD OkButton CLASS NewPersonWindow
 			endif
 		endif
 		// 		SELF:Commit()
-		IF SELF:lImport
+		IF self:lImport
 			//SELF:NextImport(SELF)
 			self:oImport:NextImport(self,true)
-			RETURN NIL
+			RETURN nil
 		ENDIF
-		SELF:Close()
-		SELF:EndWindow()
+		self:Close()
+		self:EndWindow()
 	ENDIF
 
 	
@@ -3257,7 +3258,7 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD OKButton( ) CLASS SelPersOpen
-	LOCAL keuze := Val(SELF:oDCkeus21:Value)
+	LOCAL keuze := Val(self:oDCkeus21:VALUE)
 	LOCAL oAcc as SQLselect
 	LOCAL begin_due:=oDCbegin_verv:SelectedDate, end_due:=oDCeind_verv:SelectedDate, process_date:=self:oDCdatedirectdebit:SelectedDate as date
 	oCaller:cWhereOther := ;
@@ -3265,20 +3266,20 @@ METHOD OKButton( ) CLASS SelPersOpen
 	"' and invoicedate<='"+Transform(DToS(end_due),"9999-99-99")+;
 	"' and AmountRecvd<AmountInvoice"+;
 	" and s.PAYMETHOD='"+AllTrim(self:oDCmPayMethod:VALUE)+"'"
-	IF SELF:keus21=1
+	IF self:keus21=1
 		oCaller:cWhereOther+='and s.category="D"'
-	ELSEIF SELF:keus21=2
+	ELSEIF self:keus21=2
 		oCaller:cWhereOther+='and s.category="A"'
 	ENDIF		
 	oCaller:selx_voorw := ' and invoicedate between '+;
-	DToC(oDCbegin_verv:Value)+' and '+DToC(oDCeind_verv:Value)
-	oCaller:selx_rek := IF(IsNil(oDCselx_rek:Value),NULL_STRING,oDCselx_rek:Value)
+	DToC(oDCbegin_verv:VALUE)+' and '+DToC(oDCeind_verv:VALUE)
+	oCaller:selx_rek := if(IsNil(oDCselx_rek:VALUE),null_string,oDCselx_rek:VALUE)
 	//CountryCode:="47"
 	IF keuze ==2           && abonnementen
-*		(SelPersAbon{SELF}):Show()
+*		(SelPersAbon{self}):Show()
 		keuze:=keuze
 	ELSEIF keuze == 1    && donateurs
-		IF SELF:oDCmPayMethod:Value="C" // automatic collection?
+		IF self:oDCmPayMethod:Value="C" // automatic collection?
 			//oCaller:selx_rek:=NULL_STRING
 			oCaller:Selx_OK:=FALSE // do not continue with caller 
 			if CountryCode="47"
@@ -3297,11 +3298,11 @@ METHOD OKButton( ) CLASS SelPersOpen
 	*DueAmount:
 	oCaller:cWhereOther := 's.accid="'+oCaller:selx_rek+" and s.subscribid=t.subscribid "+oCaller:cWhereOther
 
-	oAcc:=SQLselect{"select accnumber from account where accid='"+oCaller:selx_rek+"'",oConn}
+	oAcc:=SQLSelect{"select accnumber from account where accid='"+oCaller:selx_rek+"'",oConn}
 	if oAcc:RecCount>0
 		oCaller:selx_voorw := 'accountnbr' + '=' +oAcc:ACCNUMBER+oCaller:selx_voorw
 	endif
-	oCaller:Selx_OK:=TRUE
+	oCaller:Selx_OK:=true
 	self:EndDialog() 
   	RETURN nil
 METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
