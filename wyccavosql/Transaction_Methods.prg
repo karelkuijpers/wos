@@ -100,7 +100,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				IF Val(Str(m58_deb))<>0 .and.Val(Str(m58_cre))<>0
 					skipaant++
 				endif
-				self:oBal:GetBalance(m58_rek,me_type,,,self:cAccCurrency)
+				self:oBal:GetBalance(m58_rek,me_type,,EndOfMonth(Today()+31),self:cAccCurrency)
 				IF lForgnC
 					BalDeb:=self:oBal:Per_DebF
 					BalCre:=self:oBal:Per_CreF	
@@ -124,7 +124,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 					endif
 
 					oReport:PrintLine(@nRow,@nPage,BoldOn+;
-						Pad(self:CurAcc+Space(1)+oLan:Get('Account balance',,,"!")+Space(1)+DToC(Today()),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+;
+						Pad(self:CurAcc+Space(1)+oLan:Get('Account balance',,,"!")+Space(1)+DToC(EndOfMonth(Today()+31)),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+;
 						iif(lForgnC,if(BalDeb-BalCre<=0,Space(12)+self:cTab+Str(BalCre-BalDeb,12,DecAantal),;
 						RedCharOn+Str(BalDeb-BalCre,12,DecAantal)+RedCharOff+Space(13))+self:cTab+BoldOff+PadC(self:cAccCurrency,8)+self:cTab,"") +;
 						IF(self:oBal:Per_Deb > self:oBal:Per_Cre,RedOn+Str(self:oBal:Per_Deb-self:oBal:Per_Cre,12,DecAantal)+RedCharOff,;
