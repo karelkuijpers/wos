@@ -1,6 +1,6 @@
 Function AddSlashes(cString as string) as string
 // add backslashes for special characters ',",\,%,_
-return StrTran(StrTran(StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"'),'%','\%'),'_','\_')
+return StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"')
 Function aDiff(aArr1 as array,aArr2 as Array) as string
 // determine difference between two arrays
 Local i,j, L1:=Len(aArr1), L2:=Len(aArr2) as int 
