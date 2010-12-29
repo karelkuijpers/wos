@@ -1714,7 +1714,7 @@ METHOD PrintReport() CLASS PMISsend
 			ENDIF
 			// Transfer balance conform distribution instructions:
 			if self:closingDate> self:oSys:PMISLSTSND
-				oMBal:GetBalance(me_accid,me_type)
+				oMBal:GetBalance(me_accid,me_type,,EndOfMonth(Today()))      // maximum balance is balance at end of current month
 				BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)
 				if self:closingDate< Today()
 					oMBal:GetBalance(me_accid,me_type,,self:closingDate)
