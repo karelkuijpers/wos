@@ -424,7 +424,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 				
 			endif
 		else
-			return
+			return 0
 		endif
 	endif
 
