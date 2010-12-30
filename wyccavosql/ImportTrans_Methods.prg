@@ -719,7 +719,7 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 				(ErrorBox{self,"No account defined for assessments in system parameters!"}):show()
 				CZR->DBCLOSEAREA()
 				DbSetRestoreWorkarea (false)
-				return
+				return false
 			endif 
 			osel:=SQLSelect{"select ACCNUMBER from account where accid=?",oConn}
 			osel:Execute(sam) 
