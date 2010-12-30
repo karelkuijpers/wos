@@ -1422,7 +1422,7 @@ Method SplitSurName(cTargetStr as string,lOverwrite as logic,cStatement ref stri
 // returns lastname
 Local aWord as array , titPtr,WordPtr:=1 as int, Name as string 
 if sEntity=="CZR" 
-	return   // keep name as it is in case of update because of composed name, firstname, title in CZR
+	return cTargetStr  // keep name as it is in case of update because of composed name, firstname, title in CZR
 endif 
 if self:oEdit:lFirstName .and. self:oEdit:lSalutation 
 	return cTargetStr
