@@ -1,21 +1,3 @@
-CLASS Bank INHERIT FIELDSPEC
-
-
-	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS Bank
-    LOCAL   cPict                   AS STRING
-
-    SUPER:Init( HyperLabel{#Bank, "Bank account", "Number of bankaccount", "" },  "C", 25, 0 )
-    cPict       := ""
-    IF SLen(cPict) > 0
-        SELF:Picture := cPict
-    ENDIF
-
-    RETURN SELF
-
-
-
-
 CLASS DistributionInstruction INHERIT SQLTable
 ACCESS accid CLASS DistributionInstruction
  RETURN self:FieldGet(1)
