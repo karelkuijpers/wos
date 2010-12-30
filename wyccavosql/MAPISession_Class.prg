@@ -545,7 +545,7 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 	if Empty(self:hSession)
 		IF !self:Open( "" , "" )  //reinitialize hSession
 			MessageBox( 0 , "MAPI-Services not available" , "Problem" , MB_ICONEXCLAMATION )
-			RETURN
+			RETURN false
 		ENDIF		
 	endif
 	nResult := MAPISendMail( ;
