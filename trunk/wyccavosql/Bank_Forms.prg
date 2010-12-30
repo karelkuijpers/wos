@@ -1198,7 +1198,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 
 	if Empty(BANKNBRCRE)
 		(ErrorBox{self,"Bank account for payments not specified in system data"}):Show()
-		return
+		return FALSE
 	endif
 	oBank:=SQLSelect{"select payahead,accid from BankAccount where banknumber='"+BANKNBRCRE+"' and telebankng=1",oConn}
 	if oBank:Reccount<1
@@ -1222,12 +1222,12 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	ENDIF
 	IF Empty(sIDORG)
 		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
-		RETURN
+		RETURN FALSE
 	ENDIF
 	cOrgName:=GetFullName(sIDORG,2)
 	if Empty(cOrgName)
 		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
-		RETURN
+		RETURN FALSE
 	ENDIF
 	fBANKNBRCRE:=Val(BANKNBRCRE)
 	// Check validity of recipient bankaccounts:
@@ -1254,7 +1254,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by FullName",oConn}
 	IF oBord:Reccount<1
 		(WarningBox{self,"Producing CLIEOP03 file","No bank orders to be sent to the bank!"}):Show()
-		RETURN
+		RETURN FALSE
 	ENDIF
 	headinglines:={oLan:Get("Overview of payment orders (CLIEOP03)"),oLan:Get("Bankaccount",11)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("Destination",12)+oLan:Get("Due Date",11)+" "+oLan:Get("Name",25)+oLan:Get("Description",20),Replicate('-',105)}
 	// write Header
