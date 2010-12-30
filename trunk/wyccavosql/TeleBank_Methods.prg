@@ -1063,7 +1063,7 @@ IF !(oHlC:INFOCODE=="0001".and. oHLC:VARIANTCOD=="A" .and. SubStr(oHLC:BEDRAG,3,
 	ErrorBox{,"File MutCliop.TXT is not a correct CLieop file"}:Show()
 	oHLC:Close()
 	oHLC:=NULL_OBJECT
-	RETURN
+	RETURN FALSE
 ENDIF
 DO WHILE .not.oHlC:EOF
 	IF oHlC:INFOCODE=="0001"  //bestandsvoorloopinfo
@@ -1168,7 +1168,7 @@ oHlp:=Filespec{oHLC:FileSpec:Fullpath}
 oHlC:Close()
 oHLC:=NULL_OBJECT
 oHlp:Delete()
-RETURN
+RETURN true
 METHOD ImportGiro(oFs as MyFileSpec) as logic CLASS TeleMut
 	* Import of postgiro data into teletrans.dbf
 	LOCAL oHlG AS HulpGiro
@@ -1294,7 +1294,7 @@ if lSuccess
 	LogEvent(,"Imported ING file:"+oFs:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions","Log")
 
 ENDIF
-RETURN
+RETURN true
 METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 	* Import of KB Bank data into teletrans.dbf
 	LOCAL oHlS as HulpSA
@@ -1562,7 +1562,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:Close()
 	oHlM:=NULL_OBJECT
 	oHlp:Delete()
-	RETURN
+	RETURN true
 METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 	*	Import of one PostGiro AutoGiro transaction file (Sweden)
 	LOCAL oHlM as HlpMT940
@@ -1588,7 +1588,7 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 		ErrorBox{,"File "+oFm:Fullpath+" is not a correct PG Autogiro file"}:Show()
 		oHlM:Close()
 		oHlM:=null_object
-		RETURN
+		RETURN false
 	ENDIF
 	lv_bankAcntOwn:=ZeroTrim(SubStr(oHlM:MTLINE,69,10))
 	oHlM:skip()
@@ -2065,7 +2065,7 @@ oHlp:=FileSpec{oHlM:Filespec:Fullpath}
 oHlM:Close()
 oHlM:=null_object
 oHlp:DELETE()
-RETURN
+RETURN true
 METHOD ImportUA(oFr as MyFileSpec) as logic CLASS TeleMut
 	* Import of one bankstatements of Ukraine Bank into teletrans.dbf
 LOCAL cBuffer,childbuffer AS STRING
@@ -2084,7 +2084,7 @@ local oStmnt as SQLStatement
 ptrHandle:=FOpen(oFr:FullPath,FO_READ)
 IF ptrHandle = F_ERROR
 	(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:"+DosErrString(FError())}):show()
-	RETURN
+	RETURN false
 ENDIF
 cBuffer:=StrTran(Compress(FReadStr(ptrHandle,4096000)),"&nbsp;")
 cBuffer:=SubStr(cBuffer,At("</tr>",cBuffer)+5)
@@ -2092,7 +2092,7 @@ cBuffer:=StrTran(StrTran(cBuffer,CHR(10)),CHR(9))
 cBuffer:=StrTran(StrTran(StrTran(StrTran(StrTran(cBuffer,"<small>"),"</small>"),"<nobr>"),"</nobr>"),"&nbsp;")
 IF ptrHandle = F_ERROR
 	(ErrorBox{,"Could not read file: "+oFr:FullPath+"; Error:"+DosErrString(FError())}):show()
-	RETURN
+	RETURN false
 ENDIF
 FClose(ptrHandle)
 // Proces records:
@@ -2229,7 +2229,7 @@ batchsoort:=SubStr(oHlM:MTLINE,43,1)
 if batchsoort=="B" .or. batchsoort=="D"
 	// only A= refused orders and C=acceptgiro
 	oHlM:Close()
-	return 
+	return false 
 endif
 oHlM:Skip()
 
