@@ -334,7 +334,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 	IF Empty(SINC) .and.Empty(SINCHOME)
 		RETURN true
 	ENDIF
-	IF !Empty(cPersId).and.(gc=="AG" .or. (gc=="MG".and.FROMRPP))
+	IF (!Empty(cPersId).or. FromRpp) .and.gc=="AG" 
 		IF cType=="PA"  //liability?
 			// add to gifts income:
 			if !Empty(SINCHOME) .or.!Empty(SINC)
@@ -350,7 +350,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 				nCre:=Round(Cre-Deb,DecAantal)
 				nCreF:=Round(CREFORGN-DEBFORGN,DecAantal)
 				me_stat:=AllTrim(oMbr:Grade)
-				if gc=="AG" .and.!FROMRPP .and. me_stat!="Staf"
+/*				if gc=="AG" .and.!FROMRPP .and. me_stat!="Staf"
 					me_rate:=oMbr:OFFCRATE
 					DO CASE
 					CASE Empty(me_rate)
@@ -369,7 +369,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 					endif 
 					nCre:=Round(nCre*(100-OfficeRate)/100,DecAantal)
 					nCreF:=Round(nCreF*(100-OfficeRate)/100,DecAantal)
-				endif
+				endif  */
 				mOms:=DESCRIPTN
 				if nCre <>0
 					nSeqnbr++
@@ -1754,9 +1754,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						endif
 						*	Update monthbalance value of corresponding account:
 						ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre
-						if At("persid=",cStatement)>0 .and.!Empty(self:mCLNGiver)
+// 						if At("persid=",cStatement)>0 .and.!Empty(self:mCLNGiver)
 							lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,self:mDAT,self:mBST,cTransnr,@nSeqnbr)
-						ENDIF
+// 						ENDIF
 					ELSE
 						lError:=true
 					endif
@@ -3340,7 +3340,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows>0
 							if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
-								if oHm:Cre>0
+								if !oHm:Cre==0
 									if !AddToIncome(oHm:GC,false,oHm:AccID,oHm:cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr)
 										lError:=true
 										exit
