@@ -244,7 +244,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	AAdd(aMenu,{2,9,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
 	AAdd(aMenu,{0,3, oLan:MGet("&Balance"),,,,,})
 	IF Admin=="WO"
-		IF SQLSelect{"select PMISLSTSND from Sysparms where adddate(PMISLSTSND,400)<currentdate()",oConn}:Reccount>0
+		IF SQLSelect{"select PMISLSTSND from Sysparms where adddate(PMISLSTSND,400)<curdate()",oConn}:Reccount>0
 			AAdd(aMenu,{3,1,   oLan:MGet("&I.E.S. report")+"...","IESReport","",0,24,"F"})
 		ENDIF
 		AAdd(aMenu,{3,2,   oLan:MGet("&Sending to PMC")+"...","PMISsend","",0,87,"F"}) 
