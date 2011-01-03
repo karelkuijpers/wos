@@ -470,10 +470,11 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		SELF:iLine := 0
 	ENDIF
 	self:STATUSMESSAGE(self:oLan:WGet("Producing report, moment please"))
-	SELF:Pointer := Pointer{POINTERHOURGLASS}
-	cStatement:=SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MONTHEND,;
-	iif(Empty(self:WhatFrom),"","a.balitemid in ("+Implode(r_balid,",")+")")+;
-	iif(Empty(self:WhoFrom),"",iif(Empty(self:WhatFrom),""," and ")+"a.department in ("+Implode(d_dep,",")+")"),;
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	oMBal:=Balances{}
+	oMbal:AccSelection:=iif(Empty(self:WhatFrom),"","a.balitemid in ("+Implode(r_balid,",")+")")+;
+	iif(Empty(self:WhoFrom),"",iif(Empty(self:WhatFrom),""," and ")+"a.department in ("+Implode(d_dep,",")+")")
+	cStatement:=oMbal:SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MONTHEND,;
 	true,false,true,self:ind_toel)
 	oAcc:=SQLSelect{cStatement,oConn}
 
@@ -5387,6 +5388,7 @@ METHOD OKButton( ) CLASS YearClosing
 	local oTrans as SQLSelect
 	local oDep as SQLSelect
 	local oMBal as SQLSelect
+	local oBal as balances
 	local cName as string
 	local cStatement as string
 	local oStmnt as SQLStatement
@@ -5540,8 +5542,8 @@ METHOD OKButton( ) CLASS YearClosing
 	self:OWNER:STATUSMESSAGE(self:oLan:WGet("Collecting balance data, please wait")+"...")
 	* save balances of profit/loss accounts over year to be closed into arrays ProfitLossDeb/Cre
 	AfterBalance :=Year(self:BalanceEndDate+1)*100+Month(self:BalanceEndDate+1) 
-
-   oMBal:=SQLSelect{SQLGetBalance(self:YearStart*100+self:MonthStart,self:YearClose*100+self:MonthClose,'',false,true,,true),oConn}
+   oBal:=Balances{}
+   oMBal:=SQLSelect{oBal:SQLGetBalance(self:YearStart*100+self:MonthStart,self:YearClose*100+self:MonthClose,false,true,,true),oConn}
    oMBal:Gotop()
    self:cError:=""
 	DO WHILE !oMBal:EOF 
