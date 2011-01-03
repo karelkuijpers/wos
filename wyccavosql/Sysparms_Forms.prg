@@ -48,6 +48,42 @@ STATIC DEFINE EMAIL_SC_OWNMAILACC := 100
 STATIC DEFINE EMAIL_SC_SMTPSERVER := 101 
 STATIC DEFINE EMAIL_SMTPSERVER := 104 
 STATIC DEFINE SELBANKACC_LISTBOX1 := 100 
+RESOURCE TAB_PARM1 DIALOGEX  54, 48, 262, 240
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAB_PARM1_MCASH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 103, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 25, 103, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_MKRUISPSTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 44, 103, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_CLOSEMONTH, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 59, 120, 121
+	CONTROL	"Account cash:", TAB_PARM1_SC_SKAS, "Static", WS_CHILD, 4, 11, 73, 12
+	CONTROL	"Account Net Assets:", TAB_PARM1_SC_SKAP, "Static", WS_CHILD, 4, 25, 79, 13
+	CONTROL	"Account internal bank transfers:", TAB_PARM1_SC_SKRUIS, "Static", WS_CHILD, 4, 44, 106, 12
+	CONTROL	"End of Balance Year:", TAB_PARM1_FIXEDTEXT4, "Static", WS_CHILD, 4, 59, 94, 12
+	CONTROL	"v", TAB_PARM1_CASHBUTTON, "Button", WS_CHILD, 212, 11, 15, 12
+	CONTROL	"v", TAB_PARM1_CAPBUTTON, "Button", WS_CHILD, 212, 25, 15, 13
+	CONTROL	"v", TAB_PARM1_CROSSBUTTON, "Button", WS_CHILD, 212, 44, 15, 12
+	CONTROL	"Type of Administration:", TAB_PARM1_FIXEDTEXT5, "Static", WS_CHILD, 4, 77, 86, 12
+	CONTROL	"", TAB_PARM1_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 77, 120, 62
+	CONTROL	"", TAB_PARM1_SYSNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 107, 134, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Own Organisation:", TAB_PARM1_FIXEDTEXT6, "Static", WS_CHILD, 4, 129, 90, 12
+	CONTROL	"", TAB_PARM1_MPERSONOWN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 128, 108, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM1_PERSONBUTTONORG, "Button", WS_CHILD, 218, 128, 14, 12
+	CONTROL	"", TAB_PARM1_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 150, 108, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM1_PERSONBUTTONCONTACT, "Button", WS_CHILD, 218, 150, 14, 12
+	CONTROL	"Financial contact person:", TAB_PARM1_FIXEDTEXT7, "Static", WS_CHILD, 4, 151, 90, 12
+	CONTROL	"Organisation Acronym:", TAB_PARM1_ACROFIXED, "Static", WS_CHILD, 4, 171, 92, 13
+	CONTROL	"", TAB_PARM1_ENTITY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 171, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 188, 134, 119
+	CONTROL	"Currency name:", TAB_PARM1_CURRNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 205, 134, 12
+	CONTROL	"Country for I.E.:", TAB_PARM1_HBLAND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 222, 134, 12
+	CONTROL	"Country :", TAB_PARM1_SC_SLAND, "Static", WS_CHILD, 4, 222, 81, 12
+	CONTROL	"System Currency:", TAB_PARM1_SC_SMUNT, "Static", WS_CHILD, 4, 189, 66, 12
+	CONTROL	"Currency description:", TAB_PARM1_SC_SMUNTNAAM, "Static", WS_CHILD, 4, 206, 88, 12
+	CONTROL	"System name:", TAB_PARM1_FIXEDTEXT11, "Static", WS_CHILD, 4, 107, 54, 12
+	CONTROL	"Posting batch required?", TAB_PARM1_POSTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 112, 92, 87, 11
+END
+
 CLASS TAB_PARM1 INHERIT DataWindowExtra 
 
 	PROTECT oDCmCASH AS SINGLELINEEDIT
@@ -98,42 +134,6 @@ CLASS TAB_PARM1 INHERIT DataWindowExtra
   EXPORT NbrCASH, NbrCAPITAL, NbrCROSS AS STRING
   EXPORT cSoortCash, cSoortCAPITAL, cSoortCROSS AS STRING
   EXPORT mCLNOrg,mCLNContact,cOrgName,cContactName AS STRING
-RESOURCE TAB_PARM1 DIALOGEX  54, 48, 262, 240
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAB_PARM1_MCASH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 103, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 25, 103, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_MKRUISPSTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 44, 103, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_CLOSEMONTH, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 59, 120, 121
-	CONTROL	"Account cash:", TAB_PARM1_SC_SKAS, "Static", WS_CHILD, 4, 11, 73, 12
-	CONTROL	"Account Net Assets:", TAB_PARM1_SC_SKAP, "Static", WS_CHILD, 4, 25, 79, 13
-	CONTROL	"Account internal bank transfers:", TAB_PARM1_SC_SKRUIS, "Static", WS_CHILD, 4, 44, 106, 12
-	CONTROL	"End of Balance Year:", TAB_PARM1_FIXEDTEXT4, "Static", WS_CHILD, 4, 59, 94, 12
-	CONTROL	"v", TAB_PARM1_CASHBUTTON, "Button", WS_CHILD, 212, 11, 15, 12
-	CONTROL	"v", TAB_PARM1_CAPBUTTON, "Button", WS_CHILD, 212, 25, 15, 13
-	CONTROL	"v", TAB_PARM1_CROSSBUTTON, "Button", WS_CHILD, 212, 44, 15, 12
-	CONTROL	"Type of Administration:", TAB_PARM1_FIXEDTEXT5, "Static", WS_CHILD, 4, 77, 86, 12
-	CONTROL	"", TAB_PARM1_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 77, 120, 62
-	CONTROL	"", TAB_PARM1_SYSNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 107, 134, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Own Organisation:", TAB_PARM1_FIXEDTEXT6, "Static", WS_CHILD, 4, 129, 90, 12
-	CONTROL	"", TAB_PARM1_MPERSONOWN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 128, 108, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM1_PERSONBUTTONORG, "Button", WS_CHILD, 218, 128, 14, 12
-	CONTROL	"", TAB_PARM1_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 150, 108, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM1_PERSONBUTTONCONTACT, "Button", WS_CHILD, 218, 150, 14, 12
-	CONTROL	"Financial contact person:", TAB_PARM1_FIXEDTEXT7, "Static", WS_CHILD, 4, 151, 90, 12
-	CONTROL	"Organisation Acronym:", TAB_PARM1_ACROFIXED, "Static", WS_CHILD, 4, 171, 92, 13
-	CONTROL	"", TAB_PARM1_ENTITY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 171, 53, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 188, 134, 119
-	CONTROL	"Currency name:", TAB_PARM1_CURRNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 205, 134, 12
-	CONTROL	"Country for I.E.:", TAB_PARM1_HBLAND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 222, 134, 12
-	CONTROL	"Country :", TAB_PARM1_SC_SLAND, "Static", WS_CHILD, 4, 222, 81, 12
-	CONTROL	"System Currency:", TAB_PARM1_SC_SMUNT, "Static", WS_CHILD, 4, 189, 66, 12
-	CONTROL	"Currency description:", TAB_PARM1_SC_SMUNTNAAM, "Static", WS_CHILD, 4, 206, 88, 12
-	CONTROL	"System name:", TAB_PARM1_FIXEDTEXT11, "Static", WS_CHILD, 4, 107, 54, 12
-	CONTROL	"Posting batch required?", TAB_PARM1_POSTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 112, 92, 87, 11
-END
-
 METHOD CAPButton( lUnique) CLASS TAB_PARM1
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -587,12 +587,12 @@ CLASS Tab_Parm2 INHERIT DataWindowExtra
 	PROTECT oCCIncButtonHome AS PUSHBUTTON
 	PROTECT oDCmHomeExpAc AS SINGLELINEEDIT
 	PROTECT oCCExpButtonHome AS PUSHBUTTON
-	PROTECT oDCassmntfield AS SINGLELINEEDIT
-	PROTECT oDCassmntint AS SINGLELINEEDIT
-	PROTECT oDCwithldoffl AS SINGLELINEEDIT
-	PROTECT oDCassmntOffc AS SINGLELINEEDIT
-	PROTECT oDCwithldoffm AS SINGLELINEEDIT
-	PROTECT oDCwithldoffh AS SINGLELINEEDIT
+	PROTECT oDCINHDHAS AS SINGLELINEEDIT
+	PROTECT oDCINHDINT AS SINGLELINEEDIT
+	PROTECT oDCINHKNTRL AS SINGLELINEEDIT
+	PROTECT oDCINHDKNTR AS SINGLELINEEDIT
+	PROTECT oDCINHKNTRM AS SINGLELINEEDIT
+	PROTECT oDCINHKNTRH AS SINGLELINEEDIT
 	PROTECT oDCpmcupld AS CHECKBOX
 	PROTECT oDCmPersonPMCMan AS SINGLELINEEDIT
 	PROTECT oDCIESMAILACC AS SINGLELINEEDIT
@@ -622,6 +622,9 @@ CLASS Tab_Parm2 INHERIT DataWindowExtra
 	PROTECT oDCSC_SAM4 AS FIXEDTEXT
 	PROTECT oDCSC_SAM5 AS FIXEDTEXT
 	PROTECT oDCFixedText24 AS FIXEDTEXT
+	PROTECT oDCmAssFldAc AS SINGLELINEEDIT
+	PROTECT oCCAssFldAcButton AS PUSHBUTTON
+	PROTECT oDCSC_SAMFld AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   	instance mHB 
@@ -640,11 +643,11 @@ CLASS Tab_Parm2 INHERIT DataWindowExtra
 	instance mHomeExpAc 
 	instance mHomeIncAc 
 
-    EXPORT cHBName, cAMName, cAMNameProj,cGIFTINCACName,cGIFTEXPACName,cHomeINCACName,cHomeEXPACName as STRING
-  	EXPORT NbrHB, NbrAM, NbrAMProj, NbrInc, NbrExp, NbrIncHome, NbrExpHome as STRING
-  	EXPORT cSoortHB, cSoortAM, cSoortAMProj,cSoortGIFTINCAC,cSoortGIFTEXPAC,cSoortHOMEINCAC,cSoortHomeEXPAC as STRING
-   Export mCLNPMCMan,cPMCManName as string  
-RESOURCE Tab_Parm2 DIALOGEX  44, 36, 261, 239
+    EXPORT cHBName, cAMName, cAMNameProj,cAssFldAccName,cGIFTINCACName,cGIFTEXPACName,cHomeINCACName,cHOMEEXPACName as STRING
+  	EXPORT NbrHB, NbrAM, NbrAMProj,NbrAssFldAc, NbrInc, NbrExp, NbrIncHome, NbrExpHome as STRING
+  	EXPORT cSoortHB, cSoortAM, cSoortAMProj,cSoortAssFldAc,cSoortGIFTINCAC,cSoortGIFTEXPAC,cSoortHOMEINCAC,cSoortHomeEXPAC as STRING
+   Export mCLNPMCMan,cPMCManName as string
+RESOURCE Tab_Parm2 DIALOGEX  44, 36, 261, 264
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -655,49 +658,52 @@ BEGIN
 	CONTROL	"v", TAB_PARM2_AMBUTTON, "Button", WS_CHILD, 232, 33, 15, 12
 	CONTROL	"", TAB_PARM2_MAMPROJ, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 48, 121, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", TAB_PARM2_AMPROJBUTTON, "Button", WS_CHILD, 232, 48, 15, 12
-	CONTROL	"", TAB_PARM2_MGIFTINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 77, 121, 14, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_INCBUTTON, "Button", WS_CHILD, 232, 77, 15, 12
-	CONTROL	"", TAB_PARM2_MGIFTEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 92, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_EXPBUTTON, "Button", WS_CHILD, 232, 92, 15, 12
-	CONTROL	"", TAB_PARM2_MHOMEINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 110, 121, 14, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_INCBUTTONHOME, "Button", WS_CHILD, 232, 110, 15, 13
-	CONTROL	"", TAB_PARM2_MHOMEEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 125, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_EXPBUTTONHOME, "Button", WS_CHILD, 232, 125, 15, 12
-	CONTROL	"Assessment home assigned:", TAB_PARM2_ASSMNTFIELD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 147, 20, 13
-	CONTROL	"Assessment international", TAB_PARM2_ASSMNTINT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 158, 147, 20, 13
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 115, 174, 22, 13
-	CONTROL	"Assessment office:", TAB_PARM2_ASSMNTOFFC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 152, 174, 22, 13
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 188, 174, 24, 13
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 174, 22, 13
-	CONTROL	"Sending to PMC via Insite upload", TAB_PARM2_PMCUPLD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 116, 195, 127, 11
-	CONTROL	"", TAB_PARM2_MPERSONPMCMAN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 210, 125, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Email account of IES:", TAB_PARM2_IESMAILACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 225, 134, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_PERSONBUTTONCONTACT, "Button", WS_CHILD, 236, 210, 15, 12
+	CONTROL	"", TAB_PARM2_MGIFTINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 96, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_INCBUTTON, "Button", WS_CHILD, 232, 96, 15, 12
+	CONTROL	"", TAB_PARM2_MGIFTEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 110, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_EXPBUTTON, "Button", WS_CHILD, 232, 110, 15, 13
+	CONTROL	"", TAB_PARM2_MHOMEINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 129, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_INCBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 129, 16, 12
+	CONTROL	"", TAB_PARM2_MHOMEEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 144, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_EXPBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 144, 15, 12
+	CONTROL	"Assessment home assigned:", TAB_PARM2_INHDHAS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 166, 20, 12
+	CONTROL	"Assessment international", TAB_PARM2_INHDINT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 158, 166, 20, 12
+	CONTROL	"Assessment office:", TAB_PARM2_INHKNTRL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 115, 193, 22, 12
+	CONTROL	"Assessment office:", TAB_PARM2_INHDKNTR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 152, 193, 22, 12
+	CONTROL	"Assessment office:", TAB_PARM2_INHKNTRM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 190, 193, 22, 12
+	CONTROL	"Assessment office:", TAB_PARM2_INHKNTRH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 193, 22, 12
+	CONTROL	"Sending to PMC via Insite upload", TAB_PARM2_PMCUPLD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 116, 214, 127, 11
+	CONTROL	"", TAB_PARM2_MPERSONPMCMAN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 228, 125, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Email account of IES:", TAB_PARM2_IESMAILACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 243, 136, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_PERSONBUTTONCONTACT, "Button", WS_CHILD, 236, 228, 13, 12
 	CONTROL	"Account PMC clearance:", TAB_PARM2_SC_SHB, "Static", WS_CHILD, 4, 18, 90, 12
 	CONTROL	"Account Assessments standard:", TAB_PARM2_SC_SAM, "Static", WS_CHILD, 4, 33, 105, 12
-	CONTROL	"Assessment:", TAB_PARM2_SC_SINHDHAS, "Static", WS_CHILD, 4, 147, 44, 13
-	CONTROL	"office:", TAB_PARM2_SC_SINHDKNTR, "Static", WS_CHILD, 92, 175, 20, 12
+	CONTROL	"Assessment:", TAB_PARM2_SC_SINHDHAS, "Static", WS_CHILD, 4, 166, 44, 12
+	CONTROL	"office:", TAB_PARM2_SC_SINHDKNTR, "Static", WS_CHILD, 92, 193, 20, 13
 	CONTROL	"PMC Participant code:", TAB_PARM2_SC_ENTITY, "Static", WS_CHILD, 4, 3, 87, 13
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT8, "Static", WS_CHILD, 136, 147, 8, 13
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT9, "Static", WS_CHILD, 138, 174, 8, 13
-	CONTROL	"Email address of PMC:", TAB_PARM2_SC_IESMAILACC, "Static", WS_CHILD, 4, 227, 83, 12
-	CONTROL	"field:", TAB_PARM2_SC_SINHDHAS1, "Static", WS_CHILD, 92, 147, 18, 13
-	CONTROL	"int:", TAB_PARM2_SC_SINHDKNTR1, "Static", WS_CHILD, 145, 147, 13, 13
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT10, "Static", WS_CHILD, 179, 147, 9, 13
-	CONTROL	"low", TAB_PARM2_FIXEDTEXT14, "Static", WS_CHILD, 114, 164, 19, 10
-	CONTROL	"standard", TAB_PARM2_FIXEDTEXT15, "Static", WS_CHILD, 151, 164, 29, 10
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT11, "Static", WS_CHILD, 174, 174, 9, 13
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT12, "Static", WS_CHILD, 212, 174, 9, 13
-	CONTROL	"middle", TAB_PARM2_FIXEDTEXT16, "Static", WS_CHILD, 189, 164, 29, 10
-	CONTROL	"high", TAB_PARM2_FIXEDTEXT17, "Static", WS_CHILD, 226, 164, 30, 9
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT13, "Static", WS_CHILD, 249, 174, 9, 13
-	CONTROL	"Account Project Assessments:", TAB_PARM2_SC_SAM1, "Static", WS_CHILD, 4, 48, 99, 12
-	CONTROL	"Accounts to record assessable gifts to measure activity", TAB_PARM2_GROUPBOXINCOME, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 66, 253, 79
-	CONTROL	"Account Gifts Expense:", TAB_PARM2_SC_SAM2, "Static", WS_CHILD, 4, 92, 99, 12
-	CONTROL	"Account Gifts Income:", TAB_PARM2_SC_SAM3, "Static", WS_CHILD, 4, 77, 99, 12
-	CONTROL	"Account Home Gifts Expense:", TAB_PARM2_SC_SAM4, "Static", WS_CHILD, 4, 125, 99, 12
-	CONTROL	"Account Home Gifts Income:", TAB_PARM2_SC_SAM5, "Static", WS_CHILD, 4, 110, 99, 14
-	CONTROL	"PMC Manager:", TAB_PARM2_FIXEDTEXT24, "Static", WS_CHILD, 4, 210, 103, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT8, "Static", WS_CHILD, 136, 166, 8, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT9, "Static", WS_CHILD, 138, 193, 8, 12
+	CONTROL	"Email address of PMC:", TAB_PARM2_SC_IESMAILACC, "Static", WS_CHILD, 4, 245, 83, 12
+	CONTROL	"field:", TAB_PARM2_SC_SINHDHAS1, "Static", WS_CHILD, 92, 166, 18, 12
+	CONTROL	"int:", TAB_PARM2_SC_SINHDKNTR1, "Static", WS_CHILD, 145, 166, 13, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT10, "Static", WS_CHILD, 179, 166, 9, 12
+	CONTROL	"low", TAB_PARM2_FIXEDTEXT14, "Static", WS_CHILD, 114, 183, 19, 10
+	CONTROL	"standard", TAB_PARM2_FIXEDTEXT15, "Static", WS_CHILD, 151, 182, 29, 10
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT11, "Static", WS_CHILD, 174, 193, 9, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT12, "Static", WS_CHILD, 212, 193, 9, 12
+	CONTROL	"middle", TAB_PARM2_FIXEDTEXT16, "Static", WS_CHILD, 189, 182, 29, 10
+	CONTROL	"high", TAB_PARM2_FIXEDTEXT17, "Static", WS_CHILD, 226, 182, 30, 10
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT13, "Static", WS_CHILD, 249, 193, 9, 12
+	CONTROL	"Account Project Assessments", TAB_PARM2_SC_SAM1, "Static", WS_CHILD, 4, 48, 99, 12
+	CONTROL	"Accounts to record assessable gifts to measure activity", TAB_PARM2_GROUPBOXINCOME, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 84, 253, 79
+	CONTROL	"Account Gifts Expense:", TAB_PARM2_SC_SAM2, "Static", WS_CHILD, 4, 110, 99, 13
+	CONTROL	"Account Gifts Income:", TAB_PARM2_SC_SAM3, "Static", WS_CHILD, 4, 96, 99, 12
+	CONTROL	"Account Home Gifts Expense:", TAB_PARM2_SC_SAM4, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 144, 99, 12
+	CONTROL	"Account Home Gifts Income:", TAB_PARM2_SC_SAM5, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 129, 99, 13
+	CONTROL	"PMC Manager:", TAB_PARM2_FIXEDTEXT24, "Static", WS_CHILD, 4, 228, 103, 13
+	CONTROL	"", TAB_PARM2_MASSFLDAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 62, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_ASSFLDACBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 62, 16, 13
+	CONTROL	"Account Assessment Field+Int", TAB_PARM2_SC_SAMFLD, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 62, 99, 13
 END
 
 METHOD AMButton( lUnique) CLASS Tab_Parm2
@@ -710,30 +716,15 @@ METHOD AMButton( lUnique) CLASS Tab_Parm2
 METHOD AMProjButton(lUnique ) CLASS Tab_Parm2
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({NbrAMProj,NbrAm},{"BA"},"N",0)
+	cfilter:=MakeFilter({NbrAMProj,NbrAm},{income},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmAMProj:TEXTValue ),"Project Assessments",lUnique,cfilter)
 	RETURN NIL
-ACCESS assmntfield() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntfield)
-
-ASSIGN assmntfield(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntfield, uValue)
-RETURN uValue
-
-ACCESS assmntint() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntint)
-
-ASSIGN assmntint(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntint, uValue)
-RETURN uValue
-
-ACCESS assmntOffc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntOffc)
-
-ASSIGN assmntOffc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntOffc, uValue)
-RETURN uValue
-
+METHOD AssFldAcButton(lUnique ) CLASS Tab_Parm2 
+	LOCAL cfilter as string
+	Default(@lUnique,FALSE)
+	cfilter:=MakeFilter({self:NbrAssFldAc},{expense},"N",0)
+	AccountSelect(self:Owner,AllTrim(oDCmAssFldAc:TEXTValue ),"Assessment Field and Int",lUnique,cfilter)
+	RETURN nil
 method ButtonClick(oControlEvent) class Tab_Parm2
 	local oControl as Control
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
@@ -751,57 +742,67 @@ method ButtonClick(oControlEvent) class Tab_Parm2
 	return nil
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm2
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as Control
+	LOCAL lGotFocus as LOGIC
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MHB".and.!AllTrim(oControl:Value)==AllTrim(cHBName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrHB := "  "
-				SELF:cHBName := ""
-				SELF:oDCmHB:TEXTValue := ""
+		IF oControl:Name == "MHB".and.!AllTrim(oControl:VALUE)==AllTrim(cHBName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrHB := "  "
+				self:cHBName := ""
+				self:oDCmHB:TEXTValue := ""
 			ELSE
-				cHBName:=AllTrim(oControl:Value)
-				SELF:HBButton(TRUE)
+				cHBName:=AllTrim(oControl:VALUE)
+				self:HBButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MAM".and.!AllTrim(oControl:VALUE)==AllTrim(cAMName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrAM := "  "
-				SELF:cAMName := ""
-				SELF:oDCmAM:TEXTValue := ""
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrAM := "  "
+				self:cAMName := ""
+				self:oDCmAM:TEXTValue := ""
 			ELSE
-				cAMName:=AllTrim(oControl:Value)
-				SELF:AMButton(TRUE)
+				cAMName:=AllTrim(oControl:VALUE)
+				self:AMButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MAMPROJ".and.!AllTrim(oControl:Value)==AllTrim(cAMNameProj)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrAMProj := "  "
-				SELF:cAMNameProj := ""
-				SELF:oDCmAMProj:TEXTValue := ""
+		ELSEIF oControl:Name == "MAMPROJ".and.!AllTrim(oControl:VALUE)==AllTrim(cAMNameProj)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrAMProj := "  "
+				self:cAMNameProj := ""
+				self:oDCmAMProj:TEXTValue := ""
 			ELSE
-				cAMNameProj:=AllTrim(oControl:Value)
-				SELF:AMProjButton(TRUE)
+				cAMNameProj:=AllTrim(oControl:VALUE)
+				self:AMProjButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MGIFTINCAC".and.!AllTrim(oControl:Value)==AllTrim(cGIFTINCACName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrInc := "  "
-				SELF:cGIFTINCACName := ""
-				SELF:oDCmGIFTINCAC:TEXTValue := ""
+		ELSEIF oControl:Name == "MASSFLDAC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAssFldAccName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrAssFldAc := "  "
+				self:cAssFldAccName := ""
+				self:oDCmAssFldAc:TEXTValue := ""
 			ELSE
-				cGIFTINCACName:=AllTrim(oControl:Value)
-				SELF:IncButton(TRUE)
+				self:cAssFldAccName:=AllTrim(oControl:VALUE)
+				self:AssFldAcButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MGIFTEXPAC".and.!AllTrim(oControl:Value)==AllTrim(cGIFTEXPACName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrExp := "  "
-				SELF:cGIFTEXPACName := ""
-				SELF:oDCmGIFTEXPAC:TEXTValue := ""
+		ELSEIF oControl:Name == "MGIFTINCAC".and.!AllTrim(oControl:VALUE)==AllTrim(cGIFTINCACName)
+			IF Empty(alltrim(oControl:Value)) && leeg gemaakt?
+				self:NbrInc := ''
+				self:cGIFTINCACName := ""
+				self:oDCmGIFTINCAC:TEXTValue := ""
+				self:ShowAssAcc()
 			ELSE
-				cGIFTEXPACName:=AllTrim(oControl:Value)
-				SELF:ExpButton(TRUE)
+				cGIFTINCACName:=AllTrim(oControl:VALUE)
+				self:IncButton(true)
+			ENDIF
+		ELSEIF oControl:Name == "MGIFTEXPAC".and.!AllTrim(oControl:VALUE)==AllTrim(cGIFTEXPACName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrExp := "  "
+				self:cGIFTEXPACName := ""
+				self:oDCmGIFTEXPAC:TEXTValue := ""
+			ELSE
+				cGIFTEXPACName:=AllTrim(oControl:VALUE)
+				self:ExpButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MHOMEINCAC".and.!AllTrim(oControl:VALUE)==AllTrim(cHOMEINCACName)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
@@ -889,6 +890,48 @@ METHOD IncButtonHome(lUnique ) CLASS Tab_Parm2
 	RETURN nil
 
 RETURN NIL
+ACCESS INHDHAS() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHDHAS)
+
+ASSIGN INHDHAS(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHDHAS, uValue)
+RETURN uValue
+
+ACCESS INHDINT() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHDINT)
+
+ASSIGN INHDINT(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHDINT, uValue)
+RETURN uValue
+
+ACCESS INHDKNTR() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHDKNTR)
+
+ASSIGN INHDKNTR(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHDKNTR, uValue)
+RETURN uValue
+
+ACCESS INHKNTRH() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHKNTRH)
+
+ASSIGN INHKNTRH(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHKNTRH, uValue)
+RETURN uValue
+
+ACCESS INHKNTRL() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHKNTRL)
+
+ASSIGN INHKNTRL(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHKNTRL, uValue)
+RETURN uValue
+
+ACCESS INHKNTRM() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#INHKNTRM)
+
+ASSIGN INHKNTRM(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#INHKNTRM, uValue)
+RETURN uValue
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -970,35 +1013,36 @@ oCCExpButtonHome:HyperLabel := HyperLabel{#ExpButtonHome,"v","Browse in accounts
 oCCExpButtonHome:TooltipText := "Browse in accounts"
 oCCExpButtonHome:UseHLforToolTip := True
 
-oDCassmntfield := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTFIELD,_GetInst()}}
-oDCassmntfield:FieldSpec := Sysparms_SINHDHAS{}
-oDCassmntfield:HyperLabel := HyperLabel{#assmntfield,"Assessment home assigned:","Assessment field","Sysparms_SINHDHAS"}
-oDCassmntfield:UseHLforToolTip := True
+oDCINHDHAS := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHDHAS,_GetInst()}}
+oDCINHDHAS:FieldSpec := Sysparms_SINHDHAS{}
+oDCINHDHAS:HyperLabel := HyperLabel{#INHDHAS,"Assessment home assigned:","Assessment field","Sysparms_SINHDHAS"}
+oDCINHDHAS:UseHLforToolTip := True
 
-oDCassmntint := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTINT,_GetInst()}}
-oDCassmntint:FieldSpec := Sysparms_INHDINT{}
-oDCassmntint:HyperLabel := HyperLabel{#assmntint,"Assessment international","Assessment international",NULL_STRING}
-oDCassmntint:UseHLforToolTip := True
+oDCINHDINT := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHDINT,_GetInst()}}
+oDCINHDINT:FieldSpec := Sysparms_INHDINT{}
+oDCINHDINT:HyperLabel := HyperLabel{#INHDINT,"Assessment international","Assessment international",NULL_STRING}
+oDCINHDINT:UseHLforToolTip := True
 
-oDCwithldoffl := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFL,_GetInst()}}
-oDCwithldoffl:FieldSpec := Sysparms_SINHDKNTR{}
-oDCwithldoffl:HyperLabel := HyperLabel{#withldoffl,"Assessment office:","Assessment office low",NULL_STRING}
-oDCwithldoffl:UseHLforToolTip := True
+oDCINHKNTRL := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHKNTRL,_GetInst()}}
+oDCINHKNTRL:FieldSpec := Sysparms_SINHDKNTR{}
+oDCINHKNTRL:HyperLabel := HyperLabel{#INHKNTRL,"Assessment office:","Assessment office low","Sysparms_SINHDKNTR"}
+oDCINHKNTRL:UseHLforToolTip := True
 
-oDCassmntOffc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTOFFC,_GetInst()}}
-oDCassmntOffc:FieldSpec := Sysparms_SINHDKNTR{}
-oDCassmntOffc:HyperLabel := HyperLabel{#assmntOffc,"Assessment office:","Assessment office standard",NULL_STRING}
+oDCINHDKNTR := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHDKNTR,_GetInst()}}
+oDCINHDKNTR:FieldSpec := Sysparms_SINHDKNTR{}
+oDCINHDKNTR:HyperLabel := HyperLabel{#INHDKNTR,"Assessment office:","Assessment office standard","Sysparms_SINHDKNTR"}
 
-oDCwithldoffm := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFM,_GetInst()}}
-oDCwithldoffm:FieldSpec := Sysparms_SINHDKNTR{}
-oDCwithldoffm:HyperLabel := HyperLabel{#withldoffm,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
+oDCINHKNTRM := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHKNTRM,_GetInst()}}
+oDCINHKNTRM:FieldSpec := Sysparms_SINHDKNTR{}
+oDCINHKNTRM:HyperLabel := HyperLabel{#INHKNTRM,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
 
-oDCwithldoffh := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFH,_GetInst()}}
-oDCwithldoffh:FieldSpec := Sysparms_SINHDKNTR{}
-oDCwithldoffh:HyperLabel := HyperLabel{#withldoffh,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
+oDCINHKNTRH := SingleLineEdit{SELF,ResourceID{TAB_PARM2_INHKNTRH,_GetInst()}}
+oDCINHKNTRH:FieldSpec := Sysparms_SINHDKNTR{}
+oDCINHKNTRH:HyperLabel := HyperLabel{#INHKNTRH,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
 
 oDCpmcupld := CheckBox{SELF,ResourceID{TAB_PARM2_PMCUPLD,_GetInst()}}
 oDCpmcupld:HyperLabel := HyperLabel{#pmcupld,"Sending to PMC via Insite upload",NULL_STRING,NULL_STRING}
+oDCpmcupld:FieldSpec := Sysparms_PMCUPLD{}
 
 oDCmPersonPMCMan := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MPERSONPMCMAN,_GetInst()}}
 oDCmPersonPMCMan:HyperLabel := HyperLabel{#mPersonPMCMan,NULL_STRING,NULL_STRING,"name PMC manager who should approve OPP file"}
@@ -1070,7 +1114,7 @@ oDCFixedText13 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT13,_GetInst()}}
 oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"%",NULL_STRING,NULL_STRING}
 
 oDCSC_SAM1 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM1,_GetInst()}}
-oDCSC_SAM1:HyperLabel := HyperLabel{#SC_SAM1,"Account Project Assessments:",NULL_STRING,NULL_STRING}
+oDCSC_SAM1:HyperLabel := HyperLabel{#SC_SAM1,"Account Project Assessments",NULL_STRING,NULL_STRING}
 
 oDCGroupBoxIncome := GroupBox{SELF,ResourceID{TAB_PARM2_GROUPBOXINCOME,_GetInst()}}
 oDCGroupBoxIncome:HyperLabel := HyperLabel{#GroupBoxIncome,"Accounts to record assessable gifts to measure activity",NULL_STRING,NULL_STRING}
@@ -1089,6 +1133,19 @@ oDCSC_SAM5:HyperLabel := HyperLabel{#SC_SAM5,"Account Home Gifts Income:",NULL_S
 
 oDCFixedText24 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT24,_GetInst()}}
 oDCFixedText24:HyperLabel := HyperLabel{#FixedText24,"PMC Manager:",NULL_STRING,NULL_STRING}
+
+oDCmAssFldAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MASSFLDAC,_GetInst()}}
+oDCmAssFldAc:HyperLabel := HyperLabel{#mAssFldAc,NULL_STRING,"Accountnumber for field+int.assessments",NULL_STRING}
+oDCmAssFldAc:FieldSpec := MEMBERACCOUNT{}
+oDCmAssFldAc:TooltipText := "account to record how much the expense for field and international assessment is"
+
+oCCAssFldAcButton := PushButton{SELF,ResourceID{TAB_PARM2_ASSFLDACBUTTON,_GetInst()}}
+oCCAssFldAcButton:HyperLabel := HyperLabel{#AssFldAcButton,"v","Browse in accounts",NULL_STRING}
+oCCAssFldAcButton:TooltipText := "Browse in accounts"
+oCCAssFldAcButton:UseHLforToolTip := True
+
+oDCSC_SAMFld := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAMFLD,_GetInst()}}
+oDCSC_SAMFld:HyperLabel := HyperLabel{#SC_SAMFld,"Account Assessment Field+Int",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Account Gifts Expense:"
 SELF:HyperLabel := HyperLabel{#Tab_Parm2,"Account Gifts Expense:",NULL_STRING,NULL_STRING}
@@ -1117,6 +1174,13 @@ RETURN SELF:FieldGet(#mAMProj)
 
 ASSIGN mAMProj(uValue) CLASS Tab_Parm2
 SELF:FieldPut(#mAMProj, uValue)
+RETURN uValue
+
+ACCESS mAssFldAc() CLASS Tab_Parm2
+RETURN SELF:FieldGet(#mAssFldAc)
+
+ASSIGN mAssFldAc(uValue) CLASS Tab_Parm2
+SELF:FieldPut(#mAssFldAc, uValue)
 RETURN uValue
 
 ACCESS mGiftExpAc() CLASS Tab_Parm2
@@ -1183,35 +1247,35 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		oAcc:Execute( self:Server:AM)
 		IF oAcc:RecCount>0
 			self:NbrAM :=  Str(oAcc:accid,-1)
-			self:oDCmAM:TEXTValue := AllTrim(oAcc:Description)
+			self:oDCmAM:TEXTValue := oAcc:Description
 			self:cAMName := AllTrim(oAcc:Description)
 			self:cSoortAM:=oAcc:TYPE
 		ENDIF		
-	ENDIF
-	IF !Empty(SELF:Server:AssProjA)
-		oAcc:Execute( self:Server:AssProjA)
-		IF oAcc:RecCount>0
-			self:NbrAMProj :=  Str(oAcc:accid,-1)
-			self:oDCmAMProj:TEXTValue := AllTrim(oAcc:Description)
-			self:cAMNameProj := AllTrim(oAcc:Description)
-			self:cSoortAMProj:=oAcc:TYPE
-		ENDIF		
-	ENDIF
-	IF !Empty(SELF:Server:HB)
-		oAcc:Execute( self:Server:HB)
-		IF oAcc:RecCount>0
-			self:NbrHB :=  Str(oAcc:accid,-1)
-			self:oDCmHB:TEXTValue := AllTrim(oAcc:Description)
-			self:cHBName := AllTrim(oAcc:Description)
-			self:cSoortHB:=oAcc:TYPE
-		ENDIF		
-	ENDIF
+		IF !Empty(SELF:Server:AssProjA)
+			oAcc:Execute( self:Server:AssProjA)
+			IF oAcc:RecCount>0
+				self:NbrAMProj :=  Str(oAcc:accid,-1)
+				self:oDCmAMProj:TEXTValue := oAcc:Description
+				self:cAMNameProj := AllTrim(oAcc:Description)
+				self:cSoortAMProj:=oAcc:TYPE
+			ENDIF		
+		ENDIF
+		IF !Empty(SELF:Server:HB)
+			oAcc:Execute( self:Server:HB)
+			IF oAcc:RecCount>0
+				self:NbrHB :=  Str(oAcc:accid,-1)
+				self:oDCmHB:TEXTValue := oAcc:Description
+				self:cHBName := oAcc:Description
+				self:cSoortHB:=oAcc:TYPE
+			ENDIF		
+		ENDIF 
+	endif
 	IF !Empty(self:Server:GIFTEXPAC)
 		oAcc:Execute( self:Server:GIFTEXPAC)
 		IF oAcc:RecCount>0
 			self:NbrExp :=  Str(oAcc:accid,-1)
 			self:oDCmGIFTEXPAC:TEXTValue := AllTrim(oAcc:Description)
-			self:cGIFTEXPACName := AllTrim(oAcc:Description)
+			self:cGIFTEXPACName := oAcc:Description
 			self:cSoortGIFTEXPAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
@@ -1219,17 +1283,19 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		oAcc:Execute( self:Server:GIFTINCAC)
 		IF oAcc:RecCount>0
 			self:NbrInc :=  Str(oAcc:accid,-1)
-			self:oDCmGIFTINCAC:TEXTValue := AllTrim(oAcc:Description)
-			self:cGIFTINCACName := AllTrim(oAcc:Description)
+			self:oDCmGIFTINCAC:TEXTValue := oAcc:Description
+			self:cGIFTINCACName := oAcc:Description
 			self:cSoortGIFTINCAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:ShowAssAcc()
+
 	IF !Empty(self:Server:HOMEEXPAC)
 		oAcc:Execute( self:Server:HOMEEXPAC)
 		IF oAcc:RecCount>0
 			self:NbrExpHome :=  Str(oAcc:accid,-1)
-			self:oDCmHOMEEXPAC:TEXTValue := AllTrim(oAcc:Description)
-			self:cHomeEXPACName := AllTrim(oAcc:description)
+			self:oDCmHOMEEXPAC:TEXTValue := oAcc:Description
+			self:cHomeEXPACName := oAcc:Description
 			self:cSoortHomeEXPAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
@@ -1237,8 +1303,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		oAcc:Execute( self:Server:HOMEINCAC)
 		IF oAcc:RecCount>0
 			self:NbrIncHome :=  Str(oAcc:accid,-1)
-			self:oDCmHOMEINCAC:TEXTValue := AllTrim(oAcc:Description)
-			self:cHOMEINCACName := AllTrim(oAcc:Description)
+			self:oDCmHOMEINCAC:TEXTValue := oAcc:Description
+			self:cHOMEINCACName := oAcc:Description
 			self:cSoortHomeINCAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
@@ -1255,6 +1321,31 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	self:oDCmPersonPMCMan:TEXTValue:=cPMCManName
 	self:oDCENTITY:Value:=self:Server:Entity
 	RETURN NIL
+method ShowAssAcc() class Tab_Parm2
+// show or hide fields for income/cost ministry 
+	if	!Empty(self:NbrInc)
+		self:oDCmHomeIncAc:Show()
+		self:oDCSC_SAM5:Show()
+		self:oCCIncButtonHome:Show() 
+		self:oDCmHomeExpAc:Show()
+		self:oDCSC_SAM4:Show()
+		self:oCCExpButtonHome:Show()
+		self:oDCmAssFldAc:Show()
+		self:oDCSC_SAMFld:Show()
+		self:oCCAssFldAcButton:Show()
+	else
+		self:oDCmHomeIncAc:Hide()
+		self:oDCSC_SAM5:Hide()
+		self:oCCIncButtonHome:Hide()
+		self:oDCmHomeExpAc:Hide()
+		self:oDCSC_SAM4:Hide()
+		self:oCCExpButtonHome:Hide()
+		self:oDCmAssFldAc:Hide()
+		self:oDCSC_SAMFld:Hide()		
+		self:oCCAssFldAcButton:Hide()
+	endif	
+
+
 ACCESS withldoff() CLASS Tab_Parm2
 RETURN SELF:FieldGet(#INHDHAS)
 
@@ -1262,32 +1353,9 @@ ASSIGN withldoff(uValue) CLASS Tab_Parm2
 SELF:FieldPut(#INHDHAS, uValue)
 RETURN uValue
 
-ACCESS withldoffh() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffh)
-
-ASSIGN withldoffh(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffh, uValue)
-RETURN uValue
-
-ACCESS withldoffl() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffl)
-
-ASSIGN withldoffl(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffl, uValue)
-RETURN uValue
-
-ACCESS withldoffm() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffm)
-
-ASSIGN withldoffm(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffm, uValue)
-RETURN uValue
-
 STATIC DEFINE TAB_PARM2_AMBUTTON := 104 
 STATIC DEFINE TAB_PARM2_AMPROJBUTTON := 106 
-STATIC DEFINE TAB_PARM2_ASSMNTFIELD := 115 
-STATIC DEFINE TAB_PARM2_ASSMNTINT := 116 
-STATIC DEFINE TAB_PARM2_ASSMNTOFFC := 118 
+STATIC DEFINE TAB_PARM2_ASSFLDACBUTTON := 151 
 STATIC DEFINE TAB_PARM2_ENTITY := 100 
 STATIC DEFINE TAB_PARM2_EXPBUTTON := 110 
 STATIC DEFINE TAB_PARM2_EXPBUTTONHOME := 114 
@@ -1307,8 +1375,15 @@ STATIC DEFINE TAB_PARM2_HBBUTTON := 102
 STATIC DEFINE TAB_PARM2_IESMAILACC := 123 
 STATIC DEFINE TAB_PARM2_INCBUTTON := 108 
 STATIC DEFINE TAB_PARM2_INCBUTTONHOME := 112 
+STATIC DEFINE TAB_PARM2_INHDHAS := 115 
+STATIC DEFINE TAB_PARM2_INHDINT := 116 
+STATIC DEFINE TAB_PARM2_INHDKNTR := 118 
+STATIC DEFINE TAB_PARM2_INHKNTRH := 120 
+STATIC DEFINE TAB_PARM2_INHKNTRL := 117 
+STATIC DEFINE TAB_PARM2_INHKNTRM := 119 
 STATIC DEFINE TAB_PARM2_MAM := 103 
 STATIC DEFINE TAB_PARM2_MAMPROJ := 105 
+STATIC DEFINE TAB_PARM2_MASSFLDAC := 150 
 STATIC DEFINE TAB_PARM2_MGIFTEXPAC := 109 
 STATIC DEFINE TAB_PARM2_MGIFTINCAC := 107 
 STATIC DEFINE TAB_PARM2_MHB := 101 
@@ -1325,14 +1400,12 @@ STATIC DEFINE TAB_PARM2_SC_SAM2 := 145
 STATIC DEFINE TAB_PARM2_SC_SAM3 := 146 
 STATIC DEFINE TAB_PARM2_SC_SAM4 := 147 
 STATIC DEFINE TAB_PARM2_SC_SAM5 := 148 
+STATIC DEFINE TAB_PARM2_SC_SAMFLD := 152 
 STATIC DEFINE TAB_PARM2_SC_SHB := 125 
 STATIC DEFINE TAB_PARM2_SC_SINHDHAS := 127 
 STATIC DEFINE TAB_PARM2_SC_SINHDHAS1 := 133 
 STATIC DEFINE TAB_PARM2_SC_SINHDKNTR := 128 
 STATIC DEFINE TAB_PARM2_SC_SINHDKNTR1 := 134 
-STATIC DEFINE TAB_PARM2_WITHLDOFFH := 120 
-STATIC DEFINE TAB_PARM2_WITHLDOFFL := 117 
-STATIC DEFINE TAB_PARM2_WITHLDOFFM := 119 
 RESOURCE Tab_Parm3 DIALOGEX  26, 29, 254, 240
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1637,21 +1710,6 @@ STATIC DEFINE TAB_PARM3_POSTAGEBUTTON := 101
 STATIC DEFINE TAB_PARM3_SC_SCRE := 113 
 STATIC DEFINE TAB_PARM3_SC_SDEB := 108 
 STATIC DEFINE TAB_PARM3_SC_SPOSTZ := 102 
-RESOURCE Tab_Parm4 DIALOGEX  16, 14, 212, 141
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAB_PARM4_MDONORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 19, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM4_MPROJECTS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 32, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Acc nbr non-designated gifts:", TAB_PARM4_SC_SPROJ, "Static", WS_CHILD, 12, 33, 96, 12
-	CONTROL	"Account number Donors:", TAB_PARM4_SC_SDON, "Static", WS_CHILD, 12, 19, 81, 12
-	CONTROL	"Gifts", TAB_PARM4_GROUPBOX4, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 10, 202, 119
-	CONTROL	"v", TAB_PARM4_PROJECTSBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 32, 15, 12
-	CONTROL	"v", TAB_PARM4_DONORSBUTTON, "Button", WS_CHILD, 189, 18, 15, 12
-	CONTROL	"Length of decimal fraction:", TAB_PARM4_FIXEDTEXT2, "Static", WS_CHILD, 13, 49, 87, 13
-	CONTROL	"", TAB_PARM4_MDECIMALGIFTREPORT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 48, 83, 12, WS_EX_CLIENTEDGE
-END
-
 CLASS Tab_Parm4 INHERIT DataWindowExtra 
 
 	PROTECT oDCmDONORS AS SINGLELINEEDIT
@@ -1668,6 +1726,21 @@ CLASS Tab_Parm4 INHERIT DataWindowExtra
     EXPORT cPROJECTSName, cDONORSName AS STRING
   	EXPORT NbrPROJECTS, NbrDONORS AS STRING
   	EXPORT cSoortPROJECTS, cSoortDONORS AS STRING
+RESOURCE Tab_Parm4 DIALOGEX  16, 14, 212, 141
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAB_PARM4_MDONORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 19, 83, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM4_MPROJECTS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 32, 83, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Acc nbr non-designated gifts:", TAB_PARM4_SC_SPROJ, "Static", WS_CHILD, 12, 33, 96, 12
+	CONTROL	"Account number Donors:", TAB_PARM4_SC_SDON, "Static", WS_CHILD, 12, 19, 81, 12
+	CONTROL	"Gifts", TAB_PARM4_GROUPBOX4, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 10, 202, 119
+	CONTROL	"v", TAB_PARM4_PROJECTSBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 32, 15, 12
+	CONTROL	"v", TAB_PARM4_DONORSBUTTON, "Button", WS_CHILD, 189, 18, 15, 12
+	CONTROL	"Length of decimal fraction:", TAB_PARM4_FIXEDTEXT2, "Static", WS_CHILD, 13, 49, 87, 13
+	CONTROL	"", TAB_PARM4_MDECIMALGIFTREPORT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 48, 83, 12, WS_EX_CLIENTEDGE
+END
+
 METHOD DonorsButton(lUnique ) CLASS Tab_Parm4
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -2286,17 +2359,6 @@ STATIC DEFINE TAB_PARM7_OWNMAILACC := 102
 STATIC DEFINE TAB_PARM7_SC_OWNMAILACC := 100 
 STATIC DEFINE TAB_PARM7_SC_SMTPSERVER := 101 
 STATIC DEFINE TAB_PARM7_SMTPSERVER := 103 
-CLASS TABPARM_PAGE7 INHERIT DataWindowExtra 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmPSWDURA AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCmPSWRDLEN AS SINGLELINEEDIT
-	PROTECT oDCmPSWALNUM AS CHECKBOX
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE TABPARM_PAGE7 DIALOGEX  12, 11, 254, 135
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -2310,6 +2372,17 @@ BEGIN
 	CONTROL	"Password properties:", TABPARM_PAGE7_FIXEDTEXT4, "Static", SS_CENTER|WS_CHILD, 10, 9, 210, 13
 END
 
+CLASS TABPARM_PAGE7 INHERIT DataWindowExtra 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmPSWDURA AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCmPSWRDLEN AS SINGLELINEEDIT
+	PROTECT oDCmPSWALNUM AS CHECKBOX
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TABPARM_PAGE7 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -2399,13 +2472,6 @@ STATIC DEFINE TABPARM_PAGE7_FIXEDTEXT4 := 106
 STATIC DEFINE TABPARM_PAGE7_MPSWALNUM := 105 
 STATIC DEFINE TABPARM_PAGE7_MPSWDURA := 101 
 STATIC DEFINE TABPARM_PAGE7_MPSWRDLEN := 104 
-CLASS TabParm_Page8 INHERIT DataWindowExtra 
-
-	PROTECT oDCCRLANGUAGE AS COMBOBOX
-	PROTECT oDCSC_LANGUAGE AS FIXEDTEXT
-	PROTECT oDCtr_text AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE TabParm_Page8 DIALOGEX  8, 7, 272, 148
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -2415,6 +2481,13 @@ BEGIN
 	CONTROL	"(See Lan.Translation tables)", TABPARM_PAGE8_TR_TEXT, "Static", WS_CHILD, 168, 23, 100, 18
 END
 
+CLASS TabParm_Page8 INHERIT DataWindowExtra 
+
+	PROTECT oDCCRLANGUAGE AS COMBOBOX
+	PROTECT oDCSC_LANGUAGE AS FIXEDTEXT
+	PROTECT oDCtr_text AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 ACCESS CRLANGUAGE() CLASS TabParm_Page8
 RETURN SELF:FieldGet(#CRLANGUAGE)
 
@@ -2457,15 +2530,6 @@ return self
 STATIC DEFINE TABPARM_PAGE8_CRLANGUAGE := 100 
 STATIC DEFINE TABPARM_PAGE8_SC_LANGUAGE := 101 
 STATIC DEFINE TABPARM_PAGE8_TR_TEXT := 102 
-RESOURCE TabParm_Page9 DIALOGEX  2, 2, 287, 241
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_MTOPPACCT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TABPARM_PAGE9_TOPPBUTTON, "Button", WS_CHILD, 232, 11, 15, 12
-	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_SC_TOPP, "Static", WS_CHILD, 4, 11, 104, 12
-END
-
 CLASS TabParm_Page9 INHERIT DataWindowExtra 
 
 	PROTECT oDCmToPPAcct AS SINGLELINEEDIT
@@ -2476,6 +2540,15 @@ CLASS TabParm_Page9 INHERIT DataWindowExtra
    EXPORT cToPPname as STRING
   	EXPORT NbrToPP as STRING
   	EXPORT cSoortToPP as STRING
+
+RESOURCE TabParm_Page9 DIALOGEX  2, 2, 287, 241
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_MTOPPACCT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TABPARM_PAGE9_TOPPBUTTON, "Button", WS_CHILD, 232, 11, 15, 12
+	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_SC_TOPP, "Static", WS_CHILD, 4, 11, 104, 12
+END
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TabParm_Page9
 	LOCAL oControl as Control
@@ -2561,6 +2634,15 @@ RETURN NIL
 STATIC DEFINE TABPARM_PAGE9_MTOPPACCT := 100 
 STATIC DEFINE TABPARM_PAGE9_SC_TOPP := 102 
 STATIC DEFINE TABPARM_PAGE9_TOPPBUTTON := 101 
+RESOURCE TabSysParms DIALOGEX  38, 35, 304, 303
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TABSYSPARMS_TABPARM, "SysTabControl32", WS_CHILD, 4, 7, 293, 277
+	CONTROL	"OK", TABSYSPARMS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 176, 288, 53, 12
+	CONTROL	"Cancel", TABSYSPARMS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 241, 288, 53, 12
+END
+
 CLASS TabSysParms INHERIT DataWindowExtra 
 
 	PROTECT oDCTabParm AS TABCONTROL
@@ -2579,15 +2661,6 @@ CLASS TabSysParms INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT nOrigCloseMonth as int
 	export oSys as SQLSelect
-RESOURCE TabSysParms DIALOGEX  38, 35, 304, 282
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TABSYSPARMS_TABPARM, "SysTabControl32", WS_CHILD, 4, 7, 293, 258
-	CONTROL	"OK", TABSYSPARMS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 172, 265, 53, 13
-	CONTROL	"Cancel", TABSYSPARMS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 237, 265, 53, 13
-END
-
 METHOD CancelButton( ) CLASS TabSysParms
 	oTPTAB_PARM1:UndoAll()
 	if !oTPTAB_PARM2==null_object
@@ -2823,15 +2896,17 @@ METHOD OKButton( ) CLASS TabSysParms
 	",SYSNAME='"+self:oTPTAB_PARM1:SYSNAME+"'"+; 
 	",AdminType='"+self:oTPTAB_PARM1:mAdminType+"'"+;
 	",posting="+iif(self:oTPTAB_PARM1:posting,'1','0')+; 
-	iif( self:oTPTAB_PARM2==null_object,'',;
+	iif( self:oTPTAB_PARM2==null_object,'',;  
 		",PMCMANCLN='"+self:oTPTAB_PARM2:mCLNPMCMan+"'"+;
 		",HB='"+self:oTPTAB_PARM2:NbrHB+"'"+;
 		",AM='"+self:oTPTAB_PARM2:NbrAM+"'"+;
 		",AssProjA='"+self:oTPTAB_PARM2:NbrAMProj+"'"+;
 		",GIFTINCAC='"+self:oTPTAB_PARM2:NbrInc+"'"+;
 		",GIFTEXPAC='"+self:oTPTAB_PARM2:NbrExp+"'"+;
+		iif(Empty(self:oTPTAB_PARM2:NbrInc),",HOMEINCAC='',HomeEXPAC='',AssFldAc=''",+;
 		",HOMEINCAC='"+self:oTPTAB_PARM2:NbrIncHome+"'"+;
 		",HomeEXPAC='"+self:oTPTAB_PARM2:NbrExpHome+"'" +;  
+		",AssFldAc='"+self:oTPTAB_PARM2:NbrAssFldAc+"'") +;  
 		",assmntfield='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntfield,""))+"'" +;
 		",withldoffl='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffl,""))+"'"	+;	
 		",IESMAILACC='"+AllTrim(Transform(self:oTPTAB_PARM2:IESMAILACC,""))+"'" +; 
@@ -2944,83 +3019,88 @@ METHOD RegAccount(oRek,ItemName) CLASS TabSysParms
 	ENDIF
 	IF ItemName=="Receivable"
 		oTPTAB_PARM3:NbrDEBTORS :=  Str(oRek:accid,-1)
-		oTPTAB_PARM3:mDEBTORS:= AllTrim(oRek:Description)
-		oTPTAB_PARM3:cDEBTORSName := AllTrim(oRek:Description)
+		oTPTAB_PARM3:mDEBTORS:= oRek:Description
+		oTPTAB_PARM3:cDEBTORSName := oRek:Description
 		oTPTAB_PARM3:cSoortDEBTORS:=oRek:TYPE
 	ELSEIF ItemName=="Payable"
 		oTPTAB_PARM3:NbrCreditors :=  Str(oRek:accid,-1)
-		oTPTAB_PARM3:mCREDITORS:= AllTrim(oRek:Description)
-		oTPTAB_PARM3:cCREDITORSName := AllTrim(oRek:Description)
+		oTPTAB_PARM3:mCREDITORS:= oRek:Description
+		oTPTAB_PARM3:cCREDITORSName := oRek:Description
 		oTPTAB_PARM3:cSoortCREDITORS:=oRek:TYPE
 	ELSEIF ItemName=="Cash"
 		oTPTAB_PARM1:NbrCASH :=  Str(oRek:accid,-1)
-		oTPTAB_PARM1:mCASH := AllTrim(oRek:Description)
-		oTPTAB_PARM1:cCASHName := AllTrim(oRek:Description)
+		oTPTAB_PARM1:mCASH := oRek:Description
+		oTPTAB_PARM1:cCASHName := oRek:Description
 		oTPTAB_PARM1:cSoortCash:=oRek:TYPE
 	ELSEIF ItemName=="Net Asset"
 		oTPTAB_PARM1:NbrCAPITAL :=  Str(oRek:accid,-1)
-		oTPTAB_PARM1:mCAPITAL := AllTrim(oRek:Description)
-		oTPTAB_PARM1:cCAPITALName := AllTrim(oRek:Description)
+		oTPTAB_PARM1:mCAPITAL := oRek:Description
+		oTPTAB_PARM1:cCAPITALName := oRek:Description
 		oTPTAB_PARM1:cSoortCAPITAL:=oRek:TYPE
 	ELSEIF ItemName=="Internal bank transfer"
 		oTPTAB_PARM1:NbrCROSS :=  Str(oRek:accid,-1)
-		oTPTAB_PARM1:mKRUISPSTN := AllTrim(oRek:Description)
-		oTPTAB_PARM1:cCROSSName := AllTrim(oRek:Description)
+		oTPTAB_PARM1:mKRUISPSTN := oRek:Description
+		oTPTAB_PARM1:cCROSSName := oRek:Description
 		oTPTAB_PARM1:cSoortCROSS:=oRek:TYPE
 	ELSEIF ItemName=="Assessments"
 		oTPTAB_PARM2:NbrAM :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mAM := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cAMName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mAM := oRek:Description
+		oTPTAB_PARM2:cAMName := oRek:Description
 		oTPTAB_PARM2:cSoortAM:=oRek:TYPE
 	ELSEIF ItemName=="Project Assessments"
 		oTPTAB_PARM2:NbrAMProj :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mAMProj := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cAMNameProj := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mAMProj := oRek:Description
+		oTPTAB_PARM2:cAMNameProj := oRek:Description
 		oTPTAB_PARM2:cSoortAMProj:=oRek:TYPE
+	ELSEIF ItemName=="Assessment Field and Int"
+		oTPTAB_PARM2:NbrAssFldAc :=  Str(oRek:accid,-1)
+		oTPTAB_PARM2:mAssFldAc := oRek:Description
+		oTPTAB_PARM2:cAssFldAccName := oRek:Description
+		oTPTAB_PARM2:cSoortAssFldAc:=oRek:TYPE 
 	ELSEIF ItemName=="Account PMC clearance"
 		oTPTAB_PARM2:NbrHB :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mHB := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cHBName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mHB := oRek:Description
+		oTPTAB_PARM2:cHBName := oRek:Description
 		oTPTAB_PARM2:cSoortHB:=oRek:TYPE
 	ELSEIF ItemName=="Postage"
 		oTPTAB_PARM3:NbrPostage :=  Str(oRek:accid,-1)
-		oTPTAB_PARM3:mPostage := AllTrim(oRek:Description)
-		oTPTAB_PARM3:cPostageName := AllTrim(oRek:Description)
+		oTPTAB_PARM3:mPostage := oRek:Description
+		oTPTAB_PARM3:cPostageName := oRek:Description
 		oTPTAB_PARM3:cSoortPostage:=oRek:TYPE
 	ELSEIF ItemName=="Donors"
 		oTPTAB_PARM4:NbrDONORS :=  Str(oRek:accid,-1)
-		oTPTAB_PARM4:mDONORS := AllTrim(oRek:Description)
-		oTPTAB_PARM4:cDONORSName := AllTrim(oRek:Description)
+		oTPTAB_PARM4:mDONORS := oRek:Description
+		oTPTAB_PARM4:cDONORSName := oRek:Description
 		oTPTAB_PARM4:cSoortDONORS:=oRek:TYPE
 	ELSEIF ItemName=="Non earmarked Gifts"
 		oTPTAB_PARM4:NbrPROJECTS :=  Str(oRek:accid,-1)
-		oTPTAB_PARM4:mPROJECTS := AllTrim(oRek:Description)
-		oTPTAB_PARM4:cPROJECTSName := AllTrim(oRek:Description)
+		oTPTAB_PARM4:mPROJECTS := oRek:Description
+		oTPTAB_PARM4:cPROJECTSName := oRek:Description
 		oTPTAB_PARM4:cSoortPROJECTS:=oRek:TYPE
 	ELSEIF ItemName=="Gifts Income"
 		oTPTAB_PARM2:NbrInc :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mGiftIncAc := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cGIFTINCACName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mGiftIncAc := oRek:Description
+		oTPTAB_PARM2:cGIFTINCACName := oRek:Description
 		oTPTAB_PARM2:cSoortGIFTINCAC:=oRek:TYPE
 	ELSEIF ItemName=="Gifts Expense"
 		oTPTAB_PARM2:NbrExp :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mGiftEXPAc := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cGIFTEXPACName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mGiftEXPAc := oRek:Description
+		oTPTAB_PARM2:cGIFTEXPACName := oRek:Description
 		oTPTAB_PARM2:cSoortGIFTEXPAC:=oRek:TYPE
 	ELSEIF ItemName=="Gifts Home Income"
 		oTPTAB_PARM2:NbrIncHome :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mHomeIncAc := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cHOMEINCACName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mHomeIncAc := oRek:Description
+		oTPTAB_PARM2:cHOMEINCACName := oRek:Description
 		oTPTAB_PARM2:cSoortHomeINCAC:=oRek:TYPE
 	ELSEIF ItemName=="Gifts Home Expense"
 		oTPTAB_PARM2:NbrExpHome :=  Str(oRek:accid,-1)
-		oTPTAB_PARM2:mHomeEXPAc := AllTrim(oRek:Description)
-		oTPTAB_PARM2:cHomeEXPACName := AllTrim(oRek:Description)
+		oTPTAB_PARM2:mHomeEXPAc := oRek:Description
+		oTPTAB_PARM2:cHomeEXPACName := oRek:Description
 		oTPTAB_PARM2:cSoortHomeEXPAC:=oRek:TYPE
 	ELSEIF ItemName=="Account Sending to other PPs"
 		self:oTPTabParm_Page9:NbrToPP :=  Str(oRek:accid,-1)
-		self:oTPTabParm_Page9:mToPPAccT := AllTrim(oRek:Description)
-		self:oTPTabParm_Page9:cToPPName := AllTrim(oRek:Description)
+		self:oTPTabParm_Page9:mToPPAccT := oRek:Description
+		self:oTPTabParm_Page9:cToPPName := oRek:Description
 		self:oTPTabParm_Page9:cSoortToPP:=oRek:TYPE
 	ENDIF
 	
