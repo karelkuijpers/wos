@@ -10,7 +10,8 @@ IF nRet > 0
 	ENDIF
 ENDIF
 RETURN nRet
-class CheckUPGRADE
+class CheckUPGRADE  
+	declare method LoadUpgrade
 Method LoadInstallUpg(myFTP,cWorkdir) class CheckUPGRADE
 LOCAL oFTP:=myFTP  as cFtp
 Local aInsRem as Array 
@@ -72,87 +73,94 @@ endif
 return true
 
 
-method LoadUpgrade(startfile,cWorkdir) class CheckUPGRADE
-LOCAL oFTP  as cFtp
-Local ret:=false as logic 
-local aDir as array 
-local i,j as int
-local newversion, cVersion, cWarning as string , anewvers, aCurvers, altstvers:={0,0,0,0} as array,LtstVers:=0,CurVers as longint,ptrHandle 
+method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as logic) as logic class CheckUPGRADE
+	LOCAL oFTP  as cFtp
+	Local ret:=false as logic 
+	local aDir as array 
+	local i,j as int
+	local newversion, cVersion, cWarning as string , anewvers, aCurvers, altstvers:={0,0,0,0} as array,LtstVers:=0,CurVers,DBVers as float,ptrHandle  
+	local oSys as SQLSelect
 
-oFTP := CFtp{"WycOffSy FTP Agent"}
-aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
-AEval(aCurvers,{|x|CurVers:=100*CurVers+x})
-
-IF oFTP:ConnectRemote("ftp.parousiazoetermeer.net","anonymous@parousiazoetermeer.net","any")
-	aDir:=oFTP:Directory("SQLUPGRADE*.exe")      
-	// search latest available version 
-	for i:=1 upto ALen(ADir) 
-		newversion :=SubStr(AllTrim(ADir[i,F_NAME]),11)
-		newversion:=SubStr(newversion,1,Len(newversion)-4)
-		anewvers:=AEvalA(Split(newversion,"."),{|x|Val(x)})
-		if Len(anewvers)=4
-			for j:=1 to 4
-				if anewvers[j]>altstvers[j]
-					altstvers:=anewvers
-					exit
-				endif
-			next
-		endif
-	next 
-	AEval(altstvers,{|x|LtstVers:=100*LtstVers+x})	
-
-	if LtstVers>CurVers
-		newversion:=""
-		AEval(altstvers,{|x|newversion+=iif(Empty(newversion),"",".")+Str(x,-1)})
-		if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
-			cVersion:="version "+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0. (current "+Version+") "
-			cWarning:=" (this can take several minutes)" 
-		else
-			cVersion:="upgrade "
-		endif 
-		if (TextBox{,"New "+cVersion+"of Wycliffe Office System available!","Do you want to install it?"+cWarning,BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
-			// load first latest version of install program:
-			if !self:LoadInstallUpg(oFTP,cWorkdir)
-           	(ErrorBox{,"Could not load" +cWorkdir+"InstallUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
-            ret:=false
-			else	
-				if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
-					// load initial upgrade with all files first:
-					if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
-						// make InstallUpg.Bat:
-						ptrHandle:=FCreate(cWorkdir+"InstallUpg.bat") 
-						if ptrHandle = F_ERROR
-                 		(ErrorBox{,"Could not start" +cWorkdir+"InstallUpg.bat"+": "+DosErrString(FError())}):Show()
-                    	ret:=false
-						else
-							FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
-							FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
-							FWriteLine(ptrHandle,'CD "'+CurPath+'"')
-							FWriteLine(ptrHandle,'"'+cWorkdir+'"WycOffSy.exe"')
-							FWriteLine(ptrHandle,"Exit")
-      		         FClose(ptrHandle)
-        		 	      startfile:=cWorkdir+"InstallUpg.bat"
+	oFTP := CFtp{"WycOffSy FTP Agent"}
+	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
+	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
+	oSys := SQLSelect{"select Version from Sysparms",oConn}
+	if oSys:RecCount>0
+		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+	endif
+	if FirstOfDay .or. DBVers>CurVers
+		IF oFTP:ConnectRemote("ftp.parousiazoetermeer.net","anonymous@parousiazoetermeer.net","any")
+			aDir:=oFTP:Directory("SQLUPGRADE*.exe")      
+			// search latest available version 
+			for i:=1 upto ALen(ADir) 
+				newversion :=SubStr(AllTrim(ADir[i,F_NAME]),11)
+				newversion:=SubStr(newversion,1,Len(newversion)-4)
+				anewvers:=AEvalA(Split(newversion,"."),{|x|Val(x)})
+				if Len(anewvers)=4
+					for j:=1 to 4
+						if anewvers[j]>altstvers[j]
+							altstvers:=anewvers
+							exit
 						endif
-					else 
-						__RaiseFTPError(oFTP)
-					ENDIF
-				else
-					// load only upgrade
-					IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
-						startfile:=cWorkdir+"InstallUpg.EXE"
-					ELSE
-						__RaiseFTPError(oFTP)
-					ENDIF 
+					next
 				endif
-			ENDIF	
-		endif
-	ELSE
-// 		__RaiseFTPError(oFTP)
-	ENDIF
-	oFTP:CloseRemote()
-endif
+			next 
+			AEval(altstvers,{|x|LtstVers:=1000*LtstVers+x})	
 
-RETURN ret
+			if LtstVers>CurVers .and.;
+				(FirstOfDay .or. (DBVers==LtstVers.or.SQLSelect{"select online from employee where online=1",oConn}:RecCount<2))
+				newversion:=""
+				AEval(altstvers,{|x|newversion+=iif(Empty(newversion),"",".")+Str(x,-1)})
+				if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
+					cVersion:="version "+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0. (current "+Version+") "
+					cWarning:=" (this can take several minutes)" 
+				else
+					cVersion:="upgrade "
+				endif 
+				if (TextBox{,"New "+cVersion+"of Wycliffe Office System available!","Do you want to install it?"+cWarning,BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
+					// load first latest version of install program:
+					if !self:LoadInstallUpg(oFTP,cWorkdir)
+						(ErrorBox{,"Could not load" +cWorkdir+"InstallUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
+						ret:=false
+					else	
+						if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
+							// load initial upgrade with all files first:
+							if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
+								// make InstallUpg.Bat:
+								ptrHandle:=FCreate(cWorkdir+"InstallUpg.bat") 
+								if ptrHandle = F_ERROR
+									(ErrorBox{,"Could not start" +cWorkdir+"InstallUpg.bat"+": "+DosErrString(FError())}):Show()
+									ret:=false
+								else
+									FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
+									FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
+									FWriteLine(ptrHandle,'CD "'+CurPath+'"')
+									FWriteLine(ptrHandle,'"'+cWorkdir+'"WycOffSy.exe"')
+									FWriteLine(ptrHandle,"Exit")
+									FClose(ptrHandle)
+									startfile:=cWorkdir+"InstallUpg.bat"
+								endif
+							else 
+								__RaiseFTPError(oFTP)
+							ENDIF
+						else
+							// load only upgrade
+							IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
+								startfile:=cWorkdir+"InstallUpg.EXE"
+							ELSE
+								__RaiseFTPError(oFTP)
+							ENDIF 
+						endif
+					ENDIF	
+				endif
+			ELSE
+				// 		__RaiseFTPError(oFTP)
+			ENDIF
+			oFTP:CloseRemote()
+		endif
+	endif
+
+	RETURN ret
 class Initialize
 // initialise system
 protect sIdentChar as string 
@@ -676,8 +684,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	Local aDir,aLocal as array
 	local oUpg as CheckUPGRADE
 	local lStop as logic
-   SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
-   
+	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
+	
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	if self:lNewDb
@@ -690,7 +698,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			self:FirstOfDay:=true
 		endif
 	ENDIF
-// 	self:FirstOfDay:=true 
+	// 	self:FirstOfDay:=true 
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
 
 	if self:FirstOfDay 
@@ -708,9 +716,9 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		// Initialize db 
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 		self:InitializeDB()
- 
+		
 	endif
-// 		self:InitializeDB()
+	// 		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1463,7 +1471,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","toppacct","int(11)","NO","0",""},;
 		{"sysparms","lstcurrt","tinyint(1)","NO","0",""},; 
 		{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
-		{"sysparms","accpacls","date","NO","0000-00-00",""},;
+		{"sysparms","accpacls","date","NO","0000-00-00",""},; 
+		{"sysparms","assfldac","int(11)","NO","0",""},;
 		{"importlock","importfile","char(40)","YES","NULL",""},;
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
