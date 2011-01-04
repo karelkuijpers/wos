@@ -539,7 +539,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 				" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+sCurr+"'",oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:status)
-				LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSErrors")
+				LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 				return false
 			endif
 		else
@@ -568,7 +568,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 					" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+oAcc:Currency+"'",oConn}
 					oStmnt:Execute()
 					if !Empty(oStmnt:status)
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						return false
 					endif
 				else
@@ -577,7 +577,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 						oAcc:Currency+"',deb="+Str(pDebFORGN,-1)+",cre="+Str(pCreFORGN,-1),oConn}
 					oStmnt:Execute()
 					if !Empty(oStmnt:status)
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						return false
 					endif	 
 				endif
