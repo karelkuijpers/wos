@@ -4395,7 +4395,7 @@ IF titelINADR.and.!Empty(pers_titles) .and.(Purpose==1.or.Purpose==3)
 	endif	
 	title+="(case"
 	for i:=1 to Len(pers_titles)
-		title+=" when "+mAlias+"title="+Str(pers_titles[i,2],-1)+" then '"+pers_gender[i,1]+"'" 
+		title+=" when "+mAlias+"title="+Str(pers_titles[i,2],-1)+" then '"+pers_titles[i,1]+"'" 
 	next
 	title+=" END)"+iif(sSalutation .and.(Purpose==1.or.Purpose==3),")","")
 ENDIF
