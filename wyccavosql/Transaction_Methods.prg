@@ -390,7 +390,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 									lError:=true
 								endif
 							else
-								LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+								LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 								lError:=true
 							endif
 						else
@@ -398,7 +398,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 						endif
 					else
 						lError:=true
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 					endif
 				ENDIF
 			ENDIF
@@ -3217,6 +3217,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	LOCAL oHm:= self:server as TempGift
 	LOCAL oDet:=self:oSFPaymentDetails as PaymentDetails
 	LOCAL lError, recordfound as LOGIC
+	local cError as string
 	LOCAL curPntr:=1, i,nSeqnbr as int
 	LOCAL fCreTot AS FLOAT
 	LOCAL oXMLDocAcc,oXMLDocPrs as XMLDocument 
@@ -3301,7 +3302,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					return false
 				endif
 			endif
-			* book contra DebitAccount: 
+			* book contra DebitAccount:
+			cTransnr:='' 
 			oStmnt:=SQLStatement{"insert into transaction set "+;
 				"DAT='"+SQLdate(self:mDAT)+"'"+;
 				",docid='"+self:oDCmBST:Value+"'"+;
@@ -3315,28 +3317,25 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",GC='CH'",iif(self:lEarmarking,",Bfm='T'","")),oConn} // member giver from member account
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows>0
+				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 				if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
-					if Empty(cTransnr)
-						cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-					endif
 					DO	WHILE	! oHm:EOF 
 						nSeqnbr++ 
 						oStmnt:=SQLStatement{"insert into transaction set "+;
 							"transid="+cTransnr+;
 							",seqnr="+Str(nSeqnbr,-1)+;
-							",persid="+self:mCLNGiver+;
+							",persid='"+self:mCLNGiver+"'"+;
 							",DAT='"+SQLdate(self:mDAT)+"'"+;
 							",docid='"+self:oDCmBST:Value+"'"+;
 							",REFERENCE='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 							",Description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)) +"'"+;
-							",AccID="+oHm:AccID+;
-							",Cre="+Str(oHm:Cre,-1)+; 
-						",CREFORGN='"+ Str(oHm:CREFORGN,-1)+"'"+; 
-						",CURRENCY='"+ oHm:CURRENCY+"'"+;
+							",AccID='"+oHm:AccID+"'"+;
+							",Cre='"+Str(oHm:Cre,-1)+"'"+; 
+							",CREFORGN='"+ Str(oHm:CREFORGN,-1)+"'"+; 
+							",CURRENCY='"+ oHm:CURRENCY+"'"+;
 							",USERID='"+AddSlashes(LOGON_EMP_ID)+"'"+;
 							iif(SPROJ ==AllTrim(oHm:AccID).and.!Empty(self:mCLNGiver).and.oHm:Cre>0,",Bfm='O'","")+;
 							",GC='"+oHm:GC+"'",oConn} 
-// 							",GC='"+iif(lEarmarking,"OT",oHm:GC)+"'",oConn} 
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows>0
 							if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
@@ -3347,11 +3346,12 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 									endif
 								endif 
 							else
-								lError:=true 
+								lError:=true
 								exit
 							endif
 						else
 							lError:=true
+							LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 							exit
 						endif
 						oHm:skip()
@@ -3361,6 +3361,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						oStmnt:Execute()
 						if oStmnt:NumSuccessfulRows<1
 							lError:=true
+							LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						endif
 					endif
 				else
@@ -3370,8 +3371,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				lError:=true
 			endif
 			if lError
-				LogEvent(,"Error:"+oStmnt:SQLString,"LogSQL")
-				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:Status:Description)}:show()
+				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:Errormessage)}:show()
 				SQLStatement{"rollback",oConn}:Execute()
 				Break
 				return true
