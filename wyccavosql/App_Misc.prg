@@ -1512,31 +1512,40 @@ CLASS ListboxBal INHERIT ListBox
 PROTECT cDepStart, cDepStartName as STRING  // range of Departmentnumbers
 PROTECT cCurStart as STRING // Current values used in list
 PROTECT oDepartment as Department
-METHOD AddSubDep(oDep,aDep,ParentNum, nCurrentRec)  CLASS ListBoxBal
+protect aItem:={} as array  // container for departments 
+declare method AddSubDep
+METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as int  CLASS ListBoxBal
 * Find subdepartments and add to arrays with departments
 	LOCAL nChildRec			as int
-	LOCAL nCurNum			as STRING
-	Default(@ParentNum,null_string)
+	LOCAL nCurNum			as int
+	LOCAL oDep as SQLSelect
 
-	// reposition the customer server to the searched record
-	IF !Empty(nCurrentRec)
-		oDep:GoTo(nCurrentRec)
-	ENDIF
-	IF Empty(nCurrentRec).or.!oDep:ParentDep==ParentNum
-		oDep:Seek({#PARENTDEP},{ParentNum})
-	ELSE
-		oDep:Skip()
-	ENDIF
-	IF oDep:EoF .or. !oDep:ParentDep==ParentNum
-		RETURN 0
-	ENDIF
-	nCurrentRec:=oDep:RecNo
-	nCurNum:= oDep:DepId
-	AAdd(aDep,{oDep:DEPTMNTNBR+AllTrim(oDep:DESCRIPTN),oDep:DEPID})
+	if Empty(aItem)
+		oDep:=SQLSelect{"SELECT depid,parentdep as parentid,descriptn as description,deptmntnbr as number "+;
+		"FROM `department` order by parentdep,deptmntnbr",oConn}
+		if oDep:RecCount>0
+			do while !oDep:EoF
+				AAdd(aItem,{oDep:DepId,oDep:parentid,oDep:description,oDep:number})
+				//          		 1         2           3              4            
+				oDep:Skip()
+			enddo
+		else
+			return 0
+		endif
+	endif
+	IF !Empty(nCurrentRec).and.!aItem[nCurrentRec,2]==ParentNum
+		nCurrentRec:=0
+	endif
+	nCurrentRec:=AScan(aItem,{|x|x[2]==ParentNum},nCurrentRec+1)
+	IF Empty(nCurrentRec)
+		return 0
+	endif
+	nCurNum:= aItem[nCurrentRec,1]
+	AAdd(aDep,{aItem[nCurrentRec,4]+Space(1)+aItem[nCurrentRec,3],nCurNum})
 
 	// add all child departments:
 	DO WHILE true
-		nChildRec:=self:AddSubDep(oDep,aDep,nCurNum, nChildRec)
+		nChildRec:=self:AddSubDep(aDep,nCurNum, nChildRec)
 		IF Empty(nChildRec)
 			exit
 		ENDIF
@@ -1554,18 +1563,9 @@ cDepStart:=cValue
 self:Refill()
 RETURN cValue
 METHOD GetDepnts() CLASS ListBoxBal
-LOCAL oDep as Department
+LOCAL oDep as SQLSelect
 LOCAL aDep:={} as ARRAY
 LOCAL cStart as STRING, nCurRec as int
-IF IsNil(oDepartment)
-	oDep:=Department{,DBSHARED,DBREADONLY}
-ELSE
-	oDep:=self:oDepartment
-ENDIF
-IF !oDep:Used
-	RETURN {}
-ENDIF
-oDep:SuspendNotification()
 * Enforce correct sequence:
 cStart:=cDepStart
 
@@ -1574,31 +1574,16 @@ cStart:=cDepStart
 IF Empty(cStart)
 	* Top department is WO Office:
 	aDep:={{cDepStartName,cDepStart}}
-ELSE
-	IF oDep:Seek({#DEPID},{cStart})
-		AAdd(aDep,{oDep:DEPTMNTNBR+AllTrim(oDep:DESCRIPTN),oDep:DEPID})
-	ENDIF
 ENDIF
 
 * Add all subdepartments down from WhoFrom:
 DO WHILE true
-	nCurRec:=self:AddSubDep(oDep,aDep,cStart,nCurRec)
+	nCurRec:=self:AddSubDep(aDep,Val(cStart),nCurRec)
 	IF Empty(nCurrec)
 		exit
 	ENDIF
 ENDDO
 
-
-/*IF Empty(cStart)
-	oDep:GoTop()
-ELSE
-	oDep:Seek(cStart)
-ENDIF
-DO WHILE (LTrimZero(oDep:DEPTMNTNBR)<=cEnd.or.Empty(cEnd)) .and. !oDep:EoF
-	AAdd(aDep,{oDep:DEPTMNTNBR+AllTrim(oDep:DESCRIPTN),oDep:DEPID})
-	oDep:Skip()
-ENDDO */
-oDep:ResetNotification()
 RETURN aDep
 METHOD GetRetValues () CLASS ListBoxBal
 	RETURN self:aRetValues
