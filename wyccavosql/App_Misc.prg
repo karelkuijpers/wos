@@ -1281,6 +1281,7 @@ function InitGlobals()
 
 		sam		:= iif(Empty(oSys:AM),'',Str(oSys:AM,-1))
 		samProj	:= iif(Empty(oSys:ASSPROJA),'',Str(oSys:ASSPROJA,-1))
+		samFld	:= iif(Empty(oSys:ASSFLDAC),'',Str(oSys:ASSFLDAC,-1))
 		SCLC	:= AllTrim(iif(IsNil(oSys:DEFAULTCOD),'',oSys:DEFAULTCOD))
 		SFGC	:= AllTrim(iif(IsNil(oSys:FGMLCODES),'',oSys:FGMLCODES))
 		SKAP	:= iif(Empty(oSys:Capital),'',Str(oSys:Capital,-1))
@@ -1591,7 +1592,7 @@ METHOD GetSelectedItems () CLASS ListBoxBal
 LOCAL aDep:={} as ARRAY
 LOCAL nPos as int
 * Check if listbox has been activated since last rnage change:
-IF !cDepStart==cCurStart
+IF !self:cDepStart==self:cCurStart
 	* RETURN all Departments within range:
 	RETURN (AEvalA(self:GetDepnts(),{|x| x[2]}))
 ENDIF
@@ -1708,7 +1709,7 @@ METHOD GetSelectedItems (dummy:=nil as logic) as array CLASS ListBoxExtra
 LOCAL aAcc:={} as ARRAY
 LOCAL nPos as int
 * Check if listbox has been activated since last range change:
-IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
+IF !self:cAccStart==self:cCurStart.or.!self:cAccEnd==self:cCurEnd
 	* RETURN all accounts within range:
 	RETURN (AEvalA(self:GetAccnts(null_string),{|x| x[2]}))
 ENDIF
