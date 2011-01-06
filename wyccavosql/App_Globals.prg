@@ -68,6 +68,7 @@ global Posting as logic
 GLOBAL prop_types as ARRAY
 global requiredemailclient as int
 GLOBAL sam as STRING
+GLOBAL samFld as STRING
 GLOBAL samProj as STRING
 GLOBAL SCLC as STRING
 GLOBAL sCRE as string   // account payable
