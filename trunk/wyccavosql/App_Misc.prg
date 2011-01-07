@@ -1516,24 +1516,10 @@ PROTECT oDepartment as Department
 protect aItem:={} as array  // container for departments 
 declare method AddSubDep
 METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as int  CLASS ListBoxBal
-* Find subdepartments and add to arrays with departments
+	* Find subdepartments and add to arrays with departments
 	LOCAL nChildRec			as int
 	LOCAL nCurNum			as int
-	LOCAL oDep as SQLSelect
 
-	if Empty(aItem)
-		oDep:=SQLSelect{"SELECT depid,parentdep as parentid,descriptn as description,deptmntnbr as number "+;
-		"FROM `department` order by parentdep,deptmntnbr",oConn}
-		if oDep:RecCount>0
-			do while !oDep:EoF
-				AAdd(aItem,{oDep:DepId,oDep:parentid,oDep:description,oDep:number})
-				//          		 1         2           3              4            
-				oDep:Skip()
-			enddo
-		else
-			return 0
-		endif
-	endif
 	IF !Empty(nCurrentRec).and.!aItem[nCurrentRec,2]==ParentNum
 		nCurrentRec:=0
 	endif
@@ -1542,8 +1528,10 @@ METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as in
 		return 0
 	endif
 	nCurNum:= aItem[nCurrentRec,1]
-	AAdd(aDep,{aItem[nCurrentRec,4]+Space(1)+aItem[nCurrentRec,3],nCurNum})
-
+	if aItem[nCurrentRec,5]>0 // accounts under it? 
+		AAdd(aDep,{aItem[nCurrentRec,4]+Space(1)+aItem[nCurrentRec,3],nCurNum})
+	endif
+   
 	// add all child departments:
 	DO WHILE true
 		nChildRec:=self:AddSubDep(aDep,nCurNum, nChildRec)
@@ -1551,7 +1539,7 @@ METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as in
 			exit
 		ENDIF
 	ENDDO
-RETURN nCurrentRec
+	RETURN nCurrentRec
 ACCESS DepNameStart CLASS ListBoxBal
 RETURN cDepStartname
 ASSIGN DepNameStart(cValue) CLASS ListBoxBal
@@ -1564,28 +1552,51 @@ cDepStart:=cValue
 self:Refill()
 RETURN cValue
 METHOD GetDepnts() CLASS ListBoxBal
-LOCAL oDep as SQLSelect
-LOCAL aDep:={} as ARRAY
-LOCAL cStart as STRING, nCurRec as int
-* Enforce correct sequence:
-cStart:=cDepStart
+	LOCAL oDep as SQLSelect
+	LOCAL aDep:={} as ARRAY
+	LOCAL nStart as int, nCurRec as int 
+	LOCAL oDep as SQLSelect
+	// fill array with departments
+	if Empty(aItem)
+		// select all departments with accounts:
+		oDep:=SQLSelect{"SELECT d.depid,d.parentdep,d.descriptn,d.deptmntnbr,count(a.accid) as acccnt "+;
+			"FROM `department` d left join `account` a on(a.department=d.depid) group by d.depid order by parentdep,deptmntnbr",oConn}
+		if oDep:RecCount>0
+			do while !oDep:EoF
+				AAdd(aItem,{oDep:DepId,oDep:parentdep,oDep:descriptn,oDep:deptmntnbr,Val(oDep:acccnt)})
+				//          		 1         2           3              4                  5
+				oDep:Skip()
+			enddo
+		else
+			return {}
+		endif
+	endif
+
+	* Enforce correct sequence:
+	nStart:=Val(self:cDepStart)
 
 
-* Check and fill requested Departments:
-IF Empty(cStart)
-	* Top department is WO Office:
-	aDep:={{cDepStartName,cDepStart}}
-ENDIF
-
-* Add all subdepartments down from WhoFrom:
-DO WHILE true
-	nCurRec:=self:AddSubDep(aDep,Val(cStart),nCurRec)
-	IF Empty(nCurrec)
-		exit
+	* Check and fill requested Departments:
+	IF Empty(nStart)
+		* Top department is WO Office:
+		aDep:={{cDepStartName,0}}
+	else
+		nCurRec:=AScan(aItem,{|x|x[1]==nStart.and.x[5]>0})
+		if nCurRec>0 
+			aDep:={{aItem[nCurRec,4]+Space(1)+aItem[nCurRec,3],aItem[nCurRec,1]}}
+		endif
+		nCurRec:=0
 	ENDIF
-ENDDO
 
-RETURN aDep
+	* Add all subdepartments down from WhoFrom:
+	DO WHILE true
+		nCurRec:=self:AddSubDep(aDep,nStart,nCurRec)
+		IF Empty(nCurrec)
+			exit
+		ENDIF
+	ENDDO
+
+	RETURN aDep
 METHOD GetRetValues () CLASS ListBoxBal
 	RETURN self:aRetValues
 METHOD GetSelectedItems () CLASS ListBoxBal
