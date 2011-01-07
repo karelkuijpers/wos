@@ -1796,34 +1796,6 @@ STATIC DEFINE CONFIRMSEND_CANCELBUTTON := 101
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT1 := 102 
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT2 := 103 
 STATIC DEFINE CONFIRMSEND_OKBUTTON := 100 
-RESOURCE DeptReport DIALOGEX  26, 24, 401, 212
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
-	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
-	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
-	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
-	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 192, 53, 12
-	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 18, 125, 166, WS_EX_CLIENTEDGE
-	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
-	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
-	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
-	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
-	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
-	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
-	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
-	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
-	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 144, 196, 61
-	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 155, 181, 11
-	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 171, 181, 11
-	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 187, 181, 11
-	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
-END
-
 CLASS DeptReport INHERIT DataWindowMine 
 
 	PROTECT oDCFromDep AS SINGLELINEEDIT
@@ -1848,6 +1820,7 @@ CLASS DeptReport INHERIT DataWindowMine
 	PROTECT oCCSeparateFile AS RADIOBUTTON
 	PROTECT oCCSeparateFileMail AS RADIOBUTTON
 	PROTECT oDCSimpleDepStmnt AS CHECKBOX
+	PROTECT oDCSelectedCnt AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance FromDep 
@@ -1858,11 +1831,6 @@ CLASS DeptReport INHERIT DataWindowMine
 	instance SubSet 
 	instance Footnotes 
 	instance SendingMethod 
-	PROTECT oDep as Department
-	PROTECT oAcc AS Account
-	EXPORT oMBal as MBalance
-	EXPORT oPers AS Person
-	EXPORT oTrans AS TransHistory
 	PROTECT YEARSTART,YEAREND AS INT
 	PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
 * Options for report type:
@@ -1872,8 +1840,38 @@ PROTECT mDepartment AS STRING
 	EXPORT oBalReport AS BalanceReport
 	PROTECT oTransMonth AS AccountStatements
 	PROTECT oGiftRpt AS GiftsReport
-	PROTECT oPPcd AS PPCODES
+	PROTECT oPPcd as SQLSelect
+	declare method RegDepartment,GiftsPrint
 	
+RESOURCE DeptReport DIALOGEX  26, 24, 401, 212
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
+	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
+	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
+	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
+	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 195, 53, 13
+	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 22, 125, 170, WS_EX_CLIENTEDGE
+	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
+	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
+	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
+	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
+	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
+	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
+	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
+	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
+	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 144, 196, 61
+	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 155, 181, 11
+	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 171, 181, 11
+	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 187, 181, 11
+	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
+	CONTROL	"", DEPTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 11, 64, 9
+END
+
 ACCESS BalYears() CLASS DeptReport
 RETURN SELF:FieldGet(#BalYears)
 
@@ -1891,16 +1889,17 @@ RETURN uValue
 METHOD ButtonClick(oControlEvent) CLASS DeptReport
 	LOCAL oControl AS Control
 	LOCAL nDep AS STRING
-	LOCAL naam AS STRING
+	LOCAL filename as STRING
+	local aBal:={} as array
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
-	naam:=oControl:Name
-	IF !naam="SEPARATEFILE" .and. naam#"PRINTALL"
+	filename:=oControl:Name
+	IF !filename="SEPARATEFILE" .and. filename #"PRINTALL"
 		RETURN
 	ENDIF
 	IF ValidateControls( SELF, SELF:AControls )
-		IF naam == "SEPARATEFILEMAIL"
+		IF filename == "SEPARATEFILEMAIL"
 			IF !IsMAPIAvailable()
 				(errorbox{SELF:Owner,"Outlook not default mailing system or no interface to it"}):show()
 				RETURN
@@ -1909,31 +1908,31 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 		IF Empty(SELF:FromDep)
 			(errorbox{SELF:Owner,"Specify From Department"}):show()
 		ELSE
-			oMbal:GetBalYear(Val(SubStr(BalYears,1,4)),Val(SubStr(BalYears,5,2)))
-			YEARSTART:=oMbal:YEARSTART
-			YEAREND:=oMbal:YEAREND
-			IF	oMbal:MONTHSTART>oMbal:MONTHEND // spanning two	calendar	years?
-				IF	MONTHSTART < oMbal:MONTHSTART
+			aBal:=GetBalYear(Val(SubStr(BalYears,1,4)),Val(SubStr(BalYears,5,2)))
+			self:YEARSTART:=aBal[1]
+			self:YEAREND:=aBal[3]
+			IF	aBal[2]>aBal[4] // spanning two	calendar	years?
+				IF	self:MONTHSTART < aBal[2]  // MONTHSTART
 					* apparently in next	year:
-					++YEARSTART
+					++self:YEARSTART
 				ENDIF
-				IF	MONTHEND	> oMbal:MONTHEND
+				IF	self:MONTHEND	> aBal[4]  //MONTHEND
 					* appenntly	in	previous	year:
-					--YEAREND
+					--self:YEAREND
 				ENDIF
 			ENDIF
 
-		   oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,137,DMORIENT_LANDSCAPE}
-			IF naam = "SEPARATEFILE"
-				oReport:OkButton("File",TRUE)
+		   self:oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,137,DMORIENT_LANDSCAPE}
+			IF filename = "SEPARATEFILE"
+				self:oReport:OkButton("File",true)
 			ELSE
-				oReport:Show()
+				self:oReport:show()
 			ENDIF
-			IF .not.oReport:lPrintOk
+			IF .not. self:oReport:lPrintOk
 				RETURN
 			ENDIF
 			SELF:DepstmntPrint()
-			oReport:PrStop()
+			self:oReport:PrStop()
 			SELF:StatusMessage("Done",4)
 		ENDIF
 	ENDIF
@@ -1945,44 +1944,6 @@ RETURN TRUE
 METHOD Close(oEvent) CLASS DeptReport
 	SUPER:Close(oEvent)
 	//Put your changes here
-	CollectForced()
-IF !oAcc == NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
-IF !oDep == NULL_OBJECT
-	IF oDep:Used
-		oDep:Close()
-	ENDIF
-	oDep:=NULL_OBJECT
-ENDIF
-IF !oMBal == NULL_OBJECT
-	IF oMBal:Used
-		oMBal:Close()
-	ENDIF
-	oMBal:=NULL_OBJECT
-ENDIF
-IF !oTrans == NULL_OBJECT
-	IF oTrans:Used
-		oTrans:Close()
-	ENDIF
-	oTrans:=NULL_OBJECT
-ENDIF
-IF !oLan == NULL_OBJECT
-	IF oLan:Used
-		oLan:Close()
-	ENDIF
-	oLan:=NULL_OBJECT
-ENDIF
-IF !oPPcd == NULL_OBJECT
-	IF oPPcd:Used
-		oPPcd:Close()
-	ENDIF
-	oPPcd:=NULL_OBJECT
-ENDIF
-CollectForced()
 IF  !oBalReport==NULL_OBJECT
 	oBalReport:Close()
 	oBalReport:=NULL_OBJECT
@@ -2003,34 +1964,28 @@ LOCAL scheiding = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+
 '-------|-------|-------|-------|-------|-------|-------|'
 LOCAL regtel,medtel,GClen,i,nRow,nPage as int
 LOCAL aDep:={} AS ARRAY
-LOCAL mDep,jaarmaand, mailname AS STRING
-LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh AS LOGIC
+LOCAL PeriodText, mailname as STRING
+local nDep as int
+LOCAL  DueRequired,GiftsRequired,AddressRequired,RepeatingPossible as LOGIC
 LOCAL brieftxt AS STRING
 LOCAL oSelpers AS Selpers
 LOCAL oMapi AS MAPISession
-LOCAL oRecip,oRecip2 AS MAPIRecip
+LOCAL oRecip1,oRecip2 as MAPIRecip
 LOCAL aMailDepartment:={} AS ARRAY
 LOCAL cFileName AS USUAL, oFileSpec AS FileSpec
 LOCAL oEMLFrm AS eMailFormat
-LOCAL aASS,aAcc AS ARRAY
+LOCAL aASS,aAcc,aAccGift as ARRAY
 LOCAL FileInit, cDepName as STRING 
-local oBal as BalanceItem 
-local nCurFifo as int
-local addHeading as string
-// oLan:=Language{}
-// IF !oLan:Used
-// 	SELF:EndWindow()
-// ENDIF
-IF oPers == NULL_OBJECT
-	oPers := Person{}
-	IF !oPers:Used
-		SELF:EndWindow()
-	ENDIF
-ENDIF
-jaarmaand:=Str(YEARSTART,4)+' '+maand[MONTHSTART]+" "+oLan:Get('up incl')+Str(YEAREND,4)+' '+maand[MONTHEND]
+local oBal as SQLSelect 
+local nCurFifo,i as int
+local addHeading as string 
+local oAcc,oAccAss as SQLSelect
+local cLastName as string 
+local mDepNumber as string
+PeriodText:=Str(self:YEARSTART,4)+' '+maand[self:MONTHSTART]+" "+oLan:Get('up incl')+Str(self:YEAREND,4)+' '+maand[self:MonthEnd]
 //TotalWidth=137
-lPrintFile:=(oReport:Destination=="File")
-IF SendingMethod=="SeperateFileMail"
+lPrintFile:=(self:oReport:Destination=="File")
+IF self:SendingMethod=="SeperateFileMail"
 	(oEMLFrm := eMailFormat{oParent}):Show()
 	IF oEMLFrm:lCancel
 		RETURN FALSE
@@ -2046,176 +2001,153 @@ IF SendingMethod=="SeperateFileMail"
 		RETURN
 	ENDIF		
 ENDIF
-IF SendingMethod=="SeperateFileMail"
-	oSelpers:=SelPers{,,oPers,oDep}
-	oSelpers:AnalyseTxt(oEMLFrm:Template,@ind_openpost,@ind_gift,@ind_naw,@ind_herh,1)
-ENDIF
-aDep:=SELF:oDCSubSet:GetSelectedItems()
-IF oDep == NULL_OBJECT
-	oDep := Department{}
-	IF !oDep:Used
-		SELF:EndWindow()
-	ENDIF
-ENDIF
-IF !oDep:OrderInfo(DBOI_NAME)=="DEPNBR"
-	oDep:SetOrder("DEPNBR")
-ENDIF
-oDep:GoTop()
-oPers:SetOrder("Assre")
+aDep:=self:oDCSubSet:GetSelectedItems()
+if Empty(aDep)
+	ErrorBox{self,self:oLan:Wget("No departments selected in Subset")}:Show()
+	return
+endif
 IF oBalReport==NULL_OBJECT
 	oBalReport:=BalanceReport{}
 ENDIF 
 		
-oBalReport:BalYears:=BalYears
-oBalReport:lCondense:=TRUE
-oBalReport:ind_accstmnt:=FALSE
-oBalReport:ind_toel:=FALSE
-oBalReport:WhatDetails:=TRUE
-oBalReport:WhoDetails:=FALSE
-oBalReport:WhatFrom:=0
-oBalReport:MONTHEND:=SELF:MONTHEND
-oBalReport:MONTHSTART:=SELF:MONTHSTART
-oBalReport:oReport:=oReport
-oBalReport:showopeningclosingfund:=true 
-oBalReport:SimpleDepStmnt:= self:oDCSimpleDepStmnt:Checked
-// if self:oDCSimpleDepStmnt:Checked
-// 	// determin income/expense top item:
-// 	oBal:=BalanceItem{,DBSHARED,DBREADONLY}
-// 	oBal:SetOrder("SUBITEM")
-// 	oBal:SetFilter({||oBal:category="BA" .or. oBal:category="KO"})
-// 	if oBal:Seek(Space(11))
-// 		oBalReport:WhatFrom:=oBal:balitemid
-// 	endif
-// 	oBal:Close()
-// endif
-IF MONTHSTART # oMbal:MONTHSTART
-//	oBalReport:showopeningclosingfund:=FALSE
-ENDIF
-IF SendingMethod="SeperateFile"
-	oBalReport:SendToMail:=true
+self:oBalReport:BalYears:=self:BalYears
+self:oBalReport:lCondense:=true
+self:oBalReport:ind_accstmnt:=FALSE
+self:oBalReport:ind_toel:=FALSE
+self:oBalReport:WhatDetails:=true
+self:oBalReport:WhoDetails:=FALSE
+self:oBalReport:WhatFrom:=0
+self:oBalReport:MONTHEND:=self:MONTHEND
+self:oBalReport:MONTHSTART:=self:MONTHSTART
+self:oBalReport:oReport:=self:oReport
+self:oBalReport:showopeningclosingfund:=true 
+self:oBalReport:SimpleDepStmnt:= self:oDCSimpleDepStmnt:Checked
+IF self:SendingMethod="SeperateFile"
+	self:oBalReport:SendToMail:=true
 else
-	oBalReport:SendToMail:=false	
+	self:oBalReport:SendToMail:=false	
 ENDIF
-oBalReport:BeginReport:=SELF:BeginReport	
+self:oBalReport:BeginReport:=self:BeginReport	
 //DO WHILE oDep:DEPTMNTNBR <= ToDep .and. !oDep:EOF
-DO WHILE !oDep:EOF
-	mdep:=oDep:DepId
-	IF !Empty(aDep)
-		IF AScan(aDep,mdep)=0
-			oDep:Skip()
-			LOOP
-		ENDIF
-	ENDIF
-	cDepName:=CleanFileName(AllTrim(StrTran(oDep:DESCRIPTN,"."," ")))
+oAcc:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.assacc3,d.persid,d.persid2,a.accnumber,a.description,a.giftalwd,a.accid"+;
+",p1.lastname as lastname1,p1.email as email1,"+SQLFullName(0,"p1")+" as fullname1,p2.lastname as lastname2,p2.email as email2,"+SQLFullName(0,"p2")+" as fullname2 "+;
+"from account a,department d left join person p1 on(p1.persid=d.persid) left join person p2 on (p2.persid=d.persid2) "+;
+"where a.department=d.depid and d.depid in ("+Implode(aDep,",")+")",oConn}
+if oAcc:RecCount<1
+	LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
+	ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
+	return
+endif
+do WHILE !oAcc:Eof
+	nDep:=oAcc:DepId
+	cDepName:=CleanFileName(AllTrim(StrTran(oAcc:DESCRIPTN,"."," "))) 
+	mDepNumber:=oAcc:DEPTMNTNBR
 	nCurFifo:=Len(self:oReport:oPrintJob:aFIFO) 
 	addHeading:=self:oLan:RGet("Department")+Space(1)+cDepName
 	self:STATUSMESSAGE("Collecting data for for "+cDepName+", please wait...")
-	self:oBalReport:WhoFrom:=Val(mDep)
+	self:oBalReport:WhoFrom:=oAcc:DepId
 	self:oBalReport:iPage:=nPage
 	* Insert departmentname if print to seperate file:
 	FileInit:=""
-	IF lPrintFile .and.SendingMethod="SeperateFile"
+	IF lPrintFile .and. self:SendingMethod="SeperateFile"
 		FileInit:=MEMBER_START+cDepName
 	ENDIF
 
-	oBalReport:BalancePrint(FileInit)
+	self:oBalReport:BalancePrint(FileInit)
 	self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
 
-   	IF oTransMonth==NULL_OBJECT
-   		oTransMonth:=AccountStatements{60}
-   	ENDIF
-	oTransMonth:oReport:=SELF:oReport
-	oTransMonth:BeginReport:=self:BeginReport
-	oTransMonth:SendingMethod:=SendingMethod
-    IF oAcc == NULL_OBJECT
-		oAcc := Account{}
-		IF !oAcc:Used
-			SELF:EndWindow()
-		ENDIF
+   IF self:oTransMonth==null_object
+   	self:oTransMonth:=AccountStatements{60}
+   ENDIF
+	self:oTransMonth:oReport:=self:oReport
+	self:oTransMonth:BeginReport:=self:BeginReport
+	self:oTransMonth:SendingMethod:=SendingMethod 
+
+// Proces e-mail:
+	IF lPrintFile.and. SendingMethod=="SeperateFileMail"
+		IF !Empty(oAcc:persid).or.!Empty(oAcc:persid2)
+			AAdd(aMailDepartment,oAcc:RECNO)
+		endif
 	ENDIF
+
 	// Print accountstatements of all department accounts:
-	oAcc:SetOrder("DEPRTMNT")
-	oAcc:Seek(mdep)
-	nPage:=oBalReport:iPage
+	nPage:=self:oBalReport:iPage
 	aAcc:={}
+	aAccGift:={}
 	nRow:=0
-	DO WHILE !oAcc:Eof .and. oAcc:Department==mdep
-		AAdd(aAcc,{oAcc:ACCNUMBER,AllTrim(oAcc:Description)})
+	DO WHILE !oAcc:Eof .and. oAcc:DepId==nDep
+		AAdd(aAcc,oAcc:ACCNUMBER)
+		if oAcc:Giftalwd==1
+			AAdd(aAccGift,oAcc:accid)
+		endif
 		oAcc:Skip()
 	ENDDO
-	ASort(aAcc,,,{|x,y|x[1]<=y[1]})
+	ASort(aAcc,,,{|x,y|x<=y})
+ 	self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
 
-	FOR i=1 TO Len(aAcc)
-		self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+" - "+aAcc[i,2]+", please wait...")
-		nRow:=0  && forceer bladskip
-		oTransMonth:MonthPrint(aAcc[i,1],aAcc[i,1],YEARSTART,MonthStart,YEAREND,MonthEnd,@nRow,@nPage,addHeading,self:oLan)
+	FOR i=1 to Len(aAcc)
+		nRow:=0  && force page skip
+		self:oTransMonth:MonthPrint(aAcc[i],aAcc[i],self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading,self:oLan)
 	NEXT
 	
 	*	If associated accounts for this department, print also corresponding accountstatements for this month:
-	IF !Empty(oDep:ASSACC1).or.!Empty(oDep:ASSACC2).or.!Empty(oDep:ASSACC3)
-		nRow:=0  && forceer bladskip
-		IF !oAcc:OrderInfo(DBOI_NAME)=="accid"
-			oAcc:setOrder("accid")
-		ENDIF
-		aASS:={oDep:ASSACC1,oDep:ASSACC2,oDep:ASSACC3}
-		FOR i:=1 TO 3
-	   		IF !Empty(aASS[i])
-				IF !oAcc:OrderInfo(DBOI_NAME)=="accid"
-					oAcc:setOrder("accid")
-				ENDIF
-				oAcc:Seek(aASS[i])
-				SELF:Statusmessage("Printing Associated Accountstatements for "+cDepName+" - "+AllTrim(oAcc:description)+", please wait...")
-				oTransMonth:MonthPrint(oAcc:ACCNUMBER,oAcc:ACCNUMBER,YEARSTART,MonthStart,YEAREND,MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:Get("Associated",,"@!"),self:oLan)
-				nRow:=0  && forceer bladskip
-	   		ENDIF
-	   	NEXT
+	IF !Empty(oAcc:ASSACC1).or.!Empty(oAcc:ASSACC2).or.!Empty(oAcc:ASSACC3)
+		nRow:=0  && force page skip 
+		aASS:={oAcc:ASSACC1,oAcc:ASSACC2,oAcc:ASSACC3}
+		oAccAss:=SQLSelect{"select accnumber from account where accid in ("+Implode(aASS)+")",oConn} 
+		self:Statusmessage("Printing Associated Accountstatements for "+cDepName+", please wait...")
+		Do While !oAccAss:Eof
+			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:Get("Associated",,"@!"),self:oLan)
+			nRow:=0  && force page skip
+			oAccAss:Skip()
+		enddo
 	ENDIF
 	// Print gift reports for each gift allowed account:
 	self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
-	self:GiftsPrint(aAcc,@nRow,@nPage,addHeading)
+	self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName)
 	if	nCurFiFo==Len(self:oReport:oPrintJob:aFIFO)
 		// nothing printed:
-		self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+jaarmaand},2)
+		self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
 		
 	endif
 
-*	
-*	Proces e-mail:
-	IF lPrintFile.and. SendingMethod=="SeperateFileMail"
-		IF !Empty(oDep:persid)
-			AAdd(aMailDepartment,{AllTrim(StrTran(oDep:DESCRIPTN,"."," ")),oDep:persid,oDep:DepId})
-		ENDIF
-		IF !Empty(oDep:persid2)
-			AAdd(aMailDepartment,{AllTrim(StrTran(oDep:DESCRIPTN,"."," ")),oDep:persid2,oDep:DepId})
-		ENDIF
-	ENDIF
-	oDep:Skip()
 ENDDO
 
 cFileName:=oReport:prstart((SendingMethod="SeperateFile"))    // generate rtf-format when seperate files
 IF IsString(cFileName)
-	oPers:SetOrder("Assre")
 	IF SendingMethod=="SeperateFileMail" 
-		oDep:SetOrder("DEPID")
 		FOR i:=1 TO Len(aMailDepartment)
 			SELF:Statusmessage("Placing mail messages in outbox of mailing system, please wait...")
-			oPers:Seek(aMailDepartment[i,2])
-			IF oPers:EoF
-				MessageBox( 0 , "Contact person for "+aMailDepartment[i,1]+" not found; no report send" , "Problem" , MB_ICONEXCLAMATION )
-			ELSE
-				* Resolve department responsible person name:
-				oRecip := oMapi:ResolveName( AllTrim(oPers:lastname),oPers:persid,oPers:lastname,oPers:email)
-
-				IF oRecip != NULL_OBJECT
+			oAcc:Goto(aMailDepartment[i])
+			if !empty(oAcc:Persid) .or.!empty(oAcc:Persid2) 
+				oSelpers:=Selpers{}
+				oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@RepeatingPossible,1)
+				oRecip1:=null_object
+				oRecip2:=null_object
+				if !Empty(oAcc:persid) 
+					* Resolve department responsible person name:   
+					cLastName:=StrTran(StrTran(oAcc:Lastname1,"\",""),"/","")
+					oRecip1 := oMapi:ResolveName( cLastName,oAcc:persid,oAcc:fullname1,oAcc:email1)
+				endif
+				if Empty(oAcc:persid).and.!Empty(oAcc:persid2) 
+					* Resolve department responsible person name:   
+					cLastName:=StrTran(StrTran(oAcc:Lastname2,"\",""),"/","")
+					oRecip1 := oMapi:ResolveName( cLastName,oAcc:persid2,oAcc:fullname2,oAcc:email2)
+				endif
+				if !Empty(oAcc:persid).and.!Empty(oAcc:persid2) 
+					* Resolve department responsible person name:   
+					cLastName:=StrTran(StrTran(oAcc:Lastname2,"\",""),"/","")
+					oRecip2 := oMapi:ResolveName( cLastName,oAcc:persid2,oAcc:fullname2,oAcc:email2)
+				endif
+				IF oRecip1 != null_object
 					IF !Empty(oEMLFrm:Template) 
-						oDep:Seek(aMailDepartment[i,3])
-						brieftxt:=oSelpers:FillText(oEMLFrm:Template,1,ind_openpost,ind_gift,ind_naw,ind_herh,60)
+						brieftxt:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
 					ELSE
 						brieftxt:=""
 					ENDIF
 					oFileSpec:=FileSpec{cFileName}
-					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+" "+aMailDepartment[i,1]
-					oMAPI:SendDocument( oFileSpec,oRecip,oRecip2,oLan:Get('Department Statements',,"@!")+": "+jaarmaand,brieftxt)
+					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+" "+oAcc:DESCRIPTN
+					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:Get('Department Statements',,"@!")+": "+PeriodText,brieftxt)
 				ENDIF
 			ENDIF
 		NEXT
@@ -2265,206 +2197,142 @@ METHOD FromDepButton( ) CLASS DeptReport
 RETURN
 METHOD GetBalYears() CLASS DeptReport
 	// get array with balance years
-	RETURN (oMBal:GetBalYears())
-METHOD GiftsPrint(aAcc,nRow,nPage,addHeading) CLASS DeptReport
+	RETURN (GetBalYears())
+METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as string,DepNumber as string,Depname as string) as void pascal CLASS DeptReport
 	// printing of the gifts of one department
-	* aAcc: array with accounts of the department
-* Giftreport for departemnt in year
-* YEAREND to month MONTHEND
-*
+	* aAcc: array with ids of the gift accounts of the department
+	* Giftreport for departemnt in year
+	* YEAREND to month MONTHEND
+	*
 
-LOCAL a,b as STRING
-LOCAL kopmnd as ARRAY
-LOCAL i,j,mndnum,gvr,gvrcur,nMonth, nReturn  as int
-LOCAL m71_deb,m71_cre,m71_gifthb,m71_giftrst as FLOAT
-LOCAL  me_hbn, ocln,mndtxt,hlptxt, g_na1 as STRING
-LOCAL jaarmaand,me_cln,m_accid as STRING
-LOCAL startmaand as date
-LOCAL Inhdrij as int
-LOCAL fBed as FLOAT, iMaand as int
-LOCAL myLang:=Alg_taal as STRING
-* Array aAssmntAmount met 12 totaalbedragen per inhoudingscode per maand:
-* rij 1:total, 2:AG,  3:PF,  4:PF,  5: MG
-LOCAL dim aAssmntAmount[4,12] as float
-* ARRAY aGeverLst met geverlijstbedragen met per regel:
-* 1 - BED
-* 2 - persid
-* 3 - description
-* 4 - GC
-* 5 - Maand
-* 6-11 - NAW1-6
-* 12 - SORTKNM
-LOCAL aGeverLst as ARRAY
-LOCAL aOPP as ARRAY // {OPP,Trans_Type_Code,debit,credit}
-LOCAL nOPP as int, cOPP, cTypeOPP as STRING
-LOCAL lSuccess as LOGIC
-LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth as LOGIC
-LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh as LOGIC
-LOCAL brieftxt as STRING
-LOCAL BoldOn, BoldOff,RedOn,RedOff as STRING
-LOCAL ogAcc as Account
-Default(@addHeading,null_string)
+	LOCAL a,b as STRING
+	LOCAL kopmnd as ARRAY
+	LOCAL i,j,iMonth, AssmntRow  as int
+	LOCAL fAmnt as FLOAT
+	LOCAL Inhdrij as int
+	LOCAL myLang:=Alg_taal as STRING
+	* Array aAssmntAmount met 12 totaalbedragen per inhoudingscode per maand:
+	* rij 1:total, 2:AG,  3:PF,  4:PF,  5: MG
+	LOCAL dim aAssmntAmount[4,12] as float
+	* ARRAY aGiversdata with gift amounts and giver data per row:
+	* 1 - Amount
+	* 2 - persid
+	* 3 - description
+	* 4 - GC
+	* 5 - Month
+	* 6-11 - NAC1-6
+	* 12 - SORTKEY
+	LOCAL aGiversdata as ARRAY
+	LOCAL lSkip as LOGIC
+	LOCAL BoldOn, BoldOff,RedOn,RedOff as STRING
+	LOCAL oAcc,oTrans,oPPcd as SQLSelect
+	local oMBal as Balances 
+	local aPPCode:={} as array
+	local startdate,enddate as date
 
-IF self:SendingMethod="SeperateFile"
-	BoldOn:="{\b "
-	BoldOff:="}"
-	RedOn:="\cf1 "
-	RedOff:="\cf0 "
-ENDIF
-IF !oAcc:OrderInfo(DBOI_NAME)=="accid"
-	oAcc:setOrder("accid")
-ENDIF
+	IF self:SendingMethod="SeperateFile"
+		BoldOn:="{\b "
+		BoldOff:="}"
+		RedOn:="\cf1 "
+		RedOff:="\cf0 "
+	ENDIF 
 
-IF oGiftRpt==null_object
-	oGiftRpt:=GiftsReport{YEAREND,MonthEnd}
-	oGiftRpt:Country:=sLand
-ENDIF
+	oMBal:=Balances{}
+	oPPcd := SQLSelect{"select ppcode,ppname from PPCODES order by ppcode",oConn} 
+	aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
+	startdate:=SToD(Str(self:YEARSTART,4,0)+StrZero(self:MONTHSTART,2,0)+'01') 
+	enddate:=endofmonth(SToD(str(self:YEAREND,4,0)+strzero(self:MonthEnd,2)+'01'))
 
-IF oPPcd==null_object
-	oPPcd:=PPCODES{,DBSHARED,DBREADONLY}
-ENDIF
-IF !oPPcd:Used
-	self:EndWindow()
-ENDIF
-lSuccess:=oPPcd:SetOrder("PPCODE")
-IF oTrans == null_object
-	oTrans:=TransHistory{,,"balitemid",true}
-	IF !oTrans:Used
-		oTrans := null_object
-		self:EndWindow()
+	IF oGiftRpt==null_object
+		oGiftRpt:=GiftsReport{YEAREND,MonthEnd}
+		oGiftRpt:Country:=sLand
 	ENDIF
-ELSE
-	IF !oTrans:Used
-		oTrans:=TransHistory{,,"balitemid",true}
-		IF !oTrans:Used
-			oTrans := null_object
-			self:EndWindow()
-		ENDIF
-	ENDIF
-ENDIF
-if self:oLan==null_object
-	oLan:=Language{}
-endif
-IF oPers == null_object
-	oPers := Person{}
-	IF !oPers:Used
-		self:EndWindow()
-	ENDIF
-ENDIF
-IF ogAcc == null_object
-	ogAcc := Account{,DBSHARED,DBREADONLY}
-	IF !ogAcc:Used
-		self:EndWindow()
-	ENDIF
-ENDIF
-ogAcc:SetOrder("ACCNTNBR")
 
-startmaand:=SToD(Str(YEAREND,4)+'0101')
-self:Pointer := Pointer{POINTERHOURGLASS}
-self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
-nRow := 0
 
-* Adapt Top of TransHistory to oldest year:
-oTrans:ResetHistory(YEAREND,1,YEAREND,MONTHEND)
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
+	nRow := 0
 
-ogAcc:SetFilter("GiftAlwd")
-aOPP:={}
-aGeverLst:={}
-for i:=1 to 4
-	for j:=1 to 12
-		aAssmntAmount[i,j]:=0.00
+	// oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,b.category,m.persid,m.householdid,m.homepp,m.contact,m.RPTDEST,"+;
+	// 	"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.lastname as contactlstname,pc.email as contactemail"+;
+	// 	",pm.lastname,pm.email "+;
+	// 	" from balanceitem b,Account a left join member m on (a.accid=m.accid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
+	// 	" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
+	// 	" where a.balitemid=b.balitemid and a.giftalwd=1 "+;
+	// 	" and a.accid in ('"+Implode(aAcc,"','")+"' ) group by a.accid order by a.accnumber",oConn}
+	// IF oAcc:RecCount<1
+	// 	return
+	// endif
+
+	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.FROMRPP,bfm,t.opp,t.gc,t.description "+;
+		"from transaction t, account a "+;
+		"where a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
+		" and t.accid in ('"+Implode(aAcc,"','")+"') order by accnumber,dat"),oConn}
+
+	if oTrans:RecCount<1
+		return
+	endif 
+
+	aGiversdata:={}
+	for i:=1 to 4
+		for j:=1 to 12
+			aAssmntAmount[i,j]:=0.00
+		next
 	next
-next
-// aAssmntAmount:={{0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0},;
-// {0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0}}
-// nPage :=0
-lSkip:=FALSE
-lFirst:=true
+	lSkip:=FALSE
 	
-FOR i:=1 to Len(aAcc)
-	IF ogAcc:Seek(aAcc[i,1])
-		m_accid:=ogAcc:accid
-		IF !ogAcc:GIFTALWD
-			loop
-		ENDIF
-	ELSE
-		loop
-	ENDIF
+	do WHILE !oTrans:EOF
 
-*	Vul bestand geverlst met desbetreffende mutaties en bepaal totalen:
-
-*	Search first transaction of m_accid in first month:
-	oTrans:BeginCondition:=m_accid+Str(YEAREND,4,0)+"01"
-	oTrans:EndCondition:='accid=="'+m_accid+'"'
-	* Search first occurence of m_accid within given YEAREND:
-	oTrans:GoTop()
-	IF !oTrans:accid==m_accid
-		oTrans:Seek(m_accid)
-	ENDIF
-	* Search until required startmonth found:
-	DO WHILE oTrans:accid==m_accid .and.oTrans:dat<startmaand .and.!oTrans:EOF
-		oTrans:Skip()
-	ENDDO
-
-	FOR nMonth:=1 to MONTHEND step 1
-		IF MONTHEND=nMonth
-			store 0 to m71_gifthb,m71_giftrst
-			lFirstInMonth:=true
-        ENDIF
-		DO WHILE oTrans:accid=m_accid.and.Year(oTrans:dat)=YEAREND.and.Month(oTrans:dat)<=nMonth ;
-		.and..not. oTrans:EOF
-
-
-*			Afhandelen giften:
-// 			IF .not. Empty(oTrans:persid) .and. oTrans:deb#oTrans:cre .and.!oTrans:FROMRPP
-			IF .not. Empty(oTrans:persid) .and. oTrans:deb#oTrans:cre 
-				fBed:=  oTrans:cre - oTrans:deb
-				iMaand:= Month(oTrans:dat)
-				AAdd(aGeverLst,{fBed,oTrans:persid,AllTrim(oTrans:description),;
-				IF(ADMIN="WO".or.Admin="HO",Upper(oTrans:gc),""),iMaand,;
+		*	Fill geverlst with gifts values and calculate totals:
+		*	processing of gifts:
+		IF .not. Empty(oTrans:persid) .and. oTrans:deb#oTrans:cre .and.!oTrans:gc=="CH"
+			fAmnt:=  Round( oTrans:cre - oTrans:deb,DecAantal)
+			iMonth:= Month(oTrans:dat)
+			AAdd(aGiversdata,{fAmnt,oTrans:persid,AllTrim(oTrans:Description),;
+				IF(ADMIN="WO".or.Admin="HO",Upper(oTrans:gc),""),iMonth,;
 				"","","","","","",""})
-*				Werk totalen per inhoudingscode en maand bij:
-				aAssmntAmount[1,iMaand]:=aAssmntAmount[1,iMaand] + fBed   && total
-				IF Upper(oTrans:gc) = "PF"
-					Inhdrij := 3
-				ELSEIF Upper(oTrans:gc) = "MG"
-					Inhdrij := 4
-				ELSE
-					Inhdrij := 2         && default = assessable
-				ENDIF
-				aAssmntAmount[Inhdrij,iMaand]:=aAssmntAmount[Inhdrij,iMaand]+fBed
+			*				calculate totals assesment percode and month:
+			aAssmntAmount[1,iMonth]:=aAssmntAmount[1,iMonth] + fAmnt   && total
+			IF Upper(oTrans:GC) = "AG"
+				AssmntRow := 2
+			ELSEIF Upper(oTrans:GC) = "MG"
+				AssmntRow := 4
+			ELSE
+				AssmntRow := 3         && default = personal fund
 			ENDIF
-			oTrans:Skip()
-		ENDDO
-	NEXT
-NEXT
-* processing end of month:
-*	Skip departments without gifts:
-IF Len(aGeverLst)=0
-	IF MONTHEND=1
-		lSkip:=true
-	elseIF aAssmntAmount[1,MonthEnd-1]=0  && vorige maand ook al niks?
-		lSkip:=true
+			aAssmntAmount[AssmntRow,iMonth]:=aAssmntAmount[AssmntRow,iMonth]+fAmnt
+		ENDIF
+		oTrans:Skip()
+	ENDDO 
+
+
+	* processing end of month:
+	*	Skip departments without gifts:
+	IF Len(aGiversdata)=0
+		IF MONTHEND=1
+			lSkip:=true
+		elseIF aAssmntAmount[1,MonthEnd-1]=0  && vorige maand ook al niks?
+			lSkip:=true
+		ENDIF
 	ENDIF
-ENDIF
 
-IF lSkip
-	RETURN
-ENDIF
+	IF lSkip
+		RETURN
+	ENDIF
 
-nRow:=0  && forceer bladskip
+	nRow:=0  && forceer bladskip
 
-// Print gifts matrix: 
-for i:=1 to 4
-	for j:=1 to 12
-		oGiftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
+	// Print gifts matrix: 
+	for i:=1 to 4
+		for j:=1 to 12
+			self:oGiftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
+		next
 	next
-next
-self:oGiftRpt:GiftsOverview(YEAREND,MonthEnd,Footnotes, aGeverLst,oReport,oDep:DEPTMNTNBR+' '+oDep:DESCRIPTN,@nRow,@nPage,addHeading)
+	self:oGiftRpt:GiftsOverview(self:YEAREND,self:MONTHEND,self:Footnotes, aGiversdata,self:oReport,DepNumber+' '+DepName,@nRow,@nPage,addHeading)
 
 
-self:Pointer := Pointer{POINTERARROW}
-RETURN nil
+	self:Pointer := Pointer{POINTERARROW}
+	RETURN 
 	
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS DeptReport 
 
@@ -2544,6 +2412,9 @@ oDCSimpleDepStmnt := CheckBox{SELF,ResourceID{DEPTREPORT_SIMPLEDEPSTMNT,_GetInst
 oDCSimpleDepStmnt:HyperLabel := HyperLabel{#SimpleDepStmnt,"Simplified report",NULL_STRING,NULL_STRING}
 oDCSimpleDepStmnt:TooltipText := "Show only income/expense year to date"
 
+oDCSelectedCnt := FixedText{SELF,ResourceID{DEPTREPORT_SELECTEDCNT,_GetInst()}}
+oDCSelectedCnt:HyperLabel := HyperLabel{#SelectedCnt,NULL_STRING,NULL_STRING,NULL_STRING}
+
 oDCFootnotes := RadioButtonGroup{SELF,ResourceID{DEPTREPORT_FOOTNOTES,_GetInst()}}
 oDCFootnotes:FillUsing({ ;
 							{oCCLastMonth,"Last"}, ;
@@ -2570,6 +2441,25 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
+method ListBoxSelect(oControlEvent) class DeptReport
+	local oControl as Control
+	LOCAL uValue as USUAL
+	local aBal:={} as array
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+	super:ListBoxSelect(oControlEvent)
+	//Put your changes here
+	IF oControlEvent:NameSym==#BalYears
+		uValue:=oControlEvent:Control:Value
+		FillBalYears()
+		aBal:=GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
+		MONTHSTART:=aBal[2]
+		MONTHEND:=aBal[4]
+	elseif oControlEvent:NameSym==#SubSet
+		self:oDCSelectedCnt:TEXTValue:=Str(self:oDCSubSet:SelectedCount,-1)+" selected"
+	endif	
+
+	return nil
+
 ACCESS MONTHEND() CLASS DeptReport
 RETURN SELF:FieldGet(#MONTHEND)
 
@@ -2587,20 +2477,11 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DeptReport
 	//Put your PostInit additions here
 self:SetTexts()
-oMbal:GetBalYear(Year(Today()),Month(Today()))
-MONTHSTART:=Round(oMBal:MONTHSTART,0)
-MONTHEND:=Round(oMBal:MONTHEND,0)
-oDCBalYears:CurrentItemNo:=1
-mDepartment:="0:"+sEntity+" "+sLand
-oDep:=Department{,,TRUE}
-IF !oDep:Used
-	SELF:EndWindow()
-ENDIF
-oDep:SetOrder("DepNbr")
-// oDep:SetFilter("EvalFltr(DEPID)")
-SELF:oDCSubSet:Server:=oDep
-oDep:GoTop()
-IF !oDep:EoF
+self:MONTHSTART:=Month(Today()-28)
+self:MONTHEND:=self:MONTHSTART
+self:oDCBalYears:CurrentItemNo:=1
+self:mDepartment:="0:"+sEntity+" "+sLand
+IF SQLSelect{"select depid from department",oConn}:RecCount>0
 	self:RegDepartment(iif(empty(cDepmntIncl),"",split(cDepmntIncl,",")[1]),"From Department")
 ENDIF
 SELF:BeginReport:=TRUE
@@ -2610,14 +2491,11 @@ self:oDCSimpleDepStmnt:Checked:=true
 RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DeptReport
 	//Put your PreInit additions here
-	oMBal:=MBalance{,DBSHARED,DBREADONLY}
 	RETURN NIL
-METHOD RegDepartment(MyNum,ItemName) CLASS DeptReport
+METHOD RegDepartment(MyNum:='' as string,ItemName:="" as string) as void pascal CLASS DeptReport
 	LOCAL  deptxt:="",deporder  as STRING
 	local depnr as int 
 	local oDep as SQLSelect
-	Default(@MyNum,NULL_STRING)
-	Default(@Itemname,NULL_STRING)
 	IF Empty(myNum)
 		depnr:=0
 		deptxt:=sEntity+" "+sLand
@@ -2633,10 +2511,11 @@ METHOD RegDepartment(MyNum,ItemName) CLASS DeptReport
 		SELF:oDCFromDep:TEXTValue := deptxt
 		SELF:cFromDepName := deptxt
 		SELF:oDCSubSet:DepNameStart:=deptxt
-		self:oDCSubSet:DepNbrStart:=depnr
+		self:oDCSubSet:DepNbrStart:=Str(depnr,-1) 
+		self:oDCSelectedCnt:TEXTValue:=Str(self:oDCSubSet:SelectedCount,-1)+" selected"		
 	ENDIF
 		
-RETURN TRUE
+RETURN 
 ACCESS SendingMethod() CLASS DeptReport
 RETURN SELF:FieldGet(#SendingMethod)
 
@@ -2675,6 +2554,7 @@ STATIC DEFINE DEPTREPORT_LASTMONTH := 114
 STATIC DEFINE DEPTREPORT_MONTHEND := 104 
 STATIC DEFINE DEPTREPORT_MONTHSTART := 103 
 STATIC DEFINE DEPTREPORT_PRINTALL := 118 
+STATIC DEFINE DEPTREPORT_SELECTEDCNT := 122 
 STATIC DEFINE DEPTREPORT_SENDINGMETHOD := 117 
 STATIC DEFINE DEPTREPORT_SEPARATEFILE := 119 
 STATIC DEFINE DEPTREPORT_SEPARATEFILEMAIL := 120 
@@ -2728,44 +2608,6 @@ STATIC DEFINE GETEXCHRATE_MEXCHRATE := 100
 STATIC DEFINE GETEXCHRATE_OKBUTTON := 102 
 STATIC DEFINE GETEXCHRATE_ROETEXT1 := 101 
 STATIC DEFINE GETEXCHRATE_ROETEXT2 := 104 
-RESOURCE GiftReport DIALOGEX  58, 59, 396, 267
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
-	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
-	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
-	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
-	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
-	CONTROL	"Print up to which month?", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 99, 84, 12
-	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 215, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_PEILJAAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 96, 34, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_PEILMND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Last month", GIFTREPORT_LASTMONTH1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 139, 53, 11
-	CONTROL	"All months", GIFTREPORT_ALLMONTHS1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 152, 48, 11
-	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
-	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 251, 53, 12
-	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
-	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
-	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
-	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
-	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
-	CONTROL	"Member statements", GIFTREPORT_MEMBERSTMNT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 115, 70, 51
-	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 215, 180, 12
-	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 230, 181, 12
-	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 245, 181, 12
-	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 206, 196, 55
-	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 142, 128, 53, 11
-	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 142, 142, 48, 11
-	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 138, 118, 70, 38
-	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 173, 121, 11
-	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 184, 92, 11
-	CONTROL	"None", GIFTREPORT_NOSTMNTS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 125, 51, 11
-	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
-END
-
 CLASS GiftReport INHERIT DataWindowMine 
 
 	PROTECT oDCHomeBox AS CHECKBOX
@@ -2828,6 +2670,44 @@ CLASS GiftReport INHERIT DataWindowMine
 	declare method CheckAccInRange,GiftsPrint
 
 	
+RESOURCE GiftReport DIALOGEX  58, 59, 396, 267
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
+	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
+	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
+	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
+	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
+	CONTROL	"Print up to which month?", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 99, 84, 12
+	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 215, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_PEILJAAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 96, 34, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_PEILMND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 96, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Last month", GIFTREPORT_LASTMONTH1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 139, 53, 11
+	CONTROL	"All months", GIFTREPORT_ALLMONTHS1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 152, 48, 11
+	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
+	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 251, 53, 12
+	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
+	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
+	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
+	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
+	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
+	CONTROL	"Member statements", GIFTREPORT_MEMBERSTMNT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 115, 70, 51
+	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 215, 180, 12
+	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 230, 181, 12
+	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 245, 181, 12
+	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 206, 196, 55
+	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 142, 128, 53, 11
+	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 142, 142, 48, 11
+	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 138, 118, 70, 38
+	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 173, 121, 11
+	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 184, 92, 11
+	CONTROL	"None", GIFTREPORT_NOSTMNTS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 125, 51, 11
+	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
+END
+
 METHOD AccFil() CLASS GiftReport
 	LOCAL i AS INT
 	LOCAL SubLen AS INT
@@ -2978,8 +2858,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	local dim aAssmntAmount[4,12] as float
 	LOCAL fAmnt as FLOAT, iMonth as int
 	LOCAL myLang:=Alg_taal as STRING
-	* Array aAssmntAmount met 12 totaalbedragen per inhoudingscode per maand:
-	* rij 1:total, 2:AG,  3:PF,  4:PF,  5: MG
+	* Array aAssmntAmount with 12 totals per code per month:
+	* row 1:total, 2:AG,  3:PF,  4:PF,  5: MG
 	* ARRAY aGiversdata with data of giver and gifts for each row:
 	* 1 - Amount
 	* 2 - persid
@@ -3254,7 +3134,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					AAdd(aGiversdata,{fAmnt,oTrans:persid,AllTrim(oTrans:description),;
 						IF(ADMIN="WO".or.Admin="HO",Upper(oTrans:gc),""),iMonth,;
 						"","","","","","",""})
-					*				Werk totalen per inhoudingscode en maand bij:
+					*				calculate totals assesment percode and month:
 					aAssmntAmount[1,iMonth]:=aAssmntAmount[1,iMonth] + fAmnt   && total
 					IF Upper(oTrans:gc) = "AG"
 						AssmntRow := 2
@@ -3268,7 +3148,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				oTrans:Skip()
 			ENDDO 
 			IF ReportMonth=nMonth.and.self:SkipInactive .and. !lTransFound
-				*  Overslaan van medewerkers zonder mutaties:
+				*  Skip members without transactions:
 				* remove added member lines:
 				ASize(oReport:oPrintJob:aFiFo,nBeginmember)
 				lSkip:=true
@@ -3277,7 +3157,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			if !self:Memberstmnt=="NOST"
 				* processing end of month:
 				IF	ReportMonth=nMonth.or.self:Memberstmnt=="ALLST"
-					*	Afdrukken slotregels	rekeningoverzicht:
+					*	Print closing lines account statement:
 					IF	Len(aOPP)>0	.or. m71_gifthb#0	.or. m71_giftrst#0
 						oReport:PrintLine(@nRow,@nPage,+Space(97)+'------------ ------------',aHeading,3)
 						oReport:PrintLine(@nRow,@nPage,;
@@ -4159,6 +4039,14 @@ METHOD GetAccnts(dummy:=nil as string) as array CLASS ListboxGiftReport
 	ENDIF
 	RETURN aAcc 
 STATIC DEFINE MND:=5
+CLASS MonthClose INHERIT DataDialogMine 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCMindate AS DATETIMEPICKER
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE MonthClose DIALOGEX  4, 3, 288, 69
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -4169,14 +4057,6 @@ BEGIN
 	CONTROL	"Cancel", MONTHCLOSE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 224, 36, 53, 12
 END
 
-CLASS MonthClose INHERIT DataDialogMine 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCMindate AS DATETIMEPICKER
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS MonthClose
 super:Cancel() 
 self:EndWindow() 
@@ -4240,15 +4120,6 @@ STATIC DEFINE PMISSEND_BALANCETEXT := 102
 STATIC DEFINE PMISSEND_CANCELBUTTON := 101 
 STATIC DEFINE PMISSEND_OKBUTTON := 100 
 STATIC DEFINE PRSID:=2
-RESOURCE ReImbursement DIALOGEX  4, 3, 300, 64
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", REIMBURSEMENT_BALANCETEXT, "Static", WS_CHILD, 12, 18, 216, 29
-	CONTROL	"OK", REIMBURSEMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 240, 14, 53, 13
-	CONTROL	"Cancel", REIMBURSEMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 240, 32, 53, 12
-END
-
 CLASS ReImbursement INHERIT DataWindowExtra 
 
 	PROTECT oDCBalanceText AS FIXEDTEXT
@@ -4258,6 +4129,15 @@ CLASS ReImbursement INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   protect oEmp as SQLSelect 
   protect Begindate,CloseDate as date
+RESOURCE ReImbursement DIALOGEX  4, 3, 300, 64
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", REIMBURSEMENT_BALANCETEXT, "Static", WS_CHILD, 12, 18, 216, 29
+	CONTROL	"OK", REIMBURSEMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 240, 14, 53, 13
+	CONTROL	"Cancel", REIMBURSEMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 240, 32, 53, 12
+END
+
 METHOD CancelButton( ) CLASS ReImbursement 
 	self:ENDWindow()
 	super:Cancel()
@@ -4748,24 +4628,6 @@ STATIC DEFINE TAXREPORT_FIXEDTEXT2 := 104
 STATIC DEFINE TAXREPORT_OKBUTTON := 102 
 STATIC DEFINE TAXREPORT_THRESHOLD := 105 
 STATIC DEFINE TAXREPORT_YEARTAX := 100 
-RESOURCE TrialBalance DIALOGEX  20, 18, 266, 153
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TRIALBALANCE_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 22, 93, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TRIALBALANCE_DEPBUTTON, "Button", WS_CHILD, 163, 22, 15, 12
-	CONTROL	"", TRIALBALANCE_YEARTRIAL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 72, 44, 88, 72
-	CONTROL	"", TRIALBALANCE_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 64, 53, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TRIALBALANCE_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 182, 64, 54, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Condense", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
-	CONTROL	"OK", TRIALBALANCE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 184, 96, 54, 12
-	CONTROL	"Cancel", TRIALBALANCE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 184, 116, 53, 12
-	CONTROL	"Financial year", TRIALBALANCE_FIXEDTEXT1, "Static", WS_CHILD, 16, 44, 53, 12
-	CONTROL	"From month:", TRIALBALANCE_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 53, 12
-	CONTROL	"To month:", TRIALBALANCE_FIXEDTEXT3, "Static", WS_CHILD, 137, 64, 41, 12
-	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
-END
-
 class TrialBalance inherit DataWindowMine 
 
 	protect oDCmDepartment as SINGLELINEEDIT
@@ -4795,6 +4657,24 @@ class TrialBalance inherit DataWindowMine
 	PROTECT WhoFrom AS STRING
 	PROTECT	d_dep:={} AS ARRAY
 	PROTECT cCurDep AS STRING
+RESOURCE TrialBalance DIALOGEX  20, 18, 266, 153
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TRIALBALANCE_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 22, 93, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TRIALBALANCE_DEPBUTTON, "Button", WS_CHILD, 163, 22, 15, 12
+	CONTROL	"", TRIALBALANCE_YEARTRIAL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 72, 44, 88, 72
+	CONTROL	"", TRIALBALANCE_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 64, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TRIALBALANCE_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 182, 64, 54, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Condense", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
+	CONTROL	"OK", TRIALBALANCE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 184, 96, 54, 12
+	CONTROL	"Cancel", TRIALBALANCE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 184, 116, 53, 12
+	CONTROL	"Financial year", TRIALBALANCE_FIXEDTEXT1, "Static", WS_CHILD, 16, 44, 53, 12
+	CONTROL	"From month:", TRIALBALANCE_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 53, 12
+	CONTROL	"To month:", TRIALBALANCE_FIXEDTEXT3, "Static", WS_CHILD, 137, 64, 41, 12
+	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
+END
+
 METHOD AddSubDep(ParentNum, nCurrentRec)  CLASS TrialBalance
 * Find subdepartments and add to arrays with departments
 	LOCAL nChildRec			AS INT
@@ -5312,7 +5192,7 @@ CLASS YearClosing INHERIT DataWindowMine
 	PROTECT YearClose, MonthClose, BalanceYearEnd, YearStart, MonthStart as int
 	EXPORT BalanceEndDate as date
 	PROTECT YearBalance as STRING
-	Protect cError as string 
+	Protect cError,cWarning as string 
 	PROTECT d_netasset:={},;
 		d_dep:={},;
 		d_depnbr:={},;
@@ -5630,6 +5510,7 @@ METHOD OKButton( ) CLASS YearClosing
 		
 	* Make records to netassetaccounts per department:
 	self:STATUSMESSAGE(self:oLan:WGet("Recording to netasset accounts, moment please"))
+	self:cWarning:=''
 	if !self:SubDepartment(1,@cTransnr,@nSeqNbr,AfterBalance)
 		SQLStatement{"rollback",oConn}:Execute()
 		self:Pointer := Pointer{POINTERARROW}
@@ -5638,6 +5519,15 @@ METHOD OKButton( ) CLASS YearClosing
 		endif
 		return
 	ENDIF
+	if !Empty(self:cWarning)
+		self:Pointer := Pointer{POINTERARROW}
+		IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Departments')+': '+CRLF+;
+			self:cWarning+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
+			RETURN FALSE
+		else
+			self:Pointer := Pointer{POINTERHOURGLASS}
+		endif
+	endif
 
 	* Record transfer of profit/Loss to netasset accounts:
 	self:STATUSMESSAGE(self:oLan:WGet("Recording profit/loss transactions, moment please"))
@@ -5813,13 +5703,14 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 	* Make records to netassetaccount of the  department:
 	if !Round(self:d_PLcre[p_depptr]-self:d_PLdeb[p_depptr],DecAantal)==0.00
 		IF Empty(self:d_netasset[p_depptr])
-			self:Pointer := Pointer{POINTERARROW}
-			IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Department')+': '+self:d_depnbr[p_depptr]+":";
-				+self:d_depname[p_depptr]+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
-				RETURN FALSE
-			else
-				self:Pointer := Pointer{POINTERHOURGLASS}
-			endif
+			self:cWarning+=self:d_depnbr[p_depptr]+":"+self:d_depname[p_depptr]+CRLF
+// 			self:Pointer := Pointer{POINTERARROW}
+// 			IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Department')+': '+self:d_depnbr[p_depptr]+":";
+// 				+self:d_depname[p_depptr]+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
+// 				RETURN FALSE
+// 			else
+// 				self:Pointer := Pointer{POINTERHOURGLASS}
+// 			endif
 		else
 			PL_totdeb:=self:d_PLdeb[p_depptr]
 			PL_totcre:=self:d_PLcre[p_depptr]
