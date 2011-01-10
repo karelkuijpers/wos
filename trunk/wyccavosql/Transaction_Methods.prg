@@ -3049,7 +3049,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	LOCAL lNewGift:= TRUE AS LOGIC
 	Default(@cItemname,NULL_STRING)
 	Default(@lOK,FALSE)
-	IF Empty(oCLN)
+	IF Empty(oCLN) .or. oCln:reccount<1
 		//	self:cGiverName:=self:cOrigName
 		self:oDCmPerson:Value:=self:cOrigName
 		RETURN
