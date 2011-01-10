@@ -595,34 +595,18 @@ METHOD ValidateAccount() CLASS EditAccount
 	endif
 
 	* Check if account allready exists:
-	// 	nCurRec:=oAcc:RecNo
-	IF	lNew .or.!Upper(self:mAccNumber)==Upper(AllTrim(oAcc:ACCNUMBER))
-		oSel:=SQLSelect{"select accid from account where ACCNUMBER='"+self:mAccNumber+"'",oConn}
-		oSel:Execute()
-		if !oSel:BoF
-			// 		if	oAcc:Seek({#ACCNUMBER},{self:mAccNumber},FALSE)
-			// 			IF	Upper(self:mAccNumber)==Upper(AllTrim(oAcc:ACCNUMBER))
-			cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
-			lValid:=FALSE
-			// 			ENDIF
-		ENDIF
-		// 		oAcc:RecNo:=self:nCurRec // return to current position
+	oSel:=SQLSelect{"select accid from account where ACCNUMBER='"+self:mAccNumber+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	if oSel:Reccount>0
+		cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
+		lValid:=FALSE
 	ENDIF
-	if (lNew .or.!Upper(AllTrim(oAcc:Description))==Upper(AllTrim(self:mDescription)).and.lValid) 
-		oSel:=SQLSelect{"select accid from account where description='"+AllTrim(self:mDescription)+"'",oConn}
-		oSel:Execute()
-		if !oSel:BoF
-			// 		IF	oAcc:Seek({#description},{AllTrim(self:mDescription)})
-			// 			IF	Upper(AllTrim(oAcc:description))==Upper(AllTrim(self:mDescription))
-			cError:=self:oLan:WGet('Account description')+'	"'+AllTrim(self:mDescription)+'" '+self:oLan:WGet('allready exist')
-			lValid:=FALSE
-			// 			ENDIF
-		ENDIF
+	oSel:=SQLSelect{"select accid from account where description='"+AllTrim(self:mDescription)+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	if oSel:Reccount>0
+		cError:=self:oLan:WGet('Account description')+'	"'+AllTrim(self:mDescription)+'" '+self:oLan:WGet('allready exist')
+		lValid:=FALSE
 	ENDIF
-	// 	oAcc:Goto(self:nCurRec)
 	IF!lNew .and.lValid
 		cError:=ValidateAccTransfer(self:mNumSave,self:mAccNumber)
-		// 		oAcc:Goto(self:nCurRec)
 		IF !Empty(cError)
 			lValid:=FALSE
 		ENDIF
