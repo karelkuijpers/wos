@@ -552,11 +552,11 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			elseif Empty(oStOrdL:ACCNUMBER)
 				* Check account:
 				(WarningBox{,self:oLan:WGet("Periodic Records"),Str(oStOrdL:ACCOUNTID,-1)+": "+self:oLan:WGet("unknown account, skipped")+" in standing order: "+Str(CurStOrdrid,-1)}):Show()
-				lError
+				lError:=true
 			elseif Empty(oStOrdL:active)
 				* Check account:
 				(WarningBox{,self:oLan:WGet("Periodic Records"),Str(oStOrdL:ACCNUMBER,-1)+": "+self:oLan:WGet("inactive account, skipped")+" in standing order: "+Str(CurStOrdrid,-1)}):Show()
-				lError
+				lError :=true
 			endif 
 		endif
 		If !lError
