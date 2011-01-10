@@ -1170,12 +1170,12 @@ BEGIN
 	CONTROL	"First name:", FIRSTUSER_MVRNMBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 192, 143, 12
 	CONTROL	"Initials:", FIRSTUSER_MNA2MBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 192, 133, 12
 	CONTROL	"Bank/Giro:", FIRSTUSER_MBANKNUMMER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 206, 143, 13
-	CONTROL	"Telebanking?", FIRSTUSER_MTELEBANKNG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 216, 206, 80, 11
+	CONTROL	"Telebanking?", FIRSTUSER_MTELEBANKNG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 216, 206, 80, 11
 	CONTROL	"Initials:", FIRSTUSER_SC_NA2MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 192, 23, 12
 	CONTROL	"Prefix:", FIRSTUSER_SC_HISNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 177, 36, 12
 	CONTROL	"First name:", FIRSTUSER_SC_VRNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 192, 36, 12
 	CONTROL	"Lastname:", FIRSTUSER_SC_NA1MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 177, 34, 12
-	CONTROL	"Bank/Giro gifts:", FIRSTUSER_SC_BANKNUMMER, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 206, 52, 13
+	CONTROL	"Bank/Giro gifts:", FIRSTUSER_SC_BANKNUMMER, "Static", WS_CHILD, 16, 206, 52, 13
 	CONTROL	"OK", FIRSTUSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 352, 235, 54, 12
 	CONTROL	"Member data", FIRSTUSER_MEMBERBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 10, 163, 391, 59
 END
@@ -1520,7 +1520,7 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS FirstUser
 	LOCAL oEmp as SQLStatement
-	LOCAL oSys as SQLSelect 
+// 	LOCAL oSys as SQLSelect 
 	local oPers, oSel as SQLSelect 
 	LOCAL mCLN, mRek, mNum, mNum1, mNumAsset, mNumLiability, cP,mPsw as STRING
 	LOCAL i AS INT
@@ -1593,7 +1593,7 @@ METHOD OKButton( ) CLASS FirstUser
 	if !CheckPassword(mPsw)
 		return 
 	endif
-	oSys:=SQLSelect{"select * from sysparms",oConn}
+// 	oSys:=SQLSelect{"select * from sysparms",oConn}
 	oPers:=SQLSelect{"select persid from person where lastname='"+self:mNA1+"' and firstname='"+self:mVRN+"' and city='"+self:mPLA+"'",oConn} 
 	IF oPers:Reccount>0
 		mCLN:=Str(oPers:persid,-1)
@@ -1614,6 +1614,7 @@ METHOD OKButton( ) CLASS FirstUser
 		(ErrorBox{self,'Add employee Error:'+oStmnt:Status:Description}):Show()
 		return false
 	endif
+	MYEMPID:='1000'
 	oStmnt:Commit()
 	cUpdate:="update employee set loginName="+Crypt_Emp(true,"loginname",Lower(AllTrim(self:mLOGON_NAME))) ;
 		+", LSTUPDPW=NOW(), Password='"+HashPassword(1000,self:oDCmPASSWORD:TextValue)+"', type="+Crypt_Emp(true,"type","A")+", DEPID="+Crypt_Emp(true,"depid","")
@@ -1676,6 +1677,7 @@ METHOD OKButton( ) CLASS FirstUser
 		oStmnt:=SQLStatement{"insert into account set "+;
 			"description='"+"Bank: "+self:mBANKNUMMER+"'"+;
 			",ACCNUMBER='60001'"+;
+			",Currency='"+sCurr+"'"+;
 			",balitemid ='"+ mNumAsset +"'",oConn}
 		oStmnt:Execute()
 		mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
@@ -1683,27 +1685,27 @@ METHOD OKButton( ) CLASS FirstUser
 		* Add Bankaccount:
 		oStmnt:=SQLStatement{"insert into BankAccount set "+;
 			"banknumber='"+self:mBANKNUMMER+"'"+;				
-		"',accid='"+mRek+"'"+;
-			",usedforgifts='1'"+;
-			"TELEBANKNG="+if(self:mTelebankng,'1','0')+;
-			iif(self:mTelebankng,",COMALL=1,GIFTSALL=1,OPENALL=1",""),oConn}
+			",accid='"+mRek+"'"+;
+			",usedforgifts=1"+;
+			",telebankng="+if(self:mTelebankng,'1','0')+;
+			iif(self:mTelebankng,",giftsall=1,openall=1",""),oConn}
 		oStmnt:Execute()
 	ENDIF
 	* Add Account for Netasset:
 	oStmnt:=SQLStatement{"insert into account set "+;
 		"description='Netassets'"+;
 		",persid='"+mCLN+"'"+;
+		",Currency='"+sCurr+"'"+;
 		",balitemid ='"+ mNumLiability+"'"+;
 		",ACCNUMBER='15000'",oConn}
 	oStmnt:Execute()
-	mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-	oSys:CAPITAL:=Val(mRek)
-	oSys:ADMINTYPE:=self:mAdminType
+	mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+	oStmnt:=SQLStatement{"update sysparms set capital='"+mRek+"',admintype='"+self:mAdminType+"'",oConn}
+	oStmnt:Execute()
 	
 	ADMIN:=self:mAdminType
-	oSys:Commit()
-	InitGlobals()
 	SaveCheckDigit()
+	InitGlobals()
 	(TextBox{,"First use","Go to Help/Index/Configuration for instructions how to setup the system"}):Show()
 
 	SELF:EndWindow()
