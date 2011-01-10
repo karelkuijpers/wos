@@ -1406,7 +1406,7 @@ self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last sen
 
 RETURN nil
 METHOD PrintReport() CLASS PMISsend
-	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,me_saldo,me_saldoF,OfficeRate as FLOAT
+	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,AssFldInt,AssFldIntHome,me_saldo,me_saldoF,OfficeRate as FLOAT
 	local AssInc,AssIncHome as float  // to be reversed assement income totals
 	local separatorline as STRING
 	local heading as ARRAY
@@ -1488,7 +1488,7 @@ METHOD PrintReport() CLASS PMISsend
 	// fExChRate:=self:mxrate
 	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the sending, please wait")+"...")
 
-	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome
+	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
 
 	if Empty(self:oSys:PMCMANCLN) 
 		(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
@@ -1547,7 +1547,7 @@ METHOD PrintReport() CLASS PMISsend
 			(ErrorBox{self,self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal Primary Finance entity")+":"+oMbr:HOMEPP}):Show()
 			return
 		endif
-		if oMbr:HOMEPP # SEntity .and. (oMbr:TYPE # "PA".and. oMbr:TYPE # "AK")
+		if oMbr:HOMEPP # SEntity .and. (!oMbr:TYPE==LIABILITY.and. !oMbr:TYPE== asset )
 			(ErrorBox{self,oLan:WGet("Not own")+" "+ self:oLan:WGet("member")+" "+me_pers+" "+self:oLan:WGet("should have a liability/funds or asset account")}):Show()
 			return
 		endif
@@ -1709,11 +1709,17 @@ METHOD PrintReport() CLASS PMISsend
 			AssOffice:=Round(AssOffice+mbroffice,DecAantal)
 			AssOfficeProj:=Round(AssOfficeProj+mbrofficeProj,DecAantal) 
 			// calculate reversal for ministry income: 
-			if !Empty(SINC) 
-				if !me_has .or.Empty(SINCHOME)
+			if !Empty(SINC).and. me_type==LIABILITY 
+				if !me_has
 					AssInc:=Round(AssInc+mbroffice+mbrofficeProj,DecAantal)
+					if !Empty(samFld)
+						AssFldInt:=Round(AssFldInt+mbrfield+mbrint,DecAantal)
+					endif
 				else
 					AssIncHome:=Round(AssIncHome+mbroffice+mbrofficeProj,DecAantal)
+					if !Empty(samFld)
+						AssFldIntHome:=Round(AssFldIntHome+mbrfield+mbrint,DecAantal)
+					endif
 				endif
 			endif
 			
@@ -2224,7 +2230,7 @@ METHOD PrintReport() CLASS PMISsend
 			if Empty(cError).and.!Empty(AssIncHome) 
 				nSeqnr++
 				oStmnt:=SQLStatement{"insert into transaction set accid="+SINCHOME+",deb='"+Str(AssIncHome,-1)+"',debforgn='"+Str(AssIncHome,-1)+;
-					"',CURRENCY='"+sCurr+"',Description='Reversal income for office assessment home assigned'"+;
+					"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Reversal income for office assessment home assigned')+"'"+;
 					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 					",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 				oStmnt:Execute()
@@ -2237,7 +2243,7 @@ METHOD PrintReport() CLASS PMISsend
 				if Empty(cError)
 					nSeqnr++
 					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssIncHome,-1)+"',creforgn='"+Str(AssIncHome,-1)+;
-						"',CURRENCY='"+sCurr+"',Description='Reversal income for office assessment home assigned'"+;
+						"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Reversal income for office assessment home assigned')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 					oStmnt:Execute()
@@ -2252,7 +2258,7 @@ METHOD PrintReport() CLASS PMISsend
 			if Empty(cError).and.!Empty(AssInc) 
 				nSeqnr++
 				oStmnt:=SQLStatement{"insert into transaction set accid="+SINC+",deb='"+Str(AssInc,-1)+"',debforgn='"+Str(AssInc,-1)+;
-					"',CURRENCY='"+sCurr+"',Description='Reversal income for office assessment field assigned'"+;
+					"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Reversal income for office assessment field assigned')+"'"+;
 					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 					",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 				oStmnt:Execute()
@@ -2265,7 +2271,7 @@ METHOD PrintReport() CLASS PMISsend
 				if Empty(cError)
 					nSeqnr++
 					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssInc,-1)+"',creforgn='"+Str(AssInc,-1)+;
-						"',CURRENCY='"+sCurr+"',Description='Reversal income for office assessment field assigned'"+;
+						"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Reversal income for office assessment field assigned')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 					oStmnt:Execute()
@@ -2277,6 +2283,65 @@ METHOD PrintReport() CLASS PMISsend
 					endif
 				endif
 			endif
+
+			// add to expense assessment field + int: 
+			if Empty(cError).and.!Empty(AssFldInt)
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldInt,-1)+"',debforgn='"+Str(AssFldInt,-1)+;
+					"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Expense for assessment field&int')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:Description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+				elseif !ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:Description+')'
+				endif
+				if Empty(cError)
+					nSeqnr++
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssFldInt,-1)+"',creforgn='"+Str(AssFldInt,-1)+;
+						"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Expense for assessment field&int')+"'"+;
+						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+						",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows<1
+						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:Description+')'
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+					elseif !ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
+						cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:Description+')'
+					endif
+				endif
+			endif
+			if Empty(cError).and.!Empty(AssFldIntHome)
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldIntHome,-1)+"',debforgn='"+Str(AssFldIntHome,-1)+;
+					"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Expense for assessment field&int for home assigned members')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:Description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+				elseif !ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:Description+')'
+				endif
+				if Empty(cError)
+					nSeqnr++
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssFldIntHome,-1)+"',creforgn='"+Str(AssFldIntHome,-1)+;
+						"',CURRENCY='"+sCurr+"',Description='"+self:oLan:RGet('Expense for assessment field&int for home assigned members')+"'"+;
+						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+						",POSTSTATUS=2,TransId="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows<1
+						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:Description+')'
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+					elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCurr)
+						cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:Description+')'
+					endif
+				endif
+			endif
+
 			*Record total amount to PMC 
 			IF Empty(cError).and.mo_tot # 0
 				nSeqnr++
