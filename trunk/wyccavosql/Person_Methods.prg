@@ -1771,7 +1771,13 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 			oPersCnt:m51_pos+" "+oPersCnt:m51_city)
 		else
 			self:caption+=Compress(" "+cValue)
-		ENDIF
+		ENDIF 
+	   if self:oPers:RecCount>0
+		  	self:oCCOKButton:Enable()
+	   else
+   		self:oCCOKButton:Disable()
+	   endif
+
 		self:Show() 
 // 		self:GoTop()
 // 	ENDIF
@@ -2248,7 +2254,8 @@ cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 	oPersBw:oPers:SQLString:="select "+oPersBw:cFields+" from "+cFrom+iif(Empty(cWhere).and.Empty(cFilter),""," where ")+cWhere+;
 	iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder 
 	oPersBw:oPers:Execute()
-	oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1) 
+	oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1)
+ 
 	//position at current person: 
 	if Empty(oPersCnt)
 		oPersCnt:=PersonContainer{}
