@@ -31,7 +31,6 @@ STATIC DEFINE _EDITPERSONWINDOW_SC_BDAT := 115
 STATIC DEFINE _EDITPERSONWINDOW_SC_CLN := 100 
 STATIC DEFINE _EDITPERSONWINDOW_SC_DLG := 117 
 STATIC DEFINE _EDITPERSONWINDOW_SC_FAX := 113 
-STATIC DEFINE _EDITPERSONWINDOW_SC_GIRONR := 119 
 STATIC DEFINE _EDITPERSONWINDOW_SC_HISN := 114 
 STATIC DEFINE _EDITPERSONWINDOW_SC_LAN := 110 
 STATIC DEFINE _EDITPERSONWINDOW_SC_MUTD := 116 
@@ -728,7 +727,6 @@ METHOD ListBoxSelect(oControlEvent) CLASS NewPersonWindow
 			cDescr:="Bank/KID "
 		ENDIF
 
-//		oDCSC_GIRONR:TextValue:=AllTrim(oControl:TextValue)
 		self:oDCSC_BankNumber:TextValue:=cDescr+Str(AScan(aBankAcc,{|x|x[2]==cBank}),-1)
 		SELF:oDCBankBox:Hide()
 	ENDIF
@@ -1202,9 +1200,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 			self:oPersCnt:=aExtra[4]
 		endif
 	ENDIF
-
 	IF CountryCode=="47"
-		SELF:oDCSC_GIRONR:TextValue:="Bank/Giro/KID"
+		self:oDCSC_BankNumber:TextValue:="Bank/Giro/KID"
 	ENDIF
 	//if !self:lExists
 	self:InitExtraProperties()
@@ -1626,7 +1623,12 @@ METHOD FindButton( ) CLASS PersonBrowser
 	self:oPers:Execute() 
 	self:GoTop() 
 	self:oSFPersonSubForm:Browser:refresh()
-	self:FOUND :=Str(self:oPers:Reccount,-1)
+	self:FOUND :=Str(self:oPers:Reccount,-1) 
+   if self:oPers:Reccount>0
+   	self:oCCOKButton:Enable()
+   else
+   	self:oCCOKButton:Disable()
+   endif
 // 	if self:oPers:Reccount=1  
 // 		self:lFoundUnique := true
 // 	else
@@ -1773,6 +1775,11 @@ self:SetTexts()
     	self:oCCUnionButton:Hide()
     ENDIF
    self:FOUND:=Str(self:oPers:Reccount,-1)
+   if self:oPers:Reccount>0
+   	self:oCCOKButton:Enable()
+   else
+   	self:oCCOKButton:Disable()
+   endif
    self:SearchSLE:=""
    self:SearchSZP:=""
    self:SearchUni:=""
