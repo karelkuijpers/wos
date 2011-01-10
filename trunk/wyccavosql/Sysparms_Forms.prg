@@ -1204,10 +1204,24 @@ ASSIGN mPersonPMCMan(uValue) CLASS Tab_Parm2
 SELF:FieldPut(#mPersonPMCMan, uValue)
 RETURN uValue
 
-METHOD PersonButtonContact(lUnique ) CLASS Tab_Parm2 
+METHOD PersonButtonContact(lUnique,WithCln ) CLASS Tab_Parm2 
 	LOCAL cValue := AllTrim(self:oDCmPersonPMCMan:TEXTValue ) as STRING
+	local oPers as PersonContainer
 	Default(@lUnique,FALSE)
-	PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager")
+// 	PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager")
+	Default(@lUnique,FALSE) 
+	Default(@WithCln,true) 
+	oPers:=PersonContainer{}
+	if !Empty(self:mCLNPMCMan).and.WithCln .and. !Val(self:mCLNPMCMan)=0
+		oPers:persid:=self:mCLNPMCMan
+	else
+		oPers:persid:=""
+	endif
+	if self:lImport
+		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
+	else
+		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
+	endif
 
 RETURN NIL
 ACCESS pmcupld() CLASS Tab_Parm2
@@ -1303,7 +1317,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		self:oDCSC_IESMAILACC:Show()
 		self:oDCIESMAILACC:Show()
 	endif
-
+               
 	self:mCLNPMCMan:=Str(self:Server:PMCMANCLN,-1)
 	self:cPMCManName:=GetFullName(self:mCLNPMCMan)
 	self:oDCmPersonPMCMan:TEXTValue:=cPMCManName
