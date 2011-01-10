@@ -2239,7 +2239,7 @@ method AddCurr() class PaymentDetails
 LOCAL oBrowse:=self:Browser as GeneralBrowser
 LOCAL oHm:= self:Owner:Server as TempGift 
 local lAdd as logic
-AEval(oHm:aMirror,{|x|lAdd:=iif(x[10]==sCurr,iif(x[11],true,lAdd),true) })
+AEval(oHm:aMirror,{|x|lAdd:=iif(x[10]==sCurr.or.Empty(x[10]),iif(x[11],true,lAdd),true) })
 if oBrowse:GetColumn(#Currency)==nil 
 	if lAdd 
 		oBrowse:AddColumn({oDBCURRENCY,oDBCRE},oDBGC) 
@@ -3192,8 +3192,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		endif
 	ENDIF
 	
-	oSel:=SQLSelect{"select accid from bankaccount where Telebankng=1",oConn}
-	DO WHILE oSel:reccount>0
+	oSel:=SQLSelect{"select accid from bankaccount where Telebankng=1",oConn} 
+	oSel:Execute()
+	DO WHILE !oSel:EOF
 		self:cAccFilter:=if(Empty(self:cAccFilter),"",self:cAccFilter+',')+Str(oSel:AccID,-1)
 		oSel:Skip()
 	ENDDO
@@ -3202,7 +3203,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	else
 		self:cAccFilter:="a.active=1"
 	endif
-	oSel:=SQLSelect{"select accid from bankaccount",oConn}
+	oSel:=SQLSelect{"select accid from bankaccount",oConn} 
+	oSel:Execute()
 	DO WHILE !oSel:EOF
 		self:cDestFilter:=if(Empty(self:cDestFilter),"",self:cDestFilter+',')+Str(oSel:AccID,-1)
 		oSel:Skip()
@@ -3236,10 +3238,15 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	local lSucc as logic
 	local oSel as SQLSelect
 	local omBal as Balances
+	if Empty(self:DebAccId)
+		return
+	endif
 	oSel:=SQLSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid="+self:DebAccId+" and b.balitemid=a.balitemid",oConn}
 	if oSel:reccount>0
 		self:DebAccNbr:=oSel:ACCNUMBER 
 		self:DebCurrency:=oSel:CURRENCY
+	else
+		return
 	ENDIF
 	// if !self:DebCurrency==sCurr .and. self:oCurr==null_object
 	// 	self:oCurr:=Currency{}
@@ -4185,8 +4192,14 @@ self:SetTexts()
 
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
-	//Put your PreInit additions here
-	self:lsttrnr:=SQLSelect{"select max(TransId) as maxtr from transaction",oConn}:maxtr 
+	//Put your PreInit additions here 
+	local oSel as SQLSelect
+	oSel:= SQLSelect{"select max(TransId) as maxtr from transaction",oConn}
+	if oSel:RecCount>0
+		if !Empty(oSel:maxtr)
+			self:lsttrnr:=oSel:maxtr
+		endif
+	endif
 	self:cFields:="t.*,a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
 	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and Department in ("+cDepmntIncl+")") 
