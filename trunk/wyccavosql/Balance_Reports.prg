@@ -2034,8 +2034,10 @@ oAcc:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.a
 "from account a,department d left join person p1 on(p1.persid=d.persid) left join person p2 on (p2.persid=d.persid2) "+;
 "where a.department=d.depid and d.depid in ("+Implode(aDep,",")+")",oConn}
 if oAcc:RecCount<1
-	LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
-	ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
+	if !Empty(oAcc:Status)
+		LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
+		ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
+	endif
 	return
 endif
 do WHILE !oAcc:Eof
