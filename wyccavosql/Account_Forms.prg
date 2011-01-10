@@ -180,6 +180,11 @@ METHOD FindButton( ) CLASS AccountBrowser
    self:GoTop()
    self:oSFAccountBrowser_DETAIL:Browser:refresh()
   	self:FOUND :=Str(self:oAcc:Reccount,-1)
+  	if self:oAcc:Reccount>0
+  		self:oCCOKButton:Enable()
+  	else
+  		self:oCCOKButton:Disable()
+  	endif
 
 
 RETURN NIL
@@ -297,7 +302,12 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class AccountBrowser
 		self:oCCNewButton:Hide()
 	ENDIF
 	self:GoTop() 
-  	self:FOUND :=Str(self:oAcc:Reccount,-1)
+  	self:FOUND :=Str(self:oAcc:Reccount,-1) 
+  	if self:oAcc:Reccount>0
+  		self:oCCOKButton:Enable()
+  	else
+  		self:oCCOKButton:Disable()
+  	endif
 
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
