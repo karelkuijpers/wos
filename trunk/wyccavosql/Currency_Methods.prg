@@ -215,7 +215,14 @@ ASSIGN Currency(uValue) CLASS CurrencySpec
 SELF:FieldPut(#Currency, uValue)
 RETURN uValue
 method GetCurrencies(dummy:=nil as logic) class CurrencySpec
-return SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
+local oCur as SQLSelect
+oCur:=SQLSelect{"select united_ara,aed from currencylist",oConn}
+if oCur:RecCount>0
+	return oCur:GetLookupTable(300,#UNITED_ARA,#AED)
+else
+	return {}
+endif
+// return SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS CurrencySpec 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
