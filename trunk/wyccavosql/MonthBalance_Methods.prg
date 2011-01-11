@@ -165,7 +165,7 @@ METHOD GetBalance( pAccount as string ,ptype as string ,pPeriodStart:=nil as usu
 		* Before	ultimo of the month?
 		* Calculate	sum of transactions in last month: 
 		cTransSelect:=UnionTrans("select	Round(sum(t.deb),2) as monthdeb,Round(sum(t.cre),2) as monthcre,"+;
-			"Round(sum(t.DEBFORGN),2) as monthdebf,Round(sum(t.CREFORGN),2) as monthcref from transaction as t	"+;
+			"Round(sum(t.debforgn),2) as monthdebf,Round(sum(t.creforgn),2) as monthcref from transaction as t	"+;
 			"where t.DAT>='"+Str(PeriodEndYear,4)+"-"+StrZero(PeriodEndMonth,2)+"-01' and	t.DAT<='"+SQLdate(pPeriodEnd)+"'	and t.accid='"+pAccount+"'") 
 		oTrans:=SQLSelect{cTransSelect,oConn}
 		if	Empty(oTrans:Status)	.and.	oTrans:RecCount=1
@@ -466,9 +466,9 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 	",sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr2,sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr2"+;
 	",sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr3,sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr3"+;
 	iif(lForeignCurr,;
-	",sum(IF("+cAccBalYrYtDCondition+cNonStandardCurrCond+",ay.svjd,0)) as svjdyr2F,sum(IF("+cAccBalYrYtDCondition+cNonStandardCurrCond+",ay.svjc,0)) as svjcyr2F"+;
-	",sum(IF("+cAccBalYrCondition+cNonStandardCurrCond+",ay.svjd,0)) as svjdyr3F,sum(IF("+cAccBalYrCondition+cNonStandardCurrCond+",ay.svjc,0)) as svjcyr3F","")+;
-	" from (account a, balanceitem b) left join AccountBalanceYear ay ON (ay.accid=a.accid and "+cConditionAccBalYr+")"+;   
+	",sum(IF("+cAccBalYrYtDCondition+cNonStandardCurrCond+",ay.svjd,0)) as svjdyr2f,sum(IF("+cAccBalYrYtDCondition+cNonStandardCurrCond+",ay.svjc,0)) as svjcyr2f"+;
+	",sum(IF("+cAccBalYrCondition+cNonStandardCurrCond+",ay.svjd,0)) as svjdyr3f,sum(IF("+cAccBalYrCondition+cNonStandardCurrCond+",ay.svjc,0)) as svjcyr3f","")+;
+	" from (account a, balanceitem b) left join accountbalanceyear ay ON (ay.accid=a.accid and "+cConditionAccBalYr+")"+;   
 	" where a.balitemid=b.balitemid"+iif(Empty(self:cAccSelection),""," and "+self:cAccSelection)+" group by a.accid" 
 	
 	// cSelecty: 2e level select on x and mbalance mb
@@ -479,39 +479,39 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 		cStandardCurrCond:=""
 	endif  
 	cSelecty:="select x.*,"+;   
-	"sum("+cPrvYrCondition+cStandardCurrCond+",mb.deb,0)) as PrvYr_deby,sum("+cPrvYrCondition+cStandardCurrCond+",mb.cre,0)) as PrvYr_crey,"+;
-	"sum("+cPrvPerCondition+cStandardCurrCond+",mb.deb,0)) as PrvPer_deby,sum("+cPrvPerCondition+cStandardCurrCond+",mb.cre,0)) as PrvPer_crey," +;
-	"sum("+cPerCondition+cStandardCurrCond+",mb.deb,0)) as Per_deby,sum("+cPerCondition+cStandardCurrCond+",mb.cre,0)) as Per_crey"+;
-	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.deb,0)) as PrvYrYtD_deby,sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.cre,0)) as PrvYrYtD_crey",",0.00 as PrvYrYtD_deby,0.00 as PrvYrYtD_crey")+;
+	"sum("+cPrvYrCondition+cStandardCurrCond+",mb.deb,0)) as prvyr_deby,sum("+cPrvYrCondition+cStandardCurrCond+",mb.cre,0)) as prvyr_crey,"+;
+	"sum("+cPrvPerCondition+cStandardCurrCond+",mb.deb,0)) as prvper_deby,sum("+cPrvPerCondition+cStandardCurrCond+",mb.cre,0)) as prvper_crey," +;
+	"sum("+cPerCondition+cStandardCurrCond+",mb.deb,0)) as per_deby,sum("+cPerCondition+cStandardCurrCond+",mb.cre,0)) as per_crey"+;
+	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.deb,0)) as prvyrytd_deby,sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.cre,0)) as prvyrytd_crey",",0.00 as prvyrytd_deby,0.00 as prvyrytd_crey")+;
 	iif(lPrvYrYtD,",sum("+cPLCondition+",mb.deb,0)) as PL_deb,sum("+cPLCondition+cStandardCurrCond+",mb.cre,0)) as PL_cre",",0.00 as PL_deb,0.00 as PL_cre")+;
-	iif(lPrvYrYtD,",sum("+cPrvYrPLCondition+",mb.deb,0)) as PrvYrPL_deb,sum("+cPrvYrPLCondition+cStandardCurrCond+",mb.cre,0)) as PrvYrPL_cre",",0.00 as PrvYrPL_deb,0.00 as PrvYrPL_cre")+;
+	iif(lPrvYrYtD,",sum("+cPrvYrPLCondition+",mb.deb,0)) as prvyrpl_deb,sum("+cPrvYrPLCondition+cStandardCurrCond+",mb.cre,0)) as prvyrpl_cre",",0.00 as prvyrpl_deb,0.00 as prvyrpl_cre")+;
  	iif(lForeignCurr,;
- 	",sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.deb,0)) as PrvYr_debyF,sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.cre,0)) as PrvYr_creyF"+;
- 	",sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.deb,0)) as PrvPer_debyF,sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.cre,0)) as PrvPer_creyF" +;
- 	",sum("+cPerCondition+cNonStandardCurrCond+",mb.deb,0)) as Per_debyF,sum("+cPerCondition+cNonStandardCurrCond+",mb.cre,0)) as Per_creyF"+;
-	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.deb,0)) as PrvYrYtD_debyF,sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.cre,0)) as PrvYrYtD_creyF",",0.00 as PrvYrYtD_debyF,0.00 as PrvYrYtD_creyF");
+ 	",sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyr_debyf,sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.cre,0)) as prvyr_creyf"+;
+ 	",sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.deb,0)) as prvper_debyf,sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.cre,0)) as prvper_creyf" +;
+ 	",sum("+cPerCondition+cNonStandardCurrCond+",mb.deb,0)) as per_debyf,sum("+cPerCondition+cNonStandardCurrCond+",mb.cre,0)) as per_creyf"+;
+	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyrytd_debyf,sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.cre,0)) as PrvYrYtD_creyF",",0.00 as PrvYrYtD_debyF,0.00 as PrvYrYtD_creyF");
  	,"")+;
 	" from ("+cSelectx+") as x left join mbalance as mb ON (mb.accid=x.accid and "+cmBalCondition+") group by x.accid"
 	
 	// cSelectz: 3e level select on y and budget bu
    
    cSelectz:="select y.accid,y.balitemid,y.currency,y.department"+iif(lDetails,",y.accnumber,y.description","")+",y.category"+; 
-   ",y.svjdyr3+y.PrvYr_deby as PrvYr_deb,y.svjcyr3+y.PrvYr_crey as PrvYr_cre"+;
-   ",y.PrvYrYtD_deby+y.svjdyr2 as PrvYrYtD_deb,y.PrvYrYtD_crey+y.svjcyr2 as PrvYrYtD_cre,"+;
-	"y.PrvPer_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3+y.PrvYr_deby,0) as PrvPer_deb,"+;
-	"y.PrvPer_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3+y.PrvYr_crey,0) as PrvPer_cre,"+;
-	"y.Per_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3+y.PrvYr_deby+PrvPer_deby,0) as Per_deb,"+;
-	"y.Per_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3+y.PrvYr_crey+PrvPer_crey,0) as Per_cre,"+;
-	"y.PL_deb,y.PL_cre,y.PrvYrPL_deb,y.PrvYrPL_cre"+;    
+   ",y.svjdyr3+y.prvyr_deby as prvyr_deb,y.svjcyr3+y.prvyr_crey as prvyr_cre"+;
+   ",y.prvyrytd_deby+y.svjdyr2 as prvyrytd_deb,y.prvyrytd_crey+y.svjcyr2 as prvyrytd_cre,"+;
+	"y.prvper_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby,0) as prvper_deb,"+;
+	"y.prvper_crey+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3+y.prvyr_crey,0) as prvper_cre,"+;
+	"y.per_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3+y.prvyr_deby+prvper_deby,0) as per_deb,"+;
+	"y.per_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3+y.prvyr_crey+prvper_crey,0) as per_cre,"+;
+	"y.pl_deb,y.pl_cre,y.prvyrpl_deb,y.prvyrpl_cre"+;    
 	iif(lForeignCurr,;
-   ",y.svjdyr3F+y.PrvYr_debyF as PrvYr_debF,y.svjcyr3F+y.PrvYr_creyF as PrvYr_creF"+;
-   ",y.PrvYrYtD_debyF+y.svjdyr2F as PrvYrYtD_debF,y.PrvYrYtD_creyF+y.svjcyr2F as PrvYrYtD_creF"+;
-	",y.PrvPer_debyF+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3F+y.PrvYr_debyF,0) as PrvPer_debF"+;
-	",y.PrvPer_creyF+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3F+y.PrvYr_creyF,0) as PrvPer_creF"+;
-	",y.Per_debyF+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3F+y.PrvYr_debyF+PrvPer_debyF,0) as Per_debF"+;
-	",y.Per_creyF+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3F+y.PrvYr_creyF+PrvPer_creyF,0) as Per_creF";
+   ",y.svjdyr3f+y.prvyr_debyf as prvyr_debf,y.svjcyr3f+y.prvyr_creyf as prvyr_cref"+;
+   ",y.prvyrytd_debyf+y.svjdyr2f as prvyrytd_debf,y.prvyrytd_creyf+y.svjcyr2f as prvyrytd_cref"+;
+	",y.prvper_debyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf,0) as prvper_debf"+;
+	",y.prvper_creyf+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3f+y.prvyr_creyf,0) as prvper_cref"+;
+	",y.per_debyf+if(category='"+liability+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf+prvper_debyf,0) as per_debf"+;
+	",y.per_creyf+if(category='"+liability+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf+prvper_creyf,0) as per_cref";
 	,"")+;
-	iif(lBudget,",sum("+cPrvPerConditionBud+",bu.amount,0)) as PrvPer_bud,sum("+cPerConditionBud+",bu.amount,0)) as Per_bud,sum("+cYrConditionBud+",bu.amount,0)) as Yr_bud","")+;
+	iif(lBudget,",sum("+cPrvPerConditionBud+",bu.amount,0)) as prvper_bud,sum("+cPerConditionBud+",bu.amount,0)) as per_bud,sum("+cYrConditionBud+",bu.amount,0)) as yr_bud","")+;
 	" from ("+cSelecty+") as y "+;
 	iif(lBudget," left join budget bu ON (y.accid=bu.accid and "+cBudgetCondition+") group by y.accid","") 
 	RETURN cSelectz
@@ -531,12 +531,12 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 		// intential lock:
 		oMBal:=SQLSelect{"select mbalid from mbalance where accid="+pAccount+;
 			" and year="+Str(Year(pRecordDate),-1)+;
-			" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+sCurr+"' for update",oConn}
+			" and Month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"' for update",oConn}
 		if oMBal:RecCount>0  
 			// update existing:  
 			oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebAmnt,-1)+",2),cre=round(cre+"+Str(pCreAmnt,-1)+",2) where accid="+pAccount+;
 				" and year="+Str(Year(pRecordDate),-1)+;
-				" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+sCurr+"'",oConn}
+				" and month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"'",oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:status)
 				LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
@@ -544,7 +544,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 			endif
 		else
 			// insert new one
-			oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",Month="+Str(Month(pRecordDate),-1)+",CURRENCY='"+;
+			oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
 				sCurr+"',deb="+Str(pDebAmnt,-1)+",cre="+Str(pCreAmnt,-1),oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:status)
@@ -554,18 +554,18 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 		endif
 	ENDIF
 	IF !Empty(Currency) .and.!Currency==sCurr .and. (!Empty(pDebFORGN).or.!Empty(pCreFORGN)) .and.(!pDebFORGN==pDebAmnt.or. !pCreFORGN==pCreAmnt)
-		oAcc:=SQLSelect{"select CURRENCY,MULTCURR from account where accid="+pAccount,oConn}
+		oAcc:=SQLSelect{"select currency,multcurr from account where accid="+pAccount,oConn}
 		if oAcc:RecCount>0
 			if !(Empty(oAcc:Currency).or.oAcc:Currency==sCurr.or.oAcc:MULTCURR=1)
 				// intential lock:
 				oMBal:=SQLSelect{"select mbalid from mbalance where accid="+pAccount+;
 					" and year="+Str(Year(pRecordDate),-1)+;
-					" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+oAcc:Currency+"' for update",oConn}
+					" and month="+Str(Month(pRecordDate),-1)+" and currency='"+oAcc:Currency+"' for update",oConn}
 				if oMBal:RecCount>0
 					// update existing:  
 					oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebFORGN,-1)+",2),cre=round(cre+"+Str(pCreFORGN,-1)+",2) where accid="+pAccount+;
 					" and year="+Str(Year(pRecordDate),-1)+;
-					" and Month="+Str(Month(pRecordDate),-1)+" and CURRENCY='"+oAcc:Currency+"'",oConn}
+					" and Month="+Str(Month(pRecordDate),-1)+" and currency='"+oAcc:Currency+"'",oConn}
 					oStmnt:Execute()
 					if !Empty(oStmnt:status)
 						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
@@ -573,7 +573,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 					endif
 				else
 					// insert new one
-					oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",Month="+Str(Month(pRecordDate),-1)+",CURRENCY='"+;
+					oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
 						oAcc:Currency+"',deb="+Str(pDebFORGN,-1)+",cre="+Str(pCreFORGN,-1),oConn}
 					oStmnt:Execute()
 					if !Empty(oStmnt:status)
