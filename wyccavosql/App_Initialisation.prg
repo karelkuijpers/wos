@@ -84,7 +84,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 	oFTP := CFtp{"WycOffSy FTP Agent"}
 	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
 	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
-	oSys := SQLSelect{"select Version from Sysparms",oConn}
+	oSys := SQLSelect{"select Version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
 	endif
@@ -213,12 +213,11 @@ local i,TblCnt:=Len(aC) as int
 local cCreate as string, aFileDB as array, oDF as FileSpec, oDbsvr as DBServer
 local dbasename,keyname,sqlname,Indbestand as string 
 local lConversion,lSucc as logic
-
  
 for i:=1 to TblCnt
 	dbasename:=aC[i,1]
 	keyname:=aC[i,2]
-	sqlname:=aC[i,3] 
+	sqlname:=aC[i,3]
 	if self:ConVertOneTable(dbasename,keyname,sqlname,CurPath,aColumn)
 		lConversion:=true
 	endif
@@ -264,7 +263,8 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 	LOCAL cbError     as CODEBLOCK
 	LOCAL oStmt,oMemAssAcc 	as SQLStatement 
 	local oSel as SQLSelect
-	LOCAL cStatement,cStatementBase, cAssAcc	as STRING 
+	LOCAL cStatement,cStatementBase, cAssAcc	as STRING
+	local cTransaktnr as string, nSeqnr as int 
 	Local mEmpid, mCLN, mCLNn, mCLNORG, mLoginName,mLoginNameN,mType, mTypeN, mDepID, mDepIDn,mLastUPD, mLstReimb, mlstLogin, mFuncName as string 
 	local oAES as AES128 
 	local lConverted,lSuccess,lSkip as logic
@@ -292,8 +292,16 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 			oSel:=SQLSelect{"select * from "+sIdentChar+sqlname+sIdentChar,oConn} 
 			oSel:GoTop()
 			if IsNil(oSel:Status) .and. oSel:RecCount==0 .and. oSel:FCount>0 .and. !EOF()
-				if !Empty(keyname)
-					lSuccess:=DbSetIndex(keyname)
+				if !Empty(keyname) 
+					IF !(FileSpec{keyname+'.cdx'}):Find()
+						if keyname=="curcode"
+							oDbsvr:CreateIndex(keyname,"AED")
+							FileSpec{keyname+'.cdx'}:Find()
+							lSuccess:=DbSetIndex(keyname)
+						endif
+					else
+						lSuccess:=DbSetIndex(keyname)
+					endif 
 				endif
 				DbGotop()
 				lConverted:=true
@@ -302,7 +310,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 				endif
 				if dbasename="tr"
 					// determine system currency:
-					sCurr:=SQLSelect{"select currency from sysparms",oConn}:Currency
+					sCURR:=SQLSelect{"select currency from sysparms",oConn}:Currency
 				endif
 				self:oMain:STATUSMESSAGE((cIM:="Converting table "+dbasename+"..."))
 				oPro:=ProgressPer{,self}
@@ -427,8 +435,8 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 							elseif dbasename=="subscrpt" .and. fieldname==#bankaccnt
 								cDBValue:=ZeroTrim(cDBValue)
 							elseif dbasename="tr" .and. fieldname==#SEQNR
-								Transnr:=oDbsvr:FIELDGET(#TRANSAKTNR)
-								if Transnr# CurTransnr
+								Transnr:=AllTrim(oDbsvr:FIELDGET(#TRANSAKTNR))
+								if !Transnr==CurTransnr
 									CurTransnr:=Transnr
 									CurSeqnr:=0
 								endif
@@ -458,6 +466,12 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 									lSkip:=true
 									exit
 								endif
+							elseif dbasename="budget" .and. fieldname==#REK
+								if Empty(cDBValue) 
+									// skip this Empty line
+									lSkip:=true
+									exit
+								endif
 							endif
 							cDBValue:=StrTran(StrTran(cDBValue,"\","\\"),'"','\"')
 							cStatement+=iif(Empty(cStatement),"",",")+ iif(Empty(cDBValue).and.aNull[i]=true,"NULL",'"'+cDBValue+'"'+iif(dbasename=="member".and.fieldname==#REK,',"'+cDBValue+'"',"")) // mbrid = accid
@@ -473,6 +487,9 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 								lSkip:=true
 							endif
 						ENDIF
+						if CurTransnr=="1212179"
+							 CurTransnr:=CurTransnr
+						endif
 						cStatement:=cStatementBase+cStatement+")"
 					endif
 					if !lSkip
@@ -618,6 +635,11 @@ method init(oMainWindow) class Initialize
 	local oStmt as SQLStatement
 	local aDB:={} as array 
 	local cServer as string
+	local cWosIni as FileSpec
+	local ptrHandle as ptr
+	local cLine as string
+	local aWord:={} as array
+	local i as int 
 
 	self:oMain:=oMainWindow
 
@@ -632,10 +654,27 @@ method init(oMainWindow) class Initialize
 	dbname:=CurDir(CurDrive())
 	if RAt('\',dbname)>0
 		dbname:=SubStr(dbname,RAt('\',dbname)+1)
-	endif 
-	cServer:=GetServername(CurPath)
+	endif
+	cWosIni:=FileSpec{CurPath+"\Wos.ini"}
+	if cWosIni:Find()
+		ptrHandle:=FOpen2(cWosIni:FullPath, FO_READ)
+		IF ptrHandle != F_ERROR
+			do WHILE !FEof(ptrHandle)
+         	cLine:=FReadLine(ptrHandle)
+         	aWord:=GetTokens(AllTrim(cLine),{"="}) 
+         	i:=ascan(aWord,{|x|lower(alltrim(x[1]))=="server"})
+         	if i>0 .and.i<Len(aWord)
+         		cServer:=AllTrim(aWord[2,1])
+         		exit
+         	endif
+			ENDDO
+		ENDIF
+		FClose(ptrHandle)
+	endif
+   if Empty(cServer)
+		cServer:=GetServername(CurPath)
+   endif
 	if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW())
-		// if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+";UID=root;PWD=root")
 		ShowError(oConn:ERRINFO)
 		Break
 	endif
@@ -652,15 +691,20 @@ method init(oMainWindow) class Initialize
 	if sIdentChar = " "
 		sIdentChar := null_string
 	endif
-	if AScan(aDB,{|x|Lower(x)==Lower(dbname)})==0
+	if (i:=AScan(aDB,{|x|Lower(x)==Lower(dbname)}))==0
 		self:lNewDb:=true
 		//create database: 
-		oStmt:SQLString:='Create Database '+sIdentChar+dbname+sIdentChar
-		oStmt:Execute(true)
+		oStmt:SQLString:='Create Database '+sIdentChar+Lower(dbname)+sIdentChar
+		oStmt:Execute(true) 
+	else
+		dbname:=aDB[i]
 	endif
 	oStmt:SQLString:='Use '+sIdentChar+dbname+sIdentChar
-	oStmt:Execute(true)
-
+	oStmt:Execute(true) 
+	if !Empty(oStmt:Status)
+		ShowError(oConn:ERRINFO)
+		Break
+	endif
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
@@ -675,7 +719,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	local oStmnt as SQLStatement
 
 	LOCAL oMyFileSpec1,oMyFileSpec2,oDBFileSpec1 as FileSpec
-	LOCAL cIm as STRING
 	LOCAL oReg as CLASS_HKCU
 	LOCAL lCopy as LOGIC
 	LOCAL cWorkdir := WorkDir(),startfile as STRING
@@ -683,7 +726,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	Local CurVersion as string ,DBVers, PrgVers as float
 	Local aDir,aLocal as array
 	local oUpg as CheckUPGRADE
-	local lStop as logic
+	local lStop as logic 
+	local cStatement as string
+	local oStmnt as SQLStatement
+	local mindate as date
 	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
 	
 	// determine first login this day:
@@ -691,7 +737,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	if self:lNewDb
 		self:FirstOfDay:=true 
 	else
-		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= CurDate()",oConn}
+		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= curdate()",oConn}
 		if oSel:RecCount>0
 			self:FirstOfDay:=FALSE
 		else	
@@ -714,7 +760,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			break
 		endif
 		// Initialize db 
-		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 		self:InitializeDB()
 		
 	endif
@@ -756,9 +801,81 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			oMyFileSpec1:Copy(oMyFileSpec2)
 		ENDIF
 	ENDIF
+	oSys := SQLSelect{"select * from sysparms",oConn}
+	if oSys:RecCount>0
+		CurVersion:=oSys:Version
+		AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
+		if DBVers > PrgVers
+			(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
+				"Make sure you have the correct version of WycOffSy.exe"}):Show()
+			myApp:Quit()
+			break 
+		elseif DBVers < PrgVers 			
+			if !FirstOfDay
+				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
+					myApp:Quit() 
+					break
+				endif
+				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+			endif
+		endif
+	endif
+	SetDigit(18)
+
+	// get LOCAL List separator:
+	oReg:=Class_HKCU{}
+	Listseparator:=oReg:GetString("Control Panel\International","sList")   // delimiter for CSV
+	oReg:=null_object
+
+	mmj := CMonth(Today())
+	mdw := CDoW(Today())
+	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
+	
+	// Initialize sysparms:
+	IF oSys:RecCount=0 
+		aLocal:=self:GetLocaleInfo() 
+		(CurrencySpec{,,,aLocal[5]}):Show()
+		mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
+		oTrans := SQLSelect{"select min(dat) as mindate from transaction",oConn}
+		IF oTrans:RecCount>0
+			if !Empty(oTrans:MinDate)
+				IF (Year(oTrans:mindate)*12+Month(oTrans:mindate)-1) < mindate
+					mindate := SToD(Str(Year(oTrans:MinDate),4,0)+"0101") && This date not yet closed
+				ENDIF
+			ENDIF		
+		ENDIF
+		cStatement:="insert into sysparms set "+;
+			"assmntint='1'"+;
+			",assmntfield='4'"+;
+			",assmntoffc='5.0'"+;
+			",crlanguage='E'"+;
+			",topmargin='10'"+;
+			",leftmargin='10'"+;
+			",rightmargn='10'"+;
+			",bottommarg='10'"+;
+			",Closemonth='12'"+;
+			",decmgift='0'"+;
+			",assmntoffc='5.0'"+;
+			",withldoffl='5.0'"+;
+			",withldoffm='5.0'"+;
+			",withldoffh='5.0'"+;
+			",version='"+Version+"'"+;
+			iif(!Empty(aLocal),;
+			",entity='"+aLocal[3]+"'"+;
+			",countrycod='"+aLocal[1]+"'"+;
+			",countryown'"+aLocal[2]+"'"+;
+			",currname='"+aLocal[6]+"'","")+;
+			",currency='"+sCURR+"'"+;
+			",mindate='"+SQLdate(MinDate)+"'"+; // the previous year 
+		",yearclosed='"+Str(Year(MinDate)-1,4,0)+"'" // december last year
+		oStmnt:=SQLStatement{cStatement,oConn}
+		oStmnt:Execute()
+	ENDIF
+	cStatement:=""
 	IF FirstOfDay
 		// import PPCodes.dbf from folder with .exe to folder with database:
-		IF cWorkdir#CurPath
+		IF !cWorkdir == CurPath
 
 			oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
 			lCopy:=false
@@ -835,207 +952,102 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				endif
 			endif
 		endif
-	ENDIF 
-	oSys := SQLSelect{"select * from Sysparms",oConn}
-	if oSys:RecCount>0
-		CurVersion:=oSys:Version
-		AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
-		if DBVers > PrgVers
-			(ErrorBox{,"Version of Wycliffe Office System is older than version of the database."+CRLF+;
-				"Make sure you have the correct version of WycOffSy.exe"}):Show()
-			myApp:Quit()
-			break 
-		elseif DBVers < PrgVers 			
-			if !FirstOfDay
-				if (TextBox{,"New Version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
-					myApp:Quit() 
-					break
-				endif
-				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-			endif
-		endif
-	endif
-	SetDigit(18)
-
-	// get LOCAL List separator:
-	oReg:=Class_HKCU{}
-	Listseparator:=oReg:GetString("Control Panel\International","sList")   // delimiter for CSV
-	oReg:=null_object
-
-	mmj := CMonth(Today())
-	mdw := CDoW(Today())
-	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
-	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-	
-	// Initialiseer Sysparms:
-	oMainWindow:STATUSMESSAGE((cIm:=cIm+"."))
-	IF oSys:RecCount=0 
-		aLocal:=self:GetLocaleInfo() 
-		(CurrencySpec{,,,aLocal[5]}):Show()
-
-		oSys:Append()
-		//	oSys:Currency  := "EUR"
-		//    oSys:Currname := "EURO"
-		oSys:assmntint := 1
-		oSys:assmntfield := 4
-		oSys:assmntOffc := 5.0
-		oSys:CrLanguage := "E"
-		oSys:TopMargin := 10
-		oSys:LeftMargin := 10
-		oSys:RightMargn := 10
-		oSys:BottomMarg := 10
-		oSys:CLOSEMONTH:=12
-		oSys:DECMGIFT:=0
-		oSys:assmntOffc:=5.0
-		oSys:withldoffl:=5.0
-		oSys:withldoffM:=5.0
-		oSys:withldoffH:=5.0
-		oSys:Version:=Version
-		if	!Empty(aLocal)
-			//	COUNTRYCOD,	CountryName,PPCode,PPNAME,	CurrencyCode,cCurrSym
-			oSys:ENTITY:=aLocal[3]
-			oSys:COUNTRYCOD:=aLocal[1]
-			oSys:CountryOwn:=aLocal[2]
-			oSys:CURRNAME:=aLocal[6]
-		endif
-		oSys:Currency:=sCURR
-		oSys:MinDate:=SToD(Str(Year(Today())-1,4,0)+"0101") // the previous year 
-		oSys:yearclosed:=Year(Today())*12 // december last year
-		oTrans := SQLSelect{"select min(dat) as mindate from Transaction",oConn}
-		IF oTrans:RecCount>0
-			if !Empty(oTrans:MinDate)
-				IF (Year(oTrans:MinDate)*12+Month(oTrans:MinDate)-1) < oSys:MinDate
-					oSys:MinDate := SToD(Str(Year(oTrans:MinDate),4,0)+"0101") && This date not yet closed
-				ENDIF
-			ENDIF		
-		ENDIF
-		oSys:yearclosed:=Year(oSys:MinDate) -1
-		oSys:Commit()
-	ENDIF
-	IF FirstOfDay
-		IF Empty(oSys:PSWRDLEN) .or. oSys:PSWRDLEN<8
-			oSys:PSWALNUM:=true
-			oSys:PSWRDLEN:=8 
-		ENDIF
-		IF Empty(oSys:PSWDURA) .or.oSys:PSWDURA>365
-			oSys:PSWDURA:=365
-		ENDIF
-		IF Empty(oSys:assmntint)
-			oSys:assmntint:=1
-		ENDIF
-		IF Empty(oSys:ADMINTYPE)
-			oSys:ADMINTYPE:="WO"
-			ADMIN:="WO"
-		endif
-		oSys:Commit()
-		SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()				
-	ENDIF
-
-	sCURR:=oSys:Currency
-	if !SQLSelect{"select count(*) as total from department",oConn}:total=="0"
-		Departments:=true
-	endif
-
-	oMainWindow:STATUSMESSAGE((cIm:="Initializing, moment please..."))
-
-	IF self:lNewDb
-		// Initialise Persontypes: 
-		oStmnt:=SQLStatement{"insert into persontype (id,ABBRVTN,DESCRPTN) values (?,?,?)",oConn}  // hard to one for default VALUE
-		oStmnt:Execute(1,'IND','Individual')
-		oStmnt:=SQLStatement{"insert into persontype (ABBRVTN,DESCRPTN) values (?,?)",oConn}  
-		oStmnt:Execute("MBR","Member")
-		oStmnt:Execute("ENT","Wycliffe Entity")
-		oStmnt:Execute("GOV","Governement")
-		oStmnt:Execute("COM","Companies")
-		oStmnt:Execute("DIR","Direct Income")
-		oStmnt:Execute("CHU","Sending Church")
-		oStmnt:Execute("OTH","Other Organization")
-		oStmnt:Execute("CRE","Creditor")
-		// Initialise titles:
-		oStmnt:=SQLStatement{"insert into titles (id,DESCRPTN) values (1,'')",oConn}  // hard to one for default VALUE
-	endif
-
-
-	cIm:="Initializing, moment please..."
-	oMainWindow:STATUSMESSAGE(cIm)
-
-	oMainWindow:STATUSMESSAGE((cIm:=cIm+"."))
-	IF FirstOfDay
-		IF .not.Empty(oSys:HB) 
-			oTrans := SQLSelect{"select max(dat) as datmax from Transaction where accid="+Str(oSys:HB,-1)+" and bfm='H'",oConn}
-			IF !Empty(oTrans:DATmax)
-				NwHb:= Year(oTrans:DATmax)*100+Month(oTrans:DATmax)
-				IF NwHb > oSys:LstReportMonth
-					* to far in the past: replace:
-					oSys:LstReportMonth := NwHb
-				ELSEIF NwHb < oSys:LstReportMonth
-					IF oSys:LstReportMonth > Year(Today())*100+Month(Today())
-						* in future: replace:
-						oSys:LstReportMonth := NwHb
-					endif
-				endif
-			endif
-		endif
-		* Bepaal maand afsluiting HB:
-		IF Empty(oSys:CLOSEMONTH)
-			oSys:CLOSEMONTH:=12
-		endif
-
-		IF Empty(oSys:MinDate)
-			&&defaultwaarde zetten:
-			oSys:Mindate:=SToD(Str(Year(Today())-1,4,0)+"0101") // the previous year
-		ENDIF
-		IF Empty(oSys:yearclosed)
-			oSys:yearclosed:=Year(oSys:MinDate)
-		endif
-		if Empty(oSys:LstReportMonth)
-			oSys:LstReportMonth:=Year(Today()-70)*12+Month(Today()-70)
-		endif
-		IF Empty(oSys:COUNTRYCOD)
-			oReg:=Class_HKCU{}
-			oSys:COUNTRYCOD:=oReg:GetString("Control Panel\International","iCountry")   // telephone area
-			oReg:=null_object
-		endif
 		if self:lNewDb 
-			// Initialieer Mailingcodes:
-			oStmnt:=SQLStatement{"insert into perscod (PERS_CODE,ABBRVTN,description) values (?,?,?)",oConn}
+			// Initialize Mailingcodes:
+			oStmnt:=SQLStatement{"insert into perscod (pers_code,abbrvtn,description) values (?,?,?)",oConn}
 			oStmnt:Execute("  ","  ","  ")
 			oStmnt:Execute("FI","FI","Financial Giver")
 			oStmnt:Execute("EG","FG","First gift received")
 			oStmnt:Execute("MW","MB","Member")
+			// Initialize Person types: 
+			oStmnt:=SQLStatement{"insert into persontype (id,abbrvtn,descrptn) values (?,?,?)",oConn}  // hard to one for default VALUE
+			oStmnt:Execute(1,'IND','Individual')
+			oStmnt:=SQLStatement{"insert into persontype (abbrvtn,descrptn) values (?,?)",oConn}  
+			oStmnt:Execute("MBR","Member")
+			oStmnt:Execute("ENT","Wycliffe Entity")
+			oStmnt:Execute("GOV","Governement")
+			oStmnt:Execute("COM","Companies")
+			oStmnt:Execute("DIR","Direct Income")
+			oStmnt:Execute("CHU","Sending Church")
+			oStmnt:Execute("OTH","Other Organization")
+			oStmnt:Execute("CRE","Creditor")
+			// Initialize titles:
+			oStmnt:=SQLStatement{"insert into titles (id,descrptn) values (1,'')",oConn}  // hard to one for default VALUE
 		endif
+		* remove remaining help-files:
+		AEval(Directory(HelpDir+"\HU*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		AEval(Directory(HelpDir+"\HU*.cdx"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		AEval(Directory(HelpDir+"\HP*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		AEval(Directory(HelpDir+"\OR*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		AEval(Directory(HelpDir+"\IN*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		IF .not.Empty(oSys:HB) 
+			oTrans := SQLSelect{"select max(dat) as datmax from transaction where accid="+Str(oSys:HB,-1)+" and bfm='H'",oConn}
+			IF oTrans:RecCount>0 .and. !Empty(oTrans:DATmax)
+				NwHb:= Year(oTrans:DATmax)*100+Month(oTrans:DATmax)
+				IF NwHb > oSys:LstReportMonth 
+					* to far in the past: replace:
+					cStatement+=",lstreportmonth="+Str(NwHb,-1)
+				ELSEIF NwHb < oSys:LstReportMonth
+					IF oSys:LstReportMonth > Year(Today())*100+Month(Today())
+						* in future: replace:
+						cStatement+=",lstreportmonth="+Str(NwHb,-1)
+					endif
+				endif
+			endif
+		endif
+	endif
+	IF Empty(oSys:PSWRDLEN) .or. oSys:PSWRDLEN<8 
+		cStatement+=",pswalnum=1,pswrdlen=8"
+	ENDIF
+	IF Empty(oSys:PSWDURA) .or.oSys:PSWDURA>365
+		cStatement+=",pswdura=365"
+	ENDIF
+	IF Empty(oSys:assmntint)
+		cStatement+=",assmntint=1"
+	ENDIF
+	IF Empty(oSys:ADMINTYPE)
+		cStatement+=",ADMINTYPE='WO'"
+		ADMIN:="WO"
+	endif
+	* Bepaal maand afsluiting HB:
+	IF Empty(oSys:CLOSEMONTH)
+		cStatement+=",closemonth=12"
+	endif
+
+	IF Empty(oSys:MinDate)
+		&&defaultwaarde zetten:
+		cStatement+=",mindate='"+SQLdate(SToD(Str(Year(Today())-1,4,0)+"0101"))+"'" // the previous year
+	ENDIF
+	IF Empty(oSys:yearclosed)
+		cStatement+=",yearclosed="+Str(Year(oSys:MinDate),-1)
+	endif
+	if Empty(oSys:LstReportMonth)
+		cStatement+=",lstreportmonth="+Str(Year(Today()-70)*12+Month(Today()-70),-1)
+	endif
+	IF Empty(oSys:COUNTRYCOD)
+		oReg:=Class_HKCU{}
+		cStatement+=",countrycod='"+oReg:GetString("Control Panel\International","iCountry")+"'"   // telephone area
+		oReg:=null_object
+	endif
+	IF Empty(oSys:SYSNAME)
+		cStatement+=",sysname='"+oMainWindow:Caption+"'"
+	endif
+	if !oSys:Version==Version
+		cStatement+=",version='"+Version+"'"
+	endif
+	if !Empty(cStatement)
+		oStmnt:=SQLStatement{"update sysparms set "+SubStr(cStatement,2),oConn} 
+		oStmnt:Execute()
 	endif
 
 
-	oMainWindow:STATUSMESSAGE((cIm:=cIm+"."))
-	oSys:Commit()
-
 	InitGlobals() 
-	oSel:=SQLSelect{"select accid from account where GIFTALWD=1 limit 2",oConn} 
+	oSel:=SQLSelect{"select accid from account where giftalwd=1 limit 2",oConn} 
 	if oSel:RecCount=2
 		MultiDest:=true
 	else
 		MultiDest:=FALSE
 	endif	
-
-	IF FirstOfDay
-		oSysKey:=SQLSelect{"select * from SysKey where SYSKEY_ID='TRANS'",oConn}
-		IF oSysKey:RecCount=0
-			oSysKey:Append()
-			oSysKey:SYSKEY_ID := "TRANS"
-			oSysKey:VALUE:="0000001"
-		endif
-		oTrans:=SQLSelect{"select max(TransId) as maxtrans from transaction ",oConn}
-		IF oTrans:RecCount>0.and. !IsNil(oTrans:maxtrans).and.oTrans:maxtrans>0
-			nLastTrans := oTrans:maxtrans+1
-			IF Val(oSysKey:VALUE)<nLastTrans.or.Val(oSysKey:VALUE)>nLastTrans+1001
-				oSysKey:VALUE := Str(nLastTrans,10,-1) 
-				oSysKey:Commit()
-			endif
-		endif
-		SetDeleted(true)
-	endif
 
 	// 	Set up registry settings
 	InitRegistry()
@@ -1044,23 +1056,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	* Set default orientation to portrait:
 	WycIniFS:WriteInt( "Runtime", "PrintOrientation",DMORIENT_PORTRAIT)
 
-	oSys:Version := Version
-	oMainWindow:STATUSMESSAGE(Space(80))
 	oMainWindow:Pointer := Pointer{POINTERARROW}
-	oMainWindow:SetCaption(oSys:SYSNAME)
-	IF Empty(oSys:SYSNAME)
-		oSys:SYSNAME:=oMainWindow:Caption
-	endif
-	IF FirstOfDay
-		* remove remaining help-files:
-		AEval(Directory(HelpDir+"\HU*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-		AEval(Directory(HelpDir+"\HU*.cdx"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-		AEval(Directory(HelpDir+"\HP*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-		AEval(Directory(HelpDir+"\OR*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-		AEval(Directory(HelpDir+"\IN*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-	endif
-	oSys:Commit()
-	CollectForced()
 
 
 	return 
