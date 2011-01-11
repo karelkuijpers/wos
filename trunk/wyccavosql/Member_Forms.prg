@@ -377,34 +377,6 @@ local cStatement as string
 local oStmnt as SQLStatement 
 local nSeq as int
 IF SELF:ValidateDistribution()
-/*	IF self:lNew
-		// determine last seqnbr
-		//SELF:oCaller:SuspendUpdate() 
-		oLast:=SQLSelect{"select max(seqnbr) as maxseq from DistributionInstruction where mbrid="+self:mMbrId,oConn}
-		IF Empty(oLast:maxseq)
-			self:mSeq:="1"
-		ELSE
-			self:mSeq:=Str(oLast:maxseq+1,-1)
-		ENDIF
-		//oDis:SuspendNotification()
-	ENDIF 
-	cStatement:=iif(self:lNew, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +self:mSeq+"',",;
-	"update distributioninstruction set ")+;
-	"DESCRPTN='"+AllTrim(self:mDescription)+"'"+;
-	",DestPP='"+ AllTrim(self:mDestPP)+"'"+;                      
-	iif(mDestPP="ACH",",DESTACC='',DFIR='"+mDFIR+"',DFIA='"+mDFIA+"',CHECKSAVE='"+mCHECKSAVE+"'",;
-	",DFIR='',DFIA='',CHECKSAVE='',DestACC='"+ iif(Empty(self:mDestPP),"",AllTrim(self:mDestAcc))+"'")+;
-	",DestAmt  ="+ iif(Empty(self:mDestPP),"0",Str(self:mDestAmt,-1))+;
-	",DestTyp  ="+ iif(Empty(self:mDestPP),0,Str(oDCmDestTyp:CurrentItemNo-1,-1))+;
-	",CURRENCY="+iif(self:CurrencyGroup=="dollar","1","0")+;
-	",DISABLED="+iif(!self:CheckBoxActive,"1","0")+; 
-	",SINGLEUSE="+iif(self:ChecBoxSingelUse,"1","0")+;
-	iif(self:lNew,""," where mbrid="+self:mMbrId+" and seqnbr="+self:mSeq) 
-	oStmnt:=SQLStatement{cStatement,oConn}
-	oStmnt:Execute()
-	if IsNil(oStmnt:Status)
-// 		self:oCaller:FillDistribution()
-	endif   */
 	if self:lNew
 		ASize(aDis,15)
 		aDis[mbrid]:=Val(self:mMbrId)
@@ -600,7 +572,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditDistribution
 		self:nPos:=AScan(aDistrb,{|x|x[SEQNBR]==nSeq})
 		ASize(self:aDis,15) 
 		ACopy(self:oCaller:aDistr[self:nPos],self:aDis)
-		self:oDis:=SQLSelect{"select * from DistributionInstruction where mbrid ="+self:mMbrId+" and seqnbr="+self:mSeq ,oConn} 
+		self:oDis:=SQLSelect{"select * from distributioninstruction where mbrid ="+self:mMbrId+" and seqnbr="+self:mSeq ,oConn} 
 
 	endif
 	return NIL
@@ -643,7 +615,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 			self:oDCmDestAcc:SetFocus() 
 		else
 			// check if bank number can be found in person data:
-		  	oPersBank:=SQLSelect{"select banknumber form PersonBank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
+		  	oPersBank:=SQLSelect{"select banknumber form personbank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
 			if !oPersBank:RecCount=0
 				cError:="Bankaccount "+AllTrim(mDestAcc)+" not found in Person data!"
 				lValid:=False
@@ -1359,7 +1331,7 @@ METHOD NewButton( ) CLASS EditMember
 METHOD OffRates() CLASS EditMember
 	LOCAL aRate AS ARRAY
 	LOCAL oSys as SQLSelect
-	oSys:=SQLSelect{"select withldoffl,assmntOffc,withldoffM,withldoffH from Sysparms",oConn} 
+	oSys:=SQLSelect{"select withldoffl,assmntOffc,withldoffM,withldoffH from sysparms",oConn} 
 	if oSys:RecCount=1
 		aRate:={{"low ("+Str(oSys:withldoffl,-1,0)+"%)","L"},{"standard ("+Str(oSys:assmntOffc,-1,2)+"%)",""},{"middle ("+Str(oSys:withldoffM,-1,2)+"%)","M"},{"high ("+Str(oSys:withldoffH,-1,2)+"%)","H"}}
 	endif
@@ -1394,17 +1366,17 @@ METHOD OkButton CLASS EditMember
 			AAdd(aAss,oLVI:GetValue(#Number))
 		NEXT x
 		cStatement:=iif(self:lNewMember,"insert into member ","update member ")+"set accid="+self:mREK+",persid="+self:mCLN+;
-		",AOW="+Str(self:mAOW,-1)+;                                                                 
-		",ZKV="+Str(self:mZKV,-1)+;
-		",HAS="+iif(self:mGrade='Entity','0',iif(self:mPPCode=Sentity,iif(self:mHAS,'1','0'),'0')) +;
-		",CONTACT='"+self:mCLNContact+"'"+;
-		",RPTDEST='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest).or.Empty(self:mCLNContact),"0",self:StatemntsDest)+"'"+;
-		",GRADE='"+if(mGrade='Entity','',self:mGrade)+"'" +;
-		",CO='"+iif(self:mGrade='Entity',if(self:mGrade=='Entity','S','6'),'M')+"'"+;
-		",HomePP='"+self:mPPCode+"'"+;
-		",OFFCRATE='"+iif(self:mGRADE='Entity',self:withldoffrate,"")+"'"+;
+		",aow="+Str(self:mAOW,-1)+;                                                                 
+		",zkv="+Str(self:mZKV,-1)+;
+		",has="+iif(self:mGrade='Entity','0',iif(self:mPPCode=Sentity,iif(self:mHAS,'1','0'),'0')) +;
+		",contact='"+self:mCLNContact+"'"+;
+		",rptdest='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest).or.Empty(self:mCLNContact),"0",self:StatemntsDest)+"'"+;
+		",grade='"+if(mGrade='Entity','',self:mGrade)+"'" +;
+		",co='"+iif(self:mGrade='Entity',if(self:mGrade=='Entity','S','6'),'M')+"'"+;
+		",homepp='"+self:mPPCode+"'"+;
+		",offcrate='"+iif(self:mGrade='Entity',self:withldoffrate,"")+"'"+;
 		",householdid ='"+iif(self:mGrade='Entity'," ",AllTrim(self:mHBN))+"'"+;
-		",HOMEACC='"+iif(self:mPPCode=Sentity,"",self:mHomeAcc)+"'"+;
+		",homeacc='"+iif(self:mPPCode=Sentity,"",self:mHomeAcc)+"'"+;
 		iif(self:lNewMember,""," where mbrid="+self:mMbrId)
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
@@ -1431,7 +1403,7 @@ METHOD OkButton CLASS EditMember
 			IF !mRekPrv == self:mREK
 				* New Account?
 				* Disconnect old account from member:
-				oStmnt:SQLString:="update account set GIFTALWD=0,description=concat('Disconnected:',description) where accid="+mRekPrv
+				oStmnt:SQLString:="update account set giftalwd=0,description=concat('Disconnected:',description) where accid="+mRekPrv
 				oStmnt:Execute()
 			ENDIF
 		ENDIF
@@ -1449,7 +1421,7 @@ METHOD OkButton CLASS EditMember
 			* New Account or new description?
 			* Connect new Account:
 // 			oStmnt:SQLString:="update account set persid="+self:mCLN+",GIFTALWD=1,description='"+cMemberName+"' where accid="+self:mREK
-			oStmnt:SQLString:="update account set GIFTALWD=1,description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
+			oStmnt:SQLString:="update account set giftalwd=1,description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
 			oStmnt:Execute()
 		ELSEIF !AllTrim(self:cAccountName)==AllTrim(self:cMemberName)
 			* Name changed of member:
@@ -1481,15 +1453,15 @@ METHOD OkButton CLASS EditMember
 		for i:=1 to Len(self:aDistr)
 			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"',",;
 			"update distributioninstruction set ")+;
-			"DESCRPTN='"+self:aDistr[i,DESCRPTN]+"'"+;
-			",DestPP='"+ self:aDistr[i,DESTPP]+"'"+;                      
-			",DFIR='"+self:aDistr[i,DFIR]+"',DFIA='"+self:aDistr[i,DFIA]+"',CHECKSAVE='"+self:aDistr[i,CHECKSAVE]+"'"+;
-			",DestACC='"+ self:aDistr[i,DESTACC]+"'"+;
-			",DestAmt  ="+ Str(self:aDistr[i,DESTAMT],-1) +;
-			",DestTyp  ="+ str(self:aDistr[i,Desttyp],-1)+;
-			",CURRENCY="+Str(self:aDistr[i,CURRENCY],-1)+;
-			",DISABLED="+Str(self:aDistr[i,DISABLED],-1)+; 
-			",SINGLEUSE="+Str(self:aDistr[i,SINGLEUSE],-1) +;
+			"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
+			",destpp='"+ self:aDistr[i,DESTPP]+"'"+;                      
+			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;
+			",destacc='"+ self:aDistr[i,DESTACC]+"'"+;
+			",destamt  ="+ Str(self:aDistr[i,DESTAMT],-1) +;
+			",desttyp  ="+ str(self:aDistr[i,Desttyp],-1)+;
+			",currency="+Str(self:aDistr[i,CURRENCY],-1)+;
+			",disabled="+Str(self:aDistr[i,DISABLED],-1)+; 
+			",singleuse="+Str(self:aDistr[i,SINGLEUSE],-1) +;
 			iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
@@ -1594,7 +1566,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		self:oDCwithldofftxt:Hide()
 	ELSE 
 		self:oMbr:=SQLSelect{"select m.*,a.description,a.balitemid,a.department,p.mailingcodes,"+SQLFullName(0,"p")+" as membername, ";
-		+SQLFullName(0,"c")+" as contactname,b.category as type, group_concat(cast(am.accid as char),']',am.ACCNUMBER,']',am.description separator '|') as assoctd "+;
+		+SQLFullName(0,"c")+" as contactname,b.category as type, group_concat(cast(am.accid as char),']',am.accnumber,']',am.description separator '|') as assoctd "+;
 		" from account a,balanceitem as b, person p,member m "+;
 			"left join person as c on (c.persid=m.contact) "+; 
 			"left join memberassacc ass on (m.mbrid=ass.mbrid) left join account am on (am.accid=ass.accid) " +;
@@ -1650,7 +1622,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		ENDIF
 		self:withldoffrate:=oMbr:OFFCRATE
 		// fill array with distribution instruction:
-		oDis:=SQLSelect{"select * from DistributionInstruction where mbrid ="+self:mMbrId+" order by SEQNBR" ,oConn} 
+		oDis:=SQLSelect{"select * from distributioninstruction where mbrid ="+self:mMbrId+" order by seqnbr" ,oConn} 
 		if oDis:RecCount>0
 			DO WHILE !oDis:EoF 
           	AAdd(self:aDistr,{+;
@@ -1673,7 +1645,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			ENDDO
 			self:aDistrOrg:=AClone(self:aDistr)
 		endif
-  		oLast:=SQLSelect{"select max(seqnbr) as maxseq from DistributionInstruction where mbrid="+self:mMbrId,oConn}
+  		oLast:=SQLSelect{"select max(seqnbr) as maxseq from distributioninstruction where mbrid="+self:mMbrId,oConn}
 		IF Empty(oLast:maxseq)
 			self:maxseq:=1
 		ELSE
@@ -2132,7 +2104,7 @@ METHOD Init() CLASS Employee_Grade
 
 function FillPP() as array
 	local oPP as SQLSelect
-oPP:=SQLSelect{"select ppname,ppcode from PPCodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
+oPP:=SQLSelect{"select ppname,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
 // oPP:SetFilter({||!oPP:PPCODE=="AAA".and. !oPP:PPCODE=="ACH" .and.!Empty(oPP:PPCODE)})
 // oPP:GoTop()
 return oPP:GetLookupTable(500,#PPNAME,#PPCODE)
@@ -2866,10 +2838,10 @@ METHOD Processaffiliated_person_account_list(cDownload as string) as logic CLASS
 						oStmnt:=SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW','') where persid="+mPersId,oConn}
 						oStmnt:Execute()
 						// delete corresponding Distribution Instructions: 
-						oStmnt:=SQLStatement{"delete from DistributionInstruction where mbrid="+mMbrId,oConn}
+						oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid="+mMbrId,oConn}
 						oStmnt:Execute()
 						* Disconnect corresponding account: 
-						oStmnt:=SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),GIFTALWD=0 where accid="+mAccId,oConn}
+						oStmnt:=SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),giftalwd=0 where accid="+mAccId,oConn}
 						oStmnt:Execute()
 					endif
 				ELSE
@@ -2883,7 +2855,7 @@ METHOD Processaffiliated_person_account_list(cDownload as string) as logic CLASS
 		cBuffer:=MLine4(cDownload,@ptrN)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
-	SQLStatement{"update sysparms set DATLSTAFL=CurDate()",oConn}:Execute()
+	SQLStatement{"update sysparms set datlstafl=CurDate()",oConn}:Execute()
 	if nRemoved>0 .or.nUpd>0
 		cReport:=Str(nUpd,-1)+" updated household codes; "+Str(nRemoved,-1)+" members removed:"+CRLF+ cReport
 		(TextBox{,"Importing Account Change Report",cReport}):show()
