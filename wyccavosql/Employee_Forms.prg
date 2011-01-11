@@ -591,7 +591,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		SELF:SelectSubset()
 	ELSE
 		cEmpStmnt:='select e.empid,'+Crypt_Emp(false,"e.persid");
-		+' as mcln,'+SQLFullName()+' as mEMPLNAME,';
+		+' as mcln,'+SQLFullName()+' as memplname,';
 		+Crypt_Emp(false,"e.loginname")+" as loginname,online,lstlogin,";
 		+Crypt_Emp(false,"e.type") +" as type, e.password,"+Crypt_Emp(false,"e.depid")+" as depid";
 		+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+ " and empid="+self:mEmpId + " order by lastname"
@@ -628,7 +628,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 					ENDIF
 				NEXT
 				if !Empty(mDEPID)
-					oSel:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN from department where depid='"+mDEPID+"'",oConn} 
+					oSel:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+mDEPID+"'",oConn} 
 					if oSel:RecCount=1
 						self:oDCmDepartment:TextValue:= oSel:DEPTMNTNBR+": "+ oSel:DESCRIPTN
 					endif
@@ -654,7 +654,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 	self:oDCAlwdAcc:AddColumn(oColREk)
 	self:oDCAlwdAcc:AddColumn(oColName) 
 	if !lNew .and.!Empty(mDEPID) 
-		oSel:=SQLSelect{"select a.accid,a.AccNumber,a.description from account a, emplacc as e where a.accid=e.accid and e.empid="+Str(oEmp:EMPID,-1),oConn}
+		oSel:=SQLSelect{"select a.accid,a.accnumber,a.description from account a, emplacc as e where a.accid=e.accid and e.empid="+Str(oEmp:EMPID,-1),oConn}
 		oSel:Execute()
 		oSel:GoTop()
 		do while !oSel:Eof
@@ -1607,7 +1607,7 @@ METHOD OKButton( ) CLASS FirstUser
 		mCLN:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
 	ENDIF
 	MyName:= AllTrim(self:mVRN)+' '+if(Empty(self:mHISN),"",AllTrim(self:mHISN)+" ")+AllTrim(self:mNA1)
-	oStmnt:=SQLStatement{"insert into Employee set empid=1000, persid="+Crypt_Emp(true,"persid",mCLN,1000),oConn} 
+	oStmnt:=SQLStatement{"insert into employee set empid=1000, persid="+Crypt_Emp(true,"persid",mCLN,1000),oConn} 
 
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status)
@@ -1617,7 +1617,7 @@ METHOD OKButton( ) CLASS FirstUser
 	MYEMPID:='1000'
 	oStmnt:Commit()
 	cUpdate:="update employee set loginName="+Crypt_Emp(true,"loginname",Lower(AllTrim(self:mLOGON_NAME))) ;
-		+", LSTUPDPW=NOW(), Password='"+HashPassword(1000,self:oDCmPASSWORD:TextValue)+"', type="+Crypt_Emp(true,"type","A")+", DEPID="+Crypt_Emp(true,"depid","")
+		+", lstupdpw=NOW(), password='"+HashPassword(1000,self:oDCmPassword:TextValue)+"', type="+Crypt_Emp(true,"type","A")+", depid="+Crypt_Emp(true,"depid","")
 	oStmnt:SQLString:=cUpdate
 	oStmnt:Execute()
 	oStmnt:Commit()
@@ -1625,7 +1625,7 @@ METHOD OKButton( ) CLASS FirstUser
 	MYEMPID := "1000"
 	UserType:="A"
 	* Add balance items:  Income and expense, Balance: Assets&Liabilities, 
-	oStmnt:=SQLStatement{"insert into balanceitem (number,Heading,Footer,category,balitemidparent) values (?,?,?,?,?)",oConn}
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values (?,?,?,?,?)",oConn}
 	oStmnt:Execute('400','Income and Expense','Surplus/Deficit',Income,'0')
 	mNum:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 	oStmnt:Execute('4000','Income','Income',Income,mNum)
@@ -1646,16 +1646,16 @@ METHOD OKButton( ) CLASS FirstUser
 			",prefix='"+AllTrim(self:mHISNmbr)+"'"+;
 			",firstname='"+AllTrim(self:mVRNmbr) +"'"+;
 			",mailingcodes='MW '"+;
-			",TYPE=2"+;
-			",OPC='"+AllTrim(self:mLOGON_NAME) +"'"+;
+			",type=2"+;
+			",opc='"+AllTrim(self:mLOGON_NAME) +"'"+;
 			",alterdate='"+SQLdate(Today()) +"'",oConn}
 		oStmnt:Execute()
 		mCln:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
 		oStmnt:=SQLStatement{"insert into account set "+;
 			"description='"+GetFullName(mCLN) +"'"+;
 			",balitemid ='"+ mNumLiability+"'"+;
-			",ACCNUMBER='77001'"+;
-			",GIFTALWD='1'",oConn}
+			",accnumber='77001'"+;
+			",giftalwd='1'",oConn}
 		oStmnt:Execute()
 		mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)			
 		// 		SQLStatement{"update person set accid='"+mRek+"' where persid="+mCln,oConn}:Execute() 
@@ -1663,7 +1663,7 @@ METHOD OKButton( ) CLASS FirstUser
 		oStmnt:=SQLStatement{"insert into member set "+;
 			"accid ='"+ mRek +"'"+;
 			",persid ='"+ mCLN+"'"+;
-			",CO='M',Grade='SM',HomePP='"+sEntity+"'",oConn}
+			",co='M',grade='SM',homepp='"+sEntity+"'",oConn}
 		oStmnt:Execute()
 		* Generate email for member:
 		ptrHandle := FCreate("GiftReport.eMl")
@@ -1676,8 +1676,8 @@ METHOD OKButton( ) CLASS FirstUser
 	IF self:mAdminType=="HO" .or.  self:mAdminType=="GI" .or.  self:mAdminType=="WO"
 		oStmnt:=SQLStatement{"insert into account set "+;
 			"description='"+"Bank: "+self:mBANKNUMMER+"'"+;
-			",ACCNUMBER='60001'"+;
-			",Currency='"+sCurr+"'"+;
+			",accnumber='60001'"+;
+			",currency='"+sCurr+"'"+;
 			",balitemid ='"+ mNumAsset +"'",oConn}
 		oStmnt:Execute()
 		mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
@@ -1697,7 +1697,7 @@ METHOD OKButton( ) CLASS FirstUser
 		",persid='"+mCLN+"'"+;
 		",Currency='"+sCurr+"'"+;
 		",balitemid ='"+ mNumLiability+"'"+;
-		",ACCNUMBER='15000'",oConn}
+		",accnumber='15000'",oConn}
 	oStmnt:Execute()
 	mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
 	oStmnt:=SQLStatement{"update sysparms set capital='"+mRek+"',admintype='"+self:mAdminType+"'",oConn}
@@ -1845,12 +1845,12 @@ METHOD OkButton() CLASS LogonDialog
 		self:logonOk := false
 		wLogonCount:=5
 	ELSE
-	   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mDepId,"+;
-	   Crypt_Emp(false,"loginname")+" as loginname,LSTUPDPW,Password from employee where ";
+	   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mdepid,"+;
+	   Crypt_Emp(false,"loginname")+" as loginname,lstupdpw,password from employee where ";
 		+ Crypt_Emp(false,"loginname")+'="'+cUser+'"'
 
 		oEmp := SQLSelect{cEmpStmnt,oConn}
-		oSys:=SQLSelect{"select PSWDURA,SYSNAME from sysparms",oConn}
+		oSys:=SQLSelect{"select pswdura,sysname from sysparms",oConn}
 		oSys:Execute()
 		IF oEmp:Reccount==1
 			self:logonOk := ( HashPassword(oEmp:EMPID,AllTrim(oDCPassword:Textvalue)) == oEmp:Password)
@@ -2029,12 +2029,12 @@ IF !Empty( self:oDCNewPasswordSLE:TextValue )
       if !CheckPassword(self:oDCNewPasswordSLE:TextValue,Val(MYEMPID))
         	return false
       endif
-		oEmp:=SQLSelect{"select Password,PSWPRV1,PSWPRV2 from employee where empid="+MYEMPID,oConn} 
+		oEmp:=SQLSelect{"select password,pswprv1,pswprv2 from employee where empid="+MYEMPID,oConn} 
 		if IsNil(oEmp:Status)
 			* shift passwords:
-			oStmnt:= SQLStatement{"update employee set PSWPRV3='"+iif(IsNil(oEmp:PSWPRV2),"",oEmp:PSWPRV2)+;
-			"',PSWPRV2='"+iif(IsNil(oEmp:PSWPRV1),"",oEmp:PSWPRV1)+"',PSWPRV1='"+oEmp:Password+;
-			"',Password = '"+HashPassword(Val(MYEMPID),self:oDCNewPasswordSLE:TextValue)+"',LSTUPDPW=NOW()",oConn}  
+			oStmnt:= SQLStatement{"update employee set pswprv3='"+iif(IsNil(oEmp:PSWPRV2),"",oEmp:PSWPRV2)+;
+			"',pswprv2='"+iif(IsNil(oEmp:PSWPRV1),"",oEmp:PSWPRV1)+"',pswprv1='"+oEmp:Password+;
+			"',password = '"+HashPassword(Val(MYEMPID),self:oDCNewPasswordSLE:TextValue)+"',lstupdpw=NOW()",oConn}  
 			oStmnt:Execute()
 			oStmnt:Commit()
 			self:ChangePsw:=true
