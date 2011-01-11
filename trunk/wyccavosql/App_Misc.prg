@@ -41,7 +41,7 @@ DO WHILE true
 	oFileDialog := SaveAsDialog{ oWindow, cFileName  }
 	oFileDialog:SetStyle(OFN_HIDEREADONLY+OFN_LONGNAMES+OFN_EXPLORER)
 	oFileDialog:SetFilter(aFilter, aFilterDesc,1)
-	cDefFolder:=SQLSelect{"select docpath from Sysparms",oConn}:DOCPATH
+	cDefFolder:=SQLSelect{"select docpath from sysparms",oConn}:DOCPATH
    if Empty(cDefFolder)
      	cDefFolder:=CurPath
    endif
@@ -59,7 +59,7 @@ DO WHILE true
 		if !cDefFolder==ToFileFS:Drive+ ToFileFS:Path
 			if ToFileFS:Drive == SubStr(WorkDir(),1,2) .or.ToFileFS:Drive == CurDrive()+":"
 				// save current location: 
-				SQLStatement{"update Sysparms set DOCPATH='"+ ToFileFS:Drive+ ToFileFS:Path +"'",oConn}:execute()
+				SQLStatement{"update sysparms set docpath='"+ ToFileFS:Drive+ ToFileFS:Path +"'",oConn}:execute()
 			endif
 		endif
 	
@@ -948,7 +948,7 @@ FUNCTION FillPersCode ()
 LOCAL oMailCd as SQLSelect
 pers_codes:={}
 mail_abrv:={}
-oMailCd := SQLSelect{"select * from PersCod",oConn}
+oMailCd := SQLSelect{"select * from perscod",oConn}
 pers_codes:=oMailCd:GetLookupTable(500,#description,#PERS_CODE)
 oMailCd:GoTop()
 mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE)
@@ -976,12 +976,12 @@ FUNCTION FillPersProp ()
 
 FUNCTION FillPersTitle ()
 	* Fill global Array pers_titles with description + id of Titles
-	pers_titles:= SQLSelect{"select DESCRPTN,id from Titles",oConn}:getLookupTable(100)
+	pers_titles:= SQLSelect{"select descrptn,id from titles",oConn}:GetLookupTable(100)
 	RETURN 
 FUNCTION FillPersType ()
 * Fill global Array with description + id  and abbriviation, id
 LOCAL oPersTp as SQLSelect
-oPersTp:=SQLSelect{"select lower(DESCRPTN) as DESCRPTN,ABBRVTN,ID from PersonType",oConn} 
+oPersTp:=SQLSelect{"select lower(descrptn) as descrptn,abbrvtn,id from persontype",oConn} 
 Pers_Types:= oPersTp:GetLookupTable(500,#DESCRPTN,#ID) 
 oPersTp:GoTop()
 pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
@@ -1267,7 +1267,7 @@ function InitGlobals()
 	oReg:=null_object
 	oSys:=SQLSelect{"select * from sysparms",oConn}
 	IF oSys:RecCount=1
-		oSel:=SQLSelect{"select * from BalanceYear order by YEARSTART desc, MONTHSTART desc limit 1",oConn}
+		oSel:=SQLSelect{"select * from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
 			nMindate:=oSel:YEARSTART*12+oSel:YEARLENGTH+oSel:MONTHSTART 
 			LstYearClosed:=SToD(Str(Integer(nMindate/12),4)+StrZero(nMindate%12,2)+"01")
@@ -1310,7 +1310,7 @@ function InitGlobals()
 		sCURRNAME:= AllTrim(oSys:CURRNAME) 
 		Posting:=iif(oSys:Posting==1,true,false)
 		LstCurRate := iif(oSys:LSTCURRT==1,true,false)
-		oSel:= SQLSelect{"select * from CurrencyList where aed='"+AllTrim(oSys:Currency)+"'",oConn}
+		oSel:= SQLSelect{"select * from currencylist where aed='"+AllTrim(oSys:Currency)+"'",oConn}
 		if oSel:RecCount>0
 			sCURR   :=  oSel:AED
 		endif
@@ -1382,7 +1382,7 @@ function InitGlobals()
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
 	
-	oSel:=SQLSelect{"select * from BankAccount",oConn}
+	oSel:=SQLSelect{"select * from bankaccount",oConn}
 	IF oSel:RecCount>0
 		// fill global array with bank accounts
 		BankAccs:={}
@@ -1390,7 +1390,7 @@ function InitGlobals()
 			AAdd(BankAccs,Str(oSel:accid,-1))
 			oSel:Skip()
 		ENDDO
-		oSel:=SQLSelect{"select * from BankAccount where Telebankng>0 and accid",oConn}
+		oSel:=SQLSelect{"select * from bankaccount where telebankng>0 and accid",oConn}
 		IF oSel:RecCount>0
 			TeleBanking:=true
 		else
@@ -1402,7 +1402,6 @@ function InitGlobals()
 		ENDIF
 
 	ENDIF
-	// pers_codes := FillPersCode()
 	FillPersCode()
 	FillPersType()
 	FillPersGender()
@@ -1412,11 +1411,13 @@ function InitGlobals()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
-
+   if !SQLSelect{"select count(*) as total from department",oConn}:total=="0"
+		Departments:=true
+	endif
 
 	IF lRefreshMenu
 		oMainWindow:RefreshMenu()
-		oMainWindow:SetCaption()
+		oMainWindow:SetCaption(oSys:sysname)
 	ENDIF
 	RETURN nil
 	
