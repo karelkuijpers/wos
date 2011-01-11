@@ -81,7 +81,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 	"t.persid,t.description,t.docid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.gc,t.fromrpp,t.TransId "+;
 	"from balanceitem b, account a "+;
 	"left join transaction t on (a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"') where a.balitemid=b.balitemid and "+;
-	iif(nToAcc==nFromAcc,"a.accnumber='"+nFromAcc+"'","a.ACCNUMBER<='"+nToAcc+"' and a.accnumber>='"+nFromAcc+"'"))+;
+	iif(nToAcc==nFromAcc,"a.accnumber='"+nFromAcc+"'","a.accnumber<='"+nToAcc+"' and a.accnumber>='"+nFromAcc+"'"))+;
 	" order by accnumber,dat" 
 	self:oTrans:=SQLSelect{cStatement,oConn}
 	nMonthEnd:=nToYear*12+nToMonth-1
@@ -338,7 +338,7 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 		IF cType=="PA"  //liability?
 			// add to gifts income:
 			if !Empty(SINCHOME) .or.!Empty(SINC)
-				oMbr:=SQLSelect{"select has,grade,OFFCRATE from Member where accid="+AccID,oConn}
+				oMbr:=SQLSelect{"select has,grade,offcrate from member where accid="+accid,oConn}
 				if oMbr:RecCount>0 
 					lHas:= if(oMbr:HAS>0,true,false) 
 				else
@@ -373,17 +373,17 @@ Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as
 				mOms:=DESCRIPTN
 				if nCre <>0
 					nSeqnbr++
-					cStatement:="insert into transaction set TransId="+cTransnr+",accid="+iif(lHas,SINCHOME,SINC)+",dat='"+SQLdate(mDAT)+;
+					cStatement:="insert into transaction set transid="+cTransnr+",accid="+iif(lHas,SINCHOME,SINC)+",dat='"+SQLdate(mDAT)+;
 						"',docid='"+mDocId+"',description='"+mOms+;
-						"',cre="+Str(nCre,-1)+",CREFORGN="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",USERID='"+LOGON_EMP_ID+"',Currency='"+Currency+"'"
+						"',cre="+Str(nCre,-1)+",creforgn="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",userid='"+LOGON_EMP_ID+"',currency='"+Currency+"'"
 					oStmnt:=SQLStatement{cStatement,oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows>0 
 						if ChgBalance(iif(lHas,SINCHOME,SINC),mDAT,0.00,nCre,0.00,nCreF,sCURR)
 							nSeqnbr++
-							oStmnt:SQLString:="insert into transaction set TransId="+cTransnr+",accid="+iif(lHas,SEXPHOME,SEXP)+",dat='"+SQLdate(mDAT)+;
+							oStmnt:SQLString:="insert into transaction set transid="+cTransnr+",accid="+iif(lHas,SEXPHOME,SEXP)+",dat='"+SQLdate(mDAT)+;
 								"',docid='"+mDocId+"',description='"+mOms+;
-								"',deb="+Str(nCre,-1)+",DEBFORGN="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",USERID='"+LOGON_EMP_ID+"',Currency='"+Currency+"'" 
+								"',deb="+Str(nCre,-1)+",debforgn="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",userid='"+LOGON_EMP_ID+"',currency='"+Currency+"'" 
 							oStmnt:Execute()
 							if oStmnt:NumSuccessfulRows>0
 								if !ChgBalance(iif(lHas,SEXPHOME,SEXP),mDAT,nCre,0.00,nCreF,0.00,sCURR)
@@ -1245,24 +1245,24 @@ cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "
 "accid="+oMutNew:AccID+;
 ",deb="+Str(oMutNew:Deb,-1)+;
 ",cre="+Str(oMutNew:cre,-1)+;
-",DEBFORGN="+Str(oMutNew:debforgn,-1)+;
-",CREFORGN="+Str(oMutNew:CREFORGN,-1)+;
-",CURRENCY='"+oMutNew:Currency+"'"+;
+",debforgn="+Str(oMutNew:debforgn,-1)+;
+",creforgn="+Str(oMutNew:CREFORGN,-1)+;
+",currency='"+oMutNew:Currency+"'"+;
 ",docid='"+self:mBST+"'"+;
 ",dat='"+SQLdate(self:mDAT)+"'"+;
 ",gc='"+oMutNew:GC+"'"+;
-",FROMRPP="+ iif(oMutNew:FROMRPP,'1','0')+;
-",USERID='"+LOGON_EMP_ID+"'"+; 
-",PPDEST='"+oMutNew:PPDEST+"'"+;
+",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
+",userid='"+LOGON_EMP_ID+"'"+; 
+",ppdest='"+oMutNew:PPDEST+"'"+;
 ",persid="+iif(lGiver,self:mCLNGiver,"0")+;
-",TransId="+Str(self:mTRANSAKTNR,-1)+; 
-",SEQNR="+Str(iif(empty(oMutNew:SEQNR),self:nLstSEqNr,oMutNew:Recno),-1)+;
+",transid="+Str(self:mTRANSAKTNR,-1)+; 
+",seqnr="+Str(iif(empty(oMutNew:SEQNR),self:nLstSEqNr,oMutNew:Recno),-1)+;
 ",description='"+AllTrim(oMutNew:DESCRIPTN)+"'"+;
-",REFERENCE='"+oMutNew:REFERENCE+"'"+;
-iif(Posting,",POSTSTATUS="+ self:mPostStatus,"")+;
+",reference='"+oMutNew:REFERENCE+"'"+;
+iif(Posting,",poststatus="+ self:mPostStatus,"")+;
 iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
 iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=' '",""))+;  // change from earmarked gift to non-earmarked 
-iif(Empty(oMutNew:SEQNR),""," where TransId="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oMutNew:SEQNR,-1)
+iif(Empty(oMutNew:SEQNR),""," where transid="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oMutNew:SEQNR,-1)
 
 oStmnt:=SQLStatement{cStatement,oConn}
 oStmnt:Execute()
@@ -1435,7 +1435,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 		CASE oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre
 			* Remove dummy transaction line:
 			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where TransId="+self:mTRANSAKTNR+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
+			oStmnt:=SQLStatement{"delete from transaction where transid="+self:mTRANSAKTNR+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
 				return false
@@ -1455,7 +1455,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 				(oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre)
 			* Line removed:
 			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where TransId="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
+			oStmnt:=SQLStatement{"delete from transaction where transid="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
 				return false
@@ -1610,7 +1610,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				curRec:=oHm:AMirror[i,6]  // RECNO
 				* Check if giver is a member:
 				mbrRek:=oHm:AMirror[i,1]
-				mCLNGiverMbr := Str(oHm:AMirror[i,17],-1)
+				mCLNGiverMbr := oHm:AMirror[i,17]
 				//	check	if	direct gift	report:
 				if	AScan(oHm:AMirror,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
 					IF	Empty(mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
@@ -1722,29 +1722,29 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				oHm:RecNo:=oHm:AMirror[i,6]  // recno
 				IF !oHm:Cre==oHm:Deb // skip dummy lines
 					nSeqNbr++ 
-					cStatement:="insert into Transaction set "+;
-						iif(Empty(cTransnr),'',"TransId="+cTransnr+",")+;
+					cStatement:="insert into transaction set "+;
+						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
 						iif(oHm:gc='PF'.or.oHm:gc = 'AG' .or. oHm:gc = 'MG';
 						.or. (oHm:KIND= 'G').or. oHm:KIND= 'D';
 						.or. oHm:KIND= 'A' .or. oHm:KIND = 'F'.or. oHm:KIND="C","persid='"+self:mCLNGiver+"',","")+;
-						"DAT='"+SQLdate(self:mDAT)+"'"+;
+						"dat='"+SQLdate(self:mDAT)+"'"+;
 						",docid='"+self:mBST+"'"+;
 						",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN))+"'"+; 
-					",REFERENCE='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+					",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 						",accid='"+AllTrim(oHm:AccID)+"'"+;
-						",Deb="+Str(oHm:Deb,-1)+;
-						",Cre="+Str(oHm:Cre,-1)+;
-						",GC='"+oHm:gc+"'"+;
-						",USERID='"+LOGON_EMP_ID +"'"+;
-						",FROMRPP="+iif(oHm:FROMRPP,"1","0")+;
-						",OPP='"+oHm:OPP+"'"+;
-						",PPDEST='"+AllTrim(oHm:PPDEST)+"'"+; 
-					",CURRENCY='"+AllTrim(oHm:Currency) +"'"+;
-						",DEBFORGN="+Str(oHm:DEBFORGN,-1)+;
-						",CREFORGN="+Str(oHm:CREFORGN,-1)+;
-						",SEQNR="+Str(nSeqNbr,-1)+;
-						iif(IsNil(self:mPostStatus),iif(lImport,",POSTSTATUS=2",""),; 
-					",POSTSTATUS="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
+						",deb="+Str(oHm:Deb,-1)+;
+						",cre="+Str(oHm:Cre,-1)+;
+						",gc='"+oHm:gc+"'"+;
+						",userid='"+LOGON_EMP_ID +"'"+;
+						",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
+						",opp='"+oHm:OPP+"'"+;
+						",ppdest='"+AllTrim(oHm:PPDEST)+"'"+; 
+					",currency='"+AllTrim(oHm:Currency) +"'"+;
+						",debforgn="+Str(oHm:DEBFORGN,-1)+;
+						",creforgn="+Str(oHm:CREFORGN,-1)+;
+						",seqnr="+Str(nSeqnbr,-1)+;
+						iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
+					",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
 						iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:Cre>oHm:Deb,",bfm='O'","")
 					oStmnt:=SQLStatement{cStatement,oConn}
 					oStmnt:Execute()
@@ -1772,7 +1772,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						endif
 					endif
 					if lError
-						LogEvent(,"Error:"+cStatement,"LogSQL")
+						LogEvent(,"Error:"+cStatement,"LogErrors")
 						ErrorBox{self,"transaction could not be stored:"+iif(!Empty(oStmnt:Status),AllTrim(oStmnt:Status:Description),'')}:show()
 						SQLStatement{"rollback",oConn}:Execute()
 						Break
@@ -2013,7 +2013,7 @@ METHOD RegDepartment(MyNum,ItemName) CLASS InquirySelection
 		depnr:="0"
 		deptxt:=sEntity+" "+sLand
 	ELSE
-		oDep:=SQLSelect{"select DEPID,DESCRIPTN  from Department where DEPID="+MyNum,oConn}
+		oDep:=SQLSelect{"select depid,descriptn  from department where depid="+MyNum,oConn}
 		if oDep:RecCount>0
 			depnr:=Str(oDep:DEPID,-1)
 			deptxt:=oDep:DESCRIPTN
@@ -2594,7 +2594,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			Acceptgiro:=true
 		endif
 	ENDIF
-	IF (myAcc:=SQLSelect{"select accid,CURRENCY,ACCNUMBER,Description from account where accid="+AllTrim(oTmt:m56_sgir),oConn}):RecCount<1
+	IF (myAcc:=SQLSelect{"select accid,currency,accnumber,description from account where accid="+AllTrim(oTmt:m56_sgir),oConn}):RecCount<1
 		(errorbox{SELF:owner,DebAccNbr+":"+" unknown account"}):show()
 		SELF:EndWindow()
 		RETURN FALSE
@@ -2880,9 +2880,9 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				ENDDO 
 			endif
 			********** place due amounts into tempgift ***********
-			oDue:=SQLSelect{"select dueid,s.personid as persid,round(AmountInvoice - AmountRecvd,2) as cre,s.accid,invoicedate,d.seqnr,b.category as acctype "+;
+			oDue:=SQLSelect{"select dueid,s.personid as persid,round(amountinvoice - amountrecvd,2) as cre,s.accid,invoicedate,d.seqnr,b.category as acctype "+;
 			"from dueamount d,account a, balanceitem b,subscription s "+;
-			"where AmountInvoice>AmountRecvd and d.subscribid=s.subscribid and a.accid=s.accid and a.active=1 and  b.balitemid=a.balitemid and s.personid="+self:mCLNGiver,oConn}
+			"where amountinvoice>amountrecvd and d.subscribid=s.subscribid and a.accid=s.accid and a.active=1 and  b.balitemid=a.balitemid and s.personid="+self:mCLNGiver,oConn}
 			oDue:Execute()
 			if oDue:Reccount>0
 				DO WHILE !oDue:EOF 
@@ -3305,16 +3305,16 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* book contra DebitAccount:
 			cTransnr:='' 
 			oStmnt:=SQLStatement{"insert into transaction set "+;
-				"DAT='"+SQLdate(self:mDAT)+"'"+;
+				"dat='"+SQLdate(self:mDAT)+"'"+;
 				",docid='"+self:oDCmBST:Value+"'"+;
-				",Description='"+AddSlashes( AllTrim(oHm:DESCRIPTN)) +"'"+;
-				",AccID="+self:DebAccId+;
-				",Deb="+Str(self:mDebAmnt,-1)+;
-				",DEBFORGN="+Str(self:mDebAmntF,-1)+;
-				",CURRENCY='"+self:DebCurrency+"'"+;
-				",USERID='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
+				",description='"+AddSlashes( AllTrim(oHm:DESCRIPTN)) +"'"+;
+				",accid="+self:DebAccId+;
+				",deb="+Str(self:mDebAmnt,-1)+;
+				",debforgn="+Str(self:mDebAmntF,-1)+;
+				",currency='"+self:DebCurrency+"'"+;
+				",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
 			",seqnr="+Str(nSeqnbr,-1)+;
-				iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",GC='CH'",iif(self:lEarmarking,",Bfm='T'","")),oConn} // member giver from member account
+				iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",gc='CH'",iif(self:lEarmarking,",bfm='T'","")),oConn} // member giver from member account
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows>0
 				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
@@ -3325,17 +3325,17 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 							"transid="+cTransnr+;
 							",seqnr="+Str(nSeqnbr,-1)+;
 							",persid='"+self:mCLNGiver+"'"+;
-							",DAT='"+SQLdate(self:mDAT)+"'"+;
+							",dat='"+SQLdate(self:mDAT)+"'"+;
 							",docid='"+self:oDCmBST:Value+"'"+;
-							",REFERENCE='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-							",Description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)) +"'"+;
-							",AccID='"+oHm:AccID+"'"+;
-							",Cre='"+Str(oHm:Cre,-1)+"'"+; 
-							",CREFORGN='"+ Str(oHm:CREFORGN,-1)+"'"+; 
-							",CURRENCY='"+ oHm:CURRENCY+"'"+;
-							",USERID='"+AddSlashes(LOGON_EMP_ID)+"'"+;
-							iif(SPROJ ==AllTrim(oHm:AccID).and.!Empty(self:mCLNGiver).and.oHm:Cre>0,",Bfm='O'","")+;
-							",GC='"+oHm:GC+"'",oConn} 
+							",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+							",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)) +"'"+;
+							",accid='"+oHm:AccID+"'"+;
+							",cre='"+Str(oHm:Cre,-1)+"'"+; 
+							",creforgn='"+ Str(oHm:CREFORGN,-1)+"'"+; 
+							",currency='"+ oHm:CURRENCY+"'"+;
+							",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+;
+							iif(SPROJ ==AllTrim(oHm:AccID).and.!Empty(self:mCLNGiver).and.oHm:Cre>0,",bfm='O'","")+;
+							",gc='"+oHm:GC+"'",oConn} 
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows>0
 							if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
@@ -3398,7 +3398,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					ENDIF
 					IF oHm:Amirror[1,5]="G".or.oHm:Amirror[1,5]="M" // gift to a project/fund/member     //category
 						* Update Mailing code in Person :
-						oAcc:=SQLSelect{"select clc,PROPXTRA from account where accid="+oHm:Amirror[i,7],oConn}
+						oAcc:=SQLSelect{"select clc,propxtra from account where accid="+oHm:Amirror[i,7],oConn}
 						IF oAcc:reccount>0
 							if !Empty(oAcc:CLC)
 								ADDMLCodes(oAcc:CLC,@cCod)
@@ -3432,7 +3432,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					endif
 					IF !Empty(oHm:aMirror[i,12]) 
 						** update due amount
-						oStmnt:= SQLStatement{"update dueamount set AmountRecvd=round(AmountRecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
+						oStmnt:= SQLStatement{"update dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
 							"where dueid="+oHm:Amirror[i,12],oConn}
 						oStmnt:execute()
 					ENDIF
@@ -3476,7 +3476,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 								if TextBox{self:owner, "Input of Payments", ;
 										"Apply "+Str(oHm:Amirror[i,3],-1)+;
 										" to standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()=BOXREPLYYES 
-									oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", REFERENCE='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+									oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 										",lstchange='"+SQLdate(self:mDAT)+"' where subscribid="+Str(oSub:Subscribid,-1),oConn}
 									oStmnt:Execute()
 								ENDIF
@@ -3490,7 +3490,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 									"Add "+Str(oHm:Amirror[i,3],-1)+;
 									" as standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()==BOXREPLYYES 
 								oStmnt:=SQLStatement{"insert into subscription set personid="+self:mCLNGiver+",accid="+oHm:Amirror[i,7]+;
-									",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", REFERENCE='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+									",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 									",category='G',begindate='"+SQLdate(self:mDAT)+"',gc='"+oHm:Amirror[i,4]+"'",oConn}
 								oStmnt:Execute()
 							ENDIF
@@ -3572,7 +3572,7 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 		return
 	endif
 
-	oAcct:=SQLSelect{"select a.accid, a.accnumber,a.Description,a.currency,a.multcurr,"+SQLAccType()+" as accounttype "+;
+	oAcct:=SQLSelect{"select a.accid, a.accnumber,a.description,a.currency,a.multcurr,"+SQLAccType()+" as accounttype "+;
 	"from account a left join member m on (a.accid=m.accid) "+;
 	"where "+iif(Empty(self:AccID),"a.accnumber='"+AllTrim(self:ACCNUMBER)+"'","a.accid="+self:AccID),oConn}
 	oAcct:Execute()
@@ -3850,7 +3850,7 @@ METHOD ShowSelection() CLASS TransInquiry
 			ENDIF
 		else
 			// Add to filter 
-			cFilter+=iif(Empty(cFilter),'',' and ')+"a.ACCNUMBER>='"+self:FromAccNbr+"' and a.ACCNUMBER<='"+self:ToAccNbr+"'"
+			cFilter+=iif(Empty(cFilter),'',' and ')+"a.accnumber>='"+self:FromAccNbr+"' and a.accnumber<='"+self:ToAccNbr+"'"
 			self:m54_selectTxt:="Account>="+self:FromAccNbr+" - "+self:ToAccNbr
 		endif
 	ELSEif Empty(self:DepIdSelected)
@@ -3866,14 +3866,14 @@ METHOD ShowSelection() CLASS TransInquiry
 		self:m54_selectTxt:=self:m54_selectTxt+" Person="+self:PersIdSelected
 	ENDIF
 	IF !Empty(self:StartTransNbr)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.TransId>="'+self:StartTransNbr+'"'
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid>="'+self:StartTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction>="+self:StartTransNbr 
-		self:cOrder:="t.TransId desc" 
+		self:cOrder:="t.transid desc" 
 	ENDIF
 	IF !Empty(self:EndTransNbr)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.TransId<="'+self:EndTransNbr+'"'
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid<="'+self:EndTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction<="+self:EndTransNbr
-		self:cOrder:="t.TransId desc" 
+		self:cOrder:="t.transid desc" 
 	ENDIF
 	IF !Empty(self:DocIdSelected)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.docid like '"+self:DocIdSelected+"%'"
@@ -3923,11 +3923,11 @@ METHOD ShowSelection() CLASS TransInquiry
 		ENDIF
 	ENDIF 
 	IF !Empty(self:StartDate)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.Dat>="'+SQLdate(self:StartDate)+'"'
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.dat>="'+SQLdate(self:StartDate)+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Date>="+DToS(self:StartDate)
 	ENDIF
 	IF !Empty(self:EndDate)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.Dat<="'+SQLdate(self:EndDate)+'"'
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.dat<="'+SQLdate(self:EndDate)+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Date<="+DToS(self:EndDate)
 	ENDIF
 
@@ -3935,7 +3935,7 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:oCCReadyButton:Hide() 
 	if Posting
 		if	!Empty(self:PostStatSelected)  .and. self:PostStatSelected<"4"
-			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'PostStatus='+self:PostStatSelected
+			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'poststatus='+self:PostStatSelected
 			self:m54_selectTxt:=self:m54_selectTxt+" Post	status="+aPost[Val(self:PostStatSelected)+1]
 			IF	self:PostStatSelected="1"  .and. self:StartDate>=LstYearClosed.and. AScan(aMenu,{|x|x[4]=="PostingBatch"})>0 
 				// Ready to post selected by financial manager:
