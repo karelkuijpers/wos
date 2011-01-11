@@ -709,8 +709,8 @@ Function ProlongateAll(oCall as Window ) as logic
 		* Add new due amount: 
 		oStmnt:=SQLStatement{"insert into dueamount set subscribid="+mSubid+",invoicedate='"+SQLdate(oSub:DueDate)+"'"+; 
 		",seqnr="+ Str(mSeqnr,-1)+;
-			",AmountInvoice ="+ Str(bed_toez,-1)+;
-			",AmountRecvd=0",oConn}
+			",amountinvoice ="+ Str(BED_TOEZ,-1)+;
+			",amountrecvd=0",oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0
 			* update date due with term within subscription:
