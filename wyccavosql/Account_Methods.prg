@@ -255,7 +255,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	LOCAL oAccBw as AccountBrowser, oAcc as SQLSelect
 	// 	LOCAL pFilter as _CODEBLOCK
 	local cWhere:="a.balitemid=b.balitemid", myWhere as string
-	local cOrder:="ACCNUMBER" as string
+	local cOrder:="accnumber" as string
 // 	local cFrom:="account as a,balanceitem as b" as string
 	local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" as string 
 
@@ -274,7 +274,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 		myWhere+=" and (accnumber like '"+BrwsValue+"%' or description like '"+BrwsValue+"%')" 
 	endif
 	if !lNoDepartmentRestriction .and.!Empty(cDepmntIncl)
-		cAccFilter+=	iif(Empty(cAccFilter),""," and ")+"(DEPARTMENT IN ("+cDepmntIncl+")"+;
+		cAccFilter+=	iif(Empty(cAccFilter),""," and ")+"(department IN ("+cDepmntIncl+")"+;
 		iif(ADMIN=="WA" .and. USERTYPE=="D".and.!Empty(cAccAlwd)," or a.accid in ("+cAccAlwd+")",'')+")"		
 	endif
 	IF lUnique
@@ -451,28 +451,9 @@ self:aProp:=amProp
 
 Method FillProps() class EditAccount
 return self:aProp
-METHOD FillRubriekSub () CLASS EditAccount
-LOCAL oRb as BalanceItem
-LOCAL aRet := {}
-	oRb := BalanceItem{}
-	IF oRB:Used
-		IF !Empty(self:nCurNum)
-			IF oRb:Seek(nCurNum)
-				self:mSoort:=oRb:category 
-				oRb:Where('category="'+mSoort+'"')
-			ENDIF
-		ENDIF
-		oRb:GoTop()
-		DO WHILE !oRB:EoF
-			AAdd(aRet,{AllTrim(oRb:NUMBER)+":"+AllTrim(oRb:Heading),oRb:balitemid})
-			oRb:Skip()
-		ENDDO
-		oRB:Close()
-	ENDIF
-RETURN aRet
 METHOD GetBalYears() CLASS EditAccount
 	// get array with balance years
-	RETURN oMBal:GetBalYears(3)
+	RETURN GetBalYears(3)
 METHOD Import(apMapping,Checked)  CLASS EditAccount
 	IF Checked
 		lImportAutomatic:=FALSE
@@ -501,7 +482,7 @@ local oBal as SQLSelect
 		IF Empty(self:mNumSave)
 			self:cCurBal:="0:Balance Items"
 		ELSE
-			oBal:=SQLSelect{"select NUMBER,heading,category from BalanceItem where balitemid='"+self:mNumSave+"'",oConn} 
+			oBal:=SQLSelect{"select number,heading,category from balanceitem where balitemid='"+self:mNumSave+"'",oConn} 
 			IF oBal:Reccount>0
 				self:cCurBal:=AllTrim(oBal:NUMBER)+":"+oBal:Heading
 				self:mSoort:=oBal:category 
@@ -525,7 +506,7 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditAccount
 			self:mDepartment:=self:cCurDep
 			self:oDCmDepartment:TextValue:=self:cCurDep
 		ELSE
-			oDep:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN from department where depid='"+self:mDep+"'",oConn} 
+			oDep:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+self:mDep+"'",oConn} 
 			IF oDep:Reccount>0
 				self:cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
 				self:mDepartment:=self:cCurDep
@@ -595,7 +576,7 @@ METHOD ValidateAccount() CLASS EditAccount
 	endif
 
 	* Check if account allready exists:
-	oSel:=SQLSelect{"select accid from account where ACCNUMBER='"+self:mAccNumber+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	oSel:=SQLSelect{"select accid from account where accnumber='"+self:mAccNumber+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
 	if oSel:Reccount>0
 		cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
 		lValid:=FALSE
@@ -726,14 +707,14 @@ Function ValidateAccTransfer (cParendId as string,mAccId as string) as string
 
 	* Member account .or. transactions for this account:
 	* No change of balancegroupclassification allowed
-	oRb:=SQLSelect{"select category from BalanceItem where balitemid='"+cParendId+"'",oConn} 
+	oRB:=SQLSelect{"select category from balanceitem where balitemid='"+cParendId+"'",oConn} 
 	if oRB:RecCount=1	
 		cNewClass:= oRb:category 
-		oAcc:=SQLSelect{"select ACCNUMBER,balitemid,co,homepp,b.category fromBalanceItem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
+		oAcc:=SQLSelect{"select accnumber,balitemid,co,homepp,b.category from balanceitem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
 		if oAcc:RecCount=1	
 			IF	!oAcc:category== cNewClass
 				IF	!(cNewClass	$ expense+income	.and.	oAcc:category $ expense+income .or. cNewClass $ asset+liability .and. oAcc:category $ asset+liability)
-					oAccB:=SQLSelect{"select accid from AccountBalanceYear where accid='"+mAccId+"' and (svjc-svjd)<>0.00",oConn}
+					oAccB:=SQLSelect{"select accid from accountbalanceyear where accid='"+mAccId+"' and (svjc-svjd)<>0.00",oConn}
 					IF oAccB:RecCount>0 
 						cError:=Language{}:WGet("Balancegroup of account")+" "+AllTrim(oAcc:ACCNUMBER)+" "+Language{}:WGet('cannot be changed to different category after year closing')
 						lValid:=FALSE
