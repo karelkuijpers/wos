@@ -90,7 +90,7 @@ self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),'',
 self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
 self:oSub:Execute()
 self:gotop()
-self:oSFSubscriptionBrowser_DETAIL:Browser:resfresh() 
+// self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
 self:oDCFound:TEXTValue:=Str(self:oSub:RecCount,-1)
 
 RETURN true
@@ -112,7 +112,7 @@ self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),'',
 self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
 self:oSub:Execute()
 self:gotop()
-self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
+// self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
 self:oDCFound:TEXTValue:=Str(self:oSub:RecCount,-1)
                 
 RETURN TRUE
