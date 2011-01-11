@@ -190,7 +190,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	IF myType=="A"
 		lSystemAdmin:=TRUE
 	ELSEIF !Empty(EmployeeId)
-		oAuthF := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from AuthFunc where EMPID="+Str(EmployeeId,-1),oConn}
+		oAuthF := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from authfunc where empid="+Str(EmployeeId,-1),oConn}
 		oAuthF:GoTop()
 		IF oAuthF:Reccount=0
 			IF Empty(myType)
