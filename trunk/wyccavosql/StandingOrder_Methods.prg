@@ -345,15 +345,15 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 Method UpdStOrdLn(oNew as StOrdLineHelp, oOrig as StOrdLineHelp) as Logic class EditPeriodic 
 local cStatement as string, oStmnt as SQLStatement
 cStatement:=iif(Empty(oNew:RecNbr),"insert into","update")+" standingorderline set "+;
-"ACCOUNTID="+Str(oNew:ACCOUNTID,-1)+;
-",Deb="+Str(oNew:Deb,-1)+;
+"accountid="+Str(oNew:ACCOUNTID,-1)+;
+",deb="+Str(oNew:Deb,-1)+;
 ",cre="+Str(oNew:cre,-1)+;
 ",gc='"+oNew:GC+"'"+;
-",STORDRID="+self:curStordid+; 
-",SEQNR="+Str(oNew:Recno,-1)+;
-",REFERENCE='"+oNew:REFERENCE+"'"+;
-",DESCRIPTN='"+oNew:DESCRIPTN+"'"+; 
-iif(Str(oNew:ACCOUNTID,-1) == sCre,",CREDITOR="+Str(oNew:CREDITOR,-1)+",BANKACCT='"+oNew:BANKACCT+"'",",CREDITOR=0,BANKACCT=''")+;
+",stordrid="+self:curStordid+; 
+",seqnr="+Str(oNew:Recno,-1)+;
+",reference='"+oNew:REFERENCE+"'"+;
+",descriptn='"+oNew:DESCRIPTN+"'"+; 
+iif(Str(oNew:ACCOUNTID,-1) == sCre,",creditor="+Str(oNew:CREDITOR,-1)+",bankacct='"+oNew:BANKACCT+"'",",creditor=0,bankacct=''")+;
 iif(Empty(oNew:RecNbr),""," where stordrid="+self:curStordid+" and seqnr="+Str(oNew:SEQNR,-1)) 
 oStmnt:=SQLStatement{cStatement,oConn}
 oStmnt:Execute()
@@ -639,7 +639,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 				// payment to creditor
 				if CountryCode="31"  
 					// make bankorder:
-					oBord:=SQLStatement{"insert into bankorder (ACCNTFROM,AMOUNT,description,BANKNBRCRE,DATEDUE,stordrid) values ('"+sCRE+"','"+;
+					oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values ('"+sCRE+"','"+;
 						Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+AddSlashes(aTrans[i,3])+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
 					oBord:execute()
 					if oBord:NumSuccessfulRows<1
@@ -651,7 +651,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 		next
 		if !lError
 			&&skip to next month
-			oStmnt:=SQLStatement{"update standingorder set LstRecording='"+SQLdate(datum)+"' where stordrid="+Str(CurStOrdrid,-1),oConn}
+			oStmnt:=SQLStatement{"update standingorder set lstrecording='"+SQLdate(datum)+"' where stordrid="+Str(CurStOrdrid,-1),oConn}
 			oStmnt:execute()
 			if Empty(oStmnt:Status)
 				SQLStatement{"commit",oConn}:execute()
@@ -678,13 +678,13 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	if self:oCurr==null_object
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
-	oStOrdL:=SQLSelect{"select s.STORDRID,s.day,s.period,s.docid,s.currency,s.idat,s.edat,s.LstRecording,s.persid,"+;
+	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,s.idat,s.edat,s.lstrecording,s.persid,"+;
 	"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
 	" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) where l.stordrid=s.stordrid and "+;
 	"(edat is null or edat>=CurDate()) and "+;
-	"(LstRecording is null or (DATE_ADD(LstRecording,INTERVAL period MONTH)<=curdate() and "+;
-	"(edat is null or DATE_ADD(LstRecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
+	"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
+	"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
 	" order by s.stordrid,l.seqnr",oConn} 
 	if oStOrdL:RECCOUNT <1 
 		return false
