@@ -784,7 +784,7 @@ METHOD PostInit() CLASS General_Journal
 	IF !TeleBanking
 		oCCTeleBankButton:Hide()
 	ENDIF		
-	oBank := SQLSelect{"select accid from BankAccount where telebankng>0",oConn} 
+	oBank := SQLSelect{"select accid from bankaccount where telebankng>0",oConn} 
 	if oBank:RecCount>0
 		do WHILE !oBank:EOF
 			self:cAccFilter+=iif(Empty(self:cAccFilter),"",' and ')+'accid<>"'+Str(oBank:AccID,-1)+'"' 
@@ -829,7 +829,7 @@ METHOD PostInit() CLASS General_Journal
 		self:oDCmPerson:Hide()
 		self:oDCSC_CLN:Hide()
 	endif
-	oSel:=SQLSelect{"select PAYAHEAD from BankAccount where banknumber='"+BANKNBRDEB+"'",oConn}
+	oSel:=SQLSelect{"select payahead from bankaccount where banknumber='"+BANKNBRDEB+"'",oConn}
 	if oSel:RecCount<1
 		if oSel:RecCount>0
 			mPayahead:=Str(oSel:PAYAHEAD,-1) 
@@ -2601,7 +2601,7 @@ method bankanalyze() class PaymentJournal
 	self:DefOvrd:=False
 	self:DefCur:=sCurr
 	self:DefMulti:=false 
-	oSel:=SQLSelect{"select giftsall,openall,SINGLEDST,FGMLCODES,SYSCODOVER,i.category as acctype,a.description,a.accnumber,a.CURRENCY,a.multcurr,m.persid "+;
+	oSel:=SQLSelect{"select giftsall,openall,singledst,fgmlcodes,syscodover,i.category as acctype,a.description,a.accnumber,a.currency,a.multcurr,m.persid "+;
 		"from bankaccount b left join account a on (a.accid=b.singledst) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid) "+;
 		"where b.accid="+self:DebAccId,oConn}
 	if oSel:reccount>0  
@@ -3183,7 +3183,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		self:cAccFilter:=if(Empty(self:cAccFilter),"",self:cAccFilter+',')+SHB
 	ENDIF
 	self:cDestFilter:=self:cAccFilter
-	if SQLSelect{"select accid from bankaccount where Telebankng=1 and usedforgifts=1",oConn}:reccount>0
+	if SQLSelect{"select accid from bankaccount where telebankng=1 and usedforgifts=1",oConn}:RecCount>0
 		TeleBanking := true 
 	else
 		TeleBanking := FALSE
@@ -3192,7 +3192,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		endif
 	ENDIF
 	
-	oSel:=SQLSelect{"select accid from bankaccount where Telebankng=1",oConn} 
+	oSel:=SQLSelect{"select accid from bankaccount where telebankng=1",oConn} 
 	oSel:Execute()
 	DO WHILE !oSel:EOF
 		self:cAccFilter:=if(Empty(self:cAccFilter),"",self:cAccFilter+',')+Str(oSel:AccID,-1)
@@ -4010,9 +4010,9 @@ METHOD ExportButton( ) CLASS TransInquiry
 	
 	RETURN
 METHOD FindButton( ) CLASS TransInquiry
-	self:cWhereSpec:="TransId >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
+	self:cWhereSpec:="transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
-	self:cOrder:="TransId desc"
+	self:cOrder:="transid desc"
 	self:oTrans:SQLString:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
 	self:oTrans:Execute()
 	self:GoTop()
@@ -4171,7 +4171,7 @@ self:SetTexts()
 	IF AScan(aMenu,{|x| x[4]=="TransactionEdit"})=0
 		self:oCCTransferButton:Hide()
 	ELSE
-		oBank	:=	SQLSelect{"select	accid from	BankAccount	where	telebankng>0 and accid",oConn} 
+		oBank	:=	SQLSelect{"select	accid from	bankaccount	where	telebankng>0 and accid",oConn} 
 		if oBank:RecCount>0
 			do WHILE !oBank:EOF
 				self:cAccFilter+=iif(Empty(self:cAccFilter),"",' and ')+'accid<>"'+Str(oBank:AccID,-1)+'"' 
@@ -4202,17 +4202,17 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	endif
 	self:cFields:="t.*,a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
-	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and Department in ("+cDepmntIncl+")") 
+	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and department in ("+cDepmntIncl+")") 
 	if !Empty( cAccAlwd)
 		if USERTYPE=="D"
 			self:cWhereBase+=" and t.Userid='"+LOGON_EMP_ID+"'"
 			// 			+iif(MinDate >LstYearClosed,".and.DToS(Dat)>='"+DToS(MinDate)+"'",""))
 		else
-			self:cWhereBase+=" and (t.accid in("+cAccAlwd+") or t.Userid='"+LOGON_EMP_ID+"')"
+			self:cWhereBase+=" and (t.accid in("+cAccAlwd+") or t.userid='"+LOGON_EMP_ID+"')"
 		endif		
 	endif
-	cWhereSpec:="TransId>"+Str(self:lsttrnr-100,-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
-	self:cOrder:="t.TransId desc" 
+	cWhereSpec:="transid>"+Str(self:lsttrnr-100,-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
+	self:cOrder:="t.transid desc" 
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec +" order by "+self:cOrder
 	self:oTrans:=SQLSelect{UnionTrans(self:cSelectStmnt),oConn}
 	return NIL
@@ -4291,8 +4291,8 @@ oTrans:SuspendNotification()
 self:STATUSMESSAGE("Transfering data, moment please")
 self:Pointer := Pointer{POINTERHOURGLASS}
 SQLStatement{"start transaction",oConn}:Execute() 
-oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',USERID='"+LOGON_EMP_ID+"'"+;
-iif(cCurrDest==sCurr .and.!lMultiDest,",DEBFORGN=DEB,CREFORGN=Cre,Currency='"+sCurr+"'","")+;
+oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
+iif(cCurrDest==sCurr .and.!lMultiDest,",debforgn=deb,creforgn=cre,currency='"+sCurr+"'","")+;
 " where "+self:cWhereSpec,oConn}
 LogEvent(self,oStmnt:sqlstring,"logsql") 
 oStmnt:Execute()
@@ -4312,7 +4312,7 @@ if oStmnt:NumSuccessfulRows>0
 	ENDDO
 else
 	lError:=true
-	LogEvent(self,"error:"+oStmnt:status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+	LogEvent(self,"error:"+oStmnt:status:Description+CRLF+"stmnt:"+oStmnt:sqlstring,"LogErrors")
 endif
 if lError
 	SQLStatement{"rollback",oConn}:Execute()
@@ -4341,9 +4341,9 @@ self:cTransferAcc:=""
  
 cFilter:= 'a.accid<>"'+self:FromAccId+'"'
 if self:cCurr==sCurr
-	cFilter+=' and a.Currency="'+sCurr+'"'
+	cFilter+=' and a.currency="'+sCurr+'"'
 else
-	cFilter+=' and (a.Currency="'+self:cCurr+'" or a.Currency="'+sCurr+'")'
+	cFilter+=' and (a.currency="'+self:cCurr+'" or a.currency="'+sCurr+'")'
 endif	
 AccountSelect(self,"","Account to transfer to",FALSE,cFilter)
 
