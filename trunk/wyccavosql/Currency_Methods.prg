@@ -80,7 +80,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 	if Empty(CodeROE)
 		return 1
 	endif
-	oROE:=SQLSelect{"select * from CurrencyRate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
+	oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
 	if oROE:RecCount>0
 		RateId:=Str(oROE:RateId,-1) 
 		if !Empty(oROE:ROE).and.!lConfirm
@@ -90,13 +90,13 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 	else
 		lnew:=true
 		// look for most recent rate:
-		oROE:=SQLSelect{"select * from CurrencyRate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' and daterate<='"+SQLdate(DateROE)+"' order by DATERATE desc limit 1",oConn} 
+		oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' and daterate<='"+SQLdate(DateROE)+"' order by daterate desc limit 1",oConn} 
 		if oROE:RecCount>0
 			self:mxrate:=oROE:ROE 		
 			RateId:=Str(oROE:RateId,-1) 
 		else
 			// 	search last of currency:
-			oROE:=SQLSelect{"select * from CurrencyRate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' order by DATERATE desc",oConn} 
+			oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' order by daterate desc",oConn} 
 			if oROE:RecCount>0
 				self:mxrate:=oROE:ROE 		
 				RateId:=Str(oROE:RateId,-1) 
@@ -174,12 +174,12 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 			lnew:=true
 		endif
 	endif
-	cStatement:=iif(lnew,"Insert into","update")+" CurrencyRate set "+;
-		"AED='"+CodeROE+"',"+;
-		"DATERATE='"+SQLdate(DateROE)+"',"+;
-		"ROE="+Str(self:mxrate,-1)+;
-		",AEDUNIT='"+sCURR+"'"+;
-		iif(lnew,""," where RateId="+RateId) 
+	cStatement:=iif(lnew,"insert into","update")+" currencyrate set "+;
+		"aed='"+CodeROE+"',"+;
+		"daterate='"+SQLdate(DateROE)+"',"+;
+		"roe="+Str(self:mxrate,-1)+;
+		",aedunit='"+sCURR+"'"+;
+		iif(lnew,""," where rateid="+RateId) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	return self:mxrate
@@ -364,7 +364,7 @@ IF !Empty(CurRec)
 ENDIF
 RETURN true
 method GetCurrencies(dummy:=nil as logic) class CurrRateEditor
-return SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
+return SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS CurrRateEditor 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -422,7 +422,7 @@ method ListBoxSelect(oControlEvent) class CurrRateEditor
 	super:ListBoxSelect(oControlEvent)
 	//Put your changes here 
 	IF oControl:NameSym==#CurrencySelect
-	   self:oRoe:SQLString:="select * from Currencyrate where aed='"+oControl:Value+"' and DATERATE<=Now() order by aed asc,aedunit asc, daterate desc"
+	   self:oRoe:SQLString:="select * from currencyrate where aed='"+oControl:Value+"' and daterate<=Now() order by aed asc,aedunit asc, daterate desc"
 		self:oRoe:Execute()
 		self:GoTop()
 		self:oSFSub_Rates:Browser:refresh()
@@ -437,7 +437,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class CurrRateEditor
 	return NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class CurrRateEditor
 	//Put your PreInit additions here 
-   self:oRoe:=SQLSelect{"select * from Currencyrate order by aed asc,aedunit asc, daterate desc",oConn}
+   self:oRoe:=SQLSelect{"select * from currencyrate order by aed asc,aedunit asc, daterate desc",oConn}
 	return NIL
 STATIC DEFINE CURRRATEEDITOR_CURRENCYSELECT := 101 
 STATIC DEFINE CURRRATEEDITOR_FIXEDTEXT1 := 102 
@@ -587,7 +587,7 @@ Method ReEvaluate() Class Reevaluation
 	local lError as logic
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
 
-	oSys:=SQLSelect{"select LstReEval from sysparms where DATE_ADD(LstReEval,INTERVAL 38 DAY)<curdate()",oConn} 
+	oSys:=SQLSelect{"select lstreeval from sysparms where DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
 	if oSys:Reccount<1
 		self:Close()
 		Return
@@ -595,8 +595,8 @@ Method ReEvaluate() Class Reevaluation
 	UltimoMonth:=SToD(SubStr(DToS(Today()),1,6)+"01")-1
 	oCurr:=Currency{"Reevaluation"}
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
-	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.GAINLSACC,b.category as type from account a, balanceitem b "+;
-	"where ReEvaluate=1 and GAINLSACC>0 and b.balitemid=a.balitemid",oConn} 
+	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
+	"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
 	if oAccnt:Reccount>0
 		if ((TextBox{oCall,"Reevaluation of foreign currency accounts","Do you want to reevaluate up till date "+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
 			self:Close() 
@@ -629,12 +629,12 @@ Method ReEvaluate() Class Reevaluation
 					SQLStatement{"start transaction",oConn}:execute()
 					cStatement:="insert into transaction set "+;
 						"accid='"+Str(oAccnt:GAINLSACC,-1)+"'"+;
-						",DAT='"+SQLdate(UltimoMonth)+"'"+;
-						",DEB='"+Str(mDiff,-1)+"'"+;
+						",dat='"+SQLdate(UltimoMonth)+"'"+;
+						",deb='"+Str(mDiff,-1)+"'"+;
 						",currency='"+sCURR+"'"+;
 						",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
 						",seqnr=1"+;
-						",BFM='C'"   // regard as allready sent to CMS/AccPac
+						",bfm='C'"   // regard as allready sent to CMS/AccPac
 					oTrans:=SQLStatement{cStatement,oConn}
 					oTrans:execute()
 					if oTrans:NumSuccessfulRows>0
@@ -642,12 +642,12 @@ Method ReEvaluate() Class Reevaluation
 						cStatement:="insert into transaction set "+;
 							"accid='"+Str(oAccnt:accid,-1)+"'"+;
 							",seqnr=2"+;
-							",DAT='"+SQLdate(UltimoMonth)+"'"+;
-							",TransId='"+TransId+"'"+; 
-							",CRE='"+Str(mDiff,-1)+"'"+;
+							",dat='"+SQLdate(UltimoMonth)+"'"+;
+							",transid='"+TransId+"'"+; 
+							",cre='"+Str(mDiff,-1)+"'"+;
 							",currency='"+cCur+"'"+;
 							",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
-							",BFM='C'"   // regard as allready sent to CMS/AccPac
+							",bfm='C'"   // regard as allready sent to CMS/AccPac
 						oTrans:=SQLStatement{cStatement,oConn}
 						oTrans:execute()
 						if oTrans:NumSuccessfulRows>0
@@ -672,7 +672,7 @@ Method ReEvaluate() Class Reevaluation
 
 		oAccnt:Skip()
 	enddo 
-	SQLStatement{"update sysparms set LstReEval='"+SQLdate(UltimoMonth)+"'",oConn}:execute()
+	SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}:execute()
 	self:Close() 
 
 
