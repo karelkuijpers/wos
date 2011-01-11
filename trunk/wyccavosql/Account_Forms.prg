@@ -326,7 +326,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active,b.category as type,m.co"
 		self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" 
 		self:cWhere:="a.balitemid=b.balitemid"
-		self:cAccFilter:=iif(Empty(cDepmntIncl),"","DEPARTMENT IN ("+cDepmntIncl+")")
+		self:cAccFilter:=iif(Empty(cDepmntIncl),"","department IN ("+cDepmntIncl+")")
 		self:oAccCnt:=AccountContainer{}
 	endif
 	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
@@ -818,7 +818,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 METHOD FillIPC() class EditAccount
 local aIPC:={} as Array
 local oIPC as SQLSelect
-oIPC:=SQLSelect{"select * from IPCAccounts where ipcaccount "+iif(self:mSoort="BA","<60000",">50000"), oConn}
+oIPC:=SQLSelect{"select * from ipcaccounts where ipcaccount "+iif(self:mSoort="BA","<60000",">50000"), oConn}
 // if self:mSoort="BA"
 // 	oIPC:SetFilter({||oIPC:IPCACCOUNT<60000})
 // else
@@ -1422,22 +1422,22 @@ METHOD OkButton CLASS EditAccount
 			NEXT
 			cExtra+=iif(Empty(cExtra),"","</velden>")
 		endif
-		cStatement:=iif(self:lNew,"Insert into","update")+" Account Set "+;
-		"ACCNUMBER='"+LTrimZero(self:mAccNumber)+"'"+;
+		cStatement:=iif(self:lNew,"Insert into","update")+" account Set "+;
+		"accnumber='"+LTrimZero(self:mAccNumber)+"'"+;
 		", description='"+ AddSlashes(AllTrim(self:mDescription))+"'"+;
 		", balitemid='"+self:mNumSave+"'"+;
-		", Department='"+self:mDep+"'"+;
-      iif(ADMIN=="WA",", Reimb="+self:mReimb,"")+;
+		", department='"+self:mDep+"'"+;
+      iif(ADMIN=="WA",", reimb="+self:mReimb,"")+;
       ", subscriptionprice="+ Str(self:mSubscriptionprice,-1)+;
-		", GIFTALWD="+iif(self:mCLN="0" .or.Empty(self:mCLN),iif(self:mGIFTALWD,"1","0"),"1")+;
+		", giftalwd="+iif(self:mCLN="0" .or.Empty(self:mCLN),iif(self:mGIFTALWD,"1","0"),"1")+;
 		",active="+iif(self:mactive,"1","0")+;
-		", IPCACCOUNT="+iif(IsNil(self:mIPCaccount) .or. Empty(self:oDCmIPCaccount:VALUE) .or. IsString(self:oDCmIPCaccount:VALUE),"0",Str(self:oDCmIPCaccount:VALUE,-1))+;
-		iif(self:mGIFTALWD,", CLC='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',PROPXTRA='"+Transform(cExtra,"@B")+"'",", CLC='',PROPXTRA=''")+;
-		", MULTCURR="+ iif(self:mMultCurr,"1","0")+; 
+		", ipcaccount="+iif(IsNil(self:mIPCaccount) .or. Empty(self:oDCmIPCaccount:VALUE) .or. IsString(self:oDCmIPCaccount:VALUE),"0",Str(self:oDCmIPCaccount:VALUE,-1))+;
+		iif(self:mGIFTALWD,", clc='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',propxtra='"+Transform(cExtra,"@B")+"'",", clc='',propxtra=''")+;
+		", multcurr="+ iif(self:mMultCurr,"1","0")+; 
 		iif(!self:mMultCurr,;
-			iif(self:mCurrency # sCURR,", Currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1","0")+",GAINLSACC="+self:mGainLsacc,;
-				", Currency='"+sCURR+"',reevaluate=0,GAINLSACC=0"),;
-			", Currency='"+sCURR+"',reevaluate=0,GAINLSACC=0")+;
+			iif(self:mCurrency # sCURR,", currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1","0")+",gainlsacc="+self:mGainLsacc,;
+				", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
+			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0")+;
 		iif(self:lNew,""," where accid="+self:mAccId)
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
@@ -1642,9 +1642,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		// 		oAcc:GoTop() 
 		// 		oAcc:=SQLSelect{"select a.* from account left join (m.persid as mcln from member m ) where a.accid="+self:mAccId,oConn}
 		self:oAcc:=SQLSelect{;
-			"select a.*,b.category as type,b.Heading,b.number,d.DEPTMNTNBR,d.DESCRIPTN,d.IPCPROJECT, m.persid as mcln from BalanceItem as b, account as a "+;
+			"select a.*,b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject, m.persid as mcln from balanceitem as b, account as a "+;
 			"left join member as m on (a.accid=m.accid) "+; 
-		"left join department d on (d.depid=a.Department) "+;
+		"left join department d on (d.depid=a.department) "+;
 			"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
@@ -1937,7 +1937,7 @@ local oBal,oDep as SQLSelect
 		RETURN
 	ENDIF
 	self:mNumSave:=AllTrim(self:mBalitemid)
-	oBal:=SQLSelect{"select heading,balitemid from BalanceItem where number='"+mNumSave+"'",oConn}
+	oBal:=SQLSelect{"select heading,balitemid from balanceitem where number='"+mNumSave+"'",oConn}
 	IF oBal:reccount>0
 			self:oDCmBalitemid:textValue :=AllTrim(oBal:NUMBER)+":"+oBal:Heading
 			self:cCurBal:=self:mBalitemid
@@ -1951,7 +1951,7 @@ local oBal,oDep as SQLSelect
 	IF Empty(self:mDep)
 		self:mDepartment:="0:"+sEntity+" "+sLand
 	ELSE
-		oDep:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN from department where DEPTMNTNBR='"+self:mDep+"'",oConn}  
+		oDep:=SQLSelect{"select deptmntnbr,descriptn from department where deptmntnbr='"+self:mDep+"'",oConn}  
 		IF oDep:reccount>0
 			self:mDepartment:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
 		ELSE
