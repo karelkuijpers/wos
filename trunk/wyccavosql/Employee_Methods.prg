@@ -28,7 +28,7 @@ Function CheckPassword(cPW as string, Empid:=0 as int ) as logic
 	LOCAL  lAlpha, lNum, lUpper, lLower as LOGIC
 	local cErrorMsg, cNew as string
 	local oEmp as SQLSelect 
-	oSys:=SQLSelect{"select PSWRDLEN from sysparms",oConn}
+	oSys:=SQLSelect{"select pswrdlen from sysparms",oConn}
 	oSys:Execute()
 	cPW:=AllTrim(cPW)
 	IF Empty(cPW)
@@ -52,7 +52,7 @@ Function CheckPassword(cPW as string, Empid:=0 as int ) as logic
 	ENDIF
 	oSys:Close()
 	if !Empty(Empid)
-		oEmp:=SQLSelect{"select password,PSWPRV1,PSWPRV2,PSWPRV3 from employee where empid="+Str(Empid,-1),oConn}
+		oEmp:=SQLSelect{"select password,pswprv1,pswprv2,pswprv3 from employee where empid="+Str(Empid,-1),oConn}
 		if oEmp:RecCount=1
 			cNew:=HashPassword(Empid, cPW)
 			IF cNew==oEmp:Password .or.;
@@ -108,7 +108,7 @@ local oSel as SQLSelect
 			mDepartment:=cCurDep
 			oDCmDepartment:TextValue:=cCurDep
 		ELSE
-			oSel:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN from department where depid='"+myNum+"'",oConn} 
+			oSel:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
 			if oSel:RecCount=1
 				self:oDCmDepartment:TextValue:= oSel:DEPTMNTNBR+": "+ oSel:DESCRIPTN
 				self:cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
@@ -145,9 +145,9 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	IF Empty(cUser)
 		return true
 	endif
-   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mDepId from employee where "
+   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mdepid from employee where "
 	if Empty(MYEMPID)
-		cEmpStmnt+= Crypt_Emp(false,"loginname")+'="'+cUser+'" and datediff(Now(),LSTUPDPW)<10000'
+		cEmpStmnt+= Crypt_Emp(false,"loginname")+'="'+cUser+'" and datediff(Now(),lstupdpw)<10000'
 	else
 		cEmpStmnt+='empid="'+MYEMPID+'"'
 	endif
@@ -176,7 +176,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			// record login date and set user online: 
 			InitSystemMenu()
 			cDepmntIncl:=SetDepFilter(Val(oEmp:mDepId))
-			oMainWindow:SetCaption(SQLSelect{"select sysname from sysparms",oConn}:SYSNAME)
+// 			oMainWindow:SetCaption(SQLSelect{"select sysname from sysparms",oConn}:SYSNAME)
 			cAccAlwd:=""
 			if !Empty(cDepmntIncl)
 				oSQL:=SQLSelect{"select accid from emplacc where empid='"+MYEMPID+"'",oConn} 
@@ -199,10 +199,10 @@ Function HashPassword(EMPID as int,uValue as string) as string
 	return sha2(Scramblepassword(EMPID,uValue)) 
 Function IsFirstUse( ) as logic 
 	// determine if this is the first use of the system
-	IF SQLSelect{"select count(*) as total from Employee",oConn}:total='0' .and.;
-		SQLSelect{"select count(*) as total from Person",oConn}:total='0' .and.;
-		SQLSelect{"select count(*) as total from Account",oConn}:total='0' .and.;		
-		SQLSelect{"select count(*) as total from Transaction",oConn}:total='0' 
+	IF SQLSelect{"select count(*) as total from employee",oConn}:total='0' .and.;
+		SQLSelect{"select count(*) as total from person",oConn}:total='0' .and.;
+		SQLSelect{"select count(*) as total from account",oConn}:total='0' .and.;		
+		SQLSelect{"select count(*) as total from transaction",oConn}:total='0' 
 		* first user:
 		return true
 	endif
