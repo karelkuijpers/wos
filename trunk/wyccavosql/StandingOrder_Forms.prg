@@ -286,12 +286,12 @@ METHOD OKButton( ) CLASS EditPeriodic
 		endif
 		SQLStatement{"start transaction",oConn}:Execute()
 		cStatement:=iif(self:lNew,"insert into","update")+" standingorder set "+;
-			"Idat='"+SQLdate(self:oDCmIDAT:SelectedDate)+"'"+;
-			",Edat='"+SQLdate(self:oDCmEDAT:SelectedDate)+"'"+;
+			"idat='"+SQLdate(self:oDCmIDAT:SelectedDate)+"'"+;
+			",edat='"+SQLdate(self:oDCmEDAT:SelectedDate)+"'"+;
 			",day="+Str(self:mday,-1)+;
 			",docid='"+self:mdocid+"'"+;
 			",period="+Str(self:mperiod,-1)+;
-			",Currency='"+self:mCurrency+"'"+;
+			",currency='"+self:mCurrency+"'"+;
 		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
 			iif(lNew,""," where stordrid="+ self:curStordid)
 		oStmnt:=SQLStatement{cStatement,oConn}
@@ -301,7 +301,7 @@ METHOD OKButton( ) CLASS EditPeriodic
 			oStOrdLH:GoTop()
 			if lNew 
 				self:curStordid:= SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-				oStmnt:=SQLStatement{"insert into standingorderline (STORDRID,accountid,seqnr,deb,cre,DESCRIPTN,gc,REFERENCE,CREDITOR,BANKACCT) values (?,?,?,?,?,?,?,?,?,?)",oConn}
+				oStmnt:=SQLStatement{"insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values (?,?,?,?,?,?,?,?,?,?)",oConn}
 				do	while	!oStOrdLH:EoF
 					if oStOrdLH:DEB <> oStOrdLH:CRE       // no empty lines 
 						oStmnt:Execute(self:curStordid,Str(oStOrdLH:ACCOUNTID,-1),Str(nSeq++,3,0),Str(oStOrdLH:DEB,-1),Str(oStOrdLH:CRE,-1),;
@@ -368,7 +368,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:mday := oPer:day
 		self:mdocid := oPer:docid
 		self:oStOrdL := SQLSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,m.co,m.persid as persid"+;
-			" from StandingOrderLine as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid)"+;
+			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid)"+;
 			" where l.stordrid="+Str(oPer:Stordrid,-1)+" order by seqnr",oConn}
 		oOrdLnH:=self:oSFStOrderLines:Server
 		oOrdLnH:aMirror:={}
@@ -635,7 +635,7 @@ METHOD FindButton( ) CLASS PeriodicBrowser
 local i,j as int 
 	local aKeyw:={} as array 
 	if !Empty(self:cAccId)
-		self:cWhere:='ACCOUNTID='+self:cAccId 
+		self:cWhere:='accountid='+self:cAccId 
 	else
 		self:cWhere:=""
 	endif
@@ -779,9 +779,9 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
 	local lSuccess as logic 
 	self:cWhere:=""
 	self:cOrder:="l.stordrid,l.seqnr" 
-	self:cFields:="s.STORDRID,s.day,s.period,s.IDAT,s.edat,s.LstRecording,s.docid,"+;
+	self:cFields:="s.stordrid,s.day,s.period,s.idat,s.edat,s.lstrecording,s.docid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber" 
-		self:aFields:={"s.STORDRID","s.day","s.period","s.IDAT","s.edat","s.LstRecording","s.docid",""+;
+		self:aFields:={"s.stordrid","s.day","s.period","s.idat","s.edat","s.lstrecording","s.docid",""+;
 		"l.accountid","l.deb","l.cre","l.descriptn","l.accountid","a.description","a.accnumber"}
 	self:cFrom:="standingorder s, standingorderline l left join account a on (a.accid=l.accountid)"
 	self:oStOrd:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder,oConn}
@@ -789,7 +789,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
 
 	RETURN NIL
 Method Refresh() class PeriodicBrowser
-	self:oStOrd:sqlstring :="select s.STORDRID,s.day,s.period,s.idat,s.edat,s.LstRecording,s.docid,"+;
+	self:oStOrd:sqlstring :="select s.stordrid,s.day,s.period,s.idat,s.edat,s.lstrecording,s.docid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname "+;
 		"from standingorder s, standingorderline l left join account a on (a.accid=l.accountid) "+;
 		"where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+self:cOrder
