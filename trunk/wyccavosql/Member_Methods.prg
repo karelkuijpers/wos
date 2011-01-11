@@ -68,7 +68,7 @@ METHOD FilePrint CLASS MemberBrowser
 	YrSt:=aYearStartEnd[1]
 	MnSt:=aYearStartEnd[2]
 	cFields:= "p.persid,a.description,a.accnumber,m.*,group_concat(distinct ass.accnumber separator ',') as assacc"+;
-	",group_concat(IF(d.desttyp<2,concat(cast(d.DESTAMT as char),if(d.desttyp=1,'%',''),' to ',d.DESTPP,' ',d.DESTACC),concat('Remaining to ',d.DESTPP,' ',d.DESTACC)) separator ',') as distr"
+	",group_concat(IF(d.desttyp<2,concat(cast(d.destamt as char),if(d.desttyp=1,'%',''),' to ',d.destpp,' ',d.destacc),concat('Remaining to ',d.destpp,' ',d.destacc)) separator ',') as distr"
 	 
 	cFrom:="account as a, person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
 	" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) " 
