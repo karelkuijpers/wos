@@ -392,7 +392,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		AAdd(d_netasset,Val(SKAP))
 		AAdd(d_netnum,self:netassBalId)
 	ELSE
-		oDep:=SQLSelect{"select d.ParentDep,d.DEPTMNTNBR,d.Descriptn,d.depid,d.netasset,a.balitemid from department d left join account a on (a.accid=d.netasset) where depid='"+Str(self:WhoFrom,-1)+"'",oConn}
+		oDep:=SQLSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,a.balitemid from department d left join account a on (a.accid=d.netasset) where depid='"+Str(self:WhoFrom,-1)+"'",oConn}
 		if oDep:reccount>0
 			AAdd(d_dep,oDep:DepId)
 			AAdd(d_parentdep,oDep:ParentDep)
@@ -1377,7 +1377,7 @@ METHOD RegBalance(myNum) CLASS BalanceReport
 		self:mBalNumber:=cCurBal
 		self:oDCmBalNumber:TEXTValue:=cCurBal
 	ELSE
-		oBal:=SQLSelect{"select number,heading from BalanceItem where balitemid='"+Str(self:WhatFrom,-1)+"'",oConn}
+		oBal:=SQLSelect{"select number,heading from balanceitem where balitemid='"+Str(self:WhatFrom,-1)+"'",oConn}
 		IF oBal:RecCount>0
 			self:cCurBal:=AllTrim(oBal:number)+":"+oBal:Heading
 			self:mBalNumber:=cCurBal
@@ -2240,7 +2240,7 @@ METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as str
 	ENDIF 
 
 	oMBal:=Balances{}
-	oPPcd := SQLSelect{"select ppcode,ppname from PPCODES order by ppcode",oConn} 
+	oPPcd := SQLSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
 	aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
 	startdate:=SToD(Str(self:YEARSTART,4,0)+StrZero(self:MONTHSTART,2,0)+'01') 
 	enddate:=endofmonth(SToD(str(self:YEAREND,4,0)+strzero(self:MonthEnd,2)+'01'))
@@ -2266,7 +2266,7 @@ METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as str
 	// 	return
 	// endif
 
-	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.FROMRPP,bfm,t.opp,t.gc,t.description "+;
+	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.fromrpp,bfm,t.opp,t.gc,t.description "+;
 		"from transaction t, account a "+;
 		"where a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
 		" and t.accid in ('"+Implode(aAcc,"','")+"') order by accnumber,dat"),oConn}
@@ -2925,8 +2925,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oGftRpt:Country:=self:Country
 	ENDIF		
 	oMBal:=Balances{}
-	oPPcd := SQLSelect{"select ppcode,ppname from PPCODES order by ppcode",oConn} 
-	PMCLastSend:=SQLSelect{"select PMISLSTSND from Sysparms",oConn}:FIELDGET(1)
+	oPPcd := SQLSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
+	PMCLastSend:=SQLSelect{"select pmislstsnd from sysparms",oConn}:FIELDGET(1)
 	aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
 
 	startdate:=SToD(Str(ReportYear,4)+'0101') 
@@ -2968,7 +2968,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,b.category,m.persid,m.householdid,m.homepp,m.contact,m.RPTDEST,"+;
 		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.lastname as contactlstname,pc.email as contactemail"+;
 		",pm.lastname,pm.email "+;
-		" from balanceitem b,Account a left join member m on (a.accid=m.accid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
+		" from balanceitem b,account a left join member m on (a.accid=m.accid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
 		" and a.accid in ('"+Implode(aAcc,"','")+"' ) group by a.accid order by a.accnumber",oConn}
@@ -2979,7 +2979,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:SetUnit(1)
 		oPro:Show()
 	endif
-	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.FROMRPP,bfm,t.opp,t.gc,t.description "+;
+	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.fromrpp,bfm,t.opp,t.gc,t.description "+;
 		"from transaction t, account a "+;
 		"where a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
 		" and t.accid in ('"+Implode(aAcc,"','")+"') order by accnumber,dat"),oConn}
@@ -3593,7 +3593,7 @@ store Month(Today()-27) to peilmnd,peilmax
 store Year(Today()-27) to peiljaar
 store Year(LstYearClosed) to startjaar
 store Year(Today()) to maxjaar
-self:Country:=SQLSelect{"select CountryOwn from sysparms",oConn}:FIELDGET(1)
+self:Country:=SQLSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
 
 Footnotes:="Last"
 Memberstmnt:="LastSt"
@@ -3976,7 +3976,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	RETURN
 method Init() class GiftsReport 
 	self:oLan:=Language{}
-	self:DecFrac:=SQLSelect{"select DECMGIFT from Sysparms",oConn}:FIELDGET(1)
+	self:DecFrac:=SQLSelect{"select decmgift from sysparms",oConn}:FIELDGET(1)
 
 	return self
 method InitializeTexts(ReportYear as int,ReportMonth as int) as void pascal class GiftsReport  
@@ -4501,7 +4501,7 @@ self:Pointer := Pointer{POINTERHOURGLASS}
 
 // Get data header line:
 
-oSys:=SQLselect{"select IDORG, IDCONTACT from sysparms",oConn}
+oSys:=SQLSelect{"select idorg, idcontact from sysparms",oConn}
 
 IF oSys:RecCount<1
 	(ErrorBox{self,self:oLan:WGet("Database does not contain sysparms")}):Show()
@@ -4533,12 +4533,12 @@ oSys:Close()
 oSys:=null_object
 
 
-sqlStr:=UnionTrans("select sum(t.CRE-t.DEB) as taxamount,p.persid,p.PROPEXTR,p.lastname,p.firstname,p.prefix,p.address,p.attention,p.postalcode,p.city,p.country," ;
+sqlStr:=UnionTrans("select sum(t.cre-t.deb) as taxamount,p.persid,p.propextr,p.lastname,p.firstname,p.prefix,p.address,p.attention,p.postalcode,p.city,p.country," ;
    + SQLFullName(0,"p") + " as fullname from person as p,transaction as t,account ";
    + "where p.persid=t.persid and INSTR(p.propextr,'</" + self:TaxID ;
 	+ ">') and NOT INSTR(p.propextr,'<" + self:TaxID + "></" + self:TaxID + ">') and " ;
 	+ "account.accid=t.accid and account.giftalwd=1 and " ; 
-	+ "t.DAT>='" + Str(TaxYear,-1) + "-01-01' and t.DAT<='" + Str(TaxYear,-1) + "-12-31' group by p.persid having taxamount>=" + Str(nThreshold,-1))
+	+ "t.dat>='" + Str(TaxYear,-1) + "-01-01' and t.dat<='" + Str(TaxYear,-1) + "-12-31' group by p.persid having taxamount>=" + Str(nThreshold,-1))
 	
 oTrans:=SQLSelect{sqlStr,oConn}
 
@@ -5313,7 +5313,7 @@ METHOD OKButton( ) CLASS YearClosing
 	endif
 
 	// Check if all reevaluations has been done: 
-	if SQLSelect{"select LSTREEVAL from Sysparms",oConn}:LSTREEVAL <  self:BalanceEndDate 
+	if SQLSelect{"select lstreeval from Sysparms",oConn}:LSTREEVAL <  self:BalanceEndDate 
 		if SQLSelect{"select accid from account where multicurr=0 and currency<>'"+sCURR+"'",oConn}:reccount>0
 			(ErrorBox{self:OWNER,self:oLan:WGet('perform first required reevaluations')}):Show()
 			self:EndWindow()
@@ -5340,7 +5340,7 @@ METHOD OKButton( ) CLASS YearClosing
 	self:d_depnbr:={''}     	
 	self:d_PLdeb:={0.00}
 	self:d_PLcre:={0.00}
-	oDep:=SQLSelect{"select d.ParentDep,d.DEPTMNTNBR,d.Descriptn,d.depid,d.netasset,b.category from department d "+;
+	oDep:=SQLSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,b.category from department d "+;
 		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}
 	if oDep:reccount>0
 		
@@ -5463,9 +5463,9 @@ METHOD OKButton( ) CLASS YearClosing
 			endif
 			oStmnt:=SQLStatement{"insert into accountbalanceyear set "+;
 			"accid='"+Str(oMBal:accid,-1)+"'"+;
-			",YearStart="+Str(AfterBalance/100,4,0)+;
-			",MonthStart="+Str(AfterBalance%100,2,0)+; 
-			",CURRENCY='"+sCURR+"'"+;
+			",yearstart="+Str(AfterBalance/100,4,0)+;
+			",monthstart="+Str(AfterBalance%100,2,0)+; 
+			",currency='"+sCURR+"'"+;
 			",svjd='"+Str(Round(oMBal:per_deb - min_balance,DecAantal),-1)+"',svjc='"+Str(Round(oMBal:per_cre - min_balance,DecAantal),-1)+"'",oConn}
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows>0
@@ -5478,9 +5478,9 @@ METHOD OKButton( ) CLASS YearClosing
 					endif
 					oStmnt:=SQLStatement{"insert into accountbalanceyear	set "+;
 					"accid='"+Str(oMBal:accid,-1)+"'"+;
-					",YearStart="+Str(AfterBalance/100,4,0)+;
-					",MonthStart="+Str(AfterBalance%100,2,0)+;	
-					",CURRENCY='"+oMBal:Currency+"'"+;
+					",yearstart="+Str(AfterBalance/100,4,0)+;
+					",monthstart="+Str(AfterBalance%100,2,0)+;	
+					",currency='"+oMBal:Currency+"'"+;
 					",svjd='"+Str(Round(oMBal:per_debF - min_balance,DecAantal),-1)+"',svjc='"+Str(Round(oMBal:per_creF - min_balance,DecAantal),-1)+"'",oConn}
 					oStmnt:Execute()
 					if	!Empty(oStmnt:Status)
@@ -5537,20 +5537,20 @@ METHOD OKButton( ) CLASS YearClosing
 	FOR i = 1 to Len(ProfitLossAccount)
 		IF ProfitLossDeb[i]#0 .or. ProfitLossCre[i]#0
 			nSeqNbr++
-			cStatement:="insert into Transaction set "+;
-			"TransId="+cTransnr+;
-			",DAT='"+SQLdate(self:BalanceEndDate)+"'"+;
+			cStatement:="insert into transaction set "+;
+			"transid="+cTransnr+;
+			",dat='"+SQLdate(self:BalanceEndDate)+"'"+;
 			",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
 			",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
 			",accid='"+Str(ProfitLossAccount[i],-1)+"'"+;
-			",Deb="+Str(-ProfitLossDeb[i],-1)+;
-			",Cre="+Str(-ProfitLossCre[i],-1)+;
-			",USERID='"+LOGON_EMP_ID +"'"+;
-			",CURRENCY='"+ProfitLossCurrency[i] +"'"+;
-			",DEBFORGN="+Str(-ProfitLossDebF[i],-1)+;
-			",CREFORGN="+Str(-ProfitLossCreF[i],-1)+;
-			",SEQNR="+Str(nSeqNbr,-1)+;
-			",POSTSTATUS=2"	
+			",deb="+Str(-ProfitLossDeb[i],-1)+;
+			",cre="+Str(-ProfitLossCre[i],-1)+;
+			",userid='"+LOGON_EMP_ID +"'"+;
+			",currency='"+ProfitLossCurrency[i] +"'"+;
+			",debforgn="+Str(-ProfitLossDebF[i],-1)+;
+			",creforgn="+Str(-ProfitLossCreF[i],-1)+;
+			",seqnr="+Str(nSeqNbr,-1)+;
+			",poststatus=2"	
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
 			if	oStmnt:NumSuccessfulRows<1
@@ -5567,10 +5567,10 @@ METHOD OKButton( ) CLASS YearClosing
 
 	* Update closed year:
 	oStmnt:=SQLStatement{"insert into balanceyear set "+;
-	"YEARSTART="+Str(Year(LstYearClosed),-1)+;
-	",MONTHSTART="+Str(Month(LstYearClosed),-1)+;
-	",YEARLENGTH="+Str(self:YearClose*12+self:MonthClose+1-Year(LstYearClosed)*12-Month(LstYearClosed),-1)+;
-	",STATE='C'",oConn}
+	"yearstart="+Str(Year(LstYearClosed),-1)+;
+	",monthstart="+Str(Month(LstYearClosed),-1)+;
+	",yearlength="+Str(self:YearClose*12+self:MonthClose+1-Year(LstYearClosed)*12-Month(LstYearClosed),-1)+;
+	",state='C'",oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows<1
 		self:cError:=self:oLan:WGet("could not add transaction")+";Error:"+oStmnt:ErrInfo:ErrorMessage
@@ -5626,7 +5626,7 @@ METHOD OKButton( ) CLASS YearClosing
 
 	* Clearing Due Amounts:
 	self:STATUSMESSAGE(self:oLan:WGet("Removing of received invoiced amounts, moment please"))
-	oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(curdate(),120) and AmountRecvd >=AmountInvoice or invoicedate<subdate(curdate(), interval 1 year)",oConn} 
+	oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(curdate(),120) and amountrecvd >=amountinvoice or invoicedate<subdate(curdate(), interval 1 year)",oConn} 
 	oStmnt:Execute()
   	if !Empty(oStmnt:Status)
 		self:cError:=self:oLan:WGet("could not clear old dueamounts")+"; Error:"+oStmnt:ErrInfo:ErrorMessage
@@ -5720,20 +5720,20 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 			PL_totdeb := Round(PL_totdeb - min_balance,DecAantal)
 			PL_totcre := Round(PL_totcre - min_balance,DecAantal)
 			nSeqNbr++
-			cStatement:="insert into Transaction set "+;
-				iif(Empty(cTransnr),'',"TransId="+cTransnr+",")+;
-				"DAT='"+SQLdate(self:BalanceEndDate)+"'"+;
+			cStatement:="insert into transaction set "+;
+				iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
+				"dat='"+SQLdate(self:BalanceEndDate)+"'"+;
 				",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
 				",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
 				",accid='"+Str(self:d_netasset[p_depptr],-1)+"'"+;
-				",Deb="+Str(PL_totdeb,-1)+;
-				",Cre="+Str(PL_totcre,-1)+;
-				",USERID='"+LOGON_EMP_ID +"'"+;
-				",CURRENCY='"+sCURR +"'"+;
-				",DEBFORGN="+Str(PL_totdeb,-1)+;
-				",CREFORGN="+Str(PL_totcre,-1)+;
-				",SEQNR="+Str(nSeqNbr,-1)+;
-				",POSTSTATUS=2"	
+				",deb="+Str(PL_totdeb,-1)+;
+				",cre="+Str(PL_totcre,-1)+;
+				",userid='"+LOGON_EMP_ID +"'"+;
+				",currency='"+sCURR +"'"+;
+				",debforgn="+Str(PL_totdeb,-1)+;
+				",creforgn="+Str(PL_totcre,-1)+;
+				",seqnr="+Str(nSeqNbr,-1)+;
+				",poststatus=2"	
 				oStmnt:=SQLStatement{cStatement,oConn}
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows>0
@@ -5743,18 +5743,18 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 					* adapt last year	balance of net	asset	account: 
 					oStmnt:=SQLStatement{"insert into accountbalanceyear set "+;
 						"accid='"+Str(self:d_netasset[p_depptr],-1)+"'"+;
-						",YearStart="+Str(AfterBalance/100,4,0)+;
-						",MonthStart="+Str(AfterBalance%100,2,0)+; 
-						",CURRENCY='"+sCURR+"'"+;
+						",yearstart="+Str(AfterBalance/100,4,0)+;
+						",monthstart="+Str(AfterBalance%100,2,0)+; 
+						",currency='"+sCURR+"'"+;
 						",svjd='"+Str(PL_totdeb,-1)+"',svjc='"+Str(PL_totcre,-1)+"'",oConn}
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						oStmnt:=SQLStatement{"update accountbalanceyear	set "+;
 						"svjd=svjd+"+Str(PL_totdeb,-1)+",svjc=svjc+"+Str(PL_totcre,-1)+;
 						" where accid='"+Str(self:d_netasset[p_depptr],-1)+"' and "+;
-						" YearStart="+Str(AfterBalance/100,4,0)+;
-						" and	MonthStart="+Str(AfterBalance%100,2,0)+; 
-						" and	CURRENCY='"+sCURR+"'",oConn}
+						" yearstart="+Str(AfterBalance/100,4,0)+;
+						" and	monthstart="+Str(AfterBalance%100,2,0)+; 
+						" and	currency='"+sCURR+"'",oConn}
 						oStmnt:Execute()
 						if	!Empty(oStmnt:Status)
 							self:cError:=self:oLan:WGet("could not	update accountbalanceyear")+";Error:"+oStmnt:ErrInfo:ErrorMessage
