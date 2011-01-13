@@ -115,7 +115,7 @@ CLASS TeleMut
 	PROTECT lGift AS LOGIC
 
 	// PROTECT oTelPat as SQLSelect, oBank as SQLSelect
-	EXPORT teleptrn:={} as ARRAY //{contra_bankaccnt,kind,contra_name,AddSub,description,accid,ind_autmut}
+	EXPORT teleptrn:={} as ARRAY //{contra_bankaccnt,kind,contra_name,addsub,description,accid,ind_autmut}
 	EXPORT oTelTr as SQLSelect
 	EXPORT oParent AS OBJECT
 	EXPORT m57_gironr := {} as ARRAY   //met: banknumber, usedforgifts, betaalind, datlaatst 
@@ -129,7 +129,8 @@ CLASS TeleMut
 	PROTECT NonTeleAcc:={} as ARRAY
 	EXport lOK as logic 
 	export oLan as Language 
-	export cReqTeleBnk as string // required bank accounts to import
+	export cReqTeleBnk as string // required bank accounts to import 
+	protect cAccnumberCross as string  // accnumber of account for cross bank transfer (sKruis)
 
 	declare method AllreadyImported, TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 	ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift
@@ -138,7 +139,7 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 	local cStatement as string
 	// check if transaction has allready been imported
 	IF transdate <= m57_gironr[CurTelePtr,3] 
-		cStatement:="select teletrID from teletrans where "+;
+		cStatement:="select teletrid from teletrans where "+;
 		"bankaccntnbr='" +m57_gironr[CurTelePtr,1]+"'"+;
 		" and bookingdate='"+SQLdate(transdate)+"' and "+;
 		"amount="+Str(transamount,-1)+" and "+;
@@ -146,7 +147,7 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 		"kind='"+SubStr(AllTrim(TransType),1,4)+"' and "+;
 		"contra_bankaccnt='"+ZeroTrim(ContrBankNbr)+"' and "+;
 		"contra_name='"+AllTrim(ContraName)+"' and "+;
-		"BUDGETCD='"+SubStr(AllTrim(BudgetCode),1,20)+"' and "+;
+		"budgetcd='"+SubStr(AllTrim(BudgetCode),1,20)+"' and "+;
 		"description='"+AllTrim(transdescription)+"'"
 		oSEl:=SQLSelect{cStatement,oConn}
 		if oSEl:Reccount>0 
@@ -226,8 +227,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		Return false
 	endif
 	cSelect:="b.usedforgifts=1 "+;
-	"and AddSub='B' and t.kind not in ('OCR','BGC') and t.description <> 'Betreft acceptgiro' and "+; 
-	"t.bankaccntnbr in ("+self:cReqTeleBnk+") and "+;
+	"and addsub='B' and t.kind not in ('OCR','BGC') and t.description <> 'Betreft acceptgiro' and "+; 
 	"(t.kind<>'COL' or cast(t.contra_bankaccnt as unsigned)>0) and "+;
 	"(cast(t.contra_bankaccnt as unsigned)=0 or t.contra_bankaccnt not in ("+self:cBankAcc+")) "
 	if LookingForGifts
@@ -237,6 +237,8 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	else
 		cSelect:="not ("+cSelect+")"		
 	endif
+	cSelect+=iif(Empty(cSelect),""," and ")+"t.bankaccntnbr in ("+self:cReqTeleBnk+")"     // should contain requested bankaccounts
+
 	DO WHILE true
 		SQLStatement{"start transaction",oConn}:execute() 
 		// select next row not yet locked by somebody else:
@@ -247,7 +249,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		+" and "+cSelect+" order by teletrid limit 1 for UPDATE" ,oConn}
 		
 		if self:oTelTr:reccount<1
-			LogEvent(,self:oTelTr:SQLString,"logsql") 
+			LogEvent(,self:oTelTr:SQLString,"LogErrors") 
 			return false
 		endif
 		// software lock teletrans row:
@@ -264,7 +266,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 // 		iBpos:= AScan(self:m57_gironr,{|x| x[1]==BankNbr})
 // 		IF iBpos>0
 // 			TegNbr:= self:oTelTr:contra_bankaccnt
-// 			IF m57_gironr[iBpos,2].and.self:oTelTr:AddSub="B".and.!self:oTelTr:kind=="OCR" .and.!self:oTelTr:kind=="BGC";
+// 			IF m57_gironr[iBpos,2].and.self:oTelTr:addsub="B".and.!self:oTelTr:kind=="OCR" .and.!self:oTelTr:kind=="BGC";
 // 					.and.!self:oTelTr:description="Betreft acceptgiro"	.and.;
 // 					(!self:oTelTr:kind=="COL".or.!Empty(Val(self:oTelTr:contra_bankaccnt)));  // inning incasso?
 // 				.and.(Empty(Val(self:oTelTr:contra_bankaccnt)) .or.AScanExact(self:bankacc,TegNbr)==0) ; // onderlinge bankboekingen via general journal
@@ -311,13 +313,13 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		self:m56_addsub:= self:oTelTr:AddSub
 		self:m56_cod_mut_r:= self:oTelTr:code_mut_r
 		if !Empty(self:oTelTr:BUDGETCD)
-			nBudlen:= At(" ",AllTrim(self:oTelTr:BUDGETCD))
+			nBudLen:= At(" ",AllTrim(self:oTelTr:budgetcd))
 			if nBudlen>0
 				nBudlen--
 			else
-				nBudlen:=Len(AllTrim(self:oTelTr:BUDGETCD))
+				nBudLen:=Len(AllTrim(self:oTelTr:BUDGETCD))
 			endif			 
-			self:m56_budgetcd:=SubStr(AllTrim(self:oTelTr:BUDGETCD),1,nBudlen)
+			self:m56_budgetcd:=SubStr(AllTrim(self:oTelTr:BUDGETCD),1,nBudLen)
 		else
 			 self:m56_budgetcd:=""
 		endif
@@ -376,7 +378,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			self:m56_description:= Upper(Compress(self:oTelTr:Description))
 			self:m56_contra_name:= Upper(Compress(self:oTelTr:contra_name)) 
 		endif		
-		//    if !Empty(Val(AllTrim(oTelTr:persid))) .and. oTelTr:AddSub="B"
+		//    if !Empty(Val(AllTrim(oTelTr:persid))) .and. oTelTr:addsub="B"
 		if !Empty(self:oTelTr:persid) .and. self:oTelTr:persid>0 
 			self:m56_persid:=Str(self:oTelTr:persid,-1)
 		endif
@@ -402,7 +404,7 @@ METHOD Import() CLASS TeleMut
 	local aFiles:={} as array  // files to be deleted 
 	// force only one person is importing: 
 	SQLStatement{"start transaction",oConn}:execute()
-	oLock:=SQLSelect{"select importfile from ImportLock where importfile='telelock' for update",oConn}
+	oLock:=SQLSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
 
 	oFs := MyFileSpec{"mutgiro.txt"}
 	oFs:Path:=CurPath
@@ -693,8 +695,8 @@ DO WHILE Len(aFields)>3
 	",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 	",kind='"+lv_addsub+"'"+;
 	",amount='"+Str(lv_Amount,-1)+"'"+;
-	",AddSub='"+lv_addsub	+"'"+;
-	",CODE_MUT_R='M'"+;
+	",addsub='"+lv_addsub	+"'"+;
+	",code_mut_r='M'"+;
 	",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
 	if	oStmnt:NumSuccessfulRows>0
@@ -776,7 +778,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				* save transaction:
 				IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 					IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KID","","",lv_Budgetcd) .and.!Empty(lv_Amount) 
-						oSel:=SQLSelect{"select personid from subsription where invoiceid='"+lv_InvoiceID+"'",oConn}
+						oSel:=SQLSelect{"select personid from subscription where invoiceid='"+lv_InvoiceID+"'",oConn}
 						if oSel:reccount>0
 							cPersId:=Str(oSel:personid,-1)
 						else
@@ -788,7 +790,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 							",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 							",kind='KID'"+;
 							",amount='"+Str(lv_Amount,-1)+"'"+;
-							",AddSub='"+lv_addsub +"'"+;
+							",addsub='"+lv_addsub +"'"+;
 							",code_mut_r='"+lv_reference+"'"+;
 							",description='"+lv_description +"'"+;
 							",seqnr="+Str(Val(SubStr(oHlM:MTLINE,9,7)),-1)+;
@@ -855,7 +857,7 @@ DO WHILE .not.oHlM:EoF
 	if !lv_bankAcntOwn== Cur_RekNrOwn
 		Cur_RekNrOwn:=lv_bankAcntOwn
 		Cur_enRoute:=""
-		oBank:=SQLSelect{"select b.PAYAHEAD,a.accnumber from BankAccount b, account a where not b.payahead is null and a.accid=b.payahead and banknumber='"+lv_bankAcntOwn+"'",oConn}
+		oBank:=SQLSelect{"select b.payahead,a.accnumber from bankaccount b, account a where not b.payahead is null and a.accid=b.payahead and banknumber='"+lv_bankAcntOwn+"'",oConn}
 		if oBank:Reccount>0
 			Cur_enRoute:=oBank:ACCNUMBER
 		endif
@@ -932,7 +934,7 @@ DO WHILE .not.oHlM:EoF
 	    		endif
 	    	elseif Upper(SubStr(oHlM:MTLINE,57,32))="NAAM/NUMMER STEMMEN NIET OVEREEN" .and.!Empty(lv_budget)  //filled betalingskenmerk
 	    		// look for bankorder:
-	    		oBord:=SQLSelect{"select a.accnumber from bankorder o, account a where ID="+ZeroTrim(lv_bankid)+" and a.accid=b.accntfrom", oConn} 
+	    		oBord:=SQLSelect{"select a.accnumber from bankorder o, account a where id="+ZeroTrim(lv_bankid)+" and a.accid=b.accntfrom", oConn} 
 	    		if oBord:Reccount>0   
     				lv_budget:=AllTrim(oAcc2:ACCNUMBER)
     			else
@@ -1015,8 +1017,8 @@ DO WHILE .not.oHlM:EoF
 				",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 				",kind='"+lv_reference +"'"+;
 				",amount="+Str(lv_Amount,-1)+;
-				",AddSub='"+lv_addsub	+"'"+;
-				",BUDGETCD='"+lv_budget	+"'"+;
+				",addsub='"+lv_addsub	+"'"+;
+				",budgetcd='"+lv_budget	+"'"+;
 				iif(Empty(lv_persid),"",",persid='"+lv_persid +"'")+;
 				",seqnr="+Str(nVnr,-1)+;
 				",description='"+lv_description	+"'",oConn}
@@ -1025,7 +1027,7 @@ DO WHILE .not.oHlM:EoF
 				++lv_aant_toe
 				++nImp
 			else
-				LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:description,"logsql")
+				LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 			endif
   		endif
 	ENDIF
@@ -1153,9 +1155,9 @@ DO WHILE .not.oHlC:EOF
 	",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 	",kind='COL'"+;
 	",amount='"+Str(lv_Amount,-1)+"'"+;
-	",AddSub='B'"+;
+	",addsub='B'"+;
 	",code_mut_r='M'"+;
-	",BUDGETCD='"+lv_Budgetcd	+"'"+;
+	",budgetcd='"+lv_Budgetcd	+"'"+;
 	",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
 	if	oStmnt:NumSuccessfulRows>0
@@ -1275,7 +1277,7 @@ if lSuccess
 		",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 		",kind='"+oHlG:hl_mutsoor +"'"+;
 		",amount='"+Str(lv_Amount,-1)+"'"+;
-		",AddSub='"+lv_addsub +"'"+;
+		",addsub='"+lv_addsub +"'"+;
 		",code_mut_r='"+lv_cod_mut+"'"+;
 		",budgetcd='"+AllTrim(oHlG:hl_budget)+"'"+;
 		",seqnr='"+Str(Val(AllTrim(oHlG:hl_volgnum)),-1)+"'"+;
@@ -1395,8 +1397,8 @@ DO WHILE Len(AFields)>4
 	",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
 	",kind='KDB'"+;
 	",amount='"+Str(lv_Amount,-1)+"'"+;
-	",AddSub='"+lv_addsub	+"'"+;
-	",CODE_MUT_R='M'"+;
+	",addsub='"+lv_addsub	+"'"+;
+	",code_mut_r='M'"+;
 	",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
 	if	oStmnt:NumSuccessfulRows>0
@@ -1542,7 +1544,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 					",bankaccntnbr='"+lv_bankAcntOwn+"'"+;
 					",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 					",amount='"+Str(lv_Amount,-1)+"'"+;
-					",AddSub='"+lv_addsub +"'"+;
+					",addsub='"+lv_addsub +"'"+;
 					",seqnr='"+Str(Val(lv_reference),-1)+"'"+;
 					",description='"+lv_description +"'",oConn}
 					oStmnt:Execute()
@@ -1628,10 +1630,10 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 					",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 					",kind='PGA'"+;
 					",amount='"+Str(lv_Amount,-1)+"'"+;
-					",AddSub='"+lv_addsub	+"'"+;
-					",BUDGETCD='"+lv_Budgetcd	+"'"+;
+					",addsub='"+lv_addsub	+"'"+;
+					",budgetcd='"+lv_Budgetcd	+"'"+;
 					iif(Empty(lv_persid),"",",persid='"+lv_persid +"'")+;
-					",CODE_MUT_R='"+lv_reference+"'"+;
+					",code_mut_r='"+lv_reference+"'"+;
 					",description='"+lv_description	+"'",oConn}
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows>0
@@ -1798,7 +1800,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 			",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 			",kind='"+lv_addsub +"'"+;
 			",amount='"+Str(lv_Amount,-1)+"'"+;
-			",AddSub='"+lv_addsub +"'"+;
+			",addsub='"+lv_addsub +"'"+;
 			",code_mut_r='"+"M"+"'"+;
 			",description='"+lv_description +"'",oConn}
 		oStmnt:Execute()
@@ -1906,8 +1908,8 @@ DO WHILE Len(aFields)>4
 		",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
 		",kind='SAB'"+;
 		",amount='"+Str(lv_Amount,-1)+"'"+;
-		",AddSub='"+lv_addsub	+"'"+;
-		",CODE_MUT_R='M'"+;
+		",addsub='"+lv_addsub	+"'"+;
+		",code_mut_r='M'"+;
 		",seqnr='"+Str(Val(SubStr(lv_description,-4,4)),-1)+"'",;
 		",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
@@ -2049,7 +2051,7 @@ DO WHILE .not.oHlM:EOF
 			",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 			",kind='"+lv_reference+"'"+;
 			",amount='"+Str(lv_Amount,-1)+"'"+;
-			",AddSub='"+lv_addsub	+"'"+;
+			",addsub='"+lv_addsub	+"'"+;
 			",contra_name='"+lv_NameContra	+"'"+;
 			",description='"+AllTrim(lv_description)	+"'",oConn}
 			oStmnt:Execute()
@@ -2189,7 +2191,7 @@ DO WHILE recordfound
 	",bookingdate='"+SQLdate(transdate)+"'"+;
 	",kind='"+kind +"'"+;
 	",amount='"+Str(lv_Amount,-1)+"'"+;
-	",AddSub='"+lv_addsub	+"'"+;
+	",addsub='"+lv_addsub	+"'"+;
 	",code_mut_r='M'"+;
 	",seqnr="+Str(nVnr,-1)+;
 	",description='"+lv_description	+"'",oConn}
@@ -2337,8 +2339,8 @@ DO WHILE .not.oHlM:EOF
 			",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 			",kind='"+lv_reference +"'"+;
 			",amount='"+Str(lv_Amount,-1)+"'"+;
-			",AddSub='"+lv_addsub	+"'"+;
-			",BUDGETCD='"+lv_budget	+"'"+;
+			",addsub='"+lv_addsub	+"'"+;
+			",budgetcd='"+lv_budget	+"'"+;
 			iif(Empty(lv_persid),"",",persid='"+lv_persid +"'")+;
 			",description='"+lv_description	+"'",oConn}
 			oStMnt:Execute()
@@ -2362,7 +2364,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	* Gift: true: next gift
 	*       false: next nongift
 	local oSelBank as SelBankAcc
-	local oBank as SQLSelect
+	local oBank,oAcc as SQLSelect
 // 	local m57_bank:=self:m57_gironr as array
 	local cReq as string 
 	self:oLan:=Language{}
@@ -2393,6 +2395,15 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 		oSelBank:=SelBankAcc{,,,self}
 		oSelBank:Show() 
 	endif
+	// determine ACCNUMBER of sKruis:
+	IF !Gift .and.!Empty(SKruis)
+		* Seek accountnumber of skruis: 
+		oAcc:=SQLSelect{"select accnumber from account where accid="+SKruis,oConn }
+		if oAcc:reccount>0
+			self:cAccnumberCross:=oAcc:ACCNUMBER
+		endif
+	endif
+
 // 	AEval(m57_bank,{|x|cReq+=","+x[1]})
 
 // 	self:cReqTeleBnk:=SubStr(cReq,2)
@@ -2405,13 +2416,12 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	RETURN SELF
 METHOD InitTeleGift() CLASS TeleMut
 	//oBank:SetFilter("!Empty(telebankng)")
-
 	
 METHOD InitTeleNonGift() CLASS TeleMut
 	LOCAL lSuc as LOGIC
 	local oTelPat as SQLSelect
-// 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and AddSub<>'' and description<>''",oConn}
-	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and AddSub<>''",oConn}
+// 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and addsub<>'' and description<>''",oConn}
+	oTelPat:=SQLSelect{"select * from telebankpatterns where accid>0 and kind<>'' and addsub<>''",oConn}
 	DO WHILE !oTelPat:EOF
 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
 			oTelPat:kind,;
@@ -2442,13 +2452,9 @@ DO WHILE self:GetNxtMut(false)
 	self:m56_autmut:=FALSE
 	IF .not.Empty(SKruis).and..not.Empty(self:m56_contra_bankaccnt).and.Empty(self:m56_budgetcd)
 		if SQLSelect{"select accid from bankaccount where banknumber='"+AllTrim(self:m56_contra_bankaccnt)+"'",oConn}:reccount>0 
-			* Seek accountnumber of skruis: 
-			oAcc:=SQLSelect{"select accnumber from account where accid="+SKruis,oConn }
-			if oAcc:reccount>0
-				self:m56_budgetcd:=oAcc:ACCNUMBER 
-			endif 
+			self:m56_budgetcd:=self:cAccnumberCross 
 			if Empty(self:m56_description)
-				self:oLan:rget("clearing")
+				self:m56_description:=self:oLan:rget("clearing")
 			endif
 		ENDIF
 	ENDIF
