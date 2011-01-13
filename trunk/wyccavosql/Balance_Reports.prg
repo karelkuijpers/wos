@@ -3046,7 +3046,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			IF	lFirst .and.lFirstInMonth
 				oReport:PrintLine(@nRow,@nPage,oLan:Get(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
 				lFirst:=FALSE
-				oMBal:GetBalance(mAccid,oAcc:category,,previousyear*100+previousmonth)
+				oMBal:GetBalance(mAccid,,previousyear*100+previousmonth)
 				oReport:PrintLine(@nRow,@nPage,;
 					Pad(oLan:Get("Beginning Account balance",,"!")+Space(1)+oLan:Get(MonthEn[nMonth],,"!"),97)+;
 					IF(oMBal:Per_deb-oMBal:Per_cre<0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
@@ -3222,7 +3222,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 						Pad(oLan:Get('Balance',,"!")+Space(1)+oLan:Get('transactions'),97)+;
 						IF(m71_deb-m71_cre<=0,Space(13)+Str(m71_cre-m71_deb,12,DecAantal),;
 						Str(m71_deb-m71_cre,12,DecAantal)),aHeading) 
-					oMbal:GetBalance(mAccid,oAcc:category,,ReportYear*100+nMonth)
+					oMBal:GetBalance(mAccid,,ReportYear*100+nMonth)
 					
 					oReport:PrintLine(@nRow,@nPage,;
 						BoldOn+Pad(oLan:Get('Account balance',,"!")+Space(1)+oLan:Get(MonthEn[nMonth],,"!"),97)+;
