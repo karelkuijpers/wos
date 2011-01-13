@@ -50,42 +50,42 @@ STATIC DEFINE EMAIL_SMTPSERVER := 104
 STATIC DEFINE SELBANKACC_LISTBOX1 := 100 
 CLASS TAB_PARM1 INHERIT DataWindowExtra 
 
-	PROTECT oDCmCASH AS SINGLELINEEDIT
-	PROTECT oDCmCAPITAL AS SINGLELINEEDIT
-	PROTECT oDCmKRUISPSTN AS SINGLELINEEDIT
-	PROTECT oDCCloseMonth AS COMBOBOX
-	PROTECT oDCSC_SKAS AS FIXEDTEXT
-	PROTECT oDCSC_SKAP AS FIXEDTEXT
-	PROTECT oDCSC_SKRUIS AS FIXEDTEXT
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-	PROTECT oCCCashButton AS PUSHBUTTON
-	PROTECT oCCCAPButton AS PUSHBUTTON
-	PROTECT oCCCROSSButton AS PUSHBUTTON
-	PROTECT oDCFixedText5 AS FIXEDTEXT
-	PROTECT oDCmAdminType AS COMBOBOX
-	PROTECT oDCSYSNAME AS SINGLELINEEDIT
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCmPersonOwn AS SINGLELINEEDIT
-	PROTECT oCCPersonButtonOrg AS PUSHBUTTON
-	PROTECT oDCmPersonContact AS SINGLELINEEDIT
-	PROTECT oCCPersonButtonContact AS PUSHBUTTON
-	PROTECT oDCFixedText7 AS FIXEDTEXT
-	PROTECT oDCAcroFixed AS FIXEDTEXT
-	PROTECT oDCEntity AS SINGLELINEEDIT
-	PROTECT oDCCurrency AS COMBOBOX
-	PROTECT oDCCURRNAME AS SINGLELINEEDIT
-	PROTECT oDCHBLAND AS SINGLELINEEDIT
-	PROTECT oDCSC_SLAND AS FIXEDTEXT
-	PROTECT oDCSC_SMUNT AS FIXEDTEXT
-	PROTECT oDCSC_SMUNTNAAM AS FIXEDTEXT
-	PROTECT oDCFixedText11 AS FIXEDTEXT
-	PROTECT oDCPosting AS CHECKBOX
+	PROTECT oDCmCASH as SINGLELINEEDIT
+	PROTECT oDCmCAPITAL as SINGLELINEEDIT
+	PROTECT oDCmKRUISPSTN as SINGLELINEEDIT
+	PROTECT oDCCloseMonth as COMBOBOX
+	PROTECT oDCSC_SKAS as FIXEDTEXT
+	PROTECT oDCSC_SKAP as FIXEDTEXT
+	PROTECT oDCSC_SKRUIS as FIXEDTEXT
+	PROTECT oDCFixedText4 as FIXEDTEXT
+	PROTECT oCCCashButton as PUSHBUTTON
+	PROTECT oCCCAPButton as PUSHBUTTON
+	PROTECT oCCCROSSButton as PUSHBUTTON
+	PROTECT oDCFixedText5 as FIXEDTEXT
+	PROTECT oDCmAdminType as COMBOBOX
+	PROTECT oDCSYSNAME as SINGLELINEEDIT
+	PROTECT oDCFixedText6 as FIXEDTEXT
+	PROTECT oDCmPersonOwn as SINGLELINEEDIT
+	PROTECT oCCPersonButtonOrg as PUSHBUTTON
+	PROTECT oDCmPersonContact as SINGLELINEEDIT
+	PROTECT oCCPersonButtonContact as PUSHBUTTON
+	PROTECT oDCFixedText7 as FIXEDTEXT
+	PROTECT oDCAcroFixed as FIXEDTEXT
+	PROTECT oDCEntity as SINGLELINEEDIT
+	PROTECT oDCCurrency as COMBOBOX
+	PROTECT oDCCURRNAME as SINGLELINEEDIT
+	PROTECT oDCHBLAND as SINGLELINEEDIT
+	PROTECT oDCSC_SLAND as FIXEDTEXT
+	PROTECT oDCSC_SMUNT as FIXEDTEXT
+	PROTECT oDCSC_SMUNTNAAM as FIXEDTEXT
+	PROTECT oDCFixedText11 as FIXEDTEXT
+	PROTECT oDCPosting as CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mCASH 
 	instance mCAPITAL 
 	instance mKRUISPSTN 
-	instance CloseMonth 
+	instance closemonth 
 	instance mAdminType 
 	instance mPersonOwn 
 	instance mPersonContact 
@@ -95,10 +95,10 @@ CLASS TAB_PARM1 INHERIT DataWindowExtra
 	instance CURRNAME 
 	instance SYSNAME 
   EXPORT cCASHName, cCAPITALName, cCROSSName as STRING
-  EXPORT NbrCASH, NbrCAPITAL, NbrCROSS AS STRING
-  EXPORT cSoortCash, cSoortCAPITAL, cSoortCROSS AS STRING
-  EXPORT mCLNOrg,mCLNContact,cOrgName,cContactName AS STRING
-RESOURCE TAB_PARM1 DIALOGEX  54, 48, 262, 240
+  EXPORT NbrCASH, NbrCAPITAL, NbrCROSS as STRING
+  EXPORT cSoortCash, cSoortCAPITAL, cSoortCROSS as STRING
+  EXPORT mCLNOrg,mCLNContact,cOrgName,cContactName as STRING
+resource TAB_PARM1 DIALOGEX  54, 48, 262, 240
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -139,18 +139,18 @@ METHOD CAPButton( lUnique) CLASS TAB_PARM1
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrCAPITAL},{"PA"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmCAPITAL:TEXTValue ),"Net Asset",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 METHOD CashButton(lUnique ) CLASS TAB_PARM1
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrCASH},{"AK"},"N",0,false,BankAccs)
 	AccountSelect(self:Owner,AllTrim(oDCmCASH:TEXTValue ),"Cash",lUnique,cfilter)
-	RETURN NIL
-ACCESS CloseMonth() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#CloseMonth)
+	RETURN nil
+ACCESS closemonth() CLASS TAB_PARM1
+RETURN self:FIELDGET(#CloseMonth)
 
-ASSIGN CloseMonth(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#CloseMonth, uValue)
+ASSIGN closemonth(uValue) CLASS TAB_PARM1
+self:FIELDPUT(#CloseMonth, uValue)
 RETURN uValue
 
 ACCESS CountryOwn() CLASS TAB_PARM1
@@ -165,221 +165,221 @@ METHOD CROSSButton(lUnique ) CLASS TAB_PARM1
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrCROSS},{"AK"},"N",0,false,BankAccs)
 	AccountSelect(self:Owner,AllTrim(oDCmKRUISPSTN:TEXTValue ),"Internal bank transfer",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 ACCESS Currency() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#Currency)
+RETURN self:FIELDGET(#Currency)
 
 ASSIGN Currency(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#Currency, uValue)
+self:FIELDPUT(#Currency, uValue)
 RETURN uValue
 
 ACCESS CURRNAME() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#CURRNAME)
+RETURN self:FIELDGET(#CURRNAME)
 
 ASSIGN CURRNAME(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#CURRNAME, uValue)
+self:FIELDPUT(#CURRNAME, uValue)
 RETURN uValue
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TAB_PARM1
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as Control
+	LOCAL lGotFocus as LOGIC
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MCASH".and.!AllTrim(oControl:Value)==AllTrim(cCASHName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrCASH:="  "
-				SELF:cCASHName := ""
-				SELF:oDCmCASH:TEXTValue := ""
+		IF oControl:Name == "MCASH".and.!AllTrim(oControl:VALUE)==AllTrim(cCASHName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrCASH:="  "
+				self:cCASHName := ""
+				self:oDCmCASH:TEXTValue := ""
             ELSE
-				cCASHName:=AllTrim(oControl:Value)
-				SELF:CASHButton(TRUE)
+				cCASHName:=AllTrim(oControl:VALUE)
+				self:CASHButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:Value)==AllTrim(cCAPITALName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NBrCAPITAL:="  "
-				SELF:cCAPITALName := ""
-				SELF:oDCmCAPITAL:TEXTValue := ""
+		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:VALUE)==AllTrim(cCAPITALName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrCAPITAL:="  "
+				self:cCAPITALName := ""
+				self:oDCmCAPITAL:TEXTValue := ""
             ELSE
-				cCAPITALName:=AllTrim(oControl:Value)
-				SELF:CAPButton(TRUE)
+				cCAPITALName:=AllTrim(oControl:VALUE)
+				self:CAPButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MKRUISPSTN".and.!AllTrim(oControl:Value)==AllTrim(cCROSSName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrCROSS:="  "
-				SELF:cCROSSName := ""
-				SELF:oDCmKRUISPSTN:TEXTValue := ""
+		ELSEIF oControl:Name == "MKRUISPSTN".and.!AllTrim(oControl:VALUE)==AllTrim(cCROSSName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrCROSS:="  "
+				self:cCROSSName := ""
+				self:oDCmKRUISPSTN:TEXTValue := ""
             ELSE
-				cCROSSName:=AllTrim(oControl:Value)
-				SELF:CROSSButton(TRUE)
+				cCROSSName:=AllTrim(oControl:VALUE)
+				self:CROSSButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPERSONCONTACT".and.!AllTrim(oControl:Value)==AllTrim(SELF:cContactName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:mCLNContact:="  "
-				SELF:cContactName := ""
-				SELF:oDCmPersonContact:TEXTValue := ""
+		ELSEIF oControl:Name == "MPERSONCONTACT".and.!AllTrim(oControl:VALUE)==AllTrim(self:cContactName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:mCLNContact:="  "
+				self:cContactName := ""
+				self:oDCmPersonContact:TEXTValue := ""
             ELSE
-				cContactName:=AllTrim(oControl:Value)
-				SELF:PersonButtonContact(TRUE)
+				cContactName:=AllTrim(oControl:VALUE)
+				self:PersonButtonContact(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPERSONOWN".and.!AllTrim(oControl:Value)==AllTrim(SELF:cOrgName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:mCLNOrg:="  "
-				SELF:cOrgName := ""
-				SELF:oDCmPersonOwn:TEXTValue := ""
+		ELSEIF oControl:Name == "MPERSONOWN".and.!AllTrim(oControl:VALUE)==AllTrim(self:cOrgName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:mCLNOrg:="  "
+				self:cOrgName := ""
+				self:oDCmPersonOwn:TEXTValue := ""
             ELSE
-				cOrgName:=AllTrim(oControl:Value)
-				SELF:PersonButtonOrg(TRUE)
+				cOrgName:=AllTrim(oControl:VALUE)
+				self:PersonButtonOrg(true)
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN nil
 ACCESS Entity() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#Entity)
+RETURN self:FIELDGET(#Entity)
 
 ASSIGN Entity(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#Entity, uValue)
+self:FIELDPUT(#Entity, uValue)
 RETURN uValue
 
 METHOD FillMonth CLASS TAB_PARM1
 	LOCAL aM:={} as ARRAY, i as int
-	FOR i:=1 TO 12
+	FOR i:=1 to 12
 		AAdd(aM,{maand[i],i})
 	NEXT
 	RETURN aM
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1 
-LOCAL olServer AS OBJECT
+LOCAL olServer as OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TAB_PARM1",_GetInst()},iCtlID)
 
-oDCmCASH := SingleLineEdit{SELF,ResourceID{TAB_PARM1_MCASH,_GetInst()}}
-oDCmCASH:HyperLabel := HyperLabel{#mCASH,NULL_STRING,"Accountnumber for cash",NULL_STRING}
-oDCmCASH:FieldSpec := MEMBERACCOUNT{}
+oDCmCASH := SingleLineEdit{self,ResourceID{TAB_PARM1_MCASH,_GetInst()}}
+oDCmCASH:HyperLabel := HyperLabel{#mCASH,null_string,"Accountnumber for cash",null_string}
+oDCmCASH:FieldSpec := memberaccount{}
 
-oDCmCAPITAL := SingleLineEdit{SELF,ResourceID{TAB_PARM1_MCAPITAL,_GetInst()}}
-oDCmCAPITAL:HyperLabel := HyperLabel{#mCAPITAL,NULL_STRING,"Accountnumber for capital",NULL_STRING}
-oDCmCAPITAL:FieldSpec := MEMBERACCOUNT{}
+oDCmCAPITAL := SingleLineEdit{self,ResourceID{TAB_PARM1_MCAPITAL,_GetInst()}}
+oDCmCAPITAL:HyperLabel := HyperLabel{#mCAPITAL,null_string,"Accountnumber for capital",null_string}
+oDCmCAPITAL:FieldSpec := memberaccount{}
 
-oDCmKRUISPSTN := SingleLineEdit{SELF,ResourceID{TAB_PARM1_MKRUISPSTN,_GetInst()}}
-oDCmKRUISPSTN:HyperLabel := HyperLabel{#mKRUISPSTN,NULL_STRING,"Accountnumber for clearing own Bank accounts",NULL_STRING}
-oDCmKRUISPSTN:FieldSpec := MEMBERACCOUNT{}
-oDCmKRUISPSTN:UseHLforToolTip := True
+oDCmKRUISPSTN := SingleLineEdit{self,ResourceID{TAB_PARM1_MKRUISPSTN,_GetInst()}}
+oDCmKRUISPSTN:HyperLabel := HyperLabel{#mKRUISPSTN,null_string,"Accountnumber for clearing own Bank accounts",null_string}
+oDCmKRUISPSTN:FieldSpec := memberaccount{}
+oDCmKRUISPSTN:UseHLforToolTip := true
 
-oDCCloseMonth := combobox{SELF,ResourceID{TAB_PARM1_CLOSEMONTH,_GetInst()}}
-oDCCloseMonth:FillUsing(Self:FillMonth( ))
-oDCCloseMonth:HyperLabel := HyperLabel{#CloseMonth,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCCloseMonth := ComboBox{self,ResourceID{TAB_PARM1_CLOSEMONTH,_GetInst()}}
+oDCCloseMonth:FillUsing(self:FillMonth( ))
+oDCCloseMonth:HyperLabel := HyperLabel{#CloseMonth,null_string,null_string,null_string}
 
-oDCSC_SKAS := FixedText{SELF,ResourceID{TAB_PARM1_SC_SKAS,_GetInst()}}
-oDCSC_SKAS:HyperLabel := HyperLabel{#SC_SKAS,"Account cash:",NULL_STRING,NULL_STRING}
+oDCSC_SKAS := FixedText{self,ResourceID{TAB_PARM1_SC_SKAS,_GetInst()}}
+oDCSC_SKAS:HyperLabel := HyperLabel{#SC_SKAS,"Account cash:",null_string,null_string}
 
-oDCSC_SKAP := FixedText{SELF,ResourceID{TAB_PARM1_SC_SKAP,_GetInst()}}
-oDCSC_SKAP:HyperLabel := HyperLabel{#SC_SKAP,"Account Net Assets:",NULL_STRING,NULL_STRING}
+oDCSC_SKAP := FixedText{self,ResourceID{TAB_PARM1_SC_SKAP,_GetInst()}}
+oDCSC_SKAP:HyperLabel := HyperLabel{#SC_SKAP,"Account Net Assets:",null_string,null_string}
 
-oDCSC_SKRUIS := FixedText{SELF,ResourceID{TAB_PARM1_SC_SKRUIS,_GetInst()}}
-oDCSC_SKRUIS:HyperLabel := HyperLabel{#SC_SKRUIS,"Account internal bank transfers:",NULL_STRING,NULL_STRING}
+oDCSC_SKRUIS := FixedText{self,ResourceID{TAB_PARM1_SC_SKRUIS,_GetInst()}}
+oDCSC_SKRUIS:HyperLabel := HyperLabel{#SC_SKRUIS,"Account internal bank transfers:",null_string,null_string}
 
-oDCFixedText4 := FixedText{SELF,ResourceID{TAB_PARM1_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"End of Balance Year:",NULL_STRING,NULL_STRING}
+oDCFixedText4 := FixedText{self,ResourceID{TAB_PARM1_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"End of Balance Year:",null_string,null_string}
 
-oCCCashButton := PushButton{SELF,ResourceID{TAB_PARM1_CASHBUTTON,_GetInst()}}
-oCCCashButton:HyperLabel := HyperLabel{#CashButton,"v","Browse in accounts",NULL_STRING}
+oCCCashButton := PushButton{self,ResourceID{TAB_PARM1_CASHBUTTON,_GetInst()}}
+oCCCashButton:HyperLabel := HyperLabel{#CashButton,"v","Browse in accounts",null_string}
 oCCCashButton:TooltipText := "Browse in accounts"
 
-oCCCAPButton := PushButton{SELF,ResourceID{TAB_PARM1_CAPBUTTON,_GetInst()}}
-oCCCAPButton:HyperLabel := HyperLabel{#CAPButton,"v","Browse in accounts",NULL_STRING}
+oCCCAPButton := PushButton{self,ResourceID{TAB_PARM1_CAPBUTTON,_GetInst()}}
+oCCCAPButton:HyperLabel := HyperLabel{#CAPButton,"v","Browse in accounts",null_string}
 oCCCAPButton:TooltipText := "Browse in accounts"
 
-oCCCROSSButton := PushButton{SELF,ResourceID{TAB_PARM1_CROSSBUTTON,_GetInst()}}
-oCCCROSSButton:HyperLabel := HyperLabel{#CROSSButton,"v","Browse in accounts",NULL_STRING}
+oCCCROSSButton := PushButton{self,ResourceID{TAB_PARM1_CROSSBUTTON,_GetInst()}}
+oCCCROSSButton:HyperLabel := HyperLabel{#CROSSButton,"v","Browse in accounts",null_string}
 oCCCROSSButton:TooltipText := "Browse in accounts"
 
-oDCFixedText5 := FixedText{SELF,ResourceID{TAB_PARM1_FIXEDTEXT5,_GetInst()}}
-oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Type of Administration:",NULL_STRING,NULL_STRING}
+oDCFixedText5 := FixedText{self,ResourceID{TAB_PARM1_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Type of Administration:",null_string,null_string}
 
-oDCmAdminType := combobox{SELF,ResourceID{TAB_PARM1_MADMINTYPE,_GetInst()}}
+oDCmAdminType := ComboBox{self,ResourceID{TAB_PARM1_MADMINTYPE,_GetInst()}}
 oDCmAdminType:TooltipText := "Type of administration determining shown menu choices"
-oDCmAdminType:HyperLabel := HyperLabel{#mAdminType,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCmAdminType:HyperLabel := HyperLabel{#mAdminType,null_string,null_string,null_string}
 
-oDCSYSNAME := SingleLineEdit{SELF,ResourceID{TAB_PARM1_SYSNAME,_GetInst()}}
-oDCSYSNAME:HyperLabel := HyperLabel{#SYSNAME,NULL_STRING,NULL_STRING,"Name to be used for "}
+oDCSYSNAME := SingleLineEdit{self,ResourceID{TAB_PARM1_SYSNAME,_GetInst()}}
+oDCSYSNAME:HyperLabel := HyperLabel{#SYSNAME,null_string,null_string,"Name to be used for "}
 
-oDCFixedText6 := FixedText{SELF,ResourceID{TAB_PARM1_FIXEDTEXT6,_GetInst()}}
-oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Own Organisation:",NULL_STRING,NULL_STRING}
+oDCFixedText6 := FixedText{self,ResourceID{TAB_PARM1_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Own Organisation:",null_string,null_string}
 
-oDCmPersonOwn := SingleLineEdit{SELF,ResourceID{TAB_PARM1_MPERSONOWN,_GetInst()}}
-oDCmPersonOwn:HyperLabel := HyperLabel{#mPersonOwn,NULL_STRING,"name own organisation","HELP_CLN"}
+oDCmPersonOwn := SingleLineEdit{self,ResourceID{TAB_PARM1_MPERSONOWN,_GetInst()}}
+oDCmPersonOwn:HyperLabel := HyperLabel{#mPersonOwn,null_string,"name own organisation","HELP_CLN"}
 oDCmPersonOwn:FocusSelect := FSEL_HOME
 oDCmPersonOwn:FieldSpec := Person_NA1{}
-oDCmPersonOwn:UseHLforToolTip := True
+oDCmPersonOwn:UseHLforToolTip := true
 
-oCCPersonButtonOrg := PushButton{SELF,ResourceID{TAB_PARM1_PERSONBUTTONORG,_GetInst()}}
-oCCPersonButtonOrg:HyperLabel := HyperLabel{#PersonButtonOrg,"v","Browse in persons",NULL_STRING}
+oCCPersonButtonOrg := PushButton{self,ResourceID{TAB_PARM1_PERSONBUTTONORG,_GetInst()}}
+oCCPersonButtonOrg:HyperLabel := HyperLabel{#PersonButtonOrg,"v","Browse in persons",null_string}
 oCCPersonButtonOrg:TooltipText := "Browse in Persons"
 
-oDCmPersonContact := SingleLineEdit{SELF,ResourceID{TAB_PARM1_MPERSONCONTACT,_GetInst()}}
-oDCmPersonContact:HyperLabel := HyperLabel{#mPersonContact,NULL_STRING,"name financial contact person","HELP_CLN"}
+oDCmPersonContact := SingleLineEdit{self,ResourceID{TAB_PARM1_MPERSONCONTACT,_GetInst()}}
+oDCmPersonContact:HyperLabel := HyperLabel{#mPersonContact,null_string,"name financial contact person","HELP_CLN"}
 oDCmPersonContact:FocusSelect := FSEL_HOME
 oDCmPersonContact:FieldSpec := Person_NA1{}
-oDCmPersonContact:UseHLforToolTip := True
+oDCmPersonContact:UseHLforToolTip := true
 
-oCCPersonButtonContact := PushButton{SELF,ResourceID{TAB_PARM1_PERSONBUTTONCONTACT,_GetInst()}}
-oCCPersonButtonContact:HyperLabel := HyperLabel{#PersonButtonContact,"v","Browse in persons",NULL_STRING}
+oCCPersonButtonContact := PushButton{self,ResourceID{TAB_PARM1_PERSONBUTTONCONTACT,_GetInst()}}
+oCCPersonButtonContact:HyperLabel := HyperLabel{#PersonButtonContact,"v","Browse in persons",null_string}
 oCCPersonButtonContact:TooltipText := "Browse in Persons"
 
-oDCFixedText7 := FixedText{SELF,ResourceID{TAB_PARM1_FIXEDTEXT7,_GetInst()}}
-oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Financial contact person:",NULL_STRING,NULL_STRING}
+oDCFixedText7 := FixedText{self,ResourceID{TAB_PARM1_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Financial contact person:",null_string,null_string}
 
-oDCAcroFixed := FixedText{SELF,ResourceID{TAB_PARM1_ACROFIXED,_GetInst()}}
-oDCAcroFixed:HyperLabel := HyperLabel{#AcroFixed,"Organisation Acronym:",NULL_STRING,NULL_STRING}
+oDCAcroFixed := FixedText{self,ResourceID{TAB_PARM1_ACROFIXED,_GetInst()}}
+oDCAcroFixed:HyperLabel := HyperLabel{#AcroFixed,"Organisation Acronym:",null_string,null_string}
 
-oDCEntity := SingleLineEdit{SELF,ResourceID{TAB_PARM1_ENTITY,_GetInst()}}
+oDCEntity := SingleLineEdit{self,ResourceID{TAB_PARM1_ENTITY,_GetInst()}}
 oDCEntity:Picture := "@!XXX"
-oDCEntity:HyperLabel := HyperLabel{#Entity,NULL_STRING,"three character acronym used for filenames",NULL_STRING}
-oDCEntity:UseHLforToolTip := True
+oDCEntity:HyperLabel := HyperLabel{#Entity,null_string,"three character acronym used for filenames",null_string}
+oDCEntity:UseHLforToolTip := true
 
-oDCCurrency := combobox{SELF,ResourceID{TAB_PARM1_CURRENCY,_GetInst()}}
-oDCCurrency:HyperLabel := HyperLabel{#Currency,NULL_STRING,"Default currency for this organisation","Currency_Smunt"}
-olServer := CURRENCYLIST{}
+oDCCurrency := ComboBox{self,ResourceID{TAB_PARM1_CURRENCY,_GetInst()}}
+oDCCurrency:HyperLabel := HyperLabel{#Currency,null_string,"Default currency for this organisation","Currency_Smunt"}
+olServer := CurrencyList{}
 oDCCurrency:FillUsing(olServer,#UNITED_ARA,#AED)
 olServer:Close()
 
-oDCCURRNAME := SingleLineEdit{SELF,ResourceID{TAB_PARM1_CURRNAME,_GetInst()}}
+oDCCURRNAME := SingleLineEdit{self,ResourceID{TAB_PARM1_CURRNAME,_GetInst()}}
 oDCCURRNAME:FieldSpec := Sysparms_SMUNTNAAM{}
 oDCCURRNAME:HyperLabel := HyperLabel{#CURRNAME,"Currency name:","Currency name","Sysparms_SMUNTNAAM"}
-oDCCURRNAME:AutoFocusChange := True
+oDCCURRNAME:AutoFocusChange := true
 
-oDCHBLAND := SingleLineEdit{SELF,ResourceID{TAB_PARM1_HBLAND,_GetInst()}}
+oDCHBLAND := SingleLineEdit{self,ResourceID{TAB_PARM1_HBLAND,_GetInst()}}
 oDCHBLAND:FieldSpec := Sysparms_SLAND{}
 oDCHBLAND:HyperLabel := HyperLabel{#CountryOwn,"Country for I.E.:","Country for PMC","Sysparms_SLAND"}
-oDCHBLAND:UseHLforToolTip := True
+oDCHBLAND:UseHLforToolTip := true
 
-oDCSC_SLAND := FixedText{SELF,ResourceID{TAB_PARM1_SC_SLAND,_GetInst()}}
-oDCSC_SLAND:HyperLabel := HyperLabel{#SC_SLAND,"Country :",NULL_STRING,NULL_STRING}
+oDCSC_SLAND := FixedText{self,ResourceID{TAB_PARM1_SC_SLAND,_GetInst()}}
+oDCSC_SLAND:HyperLabel := HyperLabel{#SC_SLAND,"Country :",null_string,null_string}
 
-oDCSC_SMUNT := FixedText{SELF,ResourceID{TAB_PARM1_SC_SMUNT,_GetInst()}}
-oDCSC_SMUNT:HyperLabel := HyperLabel{#SC_SMUNT,"System Currency:",NULL_STRING,NULL_STRING}
+oDCSC_SMUNT := FixedText{self,ResourceID{TAB_PARM1_SC_SMUNT,_GetInst()}}
+oDCSC_SMUNT:HyperLabel := HyperLabel{#SC_SMUNT,"System Currency:",null_string,null_string}
 
-oDCSC_SMUNTNAAM := FixedText{SELF,ResourceID{TAB_PARM1_SC_SMUNTNAAM,_GetInst()}}
-oDCSC_SMUNTNAAM:HyperLabel := HyperLabel{#SC_SMUNTNAAM,"Currency description:",NULL_STRING,NULL_STRING}
+oDCSC_SMUNTNAAM := FixedText{self,ResourceID{TAB_PARM1_SC_SMUNTNAAM,_GetInst()}}
+oDCSC_SMUNTNAAM:HyperLabel := HyperLabel{#SC_SMUNTNAAM,"Currency description:",null_string,null_string}
 
-oDCFixedText11 := FixedText{SELF,ResourceID{TAB_PARM1_FIXEDTEXT11,_GetInst()}}
-oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"System name:",NULL_STRING,NULL_STRING}
+oDCFixedText11 := FixedText{self,ResourceID{TAB_PARM1_FIXEDTEXT11,_GetInst()}}
+oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"System name:",null_string,null_string}
 
-oDCPosting := CheckBox{SELF,ResourceID{TAB_PARM1_POSTING,_GetInst()}}
-oDCPosting:HyperLabel := HyperLabel{#Posting,"Posting batch required?",NULL_STRING,NULL_STRING}
+oDCPosting := CheckBox{self,ResourceID{TAB_PARM1_POSTING,_GetInst()}}
+oDCPosting:HyperLabel := HyperLabel{#Posting,"Posting batch required?",null_string,null_string}
 
-SELF:Caption := ""
-SELF:HyperLabel := HyperLabel{#TAB_PARM1,NULL_STRING,NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
+self:Caption := ""
+self:HyperLabel := HyperLabel{#TAB_PARM1,null_string,null_string,null_string}
+self:PreventAutoLayout := true
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -387,7 +387,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListBoxSelect(oControlEvent) CLASS TAB_PARM1
-	LOCAL oControl AS Control
+	LOCAL oControl as Control
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
@@ -400,63 +400,63 @@ METHOD ListBoxSelect(oControlEvent) CLASS TAB_PARM1
 		ENDIF
 	ENDIF
 	
-	RETURN NIL
+	RETURN nil
 
 ACCESS mAdminType() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mAdminType)
+RETURN self:FIELDGET(#mAdminType)
 
 ASSIGN mAdminType(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mAdminType, uValue)
+self:FIELDPUT(#mAdminType, uValue)
 RETURN uValue
 
 ACCESS mCAPITAL() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mCAPITAL)
+RETURN self:FIELDGET(#mCAPITAL)
 
 ASSIGN mCAPITAL(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mCAPITAL, uValue)
+self:FIELDPUT(#mCAPITAL, uValue)
 RETURN uValue
 
 ACCESS mCASH() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mCASH)
+RETURN self:FIELDGET(#mCASH)
 
 ASSIGN mCASH(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mCASH, uValue)
+self:FIELDPUT(#mCASH, uValue)
 RETURN uValue
 
 ACCESS mKRUISPSTN() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mKRUISPSTN)
+RETURN self:FIELDGET(#mKRUISPSTN)
 
 ASSIGN mKRUISPSTN(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mKRUISPSTN, uValue)
+self:FIELDPUT(#mKRUISPSTN, uValue)
 RETURN uValue
 
 ACCESS mPersonContact() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mPersonContact)
+RETURN self:FIELDGET(#mPersonContact)
 
 ASSIGN mPersonContact(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mPersonContact, uValue)
+self:FIELDPUT(#mPersonContact, uValue)
 RETURN uValue
 
 ACCESS mPersonOwn() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#mPersonOwn)
+RETURN self:FIELDGET(#mPersonOwn)
 
 ASSIGN mPersonOwn(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#mPersonOwn, uValue)
+self:FIELDPUT(#mPersonOwn, uValue)
 RETURN uValue
 
 METHOD PersonButtonContact(lUnique) CLASS TAB_PARM1
-	LOCAL cValue := AllTrim(SELF:oDCmPersonContact:TEXTValue ) AS STRING
+	LOCAL cValue := AllTrim(self:oDCmPersonContact:TEXTValue ) as STRING
 	Default(@lUnique,FALSE)
-	PersonSelect(SELF:Owner,cValue,lUnique,,"Contact Person Financial")
+	PersonSelect(self:Owner,cValue,lUnique,,"Contact Person Financial")
 METHOD PersonButtonOrg( lUnique) CLASS TAB_PARM1
-	LOCAL cValue := AllTrim(SELF:oDCmPersonOwn:TEXTValue ) AS STRING
+	LOCAL cValue := AllTrim(self:oDCmPersonOwn:TEXTValue ) as STRING
 	Default(@lUnique,FALSE)
-	PersonSelect(SELF:Owner,cValue,lUnique,,"Own Organisation")
+	PersonSelect(self:Owner,cValue,lUnique,,"Own Organisation")
 ACCESS Posting() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#Posting)
+RETURN self:FIELDGET(#Posting)
 
 ASSIGN Posting(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#Posting, uValue)
+self:FIELDPUT(#Posting, uValue)
 RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
@@ -464,8 +464,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 	LOCAL oAcc,oSel as SQLSelect
 	self:SetTexts()
 	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
-IF !Empty(SELF:Server:CASH)
-	oAcc:Execute( self:Server:CASH)
+IF !Empty(self:Server:cash)
+	oAcc:Execute( self:Server:cash)
 	IF oAcc:RecCount>0
 		self:NbrCASH :=  Str( oAcc:accid,-1)
 		self:oDCmCASH:TEXTValue := AllTrim(oAcc:Description)
@@ -473,8 +473,8 @@ IF !Empty(SELF:Server:CASH)
 		self:cSoortCash:=oAcc:TYPE
 	ENDIF		
 ENDIF
-IF !Empty(self:Server:CAPITAL)
-	oAcc:Execute( self:Server:CAPITAL)
+IF !Empty(self:Server:capital)
+	oAcc:Execute( self:Server:capital)
 	IF oAcc:RecCount>0
 		self:NbrCAPITAL :=  Str(oAcc:accid,-1)
 		self:oDCmCAPITAL:TEXTValue := AllTrim(oAcc:Description)
@@ -482,8 +482,8 @@ IF !Empty(self:Server:CAPITAL)
 		self:cSoortCAPITAL:=oAcc:TYPE
 	ENDIF		
 ENDIF
-IF !Empty(self:Server:CrossAccnt)
-	oAcc:Execute( self:Server:CrossAccnt)
+IF !Empty(self:Server:crossaccnt)
+	oAcc:Execute( self:Server:crossaccnt)
 	IF oAcc:RecCount>0
 		self:NbrCROSS :=  Str(oAcc:accid,-1)
 		self:oDCmKRUISPSTN:TEXTValue := AllTrim(oAcc:Description)
@@ -491,19 +491,19 @@ IF !Empty(self:Server:CrossAccnt)
 		self:cSoortCROSS:=oAcc:TYPE
 	ENDIF		
 ENDIF
-IF !Empty(shb).and.!Empty(sam)
-	SELF:oDCmAdminType:Hide()
-	SELF:oDCFixedText5:hide()
+IF !Empty(SHB).and.!Empty(sam)
+	self:oDCmAdminType:Hide()
+	self:oDCFixedText5:hide()
 ELSE
 	oSel:=SQLSelect{"select mbrid from member limit 2", oConn}
 	IF oSel:RecCount=0 // empty database
-		SELF:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"Home Front of one Member","HO"},;
+		self:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"Home Front of one Member","HO"},;
 		{"General Gifts Administration","GI"},{"General Accounting","GE"},{"Wycliffe Area","WA"}})
 	ELSE
 		IF oSel:RecCount=1  // 1 member?
-			SELF:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"Home Front of one Member","HO"},{"General Gifts Administration","GI"}})
+			self:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"Home Front of one Member","HO"},{"General Gifts Administration","GI"}})
 		ELSE
-			SELF:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"General Gifts Administration","GI"}})
+			self:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"General Gifts Administration","GI"}})
 		//	SELF:oDCmAdminType:Hide()
 		//	SELF:oDCFixedText5:hide()
 		ENDIF
@@ -511,33 +511,33 @@ ELSE
 ENDIF	
 self:oDCmAdminType:Value:=self:Server:ADMINTYPE
 IF self:Server:ADMINTYPE="WO"
-	SELF:oDCEntity:Disable()
+	self:oDCEntity:Disable()
 ENDIF
-self:mCLNContact:=Str(self:Server:IDCONTACT,-1)
-self:mCLNOrg:=Str(self:Server:IDORG,-1)
-IF !Empty(self:Server:IDCONTACT)
+self:mCLNContact:=Str(self:Server:idcontact,-1)
+self:mCLNOrg:=Str(self:Server:idorg,-1)
+IF !Empty(self:Server:idcontact)
 	self:cContactName:=GetFullName(mCLNContact)
 	self:oDCmPersonContact:TEXTValue:=cContactName
 ENDIF
-IF !Empty(self:Server:IDORG)
+IF !Empty(self:Server:idorg)
 	self:cOrgName:=GetFullName(mCLNOrg)
 	self:oDCmPersonOwn:TEXTValue:=cOrgName
 ENDIF
-if !Empty(self:Server:Currency) .and. SQLSelect{"select TransId from Transaction limit 2",oConn}:RecCount>0
+IF !Empty(self:Server:Currency) .and. SQLSelect{"select transid from transaction limit 2",oConn}:RecCount>0
 	self:oDCCurrency:Disable()
 endif
 	
-RETURN NIL
+RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TAB_PARM1
 	//Put your PreInit additions here
 oWindow:Use(oWindow:oSys)
 	return nil
 
 ACCESS SYSNAME() CLASS TAB_PARM1
-RETURN SELF:FieldGet(#SYSNAME)
+RETURN self:FIELDGET(#SYSNAME)
 
 ASSIGN SYSNAME(uValue) CLASS TAB_PARM1
-SELF:FieldPut(#SYSNAME, uValue)
+self:FIELDPUT(#SYSNAME, uValue)
 RETURN uValue
 
 STATIC DEFINE TAB_PARM1_ACROFIXED := 120 
@@ -572,59 +572,59 @@ STATIC DEFINE TAB_PARM1_SC_SMUNTNAAM := 127
 STATIC DEFINE TAB_PARM1_SYSNAME := 113 
 CLASS Tab_Parm2 INHERIT DataWindowExtra 
 
-	PROTECT oDCEntity AS COMBOBOX
-	PROTECT oDCmHB AS SINGLELINEEDIT
-	PROTECT oCCHBButton AS PUSHBUTTON
-	PROTECT oDCmAM AS SINGLELINEEDIT
-	PROTECT oCCAMButton AS PUSHBUTTON
-	PROTECT oDCmAMProj AS SINGLELINEEDIT
-	PROTECT oCCAMProjButton AS PUSHBUTTON
-	PROTECT oDCmGiftIncAc AS SINGLELINEEDIT
-	PROTECT oCCIncButton AS PUSHBUTTON
-	PROTECT oDCmGiftExpAc AS SINGLELINEEDIT
-	PROTECT oCCExpButton AS PUSHBUTTON
-	PROTECT oDCmHomeIncAc AS SINGLELINEEDIT
-	PROTECT oCCIncButtonHome AS PUSHBUTTON
-	PROTECT oDCmHomeExpAc AS SINGLELINEEDIT
-	PROTECT oCCExpButtonHome AS PUSHBUTTON
-	PROTECT oDCassmntfield AS SINGLELINEEDIT
-	PROTECT oDCassmntint AS SINGLELINEEDIT
-	PROTECT oDCwithldoffl AS SINGLELINEEDIT
-	PROTECT oDCassmntOffc AS SINGLELINEEDIT
-	PROTECT oDCwithldoffm AS SINGLELINEEDIT
-	PROTECT oDCwithldoffh AS SINGLELINEEDIT
-	PROTECT oDCpmcupld AS CHECKBOX
-	PROTECT oDCmPersonPMCMan AS SINGLELINEEDIT
-	PROTECT oDCIESMAILACC AS SINGLELINEEDIT
-	PROTECT oCCPersonButtonContact AS PUSHBUTTON
-	PROTECT oDCSC_SHB AS FIXEDTEXT
-	PROTECT oDCSC_SAM AS FIXEDTEXT
-	PROTECT oDCSC_SINHDHAS AS FIXEDTEXT
-	PROTECT oDCSC_SINHDKNTR AS FIXEDTEXT
-	PROTECT oDCSC_ENTITY AS FIXEDTEXT
-	PROTECT oDCFixedText8 AS FIXEDTEXT
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oDCSC_IESMAILACC AS FIXEDTEXT
-	PROTECT oDCSC_SINHDHAS1 AS FIXEDTEXT
-	PROTECT oDCSC_SINHDKNTR1 AS FIXEDTEXT
-	PROTECT oDCFixedText10 AS FIXEDTEXT
-	PROTECT oDCFixedText14 AS FIXEDTEXT
-	PROTECT oDCFixedText15 AS FIXEDTEXT
-	PROTECT oDCFixedText11 AS FIXEDTEXT
-	PROTECT oDCFixedText12 AS FIXEDTEXT
-	PROTECT oDCFixedText16 AS FIXEDTEXT
-	PROTECT oDCFixedText17 AS FIXEDTEXT
-	PROTECT oDCFixedText13 AS FIXEDTEXT
-	PROTECT oDCSC_SAM1 AS FIXEDTEXT
-	PROTECT oDCGroupBoxIncome AS GROUPBOX
-	PROTECT oDCSC_SAM2 AS FIXEDTEXT
-	PROTECT oDCSC_SAM3 AS FIXEDTEXT
-	PROTECT oDCSC_SAM4 AS FIXEDTEXT
-	PROTECT oDCSC_SAM5 AS FIXEDTEXT
-	PROTECT oDCFixedText24 AS FIXEDTEXT
-	PROTECT oDCmAssFldAc AS SINGLELINEEDIT
-	PROTECT oCCAssFldAcButton AS PUSHBUTTON
-	PROTECT oDCSC_SAMFld AS FIXEDTEXT
+	PROTECT oDCEntity as COMBOBOX
+	PROTECT oDCmHB as SINGLELINEEDIT
+	PROTECT oCCHBButton as PUSHBUTTON
+	PROTECT oDCmAM as SINGLELINEEDIT
+	PROTECT oCCAMButton as PUSHBUTTON
+	PROTECT oDCmAMProj as SINGLELINEEDIT
+	PROTECT oCCAMProjButton as PUSHBUTTON
+	PROTECT oDCmGiftIncAc as SINGLELINEEDIT
+	PROTECT oCCIncButton as PUSHBUTTON
+	PROTECT oDCmGiftExpAc as SINGLELINEEDIT
+	PROTECT oCCExpButton as PUSHBUTTON
+	PROTECT oDCmHomeIncAc as SINGLELINEEDIT
+	PROTECT oCCIncButtonHome as PUSHBUTTON
+	PROTECT oDCmHomeExpAc as SINGLELINEEDIT
+	PROTECT oCCExpButtonHome as PUSHBUTTON
+	PROTECT oDCassmntfield as SINGLELINEEDIT
+	PROTECT oDCassmntint as SINGLELINEEDIT
+	PROTECT oDCwithldoffl as SINGLELINEEDIT
+	PROTECT oDCassmntOffc as SINGLELINEEDIT
+	PROTECT oDCwithldoffm as SINGLELINEEDIT
+	PROTECT oDCwithldoffh as SINGLELINEEDIT
+	PROTECT oDCpmcupld as CHECKBOX
+	PROTECT oDCmPersonPMCMan as SINGLELINEEDIT
+	PROTECT oDCIESMAILACC as SINGLELINEEDIT
+	PROTECT oCCPersonButtonContact as PUSHBUTTON
+	PROTECT oDCSC_SHB as FIXEDTEXT
+	PROTECT oDCSC_SAM as FIXEDTEXT
+	PROTECT oDCSC_SINHDHAS as FIXEDTEXT
+	PROTECT oDCSC_SINHDKNTR as FIXEDTEXT
+	PROTECT oDCSC_ENTITY as FIXEDTEXT
+	PROTECT oDCFixedText8 as FIXEDTEXT
+	PROTECT oDCFixedText9 as FIXEDTEXT
+	PROTECT oDCSC_IESMAILACC as FIXEDTEXT
+	PROTECT oDCSC_SINHDHAS1 as FIXEDTEXT
+	PROTECT oDCSC_SINHDKNTR1 as FIXEDTEXT
+	PROTECT oDCFixedText10 as FIXEDTEXT
+	PROTECT oDCFixedText14 as FIXEDTEXT
+	PROTECT oDCFixedText15 as FIXEDTEXT
+	PROTECT oDCFixedText11 as FIXEDTEXT
+	PROTECT oDCFixedText12 as FIXEDTEXT
+	PROTECT oDCFixedText16 as FIXEDTEXT
+	PROTECT oDCFixedText17 as FIXEDTEXT
+	PROTECT oDCFixedText13 as FIXEDTEXT
+	PROTECT oDCSC_SAM1 as FIXEDTEXT
+	PROTECT oDCGroupBoxIncome as GROUPBOX
+	PROTECT oDCSC_SAM2 as FIXEDTEXT
+	PROTECT oDCSC_SAM3 as FIXEDTEXT
+	PROTECT oDCSC_SAM4 as FIXEDTEXT
+	PROTECT oDCSC_SAM5 as FIXEDTEXT
+	PROTECT oDCFixedText24 as FIXEDTEXT
+	PROTECT oDCmAssFldAc as SINGLELINEEDIT
+	PROTECT oCCAssFldAcButton as PUSHBUTTON
+	PROTECT oDCSC_SAMFld as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   	instance mHB 
@@ -644,10 +644,10 @@ CLASS Tab_Parm2 INHERIT DataWindowExtra
 	instance mHomeIncAc 
 
     EXPORT cHBName, cAMName, cAMNameProj,cAssFldAccName,cGIFTINCACName,cGIFTEXPACName,cHomeINCACName,cHOMEEXPACName as STRING
-  	EXPORT NbrHB, NbrAM, NbrAMProj,NbrAssFldAc, NbrInc, NbrExp, NbrIncHome, NbrExpHome as STRING
+  	EXPORT NbrHB, NbrAM, NbrAMProj,NbrAssFldAc, NbrInc, NbrExp, NbrIncHome, NBREXPHOME as STRING
   	EXPORT cSoortHB, cSoortAM, cSoortAMProj,cSoortAssFldAc,cSoortGIFTINCAC,cSoortGIFTEXPAC,cSoortHOMEINCAC,cSoortHomeEXPAC as STRING
    Export mCLNPMCMan,cPMCManName as string
-RESOURCE Tab_Parm2 DIALOGEX  44, 36, 261, 264
+resource Tab_Parm2 DIALOGEX  44, 36, 261, 264
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -709,16 +709,16 @@ END
 METHOD AMButton( lUnique) CLASS Tab_Parm2
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({NbrAm},{"BA"},"N",0)
+	cfilter:=MakeFilter({NbrAM},{"BA"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmAM:TEXTValue ),"Assessments",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 	
 METHOD AMProjButton(lUnique ) CLASS Tab_Parm2
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({NbrAMProj,NbrAm},{income},"N",0)
+	cfilter:=MakeFilter({NbrAMProj,NbrAM},{income},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmAMProj:TEXTValue ),"Project Assessments",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 METHOD AssFldAcButton(lUnique ) CLASS Tab_Parm2 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -726,24 +726,24 @@ METHOD AssFldAcButton(lUnique ) CLASS Tab_Parm2
 	AccountSelect(self:Owner,AllTrim(oDCmAssFldAc:TEXTValue ),"Assessment Field and Int",lUnique,cfilter)
 	RETURN nil
 ACCESS assmntfield() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntfield)
+RETURN self:FIELDGET(#assmntfield)
 
 ASSIGN assmntfield(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntfield, uValue)
+self:FIELDPUT(#assmntfield, uValue)
 RETURN uValue
 
 ACCESS assmntint() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntint)
+RETURN self:FIELDGET(#assmntint)
 
 ASSIGN assmntint(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntint, uValue)
+self:FIELDPUT(#assmntint, uValue)
 RETURN uValue
 
 ACCESS assmntOffc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#assmntOffc)
+RETURN self:FIELDGET(#assmntOffc)
 
 ASSIGN assmntOffc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#assmntOffc, uValue)
+self:FIELDPUT(#assmntOffc, uValue)
 RETURN uValue
 
 method ButtonClick(oControlEvent) class Tab_Parm2
@@ -751,8 +751,8 @@ method ButtonClick(oControlEvent) class Tab_Parm2
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	super:ButtonClick(oControlEvent)
 	//Put your changes here 
-	if oControl:Name=="PMCUPLD" 
-		if self:oDCpmcupld:Checked
+	IF oControl:Name=="PMCUPLD" 
+		IF self:oDCpmcupld:Checked
 			self:oDCSC_IESMAILACC:Hide()
 			self:oDCIESMAILACC:Hide()
 		else
@@ -846,7 +846,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm2
 
 		ELSEIF oControl:Name == "MHOMEEXPAC".and.!AllTrim(oControl:VALUE)==AllTrim(cHOMEEXPACName)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
-				self:NbrExpHome := "  "
+				self:NBREXPHOME := "  "
 				self:cHOMEEXPACName := ""
 				self:oDCmHOMEEXPAC:TEXTValue := ""
 			ELSE
@@ -857,10 +857,10 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm2
 	ENDIF
 	RETURN nil
 ACCESS Entity() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#Entity)
+RETURN self:FIELDGET(#Entity)
 
 ASSIGN Entity(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#Entity, uValue)
+self:FIELDPUT(#Entity, uValue)
 RETURN uValue
 
 access EntitySelected() class TAB_PARM2
@@ -872,15 +872,15 @@ METHOD ExpButton( lUnique) CLASS Tab_Parm2
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrExp},{"KO"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmGiftExpAc:TEXTValue ),"Gifts Expense",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 METHOD ExpButtonHome(lUnique ) CLASS Tab_Parm2 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({NbrExpHome},{"KO"},"N",0)
+	cfilter:=MakeFilter({NBREXPHOME},{"KO"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmHomeExpAc:TEXTValue ),"Gifts Home Expense",lUnique,cfilter)
 	RETURN nil
 
-RETURN NIL
+RETURN nil
    method FillPPCodes class Tab_Parm2
    return FillPP() 
 				
@@ -889,12 +889,12 @@ METHOD HBButton(lUnique ) CLASS Tab_Parm2
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrHB},{"AK","PA"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmHB:TEXTValue ),"Account PMC clearance",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 ACCESS IESMAILACC() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#IESMAILACC)
+RETURN self:FIELDGET(#IESMAILACC)
 
 ASSIGN IESMAILACC(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#IESMAILACC, uValue)
+self:FIELDPUT(#IESMAILACC, uValue)
 RETURN uValue
 
 METHOD IncButton(lUnique ) CLASS Tab_Parm2
@@ -902,7 +902,7 @@ METHOD IncButton(lUnique ) CLASS Tab_Parm2
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrInc},{"BA"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmGiftIncAc:TEXTValue ),"Gifts Income",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 METHOD IncButtonHome(lUnique ) CLASS Tab_Parm2 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -910,231 +910,231 @@ METHOD IncButtonHome(lUnique ) CLASS Tab_Parm2
 	AccountSelect(self:Owner,AllTrim(oDCmHomeIncAc:TEXTValue ),"Gifts Home Income",lUnique,cfilter)
 	RETURN nil
 
-RETURN NIL
+RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"Tab_Parm2",_GetInst()},iCtlID)
 
-oDCEntity := combobox{SELF,ResourceID{TAB_PARM2_ENTITY,_GetInst()}}
-oDCEntity:HyperLabel := HyperLabel{#Entity,"PP Codes","PP code of office",NULL_STRING}
-oDCEntity:UseHLforToolTip := True
-oDCEntity:FillUsing(Self:FillPPCodes( ))
+oDCEntity := ComboBox{self,ResourceID{TAB_PARM2_ENTITY,_GetInst()}}
+oDCEntity:HyperLabel := HyperLabel{#Entity,"PP Codes","PP code of office",null_string}
+oDCEntity:UseHLforToolTip := true
+oDCEntity:FillUsing(self:FillPPCodes( ))
 
-oDCmHB := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MHB,_GetInst()}}
-oDCmHB:HyperLabel := HyperLabel{#mHB,NULL_STRING,"Accountnumber for CMS account",NULL_STRING}
-oDCmHB:FieldSpec := MEMBERACCOUNT{}
-oDCmHB:UseHLforToolTip := True
+oDCmHB := SingleLineEdit{self,ResourceID{TAB_PARM2_MHB,_GetInst()}}
+oDCmHB:HyperLabel := HyperLabel{#mHB,null_string,"Accountnumber for CMS account",null_string}
+oDCmHB:FieldSpec := memberaccount{}
+oDCmHB:UseHLforToolTip := true
 
-oCCHBButton := PushButton{SELF,ResourceID{TAB_PARM2_HBBUTTON,_GetInst()}}
-oCCHBButton:HyperLabel := HyperLabel{#HBButton,"v","Browse in accounts",NULL_STRING}
+oCCHBButton := PushButton{self,ResourceID{TAB_PARM2_HBBUTTON,_GetInst()}}
+oCCHBButton:HyperLabel := HyperLabel{#HBButton,"v","Browse in accounts",null_string}
 oCCHBButton:TooltipText := "Browse in accounts"
-oCCHBButton:UseHLforToolTip := True
+oCCHBButton:UseHLforToolTip := true
 
-oDCmAM := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MAM,_GetInst()}}
-oDCmAM:HyperLabel := HyperLabel{#mAM,NULL_STRING,"Accountnumber for assessments",NULL_STRING}
-oDCmAM:FieldSpec := MEMBERACCOUNT{}
-oDCmAM:UseHLforToolTip := True
+oDCmAM := SingleLineEdit{self,ResourceID{TAB_PARM2_MAM,_GetInst()}}
+oDCmAM:HyperLabel := HyperLabel{#mAM,null_string,"Accountnumber for assessments",null_string}
+oDCmAM:FieldSpec := memberaccount{}
+oDCmAM:UseHLforToolTip := true
 
-oCCAMButton := PushButton{SELF,ResourceID{TAB_PARM2_AMBUTTON,_GetInst()}}
-oCCAMButton:HyperLabel := HyperLabel{#AMButton,"v","Browse in accounts",NULL_STRING}
+oCCAMButton := PushButton{self,ResourceID{TAB_PARM2_AMBUTTON,_GetInst()}}
+oCCAMButton:HyperLabel := HyperLabel{#AMButton,"v","Browse in accounts",null_string}
 oCCAMButton:TooltipText := "Browse in accounts"
-oCCAMButton:UseHLforToolTip := True
+oCCAMButton:UseHLforToolTip := true
 
-oDCmAMProj := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MAMPROJ,_GetInst()}}
-oDCmAMProj:HyperLabel := HyperLabel{#mAMProj,NULL_STRING,"Accountnumber for project assessments",NULL_STRING}
-oDCmAMProj:FieldSpec := MEMBERACCOUNT{}
-oDCmAMProj:UseHLforToolTip := True
+oDCmAMProj := SingleLineEdit{self,ResourceID{TAB_PARM2_MAMPROJ,_GetInst()}}
+oDCmAMProj:HyperLabel := HyperLabel{#mAMProj,null_string,"Accountnumber for project assessments",null_string}
+oDCmAMProj:FieldSpec := memberaccount{}
+oDCmAMProj:UseHLforToolTip := true
 
-oCCAMProjButton := PushButton{SELF,ResourceID{TAB_PARM2_AMPROJBUTTON,_GetInst()}}
-oCCAMProjButton:HyperLabel := HyperLabel{#AMProjButton,"v","Browse in accounts",NULL_STRING}
+oCCAMProjButton := PushButton{self,ResourceID{TAB_PARM2_AMPROJBUTTON,_GetInst()}}
+oCCAMProjButton:HyperLabel := HyperLabel{#AMProjButton,"v","Browse in accounts",null_string}
 oCCAMProjButton:TooltipText := "Browse in accounts"
-oCCAMProjButton:UseHLforToolTip := True
+oCCAMProjButton:UseHLforToolTip := true
 
-oDCmGiftIncAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MGIFTINCAC,_GetInst()}}
-oDCmGiftIncAc:HyperLabel := HyperLabel{#mGiftIncAc,NULL_STRING,"Account to record assessable gifts as income",NULL_STRING}
-oDCmGiftIncAc:FieldSpec := MEMBERACCOUNT{}
-oDCmGiftIncAc:UseHLforToolTip := True
+oDCmGiftIncAc := SingleLineEdit{self,ResourceID{TAB_PARM2_MGIFTINCAC,_GetInst()}}
+oDCmGiftIncAc:HyperLabel := HyperLabel{#mGiftIncAc,null_string,"Account to record assessable gifts as income",null_string}
+oDCmGiftIncAc:FieldSpec := memberaccount{}
+oDCmGiftIncAc:UseHLforToolTip := true
 
-oCCIncButton := PushButton{SELF,ResourceID{TAB_PARM2_INCBUTTON,_GetInst()}}
-oCCIncButton:HyperLabel := HyperLabel{#IncButton,"v","Browse in accounts",NULL_STRING}
+oCCIncButton := PushButton{self,ResourceID{TAB_PARM2_INCBUTTON,_GetInst()}}
+oCCIncButton:HyperLabel := HyperLabel{#IncButton,"v","Browse in accounts",null_string}
 oCCIncButton:TooltipText := "Browse in accounts"
-oCCIncButton:UseHLforToolTip := True
+oCCIncButton:UseHLforToolTip := true
 
-oDCmGiftExpAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MGIFTEXPAC,_GetInst()}}
-oDCmGiftExpAc:HyperLabel := HyperLabel{#mGiftExpAc,NULL_STRING,"Account to record assessable gifts as expense",NULL_STRING}
-oDCmGiftExpAc:FieldSpec := MEMBERACCOUNT{}
-oDCmGiftExpAc:UseHLforToolTip := True
+oDCmGiftExpAc := SingleLineEdit{self,ResourceID{TAB_PARM2_MGIFTEXPAC,_GetInst()}}
+oDCmGiftExpAc:HyperLabel := HyperLabel{#mGiftExpAc,null_string,"Account to record assessable gifts as expense",null_string}
+oDCmGiftExpAc:FieldSpec := memberaccount{}
+oDCmGiftExpAc:UseHLforToolTip := true
 
-oCCExpButton := PushButton{SELF,ResourceID{TAB_PARM2_EXPBUTTON,_GetInst()}}
-oCCExpButton:HyperLabel := HyperLabel{#ExpButton,"v","Browse in accounts",NULL_STRING}
+oCCExpButton := PushButton{self,ResourceID{TAB_PARM2_EXPBUTTON,_GetInst()}}
+oCCExpButton:HyperLabel := HyperLabel{#ExpButton,"v","Browse in accounts",null_string}
 oCCExpButton:TooltipText := "Browse in accounts"
-oCCExpButton:UseHLforToolTip := True
+oCCExpButton:UseHLforToolTip := true
 
-oDCmHomeIncAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MHOMEINCAC,_GetInst()}}
-oDCmHomeIncAc:HyperLabel := HyperLabel{#mHomeIncAc,NULL_STRING,"Account to record assessable gifts to home assigned members as income",NULL_STRING}
-oDCmHomeIncAc:FieldSpec := MEMBERACCOUNT{}
-oDCmHomeIncAc:UseHLforToolTip := True
+oDCmHomeIncAc := SingleLineEdit{self,ResourceID{TAB_PARM2_MHOMEINCAC,_GetInst()}}
+oDCmHomeIncAc:HyperLabel := HyperLabel{#mHomeIncAc,null_string,"Account to record assessable gifts to home assigned members as income",null_string}
+oDCmHomeIncAc:FieldSpec := memberaccount{}
+oDCmHomeIncAc:UseHLforToolTip := true
 
-oCCIncButtonHome := PushButton{SELF,ResourceID{TAB_PARM2_INCBUTTONHOME,_GetInst()}}
-oCCIncButtonHome:HyperLabel := HyperLabel{#IncButtonHome,"v","Browse in accounts",NULL_STRING}
+oCCIncButtonHome := PushButton{self,ResourceID{TAB_PARM2_INCBUTTONHOME,_GetInst()}}
+oCCIncButtonHome:HyperLabel := HyperLabel{#IncButtonHome,"v","Browse in accounts",null_string}
 oCCIncButtonHome:TooltipText := "Browse in accounts"
-oCCIncButtonHome:UseHLforToolTip := True
+oCCIncButtonHome:UseHLforToolTip := true
 
-oDCmHomeExpAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MHOMEEXPAC,_GetInst()}}
-oDCmHomeExpAc:HyperLabel := HyperLabel{#mHomeExpAc,NULL_STRING,"Account to record assessable gifts to home assigned members as expense",NULL_STRING}
-oDCmHomeExpAc:FieldSpec := MEMBERACCOUNT{}
-oDCmHomeExpAc:UseHLforToolTip := True
+oDCmHomeExpAc := SingleLineEdit{self,ResourceID{TAB_PARM2_MHOMEEXPAC,_GetInst()}}
+oDCmHomeExpAc:HyperLabel := HyperLabel{#mHomeExpAc,null_string,"Account to record assessable gifts to home assigned members as expense",null_string}
+oDCmHomeExpAc:FieldSpec := memberaccount{}
+oDCmHomeExpAc:UseHLforToolTip := true
 
-oCCExpButtonHome := PushButton{SELF,ResourceID{TAB_PARM2_EXPBUTTONHOME,_GetInst()}}
-oCCExpButtonHome:HyperLabel := HyperLabel{#ExpButtonHome,"v","Browse in accounts",NULL_STRING}
+oCCExpButtonHome := PushButton{self,ResourceID{TAB_PARM2_EXPBUTTONHOME,_GetInst()}}
+oCCExpButtonHome:HyperLabel := HyperLabel{#ExpButtonHome,"v","Browse in accounts",null_string}
 oCCExpButtonHome:TooltipText := "Browse in accounts"
-oCCExpButtonHome:UseHLforToolTip := True
+oCCExpButtonHome:UseHLforToolTip := true
 
-oDCassmntfield := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTFIELD,_GetInst()}}
+oDCassmntfield := SingleLineEdit{self,ResourceID{TAB_PARM2_ASSMNTFIELD,_GetInst()}}
 oDCassmntfield:FieldSpec := Sysparms_SINHDHAS{}
 oDCassmntfield:HyperLabel := HyperLabel{#assmntfield,"Assessment home assigned:","Assessment field","Sysparms_SINHDHAS"}
-oDCassmntfield:UseHLforToolTip := True
+oDCassmntfield:UseHLforToolTip := true
 
-oDCassmntint := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTINT,_GetInst()}}
-oDCassmntint:FieldSpec := Sysparms_INHDINT{}
-oDCassmntint:HyperLabel := HyperLabel{#assmntint,"Assessment international","Assessment international",NULL_STRING}
-oDCassmntint:UseHLforToolTip := True
+oDCassmntint := SingleLineEdit{self,ResourceID{TAB_PARM2_ASSMNTINT,_GetInst()}}
+oDCassmntint:FieldSpec := sysparms_INHDINT{}
+oDCassmntint:HyperLabel := HyperLabel{#assmntint,"Assessment international","Assessment international",null_string}
+oDCassmntint:UseHLforToolTip := true
 
-oDCwithldoffl := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFL,_GetInst()}}
+oDCwithldoffl := SingleLineEdit{self,ResourceID{TAB_PARM2_WITHLDOFFL,_GetInst()}}
 oDCwithldoffl:FieldSpec := Sysparms_SINHDKNTR{}
 oDCwithldoffl:HyperLabel := HyperLabel{#withldoffl,"Assessment office:","Assessment office low","Sysparms_SINHDKNTR"}
-oDCwithldoffl:UseHLforToolTip := True
+oDCwithldoffl:UseHLforToolTip := true
 
-oDCassmntOffc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_ASSMNTOFFC,_GetInst()}}
+oDCassmntOffc := SingleLineEdit{self,ResourceID{TAB_PARM2_ASSMNTOFFC,_GetInst()}}
 oDCassmntOffc:FieldSpec := Sysparms_SINHDKNTR{}
 oDCassmntOffc:HyperLabel := HyperLabel{#assmntOffc,"Assessment office:","Assessment office standard","Sysparms_SINHDKNTR"}
 
-oDCwithldoffm := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFM,_GetInst()}}
+oDCwithldoffm := SingleLineEdit{self,ResourceID{TAB_PARM2_WITHLDOFFM,_GetInst()}}
 oDCwithldoffm:FieldSpec := Sysparms_SINHDKNTR{}
 oDCwithldoffm:HyperLabel := HyperLabel{#withldoffm,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
 
-oDCwithldoffh := SingleLineEdit{SELF,ResourceID{TAB_PARM2_WITHLDOFFH,_GetInst()}}
+oDCwithldoffh := SingleLineEdit{self,ResourceID{TAB_PARM2_WITHLDOFFH,_GetInst()}}
 oDCwithldoffh:FieldSpec := Sysparms_SINHDKNTR{}
 oDCwithldoffh:HyperLabel := HyperLabel{#withldoffh,"Assessment office:","Assessment office","Sysparms_SINHDKNTR"}
 
-oDCpmcupld := CheckBox{SELF,ResourceID{TAB_PARM2_PMCUPLD,_GetInst()}}
-oDCpmcupld:HyperLabel := HyperLabel{#pmcupld,"Sending to PMC via Insite upload",NULL_STRING,NULL_STRING}
-oDCpmcupld:FieldSpec := Sysparms_PMCUPLD{}
+oDCpmcupld := CheckBox{self,ResourceID{TAB_PARM2_PMCUPLD,_GetInst()}}
+oDCpmcupld:HyperLabel := HyperLabel{#pmcupld,"Sending to PMC via Insite upload",null_string,null_string}
+oDCpmcupld:FieldSpec := sysparms_PMCUPLD{}
 
-oDCmPersonPMCMan := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MPERSONPMCMAN,_GetInst()}}
-oDCmPersonPMCMan:HyperLabel := HyperLabel{#mPersonPMCMan,NULL_STRING,NULL_STRING,"name PMC manager who should approve OPP file"}
+oDCmPersonPMCMan := SingleLineEdit{self,ResourceID{TAB_PARM2_MPERSONPMCMAN,_GetInst()}}
+oDCmPersonPMCMan:HyperLabel := HyperLabel{#mPersonPMCMan,null_string,null_string,"name PMC manager who should approve OPP file"}
 oDCmPersonPMCMan:FocusSelect := FSEL_HOME
 oDCmPersonPMCMan:FieldSpec := Person_NA1{}
-oDCmPersonPMCMan:UseHLforToolTip := True
+oDCmPersonPMCMan:UseHLforToolTip := true
 
-oDCIESMAILACC := SingleLineEdit{SELF,ResourceID{TAB_PARM2_IESMAILACC,_GetInst()}}
-oDCIESMAILACC:FieldSpec := Sysparms_IESMailAcc{}
-oDCIESMAILACC:HyperLabel := HyperLabel{#IESMAILACC,"Email account of IES:",NULL_STRING,"Sysparms_IESMailAcc"}
+oDCIESMAILACC := SingleLineEdit{self,ResourceID{TAB_PARM2_IESMAILACC,_GetInst()}}
+oDCIESMAILACC:FieldSpec := sysparms_IESMAILACC{}
+oDCIESMAILACC:HyperLabel := HyperLabel{#IESMAILACC,"Email account of IES:",null_string,"Sysparms_IESMailAcc"}
 oDCIESMAILACC:TooltipText := "used to email OPP file to PMC"
 
-oCCPersonButtonContact := PushButton{SELF,ResourceID{TAB_PARM2_PERSONBUTTONCONTACT,_GetInst()}}
-oCCPersonButtonContact:HyperLabel := HyperLabel{#PersonButtonContact,"v","Browse in persons",NULL_STRING}
+oCCPersonButtonContact := PushButton{self,ResourceID{TAB_PARM2_PERSONBUTTONCONTACT,_GetInst()}}
+oCCPersonButtonContact:HyperLabel := HyperLabel{#PersonButtonContact,"v","Browse in persons",null_string}
 oCCPersonButtonContact:TooltipText := "Browse in Persons"
 
-oDCSC_SHB := FixedText{SELF,ResourceID{TAB_PARM2_SC_SHB,_GetInst()}}
-oDCSC_SHB:HyperLabel := HyperLabel{#SC_SHB,"Account PMC clearance:",NULL_STRING,NULL_STRING}
+oDCSC_SHB := FixedText{self,ResourceID{TAB_PARM2_SC_SHB,_GetInst()}}
+oDCSC_SHB:HyperLabel := HyperLabel{#SC_SHB,"Account PMC clearance:",null_string,null_string}
 
-oDCSC_SAM := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM,_GetInst()}}
-oDCSC_SAM:HyperLabel := HyperLabel{#SC_SAM,"Account Assessments standard:",NULL_STRING,NULL_STRING}
+oDCSC_SAM := FixedText{self,ResourceID{TAB_PARM2_SC_SAM,_GetInst()}}
+oDCSC_SAM:HyperLabel := HyperLabel{#SC_SAM,"Account Assessments standard:",null_string,null_string}
 
-oDCSC_SINHDHAS := FixedText{SELF,ResourceID{TAB_PARM2_SC_SINHDHAS,_GetInst()}}
-oDCSC_SINHDHAS:HyperLabel := HyperLabel{#SC_SINHDHAS,"Assessment:",NULL_STRING,NULL_STRING}
+oDCSC_SINHDHAS := FixedText{self,ResourceID{TAB_PARM2_SC_SINHDHAS,_GetInst()}}
+oDCSC_SINHDHAS:HyperLabel := HyperLabel{#SC_SINHDHAS,"Assessment:",null_string,null_string}
 
-oDCSC_SINHDKNTR := FixedText{SELF,ResourceID{TAB_PARM2_SC_SINHDKNTR,_GetInst()}}
-oDCSC_SINHDKNTR:HyperLabel := HyperLabel{#SC_SINHDKNTR,"office:",NULL_STRING,NULL_STRING}
+oDCSC_SINHDKNTR := FixedText{self,ResourceID{TAB_PARM2_SC_SINHDKNTR,_GetInst()}}
+oDCSC_SINHDKNTR:HyperLabel := HyperLabel{#SC_SINHDKNTR,"office:",null_string,null_string}
 
-oDCSC_ENTITY := FixedText{SELF,ResourceID{TAB_PARM2_SC_ENTITY,_GetInst()}}
-oDCSC_ENTITY:HyperLabel := HyperLabel{#SC_ENTITY,"PMC Participant code:",NULL_STRING,NULL_STRING}
+oDCSC_ENTITY := FixedText{self,ResourceID{TAB_PARM2_SC_ENTITY,_GetInst()}}
+oDCSC_ENTITY:HyperLabel := HyperLabel{#SC_ENTITY,"PMC Participant code:",null_string,null_string}
 
-oDCFixedText8 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT8,_GetInst()}}
-oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"%",NULL_STRING,NULL_STRING}
+oDCFixedText8 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT8,_GetInst()}}
+oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"%",null_string,null_string}
 
-oDCFixedText9 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT9,_GetInst()}}
-oDCFixedText9:HyperLabel := HyperLabel{#FixedText9,"%",NULL_STRING,NULL_STRING}
+oDCFixedText9 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT9,_GetInst()}}
+oDCFixedText9:HyperLabel := HyperLabel{#FixedText9,"%",null_string,null_string}
 
-oDCSC_IESMAILACC := FixedText{SELF,ResourceID{TAB_PARM2_SC_IESMAILACC,_GetInst()}}
-oDCSC_IESMAILACC:HyperLabel := HyperLabel{#SC_IESMAILACC,"Email address of PMC:",NULL_STRING,NULL_STRING}
+oDCSC_IESMAILACC := FixedText{self,ResourceID{TAB_PARM2_SC_IESMAILACC,_GetInst()}}
+oDCSC_IESMAILACC:HyperLabel := HyperLabel{#SC_IESMAILACC,"Email address of PMC:",null_string,null_string}
 
-oDCSC_SINHDHAS1 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SINHDHAS1,_GetInst()}}
-oDCSC_SINHDHAS1:HyperLabel := HyperLabel{#SC_SINHDHAS1,"field:",NULL_STRING,NULL_STRING}
+oDCSC_SINHDHAS1 := FixedText{self,ResourceID{TAB_PARM2_SC_SINHDHAS1,_GetInst()}}
+oDCSC_SINHDHAS1:HyperLabel := HyperLabel{#SC_SINHDHAS1,"field:",null_string,null_string}
 
-oDCSC_SINHDKNTR1 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SINHDKNTR1,_GetInst()}}
-oDCSC_SINHDKNTR1:HyperLabel := HyperLabel{#SC_SINHDKNTR1,"int:",NULL_STRING,NULL_STRING}
+oDCSC_SINHDKNTR1 := FixedText{self,ResourceID{TAB_PARM2_SC_SINHDKNTR1,_GetInst()}}
+oDCSC_SINHDKNTR1:HyperLabel := HyperLabel{#SC_SINHDKNTR1,"int:",null_string,null_string}
 
-oDCFixedText10 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT10,_GetInst()}}
-oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"%",NULL_STRING,NULL_STRING}
+oDCFixedText10 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT10,_GetInst()}}
+oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"%",null_string,null_string}
 
-oDCFixedText14 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT14,_GetInst()}}
-oDCFixedText14:HyperLabel := HyperLabel{#FixedText14,"low",NULL_STRING,NULL_STRING}
+oDCFixedText14 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT14,_GetInst()}}
+oDCFixedText14:HyperLabel := HyperLabel{#FixedText14,"low",null_string,null_string}
 
-oDCFixedText15 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT15,_GetInst()}}
-oDCFixedText15:HyperLabel := HyperLabel{#FixedText15,"standard",NULL_STRING,NULL_STRING}
+oDCFixedText15 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT15,_GetInst()}}
+oDCFixedText15:HyperLabel := HyperLabel{#FixedText15,"standard",null_string,null_string}
 
-oDCFixedText11 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT11,_GetInst()}}
-oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"%",NULL_STRING,NULL_STRING}
+oDCFixedText11 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT11,_GetInst()}}
+oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"%",null_string,null_string}
 
-oDCFixedText12 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT12,_GetInst()}}
-oDCFixedText12:HyperLabel := HyperLabel{#FixedText12,"%",NULL_STRING,NULL_STRING}
+oDCFixedText12 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT12,_GetInst()}}
+oDCFixedText12:HyperLabel := HyperLabel{#FixedText12,"%",null_string,null_string}
 
-oDCFixedText16 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT16,_GetInst()}}
-oDCFixedText16:HyperLabel := HyperLabel{#FixedText16,"middle",NULL_STRING,NULL_STRING}
+oDCFixedText16 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT16,_GetInst()}}
+oDCFixedText16:HyperLabel := HyperLabel{#FixedText16,"middle",null_string,null_string}
 
-oDCFixedText17 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT17,_GetInst()}}
-oDCFixedText17:HyperLabel := HyperLabel{#FixedText17,"high",NULL_STRING,NULL_STRING}
+oDCFixedText17 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT17,_GetInst()}}
+oDCFixedText17:HyperLabel := HyperLabel{#FixedText17,"high",null_string,null_string}
 
-oDCFixedText13 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT13,_GetInst()}}
-oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"%",NULL_STRING,NULL_STRING}
+oDCFixedText13 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT13,_GetInst()}}
+oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"%",null_string,null_string}
 
-oDCSC_SAM1 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM1,_GetInst()}}
-oDCSC_SAM1:HyperLabel := HyperLabel{#SC_SAM1,"Account Project Assessments",NULL_STRING,NULL_STRING}
+oDCSC_SAM1 := FixedText{self,ResourceID{TAB_PARM2_SC_SAM1,_GetInst()}}
+oDCSC_SAM1:HyperLabel := HyperLabel{#SC_SAM1,"Account Project Assessments",null_string,null_string}
 
-oDCGroupBoxIncome := GroupBox{SELF,ResourceID{TAB_PARM2_GROUPBOXINCOME,_GetInst()}}
-oDCGroupBoxIncome:HyperLabel := HyperLabel{#GroupBoxIncome,"Accounts to record assessable gifts to measure activity",NULL_STRING,NULL_STRING}
+oDCGroupBoxIncome := GroupBox{self,ResourceID{TAB_PARM2_GROUPBOXINCOME,_GetInst()}}
+oDCGroupBoxIncome:HyperLabel := HyperLabel{#GroupBoxIncome,"Accounts to record assessable gifts to measure activity",null_string,null_string}
 
-oDCSC_SAM2 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM2,_GetInst()}}
-oDCSC_SAM2:HyperLabel := HyperLabel{#SC_SAM2,"Account Gifts Expense:",NULL_STRING,NULL_STRING}
+oDCSC_SAM2 := FixedText{self,ResourceID{TAB_PARM2_SC_SAM2,_GetInst()}}
+oDCSC_SAM2:HyperLabel := HyperLabel{#SC_SAM2,"Account Gifts Expense:",null_string,null_string}
 
-oDCSC_SAM3 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM3,_GetInst()}}
-oDCSC_SAM3:HyperLabel := HyperLabel{#SC_SAM3,"Account Gifts Income:",NULL_STRING,NULL_STRING}
+oDCSC_SAM3 := FixedText{self,ResourceID{TAB_PARM2_SC_SAM3,_GetInst()}}
+oDCSC_SAM3:HyperLabel := HyperLabel{#SC_SAM3,"Account Gifts Income:",null_string,null_string}
 
-oDCSC_SAM4 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM4,_GetInst()}}
-oDCSC_SAM4:HyperLabel := HyperLabel{#SC_SAM4,"Account Home Gifts Expense:",NULL_STRING,NULL_STRING}
+oDCSC_SAM4 := FixedText{self,ResourceID{TAB_PARM2_SC_SAM4,_GetInst()}}
+oDCSC_SAM4:HyperLabel := HyperLabel{#SC_SAM4,"Account Home Gifts Expense:",null_string,null_string}
 
-oDCSC_SAM5 := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAM5,_GetInst()}}
-oDCSC_SAM5:HyperLabel := HyperLabel{#SC_SAM5,"Account Home Gifts Income:",NULL_STRING,NULL_STRING}
+oDCSC_SAM5 := FixedText{self,ResourceID{TAB_PARM2_SC_SAM5,_GetInst()}}
+oDCSC_SAM5:HyperLabel := HyperLabel{#SC_SAM5,"Account Home Gifts Income:",null_string,null_string}
 
-oDCFixedText24 := FixedText{SELF,ResourceID{TAB_PARM2_FIXEDTEXT24,_GetInst()}}
-oDCFixedText24:HyperLabel := HyperLabel{#FixedText24,"PMC Manager:",NULL_STRING,NULL_STRING}
+oDCFixedText24 := FixedText{self,ResourceID{TAB_PARM2_FIXEDTEXT24,_GetInst()}}
+oDCFixedText24:HyperLabel := HyperLabel{#FixedText24,"PMC Manager:",null_string,null_string}
 
-oDCmAssFldAc := SingleLineEdit{SELF,ResourceID{TAB_PARM2_MASSFLDAC,_GetInst()}}
-oDCmAssFldAc:HyperLabel := HyperLabel{#mAssFldAc,NULL_STRING,"Accountnumber for field+int.assessments",NULL_STRING}
-oDCmAssFldAc:FieldSpec := MEMBERACCOUNT{}
+oDCmAssFldAc := SingleLineEdit{self,ResourceID{TAB_PARM2_MASSFLDAC,_GetInst()}}
+oDCmAssFldAc:HyperLabel := HyperLabel{#mAssFldAc,null_string,"Accountnumber for field+int.assessments",null_string}
+oDCmAssFldAc:FieldSpec := memberaccount{}
 oDCmAssFldAc:TooltipText := "account to record how much the expense for field and international assessment is"
 
-oCCAssFldAcButton := PushButton{SELF,ResourceID{TAB_PARM2_ASSFLDACBUTTON,_GetInst()}}
-oCCAssFldAcButton:HyperLabel := HyperLabel{#AssFldAcButton,"v","Browse in accounts",NULL_STRING}
+oCCAssFldAcButton := PushButton{self,ResourceID{TAB_PARM2_ASSFLDACBUTTON,_GetInst()}}
+oCCAssFldAcButton:HyperLabel := HyperLabel{#AssFldAcButton,"v","Browse in accounts",null_string}
 oCCAssFldAcButton:TooltipText := "Browse in accounts"
-oCCAssFldAcButton:UseHLforToolTip := True
+oCCAssFldAcButton:UseHLforToolTip := true
 
-oDCSC_SAMFld := FixedText{SELF,ResourceID{TAB_PARM2_SC_SAMFLD,_GetInst()}}
-oDCSC_SAMFld:HyperLabel := HyperLabel{#SC_SAMFld,"Account Assessment Field+Int",NULL_STRING,NULL_STRING}
+oDCSC_SAMFld := FixedText{self,ResourceID{TAB_PARM2_SC_SAMFLD,_GetInst()}}
+oDCSC_SAMFld:HyperLabel := HyperLabel{#SC_SAMFld,"Account Assessment Field+Int",null_string,null_string}
 
-SELF:Caption := "Account Gifts Expense:"
-SELF:HyperLabel := HyperLabel{#Tab_Parm2,"Account Gifts Expense:",NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
-SELF:Automated := False
+self:Caption := "Account Gifts Expense:"
+self:HyperLabel := HyperLabel{#Tab_Parm2,"Account Gifts Expense:",null_string,null_string}
+self:PreventAutoLayout := true
+self:Automated := False
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -1142,66 +1142,66 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS mAM() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mAM)
+RETURN self:FIELDGET(#mAM)
 
 ASSIGN mAM(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mAM, uValue)
+self:FIELDPUT(#mAM, uValue)
 RETURN uValue
 
 ACCESS mAMProj() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mAMProj)
+RETURN self:FIELDGET(#mAMProj)
 
 ASSIGN mAMProj(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mAMProj, uValue)
+self:FIELDPUT(#mAMProj, uValue)
 RETURN uValue
 
 ACCESS mAssFldAc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mAssFldAc)
+RETURN self:FIELDGET(#mAssFldAc)
 
 ASSIGN mAssFldAc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mAssFldAc, uValue)
+self:FIELDPUT(#mAssFldAc, uValue)
 RETURN uValue
 
 ACCESS mGiftExpAc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mGiftExpAc)
+RETURN self:FIELDGET(#mGiftExpAc)
 
 ASSIGN mGiftExpAc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mGiftExpAc, uValue)
+self:FIELDPUT(#mGiftExpAc, uValue)
 RETURN uValue
 
 ACCESS mGiftIncAc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mGiftIncAc)
+RETURN self:FIELDGET(#mGiftIncAc)
 
 ASSIGN mGiftIncAc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mGiftIncAc, uValue)
+self:FIELDPUT(#mGiftIncAc, uValue)
 RETURN uValue
 
 ACCESS mHB() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mHB)
+RETURN self:FIELDGET(#mHB)
 
 ASSIGN mHB(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mHB, uValue)
+self:FIELDPUT(#mHB, uValue)
 RETURN uValue
 
 ACCESS mHomeExpAc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mHomeExpAc)
+RETURN self:FIELDGET(#mHomeExpAc)
 
 ASSIGN mHomeExpAc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mHomeExpAc, uValue)
+self:FIELDPUT(#mHomeExpAc, uValue)
 RETURN uValue
 
 ACCESS mHomeIncAc() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mHomeIncAc)
+RETURN self:FIELDGET(#mHomeIncAc)
 
 ASSIGN mHomeIncAc(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mHomeIncAc, uValue)
+self:FIELDPUT(#mHomeIncAc, uValue)
 RETURN uValue
 
 ACCESS mPersonPMCMan() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#mPersonPMCMan)
+RETURN self:FIELDGET(#mPersonPMCMan)
 
 ASSIGN mPersonPMCMan(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#mPersonPMCMan, uValue)
+self:FIELDPUT(#mPersonPMCMan, uValue)
 RETURN uValue
 
 METHOD PersonButtonContact(lUnique,WithCln ) CLASS Tab_Parm2 
@@ -1212,23 +1212,23 @@ METHOD PersonButtonContact(lUnique,WithCln ) CLASS Tab_Parm2
 	Default(@lUnique,FALSE) 
 	Default(@WithCln,true) 
 	oPers:=PersonContainer{}
-	if !Empty(self:mCLNPMCMan).and.WithCln .and. !Val(self:mCLNPMCMan)=0
+	IF !Empty(self:mCLNPMCMan).and.WithCln .and. !Val(self:mCLNPMCMan)=0
 		oPers:persid:=self:mCLNPMCMan
 	else
 		oPers:persid:=""
 	endif
-	if self:lImport
+	IF self:lImport
 		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
 	else
 		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
 	endif
 
-RETURN NIL
+RETURN nil
 ACCESS pmcupld() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#pmcupld)
+RETURN self:FIELDGET(#pmcupld)
 
 ASSIGN pmcupld(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#pmcupld, uValue)
+self:FIELDPUT(#pmcupld, uValue)
 RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
@@ -1236,7 +1236,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	LOCAL oAcc as SQLSelect
 	self:SetTexts()
 	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
-	IF !Empty(SELF:Server:AM)
+	IF !Empty(self:Server:AM)
 		oAcc:Execute( self:Server:AM)
 		IF oAcc:RecCount>0
 			self:NbrAM :=  Str(oAcc:accid,-1)
@@ -1244,7 +1244,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cAMName := AllTrim(oAcc:Description)
 			self:cSoortAM:=oAcc:TYPE
 		ENDIF		
-		IF !Empty(SELF:Server:AssProjA)
+		IF !Empty(self:Server:AssProjA)
 			oAcc:Execute( self:Server:AssProjA)
 			IF oAcc:RecCount>0
 				self:NbrAMProj :=  Str(oAcc:accid,-1)
@@ -1281,7 +1281,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cSoortGIFTEXPAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
-	IF !Empty(SELF:Server:GIFTINCAC)
+	IF !Empty(self:Server:GIFTINCAC)
 		oAcc:Execute( self:Server:GIFTINCAC)
 		IF oAcc:RecCount>0
 			self:NbrInc :=  Str(oAcc:accid,-1)
@@ -1295,7 +1295,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	IF !Empty(self:Server:HOMEEXPAC)
 		oAcc:Execute( self:Server:HOMEEXPAC)
 		IF oAcc:RecCount>0
-			self:NbrExpHome :=  Str(oAcc:accid,-1)
+			self:NBREXPHOME :=  Str(oAcc:accid,-1)
 			self:oDCmHOMEEXPAC:TEXTValue := oAcc:Description
 			self:cHomeEXPACName := oAcc:Description
 			self:cSoortHomeEXPAC:=oAcc:TYPE
@@ -1310,7 +1310,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cSoortHomeINCAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
-	if self:oDCpmcupld:Checked
+	IF self:oDCpmcupld:Checked
 		self:oDCSC_IESMAILACC:Hide()
 		self:oDCIESMAILACC:Hide()
 	else
@@ -1322,10 +1322,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	self:cPMCManName:=GetFullName(self:mCLNPMCMan)
 	self:oDCmPersonPMCMan:TEXTValue:=cPMCManName
 	self:oDCENTITY:Value:=self:Server:Entity
-	RETURN NIL
+	RETURN nil
 method ShowAssAcc() class Tab_Parm2
 // show or hide fields for income/cost ministry 
-	if	!Empty(self:NbrInc)
+	IF	!Empty(self:NbrInc)
 		self:oDCmHomeIncAc:Show()
 		self:oDCSC_SAM5:Show()
 		self:oCCIncButtonHome:Show() 
@@ -1349,31 +1349,31 @@ method ShowAssAcc() class Tab_Parm2
 
 
 ACCESS withldoff() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#INHDHAS)
+RETURN self:FIELDGET(#INHDHAS)
 
 ASSIGN withldoff(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#INHDHAS, uValue)
+self:FIELDPUT(#INHDHAS, uValue)
 RETURN uValue
 
-ACCESS withldoffh() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffh)
+ACCESS withldoffH() CLASS Tab_Parm2
+RETURN self:FIELDGET(#withldoffh)
 
-ASSIGN withldoffh(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffh, uValue)
+ASSIGN withldoffH(uValue) CLASS Tab_Parm2
+self:FIELDPUT(#withldoffh, uValue)
 RETURN uValue
 
 ACCESS withldoffl() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffl)
+RETURN self:FIELDGET(#withldoffl)
 
 ASSIGN withldoffl(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffl, uValue)
+self:FIELDPUT(#withldoffl, uValue)
 RETURN uValue
 
-ACCESS withldoffm() CLASS Tab_Parm2
-RETURN SELF:FieldGet(#withldoffm)
+ACCESS withldoffM() CLASS Tab_Parm2
+RETURN self:FIELDGET(#withldoffm)
 
-ASSIGN withldoffm(uValue) CLASS Tab_Parm2
-SELF:FieldPut(#withldoffm, uValue)
+ASSIGN withldoffM(uValue) CLASS Tab_Parm2
+self:FIELDPUT(#withldoffm, uValue)
 RETURN uValue
 
 STATIC DEFINE TAB_PARM2_AMBUTTON := 104 
@@ -1429,7 +1429,7 @@ STATIC DEFINE TAB_PARM2_SC_SINHDKNTR1 := 134
 STATIC DEFINE TAB_PARM2_WITHLDOFFH := 120 
 STATIC DEFINE TAB_PARM2_WITHLDOFFL := 117 
 STATIC DEFINE TAB_PARM2_WITHLDOFFM := 119 
-RESOURCE Tab_Parm3 DIALOGEX  26, 29, 254, 240
+resource Tab_Parm3 DIALOGEX  26, 29, 254, 240
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1456,46 +1456,46 @@ CLASS Tab_Parm3 INHERIT DataWindowExtra
 	PROTECT oDBMPOSTAGE as DataColumn
 	PROTECT oDBMDEBTORS as DataColumn
 	PROTECT oDBCNTRNRCOLL as DataColumn
-	PROTECT oDCmPOSTAGE AS SINGLELINEEDIT
-	PROTECT oCCPostageButton AS PUSHBUTTON
-	PROTECT oDCSC_SPOSTZ AS FIXEDTEXT
-	PROTECT oDCGroupBox3 AS GROUPBOX
-	PROTECT oDCmDEBTORS AS SINGLELINEEDIT
-	PROTECT oCCDebButton AS PUSHBUTTON
-	PROTECT oDCmCREDITORS AS SINGLELINEEDIT
-	PROTECT oCCCreButton AS PUSHBUTTON
-	PROTECT oDCSC_SDEB AS FIXEDTEXT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCCNTRNRCOLL AS SINGLELINEEDIT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCBANKNBRCOL AS COMBOBOX
-	PROTECT oDCSC_SCRE AS FIXEDTEXT
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-	PROTECT oDCBANKNBRCRE AS COMBOBOX
+	PROTECT oDCmPOSTAGE as SINGLELINEEDIT
+	PROTECT oCCPostageButton as PUSHBUTTON
+	PROTECT oDCSC_SPOSTZ as FIXEDTEXT
+	PROTECT oDCGroupBox3 as GROUPBOX
+	PROTECT oDCmDEBTORS as SINGLELINEEDIT
+	PROTECT oCCDebButton as PUSHBUTTON
+	PROTECT oDCmCREDITORS as SINGLELINEEDIT
+	PROTECT oCCCreButton as PUSHBUTTON
+	PROTECT oDCSC_SDEB as FIXEDTEXT
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCCNTRNRCOLL as SINGLELINEEDIT
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCBANKNBRCOL as COMBOBOX
+	PROTECT oDCSC_SCRE as FIXEDTEXT
+	PROTECT oDCFixedText4 as FIXEDTEXT
+	PROTECT oDCBANKNBRCRE as COMBOBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
     EXPORT cPostageName, cDEBTORSName, cCREDITORSName as STRING
   	EXPORT NbrPostage, NbrDEBTORS, NbrCREDITORS as STRING
   	EXPORT cSoortPostage, cSoortDEBTORS, cSoortCREDITORS as STRING
 ACCESS BANKNBRCOL() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#BANKNBRCOL)
+RETURN self:FIELDGET(#BANKNBRCOL)
 
 ASSIGN BANKNBRCOL(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#BANKNBRCOL, uValue)
+self:FIELDPUT(#BANKNBRCOL, uValue)
 RETURN uValue
 
 ACCESS BANKNBRCRE() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#BANKNBRCRE)
+RETURN self:FIELDGET(#BANKNBRCRE)
 
 ASSIGN BANKNBRCRE(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#BANKNBRCRE, uValue)
+self:FIELDPUT(#BANKNBRCRE, uValue)
 RETURN uValue
 
 ACCESS CNTRNRCOLL() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#CNTRNRCOLL)
+RETURN self:FIELDGET(#CNTRNRCOLL)
 
 ASSIGN CNTRNRCOLL(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#CNTRNRCOLL, uValue)
+self:FIELDPUT(#CNTRNRCOLL, uValue)
 RETURN uValue
 
 METHOD CreButton(lUnique ) CLASS TAB_PARM3 
@@ -1509,33 +1509,33 @@ METHOD DebButton(lUnique ) CLASS TAB_PARM3
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrDEBTORS},{"AK"},"N",0,false,BankAccs)
 	AccountSelect(self:Owner,AllTrim(oDCmDEBTORS:TEXTValue ),"Receivable",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm3
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as Control
+	LOCAL lGotFocus as LOGIC
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MPOSTAGE".and.!AllTrim(oControl:Value)==AllTrim(cPostageName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrPostage := "  "
-				SELF:cPostageName := ""
-				SELF:oDCmPostage:TEXTValue := ""
+		IF oControl:Name == "MPOSTAGE".and.!AllTrim(oControl:VALUE)==AllTrim(cPostageName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrPostage := "  "
+				self:cPostageName := ""
+				self:oDCmPostage:TEXTValue := ""
             ELSE
-				cPostageName:=AllTrim(oControl:Value)
-				SELF:PostageButton(TRUE)
+				cPostageName:=AllTrim(oControl:VALUE)
+				self:PostageButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MDEBTORS".and.!AllTrim(oControl:Value)==AllTrim(cDEBTORSName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrDEBTORS:="  "
-				SELF:cDEBTORSName := ""
-				SELF:oDCmDEBTORS:TEXTValue := ""
+		ELSEIF oControl:Name == "MDEBTORS".and.!AllTrim(oControl:VALUE)==AllTrim(cDEBTORSName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrDEBTORS:="  "
+				self:cDEBTORSName := ""
+				self:oDCmDEBTORS:TEXTValue := ""
             ELSE
-				cDEBTORSName:=AllTrim(oControl:Value)
-				SELF:DEBButton(TRUE)
+				cDEBTORSName:=AllTrim(oControl:VALUE)
+				self:DEBButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MCREDITORS".and.!AllTrim(oControl:VALUE)==AllTrim(cCREDITORSName)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
@@ -1548,7 +1548,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm3
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN nil
 
 METHOD FillBank() CLASS Tab_Parm3
 	RETURN FillBankAccount("b.Telebankng")
@@ -1559,86 +1559,86 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"Tab_Parm3",_GetInst()},iCtlID)
 
-oDCmPOSTAGE := SingleLineEdit{SELF,ResourceID{TAB_PARM3_MPOSTAGE,_GetInst()}}
-oDCmPOSTAGE:HyperLabel := HyperLabel{#mPOSTAGE,NULL_STRING,"Accountnumber for postage",NULL_STRING}
-oDCmPOSTAGE:FieldSpec := MEMBERACCOUNT{}
+oDCmPOSTAGE := SingleLineEdit{self,ResourceID{TAB_PARM3_MPOSTAGE,_GetInst()}}
+oDCmPOSTAGE:HyperLabel := HyperLabel{#mPOSTAGE,null_string,"Accountnumber for postage",null_string}
+oDCmPOSTAGE:FieldSpec := memberaccount{}
 
-oCCPostageButton := PushButton{SELF,ResourceID{TAB_PARM3_POSTAGEBUTTON,_GetInst()}}
-oCCPostageButton:HyperLabel := HyperLabel{#PostageButton,"v","Browse in accounts",NULL_STRING}
+oCCPostageButton := PushButton{self,ResourceID{TAB_PARM3_POSTAGEBUTTON,_GetInst()}}
+oCCPostageButton:HyperLabel := HyperLabel{#PostageButton,"v","Browse in accounts",null_string}
 oCCPostageButton:TooltipText := "Browse in accounts"
 
-oDCSC_SPOSTZ := FixedText{SELF,ResourceID{TAB_PARM3_SC_SPOSTZ,_GetInst()}}
-oDCSC_SPOSTZ:HyperLabel := HyperLabel{#SC_SPOSTZ,"Account Postage:",NULL_STRING,NULL_STRING}
+oDCSC_SPOSTZ := FixedText{self,ResourceID{TAB_PARM3_SC_SPOSTZ,_GetInst()}}
+oDCSC_SPOSTZ:HyperLabel := HyperLabel{#SC_SPOSTZ,"Account Postage:",null_string,null_string}
 
-oDCGroupBox3 := GroupBox{SELF,ResourceID{TAB_PARM3_GROUPBOX3,_GetInst()}}
-oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Receiving/sending Bills",NULL_STRING,NULL_STRING}
+oDCGroupBox3 := GroupBox{self,ResourceID{TAB_PARM3_GROUPBOX3,_GetInst()}}
+oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Receiving/sending Bills",null_string,null_string}
 
-oDCmDEBTORS := SingleLineEdit{SELF,ResourceID{TAB_PARM3_MDEBTORS,_GetInst()}}
-oDCmDEBTORS:HyperLabel := HyperLabel{#mDEBTORS,NULL_STRING,"Accountnumber Debtors",NULL_STRING}
-oDCmDEBTORS:FieldSpec := MEMBERACCOUNT{}
-oDCmDEBTORS:UseHLforToolTip := True
+oDCmDEBTORS := SingleLineEdit{self,ResourceID{TAB_PARM3_MDEBTORS,_GetInst()}}
+oDCmDEBTORS:HyperLabel := HyperLabel{#mDEBTORS,null_string,"Accountnumber Debtors",null_string}
+oDCmDEBTORS:FieldSpec := memberaccount{}
+oDCmDEBTORS:UseHLforToolTip := true
 
-oCCDebButton := PushButton{SELF,ResourceID{TAB_PARM3_DEBBUTTON,_GetInst()}}
-oCCDebButton:HyperLabel := HyperLabel{#DebButton,"v","Browse in accounts",NULL_STRING}
+oCCDebButton := PushButton{self,ResourceID{TAB_PARM3_DEBBUTTON,_GetInst()}}
+oCCDebButton:HyperLabel := HyperLabel{#DebButton,"v","Browse in accounts",null_string}
 oCCDebButton:TooltipText := "Browse in accounts"
 
-oDCmCREDITORS := SingleLineEdit{SELF,ResourceID{TAB_PARM3_MCREDITORS,_GetInst()}}
-oDCmCREDITORS:HyperLabel := HyperLabel{#mCREDITORS,NULL_STRING,"Accountnumber Creditors",NULL_STRING}
-oDCmCREDITORS:FieldSpec := MEMBERACCOUNT{}
-oDCmCREDITORS:UseHLforToolTip := True
+oDCmCREDITORS := SingleLineEdit{self,ResourceID{TAB_PARM3_MCREDITORS,_GetInst()}}
+oDCmCREDITORS:HyperLabel := HyperLabel{#mCREDITORS,null_string,"Accountnumber Creditors",null_string}
+oDCmCREDITORS:FieldSpec := memberaccount{}
+oDCmCREDITORS:UseHLforToolTip := true
 
-oCCCreButton := PushButton{SELF,ResourceID{TAB_PARM3_CREBUTTON,_GetInst()}}
-oCCCreButton:HyperLabel := HyperLabel{#CreButton,"v","Browse in accounts",NULL_STRING}
+oCCCreButton := PushButton{self,ResourceID{TAB_PARM3_CREBUTTON,_GetInst()}}
+oCCCreButton:HyperLabel := HyperLabel{#CreButton,"v","Browse in accounts",null_string}
 oCCCreButton:TooltipText := "Browse in accounts"
 
-oDCSC_SDEB := FixedText{SELF,ResourceID{TAB_PARM3_SC_SDEB,_GetInst()}}
-oDCSC_SDEB:HyperLabel := HyperLabel{#SC_SDEB,"Account Receivable",NULL_STRING,NULL_STRING}
+oDCSC_SDEB := FixedText{self,ResourceID{TAB_PARM3_SC_SDEB,_GetInst()}}
+oDCSC_SDEB:HyperLabel := HyperLabel{#SC_SDEB,"Account Receivable",null_string,null_string}
 
-oDCFixedText2 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Contract number direct debit:",NULL_STRING,NULL_STRING}
+oDCFixedText2 := FixedText{self,ResourceID{TAB_PARM3_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Contract number direct debit:",null_string,null_string}
 
-oDCCNTRNRCOLL := SingleLineEdit{SELF,ResourceID{TAB_PARM3_CNTRNRCOLL,_GetInst()}}
-oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,NULL_STRING,"Contract number automatic collection (KID files)",NULL_STRING}
-oDCCNTRNRCOLL:UseHLforToolTip := True
+oDCCNTRNRCOLL := SingleLineEdit{self,ResourceID{TAB_PARM3_CNTRNRCOLL,_GetInst()}}
+oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,null_string,"Contract number automatic collection (KID files)",null_string}
+oDCCNTRNRCOLL:UseHLforToolTip := true
 
-oDCFixedText3 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Bank account direct debit:",NULL_STRING,NULL_STRING}
+oDCFixedText3 := FixedText{self,ResourceID{TAB_PARM3_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Bank account direct debit:",null_string,null_string}
 
-oDCBANKNBRCOL := combobox{SELF,ResourceID{TAB_PARM3_BANKNBRCOL,_GetInst()}}
-oDCBANKNBRCOL:FillUsing(Self:FillBank( ))
-oDCBANKNBRCOL:HyperLabel := HyperLabel{#BANKNBRCOL,NULL_STRING,"Own telebanking bank account used to credit invoices and automatic collection",NULL_STRING}
-oDCBANKNBRCOL:UseHLforToolTip := True
+oDCBANKNBRCOL := ComboBox{self,ResourceID{TAB_PARM3_BANKNBRCOL,_GetInst()}}
+oDCBANKNBRCOL:FillUsing(self:FillBank( ))
+oDCBANKNBRCOL:HyperLabel := HyperLabel{#BANKNBRCOL,null_string,"Own telebanking bank account used to credit invoices and automatic collection",null_string}
+oDCBANKNBRCOL:UseHLforToolTip := true
 
-oDCSC_SCRE := FixedText{SELF,ResourceID{TAB_PARM3_SC_SCRE,_GetInst()}}
-oDCSC_SCRE:HyperLabel := HyperLabel{#SC_SCRE,"Account Payable",NULL_STRING,NULL_STRING}
+oDCSC_SCRE := FixedText{self,ResourceID{TAB_PARM3_SC_SCRE,_GetInst()}}
+oDCSC_SCRE:HyperLabel := HyperLabel{#SC_SCRE,"Account Payable",null_string,null_string}
 
-oDCFixedText4 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Bank account payments:",NULL_STRING,NULL_STRING}
+oDCFixedText4 := FixedText{self,ResourceID{TAB_PARM3_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Bank account payments:",null_string,null_string}
 
-oDCBANKNBRCRE := combobox{SELF,ResourceID{TAB_PARM3_BANKNBRCRE,_GetInst()}}
-oDCBANKNBRCRE:FillUsing(Self:FillBank( ))
-oDCBANKNBRCRE:HyperLabel := HyperLabel{#BANKNBRCRE,NULL_STRING,"Own telebanking bank account used to send payments to creditor",NULL_STRING}
-oDCBANKNBRCRE:UseHLforToolTip := True
+oDCBANKNBRCRE := ComboBox{self,ResourceID{TAB_PARM3_BANKNBRCRE,_GetInst()}}
+oDCBANKNBRCRE:FillUsing(self:FillBank( ))
+oDCBANKNBRCRE:HyperLabel := HyperLabel{#BANKNBRCRE,null_string,"Own telebanking bank account used to send payments to creditor",null_string}
+oDCBANKNBRCRE:UseHLforToolTip := true
 
-SELF:Caption := ""
-SELF:HyperLabel := HyperLabel{#Tab_Parm3,NULL_STRING,NULL_STRING,NULL_STRING}
-SELF:EnableStatusBar(True)
-SELF:PreventAutoLayout := True
+self:Caption := ""
+self:HyperLabel := HyperLabel{#Tab_Parm3,null_string,null_string,null_string}
+self:EnableStatusBar(true)
+self:PreventAutoLayout := true
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 self:Browser := DataBrowser{self}
 
-oDBMPOSTAGE := DataColumn{MEMBERACCOUNT{}}
+oDBMPOSTAGE := DataColumn{memberaccount{}}
 oDBMPOSTAGE:Width := 10
 oDBMPOSTAGE:HyperLabel := oDCMPOSTAGE:HyperLabel 
 oDBMPOSTAGE:Caption := ""
 self:Browser:AddColumn(oDBMPOSTAGE)
 
-oDBMDEBTORS := DataColumn{MEMBERACCOUNT{}}
+oDBMDEBTORS := DataColumn{memberaccount{}}
 oDBMDEBTORS:Width := 10
 oDBMDEBTORS:HyperLabel := oDCMDEBTORS:HyperLabel 
 oDBMDEBTORS:Caption := ""
@@ -1651,31 +1651,31 @@ oDBCNTRNRCOLL:Caption := ""
 self:Browser:AddColumn(oDBCNTRNRCOLL)
 
 
-SELF:ViewAs(#FormView)
+self:ViewAs(#FormView)
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
 ACCESS mCREDITORS() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#mCREDITORS)
+RETURN self:FIELDGET(#mCREDITORS)
 
 ASSIGN mCREDITORS(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#mCREDITORS, uValue)
+self:FIELDPUT(#mCREDITORS, uValue)
 RETURN uValue
 
 ACCESS mDEBTORS() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#mDEBTORS)
+RETURN self:FIELDGET(#mDEBTORS)
 
 ASSIGN mDEBTORS(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#mDEBTORS, uValue)
+self:FIELDPUT(#mDEBTORS, uValue)
 RETURN uValue
 
 ACCESS mPOSTAGE() CLASS Tab_Parm3
-RETURN SELF:FieldGet(#mPOSTAGE)
+RETURN self:FIELDGET(#mPOSTAGE)
 
 ASSIGN mPOSTAGE(uValue) CLASS Tab_Parm3
-SELF:FieldPut(#mPOSTAGE, uValue)
+self:FIELDPUT(#mPOSTAGE, uValue)
 RETURN uValue
 
 METHOD PostageButton( lUnique) CLASS Tab_Parm3
@@ -1683,7 +1683,7 @@ METHOD PostageButton( lUnique) CLASS Tab_Parm3
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrPostage},{"KO"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmPostage:TEXTValue ),"Postage",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
@@ -1698,7 +1698,7 @@ IF !Empty(self:Server:Postage)
 		self:cSoortPostage:=oAcc:TYPE
 	ENDIF		
 ENDIF
-IF !Empty(SELF:Server:DEBTORS)
+IF !Empty(self:Server:DEBTORS)
 	oAcc:Execute( self:Server:DEBTORS)
 	IF oAcc:RecCount>0
 		self:NbrDEBTORS :=  Str(oAcc:accid,-1)
@@ -1733,7 +1733,7 @@ STATIC DEFINE TAB_PARM3_POSTAGEBUTTON := 101
 STATIC DEFINE TAB_PARM3_SC_SCRE := 113 
 STATIC DEFINE TAB_PARM3_SC_SDEB := 108 
 STATIC DEFINE TAB_PARM3_SC_SPOSTZ := 102 
-RESOURCE Tab_Parm4 DIALOGEX  16, 14, 212, 141
+resource Tab_Parm4 DIALOGEX  16, 14, 212, 141
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1750,56 +1750,56 @@ END
 
 CLASS Tab_Parm4 INHERIT DataWindowExtra 
 
-	PROTECT oDCmDONORS AS SINGLELINEEDIT
-	PROTECT oDCmPROJECTS AS SINGLELINEEDIT
-	PROTECT oDCSC_SPROJ AS FIXEDTEXT
-	PROTECT oDCSC_SDON AS FIXEDTEXT
-	PROTECT oDCGroupBox4 AS GROUPBOX
-	PROTECT oCCProjectsButton AS PUSHBUTTON
-	PROTECT oCCDonorsButton AS PUSHBUTTON
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCmDecimalGiftreport AS SINGLELINEEDIT
+	PROTECT oDCmDONORS as SINGLELINEEDIT
+	PROTECT oDCmPROJECTS as SINGLELINEEDIT
+	PROTECT oDCSC_SPROJ as FIXEDTEXT
+	PROTECT oDCSC_SDON as FIXEDTEXT
+	PROTECT oDCGroupBox4 as GROUPBOX
+	PROTECT oCCProjectsButton as PUSHBUTTON
+	PROTECT oCCDonorsButton as PUSHBUTTON
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCmDecimalGiftreport as SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-    EXPORT cPROJECTSName, cDONORSName AS STRING
-  	EXPORT NbrPROJECTS, NbrDONORS AS STRING
-  	EXPORT cSoortPROJECTS, cSoortDONORS AS STRING
+    EXPORT cPROJECTSName, cDONORSName as STRING
+  	EXPORT NbrPROJECTS, NbrDONORS as STRING
+  	EXPORT cSoortPROJECTS, cSoortDONORS as STRING
 METHOD DonorsButton(lUnique ) CLASS Tab_Parm4
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrDONORS},{"BA"},"B",1)
 	AccountSelect(self:Owner,AllTrim(oDCmDONORS:TEXTValue ),"Donors",lUnique,cfilter)
 
-	RETURN NIL
+	RETURN nil
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm4
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as Control
+	LOCAL lGotFocus as LOGIC
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MDONORS".and.!AllTrim(oControl:Value)==AllTrim(cDONORSName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrDONORS := "  "
-				SELF:cDONORSName := ""
-				SELF:oDCmDONORS:TEXTValue := ""
+		IF oControl:Name == "MDONORS".and.!AllTrim(oControl:VALUE)==AllTrim(cDONORSName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrDONORS := "  "
+				self:cDONORSName := ""
+				self:oDCmDONORS:TEXTValue := ""
             ELSE
-				cDONORSName:=AllTrim(oControl:Value)
-				SELF:DONORSButton(TRUE)
+				cDONORSName:=AllTrim(oControl:VALUE)
+				self:DONORSButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPROJECTS".and.!AllTrim(oControl:Value)==AllTrim(cPROJECTSName)
-			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NbrPROJECTS := "  "
-				SELF:cPROJECTSName := ""
-				SELF:oDCmPROJECTS:TEXTValue := ""
+		ELSEIF oControl:Name == "MPROJECTS".and.!AllTrim(oControl:VALUE)==AllTrim(cPROJECTSName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrPROJECTS := "  "
+				self:cPROJECTSName := ""
+				self:oDCmPROJECTS:TEXTValue := ""
             ELSE
-				cPROJECTSName:=AllTrim(oControl:Value)
-				SELF:PROJECTSButton(TRUE)
+				cPROJECTSName:=AllTrim(oControl:VALUE)
+				self:PROJECTSButton(true)
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN nil
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4 
 
@@ -1807,47 +1807,47 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"Tab_Parm4",_GetInst()},iCtlID)
 
-oDCmDONORS := SingleLineEdit{SELF,ResourceID{TAB_PARM4_MDONORS,_GetInst()}}
-oDCmDONORS:HyperLabel := HyperLabel{#mDONORS,NULL_STRING,"Accountnumber for donors",NULL_STRING}
-oDCmDONORS:FieldSpec := MEMBERACCOUNT{}
+oDCmDONORS := SingleLineEdit{self,ResourceID{TAB_PARM4_MDONORS,_GetInst()}}
+oDCmDONORS:HyperLabel := HyperLabel{#mDONORS,null_string,"Accountnumber for donors",null_string}
+oDCmDONORS:FieldSpec := memberaccount{}
 
-oDCmPROJECTS := SingleLineEdit{SELF,ResourceID{TAB_PARM4_MPROJECTS,_GetInst()}}
-oDCmPROJECTS:HyperLabel := HyperLabel{#mPROJECTS,NULL_STRING,"Accountnumer for non-earmarked gifts",NULL_STRING}
-oDCmPROJECTS:FieldSpec := MEMBERACCOUNT{}
+oDCmPROJECTS := SingleLineEdit{self,ResourceID{TAB_PARM4_MPROJECTS,_GetInst()}}
+oDCmPROJECTS:HyperLabel := HyperLabel{#mPROJECTS,null_string,"Accountnumer for non-earmarked gifts",null_string}
+oDCmPROJECTS:FieldSpec := memberaccount{}
 
-oDCSC_SPROJ := FixedText{SELF,ResourceID{TAB_PARM4_SC_SPROJ,_GetInst()}}
-oDCSC_SPROJ:HyperLabel := HyperLabel{#SC_SPROJ,"Acc nbr non-designated gifts:",NULL_STRING,NULL_STRING}
+oDCSC_SPROJ := FixedText{self,ResourceID{TAB_PARM4_SC_SPROJ,_GetInst()}}
+oDCSC_SPROJ:HyperLabel := HyperLabel{#SC_SPROJ,"Acc nbr non-designated gifts:",null_string,null_string}
 
-oDCSC_SDON := FixedText{SELF,ResourceID{TAB_PARM4_SC_SDON,_GetInst()}}
-oDCSC_SDON:HyperLabel := HyperLabel{#SC_SDON,"Account number Donors:",NULL_STRING,NULL_STRING}
+oDCSC_SDON := FixedText{self,ResourceID{TAB_PARM4_SC_SDON,_GetInst()}}
+oDCSC_SDON:HyperLabel := HyperLabel{#SC_SDON,"Account number Donors:",null_string,null_string}
 
-oDCGroupBox4 := GroupBox{SELF,ResourceID{TAB_PARM4_GROUPBOX4,_GetInst()}}
-oDCGroupBox4:HyperLabel := HyperLabel{#GroupBox4,"Gifts",NULL_STRING,NULL_STRING}
+oDCGroupBox4 := GroupBox{self,ResourceID{TAB_PARM4_GROUPBOX4,_GetInst()}}
+oDCGroupBox4:HyperLabel := HyperLabel{#GroupBox4,"Gifts",null_string,null_string}
 
-oCCProjectsButton := PushButton{SELF,ResourceID{TAB_PARM4_PROJECTSBUTTON,_GetInst()}}
-oCCProjectsButton:HyperLabel := HyperLabel{#ProjectsButton,"v","Browse in accounts",NULL_STRING}
+oCCProjectsButton := PushButton{self,ResourceID{TAB_PARM4_PROJECTSBUTTON,_GetInst()}}
+oCCProjectsButton:HyperLabel := HyperLabel{#ProjectsButton,"v","Browse in accounts",null_string}
 oCCProjectsButton:TooltipText := "Browse in accounts"
 
-oCCDonorsButton := PushButton{SELF,ResourceID{TAB_PARM4_DONORSBUTTON,_GetInst()}}
-oCCDonorsButton:HyperLabel := HyperLabel{#DonorsButton,"v","Browse in accounts",NULL_STRING}
+oCCDonorsButton := PushButton{self,ResourceID{TAB_PARM4_DONORSBUTTON,_GetInst()}}
+oCCDonorsButton:HyperLabel := HyperLabel{#DonorsButton,"v","Browse in accounts",null_string}
 oCCDonorsButton:TooltipText := "Browse in accounts"
 
-oDCFixedText2 := FixedText{SELF,ResourceID{TAB_PARM4_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Length of decimal fraction:",NULL_STRING,NULL_STRING}
+oDCFixedText2 := FixedText{self,ResourceID{TAB_PARM4_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Length of decimal fraction:",null_string,null_string}
 
-oDCmDecimalGiftreport := SingleLineEdit{SELF,ResourceID{TAB_PARM4_MDECIMALGIFTREPORT,_GetInst()}}
-oDCmDecimalGiftreport:HyperLabel := HyperLabel{#mDecimalGiftreport,NULL_STRING,"Length decimal fraction",NULL_STRING}
+oDCmDecimalGiftreport := SingleLineEdit{self,ResourceID{TAB_PARM4_MDECIMALGIFTREPORT,_GetInst()}}
+oDCmDecimalGiftreport:HyperLabel := HyperLabel{#mDecimalGiftreport,null_string,"Length decimal fraction",null_string}
 oDCmDecimalGiftreport:TooltipText := "Number of position behind decimal point on Gifts report"
 oDCmDecimalGiftreport:Picture := "9"
 
-SELF:Caption := "Gifts"
-SELF:HyperLabel := HyperLabel{#Tab_Parm4,"Gifts",NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
+self:Caption := "Gifts"
+self:HyperLabel := HyperLabel{#Tab_Parm4,"Gifts",null_string,null_string}
+self:PreventAutoLayout := true
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -1855,24 +1855,24 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS mDecimalGiftreport() CLASS Tab_Parm4
-RETURN SELF:FieldGet(#mDecimalGiftreport)
+RETURN self:FIELDGET(#mDecimalGiftreport)
 
 ASSIGN mDecimalGiftreport(uValue) CLASS Tab_Parm4
-SELF:FieldPut(#mDecimalGiftreport, uValue)
+self:FIELDPUT(#mDecimalGiftreport, uValue)
 RETURN uValue
 
 ACCESS mDONORS() CLASS Tab_Parm4
-RETURN SELF:FieldGet(#mDONORS)
+RETURN self:FIELDGET(#mDONORS)
 
 ASSIGN mDONORS(uValue) CLASS Tab_Parm4
-SELF:FieldPut(#mDONORS, uValue)
+self:FIELDPUT(#mDONORS, uValue)
 RETURN uValue
 
 ACCESS mPROJECTS() CLASS Tab_Parm4
-RETURN SELF:FieldGet(#mPROJECTS)
+RETURN self:FIELDGET(#mPROJECTS)
 
 ASSIGN mPROJECTS(uValue) CLASS Tab_Parm4
-SELF:FieldPut(#mPROJECTS, uValue)
+self:FIELDPUT(#mPROJECTS, uValue)
 RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4
@@ -1880,7 +1880,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
 oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
-IF !Empty(SELF:Server:DONORS)
+IF !Empty(self:Server:DONORS)
 	oAcc:Execute( self:Server:DONORS)
 	IF oAcc:RecCount>0
 		self:NbrDONORS :=  Str(oAcc:accid,-1)
@@ -1889,7 +1889,7 @@ IF !Empty(SELF:Server:DONORS)
 		self:cSoortDONORS:=oAcc:TYPE
 	ENDIF		
 ENDIF
-IF !Empty(SELF:Server:PROJECTS)
+IF !Empty(self:Server:PROJECTS)
 	oAcc:Execute( self:Server:PROJECTS)
 	IF oAcc:RecCount>0
 		self:NbrPROJECTS :=  Str(oAcc:accid,-1)
@@ -1899,13 +1899,13 @@ IF !Empty(SELF:Server:PROJECTS)
 	ENDIF		
 ENDIF
 self:mDecimalGiftreport:=self:Server:DECMGIFT
-RETURN NIL
+RETURN nil
 METHOD ProjectsButton(lUnique ) CLASS Tab_Parm4
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({NbrPROJECTS},{"BA","PA"},"N",1)
 	AccountSelect(self:Owner,AllTrim(self:oDCmPROJECTS:TEXTValue ),"Non earmarked Gifts",lUnique,cfilter)
-	RETURN NIL
+	RETURN nil
 STATIC DEFINE TAB_PARM4_DONORSBUTTON := 106 
 STATIC DEFINE TAB_PARM4_FIXEDTEXT2 := 107 
 STATIC DEFINE TAB_PARM4_GROUPBOX4 := 104 
@@ -1915,7 +1915,7 @@ STATIC DEFINE TAB_PARM4_MPROJECTS := 101
 STATIC DEFINE TAB_PARM4_PROJECTSBUTTON := 105 
 STATIC DEFINE TAB_PARM4_SC_SDON := 103 
 STATIC DEFINE TAB_PARM4_SC_SPROJ := 102 
-RESOURCE Tab_Parm5 DIALOGEX  20, 18, 238, 235
+resource Tab_Parm5 DIALOGEX  20, 18, 238, 235
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1945,28 +1945,28 @@ END
 
 CLASS Tab_Parm5 INHERIT DataWindowExtra 
 
-	PROTECT oDCFIRSTNAME AS CHECKBOX
-	PROTECT oDCCITYLETTER AS SINGLELINEEDIT
-	PROTECT oDCmCod1 AS COMBOBOX
-	PROTECT oDCmCod2 AS COMBOBOX
-	PROTECT oDCmCod3 AS COMBOBOX
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCSALUTADDR AS CHECKBOX
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCmOwnCntry AS SINGLELINEEDIT
-	PROTECT oDCSURNMFIRST AS CHECKBOX
-	PROTECT oDCSTRZIPCITY AS COMBOBOX
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCmFGCod3 AS COMBOBOX
-	PROTECT oDCmFGCod2 AS COMBOBOX
-	PROTECT oDCmFGCod1 AS COMBOBOX
-	PROTECT oDCGroupBox2 AS GROUPBOX
-	PROTECT oDCCITYNMUPC AS CHECKBOX
-	PROTECT oDCLSTNMUPC AS CHECKBOX
-	PROTECT oDCTITINADR AS CHECKBOX
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-	PROTECT oDCMailClient AS COMBOBOX
+	PROTECT oDCFIRSTNAME as CHECKBOX
+	PROTECT oDCCITYLETTER as SINGLELINEEDIT
+	PROTECT oDCmCod1 as COMBOBOX
+	PROTECT oDCmCod2 as COMBOBOX
+	PROTECT oDCmCod3 as COMBOBOX
+	PROTECT oDCGroupBox1 as GROUPBOX
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCSALUTADDR as CHECKBOX
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCmOwnCntry as SINGLELINEEDIT
+	PROTECT oDCSURNMFIRST as CHECKBOX
+	PROTECT oDCSTRZIPCITY as COMBOBOX
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCmFGCod3 as COMBOBOX
+	PROTECT oDCmFGCod2 as COMBOBOX
+	PROTECT oDCmFGCod1 as COMBOBOX
+	PROTECT oDCGroupBox2 as GROUPBOX
+	PROTECT oDCCITYNMUPC as CHECKBOX
+	PROTECT oDCLSTNMUPC as CHECKBOX
+	PROTECT oDCTITINADR as CHECKBOX
+	PROTECT oDCFixedText4 as FIXEDTEXT
+	PROTECT oDCMailClient as COMBOBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   		instance FIRSTNAME 
@@ -1985,17 +1985,17 @@ CLASS Tab_Parm5 INHERIT DataWindowExtra
 	EXPORT INSTANCE mCod5 := ""
 	EXPORT INSTANCE mCod6 := ""
 ACCESS CITYLETTER() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#CITYLETTER)
+RETURN self:FIELDGET(#CITYLETTER)
 
 ASSIGN CITYLETTER(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#CITYLETTER, uValue)
+self:FIELDPUT(#CITYLETTER, uValue)
 RETURN uValue
 
 ACCESS CITYNMUPC() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#CITYNMUPC)
+RETURN self:FIELDGET(#CITYNMUPC)
 
 ASSIGN CITYNMUPC(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#CITYNMUPC, uValue)
+self:FIELDPUT(#CITYNMUPC, uValue)
 RETURN uValue
 
 METHOD FillAddrTypes() CLASS Tab_Parm5
@@ -2003,10 +2003,10 @@ METHOD FillAddrTypes() CLASS Tab_Parm5
 	
 
 ACCESS FIRSTNAME() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#FIRSTNAME)
+RETURN self:FIELDGET(#FIRSTNAME)
 
 ASSIGN FIRSTNAME(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#FIRSTNAME, uValue)
+self:FIELDPUT(#FIRSTNAME, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm5 
@@ -2015,95 +2015,95 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"Tab_Parm5",_GetInst()},iCtlID)
 
-oDCFIRSTNAME := CheckBox{SELF,ResourceID{TAB_PARM5_FIRSTNAME,_GetInst()}}
+oDCFIRSTNAME := CheckBox{self,ResourceID{TAB_PARM5_FIRSTNAME,_GetInst()}}
 oDCFIRSTNAME:HyperLabel := HyperLabel{#FIRSTNAME,"Firstname in address","Firstname in address","Sysparms_SVOORNAAM"}
 
-oDCCITYLETTER := SingleLineEdit{SELF,ResourceID{TAB_PARM5_CITYLETTER,_GetInst()}}
-oDCCITYLETTER:HyperLabel := HyperLabel{#CITYLETTER,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCCITYLETTER := SingleLineEdit{self,ResourceID{TAB_PARM5_CITYLETTER,_GetInst()}}
+oDCCITYLETTER:HyperLabel := HyperLabel{#CITYLETTER,null_string,null_string,null_string}
 
-oDCmCod1 := combobox{SELF,ResourceID{TAB_PARM5_MCOD1,_GetInst()}}
-oDCmCod1:HyperLabel := HyperLabel{#mCod1,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmCod1 := ComboBox{self,ResourceID{TAB_PARM5_MCOD1,_GetInst()}}
+oDCmCod1:HyperLabel := HyperLabel{#mCod1,null_string,"Mailing code",null_string}
 oDCmCod1:FillUsing(pers_codes)
 
-oDCmCod2 := combobox{SELF,ResourceID{TAB_PARM5_MCOD2,_GetInst()}}
-oDCmCod2:HyperLabel := HyperLabel{#mCod2,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmCod2 := ComboBox{self,ResourceID{TAB_PARM5_MCOD2,_GetInst()}}
+oDCmCod2:HyperLabel := HyperLabel{#mCod2,null_string,"Mailing code",null_string}
 oDCmCod2:FillUsing(pers_codes)
 
-oDCmCod3 := combobox{SELF,ResourceID{TAB_PARM5_MCOD3,_GetInst()}}
-oDCmCod3:HyperLabel := HyperLabel{#mCod3,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmCod3 := ComboBox{self,ResourceID{TAB_PARM5_MCOD3,_GetInst()}}
+oDCmCod3:HyperLabel := HyperLabel{#mCod3,null_string,"Mailing code",null_string}
 oDCmCod3:FillUsing(pers_codes)
 
-oDCGroupBox1 := GroupBox{SELF,ResourceID{TAB_PARM5_GROUPBOX1,_GetInst()}}
-oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Default mailing codes for new persons",NULL_STRING,NULL_STRING}
+oDCGroupBox1 := GroupBox{self,ResourceID{TAB_PARM5_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Default mailing codes for new persons",null_string,null_string}
 
-oDCFixedText1 := FixedText{SELF,ResourceID{TAB_PARM5_FIXEDTEXT1,_GetInst()}}
-oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"City name in heading letters:",NULL_STRING,NULL_STRING}
+oDCFixedText1 := FixedText{self,ResourceID{TAB_PARM5_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"City name in heading letters:",null_string,null_string}
 
-oDCSALUTADDR := CheckBox{SELF,ResourceID{TAB_PARM5_SALUTADDR,_GetInst()}}
-oDCSALUTADDR:HyperLabel := HyperLabel{#SALUTADDR,"Salutation in address","Salutation in address",NULL_STRING}
+oDCSALUTADDR := CheckBox{self,ResourceID{TAB_PARM5_SALUTADDR,_GetInst()}}
+oDCSALUTADDR:HyperLabel := HyperLabel{#SALUTADDR,"Salutation in address","Salutation in address",null_string}
 oDCSALUTADDR:TooltipText := "Should salutation and titles be shown in addresses (e.g. lables)"
 
-oDCFixedText2 := FixedText{SELF,ResourceID{TAB_PARM5_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Names used for your own country (seperated by ,)",NULL_STRING,NULL_STRING}
+oDCFixedText2 := FixedText{self,ResourceID{TAB_PARM5_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Names used for your own country (seperated by ,)",null_string,null_string}
 
-oDCmOwnCntry := SingleLineEdit{SELF,ResourceID{TAB_PARM5_MOWNCNTRY,_GetInst()}}
-oDCmOwnCntry:HyperLabel := HyperLabel{#mOwnCntry,NULL_STRING,"Used for suppressing printing of own country names within addresses",NULL_STRING}
-oDCmOwnCntry:UseHLforToolTip := True
+oDCmOwnCntry := SingleLineEdit{self,ResourceID{TAB_PARM5_MOWNCNTRY,_GetInst()}}
+oDCmOwnCntry:HyperLabel := HyperLabel{#mOwnCntry,null_string,"Used for suppressing printing of own country names within addresses",null_string}
+oDCmOwnCntry:UseHLforToolTip := true
 
-oDCSURNMFIRST := CheckBox{SELF,ResourceID{TAB_PARM5_SURNMFIRST,_GetInst()}}
-oDCSURNMFIRST:HyperLabel := HyperLabel{#SURNMFIRST,"Starting with surname in address","Starting with surname in address followed by firstname",NULL_STRING}
-oDCSURNMFIRST:UseHLforToolTip := True
+oDCSURNMFIRST := CheckBox{self,ResourceID{TAB_PARM5_SURNMFIRST,_GetInst()}}
+oDCSURNMFIRST:HyperLabel := HyperLabel{#SURNMFIRST,"Starting with surname in address","Starting with surname in address followed by firstname",null_string}
+oDCSURNMFIRST:UseHLforToolTip := true
 
-oDCSTRZIPCITY := combobox{SELF,ResourceID{TAB_PARM5_STRZIPCITY,_GetInst()}}
-oDCSTRZIPCITY:HyperLabel := HyperLabel{#STRZIPCITY,NULL_STRING,"Configuration of address",NULL_STRING}
-oDCSTRZIPCITY:UseHLforToolTip := True
-oDCSTRZIPCITY:FillUsing(Self:FillAddrTypes( ))
+oDCSTRZIPCITY := ComboBox{self,ResourceID{TAB_PARM5_STRZIPCITY,_GetInst()}}
+oDCSTRZIPCITY:HyperLabel := HyperLabel{#STRZIPCITY,null_string,"Configuration of address",null_string}
+oDCSTRZIPCITY:UseHLforToolTip := true
+oDCSTRZIPCITY:FillUsing(self:FillAddrTypes( ))
 
-oDCFixedText3 := FixedText{SELF,ResourceID{TAB_PARM5_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Sequence within address:",NULL_STRING,NULL_STRING}
+oDCFixedText3 := FixedText{self,ResourceID{TAB_PARM5_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Sequence within address:",null_string,null_string}
 
-oDCmFGCod3 := combobox{SELF,ResourceID{TAB_PARM5_MFGCOD3,_GetInst()}}
-oDCmFGCod3:HyperLabel := HyperLabel{#mFGCod3,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmFGCod3 := ComboBox{self,ResourceID{TAB_PARM5_MFGCOD3,_GetInst()}}
+oDCmFGCod3:HyperLabel := HyperLabel{#mFGCod3,null_string,"Mailing code",null_string}
 oDCmFGCod3:FillUsing(pers_codes)
 
-oDCmFGCod2 := combobox{SELF,ResourceID{TAB_PARM5_MFGCOD2,_GetInst()}}
-oDCmFGCod2:HyperLabel := HyperLabel{#mFGCod2,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmFGCod2 := ComboBox{self,ResourceID{TAB_PARM5_MFGCOD2,_GetInst()}}
+oDCmFGCod2:HyperLabel := HyperLabel{#mFGCod2,null_string,"Mailing code",null_string}
 oDCmFGCod2:FillUsing(pers_codes)
 
-oDCmFGCod1 := combobox{SELF,ResourceID{TAB_PARM5_MFGCOD1,_GetInst()}}
-oDCmFGCod1:HyperLabel := HyperLabel{#mFGCod1,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmFGCod1 := ComboBox{self,ResourceID{TAB_PARM5_MFGCOD1,_GetInst()}}
+oDCmFGCod1:HyperLabel := HyperLabel{#mFGCod1,null_string,"Mailing code",null_string}
 oDCmFGCod1:FillUsing(pers_codes)
 
-oDCGroupBox2 := GroupBox{SELF,ResourceID{TAB_PARM5_GROUPBOX2,_GetInst()}}
-oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Mailing codes for first givers","These codes will be assigned to a person at his first gift",NULL_STRING}
-oDCGroupBox2:UseHLforToolTip := True
+oDCGroupBox2 := GroupBox{self,ResourceID{TAB_PARM5_GROUPBOX2,_GetInst()}}
+oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Mailing codes for first givers","These codes will be assigned to a person at his first gift",null_string}
+oDCGroupBox2:UseHLforToolTip := true
 
-oDCCITYNMUPC := CheckBox{SELF,ResourceID{TAB_PARM5_CITYNMUPC,_GetInst()}}
-oDCCITYNMUPC:HyperLabel := HyperLabel{#CITYNMUPC,"City name in uppercase characters",NULL_STRING,NULL_STRING}
+oDCCITYNMUPC := CheckBox{self,ResourceID{TAB_PARM5_CITYNMUPC,_GetInst()}}
+oDCCITYNMUPC:HyperLabel := HyperLabel{#CITYNMUPC,"City name in uppercase characters",null_string,null_string}
 
-oDCLSTNMUPC := CheckBox{SELF,ResourceID{TAB_PARM5_LSTNMUPC,_GetInst()}}
-oDCLSTNMUPC:HyperLabel := HyperLabel{#LSTNMUPC,"Last name in uppercase characters",NULL_STRING,NULL_STRING}
+oDCLSTNMUPC := CheckBox{self,ResourceID{TAB_PARM5_LSTNMUPC,_GetInst()}}
+oDCLSTNMUPC:HyperLabel := HyperLabel{#LSTNMUPC,"Last name in uppercase characters",null_string,null_string}
 
-oDCTITINADR := CheckBox{SELF,ResourceID{TAB_PARM5_TITINADR,_GetInst()}}
-oDCTITINADR:HyperLabel := HyperLabel{#TITINADR,"Title in address","Title in address",NULL_STRING}
+oDCTITINADR := CheckBox{self,ResourceID{TAB_PARM5_TITINADR,_GetInst()}}
+oDCTITINADR:HyperLabel := HyperLabel{#TITINADR,"Title in address","Title in address",null_string}
 oDCTITINADR:TooltipText := "Should titles be shown in addresses (e.g. lables)"
 
-oDCFixedText4 := FixedText{SELF,ResourceID{TAB_PARM5_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Email Client:",NULL_STRING,NULL_STRING}
+oDCFixedText4 := FixedText{self,ResourceID{TAB_PARM5_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Email Client:",null_string,null_string}
 
-oDCMailClient := combobox{SELF,ResourceID{TAB_PARM5_MAILCLIENT,_GetInst()}}
+oDCMailClient := ComboBox{self,ResourceID{TAB_PARM5_MAILCLIENT,_GetInst()}}
 oDCMailClient:TooltipText := "Email program used for emailing PMC file or Gift reports, etc."
 oDCMailClient:FillUsing({{"Windows Mail/ Outlook Express",0},{"Microsoft Outlook",1},{"Mozilla Thunderbird",2},{"Windows Live Mail",3},{"Mapi2Xml",4}})
-oDCMailClient:HyperLabel := HyperLabel{#MailClient,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCMailClient:HyperLabel := HyperLabel{#MailClient,null_string,null_string,null_string}
 
-SELF:Caption := "Mailing"
-SELF:HyperLabel := HyperLabel{#Tab_Parm5,"Mailing",NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
+self:Caption := "Mailing"
+self:HyperLabel := HyperLabel{#Tab_Parm5,"Mailing",null_string,null_string}
+self:PreventAutoLayout := true
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2111,75 +2111,75 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS LSTNMUPC() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#LSTNMUPC)
+RETURN self:FIELDGET(#LSTNMUPC)
 
 ASSIGN LSTNMUPC(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#LSTNMUPC, uValue)
+self:FIELDPUT(#LSTNMUPC, uValue)
 RETURN uValue
 
 ACCESS MailClient() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#MailClient)
+RETURN self:FIELDGET(#MailClient)
 
 ASSIGN MailClient(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#MailClient, uValue)
+self:FIELDPUT(#MailClient, uValue)
 RETURN uValue
 
 ACCESS mCod1() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mCod1)
+RETURN self:FIELDGET(#mCod1)
 
 ASSIGN mCod1(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mCod1, uValue)
+self:FIELDPUT(#mCod1, uValue)
 RETURN uValue
 
 ACCESS mCod2() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mCod2)
+RETURN self:FIELDGET(#mCod2)
 
 ASSIGN mCod2(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mCod2, uValue)
+self:FIELDPUT(#mCod2, uValue)
 RETURN uValue
 
 ACCESS mCod3() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mCod3)
+RETURN self:FIELDGET(#mCod3)
 
 ASSIGN mCod3(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mCod3, uValue)
+self:FIELDPUT(#mCod3, uValue)
 RETURN uValue
 
 ACCESS mFGCod1() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mFGCod1)
+RETURN self:FIELDGET(#mFGCod1)
 
 ASSIGN mFGCod1(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mFGCod1, uValue)
+self:FIELDPUT(#mFGCod1, uValue)
 RETURN uValue
 
 ACCESS mFGCod2() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mFGCod2)
+RETURN self:FIELDGET(#mFGCod2)
 
 ASSIGN mFGCod2(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mFGCod2, uValue)
+self:FIELDPUT(#mFGCod2, uValue)
 RETURN uValue
 
 ACCESS mFGCod3() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mFGCod3)
+RETURN self:FIELDGET(#mFGCod3)
 
 ASSIGN mFGCod3(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mFGCod3, uValue)
+self:FIELDPUT(#mFGCod3, uValue)
 RETURN uValue
 
 ACCESS mOwnCntry() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#mOwnCntry)
+RETURN self:FIELDGET(#mOwnCntry)
 
 ASSIGN mOwnCntry(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#mOwnCntry, uValue)
+self:FIELDPUT(#mOwnCntry, uValue)
 RETURN uValue
 
 METHOD PostInit() CLASS Tab_Parm5
 	//Put your PostInit additions here
 self:SetTexts()
 	IF!Empty(self:Server:DefaultCOD)
-		mCOD1  := if(Empty(SubStr(SELF:Server:DefaultCOD,1,2)),NIL,SubStr(SELF:Server:DefaultCOD,1,2))
+		mCOD1  := if(Empty(SubStr(self:Server:DefaultCOD,1,2)),nil,SubStr(self:Server:DefaultCOD,1,2))
 		mCOD2  := if(Empty(SubStr(self:Server:DefaultCOD,4,2)),nil,SubStr(self:Server:DefaultCOD,4,2))
-		mCOD3  := if(Empty(SubStr(SELF:Server:DefaultCOD,7,2)),NIL,SubStr(SELF:Server:DefaultCOD,7,2))
+		mCOD3  := if(Empty(SubStr(self:Server:DefaultCOD,7,2)),nil,SubStr(self:Server:DefaultCOD,7,2))
 	ENDIF
 	IF!Empty(self:Server:FGMLCODES)
 		mFGCod1  := if(Empty(SubStr(self:Server:FGMLCODES,1,2)),nil,SubStr(self:Server:FGMLCODES,1,2))
@@ -2188,38 +2188,38 @@ self:SetTexts()
 	ENDIF
 	self:SALUTADDR:=iif(self:Server:NOSALUT=1,false,true)
 	self:mOwnCntry :=self:Server:OwnCntry
-	RETURN NIL
+	RETURN nil
 METHOD PreInit(oParent) CLASS Tab_Parm5
 	//Put your PreInit additions here
 
-	RETURN NIL
+	RETURN nil
 
 ACCESS SALUTADDR() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#SALUTADDR)
+RETURN self:FIELDGET(#SALUTADDR)
 
 ASSIGN SALUTADDR(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#SALUTADDR, uValue)
+self:FIELDPUT(#SALUTADDR, uValue)
 RETURN uValue
 
 ACCESS STRZIPCITY() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#STRZIPCITY)
+RETURN self:FIELDGET(#STRZIPCITY)
 
 ASSIGN STRZIPCITY(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#STRZIPCITY, uValue)
+self:FIELDPUT(#STRZIPCITY, uValue)
 RETURN uValue
 
 ACCESS SURNMFIRST() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#SURNMFIRST)
+RETURN self:FIELDGET(#SURNMFIRST)
 
 ASSIGN SURNMFIRST(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#SURNMFIRST, uValue)
+self:FIELDPUT(#SURNMFIRST, uValue)
 RETURN uValue
 
 ACCESS TITINADR() CLASS Tab_Parm5
-RETURN SELF:FieldGet(#TITINADR)
+RETURN self:FIELDGET(#TITINADR)
 
 ASSIGN TITINADR(uValue) CLASS Tab_Parm5
-SELF:FieldPut(#TITINADR, uValue)
+self:FIELDPUT(#TITINADR, uValue)
 RETURN uValue
 
 STATIC DEFINE TAB_PARM5_CITYLETTER := 101 
@@ -2244,7 +2244,7 @@ STATIC DEFINE TAB_PARM5_SALUTADDR := 107
 STATIC DEFINE TAB_PARM5_STRZIPCITY := 111 
 STATIC DEFINE TAB_PARM5_SURNMFIRST := 110 
 STATIC DEFINE TAB_PARM5_TITINADR := 119 
-RESOURCE TAB_PARM6 DIALOGEX  4, 4, 185, 105
+resource TAB_PARM6 DIALOGEX  4, 4, 185, 105
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -2260,29 +2260,29 @@ BEGIN
 	CONTROL	"mm", TAB_PARM6_FIXEDTEXT6, "Static", WS_CHILD, 134, 46, 20, 12
 	CONTROL	"mm", TAB_PARM6_FIXEDTEXT7, "Static", WS_CHILD, 134, 61, 20, 12
 	CONTROL	"mm", TAB_PARM6_FIXEDTEXT8, "Static", WS_CHILD, 134, 76, 20, 13
-END
+end
 
 CLASS TAB_PARM6 INHERIT DataWindowExtra 
 
-	PROTECT oDCSC_TOPMARGIN AS FIXEDTEXT
-	PROTECT oDCSC_LEFTMARGIN AS FIXEDTEXT
-	PROTECT oDCSC_RIGHTMARGN AS FIXEDTEXT
-	PROTECT oDCSC_BOTTOMMARG AS FIXEDTEXT
-	PROTECT oDCTOPMARGIN AS SINGLELINEEDIT
-	PROTECT oDCLEFTMARGIN AS SINGLELINEEDIT
-	PROTECT oDCRIGHTMARGN AS SINGLELINEEDIT
-	PROTECT oDCBOTTOMMARG AS SINGLELINEEDIT
-	PROTECT oDCFixedText5 AS FIXEDTEXT
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCFixedText7 AS FIXEDTEXT
-	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCSC_TOPMARGIN as FIXEDTEXT
+	PROTECT oDCSC_LEFTMARGIN as FIXEDTEXT
+	PROTECT oDCSC_RIGHTMARGN as FIXEDTEXT
+	PROTECT oDCSC_BOTTOMMARG as FIXEDTEXT
+	PROTECT oDCTOPMARGIN as SINGLELINEEDIT
+	PROTECT oDCLEFTMARGIN as SINGLELINEEDIT
+	PROTECT oDCRIGHTMARGN as SINGLELINEEDIT
+	PROTECT oDCBOTTOMMARG as SINGLELINEEDIT
+	PROTECT oDCFixedText5 as FIXEDTEXT
+	PROTECT oDCFixedText6 as FIXEDTEXT
+	PROTECT oDCFixedText7 as FIXEDTEXT
+	PROTECT oDCFixedText8 as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 ACCESS BOTTOMMARG() CLASS TAB_PARM6
-RETURN SELF:FieldGet(#BOTTOMMARG)
+RETURN self:FIELDGET(#BOTTOMMARG)
 
 ASSIGN BOTTOMMARG(uValue) CLASS TAB_PARM6
-SELF:FieldPut(#BOTTOMMARG, uValue)
+self:FIELDPUT(#BOTTOMMARG, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM6 
@@ -2291,54 +2291,54 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TAB_PARM6",_GetInst()},iCtlID)
 
-oDCSC_TOPMARGIN := FixedText{SELF,ResourceID{TAB_PARM6_SC_TOPMARGIN,_GetInst()}}
-oDCSC_TOPMARGIN:HyperLabel := HyperLabel{#SC_TOPMARGIN,"Top Margin:",NULL_STRING,NULL_STRING}
+oDCSC_TOPMARGIN := FixedText{self,ResourceID{TAB_PARM6_SC_TOPMARGIN,_GetInst()}}
+oDCSC_TOPMARGIN:HyperLabel := HyperLabel{#SC_TOPMARGIN,"Top Margin:",null_string,null_string}
 
-oDCSC_LEFTMARGIN := FixedText{SELF,ResourceID{TAB_PARM6_SC_LEFTMARGIN,_GetInst()}}
-oDCSC_LEFTMARGIN:HyperLabel := HyperLabel{#SC_LEFTMARGIN,"Left Margin:",NULL_STRING,NULL_STRING}
+oDCSC_LEFTMARGIN := FixedText{self,ResourceID{TAB_PARM6_SC_LEFTMARGIN,_GetInst()}}
+oDCSC_LEFTMARGIN:HyperLabel := HyperLabel{#SC_LEFTMARGIN,"Left Margin:",null_string,null_string}
 
-oDCSC_RIGHTMARGN := FixedText{SELF,ResourceID{TAB_PARM6_SC_RIGHTMARGN,_GetInst()}}
-oDCSC_RIGHTMARGN:HyperLabel := HyperLabel{#SC_RIGHTMARGN,"Right Margin:",NULL_STRING,NULL_STRING}
+oDCSC_RIGHTMARGN := FixedText{self,ResourceID{TAB_PARM6_SC_RIGHTMARGN,_GetInst()}}
+oDCSC_RIGHTMARGN:HyperLabel := HyperLabel{#SC_RIGHTMARGN,"Right Margin:",null_string,null_string}
 
-oDCSC_BOTTOMMARG := FixedText{SELF,ResourceID{TAB_PARM6_SC_BOTTOMMARG,_GetInst()}}
-oDCSC_BOTTOMMARG:HyperLabel := HyperLabel{#SC_BOTTOMMARG,"Bottom Margin:",NULL_STRING,NULL_STRING}
+oDCSC_BOTTOMMARG := FixedText{self,ResourceID{TAB_PARM6_SC_BOTTOMMARG,_GetInst()}}
+oDCSC_BOTTOMMARG:HyperLabel := HyperLabel{#SC_BOTTOMMARG,"Bottom Margin:",null_string,null_string}
 
-oDCTOPMARGIN := SingleLineEdit{SELF,ResourceID{TAB_PARM6_TOPMARGIN,_GetInst()}}
-oDCTOPMARGIN:FieldSpec := Sysparms_TopMargin{}
+oDCTOPMARGIN := SingleLineEdit{self,ResourceID{TAB_PARM6_TOPMARGIN,_GetInst()}}
+oDCTOPMARGIN:FieldSpec := sysparms_TOPMARGIN{}
 oDCTOPMARGIN:HyperLabel := HyperLabel{#TOPMARGIN,"Top Margin:","Top margin of a report in mm","Sysparms_TopMargin"}
 
-oDCLEFTMARGIN := SingleLineEdit{SELF,ResourceID{TAB_PARM6_LEFTMARGIN,_GetInst()}}
-oDCLEFTMARGIN:FieldSpec := Sysparms_LeftMargin{}
+oDCLEFTMARGIN := SingleLineEdit{self,ResourceID{TAB_PARM6_LEFTMARGIN,_GetInst()}}
+oDCLEFTMARGIN:FieldSpec := sysparms_LEFTMARGIN{}
 oDCLEFTMARGIN:HyperLabel := HyperLabel{#LEFTMARGIN,"Left Margin:","Left margin of a repprt in mm","Sysparms_LeftMargin"}
 
-oDCRIGHTMARGN := SingleLineEdit{SELF,ResourceID{TAB_PARM6_RIGHTMARGN,_GetInst()}}
-oDCRIGHTMARGN:FieldSpec := Sysparms_RightMargn{}
+oDCRIGHTMARGN := SingleLineEdit{self,ResourceID{TAB_PARM6_RIGHTMARGN,_GetInst()}}
+oDCRIGHTMARGN:FieldSpec := sysparms_RIGHTMARGN{}
 oDCRIGHTMARGN:HyperLabel := HyperLabel{#RIGHTMARGN,"Right Margin:","Right margin of a report in mm","Sysparms_RightMargn"}
 
-oDCBOTTOMMARG := SingleLineEdit{SELF,ResourceID{TAB_PARM6_BOTTOMMARG,_GetInst()}}
-oDCBOTTOMMARG:FieldSpec := Sysparms_BottomMarg{}
+oDCBOTTOMMARG := SingleLineEdit{self,ResourceID{TAB_PARM6_BOTTOMMARG,_GetInst()}}
+oDCBOTTOMMARG:FieldSpec := sysparms_BOTTOMMARG{}
 oDCBOTTOMMARG:HyperLabel := HyperLabel{#BOTTOMMARG,"Bottom Margin:","Bottom margin of a report in mm","Sysparms_BottomMarg"}
 
-oDCFixedText5 := FixedText{SELF,ResourceID{TAB_PARM6_FIXEDTEXT5,_GetInst()}}
-oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"mm",NULL_STRING,NULL_STRING}
+oDCFixedText5 := FixedText{self,ResourceID{TAB_PARM6_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"mm",null_string,null_string}
 
-oDCFixedText6 := FixedText{SELF,ResourceID{TAB_PARM6_FIXEDTEXT6,_GetInst()}}
-oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"mm",NULL_STRING,NULL_STRING}
+oDCFixedText6 := FixedText{self,ResourceID{TAB_PARM6_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"mm",null_string,null_string}
 
-oDCFixedText7 := FixedText{SELF,ResourceID{TAB_PARM6_FIXEDTEXT7,_GetInst()}}
-oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"mm",NULL_STRING,NULL_STRING}
+oDCFixedText7 := FixedText{self,ResourceID{TAB_PARM6_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"mm",null_string,null_string}
 
-oDCFixedText8 := FixedText{SELF,ResourceID{TAB_PARM6_FIXEDTEXT8,_GetInst()}}
-oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"mm",NULL_STRING,NULL_STRING}
+oDCFixedText8 := FixedText{self,ResourceID{TAB_PARM6_FIXEDTEXT8,_GetInst()}}
+oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"mm",null_string,null_string}
 
-SELF:Caption := ""
-SELF:HyperLabel := HyperLabel{#TAB_PARM6,NULL_STRING,NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
+self:Caption := ""
+self:HyperLabel := HyperLabel{#TAB_PARM6,null_string,null_string,null_string}
+self:PreventAutoLayout := true
 
-if !IsNil(oServer)
-	SELF:Use(oServer)
+IF !IsNil(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2346,24 +2346,24 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS LEFTMARGIN() CLASS TAB_PARM6
-RETURN SELF:FieldGet(#LEFTMARGIN)
+RETURN self:FIELDGET(#LEFTMARGIN)
 
 ASSIGN LEFTMARGIN(uValue) CLASS TAB_PARM6
-SELF:FieldPut(#LEFTMARGIN, uValue)
+self:FIELDPUT(#LEFTMARGIN, uValue)
 RETURN uValue
 
 ACCESS RIGHTMARGN() CLASS TAB_PARM6
-RETURN SELF:FieldGet(#RIGHTMARGN)
+RETURN self:FIELDGET(#RIGHTMARGN)
 
 ASSIGN RIGHTMARGN(uValue) CLASS TAB_PARM6
-SELF:FieldPut(#RIGHTMARGN, uValue)
+self:FIELDPUT(#RIGHTMARGN, uValue)
 RETURN uValue
 
 ACCESS TOPMARGIN() CLASS TAB_PARM6
-RETURN SELF:FieldGet(#TOPMARGIN)
+RETURN self:FIELDGET(#TOPMARGIN)
 
 ASSIGN TOPMARGIN(uValue) CLASS TAB_PARM6
-SELF:FieldPut(#TOPMARGIN, uValue)
+self:FIELDPUT(#TOPMARGIN, uValue)
 RETURN uValue
 
 STATIC DEFINE TAB_PARM6_BOTTOMMARG := 107 
@@ -2382,7 +2382,7 @@ STATIC DEFINE TAB_PARM7_OWNMAILACC := 102
 STATIC DEFINE TAB_PARM7_SC_OWNMAILACC := 100 
 STATIC DEFINE TAB_PARM7_SC_SMTPSERVER := 101 
 STATIC DEFINE TAB_PARM7_SMTPSERVER := 103 
-RESOURCE TABPARM_PAGE7 DIALOGEX  12, 11, 254, 135
+resource TABPARM_PAGE7 DIALOGEX  12, 11, 254, 135
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -2393,17 +2393,17 @@ BEGIN
 	CONTROL	"", TABPARM_PAGE7_MPSWRDLEN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 48, 53, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Mixture of alphabetic and numerics", TABPARM_PAGE7_MPSWALNUM, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 84, 66, 144, 11
 	CONTROL	"Password properties:", TABPARM_PAGE7_FIXEDTEXT4, "Static", SS_CENTER|WS_CHILD, 10, 9, 210, 13
-END
+end
 
 CLASS TABPARM_PAGE7 INHERIT DataWindowExtra 
 
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmPSWDURA AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCmPSWRDLEN AS SINGLELINEEDIT
-	PROTECT oDCmPSWALNUM AS CHECKBOX
-	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCmPSWDURA as SINGLELINEEDIT
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCmPSWRDLEN as SINGLELINEEDIT
+	PROTECT oDCmPSWALNUM as CHECKBOX
+	PROTECT oDCFixedText4 as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TABPARM_PAGE7 
@@ -2412,41 +2412,41 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TABPARM_PAGE7",_GetInst()},iCtlID)
 
-oDCFixedText1 := FixedText{SELF,ResourceID{TABPARM_PAGE7_FIXEDTEXT1,_GetInst()}}
-oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Maximum duration:",NULL_STRING,NULL_STRING}
+oDCFixedText1 := FixedText{self,ResourceID{TABPARM_PAGE7_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Maximum duration:",null_string,null_string}
 
-oDCmPSWDURA := SingleLineEdit{SELF,ResourceID{TABPARM_PAGE7_MPSWDURA,_GetInst()}}
+oDCmPSWDURA := SingleLineEdit{self,ResourceID{TABPARM_PAGE7_MPSWDURA,_GetInst()}}
 oDCmPSWDURA:TooltipText := "Maximum time in days before a password must be changed"
-oDCmPSWDURA:HyperLabel := HyperLabel{#mPSWDURA,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCmPSWDURA:FieldSpec := Sysparms_PSWDURA{}
+oDCmPSWDURA:HyperLabel := HyperLabel{#mPSWDURA,null_string,null_string,null_string}
+oDCmPSWDURA:FieldSpec := sysparms_PSWDURA{}
 oDCmPSWDURA:Picture := "999"
 
-oDCFixedText2 := FixedText{SELF,ResourceID{TABPARM_PAGE7_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"days",NULL_STRING,NULL_STRING}
+oDCFixedText2 := FixedText{self,ResourceID{TABPARM_PAGE7_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"days",null_string,null_string}
 
-oDCFixedText3 := FixedText{SELF,ResourceID{TABPARM_PAGE7_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Minimum length:",NULL_STRING,NULL_STRING}
+oDCFixedText3 := FixedText{self,ResourceID{TABPARM_PAGE7_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Minimum length:",null_string,null_string}
 
-oDCmPSWRDLEN := SingleLineEdit{SELF,ResourceID{TABPARM_PAGE7_MPSWRDLEN,_GetInst()}}
+oDCmPSWRDLEN := SingleLineEdit{self,ResourceID{TABPARM_PAGE7_MPSWRDLEN,_GetInst()}}
 oDCmPSWRDLEN:TooltipText := "Minimum length of a  password"
-oDCmPSWRDLEN:HyperLabel := HyperLabel{#mPSWRDLEN,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCmPSWRDLEN:FieldSpec := Sysparms_PSWRDLEN{}
+oDCmPSWRDLEN:HyperLabel := HyperLabel{#mPSWRDLEN,null_string,null_string,null_string}
+oDCmPSWRDLEN:FieldSpec := sysparms_PSWRDLEN{}
 oDCmPSWRDLEN:Picture := "99"
 
-oDCmPSWALNUM := CheckBox{SELF,ResourceID{TABPARM_PAGE7_MPSWALNUM,_GetInst()}}
-oDCmPSWALNUM:HyperLabel := HyperLabel{#mPSWALNUM,"Mixture of alphabetic and numerics",NULL_STRING,NULL_STRING}
+oDCmPSWALNUM := CheckBox{self,ResourceID{TABPARM_PAGE7_MPSWALNUM,_GetInst()}}
+oDCmPSWALNUM:HyperLabel := HyperLabel{#mPSWALNUM,"Mixture of alphabetic and numerics",null_string,null_string}
 
-oDCFixedText4 := FixedText{SELF,ResourceID{TABPARM_PAGE7_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Password properties:",NULL_STRING,NULL_STRING}
+oDCFixedText4 := FixedText{self,ResourceID{TABPARM_PAGE7_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Password properties:",null_string,null_string}
 
-SELF:Caption := "Password security"
-SELF:HyperLabel := HyperLabel{#TABPARM_PAGE7,"Password security",NULL_STRING,NULL_STRING}
-SELF:PreventAutoLayout := True
+self:Caption := "Password security"
+self:HyperLabel := HyperLabel{#TABPARM_PAGE7,"Password security",null_string,null_string}
+self:PreventAutoLayout := true
 
-if !IsNil(oServer)
-	SELF:Use(oServer)
+IF !IsNil(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2454,40 +2454,40 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS mPSWALNUM() CLASS TABPARM_PAGE7
-RETURN SELF:FieldGet(#mPSWALNUM)
+RETURN self:FIELDGET(#mPSWALNUM)
 
 ASSIGN mPSWALNUM(uValue) CLASS TABPARM_PAGE7
-SELF:FieldPut(#mPSWALNUM, uValue)
+self:FIELDPUT(#mPSWALNUM, uValue)
 RETURN uValue
 
 ACCESS mPSWDURA() CLASS TABPARM_PAGE7
-RETURN SELF:FieldGet(#mPSWDURA)
+RETURN self:FIELDGET(#mPSWDURA)
 
 ASSIGN mPSWDURA(uValue) CLASS TABPARM_PAGE7
-SELF:FieldPut(#mPSWDURA, uValue)
+self:FIELDPUT(#mPSWDURA, uValue)
 RETURN uValue
 
 ACCESS mPSWRDLEN() CLASS TABPARM_PAGE7
-RETURN SELF:FieldGet(#mPSWRDLEN)
+RETURN self:FIELDGET(#mPSWRDLEN)
 
 ASSIGN mPSWRDLEN(uValue) CLASS TABPARM_PAGE7
-SELF:FieldPut(#mPSWRDLEN, uValue)
+self:FIELDPUT(#mPSWRDLEN, uValue)
 RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPARM_PAGE7
 	//Put your PostInit additions here
 self:SetTexts()
 	self:mPSWDURA:=self:Server:PSWDURA
-	IF Empty(SELF:mPSWDURA)
-		SELF:mPSWDURA:=9999
+	IF Empty(self:mPSWDURA)
+		self:mPSWDURA:=9999
 	ENDIF
-	SELF:mPSWRDLEN:=SELF:Server:PSWRDLEN
-	IF Empty(SELF:mPSWRDLEN)
-		SELF:mPSWRDLEN:=8
+	self:mPSWRDLEN:=self:Server:PSWRDLEN
+	IF Empty(self:mPSWRDLEN)
+		self:mPSWRDLEN:=8
 	ENDIF
-	self:mPSWALNUM:=self:SErver:PSWALNUM
+	self:mPSWALNUM:=self:Server:PSWALNUM
 	self:oDCmPSWALNUM:Hide()
-	RETURN NIL
+	RETURN nil
 STATIC DEFINE TABPARM_PAGE7_FIXEDTEXT1 := 100 
 STATIC DEFINE TABPARM_PAGE7_FIXEDTEXT2 := 102 
 STATIC DEFINE TABPARM_PAGE7_FIXEDTEXT3 := 103 
@@ -2495,27 +2495,27 @@ STATIC DEFINE TABPARM_PAGE7_FIXEDTEXT4 := 106
 STATIC DEFINE TABPARM_PAGE7_MPSWALNUM := 105 
 STATIC DEFINE TABPARM_PAGE7_MPSWDURA := 101 
 STATIC DEFINE TABPARM_PAGE7_MPSWRDLEN := 104 
-RESOURCE TabParm_Page8 DIALOGEX  8, 7, 272, 148
+resource TabParm_Page8 DIALOGEX  8, 7, 272, 148
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Language used", TABPARM_PAGE8_CRLANGUAGE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 79, 24, 75, 33
 	CONTROL	"Language used:", TABPARM_PAGE8_SC_LANGUAGE, "Static", WS_CHILD, 8, 27, 70, 12
 	CONTROL	"(See Lan.Translation tables)", TABPARM_PAGE8_TR_TEXT, "Static", WS_CHILD, 168, 23, 100, 18
-END
+end
 
 CLASS TabParm_Page8 INHERIT DataWindowExtra 
 
-	PROTECT oDCCRLANGUAGE AS COMBOBOX
-	PROTECT oDCSC_LANGUAGE AS FIXEDTEXT
-	PROTECT oDCtr_text AS FIXEDTEXT
+	PROTECT oDCCRLANGUAGE as COMBOBOX
+	PROTECT oDCSC_LANGUAGE as FIXEDTEXT
+	PROTECT oDCtr_text as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 ACCESS CRLANGUAGE() CLASS TabParm_Page8
-RETURN SELF:FieldGet(#CRLANGUAGE)
+RETURN self:FIELDGET(#CRLANGUAGE)
 
 ASSIGN CRLANGUAGE(uValue) CLASS TabParm_Page8
-SELF:FieldPut(#CRLANGUAGE, uValue)
+self:FIELDPUT(#CRLANGUAGE, uValue)
 RETURN uValue
 
 METHOD FillLanguage() CLASS TabParm_Page8
@@ -2526,24 +2526,24 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TabParm_Page8",_GetInst()},iCtlID)
 
-oDCCRLANGUAGE := combobox{SELF,ResourceID{TABPARM_PAGE8_CRLANGUAGE,_GetInst()}}
-oDCCRLANGUAGE:HyperLabel := HyperLabel{#CRLANGUAGE,"Language used",NULL_STRING,"Sysparms_LANGUAGE"}
-oDCCRLANGUAGE:FillUsing(Self:FillLanguage( ))
-oDCCRLANGUAGE:FieldSpec := sysparms_CRLANGUAGE{}
+oDCCRLANGUAGE := ComboBox{self,ResourceID{TABPARM_PAGE8_CRLANGUAGE,_GetInst()}}
+oDCCRLANGUAGE:HyperLabel := HyperLabel{#CRLANGUAGE,"Language used",null_string,"Sysparms_LANGUAGE"}
+oDCCRLANGUAGE:FillUsing(self:FillLanguage( ))
+oDCCRLANGUAGE:FieldSpec := sysparms_crlanguage{}
 
-oDCSC_LANGUAGE := FixedText{SELF,ResourceID{TABPARM_PAGE8_SC_LANGUAGE,_GetInst()}}
-oDCSC_LANGUAGE:HyperLabel := HyperLabel{#SC_LANGUAGE,"Language used:",NULL_STRING,NULL_STRING}
+oDCSC_LANGUAGE := FixedText{self,ResourceID{TABPARM_PAGE8_SC_LANGUAGE,_GetInst()}}
+oDCSC_LANGUAGE:HyperLabel := HyperLabel{#SC_LANGUAGE,"Language used:",null_string,null_string}
 
-oDCtr_text := FixedText{SELF,ResourceID{TABPARM_PAGE8_TR_TEXT,_GetInst()}}
-oDCtr_text:HyperLabel := HyperLabel{#tr_text,"(See Lan.Translation tables)",NULL_STRING,NULL_STRING}
+oDCtr_text := FixedText{self,ResourceID{TABPARM_PAGE8_TR_TEXT,_GetInst()}}
+oDCtr_text:HyperLabel := HyperLabel{#tr_text,"(See Lan.Translation tables)",null_string,null_string}
 
-SELF:Caption := "DataWindow Caption"
-SELF:HyperLabel := HyperLabel{#TabParm_Page8,"DataWindow Caption",NULL_STRING,NULL_STRING}
+self:Caption := "DataWindow Caption"
+self:HyperLabel := HyperLabel{#TabParm_Page8,"DataWindow Caption",null_string,null_string}
 
-if !IsNil(oServer)
-	SELF:Use(oServer)
+IF !IsNil(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2553,20 +2553,20 @@ return self
 STATIC DEFINE TABPARM_PAGE8_CRLANGUAGE := 100 
 STATIC DEFINE TABPARM_PAGE8_SC_LANGUAGE := 101 
 STATIC DEFINE TABPARM_PAGE8_TR_TEXT := 102 
-RESOURCE TabParm_Page9 DIALOGEX  2, 2, 287, 241
+resource TabParm_Page9 DIALOGEX  2, 2, 287, 241
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_MTOPPACCT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 121, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", TABPARM_PAGE9_TOPPBUTTON, "Button", WS_CHILD, 232, 11, 15, 12
 	CONTROL	"Account Sending to other PPs:", TABPARM_PAGE9_SC_TOPP, "Static", WS_CHILD, 4, 11, 104, 12
-END
+end
 
 CLASS TabParm_Page9 INHERIT DataWindowExtra 
 
-	PROTECT oDCmToPPAcct AS SINGLELINEEDIT
-	PROTECT oCCToPPButton AS PUSHBUTTON
-	PROTECT oDCSC_ToPP AS FIXEDTEXT
+	PROTECT oDCmToPPAcct as SINGLELINEEDIT
+	PROTECT oCCToPPButton as PUSHBUTTON
+	PROTECT oDCSC_ToPP as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
    EXPORT cToPPname as STRING
@@ -2599,26 +2599,26 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TabParm_Page9",_GetInst()},iCtlID)
 
-oDCmToPPAcct := SingleLineEdit{SELF,ResourceID{TABPARM_PAGE9_MTOPPACCT,_GetInst()}}
-oDCmToPPAcct:HyperLabel := HyperLabel{#mToPPAcct,"Account Sending to other PPs:","Accountnumber for to othher PPs account",NULL_STRING}
-oDCmToPPAcct:FieldSpec := MEMBERACCOUNT{}
-oDCmToPPAcct:UseHLforToolTip := True
+oDCmToPPAcct := SingleLineEdit{self,ResourceID{TABPARM_PAGE9_MTOPPACCT,_GetInst()}}
+oDCmToPPAcct:HyperLabel := HyperLabel{#mToPPAcct,"Account Sending to other PPs:","Accountnumber for to othher PPs account",null_string}
+oDCmToPPAcct:FieldSpec := memberaccount{}
+oDCmToPPAcct:UseHLforToolTip := true
 
-oCCToPPButton := PushButton{SELF,ResourceID{TABPARM_PAGE9_TOPPBUTTON,_GetInst()}}
-oCCToPPButton:HyperLabel := HyperLabel{#ToPPButton,"v","Browse in accounts",NULL_STRING}
+oCCToPPButton := PushButton{self,ResourceID{TABPARM_PAGE9_TOPPBUTTON,_GetInst()}}
+oCCToPPButton:HyperLabel := HyperLabel{#ToPPButton,"v","Browse in accounts",null_string}
 oCCToPPButton:TooltipText := "Browse in accounts"
-oCCToPPButton:UseHLforToolTip := True
+oCCToPPButton:UseHLforToolTip := true
 
-oDCSC_ToPP := FixedText{SELF,ResourceID{TABPARM_PAGE9_SC_TOPP,_GetInst()}}
-oDCSC_ToPP:HyperLabel := HyperLabel{#SC_ToPP,"Account Sending to other PPs:",NULL_STRING,NULL_STRING}
+oDCSC_ToPP := FixedText{self,ResourceID{TABPARM_PAGE9_SC_TOPP,_GetInst()}}
+oDCSC_ToPP:HyperLabel := HyperLabel{#SC_ToPP,"Account Sending to other PPs:",null_string,null_string}
 
-SELF:Caption := "Wycliffe Area Parameters"
-SELF:HyperLabel := HyperLabel{#TabParm_Page9,"Wycliffe Area Parameters",NULL_STRING,NULL_STRING}
+self:Caption := "Wycliffe Area Parameters"
+self:HyperLabel := HyperLabel{#TabParm_Page9,"Wycliffe Area Parameters",null_string,null_string}
 
-if !IsNil(oServer)
-	SELF:Use(oServer)
+IF !IsNil(oServer)
+	self:Use(oServer)
 ELSE
-	SELF:Use(SELF:Owner:Server)
+	self:Use(self:Owner:Server)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2626,10 +2626,10 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS mToPPAcct() CLASS TabParm_Page9
-RETURN SELF:FieldGet(#mToPPAcct)
+RETURN self:FIELDGET(#mToPPAcct)
 
 ASSIGN mToPPAcct(uValue) CLASS TabParm_Page9
-SELF:FieldPut(#mToPPAcct, uValue)
+self:FIELDPUT(#mToPPAcct, uValue)
 RETURN uValue
 
 method PostInit(oWindow,iCtlID,oServer,uExtra) class TabParm_Page9
@@ -2641,7 +2641,7 @@ self:SetTexts()
 		IF oAcc:RecCount>0
 			self:NbrToPP :=  Str(oAcc:accid,-1)
 			self:oDCmToPPAcct:TEXTValue := AllTrim(oAcc:Description)
-			self:cToPPname := AllTrim(oAcc:description)
+			self:cToPPname := AllTrim(oAcc:Description)
 			self:cSoortToPP:=oAcc:TYPE
 		ENDIF		
 	ENDIF
@@ -2653,13 +2653,13 @@ METHOD ToPPButton(lUnique ) CLASS TabParm_Page9
 	AccountSelect(self:Owner,AllTrim(oDCmToPPAcct:TEXTValue ),"Account Sending to other PPs",lUnique,cfilter)
 	RETURN nil
 
-RETURN NIL
+RETURN nil
 STATIC DEFINE TABPARM_PAGE9_MTOPPACCT := 100 
 STATIC DEFINE TABPARM_PAGE9_SC_TOPP := 102 
 STATIC DEFINE TABPARM_PAGE9_TOPPBUTTON := 101 
 CLASS TabSysParms INHERIT DataWindowExtra 
 
-	PROTECT oDCTabParm AS TABCONTROL
+	PROTECT oDCTabParm as TABCONTROL
 	protect oTPTAB_PARM1 as TAB_PARM1
 	protect oTPTAB_PARM2 as TAB_PARM2
 	protect oTPTAB_PARM3 as TAB_PARM3
@@ -2669,13 +2669,13 @@ CLASS TabSysParms INHERIT DataWindowExtra
 	protect oTPTABPARM_PAGE7 as TABPARM_PAGE7
 	protect oTPTABPARM_PAGE8 as TABPARM_PAGE8
 	protect oTPTABPARM_PAGE9 as TABPARM_PAGE9
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT nOrigCloseMonth as int
 	export oSys as SQLSelect
-RESOURCE TabSysParms DIALOGEX  38, 35, 304, 303
+resource TabSysParms DIALOGEX  38, 35, 304, 303
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -2686,37 +2686,37 @@ END
 
 METHOD CancelButton( ) CLASS TabSysParms
 	oTPTAB_PARM1:UndoAll()
-	if !oTPTAB_PARM2==null_object
+	IF !oTPTAB_PARM2==null_object
 		oTPTAB_PARM2:UndoAll()
 	endif
-	if !oTPTAB_PARM3==null_object
+	IF !oTPTAB_PARM3==null_object
 		oTPTAB_PARM3:UndoAll()
 	endif
-	if !oTPTAB_PARM4==null_object
+	IF !oTPTAB_PARM4==null_object
 		oTPTAB_PARM4:UndoAll()
 	endif
 	oTPTAB_PARM5:UndoAll()
-	if !oTPTABPARM_PAGE7==null_object
+	IF !oTPTABPARM_PAGE7==null_object
 		oTPTABPARM_PAGE7:UndoAll()
 	endif
 	self:EndWindow()
-	RETURN NIL
+	RETURN nil
 method checktabs(admintype)  CLASS TabSysParms
 * remove non applicable Tabs in case of non Wycliffe Office:
 
 IF !admintype=="WO".and.!admintype=="WA" 
-	if !oTPTAB_PARM2==null_object
+	IF !oTPTAB_PARM2==null_object
 		oDCTabParm:DeleteTab(#TAB_PARM2)
 		oTPTAB_PARM2:Destroy()
 		oTPTAB_PARM2:=null_object
 	endif		
 	IF admintype=="HO"
-		if !oTPTAB_PARM3==null_object
+		IF !oTPTAB_PARM3==null_object
 			oDCTabParm:DeleteTab(#TAB_PARM3)
 			oTPTAB_PARM3:Destroy()
 			oTPTAB_PARM3:=null_object
 		endif		
-		if !oTPTAB_PARM4==null_object
+		IF !oTPTAB_PARM4==null_object
 			oDCTabParm:DeleteTab(#TAB_PARM4)
 			oTPTAB_PARM4:Destroy()
 			oTPTAB_PARM4:=null_object		
@@ -2724,8 +2724,8 @@ IF !admintype=="WO".and.!admintype=="WA"
 	endif
 ENDIF
 
-if admintype="WO".and.!ADMIN=="WO"
-	if oDCTabParm:GetTabPage(#TAB_PARM2)==null_object 
+IF admintype="WO".and.!ADMIN=="WO"
+	IF oDCTabParm:GetTabPage(#TAB_PARM2)==null_object 
 		ASize(self:aSubForms,Len(self:aSubForms)+1)
 		AIns(aSubForms,2)
 		oTPTAB_PARM2 := Tab_Parm2{self, 0}
@@ -2734,15 +2734,15 @@ if admintype="WO".and.!ADMIN=="WO"
 		//AAdd(self:aSubForms,oTPTAB_PARM2)
 	endif
 endif
-if !admintype=="HO" .and. ADMIN=="HO"
-	if oDCTabParm:GetTabPage(#TAB_PARM3)==null_object 
+IF !admintype=="HO" .and. ADMIN=="HO"
+	IF oDCTabParm:GetTabPage(#TAB_PARM3)==null_object 
 		ASize(self:aSubForms,Len(self:aSubForms)+1)
 		AIns(aSubForms,3)
 		oTPTAB_PARM3 := Tab_Parm3{self, 0}
 		aSubForms[3]:= oTPTAB_PARM3
 		oDCTabParm:InsertTab(3,#TAB_PARM3,"Invoices",self:oTPTAB_PARM3,0) 
 	endif	
-	if oDCTabParm:GetTabPage(#TAB_PARM4)==null_object 
+	IF oDCTabParm:GetTabPage(#TAB_PARM4)==null_object 
 		ASize(self:aSubForms,Len(self:aSubForms)+1)
 		AIns(aSubForms,4)
 		oTPTAB_PARM4 := Tab_Parm4{self, 0}
@@ -2756,7 +2756,7 @@ METHOD Close(oEvent) CLASS TabSysParms
 self:oTPTAB_PARM1:Close()
 self:oTPTAB_PARM1:Destroy()
 super:Close()
-SELF:Destroy()	
+self:Destroy()	
 RETURN nil
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms 
@@ -2765,41 +2765,41 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"TabSysParms",_GetInst()},iCtlID)
 
-oDCTabParm := TabControl{SELF,ResourceID{TABSYSPARMS_TABPARM,_GetInst()}}
-oDCTabParm:HyperLabel := HyperLabel{#TabParm,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCTabParm := TabControl{self,ResourceID{TABSYSPARMS_TABPARM,_GetInst()}}
+oDCTabParm:HyperLabel := HyperLabel{#TabParm,null_string,null_string,null_string}
 
-oCCOKButton := PushButton{SELF,ResourceID{TABSYSPARMS_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+oCCOKButton := PushButton{self,ResourceID{TABSYSPARMS_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 
-oCCCancelButton := PushButton{SELF,ResourceID{TABSYSPARMS_CANCELBUTTON,_GetInst()}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+oCCCancelButton := PushButton{self,ResourceID{TABSYSPARMS_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
 
-SELF:Caption := "System Parameter"
-SELF:HyperLabel := HyperLabel{#TabSysParms,"System Parameter",NULL_STRING,NULL_STRING}
-SELF:EnableStatusBar(False)
-SELF:PreventAutoLayout := True
-SELF:AllowServerClose := True
+self:Caption := "System Parameter"
+self:HyperLabel := HyperLabel{#TabSysParms,"System Parameter",null_string,null_string}
+self:EnableStatusBar(False)
+self:PreventAutoLayout := true
+self:AllowServerClose := true
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ENDIF
-oTPTAB_PARM1 := TAB_PARM1{SELF, 0}
+oTPTAB_PARM1 := TAB_PARM1{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM1,"General ",oTPTAB_PARM1,0)
-oTPTAB_PARM2 := TAB_PARM2{SELF, 0}
+oTPTAB_PARM2 := Tab_Parm2{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM2,"PMC",oTPTAB_PARM2,0)
-oTPTAB_PARM3 := TAB_PARM3{SELF, 0}
+oTPTAB_PARM3 := Tab_Parm3{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM3,"Invoices",oTPTAB_PARM3,0)
-oTPTAB_PARM4 := TAB_PARM4{SELF, 0}
+oTPTAB_PARM4 := Tab_Parm4{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM4,"Gifts",oTPTAB_PARM4,0)
-oTPTAB_PARM5 := TAB_PARM5{SELF, 0}
+oTPTAB_PARM5 := Tab_Parm5{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM5," Mailing",oTPTAB_PARM5,0)
-oTPTAB_PARM6 := TAB_PARM6{SELF, 0}
+oTPTAB_PARM6 := TAB_PARM6{self, 0}
 oDCTabParm:AppendTab(#TAB_PARM6,"Reports",oTPTAB_PARM6,0)
-oTPTABPARM_PAGE7 := TABPARM_PAGE7{SELF, 0}
+oTPTABPARM_PAGE7 := TABPARM_PAGE7{self, 0}
 oDCTabParm:AppendTab(#TABPARM_PAGE7,"Security",oTPTABPARM_PAGE7,0)
-oTPTABPARM_PAGE8 := TABPARM_PAGE8{SELF, 0}
+oTPTABPARM_PAGE8 := TabParm_Page8{self, 0}
 oDCTabParm:AppendTab(#TABPARM_PAGE8,"Language",oTPTABPARM_PAGE8,0)
-oTPTABPARM_PAGE9 := TABPARM_PAGE9{SELF, 0}
+oTPTABPARM_PAGE9 := TabParm_Page9{self, 0}
 oDCTabParm:AppendTab(#TABPARM_PAGE9,"Area",oTPTABPARM_PAGE9,0)
 oDCTabParm:SelectTab(#TAB_PARM1)
 
@@ -2809,7 +2809,7 @@ return self
 
 METHOD OKButton( ) CLASS TabSysParms
 	LOCAL oSys:=self:oSys as SQLSelect
-	LOCAL nNewStart AS INT
+	LOCAL nNewStart as int
 	local oBalY,oStmnt as SQLStatement
 	local cStatement as string	
 	* Check values:
@@ -2846,7 +2846,7 @@ METHOD OKButton( ) CLASS TabSysParms
 			(ErrorBox{,"Account for Gifts HOME Income should be Income"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortHOMEEXPAC=="KO".and.!Empty(self:oTPTAB_PARM2:NbrExpHome)
+		IF !self:oTPTAB_PARM2:cSoortHOMEEXPAC=="KO".and.!Empty(self:oTPTAB_PARM2:NBREXPHOME)
 			(ErrorBox{,"Account for Gifts Home Expense should be Expenses"}):Show()
 			RETURN
 		endif
@@ -2906,86 +2906,86 @@ METHOD OKButton( ) CLASS TabSysParms
 		ENDIF
 	endif
 	cStatement:="update sysparms set "+;	
-	"CASH='"+self:oTPTAB_PARM1:NbrCASH+"'" +;
-	",CrossAccnt='"+self:oTPTAB_PARM1:NbrCROSS+"'" +;
-	",CAPITAL='"+self:oTPTAB_PARM1:NbrCAPITAL+"'"+;
-	",IDORG='"+self:oTPTAB_PARM1:mCLNOrg+"'"+;
-	",IDCONTACT='"+self:oTPTAB_PARM1:mCLNContact+"'"+;
-	",CloseMonth='"+Transform(self:oTPTAB_PARM1:CloseMonth,"")+"'"+; 
-	",ENTITY='"+iif( self:oTPTAB_PARM1:mAdminType="WO".and.!IsNil(self:oTPTAB_PARM2:Entity),self:oTPTAB_PARM2:Entity,self:oTPTAB_PARM1:Entity)+"'"+;
-	",CURRENCY='"+self:oTPTAB_PARM1:CURRENCY+"'"+; 
-	",CountryOwn='"+self:oTPTAB_PARM1:CountryOwn+"'"+; 
-	",CURRNAME='"+self:oTPTAB_PARM1:CURRNAME+"'"+; 
-	",SYSNAME='"+self:oTPTAB_PARM1:SYSNAME+"'"+; 
-	",AdminType='"+self:oTPTAB_PARM1:mAdminType+"'"+;
+	"cash='"+self:oTPTAB_PARM1:NbrCASH+"'" +;
+	",crossaccnt='"+self:oTPTAB_PARM1:NbrCROSS+"'" +;
+	",capital='"+self:oTPTAB_PARM1:NbrCAPITAL+"'"+;
+	",idorg='"+self:oTPTAB_PARM1:mCLNOrg+"'"+;
+	",idcontact='"+self:oTPTAB_PARM1:mCLNContact+"'"+;
+	",closemonth='"+Transform(self:oTPTAB_PARM1:closemonth,"")+"'"+; 
+	",entity='"+iif( self:oTPTAB_PARM1:mAdminType="WO".and.!IsNil(self:oTPTAB_PARM2:Entity),self:oTPTAB_PARM2:Entity,self:oTPTAB_PARM1:Entity)+"'"+;
+	",currency='"+self:oTPTAB_PARM1:CURRENCY+"'"+; 
+	",countryown='"+self:oTPTAB_PARM1:CountryOwn+"'"+; 
+	",currname='"+self:oTPTAB_PARM1:CURRNAME+"'"+; 
+	",sysname='"+self:oTPTAB_PARM1:SYSNAME+"'"+; 
+	",admintype='"+self:oTPTAB_PARM1:mAdminType+"'"+;
 	",posting="+iif(self:oTPTAB_PARM1:posting,'1','0')+; 
 	iif( self:oTPTAB_PARM2==null_object,'',;  
-		",PMCMANCLN='"+self:oTPTAB_PARM2:mCLNPMCMan+"'"+;
-		",HB='"+self:oTPTAB_PARM2:NbrHB+"'"+;
-		",AM='"+self:oTPTAB_PARM2:NbrAM+"'"+;
-		",AssProjA='"+self:oTPTAB_PARM2:NbrAMProj+"'"+;
-		",GIFTINCAC='"+self:oTPTAB_PARM2:NbrInc+"'"+;
-		",GIFTEXPAC='"+self:oTPTAB_PARM2:NbrExp+"'"+;
-		iif(Empty(self:oTPTAB_PARM2:NbrInc),",HOMEINCAC='',HomeEXPAC='',AssFldAc=''",+;
-		",HOMEINCAC='"+self:oTPTAB_PARM2:NbrIncHome+"'"+;
-		",HomeEXPAC='"+self:oTPTAB_PARM2:NbrExpHome+"'" +;  
-		",AssFldAc='"+self:oTPTAB_PARM2:NbrAssFldAc+"'") +;  
+		",pmcmancln='"+self:oTPTAB_PARM2:mCLNPMCMan+"'"+;
+		",hb='"+self:oTPTAB_PARM2:NbrHB+"'"+;
+		",am='"+self:oTPTAB_PARM2:NbrAM+"'"+;
+		",assproja='"+self:oTPTAB_PARM2:NbrAMProj+"'"+;
+		",giftincac='"+self:oTPTAB_PARM2:NbrInc+"'"+;
+		",giftexpac='"+self:oTPTAB_PARM2:NbrExp+"'"+;
+		iif(Empty(self:oTPTAB_PARM2:NbrInc),",homeincac='',homeexpac='',assfldac=''",+;
+		",homeincac='"+self:oTPTAB_PARM2:NbrIncHome+"'"+;
+		",homeexpac='"+self:oTPTAB_PARM2:NBREXPHOME+"'" +;  
+		",assfldac='"+self:oTPTAB_PARM2:NbrAssFldAc+"'") +;  
 		",assmntfield='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntfield,""))+"'" +;
 		",withldoffl='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffl,""))+"'"	+;	
-		",IESMAILACC='"+AllTrim(Transform(self:oTPTAB_PARM2:IESMAILACC,""))+"'" +; 
+		",iesmailacc='"+AllTrim(Transform(self:oTPTAB_PARM2:IESMAILACC,""))+"'" +; 
 		",assmntint="+AllTrim(Transform(self:oTPTAB_PARM2:assmntint,"") +; 
-		",assmntOffc='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntOffc,""))+"'" +; 
-		",withldoffM='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffM,""))+"'"	+;	
-		",withldoffH='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffH,""))+"'") +;	
+		",assmntoffc='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntOffc,""))+"'" +; 
+		",withldoffm='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffM,""))+"'"	+;	
+		",withldoffh='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffH,""))+"'") +;	
 		",pmcupld="+iif(self:oTPTAB_PARM2:pmcupld,'1','0')+; 
 	iif(self:oTPTAB_PARM3==null_object,'',;
-		",Postage='"+self:oTPTAB_PARM3:NbrPostage+"'"+;
-		",DEBTORS='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
-		",CREDITORS='"+self:oTPTAB_PARM3:NbrCREDITORS+"'"+;
-		",CNTRNRCOLL='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
-		",BANKNBRCOL='"+self:oTPTAB_PARM3:BANKNBRCOL+"'" + ;
-		",BANKNBRCRE='"+self:oTPTAB_PARM3:BANKNBRCRE+"'")+;
+		",postage='"+self:oTPTAB_PARM3:NbrPostage+"'"+;
+		",debtors='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
+		",creditors='"+self:oTPTAB_PARM3:NbrCreditors+"'"+;
+		",cntrnrcoll='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
+		",banknbrcol='"+self:oTPTAB_PARM3:BANKNBRCOL+"'" + ;
+		",banknbrcre='"+self:oTPTAB_PARM3:BANKNBRCRE+"'")+;
 	iif(self:oTPTAB_PARM4==null_object,'',;
-		",DONORS='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
-		",PROJECTS='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
+		",donors='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
+		",projects='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
 		iif(IsNil(self:oTPTAB_PARM4:mDecimalGiftreport),'',;
-		",DECMGIFT="+Str(Min(self:oTPTAB_PARM4:mDecimalGiftreport,2),-1)+;
-	",NOSALUT="+iif(self:oTPTAB_PARM5:SALUTADDR,'0','1') +;
-	",DefaultCOD='"+ MakeCod({self:oTPTAB_PARM5:mCod1,self:oTPTAB_PARM5:mCod2,self:oTPTAB_PARM5:mCod3})+"'"+; 
-	",FGMLCODES='"+MakeCod({self:oTPTAB_PARM5:mFGCod1,self:oTPTAB_PARM5:mFGCod2,self:oTPTAB_PARM5:mFGCod3})+"'"+; 
-	",FIRSTNAME="+iif(self:oTPTAB_PARM5:FIRSTNAME,'1','0')+; 
-	",CITYLETTER='"+self:oTPTAB_PARM5:CITYLETTER+"'"+; 
-	",OwnCntry='"+AllTrim(self:oTPTAB_PARM5:mOwnCntry)+"'"+; 
-	",SURNMFIRST="+iif(self:oTPTAB_PARM5:SURNMFIRST,'1','0')+; 
-	",STRZIPCITY="+Str(self:oTPTAB_PARM5:STRZIPCITY,-1)+;
-	",CITYNMUPC="+iif(self:oTPTAB_PARM5:CITYNMUPC,'1','0')+;
-	",LSTNMUPC="+iif(self:oTPTAB_PARM5:LSTNMUPC,'1','0')+; 
-	",TITINADR="+iif(self:oTPTAB_PARM5:TITINADR,'1','0')+; 
-	",MAILCLIENT='"+Str(self:oTPTAB_PARM5:MailClient,-1)+"'"+;
-	",TOPMARGIN='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
-	",LEFTMARGIN='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
-	",RIGHTMARGN='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
-	",BOTTOMMARG='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;	
+		",decmgift="+Str(Min(self:oTPTAB_PARM4:mDecimalGiftreport,2),-1)+;
+	",nosalut="+iif(self:oTPTAB_PARM5:SALUTADDR,'0','1') +;
+	",defaultcod='"+ MakeCod({self:oTPTAB_PARM5:mCOD1,self:oTPTAB_PARM5:mCOD2,self:oTPTAB_PARM5:mCOD3})+"'"+; 
+	",fgmlcodes='"+MakeCod({self:oTPTAB_PARM5:mFGCod1,self:oTPTAB_PARM5:mFGCod2,self:oTPTAB_PARM5:mFGCod3})+"'"+; 
+	",firstname="+iif(self:oTPTAB_PARM5:FIRSTNAME,'1','0')+; 
+	",cityletter='"+self:oTPTAB_PARM5:CITYLETTER+"'"+; 
+	",owncntry='"+AllTrim(self:oTPTAB_PARM5:mOwnCntry)+"'"+; 
+	",surnmfirst="+iif(self:oTPTAB_PARM5:SURNMFIRST,'1','0')+; 
+	",strzipcity="+Str(self:oTPTAB_PARM5:STRZIPCITY,-1)+;
+	",citynmupc="+iif(self:oTPTAB_PARM5:CITYNMUPC,'1','0')+;
+	",lstnmupc="+iif(self:oTPTAB_PARM5:LSTNMUPC,'1','0')+; 
+	",titinadr="+iif(self:oTPTAB_PARM5:TITINADR,'1','0')+; 
+	",mailclient='"+Str(self:oTPTAB_PARM5:MailClient,-1)+"'"+;
+	",topmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
+	",leftmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;           
+	",rightmargn='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
+	",bottommarg='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;	
 	iif(self:oTPTABPARM_PAGE7==null_object,'',;
-		",PSWRDLEN="+Str(Min(self:oTPTABPARM_PAGE7:mPSWRDLEN,10),-1)+;
-		",PSWDURA="+iif(Empty(self:oTPTABPARM_PAGE7:mPSWDURA),"9999",AllTrim(Transform(self:oTPTABPARM_PAGE7:mPSWDURA,""))+;
-		",PSWALNUM="+iif(self:oTPTABPARM_PAGE7:mPSWALNUM,'1','0')) +;
-	",CRLANGUAGE='"+self:oTPTabParm_Page8:CRLANGUAGE+"'"+;
+		",pswrdlen="+Str(Min(self:oTPTABPARM_PAGE7:mPSWRDLEN,10),-1)+;
+		",pswdura="+iif(Empty(self:oTPTABPARM_PAGE7:mPSWDURA),"9999",AllTrim(Transform(self:oTPTABPARM_PAGE7:mPSWDURA,""))+;
+		",pswalnum="+iif(self:oTPTABPARM_PAGE7:mPSWALNUM,'1','0')) +;
+	",crlanguage='"+self:oTPTabParm_Page8:CRLANGUAGE+"'"+;
 	iif(self:oTPTABPARM_PAGE9==null_object,'',;
-		",TOPPACCT='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'")
+		",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'")
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute() 
 	IF oStmnt:NumSuccessfulRows>0
-		IF !ClosingMonth==SELF:Server:CloseMonth
+		IF !ClosingMonth==self:Server:closemonth
 			*	Closingmonth has been changed:
-			ClosingMonth:=SELF:Server:CloseMonth
+			ClosingMonth:=self:Server:closemonth
 			// 		nNewStart:=if(ClosingMonth==12,1,ClosingMonth+1)
 			// 		*	Correct existing AccountBalanceyear not yet closed:
 			// 		oBalY:=SQLStatement{"update AccountBalanceYear set MONTHSTART="+Str(nNewStart,-1)+" where (YEARSTART*12+MonthStart)>"+Str(Year(LstYearClosed)*12+Month(LstYearClosed),5),oConn}
 			// 		oBalY:Execute()
 		ENDIF
 		InitGlobals()
-		SELF:Owner:SetCaption(oSys:SYSNAME)
+		self:Owner:SetCaption(oSys:SYSNAME)
 		
 		// reinitailise menu's with myLanguae
 		GetUserMenu(LOGON_EMP_ID)
@@ -2994,13 +2994,13 @@ METHOD OKButton( ) CLASS TabSysParms
 	elseif !Empty(oStmnt:Status)
 		LogEvent(self,"error:"+oStmnt:SQLString)
 	ENDIF
-	SELF:EndWindow()
-	RETURN NIL
+	self:EndWindow()
+	RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
 	//Put your PostInit additions here
 	local oTabPage as Window
 self:SetTexts() 
-	nOrigCloseMonth:=self:Server:CloseMonth
+	nOrigCloseMonth:=self:Server:closemonth
 	 
 	
 /*	* remove non applicable Tabs in case of non Wycliffe Office:
@@ -3025,13 +3025,13 @@ self:SetTexts()
 		oTPTABPARM_PAGE7:Destroy()
 		oTPTABPARM_PAGE7:=null_object		
 	ENDIF 
-	if !ADMIN=="WA" 
+	IF !ADMIN=="WA" 
 		oDCTabParm:DeleteTab(#TABPARM_PAGE9)
 		self:oTPTABPARM_PAGE9:Destroy()
 		oTPTABPARM_PAGE9:=null_object		
 	endif
 
-	RETURN NIL
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
 	//Put your PreInit additions here 
 	self:oSys:=SQLSelect{"select * from sysparms",oConn}
@@ -3116,7 +3116,7 @@ METHOD RegAccount(oRek,ItemName) CLASS TabSysParms
 		oTPTAB_PARM2:cHOMEINCACName := oRek:Description
 		oTPTAB_PARM2:cSoortHomeINCAC:=oRek:TYPE
 	ELSEIF ItemName=="Gifts Home Expense"
-		oTPTAB_PARM2:NbrExpHome :=  Str(oRek:accid,-1)
+		oTPTAB_PARM2:NBREXPHOME :=  Str(oRek:accid,-1)
 		oTPTAB_PARM2:mHomeEXPAc := oRek:Description
 		oTPTAB_PARM2:cHomeEXPACName := oRek:Description
 		oTPTAB_PARM2:cSoortHomeEXPAC:=oRek:TYPE
@@ -3127,7 +3127,7 @@ METHOD RegAccount(oRek,ItemName) CLASS TabSysParms
 		self:oTPTabParm_Page9:cSoortToPP:=oRek:TYPE
 	ENDIF
 	
-RETURN TRUE
+RETURN true
 METHOD RegPerson(oCLN,ItemName) CLASS TabSysParms
 IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 	IF ItemName=="Own Organisation"
@@ -3144,7 +3144,7 @@ IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 		oTPTAB_PARM2:mPersonPMCMan := oTPTAB_PARM2:cPMCManName
 	ENDIF
 ENDIF
-RETURN TRUE
+RETURN true
 STATIC DEFINE TABSYSPARMS_CANCELBUTTON := 102 
 STATIC DEFINE TABSYSPARMS_OKBUTTON := 101 
 STATIC DEFINE TABSYSPARMS_TABPARM := 100 
