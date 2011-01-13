@@ -9,7 +9,7 @@ local oBal as SQLSelect
 IF !Empty(cBalItem).and.IsDigit(psz(_cast,AllTrim(cBalItem))) 
 	oBal:=SQLSelect{"select balitemid from balanceitem where number='"+AllTrim(cBalItem)+"'",oConn}
 ELSE
-	oBal:=SQLSelect{"select balitemid from balanceitem where Heading='"+AllTrim(cBalItem)+"'",oConn}
+	oBal:=SQLSelect{"select balitemid from balanceitem where heading='"+AllTrim(cBalItem)+"'",oConn}
 ENDIF
 if oBal:RecCount=1
 	lUnique:=true
@@ -35,8 +35,8 @@ LOCAL nCurRec AS INT
 IF cParentId=="0".and.AllTrim(cParentNbr)=="0"
 	RETURN ""
 ENDIF
-IF !AllTrim(cParentNbr)=="0" .and.!IsNil(self:Number)
-	IF AllTrim(cParentNbr)==AllTrim(self:Number)
+IF !AllTrim(cParentNbr)=="0" .and.!IsNil(self:NUMber)
+	IF AllTrim(cParentNbr)==AllTrim(self:NUMber)
 		cError:="Parent must be unqual to self"
 		RETURN cError
 	ENDIF
@@ -107,8 +107,8 @@ METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemE
 			FieldValue:="Liabilities&Funds"
 		ENDIF
 		oListViewItem:SetValue(self:aItem[nCurrentRec,1],#Identifier)  // balitemid
-		oListViewItem:SetText(self:aItem[nCurrentRec,4],#Identifier)   //  NUMber
-		oListViewItem:SetValue(self:aItem[nCurrentRec,3], #Description)  // Heading
+		oListViewItem:SetText(self:aItem[nCurrentRec,4],#Identifier)   //  number
+		oListViewItem:SetValue(self:aItem[nCurrentRec,3], #Description)  // heading
 		oListViewItem:SetValue(FieldValue, #Type)
 		oListView:AddItem(oListViewItem)
 		nCurrentRec:=AScan(self:aItem,{|x|x[2]==ParentNum},nCurrentRec+1)
@@ -122,7 +122,7 @@ METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemE
 		oListViewItem:ImageIndex	:=	3
 		//	for each	field, set the	value	in	the item
 		oListViewItem:SetValue(self:aAccnts[nCurAcc,1],#Identifier)  // accid
-		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	#Identifier)  //AccNumber
+		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	#Identifier)  //accnumber
 		oListViewItem:SetValue(self:aAccnts[nCurAcc,3],#Description)  //  description
 		category:=self:aAccnts[nCurAcc,5]
 		IF	category==expense
@@ -183,16 +183,16 @@ METHOD FilePrint CLASS BalanceItemExplorer
 	nPage := 0
 	oReport:PrintLine(@nRow,@nPage,self:cRootName,kopregels)
 
-	oBal:=SQLSelect{"SELECT distinct gr.itemid,gr.parentid,gr.description,gr.Number,gr.type from ("+;
-		"(SELECT distinct b1.balitemid as itemid,b1.balitemidparent as parentid,b1.Heading as description,b1.Number as Number,'balanceitem' as type "+;
+	oBal:=SQLSelect{"SELECT distinct gr.itemid,gr.parentid,gr.description,gr.number,gr.type from ("+;
+		"(SELECT distinct b1.balitemid as itemid,b1.balitemidparent as parentid,b1.heading as description,b1.number as number,'balanceitem' as type "+;
 		"from balanceitem b1,balanceitem b2 where b1.balitemidparent=b2.balitemid or not b2.balitemidparent ) "+;
 		"union "+;
-		"(SELECT a.accid as itemid,a.balitemid as parentid, a.description as description, a.AccNumber as Number,'account' as type "+;
-		"from account a,balanceitem b2 where a.balitemid=b2.balitemid or not a.balitemid)) as gr order by gr.parentid,gr.type desc, gr.Number",oConn}
+		"(SELECT a.accid as itemid,a.balitemid as parentid, a.description as description, a.accnumber as number,'account' as type "+;
+		"from account a,balanceitem b2 where a.balitemid=b2.balitemid or not a.balitemid)) as gr order by gr.parentid,gr.type desc, gr.number",oConn}
 
 	if oBal:RecCount>0
 		do while !oBal:EoF
-			AAdd(aBal,{oBal:type,oBal:itemid,oBal:parentid,oBal:description,oBal:Number})
+			AAdd(aBal,{oBal:type,oBal:itemid,oBal:parentid,oBal:description,oBal:number})
 			oBal:Skip()
 		enddo
 		DO WHILE true
@@ -248,8 +248,8 @@ METHOD InitData() CLASS BalanceItemExplorer
 	// create, initialize, and set the relation on the data servers
 // 	oMainItemServer	:= BalanceItem{}      // order on HFDRUBRNUM 
 // 	oSubItemServer:= BalanceItem{} 
-	self:cMainItemServer:="balanceItem"
-	self:cSubitemserver:="balanceItem"
+	self:cMainItemServer:="balanceitem"
+	self:cSubitemserver:="balanceitem"
 
 	self:cRootName:= "0:Balance Items"
 	self:cRootValue:=0
@@ -402,7 +402,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	local nCurAcc as int
 	local oBal,oAcc as SQLSelect
 	if Empty(aItem)
-		oBal:=SQLSelect{"SELECT balitemid as itemid,balitemidparent as parentid,Heading as description,Number as Number,category from balanceitem order by balitemidparent,balitemid",oConn}
+		oBal:=SQLSelect{"SELECT balitemid as itemid,balitemidparent as parentid,heading as description,number as number,category from balanceitem order by balitemidparent,balitemid",oConn}
 		if oBal:RecCount>0
 			do while !oBal:EoF
 				AAdd(aItem,{oBal:itemid,oBal:parentid,oBal:description,oBal:NUMber,oBal:category}) 
@@ -416,7 +416,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 					"from account a, balanceitem b where b.balitemid=a.balitemid order by parentid, number",oConn}
 				if oAcc:RecCount>0 
 					do while !oAcc:EoF
-						AAdd(aAccnts,{oAcc:itemid,oAcc:parentid,oAcc:description,oAcc:Number,oAcc:category}) 
+						AAdd(aAccnts,{oAcc:itemid,oAcc:parentid,oAcc:description,oAcc:NUMber,oAcc:category}) 
 						//                  1            2           3              4             5
 						oAcc:Skip()
 					enddo
@@ -1354,11 +1354,11 @@ FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
 	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
-	CONTROL	"Footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
+	CONTROL	"footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
 	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
 	CONTROL	"Balancegroup#:", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
+	CONTROL	"footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Main group#:", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
 	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
@@ -1437,15 +1437,15 @@ oDCSC_KOPTEKST := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_KOPTEKST,_GetInst
 oDCSC_KOPTEKST:HyperLabel := HyperLabel{#SC_KOPTEKST,"Header:",NULL_STRING,NULL_STRING}
 
 oDCSC_VOETTEKST := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_VOETTEKST,_GetInst()}}
-oDCSC_VOETTEKST:HyperLabel := HyperLabel{#SC_VOETTEKST,"Footer:",NULL_STRING,NULL_STRING}
+oDCSC_VOETTEKST:HyperLabel := HyperLabel{#SC_VOETTEKST,"footer:",null_string,null_string}
 
 oDCSC_HFDRBRNUM := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_HFDRBRNUM,_GetInst()}}
 oDCSC_HFDRBRNUM:HyperLabel := HyperLabel{#SC_HFDRBRNUM,"Parent Group#:",NULL_STRING,NULL_STRING}
 
 oDCmNUM := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MNUM,_GetInst()}}
 oDCmNUM:FieldSpec := BalanceItem_NUMBER{}
-oDCmNUM:HyperLabel := HyperLabel{#mNUM,"Balancegroup#:","Number of balance group","Rubriek_NUM"}
-oDCmNUM:TooltipText := "Number of balance group"
+oDCmNUM:HyperLabel := HyperLabel{#mNUM,"Balancegroup#:","number of balance group","Rubriek_NUM"}
+oDCmNUM:TooltipText := "number of balance group"
 
 oDCmKOPTEKST := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MKOPTEKST,_GetInst()}}
 oDCmKOPTEKST:FieldSpec := BalanceItem_KOPTEKST{}
@@ -1454,13 +1454,13 @@ oDCmKOPTEKST:TooltipText := "Header printed at beginning of this item on the rep
 
 oDCmVOETTEKST := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MVOETTEKST,_GetInst()}}
 oDCmVOETTEKST:FieldSpec := BalanceItem_VOETTEKST{}
-oDCmVOETTEKST:HyperLabel := HyperLabel{#mVOETTEKST,"Footer:","Footer of balance group","Rubriek_VOETTEKST"}
-oDCmVOETTEKST:TooltipText := "Footer printed at end of this item on the report"
+oDCmVOETTEKST:HyperLabel := HyperLabel{#mVOETTEKST,"footer:","footer of balance group","Rubriek_VOETTEKST"}
+oDCmVOETTEKST:TooltipText := "footer printed at end of this item on the report"
 
 oDCmHFDRBRNUM := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MHFDRBRNUM,_GetInst()}}
 oDCmHFDRBRNUM:FieldSpec := BalanceItem_NUMBER{}
-oDCmHFDRBRNUM:HyperLabel := HyperLabel{#mHFDRBRNUM,"Main group#:","Number of main group item belongs to","Rubriek_HFDRBRNUM"}
-oDCmHFDRBRNUM:TooltipText := "Number of main group item belongs to"
+oDCmHFDRBRNUM:HyperLabel := HyperLabel{#mHFDRBRNUM,"Main group#:","number of main group item belongs to","Rubriek_HFDRBRNUM"}
+oDCmHFDRBRNUM:TooltipText := "number of main group item belongs to"
 
 oCCRadioButtonKO := RadioButton{SELF,ResourceID{EDITBALANCEITEM_RADIOBUTTONKO,_GetInst()}}
 oCCRadioButtonKO:HyperLabel := HyperLabel{#RadioButtonKO,"Expenses",NULL_STRING,NULL_STRING}
@@ -1551,8 +1551,8 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	ENDIF
 	IF lNew.or.!AllTrim(self:mNum)==AllTrim(OrgNum)
 		*Check if balitemid allready exist:
-		if SQLSelect{"select balitemid from balanceitem where number='"+self:mNum+"'",oConn}:RecCount>0
-			(ErrorBox{,"Item number "+ self:mNum+ " allready exist!"}):Show()
+		if SQLSelect{"select balitemid from balanceitem where number='"+self:mNUM+"'",oConn}:RecCount>0
+			(ErrorBox{,"Item number "+ self:mNUM+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
@@ -1565,9 +1565,9 @@ METHOD OKButton( ) CLASS EditBalanceItem
    self:cMainId:=mParent
 
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+"balanceitem set "+;
-		"Number='"+AllTrim(self:mNum)+"'"+;
-		",Heading='"+AllTrim(self:mKopTekst)+"'"+;
-		",Footer='"+AllTrim(self:mVoetTekst)+"'"+;
+		"number='"+AllTrim(self:mNUM)+"'"+;
+		",heading='"+AllTrim(self:mKOPTEKST)+"'"+;
+		",footer='"+AllTrim(self:mVOETTEKST)+"'"+;
 		",category='"+self:mSoort+"'"+;
 	",balitemidparent='"+self:cMainId+"'"+;
 		iif(self:lNew,""," where balitemid='"+self:mBalId+"'")
@@ -1600,9 +1600,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBalanceItem
 		self:mBalId:=uExtra[3] 
 		oBal:=SQLSelect{"select * from balanceitem where balitemid='"+mBalId+"'",oConn} 
 		if oBal:RecCount>0
-			self:mNum := oBal:Number
-			self:mKopTekst  := oBal:Heading
-			self:mVoetTekst  := oBal:Footer
+			self:mNUM := oBal:NUMber
+			self:mKOPTEKST  := oBal:heading
+			self:mVOETTEKST  := oBal:footer
 			self:mSoort := iif(IsNil(oBal:category),asset,oBal:category)
 			self:OrgSoort:=self:mSoort
 			self:OrgKoptekst	:=self:mKopTekst
@@ -1621,7 +1621,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBalanceItem
 	ELSE
 		oBal:=SQLSelect{"select number,category from balanceitem where balitemid='"+self:cMainId+"'",oConn}
 		if oBal:RecCount>0
-			self:mHFDRBRNUM:=oBal:Number
+			self:mHFDRBRNUM:=oBal:NUMber
 			self:OrgHFDRBRNUM :=self:mHFDRBRNUM
 			IF lNew
 				self:mSoort:=iif(IsNil(oBal:category),asset,oBal:category)
@@ -1808,7 +1808,7 @@ local oBal as SQLSelect
 IF !Empty(cBalItem).and.IsDigit(psz(_cast,AllTrim(cBalItem)))
 	oBal:=SQLSelect{"select balitemid from balanceitem where number='"+cBalItem+"'",oConn}
 ELSE
-	oBal:=SQLSelect{"select balitemid from balanceitem where Heading like '"+AllTrim(cBalItem)+"%'",oConn}
+	oBal:=SQLSelect{"select balitemid from balanceitem where heading like '"+AllTrim(cBalItem)+"%'",oConn}
 ENDIF
 if oBal:RecCount=1
 	lUnique := true
