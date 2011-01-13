@@ -43,7 +43,7 @@ METHOD AccButton(lUnique ) CLASS DueAmountBrowser
 	local aIncl:={} as array
 	Default(@lUnique,FALSE)
 // 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"General Ledger Account of Bank Account",lUnique,afilter[2],afilter[1],oAccount,,false)
-	cFilter:='!Empty(subscriptionprice).or.Giftalwd'
+	cFilter:='!Empty(subscriptionprice).or.giftalwd'
 
 	IF !Empty(sdon)
 		AAdd(aIncl,SDON)
@@ -152,8 +152,8 @@ IF oReport:Extension#"xls"
 ENDIF
 oDue:GoTop()
 DO WHILE !oDue:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oDue:accountname,20)+cTab+Pad(oDue:PersonName,30)+;
-	cTab+Str(oDue:AmountInvoice-oDue:AmountRecvd,10,DecAantal)+cTab+;
+	oReport:PrintLine(@nRow,@nPage,Pad(oDue:accountname,20)+cTab+Pad(oDue:personname,30)+;
+	cTab+Str(oDue:amountinvoice-oDue:AmountRecvd,10,DecAantal)+cTab+;
 	DToC(oDue:invoicedate),kopregels)
 	oDue:skip()
 ENDDO
@@ -241,8 +241,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DueAmountBrowser
 	RETURN NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class DueAmountBrowser
 	//Put your PreInit additions here
-	self:cWhere:="p.persid=s.personid and a.accid=s.accid and AmountInvoice >AmountRecvd and d.subscribid=s.subscribid"
-	self:cFields:= "a.description as accountname,"+SQLFullName(0,"p")+" as PersonName,d.invoicedate,d.AmountInvoice,d.AmountRecvd,d.dueid,s.personid,s.accid,d.seqnr"
+	self:cWhere:="p.persid=s.personid and a.accid=s.accid and amountinvoice >amountrecvd and d.subscribid=s.subscribid"
+	self:cFields:= "a.description as accountname,"+SQLFullName(0,"p")+" as personname,d.invoicedate,d.amountinvoice,d.amountrecvd,d.dueid,s.personid,s.accid,d.seqnr"
 	self:cFrom:="person p,account a, dueamount d,subscription s" 
 	self:cOrder:="personname"
 	oDue:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder ,oConn}
@@ -280,10 +280,10 @@ ASSIGN AccountName(uValue) CLASS DueAmountBrowser_DETAIL
 SELF:FieldPut(#AccountName, uValue)
 RETURN uValue
 
-ACCESS AmountInvoice() CLASS DueAmountBrowser_DETAIL
+ACCESS amountinvoice() CLASS DueAmountBrowser_DETAIL
 RETURN SELF:FieldGet(#AmountInvoice)
 
-ASSIGN AmountInvoice(uValue) CLASS DueAmountBrowser_DETAIL
+ASSIGN amountinvoice(uValue) CLASS DueAmountBrowser_DETAIL
 SELF:FieldPut(#AmountInvoice, uValue)
 RETURN uValue
 
@@ -367,10 +367,10 @@ ASSIGN InvoiceDate(uValue) CLASS DueAmountBrowser_DETAIL
 SELF:FieldPut(#InvoiceDate, uValue)
 RETURN uValue
 
-ACCESS PersonName() CLASS DueAmountBrowser_DETAIL
+ACCESS personname() CLASS DueAmountBrowser_DETAIL
 RETURN SELF:FieldGet(#PersonName)
 
-ASSIGN PersonName(uValue) CLASS DueAmountBrowser_DETAIL
+ASSIGN personname(uValue) CLASS DueAmountBrowser_DETAIL
 SELF:FieldPut(#PersonName, uValue)
 RETURN uValue
 
