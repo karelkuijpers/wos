@@ -3252,9 +3252,12 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	// 	self:oCurr:=Currency{}
 	// endif
 	omBal:=Balances{}
-	omBal:GetBalance( self:DebAccId,oSel:category,,,self:DebCurrency)
-
-	self:DebBalance:=omBal:per_debF-omBal:per_creF 
+	omBal:GetBalance( self:DebAccId,,,self:DebCurrency)
+   if self:DebCurrency==sCurr
+		self:DebBalance:=round(omBal:per_deb-omBal:per_cre,decaantal)
+   else 
+		self:DebBalance:=Round(omBal:per_debF-omBal:per_creF,DecAantal)
+   endif 
 	self:oDCDebbalance:Value:=self:DebBalance
 	self:oDCCurText1:Value :=self:DebCurrency 
 	self:oDCCurText2:Value:=self:DebCurrency 
@@ -3271,15 +3274,6 @@ METHOD TeleBankButton( ) CLASS PaymentJournal
 		lTeleBank:=false
 		return nil
 	endif
-
-// 	IF oPersBank==NULL_OBJECT
-// 		oPersBank:=PersonBank{}
-// 		lSuccess:=oPersBank:SetOrder("GIROPERS")
-// 	ENDIF
-// 	IF !oPersBank:Used
-// 		oPersBank:=NULL_OBJECT
-// 		SELF:EndWindow()
-// 	ENDIF
 
 	IF oTmt:NextTeleGift()
 		oCCTeleBankButton:Hide()
@@ -3826,7 +3820,7 @@ endif
 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.TransId="+cTransnr,oConn}
 	if self:oMyTrans:RecCount<1
-		LogEvent(,self:oMyTrans:sqlstring,"logsql")
+		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
 	endif 
 	self:oHm:aMirror:={}
 	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF
@@ -4294,7 +4288,6 @@ SQLStatement{"start transaction",oConn}:Execute()
 oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
 iif(cCurrDest==sCurr .and.!lMultiDest,",debforgn=deb,creforgn=cre,currency='"+sCurr+"'","")+;
 " where "+self:cWhereSpec,oConn}
-LogEvent(self,oStmnt:sqlstring,"logsql") 
 oStmnt:Execute()
 if oStmnt:NumSuccessfulRows>0
 	DO WHILE !oTrans:EOF
