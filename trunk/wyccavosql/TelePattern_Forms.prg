@@ -1,3 +1,30 @@
+RESOURCE EditTeleBankPattern DIALOGEX  4, 3, 319, 162
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Account:", EDITTELEBANKPATTERN_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 68, 51, 82, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Bank/Giro:", EDITTELEBANKPATTERN_MCONTRA_BANKACCNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 30, 80, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Naam Tegnr:", EDITTELEBANKPATTERN_MCONTRA_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 180, 30, 120, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITTELEBANKPATTERN_MKIND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 12, 68, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Type:", EDITTELEBANKPATTERN_SC_KIND, "Static", WS_CHILD, 13, 12, 31, 13
+	CONTROL	"Bank account#:", EDITTELEBANKPATTERN_SC_CONTRA_BANKACCNT, "Static", WS_CHILD, 13, 30, 54, 13
+	CONTROL	"Name:", EDITTELEBANKPATTERN_SC_CONTRA_NAME, "Static", WS_CHILD, 154, 30, 24, 13
+	CONTROL	"Description:", EDITTELEBANKPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 13, 73, 45, 13
+	CONTROL	"Account:", EDITTELEBANKPATTERN_SC_REK, "Static", WS_CHILD, 13, 52, 31, 13
+	CONTROL	"description:", EDITTELEBANKPATTERN_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 67, 73, 217, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITTELEBANKPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 148, 51, 14, 13
+	CONTROL	"Debit/Credit", EDITTELEBANKPATTERN_MADDSUB, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 67, 91, 57, 46
+	CONTROL	"Debit", EDITTELEBANKPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 101, 39, 11
+	CONTROL	"Credit", EDITTELEBANKPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 113, 41, 11
+	CONTROL	"Both", EDITTELEBANKPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 124, 40, 12
+	CONTROL	"Automatic processing of recognised records?", EDITTELEBANKPATTERN_MIND_AUTMUT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 94, 156, 11
+	CONTROL	"", EDITTELEBANKPATTERN_RECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Date changed:", EDITTELEBANKPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
+	CONTROL	"", EDITTELEBANKPATTERN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 1, 301, 141
+	CONTROL	"OK", EDITTELEBANKPATTERN_SAVEBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 254, 144, 54, 12
+	CONTROL	"Cancel", EDITTELEBANKPATTERN_CANCELBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 144, 53, 12
+END
+
 CLASS EditTeleBankPattern INHERIT DataDialogMine 
 
 	PROTECT oDCmAccount AS SINGLELINEEDIT
@@ -37,33 +64,6 @@ CLASS EditTeleBankPattern INHERIT DataDialogMine
 	EXPORT maccid,CurTelPatId as STRING
 	PROTECT oBrowse as SQLSelect 
 	protect oOwner as DataWindow
-RESOURCE EditTeleBankPattern DIALOGEX  4, 3, 319, 162
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Account:", EDITTELEBANKPATTERN_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 68, 51, 82, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Bank/Giro:", EDITTELEBANKPATTERN_MCONTRA_BANKACCNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 30, 80, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Naam Tegnr:", EDITTELEBANKPATTERN_MCONTRA_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 180, 30, 120, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITTELEBANKPATTERN_MKIND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 12, 68, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Type:", EDITTELEBANKPATTERN_SC_KIND, "Static", WS_CHILD, 13, 12, 31, 13
-	CONTROL	"Bank account#:", EDITTELEBANKPATTERN_SC_CONTRA_BANKACCNT, "Static", WS_CHILD, 13, 30, 54, 13
-	CONTROL	"Name:", EDITTELEBANKPATTERN_SC_CONTRA_NAME, "Static", WS_CHILD, 154, 30, 24, 13
-	CONTROL	"Description:", EDITTELEBANKPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 13, 73, 45, 13
-	CONTROL	"Account:", EDITTELEBANKPATTERN_SC_REK, "Static", WS_CHILD, 13, 52, 31, 13
-	CONTROL	"description:", EDITTELEBANKPATTERN_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 67, 73, 217, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITTELEBANKPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 148, 51, 14, 13
-	CONTROL	"Debit/Credit", EDITTELEBANKPATTERN_MADDSUB, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 67, 91, 57, 46
-	CONTROL	"Debit", EDITTELEBANKPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 101, 39, 11
-	CONTROL	"Credit", EDITTELEBANKPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 113, 41, 11
-	CONTROL	"Both", EDITTELEBANKPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 124, 40, 12
-	CONTROL	"Automatic processing of recognised records?", EDITTELEBANKPATTERN_MIND_AUTMUT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 94, 156, 11
-	CONTROL	"", EDITTELEBANKPATTERN_RECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Date changed:", EDITTELEBANKPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
-	CONTROL	"", EDITTELEBANKPATTERN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 1, 301, 141
-	CONTROL	"OK", EDITTELEBANKPATTERN_SAVEBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 254, 144, 54, 12
-	CONTROL	"Cancel", EDITTELEBANKPATTERN_CANCELBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 144, 53, 12
-END
-
 METHOD AccButton(lUnique ) CLASS EditTeleBankPattern 
 	Default(@lUnique,false)
 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"Account",lUnique)
@@ -258,7 +258,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 		self:mkind := self:Server:kind
 		self:mcontra_bankaccnt := self:Server:contra_bankaccnt
 		self:mcontra_name := self:Server:contra_name
-		self:mAddSub := self:Server:AddSub
+		self:mAddSub := self:Server:addsub
 		self:mInd_AutMut := if(Empty(self:Server:Ind_AutMut),FALSE,true)
 		self:CurTelPatId:=str(self:server:telpatid,-1)
 		self:oDCmAccount:TEXTValue := AllTrim(self:Server:accountname)
@@ -300,9 +300,9 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 		",description ='"+SubStr(AllTrim(self:mdescription),1,32)+"'"+;
 		",kind ='"+AllTrim(self:mkind)+"'"+;
 		",contra_name ='"+SubStr(AllTrim(self:mcontra_name),1,32)+"'"+;
-		",AddSub ='"+self:mAddSub+"'"+;
-		",IND_AUTMUT ="+iif(self:mInd_AutMut,'1','0')+;
-		",RecDate=Now()"+;
+		",addsub ='"+self:mAddSub+"'"+;
+		",ind_autmut ="+iif(self:mInd_AutMut,'1','0')+;
+		",recdate=Now()"+;
 		iif(lNew,""," where telpatid="+self:CurTelPatId)
 	oMyServer:=SQLStatement{cStatement,oConn}
 	oMyServer:Execute()
@@ -377,24 +377,34 @@ STATIC DEFINE EDITTELEPATTERN_SC_NAAM_TEGNR := 102
 STATIC DEFINE EDITTELEPATTERN_SC_OMS := 103 
 STATIC DEFINE EDITTELEPATTERN_SC_REK := 104 
 STATIC DEFINE EDITTELEPATTERN_SC_TEGENGIRO := 101 
-RESOURCE TelePatternBrowser DIALOGEX  7, 8, 531, 229
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TELEPATTERNBROWSER_TELEPATTERNBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 3, 4, 473, 211
-	CONTROL	"Edit", TELEPATTERNBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 42, 40, 12
-	CONTROL	"Delete", TELEPATTERNBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 155, 40, 13
-END
-
 CLASS TelePatternBrowser INHERIT DataWindowExtra 
 
 	PROTECT oCCEditButton AS PUSHBUTTON
 	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
 	PROTECT oSFTelePatternBrowser_DETAIL AS TelePatternBrowser_DETAIL
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   	export oTelPat as SQLSelect 
   	export cWhereBase,cWhereSpec,cFields,cOrder,cFrom as string
+
+RESOURCE TelePatternBrowser DIALOGEX  7, 8, 531, 265
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TELEPATTERNBROWSER_TELEPATTERNBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 25, 473, 235
+	CONTROL	"Edit", TELEPATTERNBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 42, 40, 12
+	CONTROL	"Delete", TELEPATTERNBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 155, 40, 13
+	CONTROL	"", TELEPATTERNBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
+	CONTROL	"Found:", TELEPATTERNBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
+	CONTROL	"Find", TELEPATTERNBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
+	CONTROL	"", TELEPATTERNBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
+	CONTROL	"Search like google:", TELEPATTERNBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
+END
 
 METHOD Close(oEvent) CLASS TelePatternBrowser
 *	SUPER:Close(oEvent)
@@ -456,7 +466,7 @@ nRow := 0
 nPage := 0
 DO WHILE .not. oTele:EOF
    oReport:PrintLine(@nRow,@nPage,Pad(oTele:ACCNUMBER,12)+Pad(oTele:accountname,20)+" "+Pad(NTrim(oTele:contra_bankaccnt),15)+' '+;
-	Pad(oTele:contra_name,25)+" "+Pad(oTele:description,25)+"  "+Pad(oTele:AddSub,4)+if(oTele:IND_AUTMUT,"X"," ")+'  '+;
+	Pad(oTele:contra_name,25)+" "+Pad(oTele:description,25)+"  "+Pad(oTele:addsub,4)+if(oTele:IND_AUTMUT,"X"," ")+'  '+;
     DToC(oTele:RECDATE),kopregels)
    oTele:skip()
 ENDDO
@@ -464,6 +474,32 @@ oTele:ResetNotification()
 oReport:prstart()
 oReport:prstop()
 RETURN SELF
+METHOD FindButton( ) CLASS TelePatternBrowser 
+	local aKeyw:={} as array
+	local aFields:={"a.accnumber","a.description","t.contra_bankaccnt","t.contra_name","t.description","t.kind"} as array
+	local i,j as int 
+	self:cWhereSpec:=""
+	if !Empty(self:SearchUni)
+		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
+		aKeyw:=GetTokens(self:SearchUni)
+		for i:=1 to Len(aKeyw)
+			self:cWhereSpec+=" and ("
+			for j:=1 to Len(AFields)
+				self:cWhereSpec+=iif(j=1,""," or ")+AFields[j]+" like '%"+aKeyw[i,1]+"%'"
+			next
+			self:cWhereSpec+=")"
+		next
+	endif
+	self:oTelPat:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+iif(Empty(self:cWhereSpec),"",self:cWhereSpec)+" order by "+self:cOrder
+   self:oTelPat:Execute() 
+	if !Empty(self:oTelPat:status) 
+	 	LogEvent(,"findbutton telepattern:"+self:oTelPat:status:description+"( statmnt:"+self:oTelPat:SQLString,"LogErrors")
+	endif
+   self:oTelPat:GoTop()
+   self:GoTop()
+  	self:oDCFound:TextValue :=Str(self:oTelPat:Reccount,-1)
+
+RETURN NIL
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TelePatternBrowser 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -477,6 +513,24 @@ oCCEditButton:OwnerAlignment := OA_PX
 oCCDeleteButton := PushButton{SELF,ResourceID{TELEPATTERNBROWSER_DELETEBUTTON,_GetInst()}}
 oCCDeleteButton:HyperLabel := HyperLabel{#DeleteButton,"Delete",NULL_STRING,NULL_STRING}
 oCCDeleteButton:OwnerAlignment := OA_PX
+
+oDCFound := FixedText{SELF,ResourceID{TELEPATTERNBROWSER_FOUND,_GetInst()}}
+oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFoundtext := FixedText{SELF,ResourceID{TELEPATTERNBROWSER_FOUNDTEXT,_GetInst()}}
+oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
+
+oCCFindButton := PushButton{SELF,ResourceID{TELEPATTERNBROWSER_FINDBUTTON,_GetInst()}}
+oCCFindButton:HyperLabel := HyperLabel{#FindButton,"Find",NULL_STRING,NULL_STRING}
+
+oDCSearchUni := SingleLineEdit{SELF,ResourceID{TELEPATTERNBROWSER_SEARCHUNI,_GetInst()}}
+oDCSearchUni:HyperLabel := HyperLabel{#SearchUni,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCSearchUni:FocusSelect := FSEL_TRIM
+oDCSearchUni:TooltipText := "Enter one or more (part of) key values "
+oDCSearchUni:UseHLforToolTip := True
+
+oDCFixedText4 := FixedText{SELF,ResourceID{TELEPATTERNBROWSER_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Search like google:",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Telebanking patterns"
 SELF:HyperLabel := HyperLabel{#TelePatternBrowser,"Telebanking patterns",NULL_STRING,NULL_STRING}
@@ -498,7 +552,8 @@ return self
 method PostInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	//Put your PostInit additions here 
 	self:SetTexts()
-	return NIL
+  	self:oDCFound:TextValue :=Str(self:oTelPat:Reccount,-1)
+	return nil
 
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	//Put your PreInit additions here 
@@ -511,6 +566,13 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	self:oTelPat:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+iif(Empty(self:cWhereSpec),""," and "+self:cWhereSpec)+" order by "+self:cOrder,oConn}
 	
 	return NIL
+
+ACCESS SearchUni() CLASS TelePatternBrowser
+RETURN SELF:FieldGet(#SearchUni)
+
+ASSIGN SearchUni(uValue) CLASS TelePatternBrowser
+SELF:FieldPut(#SearchUni, uValue)
+RETURN uValue
 
 STATIC DEFINE TELEPATTERNBROWSER_DELETEBUTTON := 102 
 CLASS TelePatternBrowser_DETAIL INHERIT DataWindowMine 
@@ -628,4 +690,9 @@ STATIC DEFINE TELEPATTERNBROWSER_DETAIL_MUTSOORT := 100
 STATIC DEFINE TELEPATTERNBROWSER_DETAIL_RECDATE := 107 
 STATIC DEFINE TELEPATTERNBROWSER_DETAIL_TEGENGIRO := 101 
 STATIC DEFINE TELEPATTERNBROWSER_EDITBUTTON := 101 
+STATIC DEFINE TELEPATTERNBROWSER_FINDBUTTON := 105 
+STATIC DEFINE TELEPATTERNBROWSER_FIXEDTEXT4 := 107 
+STATIC DEFINE TELEPATTERNBROWSER_FOUND := 103 
+STATIC DEFINE TELEPATTERNBROWSER_FOUNDTEXT := 104 
+STATIC DEFINE TELEPATTERNBROWSER_SEARCHUNI := 106 
 STATIC DEFINE TELEPATTERNBROWSER_TELEPATTERNBROWSER_DETAIL := 100 
