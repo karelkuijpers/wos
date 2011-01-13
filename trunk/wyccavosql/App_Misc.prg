@@ -284,36 +284,36 @@ LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
-oSQL:=SQLSelect{"select a.AccNumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
 oSQL:GoTop()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	oSQL:Skip()
 ENDDO
 // select home members: 
-oSQL:=SQLSelect{"select m.CO,a.AccNumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:SQLString:="select m.CO,a.AccNumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
+oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
@@ -418,36 +418,36 @@ LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
-oSQL:=SQLSelect{"select a.AccNumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
 oSQL:GoTop()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	oSQL:Skip()
 ENDDO
 // select home members: 
-oSQL:=SQLSelect{"select m.CO,a.AccNumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:SQLString:="select m.CO,a.AccNumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
+oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:AccNumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
@@ -894,34 +894,6 @@ function FileStart(cFilename as string, OwnerWindow as Window )
 	END				
 
 	RETURN 
-FUNCTION FillAccount (oParent, cFilter, oAcc)
-	LOCAL aAcc := {}
-	LOCAL oAccount as Account
-	LOCAL lSuc as LOGIC
-	LOCAL pFilter as _CODEBLOCK
-	Default(@oAcc,null_object)
-	
-	IF !Empty(oAcc)
-		oAccount:=oAcc
-	ELSE
-		oAccount := Account{oParent}
-	ENDIF
-	IF oAccount:Used
-		oAccount:SetOrder("RekOms")
-		IF !Empty(cFilter)
-			pFilter:=&("{||"+ cFilter+"}")
-
-			lSuc:=oAccount:SetFilter(pFilter,cFilter)
-	*		lSuc:=oAccount:SetFilter(,cFilter)
-		ENDIF
-		oAccount:GoTop()
-		DO WHILE .not.oAccount:eof
-			AAdd(aAcc,{Trim(oAccount:Description)+" "+AllTrim(oAccount:AccNumber),oAccount:accid})
-			oAccount:Skip()
-		ENDDO
-		oAccount:Close()
-	ENDIF
-	RETURN aAcc
 Function FillBalYears()
 // determine available balance years:
 local oSel as SQLSelect
@@ -1376,7 +1348,7 @@ function InitGlobals()
 			oLan:Get('October',,"!"),oLan:Get('November',,"!"),oLan:Get('December',,"!")}
 		PaymentDescription:={;
 			oLan:Get("Donation",,"!"),oLan:Get("Gift",,"!"),oLan:Get("Invoice",,"!"),;
-			oLan:Get("Subscription",,"!")}
+			oLan:Get("subscription",,"!")}
 		oLan:Close()
 	ENDIF
 	TeleBanking := FALSE 
@@ -1653,7 +1625,7 @@ cAccStart:=cValue
 self:Refill()
 RETURN cValue
 METHOD GetAccnts(dummy:=nil as string) as array CLASS ListBoxExtra
-// LOCAL oAcc as Account 
+// LOCAL oAcc as account 
 Local oSQL as SQLSelect
 LOCAL aAcc:={} as ARRAY
 LOCAL cExchAcc, cStart, cEnd, cWhere as STRING
@@ -1678,10 +1650,10 @@ else
 	cWhere:="accnumber<="+cStart
 endif
 
-oSQL:=SQLSelect{"select AccNumber,description,accid from Account where giftalwd=1 and "+cWhere ,oConn}
+oSQL:=SQLSelect{"select accnumber,description,accid from account where giftalwd=1 and "+cWhere ,oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EoF
-	AAdd(aAcc,{Pad(oSQL:AccNumber,LENACCNBR)+" "+oSQL:description,oSQL:accid})
+	AAdd(aAcc,{Pad(oSQL:accnumber,LENACCNBR)+" "+oSQL:description,oSQL:accid})
 	oSQL:Skip()
 ENDDO
 RETURN aAcc
@@ -2118,10 +2090,10 @@ function PersonUnion(id1 as string, id2 as string)
 			oTrans:Skip()
 		enddo
 	endif
-	oStmt:SQLString:='Update PersonBank Set persid="'+id1+'" where persid="'+id2+'"'
+	oStmt:SQLString:='Update personbank Set persid="'+id1+'" where persid="'+id2+'"'
 	oStmt:Execute()
 
-	oStmt:SQLString:='Update Subscription Set personid="'+id1+'" where personid="'+id2+'"'
+	oStmt:SQLString:='Update subscription Set personid="'+id1+'" where personid="'+id2+'"'
 	oStmt:Execute()
 
 // 	oStmt:SQLString:='Update DueAmount Set persid="'+id1+'" where persid="'+id2+'"'
@@ -2181,13 +2153,13 @@ function PersonUnion(id1 as string, id2 as string)
 		cStatement+=",telhome='"+ oPers2:telhome+"'"
 	endif
 	if Empty( oPers1:MOBILE)
-		cStatement+=",MOBILE='"+ oPers2:MOBILE+"'"
+		cStatement+=",mobile='"+ oPers2:MOBILE+"'"
 	endif
 	if Empty( oPers1:FAX)
-		cStatement+=",FAX='"+ oPers2:FAX+"'"
+		cStatement+=",fax='"+ oPers2:FAX+"'"
 	endif
 	if Empty( oPers1:EMAIL)
-		cStatement+=",EMAIL='"+ oPers2:EMAIL+"'"
+		cStatement+=",email='"+ oPers2:EMAIL+"'"
 	endif
 	if Empty( oPers1:birthdate)
 		cStatement+=",birthdate='"+ SQLdate(oPers2:birthdate)+"'"
@@ -2229,7 +2201,7 @@ function PersonUnion(id1 as string, id2 as string)
 			endif
 			recordfound:=oXMLDocPrs2:GetNextChild()			
 		ENDDO
-		cStatement+=",PROPEXTR='"+ oXMLDocPrs1:GetBuffer() +"'"
+		cStatement+=",propextr='"+ oXMLDocPrs1:GetBuffer() +"'"
 	endif
 	if !Empty(oPers2:accid)
 		// connect member to Id1:
@@ -2244,7 +2216,7 @@ function PersonUnion(id1 as string, id2 as string)
 		endif
 	endif
 	// update employee if applicable
-	SQLStatement{"update Employee set persid='"+Crypt_Emp(true,"persid",id1)+"' where persid='"+Crypt_Emp(true,"persid",id2)+"'",oConn}:Execute()
+	SQLStatement{"update employee set persid='"+Crypt_Emp(true,"persid",id1)+"' where persid='"+Crypt_Emp(true,"persid",id2)+"'",oConn}:Execute()
 	// delete person id2:
 	SQLStatement{"delete from person where persid="+id2,oConn}:Execute()
 
