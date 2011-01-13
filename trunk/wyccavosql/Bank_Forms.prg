@@ -118,7 +118,7 @@ DO WHILE .not. oSel:EOF
 	ENDIF		
 
    oReport:PrintLine(@nRow,@nPage,Pad(oSel:banknumber,20)+cTab+Pad(oSel:Description,25)+cTab+;
-   PadC(iif(oSel:usedforgifts==1,"X",Space(1)),14)+cTab+PadC(iif(oSel:TELEBANKNG==0,Space(1),"X"),11)+cTab+;
+   PadC(iif(oSel:usedforgifts==1,"X",Space(1)),14)+cTab+PadC(iif(oSel:telebankng==0,Space(1),"X"),11)+cTab+;
    iif(Empty(oSel:AccountPaymnt),Space(20),Pad(oSel:AccountPaymnt,20))+cTab+;
    iif(empty(oSel:accountsingle),space(20),Pad(oSel:accountsingle,20))+cTab+Pad(cCodOms,12)+;
    cTab+PadC(iif(Empty(oSel:SYSCODOVER),Space(1),"X"),13),kopregels)
@@ -147,7 +147,7 @@ METHOD FindButton( ) CLASS BankBrowser
 	self:oBank:SQLString :="select "+self:cFields+" from "+self:cFrom+" where "+cWhere+" order by "+self:cOrder 
    self:oBank:Execute() 
 	if !Empty(self:oBank:status) 
-	 	LogEvent(,"findbutton Bank:"+self:oAcc:status:description+"( statmnt:"+self:oBank:SQLString,"LogSQL")
+	 	LogEvent(,"findbutton Bank:"+self:oAcc:status:description+"( statmnt:"+self:oBank:SQLString,"LogErrors")
 	endif
    self:oBank:GoTop()
    self:GoTop()
@@ -221,7 +221,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 	//Put your PreInit additions here 
 	self:cFrom:="bankaccount b, account a"
-	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,b.TELEBANKNG,b.usedforgifts"
+	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,b.telebankng,b.usedforgifts"
 	self:cOrder:="a.description"
 	self:cWhere:="a.accid=b.accid"
 	oBank:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
@@ -385,7 +385,7 @@ oDBMTELEBANKNG := DataColumn{indicator{}}
 oDBMTELEBANKNG:Width := 17
 oDBMTELEBANKNG:HyperLabel := HyperLabel{#mTELEBANKNG,"Telebank?",NULL_STRING,NULL_STRING} 
 oDBMTELEBANKNG:Caption := "Telebank?"
-oDBmTELEBANKNG:Block := {|x| if(x:TELEBANKNG==0,'No','Yes')}
+oDBmTELEBANKNG:Block := {|x| if(x:telebankng==0,'No','Yes')}
 oDBmTELEBANKNG:BlockOwner := self:Server
 self:Browser:AddColumn(oDBMTELEBANKNG)
 
@@ -820,19 +820,19 @@ local nCurrec as int
 // 	 	",COMFL="+iif(self:mCOMFL,"1","0")+;
 
 	IF ValidateControls( self, self:AControls ) .and. self:ValidateBank()
-		cStatement:=iif(self:lNew,"insert into ","update ")+"BankAccount set "+;
+		cStatement:=iif(self:lNew,"insert into ","update ")+"bankaccount set "+;
 		"accid="+self:mRek +;
-		",TELEBANKNG="+iif(self:mTelebankng,"1","0")+;
+		",telebankng="+iif(self:mTelebankng,"1","0")+;
 		",usedforgifts="+iif(self:mGIFTENIND,"1","0")+;
 		",banknumber='"+ZeroTrim(self:mBANKNUMMER)+"'"+;
-		",OPENALL="+iif(self:mOPENALL,"1","0")+;
-		",GIFTSALL ="+iif(self:mGIFTSALL,"1","0")+;
-	 	",PAYAHEAD='"+ self:mRekP +"'"+;
+		",openall="+iif(self:mOPENALL,"1","0")+;
+		",giftsall ="+iif(self:mGIFTSALL,"1","0")+;
+	 	",payahead='"+ self:mRekP +"'"+;
 	 	iif(self:mGIFTENIND .and. self:oDCSingleDest:Checked,; 
-		 	",SINGLEDST='"+mRekS +"'"+;
-		 	",SYSCODOVER='"+iif(self:oDCOverride:Checked,"O","A")+"'"+;
- 			",FGMLCODES ='"+ MakeCod({self:mFGCod1,self:mFGCod2,self:mFGCod3})+"'",;
-		 	",SINGLEDST='',FGMLCODES='',SYSCODOVER=''")+;
+		 	",singledst='"+mRekS +"'"+;
+		 	",syscodover='"+iif(self:oDCOverride:Checked,"O","A")+"'"+;
+ 			",fgmlcodes ='"+ MakeCod({self:mFGCod1,self:mFGCod2,self:mFGCod3})+"'",;
+		 	",singledst='',fgmlcodes='',syscodover=''")+;
 		iif(self:lNew,""," where bankid="+self:mBankId)	
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
@@ -868,8 +868,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
 		self:mRek := Str(self:oBank:accid,-1)
 		self:mAccount := AllTrim(self:oBank:Description)
 		SELF:cAccountName := mAccount
-		if !Empty(self:oBank:PAYAHEAD)			
-			self:mRekP:=Str(self:oBank:PAYAHEAD,-1)
+		if !Empty(self:oBank:payahead)			
+			self:mRekP:=Str(self:oBank:payahead,-1)
 		 	self:mAccountPaymnt := self:oBank:AccountPaymnt
 			self:cAccountNameP:= mAccountPaymnt
 		endif
@@ -879,12 +879,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
 			self:cAccountNameS:= mAccountSingle
 		endif
 		self:mBANKNUMMER:=AllTrim(self:oBank:banknumber)
-		self:oDCmTelebankng:Checked:=iif(self:oBank:TELEBANKNG=0,FALSE,true)
+		self:oDCmTelebankng:Checked:=iif(self:oBank:telebankng=0,FALSE,true)
 		self:oDCmGIFTENIND:Checked:=iif(self:oBank:usedforgifts=0,false,true)
 		self:mBANKNUMMER:=self:oBank:banknumber
-		self:mOPENALL:=self:oBank:OPENALL
+		self:mOPENALL:=self:oBank:openall
 // 	 	self:mOPENAC   :=self:oBank:OPENAC
-		self:mGIFTSALL :=self:oBank:GIFTSALL
+		self:mGIFTSALL :=self:oBank:giftsall
 // 		self:mPO       :=self:oBank:PO
 // 		self:mCOMALL   :=self:oBank:COMALL
 // 	 	self:mCOMFL    :=self:oBank:COMFL
@@ -908,7 +908,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditBank
 	IF !uExtra[1]
 		self:lNew :=FALSE
 		self:mBankId:=Str(oServer:BANKID,-1)
-		self:oBank:=SQLSelect{"select b.*,a.description,a.accnumber,sd.description as accountsingle,pa.description as AccountPaymnt from account a, bankaccount b"+;
+		self:oBank:=SQLSelect{"select b.*,a.description,a.accnumber,sd.description as accountsingle,pa.description as accountpaymnt from account a, bankaccount b"+;
 		" left join account sd on (sd.accid=b.singledst) left join account pa on (pa.accid=b.payahead) where a.accid=b.accid and b.bankid='"+self:mBankId+"'",oConn} 
 	ELSE
 		self:lNew:=true
@@ -1025,20 +1025,20 @@ METHOD ValidateBank() CLASS EditBank
 	endif	
 	IF lNew .or.!AllTrim(oBank:banknumber)==AllTrim(self:mBANKNUMMER)
 		* Check if bank account allready exists: 
-		if SQLSelect{"select banknumber from BankAccount where banknumber='"+AllTrim(self:mBANKNUMMER)+"'" +iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SQLSelect{"select banknumber from bankaccount where banknumber='"+AllTrim(self:mBANKNUMMER)+"'" +iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			cError:="Bank Account number allready exits"
 			lValid:=FALSE
 		endif
 	endif
 	if lValid.and.(lNew .or.oBank:accid # Val(self:mRek))
-		if SQLSelect{"select banknumber from BankAccount where accid='"+self:mRek+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SQLSelect{"select banknumber from bankaccount where accid='"+self:mRek+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			If TextBox{,"Edit Bank account", 'Account "'+AllTrim(cAccountName)+'" allready assigned to Bank Account '+oBank:banknumber,BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:Show()= BOXREPLYCANCEL
 				return false
 			ENDIF
 		endif
 	endif
 	if lValid.and.!Empty(mRekS).and.(self:lNew.or.oBank:SINGLEDST # Val(mRekS))  // single destination account changed?
-		if SQLSelect{"select banknumber from BankAccount where SINGLEDST='"+self:mRekS+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SQLSelect{"select banknumber from bankaccount where singledst='"+self:mRekS+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			If TextBox{,"Edit Bank account", 'Account "'+AllTrim(cAccountNameS)+'" allready assigned as destination to Bank Account '+oBank:banknumber,BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:Show()= BOXREPLYCANCEL
 				return false
 			ENDIF
@@ -1075,7 +1075,7 @@ STATIC DEFINE EDITBANK_SINGLEDEST := 115
 STATIC DEFINE EDITBANK_SINGLETEXT := 122 
 CLASS Indicator INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS Indicator
     LOCAL   cPict                   AS STRING
@@ -1088,7 +1088,7 @@ METHOD Init() CLASS Indicator
 
     RETURN SELF
 
-
+
 RESOURCE SelBankOrder DIALOGEX  5, 18, 235, 137
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select bank orders to send to bank"
@@ -1200,14 +1200,14 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		(ErrorBox{self,"Bank account for payments not specified in system data"}):Show()
 		return FALSE
 	endif
-	oBank:=SQLSelect{"select payahead,accid from BankAccount where banknumber='"+BANKNBRCRE+"' and telebankng=1",oConn}
+	oBank:=SQLSelect{"select payahead,accid from bankaccount where banknumber='"+BANKNBRCRE+"' and telebankng=1",oConn}
 	if oBank:Reccount<1
 		(ErrorBox{,"Bank account number "+BANKNBRCRE+;
 			" not specified as telebanking in system data"}):Show()
 		RETURN FALSE
 	else
 		cAccFrom:=Str(oBank:accid,-1)
-		m56_Payahead:=Str(oBank:PAYAHEAD,-1) 
+		m56_Payahead:=Str(oBank:payahead,-1) 
 		if Empty(m56_Payahead)
 			(ErrorBox{,"For bank account number "+BANKNBRCRE+;
 				" no account for Payments en route specified in system data"}):Show()
@@ -1248,15 +1248,15 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		return false
 	endif	
 	
-	oBord:=SQLSelect{"select o.id,o.banknbrcre,o.amount,o.datedue,o.description,"+SQLFullName(0,"p")+"as FullName "+;
-		"from BankOrder o,personbank b,person p "+;
+	oBord:=SQLSelect{"select o.id,o.banknbrcre,o.amount,o.datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
+		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
-		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by FullName",oConn}
+		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
 	IF oBord:Reccount<1
 		(WarningBox{self,"Producing CLIEOP03 file","No bank orders to be sent to the bank!"}):Show()
 		RETURN FALSE
 	ENDIF
-	headinglines:={oLan:Get("Overview of payment orders (CLIEOP03)"),oLan:Get("Bankaccount",11)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("Destination",12)+oLan:Get("Due Date",11)+" "+oLan:Get("Name",25)+oLan:Get("Description",20),Replicate('-',105)}
+	headinglines:={oLan:Get("Overview of payment orders (CLIEOP03)"),oLan:Get("bankaccount",11)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("Destination",12)+oLan:Get("Due Date",11)+" "+oLan:Get("Name",25)+oLan:Get("Description",20),Replicate('-',105)}
 	// write Header
 	oReport := PrintDialog{self,"Producing of CLIEOP03 file for payments",,105}
 	oReport:Show()
@@ -1289,7 +1289,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		cBank:=oBord:BANKNBRCRE
 		if Len(cBank)=9
 			if !IsDutchBanknbr(cBank)
-				(ErrorBox{self,"Bankaccount "+cBank+" in bank order is not correct!"}):Show()
+				(ErrorBox{self,"bankaccount "+cBank+" in bank order is not correct!"}):Show()
 				FClose(ptrHandle) 
 				(FileSpec{cFilename}):DELETE()
 				FErase(cFilename)
@@ -1361,14 +1361,14 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 				cDescr:=Transform(aTrans[i,2],"") 
  
 				oStmnt:=SQLStatement{"insert into transaction set "+;
-				"DAT='"+SQLdate(process_date)+"'"+;
-				",DOCID='BETOPD'"+;
+				"dat='"+SQLdate(process_date)+"'"+;
+				",docid='BETOPD'"+;
 				",description ='"+cDescr +"'"+;
 				",accid ='"+m56_Payahead+"'"+;
 				",cre ='"+cAmnt+"'"+;
 				",creforgn ='"+cAmnt+"'"+;
 				",seqnr=1,poststatus=2"+;
-				",USERID ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
+				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 				oStmnt:execute()
 				if oStmnt:NumSuccessfulRows<1
 					LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
@@ -1382,15 +1382,15 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 				// record debdit on from account:
 				oStmnt:=SQLStatement{"insert into transaction set "+;
-				"TransId='"+cTransnr+"'"+;
-				",DAT='"+SQLdate(process_date)+"'"+;
-				",DOCID='BETOPD'"+;
+				"transid='"+cTransnr+"'"+;
+				",dat='"+SQLdate(process_date)+"'"+;
+				",docid='BETOPD'"+;
 				",description ='"+cDescr +"'"+;
 				",accid ='"+cAccFrom+"'"+;
 				",deb ='"+cAmnt+"'"+;
 				",debforgn ='"+cAmnt+"'"+;
 				",seqnr=2,poststatus=2"+;
-				",USERID ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
+				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 				oStmnt:execute()
 				if oStmnt:NumSuccessfulRows<1
 					LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
