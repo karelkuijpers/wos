@@ -84,7 +84,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 	oFTP := CFtp{"WycOffSy FTP Agent"}
 	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
 	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
-	oSys := SQLSelect{"select Version from sysparms",oConn}
+	oSys := SQLSelect{"select version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
 	endif
@@ -595,7 +595,7 @@ end SEQUENCE
 ErrorBlock(cbError)
 return
  
-method GetLocaleInfo() as array class Initialize
+method GetLocaleInfo() as array class Initialize 
 // get local telephoe country code, country name and currency code
 LOCAL oReg as CLASS_HKCU
 LOCAL oRegLM as CLASS_HKLM
@@ -610,12 +610,12 @@ Local oPP as SQLSelect
 	if AScan(EuroCountries,CountryName) > 0
 		CurrencyCode:="EUR"
 	else
-		oCurr:=SQLSelect{"select aed from CurrencyList where UNITED_ARA like '%"+CountryName+"%'",oConn}
+		oCurr:=SQLSelect{"select aed from currencylist where united_ara like '%"+CountryName+"%'",oConn}
 		if oCurr:RecCount>0
 			CurrencyCode:=oCurr:AED
 		endif 
 	endif
-	oPP:=SQLSelect{"select ppcode,ppname from PPCodes where ppname like '%"+CountryName+"%'",oConn}
+	oPP:=SQLSelect{"select ppcode,ppname from ppcodes where ppname like '%"+CountryName+"%'",oConn}
 	if oPP:RecCount>0
 		PPCode:=oPP:PPCode
 		PPNAME:=oPP:PPNAME
@@ -1648,8 +1648,8 @@ method InitializeDB() as void Pascal  class Initialize
 	// check database 
 	// read current database structure:
 	dbname:=AddSlashes(dbname) 
-	oSel:=SQLSelect{"SELECT TABLE_NAME, ENGINE, TABLE_COLLATION FROM INFORMATION_SCHEMA.TABLES "+;
-		"WHERE table_schema = '"+dbname+"' order by TABLE_NAME",oConn}
+	oSel:=SQLSelect{"SELECT TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME",oConn}
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),oSel:table_collation})
@@ -1657,8 +1657,8 @@ method InitializeDB() as void Pascal  class Initialize
 		enddo
 	endif
 	//read current columns:
-	oSel:=SQLSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM INFORMATION_SCHEMA.COLUMNS "+;
-		"WHERE table_schema = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
+	oSel:=SQLSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(aCurColumn,{oSel:table_name,oSel:COLUMN_NAME,oSel:COLUMN_TYPE,oSel:IS_NULLABLE,iif(IsNil(oSel:COLUMN_DEFAULT),"NULL",;
@@ -1667,7 +1667,7 @@ method InitializeDB() as void Pascal  class Initialize
 		enddo
 	endif
 	// read current indexes:
-	oSel:=SQLSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME from INFORMATION_SCHEMA.statistics where table_schema='"+dbname+"'",oConn}
+	oSel:=SQLSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME from information_schema.statistics where TABLE_SCHEMA='"+dbname+"'",oConn}
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(aCurIndex,{oSel:table_name,oSel:NON_UNIQUE,oSel:INDEX_NAME,oSel:SEQ_IN_INDEX,oSel:COLUMN_NAME})
@@ -1762,10 +1762,10 @@ method InitializeDB() as void Pascal  class Initialize
 
 	// ensure ImportLock has required record:
 	if SQLSelect{"select importfile from ImportLock where importfile='telelock'",oConn}:RecCount<1
-		SQLStatement{"insert into ImportLock set importfile='telelock'",oConn}:Execute()
+		SQLStatement{"insert into importlock set importfile='telelock'",oConn}:Execute()
 	endif
 	if SQLSelect{"select importfile from ImportLock where importfile='batchlock'",oConn}:RecCount<1
-		SQLStatement{"insert into ImportLock set importfile='batchlock'",oConn}:Execute()
+		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
 	if self:lNewDb
