@@ -111,11 +111,11 @@ METHOD RegPerson(oCLN) CLASS DueAmountBrowser
     ENDIF
 	self:cWhere:="p.persid=s.personid and a.accid=s.accid and amountinvoice >amountrecvd and d.subscribid=s.subscribid"
 	if !empty(self:mREK)
-		self:cWhere+=" and d.accid="+self:mRek
+		self:cWhere+=" and s.accid="+self:mRek
 		self:cOrder:="personname"
 	endif
 	if !Empty(self:mCLN)
-		self:cWhere+=" and d.persid="+self:mCLN
+		self:cWhere+=" and p.persid="+self:mCLN
 		self:cOrder:="a.description"
 	endif
 	self:oDue:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
