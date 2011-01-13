@@ -608,7 +608,7 @@ Method ReEvaluate() Class Reevaluation
 	do while !oAccnt:EoF 
 		cCur:= oAccnt:Currency
 		// determine balance in foreign currency:
-		oMBal:GetBalance(Str(oAccnt:accid,-1),oAccnt:type,,UltimoMonth,cCur)
+		oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,cCur)
 		if oMBal:per_deb # 0 .or. oMBal:per_cre # 0
 			// calculate new balance in local currency: 
 			if (nCurPntr:=AScan(aROE,{|x|x[1]== cCur}))>0
@@ -622,7 +622,7 @@ Method ReEvaluate() Class Reevaluation
 				lError:=true
 				mDiff1:=Round((oMBal:per_cre - oMBal:per_deb)*CurRate,DecAantal)
 				// determine old balance in local currency:
-				oMBal:GetBalance(Str(oAccnt:accid,-1),oAccnt:type,,UltimoMonth,sCURR)
+				oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,sCURR)
 				mDiff2:=Round(oMBal:per_cre - oMBal:per_deb,DecAantal)
 				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
 				if mDiff <> 0
@@ -660,7 +660,7 @@ Method ReEvaluate() Class Reevaluation
 						endif
 					endif
                if lError
-     					LogEvent(self,"Error:"+oTrans:SQLString,"LogSQL")
+     					LogEvent(self,"Error:"+oTrans:SQLString,"LogErrors")
 						ErrorBox{self:oCall,"reevaluation transaction for account "+oAccnt:accnumber+"could not be stored"}:Show()
 						SQLStatement{"rollback",oConn}:execute()
 						return
