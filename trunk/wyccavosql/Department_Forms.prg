@@ -21,7 +21,7 @@ METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentE
 		oListViewItem:ImageIndex	:= 1
 
 		// for each field, set the value in the item
-		Fieldvalue:="Department"
+		Fieldvalue:="department"
 		oListViewItem:SetValue(self:aItem[nCurrentRec,1], #Identifier)  //id
 		oListViewItem:SetText(self:aItem[nCurrentRec,4], #Identifier)   // number
 		oListViewItem:SetValue(self:aItem[nCurrentRec,3], #Description)
@@ -90,12 +90,12 @@ METHOD FilePrint CLASS DepartmentExplorer
 	local oDep as SQLselect 
 	local aDep:={} as array
 
-	oReport := PrintDialog{,"Department Hierarchy",,83}
+	oReport := PrintDialog{,"department Hierarchy",,83}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	kopregels := {oLan:get("Department Hierarchy",,"!")}
+	kopregels := {oLan:get("department Hierarchy",,"!")}
 	nRow := 0
 	nPage := 0
 	oDep:=SQLSelect{"SELECT distinct gr.itemid,gr.parentid,gr.description,gr.number,gr.type from ("+;
@@ -122,7 +122,7 @@ METHOD FilePrint CLASS DepartmentExplorer
 	oReport:prstop()
 	RETURN nil
 METHOD Init(oOwner, myType,myNum,myCaller,mySearch,myItemname) CLASS DepartmentExplorer
-	* myType: in case you want only select a record: Balance Item /Department / Account
+	* myType: in case you want only select a record: Balance Item /department / Account
 	* mySearch: idem with searchvalue
 	* myItemname: naam of searched item (e.g "from" or "to" (used in RegDepartment)
 	Default(@myType,NULL_STRING)
@@ -143,9 +143,9 @@ METHOD Init(oOwner, myType,myNum,myCaller,mySearch,myItemname) CLASS DepartmentE
 
    self:ListView:ContextMenu := DepartmentListViewMenu{}
 	IF Empty(self:cType)
-		SELF:Caption := "Exploring Department Hierarchy: Of Who is it"
+		self:Caption := "Exploring department Hierarchy: Of Who is it"
 	ELSE
-		SELF:Caption := "Selecting Department: Of Who is it"
+		self:Caption := "Selecting department: Of Who is it"
 	ENDIF
 RETURN SELF
 METHOD InitData() CLASS DepartmentExplorer
@@ -220,7 +220,7 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 *		IF oItemDrag:ImageIndex==3 //Account?
 		IF SELF:IsAccountSymbol(sItemDrag)
 			* update account: 
-			SQLStatement{"update account set DEPARTMENT='"+nMain+"' where accid='"+nNum+"'",oConn}:execute()
+			SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}:execute()
 		ELSE
 			* update department:
 			cError:=ValidateTransition(nParId,nMain,nNum)
@@ -396,7 +396,7 @@ METHOD CAPButton( lUnique) CLASS EditDepartment
 	Default(@lUnique,FALSE)
 	cfilter:=MakeFilter({self:NbrCAPITAL},{liability},"N",0,false)
 	if !self:lNew 
-		cfilter+= " and Department="+self:mDepId
+		cfilter+= " and department="+self:mDepId
 		AccountSelect(self,iif(Val(self:mDepId)>0,"",oDCmCAPITAL:TEXTValue ),"Net Asset",lUnique,cfilter,self:owner,false)
 	endif
 	RETURN NIL
@@ -493,7 +493,7 @@ oCCCAPButton:HyperLabel := HyperLabel{#CAPButton,"v","Browse in accounts",NULL_S
 oCCCAPButton:TooltipText := "Browse in accounts"
 
 oDCmPerson1 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON1,_GetInst()}}
-oDCmPerson1:HyperLabel := HyperLabel{#mPerson1,NULL_STRING,"The person, who is contact for the department","HELP_CLN"}
+oDCmPerson1:HyperLabel := HyperLabel{#mPerson1,null_string,"The person, who is contact for the department","HELP_CLN"}
 oDCmPerson1:FocusSelect := FSEL_HOME
 oDCmPerson1:UseHLforToolTip := True
 
@@ -502,7 +502,7 @@ oCCPersonButton1:HyperLabel := HyperLabel{#PersonButton1,"v","Browse in persons"
 oCCPersonButton1:TooltipText := "Browse in Persons"
 
 oDCmPerson2 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON2,_GetInst()}}
-oDCmPerson2:HyperLabel := HyperLabel{#mPerson2,NULL_STRING,"The person, who is contact for the department","HELP_CLN"}
+oDCmPerson2:HyperLabel := HyperLabel{#mPerson2,null_string,"The person, who is contact for the department","HELP_CLN"}
 oDCmPerson2:FocusSelect := FSEL_HOME
 oDCmPerson2:UseHLforToolTip := True
 
@@ -517,7 +517,7 @@ oDCGroupBox2 := GroupBox{SELF,ResourceID{EDITDEPARTMENT_GROUPBOX2,_GetInst()}}
 oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Associated accounts for reporting:",NULL_STRING,NULL_STRING}
 
 oDCmAccount1 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT1,_GetInst()}}
-oDCmAccount1:HyperLabel := HyperLabel{#mAccount1,NULL_STRING,"Number of account associated with the department",NULL_STRING}
+oDCmAccount1:HyperLabel := HyperLabel{#mAccount1,null_string,"Number of account associated with the department",null_string}
 oDCmAccount1:FocusSelect := FSEL_HOME
 oDCmAccount1:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount1:UseHLforToolTip := True
@@ -527,7 +527,7 @@ oCCRek1Button:HyperLabel := HyperLabel{#Rek1Button,"v","Browse in accounts",NULL
 oCCRek1Button:TooltipText := "Browse in accounts"
 
 oDCmAccount2 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT2,_GetInst()}}
-oDCmAccount2:HyperLabel := HyperLabel{#mAccount2,NULL_STRING,"Number of account associated with the department",NULL_STRING}
+oDCmAccount2:HyperLabel := HyperLabel{#mAccount2,null_string,"Number of account associated with the department",null_string}
 oDCmAccount2:FocusSelect := FSEL_HOME
 oDCmAccount2:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount2:UseHLforToolTip := True
@@ -537,7 +537,7 @@ oCCRek2Button:HyperLabel := HyperLabel{#Rek2Button,"v","Browse in accounts",NULL
 oCCRek2Button:TooltipText := "Browse in accounts"
 
 oDCmAccount3 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT3,_GetInst()}}
-oDCmAccount3:HyperLabel := HyperLabel{#mAccount3,NULL_STRING,"Number of account associated with the department",NULL_STRING}
+oDCmAccount3:HyperLabel := HyperLabel{#mAccount3,null_string,"Number of account associated with the department",null_string}
 oDCmAccount3:FocusSelect := FSEL_HOME
 oDCmAccount3:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount3:UseHLforToolTip := True
@@ -549,8 +549,8 @@ oCCRek3Button:TooltipText := "Browse in accounts"
 oDCSC_CLN1 := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_CLN1,_GetInst()}}
 oDCSC_CLN1:HyperLabel := HyperLabel{#SC_CLN1,"Contact person 2:",NULL_STRING,NULL_STRING}
 
-SELF:Caption := "Edit of Department"
-SELF:HyperLabel := HyperLabel{#EditDepartment,"Edit of Department",NULL_STRING,NULL_STRING}
+self:Caption := "Edit of department"
+self:HyperLabel := HyperLabel{#EditDepartment,"Edit of department",null_string,null_string}
 SELF:PreventAutoLayout := True
 SELF:AllowServerClose := True
 
@@ -633,13 +633,13 @@ METHOD OKButton( ) CLASS EditDepartment
 	local oStmnt as SQLStatement
 
 	IF Empty(mDepartmntNbr)
-		(Errorbox{,"Please fill number of department"}):Show()
+		(ErrorBox{,"Please fill number of department"}):Show()
 		RETURN
 	ENDIF
 	IF lNew.or.!AllTrim(mDepartmntNbr)==AllTrim(OrgDepNbr)
 		*Check if Number allready exist:
-		IF SQLSelect{"select depid from department where DEPTMNTNBR='"+AllTrim(mDepartmntNbr)+"'",oConn}:Reccount>0
-			(Errorbox{,"Department number "+ mDepartmntNbr+ " allready exist!"}):Show()
+		IF SQLSelect{"select depid from department where deptmntnbr='"+AllTrim(mDepartmntNbr)+"'",oConn}:Reccount>0
+			(ErrorBox{,"department number "+ mDepartmntNbr+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
@@ -651,19 +651,19 @@ METHOD OKButton( ) CLASS EditDepartment
 
 	IF SELF:lNew
 		IF !Empty(SELF:NbrCAPITAL)
-			(Errorbox{,"Net asset account "+SELF:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
+			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
 			RETURN
 		ENDIF		
 		oDep:Append()
 	ENDIF
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
-	"DEPTMNTNBR='"+AllTrim(self:mDepartmntNbr)+"',"+;
-	"Descriptn='"+AllTrim(self:mDescription)+"',"+;
-	"ParentDep='"+cMainId+"',"+;
-	"NetAsset='"+self:NbrCAPITAL+"',"+;
-	"ASSACC1 ='"+ mAcc1+"',"+;
-	"ASSACC2 ='"+ mAcc2+"',"+;
-	"ASSACC3 ='"+ mAcc3+"',"+;
+	"deptmntnbr='"+AllTrim(self:mDepartmntNbr)+"',"+;
+	"descriptn='"+AllTrim(self:mDescription)+"',"+;
+	"parentdep='"+cMainId+"',"+;
+	"netasset='"+self:NbrCAPITAL+"',"+;
+	"assacc1 ='"+ mAcc1+"',"+;
+	"assacc2 ='"+ mAcc2+"',"+;
+	"assacc3 ='"+ mAcc3+"',"+;
 	"persid ='"+ mCLN1+"',"+;
 	"persid2 ='"+ mCLN2+"'"+;
 	iif(self:lNew,""," where depid='"+self:mDepId+"'")
@@ -713,16 +713,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mParentDep:=0
 			OrgParent :="0"
 		ELSE
-			oSel:=SQLSelect{"select DEPTMNTNBR from department where depid='"+cMainId+"'",oConn}
+			oSel:=SQLSelect{"select deptmntnbr from department where depid='"+cMainId+"'",oConn}
 			IF self:oDep:Reccount>0
-				mParentDep:=oDep:DEPTMNTNBR
+				mParentDep:=oDep:deptmntnbr
 				OrgParent :=mParentDep
 			endif
 		ENDIF
 
 	ELSE
 		self:mDepId:=uExtra[4] 
-		self:oDep:=SQLSelect{"select d.*,dp.DEPTMNTNBR as DEPTMNTNBRParent,an.description as captital,ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,"+SQLFullName(0,"p1")+" as person1," +;
+		self:oDep:=SQLSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,"+SQLFullName(0,"p1")+" as person1," +;
 		SQLFullName(0,"p2")+" as person2 "+;
 		"from department d "+;
 		"left join account an on (an.accid=d.netasset) "+; 
@@ -753,18 +753,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mAccount3 := AllTrim(self:oDep:ass3)
 			cAccount3Name := mAccount3
 		endif
-		mDepartmntNbr:=self:oDep:DEPTMNTNBR
+		mDepartmntNbr:=self:oDep:deptmntnbr
 		OrgDepNbr:=AllTrim(mDepartmntNbr)
 		if !Empty(self:oDep:ParentDep)
 			cMainId:=Str(self:oDep:ParentDep,-1)
-			mParentDep:=oDep:DEPTMNTNBRparent
+			mParentDep:=oDep:deptmntnbrparent
 			OrgParent :=mParentDep
 		else
 			cMainId:="0"
 			mParentDep:=0
 			OrgParent :="0"
 		ENDIF
-		mDescription:=self:oDep:Descriptn
+		mDescription:=self:oDep:descriptn
 		OrgDescription:=mDescription
 		if !Empty(self:oDep:persid)
 			mCLN1 := Str(self:oDep:persid,-1)
@@ -868,7 +868,7 @@ METHOD RekButton(lUnique:=false as logic,cValue as string,cName as string,myAcc1
 	endif
 // 	AccountSelect(self,cValue ,cName,lUnique,;
 // 		iif(myAcc1==null_string,'','accid='+myAcc1+' or ')+;
-// 		'subscriptionprice=0'+iif(self:lNew,'',' and Department<>'+Str(self:Server:DEPID,-1))+;
+// 		'subscriptionprice=0'+iif(self:lNew,'',' and department<>'+Str(self:Server:DEPID,-1))+;
 // 		iif(myAcc2==null_string,'',' and accid<>'+myAcc2)+;
 // 		iif(myAcc3==null_string,'',' and accid<>'+myAcc3)+;
 // 		iif(SKAP==null_string,'',' and accid<>'+SKAP)+;
@@ -906,9 +906,9 @@ STATIC DEFINE EDITDEPARTMENT_SC_CLN := 115
 STATIC DEFINE EDITDEPARTMENT_SC_CLN1 := 123 
 STATIC DEFINE EDITDEPARTMENT_SC_SKAP := 109 
 Function FindDep(cDep ref string) as logic
-*	Find a Department with the given number/description
-*	Returns: True: if unique Department found
-*			 False: if not found (Department:EOF-TRUE) or not unique found (current record found )
+*	Find a department with the given number/description
+*	Returns: True: if unique department found
+*			 False: if not found (department:EOF-TRUE) or not unique found (current record found )
 *		
 *
 LOCAL lUnique as LOGIC
@@ -918,9 +918,9 @@ IF Empty(cDep).or.cDep=="0"
 	RETURN true
 ENDIF
 IF IsDigit(psz(_cast,AllTrim(cDep))) 
-	oDep:=SQLSelect{"select depid from department where DEPTMNTNBR='"+AllTrim(cDep)+"'",oConn}
+	oDep:=SQLSelect{"select depid from department where deptmntnbr='"+AllTrim(cDep)+"'",oConn}
 ELSE
-	oDep:=SQLSelect{"select depid from department where DESCRIPTN like '"+AllTrim(cDep)+"%'",oConn}
+	oDep:=SQLSelect{"select depid from department where descriptn like '"+AllTrim(cDep)+"%'",oConn}
 ENDIF
 IF oDep:Reccount=1
 	cDep:=Str(oDep:DEPID,-1) 
