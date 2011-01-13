@@ -27,7 +27,7 @@ class Balances
 	assign AccSelection(uValue) class Balances
 	self:cAccSelection:=uValue
 	return self:cAccSelection
-METHOD GetBalance( pAccount as string ,ptype as string ,pPeriodStart:=nil as usual ,pPeriodEnd:=nil as usual, pCurrency:='' as string) as void pascal CLASS Balances
+METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=nil as usual, pCurrency:='' as string) as void pascal CLASS Balances
 	******************************************************************************
 	*  Name      : GetBalance
 	*              Calculation of balance values of a account during a certain period
@@ -38,7 +38,6 @@ METHOD GetBalance( pAccount as string ,ptype as string ,pPeriodStart:=nil as usu
 	************** PARAMETERS and DECLARATION OF VARIABLEs ***********************
 	*
 	* pAccount     : accountId (string)
-	* pType        : type of the related balance item
 	* pPeriodStart : year and month, at which the required period starts; default: First month of the current balance year
 	*              : it is possible that this value is filled with a specific date in case a date within a month is needed.
 	* pPeriodEnd   : year and month, at which the required period ends;  default: today + 31 days
@@ -135,7 +134,7 @@ METHOD GetBalance( pAccount as string ,ptype as string ,pPeriodStart:=nil as usu
    endif
    self:cAccSelection:=" a.accid='"+pAccount+"'"
    cStatement:= self:SQLGetBalance(PeriodStartYear*100+ PeriodStartMonth, PeriodEndYear*100+PeriodEndMonth-;
-	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0))
+	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true))
 	oAccBal:=SQLSelect{cStatement,oConn}
 	if !Empty(oAccBal:Status).or.oAccBal:RecCount<1
 		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"logerrors")
@@ -188,7 +187,7 @@ METHOD GetBalance( pAccount as string ,ptype as string ,pPeriodStart:=nil as usu
 
 	RETURN
 
-Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=false as logic, lForeignCurr:=false as logic, lBudget:=false as logic, lDetails:=false as logic ) as string class Balances 
+Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=false as logic, lForeignCurr:=false as logic, lBudget:=false as logic, lDetails:=false as logic ) as string class Balances 
 	******************************************************************************
 	*  Name      : SQLGetBalance
 	*              Generate SQL code for calculation of balance values of selected accounts during a certain period 
@@ -201,11 +200,13 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 	*
 	* dPeriodStart : year and month, at which the required period starts; default: First month of the current balance year
 	* dPeriodEnd   : year and month, at which the required period ends;  default: today + 31 days
-	* cAccSelection: criteria to select accounts e.g. a.department in(..,..,...) and a.balitemid in (..,..,..) (in self:cAccSelection) 
-	* lPrvYrYtD		: if true also PrvYrAfterYtD_deb and PrvYrAfterYtD_cre are returned 
-	* lForeignCurr	: if true _debF and _creF values are also returned from the SQLSelect
-	* lBudget		; if true return also fields with budget values PrvPer_bud, Per_bud, Yr_bud from the SQLSelect
-	* lDetails		: if true return also account values accnumber and description from the SQLSelect 
+	* lprvyrYtD		: if true also prvyrAfterytd_deb and prvyrAfterytd_cre are returned 
+	* lForeignCurr	: if true _debf and _creF values are also returned from the SQLSelect
+	* lBudget		; if true return also fields with budget values prvper_bud, per_bud, yr_bud from the SQLSelect
+	* lDetails		: if true return also account values accnumber and description from the SQLSelect
+	* A extra selection to be used in the where clause to select accounts can be given bij: Balances:cAccSelection:=<selection criteria>, 
+	*	e.g. a.department in(..,..,...) and a.balitemid in (..,..,..)  
+   *
 	*
 	* There are three periods during which balance values are calculated:
 	* 1. Required period determined by dPeriodStart and dPeriodEnd
@@ -224,39 +225,41 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 	*                         |                                         |
 	*                     last close(e.g.)                            budget
 	*
-	* Returned: array with the following string values:
-	* - cFields:	fields to select
-	* - cFrom:		tables to retrieve
-	* - cWhere:		selection values
-	* - cGroup:		grouping values
 	* 
 	* Generated SQL retrieves the following values:
-	* per_deb (+per_debF)			: calculated debit balance value during required period  (+ foreign currency)
+	* per_deb (+per_debf)			: calculated debit balance value during required period  (+ foreign currency)
 	* per_cre (+per_creF)  			: idem for credit
-	* PrvPer_deb (+PrvPer_debF)	: calculated debit balance value at begin of previous period
-	* PrvPer_cre (+PrvPer_creF)	: idem for credit
-	* PrvYr_deb (+PrvYr_debF)  	: calculated debit balance value during previous year
-	* PrvYr_cre (+PrvYr_creF)  	: idem for credit
+	* prvper_deb (+prvper_debf)	: calculated debit balance value at begin of previous period
+	* prvper_cre (+prvper_cref)	: idem for credit
+	* prvyr_deb (+prvyr_debf)  	: calculated debit balance value during previous year
+	* prvyr_cre (+prvyr_creF)  	: idem for credit
 	* Optional:
-	* If lPrvYrYtD true: 
-	* - PrvYrYtD_deb,PrvYrYtD_cre: previous year YtD 
-	* - PL_deb (PL_debF)	: Profit/Loss from previous year to add to netasset accounts 
-	* - PrvYrPL_deb (PrvYrPL_debF)	: Profit/Loss from year before previous year to add to balances of previous year of net aset accounts 
+	* If lprvyrYtD true: 
+	* - prvyrytd_deb,prvyrytd_cre: previous year YtD 
+	* - pl_deb (pl_debf)	: Profit/Loss from previous year to add to netasset accounts 
+	* - prvyrpl_deb (prvyrpl_debf)	: Profit/Loss from year before previous year to add to balances of previous year of net aset accounts 
 	*                                  (If year before previous year not closed)  
 	* if lBudget true:
-	* - PrvPer_bud		: budget during prev.period
-	* - Per_bud			: budget during required period 
-	* - Yr_bud				: budget during whole balance year
-	* accnumber and description of account   
+	* - prvper_bud		: budget during prev.period
+	* - per_bud			: budget during required period 
+	* - yr_bud				: budget during whole balance year
+	* Besides that data of the accounts are returned:
+	* - category (assets/liability/income/expense)
+   * - accid,
+   * - balitemid,
+   * - currency,
+   * - department 
+	* if lDetails true:
+	* accnumber and description  of account   
 	* All these values have the following meaning:
 	* in case of Cost/profit       : sum of transactions during the specifief period,
 	* in case of liabilities/assets: actual balance value at end of the specified period)   
 	*
 	* CALCULATION
-	* PrvYr_deb/cre: if previous year closed: svjc/d from Accountbalanceyear of balance year required period starts with
+	* prvyr_deb/cre: if previous year closed: svjc/d from Accountbalanceyear of balance year required period starts with
 	*                else: if Cost/profit: total of mbalance from previous year, else: svjc/d of Accountbalanceyear of MinDate + 
 	*                                                                                  total of mbalance up till including previous year
-	* PrvYrYtD_deb/cre: if Cost/profit: total of mbalance from same yeartodate period during previous year as required period
+	* prvyrytd_deb/cre: if Cost/profit: total of mbalance from same yeartodate period during previous year as required period
 	*                   else: svjc/d from last available accountbalanceyear of previous year or earlier + 
 	* 									total of mbalance from same yeartodate period during previous year as required period	* 
 	* Thus needed accountbalanceyear: 
@@ -273,23 +276,15 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 	LOCAL PeriodEnd as int // Idem but as number of months since year zero
 	LOCAL LastClose as int // moment of last closing of balance year in number of months since year zero
 	LOCAL CurrMonth as int // Current month during processing in number of months since year zero
-	LOCAL lCostProfit as LOGIC // Is account a Cost or profit account: true
-	LOCAL nState:=1 as int // State of proces: previous Year, previous period, required period
-	LOCAL oAccBal as SQLSelect
-	local oMBal as SQLSelect 
-	local oTrans as SQLSelect
-	local cTransSelect as string
 	local YearBeginEnd:={} as array //{year start, monthstart, year end, month end}
 	local PrvYearBeginEnd:={} as array //{previous year start, monthstart, year end, month end}
-	local per_deb,per_debF,per_cre,per_creF,month_deb,month_cre,month_debF,month_creF as float
-	local cFields, cFrom, cWhere, cGroup as string
-	local cPrvYrCondition as string  // condition to select mbalance row into sum of Previous Year 
-	local cPrvYrYtDCondition as string  // condition to select mbalance row into sum of Previous YtD Year 
+	local cprvyrCondition as string  // condition to select mbalance row into sum of Previous Year 
+	local cprvyrYtDCondition as string  // condition to select mbalance row into sum of Previous YtD Year 
 	local cPLCondition as string  // condition to select mbalance row into sum of profit/loss Previous Year 
-	local cPrvYrPLCondition as string  // condition to select mbalance row into sum of profit/loss Year before previous Year 
-	local cPrvPerCondition as string  // condition to select mbalance row into sum of Previous Period 
+	local cprvyrPLCondition as string  // condition to select mbalance row into sum of profit/loss Year before previous Year 
+	local cprvperCondition as string  // condition to select mbalance row into sum of Previous Period 
 	local cPerCondition as string  // condition to select mbalance row into sum of Required Period 
-	local cPrvPerConditionBud as string  // condition to select budget row into sum of Previous Period 
+	local cprvperConditionBud as string  // condition to select budget row into sum of Previous Period 
 	local cPerConditionBud as string  // condition to select budget row into sum of Required Period 
 	local cYrConditionBud as string  // condition to select budget row into sum of balance year 
 	local cmBalCondition as string  // condition to select mbalance mb 
@@ -351,54 +346,54 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 	// condition for selecting mbalance into sum previous year:
 	if PrvYearStartYr==CurrStartYear-1 .and.PrvYearStartMn==CurrStartMonth
 		// same period for costprofit as assets/liablities:
-		cPrvYrCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrevPeriodStart-1,-1)
+		cprvyrCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrevPeriodStart-1,-1)
 	elseIF PrvYearNotClosed  // get also mbalance for previous year 
-		cPrvYrCondition:="if((mb.year*12+mb.month) between if(x.category between '"+income+"' and '"+expense+"',"+;
+		cprvyrCondition:="if((mb.year*12+mb.month) between if(x.category between '"+income+"' and '"+expense+"',"+;
 			Str((CurrStartYear-1)*12+CurrStartMonth,-1)+","+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+") and "+Str(PrevPeriodStart-1,-1)			
 	else
 		// no mbalance needed for (last year balance in Accountbalanceyear):
-		cPrvYrCondition:="if(mb.year<0"      // always false
+		cprvyrCondition:="if(mb.year<0"      // always false
 	endif
 	// condition for selecting mbalance into sum last months for previous YtD year: 
-	if lPrvYrYtD
+	if lprvyrYtD
 		if PrvYearNotClosed
-			cPrvYrYtDCondition:="if((mb.year*12+mb.month) between if(x.category between '"+income+"' and '"+expense+"',"+;
+			cprvyrYtDCondition:="if((mb.year*12+mb.month) between if(x.category between '"+income+"' and '"+expense+"',"+;
 			Str((CurrStartYear-1)*12+CurrStartMonth,-1)+","+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+") and "+Str(PeriodEnd-12,-1)			
 			cPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrevPeriodStart-1,-1)+;
 			" and category between '"+income+"' and '"+expense+"'"
 			if YearBeforePrvNotClosed 
-				cPrvYrPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2]-1,-1)+;
+				cprvyrPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2]-1,-1)+;
 				" and category between '"+income+"' and '"+expense+"'"
 			else
-				cPrvYrPLCondition:="if(mb.year<0"      // always false  // not needed			
+				cprvyrPLCondition:="if(mb.year<0"      // always false  // not needed			
 			endif
 		else
-			cPrvYrYtDCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd-12,-1)
+			cprvyrYtDCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd-12,-1)
 			cPLCondition:="if((mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PrevPeriodStart-1,-1)+;
 			" and category between '"+income+"' and '"+expense+"'"
-			cPrvYrPLCondition:="if(mb.year<0"      // always false  // not needed
+			cprvyrPLCondition:="if(mb.year<0"      // always false  // not needed
 		endif
 		if lForeignCurr
 			cPLCondition+=" and mb.currency='"+sCURR+"'"
-			cPrvYrPLCondition+=" and mb.currency='"+sCURR+"'"
+			cprvyrPLCondition+=" and mb.currency='"+sCURR+"'"
 		endif
 	endif
 	
 	// condition for selecting mbalance into sum previous period: 
 	if PrevPeriodStart=PeriodStart   
 		// no previous period
-		cPrvPerCondition:="if(mb.year<0"      // always false
+		cprvperCondition:="if(mb.year<0"      // always false
 	else
-		cPrvPerCondition:="if((mb.year*12+mb.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodStart-1,-1)						
+		cprvperCondition:="if((mb.year*12+mb.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodStart-1,-1)						
 	endif
 	if lForeignCurr
-		cPrvPerCondition+=" and mb.currency='"+sCURR+"'"
+		cprvperCondition+=" and mb.currency='"+sCURR+"'"
 	endif
 
 	// condition for selecting mbalance mb:
 	IF PrvYearNotClosed 
 		cmBalCondition:="(mb.year*12+mb.month) between "+Str(PrvYearStartYr*12+PrvYearStartMn,-1)+" and "+Str(PeriodEnd,-1)			
-	elseif lPrvYrYtD
+	elseif lprvyrYtD
 		cmBalCondition:="(mb.year*12+mb.month) between "+Str(PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2],-1)+" and "+Str(PeriodEnd,-1)				
 	else
 		// only balance years of required period:
@@ -416,9 +411,9 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 		// condition for selecting budget into sum previous period: 
 		if PrevPeriodStart=PeriodStart   
 			// no previous period
-			cPrvPerConditionBud:="if(bu.year<0"      // always false
+			cprvperConditionBud:="if(bu.year<0"      // always false
 		else
-			cPrvPerConditionBud:="if((bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodStart-1,-1)						
+			cprvperConditionBud:="if((bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodStart-1,-1)						
 		endif
 		cPerConditionBud:="if((bu.year*12+bu.month) between "+Str(PeriodStart,-1)+" and "+Str(PeriodEnd,-1)
 		// condition for selecting budget into sum balance year: 
@@ -479,17 +474,17 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
 		cStandardCurrCond:=""
 	endif  
 	cSelecty:="select x.*,"+;   
-	"sum("+cPrvYrCondition+cStandardCurrCond+",mb.deb,0)) as prvyr_deby,sum("+cPrvYrCondition+cStandardCurrCond+",mb.cre,0)) as prvyr_crey,"+;
-	"sum("+cPrvPerCondition+cStandardCurrCond+",mb.deb,0)) as prvper_deby,sum("+cPrvPerCondition+cStandardCurrCond+",mb.cre,0)) as prvper_crey," +;
+	"sum("+cprvyrCondition+cStandardCurrCond+",mb.deb,0)) as prvyr_deby,sum("+cprvyrCondition+cStandardCurrCond+",mb.cre,0)) as prvyr_crey,"+;
+	"sum("+cprvperCondition+cStandardCurrCond+",mb.deb,0)) as prvper_deby,sum("+cprvperCondition+cStandardCurrCond+",mb.cre,0)) as prvper_crey," +;
 	"sum("+cPerCondition+cStandardCurrCond+",mb.deb,0)) as per_deby,sum("+cPerCondition+cStandardCurrCond+",mb.cre,0)) as per_crey"+;
-	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.deb,0)) as prvyrytd_deby,sum("+cPrvYrYtDCondition+cStandardCurrCond+",mb.cre,0)) as prvyrytd_crey",",0.00 as prvyrytd_deby,0.00 as prvyrytd_crey")+;
-	iif(lPrvYrYtD,",sum("+cPLCondition+",mb.deb,0)) as PL_deb,sum("+cPLCondition+cStandardCurrCond+",mb.cre,0)) as PL_cre",",0.00 as PL_deb,0.00 as PL_cre")+;
-	iif(lPrvYrYtD,",sum("+cPrvYrPLCondition+",mb.deb,0)) as prvyrpl_deb,sum("+cPrvYrPLCondition+cStandardCurrCond+",mb.cre,0)) as prvyrpl_cre",",0.00 as prvyrpl_deb,0.00 as prvyrpl_cre")+;
+	iif(lprvyrYtD,",sum("+cprvyrYtDCondition+cStandardCurrCond+",mb.deb,0)) as prvyrytd_deby,sum("+cprvyrYtDCondition+cStandardCurrCond+",mb.cre,0)) as prvyrytd_crey",",0.00 as prvyrytd_deby,0.00 as prvyrytd_crey")+;
+	iif(lprvyrYtD,",sum("+cPLCondition+",mb.deb,0)) as pl_deb,sum("+cPLCondition+cStandardCurrCond+",mb.cre,0)) as pl_cre",",0.00 as pl_deb,0.00 as pl_cre")+;
+	iif(lprvyrYtD,",sum("+cprvyrPLCondition+",mb.deb,0)) as prvyrpl_deb,sum("+cprvyrPLCondition+cStandardCurrCond+",mb.cre,0)) as prvyrpl_cre",",0.00 as prvyrpl_deb,0.00 as prvyrpl_cre")+;
  	iif(lForeignCurr,;
- 	",sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyr_debyf,sum("+cPrvYrCondition+cNonStandardCurrCond+",mb.cre,0)) as prvyr_creyf"+;
- 	",sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.deb,0)) as prvper_debyf,sum("+cPrvPerCondition+cNonStandardCurrCond+",mb.cre,0)) as prvper_creyf" +;
+ 	",sum("+cprvyrCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyr_debyf,sum("+cprvyrCondition+cNonStandardCurrCond+",mb.cre,0)) as prvyr_creyf"+;
+ 	",sum("+cprvperCondition+cNonStandardCurrCond+",mb.deb,0)) as prvper_debyf,sum("+cprvperCondition+cNonStandardCurrCond+",mb.cre,0)) as prvper_creyf" +;
  	",sum("+cPerCondition+cNonStandardCurrCond+",mb.deb,0)) as per_debyf,sum("+cPerCondition+cNonStandardCurrCond+",mb.cre,0)) as per_creyf"+;
-	iif(lPrvYrYtD,",sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyrytd_debyf,sum("+cPrvYrYtDCondition+cNonStandardCurrCond+",mb.cre,0)) as PrvYrYtD_creyF",",0.00 as PrvYrYtD_debyF,0.00 as PrvYrYtD_creyF");
+	iif(lprvyrYtD,",sum("+cprvyrYtDCondition+cNonStandardCurrCond+",mb.deb,0)) as prvyrytd_debyf,sum("+cprvyrYtDCondition+cNonStandardCurrCond+",mb.cre,0)) as prvyrytd_creyF",",0.00 as prvyrytd_debyF,0.00 as prvyrytd_creyF");
  	,"")+;
 	" from ("+cSelectx+") as x left join mbalance as mb ON (mb.accid=x.accid and "+cmBalCondition+") group by x.accid"
 	
@@ -500,18 +495,18 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lPrvYrYtD:=fa
    ",y.prvyrytd_deby+y.svjdyr2 as prvyrytd_deb,y.prvyrytd_crey+y.svjcyr2 as prvyrytd_cre,"+;
 	"y.prvper_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby,0) as prvper_deb,"+;
 	"y.prvper_crey+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3+y.prvyr_crey,0) as prvper_cre,"+;
-	"y.per_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3+y.prvyr_deby+prvper_deby,0) as per_deb,"+;
-	"y.per_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3+y.prvyr_crey+prvper_crey,0) as per_cre,"+;
+	"y.per_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby+prvper_deby,0) as per_deb,"+;
+	"y.per_crey+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3+y.prvyr_crey+prvper_crey,0) as per_cre,"+;
 	"y.pl_deb,y.pl_cre,y.prvyrpl_deb,y.prvyrpl_cre"+;    
 	iif(lForeignCurr,;
    ",y.svjdyr3f+y.prvyr_debyf as prvyr_debf,y.svjcyr3f+y.prvyr_creyf as prvyr_cref"+;
    ",y.prvyrytd_debyf+y.svjdyr2f as prvyrytd_debf,y.prvyrytd_creyf+y.svjcyr2f as prvyrytd_cref"+;
 	",y.prvper_debyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf,0) as prvper_debf"+;
-	",y.prvper_creyf+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3f+y.prvyr_creyf,0) as prvper_cref"+;
-	",y.per_debyf+if(category='"+liability+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf+prvper_debyf,0) as per_debf"+;
-	",y.per_creyf+if(category='"+liability+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf+prvper_creyf,0) as per_cref";
+	",y.prvper_creyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf,0) as prvper_cref"+;
+	",y.per_debyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf+prvper_debyf,0) as per_debf"+;
+	",y.per_creyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf+prvper_creyf,0) as per_cref";
 	,"")+;
-	iif(lBudget,",sum("+cPrvPerConditionBud+",bu.amount,0)) as prvper_bud,sum("+cPerConditionBud+",bu.amount,0)) as per_bud,sum("+cYrConditionBud+",bu.amount,0)) as yr_bud","")+;
+	iif(lBudget,",sum("+cprvperConditionBud+",bu.amount,0)) as prvper_bud,sum("+cPerConditionBud+",bu.amount,0)) as per_bud,sum("+cYrConditionBud+",bu.amount,0)) as yr_bud","")+;
 	" from ("+cSelecty+") as y "+;
 	iif(lBudget," left join budget bu ON (y.accid=bu.accid and "+cBudgetCondition+") group by y.accid","") 
 	RETURN cSelectz
@@ -991,7 +986,7 @@ DO WHILE !oMBal:EoF
 				"Round(sum(t.DEBFORGN),2) as monthdebf,Round(sum(t.CREFORGN),2) as monthcref from transaction as t "+;
 				"where t.DAT>='"+Str(PeriodEndYear,4)+"-"+StrZero(PeriodEndMonth,2)+"-01' and t.DAT<='"+SQLdate(pPeriodEnd)+"' and t.accid='"+pAccount+"'") 
 				oTrans:=SQLSelect{cTransSelect,oConn}
-				LogEvent(,"GetBalance:"+oTrans:SQLString,'logsql') 
+// 				LogEvent(,"GetBalance:"+oTrans:SQLString,'logsql') 
 				IF Empty(oTrans:Status) .and. oTrans:RecCount=1
 					if pCurrency=sCURR
 						per_deb :=Round(per_deb+oTrans:monthdeb, DecAantal)
@@ -1001,7 +996,7 @@ DO WHILE !oMBal:EoF
 						per_cre :=Round(per_cre+oTrans:monthcref, DecAantal)							
 					endif
 				else
-					LogEvent(,"GetBalance:Error:"+oTrans:Status:Description+"; statement:"+oTrans:SQLString,"LogSQL")
+					LogEvent(,"GetBalance:Error:"+oTrans:Status:Description+"; statement:"+oTrans:SQLString,"LogErrors")
 				ENDIF
 			ENDIF
 		ENDIF
