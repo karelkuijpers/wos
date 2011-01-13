@@ -100,7 +100,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				IF Val(Str(m58_deb))<>0 .and.Val(Str(m58_cre))<>0
 					skipaant++
 				endif
-				self:oBal:GetBalance(m58_rek,me_type,,EndOfMonth(Today()+31),self:cAccCurrency)
+				self:oBal:GetBalance(m58_rek,,EndOfMonth(Today()+31),self:cAccCurrency)
 				IF lForgnC
 					BalDeb:=self:oBal:Per_DebF
 					BalCre:=self:oBal:Per_CreF	
@@ -210,7 +210,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				IF Empty(mnd_cur)  && eerste maand:
 					jr_cur:=Year(self:oTrans:dat)
 					mnd_cur:=Month(self:oTrans:dat)
-					self:oBal:GetBalance(m58_rek,me_type,jr_cur*100+mnd_cur,jr_cur*100+mnd_cur,self:cAccCurrency)
+					self:oBal:GetBalance(m58_rek,jr_cur*100+mnd_cur,jr_cur*100+mnd_cur,self:cAccCurrency)
 					if lForgnC
 						oReport:PrintLine(@nRow,@nPage,;
 							Pad(oLan:Get('Beginning account balance',,"!")+Space(1)+oLan:Get(MonthEn[mnd_cur],,"!")+Space(1)+Str(jr_cur,4),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+; 
@@ -279,7 +279,7 @@ IF Integer(m57_giftbed*100)/100#0
 	iif(lForgnC,Str(m57_giftbedF,12,DecAantal)+Space(13)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 	+Space(12)+self:cTab+Str(m57_giftbed,12,DecAantal),Heading,6)
 ENDIF
-self:oBal:GetBalance(m58_rek,me_type,,jr_cur*100+mnd_cur,self:cAccCurrency)
+self:oBal:GetBalance(m58_rek,,jr_cur*100+mnd_cur,self:cAccCurrency)
 IF lForgnC
 	BalDeb:=self:oBal:Per_DebF
 	BalCre:=self:oBal:Per_CreF	
@@ -1169,7 +1169,7 @@ METHOD ShowBankBalance() as void pascal CLASS General_Journal
 			ENDIF
 			IF cRek==sHB .or. cRek==sKAS .or. AScanExact(BankAccs,cRek)>0
 				oMBal:=Balances{}  
-				oMBal:GetBalance(cRek,aMir[i,10],,,aMir[i,11])
+				oMBal:GetBalance(cRek,,,aMir[i,11])
 				self:oDCBankBalance:TextValue:=AllTrim(Str(oMBal:Per_Deb - oMBal:per_Cre,,DecAantal))+" "+aMir[i,11]
 				self:oDCBankText:TextValue:="Balance of "+aMir[i,9]+":" 
 				IF Empty(CurBank)
