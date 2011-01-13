@@ -105,15 +105,15 @@ METHOD OKButton( ) CLASS EditMailCd
 		ENDIF
 		
 		* check if mailcd allready exists:
-	    IF (lNew.or.AllTrim(oMcd:Description) # AllTrim(self:mOms).or.AllTrim(oMcd:ABBRVTN) # AllTrim(self:mAbbrvtn))
+	    IF (lNew.or.AllTrim(oMcd:Description) # AllTrim(self:mOms).or.AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn))
 			IF lNew .or. AllTrim(oMcd:Description) # AllTrim(self:mOms)
-				if SQLSelect{"select description from perscod where description='"+AllTrim(self:mOms)+"' and PERS_CODE<>'"+self:mCod+"'",oConn}:RecCount>0
+				if SQLSelect{"select description from perscod where description='"+AllTrim(self:mOms)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode description '+ AllTrim(self:mOms) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
 			ENDIF
-			IF lNew .or. AllTrim(oMcd:ABBRVTN) # AllTrim(self:mAbbrvtn).and.!Empty(self:mAbbrvtn)
-				if SQLSelect{"select description from perscod where Abbrvtn='"+AllTrim(self:mAbbrvtn)+"' and PERS_CODE<>'"+self:mCod+"'",oConn}:RecCount>0
+			IF lNew .or. AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn).and.!Empty(self:mAbbrvtn)
+				if SQLSelect{"select description from perscod where abbrvtn='"+AllTrim(self:mAbbrvtn)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode abbreviation '+ AllTrim(self:mAbbrvtn) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
@@ -123,7 +123,7 @@ METHOD OKButton( ) CLASS EditMailCd
 			oMcd:Append()
 		ENDIF
         oMcd:description      := self:mOms
-        oMcd:ABBRVTN  := Upper(SELF:mAbbrvtn)
+        oMcd:abbrvtn  := Upper(self:mAbbrvtn)
 		self:Commit() 
 		self:EndWindow()
 RETURN NIL
@@ -139,8 +139,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd
 	ENDIF
 	IF !lNew
 		self:mOms := oMcd:description
-		self:mCod := oMcd:PERS_CODE
-		self:mAbbrvtn := oMcd:ABBRVTN
+		self:mCod := oMcd:pers_code
+		self:mAbbrvtn := oMcd:abbrvtn
 	ELSE
 		self:mCod:="  "
     ENDIF
@@ -319,7 +319,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	ENDIF
 	* check if Property allready exists:
 	IF self:lnew .or. AllTrim(oProp:FIELDGET(#NAME)) # AllTrim(self:MPROPNAME)
-		if SQLSelect{"select name from Person_Properties where name='"+AllTrim(self:MPROPNAME)+"' and id<>"+Str(self:mId,-1),oConn}:Reccount>0
+		if SQLSelect{"select name from person_properties where name='"+AllTrim(self:MPROPNAME)+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0
 			(Errorbox{,'Property Name '+ alltrim(mPropName) +' already exists' }):Show()
 			RETURN nil
 		ENDIF
@@ -330,8 +330,8 @@ METHOD OKButton( ) CLASS EditPersProp
 		for i:=1 to Len(self:CurDropVal)
 			CurValue:=CurDropVal[i]
 			if AScan(aNewDropValues,CurValue)=0
-				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(PROPEXTR,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0"
-				cRemoved+=CurValue+Space(1)+self:oLan:WGet("used in")+Space(1)+(SQLSelect{"select count(*) as total from person where instr(PROPEXTR,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}):total+Space(1)+self:oLan:WGet("persons")+CRLF
+				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0"
+				cRemoved+=CurValue+Space(1)+self:oLan:WGet("used in")+Space(1)+(SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}):total+Space(1)+self:oLan:WGet("persons")+CRLF
 			endif 
 		next
 		IF !Empty(cRemoved)
@@ -341,15 +341,15 @@ METHOD OKButton( ) CLASS EditPersProp
 			endif
 		endif
 	endif
-	cStatement:=iif(self:lNew,"insert into ","update ")+"Person_Properties set name='"+AllTrim(self:MPROPNAME)+"',type="+Str(mType,-1)+",`VALUES`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
-	iif(self:lnew,""," where id="+Str(self:mId,-1)) 
+	cStatement:=iif(self:lNew,"insert into ","update ")+"person_properties set name='"+AllTrim(self:MPROPNAME)+"',type="+Str(mType,-1)+",`VALUES`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
+	iif(self:lNew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		if !Empty(cRemoveCond)
 			// remove propertu from persons:
-			oStmnt:=SQLStatement{"update person set PROPEXTR=concat(substring(PROPEXTR,1,instr(PROPEXTR,'<V"+Str(mId,-1)+">')-1)"+;
-			",substring(PROPEXTR,instr(PROPEXTR,'</V"+Str(mId,-1)+">')+"+Str(Len(Str(mId,-1))+4,-1)+"))"+;
+			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+Str(mId,-1)+">')-1)"+;
+			",substring(propextr,instr(propextr,'</V"+Str(mId,-1)+">')+"+Str(Len(Str(mId,-1))+4,-1)+"))"+;
 			" where ("+cRemoveCond+")",oConn}
 			oStmnt:Execute() 
 			TextBox{,self:oLan:WGet("Removal property values"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:WGet("persons updated")}:Show()
@@ -374,7 +374,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp
 	ENDIF
 	IF !lNew
 		self:MPROPNAME := oProp:FIELDGET(2)  //name
-		self:mId := oProp:ID
+		self:mId := oProp:id
 		self:mType := oProp:TYPE
 		self:mValues:=oProp:VALUES
 		IF self:mType==DROPDOWN
@@ -482,7 +482,7 @@ METHOD OKButton( ) CLASS EditPersTitle
 		
 		* check if Title allready exists:
 		IF self:lNew .or. AllTrim(oTit:DESCRPTN) # AllTrim(mDescrptn)
-			if SQLSelect{"select id from titles where DESCRPTN='"+AllTrim(mDescrptn)+"' and id<>"+Str(self:mId,-1),oConn}:Reccount>0 
+			if SQLSelect{"select id from titles where descrptn='"+AllTrim(mDescrptn)+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0 
 				(ErrorBox{,'Title description '+ AllTrim(mDescrptn) +' already exists' }):Show()
 				RETURN nil
 			ENDIF
@@ -507,8 +507,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersTitle
 		SELF:lNew:=TRUE
 	ENDIF
 	IF !lNew
-		SELF:mDescrptn := oTit:DESCRPTN
-		mId := oTit:ID
+		self:mDescrptn := oTit:DESCRPTN
+		mId := oTit:id
 	ELSE
 		mId:=0
     ENDIF
@@ -559,7 +559,7 @@ oDCSC_OMS:HyperLabel := HyperLabel{#SC_OMS,"Description:",NULL_STRING,NULL_STRIN
 
 oDCmDescrptn := SingleLineEdit{self,ResourceID{EDITPERSTYPE_MDESCRPTN,_GetInst()}}
 oDCmDescrptn:FieldSpec := Persontype_descrptn{}
-oDCmDescrptn:HyperLabel := HyperLabel{#mDescrptn,"Description:","Description of  persontype: individual, company, ...",NULL_STRING}
+oDCmDescrptn:HyperLabel := HyperLabel{#mDescrptn,"Description:","Description of  persontype: individual, company, ...",null_string}
 oDCmDescrptn:UseHLforToolTip := True
 
 oDCmAbbrvtn := SingleLineEdit{self,ResourceID{EDITPERSTYPE_MABBRVTN,_GetInst()}}
@@ -622,8 +622,8 @@ METHOD OKButton(lNew ) CLASS EditPersType
 		ENDIF
 		
 		* check if person type allready exists:
-	    IF (self:lNew.or.AllTrim(oPtp:DESCRPTN)#AllTrim(mDescrptn).or.AllTrim(oPtp:ABBRVTN)#AllTrim(mAbbrvtn)) 
-			if SQLSelect{"select id from persontype where (ABBRVTN='"+AllTrim(mAbbrvtn)+"' or DESCRPTN='"+AllTrim(mDescrptn)+"') and id<>"+Str(self:mId,-1),oConn}:reccount>0  
+	    IF (self:lNew.or.AllTrim(oPtp:DESCRPTN)#AllTrim(mDescrptn).or.AllTrim(oPtp:abbrvtn)#AllTrim(mAbbrvtn)) 
+			if SQLSelect{"select id from persontype where (abbrvtn='"+AllTrim(mAbbrvtn)+"' or descrptn='"+AllTrim(mDescrptn)+"') and id<>"+Str(self:mId,-1),oConn}:RecCount>0  
 				(ErrorBox{,self:oLan:WGet('Person type description or abbrevation already exists') }):Show()
 				RETURN nil
 			endif
@@ -632,8 +632,8 @@ METHOD OKButton(lNew ) CLASS EditPersType
 		IF SELF:lNew
 			oPtp:Append()
 		ENDIF
-        oPtp:DESCRPTN := SELF:mDescrptn
-        oPtp:ABBRVTN  := Upper(SELF:mAbbrvtn)
+        oPtp:DESCRPTN := self:mDescrptn
+        oPtp:abbrvtn  := Upper(self:mAbbrvtn)
 		SELF:Commit()
 		FillPersType()
 		self:EndWindow()
@@ -650,9 +650,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersType
 		SELF:lNew:=TRUE
 	ENDIF
 	IF !lNew
-		SELF:mDescrptn := oPtp:DESCRPTN
-		self:mId := oPtp:ID
-		self:mAbbrvtn := oPtp:ABBRVTN
+		self:mDescrptn := oPtp:DESCRPTN
+		self:mId := oPtp:id
+		self:mAbbrvtn := oPtp:abbrvtn
 		IF self:mAbbrvtn=="IND" .or. self:mAbbrvtn=="MBR" .or.self:mAbbrvtn=="ENT"
 			SELF:oDCmAbbrvtn:Disable()
 		ENDIF
@@ -682,7 +682,7 @@ METHOD GetMailAbbr(MyPersCode)  CLASS PersCod
 			SELF:SetOrder( "PERSCODE" )
 		ENDIF
 		IF SELF:Seek(MyPersCode)
-			RETURN AllTrim(SELF:ABBRVTN)
+			RETURN AllTrim(self:abbrvtn)
 		ENDIF
 	ENDIF
 RETURN NULL_STRING
@@ -731,7 +731,7 @@ endif
 oTPTABMAIL_PAGE := TABMAIL_PAGE{self, 0}
 oDCTabMail:AppendTab(#TABMAIL_PAGE,"Mail Codes",oTPTABMAIL_PAGE,0)
 oTPTABTITLE_PAGE := TABTITLE_PAGE{self, 0}
-oDCTabMail:AppendTab(#TABTITLE_PAGE,"Titles",oTPTABTITLE_PAGE,0)
+oDCTabMail:AppendTab(#TABTITLE_PAGE,"titles",oTPTABTITLE_PAGE,0)
 oTPTABTYPE_PAGE := TABTYPE_PAGE{self, 0}
 oDCTabMail:AppendTab(#TABTYPE_PAGE,"Types",oTPTABTYPE_PAGE,0)
 oTPTABPROP_PAGE := TABPROP_PAGE{self, 0}
@@ -953,8 +953,8 @@ class Sub_PersTypeReg inherit DataWindowMine
 
 	PROTECT oDBDESCRPTN as DataColumn
 	PROTECT oDBABBRVTN as DataColumn
-	instance Descrptn 
-	instance Abbrvtn 
+	instance DESCRPTN 
+	instance abbrvtn 
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Sub_PersTypeReg DIALOGEX  13, 12, 226, 186
@@ -963,19 +963,19 @@ FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
-access Abbrvtn() class Sub_PersTypeReg
+access abbrvtn() class Sub_PersTypeReg
 return self:FieldGet(#Abbrvtn)
 
-assign Abbrvtn(uValue) class Sub_PersTypeReg
+assign abbrvtn(uValue) class Sub_PersTypeReg
 self:FieldPut(#Abbrvtn, uValue)
-return Abbrvtn := uValue
+return abbrvtn := uValue
 
-access Descrptn() class Sub_PersTypeReg
+access DESCRPTN() class Sub_PersTypeReg
 return self:FieldGet(#Descrptn)
 
-assign Descrptn(uValue) class Sub_PersTypeReg
+assign DESCRPTN(uValue) class Sub_PersTypeReg
 self:FieldPut(#Descrptn, uValue)
-return Descrptn := uValue
+return DESCRPTN := uValue
 
 method Init(oWindow,iCtlID,oServer,uExtra) class Sub_PersTypeReg 
 
@@ -1115,7 +1115,7 @@ oLan:Get("DESCRIPTION",20,"@!"),' '}
 nRow := 0
 nPage := 0
 DO WHILE .not. oDB:EOF
-   oReport:PrintLine(@nRow,@nPage,PadC(Transform(oDB:Abbrvtn,'xxx'),12)+' '+;
+   oReport:PrintLine(@nRow,@nPage,PadC(Transform(oDB:abbrvtn,'xxx'),12)+' '+;
    Transform(oDB:description,'xxxxxxxxxxxxxxxxxxxx'),kopregels)
    oDB:skip()
 ENDDO
@@ -1220,13 +1220,13 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 		RETURN
 	ENDIF
 	mOms:=oProp:FIELDGET(#NAME)
-	mId:=Str(oProp:ID,-1)
+	mId:=Str(oProp:id,-1)
 	mCod:="V"+mId 
-	oSel:=SQLSelect{"select count(*) as total from person where instr(PROPEXTR,'<V"+mId+">')>0",oConn}
+	oSel:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+mId+">')>0",oConn}
 	
 	IF (TextBox{ self, self:oLan:WGet("Delete Property"),;
 			self:oLan:WGet("Delete Property")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+oSel:total+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
-		SQLStatement{"delete from person_properties where ID="+mId,oConn}:execute()
+		SQLStatement{"delete from person_properties where id="+mId,oConn}:execute()
 // 		self:DELETE()
 // 		oProp:Commit() 
 		self:oProp:execute()
@@ -1234,9 +1234,9 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 		if val(oSel:Total)>0
 			self:STATUSMESSAGE("Removing "+mOms+" from all persons, moment please")
 			self:Pointer := Pointer{POINTERHOURGLASS} 
-			oStmnt:=SQLStatement{"update person set PROPEXTR=concat(substring(PROPEXTR,1,instr(PROPEXTR,'<V"+mId+">')-1)"+;
-			",substring(PROPEXTR,instr(PROPEXTR,'</V"+mId+">')+"+Str(len(mId)+4,-1)+"))"+;
-			" where instr(PROPEXTR,'<V"+mId+">')>0",oConn}
+			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+mId+">')-1)"+;
+			",substring(propextr,instr(propextr,'</V"+mId+">')+"+Str(Len(mId)+4,-1)+"))"+;
+			" where instr(propextr,'<V"+mId+">')>0",oConn}
 			oStmnt:execute()
 		endif
 		SELF:Pointer := Pointer{POINTERARROW}
@@ -1315,7 +1315,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra 
-	self:oProp:=SQLSelect{"select * from Person_Properties order by name",oConn}
+	self:oProp:=SQLSelect{"select * from person_properties order by name",oConn}
 	RETURN NIL
 
 METHOD RemoveButton( ) CLASS TabProp_Page 
@@ -1357,10 +1357,10 @@ METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 		RETURN
 	ENDIF
 	mOms:=AllTrim(oTit:DESCRPTN)
-	oSel:=SQLSelect{"select count(*) as total from person where  title="+Str(self:oTit:ID,-1),oConn}
+	oSel:=SQLSelect{"select count(*) as total from person where  title="+Str(self:oTit:id,-1),oConn}
 	IF (TextBox{ self, self:oLan:WGet("Delete title"),;
 			self:oLan:WGet("Delete title")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+oSel:total+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
-		mCod:=Str(oTit:ID,-1)
+		mCod:=Str(oTit:id,-1)
 		SELF:oSFSub_PersTitleReg:Delete()
 		oTit:Commit()
 		oSFSub_PersTitleReg:Browser:REFresh()
@@ -1443,7 +1443,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTITLE_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTITLE_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra
-	self:oTit:=SQLSelect{"select * from Titles order by DESCRPTN",oConn}
+	self:oTit:=SQLSelect{"select * from titles order by descrptn",oConn}
 	RETURN NIL
 STATIC DEFINE TABTITLE_PAGE_DELETEBUTTON := 103 
 STATIC DEFINE TABTITLE_PAGE_EDITBUTTON := 101 
@@ -1483,8 +1483,8 @@ CLASS TABTYPE_PAGE INHERIT DataWindowExtra
 		RETURN
 	ENDIF
 	mOms:=AllTrim(oPtp:DESCRPTN)
-	mCod:=oPtp:ID
-	if oPtp:ABBRVTN="ENT" .or.oPtp:ABBRVTN="MBR" .or.oPtp:ABBRVTN="IND".or.oPtp:ABBRVTN="CRE".or.oPtp:ABBRVTN="COM"
+	mCod:=oPtp:id
+	if oPtp:abbrvtn="ENT" .or.oPtp:abbrvtn="MBR" .or.oPtp:abbrvtn="IND".or.oPtp:abbrvtn="CRE".or.oPtp:abbrvtn="COM"
 		Errorbox{,self:oLan:WGet("this type can't be removed")}:show()
 		return nil
 	endif
@@ -1570,7 +1570,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTYPE_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTYPE_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra 
-	self:oType:=SQLSelect{"select * from Persontype order by DESCRPTN",oConn}
+	self:oType:=SQLSelect{"select * from persontype order by descrptn",oConn}
 	RETURN NIL
 
 STATIC DEFINE TABTYPE_PAGE_DELETEBUTTON := 103 
