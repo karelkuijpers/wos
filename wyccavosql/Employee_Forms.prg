@@ -67,15 +67,11 @@ CLASS EditEmployeeWindow INHERIT DataWindowExtra
   PROTECT lCurRec AS INT
   PROTECT cOrigType as STRING 
   protect cLoginNameOrg as string
-//   	PROTECT oPerson AS Person
 	PROTECT mCln, mCLNOrg as STRING
 	PROTECT cMemberName as STRING 
-	PROTECT oDep as Department
 	PROTECT cCurDep as STRING
   	PROTECT WhoFrom as STRING
 	protect PasswordOrg
-// 	protect oAccAlwd as EmplAcc
-	protect oAccA as Account
 	protect mEmpID as string 
 	protect aAcAlwd:={} as array
 	protect oCaller as EmployeeBrowser 
@@ -568,9 +564,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 	self:oDCmDepartment:TextValue:=mDepartment
 	cCurDep:=mDepartment
 	WhoFrom:="0"
-	IF Departments
-		oDep:=Department{}
-	else
+	IF !Departments
 		self:oDCAllwdDepTxt:Hide()
 		oCCDepButton:Hide()
 		oDCmDepartment:Hide()
