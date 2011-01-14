@@ -329,7 +329,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 				aNull:={}
 				for i:=1 to Len(aDBStruct) 
 					cFieldName:=self:RenameField(dbasename,aDBStruct[i,DBS_NAME])
-					if AScan(aColumn,{|x|x[1]==sqlname .and.x[2]==cFieldName .and. x[6]=="NULL"})>0
+					if AScan(aColumn,{|x|x[1]==sqlname .and.x[2]==cFieldName .and. x[5]=="NULL"})>0
 						AAdd(aNull,true)
 					else
 						AAdd(aNull,false)
@@ -674,10 +674,31 @@ method init(oMainWindow) class Initialize
    if Empty(cServer)
 		cServer:=GetServername(CurPath)
    endif
-	if !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW())
+   SQLConnectErrorMsg(FALSE)
+   do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
+		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
+		if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
+			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show()
+			FileStart(WorkDir()+"ODBCInstall.html",oMainWindow)
+			if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
+ 				loop
+			endif
+			break
+		endif
+		// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
+		if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0
+			ErrorBox{,"You have first to install MYSQL"}:Show()
+			break
+		endif
+  
+		// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
+		if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0
+			ErrorBox{,"Let your administrator enter first the userid for the WOS database in MYSQL"}:Show()
+			break
+		endif
 		ShowError(oConn:ERRINFO)
 		Break
-	endif
+   enddo
 	oSel:=SQLSelect{"show databases",oConn}
 	oSel:Execute() 
 	do while !oSel:EoF
@@ -760,10 +781,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			break
 		endif
 		// Initialize db 
-		self:InitializeDB()
+// 		self:InitializeDB()
 		
 	endif
-	// 		self:InitializeDB()
+		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1768,9 +1789,9 @@ method InitializeDB() as void Pascal  class Initialize
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
-	if self:lNewDb
+// 	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
-	endif
+// 	endif
 	return
 Method Matchunequalgaps(aStatReq as array,aStatCur as array,aReqColumn as array,aCurColumn as array,nStartCurrent as int,nEndCurrent as int,nStartRequired as int,nEndRequired as int) as int class Initialize
 	// score each possible mapping of columns within required gap on columns of current gap and map column with highest score
