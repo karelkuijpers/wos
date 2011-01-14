@@ -111,7 +111,7 @@ local oSel as SQLSelect
 			oSel:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
 			if oSel:RecCount=1
 				self:oDCmDepartment:TextValue:= oSel:DEPTMNTNBR+": "+ oSel:DESCRIPTN
-				self:cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
+				self:cCurDep:=AllTrim(oSel:DEPTMNTNBR)+":"+oSel:DESCRIPTN
 				self:mDepartment:=cCurDep
 			endif
 		ENDIF
