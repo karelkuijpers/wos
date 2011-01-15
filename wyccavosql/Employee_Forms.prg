@@ -808,7 +808,6 @@ CLASS EmployeeBrowser INHERIT DataWindowExtra
 	PROTECT oSFEmployeeBrowser_DETAIL AS EmployeeBrowser_DETAIL
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT oPers as Person 
   export oSelEmp as SQLSelect 
 RESOURCE EmployeeBrowser DIALOGEX  18, 17, 398, 195
 STYLE	WS_CHILD
