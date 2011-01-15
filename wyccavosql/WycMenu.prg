@@ -216,7 +216,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			IF Admin=="WO".or.Admin=="GI"
 				AAdd(aMenu,{1,5, oLan:MGet("&Donations")+"...","Donations","",0,13,"PFM"})
 			ENDIF
-			AAdd(aMenu,{1,6, oLan:MGet("Arti&cle")+"...","ArticleBrowser","",0,47,"PFM"})
+// 			AAdd(aMenu,{1,6, oLan:MGet("Arti&cle")+"...","ArticleBrowser","",0,47,"PFM"})
 		endif
 	ENDIF
 	AAdd(aMenu,{1,7,,,,,})           // separator
@@ -244,9 +244,6 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	AAdd(aMenu,{2,9,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
 	AAdd(aMenu,{0,3, oLan:MGet("&Balance"),,,,,})
 	IF Admin=="WO"
-		IF SQLSelect{"select PMISLSTSND from Sysparms where adddate(PMISLSTSND,400)<curdate()",oConn}:Reccount>0
-			AAdd(aMenu,{3,1,   oLan:MGet("&I.E.S. report")+"...","IESReport","",0,24,"F"})
-		ENDIF
 		AAdd(aMenu,{3,2,   oLan:MGet("&Sending to PMC")+"...","PMISsend","",0,87,"F"}) 
 		AAdd(aMenu,{3,3,   oLan:MGet("&IPC Report")+"...","IPCReport","",0,89,"F"}) 
 	elseif Admin="WA"
@@ -272,7 +269,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if !Admin="WA"
 		AAdd(aMenu,{0,4, oLan:MGet("&Mail/Invoice"),,,,,})
 		IF !Admin=="HO"
-			AAdd(aMenu,{4,1, oLan:MGet("&Invoicing")+"...","Invoicing","Producing bills",0,26,"PF"})
+// 			AAdd(aMenu,{4,1, oLan:MGet("&Invoicing")+"...","Invoicing","Producing bills",0,26,"PF"})
 			AAdd(aMenu,{4,2, oLan:MGet("&Reminders mailing"),"Reminders","",0,63,"PF"})
 			AAdd(aMenu,{4,3, oLan:MGet("&Due Amount Inquiry/Delete")+"...","DueAmountBrowser","",0,39,"PF"})
 			AAdd(aMenu,{4,4,,,,,})           // separator
