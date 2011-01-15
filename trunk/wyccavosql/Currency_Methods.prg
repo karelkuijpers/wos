@@ -189,6 +189,15 @@ Default(@cBase,sCURR)
 self:cCurCaption:=cCaption 
 self:cBaseCur:=cBase
 return self
+RESOURCE CurrencySpec DIALOGEX  4, 3, 282, 26
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", CURRENCYSPEC_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 76, 7, 134, 185
+	CONTROL	"System Currency:", CURRENCYSPEC_SC_SMUNT, "Static", WS_CHILD, 4, 7, 66, 12
+	CONTROL	"OK", CURRENCYSPEC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 220, 7, 53, 12
+END
+
 CLASS CurrencySpec INHERIT DataDialogMine 
 
 	PROTECT oDCCurrency AS COMBOBOX
@@ -196,33 +205,15 @@ CLASS CurrencySpec INHERIT DataDialogMine
 	PROTECT oCCOKButton AS PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  instance CURRENCY as string
+  instance CURRENCY as string 
   
-  declare method GetCurrencies
-RESOURCE CurrencySpec DIALOGEX  4, 3, 282, 25
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", CURRENCYSPEC_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 76, 0, 134, 118
-	CONTROL	"System Currency:", CURRENCYSPEC_SC_SMUNT, "Static", WS_CHILD, 4, 7, 66, 12
-	CONTROL	"OK", CURRENCYSPEC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 222, 3, 53, 12
-END
-
 ACCESS Currency() CLASS CurrencySpec
 RETURN SELF:FieldGet(#Currency)
 
 ASSIGN Currency(uValue) CLASS CurrencySpec
 SELF:FieldPut(#Currency, uValue)
 RETURN uValue
-method GetCurrencies(dummy:=nil as logic) class CurrencySpec
-local oCur as SQLSelect
-oCur:=SQLSelect{"select united_ara,aed from currencylist",oConn}
-if oCur:RecCount>0
-	return oCur:GetLookupTable(300,#UNITED_ARA,#AED)
-else
-	return {}
-endif
-// return SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS CurrencySpec 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -231,7 +222,7 @@ SUPER:Init(oWindow,ResourceID{"CurrencySpec",_GetInst()},iCtlID)
 
 oDCCurrency := combobox{SELF,ResourceID{CURRENCYSPEC_CURRENCY,_GetInst()}}
 oDCCurrency:HyperLabel := HyperLabel{#Currency,NULL_STRING,"Default currency for this organisation","Currency_Smunt"}
-oDCCurrency:FillUsing(Self:GetCurrencies( ))
+oDCCurrency:FillUsing(SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED))
 
 oDCSC_SMUNT := FixedText{SELF,ResourceID{CURRENCYSPEC_SC_SMUNT,_GetInst()}}
 oDCSC_SMUNT:HyperLabel := HyperLabel{#SC_SMUNT,"System Currency:",NULL_STRING,NULL_STRING}
@@ -289,7 +280,6 @@ CLASS CurrRateEditor INHERIT DATAWINDOW
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
   export oRoe as SQLSelect
   
-  declare method GetCurrencies
 RESOURCE CurrRateEditor DIALOGEX  4, 12, 303, 268
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -363,8 +353,6 @@ IF !Empty(CurRec)
 	self:oSFSub_Rates:Browser:REFresh()
 ENDIF
 RETURN true
-method GetCurrencies(dummy:=nil as logic) class CurrRateEditor
-return SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS CurrRateEditor 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -374,7 +362,7 @@ SUPER:Init(oWindow,ResourceID{"CurrRateEditor",_GetInst()},iCtlID)
 oDCCurrencySelect := combobox{SELF,ResourceID{CURRRATEEDITOR_CURRENCYSELECT,_GetInst()}}
 oDCCurrencySelect:TooltipText := "Select required currency of which rates should be shown"
 oDCCurrencySelect:HyperLabel := HyperLabel{#CurrencySelect,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCCurrencySelect:FillUsing(Self:GetCurrencies( ))
+oDCCurrencySelect:FillUsing(SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED))
 
 oDCFixedText1 := FixedText{SELF,ResourceID{CURRRATEEDITOR_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Currency:",NULL_STRING,NULL_STRING}
@@ -677,6 +665,12 @@ Method ReEvaluate() Class Reevaluation
 
 
 	return 
+RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS Sub_Rates INHERIT DATAWINDOW 
 
 	PROTECT oDBAED as JapDataColumn
@@ -686,12 +680,6 @@ CLASS Sub_Rates INHERIT DATAWINDOW
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export lFilling:=true as logic 
-RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 ACCESS AED() CLASS Sub_Rates
 RETURN SELF:FieldGet(#AED)
 
