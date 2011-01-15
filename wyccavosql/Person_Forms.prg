@@ -1095,7 +1095,7 @@ METHOD OkButton CLASS NewPersonWindow
 		oPers:=SQLStatement{cStmnt,oConn}
 		oPers:Execute() 
 		if !IsNil(oPers:Status)
-			LogEvent(,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogSQL")
+			LogEvent(,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogErrors")
 			(ErrorBox{self,'Add/update person Error:'+oPers:Status:Description}):Show()
 		endif
 // 		IF .not. oPers:Commit()
@@ -1448,34 +1448,6 @@ STATIC DEFINE NEWPERSONWINDOW_SC_TEL3 := 167
 STATIC DEFINE NEWPERSONWINDOW_SC_TEL4 := 171 
 STATIC DEFINE NEWPERSONWINDOW_SC_TIT := 105 
 STATIC DEFINE NEWPERSONWINDOW_SC_VRN := 102 
-RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
-	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
-	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
-	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
-	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
-	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
-	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
-	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
-	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
-	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
-	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
-	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
-	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
-	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
-	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
-	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
-	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
-	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
-	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
-	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
-	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
-	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
-END
-
 CLASS PersonBrowser INHERIT DataWindowMine 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -1506,13 +1478,10 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	EXPORT cItemName	AS STRING
 	EXPORT oReport AS PrintDialog
 	EXPORT lUnique, lFoundUnique AS LOGIC
-	PROTECT oDue AS DueAmount   && open
-	PROTECT oSub AS Subscription &&pol
 // 	PROTECT oAcc AS Account
 // 	PROTECT oTrans as SQLSelect
 // 	PROTECT oTransH as SQLSelect
 	EXPORT oPers as SQLSelect
-	PROTECT oPersBank AS PersonBank
 	PROTECT m_namen,m_waarden,Ann,m_adressen AS ARRAY
 	PROTECT pKondp, pKondA AS _CODEBLOCK
 	PROTECT pKond AS _CODEBLOCK
@@ -1526,18 +1495,34 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	
 	declare method PersonSelect
 
-METHOD ContainsButton( ) CLASS PersonBrowser
-local lSuccess as logic, cSel:=Upper(AllTrim(self:oDCSearchSLE:TextValue)), cFilter as string
-Local oPers:=self:Server as Person
-cFilter:=oPers:Filter
-if !Empty(cFilter)
-	cFilter:="("+cFilter+").and."
-endif
-cFilter+="'"+cSel+"' $ upper(lastname)"
-	lSuccess:=oPers:SetFilter(cFilter) 
-	self:oSFPersonSubForm:Browser:refresh()
-	self:GoTop()
-RETURN NIL
+RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
+	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
+	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
+	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
+	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
+	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
+	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
+	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
+	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
+	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
+	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
+	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
+	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
+	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
+	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
+	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
+	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
+	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
+	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
+	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
+	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
+	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
+END
+
 METHOD EditButton(lNew) CLASS PersonBrowser
 
 	Default(@lNew,FALSE)
@@ -1834,7 +1819,6 @@ ENDIF
 PersonSelect(self,cValue,false,"persid<>'"+Str(oPers:persid,-1)+"'","person to merge with ")
 
 RETURN NIL
-STATIC DEFINE PERSONBROWSER_CONTAINSBUTTON := 117 
 STATIC DEFINE PERSONBROWSER_DELETEBUTTON := 110 
 STATIC DEFINE PERSONBROWSER_EDITBUTTON := 108 
 STATIC DEFINE PERSONBROWSER_FINDBUTTON := 119 
@@ -1864,12 +1848,6 @@ class PersonContainer
 	EXPORT md_address1, md_address2, md_address3, md_address4 as STRING 
 	export current_PersonID as int
 
-RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS PersonSubForm INHERIT DataWindowMine 
 
 	PROTECT oDBLASTNAME as JapDataColumn
@@ -1883,6 +1861,12 @@ CLASS PersonSubForm INHERIT DataWindowMine
 	PROTECT oDBCOUNTRY as JapDataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 ACCESS address() CLASS PersonSubForm
 RETURN SELF:FieldGet(#address)
 
@@ -2207,6 +2191,19 @@ STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL4 := 108
 STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL5 := 107 
 STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL6 := 108 
 STATIC DEFINE SELPERSCHANGEMAILCODES_OKBUTTON := 113 
+CLASS SelPersExport INHERIT DialogWinDowExtra 
+
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCSubSet AS LISTBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCExportFormat AS RADIOBUTTONGROUP
+	PROTECT oCCTabButton AS RADIOBUTTON
+	PROTECT oCCCSVButton AS RADIOBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT MyFields AS ARRAY
+  PROTECT myParent AS OBJECT
 RESOURCE SelPersExport DIALOGEX  11, 22, 280, 226
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Specify persons to export"
@@ -2221,19 +2218,6 @@ BEGIN
 	CONTROL	"Comma separated file (CSV)", SELPERSEXPORT_CSVBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 166, 58, 102, 11
 END
 
-CLASS SelPersExport INHERIT DialogWinDowExtra 
-
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCSubSet AS LISTBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCExportFormat AS RADIOBUTTONGROUP
-	PROTECT oCCTabButton AS RADIOBUTTON
-	PROTECT oCCCSVButton AS RADIOBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT MyFields AS ARRAY
-  PROTECT myParent AS OBJECT
 METHOD CancelButton( ) CLASS SelPersExport
 	SELF:myParent:myFields:={}
 SELF:EndDialog(1)
@@ -2336,219 +2320,6 @@ STATIC DEFINE SELPERSEXPORT_FIXEDTEXT1 := 103
 STATIC DEFINE SELPERSEXPORT_OKBUTTON := 100 
 STATIC DEFINE SELPERSEXPORT_SUBSET := 102 
 STATIC DEFINE SELPERSEXPORT_TABBUTTON := 105 
-CLASS SelPersGifts INHERIT DialogWinDowExtra 
-
-	PROTECT oDCSelx_rek AS COMBOBOX
-	PROTECT oDCStandardG AS CHECKBOX
-	PROTECT oDCSubscript AS CHECKBOX
-	PROTECT oDCDonation AS CHECKBOX
-	PROTECT oDCPaymethod AS RADIOBUTTONGROUP
-	PROTECT oCCRadioButton1 AS RADIOBUTTON
-	PROTECT oCCRadioButton2 AS RADIOBUTTON
-	PROTECT oCCRadioButton3 AS RADIOBUTTON
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCbegin_bed AS SINGLELINEEDIT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCGroupBoxSoort AS GROUPBOX
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS OBJECT
-RESOURCE SelPersGifts DIALOGEX  10, 23, 212, 129
-STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
-CAPTION	"Which member/fund"
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"From", SELPERSGIFTS_SELX_REK, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 8, 7, 117, 95
-	CONTROL	"Standard Gifts", SELPERSGIFTS_STANDARDG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 36, 60, 12
-	CONTROL	"Subscriptions", SELPERSGIFTS_SUBSCRIPT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 48, 60, 11
-	CONTROL	"Donations", SELPERSGIFTS_DONATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 59, 50, 11
-	CONTROL	"Pay method", SELPERSGIFTS_PAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 25, 66, 50
-	CONTROL	"Accept giro", SELPERSGIFTS_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 82, 37, 52, 11
-	CONTROL	"Direct Debit", SELPERSGIFTS_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 82, 48, 52, 11
-	CONTROL	"Don't care", SELPERSGIFTS_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 82, 59, 52, 11
-	CONTROL	"Above which gift amount:", SELPERSGIFTS_FIXEDTEXT3, "Static", WS_CHILD, 8, 110, 84, 13
-	CONTROL	"", SELPERSGIFTS_BEGIN_BED, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 95, 110, 77, 10
-	CONTROL	"Ok", SELPERSGIFTS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 152, 7, 53, 12
-	CONTROL	"Cancel", SELPERSGIFTS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 152, 23, 53, 12
-	CONTROL	"Wich type:", SELPERSGIFTS_GROUPBOXSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 25, 62, 48
-END
-
-method ButtonClick(oControlEvent) class SelPersGifts
-	local oControl as Control
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
-	super:ButtonClick(oControlEvent)
-	//Put your changes here
-	IF oControl:Name=="DONATION" .or.oControl:Name=="SUBSCRIPT" .or.oControl:Name=="StandardG"
-		self:ShowTypes()
-	endif
-	return nil
-METHOD CancelButton( ) CLASS SelPersGifts
-	SELF:EndDialog()
-	oCaller:Selx_OK := FALSE
-	RETURN SELF
-METHOD Close(oEvent) CLASS SelPersGifts
-	SUPER:Close(oEvent)
-	//Put your changes here
-	SELF:Destroy()
-	RETURN NIL
-METHOD Init(oParent,uExtra) CLASS SelPersGifts 
-
-self:PreInit(oParent,uExtra)
-
-SUPER:Init(oParent,ResourceID{"SelPersGifts",_GetInst()},TRUE)
-
-oDCSelx_rek := combobox{SELF,ResourceID{SELPERSGIFTS_SELX_REK,_GetInst()}}
-oDCSelx_rek:HyperLabel := HyperLabel{#Selx_rek,"From",NULL_STRING,NULL_STRING}
-oDCSelx_rek:FillUsing(Self:FillPerGifts( ))
-
-oDCStandardG := CheckBox{SELF,ResourceID{SELPERSGIFTS_STANDARDG,_GetInst()}}
-oDCStandardG:HyperLabel := HyperLabel{#StandardG,"Standard Gifts",NULL_STRING,"Gifts pattern"}
-oDCStandardG:UseHLforToolTip := True
-
-oDCSubscript := CheckBox{SELF,ResourceID{SELPERSGIFTS_SUBSCRIPT,_GetInst()}}
-oDCSubscript:HyperLabel := HyperLabel{#Subscript,"Subscriptions",NULL_STRING,"Payed magazines, memberships, etc."}
-oDCSubscript:UseHLforToolTip := True
-
-oDCDonation := CheckBox{SELF,ResourceID{SELPERSGIFTS_DONATION,_GetInst()}}
-oDCDonation:HyperLabel := HyperLabel{#Donation,"Donations",NULL_STRING,"Promised gifts"}
-oDCDonation:UseHLforToolTip := True
-
-oCCRadioButton1 := RadioButton{SELF,ResourceID{SELPERSGIFTS_RADIOBUTTON1,_GetInst()}}
-oCCRadioButton1:HyperLabel := HyperLabel{#RadioButton1,"Accept giro",NULL_STRING,"Paying by means of acceptgiro"}
-oCCRadioButton1:UseHLforToolTip := True
-
-oCCRadioButton2 := RadioButton{SELF,ResourceID{SELPERSGIFTS_RADIOBUTTON2,_GetInst()}}
-oCCRadioButton2:HyperLabel := HyperLabel{#RadioButton2,"Direct Debit",NULL_STRING,"Paying by means of automatic collection"}
-oCCRadioButton2:UseHLforToolTip := True
-
-oCCRadioButton3 := RadioButton{SELF,ResourceID{SELPERSGIFTS_RADIOBUTTON3,_GetInst()}}
-oCCRadioButton3:HyperLabel := HyperLabel{#RadioButton3,"Don't care",NULL_STRING,"Every methodis OK"}
-oCCRadioButton3:UseHLforToolTip := True
-
-oDCFixedText3 := FixedText{SELF,ResourceID{SELPERSGIFTS_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Above which gift amount:",NULL_STRING,NULL_STRING}
-
-oDCbegin_bed := SingleLineEdit{SELF,ResourceID{SELPERSGIFTS_BEGIN_BED,_GetInst()}}
-oDCbegin_bed:Picture := "999999"
-oDCbegin_bed:HyperLabel := HyperLabel{#begin_bed,NULL_STRING,NULL_STRING,NULL_STRING}
-
-oCCOKButton := PushButton{SELF,ResourceID{SELPERSGIFTS_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"Ok",NULL_STRING,NULL_STRING}
-
-oCCCancelButton := PushButton{SELF,ResourceID{SELPERSGIFTS_CANCELBUTTON,_GetInst()}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
-
-oDCGroupBoxSoort := GroupBox{SELF,ResourceID{SELPERSGIFTS_GROUPBOXSOORT,_GetInst()}}
-oDCGroupBoxSoort:HyperLabel := HyperLabel{#GroupBoxSoort,"Wich type:",NULL_STRING,NULL_STRING}
-
-oDCPaymethod := RadioButtonGroup{SELF,ResourceID{SELPERSGIFTS_PAYMETHOD,_GetInst()}}
-oDCPaymethod:FillUsing({ ;
-							{oCCRadioButton1,"G"}, ;
-							{oCCRadioButton2,"C"}, ;
-							{oCCRadioButton3,"B"} ;
-							})
-oDCPaymethod:HyperLabel := HyperLabel{#Paymethod,"Pay method",NULL_STRING,NULL_STRING}
-
-SELF:Caption := "Which member/fund"
-SELF:HyperLabel := HyperLabel{#SelPersGifts,"Which member/fund",NULL_STRING,NULL_STRING}
-
-self:PostInit(oParent,uExtra)
-
-return self
-
-method ListBoxSelect(oControlEvent) class SelPersGifts
-	local oControl as Control
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
-	super:ListBoxSelect(oControlEvent)
-	//Put your changes here 
-	IF oControl:Name=="SELX_REK"
-		self:ShowTypes()
-	endif
-
-	return NIL
-METHOD OKButton( ) CLASS SelPersGifts
-	LOCAL oAcc as Account , mSoortCond,mPay as string
-	if !IsNil(self:oDCPaymethod:VALUE) .and.!self:oDCPaymethod:Value=='B'
-		mPay:=self:oDCPaymethod:Value
-	endif
-	oCaller:selx_rek := if(IsNil(oDCselx_rek:VALUE).or.Empty(oDCselx_rek),null_string,oDCselx_rek:VALUE)
-	if !Empty(oCaller:selx_rek)
-		oCaller:cWhereOther := 's.accid="'+oCaller:selx_rek+'"'+iif(Empty(mPay),"",' and s.PAYMETHOD=="'+mPay+'"') 
-	else
-		mSoortCond:=""
-		if self:oDCStandardG:Checked
-			mSoortCond+='category=="G"'
-		endif
-		if self:oDCSubscript:Checked
-				mSoortCond+=iif(Empty(mSoortCond),'',' or ')+'s.category=="A"'+iif(Empty(mPay),"",'and s.PAYMETHOD=="'+mPay+'"')
-		endif
-		if self:oDCDonation:Checked
-			mSoortCond+=iif(Empty(mSoortCond),'',' or ')+'s.category=="D"' +iif(Empty(mPay),"",'and s.PAYMETHOD=="'+mPay+'"')
-		endif
-		if Empty(mSoortCond)
-			(ErrorBox{self,"Specify at least one type"}):show()
-			return
-		endif
-		oCaller:cWhereOther:='('+mSoortCond+')'
-	endif
-	if Val(oDCbegin_bed:TextValue)>0
-		iif(Empty(oCaller:cWhereOther),'',' and ')+'s.amount>='+AllTrim(oDCbegin_bed:TextValue)
-	endif
-	oAcc:=Account{}
-	oAcc:SetOrder("accid")
-	oAcc:Seek(#REK,oCaller:selx_rek)
-	oCaller:selx_voorw :=StrTran(StrTran(StrTran(oCaller:cWhereOther,'.',' '),'amount','amount'),'accid','account')
-// 	oCaller:selx_voorw := 'member = ' + AllTrim(oAcc:description)+;
-// 	' and gift amount > ' + AllTrim(oDCbegin_bed:TextValue)
-	oAcc:Close()
-	oAcc:=null_object 
-	self:oCaller:selx_ok:=true
-	self:EndDialog() 
-	
-RETURN 
-METHOD PostInit(oParent,uExtra) CLASS SelPersGifts
-	//Put your PostInit additions here
-self:SetTexts()
-	oDCbegin_bed:Value := 0
-	self:oDCSelx_rek:CurrentItemNo:=1
-	self:oCCRadioButton3:Value := true
-	self:ShowTypes()
-	self:oCaller:selx_ok:=false	
-RETURN nil
-method PreInit(oParent,uExtra) class SelPersGifts
-	//Put your PreInit additions here
-	oCaller:=uExtra
-	return nil
-method ShowTypes() class SelPersGifts
-// show selection of types: 
-if IsNil(oDCSelx_rek:VALUE).or.Empty(oDCSelx_rek:VALUE)
-	oDCGroupBoxSoort:Show() 
-	oDCStandardG:Show()
-	oDCSubscript:Show()
-	oDCDonation:Show()
-	if oDCDonation:Checked  .or. oDCSubscript:Checked 
-		self:oDCPaymethod:Show()
-		self:oCCRadioButton1:Show()
-		self:oCCRadioButton2:Show()
-		self:oCCRadioButton2:Show()
-	else
-		self:oDCPaymethod:Hide()
-		self:oCCRadioButton1:Hide()
-		self:oCCRadioButton2:Hide()
-		self:oCCRadioButton2:Hide()
-	endif		
-else
-	oDCGroupBoxSoort:Hide() 
-	oDCStandardG:Hide()
-	oDCSubscript:Hide()
-	oDCDonation:Hide()
-	self:oDCPaymethod:Show()
-	self:oCCRadioButton1:Show()
-	self:oCCRadioButton2:Show()
-	self:oCCRadioButton2:Show()
-endif
-	
 STATIC DEFINE SELPERSGIFTS_BEGIN_BED := 109 
 STATIC DEFINE SELPERSGIFTS_CANCELBUTTON := 111 
 STATIC DEFINE SELPERSGIFTS_DONATION := 103 
@@ -2619,7 +2390,6 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT oCaller as SelPers
   PROTECT cType AS STRING
-  PROTECT oPerscd AS PersCod
   PROTECT aPropEx:={} as ARRAY 
   
   declare method ExtraPropCondition 
@@ -2870,7 +2640,6 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD OKButton( ) CLASS SelPersMailCd
-	LOCAL oPers AS Person
 	LOCAL i,nSel as int
  	LOCAL oContr AS Control
  	LOCAL myCombo as Listbox 
@@ -3039,7 +2808,6 @@ self:SetTexts()
 // 		oCCSortButton1:Hide()		
 // 		oCCSortButton2:Hide()		
 // 	ENDIF
-	oPerscd := Perscod{} 
 	oCaller:selx_OK := FALSE   // in case of close window by user: false: only OK when pressing OK
 
    self:InitExtraProperties()
@@ -3429,7 +3197,7 @@ CLASS SelPersPayments INHERIT DataDialogMine
     PROTECT cAccountBeginName,cAccountEndName AS STRING
 	PROTECT mRekSt,mRekId AS STRING
 	PROTECT mRekEnd AS STRING
-	PROTECT oAcc AS Account
+// 	PROTECT oAcc AS Account
 	PROTECT oCaller, MyParent as OBJECT 
 	export cFilter:="" as STRING
   
@@ -3514,12 +3282,6 @@ METHOD CancelButton( ) CLASS SelPersPayments
 METHOD Close(oEvent) CLASS SelPersPayments
 	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oAcc==NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
 SELF:Destroy()
 RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS SelPersPayments
@@ -3852,20 +3614,6 @@ STATIC DEFINE SELPERSPAYMENTSOUD_SELX_END := 112
 STATIC DEFINE SELPERSPAYMENTSOUD_SELX_REK := 104 
 STATIC DEFINE SELPERSPAYMENTSOUD_SELX_REKEND := 106 
 STATIC DEFINE SELPERSPAYMENTSOUD_SUBSET := 108 
-RESOURCE SelPersPrimary DIALOGEX  15, 22, 324, 123
-STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
-CAPTION	"Selection items for persons"
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Selection on", SELPERSPRIMARY_SELX_KEUZE1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 10, 237, 99
-	CONTROL	"person parameters only (e.g. mailing code, gender, ..)", SELPERSPRIMARY_SELPERSPRBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 23, 198, 11
-	CONTROL	"unpaid items (in con.with bills, reminders, ...)", SELPERSPRIMARY_SELPERSPRBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 44, 167, 12
-	CONTROL	"Regular payers/givers: standard gifts/donations/subscriptions", SELPERSPRIMARY_SELPERSPRBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 65, 214, 11
-	CONTROL	"givers/payers in certain period", SELPERSPRIMARY_SELPERSPRBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 86, 156, 11
-	CONTROL	"OK", SELPERSPRIMARY_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 259, 14, 53, 12
-	CONTROL	"Cancel", SELPERSPRIMARY_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 34, 53, 12
-END
-
 CLASS SelPersPrimary INHERIT DialogWinDowExtra 
 
 	PROTECT oDCSelx_keuze1 AS RADIOBUTTONGROUP
@@ -3880,8 +3628,22 @@ CLASS SelPersPrimary INHERIT DialogWinDowExtra
     PROTECT cAccountBeginName,cAccountEndName AS STRING
 	PROTECT mRekSt AS STRING
 	PROTECT mREKEnd AS STRING
-	PROTECT oAcc AS Account
+// 	PROTECT oAcc AS Account
 	PROTECT oCaller AS OBJECT
+RESOURCE SelPersPrimary DIALOGEX  15, 22, 324, 123
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Selection items for persons"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Selection on", SELPERSPRIMARY_SELX_KEUZE1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 10, 237, 99
+	CONTROL	"person parameters only (e.g. mailing code, gender, ..)", SELPERSPRIMARY_SELPERSPRBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 23, 198, 11
+	CONTROL	"unpaid items (in con.with bills, reminders, ...)", SELPERSPRIMARY_SELPERSPRBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 44, 167, 12
+	CONTROL	"Regular payers/givers: standard gifts/donations/subscriptions", SELPERSPRIMARY_SELPERSPRBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 65, 214, 11
+	CONTROL	"givers/payers in certain period", SELPERSPRIMARY_SELPERSPRBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 26, 86, 156, 11
+	CONTROL	"OK", SELPERSPRIMARY_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 259, 14, 53, 12
+	CONTROL	"Cancel", SELPERSPRIMARY_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 34, 53, 12
+END
+
 METHOD CancelButton( ) CLASS SelPersPrimary
 	SELF:EndDialog()
 	oCaller:selx_OK := FALSE
