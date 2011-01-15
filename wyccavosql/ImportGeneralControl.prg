@@ -242,7 +242,7 @@ ASSIGN ConfirmBox(uValue) CLASS ImportMapping
 SELF:FieldPut(#ConfirmBox, uValue)
 RETURN uValue
 
-Method CongruenceScore(oPers as Person,cImpLastname as string,cImpAddress as string,cImpPos as string,cImpHnr as string, cImpFirstName as string,cImpInitials as string) as int class ImportMapping
+Method CongruenceScore(oPers as SQLSelect,cImpLastname as string,cImpAddress as string,cImpPos as string,cImpHnr as string, cImpFirstName as string,cImpInitials as string) as int class ImportMapping
 // determine measure of correspondence of found person with person to import
 //					==		=
 // lastname		2		1
@@ -598,8 +598,8 @@ oTreeView:=SELF:oDCTreeView1
 
 	* Add fields of target: 
 	self:aTargetDB:={}
-	oTargetDB:=SQLSelect{"SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM INFORMATION_SCHEMA.COLUMNS "+;
-		"WHERE table_schema = '"+dbname+"' and TABLE_NAME='"+TargetDB+"' order by ORDINAL_POSITION",oConn}
+	oTargetDB:=SQLSelect{"SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME='"+TargetDB+"' order by ORDINAL_POSITION",oConn}
 	if oTargetDB:RecCount<1
 		return
 	endif
@@ -805,7 +805,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				(ErrorBox{self,"Account id:"+ACCID +" is not a correct!"+CRLF+"Import stopped"}):show()
 				return 3
 			endif
-			if SQLSelect{"select ACCID from account where ACCID='"+ACCID+"'",oConn}:RecCount>0  
+			if SQLSelect{"select accid from account where accid='"+ACCID+"'",oConn}:RecCount>0  
 				// Account allready in the database, so update it:
 				self:lExists:=true 
 				self:lOverwrite:=self:oDCReplaceDuplicates:Checked 
@@ -823,7 +823,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 			else
 				accnumber:=AllTrim(accnumber)
 			endif
-			oAcc:=SQLSelect{"select ACCID from account where ACCNUMBER='"+ACCNUMBER+"'",oConn}
+			oAcc:=SQLSelect{"select accid from account where accnumber='"+ACCNUMBER+"'",oConn}
 			if oAcc:RecCount>0
 				// Account allready in the database, so update it:
 				self:lExists:=true 
@@ -990,7 +990,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				elseif IDs=#mDepartment
 					// find department
 					cTargetStr:=ZeroTrim(cTargetStr) 
-					oDep:=SQLSelect{"select depid,DEPTMNTNBR,DESCRIPTN from department where DEPTMNTNBR='"+cTargetStr+"' or depid='"+cTargetStr+"'",oConn}
+					oDep:=SQLSelect{"select depid,deptmntnbr,descriptn from department where deptmntnbr='"+cTargetStr+"' or depid='"+cTargetStr+"'",oConn}
 					if oDep:RecCount>0
 						IVarPutSelf(self:oEdit,#mDepartment,AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN)
 						IVarPutSelf(self:oEdit,#mDep,Str(oDep:DepId,-1))
@@ -1640,7 +1640,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	if Empty(oStmnt:Status)
 		return true
 	else
-		LogEvent(self,"error:"+oStmnt:Status:description+" in statement:"+oStmnt:sqlString,"logSQL")
+		LogEvent(self,"error:"+oStmnt:Status:description+" in statement:"+oStmnt:sqlString,"LogErrors")
 		return false
 	endif
 ACCESS TargetDB() CLASS ImportMapping
