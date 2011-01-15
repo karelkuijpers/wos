@@ -1485,9 +1485,14 @@ CLASS ListboxBal INHERIT ListBox
 * Special version of listbox to support multiple selction of Departments
 PROTECT cDepStart, cDepStartName as STRING  // range of Departmentnumbers
 PROTECT cCurStart as STRING // Current values used in list
-PROTECT oDepartment as Department
 protect aItem:={} as array  // container for departments 
 declare method AddSubDep
+// ACCESS Server CLASS ListBoxBal
+// RETURN oDepartment
+// ASSIGN Server(oDep) CLASS ListboxBal
+// oDepartment:=null_object
+// oDepartment:=oDep
+// RETURN oDepartment
 METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as int  CLASS ListBoxBal
 	* Find subdepartments and add to arrays with departments
 	LOCAL nChildRec			as int
@@ -1599,12 +1604,6 @@ IF !cDepStart==cCurStart
 
 ENDIF
 RETURN nil
-ACCESS Server CLASS ListBoxBal
-RETURN oDepartment
-ASSIGN Server(oDep) CLASS ListBoxBal
-oDepartment:=null_object
-oDepartment:=oDep
-RETURN oDepartment
 CLASS ListboxExtra INHERIT ListBox
 * Special version of listbox to support multiple selction of accounts
 export cAccStart, cAccEnd as STRING  // range of accountnumbers
