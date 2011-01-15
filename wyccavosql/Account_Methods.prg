@@ -272,19 +272,6 @@ METHOD FillBudgetYear(aContr) CLASS EditAccount
  	self:mBud1:=Round(YearAmnt,DecAantal)
  	self:oDCmBUD1:Show()
 RETURN	
-METHOD FillDepartments () CLASS EditAccount
-LOCAL oDep as Department
-LOCAL aRet := {{"0:"+sEntity+" "+sLand,"   "}}
-	oDep := Department{}
-	IF oDep:Used
-		oDep:GoTop()
-		DO WHILE !oDep:EoF
-			AAdd(aRet,{AllTrim(oDep:DEPTMNTNBR)+":"+AllTrim(oDep:Descriptn),oDep:DEPID})
-			oDep:Skip()
-		ENDDO
-		oDep:Close()
-	ENDIF
-RETURN aRet
 Method FillProprst() class EditAccount
 local amProp as array
 amProp:={} 
