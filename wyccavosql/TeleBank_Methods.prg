@@ -1935,7 +1935,6 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp as Filespec
 	LOCAL ld_bookingdate as date 
-	Local oPers:=Person{,DBSHARED,DBREADONLY} as Person 
 	local aExcludebank:={;                  // the following bank accounts should be ignored as belonging to givers
 	"44528602";		//PRIVATGIROT AB
 	,"92486";		//PLUSGIROT, NBGIRO,DEBETKONTO                                                  
@@ -2007,7 +2006,7 @@ DO WHILE .not.oHlM:EOF
 		case recordcode=="51" .or.(recordcode=="62" .and.Empty(lv_address)) 
 			lv_address :=Compress(AllTrim(SubStr(oHlM:MTLINE,3,70)))						
 		case recordcode=="52" .or.( recordcode=="63".and.Empty(lv_zip) )
-			lv_zip :=oPers:StandardZip(AllTrim(SubStr(oHlM:MTLINE,3,8)))						
+			lv_zip :=StandardZip(AllTrim(SubStr(oHlM:MTLINE,3,8)))						
 			lv_city :=AllTrim(SubStr(oHlM:MTLINE,12,35))						
 			lv_country :=AllTrim(SubStr(oHlM:MTLINE,47,2))						
 		case recordcode=="60"
