@@ -1,78 +1,3 @@
-METHOD FindBal(cBalItem ref string) as logic CLASS BalanceItem
-*	Find a BalanceItem with the given number/description
-*	Returns: True: if unique BalanceItem found
-*			 False: if not found (BalanceItem:EOF-TRUE) or not unique found (current record found )
-*		
-*
-LOCAL lUnique as LOGIC 
-local oBal as SQLSelect
-IF !Empty(cBalItem).and.IsDigit(psz(_cast,AllTrim(cBalItem))) 
-	oBal:=SQLSelect{"select balitemid from balanceitem where number='"+AllTrim(cBalItem)+"'",oConn}
-ELSE
-	oBal:=SQLSelect{"select balitemid from balanceitem where heading='"+AllTrim(cBalItem)+"'",oConn}
-ENDIF
-if oBal:RecCount=1
-	lUnique:=true
-	cBalItem:=oBal:balitemid
-ENDIF
-RETURN lUnique
-METHOD ValidateBalanceTransition(cParentNbr:="0" as string,cParentId:="0" ref string,cClassification:="" as string ) as string CLASS BalanceItem
-* Check if transition of current balance item to new parent is allowed
-*
-* If not allowed: returns errormessage text
-* Input::
-*	cParentNbr: number of required new parent of current BalanceItem , or
-*	cParentId : identifier (balitemid)of required new parent of current BalanceItem
-*		 If cParentNbr is given,  value of cParentId will be returned (call with @..)
-*	cClassification: Current classification of the balance item itself
-*
-* Output: cNewClassification of the parent
-*
-LOCAL cError as STRING
-LOCAL nCurRec AS INT
-// Default(@cParentNbr,NULL_STRING)
-// Default(@cClassification,NULL_STRING)
-IF cParentId=="0".and.AllTrim(cParentNbr)=="0"
-	RETURN ""
-ENDIF
-IF !AllTrim(cParentNbr)=="0" .and.!IsNil(self:NUMber)
-	IF AllTrim(cParentNbr)==AllTrim(self:NUMber)
-		cError:="Parent must be unqual to self"
-		RETURN cError
-	ENDIF
-ELSE
-	IF !IsNil(self:balitemid) .and. cParentId==Str(self:balitemid,-1)
-		cError:="Parent must be unqual to self"
-		RETURN cError
-	ENDIF
-ENDIF
-nCurRec:=SELF:RecNo
-IF Empty(cClassification)
-	cClassification:=self:category
-ENDIF
-IF !AllTrim(cParentNbr)=="0"
-	self:Seek(#NUMBER,AllTrim(cParentNbr))
-ELSE
-	self:Seek(#NUM,cParentId)
-ENDIF
-
- *Check correspondence IN classification TO parent:
-IF !self:EoF
-	cParentId:=Str(self:balitemid,-1)
-	IF self:category $ "KOBA"
-		IF !cClassification $ "KOBA"
-	 		cError:="Fill as Classification Income or Expense"
-	 	ENDIF
-	ELSE
-		IF !cClassification $ "PAAK"
-	 		cError:="Fill as Classification Liabilities or Assets"
-	 	ENDIF
-	ENDIF
-ELSE
-	cError:="Main item:"+cParentNbr+" does not exist"
-ENDIF
-SELF:RecNo:=nCurRec
-RETURN cError
 CLASS BalanceItemExplorer INHERIT CustomExplorer 
 declare method BuildListViewItems, PrintSubItem
 METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemExplorer
@@ -1348,27 +1273,6 @@ method ViewReport() class CustomExplorer
 method ViewSmallIcon() class CustomExplorer
 	return self:ListView:ViewAs(#SmallIconView)
 
-RESOURCE EditBalanceItem DIALOGEX  26, 24, 358, 200
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
-	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
-	CONTROL	"footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
-	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
-	CONTROL	"Balancegroup#:", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
-	CONTROL	"footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Main group#:", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
-	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
-	CONTROL	"Income", EDITBALANCEITEM_RADIOBUTTONBA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 101, 80, 11
-	CONTROL	"Assets", EDITBALANCEITEM_RADIOBUTTONAK, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 132, 80, 12
-	CONTROL	"Liablities and funds", EDITBALANCEITEM_RADIOBUTTONPA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 147, 80, 11
-	CONTROL	"OK", EDITBALANCEITEM_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 256, 176, 53, 12
-	CONTROL	"Cancel", EDITBALANCEITEM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 176, 53, 12
-END
-
 CLASS EditBalanceItem INHERIT DataWindowExtra 
 
 	PROTECT oDCSC_NUM AS FIXEDTEXT
@@ -1400,6 +1304,27 @@ CLASS EditBalanceItem INHERIT DataWindowExtra
 
 
 	
+RESOURCE EditBalanceItem DIALOGEX  26, 24, 358, 200
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
+	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
+	CONTROL	"footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
+	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
+	CONTROL	"Balancegroup#:", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
+	CONTROL	"footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Main group#:", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
+	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
+	CONTROL	"Income", EDITBALANCEITEM_RADIOBUTTONBA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 101, 80, 11
+	CONTROL	"Assets", EDITBALANCEITEM_RADIOBUTTONAK, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 132, 80, 12
+	CONTROL	"Liablities and funds", EDITBALANCEITEM_RADIOBUTTONPA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 147, 80, 11
+	CONTROL	"OK", EDITBALANCEITEM_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 256, 176, 53, 12
+	CONTROL	"Cancel", EDITBALANCEITEM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 176, 53, 12
+END
+
 METHOD CancelButton( ) CLASS EditBalanceItem
 	SELF:ENDWindow()
 RETURN NIL
@@ -1646,12 +1571,6 @@ STATIC DEFINE EDITBALANCEITEM_SC_HFDRBRNUM := 103
 STATIC DEFINE EDITBALANCEITEM_SC_KOPTEKST := 101 
 STATIC DEFINE EDITBALANCEITEM_SC_NUM := 100 
 STATIC DEFINE EDITBALANCEITEM_SC_VOETTEKST := 102 
-CLASS ExplorerClick INHERIT DIALOGWINDOW 
-
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE ExplorerClick DIALOGEX  9, 8, 263, 28
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP
 FONT	8, "MS Shell Dlg"
@@ -1660,6 +1579,12 @@ BEGIN
 	CONTROL	"Select item and click Select", EXPLORERCLICK_FIXEDTEXT1, "Static", WS_CHILD, 42, 8, 102, 13
 END
 
+CLASS ExplorerClick INHERIT DIALOGWINDOW 
+
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oParent,uExtra) CLASS ExplorerClick 
 
 self:PreInit(oParent,uExtra)
