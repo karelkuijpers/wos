@@ -1425,9 +1425,9 @@ CLASS InquirySelection INHERIT DataWindowExtra
 	INSTANCE mPerson
 	INSTANCE AmountType
 	INSTANCE Description
-	protect oDep as Department
-	Export oAcc as Account
-  	EXPORT oPers AS Person
+// 	protect oDep as Department
+// 	Export oAcc as Account
+//   	EXPORT oPers AS Person
   	EXPORT nAccount, nAccountTo  as STRING
 	EXPORT cAccName, cAccNumber,cAccNameTo, cAccNumberTo as STRING
   	PROTECT mCLNGiver AS STRING
@@ -1507,18 +1507,6 @@ METHOD CancelButton( ) CLASS InquirySelection
 METHOD Close(oEvent) CLASS InquirySelection
 *	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oAcc==NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
-IF !oPers==NULL_OBJECT
-	IF oPers:Used
-		oPers:Close()
-	ENDIF
-	oPers:=NULL_OBJECT
-ENDIF
 SELF:Destroy()
 	// force garbage collection
 	*CollectForced()
@@ -3768,9 +3756,6 @@ BEGIN
 END
 
 METHOD Close(oEvent) CLASS TransInquiry
-LOCAL cServer AS STRING
-LOCAL oServer AS TransHistory
-LOCAL oFs AS FileSpec
 IF !oHm==NULL_OBJECT
 	IF oHm:Used
 		oHm:Close()
