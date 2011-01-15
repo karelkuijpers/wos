@@ -867,7 +867,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS BalanceReport
 			IF nPntr>1
 				cCurValue:=SubStr(cCurValue,1,nPntr-1)
 			ENDIF
-			IF SELF:oBal:FindBal(@cCurValue)
+			IF FindBal(@cCurValue)
 				SELF:RegBalance(cCurValue)
 			ELSE
 				SELF:BalButton()
@@ -880,7 +880,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS BalanceReport
 				IF nPntr>1
 					cCurValue:=SubStr(cCurValue,1,nPntr-1)
 				ENDIF
-				IF SELF:oDep:FindDep(@cCurValue)
+				IF FindDep(@cCurValue)
 					SELF:RegDepartment(cCurValue,"")
 				ELSE
 					SELF:DepButton()
@@ -4046,7 +4046,7 @@ STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Journaling is allowed from:", MONTHCLOSE_FIXEDTEXT1, "Static", WS_CHILD, 4, 25, 88, 13
-	CONTROL	"donderdag 7 januari 2010", MONTHCLOSE_MINDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 96, 25, 118, 14
+	CONTROL	"zaterdag 15 januari 2011", MONTHCLOSE_MINDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 96, 25, 118, 14
 	CONTROL	"OK", MONTHCLOSE_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 224, 18, 54, 12
 	CONTROL	"Cancel", MONTHCLOSE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 224, 36, 53, 12
 END
@@ -4083,8 +4083,6 @@ SELF:AllowServerClose := True
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
-ELSE
-	SELF:Use(SysParms{})
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -5105,10 +5103,6 @@ self:SetTexts()
 		MonthEnd := Month(Today())
 	ENDIF	
 	lCondense:=FALSE
-	oDep:=Department{,,TRUE}
-	IF !oDep:Used
-		SELF:EndWindow()
-	ENDIF
 	mDepartment:="0:"+sEntity+" "+sLand
 	cCurDep:=mDepartment
 	WhoFrom:=Space(11)
