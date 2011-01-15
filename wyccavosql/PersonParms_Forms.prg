@@ -381,7 +381,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp
 	IF !lNew
 		self:MPROPNAME := oProp:FIELDGET(2)  //name
 		self:mId := oProp:id
-		self:mType := oProp:TYPE
+		self:oDCmType:TextValue := oProp:typedescr
 		self:mValues:=oProp:VALUES
 		IF self:mType==DROPDOWN
 			self:CurDropVal:=Split(self:mValues,",")
@@ -852,7 +852,7 @@ oDBTypeDescr:BlockOwner := self:server
 self:Browser:AddColumn(oDBTYPEDESCR)
 
 
-SELF:ViewAs(#BrowseView)
+self:ViewAs( #BrowseView )
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -1305,7 +1305,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra 
-	self:oProp:=SQLSelect{"select * from person_properties order by name",oConn}
+	self:oProp:=SQLSelect{"select id,name,`values`,case type when 0 then 'Text' when 1 then 'CheckBox' when 2 then 'DropDownList' END as typedescr  from person_properties order by name",oConn}
 	RETURN NIL
 
 METHOD RemoveButton( ) CLASS TabProp_Page 
