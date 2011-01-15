@@ -678,10 +678,10 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	RETURN NIL
 METHOD PrintReport() CLASS DonorFollowingReport
 	// printing of donor versus project report
-	LOCAL oAcc as Account
-	LOCAL oTrans as TransHistory
-	LOCAL oPers as Person
-	LOCAL oTransFreq as TransHistory
+	LOCAL oAcc as SQLSelect
+	LOCAL oTrans as SQLSelect
+	LOCAL oPers as SQLSelect
+	LOCAL oTransFreq as SQLSelect
 	LOCAL aPers:={} as ARRAY // of each giver its CLN  
 	local aPersExp:={} as Array // {pos.recno.exportable} of each person from aPers: if it is exportable conform selpersmailcode   
 	LOCAL aPersPrvFreq,aPersFreq as ARRAY // of each person from aPers: frequency of giving: 1: first giver, 2: not last 2 years, 3: not last year, 4:last year once, 5: more than once last year
@@ -732,17 +732,17 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	//SELF:Statusmessage(sMes)
 
-	oAcc:=Account{,DBSHARED,DBREADONLY}
-	IF !oAcc:Used
-		RETURN nil
-	ENDIF
-	oAcc:SetOrder("REK")
-	oAcc:SetFilter({||oAcc:GIFTALWD==true .or. !Empty(oAcc:CLN)})
-	oPers:=Person{,DBSHARED,DBREADONLY}
-	IF !oPers:Used
-		RETURN nil
-	ENDIF
-	oPers:SetOrder("ASSRE")
+// 	oAcc:=Account{,DBSHARED,DBREADONLY}
+// 	IF !oAcc:Used
+// 		RETURN nil
+// 	ENDIF
+// 	oAcc:SetOrder("REK")
+// 	oAcc:SetFilter({||oAcc:GIFTALWD==true .or. !Empty(oAcc:CLN)})
+// 	oPers:=Person{,DBSHARED,DBREADONLY}
+// 	IF !oPers:Used
+// 		RETURN nil
+// 	ENDIF
+// 	oPers:SetOrder("ASSRE")
 	aAcc:=self:oDCSubSet:GetSelectedItems()
 	ASort(aAcc)
 
@@ -1408,7 +1408,7 @@ SELF:FieldPut(#Ranges, uValue)
 RETURN uValue
 
 METHOD RegAccount(omAcc,ItemName) CLASS DonorFollowingReport
-	LOCAL oAccount AS Account
+	LOCAL oAccount as SQLSelect
 	IF Empty(omAcc).or.omAcc==NULL_OBJECT
 		RETURN
 	ENDIF
