@@ -78,7 +78,7 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 		ENDIF
 		* Check if account net asset of a department:
 		IF !Empty(oAccSelf:Department)
-			oDep:=SQLSelect{"select DESCRIPTN,NETASSET from Department where depid="+Str(oAccSelf:Department,-1),oConn}
+			oDep:=SQLSelect{"select descriptn,netasset from Department where depid="+Str(oAccSelf:Department,-1),oConn}
 			IF oDep:Reccount=1
 				IF oDep:NETASSET==oAccSelf:accid
 					InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account is net asset account of its department "+oDep:DESCRIPTN)+"!"}:Show()
@@ -86,7 +86,7 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 				ENDIF
 			ENDIF
 		ENDIF
-		oTrans:=SQLSelect{"select transnr from Transaction where accid="+cRek,oConn}
+		oTrans:=SQLSelect{"select transnr from transaction where accid="+cRek,oConn}
 		IF oTrans:Reccount>0
 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions in non balanced years associated with this account")+"!"}:Show()
     	ELSE
@@ -97,15 +97,21 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 				return false
 			endif
 			// check if account not used as ROE-gain/loss:
-			oAcc:=SQLSelect{"select ACCNUMBER from account where GAINLSACC="+cRek,oConn}
+			oAcc:=SQLSelect{"select accnumber from account where gainlsacc="+cRek,oConn}
 			if oAcc:Reccount>0
 				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oAcc:ACCNUMBER)+"!"}:Show()
 				return false
 			endif
 			// check if account used in standorderline:
-			oAcc:=SQLSelect{"select STORDRID from standingorderline where accountid="+cRek,oConn}
+			oAcc:=SQLSelect{"select stordrid from standingorderline where accountid="+cRek,oConn}
 			if oAcc:Reccount>0
 				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in standing orders")+"!"}:Show()
+				return false
+			endif
+			// check if account belongs to a member:
+			oAcc:=SQLSelect{"select mbrid from member where accid="+cRek,oConn}
+			if oAcc:Reccount>0
+				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account belongs to a member")+"!"}:Show()
 				return false
 			endif
 			
@@ -113,16 +119,16 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 			oStmnt:Execute()							
 			if oStmnt:NumSuccessfulRows>0
 				* remove also corresponding subscriptions/donations: 
-				oStmnt:SQLString:="delete from Subscription where accid="+cRek
+				oStmnt:SQLString:="delete from subscription where accid="+cRek
 				oStmnt:Execute()
 				// remove corresponding balance years: 
-				oStmnt:SQLString:="delete from AccountBalanceYear where accid="+cRek
+				oStmnt:SQLString:="delete from accountbalanceyear where accid="+cRek
 				oStmnt:Execute()
 				// remove also corresponding month balances: 
-				oStmnt:SQLString:="delete from mBalance where accid="+cRek
+				oStmnt:SQLString:="delete from mbalance where accid="+cRek
 				oStmnt:Execute()
 				// remove related telepattern too:
-				oStmnt:SQLString:="delete from TeleBankPatterns where accid="+cRek
+				oStmnt:SQLString:="delete from telebankpatterns where accid="+cRek
 				oStmnt:Execute()
 				// remove related budget too: 
 				oStmnt:SQLString:="delete from budget where accid="+cRek
@@ -174,7 +180,7 @@ METHOD FindButton( ) CLASS AccountBrowser
    self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
    self:oAcc:Execute() 
    if !Empty(oAcc:status)
-	 	LogEvent(,"findbutton Acc:"+self:oAcc:status:description+"( stamnt:"+self:oAcc:SQLString,"LogSQL")
+	 	LogEvent(,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
    endif
  
    self:GoTop()
@@ -479,7 +485,7 @@ BEGIN
 	CONTROL	"", EDITACCOUNT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 228, 55, 97, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITACCOUNT_DEPBUTTON, "Button", WS_CHILD, 324, 55, 15, 12
 	CONTROL	"Subscriptionprice:", EDITACCOUNT_MSUBSCRIPTIONPRICE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 256, 73, 68, 13
-	CONTROL	"6-11-2010", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
+	CONTROL	"15-1-2011", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
 	CONTROL	"Multi Currency", EDITACCOUNT_MMULTCURR, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 136, 60, 11
 	CONTROL	"", EDITACCOUNT_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 136, 104, 72
 	CONTROL	"Reevaluate", EDITACCOUNT_MREEVALUATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 224, 136, 56, 11
@@ -651,7 +657,6 @@ CLASS EditAccount INHERIT DataWindowExtra
 // 	instance mBUD12 
 // 	instance BudgetGranularity
 // 	instance PropValueSingle,PropValueCombo 
-PROTECT oMBal as mBalance
   	EXPORT oAcc as SQLSelect
   	PROTECT nCurRec as int
   	PROTECT nCurNum,cCurGainLossAcc, nCurDep, cCurSingle as STRING
@@ -662,13 +667,10 @@ PROTECT oMBal as mBalance
   	PROTECT mMainId, mAccId as STRING
   	export mGainLsacc as string
   	PROTECT mSoort as STRING
-	PROTECT oBal as BalanceItem
-	PROTECT oDep as Department
 	PROTECT cCurBal, cCurDep as STRING
 	EXPORT mCln, mAccId as STRING 
 	protect aProp as Array
 	protect CurBal as float 
-	protect oAccG as Account 
 	Protect Enabled:=true as logic
 	export lExists as logic 
 	export oAccCnt as AccountContainer 
@@ -748,7 +750,7 @@ METHOD DateTimeSelectionChanged(oDateTimeSelectionEvent) CLASS EditAccount
 		
 		dCurDate := oDCBalanceDate:SelectedDate
 		oBalncs:=Balances{}
-		oBalncs:GetBalance(mAccId,self:mSoort,,oDCBalanceDate:SelectedDate,self:mCurrency)
+		oBalncs:GetBalance(mAccId,,oDCBalanceDate:SelectedDate,self:mCurrency)
 
 		self:mBalance:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)
 // 		oMBal:GetBalance(mAccId,mNumSave,,oDCBalanceDate:SelectedDate,self:mCurrency) 
@@ -832,7 +834,6 @@ METHOD GLAccButton(lUnique ) CLASS EditAccount
 
 RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount 
-LOCAL olServer AS OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -893,9 +894,7 @@ oDCmMultCurr:UseHLforToolTip := True
 
 oDCmCurrency := combobox{SELF,ResourceID{EDITACCOUNT_MCURRENCY,_GetInst()}}
 oDCmCurrency:HyperLabel := HyperLabel{#mCurrency,NULL_STRING,"Currency used by this account",NULL_STRING}
-olServer := CURRENCYLIST{}
-oDCmCurrency:FillUsing(olServer,#UNITED_ARA,#AED)
-olServer:Close()
+oDCmCurrency:FillUsing(SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED))
 oDCmCurrency:UseHLforToolTip := True
 
 oDCmReevaluate := CheckBox{SELF,ResourceID{EDITACCOUNT_MREEVALUATE,_GetInst()}}
@@ -1131,7 +1130,7 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditAccount
 	LOCAL i as int
 	LOCAL aContr:={} as ARRAY
 	LOCAL BudYear,BudMonth as int
-	LOCAL oAcc:=self:Server as Account
+// 	LOCAL oAcc:=self:Server as Account
 	LOCAL BudAmnt,CurAmnt:=0.00 as FLOAT
 	LOCAL MonthEqual:=true as LOGIC
 	LOCAL nPntr, nSel as int
@@ -1442,7 +1441,7 @@ METHOD OkButton CLASS EditAccount
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:status)
-			LogEvent(,cStatement,"LogSQL")
+			LogEvent(,cStatement,"LogErrors")
 			(ErrorBox{self,"Fout:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
 			return nil
 		endif
@@ -1524,7 +1523,7 @@ METHOD OkButton CLASS EditAccount
 			ELSEIF IsObject(self:oCaller:oAcc)
 				self:oCaller:oAcc:Execute()
 				if !Empty(self:oCaller:oAcc:status)
-					LogEvent(self,"wrong:"+self:oCaller:oAcc:SQLString,"logsql")
+					LogEvent(self,"wrong:"+self:oCaller:oAcc:SQLString,"LogErrors")
 				endif 
 				self:oCaller:oAcc:SuspendNotification() 
 				// reposition owner at current person:
@@ -1625,14 +1624,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		endif
 		if !Empty(self:mNumSave)
 			// read balance item:
-			osel:=SQLSelect{"select number,Heading from balanceitem where balitemid="+mNumSave,oConn}
-			self:mBalitemid:=AllTrim(osel:NUMBER)+":"+osel:Heading
+			osel:=SQLSelect{"select number,heading from balanceitem where balitemid="+mNumSave,oConn}
+			self:mBalitemid:=AllTrim(osel:NUMBER)+":"+osel:heading
 			self:cCurBal:=self:mBalitemid
 		ENDIF
 		IF Empty(self:mDep)
 			self:mDepartment:="0:"+sEntity+" "+sLand
 		else
-			osel:=SQLSelect{"select DEPTMNTNBR,DESCRIPTN,IPCPROJECT from department where depid="+self:mDep,oConn}
+			osel:=SQLSelect{"select deptmntnbr,descriptn,ipcproject from department where depid="+self:mDep,oConn}
 			self:mDepartment:=osel:DEPTMNTNBR+":"+osel:DESCRIPTN
 			self:ShowIPC(osel:IPCPROJECT)
 		ENDIF
@@ -1670,7 +1669,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:mCurrency:=sCurr
 		endif 
 		oBalncs:=Balances{}
-		oBalncs:GetBalance(mAccId,self:mSoort,,,self:mCurrency) 
+		oBalncs:GetBalance(mAccId,,,self:mCurrency) 
 		self:CurBal:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)
 		self:mBalance:=self:CurBal 
 		
@@ -1753,7 +1752,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:mBalitemid:=""
 			self:cCurBal:=""
 		else 
-			self:oDCmBalitemid:textValue:=AllTrim(self:oAcc:NUMBER)+":"+self:oAcc:Heading
+			self:oDCmBalitemid:textValue:=AllTrim(self:oAcc:NUMBER)+":"+self:oAcc:heading
 			self:cCurBal:=self:mBalitemid
 		ENDIF
 		IF Empty(oAcc:DEPTMNTNBR)
@@ -1806,11 +1805,6 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:lNew:=uExtra
 		ENDIF
 	ENDIF
-	oMBal:=MBalance{}
-	IF !oMBal:Used
-		self:EndWindow()
-		RETURN FALSE
-	ENDIF
 	self:FillProprst()
 	RETURN nil
 ACCESS PropBox() CLASS EditAccount
@@ -1852,7 +1846,7 @@ SELF:FieldPut(#PropValueSingle, uValue)
 RETURN uValue
 
 Method ShowCurrency() class EditAccount
-local oAcc:=self:Server as Account
+// local oAcc:=self:Server as Account
 if self:oDCmMultCurr:Checked
 	self:oDCCurrText:Hide()
 	self:oDCmCurrency:Hide()
@@ -1939,7 +1933,7 @@ local oBal,oDep as SQLSelect
 	self:mNumSave:=AllTrim(self:mBalitemid)
 	oBal:=SQLSelect{"select heading,balitemid from balanceitem where number='"+mNumSave+"'",oConn}
 	IF oBal:reccount>0
-			self:oDCmBalitemid:textValue :=AllTrim(oBal:NUMBER)+":"+oBal:Heading
+			self:oDCmBalitemid:textValue :=AllTrim(oBal:NUMBER)+":"+oBal:heading
 			self:cCurBal:=self:mBalitemid
 			self:mNumSave:=oBal:balitemid
 		ELSE
