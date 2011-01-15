@@ -91,11 +91,6 @@ PROTECT mbud  AS FLOAT
 EXPORT oReport AS PrintDialog
 EXPORT iLine,iPage AS INT
 EXPORT BeginReport:=FALSE AS LOGIC
-PROTECT oBal AS BalanceItem
-PROTECT oDep AS Department
-EXPORT oAcc AS Account
-EXPORT oMBal as MBalance
-EXPORT oTrans AS TransHistory
 EXPORT YEARSTART,YEAREND AS INT
 PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
 * Options for report type:
@@ -108,6 +103,11 @@ EXPORT showopeningclosingfund:=FALSE as LOGIC
 Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,RedCharOn,RedCharOff as STRING 
 Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
 export SimpleDepStmnt as logic
+// Fiexed texts to print:
+protect cSummary,cDirectText,cDirectOn,cIncome,cIncomeL,cExpense,cExpenseL,cLiability,cAsset,cDetailed,cInscriptionInEx,cInscriptionAsLi as string 
+protect cFrom,cTo,cYear,cFullyear,cDescription,cPrvYrYTD,cCurPeriod,cYtD,cSurPlus,cClsBal,cClosingBal,cAmount,cBudget,cOpeningBal as string 
+protect cNegative,cPositive as string
+
 
 declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, level as int,r_indmain as array,r_parentid as array,r_balid as array,r_balnbr as array,r_cat as array,r_heading as array,r_footer) as int  CLASS BalanceReport
@@ -534,7 +534,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 				d_PLdeb[Dep_Ptr]:=Round(if(IsNil(d_PLdeb[Dep_Ptr]),0,d_PLdeb[Dep_Ptr]) + oAcc:PL_deb,DecAantal)
 				d_PLcre[Dep_Ptr]:=Round(if(IsNil(d_PLcre[Dep_Ptr]),0,d_PLcre[Dep_Ptr]) + oAcc:PL_cre,DecAantal)
 				IF YearBeforePrvNotClosed
-					* When year before previous year also not closed do the same for net asset account balances of previous year
+					* When year before previous year also not closed do the same for net assets account balances of previous year
 					d_PrfLssPrYr[Dep_Ptr]:=Round(if(IsNil(d_PrfLssPrYr[Dep_Ptr]),0,d_PrfLssPrYr[Dep_Ptr]) + oAcc:PrvYrPL_deb - oAcc:PrvYrPL_cre,DecAantal)
 				ENDIF
 			ENDIF
@@ -559,9 +559,38 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	*                                                                                                                                                                                                                                                                              *
 	********************************************************************************************************************************************************************
 	*
-	self:STATUSMESSAGE(self:oLan:WGet("Printing summary"))
+	self:STATUSMESSAGE(self:oLan:WGet("Printing summary")) 
+	// prefill fixed textes:
+   self:cSummary:=oLan:Get("SUMMARY",,"@!")
+   self:cDirectText:=oLan:Get("Direct Records",,"!")
+   self:cDirectOn:=oLan:Get("Direct on",,"!") 
+   self:cIncome:= oLan:Get('INCOME',,"@!") 
+   self:cIncomeL:=oLan:Get('Income',13,"!","R")
+   self:cExpense:=oLan:Get('EXPENSE',,"@!") 
+   self:cExpenseL:=oLan:Get('Expense',11,"!","R")
+   self:cLiability:=oLan:Get('LIABILITIES AND FUNDS',,"@!")
+   self:cAsset:=oLan:Get('ASSET',,"@!")
+   self:cDetailed:=oLan:Get('DETAILED',,"@!")
+   self:cInscriptionInEx:=oLan:Get('INCOME AND EXPENSE',,"@!")
+	self:cInscriptionAsLi:=oLan:Get('BALANCE SHEET',,"@!")
+	self:cFrom:=oLan:Get('from',6)
+	self:cTo:=oLan:Get('to',5,,'C')
+	self:cYear:=oLan:Get('Year',7,"!","L") 
+	self:cFullyear:=oLan:Get('FULL YEAR',21,"@!","C")
+	self:cDescription:=oLan:Get('Description',iif(lXls,24,self:BalColWidth),"!")+iif(lXls,Replicate(self:TAB,self:MaxLevel),"")
+	self:cPrvYrYTD:=oLan:get('PREVIOUS YEAR TO DATE',21,'@!','R')
+	self:cCurPeriod:=oLan:Get('CURRENT PERIOD',15,"@!","R")
+	self:cYtD:=oLan:Get('YEAR TO DATE',20,"@!","R")
+	self:cSurPlus:=oLan:Get('Surplus',9,"!","R")
+	self:cClsBal:=oLan:Get('Cls.Balance',11,"!","R")
+	self:cClosingBal:=oLan:Get('CLOSING BALANCE',,"!")
+	self:cAmount:=oLan:Get('Amount',11,"!","R") 
+	self:cBudget:=oLan:Get('Budget-%',8,"!","R")
+	self:cOpeningBal:=Pad(oLan:Get('OPENING FUND BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))
+	self:cNegative:=oLan:Get('Negative',,"!")
+	self:cPositive:=oLan:Get('Posative',,"!")
 
-	hfdkop:=self:prkop(oLan:Get("SUMMARY",,"@!"),r_cat[1],1,,d_dep,d_parentdep,d_depname,;
+	hfdkop:=self:prkop(self:cSummary,r_cat[1],1,,d_dep,d_parentdep,d_depname,;
 		r_balid,r_heading,r_footer,r_parentid)
 	hfdkop[1]:= BoldOn+YellowOn+ hfdkop[1]+YellowOff+BoldOff
 
@@ -606,18 +635,18 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 						mType:=SubStr(accnts[rektel],1,1)
 						IF mType='1'
 							m_cat:=INCOME
-							kop:=oLan:Get('INCOME',,"@!")
+							kop:=self:cIncome
 						ELSEIF mType='2'
 							m_cat:=EXPENSE
-							kop:=oLan:Get('EXPENSE',,"@!")
+							kop:=self:cExpense
 						ELSEIF mType='3'
 							m_cat:=ASSET
-							kop:=oLan:Get('ASSETS',,"@!")
+							kop:=self:cAsset
 						ELSE
 							m_cat:=LIABILITY 
-							kop:=oLan:get('LIABILITIES AND FUNDS',,"@!")
+							kop:=self:cLiability
 						ENDIF
-						hfdkop:=self:prkop(oLan:Get('DETAILED',,"@!"),m_cat,Dep_Ptr,,d_dep,d_parentdep,d_depname,;
+						hfdkop:=self:prkop(self:cDetailed,m_cat,Dep_Ptr,,d_dep,d_parentdep,d_depname,;
 							r_balid,r_heading,r_footer,r_parentid)
 						iLine:=0  && forceer iPageskip 
 						self:oReport:PrintLine(@iLine,@iPage,kop,hfdkop,0)
@@ -805,36 +834,6 @@ METHOD Close(oEvent) CLASS BalanceReport
 	LOCAL stt,eindt AS STRING
 	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oLan == NULL_OBJECT
-	IF oLan:Used
-		oLan:Close()
-		oLan:=NULL_OBJECT
-	ENDIF
-ENDIF
-IF !oAcc == NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-		oAcc:=NULL_OBJECT
-	ENDIF
-ENDIF
-IF !oMBal == NULL_OBJECT
-	IF oMBal:Used
-		oMBal:Close()
-		oMBal:=NULL_OBJECT
-	ENDIF
-ENDIF
-IF !oBal == NULL_OBJECT
-	IF oBal:Used
-		oBal:Close()
-		oBal:=NULL_OBJECT
-	ENDIF
-ENDIF
-IF !oDep == NULL_OBJECT
-	IF oDep:Used
-		oDep:Close()
-		oDep:=NULL_OBJECT
-	ENDIF
-ENDIF
 //CollectForced()
 
 SELF:Destroy()
@@ -1163,7 +1162,7 @@ METHOD prAmounts(pr_soort,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	endif
 	HeadingCache:={}
 
-	IF pr_soort=='BA'.or.pr_soort=='PA'
+	IF pr_soort==EXPENSE.or.pr_soort==LIABILITY
 		mvjsaltot:=-pr_salvjtot
 		mvrgsal:=-pr_salvrg
 		msal:=-pr_sal
@@ -1177,7 +1176,7 @@ METHOD prAmounts(pr_soort,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	*   regel:=Pad(Space(pr_level*2)+pr_oms,30)+' '
 	// 	regel:=iif(self:Numbers,self:Tab,"")+iif(self:lXls,iif(pr_level>1,Replicate(self:Tab,pr_level-1),'')+pr_oms+iif(levelrest>0,Replicate(self:Tab,levelrest),''),Pad(Space(pr_level*2)+pr_oms,BalColWidth))+self:Tab
 	regel:=iif(self:lXls,iif(pr_level>0,Replicate(self:Tab,pr_level),'')+pr_oms+iif(levelrest>0,Replicate(self:Tab,levelrest),''),Pad(Space(pr_level*2)+pr_oms,BalColWidth))+self:Tab
-	IF pr_soort=='KO'.or.pr_soort=='BA'
+	IF pr_soort==INCOME.or.pr_soort==EXPENSE
 		if !self:SimpleDepStmnt
 			IF mvjsaltot # 0
 				vjtm_perc:=(mbalprvyrYtD)*100/mvjsaltot
@@ -1192,10 +1191,10 @@ METHOD prAmounts(pr_soort,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	ELSE
 		regel:=regel+Space(9)
 	ENDIF
-	IF pr_soort=='PA'.or.pr_soort=='AK'
+	IF pr_soort==LIABILITY.or.pr_soort==ASSET
 		regel:=regel+self:TAB+Str(mbalprvyrYtD,11,decaantal)+'  '+self:TAB+Str(msal,11,decaantal)
 	ENDIF
-	IF pr_soort=='KO'.or.pr_soort=='BA'
+	IF pr_soort==INCOME.or.pr_soort==EXPENSE
 		mtmsal:=mvrgsal+msal
 		vrbr_perc:=0
 		per_perc:=0
@@ -1223,24 +1222,17 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BalanceReport
 	RETURN NIL
 METHOD prkop(kop_type,kop_soort,dep_ptr,cDirect,d_dep,d_parentDep,d_depname,;
 r_balid,r_heading,r_footer,r_parentid) CLASS BalanceReport
-* Bepalen Heading
+* Compose Heading
 LOCAL Heading:={} as ARRAY
-LOCAL opschrift as STRING
+LOCAL inscription as STRING
 LOCAL pntr as int
 LOCAL cDepName as STRING
-// LOCAL BoldOn, BoldOff, YellowOn, YellowOff as STRING
-// IF self:SendToMail
-// 	BoldOn:="{\b "
-// 	BoldOff:="}"
-// 	YellowOn:="\highlight2 "
-// 	YellowOff:="\highlight0 "
-// ENDIF
 Default(@cDirect,null_string)
 
-IF kop_soort=='BA'.or.kop_soort=='KO'
-	opschrift:=oLan:get('INCOME AND EXPENSE',,"@!")
+IF kop_soort==EXPENSE.or.kop_soort==INCOME
+	inscription:=self:cInscriptionInEx
 ELSE
-	opschrift:=oLan:get('BALANCE SHEET',,"@!")
+	inscription:=self:cInscriptionAsLi
 ENDIF
 IF WhatDetails
 	* Determine departname in heading:
@@ -1275,27 +1267,27 @@ ELSE
 ENDIF
 
 Heading:={cDepName+cDirect+Replicate(self:TAB,8),;
-+ BoldOn+YellowOn+opschrift+" "+Trim(kop_type)+'  '+oLan:get('from',6)+;
-' '+maand[MONTHSTART]+oLan:get('to',5,,'C') + maand[MONTHEND]+BoldOff+YellowOff,;
-oLan:get('Year',7,"!","L")+oDCBalYears:TextValue,' ',;
-iif(self:lXls.and.self:Numbers,self:TAB,"")+oLan:get('Description',iif(lXls,24,self:BalColWidth),"!")+iif(lXls,Replicate(self:TAB,self:MaxLevel),"")+;
-iif(self:SimpleDepStmnt,"",self:TAB+oLan:get('PREVIOUS YEAR TO DATE',21,'@!','R')+Space(6)+self:TAB+self:TAB+;
-oLan:get('CURRENT PERIOD',15,"@!","R")+self:TAB)+;
-IF(kop_soort='BA'.or.kop_soort='KO',self:TAB+oLan:get('YEAR TO DATE',20,"@!","R")+self:TAB+self:TAB+oLan:get('FULL YEAR',21,"@!","C"),''),;
++ BoldOn+YellowOn+inscription+" "+Trim(kop_type)+'  '+self:cFrom+;
+' '+maand[MONTHSTART]+self:cTo + maand[MonthEnd]+BoldOff+YellowOff,;
+self:cYear+oDCBalYears:TextValue,' ',;
+iif(self:lXls.and.self:Numbers,self:TAB,"")+self:cDescription+;
+iif(self:SimpleDepStmnt,"",self:TAB+self:cPrvYrYTD+Space(6)+self:TAB+self:TAB+;
+self:cCurPeriod+self:TAB)+;
+IF(kop_soort=EXPENSE.or.kop_soort=INCOME,self:TAB+self:cYtD+self:TAB+self:TAB+self:cFullyear,''),;
 iif(lXls,Replicate(self:TAB,self:MaxLevel+iif(self:Numbers,1,0)),Space (BalColWidth))+;
 iif(kop_soort='SD',;
-	self:TAB+oLan:get('Surplus',9,"!","R")+self:TAB+oLan:get('Cls.Balance',11,"!","R")+self:TAB+;
-	oLan:get('Income',13,"!","R")+self:TAB+oLan:get('Expense',11,"!","R")+;
-	self:TAB+oLan:get('Surplus',11,"!","R")+self:TAB+oLan:get('Cls.Balance',11,"!","R"),'')+;
-iif(kop_soort='AK'.or.kop_soort='PA',;
+	self:TAB+self:cSurPlus+self:TAB+self:cClsBal+self:TAB+;
+	self:cIncomeL+self:TAB+self:cExpenseL+;
+	self:TAB+PadL(self:cSurPlus,11)+self:TAB+self:cClsBal,'')+;
+iif(kop_soort=ASSET.or.kop_soort=LIABILITY,;
 	self:TAB+Space(9) +;
-	self:TAB+oLan:get('Amount',11,"!","R")+self:TAB+oLan:get('Amount',13,"!","R"),'')+;
-iif(kop_soort='BA'.or.kop_soort='KO',;
-	self:TAB+iif(self:SimpleDepStmnt,"",oLan:get('Budget-%',9,"!","R") +;
-	self:TAB+oLan:get('Amount',11,"!","R")+self:TAB+oLan:get('Amount',13,"!","R")+;
-	self:TAB+oLan:get('Budget-%',8,"!","R"))+;
-	self:TAB+oLan:get('Amount',11,"!","R")+self:TAB+oLan:get('Budget-%',8,"!","R")+;
-	self:TAB+oLan:get('Budget',11,"!","R")+self:TAB+oLan:get('Budget-%',8,"!","R"),''),;
+	self:TAB+self:cAmount+self:TAB+PadL(self:cAmount,13),'')+;
+iif(kop_soort=EXPENSE.or.kop_soort=INCOME,;
+	self:TAB+iif(self:SimpleDepStmnt,"",PadL(self:cBudget,9) +;
+	self:TAB+self:cAmount+self:TAB+PadL(self:cAmount,13)+;
+	self:TAB+self:cBudget)+;
+	self:TAB+self:cAmount+self:TAB+self:cBudget+;
+	self:TAB+PadL(self:cBudget,11)+self:TAB+self:cBudget,''),;
 Replicate(CHR(95),TotalWidth),' '}
 //Replicate('-',TotalWidth),' '}
 
@@ -1339,7 +1331,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 			IF TopWhatPtr=0
 				EXIT
 			ENDIF
-			self:hfdkop:=self:prkop(oLan:Get("SUMMARY",,"@!"),r_cat[TopWhatPtr],p_depptr,if(lDirect,"("+oLan:Get("Direct Records",,"!")+")",""),d_dep,d_parentdep,d_depname,;
+			self:hfdkop:=self:prkop(self:cSummary,r_cat[TopWhatPtr],p_depptr,if(lDirect,"("+self:cDirectText+")",""),d_dep,d_parentdep,d_depname,;
 				r_balid,r_heading,r_footer,r_parentid)
 			IF self:WhatDetails.and.(self:WhoDetails.or.d_dep[p_depptr]==self:WhoFrom)
 				iLine:=0
@@ -1349,7 +1341,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 				r_balPrYrYtD,r_balPrvPer,r_balPer,r_bud,r_budper,r_budytd,r_cat,r_balid,d_netnum,d_depname,aTot,aTotprv,@iLine,@iPage)
 		ENDDO
 	ELSE
-		self:hfdkop:=self:prkop(oLan:Get("SUMMARY",,"@!"),r_cat[1],p_depptr,,d_dep,d_parentdep,d_depname,;
+		self:hfdkop:=self:prkop(self:cSummary,r_cat[1],p_depptr,,d_dep,d_parentdep,d_depname,;
 			r_balid,r_heading,r_footer,r_parentid)
 		IF self:WhatDetails
 			* Force pageskip:
@@ -1363,9 +1355,9 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 METHOD prtotaal(tot_soort,iLine,iPage) CLASS BalanceReport
 * Afdrukken van sommatielijnen
    oReport:PrintLine(@iLine,@iPage,iif(self:lXls.and.self:Numbers,self:TAB,"")+ Space(iif(self:lXls,24,BalColWidth))+iif(self:lXls,Replicate(self:TAB,self:MaxLevel),"")+self:TAB+;
-   iif(tot_soort=='BA'.or. tot_soort=='KO'.or. tot_soort=='SD',iif(self:SimpleDepStmnt,"",'---------'),Space(9))+;
+   iif(tot_soort==EXPENSE.or. tot_soort==INCOME.or. tot_soort=='SD',iif(self:SimpleDepStmnt,"",'---------'),Space(9))+;
    iif(self:SimpleDepStmnt,"",self:TAB+'-----------  '+self:TAB+'-----------')+;
-   iif(tot_soort=='BA'.or.tot_soort=='KO',;
+   iif(tot_soort==EXPENSE.or.tot_soort==INCOME,;
       iif(self:SimpleDepStmnt,"",self:TAB+'--------')+self:TAB+'-----------'+self:TAB+'--------'+self:TAB+'-----------'+self:TAB+'--------',;
 	iif(tot_soort=='SD',self:TAB+'-----------'+self:TAB+'-----------'+self:TAB+'-----------','')),hfdkop,2) 
 RETURN
@@ -1435,13 +1427,13 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					!Empty(r_balPrvPer[Bal_Ptr]).or.;
 					!Empty(r_balPer[Bal_Ptr])
 				* Print directly recorded amounts:
-				pr_oms:=oLan:Get("Direct on",,"!")+" "
+				pr_oms:=self:cDirectOn+" "
 				IF Empty(r_heading[Bal_Ptr])
 					pr_oms:=pr_oms+r_footer[Bal_Ptr]
 				ELSE
 					pr_oms:=pr_oms+r_heading[Bal_Ptr]
 				ENDIF
-				if (r_cat[bal_ptr]=="BA".or.r_cat[bal_ptr]=="KO") .or. !self:SimpleDepStmnt      // skip balance items in case of simple report
+				if (r_cat[bal_ptr]==INCOME.or.r_cat[bal_ptr]==EXPENSE) .or. !self:SimpleDepStmnt      // skip balance items in case of simple report
 					self:prAmounts(Upper(r_cat[bal_ptr]),r_balpryrtot[bal_ptr],;
 						r_balPrvYrYtD[Bal_Ptr],;
 						r_balPrvPer[Bal_Ptr],r_balPer[Bal_Ptr],r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,0.00,0.00,@iLine,@iPage)
@@ -1463,7 +1455,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					r_balPrvYrYtD[bal_ptr]:=if(Empty(r_balPrvYrYtD[bal_ptr]),0.00,r_balPrvYrYtD[bal_ptr])+r_balPrvYrYtD[SubBalPtr]
 					r_balPrvPer[bal_ptr]:=if(Empty(r_balPrvPer[bal_ptr]),0.00,r_balPrvPer[bal_ptr])+r_balPrvPer[SubBalPtr]
 					r_balPer[Bal_Ptr]  :=if(Empty(r_balPer[Bal_Ptr]),0.00,r_balPer[Bal_Ptr])  +r_balPer[SubBalPtr]
-					IF r_cat[SubBalPtr]== 'BA' .or. r_cat[SubBalPtr]== 'PA';
+					IF r_cat[SubBalPtr]== INCOME .or. r_cat[SubBalPtr]== LIABILITY;
 							.or. r_cat[Bal_Ptr]== r_cat[SubBalPtr]
 						r_bud[bal_ptr] :=if(Empty(r_bud[bal_ptr]),0.00,r_bud[bal_ptr]) +r_bud[SubBalPtr]
 						r_budper[bal_ptr] :=if(Empty(r_budper[bal_ptr]),0.00,r_budper[bal_ptr]) +r_budper[SubBalPtr]
@@ -1479,7 +1471,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 	ENDIF
 	IF (WhatDetails)
 		m_soort:=Upper(r_cat[Bal_Ptr]) 
-		if (m_soort=="BA".or.m_soort=="KO") .or. !self:SimpleDepStmnt      // skip balance items in case of simple report
+		if (m_soort==INCOME.or.m_soort==expense) .or. !self:SimpleDepStmnt      // skip balance items in case of simple report
 			IF	r_indmain[Bal_Ptr].and. TotalFound>1
 				self:prtotaal(m_soort,@iLine,@iPage)
 			ENDIF
@@ -1522,7 +1514,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				clbal:=r_balPer[kap_num]
 			ENDIF
 			IF !IsNil(r_balpryrtot[Bal_Ptr]) .and.!IsNil(r_balPer[Bal_Ptr])  .and.!IsNil(r_balPrvPer[Bal_Ptr])   //added: +r_balPrvPer[1] because starting month > 1
-				IF m_soort=="BA".or.m_soort=="PA"
+				IF m_soort==INCOME.or.m_soort==LIABILITY
 					surplusvj:=-r_balpryrtot[Bal_Ptr]-r_balPrvPer[Bal_Ptr]
 					surplus:=-r_balPer[Bal_Ptr] - r_balPrvPer[Bal_Ptr]     //added: -r_balPrvPer[bal_ptr] because starting month > 1
 				ELSE
@@ -1537,7 +1529,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				// 1e keer proberen:
 				m_soort:=Upper(r_cat[1])
 				IF !IsNil(r_balpryrtot[1]) .and.!IsNil(r_balPer[1]) .and.!IsNil(r_balPrvPer[1])     //added: +r_balPrvPer[1] because starting month > 1
-					IF m_soort=="BA".or.m_soort=="PA"
+					IF m_soort==INCOME.or.m_soort==LIABILITY
 						surplusvj:=-r_balpryrtot[1]-r_balPrvPer[1]
 						surplus:=-r_balPer[1]-r_balPrvPer[1]     //added: -r_balPrvPer[1] because starting month > 1
 					ELSE
@@ -1558,8 +1550,8 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					clbal:=-(r_balPer[kap_num]-surplus)
 					IF SELF:showopeningclosingfund
 						oReport:PrintLine(@iLine,@iPage,' ',hfdkop,2)
-						oReport:PrintLine(@iLine,@iPage,Pad(oLan:Get('OPENING FUND BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbalvj,11,DecAantal),hfdkop,0)
-						oReport:PrintLine(@iLine,@iPage,BoldOn+Pad(iif(clbal<0,RedOn+oLan:Get('Negative',,"!"),GreenOn+oLan:Get('Positive',,"!"))+" "+oLan:Get('CLOSING BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,hfdkop,0)
+						oReport:PrintLine(@iLine,@iPage,self:cOpeningBal+Str(clbalvj,11,DecAantal),hfdkop,0)
+						oReport:PrintLine(@iLine,@iPage,BoldOn+Pad(iif(clbal<0,RedOn+self:cNegative,GreenOn+self:cPositive)+" "+self:cClosingBal,BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,hfdkop,0)
 					ENDIF
 				ENDIF
 				IF !SELF:showopeningclosingfund
@@ -1571,7 +1563,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, decaantal)
 					fAmnt:=SELF:BalFishTot("B",aTotprv)
 					clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
-					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,oLan:Get("Direct on",,"!")+" ","")+d_depname[dep_ptr]
+					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,self:cDirectOn+" ","")+d_depname[Dep_Ptr]
 // 					self:prAmounts("SD",clbalvj,r_balPrvYrYtD[Bal_Ptr],;
 // 						surplus,clbal,r_bud[bal_ptr],r_budper[bal_ptr],r_budytd[bal_ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
 					self:prAmounts("SD",clbalvj,surplusvj,;
@@ -1689,7 +1681,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 					r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,r_heading,r_footer,r_bud,r_budper,r_budytd,r_balid,;
 					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
 			ENDIF
-			IF TotalFound>1 && extra spatieregel na total
+			IF TotalFound>1 && extra space after total
 				oReport:PrintLine(@iLine,@iPage,' ',hfdkop,0)
 			ENDIF
 		ELSE
@@ -4171,8 +4163,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD OKButton( ) CLASS ReImbursement 
-	local oTrans:=Transaction{,DBSHARED,DBREADONLY} as Transaction 
-	local oAcc:=Account{,DBSHARED,DBREADONLY} as Account
+	local oTrans as SQLSelect 
 	local cFileName,cRef, cTask:=olan:WGet("Sending reimbursement request") as string 
 	LOCAL cDelim:=Listseparator as STRING
 	LOCAL ToFileFS as FileSpec
@@ -4186,33 +4177,33 @@ METHOD OKButton( ) CLASS ReImbursement
 	LOCAL oRecip,oRecip2 as MAPIRecip
 	LOCAL cExportMail as STRING
 	LOCAL lSent as LOGIC
-	LOCAL oSys as Sysparms
+	LOCAL oSys,oAcc as SQLSelect
 	local fTotReimb as float
 	LOCAL oEMLFrm as eMailFormat
 	LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh as LOGIC 
 	local brieftxt as string
 	LOCAL oSelpers as Selpers
-	local oPers as Person
+	local oPers as SQLSelect
 	
-	oTrans:SetOrder("TRANSNR")
-	oAcc:=Account{}
-	if !Empty(oAcc:Filter).and.!Empty(cAccAlwd) 
-		oAcc:Filter+=".or.EvAlw(accid)"
-	endif
-	oAcc:setOrder("accid") 
-	oTrans:SetSelectiveRelation(oAcc,"accid")
-	if !Empty( cAccAlwd)
-		oTrans:setFilter(,"Userid='"+LOGON_EMP_ID+"'.and.DToS(Dat)>='"+DToS(self:Begindate)+"'.and.Dtos(dat)<='"+DToS(self:CloseDate)+"'")
-	ENDIF
-	oTrans:gotop()
-	if oTrans:EoF
-		ErrorBox{self,"Nothing to reimburse"}:Show()
-		oTrans:Close()
-		oAcc:Close()
-		self:EndWindow()
-		self:Close()
-		return false
-	endif
+// 	oTrans:SetOrder("TRANSNR")
+// 	oAcc:=Account{}
+// 	if !Empty(oAcc:Filter).and.!Empty(cAccAlwd) 
+// 		oAcc:Filter+=".or.EvAlw(accid)"
+// 	endif
+// 	oAcc:setOrder("accid") 
+// 	oTrans:SetSelectiveRelation(oAcc,"accid")
+// 	if !Empty( cAccAlwd)
+// 		oTrans:setFilter(,"Userid='"+LOGON_EMP_ID+"'.and.DToS(Dat)>='"+DToS(self:Begindate)+"'.and.Dtos(dat)<='"+DToS(self:CloseDate)+"'")
+// 	ENDIF
+// 	oTrans:gotop()
+// 	if oTrans:EoF
+// 		ErrorBox{self,"Nothing to reimburse"}:Show()
+// 		oTrans:Close()
+// 		oAcc:Close()
+// 		self:EndWindow()
+// 		self:Close()
+// 		return false
+// 	endif
 	
 	cFileName := "reimbursement request "+LOGON_EMP_ID
 	ToFileFS:=AskFileName(self,cFileName,cTask,"*.csv","comma separated file")
@@ -4245,9 +4236,9 @@ METHOD OKButton( ) CLASS ReImbursement
 		if Empty(cRef)
 			cRef:=AllTrim(oTrans:DOCID)
 		endif 
-		if oAcc:REIMB
-			fTotReimb:=Round(fTotReimb+oTrans:CRE - oTrans:DEB,2)
-		endif
+// 		if oAcc:REIMB
+// 			fTotReimb:=Round(fTotReimb+oTrans:CRE - oTrans:DEB,2)
+// 		endif
 
 		FWriteLine(ptrHandle,;
 			'"'+DToS(oTrans:dat)+'"'+cDelim+'"'+oTrans:docid+'"'+cDelim+'"'+oTrans:TransId+'"'+cDelim+'"'+SubStr(oAcc:accnumber,1,11)+'"'+cDelim+'"'+;
@@ -4276,13 +4267,13 @@ METHOD OKButton( ) CLASS ReImbursement
 	if ((TextBox{self,cTask,;
 			"Are printed transactions OK and can they be sent by email for reimbursement?",;
 			BOXICONQUESTIONMARK + BUTTONYESNO}):Show()) == BOXREPLYYES
-		IF oPers == null_object
-			oPers := Person{}
-			IF !oPers:Used
-				self:EndWindow()
-			ENDIF
-		ENDIF
-		oPers:SetOrder("ASSRE")
+// 		IF oPers == null_object
+// 			oPers := Person{}
+// 			IF !oPers:Used
+// 				self:EndWindow()
+// 			ENDIF
+// 		ENDIF
+// 		oPers:SetOrder("ASSRE")
 // 		if	!File(CurPath+"\Reimb_"+LOGON_EMP_ID+".Eml")
 			ptrHandleEml:=FCreate(CurPath+"\Reimb_"+LOGON_EMP_ID+".Eml")
 			FWriteLine(ptrHandleEml,'Dear Sally,')
@@ -4302,10 +4293,10 @@ METHOD OKButton( ) CLASS ReImbursement
 			brieftxt:=""
 		ENDIF
 
-		oSys:=Sysparms{}
-		cExportMail:=AllTrim(oSys:EXPMAILACC)
-		cExportMail:=StrTran(cExportMail,";"+AllTrim(oSys:OWNMAILACC))
-		cExportMail:=StrTran(cExportMail,AllTrim(oSys:OWNMAILACC)) 
+// 		oSys:=Sysparms{}
+// 		cExportMail:=AllTrim(oSys:EXPMAILACC)
+// 		cExportMail:=StrTran(cExportMail,";"+AllTrim(oSys:OWNMAILACC))
+// 		cExportMail:=StrTran(cExportMail,AllTrim(oSys:OWNMAILACC)) 
 		* Send file by email:
 		IF IsMAPIAvailable()
 			* Resolve IESname
@@ -4326,26 +4317,22 @@ METHOD OKButton( ) CLASS ReImbursement
 			ELSE
 				// 			ToFileFS:DELETE()
 			ENDIF
-			IF !cExportMail==oSys:EXPMAILACC
-				oSys:RecLock()
-				oSys:EXPMAILACC:=cExportMail
-				oSys:UnLock()
-			ENDIF
-			oSys:commit()
-			oSys:UnLock()
-			self:oEmp:RecLock()
-			self:oEmp:LSTREIMB:=self:CloseDate
-			self:oEmp:commit()
+// 			IF !cExportMail==oSys:EXPMAILACC
+// 				oSys:RecLock()
+// 				oSys:EXPMAILACC:=cExportMail
+// 				oSys:UnLock()
+// 			ENDIF
+// 			oSys:commit()
+// 			oSys:UnLock()
+// 			self:oEmp:RecLock()
+// 			self:oEmp:LSTREIMB:=self:CloseDate
+// 			self:oEmp:commit()
 		ENDIF
-		oSys:Close()
 	else
 		if !ToFileFS:DELETE()
 			FErase(cFilename)
 		endif
 	endif
-	self:oEmp:Close()
-	oAcc:Close()
-	oTrans:Close()
 	self:EndWindow()
 	self:Close()
 	RETURN nil
@@ -4964,27 +4951,21 @@ ENDDO
 
 aDep:=d_Dep
 
-IF oAcc==NULL_OBJECT
-	oAcc:=Account{}
-	IF !oAcc:Used
-		SELF:EndWindow()
-	ENDIF
-ENDIF
-IF oAcc:OrderInfo(DBOI_NAME)#"ACCNTNBR"
-	oAcc:SetOrder("AccNtNbr")
-ENDIF
+// IF oAcc==NULL_OBJECT
+// 	oAcc:=Account{}
+// 	IF !oAcc:Used
+// 		SELF:EndWindow()
+// 	ENDIF
+// ENDIF
+// IF oAcc:OrderInfo(DBOI_NAME)#"ACCNTNBR"
+// 	oAcc:SetOrder("AccNtNbr")
+// ENDIF
 *cFilter:="AScan(aDep,Department)>0"
 *pFilter:=&("{||"+ cFilter+"}")
 *lSuccess:=oAcc:SetFilter(,cFilter)
 
 *lSuccess:=oAcc:SetFilter({|x| AScan(aDep,x:Department)>0})
 oAcc:GoTop()
-IF oMBal==NULL_OBJECT
-	oMBal:=MBalance{,DBSHARED,DBREADONLY}
-	IF !oMBal:Used
-		SELF:EndWindow()
-	ENDIF
-ENDIF
 * aanmaken naam report bestand
 *store 1 TO blad,r
 IF lPrint
