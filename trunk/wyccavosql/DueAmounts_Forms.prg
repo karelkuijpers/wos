@@ -265,7 +265,6 @@ CLASS DueAmountBrowser_DETAIL INHERIT DataWindowMine
 	PROTECT oDBAMOUNTRECVD as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT oPers AS Person
 ACCESS Accntnumber() CLASS DueAmountBrowser_DETAIL
 RETURN SELF:FieldGet(#Accntnumber)
 
@@ -297,12 +296,6 @@ RETURN uValue
 METHOD Close(oEvent) CLASS DueAmountBrowser_DETAIL
 *	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oPers==NULL_OBJECT
-	IF oPers:Used
-		oPers:Close()
-	ENDIF
-	oPers:=NULL_OBJECT
-ENDIF
 RETURN NIL
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS DueAmountBrowser_DETAIL 
