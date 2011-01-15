@@ -781,10 +781,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			break
 		endif
 		// Initialize db 
-// 		self:InitializeDB()
+		self:InitializeDB()
 		
 	endif
-		self:InitializeDB()
+// 		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1789,9 +1789,9 @@ method InitializeDB() as void Pascal  class Initialize
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
-// 	if self:lNewDb
+	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
-// 	endif
+	endif
 	return
 Method Matchunequalgaps(aStatReq as array,aStatCur as array,aReqColumn as array,aCurColumn as array,nStartCurrent as int,nEndCurrent as int,nStartRequired as int,nEndRequired as int) as int class Initialize
 	// score each possible mapping of columns within required gap on columns of current gap and map column with highest score
