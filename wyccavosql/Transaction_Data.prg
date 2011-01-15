@@ -935,112 +935,14 @@ ASSIGN  SEQNR(uValue)  CLASS TempTrans
     RETURN SELF:FieldPut(#SEQNR, uValue)
 
 CLASS Transaction INHERIT SQLTable
-protect oAcct as Account
-protect oMbr as Members
-declare method AddToIncome
+// protect oAcct as Account
+// protect oMbr as Members
+// declare method AddToIncome
  
 ACCESS accid CLASS Transaction
  RETURN self:FieldGet(2)
 ASSIGN accid(uValue) CLASS Transaction
  RETURN self:FieldPut(2, uValue)
-METHOD AddToIncome(oMBal as MBalance) CLASS Transaction
-// Add current record to Gifts Income/Expense in case of assessable gift to liability member
-LOCAL oAcc:=self:oAcct as Account
-LOCAL oTrans:=self as Transaction
-LOCAL nRec as DWORD
-LOCAL cTransnr:=self:TransId as STRING
-LOCAL mDat as date, mBst, mOms as STRING
-LOCAL nCre as FLOAT
-Local lHas as logic
-LOCAL OfficeRate as FLOAT, me_rate,me_stat as STRING 
-IF Empty(SINC) .and.Empty(SINCHOME)
-	RETURN
-ENDIF
-IF !Empty(oTrans:persid).and.(oTrans:GC=="AG" .or. oTrans:GC=="OT" .or. oTrans:GC=="MG".and. oTrans:FROMRPP)
-	IF oAcc==null_object .or. !oAcc:Used
-		self:oAcct:=Account{,DBSHARED,DBREADONLY}
-		IF !oAcct:Used
-			RETURN
-		ENDIF
-		oAcc:=self:oAcct
-		oAcc:SetOrder("accid")
-	ENDIF
-	IF oAcc:Seek(oTrans:accid)
-		IF oAcc:Type=="PA"  //liability?
-			// add to gifts income:
-			if !Empty(SINCHOME) .or.!Empty(SINC)
-				if self:oMbr==null_object .or. !self:oMbr:Used
-					self:oMbr:=Members{,DBSHARED,DBREADONLY}
-					self:oMbr:SetOrder("MBRREK")
-				endif
-				if self:oMbr:Seek(oTrans:accid)
-					lHas:= self:oMbr:HAS
-				endif
-			endif
-			if Empty(SINC).and.!lHas
-				RETURN
-			endif
-			nCre:=Round(self:CRE-self:DEB,DecAantal)
-			me_stat:=AllTrim(oMbr:Grade)
-			if oTrans:GC=="AG" .and.!oTrans:FROMRPP .and. me_stat!="Staf"
-				me_rate:=oMbr:OFFCRATE
-				DO CASE
-				CASE Empty(me_rate)
-					OfficeRate:=sInhdKntr
-				CASE me_rate="L"
-					OfficeRate:=sInhdKntrL
-				CASE me_rate="H"
-					OfficeRate:=sInhdKntrH
-				CASE me_rate="M"
-					OfficeRate:=sInhdKntrM
-				OTHERWISE
-					OfficeRate:=sInhdKntr
-				ENDCASE
-				if lHas
-					OfficeRate:=OfficeRate+sInhdField        // add field assessment in cas eof home assigned
-				endif 
-            nCre:=Round(nCre*(100-OfficeRate)/100,DecAantal)
-			endif
-			nRec:=oTrans:RecNo
-			mDat:= self:DAT
-			mBst:=self:docid
-			mOms:=self:description
-			oTrans:Append(FALSE)
-			oTrans:TransId := cTransnr
-			if lHas
-				oTrans:accid:=SINCHOME
-			else
-				oTrans:accid:=SINC
-			endif
-			oTrans:DAT := mDat
-			oTrans:docid := mBst
-			oTrans:description := mOms
-			oTrans:Cre := nCre
-			oTrans:USERID := LOGON_EMP_ID
-			*	Update monthbalance value of corresponding account:
-			oMBal:ChgBalance(oTrans:accid,oTrans:DAT,oTrans:DEB,oTrans:CRE,oTrans:DEB,oTrans:CRE) //accid,deb,cre
-			oTrans:Append(FALSE)
-			oTrans:TransId := cTransnr
-			oTrans:DAT := mDAT
-			oTrans:docid := mBst
-			oTrans:description := mOms
-			if lHas
-				oTrans:accid:=SEXPHOME
-			else
-				oTrans:accid:=SEXP
-			endif
-			oTrans:DEB := nCre
-			oTrans:USERID := LOGON_EMP_ID
-			*	Update monthbalance value of corresponding account:
-			oMBal:ChgBalance(oTrans:accid,oTrans:DAT,oTrans:DEB,oTrans:CRE,oTrans:DEB,oTrans:CRE) //accid,deb,cre
-			oTrans:GoTo(nRec)
-		ENDIF
-	ENDIF
-ENDIF
-RETURN
-			
-
-			
 ACCESS BFM CLASS Transaction
  RETURN self:FieldGet(9)
 ASSIGN BFM(uValue) CLASS Transaction
