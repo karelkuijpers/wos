@@ -2,8 +2,8 @@ RESOURCE EditPeriodic DIALOGEX  41, 37, 399, 234
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"25-8-2010", EDITPERIODIC_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
-	CONTROL	"25-8-2010", EDITPERIODIC_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
+	CONTROL	"15-1-2011", EDITPERIODIC_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
+	CONTROL	"15-1-2011", EDITPERIODIC_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
 	CONTROL	"", EDITPERIODIC_MDAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 44, 36, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Period", EDITPERIODIC_MPERIOD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 36, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITPERIODIC_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 264, 81, 96, 111
@@ -114,7 +114,6 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditPeriodic
 	ENDIF
 	RETURN NIL
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic 
-LOCAL olServer AS OBJECT
 LOCAL DIM aBrushes[1] AS OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -140,9 +139,7 @@ oDCmPeriod:Picture := "9999"
 
 oDCmCurrency := combobox{SELF,ResourceID{EDITPERIODIC_MCURRENCY,_GetInst()}}
 oDCmCurrency:HyperLabel := HyperLabel{#mCurrency,NULL_STRING,"Currency of the amount",NULL_STRING}
-olServer := CurrencyList{}
-oDCmCurrency:FillUsing(olServer,#UNITED_ARA,#AED)
-olServer:Close()
+oDCmCurrency:FillUsing(SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED))
 oDCmCurrency:TooltipText := "Apply this currency to the debit and credit amounts below."
 
 oDCmDOCID := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_MDOCID,_GetInst()}}
