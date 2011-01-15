@@ -58,7 +58,7 @@ endif
 	
 CLASS AmountGift INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS AmountGift
     LOCAL   cPict                   AS STRING
@@ -73,7 +73,7 @@ METHOD Init() CLASS AmountGift
 
 
 
-
+
 class  BankAcc  
 	protect oPrsBnk as SQLSelect 
 	declare method BankAcc
@@ -87,11 +87,11 @@ method BankAcc(persid as int) as string class BankAcc
 	endif
 	RETURN null_string
 method Init() class BankAcc
-	self:oPrsBnk:=SQLSelect{"Select banknumber from PersonBank where persid=?",oConn}
+	self:oPrsBnk:=SQLSelect{"Select banknumber from personbank where persid=?",oConn}
 	return self
 CLASS DateGift INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS DateGift
     LOCAL   cPict                   AS STRING
@@ -106,10 +106,10 @@ METHOD Init() CLASS DateGift
 
 
 
-
+
 CLASS Destination INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS Destination
     LOCAL   cPict                   AS STRING
@@ -254,7 +254,7 @@ function GetBankAccnts(mPersid as string) as array
 local aBankAcc:={} as array
 local oSel as SQLSelect 
 	* Fill aBankAcc: 
-oSel:=SQLSelect{"select group_concat(banknumber separator ',') as bankaccs from PersonBank where persid="+mPersid+" group by persid" ,oConn}
+oSel:=SQLSelect{"select group_concat(banknumber separator ',') as bankaccs from personbank where persid="+mPersid+" group by persid" ,oConn}
 if oSel:RecCount>0
 	return Split(oSel:bankaccs,',')
 else
@@ -404,7 +404,7 @@ Function GetStreetHousnbr(Address as string) as array
 	RETURN {AllTrim(StreetName), AllTrim(Housenbr)}
 CLASS GFTNDGRP INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS GFTNDGRP
     LOCAL   cPict                   AS STRING
@@ -417,7 +417,7 @@ METHOD Init() CLASS GFTNDGRP
 
     RETURN SELF
 
-
+
 CLASS Gifts_group INHERIT FIELDSPEC
 
 
@@ -433,10 +433,10 @@ METHOD Init() CLASS Gifts_group
 
     RETURN SELF
 
-
+
 CLASS GiftsNoDest_Group INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS GiftsNoDest_Group
     LOCAL   cPict                   AS STRING
@@ -449,7 +449,7 @@ METHOD Init() CLASS GiftsNoDest_Group
 
     RETURN SELF
 
-
+
 FUNCTION MakeAbrvCod(cCodes as STRING)
 * Translates string with mailing code abbravations (separated by space)  to array of mailing code identifiers
 LOCAL aAbCodes as ARRAY
@@ -798,16 +798,14 @@ METHOD MatchImport(synctype) CLASS NewPersonWindow
 	* 	1=replace current values with values from import
 	*	2=keep current values
 	*
-	LOCAL oPers:=SELF:Server AS Person
+	LOCAL oPers:=self:Server as SQLSelect
 	LOCAL searchname, cSur, cA1, cPA,cVA,cVP as STRING
 	LOCAL LencPA AS INT
 	LOCAL ntus as int
 	LOCAL first, lUnique, lDupl as LOGIC
 	LOCAL stRec AS DWORD
 	LOCAL aCodsBrev:={}, aMailCodes:={} AS ARRAY
-	LOCAL oMail AS Perscod
-	
-	oMail:=Perscod{}
+
 	// search import name within persons:
 	* First find with NAW:
 	oPers:m51_pos:=AllTrim(SELF:mPOS)
@@ -1013,7 +1011,6 @@ METHOD SetState() CLASS NewPersonWindow
 	LOCAL oXMLDoc AS XMLDocument
 	LOCAL cDescr:="Bank# " as STRING
 	local aBank:={} as array
-// 	self:oPerson:=SQLSelect{"select p.*,a.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p left join member m on (m.persid=p.persid) left join account a on (a.accid=m.accid) left join personbank b on (p.persid=b.persid) where p.persid='"+Str(self:mPersid,-1)+"' group by p.persid",oConn}
 	self:oPerson:=SQLSelect{"select p.*,m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:mPersid),"p.persid="+Str(self:mPersid,-1),"p.externid='"+self:mExternid+"'")+" group by p.persid",oConn}
@@ -1161,7 +1158,7 @@ RETURN
 METHOD Sync(oPerson,oPersBank,oReport,oAddrs,type,kopregels,nRow,nPage,nver) CLASS NewPersonWindow
 // save kidnbr as bank account and telephone#, email, remarks and mailing codes
 LOCAL cEml,cFax,cMob,cType, cTelex as STRING
-LOCAL  oPers:=oPerson AS Person
+LOCAL  oPers:=oPerson as SQLSelect
 // keep original values?
 	IF !Empty(oPerson:telbusiness)
 		self:mTEL1:=oPerson:telbusiness
@@ -1315,303 +1312,6 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	ENDIF
 
 	RETURN lValid
-METHOD FindPersSubVrn(lCheck,FirstNameFound,FirstNameExactFound,nFoundRec,IsUnique, cSearch) CLASS Person
-	// Subroutine of method FindPers
-	// lCheck is checkvalue to be set
-	// lCheck,FirstNameFound,FirstNameExactFound,nFoundRec,IsUnique are relative addressed value with new values returned
-	// cSearch is given value to be searched
-	// Returns True: if do loop with search has to be exited, else false
-	// refine found record with firstname check:
-	LOCAL m51vrn:=Upper(AllTrim(self:m51_firstname)), mFirstname:=Upper(AllTrim(self:firstname)) as STRING
-	IF lCheck
-		IF !Empty(self:m51_firstname)
-			IF !Empty(self:firstname)
-				IF m51vrn $ mFirstname .or. mFirstname $ m51vrn
-					// first name match:
-					IF !FirstNameFound
-						FirstNameFound:=true
-						nFoundRec:=self:RecNo
-						IsUnique := true
-						IF m51vrn == mFirstname
-							FirstNameExactFound:=true
-						ENDIF
-					ELSE
-						IF m51vrn == mFirstname
-							IF FirstNameExactFound
-								IsUnique:=FALSE
-							ELSE
-								nFoundRec:=self:RecNo
-								FirstNameExactFound:=true
-								IsUnique := true
-							ENDIF
-                    	ELSEIF !FirstNameExactFound
-							IsUnique := FALSE
-						ENDIF
-					ENDIF
-				ELSEIF !FirstNameFound
-					IsUnique:=FALSE
-				ENDIF
-			ELSE
-				IF !FirstNameFound
-					IsUnique:=FALSE
-				ENDIF
-			ENDIF
-		ELSE
-			IsUnique := FALSE
-			IF Empty(cSearch)
-				// EXIT
-				RETURN true
-			ENDIF
-		ENDIF
-	ELSE
-		lCheck:=true
-		nFoundRec:=self:RecNo
-		IF !Empty(self:m51_firstname) .and.!Empty(self:firstname)
-			IF m51vrn $ mFirstname .or. mFirstname $ m51vrn
-				// first name match:
-				FirstNameFound:=true
-				IF m51vrn == mFirstname
-					FirstNameExactFound:=true
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
-RETURN FALSE
-Method GetBankAccnts(mPersid) class Person 
-local aBankAcc:={} as array
-local oSel as SQLSelect
-Default(@mPersid,self:persid)
- 
-	* Fill aBankAcc:
-	oSel:=SQLSelect{"select banknumber from personbank where persid="+mPersid,oConn}
-DO WHILE !oSel:EoF 
-	IF !Empty(oSel:banknumber)
-		AAdd(aBankAcc,AllTrim(oSel:banknumber))
-	ENDIF
-	oSel:Skip()
-ENDDO 
-return aBankAcc
-Method GetFullName(PersNbr,Purpose) CLASS Person
-// composition of full name of a person
-// PersNbr: Optional ID of person 
-// Purpose: optional indicator that the name is used for:
-// 	0: addresslist: with surname "," firstname prefix (without salutation) 
-//		1: fullname conform address specification
-//		2: name for identification: lastname, firstname prefix 
-//		3: like 1 but always with firstname 
-LOCAL frstnm,naam1, titel,prefix as STRING
-// LOCAL nCurRec as int
-Default(@PersNbr,nil)
-Default(@Purpose,0)
-IF !self:Used
-	RETURN null_string
-ENDIF
-// nCurRec:=self:RecNo
-IF !IsNil(PersNbr) .and.!PersNbr==self:persid
-	IF Empty(PersNbr)
-		RETURN ""
-	ENDIF
-	self:seek(#persid,PersNbr)
-ENDIF
-if sSalutation .and.(Purpose==1.or.Purpose==3) 
-	titel := self:Salutation
-	if !Empty(titel)
-		titel+=" "
-	endif
-endif
-if TITELINADR.and.!Empty(self:Title) .and.(Purpose==1.or.Purpose==3) 
-	titel += AllTrim(self:Title)+' '
-endif
-IF .not. Empty(self:prefix)
-   prefix :=AllTrim(self:prefix) +" "
-ENDIF
-IF .not. Empty(self:lastname)
-   naam1 := AllTrim(self:lastname)+" "
-ENDIF
-IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
-	IF !Empty(self:firstname)
-		frstnm += AllTrim(self:firstname)+' '
-	ELSEIF .not. Empty(self:initials)  && anders voorletters gebruiken
-		frstnm += AllTrim(self:initials)+' '
-	ENDIF
-ELSEIF .not. Empty(self:initials)  && anders voorletters gebruiken
-	frstnm += AllTrim(self:initials)+' '
-ENDIF
-DO CASE
-case Purpose==0
-	//addresslist:
-	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
-Case Purpose==1.or.Purpose==3
-	// address conform address specifications:
-	IF sSurnameFirst
-   	naam1 := naam1+titel+frstnm + prefix
-	else
-		naam1:=titel+frstnm+prefix+naam1
-	endif	
-CASE Purpose==2
-	// identification:
-	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
-endcase
-// if !IsNil(PersNbr) .and.!nCurRec==self:RecNo
-// 	self:Goto(nCurRec)
-// endif
-return (AllTrim(naam1))
-METHOD GetFullNAW(PersNbr,country,Purpose) CLASS Person
-* Samenstellen van te tonen NAW
-* country: default country (optional)
-LOCAL f_regel:="" as STRING
-// LOCAL nCurRec as int
-Default(@country,null_string)
-Default(@PersNbr,nil)
-Default(@Purpose,1)
-
-IF !self:Used
-	RETURN null_string
-ENDIF 
-// nCurRec:=self:RecNo
-IF !IsNil(PersNbr) .and.!PersNbr==self:persid
-	IF IsString(PersNbr)
-		IF Empty(PersNbr)
-			RETURN ""
-		ENDIF
-		self:seek(#persid,PersNbr)
-	ENDIF
-ENDIF
-f_regel:=self:GetFullName(,Purpose)
-
-
-/*f_regel:=SELF:Salutation
-IF .not. Empty(f_regel)
-   f_regel+=' '
-ENDIF
-IF sFirstNmInAdr .and..not.Empty(SELF:firstname)
-   f_regel+=AllTrim(SELF:firstname)+' '
-ELSEIF .not. Empty(SELF:initials)  && anders voorletters gebruiken
-   f_regel+=AllTrim(SELF:initials)+' '
-ENDIF
-IF .not. Empty(SELF:prefix)
-   f_regel+=AllTrim(SELF:prefix)+' '
-ENDIF
-IF .not. Empty(SELF:lastname)
-   f_regel+=AllTrim(SELF:lastname)
-ENDIF    */
-f_regel:=f_regel+', '
-IF .not.Empty(self:address)
-   f_regel+=AllTrim(self:address)+" "
-ENDIF
-IF .not.Empty(self:postalcode)
-   f_regel+=Trim(self:postalcode)+" "
-ENDIF
-IF .not.Empty(self:city)
-   f_regel+=Trim(self:city)+" "
-ENDIF
-IF .not.Empty(self:country)
-   f_regel+=Trim(self:country)
-ELSEIF .not.Empty(country)
-   f_regel+=country
-ENDIF
-// if !IsNil(PersNbr) .and.!nCurRec==self:RecNo
-// 	self:Goto(nCurRec)
-// endif
-RETURN AllTrim(f_regel)
-METHOD GetGiroNAW() CLASS Person
-* samenstellen van adres op GiroAccept
-LOCAL cPlaats as STRING, i as int, cLan as STRING
-LOCAL aAdr:={} as ARRAY
-/*naam1 := SELF:Salutation
-IF .NOT. Empty(naam1)
-	naam1 += ' '
-ENDIF
-IF .not. Empty(SELF:prefix)
-   naam1 += AllTrim(SELF:prefix)+' '
-ENDIF
-IF .not. Empty(SELF:lastname)
-   naam1 += AllTrim(SELF:lastname)+' '
-ENDIF
-IF sFirstNmInAdr
-	IF !Empty(SELF:firstname)
-		frstnm += AllTrim(SELF:firstname)+' '
-	ELSEIF .not. Empty(SELF:initials)  && anders voorletters gebruiken
-		frstnm += AllTrim(SELF:initials)+' '
-	ENDIF
-ELSEIF .not. Empty(SELF:initials)  && anders voorletters gebruiken
-	frstnm += AllTrim(SELF:initials)+' '
-ENDIF		
-IF sSurnameFirst
-   	naam1 += frstnm
-ELSE
-   	naam1 := frstnm+naam1
-ENDIF */
-
-AAdd(aAdr,Upper(self:GetFullName(,1)))
-IF .not. Empty(self:country)
-	cLan:=Upper(AllTrim(self:country))
-	IF AScan(OwnCountryNames,{|x| Upper(AllTrim(x))==cLan})#0
-		cLan := ""
-	ENDIF
-ENDIF
-
-IF .not. Empty(cLan).and. sSTRZIPCITY==2
-	AAdd(aAdr,cLan)
-ENDIF
-IF sSTRZIPCITY#3
-	IF self:postalcode # '0001' .and. self:postalcode # '0002'
-		cPlaats := AllTrim(AllTrim(self:postalcode) + '   ' + AllTrim(self:city))
-	ELSE
-		cPlaats := AllTrim(self:city)
-	ENDIF
-ELSE
-	cPlaats := AllTrim(AllTrim(self:city)+'   '+AllTrim(self:postalcode))
-ENDIF
-IF  (sSTRZIPCITY==2 .or. sSTRZIPCITY==1) .and.!Empty(cPlaats)
-	AAdd(aAdr,cPlaats)
-ENDIF
-AAdd(aAdr,Upper(AllTrim(self:address)))
-IF  (sSTRZIPCITY==0 .or. sSTRZIPCITY==3) .and.!Empty(cPlaats)
-	AAdd(aAdr,cPlaats)
-ENDIF
-IF .not. Empty(cLan).and. sSTRZIPCITY#2
-	AAdd(aAdr,cLan)
-ENDIF
-FOR i:=1 to Len(aAdr)
-	IVarPutSelf(self,String2Symbol("md_adres"+Str(i,1,0)),aAdr[i])
-NEXT
-RETURN nil
-METHOD GetStreetHousnbr(Address) CLASS Person
-	* return array {streetname, housnbr} from input Address
-	return GetStreetHousnbr(Address)
-METHOD ResetNAW() CLAS Person
-* Reset of fields for name and address:
-	m51_initials:= m51_firstname:= m51_lastname:= m51_title:= m51_prefix:= m51_pos:=	m51_AD1:=m51_city:=""
-RETURN
-METHOD SkipExact(nOrd as int,cValue as string) as logic CLASS Person
-* search for exact match:
-DO WHILE !self:EOF.and.!(nOrd==1.and.Upper(AllTrim(self:lastname))==Upper(self:m51_lastname) .or.;
-	nOrd==2.and.Upper(AllTrim(self:postalcode))==cValue.or.nOrd==3)
-	self:Skip()
-	IF !(nOrd==1.and.Upper(self:lastname)=Upper(self:m51_lastname) .or.;
-	nOrd==2.and.Upper(self:postalcode)=cValue)
-		*	Not exact match found:
-		self:GoBottom()
-		self:Skip()  //enforce eof
-		RETURN FALSE	
-	ENDIF
-ENDDO
-RETURN true
-
-(nOrd==1.and.Upper(AllTrim(self:lastname))==Upper(self:m51_lastname) .or.nOrd==2.and.Upper(AllTrim(self:postalcode))==cValue.or.nOrd==3)	
-METHOD StandardZip(ZipCode) CLASS Person
-	* Standardise Ducth Zip-code format: 9999 XX 
-	if Empty(ZipCode)
-		return null_string
-	endif
-	ZipCode:=Upper(AllTrim(ZipCode))
-	IF Len(ZipCode)==6
-		IF isnum(SubStr(ZipCode,1,4)) .and. !isnum(SubStr(ZipCode,5,2))
-			RETURN SubStr(ZipCode,1,4)+" "+SubStr(ZipCode,5,2)
-		ENDIF
-	ENDIF
-RETURN ZipCode
 METHOD Close( oEvent ) CLASS PersonBrowser
 IF SELF:IsVisible() .and. !SELF:oCaller==NULL_OBJECT
 	// apparently not clicked on OK
@@ -1666,15 +1366,15 @@ METHOD DeleteButton CLASS PersonBrowser
 		if oSel:RecCount>0 
 			InfoBox { self, "Delete Record",;
 				"This person is a member! First remove person as member'"}:Show()
-			RETURN
+			RETURN                      
 		ENDIF
-		oSel:SQLString:="select TransId from transaction where persid='"+myCLN+"'"
+		oSel:SQLString:="select transid from transaction where persid='"+myCLN+"'"
 		oSel:Execute() 
 		if oSel:RecCount>0
 			InfoBox { SELF, "Delete Record","Fin.records in not yet balanced years present! Wait untill year balancing"}:Show()
 			RETURN
 		ENDIF
-		oSel:SQLString:="select persid from Subscription where persid='"+myCLN+"'"
+		oSel:SQLString:="select persid from subscription where persid='"+myCLN+"'"
 		oSel:Execute()
 		if oSel:RecCount>0
 			InfoBox { SELF, "Delete Record",;
@@ -1691,7 +1391,7 @@ METHOD DeleteButton CLASS PersonBrowser
 			oSQL:=SQLStatement{"delete from personbank where persid="+myCLN,oConn}
 			oSQL:Execute() 
 		else
-			LogEvent(,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogSQL")
+			LogEvent(,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogErrors")
 			(ErrorBox{self,'Delete person Error:'+oSQL:Status:Description}):Show()
 		endif
 
@@ -2333,72 +2033,6 @@ CLASS Selpers INHERIT DataWindowExtra
 	export cTel,cDay,cNight,cFax,cMobile,cAbrv,cMr,cMrs,cCouple as string  // texts for use in reports
 
 	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters
-METHOD AcceptGiro(Rij, Blad , oReport, brief, oSelPers, brief_breedte,ind_openpost,ind_gift,ind_naw,ind_herh) CLASS SelPers
-*	Print of acceptgiro (small)
-* self: server
-* oReport: Printjob
-LOCAL brieftxt, regel, cBank AS STRING
-LOCAL m96_regels,regel_tel, tel, skiptst:=14  AS INT
-LOCAL m12_openbed AS FLOAT
-
-* Test bladskip:
-*oReport:PrintLine(@rij,@blad,,,14)
-brieftxt:=self:FillText(brief,oSelPers:selx_keus1,ind_openpost,ind_gift,ind_naw,ind_herh,brief_breedte)
-IF !Empty(brief)
-	m96_regels:=MLCount(brieftxt,35)
-	FOR regel_tel=1 TO 3
-		IF regel_tel <= m96_regels
-			oReport:PrintLine(@Rij,@Blad,Space(41)+MemoLine(brieftxt,35,regel_tel),,skiptst)
-			--skiptst
-		ELSE
-			oReport:PrintLine(@Rij,@Blad,' ',,skiptst)
-			--skiptst
-		ENDIF
-	NEXT
-ELSE
-	FOR regel_tel = 1 TO 3
-		oReport:PrintLine(@Rij,@Blad,' ',,skiptst)
-		--skiptst
-	NEXT
-ENDIF
-m12_openbed:=Val(self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})])
-IF m12_bd
-	oReport:PrintLine(@Rij,@Blad,oPers:persid+Space(16)+Str(m12_openbed,5,0)+;
-	Space(4)+SubStr(Str(m12_openbed,7,decaantal),6,2)+;
-	Space(9)+self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})])
-*	Space(8)+oSelpers:selx_rek+' '+self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})])
-ELSE
-*	oReport:PrintLine(@rij,@blad,oPers:persid+Space(33)+oSelpers:selx_rek+'  '+self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})])
-	oReport:PrintLine(@Rij,@Blad,oPers:persid+Space(34)+self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})])
-ENDIF
-oReport:PrintLine(@Rij,@Blad,' ')
-oReport:PrintLine(@Rij,@Blad,' ')
-IF m12_bd
-*	oReport:PrintLine(@rij,@blad,Str(m12_openbed,6,0)+Space(3)+SubStr(Str(m12_openbed,7,decaantal),6,2))
-	regel:=Str(m12_openbed,6,0)+Space(3)+SubStr(Str(m12_openbed,7,decaantal),6,2)
-ELSE
-	regel:=Space(11)
-ENDIF
-cBank:=AllTrim(self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%BANKACCOUNT"})])
-IF !Empty(cBank)
-	regel:=Pad(regel,24)+cBank
-ENDIF
-oReport:PrintLine(@Rij,@Blad,regel)
-oReport:PrintLine(@Rij,@Blad,' ')
-*oReport:PrintLine(@rij,@blad,' ')
-SELF:oPers:GetGiroNaw()
-oReport:PrintLine(@Rij,@Blad,Space(21)+ self:oPers:md_address1)
-oReport:PrintLine(@Rij,@Blad,Space(21)+ self:oPers:md_address2)
-oReport:PrintLine(@Rij,@Blad,Space(21)+ self:oPers:md_address3)
-oReport:PrintLine(@Rij,@Blad,Space(21)+ self:oPers:md_address4)
-
-IF oReport:oPrintJob:PaperHeight-Rij>9  // nog ruimte voor een volgende acceptgiro?
-	* Dan: Skip 10 regels:
-	FOR tel = 1 TO 10
-		oReport:PrintLine(@Rij,@Blad,' ')
-	NEXT
-ENDIF
-	RETURN NIL
 METHOD AnalyseTxt(template as string,DueRequired ref logic,GiftsRequired ref logic,AddressRequired ref logic,RepeatingPossible ref logic,selectionType as int,selx_accid:=0 as int) as void pascal CLASS Selpers
 	* Analyse content of template
 	LOCAL h1,h2,i as int,repeatedtxt as STRING
@@ -2614,7 +2248,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	self:STATUSMESSAGE("Exporting persons, please wait...")
 	IF CountryCode=="47".and.!Empty(SDON)
 		// determine default donation nbr 
-		oSQL:=SQLSelect{"select ACCNUMBER from account where accid="+SDON,oConn}
+		oSQL:=SQLSelect{"select accnumber from account where accid="+SDON,oConn}
 		oSQL:Execute()
 		if oSQL:RECCOUNT>0
 			Donat:=AllTrim(oSQL:ACCNUMBER)
@@ -2993,8 +2627,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 // 					oDue:seek(asscln)
 // 					DO WHILE !oDue:EOF.and.oDue:persid=Asscln
 // 						IF oDue:Eval(pKond,,,1) && &oSelfPers:cWhereOther
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:AmountInvoice-oDue:AmountRecvd,10,DecAantal))
-// 							TotalAmnt+=oDue:AmountInvoice-oDue:AmountRecvd
+// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
+// 							TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
 // 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
 // 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oPers:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
 // 							oAcc:seek(oDue:accid)
@@ -3022,8 +2656,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 // 				oDue:seek( asscln)
 // 				DO WHILE !oDue:EOF.and. oDue:persid==Asscln
 // 					IF oDue:Eval(pKond,,,1) && &oSelPers:cWhereOther
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:AmountInvoice-oDue:AmountRecvd,10,DecAantal))
-// 						TotalAmnt+=oDue:AmountInvoice-oDue:AmountRecvd
+// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
+// 						TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
 // 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
 // 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oPers:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
 // 						oAcc:seek(oDue:accid)
@@ -3065,7 +2699,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(oTransH:dat))
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=AllTrim(Str(oTransH:cre-oTransH:deb,10,DecAantal))
 							TotalAmnt+=oTransH:cre-oTransH:deb
-							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TRANSID"})]:=AllTrim(oTransH:TransId)
+							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%transid"})]:=AllTrim(oTransH:transid)
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=AllTrim(oTransH:DOCID)
 							oAcc:seek(oTransH:accid)
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
@@ -3248,106 +2882,6 @@ METHOD NAW_Extended(nRow ref int, nPage ref int ,Heading as array, oReport as Pr
 	ENDIF
 
 	RETURN 
-METHOD PrintAccepts(oParent,nType,cTitel,oSelPers) CLASS Selpers
-LOCAL i AS INT
-LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh AS LOGIC
-LOCAL nRow as int
-LOCAL nPage as int
-LOCAL oAccFrm AS AcceptFormat
-LOCAL lReady AS LOGIC
-LOCAL oFromTo AS Range
-LOCAL brfWidth:=79 AS INT
-LOCAL Aantal:=0 AS INT
-LOCAL cRemarks AS STRING
-local oReport as PrintDialog
-oFromTo:=Range{}
-oDue := DueAmount{}
-IF !oDue:Used
-	SELF:EndWindow()
-	RETURN
-ENDIF
-oDue:SetOrder("OPENPOST")
-oSub := Subscription{}
-IF !oSub:Used
-	SELF:EndWindow()
-	RETURN
-ENDIF
-oSub:SetOrder("POL")
-oAcc := Account{}
-IF !oAcc:Used
-	SELF:EndWindow()
-	RETURN
-ENDIF
-oAcc:SetOrder("accid")
-oTrans := Transaction{}
-IF !oTrans:Used
-	SELF:EndWindow()
-	RETURN
-ENDIF
-oTrans:setOrder("MUT")
-
-	
-DO WHILE !lReady
-	oAccFrm := AcceptFormat{oParent}
-	oAccFrm:Show()
-	IF oAccFrm:lCancel
-		RETURN FALSE
-	ENDIF
-	cRemarks:=oAccFrm:brief
-	m12_bd := if(WycIniFS:GetInt( "Runtime", "AccAmount" )==1,TRUE,FALSE)
-	oReport := PrintDialog{oParent,cTitel,,brfWidth}
-	IF !Empty(oFromTo)
-		oReport:InitRange(oFromTo)
-	ENDIF
-	oReport:Show()
-	IF .not.oReport:lPrintOk
-		RETURN FALSE
-	ENDIF
-	oFromTo := oReport:oRange
-*	Vul evenveel brieven als maximumrange:
-	IF !Empty(oFromTo)
-		IF !Empty(oFromTo:Max)
-			Aantal:=oFromTo:Max+1
-		ELSE
-			Aantal:=0
-		ENDIF
-	ELSE
-		Aantal:=0
-	ENDIF
-	nRow:=0
-	nPage:=0
-	ind_openpost:=.f.
-	ind_gift:=.f.
-	ind_naw:=.f.
-	ind_herh:=.f.
-	self:AnalyseTxt(cRemarks,@ind_openpost,@ind_gift,@ind_naw,@ind_herh,self:selx_keus1,Val(self:selx_rek))
-	IF m12_bd
-		IF SELF:selx_keus1=2
-			ind_openpost:=.t.
-		ELSE
-			ind_gift:=.t.
-		ENDIF
-	ENDIF
-	FOR i=1 TO Len(aNN)
-		oPers:GoTo(aNN[i,2])
-		self:AcceptGiro(@nRow,@nPage,oReport,oAccFrm:brief,self,brfWidth, ;
-		ind_openpost,ind_gift,ind_naw,ind_herh)
-		IF !Empty(aantal) .and. nPage > aantal
-			EXIT
-		ENDIF
-	NEXT
-	oReport:prstart()
-	lReady := oReport:oPrintJob:lLblFinish
-	oReport:prstop()
-ENDDO
-oReport:prstart()
-oReport:prstop()
-oDue:Close()
-oSub:Close()
-oAcc:Close()
-oTrans:Close()
-
-RETURN TRUE
 METHOD PrintLabels(oParent,nType,cTitel,cVoorw) CLASS Selpers
 
 LOCAL oLblFrm AS LabelFormat
@@ -3406,32 +2940,32 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	local CurLetter as string
 	local cGroup,cHaving,cSQLString,cGrFields as string 
 	
-	self:splaats:=SQLSelect{"select CityLetter from sysparms",oConn}:cityletter
+	self:splaats:=SQLSelect{"select cityletter from sysparms",oConn}:cityletter
 	cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,"+;
 	"p.datelastgift"   	
 	IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
 		cFields+=",t.cre-t.deb as amountgift"
-		cGrFields:="gr.*,sum(gr.amountgift) as TOTAMNT"
+		cGrFields:="gr.*,sum(gr.amountgift) as totamnt"
 		if self:selx_MinIndAmnt>0
-			cGrFields+=",max(amountgift) as MAXAMNT" 
+			cGrFields+=",max(amountgift) as maxamnt" 
 		endif
 		cGroup:=" group by p.persid"
 		if self:selx_MinAmnt>0 .and. self:selx_MaxAmnt>0
-			cHaving:=" having TOTAMNT between "+Str(self:selx_MinAmnt,-1)+" and "+Str(self:selx_MaxAmnt,-1) 
+			cHaving:=" having totamnt between "+Str(self:selx_MinAmnt,-1)+" and "+Str(self:selx_MaxAmnt,-1) 
 		elseif self:selx_MinAmnt>0
-			cHaving:=" having TOTAMNT >= "+Str(self:selx_MinAmnt,-1)
+			cHaving:=" having totamnt >= "+Str(self:selx_MinAmnt,-1)
 		elseif self:selx_MaxAmnt>0
-			cHaving:=" having TOTAMNT <= "+Str(self:selx_MaxAmnt,-1)
+			cHaving:=" having totamnt <= "+Str(self:selx_MaxAmnt,-1)
 		endif
 		if self:selx_MinIndAmnt>0
-			cHaving+=iif(Empty(cHaving)," having "," and ")+"MAXAMNT >= "+Str(self:selx_MinIndAmnt,-1)
+			cHaving+=iif(Empty(cHaving)," having "," and ")+"maxamnt >= "+Str(self:selx_minindamnt,-1)
 		endif
       cSQLString:=UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)
       self:oPers:=SQLSelect{"select "+cGrFields+" from ("+cSQLString+") as gr group by gr.persid "+cHaving+" order by "+self:SortOrder,oConn}
 	else
 		self:oPers:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder,oConn} 
 	endif
-   LogEvent(self,self:oPers:sqlString,"logsql")
+//    LogEvent(self,self:oPers:sqlString,"logsql")
 	self:oPers:Execute()
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(self:oPers:RECCOUNT)+ ' persons found')}):Show()
 	if !self:oPers:RECCOUNT=0 
@@ -3561,136 +3095,131 @@ METHOD PrintToOutput(oWindow,aTitle,TitleExtra) CLASS SelPers
 
 	return lSucc
 METHOD Show() CLASS SelPers
-// LOCAL kopregels AS ARRAY
-// LOCAL nRow AS INT
-// LOCAL nPage AS INT
-LOCAL i as int, ind as int
-LOCAL lSucc AS LOGIC
-LOCAL CurCln  as STRING, CurTotal:=0 as FLOAT
-LOCAL aPerson:={} AS ARRAY // array with personnbrs, TotalAamount
-LOCAL aTitle := {'Compact Person report','Extended Person report','Labels',;
-'Letters','Giro accepts','Export persons','Add/Remove Mailing Codes'}
-LOCAL RekIdEnd as STRING
-LOCAL aRekId as ARRAY // copy of KondA
-Local oStmnt as SQLStatement 
-// LOCAL oXMLDoc as XMLDocument, uFieldValue as usual, extrafound:=false as logic
+	// LOCAL kopregels AS ARRAY
+	// LOCAL nRow AS INT
+	// LOCAL nPage AS INT
+	LOCAL i as int, ind as int
+	LOCAL lSucc AS LOGIC
+	LOCAL CurCln  as STRING, CurTotal:=0 as FLOAT
+	LOCAL aPerson:={} AS ARRAY // array with personnbrs, TotalAamount
+	LOCAL aTitle := {'Compact Person report','Extended Person report','Labels',;
+		'Letters','Giro accepts','Export persons','Add/Remove Mailing Codes'}
+	LOCAL RekIdEnd as STRING
+	LOCAL aRekId as ARRAY // copy of KondA
+	Local oStmnt as SQLStatement 
+	// LOCAL oXMLDoc as XMLDocument, uFieldValue as usual, extrafound:=false as logic
 
-self:selx_Ok:=true 
-* bepaal gewenste selectie:
-aNN := {}
-IF cType=="REMINDERS".or.cType=="DONATIONS".or.cType=="SUBSCRIPTIONS"
-	selx_keus1 := 2
-ELSEIF cType=="STANDARD GIVERS"
-	selx_keus1 := 3
-ELSEIF cType=="MAILINGCODE"
-	selx_keus1 := 1
-ELSEIF cType=="THANKYOU"
-	selx_keus1 := 4
-ELSEIF cType=="FIRSTGIVERS"
-	selx_keus1 := 1
-ELSEIF cType=="FIRSTNONEAR"
-	selx_keus1 := 1
-ELSE
-	(SelPersPrimary{oWindow,SELF}):Show()
-ENDIF 
+	self:selx_Ok:=true 
+	* bepaal gewenste selectie:
+	aNN := {}
+	IF cType=="REMINDERS".or.cType=="DONATIONS".or.cType=="SUBSCRIPTIONS"
+		selx_keus1 := 2
+	ELSEIF cType=="STANDARD GIVERS"
+		selx_keus1 := 3
+	ELSEIF cType=="MAILINGCODE"
+		selx_keus1 := 1
+	ELSEIF cType=="THANKYOU"
+		selx_keus1 := 4
+	ELSEIF cType=="FIRSTGIVERS"
+		selx_keus1 := 1
+	ELSEIF cType=="FIRSTNONEAR"
+		selx_keus1 := 1
+	ELSE
+		(SelPersPrimary{oWindow,SELF}):Show()
+	ENDIF 
 
-IF SELF:selx_ok
-	IF selx_keus1 == 2
-		(SelPersOpen{oWindow,{self,cType}}):Show()
-		self:cFrom+=",dueamount as d,subscription as t"
-		cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
-	ELSEIF selx_keus1 == 3
-		(SelPersGifts{oWindow,SELF}):Show()
-		self:cFrom+=",subscription as t"
-		cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.personid" 
-	ELSEIF selx_keus1 == 4
-//		(SelPersPayments{oWindow,SELF}):Show()
-		(SelPersPayments{oWindow,self}):Show()
-		IF selx_MinAmnt>0.or.selx_MaxAmnt>0 // selection of minimum total amount:
-			selx_keus1 := 5
+	IF SELF:selx_ok
+		IF selx_keus1 == 2
+			(SelPersOpen{oWindow,{self,cType}}):Show()
+			self:cFrom+=",dueamount as d,subscription as t"
+			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
+// 		ELSEIF selx_keus1 == 3
+// 			(SelPersGifts{oWindow,SELF}):Show()
+// 			self:cFrom+=",subscription as t"
+// 			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.personid" 
+		ELSEIF selx_keus1 == 4
+			//		(SelPersPayments{oWindow,SELF}):Show()
+			(SelPersPayments{oWindow,self}):Show()
+			IF selx_MinAmnt>0.or.selx_MaxAmnt>0 // selection of minimum total amount:
+				selx_keus1 := 5
+			ENDIF
+			self:cFrom+=",transaction as t"
+			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
 		ENDIF
-		self:cFrom+=",transaction as t"
-		cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
+	ELSE
+		SELF:EndWindow()
+		RETURN
 	ENDIF
-ELSE
-	SELF:EndWindow()
-	RETURN
-ENDIF
-IF self:selx_Ok
-	(SelPersMailCd{oWindow,{SELF,cType}}):Show()
-ELSE
-	self:EndWindow()
-	self:Close()
-	RETURN
-ENDIF
-IF !Selx_OK
-	SELF:EndWindow()
-	RETURN
-ENDIF
-IF IsNil(cWhereOther)
-	cWhereOther:=null_string
-ENDIF
-IF IsNil(self:cWherep)
-	self:cWherep:=null_string
-ENDIF
-if !(Empty(self:cWherep).and.Empty(cWhereOther))
-	if Empty(self:cWherep)
-		self:cWherep:=" where "+cWhereOther
-	else
-		self:cWherep:=" where "+self:cWherep+iif(Empty(cWhereOther),""," and "+cWhereOther)
+	IF self:selx_Ok
+		(SelPersMailCd{oWindow,{SELF,cType}}):Show()
+	ELSE
+		self:EndWindow()
+		self:Close()
+		RETURN
+	ENDIF
+	IF !Selx_OK
+		SELF:EndWindow()
+		RETURN
+	ENDIF
+	IF IsNil(cWhereOther)
+		cWhereOther:=null_string
+	ENDIF
+	IF IsNil(self:cWherep)
+		self:cWherep:=null_string
+	ENDIF
+	if !(Empty(self:cWherep).and.Empty(cWhereOther))
+		if Empty(self:cWherep)
+			self:cWherep:=" where "+cWhereOther
+		else
+			self:cWherep:=" where "+self:cWherep+iif(Empty(cWhereOther),""," and "+cWhereOther)
+		endif
 	endif
-endif
-self:cWherep+=" and p.persid>0"
-IF !Empty(self:selx_AccStart) .and. !Empty(self:selx_AccStart) .and. !self:selx_AccStart==self:selx_Accend 
-	// range of account numbers:
-	self:cFrom+=",account as a"
-	self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
-endif
+	self:cWherep+=" and p.persid>0"
+	IF !Empty(self:selx_AccStart) .and. !Empty(self:selx_AccStart) .and. !self:selx_AccStart==self:selx_Accend 
+		// range of account numbers:
+		self:cFrom+=",account as a"
+		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
+	endif
 
-self:oDB:=SQLSelectPerson{"",oConn}
-SELF:oWindow:Pointer := Pointer{POINTERARROW}
+	self:oDB:=SQLSelectPerson{"",oConn}
+	SELF:oWindow:Pointer := Pointer{POINTERARROW}
 
-oWindow:=GetParentWindow(SELF)
+	oWindow:=GetParentWindow(SELF)
 
-oWindow:Pointer := Pointer{POINTERHOURGLASS}
-SELF:oWindow:StatusMessage("Producing reports, please wait...")
+	oWindow:Pointer := Pointer{POINTERHOURGLASS}
+	SELF:oWindow:StatusMessage("Producing reports, please wait...")
 
-* Print the required report: 
+	* Print the required report: 
 
-lSucc:=self:PrintToOutput(oWindow,aTitle,"")
-oWindow:Pointer := Pointer{POINTERARROW}
+	lSucc:=self:PrintToOutput(oWindow,aTitle,"")
+	oWindow:Pointer := Pointer{POINTERARROW}
 
-IF lSucc
-	* remove eventually EG/EO-codes:
-	IF SELF:lEG .or. SELF:lEO  // EG or EO selected?
-		* Ask for removing codes:
-		IF (TextBox{oWindow, "Printing of persons", "Has code for "+;
-		IF(SELF:lEG,"First gift received","") +;
-		IF(SELF:lEO,IF(SELF:lEG," and ","")+"First non-earm gift","")+" to be removed?",;
-		BUTTONYESNO}):Show() == BOXREPLYYES
-			* remove the codes:
-			if self:lEG .and. self:lEO
-				oStmnt :=SQLStatement{;
-				"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'EO','FI') where instr(mailingcodes,'EG')>0 or instr(mailingcodes,'EO')>0)",oConn}
-			elseif self:lEG
-				oStmnt :=SQLStatement{;
-				"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'FI FI','FI') where instr(mailingcodes,'EG')>0",oConn}
-			else //EO
-				oStmnt :=SQLStatement{;
-				"update person set mailingcodes=replace(replace(mailingcodes,'EO','FI'),'FI FI','FI'), where instr(mailingcodes,'EO')>0",oConn}
-			endif
-			oStmnt:Execute()
-			oStmnt:Commit()
+	IF lSucc
+		* remove eventually EG/EO-codes:
+		IF SELF:lEG .or. SELF:lEO  // EG or EO selected?
+			* Ask for removing codes:
+			IF (TextBox{oWindow, "Printing of persons", "Has code for "+;
+					IF(SELF:lEG,"First gift received","") +;
+					IF(SELF:lEO,IF(SELF:lEG," and ","")+"First non-earm gift","")+" to be removed?",;
+					BUTTONYESNO}):Show() == BOXREPLYYES
+				* remove the codes:
+				if self:lEG .and. self:lEO
+					oStmnt :=SQLStatement{;
+						"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'EO','FI') where instr(mailingcodes,'EG')>0 or instr(mailingcodes,'EO')>0)",oConn}
+				elseif self:lEG
+					oStmnt :=SQLStatement{;
+						"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'FI FI','FI') where instr(mailingcodes,'EG')>0",oConn}
+				else //EO
+					oStmnt :=SQLStatement{;
+						"update person set mailingcodes=replace(replace(mailingcodes,'EO','FI'),'FI FI','FI'), where instr(mailingcodes,'EO')>0",oConn}
+				endif
+				oStmnt:Execute()
+				oStmnt:Commit()
+			ENDIF
 		ENDIF
 	ENDIF
-ENDIF
 
-RETURN
-METHOD FillPerGifts CLASS SelPersGifts
-local aAcc as  array 
-aAcc:=FillAccount(self, "GiftAlwd")
-AAdd(aAcc,{"<All>",""})	
-Return aAcc
+	RETURN
 Method ExtraPropCondition(aPropExValues as array) as void Pascal Class SelPersMailCd
 	// compose extra properties selection condition: 
 LOCAL cExtra as string
@@ -3907,7 +3436,7 @@ METHOD Abon_Con(dummy:=nil as logic) as array CLASS SelPersOpen
 	LOCAL aAcc := {} as array
 	LOCAL cStatement as STRING
 
-	cStatement:="select distinct concat(a.description,' ',a.accnumber) as accdescr, a.accid from account a,Subscription s "+;
+	cStatement:="select distinct concat(a.description,' ',a.accnumber) as accdescr, a.accid from account a,subscription s "+;
 	"where s.accid=a.accid and active=1 and "+; 
 	iif(self:cType=="SUBSCRIPTIONS","a.subscriptionprice>0 and s.category='A'","giftalwd=1 and category='D'")
 	oAcc:=SQLSelect{cStatement,oConn}
@@ -3930,7 +3459,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
 	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds as STRING
 	Local oWarn as TextBox
-	Local aTrans:={} as array // persid,Dtos(invoicedate)+seqnr,accid,AmountInvoice, banknumber, Description 
+	Local aTrans:={} as array // persid,Dtos(invoicedate)+seqnr,accid,amountinvoice, banknumber, Description 
 	Local aDir as array
 	local oPro as ProgressPer 
 	local oSel as SQLSelect
@@ -3955,7 +3484,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 		RETURN false
 	ENDIF
 
-	oSel:=SQLSelect{"select PAYAHEAD from BankAccount where banknumber='"+BANKNBRDEB+"' and telebankng=1",oConn}
+	oSel:=SQLSelect{"select payahead from bankaccount where banknumber='"+BANKNBRDEB+"' and telebankng=1",oConn}
 	if oSel:RecCount<1
 		(ErrorBox{,"Bank account number "+BANKNBRDEB+;
 			" not specified as telebanking in system data"}):Show()
@@ -3975,7 +3504,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 		"left join person ps on (ps.persid=s.personid) "+;
 		"where s.subscribid=d.subscribid "+;
 		"and s.paymethod='C' and invoicedate between '"+SQLdate(begin_due)+;
-		"' and '"+SQLdate(end_due)+"' and d.AmountRecvd<d.AmountInvoice and "+;
+		"' and '"+SQLdate(end_due)+"' and d.amountrecvd<d.amountinvoice and "+;
 		"s.bankaccnt not in (select p.banknumber from personbank p where p.persid=s.personid)",oConn}
 	if oDue:RecCount>0
 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
@@ -3988,12 +3517,12 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 	endif
 	
 
-	oDue:=SQLSelect{"select d.dueid,s.personid,s.accid,d.AmountInvoice,d.invoicedate,d.seqnr,s.term,s.BANKACCNT,a.accnumber,a.clc,b.category as acctype,"+SQLAccType()+" as type,"+;
+	oDue:=SQLSelect{"select d.dueid,s.personid,s.accid,d.amountinvoice,d.invoicedate,d.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+SQLAccType()+" as type,"+;
 		"p.datelastgift,"+SQLFullName(0,'p')+" as personname "+;
-		" from account a left join member m on (a.accid=m.accid),balanceitem b,person p, DueAmount d,Subscription s "+;
+		" from account a left join member m on (a.accid=m.accid),balanceitem b,person p, dueamount d,Subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
 		"and invoicedate between '"+SQLdate(begin_due)+;
-		"' and '"+SQLdate(end_due)+"' and AmountRecvd<AmountInvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
+		"' and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
 	IF oDue:RecCount<1
 		(WarningBox{self,"Producing CLIEOP03 file","No due amounts to be debited direct!"}):Show()
 		RETURN false
@@ -4110,7 +3639,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 		if !lError
 			// Reconcile Due Amounts:
 			ArrayDeProtect(aTrans)
-			oStmnt:=SQLStatement{"update dueamount set amountrecvd=AmountInvoice where dueid in ("+Implode(aTrans,",",,,8)+")",oConn}
+			oStmnt:=SQLStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+Implode(aTrans,",",,,8)+")",oConn}
 			oStmnt:Execute()
 			oPro:AdvancePro()
 			ArrayProtect(aTrans)
@@ -4131,14 +3660,14 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 					cAccMlCd:=Transform(aTrans[i,6],"") 
 					cAccType:=aTrans[1,7]
 					oStmnt:=SQLStatement{"insert into transaction set "+;
-						"DAT='"+SQLdate(process_date)+"'"+;
-						",DOCID='COL'"+;
+						"dat='"+SQLdate(process_date)+"'"+;
+						",docid='COL'"+;
 						",description ='"+cDescr +"'"+;
 						",accid ='"+m56_Payahead+"'"+;
 						",deb ='"+cAmnt+"'"+;
 						",debforgn ='"+cAmnt+"'"+;
 						",seqnr=1,poststatus=2"+;
-						",USERID ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
+						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
 						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
@@ -4152,16 +3681,16 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 					cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 					// record credit on destination account:
 					oStmnt:=SQLStatement{"insert into transaction set "+;
-						"TransId='"+cTransnr+"'"+;
-						",DAT='"+SQLdate(process_date)+"'"+;
-						",DOCID='COL'"+;
+						"transid='"+cTransnr+"'"+;
+						",dat='"+SQLdate(process_date)+"'"+;
+						",docid='COL'"+;
 						",description ='"+cDescr +"'"+;
 						",accid ='"+cAccID+"'"+;
 						",persid='"+cPersId+"'"+;
 						",cre ='"+cAmnt+"'"+;
 						",creforgn ='"+cAmnt+"'"+;
 						",seqnr=2,poststatus=2"+;
-						",USERID ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'"+iif(cType=='M',",GC='AG'",""),oConn}
+						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'"+iif(cType=='M',",GC='AG'",""),oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
 						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
@@ -4218,7 +3747,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	// make KID file for automatic collection for Norwegian Banks
 	LOCAL cFilter AS STRING
-	LOCAL oDue AS DueAmount, oPers AS Person, oSub AS Subscription
+	LOCAL oDue as SQLSelect, oPers as SQLSelect, oSub as SQLSelect
 	LOCAL ptrHandle
 	LOCAL cFilename AS STRING
 	LOCAL nSeq, nLine AS INT, fSum:=0 AS FLOAT
@@ -4230,14 +3759,14 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 
 	cFilter:=	'paymethod="C".and.dtos(invoicedate)>="'+DToS(begin_due)+;
 	'".and.dtos(invoicedate)<="'+DToS(end_due)+;
-	'".and.AmountRecvd<AmountInvoice'
+	'".and.amountrecvd<amountinvoice'
 	cSession:=Str(Year(Today()),4,0)+StrZero((Today()-SToD(Str(Year(Today()),4,0)+"0101"))+1,3)
-    oDue:=DueAmount{,DBSHARED,DBREADONLY}
-    IF !oDue:Used
-    	RETURN
-    ENDIF
-	oDue:SetOrder("OPENDAT")
-	Success:=oDue:SetFilter(cFilter)
+//     oDue:=DueAmount{,DBSHARED,DBREADONLY}
+//     IF !oDue:Used
+//     	RETURN
+//     ENDIF
+// 	oDue:SetOrder("OPENDAT")
+// 	Success:=oDue:SetFilter(cFilter)
 	oDue:GoTop()
 	IF !oDue:EoF
 	   * Datafile aanmaken:
@@ -4255,21 +3784,20 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	oSub:=SubScription{,DBSHARED,DBREADONLY}
-	IF !oSub:Used
-		RETURN
-	ENDIF
-	oSub:SetFilter({||oSub:PAYMETHOD=="C"},"PAYMETHOD=='C'")
-	oSub:SetOrder("POL")
-	oPers:=Person{,DBSHARED,DBREADONLY}
-	IF !oPers:Used
-		RETURN
-	ENDIF
-	oPers:SetOrder("ASSRE")
-	oLan:=Language{}
+// 	oSub:=SubScription{,DBSHARED,DBREADONLY}
+// 	IF !oSub:Used
+// 		RETURN
+// 	ENDIF
+// 	oSub:SetFilter({||oSub:PAYMETHOD=="C"},"PAYMETHOD=='C'")
+// 	oSub:SetOrder("POL")
+// 	oPers:=Person{,DBSHARED,DBREADONLY}
+// 	IF !oPers:Used
+// 		RETURN
+// 	ENDIF
+// 	oPers:SetOrder("ASSRE")
 	headinglines:={oLan:Get("Overview of generated automatic collection (KID)"),oLan:Get("Session:")+cSession,oLan:Get("Name",41)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("KID",13),Replicate('-',67)}
 	// write Header
-	FWriteLine(ptrHandle,"NY000010"+PadL(AllTrim((Sysparms{,DBSHARED,DBREADONLY}):CNTRNRCOLL),8,"0")+padl(cSession,7,"0")+PadR("0000808",57,"0"))
+	FWriteLine(ptrHandle,"NY000010"+PadL(SQLSelect{"select cntrnrcoll from sysparms",oConn}:CNTRNRCOLL,8,"0")+PadL(cSession,7,"0")+PadR("0000808",57,"0"))
 	FWriteLine(ptrHandle,"NY210020000000000"+PadL(cSession,7,"0")+PadL(BANKNBRDEB,11,"0")+Replicate("0",45))
 	nLine:=2
 	DueDateFirst:=oDue:invoicedate
@@ -4306,21 +3834,13 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	Replicate("0",33))
 	
 	FClose(ptrHandle)
-	oDue:Close()
-	oSub:Close()
-	oPers:Close()
-	oLan:Close()
-	oDue:=NULL_OBJECT
-	oSub:=NULL_OBJECT
-	oPers:=NULL_OBJECT
-	oLan:=NULL_OBJECT
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',67),headinglines,3)
 	oReport:PrintLine(@nRow,@nPage,Space(41)+Str(Round(fSum,2),12,2),headinglines)
 	oReport:prstart()
 	oReport:prstop()
 	(InfoBox{SELF,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"}):Show()
 RETURN
-METHOD RegAccount(oAcc as Account,ItemName as string) as logic CLASS SelPersPayments
+METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
 		IF Empty(oAcc).or.oAcc:reccount<1
 			self:mRekSt :=  ""
@@ -4480,43 +4000,43 @@ local i,j as int
 			cFields+=",t.docid"
 		endif
 		IF AtC("%AMOUNTGIFT",cMarkupText)>0
-			cFields+=",Round(t.CRE-t.DEB,2) as AmountGift"
+			cFields+=",Round(t.cre-t.deb,2) as amountgift"
 		endif
-		cMarkupText:="CONCAT('"+StrTran(StrTran(StrTran(StrTran(StrTran(cMarkupText,"%AMOUNTGIFT","',gr.AmountGift,'"),"%DATEGIFT","',date_format(gr.dat,'"+LocalDateFormat+"'),'"),"%DESTINATION","',gr.description,'"),"%REFERENCEGIFT","',gr.Reference,'"),"%DOCUMENTID","',gr.docid,'")+"')"
+		cMarkupText:="CONCAT('"+StrTran(StrTran(StrTran(StrTran(StrTran(cMarkupText,"%AMOUNTGIFT","',gr.AmountGift,'"),"%DATEGIFT","',date_format(gr.dat,'"+LocalDateFormat+"'),'"),"%DESTINATION","',gr.description,'"),"%REFERENCEGIFT","',gr.reference,'"),"%DOCUMENTID","',gr.docid,'")+"')"
 		cMarkupText:=StrTran(StrTran(cMarkupText,"'',",""),",''","")
 // 		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as "+myFields[j,2]:HyperLabel:Name 
 		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as giftsgroup" 
 		cGroup:=" group by gr.persid"
 	endif
 	IF (j:=AScan(myFields,{|x|x[1]== #TOTAMNT}))>0 .or. fMinAmnt>0 .or. fMaxAmnt>0 .or. fMinIndVidAmnt>0
-		cField:=",Round(t.CRE-t.DEB,2) as AmountGift"
+		cField:=",Round(t.cre-t.deb,2) as amountgift"
 		if AtC(cField,cFields)=0
 			cFields+=cField
 		endif
 		if j>0 .or.fMinAmnt>0 .or. fMaxAmnt>0
-			cGrFields+=",round(sum(gr.AmountGift),2) as TOTAMNT"
+			cGrFields+=",round(sum(gr.amountgift),2) as totamnt"
 		endif
 		if fMinIndVidAmnt>0
-			cGrFields+=",max(gr.AmountGift) as MAXAMNT" 
+			cGrFields+=",max(gr.amountgift) as maxamnt" 
 		endif
 		cGroup:=" group by gr.persid"
 		if fMinAmnt>0 .and. fMaxAmnt>0
-			cHaving:=" having TOTAMNT between "+Str(fMinAmnt,-1)+" and "+Str(fMaxAmnt,-1) 
+			cHaving:=" having totamnt between "+Str(fMinAmnt,-1)+" and "+Str(fMaxAmnt,-1) 
 		elseif fMinAmnt>0
-			cHaving:=" having TOTAMNT >= "+Str(fMinAmnt,-1)
+			cHaving:=" having totamnt >= "+Str(fMinAmnt,-1)
 		elseif fMaxAmnt>0
-			cHaving:=" having TOTAMNT <= "+Str(fMaxAmnt,-1)
+			cHaving:=" having totamnt <= "+Str(fMaxAmnt,-1)
 		endif
 		if fMinIndVidAmnt>0
-			cHaving+=iif(Empty(cHaving)," having "," and ")+"MAXAMNT >= "+Str(fMinIndVidAmnt,-1)
+			cHaving+=iif(Empty(cHaving)," having "," and ")+"maxamnt >= "+Str(fMinIndVidAmnt,-1)
 		endif 
 	endif
 	IF (j:=AScan(myFields,{|x|x[1]== #AmountGift}))>0 
-		cField:=",Round(t.CRE-t.DEB,2) as AmountGift"
+		cField:=",Round(t.cre-t.deb,2) as amountgift"
 		if AtC(cField,cFields)=0
 			cFields+=cField
 		endif
-		cGrFields+=",gr.AmountGift"
+		cGrFields+=",gr.amountgift"
 	endif
 	// determine fields to extract from the database
 	for i:=1 to Len(myFields)
