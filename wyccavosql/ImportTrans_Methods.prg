@@ -1,5 +1,5 @@
 STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCnt ref int) as void pascal
-	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, DocId as string, Amount as float, DATUM as date
+	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, DATUM as date
 	local oImpTr as SQLSelect
 	local cStatement as string
 	local oStmnt as SQLStatement
@@ -28,15 +28,15 @@ STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCn
 	Firma:=alltrim(CZR->FieldGetSym(#FIRMA))
 	FromDesc:=alltrim(CZR->FieldGetSym(#MD_UCET))
 	ToDescr:=AllTrim(CZR->FieldGetSym(#D_UCET))
-	DocId:=AllTrim(CZR->FieldGetSym(#DOKLAD))
+	docid:=AllTrim(CZR->FieldGetSym(#DOKLAD))
 	// Check if transaction already present:
-	cOrigin:="WD"+Pad(DocId,9)
+	cOrigin:="WD"+Pad(docid,9)
 	cTransnr:=StrZero(CZR->ICO,10,0) 
 
 // Search for two lines (debit and credit) equal to transaction to be imported:
-	oImpTr:=SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and TRANSACTNR='"+cTransnr+"' and "+; 
-	"EXTERNID='"+ExtId+"' and TRANSDATE='"+SQLdate(DATUM)+"' and DESCRIPTN='"+Description+"' and "+;
-	"(ACCOUNTNR='"+FromAcc+"' and DEBITAMNT="+Str(Amount,-1)+" or ACCOUNTNR='"+ToAcc+"' and CREDITAMNT="+Str(Amount,-1)+")"+;
+	oImpTr:=SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and transactnr='"+cTransnr+"' and "+; 
+	"externid='"+ExtId+"' and transdate='"+SQLdate(DATUM)+"' and descriptn='"+Description+"' and "+;
+	"(accountnr='"+FromAcc+"' and debitamnt="+Str(Amount,-1)+" or accountnr='"+ToAcc+"' and creditamnt="+Str(Amount,-1)+")"+;
 	" order by imptrid",oConn}
 	if oImpTr:RecCount=2				
 		return  // skip if allready present
@@ -56,34 +56,34 @@ STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCn
 	endif
 	// add transaction to imported transactions: 
 	cStatement:="insert into importtrans set "+; 
-	",DOCID='"+DocId +"'"+;
+	",docid='"+docid +"'"+;
 		",origin='"+cOrigin+"'"+;
-		",TRANSACTNR='"+cTransnr +"'"+;
-		",ACCOUNTNR='"+FromAcc+"'"+;
-		",ACCNAME='"+FromDesc+"'"+;
-		",DEBITAMNT="+Str(Amount,-1)+;
-		",EXTERNID='"+ExtId+"'"+; 
-	",GIVER='"+Firma+"'"+;
-		",DESCRIPTN='"+Description+"'"+;
+		",transactnr='"+cTransnr +"'"+;
+		",accountnr='"+FromAcc+"'"+;
+		",accname='"+FromDesc+"'"+;
+		",debitamnt="+Str(Amount,-1)+;
+		",externid='"+ExtId+"'"+; 
+	",giver='"+Firma+"'"+;
+		",descriptn='"+Description+"'"+;
 		",transdate='"+SQLdate(DATUM)+"'"+;
-		",ASSMNTCD='"+AsmtCode1+"'"+; 
-	",POSTSTATUS=1"
+		",assmntcd='"+AsmtCode1+"'"+; 
+	",poststatus=1"
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		cStatement:="insert into importtrans set "+; 
-		",DOCID='"+DocId +"'"+;
+		",docid='"+docid +"'"+;
 			",origin='"+cOrigin+"'"+;
-			",TRANSACTNR='"+cTransnr +"'"+;
-			",ACCOUNTNR='"+ToAcc+"'"+;
-			",ACCNAME='"+ToDescr+"'"+;
-			",CREDITAMNT="+Str(Amount,-1)+;
-			",EXTERNID='"+ExtId+"'"+; 
-		",GIVER='"+Firma+"'"+;
-			",DESCRIPTN='"+Description+"'"+;
+			",transactnr='"+cTransnr +"'"+;
+			",accountnr='"+ToAcc+"'"+;
+			",accname='"+ToDescr+"'"+;
+			",creditamnt="+Str(Amount,-1)+;
+			",externid='"+ExtId+"'"+; 
+		",giver='"+Firma+"'"+;
+			",descriptn='"+Description+"'"+;
 			",transdate='"+SQLdate(DATUM)+"'"+;
-			",ASSMNTCD='"+AsmtCode1+"'"+; 
-		",POSTSTATUS=1"
+			",assmntcd='"+AsmtCode1+"'"+; 
+		",poststatus=1"
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0
@@ -108,12 +108,12 @@ declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAus
 METHOD Close() CLASS ImportBatch
 * Closing of class-occurrence
 // SetAnsi(true)   ?????
-SQLStatement{"update importtrans set lock_id=0 where TRANSACTNR='"+self:cCurBatchNbr+;
+SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 RETURN true
 METHOD CloseBatch(dummy:=nil as logic) as void pascal CLASS ImportBatch
 * Closing of batch as being processes
-SQLStatement{"update importtrans set processed=1,lock_id=0 where TRANSACTNR='"+self:cCurBatchNbr+;
+SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
 RETURN 
@@ -217,7 +217,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		lOK:=False
 		return false
 	endif
-	CurBatchNbr:=oImpTr1:TRANSACTNR
+	CurBatchNbr:=oImpTr1:transactnr
 	CurOrigin:=oImpTr1:Origin
 	
 	//lock rest of same transaction:
@@ -236,13 +236,13 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
 	"where i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+"' order by imptrid",oConn}
 	if oImpB:reccount<1
-	   LogEvent(,oImpB:SQLString+"; error:"+oImpB:Status:description,"logsql")
+	   LogEvent(,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
 	   lOK:=false
 	  	return false
 	endif
 	lOK:=true
-	CurDate:=oImpB:TransDate
-	OrigBst:=oImpB:DOCID
+	CurDate:=oImpB:transdate
+	OrigBst:=oImpB:docid
    nPostStatus:=oImpB:POSTSTATUS
 	IF !self:oHM:Used
 		RETURN FALSE
@@ -252,16 +252,16 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:oHM:SuspendNotification()
 	DO WHILE !oImpB:EoF
 		self:oHM:append()
-		self:oHM:DESCRIPTN := oImpB:DESCRIPTN
+		self:oHM:descriptn := oImpB:descriptn
 		self:oHM:AccNumber:=Space(11)
-		self:oHM:accdesc:=oImpB:ACCNAME
+		self:oHM:accdesc:=oImpB:accname
 		self:oHM:accid:=Space(11)
      	self:oHM:kind := " "
       self:oHM:Gc := ""
-		self:oHM:CURRENCY := iif(Empty(oImpB:Currency),sCurr,oImpB:Currency)
+		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency)
 		MultiCur:=false
-		IF !Empty(oImpB:ACCOUNTNR)
-			self:oHM:AccNumber := LTrimZero(oImpB:ACCOUNTNR)
+		IF !Empty(oImpB:accountnr)
+			self:oHM:AccNumber := LTrimZero(oImpB:accountnr)
 			IF !Empty(oImpB:AccNumber)
 				self:oHM:accid := Str(oImpB:accid,-1)
 				self:oHM:accdesc:=oImpB:accountname
@@ -276,10 +276,10 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		ELSE
 			self:lOK:=FALSE
 		ENDIF
-		self:oHM:deb := oImpB:DEBITAMNT
-		self:oHM:cre := oImpB:CREDITAMNT
-		self:oHM:debforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:DEBITAMNT,oImpB:debforgn)
-		self:oHM:creforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:CREDITAMNT,oImpB:creforgn)
+		self:oHM:deb := oImpB:debitamnt
+		self:oHM:cre := oImpB:creditamnt
+		self:oHM:debforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:debitamnt,oImpB:debforgn)
+		self:oHM:creforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:creditamnt,oImpB:creforgn)
 		self:oHM:BFM:= " "
 		self:oHM:FROMRPP:=iif(oImpB:FROMRPP=1,true,false)
 		self:oHM:lFromRPP:=iif(oImpB:FROMRPP=1,true,false)
@@ -288,7 +288,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:REFERENCE:=oImpB:REFERENCE 
 		self:oHM:POSTSTATUS:=oImpB:POSTSTATUS
 
-		self:oHM:Gc:=oImpB:ASSMNTCD
+		self:oHM:Gc:=oImpB:assmntcd
 		IF !Empty(oImpB:GIVER)
 			cGiverName:=AllTrim(oImpB:GIVER)
 			if cGiverName==","
@@ -300,8 +300,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			cExId:=oImpB:EXTERNID
 		endif
 		* Add TO mirror:
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:CURRENCY,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:DESCRIPTN,oImpB:persid,oImpB:TYPE})
-		cOms:=oImpB:DESCRIPTN 
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:CURRENCY,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE})
+		cOms:=oImpB:descriptn 
 		self:curimpid:=oImpB:imptrid 
 		oImpB:Skip()
 	ENDDO
@@ -474,7 +474,7 @@ maxPt=aPt[Len(aPt)]
 cBuffer:=ptrHandle:FReadLine()
 aFields:=Split(cBuffer,cDelim)
 linenr=1 
-oImpTr:=SQLSelect{"select imptrid from ImportTrans where origin='"+cOrigin+"' and TRANSACTNR=?",oConn} 
+oImpTr:=SQLSelect{"select imptrid from ImportTrans where origin='"+cOrigin+"' and transactnr=?",oConn} 
 DO WHILE Len(AFields)>1
 	linenr++  
 
@@ -525,35 +525,35 @@ DO WHILE Len(AFields)>1
 				endif
 			endif
 		ENDIF
-		cStatement:=iif(Empty(impDat),"",",Transdate='"+SQLdate(impDat) +"'")+;
-		",DOCID='Import'"+; 
-		iif(ptTrans<= Len(AFields),",TRANSACTNR='"+AFields[ptTrans]+"'","")+;
-		",DESCRIPTN='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
-		iif(ptDoc<= Len(AFields),",GIVER='"+AFields[ptDoc]+"'","")+;
-		iif(ptCre<= Len(AFields),",CREDITAMNT="+StrTran(AFields[ptCre],"."),"")+;
-		iif(ptAccName>0 .and. ptAccName<=Len(AFields),",ACCNAME='"+AFields[ptAccName]+"'"+iif(Empty(cAccNumber),"",",ACCOUNTNR='"+cAccNumber+"'")+iif(Empty(cAssmnt),"",",ASSMNTCD='AG'"),"")+;
-		iif(ptPers>0 .and. ptPers<=Len(AFields),",EXTERNID='"+AFields[ptPers]+"'","")+;
-		",ORIGIN='"+cOrigin+"'"
+		cStatement:=iif(Empty(impDat),"",",transdate='"+SQLdate(impDat) +"'")+;
+		",docid='Import'"+; 
+		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
+		",descriptn='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
+		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
+		iif(ptCre<= Len(AFields),",creditamnt="+StrTran(AFields[ptCre],"."),"")+;
+		iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AFields[ptAccName]+"'"+iif(Empty(cAccNumber),"",",accountnr='"+cAccNumber+"'")+iif(Empty(cAssmnt),"",",assmntcd='AG'"),"")+;
+		iif(ptPers>0 .and. ptPers<=Len(AFields),",externid='"+AFields[ptPers]+"'","")+;
+		",origin='"+cOrigin+"'"
 		oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 		oStmnt:execute() 
 		if oStmnt:NumSuccessfulRows<1
-			LogEvent(,"error:"+oStmnt:SQLString,"LogSQL")
+			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
 			return false
 		endif
-		cStatement:=iif(Empty(impDat),"",",Transdate='"+SQLdate(impDat) +"'")+;
-		",DOCID='Import'"+; 
-		iif(ptTrans<= Len(AFields),",TRANSACTNR='"+AFields[ptTrans]+"'","")+;
-		",DESCRIPTN='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
-		iif(ptDoc<= Len(AFields),",GIVER='"+AFields[ptDoc]+"'","")+;
-		iif(ptCre<= Len(AFields),",DEBITAMNT="+StrTran(AFields[ptCre],"."),"")+;
-		",ACCOUNTNR='"+cBank+"'"+;
-		iif(ptPers>0 .and. ptPers<=Len(AFields),",EXTERNID='"+AFields[ptPers]+"'","")+;
-		",ORIGIN='"+cOrigin+"'"
+		cStatement:=iif(Empty(impDat),"",",transdate='"+SQLdate(impDat) +"'")+;
+		",docid='Import'"+; 
+		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
+		",descriptn='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
+		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
+		iif(ptCre<= Len(AFields),",debitamnt="+StrTran(AFields[ptCre],"."),"")+;
+		",accountnr='"+cBank+"'"+;
+		iif(ptPers>0 .and. ptPers<=Len(AFields),",externid='"+AFields[ptPers]+"'","")+;
+		",origin='"+cOrigin+"'"
 		oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 		oStmnt:execute() 
 		if oStmnt:NumSuccessfulRows<1
-			LogEvent(,"error:"+oStmnt:SQLString,"LogSQL")
+			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
 			return false
 		endif
@@ -631,7 +631,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		IF !aFields[ptTrans]==CurTransNbr // new transaction?
 			CurTransNbr:=aFields[ptTrans]
 			* Check if batchtransaction not yet loaded:
-			if SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and TRANSACTNR='"+AllTrim(AFields[ptTrans ])+"'",oConn}:RecCount<1 
+			if SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and transactnr='"+AllTrim(AFields[ptTrans ])+"'",oConn}:RecCount<1 
 				// 			IF !oImpTr:Seek(Pad(cOrigin,11)+AFields[ptTrans ])
 				lv_geladen:=FALSE
 			ELSE
@@ -640,28 +640,28 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		ENDIF
 		IF !lv_geladen
 			cStatement:=;
-				iif(ptDate<= Len(AFields),",Transdate='"+SQLdate(SToD(AFields[ptDate]))+"'","")+;
-				iif(ptDoc<= Len(AFields),",DOCID='"+AFields[ptDoc]+"'","")+; 
-			iif(ptTrans<= Len(AFields),",TRANSACTNR='"+AFields[ptTrans]+"'","")+;
-				",ACCOUNTNR='"+AFields[ptAcc]+"'"+;
-				iif(ptDesc<= Len(AFields),",DESCRIPTN='"+AddSlashes(AFields[ptDesc])+"'","") +;
-				iif(ptDeb<= Len(AFields),",DEBITAMNT="+AFields[ptDeb],"")+;
-				iif(ptCre<= Len(AFields),",CREDITAMNT="+AFields[ptCre],"")+; 
-			",DEBFORGN="+iif(ptDebF>0 .and.ptDebF<= Len(AFields),+AFields[ptDebF],AFields[ptDeb])+;
-				",CREFORGN="+iif( ptCreF>0 .and. ptCreF<= Len(AFields),AFields[ptCre],AFields[ptCre])+;
-				",CURRENCY='"+iif(ptCur>0 .and.ptCur<= Len(AFields),AFields[ptCur],sCURR)+"'"+;
-				iif(ptAss<= Len(AFields),",ASSMNTCD='"+AFields[ptAss]+"'","")+;
-				iif(ptAccName>0 .and. ptAccName<=Len(AFields),",ACCNAME='"+AFields[ptAccName]+"'","")+;
-				iif(ptPers>0 .and. ptPers<=Len(AFields),iif(AllTrim(AFields[ptPers])==",","",",GIVER='"+AllTrim(AFields[ptPers])+"'"),"")+;
-				iif(ptPPD>0 .and. ptPPD<=Len(AFields),",PPDEST='"+AFields[ptPPD]+"'","")+;
-				iif(ptRef>0 .and. ptRef<=Len(AFields),",REFERENCE='"+AddSlashes(AFields[ptRef])+"'","")+;
-				iif(ptSeq>0 .and. ptSeq<=Len(AFields)  .and. !IsNil(AFields[ptSeq]),",SEQNR="+AFields[ptSeq],"")+;
-				",POSTSTATUS="+iif(ptPost>0 .and. ptPost<=Len(AFields).and. !IsNil(AFields[ptPost]),AFields[ptPost],"1")+;
-				",ORIGIN='"+cOrigin+"'" 
-			oStmnt:=SQLStatement{"insert into ImportTrans set "+SubStr(cStatement,2),oConn}
+				iif(ptDate<= Len(AFields),",transdate='"+SQLdate(SToD(AFields[ptDate]))+"'","")+;
+				iif(ptDoc<= Len(AFields),",docid='"+AFields[ptDoc]+"'","")+; 
+			iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
+				",accountnr='"+AFields[ptAcc]+"'"+;
+				iif(ptDesc<= Len(AFields),",descriptn='"+AddSlashes(AFields[ptDesc])+"'","") +;
+				iif(ptDeb<= Len(AFields),",debitamnt="+AFields[ptDeb],"")+;
+				iif(ptCre<= Len(AFields),",creditamnt="+AFields[ptCre],"")+; 
+			",debforgn="+iif(ptDebF>0 .and.ptDebF<= Len(AFields),+AFields[ptDebF],AFields[ptDeb])+;
+				",creforgn="+iif( ptCreF>0 .and. ptCreF<= Len(AFields),AFields[ptCre],AFields[ptCre])+;
+				",currency='"+iif(ptCur>0 .and.ptCur<= Len(AFields),AFields[ptCur],sCURR)+"'"+;
+				iif(ptAss<= Len(AFields),",assmntcd='"+AFields[ptAss]+"'","")+;
+				iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AFields[ptAccName]+"'","")+;
+				iif(ptPers>0 .and. ptPers<=Len(AFields),iif(AllTrim(AFields[ptPers])==",","",",giver='"+AllTrim(AFields[ptPers])+"'"),"")+;
+				iif(ptPPD>0 .and. ptPPD<=Len(AFields),",ppdest='"+AFields[ptPPD]+"'","")+;
+				iif(ptRef>0 .and. ptRef<=Len(AFields),",reference='"+AddSlashes(AFields[ptRef])+"'","")+;
+				iif(ptSeq>0 .and. ptSeq<=Len(AFields)  .and. !IsNil(AFields[ptSeq]),",seqnr="+AFields[ptSeq],"")+;
+				",poststatus="+iif(ptPost>0 .and. ptPost<=Len(AFields).and. !IsNil(AFields[ptPost]),AFields[ptPost],"1")+;
+				",origin='"+cOrigin+"'" 
+			oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 			oStmnt:Execute()
 			IF oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error: "+oStmnt:SQLString,"LogSQL")
+				LogEvent(,"error: "+oStmnt:SQLString,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -707,12 +707,6 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 		SetAnsi(oImpCZR:IsAnsi)
 		IF DBUSEAREA(true,"DBFCDX",oImpCZR:FullPath,"CZR",FALSE,FALSE)
 			// determine member accounts:
-			oAcc:=Account{,DBSHARED,DBREADONLY}
-			if !oAcc:Used 
-				CZR->DBCLOSEAREA()
-				DbSetRestoreWorkarea (false)
-				return false
-			endif
 			oMbr:=SQLSelect{"select a.accnumber from member m, account a where m.accid=a.accid",oConn}
 			aeval(oMbr:GetLookupTable(3000,#accnumber,#accnumber),{|x|aadd(aMbrAcc,x[1])})
 			if Empty(sam)
@@ -721,7 +715,7 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 				DbSetRestoreWorkarea (false)
 				return false
 			endif 
-			osel:=SQLSelect{"select ACCNUMBER from account where accid=?",oConn}
+			osel:=SQLSelect{"select accnumber from account where accid=?",oConn}
 			osel:Execute(sam) 
 			IF osel:RecCount<1
 				(errorbox{self:OWNER,self:oLan:WGet('Account for assemments not found')}):Show()
@@ -740,9 +734,9 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 			PMCAcc:=osel:ACCNUMBER
 
 			// Search latest transdate in Imptr: 
-			oImpTr:=SQLSelect{"select TRANSDATE from importtrans where origin='WD' order by TRANSDATE desc limit 1",oConn}
+			oImpTr:=SQLSelect{"select transdate from importtrans where origin='WD' order by transdate desc limit 1",oConn}
 			if oImpTr:RecCount>0
-				LastDate:=oImpTr:TRANSDATE
+				LastDate:=oImpTr:transdate
 			endif				
 			Lastdate-=31
 			CZR->DbSetFilter({||CZR->DATUM > LastDate})
@@ -764,8 +758,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	LOCAL childfound, recordfound AS LOGIC
 	LOCAL ChildName AS STRING
 	LOCAL amount, USamountAbs, USDAmount, oppAmount as FLOAT
-	LOCAL transdescription,description,oppdescr, Docid, accnbr,accnbrdest,origin,transtype,housecode,samnbr,shbnbr, reference as STRING
-	LOCAL transdate, oppdate,rppdate,cmsdate AS DATE
+	LOCAL transdescription,description,oppdescr, docid, accnbr,accnbrdest,origin,transtype,housecode,samnbr,shbnbr, reference as STRING
+	LOCAL transdate, oppdate,rppdate,cmsdate as date
 	LOCAL oAfl AS UpdateHouseHoldID
 	LOCAL datelstafl AS DATE
 	LOCAL nAnswer, nCnt as int 
@@ -800,7 +794,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		RETURN FALSE
 	ENDIF 
 
-	datelstafl:=SQLSelect{"select DATLSTAFL from sysparms",oConn}:DATLSTAFL 
+	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
 	if datelstafl<Today()  
 		/*	oInST:=Insite{}
 		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
@@ -828,7 +822,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 
 	oCurr:=Currency{self:oLan:WGet("Importing RPP")} 
 	RPP_date:=SToD(SubStr(oFr:FileName,5,8))
-	mxrate:=SQLSelect{"select exchrate from Sysparms",oConn}:EXCHRATE
+	mxrate:=SQLSelect{"select exchrate from sysparms",oConn}:EXCHRATE
 	mxrate:=oCurr:GetROE("USD", RPP_date,true) 
 	if oCurr:lStopped
 		FClose(ptrHandle)
@@ -845,7 +839,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	ENDIF
 	
 	recordfound:= PMISDocument:GetElement("Record")
-	osel:=SQLSelect{"select ACCNUMBER,currency from account where accid=?",oConn}
+	osel:=SQLSelect{"select accnumber,currency from account where accid=?",oConn}
 	osel:Execute(sam) 
 	IF osel:RecCount<1
 		(errorbox{self:OWNER,self:oLan:WGet('Account for assemments not found')}):Show()
@@ -866,7 +860,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	endif
 	DO WHILE recordfound
 		childfound:=PMISDocument:GetFirstChild()
-		docId:=""
+		docid:=""
 		origin:=""
 		transdescription:=""
 		description:=""
@@ -904,7 +898,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			CASE ChildName="Originating_PP_Code"
 				origin:=AllTrim(PMISDocument:ChildContent)
 			CASE ChildName="General_Transaction_Id"
-				DocId:=PMISDocument:ChildContent
+				docid:=PMISDocument:ChildContent
 			CASE ChildName="RPP_Destination_String"
 				accnbr:=AllTrim(PMISDocument:ChildContent)
 			CASE ChildName="RPP_Household_Code"
@@ -931,7 +925,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			transdate:=oppdate
 		ENDIF
 		// check record allready loaded: 
-		if SQLSelect{"select imptrid from importtrans where origin='"+origin+"' and TRANSACTNR='"+Docid+"'",oConn}:RecCount<1 
+		if SQLSelect{"select imptrid from importtrans where origin='"+origin+"' and transactnr='"+docid+"'",oConn}:RecCount<1 
 			// not yet loaded:
 			// first transaction roW 
 			// in case of BTA and gift form USA look up donor:
@@ -977,24 +971,24 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				ENDIF
 			ENDIF
 
-			cStatement:="insert into ImportTrans set "+;
-				"TRANSDATE='"+SQLdate(transdate)+"'"+;
-				",DOCID='"+Docid+"'"+;
-				",TRANSACTNR='"+Docid +"'"+;
-				",ACCOUNTNR='"+shbnbr+"'"+;
-				",ASSMNTCD=''"+;
-				",ORIGIN='"+origin +"'"+;
+			cStatement:="insert into importtrans set "+;
+				"transdate='"+SQLdate(transdate)+"'"+;
+				",docid='"+docid+"'"+;
+				",transactnr='"+docid +"'"+;
+				",accountnr='"+shbnbr+"'"+;
+				",assmntcd=''"+;
+				",origin='"+origin +"'"+;
 				",processed=0"+;
-				",FROMRPP=1"+; 
-			iif(USDAmount<0,",CREDITAMNT=0.00,DEBITAMNT="+str(-amount,-1)+iif(lUSD,",DEBFORGN="+str(-USDAmount,-1),''),;
-				",CREDITAMNT="+Str(amount,-1)+",DEBITAMNT=0.00"+iif(lUSD,",CREFORGN="+Str( USDAmount,-1),''))+;
-				iif(lUSD,",CURRENCY='USD'","")+;
-				",DESCRIPTN='"+AddSlashes(cDescription)+"'"+;
+				",fromrpp=1"+; 
+			iif(USDAmount<0,",creditamnt=0.00,debitamnt="+str(-amount,-1)+iif(lUSD,",debforgn="+str(-USDAmount,-1),''),;
+				",creditamnt="+Str(amount,-1)+",debitamnt=0.00"+iif(lUSD,",creforgn="+Str( USDAmount,-1),''))+;
+				iif(lUSD,",currency='USD'","")+;
+				",descriptn='"+AddSlashes(cDescription)+"'"+;
 				","+iif((transtype="PC" .or. transtype="AT") .and.!Empty(accnbrdest),"POSTSTATUS=2","POSTSTATUS=1")
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error:"+cStatement,"LogSQL")
+				LogEvent(,"error:"+cStatement,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -1006,22 +1000,22 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			IF transtype="CN" .or. transtype="CP".or.transtype="MM"
 				cDescription:="Gift "+cDescription
 			endif 
-			cStatement:="insert into ImportTrans set "+;
-				"TRANSDATE='"+SQLdate(transdate)+"'"+;
-				",DOCID='"+Docid+"'"+;
-				",TRANSACTNR='"+Docid +"'"+;
-				",ORIGIN='"+origin +"'"+;
-				iif(!Empty(accnbrdest),",ACCOUNTNR='"+accnbrdest+"'","")+;					
-			iif(amount<0,",DEBITAMNT=0.00,CREDITAMNT="+str(-amount,-1),",DEBITAMNT="+str(amount,-1)+",CREDITAMNT=0.00")+;
+			cStatement:="insert into importtrans set "+;
+				"transdate='"+SQLdate(transdate)+"'"+;
+				",docid='"+docid+"'"+;
+				",transactnr='"+docid +"'"+;
+				",origin='"+origin +"'"+;
+				iif(!Empty(accnbrdest),",accountnr='"+accnbrdest+"'","")+;					
+			iif(amount<0,",debitamnt=0.00,creditamnt="+str(-amount,-1),",debitamnt="+str(amount,-1)+",creditamnt=0.00")+;
 				",processed=0"+;
-				",FROMRPP=1"+; 
-			",DESCRIPTN='"+AddSlashes(cDescription)+"'"+;
+				",fromrpp=1"+; 
+			",descriptn='"+AddSlashes(cDescription)+"'"+;
 				",reference='"+reference+"'"+;			 
-			",POSTSTATUS="+iif(transtype="PC" .and.!Empty(accnbrdest),"2","1")+;
+			",poststatus="+iif(transtype="PC" .and.!Empty(accnbrdest),"2","1")+;
 				iif(transtype="CN" .or. transtype="CP",;
-				",ASSMNTCD='AG',EXTERNID='"+cExId+"'";
+				",assmntcd='AG',externid='"+cExId+"'";
 				,;
-				",ASSMNTCD='"+;
+				",assmntcd='"+;
 				iif(transtype="MM","MG",;
 				iif(transtype="PC",;
 				iif(amount<0,"PF","CH");
@@ -1035,7 +1029,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
 			IF oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error:"+cStatement,"LogSQL")
+				LogEvent(,"error:"+cStatement,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -1059,7 +1053,7 @@ RETURN SELF
 METHOD LockBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 * Locking of current batch records
 local oMyImp as SQLSelect
-oMyImp:=SQLSelect{"select imptrid from importtrans where TRANSACTNR='"+self:cCurBatchNbr+;
+oMyImp:=SQLSelect{"select imptrid from importtrans where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and processed=0 and lock_id="+MYEMPID+" for update",oConn}
 oMyImp:execute()
 if oMyImp:reccount<1
@@ -1070,7 +1064,7 @@ endif
 return true
 METHOD SkipBatch(dummy:=nil as logic) as void pascal CLASS ImportBatch
 * Unlock batch 
-SQLStatement{"update importtrans set lock_id=0 where TRANSACTNR='"+self:cCurBatchNbr+;
+SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
 RETURN 
