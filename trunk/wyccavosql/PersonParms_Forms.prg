@@ -299,7 +299,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	local oStmnt as SQLStatement 
 	local aNewDropValues:={} as array
 	local i as int
-	local cRemoved,cRemoveCond as string 
+	local cRemoved,cRemoveCond,cTotal as string 
 	oProp:=SELF:server
 	IF !SELF:lnew
 		IF Empty(self:mId)
@@ -319,7 +319,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	ENDIF
 	* check if Property allready exists:
 	IF self:lnew .or. AllTrim(oProp:FIELDGET(#NAME)) # AllTrim(self:MPROPNAME)
-		if SQLSelect{"select name from person_properties where name='"+AllTrim(self:MPROPNAME)+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0
+		if SQLSelect{"select name from person_properties where name='"+AddSlashes(AllTrim(self:MPROPNAME))+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0
 			(Errorbox{,'Property Name '+ alltrim(mPropName) +' already exists' }):Show()
 			RETURN nil
 		ENDIF
@@ -329,9 +329,15 @@ METHOD OKButton( ) CLASS EditPersProp
 		aNewDropValues:=Split(self:mValues,",")
 		for i:=1 to Len(self:CurDropVal)
 			CurValue:=CurDropVal[i]
-			if AScan(aNewDropValues,CurValue)=0
-				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0"
-				cRemoved+=CurValue+Space(1)+self:oLan:WGet("used in")+Space(1)+(SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}):total+Space(1)+self:oLan:WGet("persons")+CRLF
+			if AScan(aNewDropValues,CurValue)=0 
+				oProp:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+AddSlashes(CurValue)+"</v"+Str(self:mId,-1)+">')>0",oConn}
+				if oProp:RecCount>0
+					cTotal:=oProp:total
+				else
+					cTotal:="0"
+				endif
+				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(propextr,'<V"+Str(self:mId,-1)+">"+AddSlashes(CurValue)+"</v"+Str(self:mId,-1)+">')>0"
+				cRemoved+=CurValue+Space(1)+self:oLan:WGet("used in")+Space(1)+cTotal+Space(1)+self:oLan:WGet("persons")+CRLF
 			endif 
 		next
 		IF !Empty(cRemoved)
@@ -518,6 +524,18 @@ STATIC DEFINE EDITPERSTITLE_CANCELBUTTON := 103
 STATIC DEFINE EDITPERSTITLE_MDESCRPTN := 101 
 STATIC DEFINE EDITPERSTITLE_OKBUTTON := 102 
 STATIC DEFINE EDITPERSTITLE_SC_OMS := 100 
+RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
+END
+
 class EditPersType inherit DataWindowExtra 
 
 	protect oDCSC_OMS as FIXEDTEXT
@@ -532,18 +550,6 @@ class EditPersType inherit DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 EXPORT oCaller AS OBJECT
 PROTECT mId AS INT
-
-RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
-END
 
 METHOD CancelButton( ) CLASS EditPersType
 	SELF:EndWindow()
@@ -676,17 +682,6 @@ STATIC DEFINE MAILCDREGOUD_OMS := 103
 STATIC DEFINE MAILCDREGOUD_PERS_CODE := 102 
 STATIC DEFINE MAILCDREGOUD_SC_OMS := 101 
 STATIC DEFINE MAILCDREGOUD_SC_PERS_CODE := 100 
-METHOD GetMailAbbr(MyPersCode)  CLASS PersCod
-	IF !Empty(MyPersCode)
-	 	IF !SELF:OrderInfo( DBOI_NAME ) == "PERSCODE"
-			SELF:SetOrder( "PERSCODE" )
-		ENDIF
-		IF SELF:Seek(MyPersCode)
-			RETURN AllTrim(self:abbrvtn)
-		ENDIF
-	ENDIF
-RETURN NULL_STRING
-	
 class PersonParms inherit DataWindowExtra 
 
 	protect oDCTabMail as TABCONTROL
@@ -1093,7 +1088,7 @@ METHOD EditButton(lNew ) CLASS TABMAIL_PAGE
    	RETURN
 
 METHOD FilePrint CLASS TABMAIL_PAGE
-LOCAL oDB AS PersCod
+LOCAL oDB as SQLSelect
 LOCAL kopregels AS ARRAY
 LOCAL nRow as int
 LOCAL nPage as int
@@ -1104,11 +1099,7 @@ oReport:Show()
 IF .not.oReport:lPrintOk
 	RETURN FALSE
 ENDIF
-oDB := PersCod{}
-IF !oDB:Used
-	oLan:Close()
-	RETURN FALSE
-ENDIF
+oDB := SQLSelect{"select abbrvtn,description from perscod order by abbrvtn",oConn}
 oDB:GoTop()
 kopregels := {oLan:get("Mailing codes",,"!"),oLan:get("ABBREVATION",12,"@!")+' '+;
 oLan:Get("DESCRIPTION",20,"@!"),' '}
@@ -1119,7 +1110,6 @@ DO WHILE .not. oDB:EOF
    Transform(oDB:description,'xxxxxxxxxxxxxxxxxxxx'),kopregels)
    oDB:skip()
 ENDDO
-oDb:Close()
 oReport:prstart()
 oReport:prstop()
 RETURN NIL
