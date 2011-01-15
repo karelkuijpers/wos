@@ -595,7 +595,7 @@ end SEQUENCE
 ErrorBlock(cbError)
 return
  
-method GetLocaleInfo() as array class Initialize 
+method GetLocaleInfo() as array class Initialize
 // get local telephoe country code, country name and currency code
 LOCAL oReg as CLASS_HKCU
 LOCAL oRegLM as CLASS_HKLM
@@ -610,12 +610,12 @@ Local oPP as SQLSelect
 	if AScan(EuroCountries,CountryName) > 0
 		CurrencyCode:="EUR"
 	else
-		oCurr:=SQLSelect{"select aed from currencylist where united_ara like '%"+CountryName+"%'",oConn}
+		oCurr:=SQLSelect{"select aed from CurrencyList where UNITED_ARA like '%"+CountryName+"%'",oConn}
 		if oCurr:RecCount>0
 			CurrencyCode:=oCurr:AED
 		endif 
 	endif
-	oPP:=SQLSelect{"select ppcode,ppname from ppcodes where ppname like '%"+CountryName+"%'",oConn}
+	oPP:=SQLSelect{"select ppcode,ppname from PPCodes where ppname like '%"+CountryName+"%'",oConn}
 	if oPP:RecCount>0
 		PPCode:=oPP:PPCode
 		PPNAME:=oPP:PPNAME
@@ -629,7 +629,6 @@ Local oPP as SQLSelect
 		
 		
 return {COUNTRYCOD, CountryName,PPCode,PPNAME, CurrencyCode,cCurrSym}
-
 method init(oMainWindow) class Initialize
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
@@ -650,38 +649,50 @@ method init(oMainWindow) class Initialize
 
 	oConn:=SQLConnection{}
 
-	// Determine database:
-	dbname:=CurDir(CurDrive())
-	if RAt('\',dbname)>0
-		dbname:=SubStr(dbname,RAt('\',dbname)+1)
-	endif
+	// read and interprete wos.ini file
 	cWosIni:=FileSpec{CurPath+"\Wos.ini"}
 	if cWosIni:Find()
-		ptrHandle:=FOpen2(cWosIni:FullPath, FO_READ)
+		ptrHandle:=FOpen2(cWosIni:FullPath, FO_READ + FO_SHARED)
 		IF ptrHandle != F_ERROR
-			do WHILE !FEof(ptrHandle)
-         	cLine:=FReadLine(ptrHandle)
-         	aWord:=GetTokens(AllTrim(cLine),{"="}) 
-         	i:=ascan(aWord,{|x|lower(alltrim(x[1]))=="server"})
-         	if i>0 .and.i<Len(aWord)
-         		cServer:=AllTrim(aWord[2,1])
-         		exit
-         	endif
+			do WHILE empty(cServer).or.empty(dbname)
+				cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
+				if Empty(cLine).and. FEof(ptrHandle)
+					exit
+				endif
+				if !SubStr(cLine,1,1)=='#'   // skip comment lines
+					aWord:=GetTokens(cLine,{"="}) 
+					i:=ascan(aWord,{|x|lower(alltrim(x[1]))=="server"})
+					if i>0 .and.i<Len(aWord)
+						cServer:=AllTrim(aWord[2,1])
+					else
+						i:=AScan(aWord,{|x|Lower(AllTrim(x[1]))=="database"})
+						if i>0 .and.i<Len(aWord)
+							dbname:=AllTrim(aWord[2,1])
+						endif
+					endif
+				endif
 			ENDDO
 		ENDIF
 		FClose(ptrHandle)
 	endif
-   if Empty(cServer)
+	if Empty(cServer)
 		cServer:=GetServername(CurPath)
-   endif
-   SQLConnectErrorMsg(FALSE)
-   do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
+	endif
+	if Empty(dbname)
+		// Determine database:
+		dbname:=CurDir(CurDrive())
+		if RAt('\',dbname)>0
+			dbname:=SubStr(dbname,RAt('\',dbname)+1)
+		endif
+	endif
+	SQLConnectErrorMsg(FALSE)
+	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
 		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 		if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
 			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show()
 			FileStart(WorkDir()+"ODBCInstall.html",oMainWindow)
 			if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
- 				loop
+				loop
 			endif
 			break
 		endif
@@ -690,7 +701,7 @@ method init(oMainWindow) class Initialize
 			ErrorBox{,"You have first to install MYSQL"}:Show()
 			break
 		endif
-  
+		
 		// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 		if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0
 			ErrorBox{,"Let your administrator enter first the userid for the WOS database in MYSQL"}:Show()
@@ -698,7 +709,7 @@ method init(oMainWindow) class Initialize
 		endif
 		ShowError(oConn:ERRINFO)
 		Break
-   enddo
+	enddo
 	oSel:=SQLSelect{"show databases",oConn}
 	oSel:Execute() 
 	do while !oSel:EoF
@@ -854,7 +865,11 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
 	
 	// Initialize sysparms:
-	IF oSys:RecCount=0 
+	IF oSys:RecCount=0
+		if SQLSelect{"select united_ara,aed from currencylist",oConn}:RecCount<1
+			ErrorBox{,"No currencies available, wrong installation"}:Show()
+			break
+		endif 
 		aLocal:=self:GetLocaleInfo() 
 		(CurrencySpec{,,,aLocal[5]}):Show()
 		mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
