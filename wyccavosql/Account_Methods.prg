@@ -1,161 +1,3 @@
-METHOD AddSubDep(ParentNum as int, nCurrentRec as int)  CLASS Account
-* Find subdepartments and add to arrays with departments
-	LOCAL nChildRec			as int
-	LOCAL nCurNum			as int
-	//Default(@nCurrentRec,NULL_STRING)
-
-	// reposition the customer server to the searched record
-	IF !Empty(nCurrentRec)
-		oDep:GoTo(nCurrentRec)
-	ENDIF
-	IF Empty(nCurrentRec).or.!oDep:ParentDep==ParentNum
-		oDep:Seek({#PARENTDEP},{ParentNum})
-	ELSE
-		oDep:Skip()
-	ENDIF
-	IF oDep:EoF .or. !oDep:ParentDep==ParentNum
-		RETURN 0
-	ENDIF
-	nCurrentRec:=oDep:RecNo
-	nCurNum:= oDep:DEPID
- 	AAdd(d_dep,oDep:DEPID)
-
-	// add all child departments:
-	DO WHILE true
-		nChildRec:=self:AddSubDep(nCurNum, nChildRec)
-		IF Empty(nChildRec)
-			exit
-		ENDIF
-	ENDDO
-RETURN nCurrentRec
-METHOD FindAcc(cAccount) CLASS Account
-*	Find an account with the given number/description
-*	Returns: True: if unique account found
-*			 False: if not found (Account:EOF-TRUE) or not unique found (current record found record)
-*
-LOCAL lUnique as LOGIC
-self:SuspendNotification()
-cAccount:=AllTrim(cAccount)
-IF !Empty(cAccount).and.IsDigit(cAccount)
-	cAccount:=LTrimZero(cAccount)
-	IF self:Seek({#accnumber},{cAccount})
-		IF Len(cAccount)<11
-			self:skip()
-			IF self:EOF .or.!LTrimZero(self:ACCNUMBER) = cAccount
-				self:skip(-1)
-*				cAccount := SELF:AccNumber
-				lUnique := true
-			ELSE
-				self:skip(-1)
-*				cAccount:=AllTrim(SELF:description)
-			ENDIF			
-		ELSE
-*			cAccount := SELF:AccNumber
-			lUnique := true
-		ENDIF
-	ENDIF
-ELSE
-	IF self:Seek({#description},{cAccount})
-		self:skip()
-		IF self:EOF .or.!Upper(self:Description) = Upper(cAccount)
-			self:skip(-1)
-*			cAccount := SELF:AccNumber
-			lUnique := true
-		ELSE
-			self:skip(-1)
-		ENDIF
-	ENDIF
-ENDIF
-self:ResetNotification()
-RETURN lUnique
-method SetDepFilter(WhoFrom as String, aTypeIncl as array) class Account 
-// compose filter for department branch from given WhoFrom depid 
-LOCAL nChildRec			as int 
-if Empty(aTypeIncl)
-	self:cTypeIncl:=""
-else
-	self:cTypeIncl:=Implode(aTypeIncl)
-endif
-	
-IF Empty(WhoFrom)
-	self:d_dep:={} 
-	self:cDepIncl:=""
-return
-endif
-if self:oDep == null_object
-	oDep:=Department{}
-	if !oDep:Used
-		return
-	ENDIF
-endif
-if oDep:Seek({#DEPID},{WhoFrom})
-	d_dep:={oDep:DEPID}
-ENDIF
-
-* Add all subdepartments down from WhoFrom:
-DO WHILE true
-	nChildRec:=self:AddSubDep(Val(WhoFrom), nChildRec)
-	IF Empty(nChildRec)
-		exit
-	ENDIF
-ENDDO
-self:cDepIncl:=Implode(self:d_dep,",")
-return 
-METHOD ValidateAccTransfer (cParendId,mAccId,oMBal) CLASS Account
-	* Check if transfer of current account mAccId to another balance item with identifciation cParentid is allowed
-	* oMBal: given BalnceMonth object
-	* Returns Error text if not allowed
-
-	LOCAL oRB as BalanceItem
-	LOCAL cNewClass, cError  as STRING
-	LOCAL lValid as LOGIC
-	LOCAL oMbr as Members
-	IF Empty(cParendId)
-		RETURN Language{}:WGet("Root not allowed as parent of an account")
-	ENDIF	
-
-	* Member account .or. transactions for this account:
-	* No change of balancegroupclassification allowed
-	IF !cParendId == Str(self:balitemid,-1) // balanceitem changed?
-		oRb := BalanceItem{}
-		IF oRB:Used
-			IF oRB:Seek(#NUM,cParendId)
-				cNewClass:= oRb:category
-				IF self:persid>0  // Member?
-					IF !(cNewClass== "PA" .or. cNewClass=="BA")
-						cError:=Language{}:WGet("Balancegroup of member account")+" " +AllTrim(self:ACCNUMBER)+" "+Language{}:WGet("should be liability/fund or income" )
-						lValid:=FALSE
-					ELSEIF cNewClass=="BA"
-						oMbr:=Members{}
-						IF oMbr:Used
-							IF oMbr:Seek(#REK,self:accid)
-								IF oMbr:CO="M"
-									cError:=Language{}:WGet("Balancegroup of (non project) member account")+" " +AllTrim(self:ACCNUMBER)+" "+Language{}:WGet("should be liability/fund")
-									lValid:=FALSE
-								ENDIF
-							ENDIF
-							oMbr:Close()
-							oMbr:=null_object
-						ENDIF
-					ENDIF
-				ELSE
-					IF oRb:Seek(#NUM,self:balitemid)
-						IF !oRb:category== cNewClass
-							IF !(cNewClass $ "KOBA" .and. oRb:category$"KOBA" .or. cNewClass $ "AKPA" .and. oRb:category$"AKPA")
-								oMBal:GetBalance(Str(self:accid,-1),Str(self:balitemid,-1))
-								IF oMBal:per_deb#0.or.oMBal:per_cre#0.or. oMBal:vjr_deb#0.or. oMBal:vjr_cre#0
-									cError:=Language{}:WGet("Balancegroup of account")+" "+AllTrim(self:ACCNUMBER)+"  "+Language{}:WGet("cannot be changed to different class when in use" )
-									lValid:=FALSE
-								ENDIF
-							ENDIF
-						ENDIF
-					ENDIF
-				ENDIF
-			ENDIF
-			oRB:Close()
-		ENDIF
-	ENDIF
-	RETURN cError
 METHOD AccountSelect(Caller as object,BrwsValue:="" as string,ItemName as string,Unique:=false as logic ) as logic CLASS AccountBrowser
 local 
 	self:oCaller := Caller
@@ -225,7 +67,7 @@ cFields:="a.*,b.Heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootN
 oDB:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+self:cAccFilter)+" group by a.accid order by "+cOrder,oConn}
 do WHILE .not. oDB:EOF
 	oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20,0)+cTab+;
-	IF(oDB:GiftAlwd=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDb:Budgt),0,oDB:budgt),11,0)+cTab;
+	IF(oDB:giftalwd=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDb:Budgt),0,oDB:budgt),11,0)+cTab;
 	+Str(oDB:subscriptionprice,9,DecAantal)+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:Currency,8)+cTab+PadC( iif(oDB:MULTCURR=1,"X"," "),5)+cTab+PadC( iif(oDB:REEVALUATE=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),kopregels)
 	oDB:skip()
 ENDDO
@@ -598,12 +440,12 @@ METHOD ValidateAccount() CLASS EditAccount
 	ENDIF
 
 	RETURN lValid
-Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,GiftAlwd:=2 as int,;
+Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
 SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
 // make filter condition for account
 // select from ARRAY AAccNot WITH accounts TO be excluded
 // IsMember: M: member, N: not member, B: both (default), E: entity member(project)
-// GiftAlwd: 1=true / 0=false/2: don't care
+// giftalwd: 1=true / 0=false/2: don't care
 // SubscriptionAllowed: true/false
 // aAccIncl: accounts to be included (id as string)
 // aAccExcl: extra accounts to be excluded (id as string) 
@@ -643,10 +485,10 @@ IF IsMember=="M"
 ELSEIF IsMember=="N"
 	cFilter+=' and a.accid not in (select m.accid from member m)'
 ENDIF
-IF GiftAlwd=0
-	cFilter+=' and a.GIFTALWD<>1'
-elseif GiftAlwd=1	
-	cFilter+=' and a.GIFTALWD=1'
+IF giftalwd=0
+	cFilter+=' and a.giftalwd<>1'
+elseif giftalwd=1	
+	cFilter+=' and a.giftalwd=1'
 ENDIF
 IF !SubscriptionAllowed
 	cFilter+=' and a.subscriptionprice=0'
@@ -669,7 +511,7 @@ function SetDepFilter(WhoFrom as int) as string
 	local oDep as SQLSelect
 	
 	IF !Empty(WhoFrom)
-		oDep:=SQLSelect{"select depid,ParentDep from department order by parentdep,depid",oConn}
+		oDep:=SQLSelect{"select depid,parentdep from department order by parentdep,depid",oConn}
 		if oDep:RecCount>0
 			aDepIncl:={WhoFrom} 
 			d_dep:=oDep:getlookuptable(1000) 
