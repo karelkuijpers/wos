@@ -1297,7 +1297,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 			endif
 		endif
 		rekeningnrsTot:=Round(rekeningnrsTot+fBANKNBRCRE+Val(cBank),0)
-		LogEvent(,CHR(9)+Str(fBANKNBRCRE,-1)+CHR(9)+cBank+CHR(9)+Str(rekeningnrsTot,-1),"logcalcNew")
+// 		LogEvent(,CHR(9)+Str(fBANKNBRCRE,-1)+CHR(9)+cBank+CHR(9)+Str(rekeningnrsTot,-1),"logcalcNew")
 		// Transactie record:
 		FWriteLine(ptrHandle,"0100A0005"+StrZero(oBord:AMOUNT*100,12,0)+ PadL(BANKNBRCRE,10,"0")+PadL(cBank,10,"0") +Space(9))
 		// Betalingsknemerk record:
