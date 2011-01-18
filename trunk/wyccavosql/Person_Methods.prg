@@ -2933,7 +2933,6 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	LOCAL lReady AS LOGIC
 	LOCAL oFromTo:=Range{} as Range
 	LOCAL brfWidth AS INT
-	LOCAL oSys AS Sysparms
 	LOCAL nTo AS INT
 	local oReport as PrintDialog 
 	local oSel as SQLSelect 
