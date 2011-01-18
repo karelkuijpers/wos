@@ -2491,7 +2491,6 @@ METHOD OKButton( ) CLASS TotalsMembers
 	Local aSubTot:={0,0,0,0,0,0,0}, aTotTot:={0,0,0,0,0,0,0} as array
 	Local iPos,i,j as int, MemberId as string, CurCat as int 
 	local oAcc as SQLSelect 
-	local oMem as Members
 	LOCAL cTab:=CHR(9) as STRING
 	local nNameLen:=30 as int 
 	local aGroupName as array
