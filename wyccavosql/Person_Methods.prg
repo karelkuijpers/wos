@@ -1013,7 +1013,7 @@ METHOD SetState() CLASS NewPersonWindow
 	local aBank:={} as array
 	self:oPerson:=SQLSelect{"select p.*,m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
-	"where "+iif(!Empty(self:mPersid),"p.persid="+Str(self:mPersid,-1),"p.externid='"+self:mExternid+"'")+" group by p.persid",oConn}
+	"where "+iif(!Empty(self:mPersid),"p.persid="+self:mPersid,"p.externid='"+self:mExternid+"'")+" group by p.persid",oConn}
 	self:oDCmLastname:Value := self:oPerson:lastname
 	self:ODCmPrefix:Value  := self:oPerson:prefix
 	self:oDCmTitle:Value  := self:oPerson:Title
@@ -1193,7 +1193,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	
 //RETURN TRUE  // voor testen ============
 	if !lNew
-		oPers:=SQLSelect{"select * from person where persid='"+Str(self:mPersid,-1)+"'",oConn}
+		oPers:=SQLSelect{"select * from person where persid='"+self:mPersid+"'",oConn}
 	endif
 	IF lValid .and. Empty(self:mLastName)
 		lValid:=FALSE
@@ -1212,7 +1212,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = AllTrim(oPers:lastname) .or. oPers:postalcode # self:mPostalcode.or.oPers:firstname # self:mFirstname.or.oPers:address # self:mAddress.or. ZeroTrim(oPers:EXTERNID) # self:mExternid)
 		* Check duplicate NAC:
 		oSel:=SQLSelect{"select persid from person where lastname='"+self:mLastName+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
-		+self:mAddress+"%'"+iif(self:lNew,""," and persid<>'"+Str(self:mPersid,-1)+"'"),oConn}
+		+self:mAddress+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
 		oSel:GoTop()
 		IF oSel:RecCount>0
 			Housnbr:=GetStreetHousnbr(self:mAddress)[2]
@@ -1227,7 +1227,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 		ENDIF
 		IF lValid .and.!Empty(AllTrim(self:mExternid))
 			// check if no duplicate external id:
-			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(self:mExternid)+"'"+iif(self:lNew,""," and persid<>'"+Str(self:mPersid,-1)+"'")
+			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(self:mExternid)+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
 			oSel:Execute()
 			IF oSel:RecCount>0
 				cError :=self:oLan:WGet("Person")+" "+GetFullName(oSel:persid,2)+" "+self:oLan:WGet("has already external id")+" "+self:mExternid+"!"
@@ -1262,7 +1262,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 		IF !Empty(cSelBank) 
 			cSelBank+=")"
 			if !lNew
-				cSelBank+=" and persid<>'"+Str(self:mPersid,-1)+"'"
+				cSelBank+=" and persid<>'"+self:mPersid+"'"
 			endif
 			oSel:=SQLSelect{"select banknumber,persid from personbank where "+cSelBank,oConn}
 			oSel:Execute()
@@ -2134,7 +2134,6 @@ endif
 	
 RETURN TRUE	
 METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
-	LOCAL oMcd as PersCod
 	LOCAL i,j,k, n as int
 	LOCAL aMapping, aExpF:={}, aPerF as ARRAY
 	LOCAL oSpecPers as SelPersExport
