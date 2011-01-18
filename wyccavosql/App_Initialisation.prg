@@ -475,7 +475,6 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 							endif
 							cDBValue:=StrTran(StrTran(cDBValue,"\","\\"),'"','\"')
 							cStatement+=iif(Empty(cStatement),"",",")+ iif(Empty(cDBValue).and.aNull[i]=true,"NULL",'"'+cDBValue+'"'+iif(dbasename=="member".and.fieldname==#REK,',"'+cDBValue+'"',"")) // mbrid = accid
-// 							+iif(i==Len(aDBStruct),")",",")
 						next
 						if dbasename='dueamnt'
 							// add subscribid from subscription
@@ -496,13 +495,10 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 						oStmt:SQLString := cStatement 
 						oStmt:Execute()
 						IF !IsNil( oStmt:Status )
-							LogEvent(,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")")
+							LogEvent(,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","LogErrors")
 							// 					ShowError( oStmt:ERRINFO )
 							oStmt:FreeStmt(SQL_CLOSE)
 						endif
-// 						if j%5000==1
-// 							oStmt:Commit()
-// 						endif
 					endif
 					oPro:AdvancePro()
 					oDbsvr:Skip()
@@ -641,7 +637,6 @@ method init(oMainWindow) class Initialize
 	local i as int 
 
 	self:oMain:=oMainWindow
-
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 	SetDefault(CurPath)
@@ -1560,13 +1555,13 @@ method InitializeDB() as void Pascal  class Initialize
 	local aIndex:={;
 		{"account","0","PRIMARY","1","accid"},;
 		{"account","0","description","1","description"},;
-		{"account","0","ACCNUMBER","1","ACCNUMBER"},;
+		{"account","0","accnumber","1","accnumber"},;
 		{"account","1","balitemid","1","balitemid"},;
-		{"account","1","DEPARTMENT","1","DEPARTMENT"},;
+		{"account","1","department","1","department"},;
 		{"accountbalanceyear","0","PRIMARY","1","accid"},;
-		{"accountbalanceyear","0","PRIMARY","2","YEARSTART"},;
-		{"accountbalanceyear","0","PRIMARY","3","MONTHSTART"},;
-		{"accountbalanceyear","0","PRIMARY","4","CURRENCY"},;
+		{"accountbalanceyear","0","PRIMARY","2","yearstart"},;
+		{"accountbalanceyear","0","PRIMARY","3","monthstart"},;
+		{"accountbalanceyear","0","PRIMARY","4","currency"},;
 		{"article","0","PRIMARY","1","articleid"},;
 		{"article","0","description","1","description"},;
 		{"authfunc","0","PRIMARY","1","EMPID"},;
@@ -1574,99 +1569,99 @@ method InitializeDB() as void Pascal  class Initialize
 		{"balanceitem","0","PRIMARY","1","balitemid"},;
 		{"balanceitem","0","NUMBER","1","NUMBER"},;
 		{"balanceitem","1","balitemidparent","1","balitemidparent"},;
-		{"balanceitem","1","balitemidparent","2","NUMBER"},;
+		{"balanceitem","1","balitemidparent","2","number"},;
 		{"balanceitem","1","Heading","1","Heading"},;
-		{"balanceyear","0","PRIMARY","1","YEARSTART"},;
-		{"balanceyear","0","PRIMARY","2","MONTHSTART"},;
-		{"bankaccount","0","PRIMARY","1","BANKID"},;
+		{"balanceyear","0","PRIMARY","1","yearstart"},;
+		{"balanceyear","0","PRIMARY","2","monthstart"},;
+		{"bankaccount","0","PRIMARY","1","bankid"},;
 		{"bankaccount","0","BANKNUMBER","1","banknumber"},;
 		{"bankaccount","1","accid","1","accid"},;
-		{"bankorder","0","PRIMARY","1","ID"},;
-		{"bankorder","1","ACCNTFROM","1","ACCNTFROM"},;
+		{"bankorder","0","PRIMARY","1","id"},;
+		{"bankorder","1","ACCNTFROM","1","accntfrom"},;
 		{"budget","0","PRIMARY","1","accid"},;
-		{"budget","0","PRIMARY","2","YEAR"},;
-		{"budget","0","PRIMARY","3","MONTH"},;
-		{"currencylist","0","PRIMARY","1","AED"},;
-		{"currencyrate","0","PRIMARY","1","RATEID"},;
-		{"currencyrate","0","AEDDATE","1","AED"},;
-		{"currencyrate","0","AEDDATE","2","DATERATE"},;
-		{"currencyrate","0","AEDDATE","3","AEDUNIT"},;
-		{"department","0","PRIMARY","1","DEPID"},;
-		{"department","0","DEPTMNTNBR_2","1","DEPTMNTNBR"},;
-		{"department","0","DESCRIPTN","1","DESCRIPTN"},;
-		{"department","1","DEPTMNTNBR_3","1","PARENTDEP"},;
-		{"department","1","DEPTMNTNBR_3","2","DEPTMNTNBR"},;
+		{"budget","0","PRIMARY","2","year"},;
+		{"budget","0","PRIMARY","3","month"},;
+		{"currencylist","0","PRIMARY","1","aed"},;
+		{"currencyrate","0","PRIMARY","1","rateid"},;
+		{"currencyrate","0","AEDDATE","1","aed"},;
+		{"currencyrate","0","AEDDATE","2","daterate"},;
+		{"currencyrate","0","AEDDATE","3","aedunit"},;
+		{"department","0","PRIMARY","1","depid"},;
+		{"department","0","DEPTMNTNBR_2","1","deptmntnbr"},;
+		{"department","0","DESCRIPTN","1","descriptn"},;
+		{"department","1","DEPTMNTNBR_3","1","parentdep"},;
+		{"department","1","DEPTMNTNBR_3","2","deptmntnbr"},;
 		{"distributioninstruction","0","PRIMARY","1","mbrid"},;
-		{"distributioninstruction","0","PRIMARY","2","SEQNBR"},;
+		{"distributioninstruction","0","PRIMARY","2","seqnbr"},;
 		{"dueamount","0","PRIMARY","1","dueid"},;
 		{"dueamount","0","subscrdue","1","subscribid"},;
 		{"dueamount","0","subscrdue","2","invoicedate"},;
 		{"dueamount","0","subscrdue","3","seqnr"},;
-		{"employee","0","PRIMARY","1","EMPID"},; 
-		{"emplacc","0","PRIMARY","1","EMPID"},; 
-		{"emplacc","0","PRIMARY","2","ACCID"},; 
+		{"employee","0","PRIMARY","1","empid"},; 
+		{"emplacc","0","PRIMARY","1","empid"},; 
+		{"emplacc","0","PRIMARY","2","accid"},; 
 		{"importtrans","0","PRIMARY","1","imptrID"},;
-		{"importtrans","1","TRANSACTNR","1","ORIGIN"},;
-		{"importtrans","1","TRANSACTNR","2","TRANSACTNR"},;
-		{"ipcaccounts","0","PRIMARY","1","IPCACCOUNT"},;
-		{"language","0","PRIMARY","1","LOCATION"},;
-		{"language","0","PRIMARY","2","SENTENCEEN"},;
+		{"importtrans","1","TRANSACTNR","1","origin"},;
+		{"importtrans","1","TRANSACTNR","2","transactnr"},;
+		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
+		{"language","0","PRIMARY","1","location"},;
+		{"language","0","PRIMARY","2","sentenceen"},;
 		{"mbalance","0","PRIMARY","1","mbalid"},;
 		{"mbalance","0","accmonth","1","accid"},;
-		{"mbalance","0","accmonth","2","YEAR"},;
-		{"mbalance","0","accmonth","3","MONTH"},;
-		{"mbalance","0","accmonth","4","CURRENCY"},;
+		{"mbalance","0","accmonth","2","year"},;
+		{"mbalance","0","accmonth","3","month"},;
+		{"mbalance","0","accmonth","4","currency"},;
 		{"member","0","PRIMARY","1","mbrid"},;
 		{"member","0","accid","1","accid"},;
 		{"member","0","persid","1","persid"},;
 		{"member","1","householdid","1","householdid"},;
 		{"memberassacc","0","PRIMARY","1","mbrid"},;	
-		{"memberassacc","0","PRIMARY","2","ACCID"},;	
+		{"memberassacc","0","PRIMARY","2","accid"},;	
 		{"teletrans","0","PRIMARY","1","teletrID"},;
 		{"teletrans","1","bankaccntnbr","1","processed"},;
 		{"teletrans","1","bankaccntnbr","2","bankaccntnbr"},;
 		{"teletrans","1","bankaccntnbr","3","bookingdate"},;
 		{"teletrans","1","bankaccntnbr","4","lock_id"},;
 		{"teletrans","1","bankaccntnbr","5","lock_time"},;
-		{"standingorder","0","PRIMARY","1","STORDRID"},;
-		{"standingorderline","0","PRIMARY","1","STORDRID"},;
-		{"standingorderline","0","PRIMARY","2","SEQNR"},;
-		{"standingorderline","1","STORDLAC","1","ACCOUNTID"},;
-		{"perscod","0","PRIMARY","1","PERS_CODE"},;
-		{"perscod","0","ABBRVTN","1","ABBRVTN"},;
+		{"standingorder","0","PRIMARY","1","stordrid"},;
+		{"standingorderline","0","PRIMARY","1","stordrid"},;
+		{"standingorderline","0","PRIMARY","2","seqnr"},;
+		{"standingorderline","1","STORDLAC","1","accountid"},;
+		{"perscod","0","PRIMARY","1","pers_code"},;
+		{"perscod","0","ABBRVTN","1","abbrvtn"},;
 		{"perscod","1","description","1","description"},;
 		{"person","0","PRIMARY","1","persid"},;
 		{"person","1","lastname","1","lastname"},;
 		{"person","1","lastname","2","firstname"},;
 		{"person","1","postalcode","1","postalcode"},;
-		{"person","1","EXTERNID_2","1","EXTERNID"},;
-		{"person_properties","0","PRIMARY","1","ID"},;
-		{"person_properties","0","NAME","1","NAME"},;
+		{"person","1","EXTERNID_2","1","externid"},;
+		{"person_properties","0","PRIMARY","1","id"},;
+		{"person_properties","0","NAME","1","name"},;
 		{"personbank","0","PRIMARY","1","banknumber"},;
 		{"personbank","1","persid","1","persid"},;
-		{"persontype","0","PRIMARY","1","ID"},;
-		{"persontype","0","ABBRVTN","1","ABBRVTN"},;
-		{"ppcodes","0","PRIMARY","1","PPCODE"},;
-		{"ppcodes","0","PPNAME","1","PPNAME"},;
-		{"subscription","0","PRIMARY","1","SUBSCRIBID"},;
+		{"persontype","0","PRIMARY","1","id"},;
+		{"persontype","0","ABBRVTN","1","abbrvtn"},;
+		{"ppcodes","0","PRIMARY","1","ppcode"},;
+		{"ppcodes","0","PPNAME","1","ppname"},;
+		{"subscription","0","PRIMARY","1","subscribid"},;
 		{"subscription","1","personid","1","personid"},;
 		{"subscription","1","personid","2","accid"},;
 		{"subscription","1","accid","1","accid"},;
-		{"subscription","1","INVOICEID","1","INVOICEID"},;
+		{"subscription","1","INVOICEID","1","invoiceid"},;
 		{"syskey","0","PRIMARY","1","SYSKEY_ID"},;
 		{"telebankpatterns","0","PRIMARY","1","telpatID"},;
 		{"telebankpatterns","1","contra_bankaccnt","1","accid"},;
 		{"telebankpatterns","1","contra_bankaccnt","2","contra_name"},;
-		{"telebankpatterns","1","contra_bankaccnt","3","RECDATE"},;
+		{"telebankpatterns","1","contra_bankaccnt","3","recdate"},;
 		{"titles","0","PRIMARY","1","ID"},;
-		{"transaction","0","PRIMARY","1","TransId"},;
-		{"transaction","0","PRIMARY","2","SEQNR"},;
+		{"transaction","0","PRIMARY","1","transid"},;
+		{"transaction","0","PRIMARY","2","seqnr"},;
 		{"transaction","1","accid","1","accid"},;
-		{"transaction","1","accid","2","DAT"},;
-		{"transaction","1","accid","3","BFM"},;
+		{"transaction","1","accid","2","dat"},;
 		{"transaction","1","docid","1","docid"},;
 		{"transaction","1","reference","1","reference"},;
-		{"transaction","1","transdate","1","DAT"},;
+		{"transaction","1","transdate","1","dat"},;
+		{"transaction","1","transdate","2","transid"},;
 		{"transaction","1","person","1","persid"};
 		} as array 
 
