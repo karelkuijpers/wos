@@ -550,6 +550,7 @@ oDCBankBox:HyperLabel := HyperLabel{#BankBox,NULL_STRING,NULL_STRING,NULL_STRING
 oDCmEmail := SingleLineEdit{SELF,ResourceID{NEWPERSONWINDOW_MEMAIL,_GetInst()}}
 oDCmEmail:HyperLabel := HyperLabel{#mEmail,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmEmail:FocusSelect := FSEL_HOME
+oDCmEmail:FieldSpec := Person_EMAIL{}
 
 oDCmRemarks := MultiLineEdit{SELF,ResourceID{NEWPERSONWINDOW_MREMARKS,_GetInst()}}
 oDCmRemarks:FieldSpec := Person_OPM{}
@@ -634,7 +635,6 @@ oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Mailing codes",NULL_STRING,NUL
 
 oDCmPersid := SingleLineEdit{SELF,ResourceID{NEWPERSONWINDOW_MPERSID,_GetInst()}}
 oDCmPersid:HyperLabel := HyperLabel{#mPersid,"PersonNbr:","Number of person",NULL_STRING}
-oDCmPersid:FieldSpec := Person_CLN{}
 
 oDCSC_BDAT := FixedText{SELF,ResourceID{NEWPERSONWINDOW_SC_BDAT,_GetInst()}}
 oDCSC_BDAT:HyperLabel := HyperLabel{#SC_BDAT,"Creation:",NULL_STRING,NULL_STRING}
@@ -1088,46 +1088,36 @@ METHOD OkButton CLASS NewPersonWindow
 			iif(self:oDCmType:CurrentItemNo>0,",type='"+Str(self:oDCmType:GetItemValue(self:oDCmType:CurrentItemNo),-1)+"'","")+;
 			",birthdate='"+SQLdate(self:mBirthDate)+"'"+;
 			iif(self:oDCmGENDER:CurrentItemNo>0,",gender='"+Str(self:oDCmGENDER:GetItemValue(self:oDCmGENDER:CurrentItemNo),-1)+"'","")+; 
-			",propextr='"+StrTran(cExtra,"'","\'")+"'"+;
-			",alterdate ='"+SQLdate(self:mAlterDate)+"'"+;
+		",propextr='"+StrTran(cExtra,"'","\'")+"'"+;
+			",alterdate='"+SQLdate(self:mAlterDate)+"'"+;
 			",datelastgift ='"+SQLdate(self:mDateLastGift)+"'"+;
-			iif(self:lNew,""," where persid='"+Str(self:mPersId,-1)+"'")
+			iif(self:lNew,''," where persid='"+self:mPersId+"'")
 		oPers:=SQLStatement{cStmnt,oConn}
 		oPers:Execute() 
 		if !IsNil(oPers:Status)
 			LogEvent(,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogErrors")
 			(ErrorBox{self,'Add/update person Error:'+oPers:Status:Description}):Show()
 		endif
-// 		IF .not. oPers:Commit()
-// 			oTextBox := TextBox{ self, self:oLan:WGet("Changes discarded")+":",;
-// 				self:oLan:WGet("Changes discarded")+" "+self:oLan:WGet("because somebody else has updated the person at the same time")+" ";
-// 				+ oPers:Status:Caption +;
-// 				":" + oPers:Status:Description}		
-// 			oTextBox:Type := BUTTONOKAY
-// 			oTextBox:Show()
-// 			RETURN NIL
-// 		ELSE
-			// 			IF !self:lNew .and.!Empty(self:mrek)
-			if self:lNew
-				self:mPersId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGet(1)
-			elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
-				// in case of member update name of corresponding account:
-				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(Str(self:mPersId,-1)),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+Str(self:mPersid,-1)+")",oConn}
-				oStmnt:Execute()
-			ENDIF
-// 		ENDIF
+		if self:lNew
+			self:mPersId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGet(1)
+		elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
+			// in case of member update name of corresponding account:
+			oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+self:mPersId+")",oConn}
+			oStmnt:Execute()
+		ENDIF
+		// 		ENDIF
 		FOR i=1 to Len(aBankAcc)
 			IF i<=Len(OrigaBank)
 				IF !aBankAcc[i,2] ==OrigaBank[i] // change of value? 
 					IF Empty(aBankAcc[i,2]).or.Empty(aBankAcc[i,2])  // removed?
 						oStmnt:=SQLStatement{"delete from personbank where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					else   // changed
-						oStmnt:=SQLStatement{"update personbank set persid='"+Str(self:mPersId,-1)+"',banknumber='"+aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
+						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					endif
 					oStmnt:Execute()
 				ENDIF
 			ELSEIF Len(aBankAcc[i,2])>1 
-				oStmnt:=SQLStatement{"Insert into personbank set persid="+Str(self:mPersId,-1)+",banknumber='"+aBankAcc[i,2]+"'",oConn}
+				oStmnt:=SQLStatement{"Insert into personbank set persid="+self:mPersId+",banknumber='"+aBankAcc[i,2]+"'",oConn}
 				oStmnt:Execute() 
 			ENDIF
 		NEXT
@@ -1140,18 +1130,22 @@ METHOD OkButton CLASS NewPersonWindow
 		ENDIF
 		// refresh owner: 
 		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser)
-			self:oCaller:oPers:Execute() 
-			self:oCaller:oPers:SuspendNotification() 
-			// repostion owner at current person:
-			self:oCaller:gotop()
-			do while !self:oCaller:oPers:EOF .and. !self:oCaller:oPers:persid==self:mPersId
-				self:oCaller:oPers:Skip()
-			enddo
-			nCurRec:=self:oCaller:oPers:Recno
-			self:oCaller:oPers:ResetNotification()
-			if !Empty(nCurRec)
-				self:oCaller:goto(nCurRec)
-			endif
+			self:oCaller:SearchCLN:=self:mPersId
+			self:oCaller:ReFind()
+			if self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
+				self:oCaller:SELECT()   // go direct to
+			endif 
+			// 			self:oCaller:oPers:SuspendNotification() 
+			// 			// reposition owner at current person:
+			// 			self:oCaller:gotop()
+			// 			do while !self:oCaller:oPers:EOF .and. !self:oCaller:oPers:persid==Val(self:mPersId)
+			// 				self:oCaller:oPers:Skip()
+			// 			enddo
+			// 			nCurRec:=self:oCaller:oPers:Recno
+			// 			self:oCaller:oPers:ResetNotification()
+			// 			if !Empty(nCurRec)
+			// 				self:oCaller:goto(nCurRec)
+			// 			endif
 		endif
 		// 		SELF:Commit()
 		IF self:lImport
@@ -1448,6 +1442,34 @@ STATIC DEFINE NEWPERSONWINDOW_SC_TEL3 := 167
 STATIC DEFINE NEWPERSONWINDOW_SC_TEL4 := 171 
 STATIC DEFINE NEWPERSONWINDOW_SC_TIT := 105 
 STATIC DEFINE NEWPERSONWINDOW_SC_VRN := 102 
+RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
+	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
+	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
+	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
+	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
+	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
+	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
+	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
+	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
+	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
+	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
+	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
+	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
+	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
+	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
+	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
+	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
+	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
+	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
+	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
+	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
+	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
+END
+
 CLASS PersonBrowser INHERIT DataWindowMine 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -1493,36 +1515,7 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	export cFields, cFrom,cWhere,cOrder, cFilter as string
 	export oPersCnt as PersonContainer  
 	
-	declare method PersonSelect
-
-RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
-	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
-	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
-	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
-	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
-	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
-	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
-	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
-	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
-	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
-	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
-	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
-	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
-	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
-	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
-	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
-	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
-	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
-	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
-	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
-	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
-	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
-END
-
+	declare method PersonSelect 
 METHOD EditButton(lNew) CLASS PersonBrowser
 
 	Default(@lNew,FALSE)
@@ -1551,17 +1544,20 @@ METHOD EditButton(lNew) CLASS PersonBrowser
 
 	RETURN NIL
 METHOD FindButton( ) CLASS PersonBrowser 
-	LOCAL cMyFrom:=self:cFrom as STRING
+	LOCAL cMyFrom as STRING
 	local aKeyw:={} as array
 	local i,j as int
 	local lStart as logic
 	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","attention","email","remarks","telbusiness","telhome","mobile"} as array 
 	self:cWhere:=""
+	cMyFrom:="person as p"
 	if !Empty(self:SearchBank)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" b.banknumber = '"+AllTrim(self:SearchBank)+"' and p.persid=b.persid " 
 		cMyFrom+=",personbank as b"
 	else
-		if !Empty(self:SearchUni) 
+		if !Empty(self:SearchCLN)
+			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'"
+		elseif !Empty(self:SearchUni) 
 			aKeyw:=GetTokens(AllTrim(self:SearchUni))
 			for i:=1 to Len(aKeyw)
 				self:cWhere+=iif(i>1," and ("," (") 
@@ -1579,36 +1575,32 @@ METHOD FindButton( ) CLASS PersonBrowser
 				endif
 				self:cWhere+=")"
 			next 
-		endif
-		if !Empty(self:SearchSLE)
-			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" lastname like '"+StrTran(AllTrim(self:SearchSLE),"'","\'")+"%'"
-		endif
-		if !Empty(self:SearchSZP)
-			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" postalcode like '"+StandardZip(self:SearchSZP)+"%'"
-		endif
-		if !Empty(self:SearchCLN)
-			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" persid = '"+AllTrim(self:SearchCLN)+"'"
+			if !Empty(self:SearchSLE)
+				self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.lastname like '"+StrTran(AllTrim(self:SearchSLE),"'","\'")+"%'"
+			endif
+			if !Empty(self:SearchSZP)
+				self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.postalcode like '"+StandardZip(self:SearchSZP)+"%'"
+			endif 
 		endif
 	endif 
 	if !Empty(self:cFilter)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"("+self:cFilter+")"
 	endif
-	oPers:FreeStmt()
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder
-	self:oPers:Execute() 
-	self:GoTop() 
-	self:oSFPersonSubForm:Browser:refresh()
+	self:oPers:Execute()
+
 	self:FOUND :=Str(self:oPers:Reccount,-1) 
-   if self:oPers:Reccount>0
-   	self:oCCOKButton:Enable()
-   else
-   	self:oCCOKButton:Disable()
-   endif
-// 	if self:oPers:Reccount=1  
-// 		self:lFoundUnique := true
-// 	else
-// 		self:lFoundUnique := FALSE
-// 	endif   	
+	if self:oPers:Reccount>0
+		self:oCCOKButton:Enable()
+	else
+		self:oSFPersonSubForm:Browser:refresh()
+		self:oCCOKButton:Disable()
+	endif
+	// 	if self:oPers:Reccount=1  
+	// 		self:lFoundUnique := true
+	// 	else
+	// 		self:lFoundUnique := FALSE
+	// 	endif   	
 
 	RETURN nil
 ASSIGN FOUND(uValue) CLASS PersonBrowser
@@ -1725,18 +1717,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD OKButton CLASS PersonBrowser 
-	IF !SELF:oCaller==NULL_OBJECT
-	    IF IsMethod(SELF:oCaller, #RegPerson)
-    		IF !SELF:Server==NULL_OBJECT
-    			IF self:Server:Used
-					self:Hide()
-					self:oCaller:RegPerson(self:oPers,self:cItemName,true,self)
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
-	SELF:EndWindow()
-	
+	self:SELECT()	
 	RETURN NIL
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PostInit additions here
@@ -1749,7 +1730,8 @@ self:SetTexts()
     	SELF:oCCDeleteButton:Hide()
     	self:oCCUnionButton:Hide()
     ENDIF
-   self:FOUND:=Str(self:oPers:Reccount,-1)
+//    self:FOUND:=Str(self:oPers:Reccount,-1)
+   self:FOUND:=Transform(SQLSelect{"select count(*) as totcount from person",oConn}:totcount,"")
    if self:oPers:Reccount>0
    	self:oCCOKButton:Enable()
    else
@@ -1768,12 +1750,16 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	self:cFields:= "p.persid,lastname,initials,firstname,prefix,datelastgift,address,postalcode,city,country"
 	self:cFrom:="person as p"
 	self:cOrder:="lastname"
-	self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder,oConn} 
+	self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn} 
 	self:oPersCnt:=PersonContainer{}
 	RETURN NIL
 METHOD PrintButton( ) CLASS PersonBrowser
 	SELF:FilePrint()
 	RETURN
+method ReFind() class PersonBrowser
+self:FindButton()
+return 
+
 ACCESS SearchBank() CLASS PersonBrowser
 RETURN SELF:FieldGet(#SearchBank)
 
@@ -1808,6 +1794,20 @@ RETURN SELF:FieldGet(#SearchUni)
 ASSIGN SearchUni(uValue) CLASS PersonBrowser
 SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
+METHOD SELECT() CLASS PersonBrowser 
+	IF !self:oCaller==null_object
+	    IF IsMethod(self:oCaller, #Regperson)
+    		IF !self:Server==null_object
+    			IF self:Server:Used
+					self:Hide()
+					self:oCaller:Regperson(self:oPers,self:cItemName,true,self)
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	self:EndWindow()
+	
+	RETURN nil
 METHOD UnionButton( ) CLASS PersonBrowser 
 // Merge this person to another person: 
 Local oPers:=self:Server as SQLSelect
@@ -1848,6 +1848,12 @@ class PersonContainer
 	EXPORT md_address1, md_address2, md_address3, md_address4 as STRING 
 	export current_PersonID as int
 
+RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS PersonSubForm INHERIT DataWindowMine 
 
 	PROTECT oDBLASTNAME as JapDataColumn
@@ -1861,12 +1867,6 @@ CLASS PersonSubForm INHERIT DataWindowMine
 	PROTECT oDBCOUNTRY as JapDataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 ACCESS address() CLASS PersonSubForm
 RETURN SELF:FieldGet(#address)
 
@@ -2046,26 +2046,6 @@ STATIC DEFINE PERSONSUBFORM_PREFIX := 106
 STATIC DEFINE SELPERSABON_CANCELBUTTON := 102 
 STATIC DEFINE SELPERSABON_OKBUTTON := 101 
 STATIC DEFINE SELPERSABON_SELX_REK := 100 
-CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
-
-	PROTECT oDCmCodAdd5 AS COMBOBOX
-	PROTECT oDCmCodAdd4 AS COMBOBOX
-	PROTECT oDCmCodAdd3 AS COMBOBOX
-	PROTECT oDCmCodAdd2 AS COMBOBOX
-	PROTECT oDCmCodAdd1 AS COMBOBOX
-	PROTECT oDCCodeBox AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmCodDel5 AS COMBOBOX
-	PROTECT oDCmCodDel4 AS COMBOBOX
-	PROTECT oDCmCodDel3 AS COMBOBOX
-	PROTECT oDCmCodDel2 AS COMBOBOX
-	PROTECT oDCmCodDel1 AS COMBOBOX
-	PROTECT oDCCodeBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS OBJECT
 RESOURCE SelPersChangeMailCodes DIALOGEX  8, 18, 404, 146
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Add/Remove Mailing Codes"
@@ -2088,6 +2068,26 @@ BEGIN
 	CONTROL	"Cancel", SELPERSCHANGEMAILCODES_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 277, 116, 53, 12
 END
 
+CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
+
+	PROTECT oDCmCodAdd5 AS COMBOBOX
+	PROTECT oDCmCodAdd4 AS COMBOBOX
+	PROTECT oDCmCodAdd3 AS COMBOBOX
+	PROTECT oDCmCodAdd2 AS COMBOBOX
+	PROTECT oDCmCodAdd1 AS COMBOBOX
+	PROTECT oDCCodeBox AS GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmCodDel5 AS COMBOBOX
+	PROTECT oDCmCodDel4 AS COMBOBOX
+	PROTECT oDCmCodDel3 AS COMBOBOX
+	PROTECT oDCmCodDel2 AS COMBOBOX
+	PROTECT oDCmCodDel1 AS COMBOBOX
+	PROTECT oDCCodeBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS OBJECT
 METHOD CancelButton( ) CLASS SelPersChangeMailCodes
 	oCaller:selx_OK := FALSE
 	self:EndDialog()
@@ -2191,19 +2191,6 @@ STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL4 := 108
 STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL5 := 107 
 STATIC DEFINE SELPERSCHANGEMAILCODES_MCODDEL6 := 108 
 STATIC DEFINE SELPERSCHANGEMAILCODES_OKBUTTON := 113 
-CLASS SelPersExport INHERIT DialogWinDowExtra 
-
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCSubSet AS LISTBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCExportFormat AS RADIOBUTTONGROUP
-	PROTECT oCCTabButton AS RADIOBUTTON
-	PROTECT oCCCSVButton AS RADIOBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT MyFields AS ARRAY
-  PROTECT myParent AS OBJECT
 RESOURCE SelPersExport DIALOGEX  11, 22, 280, 226
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Specify persons to export"
@@ -2218,6 +2205,19 @@ BEGIN
 	CONTROL	"Comma separated file (CSV)", SELPERSEXPORT_CSVBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 166, 58, 102, 11
 END
 
+CLASS SelPersExport INHERIT DialogWinDowExtra 
+
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCSubSet AS LISTBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCExportFormat AS RADIOBUTTONGROUP
+	PROTECT oCCTabButton AS RADIOBUTTON
+	PROTECT oCCCSVButton AS RADIOBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT MyFields AS ARRAY
+  PROTECT myParent AS OBJECT
 METHOD CancelButton( ) CLASS SelPersExport
 	SELF:myParent:myFields:={}
 SELF:EndDialog(1)
