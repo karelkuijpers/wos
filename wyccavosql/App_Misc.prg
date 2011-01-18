@@ -1455,10 +1455,10 @@ LOCAL alt:=FALSE as LOGIC
 		alt := !alt
 	NEXT
 	RETURN ((sum % 10) == 0)
-Function IsMod11(cGetal)
+Function IsMod11(cGetal as string) as logic
 // check if cGetal is  modulo 11 for dutch betalingskenmerk 
 return (cGetal==Mod11(SubStr(cGetal,2)))
-Function IsModulus11(cGetal)
+Function IsModulus11(cGetal as string) as logic
 local lres as usual
 lres:=Modulus11(SubStr(cGetal,1,Len(cGetal)-2))
 if IsLogic(lres)
