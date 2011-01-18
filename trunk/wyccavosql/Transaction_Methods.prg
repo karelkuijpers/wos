@@ -1198,7 +1198,7 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 	local aCre:={} as array	
 	
 	oHm := SELF:server
-	nCurRec := oHm:RECNO 
+	nCurRec := oHm:RECNO
 
 	AEval(oHm:aMirror,{|x| AAdd(aCre,Round(x[2]-x[3],DecAantal))})
 	fTot:=asum(aCre) 
@@ -1229,6 +1229,7 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 			ENDIF
 		ENDIF
 	ENDIF
+ 	self:oDCFoundtext:TextValue:=Str(oHm:RecCount,-1)
 
 RETURN TRUE
 METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as logic CLASS General_Journal
