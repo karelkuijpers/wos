@@ -3578,7 +3578,6 @@ RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	//Put your PostInit additions here
-LOCAL oSys as SysParms
 self:SetTexts()
 
 store Month(Today()-27) to peilmnd,peilmax
@@ -3589,8 +3588,8 @@ self:Country:=SQLSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
 
 Footnotes:="Last"
 Memberstmnt:="LastSt"
-self:oDCHomeBox:Caption:=(Language{}):WGet("Members of")+" "+sLand
-self:oDCNonHomeBox:Caption:=(Language{}):WGet("Members not of")+" "+sLand
+self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
+self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
 HomeBox:=true
 self:NonHomeBox:=true
 self:ProjectsBox:=true
@@ -3600,10 +3599,10 @@ if FromAccount==ToAccount
 else
 	if self:Memberstmnt="ALLST"
 		self:SkipInactive:=false 
-		self:oDCSkipInactive:ToolTipText:=(Language{}):WGet("Suppress reports with no financial transaction in All Months")
+		self:oDCSkipInactive:ToolTipText:=self:oLan:WGet("Suppress reports with no financial transaction in All Months")
 	else
 		self:SkipInactive:=true
-		self:oDCSkipInactive:ToolTipText:=(Language{}):WGet("Suppress reports with no financial transaction in Last Month")
+		self:oDCSkipInactive:ToolTipText:=self:oLan:WGet("Suppress reports with no financial transaction in Last Month")
 	endif
 endif
 
