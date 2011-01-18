@@ -496,8 +496,7 @@ IF !Empty(self:Server:crossaccnt)
 	ENDIF		
 ENDIF
 IF !Empty(SHB).and.!Empty(sam)
-	self:oDCmAdminType:Hide()
-	self:oDCFixedText5:hide()
+	self:oDCmAdminType:Disable()
 ELSE
 	oSel:=SQLSelect{"select mbrid from member limit 2", oConn}
 	IF oSel:RecCount=0 // empty database
@@ -508,8 +507,6 @@ ELSE
 			self:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"Home Front of one Member","HO"},{"General Gifts Administration","GI"}})
 		ELSE
 			self:oDCmAdminType:FillUsing({{"Wycliffe Office","WO"},{"General Gifts Administration","GI"}})
-		//	SELF:oDCmAdminType:Hide()
-		//	SELF:oDCFixedText5:hide()
 		ENDIF
 	ENDIF
 ENDIF	
