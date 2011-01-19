@@ -1113,11 +1113,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","InnoDB","utf8_unicode_ci"},;
 		{"dueamount","InnoDB","utf8_unicode_ci"},;
 		{"emplacc","MyIsam","utf8_unicode_ci"},; 
-		{"employee","MyIsam","latin1_swedish_ci"},; 
-		{"importlock","InnoDB","utf8_unicode_ci"},;
+	{"employee","MyIsam","latin1_swedish_ci"},; 
+	{"importlock","InnoDB","utf8_unicode_ci"},;
 		{"importtrans","InnoDB","utf8_unicode_ci"},;
 		{"ipcaccounts","MyIsam","utf8_unicode_ci"},;  
-		{"language","MyIsam","utf8_unicode_ci"},;
+	{"language","MyIsam","utf8_unicode_ci"},;
 		{"mbalance","InnoDB","utf8_unicode_ci"},;
 		{"member","MyIsam","utf8_unicode_ci"},;
 		{"memberassacc","MyIsam","utf8_unicode_ci"},;
@@ -1149,10 +1149,10 @@ method InitializeDB() as void Pascal  class Initialize
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// Table name, Field,Type,Null,Default,Extra 
-//		{"dueamount","persid","int(11)","NO","NULL",""},;
-//		{"dueamount","accid","int(11)","YES","NULL",""},;
-// 	{"dueamount","paymethod","char(1)","NO","",""},;
-// 	{"dueamount","category","char(1)","NO","",""},;
+	//		{"dueamount","persid","int(11)","NO","NULL",""},;
+	//		{"dueamount","accid","int(11)","YES","NULL",""},;
+	// 	{"dueamount","paymethod","char(1)","NO","",""},;
+	// 	{"dueamount","category","char(1)","NO","",""},;
 
 
 	local aColumn:={;
@@ -1190,7 +1190,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","supplier","char(30)","NO","",""},;
 		{"article","accountstock","int(11)","NO","0",""},;
 		{"article","accountpurchase","int(11)","NO","0",""},;   
-		{"authfunc","empid","int(11)","NO","NULL",""},;
+	{"authfunc","empid","int(11)","NO","NULL",""},;
 		{"authfunc","funcname","char(32)","NO","",""},;
 		{"balanceitem","balitemid","int(11)","NO","NULL","auto_increment"},;
 		{"balanceitem","heading","char(25)","YES","NULL",""},;
@@ -1259,8 +1259,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","dfir","char(9)","NO","",""},;
 		{"distributioninstruction","dfia","char(17)","NO","",""},;
 		{"distributioninstruction","checksave","char(1)","NO","",""},; 
-		{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
-		{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
+	{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
+	{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
 		{"dueamount","invoicedate","date","NO","0000-00-00",""},;
 		{"dueamount","seqnr","int(2)","NO","0",""},;
 		{"dueamount","amountinvoice","decimal(13,2)","NO","0",""},;
@@ -1279,7 +1279,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","pswprv3","varchar(64)","NO","",""},;
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
-		{"employee","lstreimb","date","NO","0000-00-00",""},;
+	{"employee","lstreimb","date","NO","0000-00-00",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
@@ -1337,7 +1337,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","offcrate","char(1)","NO","m",""},;
 		{"member","contact","int(11)","NO","0",""},;
 		{"member","rptdest","int(2)","NO","0",""},; 
-		{"memberassacc","mbrid","int(11)","NO","NULL",""},;
+	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","",""},;
 		{"perscod","description","char(20)","YES","NULL",""},;
@@ -1390,7 +1390,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""},; 
-		{"standingorderline","stordrid","int(11)","NO","0",""},;
+	{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
 		{"standingorderline","deb","decimal(19,2)","NO","0",""},;
@@ -1495,11 +1495,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","checkemp","char(32)","NO","",""},;
 		{"sysparms","mailclient","tinyint(1)","NO","0",""},;
 		{"sysparms","posting","tinyint(1)","NO","0",""},; 
-		{"sysparms","toppacct","int(11)","NO","0",""},;
+	{"sysparms","toppacct","int(11)","NO","0",""},;
 		{"sysparms","lstcurrt","tinyint(1)","NO","0",""},; 
-		{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
-		{"sysparms","accpacls","date","NO","0000-00-00",""},; 
-		{"sysparms","assfldac","int(11)","NO","0",""},;
+	{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
+	{"sysparms","accpacls","date","NO","0000-00-00",""},; 
+	{"sysparms","assfldac","int(11)","NO","0",""},;
 		{"importlock","importfile","char(40)","YES","NULL",""},;
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
@@ -1544,7 +1544,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","debforgn","decimal(19,2)","NO","0",""},;
 		{"transaction","creforgn","decimal(19,2)","NO","0",""},;
 		{"transaction","currency","char(3)","NO","",""},; 
-		{"transaction","reference","varchar(127)","NO","",""},;
+	{"transaction","reference","varchar(127)","NO","",""},;
 		{"transaction","seqnr","smallint(4)","NO","NULL",""},;
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
 		{"transaction","ppdest","char(3)","NO","",""}; 
@@ -1598,9 +1598,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"dueamount","0","subscrdue","2","invoicedate"},;
 		{"dueamount","0","subscrdue","3","seqnr"},;
 		{"employee","0","PRIMARY","1","empid"},; 
-		{"emplacc","0","PRIMARY","1","empid"},; 
-		{"emplacc","0","PRIMARY","2","accid"},; 
-		{"importtrans","0","PRIMARY","1","imptrID"},;
+	{"emplacc","0","PRIMARY","1","empid"},; 
+	{"emplacc","0","PRIMARY","2","accid"},; 
+	{"importtrans","0","PRIMARY","1","imptrID"},;
 		{"importtrans","1","TRANSACTNR","1","origin"},;
 		{"importtrans","1","TRANSACTNR","2","transactnr"},;
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
@@ -1616,8 +1616,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","0","persid","1","persid"},;
 		{"member","1","householdid","1","householdid"},;
 		{"memberassacc","0","PRIMARY","1","mbrid"},;	
-		{"memberassacc","0","PRIMARY","2","accid"},;	
-		{"teletrans","0","PRIMARY","1","teletrID"},;
+	{"memberassacc","0","PRIMARY","2","accid"},;	
+	{"teletrans","0","PRIMARY","1","teletrID"},;
 		{"teletrans","1","bankaccntnbr","1","processed"},;
 		{"teletrans","1","bankaccntnbr","2","bankaccntnbr"},;
 		{"teletrans","1","bankaccntnbr","3","bookingdate"},;
@@ -1665,9 +1665,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","1","person","1","persid"};
 		} as array 
 
-// 		{"transaction","1","amountdeb","1","deb"},;
-// 		{"transaction","1","amountcre","1","cre"},;
-// 		{"transaction","1","description","1","description"},;
+	// 		{"transaction","1","amountdeb","1","deb"},;
+	// 		{"transaction","1","amountcre","1","cre"},;
+	// 		{"transaction","1","description","1","description"},;
 
 	
 	// add to total collection of columns:
@@ -2021,7 +2021,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	local nPosCurbefore as int // position of corresponding current item before this required one
 	local nPosCurAfter  as int // position of corresponding current item after this required one
 	local cReqname,cIndex as string 
-	local cStatement,Sp:=Space(1) as string
+	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1) as string
 	local oStmnt as SQLStatement 
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
@@ -2118,7 +2118,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	nLenReq:=ALen(aReqIndex)
 	nLenCur:=ALen(aCurIndex)
 	aStatReq:=AReplicate({'',0},nLenReq)
-	aStatCur:=AReplicate('',nLenCur)
+	aStatCur:=AReplicate('',nLenCur) 
 	for nPosReq:=1 to nLenReq   
 		// Table,Non_unique,Key_name,Seq_in_index,Column_name
 		cReqname:=Lower(aReqIndex[nPosReq,5])       // first position is table name, fith column name 
@@ -2146,17 +2146,34 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	nPosCur:=1
 	nPosCur:=AScan(aStatCur,{|x|Empty(x)},nPosCur)
 	cIndex:=""
+	cDropIndex:="" 
+	cAddIndex:=""
+	// first missing curindex lines:
 	do while nPosCur>0
 		if !aCurIndex[nPosCur,3]==cIndex 
 			cIndex:=aCurIndex[nPosCur,3]
-			cStatement+=iif(Empty(cStatement),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
+			if AtC(cIndex,cDropIndex)=0     // not yet dropped?
+				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
+				if (nPosReq:=ascan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. atc(cIndex,cAddIndex)=0 
+					// add to indexes to be added:
+					cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
+						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+					nPosReq++		
+					do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
+						cAddIndex+="," +sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+						nPosReq++
+					enddo
+					cAddIndex+=")"+Sp
+				endif
+			endif
 		endif
 		if nPosCur< nLenCur
 			nPosCur:=AScan(aStatCur,{|x|Empty(x)},nPosCur+1)
 		else
 			exit
 		endif
-	enddo
+	enddo 
+	
 	// add new or changed indexes:
 	nPosReq:=1
 	nPosReq:=AScan(aStatReq,{|x|Empty(x[1])},nPosReq)
@@ -2165,17 +2182,28 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		cIndex:=aReqIndex[nPosReq,3]
 		//	process all	lines	of	this index
 		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
-		cStatement+=iif(Empty(cStatement),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
-			"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
-		nPosReq++		
-		do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
-			cStatement+="," +sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
-			nPosReq++
-		enddo
-		cStatement+=")"+Sp
+		if AtC(cIndex,cAddIndex)=0 
+			if AScan(aCurIndex,{|x|x[3]==cIndex})>0 .and. AtC(cIndex,cDropIndex)=0
+				// add to drop index
+				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)			
+			endif
+			cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
+				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+			nPosReq++		
+			do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
+				cAddIndex+="," +sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+				nPosReq++
+			enddo
+			cAddIndex+=")"+Sp 
+		endif
 		nPosReq:=AScan(aStatReq,{|x|Empty(x[1])},nPosReq)
 	enddo
-	
+	if !Empty(cDropIndex)
+		cStatement+=iif(Empty(cStatement),'',', ')+ cDropIndex
+	endif
+	if !Empty(cAddIndex)
+		cStatement+=iif(Empty(cStatement),'',', ')+ cAddIndex
+	endif
 	if !Empty(cStatement) 
 		oMain:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
 		SQLStatement{"start transaction",oConn}:Execute()
