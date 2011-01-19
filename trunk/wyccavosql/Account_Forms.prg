@@ -55,7 +55,6 @@ END
 METHOD DeleteButton( ) CLASS AccountBrowser 
 	* Delete a account occurrence
 	LOCAL oTrans as SQLSelect
-	LOCAL oSub as Subscription
 	LOCAL oMBal as Balances
 	LOCAL  oDep as SQLSelect
 	Local oAcc, oAccSelf:=self:Server as SQLSelect
