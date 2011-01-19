@@ -1435,7 +1435,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	endif
 	RETURN true
 METHOD OKButton( ) CLASS SelBankOrder 
-	LOCAL oAcc as Account
 	LOCAL begin_due:=oDCbegin_verv:SelectedDate, end_due:=oDCeind_verv:SelectedDate, process_date:=self:oDCDatePayment:SelectedDate as date
 
 	IF CountryCode="31"
