@@ -2806,7 +2806,6 @@ METHOD InitRange(mRange) CLASS PrintDialog
 METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 
 	LOCAL nMax, nMin,nRet AS INT
-	Local oSys as SysParms
 	Local cDefFolder as string 
 	local lError as logic
 	Default(@SendToMail,FALSE)
@@ -3188,7 +3187,6 @@ RETURN SELF:Font
 METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,SendToMail) CLASS Printjob
 	LOCAL oSize AS Dimension
 	LOCAL oKixSize AS Dimension
-	LOCAL oSys AS Sysparms
 	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH AS INT
 	LOCAL nResolution:=600 // dots per inch
 	Default(@SendToMail,FALSE)
