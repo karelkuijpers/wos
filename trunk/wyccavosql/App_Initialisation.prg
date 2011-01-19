@@ -680,6 +680,7 @@ method init(oMainWindow) class Initialize
 			dbname:=SubStr(dbname,RAt('\',dbname)+1)
 		endif
 	endif
+	dbname:=Lower(dbname)
 	SQLConnectErrorMsg(FALSE)
 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
 		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
@@ -712,7 +713,6 @@ method init(oMainWindow) class Initialize
 		oSel:Skip()
 	enddo
 	oSel:FreeStmt(SQL_CLOSE) 
-	oStmt:=SQLStatement{"",oConn}
 	// database quotation mark for names:
 	sIdentChar := oConn:Info( SQL_IDENTIFIER_QUOTE_CHAR)
 	if sIdentChar = " "
@@ -721,15 +721,19 @@ method init(oMainWindow) class Initialize
 	if (i:=AScan(aDB,{|x|Lower(x)==Lower(dbname)}))==0
 		self:lNewDb:=true
 		//create database: 
-		oStmt:SQLString:='Create Database '+sIdentChar+Lower(dbname)+sIdentChar
-		oStmt:Execute(true) 
+		oStmt:=SQLStatement{'Create Database '+sIdentChar+dbname+sIdentChar,oConn}
+		oStmt:Execute()
+		if !Empty(oStmt:Status)
+			ErrorBox{,"Could not create database "+dbname+"; error:"+oStmt:ERRINFO:errormessage}:Show()
+			break
+		endif 
 	else
 		dbname:=aDB[i]
 	endif
-	oStmt:SQLString:='Use '+sIdentChar+dbname+sIdentChar
-	oStmt:Execute(true) 
+	oStmt:=SQLStatement{'Use '+sIdentChar+dbname+sIdentChar,oConn}
+	oStmt:Execute() 
 	if !Empty(oStmt:Status)
-		ShowError(oConn:ERRINFO)
+		ErrorBox{,"Could not connect to database "+dbname+"; error:"+oStmt:ERRINFO:errormessage}:Show()
 		Break
 	endif
 	return self
