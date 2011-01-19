@@ -2642,7 +2642,6 @@ METHOD OKButton( ) CLASS TotalsMembers
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PostInit additions here
-	LOCAL oSys AS Sysparms
 	self:SetTexts()
 	IF Month(Today()) <=9
 		SELF:FromYear:=Year(Today())-2
