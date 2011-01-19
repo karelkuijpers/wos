@@ -1802,7 +1802,6 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 	LOCAL oMem as SQLSelect
 	LOCAL aDistrm:=self:aDistr as array
 	Local n,myMbrId:=Val(self:mMbrId) as int 
-	local oAccVal as Account
 
 	*Check obliged fields:
 	IF Empty(self:mCLN)
