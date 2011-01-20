@@ -2174,7 +2174,7 @@ METHOD DeleteButton CLASS MemberBrowser
 		mMbrId:=Str(oSFMemberBrowser_Detail:Server:MbrId,-1)
 		mRek:=Str(oSFMemberBrowser_Detail:Server:accid,-1)
 		oMBAL :=Balances{}
-		oMBAL:GetBalance(mRek,self:Server:TYPE)
+		oMBAL:GetBalance(mRek)
 		IF !oMBAL:per_deb==oMBal:per_cre
 			(ErrorBox{,"No zero balance"}):Show()
 			RETURN
