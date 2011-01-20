@@ -694,7 +694,7 @@ method init(oMainWindow) class Initialize
 		endif
 		// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
 		if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0
-			ErrorBox{,"You have first to install MYSQL"}:Show()
+			ErrorBox{,"You have first to install MYSQL"+iif(Lower(cServer)=='localhost','',' or connect to MYSQL server')}:Show()
 			break
 		endif
 		
