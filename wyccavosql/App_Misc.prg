@@ -454,6 +454,7 @@ ENDDO
 oSQL:Close()
 oSQL:=null_object
 
+DEFINE DATEFIELD:=3
 CLASS DateStandard INHERIT DATETIMEPICKER
 	* Standard date for normal use
 METHOD INIT(oOwner, nResourceID) CLASS DATEStandard
@@ -960,7 +961,8 @@ pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
 return
 FUNCTION FillPropTypes()
 * Fill Array with person property types
-RETURN {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN}}
+prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
+return
 FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as string) as void
 // add conditinally accstr to aAcc
 LOCAL accstr:=LTrimZero(SubStr(accarr[1],1,LENACCNBR)) as STRING
@@ -1378,7 +1380,7 @@ function InitGlobals()
 	FillPersType()
 	FillPersGender()
 	FillPersTitle()
-	prop_types:=FillPropTypes()
+	FillPropTypes()
 	FillPersProp() 
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
@@ -2229,6 +2231,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2236,12 +2244,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
