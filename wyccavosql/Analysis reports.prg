@@ -1,52 +1,52 @@
 CLASS DonorFollowingReport INHERIT DataWindowMine 
 
-	PROTECT oDCProjectsBox AS CHECKBOX
-	PROTECT oDCHomeBox AS CHECKBOX
-	PROTECT oDCNonHomeBox AS CHECKBOX
-	PROTECT oDCFromAccount AS SINGLELINEEDIT
-	PROTECT oCCFromAccButton AS PUSHBUTTON
-	PROTECT oDCToAccount AS SINGLELINEEDIT
-	PROTECT oCCToAccButton AS PUSHBUTTON
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCSubPerLen AS COMBOBOX
-	PROTECT oDCPropertiesBox AS GROUPBOX
-	PROTECT oDCGender AS CHECKBOX
-	PROTECT oDCAge AS CHECKBOX
-	PROTECT oCCRange10 AS RADIOBUTTON
-	PROTECT oCCRange20 AS RADIOBUTTON
-	PROTECT oDCType AS CHECKBOX
-	PROTECT oDCFrequency AS CHECKBOX
-	PROTECT oDCRanges AS RADIOBUTTONGROUP
-	PROTECT oDCStatisticsBox AS GROUPBOX
-	PROTECT oDCStatBox1 AS CHECKBOX
-	PROTECT oDCStatBox2 AS CHECKBOX
-	PROTECT oDCStatBox3 AS CHECKBOX
-	PROTECT oDCStatBox4 AS CHECKBOX
-	PROTECT oDCStatBox5 AS CHECKBOX
-	PROTECT oDCStatBox6 AS CHECKBOX
-	PROTECT oDCStatBox7 AS CHECKBOX
-	PROTECT oDCStatBox8 AS CHECKBOX
-	PROTECT oDCNumberRanges AS SINGLELINEEDIT
-	PROTECT oDCFixedTextRanges AS FIXEDTEXT
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCTextfrom AS FIXEDTEXT
-	PROTECT oDCTextTill AS FIXEDTEXT
-	PROTECT oDCFixedText7 AS FIXEDTEXT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCSubSet AS LISTBOXDONORREPORT
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCDiffBox AS CHECKBOX
-	PROTECT oDCFromdate AS DATESTANDARD
-	PROTECT oDCTodate AS DATESTANDARD
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCFixedText8 AS FIXEDTEXT
-	PROTECT oDCGroupBox3 AS GROUPBOX
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oDCProjectsBox as CheckBox
+	PROTECT oDCHomeBox as CheckBox
+	PROTECT oDCNonHomeBox as CheckBox
+	PROTECT oDCFromAccount as SingleLineEdit
+	PROTECT oCCFromAccButton as PUSHBUTTON
+	PROTECT oDCToAccount as SingleLineEdit
+	PROTECT oCCToAccButton as PUSHBUTTON
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCSubPerLen as combobox
+	PROTECT oDCPropertiesBox as GROUPBOX
+	PROTECT oDCGender as CheckBox
+	PROTECT oDCAge as CheckBox
+	PROTECT oCCRange10 as RadioButton
+	PROTECT oCCRange20 as RadioButton
+	PROTECT oDCType as CheckBox
+	PROTECT oDCFrequency as CheckBox
+	PROTECT oDCRanges as RadioButtonGroup
+	PROTECT oDCStatisticsBox as GROUPBOX
+	PROTECT oDCStatBox1 as CheckBox
+	PROTECT oDCStatBox2 as CheckBox
+	PROTECT oDCStatBox3 as CheckBox
+	PROTECT oDCStatBox4 as CheckBox
+	PROTECT oDCStatBox5 as CheckBox
+	PROTECT oDCStatBox6 as CheckBox
+	PROTECT oDCStatBox7 as CheckBox
+	PROTECT oDCStatBox8 as CheckBox
+	PROTECT oDCNumberRanges as SingleLineEdit
+	PROTECT oDCFixedTextRanges as FIXEDTEXT
+	PROTECT oDCGroupBox1 as GROUPBOX
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCTextfrom as FIXEDTEXT
+	PROTECT oDCTextTill as FIXEDTEXT
+	PROTECT oDCFixedText7 as FIXEDTEXT
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oDCSubSet as ListboxDonorReport
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCDiffBox as CheckBox
+	PROTECT oDCFromdate as DATESTANDARD
+	PROTECT oDCTodate as DATESTANDARD
+	PROTECT oDCFixedText6 as FIXEDTEXT
+	PROTECT oDCFixedText8 as FIXEDTEXT
+	PROTECT oDCGroupBox3 as GROUPBOX
+	PROTECT oDCFixedText9 as FIXEDTEXT
+	PROTECT oDCFixedText10 as FIXEDTEXT
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE ProjectsBox
 	INSTANCE HomeBox
 	INSTANCE NonHomeBox
@@ -55,7 +55,7 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	INSTANCE SubPerLen
 	INSTANCE Gender
 	INSTANCE Age
-	INSTANCE Type
+	INSTANCE TYPE
 	INSTANCE Frequency
 	INSTANCE Ranges
 	INSTANCE StatBox1
@@ -70,12 +70,15 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	INSTANCE SubSet
 	INSTANCE DiffBox
 	PROTECT MaxJaar,MinJaar, StartJaar as int
-    PROTECT aPropEx:={} AS ARRAY
-	EXPORT cFromAccName AS STRING
-	EXPORT cToAccName AS STRING
-	PROTECT FromYear,FromMonth,ToYear,ToMonth AS INT
-	export oSelPers as SelPers 
+	PROTECT aPropEx:={} as ARRAY
+	EXPORT cFromAccName as STRING
+	EXPORT cToAccName as STRING
+	PROTECT FromYear,FromMonth,ToYear,ToMonth as int
+	export oSelpers as Selpers 
 	export aSelectedClasses as arraY
+
+   
+   	
 RESOURCE DonorFollowingReport DIALOGEX  33, 9, 391, 400
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -105,7 +108,7 @@ BEGIN
 	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 316, 153, 11
 	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 329, 155, 11
 	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 342, 191, 11
-	CONTROL	"export givers per class", DONORFOLLOWINGREPORT_STATBOX8, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 355, 155, 11
+	CONTROL	"export givers per class", DONORFOLLOWINGREPORT_STATBOX8, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|WS_DISABLED, 19, 355, 155, 11
 	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 342, 17, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 342, 63, 12
 	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 30, 377, 82
@@ -118,8 +121,8 @@ BEGIN
 	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
 	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
 	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
-	CONTROL	"zaterdag 3 mei 2008", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13, WS_EX_CLIENTEDGE
-	CONTROL	"zaterdag 3 mei 2008", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13, WS_EX_CLIENTEDGE
+	CONTROL	"20. januar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
+	CONTROL	"20. januar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
 	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
 	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
 	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
@@ -128,39 +131,39 @@ BEGIN
 END
 
 METHOD AccFil() CLASS DonorFollowingReport
-	LOCAL i AS INT
-	LOCAL SubLen AS INT
-	SELF:FromAccount:="0"
-	SELF:ToAccount:="zzzzzzzzz"
-	SELF:oDCSubSet:FillUsing(SELF:oDCSubSet:GetAccnts())
+	LOCAL i as int
+	LOCAL SubLen as int
+	self:FromAccount:="0"
+	self:ToAccount:="zzzzzzzzz"
+	self:oDCSubSet:FillUsing(self:oDCSubSet:GetAccnts())
 	* Select all:
-	SubLen:=SELF:oDCSubSet:ItemCount
-	FOR i = 1 TO SubLen
-    	SELF:oDCSubSet:SelectItem(i)
+	SubLen:=self:oDCSubSet:ItemCount
+	FOR i = 1 to SubLen
+    	self:oDCSubSet:SelectItem(i)
 	NEXT
-	SELF:FromAccount:= LTrimZero(SELF:oDCSubSet:GetItem(1,LENACCNBR))
-	SELF:oDCFromAccount:TEXTValue := FromAccount
-	SELF:cFromAccName := FromAccount
-	SELF:oDCTextfrom:caption := AllTrim(SubStr(SELF:oDCSubSet:GetItem(1),LENACCNBR+1))
-	SELF:ToAccount:= LTrimZero(SELF:oDCSubSet:GetItem(SubLen,LENACCNBR))
-	SELF:oDCToAccount:TEXTValue := ToAccount
-	SELF:cToAccName := ToAccount
-	SELF:oDCTextTill:caption := AllTrim(SubStr(SELF:oDCSubSet:GetItem(SubLen),LENACCNBR+1))
+	self:FromAccount:= LTrimZero(self:oDCSubSet:GetItem(1,LENACCNBR))
+	self:oDCFromAccount:TEXTValue := FromAccount
+	self:cFromAccName := FromAccount
+	self:oDCTextfrom:Caption := AllTrim(SubStr(self:oDCSubSet:GetItem(1),LENACCNBR+1))
+	self:ToAccount:= LTrimZero(self:oDCSubSet:GetItem(SubLen,LENACCNBR))
+	self:oDCToAccount:TEXTValue := ToAccount
+	self:cToAccName := ToAccount
+	self:oDCTextTill:Caption := AllTrim(SubStr(self:oDCSubSet:GetItem(SubLen),LENACCNBR+1))
 RETURN
 
 
-METHOD AddClass(aValues,line,level,maxlevel,aClassList) CLASS DonorFollowingReport
-	// add Class combinations recurrent to aValues
-	LOCAL i AS INT
-	LOCAL sep:="," AS STRING
+METHOD AddClass(aClassTuples,line,level,maxlevel,aClassList) CLASS DonorFollowingReport
+	// Add Class combinations recursively to aClassTuples
+	LOCAL i as int
+	LOCAL sep:="," as STRING
 	IF Empty(line)
 		sep:=""
 	ENDIF
-	FOR i:=aClassList[level,2] TO aClassList[level,3]
+	FOR i:=aClassList[level,2] to aClassList[level,3]
 		IF level<maxlevel
-			SELF:AddClass(aValues,line+sep+AllTrim(Str(i)),level+1,maxlevel,aClassList)
+			self:AddClass(aClassTuples,line+sep+Str(i,-1),level+1,maxlevel,aClassList)
 		ELSE
-			AAdd(aValues,{line+sep+AllTrim(Str(i))})
+			AAdd(aClassTuples,line+sep+Str(i,-1))
 		ENDIF
 	NEXT
 RETURN
@@ -174,115 +177,42 @@ SELF:FieldPut(#Age, uValue)
 RETURN uValue
 
 METHOD ButtonClick(oControlEvent) CLASS DonorFollowingReport
-	LOCAL oControl AS Control
-	LOCAL i AS INT
-	LOCAL SubLen AS INT
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	LOCAL oControl as CONTROL
+	LOCAL i as int
+	LOCAL SubLen as int
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
 	IF oControl:Name=="STATBOX7"
-		IF SELF:oDCStatBox7:Checked
-			SELF:oDCNumberRanges:Show()
-			SELF:oDCFixedTextRanges:Show()
+		IF self:oDCStatBox7:Checked
+			self:oDCNumberRanges:Show()
+			self:oDCFixedTextRanges:Show()
 		ELSE
-			SELF:oDCNumberRanges:Hide()
-			SELF:oDCFixedTextRanges:Hide()
+			self:oDCNumberRanges:Hide()
+			self:oDCFixedTextRanges:Hide()
 		ENDIF
 	ELSEIF oControl:Name=="AGE"
-		IF SELF:oDCAge:Checked
-			SELF:oDCRanges:show()
-			SELF:oCCRange10:Show()
-			SELF:oCCRange20:Show()
+		IF self:oDCAge:Checked
+			self:oDCRanges:Show()
+			self:oCCRange10:Show()
+			self:oCCRange20:Show()
 		ELSE
-			SELF:oDCRanges:Hide()
-			SELF:oCCRange10:Hide()
-			SELF:oCCRange20:Hide()
+			self:oDCRanges:Hide()
+			self:oCCRange10:Hide()
+			self:oCCRange20:Hide()
 		ENDIF
 	ELSEIF oControl:NameSym=#HomeBox .or. oControl:NameSym=#NonHomeBox .or. oControl:NameSym=#ProjectsBox
-		SELF:AccFil()
+		self:AccFil()
 	ENDIF
-	RETURN NIL
+	RETURN nil
 METHOD CancelButton( ) CLASS DonorFollowingReport
-	SELF:EndWindow()
-	RETURN NIL
+	self:EndWindow()
+	RETURN nil
 METHOD Close(oEvent) CLASS DonorFollowingReport
 	SUPER:Close(oEvent)
 	//Put your changes here
-	SELF:EndWindow()
-	RETURN NIL
-METHOD DetermineFrequency(oTransF, aPersons, aFPer,aFreq,aPrvFreq,pPtr) CLASS DonorFollowingReport
-	// determine frequency of giving of person
-	LOCAL cntr:=0,i,curFreq AS INT
-	LOCAL oTrans:=oTransF AS TransHistory
-	LOCAL lDiff:=!Empty(aPrvFreq) AS LOGIC
-	LOCAL tDat:=oTrans:DAT as date, PersId:=oTrans:PersId as STRING
-	
-	IF pPtr=0
-		pPtr:=AScanBinExact(aPersons,PersId)
-		IF pPtr==0	
-			RETURN
-		ENDIF
-	ENDIF
-
-	// determine period:
-	IF lDiff
-		// actual period:
-		IF (curFreq:=aFreq[pPtr])<5
-			IF tDat<aFPer[3,1]
-				IF curFreq=1
-					aFreq[pPtr]:=2 // not given last two years
-				ENDIF
-			ELSEIF tDat<aFPer[4,1]
-				IF curFreq<3
-					aFreq[pPtr]:=3 // not given last year
-				ENDIF
-			ELSE
-				IF curFreq<4
-					aFreq[pPtr]:=4 // given last year
-				ELSE
-					aFreq[pPtr]:=5 // given >=2 times last year
-				ENDIF
-			ENDIF
-		ENDIF
-		// previous period:
-		IF (curFreq:=aPrvFreq[pPtr])<5
-			IF tDat<aFPer[1,1]
-				IF curFreq=1
-					aPrvFreq[pPtr]:=2 // not given last two years
-				ENDIF
-			ELSEIF tDat<aFPer[2,1]
-				IF curFreq<3
-					aPrvFreq[pPtr]:=3 // not given last year
-				ENDIF
-			ELSEIF tDat<=aFPer[2,2]
-				IF curFreq<4
-					aPrvFreq[pPtr]:=4 // given last year
-				ELSE
-					aPrvFreq[pPtr]:=5 // given >=2 times last year
-				ENDIF
-			ENDIF
-		ENDIF
-	ELSE
-		// only actual period:
-		IF (curFreq:=aFreq[pPtr])<5
-			IF tDat<aFPer[1,1]
-				IF curFreq=1
-					aFreq[pPtr]:=2 // not given last two years
-				ENDIF
-			ELSEIF tDat<aFPer[2,1]
-				IF curFreq<3
-					aFreq[pPtr]:=3 // not given last year
-				ENDIF
-			ELSE
-				IF curFreq<4
-					aFreq[pPtr]:=4 // given last year
-				ELSE
-					aFreq[pPtr]:=5 // given >=2 times last year
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
-RETURN
+	self:EndWindow()
+	RETURN nil
 ACCESS DiffBox() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#DiffBox)
 
@@ -291,22 +221,22 @@ SELF:FieldPut(#DiffBox, uValue)
 RETURN uValue
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DonorFollowingReport
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as CONTROL
+	LOCAL lGotFocus as LOGIC
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
 		IF oControl:Name == "FROMACCOUNT"
-			IF !Upper(AllTrim(oControl:Value))==Upper(AllTrim(cFromAccName))
-				cFromAccName:=AllTrim(oControl:Value)
-				SELF:FromAccButton(TRUE)
+			IF !Upper(AllTrim(oControl:VALUE))==Upper(AllTrim(cFromAccName))
+				cFromAccName:=AllTrim(oControl:VALUE)
+				self:FromAccButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "TOACCOUNT"
-			IF !Upper(AllTrim(oControl:Value))==Upper(AllTrim(cToAccName))
-				cToAccName:=AllTrim(oControl:Value)
-				SELF:ToAccButton(TRUE)
+			IF !Upper(AllTrim(oControl:VALUE))==Upper(AllTrim(cToAccName))
+				cToAccName:=AllTrim(oControl:VALUE)
+				self:ToAccButton(true)
 			ENDIF
 		ENDIF
 	ENDIF
@@ -321,7 +251,7 @@ RETURN uValue
 
 METHOD FromAccButton(lUnique ) CLASS DonorFollowingReport
 	Default(@lUnique,FALSE)
-	AccountSelect(SELF,AllTrim(oDCFromAccount:TEXTValue ),"From Account",lUnique,"GiftAlwd",,)
+	AccountSelect(self,AllTrim(oDCFromAccount:TEXTValue ),"From Account",lUnique,"GiftAlwd",,)
 ACCESS FromAccount() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#FromAccount)
 
@@ -515,56 +445,58 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PeriodCount,maxcols,maxlines) CLASS DonorFollowingReport
-// fill excel matrix with data
-LOCAL i,j,m as int, line as STRING
-LOCAL diff AS FLOAT
-	* header record:
-	FWriteLine(ptrHandle,"<tr><td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(maxcols-PeriodCount,-1)+"'>"+oLan:Get(cHeading)+"</td></tr>")
-	FOR j:=1 TO maxlines
-		line:="<tr>"
-       	FOR i:=1 TO maxcols
-       		IF IsNumeric(aMatrix[i,j])
-       			// determine difference with previous period:
-       			IF i>PeriodCount .and. SELF:DiffBox
-       				IF IsNumeric(aMatrix[i-PeriodCount,j]) .and. aMatrix[i-PeriodCount,j]>0
-		       			diff:=(aMatrix[i,j]*100)/aMatrix[i-PeriodCount,j]-100
-		       			line+="<td>"+Str(aMatrix[i,j],-1)+" ("+iif(diff<0,"","+")+Str(diff,-1,0)+"%)"+"</td>"
-		       		ELSE
-						line+="<td>"+iif(aMatrix[i,j]>0,Str(aMatrix[i,j],-1)+" (new)","")+"</td>"
-					ENDIF					
-	       		ELSE
-					line+="<td>"+Str(aMatrix[i,j],-1)+"</td>"
-				ENDIF
-			ELSEIF IsString(aMatrix[i,j])
-				line+="<td "+iif(i=1,"style='background-color:#AFEEEE;'",iif(j=1,"style='background-color:lightblue;'",""))+">"+aMatrix[i,j]+"</td>"
-			ELSEIF IsArray(aMatrix[i,j])
-       			line+="<td><table style='border-collapse:collapse;' border='1'><tr>"
-       			FOR m:=1 TO Len(aMatrix[i,j])
-       				IF j=2
-						line+="<td style='background-color:#F0E68C;text-align:center;'>"+iif(m=NumberRanges,">"+Str(aMatrix[i,j,m-1],-1),"<="+Str(aMatrix[i,j,m],-1))+"</td>"
-					ELSE	
-						line+="<td>"+Str(aMatrix[i,j,m],-1)+"</td>"
+METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PeriodCount,aRelevantClass,ixOff)	CLASS	DonorFollowingReport
+	// fill excel matrix with data
+	LOCAL i,j,m as int, line as STRING
+	LOCAL diff as FLOAT
+	// header record:
+	FWriteLine(ptrHandle,"<tr><td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>"+oLan:Get(cHeading)+"</td></tr>")
+	FOR j:=1 to Len(aMatrix[1]) 
+		IF j<=ixOff .or. aRelevantClass[j-ixOff]
+			line:="<tr>"
+			FOR i:=1 to Len(aMatrix)
+				IF IsNumeric(aMatrix[i,j])
+					// determine difference with previous period:
+					IF i>PeriodCount .and. self:DiffBox
+						IF IsNumeric(aMatrix[i-PeriodCount,j]) .and. aMatrix[i-PeriodCount,j]>0
+							diff:=(aMatrix[i,j]*100)/aMatrix[i-PeriodCount,j]-100
+							line+="<td>"+Str(aMatrix[i,j],-1)+" ("+iif(diff<0,"","+")+Str(diff,-1,0)+"%)"+"</td>"
+						ELSE
+							line+="<td>"+iif(aMatrix[i,j]>0,Str(aMatrix[i,j],-1)+" (new)","")+"</td>"
+						ENDIF							
+					ELSE
+						line+="<td>"+Str(aMatrix[i,j],-1)+"</td>"
 					ENDIF
-				NEXT
-				line+="</tr></table></td>"
-       		ELSE
-				line+="<td></td>"
-			ENDIF
-			IF i=1
-				i:=PeriodCount+1 // skip previous period
-			ENDIF
-		NEXT
-		FWriteLine(ptrHandle,line+"</tr>")
+				ELSEIF IsString(aMatrix[i,j])
+					line+="<td "+iif(i=1,"style='background-color:#AFEEEE;'",iif(j=1,"style='background-color:lightblue;'",""))+">"+aMatrix[i,j]+"</td>"
+				ELSEIF IsArray(aMatrix[i,j])
+					line+="<td><table style='border-collapse:collapse;' border='1'><tr>"
+					FOR m:=1 to Len(aMatrix[i,j])
+						IF j=2
+							line+="<td style='background-color:#F0E68C;text-align:center;'>"+iif(m=NumberRanges,">"+Str(aMatrix[i,j,m-1],-1),"<="+Str(aMatrix[i,j,m],-1))+"</td>"
+						ELSE	
+							line+="<td>"+Str(aMatrix[i,j,m],-1)+"</td>"
+						ENDIF
+					NEXT
+					line+="</tr></table></td>"
+				ELSE
+					line+="<td></td>"
+				ENDIF
+				IF i=1
+					i:=PeriodCount+1 // skip previous period
+				ENDIF
+			NEXT
+			FWriteLine(ptrHandle,line+"</tr>")
+		ENDIF
 	NEXT
-	FWriteLine(ptrHandle,"<tr><td colspan='"+Str(maxcols-PeriodCount,-1)+"'>&nbsp;<br></td></tr>")
-	RETURN NIL
+	FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>&nbsp;<br></td></tr>")
+	RETURN nil
 method MouseButtonDown(oMouseEvent) class DonorFollowingReport
 	local nButtonID as int
-	nButtonID := IIf(oMouseEvent == NULL_OBJECT, 0, oMouseEvent:ButtonID)
+	nButtonID := iif(oMouseEvent == null_object, 0, oMouseEvent:ButtonID)
 	super:MouseButtonDown(oMouseEvent)
 	//Put your changes here
-	return NIL
+	return nil
 
 ACCESS NonHomeBox() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#NonHomeBox)
@@ -582,341 +514,407 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS DonorFollowingReport 
 	local nP as int
-	FromYear:=Year(SELF:oDCFromdate:SelectedDate)
-	FromMonth:=Month(SELF:oDCFromdate:SelectedDate)
-	ToYear:=Year(SELF:oDCTodate:SelectedDate)
-	ToMonth:=Month(SELF:oDCTodate:SelectedDate)
-	IF SELF:oDCSubSet:SelectedCount<1
-		(ErrorBox{self,self:oLan:Wget("Select at least one Fund/Member!")}):show()
-		SELF:oDCFromAccount:SetFocus()
+	FromYear:=Year(self:oDCFromdate:SelectedDate)
+	FromMonth:=Month(self:oDCFromdate:SelectedDate)
+	ToYear:=Year(self:oDCTodate:SelectedDate)
+	ToMonth:=Month(self:oDCTodate:SelectedDate)
+	IF self:oDCSubSet:SelectedCount<1
+		(ErrorBox{self,self:oLan:Wget("Select at least one Fund/Member!")}):Show()
+		self:oDCFromAccount:SetFocus()
 		RETURN
 	ENDIF
 	IF FromYear<1980 .or.FromYear>Year(Today())+1
-		(ErrorBox{self,self:oLan:Wget("Non valid from month!")}):show()
-		SELF:oDCFromYear:SetFocus()
+		(ErrorBox{self,self:oLan:Wget("Non valid from month!")}):Show()
+		self:oDCFromYear:SetFocus()
 		RETURN
 	ENDIF
 	IF ToYear<1980 .or.ToYear>Year(Today())+1
-		(ErrorBox{self,self:oLan:Wget("Non valid To month!")}):show()
-		SELF:oDCToYear:SetFocus()
+		(ErrorBox{self,self:oLan:Wget("Non valid To month!")}):Show()
+		self:oDCToYear:SetFocus()
 		RETURN
 	ENDIF
-	IF SELF:oDCFromdate:SelectedDate > SELF:oDCTodate:SelectedDate
-		(ErrorBox{self,self:oLan:Wget("To Date must be behind From Date")}):show()
-		SELF:oDCFromYear:SetFocus()
+	IF self:oDCFromdate:SelectedDate > self:oDCTodate:SelectedDate
+		(ErrorBox{self,self:oLan:Wget("To Date must be behind From Date")}):Show()
+		self:oDCFromYear:SetFocus()
 		RETURN
 	ENDIF
 	IF StatBox7 .and. NumberRanges<2
-		(ErrorBox{self,self:oLan:Wget("Number of ranges must be at least 2")}):show()
-		SELF:oDCNumberRanges:SetFocus()
+		(ErrorBox{self,self:oLan:Wget("Number of ranges must be at least 2")}):Show()
+		self:oDCNumberRanges:SetFocus()
 		RETURN
 	ENDIF
 	IF !(StatBox1.or.StatBox2.or.StatBox3.or.StatBox4.or.StatBox5.or.StatBox6.or.StatBox7)
-		(ErrorBox{self,self:oLan:Wget("Select at least one type of statistical data!")}):show()
-		SELF:oDCStatBox1:SetFocus()
+		(ErrorBox{self,self:oLan:Wget("Select at least one type of statistical data!")}):Show()
+		self:oDCStatBox1:SetFocus()
 		RETURN
 	ENDIF
-// 	if !self:odcAge:Checked .and.!self:oDCGender:Checked .and. !self:oDCFrequency:Checked .and.!self:oDCType:Checked
-// 		if Empty(self:aPropEx) .or. AScan(self:aPropEx,{|x|x:Checked})==0
-// 			(ErrorBox{self,self:oLan:Wget("Specify at least one person property")}):show()
-// 			RETURN
-// 		endif
-// 	endif
-
 	if StatBox8
-		oSelpers:=SelPers{self,"MAILINGCODE"}
-		(SelPersMailCd{self,{oSelpers,"","Additional specifications of persons to be exported"}}):show() 
+		oSelpers:=Selpers{self,"MAILINGCODE"}
+		(SelPersMailCd{self,{oSelpers,"","Additional specifications of persons to be exported"}}):Show() 
 	endif
-	SELF:Pointer := Pointer{POINTERHOURGLASS}
-	SELF:PrintReport()
-	SELF:Pointer := Pointer{POINTERARROW}
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:PrintReport()
+	self:Pointer := Pointer{POINTERARROW}
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	//Put your PostInit additions here
-	LOCAL count AS INT
-	LOCAL EndDate,FromDate AS DATE
-	LOCAL oTrans AS TransHistory
-	LOCAL StartDate AS DATE
+	LOCAL count as int
+	LOCAL EndDate,FromDate as date
+	LOCAL StartDate as date
+	LOCAL OldestYear as date
+	  
 	self:SetTexts()
 
 	self:oDCHomeBox:Caption:=(Language{}):WGet("Members of")+" "+sLand
 	self:oDCNonHomeBox:Caption:=(Language{}):WGet("Members not of")+" "+sLand
-	SELF:ProjectsBox:=TRUE
-	SELF:AccFil()
-	oTrans:=TransHistory{}
-	StartDate:=SToD(Str(oTrans:OldestYear,6)+"01")
-	oDCFromdate:DateRange:=DATERange{StartDate,Today()+31}
-	oDCTodate:DateRange:=DATERange{StartDate,Today()+31}
-	oTrans:Close()
-	oTrans:=NULL_OBJECT
+	self:ProjectsBox:=true
+	self:AccFil()
 
-	SELF:oDCFromdate:Value:=Today()-360
-	SELF:oDCFromdate:Value:=SELF:oDCFromdate:Value - Day(SELF:oDCFromdate:Value)+1
-	SELF:oDCTodate:Value:=Today() - Day(Today())
+	
+	if !Empty(GlBalYears)
+		OldestYear:=GlBalYears[Len(GlBalYears),1] 
+	else
+		OldestYear:=MinDate
+	endif                      
+	
+	StartDate:=OldestYear
+	oDCFromdate:DateRange:=DateRange{StartDate,Today()+31}
+	oDCTodate:DateRange:=DateRange{StartDate,Today()+31}
 
-	SELF:SubPerLen:=0
-	SELF:Ranges:="20"
-	SELF:NumberRanges:=5
+	self:oDCFromdate:Value:=Today()-360
+	self:oDCFromdate:Value:=self:oDCFromdate:Value - Day(self:oDCFromdate:Value)+1
+	self:oDCTodate:Value:=Today() - Day(Today())
+
+	self:SubPerLen:=0
+	self:Ranges:="20"
+	self:NumberRanges:=5
 	//SELF:oCCRange10:Pressed:=TRUE
-	FOR count:=1 TO Len(pers_propextra) STEP 1
-		SELF:SetPropExtra(count)
+	FOR count:=1 to Len(pers_propextra) step 1
+		self:SetPropExtra(count)
 	NEXT
-	StatBox1:=TRUE
-StatBox2:=TRUE
-StatBox3:=TRUE
-StatBox4:=TRUE
-StatBox5:=TRUE
-StatBox6:=TRUE
-StatBox7:=TRUE
-SELF:oDCFixedTextRanges:show()
-SELF:oDCNumberRanges:show()
-DiffBox:=TRUE
-RETURN NIL
+	StatBox1:=true
+	StatBox2:=true
+	StatBox3:=true
+	StatBox4:=true
+	StatBox5:=true
+	StatBox6:=true
+	StatBox7:=true
+	self:oDCFixedTextRanges:show()
+	self:oDCNumberRanges:show()
+	DiffBox:=true
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	//Put your PreInit additions here
 	self:FillMbrProjArray()
-	RETURN NIL
+	RETURN nil
 METHOD PrintReport() CLASS DonorFollowingReport
 	// printing of donor versus project report
 	LOCAL oAcc as SQLSelect
+	LOCAL accStr, sqlStr, sqlStr2, freqStr1, freqStr2 as STRING
 	LOCAL oTrans as SQLSelect
 	LOCAL oPers as SQLSelect
 	LOCAL oTransFreq as SQLSelect
 	LOCAL aPers:={} as ARRAY // of each giver its CLN  
-	local aPersExp:={} as Array // {pos.recno.exportable} of each person from aPers: if it is exportable conform selpersmailcode   
+	#ifdef USE_STATBOX8
+		local aPersExp:={} as Array // {pos.recno.exportable} of each person from aPers: if it is exportable conform selpersmailcode
+	#endif   
 	LOCAL aPersPrvFreq,aPersFreq as ARRAY // of each person from aPers: frequency of giving: 1: first giver, 2: not last 2 years, 3: not last year, 4:last year once, 5: more than once last year
-	LOCAL i,j,k,m,nRange,nCSt,maxlevel as int
+	LOCAL periodNo, classNo, i,j,k,m,nRange,nCSt,maxlevel as int
 	LOCAL cName as STRING
-	LOCAL nFromYear:=FromYear,nFromMonth:=FromMonth,nToYear:=ToYear,nToMonth:=ToMonth as int
-	LOCAL StartDate,EndDate,PerStart,PerEnd,FrequencyEnd,FrequencyStart as date
+	LOCAL NextYear, NextMonth, PrevYear, PrevMonth as int
+	LOCAL StartDate,EndDate,PerStart,PerEnd,FrequencyEnd,FrequencyStart, PerStart1, PerStart2 as date
+	LOCAL PeriodCount:=0 as int // Number of subperiods in total date range
+	LOCAL PrevPeriodCount as int
 	LOCAL cFileName as USUAL, oFileSpec as FileSpec
 	LOCAL ptrHandle
 	LOCAL aAcc:={} as ARRAY
 	LOCAL aClass:={} as ARRAY // person classes: {symname,fieldname, value[,value]}
 	LOCAL aClassIndex:={} as ARRAY // list with overview of classes: fieldname, startnbr, endnbr,type (type:0 normal field, 1: age range,2:giving frequency, 3: extra property dropdn, 4: extra property checkbx
 	LOCAL aExportClass:={} as Array // contains list of possible classes to be exported: {{name,index}, ...}
-	LOCAL aPersValuePtrPrv,aPersValuePtr as ARRAY
-	LOCAL aPeriod:={} as ARRAY // subperiods: {startdate,enddate}
-	LOCAL PrevPeriodCount as int
-	LOCAL aValues:={} as ARRAY // values per period and class: {classid,{perid,{values}}}
+	LOCAL persValuePtrPrv,persValuePtr as int
+	LOCAL aPeriod:={} as ARRAY // subperiods' start date
+	LOCAL aClassTuples:={} as ARRAY // Each member is a comma separated list of class values. The entire array contains all possible class combinations
+	LOCAL aRelevantClass as ARRAY // Each member indicates if the corresponding element in aClassTuples has any donation entries
 	LOCAL aDropValues as ARRAY
 	LOCAL oCheck as CheckBox
-	LOCAL cSearch,cSearchOrg,cSep,cClassName,cValueName,line as STRING
+	LOCAL cSearch,cSearchOrg,cSep,cClassName as STRING
 	LOCAL uFieldValue as USUAL, nFreq as int
-	LOCAL nClassPtr,nClassPtr1,nClassPtr2,nCount,nAge,nValuePtr,nSubPeriod,nPersPtr as int
-	LOCAL dTransDat as date
-	LOCAL lSuccess as LOGIC
+	LOCAL nClassPtr,nClassPtr1,nClassPtr2,nCount,nAge,nPersPtr as int
 	LOCAL aClassPtr as ARRAY // ptrs to rows in aClass
 	LOCAL aMatrix1,aMatrix2,aMatrix3,aMatrix4,aMatrix5,aMatrix6,aMatrix7 as ARRAY // matrix to fill with calculated values Stat1,Stat2, ...
-	LOCAL SubSum as ARRAY
 	LOCAL oXMLDoc as XMLDocument
 	LOCAL fType as int //(0: normal FIELD,1: birthdate, 2: extra property checkbx,3:  extra property dropdown
-	LOCAL SubTotal as FLOAT, PerTotal,PerCount as ARRAY
-	LOCAL cFileName as USUAL, oFileSpec as FileSpec
-	LOCAL ptrHandle
-	LOCAL median1,median2,TrCnt,HelpDate,UltDay,EndDay,StartDay as int
-	LOCAL aRangeVal as ARRAY  // values ranges per period
-	LOCAL maxVal, minVal,rangeVal  // max and min value per period and value per range per period
+	LOCAL PerTotal,PerCount as ARRAY
+	LOCAL donationsCount,median,TrCnt as int
+	LOCAL rangeVal  // max and min value per period and value per range per period
+	LOCAL gMes:="Finding transactions" as STRING
 	LOCAL sMes:="Collecting data for the report" as STRING
+	LOCAL rMes:="Generating report" as STRING
 	LOCAL pMes:="Determining class per giver" as STRING
 	LOCAL fMes:="Determining frequency of givers" as STRING
-	LOCAL repMes:="" as STRING
 	LOCAL Frequency_types:={{"First giver",1},{"Not given last 2 years",2},{"Not given last year",3},{"Given last year",4},{"Regular giver",5}}
-	LOCAL aFrequency_periods:={{},{}} // periods for determing frequency of giving
 	LOCAL time1 as STRING
-	LOCAL pPtr as DWORD, prvCLN as STRING
-	LOCAL lDiff:=self:DiffBox, lUltEnd, lUltStart as LOGIC
+	LOCAL lDiff:=self:DiffBox as LOGIC
 	local pKondp as _CODEBLOCK 
 	LOCAL aTitle := {'Compact Person report','Extended Person report','Labels',;
 		'Letters','Giro accepts','Export persons','Add/Remove Mailing Codes'} as array
 
-	//SELF:Statusmessage(sMes)
+	time1:=Time()
+	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
 
-// 	oAcc:=Account{,DBSHARED,DBREADONLY}
-// 	IF !oAcc:Used
-// 		RETURN nil
-// 	ENDIF
-// 	oAcc:SetOrder("REK")
-// 	oAcc:SetFilter({||oAcc:GIFTALWD==true .or. !Empty(oAcc:CLN)})
-// 	oPers:=Person{,DBSHARED,DBREADONLY}
-// 	IF !oPers:Used
-// 		RETURN nil
-// 	ENDIF
-// 	oPers:SetOrder("ASSRE")
+	// Build accStr to be a comma separated list of account numbers enclosed in parentheses
 	aAcc:=self:oDCSubSet:GetSelectedItems()
-	ASort(aAcc)
+	ASort(aAcc)          
+	accStr:="("
+	for i:=1 to Len(aAcc)-1
+		accStr+=Str(aAcc[i],-1) + ","
+	next
+	accStr+=Str(aAcc[Len(aAcc)],-1) + ")"
+	
+	// Build aPeriod to contain the start dates of the periods to examine. Thus if aPeriod contains
+	// the dates A, B, C, and D, the interesting periods will be:
+	//     A to B-1
+	//     B to C-1
+	//     C to D-1
 
 	// Determine periods:
-	StartDate:=self:oDCFromdate:SelectedDate
-	EndDate:=self:oDCTodate:SelectedDate
-	lUltEnd:= (Day(EndDate)== MonthEnd(nToMonth,nToYear))
-	lUltStart:= (Day(StartDate)== MonthEnd(nFromMonth,nFromYear))
-	IF self:SubPerLen=0
-		AAdd(aPeriod,{StartDate,EndDate})
-	ELSE
-		PerStart:=StartDate
-		PerEnd:=PerStart
-		EndDay:=Day(EndDate)
-		DO WHILE PerStart < EndDate
-			HelpDate:=Year(PerEnd)*12+Month(PerEnd)-1+SubPerLen
-			PerEnd:=SToD(Str(HelpDate/12,4)+StrZero(HelpDate%12+1,2)+"01")
-			UltDay:=MonthEnd(Month(PerEnd),Year(PerEnd))
-			IF lUltEnd .or. EndDay>UltDay
-				PerEnd+=UltDay-1
-			ELSE
-				PerEnd+=EndDay-1
-			ENDIF			
-			IF PerEnd<=EndDate
-				AAdd(aPeriod,{PerStart,PerEnd})	
-			ENDIF
-			PerStart:=PerEnd+1				
-		ENDDO
-		EndDate:=aPeriod[Len(aPeriod),2]
+	StartDate:=oDCFromdate:SelectedDate
+	EndDate:=oDCTodate:SelectedDate+1 // EndDate is the first date after the date range
+	IF IsString(SubPerLen)   // SubPerLen is a string if the user typed a non-standard value in the field
+		SubPerLen:=0
 	ENDIF
+	IF SubPerLen=0 
+		// There are no subperiods, so we simply use the entire date range
+		AAdd(aPeriod,StartDate)
+		AAdd(aPeriod,EndDate)
+	ELSE
+		// Split the date range into SubPerLen ranges			
+		PerStart:=StartDate
+		DO WHILE PerStart <= EndDate            
+			AAdd(aPeriod,PerStart)
+			NextYear:=Year(StartDate)
+			NextMonth:=Month(StartDate) + SubPerLen * ++PeriodCount
+			DO WHILE NextMonth>12
+				NextYear++
+				NextMonth-=12
+			ENDDO              
+			// Make PerStart the last day of the period, taking into account that the following month may be short
+			PerStart:=ConDate(NextYear, NextMonth, Min(Day(StartDate), MonthEnd(NextMonth,NextYear) ))
+		ENDDO
+
+		IF PeriodCount<=1
+			// SubPerLen is greater than the total date range. Emulate SubPerLen=0
+			SubPerLen:=0
+			AAdd(aPeriod,EndDate)
+		ELSE
+			// Adjust EndDate to be the end of the last range
+			EndDate:=aPeriod[Len(aPeriod)]
+		ENDIF
+	ENDIF   
+	
 	IF lDiff
 		// also for the previous period:
-		PrevPeriodCount:=Len(aPeriod)
-		PerEnd:=aPeriod[1,1]-1
-		PerStart:=PerEnd
-		ASize(aPeriod,2*PrevPeriodCount)
-		IF SubPerLen=0
-			PerStart:=PerEnd-(EndDate-StartDate)
+		PrevPeriodCount:=Len(aPeriod)-1
+		ASize(aPeriod,2*PrevPeriodCount+1) // Extend aPeriod to hold start dates of previous subperiods
+		IF SubPerLen=0   
+			// Make previous period as long as current period, measured in days
 			AIns(aPeriod,1)	
-			aPeriod[1]:={PerStart,PerEnd}
+			aPeriod[1]:=StartDate - (EndDate-StartDate)
 		ELSE
-			EndDay:=Day(StartDate)
-			FOR i:=1 to PrevPeriodCount
-				HelpDate:=Year(PerStart)*12+Month(PerStart)-1-SubPerLen
-				PerStart:=SToD(Str(HelpDate/12,4)+StrZero(HelpDate%12+1,2)+"01")
-				UltDay:=MonthEnd(Month(PerStart),Year(PerStart))
-				IF lUltStart .or. EndDay>UltDay
-					PerStart+=UltDay-1
-				ELSE
-					PerStart+=EndDay-1
-				ENDIF			
+			// Make previous periods as long as current periods, measured in months
+			FOR periodNo:=1 to PrevPeriodCount
+				PrevYear:=Year(StartDate)
+				PrevMonth:=Month(StartDate) - SubPerLen * periodNo
+				DO WHILE PrevMonth<1
+					PrevYear--
+					PrevMonth+=12
+				ENDDO								
+				// Make PerStart the first day of the period, taking into account that the previous month may be short
+				PerStart:=ConDate(PrevYear, PrevMonth, Min(Day(StartDate), MonthEnd(PrevMonth,PrevYear) ))
 				AIns(aPeriod,1)	
-				aPeriod[1]:={PerStart,PerEnd}
-				PerEnd:=PerStart-1				
+				aPeriod[1]:=PerStart
 			NEXT
 		ENDIF
 	ENDIF
 
-	oTrans:=TransHistory{Year(aPeriod[1,1]),Month(aPeriod[1,1]),"NUM",DBREADONLY,nToYear,nToMonth,aAcc[1]+Str(Year(aPeriod[1,1]),4,0)+StrZero(Month(aPeriod[1,1]),2,0),"rek<='"+aAcc[Len(aAcc)]+"'"}
-	IF !oTrans:Used
-		RETURN nil
-	ENDIF 
-	lSuccess:=oTrans:SetFilter(,"!Empty(CLN).and.!GC=='PF'.and.!GC=='CH'.and.DTOS(DAT)>='"+DToS(aPeriod[1,1])+"'.and.DTOS(DAT)<='"+DToS(EndDate)+"'.and.CRE>DEB")
-	// Determine first CLN's of givers:
-	time1:=Time()
-	oTrans:GoTop()
-	DO WHILE !oTrans:EoF
-		if AScanBinExact(aAcc,oTrans:REK)=0
-			oTrans:Skip()
-			loop
-		endif
-		IF AScan(aPers,oTrans:CLN)=0
-			AAdd(aPers,oTrans:CLN)
-		ENDIF
-		TrCnt++
-		IF TrCnt>1000
-			repMes+="."
-			self:STATUSMESSAGE(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-			IF Len(repMes)>84
-				repMes:=""
-			ENDIF
-			TrCnt:=0
-		ENDIF
-		oTrans:Skip()
-	ENDDO
-	//LogEvent(SELF,"determine clns:"+ElapTime(time1,Time()))	
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS followingtrans")
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS followingtrans2")
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS freqtrans")
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS freqtrans2")
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS perslist")
+	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS persclass")
 
-	TrCnt:=0
+	// Build sqlStr2 to contain the subperiod classification string
+	if Len(aPeriod)>2
+		sqlStr2:="case "
+		for periodNo:=2 to Len(aPeriod)-1
+			sqlStr2+="when dat<'" + SQLdate(aPeriod[periodNo]) + "' THEN " + Str(periodNo-1,-1) + " "
+		next
+		sqlStr2+="else " + Str(Len(aPeriod)-1,-1) + " end"
+	else
+		sqlStr2:="1"
+	endif
+
+
+	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
+
+	// Make followingtrans contain all the relevant transactions
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
+		+ UnionTrans("SELECT transid,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
+		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
+		+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
+		+ " t.dat<='" + SQLdate(EndDate-1) + "' AND";
+		+ " t.CRE>t.DEB"))
+		return nil
+	endif                     
+		
+	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
+	
+	
+	
+	// Find persid's of all givers   
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE perslist (persid INT, PRIMARY KEY (persid)) SELECT DISTINCT persid FROM followingtrans ORDER BY persid")
+		return nil
+	endif
+
+	oTrans:=SQLSelect{"SELECT persid FROM perslist",oConn} 
+	
+	do WHILE !oTrans:EoF
+		AAdd(aPers,oTrans:persid)
+		oTrans:Skip()
+	ENDDO  
+	oTrans:Close()
 	ASort(aPers)
+
 	IF self:Frequency
-		// determine frequency periods:
-		repMes+="."
-		self:STATUSMESSAGE(fMes+repMes)
-		PerStart:=StartDate-360
-		PerStart:=SToD(Str(Year(PerStart),4,0)+StrZero(Month(PerStart),2,0)+"01")
-		PerEnd:=StartDate-1
-		aFrequency_periods[2]:={PerStart,PerEnd}
-		FrequencyEnd:=PerEnd
-		PerEnd:=PerStart-1
-		PerStart:=PerStart-360
-		PerStart:=SToD(Str(Year(PerStart),4,0)+StrZero(Month(PerStart),2,0)+"01")
-		aFrequency_periods[1]:={PerStart,PerEnd}
-		// determine previous frequency periods:
+		// Determine frequency periods:
+		// We shall look at 2 or 4 date ranges each one year long. These will be inspected for giver frequency.
+		self:STATUSMESSAGE(fMes+" ("+ElapTime(time1,Time())+")")
+
+		// The first two periods to inspect are the last two years before the "current" periods 
+		// The periods always start on the first day of a month
+		// We use approximate years of 360 days to avoid overshooting a month start
+
+		PerStart1:=StartDate-360
+		PerStart1:=ConDate(Year(PerStart1), Month(PerStart1), 1)
+
+		PerStart2:=PerStart1-360
+		PerStart2:=ConDate(Year(PerStart2), Month(PerStart2), 1)
+		
+		freqStr1:="CASE WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 1 ";
+			+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(StartDate) +"' THEN 2 ";
+			+ "ELSE 0 END freq1"
+
 		IF lDiff
-			ASize(aFrequency_periods,4)
-			AIns(aFrequency_periods,1)
-			AIns(aFrequency_periods,1)
-			PerStart:=aPeriod[1,1]-360
-			PerStart:=SToD(Str(Year(PerStart),4,0)+StrZero(Month(PerStart),2,0)+"01")
-			PerEnd:=aPeriod[1,1]-1
-			aFrequency_periods[2]:={PerStart,PerEnd}
-			PerEnd:=PerStart-1
-			PerStart:=PerStart-360
-			PerStart:=SToD(Str(Year(PerStart),4,0)+StrZero(Month(PerStart),2,0)+"01")
-			aFrequency_periods[1]:={PerStart,PerEnd}	
+			// The other two periods to inspect are the last two years before the "previous" periods
+			// The periods always start on the first day of a month
+			// We use approximate years of 360 days to avoid overshooting a month start
+
+			PerStart1:=aPeriod[1]-360
+			PerStart1:=ConDate(Year(PerStart1), Month(PerStart1), 1)
+			
+			PerStart2:=PerStart1-360
+			PerStart2:=ConDate(Year(PerStart2), Month(PerStart2), 1)
+
+			freqStr2:="CASE WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 1 ";
+				+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(aPeriod[1]) +"' THEN 2 ";
+				+ "ELSE 0 END freq2"
+		ELSE
+			freqStr2:="0 freq2"
 		ENDIF
-		FrequencyStart:=aFrequency_periods[1,1]
+
+		FrequencyStart:=PerStart2 // First interesting date for frequency considerations
+		FrequencyEnd:=StartDate   // Day after last interesting date for frequency considerations 
+
 		// create and fill frequencies:
 		aPersFreq:=AReplicate(1,Len(aPers))   // initialize as new givers
 		IF lDiff
 			aPersPrvFreq:=AReplicate(1,Len(aPers))    // initialize as new givers
-		ENDIF
-		oTransFreq:=TransHistory{Round(oTrans:OldestYear/100,0),oTrans:OldestYear%100,"MUT",DBREADONLY,Year(FrequencyEnd),Month(FrequencyEnd),aPers[1],"CLN>='"+aPers[Len(aPers)]+"'"}
-		IF !oTransFreq:Used
-			RETURN nil
-		ENDIF
-		lSuccess:=oTransFreq:SetFilter(,"!Empty(CLN).and.!GC=='PF'.and.!GC=='CH'.and.DTOS(DAT)>='"+DToS(FrequencyStart)+"'.and.DTOS(DAT)<='"+DToS(FrequencyEnd)+"'.and.CRE>DEB")
-		pPtr:=0
+		ENDIF     
+		
+		
+		// freqtrans will contain all transactions in the frequency periods.
+		// We use a crude persid check here. A more exact one will follow below.
+		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
+			+ UnionTrans("SELECT t.transid,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
+			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
+			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
+			+ " t.dat>='" +  SQLdate(FrequencyStart) + "' AND" ;
+			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB "))
+			return nil
+		endif
+
+		// Now join with perslist to remove uninteresting persons. We could not do this in the previous statement
+		// because UnionTrans may generate multiple SELECT statements and perslist is a temporary table and therefore
+		// can only be used once in a statement.
+		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans2 AS SELECT t.persid,freq1,freq2 FROM freqtrans t,perslist WHERE t.persid=perslist.persid")
+			return nil
+		endif
+		
+		// create and fill frequencies:
+		aPersFreq:=AReplicate(1,Len(aPers))   // initialize as new givers
+		
+		sqlStr:="SELECT persid,freq1,COUNT(*) xcount FROM freqtrans2 GROUP BY persid,freq1"  
+		oTransFreq:=SQLSelect{sqlStr,oConn} 
+
 		DO WHILE !oTransFreq:EoF
-			IF prvCLN==oTransFreq:CLN
-				IF Empty(pPtr)
-					oTransFreq:Skip()
-					loop
+			k:=AScanBin(aPers,oTransFreq:persid) 
+			DO CASE
+			CASE oTransFreq:freq1=1 // Two years previously
+				IF aPersFreq[k]<3
+					aPersFreq[k]:=3 // Given two years previously
+				ENDIF
+			CASE oTransFreq:freq1=2 // Last year
+				IF Val(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
+					aPersFreq[k]:=5 // Given >=2 times last year
 				ELSE
-					IF oTransFreq:DAT<FrequencyStart
-						oTransFreq:Skip()
-						loop
-					ENDIF
+					aPersFreq[k]:=4 // Given once last year
 				ENDIF
-			elseif AScanBinExact(aAcc,oTransFreq:REK)=0
-				oTransFreq:Skip()
-				loop
-			ELSE
-				pPtr:=0
-				prvCLN:=oTransFreq:CLN
-			ENDIF
-			self:DetermineFrequency(oTransFreq,aPers,aFrequency_periods,aPersFreq,aPersPrvFreq,@pPtr)
+			ENDCASE
 			oTransFreq:Skip()
-			TrCnt++
-			IF TrCnt>600
-				repMes+="."
-				self:STATUSMESSAGE(fMes+"("+ElapTime(time1,Time())+")"+repMes)
-				IF Len(repMes)>84
-					repMes:=""
-				ENDIF
-				TrCnt:=0
-			ENDIF
 		ENDDO
-		//LogEvent(SELF,"determine time:"+ElapTime(time1,Time()))	
-	ENDIF
-	repMes:="."
-	self:STATUSMESSAGE(sMes+"("+ElapTime(time1,Time())+")"+repMes)
+		oTransFreq:Close()
+
+		IF lDiff  
+			aPersPrvFreq:=AReplicate(1,Len(aPers))    // initialize as new givers
+			
+			sqlStr:="SELECT persid,freq2,COUNT(*) xcount FROM freqtrans2 GROUP BY persid,freq2"  
+			oTransFreq:=SQLSelect{sqlStr,oConn} 
+
+			DO WHILE !oTransFreq:EoF
+				k:=AScanBin(aPers,oTransFreq:persid) 
+				DO CASE
+				CASE oTransFreq:freq2=1 // Two years previously
+					IF aPersPrvFreq[k]<3
+						aPersPrvFreq[k]:=3 // Given two years previously
+					ENDIF
+				CASE oTransFreq:freq2=2 // Last year
+					IF Val(oTransFreq:xcount)>=2
+						aPersPrvFreq[k]:=5 // Given >=2 times last year
+					ELSE
+						aPersPrvFreq[k]:=4 // Given once last year
+					ENDIF
+				ENDCASE
+				oTransFreq:Skip()
+			ENDDO                          
+			oTransFreq:Close()
+		ENDIF		
+	ENDIF   // frequency        
+
+
+	self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")")
 	// Determine Person classes:
 	IF self:Age
 		j:=0
 		nRange:=Val(self:Ranges)
 		nCSt:=Len(aClass)+1
-		AAdd(aClass,{"BIRTHDAT","Age",0,0})  // unknown
+		AAdd(aClass,{"BIRTHDATE","Age",0,0})  // unknown
 		FOR i:=20 to 80 step nRange
-			AAdd(aClass,{"BIRTHDAT","Age",j,i})
+			AAdd(aClass,{"BIRTHDATE","Age",j,i})
 			j:=i
 		NEXT
-		AAdd(aClass,{"BIRTHDAT","Age",80,120}) //fieldname, name, range1, range2
-		AAdd(aClassIndex,{"BIRTHDAT",nCSt,Len(aClass),1}) // add to overview
+		AAdd(aClass,{"BIRTHDATE","Age",80,120}) //fieldname, name, range1, range2
+		AAdd(aClassIndex,{"BIRTHDATE",nCSt,Len(aClass),1}) // add to overview
 	ENDIF
 	IF self:Gender
 		nCSt:=Len(aClass)+1
@@ -959,11 +957,10 @@ METHOD PrintReport() CLASS DonorFollowingReport
 					AAdd(aClassIndex,{cName,nCSt,Len(aClass),1+pers_propextra[j,4]})   /* add to overview */
 				ENDIF
 			ENDIF
-			//AAdd(aClassIndex,{cName,nCSt,Len(aClass),1+pers_propextra[j,3]}) // add to overview
 		ENDIF
 	NEXT
 
-	// Make all combinations of classes from overview in aValues with initializes values per period:
+
 	maxlevel:=Len(aClassIndex)
 	IF maxlevel<1
 		// default class all
@@ -971,37 +968,74 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		AAdd(aClass,{"ALL","All",0,"all"})
 		maxlevel:=1
 	ENDIF
-	self:AddClass(aValues,"",1,maxlevel,aClassIndex)
+	self:AddClass(aClassTuples,"",1,maxlevel,aClassIndex)
+
 	// Determine classes per person:
-	aPersValuePtr:=AReplicate(0,Len(aPers))
-	IF lDiff
-		aPersValuePtrPrv:=AReplicate(0,Len(aPers))   // separate array for previous period
-	ENDIF
-	aPersExp:=ArrayCreate(Len(aPers))
-	IF self:StatBox8
-		IF .not.Empty(oSelPers:selx_kondp)
-			pKondp := &("{||"+ oSelPers:selx_kondp+"}")
-		ENDIF
+	
+	#ifdef USE_STATBOX8
+		aPersExp:=ArrayCreate(Len(aPers))
+		IF self:StatBox8
+			IF .not.Empty(oSelPers:selx_kondp)
+				pKondp := &("{||"+ oSelPers:selx_kondp+"}")
+			ENDIF
+		endif             
+	#endif
+
+
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE persclass (" ;
+		+ "persid int(11) NOT NULL," ; 
+		+ "classindex int(11) NOT NULL," ;
+		+ "prevclassindex int(11) NOT NULL," ;
+		+ "PRIMARY KEY (persid)" ;
+		+ ") ENGINE=MyISAM")
+		return nil
 	endif
-	FOR k:=1 to Len(aPers)
+
+
+	TrCnt:=0
+	oPers:=SQLSelect{"select * from person",oConn} 		
+	DO WHILE !oPers:EoF
+		TrCnt++
+		IF TrCnt>=100
+			self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")   " + Str(oPers:RecNo*100/oPers:RECCOUNT,-1,0) + "% done")
+			TrCnt:=0
+		ENDIF	
+
+		k:=AScanBin(aPers,oPers:persid)
+		if k=0
+			oPers:Skip()
+			loop
+		endif
+
 		cSearch:=""
 		cSep:=""
-		if maxlevel>1  .or.!aClassIndex[1,1]=="ALL".or.self:StatBox8
-			IF !oPers:Seek(aPers[k])
-				aPersExp[k]:={"",0,false}
-				loop
-			ENDIF
-		endif
-		IF self:StatBox8 
-			aPersExp[k]:={oPers:POS,oPers:RecNo,(oPers:Eval(pKondp,,,1).and.oSelPers:EvalExtraProp(oPers))}
-		ENDIF
+		// #ifdef USE_STATBOX8
+		// 		if maxlevel>1  .or.!aClassIndex[1,1]=="ALL".or.self:StatBox8
+		// 			oPers:=SQLSelect{"select * from person where persid=" + aPers[k],oConn} 		
+		// 			if oPers:EoF
+		// 				aPersExp[k]:={"",0,false} 
+		// 				loop
+		// 			ENDIF
+		// 			if self:StatBox8 
+		// 				aPersExp[k]:={oPers:POS,oPers:RecNo,(oPers:Eval(pKondp,,,1).and.oSelPers:EvalExtraProp(oPers))}
+		// 			ENDIF
+		// 		endif
+		// #endif
+
+		// In the following code, for most classes nClassPtr will be set to the index of the relevant entry in aClass, but
+		// for the FREQUENCY class, nClassPtr2 will be the index of the entry for the current period and nClassPtr1 will be 
+		// the index for the entry for the previous period.
+		// Also, for most classes cSearch will contain the relevant class value; but for the FREQUENCY class, cSearch will
+		// contain the string %FR% which will then later be replaced by the appropriate value, derived from nClassPtr2 or
+		// nClassPtr1.
+
 		nClassPtr2:=0
 		nClassPtr1:=0
 		FOR i:=1 to maxlevel
 			cName:=aClassIndex[i,1]
 			nCount:=aClassIndex[i,3]+1-aClassIndex[i,2]
 			fType:=aClassIndex[i,4]
-			IF ftype=3 .or. ftype=4
+			IF fType=3 .or. fType=4   // Extra properties
 				oXMLDoc:=XMLDocument{oPers:PROPEXTR}
 				IF oXMLDoc:GetElement(cName)
 					uFieldValue:=oXMLDoc:GetContentCurrentElement()
@@ -1012,7 +1046,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 						uFieldValue:=null_string
 					ENDIF
 				ENDIF
-			ELSEIF ftype=2
+			ELSEIF fType=2 // Frequency
 				nFreq:=aPersFreq[k]
 				nClassPtr2:=AScan(aClass,{|x| nFreq==x[3]},aClassIndex[i,2],nCount)
 				IF lDiff
@@ -1022,7 +1056,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			ELSEIF !cName=="ALL"
 				uFieldValue:=oPers:FIELDGET(cName)
 			ENDIF
-			IF cName=="BIRTHDAT"
+			IF cName=="BIRTHDATE"
 				// convert birthdate to age:
 				IF Empty(uFieldValue)
 					nAge:=0
@@ -1038,361 +1072,336 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				// search value in aClass:
 				nClassPtr:=AScan(aClass,{|x| uFieldValue==x[3]},aClassIndex[i,2],nCount)
 			ENDIF
-			IF ftype=2
+			IF fType=2 // Frequency
 				cSearch+=cSep+"%FR%"
 			ELSE		
 				cSearch+=cSep+AllTrim(Str(nClassPtr))
 			ENDIF
 			cSep:=","
 		NEXT
+		
 		IF !Empty(cSearch)
 			IF !Empty(nClassPtr2)
 				cSearchOrg:=cSearch
 				cSearch:=StrTran(cSearch,"%FR%",AllTrim(Str(nClassPtr2)))
 			ENDIF
-			nValuePtr:=AScan(aValues,{|x|x[1]==cSearch})
-			aPersValuePtr[k]:=nValuePtr
+			persValuePtr:=AScan(aClassTuples,cSearch)
 			IF lDiff
 				IF !Empty(nClassPtr1)
 					cSearch:=StrTran(cSearchOrg,"%FR%",AllTrim(Str(nClassPtr1)))
-					nValuePtr:=AScan(aValues,{|x|x[1]==cSearch})
+					persValuePtrPrv:=AScan(aClassTuples,cSearch)
+				ELSE
+					persValuePtrPrv:=persValuePtr
 				ENDIF
-				aPersValuePtrPrv[k]:=nValuePtr
+				sqlStr:="INSERT INTO persclass (persid, classindex, prevclassindex) VALUES (" ;
+					+Str(oPers:persid,-1)+"," ;
+					+Str(persValuePtr,-1)+"," ;
+					+Str(persValuePtrPrv,-1)+")"
+			ELSE
+				sqlStr:="INSERT INTO persclass (persid, classindex, prevclassindex) VALUES (" ;
+					+Str(oPers:persid,-1)+"," ;
+					+Str(persValuePtr,-1)+"," ;
+					+"0)"
 			ENDIF
-		ENDIF
-		TrCnt++
-		IF TrCnt>400
-			repMes+="."
-			self:Statusmessage(pMes+"("+ElapTime(time1,Time())+")"+repMes)
-			IF Len(repMes)>80
-				repMes:=""
-			ENDIF
-			TrCnt:=0
-		ENDIF	
-	NEXT
-	repMes:="."
-	self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-	TrCnt:=1
-	
-	// Collect values per subperiod and class:
-	oTrans:GoTop()
-
-	DO WHILE !oTrans:EoF
-		// Determine corresponding combination of classes:
-		cSearch:=""
-		cSep:=""
-		// determine subperiod:
-		dTransDat:=oTrans:DAT
-		nSubPeriod:=AScan(aPeriod,{|x| dTransDat >= x[1] .and. dTransDat <= x[2]})
-		IF nSubPeriod>0
-			// in required period:		
-			// determine search string to search classes
-			IF Empty(oTrans:CLN) .or.AScanBinExact(aAcc,oTrans:REK)=0
-				oTrans:Skip()
-				loop
+			if self:SqlDoAndTest(sqlStr)
+				return nil
 			endif
-			pPtr:=AScanBinExact(aPers,oTrans:cln)
-			IF pPtr==0
-				oTrans:Skip()
-				loop
-			ENDIF
-			IF nSubPeriod<=PrevPeriodCount
-				nValuePtr:=aPersValuePtrPrv[pPtr]
-			ELSE
-				nValuePtr:=aPersValuePtr[pPtr]
-			ENDIF
-			IF nValuePtr>0
-				IF nValuePtr=1 .and. nSubPeriod=1
-					nSubPeriod:=nSubPeriod
-				ENDIF
-				IF Len(aValues[nValuePtr])=1
-					// first value for combination:
-					AAdd(aValues[nValuePtr],ArrayNew(Len(aPeriod)))
-				ENDIF
-				IF Empty(aValues[nValuePtr,2,nSubPeriod])
-					// first value in subperiod:
-					aValues[nValuePtr,2][nSubPeriod]:={{oTrans:CLN,oTrans:CRE-oTrans:DEB}}
-				ELSE
-					// search if allready gift of person recorded in sub period:
-					nPersPtr:=AScan(aValues[nValuePtr,2][nSubPeriod],{|x|x[1]==oTrans:Cln})
-					IF nPersPtr=0
-						AAdd(aValues[nValuePtr,2][nSubPeriod],{oTrans:CLN,oTrans:CRE-oTrans:DEB})
-					ELSE
-						aValues[nValuePtr,2][nSubPeriod][nPersPtr][2]+=oTrans:CRE-oTrans:DEB
-					ENDIF					
-					//	ENDIF
-				ENDIF
-			ENDIF	
 		ENDIF
-		oTrans:Skip()
-		TrCnt++
-		IF TrCnt>200
-			repMes+="."
-			self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-			IF Len(repMes)>80
-				repMes:=""
-			ENDIF
-			TrCnt:=0
-		ENDIF
-
+		oPers:Skip()
 	ENDDO
-	// compress empty lines:
-	FOR i:=Len(aValues) to 1 step -1
-		IF Len(aValues[i])=1
-			ADel(aValues,i)
-			ASize(aValues,Len(aValues)-1)
-		ENDIF		
-	NEXT
+	oPers:Close()
 
-	// percentage of total number of givers a certain class of givers has contributed
-	aMatrix1:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix2:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix3:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix4:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix5:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix6:=ArrayNew(Len(aPeriod)+1,Len(aValues)+1)// col,rows
-	aMatrix7:=ArrayNew(Len(aPeriod)+1,Len(aValues)+2)// col,rows
-	FOR i:=1 to Len(aValues)
-		aClassPtr:=Split(aValues[i,1],",")
-		cClassName:=""
-		FOR j:=1 to Len(aClassPtr)
-			k:=Val(aClassPtr[j])
-			IF aClass[k,1]="BIRTHDAT"
-				IF aClass[k,3]=0
-					cClassName+=oLan:Get(aClass[k,2])+" is unknown "
+	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
+
+	// Create consolidated table
+
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
+		+ "SELECT f.transid,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
+		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
+		+ "GROUP by f.persid,f.subperiod)")
+		return nil
+	endif
+
+	// Determine which members of aClassTuples are relevant
+	aRelevantClass:=AReplicate(.F.,Len(aClassTuples))
+	sqlStr:="SELECT classindex FROM followingtrans2 GROUP BY classindex HAVING count(*)>0"
+	oTrans:=SQLSelect{sqlStr,oConn}
+	IF oTrans:RECCOUNT>0
+		DO WHILE !oTrans:EoF
+			aRelevantClass[oTrans:classindex]:=.T.
+			oTrans:Skip()
+		ENDDO
+	ENDIF
+	oTrans:Close()
+
+	// Note: Len(aPeriod) is one greater that the number of periods
+	aMatrix1:=ArrayNew(Len(aPeriod))
+	aMatrix2:=ArrayNew(Len(aPeriod))
+	aMatrix3:=ArrayNew(Len(aPeriod))
+	aMatrix4:=ArrayNew(Len(aPeriod))
+	aMatrix5:=ArrayNew(Len(aPeriod))
+	aMatrix6:=ArrayNew(Len(aPeriod))
+	aMatrix7:=ArrayNew(Len(aPeriod))    
+
+	for periodNo:=1 to Len(aPeriod)
+		aMatrix1[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix2[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix3[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix4[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix5[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix6[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+		aMatrix7[periodNo]:=AReplicate(0,Len(aClassTuples)+2)
+
+		aMatrix1[periodNo,1]:=nil
+		aMatrix2[periodNo,1]:=nil
+		aMatrix3[periodNo,1]:=nil
+		aMatrix4[periodNo,1]:=nil
+		aMatrix5[periodNo,1]:=nil
+		aMatrix6[periodNo,1]:=nil
+		aMatrix7[periodNo,1]:=nil
+		aMatrix7[periodNo,2]:=iif(periodNo=1, nil, AReplicate(0,NumberRanges))
+	NEXT		
+	
+	FOR classNo:=1 to Len(aClassTuples)
+		if aRelevantClass[classNo]
+			aClassPtr:=Split(aClassTuples[classNo],",")
+			cClassName:=""
+			FOR j:=1 to Len(aClassPtr)
+				k:=Val(aClassPtr[j])
+				IF aClass[k,1]="BIRTHDATE"
+					IF aClass[k,3]=0
+						cClassName+=oLan:Get(aClass[k,2])+" is unknown "
+					ELSE
+						cClassName+=oLan:Get(aClass[k,2])+"="+AllTrim(Str(aClass[k,3]))+" - "+AllTrim(Str(aClass[k,4]))+" "
+					ENDIF
+				ELSEIF aClass[k,1]="TYPE" .or. aClass[k,1]="GENDER" .or. aClass[k,1]="FREQUENCY"
+					cClassName+=oLan:Get(aClass[k,4])+" "
 				ELSE
-					cClassName+=oLan:Get(aClass[k,2])+"="+AllTrim(Str(aClass[k,3]))+" - "+AllTrim(Str(aClass[k,4]))+" "
+					cClassName+=oLan:Get(aClass[k,2])+"="+oLan:Get(aClass[k,4])+" "
 				ENDIF
-			ELSEIF aClass[k,1]="TYPE" .or. aClass[k,1]="GENDER" .or. aClass[k,1]="FREQUENCY"
-				cClassName+=oLan:Get(aClass[k,4])+" "
-			ELSE
-				cClassName+=oLan:Get(aClass[k,2])+"="+oLan:Get(aClass[k,4])+" "
-			ENDIF
-		NEXT
-		aMatrix1[1,i+1]:=cClassName
-		aMatrix2[1,i+1]:=cClassName
-		aMatrix3[1,i+1]:=cClassName
-		aMatrix4[1,i+1]:=cClassName
-		aMatrix5[1,i+1]:=cClassName
-		aMatrix6[1,i+1]:=cClassName
-		aMatrix7[1,i+2]:=cClassName
+			NEXT
+			aMatrix1[1,classNo+1]:=cClassName
+			aMatrix2[1,classNo+1]:=cClassName
+			aMatrix3[1,classNo+1]:=cClassName
+			aMatrix4[1,classNo+1]:=cClassName
+			aMatrix5[1,classNo+1]:=cClassName
+			aMatrix6[1,classNo+1]:=cClassName
+			aMatrix7[1,classNo+2]:=cClassName
+		ENDIF
 	NEXT
-	FOR i:=1 to Len(aPeriod)
-		aMatrix1[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix2[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix3[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix4[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix5[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix6[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
-		aMatrix7[i+1,1]:=DToC(aPeriod[i,1])+" - "+DToC(aPeriod[i,2])
+	FOR periodNo:=1 to Len(aPeriod)-1
+		aMatrix1[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix2[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix3[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix4[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix5[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix6[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix7[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
 	NEXT
 	// determine subtotals per period:
-	PerTotal:=AReplicate(0.00,Len(aPeriod))
-	PerCount:=AReplicate(0,Len(aPeriod))
-	FOR i:=1 to Len(aPeriod)
-		maxVal:=-9999999.00
-		FOR j:=1 to Len(aValues)
-			SubTotal:=0
-			nCount:=0
-			IF !Empty(aValues[j,2,i])
-				FOR m:=1 to Len(aValues[j,2,i])
-					SubTotal+=aValues[j,2,i,m,2]
-					maxVal:=Max(maxVal,aValues[j,2,i,m,2])
-				NEXT
-				nCount:=Len(aValues[j,2,i])
-				PerCount[i]+=nCount		
-				PerTotal[i]+=SubTotal
-			ENDIF
-			aMatrix3[i+1,j+1]:=nCount
-			aMatrix1[i+1,j+1]:=SubTotal
-		NEXT
+	PerTotal:=AReplicate(0.00,Len(aPeriod)-1)
+	PerCount:=AReplicate(0,Len(aPeriod)-1)
+
+	oTrans:=SQLSelect{"SELECT subperiod,classindex,sum(amount) sumamount,count(*) xcount " ;
+		+ "FROM followingtrans2 GROUP BY subperiod,classindex",oConn}
+
+	// Note: oTrans:xcount is a Bigint therefore we need to use Val() on it 
+
+	DO WHILE !oTrans:EoF
+		aMatrix1[oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
+		aMatrix3[oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
+		oTrans:Skip()
+	ENDDO 
+	oTrans:Close()
+
+	oTrans:=SQLSelect{"SELECT subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
+		+ "FROM followingtrans2 GROUP BY subperiod",oConn}
+
+	DO WHILE !oTrans:EoF
 		// determine ranges from average per period:
-		IF i>PrevPeriodCount.and.PerCount[i]>0
-			rangeVal:=Round(((PerTotal[i])/(NumberRanges*PerCount[i])),0)
+		IF oTrans:subperiod>PrevPeriodCount.and.Val(oTrans:xcount)>0
+			rangeVal:=Round(oTrans:sumamount/(NumberRanges*Val(oTrans:xcount)), 0)
 			IF rangeVal >0
-				aMatrix7[i+1,2]:=ArrayNew(NumberRanges)
 				FOR m:=1 to self:NumberRanges-1
-					aMatrix7[i+1,2,m]:=Round(m*rangeVal,0)
+					aMatrix7[oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
+					
 				NEXT
-				aMatrix7[i+1,2,NumberRanges]:=maxVal
+				aMatrix7[oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
 			ENDIF			
 		ENDIF
-	NEXT
-	repMes+="."
-	self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-	IF Len(repMes)>80
-		repMes:=""
-	ENDIF
-	TrCnt:=0
+		PerTotal[oTrans:subperiod]:=oTrans:sumamount
+		PerCount[oTrans:subperiod]:=Val(oTrans:xcount)
+		oTrans:Skip()
+	ENDDO
+  	oTrans:Close()
+
+	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  0% done")
 	
 	// Fill	Matrices:
-	i:=i
-	FOR i:=1 to Len(aPeriod)
-		FOR j:=1 to Len(aValues)
-			IF PerTotal[i]>0
-				aMatrix2[i+1,j+1]:=Round((aMatrix1[i+1,j+1]*100)/PerTotal[i],2)
-			ENDIF
-			IF PerCount[i]>0
-				aMatrix4[i+1,j+1]:=Round((aMatrix3[i+1,j+1]*100)/PerCount[i],2)
-			ENDIF
-			IF aMatrix3[i+1,j+1]>0
-				aMatrix5[i+1,j+1]:=Round(aMatrix1[i+1,j+1]/aMatrix3[i+1,j+1],2)
-			ENDIF
-			IF StatBox7 .and.i>PrevPeriodCount
-				aMatrix7[i+1,j+2]:=AReplicate(0,NumberRanges)
-				IF !Empty(aValues[j,2,i])
-					FOR m:=1 to Len(aValues[j,2,i])
-						k:=AScan(aMatrix7[i+1,2],{|x|aValues[j,2,i,m,2]<=x})
-						IF k>0
-							aMatrix7[i+1,j+2,k]++
+	FOR periodNo:=1 to Len(aPeriod)-1
+		FOR classNo:=1 to Len(aClassTuples)
+			IF aRelevantClass[classNo]
+				IF PerTotal[periodNo]>0
+					aMatrix2[periodNo+1,classNo+1]:=Round((aMatrix1[periodNo+1,classNo+1]*100)/PerTotal[periodNo],2)
+				ENDIF
+				IF PerCount[periodNo]>0
+					aMatrix4[periodNo+1,classNo+1]:=Round((aMatrix3[periodNo+1,classNo+1]*100)/PerCount[periodNo],2)
+				ENDIF
+
+				// aMatrix3[periodNo+1,classNo+2] contains the number of donations with subperiod=periodNo and classindex=classNo
+				donationsCount:=aMatrix3[periodNo+1,classNo+1]
+				IF donationsCount>0
+					aMatrix5[periodNo+1,classNo+1]:=Round(aMatrix1[periodNo+1,classNo+1]/donationsCount,2)
+
+					IF StatBox6
+						// Median calculation:
+						
+						sqlStr:="SELECT amount FROM " ;
+							+ "(SELECT amount FROM followingtrans2 WHERE subperiod=" + Str(periodNo,-1) + " AND classindex=" + Str(classNo,-1) + " ORDER BY amount) t " ;
+							+ "LIMIT " + Str(Floor((donationsCount-1)/2),-1) + ",2"
+
+						oTrans:=SQLSelect{sqlStr, oConn}       
+// 						SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+
+						median:=oTrans:amount
+
+						IF donationsCount%2=0
+							// We have an even number of entries
+							oTrans:Skip()
+							median:=(median+oTrans:amount)/2
 						ENDIF
-					NEXT
+						aMatrix6[periodNo+1,classNo+1]:=median
+						oTrans:Close()
+					endif
 				ENDIF
-			ENDIF
-			TrCnt++
-			IF TrCnt>200
-				repMes+="."
-				self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-				IF Len(repMes)>80
-					repMes:=""
-				ENDIF
-				TrCnt:=0
-			ENDIF
+
+				aMatrix7[periodNo+1,classNo+2]:=AReplicate(0,NumberRanges)
+			ENDIF      
 		NEXT
-	NEXT
-	IF StatBox6
-		// Median calculation:
-		// Sort each aValue per period:
-		FOR i:=1 to Len(aPeriod)
-			FOR j:=1 to Len(aValues)
-				IF !Empty(aValues[j,2,i])
-					ASort(aValues[j,2,i],,,{|x,y| x[2]<=y[2]})
-					median1:=Len(aValues[j,2,i])
-					median2:=Max(Round(median1/2.0,0),1)
-					IF median1%2=1
-						// odd:
-						aMatrix6[i+1,j+1]:=aValues[j,2,i,median2,2]
-					ELSE
-						aMatrix6[i+1,j+1]:=Round((aValues[j,2,i,median2,2]+aValues[j,2,i,median2+1,2])/2,2)
-					ENDIF
-				ENDIF
+
+		IF StatBox7.and.periodNo>PrevPeriodCount
+			// sqlStr2 is the range classifier
+			sqlStr2:="CASE "
+			for j:=1 to NumberRanges-1
+				sqlStr2+="WHEN amount<=" + Str(aMatrix7[periodNo+1,2,j],-1) + " THEN " + Str(j) + " "
+			next
+			sqlStr2+="ELSE " + Str(NumberRanges,-1) + " END"
+			
+			sqlStr:="SELECT " + sqlStr2 + " xrange, classindex, count(*) xcount FROM followingtrans2 " ;
+				+ "WHERE subperiod=" + Str(periodNo,-1) + " GROUP BY classindex,xrange"
+			
+			oTrans:=SQLSelect{sqlStr,oConn}				
+// 			SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+			
+			if oTrans:RECCOUNT<>0 
+				DO WHILE !oTrans:EoF
+					IF oTrans:xcount<>0
+						aMatrix7[periodNo+1,oTrans:classindex+2,oTrans:xrange]:=Val(oTrans:xcount)
+					endif
+					oTrans:Skip()
+				ENDDO
+			ENDIF
+			oTrans:Close()
+		ENDIF
+
+		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  " + Str(periodNo*100/Len(aPeriod)-1,-1,0) + "% done")
+	NEXT  
+	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  100% done")
+
+	#ifdef USE_STATBOX8
+		IF self:StatBox8
+			// let user select required classes to export:
+			FOR i:=1 to Len(aValues)   // classes
+				nCount:=0 
+				FOR j:=1 to Len(aPeriod)-1
+					nCount+=aMatrix3[j+1,i+1]
+				NEXT
+				AAdd(aExportClass,{aMatrix3[1,i+1]+"("+Str(nCount,-1)+" persons)",i})
 			NEXT
-			repMes+="."
-			self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
-			IF Len(repMes)>80
-				repMes:=""
-			ENDIF
-		NEXT
-	ENDIF
-	IF self:StatBox8
-		// let user select required classes to export:
-		FOR i:=1 to Len(aValues)   // classes
-			nCount:=0 
-			FOR j:=1 to Len(aPeriod)
-				nCount+=aMatrix3[j+1,i+1]
-			NEXT
-			AAdd(aExportClass,{aMatrix3[1,i+1]+"("+Str(nCount,-1)+" persons)",i})
-		NEXT
-		(DonorFolwngSelClasses{self,{self,aExportClass}}):show()
-		// make export files:
-		FOR m:=1 to Len(self:aSelectedClasses)
-			i:=self:aSelectedClasses[m]
-			oSelPers:aNN:={}
-			FOR j:=1 to Len(aValues[i,2])    //periods 
-				IF !IsNil(aValues[i,2][j])
-					FOR k:=1 to Len(aValues[i,2][j])  //persons
-						nPersPtr:=AScan(aPers,aValues[i,2][j][k,1])
-						IF nPersPtr>0
-							IF !IsNil(aPersExp[nPersPtr]) .and. aPersExp[nPersPtr,3]
-								IF AScan(oSelPers:aNN,{|x|x[2]=aPersExp[nPersPtr,2]})==0
-									AAdd(oSelPers:aNN,{aPersExp[nPersPtr,1],aPersExp[nPersPtr,2]})
+			(DonorFolwngSelClasses{self,{self,aExportClass}}):show()
+			// make export files:
+			FOR m:=1 to Len(self:aSelectedClasses)
+				i:=self:aSelectedClasses[m]
+				oSelPers:aNN:={}
+				FOR j:=1 to Len(aValues[i,2])    //periods 
+					IF !IsNil(aValues[i,2][j])
+						FOR k:=1 to Len(aValues[i,2][j])  //persons
+							nPersPtr:=AScan(aPers,aValues[i,2][j][k,1])
+							IF nPersPtr>0
+								IF !IsNil(aPersExp[nPersPtr]) .and. aPersExp[nPersPtr,3]
+									IF AScan(oSelPers:aNN,{|x|x[2]=aPersExp[nPersPtr,2]})==0
+										AAdd(oSelPers:aNN,{aPersExp[nPersPtr,1],aPersExp[nPersPtr,2]})
+									ENDIF
 								ENDIF
-							ENDIF
-						ENDIF					
-					NEXT
+							ENDIF					
+						NEXT
+					ENDIF
+				NEXT
+				cClassName:=aMatrix1[1,i+1]
+				IF Len(oSelPers:aNN)>0
+					oSelPers:PrintToOutput(aTitle," - "+cClassName)
 				ENDIF
 			NEXT
-			cClassName:=aMatrix1[1,i+1]
-			IF Len(oSelPers:aNN)>0
-				oSelPers:PrintToOutput(aTitle," - "+cClassName)
-			ENDIF
-		NEXT
-	ENDIF
+		ENDIF
+	#endif
 
-
-	// markup report from matrix:
-	// oFileSpec:=FileSpec{CurPath + "\DonorFollowing"+DToS(StartDate)+"_"+DToS(ENDDate)+'.XLS'}
-	oFileSpec:=AskFileName(self,"DonorFollowing"+DToS(StartDate)+"_"+DToS(EndDate),"Creating Donor Following-report",'*.XLS',"Excel Spreadsheet") 
+	// Markup report from matrix:
+	oFileSpec:=AskFileName(self,"DonorFollowing"+DToS(StartDate)+"_"+DToS(EndDate-1),"Creating Donor Following-report",'*.XLS',"Excel Spreadsheet") 
 	IF oFileSpec==null_object
-		return
+		return nil
 	ENDIF
 	cFileName:=oFileSpec:FullPath
 	ptrHandle := MakeFile(self,@cFileName,"Creating DonorFollowing-report")
 
 	IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 		oFileSpec:FullPath:=cFileName
-		* header record:
+		// header record:
 		FWriteLine(ptrHandle,"<html><body><table style='font-family: Arial;' border='2'><tr style='font-weight: bold; color:navy;'>"+;
-			"<td style='text-align : center;' colspan='"+Str(Len(aPeriod)-PrevPeriodCount+1,-1)+"'>"+oLan:Get("Donor Following Report")+"  "+;
-			oLan:Get("period")+": "+DToC(StartDate)+" - "+DToC(ENDDate)+"</td></tr>")
-		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount+1,-1)+"'>"+oLan:Get("Destinations")+":<br><ol>")
+			"<td style='text-align : center;' colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Get("Donor Following Report")+"  "+;
+			oLan:Get("period")+": "+DToC(StartDate)+" - "+DToC(EndDate-1)+"</td></tr>")
+		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Get("Destinations")+":<br><ol>")
 		FOR i:=1 to Len(aAcc)
-			IF oAcc:Seek(aAcc[i])
-				FWriteLine(ptrHandle,"<li>"+AllTrim(oAcc:OMS)+"</li>")
-			ENDIF
+			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[i],-1) ,oConn}
+			IF !oAcc:EoF
+				FWriteLine(ptrHandle,"<li>"+AllTrim(oAcc:Description)+"</li>")
+			ENDIF      
+			oAcc:Close()
 		NEXT
 		FWriteLine(ptrHandle,"</ol></td></tr>")
 		IF StatBox1
-			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox2
-			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox3
-			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox4
-			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox5
-			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox6
-			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+1)
+			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 		ENDIF
 		IF StatBox7
-			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,Len(aPeriod)+1,Len(aValues)+2)
+			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,aRelevantClass,2)
 		ENDIF
-		* closing record:
+		// closing record:
 		FWriteLine(ptrHandle,"<table></body></html>")
 		FClose(ptrHandle)
-		repMes+="."
-		self:Statusmessage(sMes+"("+ElapTime(time1,Time())+")"+repMes)
+		self:STATUSMESSAGE("")
 		self:Pointer := Pointer{POINTERARROW}
-		// show with excel:
-		j:=	myApp:Run(EXCEL+'"'+oFileSpec:FullPath+'"')
 
-		IF j=2
-			(errorbox{self,"Excel not found in:"+EXCEL+"; could not open report file "+oFileSpec:FullPath}):Show()
-		ENDIF
+		// Show with excel:
+		FileStart(oFileSpec:FullPath,self)
 	ENDIF
 	//LogEvent(SELF,"total time:"+ElapTime(time1,Time()))	
 
-	oAcc:Close()
-	oAcc:=null_object
-	oTrans:Close()
-	oTrans:=null_object
-	IF !Empty(oTransFreq )
-		IF oTransFreq:Used
-			oTransFreq:Close()
-			oTransFreq:=null_object
-		ENDIF
-	ENDIF
-	oPers:Close()
-	oPers:=null_object
-
-
 	RETURN nil
+
 ACCESS ProjectsBox() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#ProjectsBox)
 
@@ -1408,34 +1417,34 @@ SELF:FieldPut(#Ranges, uValue)
 RETURN uValue
 
 METHOD RegAccount(omAcc,ItemName) CLASS DonorFollowingReport
-	LOCAL oAccount as SQLSelect
-	IF Empty(omAcc).or.omAcc==NULL_OBJECT
+	LOCAL oAccount as SQLSelect     
+	IF Empty(omAcc) .or.omAcc:RecCount<1
 		RETURN
 	ENDIF
 	oAccount:=omAcc
 	IF ItemName == "From Account"
-		SELF:FromAccount:= LTrimZero(oAccount:AccNumber)
-		SELF:oDCFromAccount:TEXTValue := FromAccount
-		SELF:cFromAccName := FromAccount
+		self:FromAccount:= LTrimZero(oAccount:accnumber)
+		self:oDCFromAccount:TEXTValue := FromAccount
+		self:cFromAccName := FromAccount
 		self:oDCTextfrom:Caption := AllTrim(oAccount:Description)
-		SELF:oDCSubSet:AccNbrStart:=SELF:FromAccount
+		self:oDCSubSet:AccNbrStart:=self:FromAccount
 	ELSEIF ItemName == "Till Account"
-		SELF:ToAccount:= LTrimZero(oAccount:ACCNUMBER)
-		SELF:oDCToAccount:TEXTValue := ToAccount
-		SELF:cToAccName := ToAccount
+		self:ToAccount:= LTrimZero(oAccount:accnumber)
+		self:oDCToAccount:TEXTValue := ToAccount
+		self:cToAccName := ToAccount
 		self:oDCTextTill:Caption := AllTrim(oAccount:Description)
-		SELF:oDCSubSet:AccNbrEnd:=ToAccount
+		self:oDCSubSet:AccNbrEnd:=ToAccount
 	ENDIF
 		
-RETURN TRUE
+RETURN true
 METHOD SetPropExtra( Count) CLASS DonorFollowingReport
-	LOCAL oCheck AS CheckBox
-	LOCAL oDCGroupBoxExtra	AS GroupBox
-	LOCAL Name AS STRING,Type, ID AS INT, Values AS STRING
-	LOCAL myDim AS Dimension
-	LOCAL myOrg AS Point
-	LOCAL aValues AS ARRAY
-	LOCAL NewY:=SELF:oDCFrequency:Origin:Y AS INT
+	LOCAL oCheck as CheckBox
+	LOCAL oDCGroupBoxExtra	as GROUPBOX
+	LOCAL Name as STRING,Type, ID as int, Values as STRING
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
+	LOCAL aValues as ARRAY
+	LOCAL NewY:=self:oDCFrequency:Origin:Y as int
 	IF pers_propextra[Count,3]==TEXTBX
 		// skip textboxes
 		RETURN
@@ -1444,68 +1453,99 @@ METHOD SetPropExtra( Count) CLASS DonorFollowingReport
 	ID := pers_propextra[Count,2]
 	//
 	// enlarge window
-	myDim:=SELF:Size
+	myDim:=self:Size
 	myDim:Height+=25
-	SELF:Size:=myDim
-	myOrg:=SELF:Origin
+	self:Size:=myDim
+	myOrg:=self:Origin
 	myOrg:y-=25
-	SELF:Origin:=myOrg
+	self:Origin:=myOrg
 	//
 	// shift statistical group down
-	myOrg:=SELF:oDCStatisticsBox:Origin
+	myOrg:=self:oDCStatisticsBox:Origin
 	myOrg:y-=25
-	SELF:oDCStatisticsBox:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox1:Origin
+	self:oDCStatisticsBox:Origin:=myOrg
+	myOrg:=self:oDCStatBox1:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox1:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox2:Origin
+	self:oDCStatBox1:Origin:=myOrg
+	myOrg:=self:oDCStatBox2:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox2:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox3:Origin
+	self:oDCStatBox2:Origin:=myOrg
+	myOrg:=self:oDCStatBox3:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox3:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox4:Origin
+	self:oDCStatBox3:Origin:=myOrg
+	myOrg:=self:oDCStatBox4:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox4:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox5:Origin
+	self:oDCStatBox4:Origin:=myOrg
+	myOrg:=self:oDCStatBox5:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox5:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox6:Origin
+	self:oDCStatBox5:Origin:=myOrg
+	myOrg:=self:oDCStatBox6:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox6:Origin:=myOrg
-	myOrg:=SELF:oDCStatBox7:Origin
+	self:oDCStatBox6:Origin:=myOrg
+	myOrg:=self:oDCStatBox7:Origin
 	myOrg:y-=25
-	SELF:oDCStatBox7:Origin:=myOrg
-	myOrg:=SELF:oDCNumberRanges:Origin
+	self:oDCStatBox7:Origin:=myOrg
+	myOrg:=self:oDCNumberRanges:Origin
 	myOrg:y-=25
-	SELF:oDCNumberRanges:Origin:=myOrg
-	myOrg:=SELF:oDCFixedTextRanges:Origin
+	self:oDCNumberRanges:Origin:=myOrg
+	myOrg:=self:oDCFixedTextRanges:Origin
 	myOrg:y-=25
-	SELF:oDCFixedTextRanges:Origin:=myOrg
+	self:oDCFixedTextRanges:Origin:=myOrg
 	myOrg:=self:oDCStatBox8:Origin
 	myOrg:Y-=25
 	self:oDCStatBox8:Origin:=myOrg
 	myOrg:=self:oDCDiffBox:Origin
 	myOrg:y-=25
-	SELF:oDCDiffBox:Origin:=myOrg
+	self:oDCDiffBox:Origin:=myOrg
 	
 	// enlarge PropertiesBox group:
-	myDim:=SELF:oDCPropertiesBox:Size
+	myDim:=self:oDCPropertiesBox:Size
 	myDim:Height+=25
-	SELF:oDCPropertiesBox:Size:=myDim
-	myOrg:=SELF:oDCPropertiesBox:Origin
+	self:oDCPropertiesBox:Size:=myDim
+	myOrg:=self:oDCPropertiesBox:Origin
 	myOrg:y-=25
-	SELF:oDCPropertiesBox:Origin:=myOrg
+	self:oDCPropertiesBox:Origin:=myOrg
 	//
 //	insert extra properties as checkboxes in group PropertiesBox:	
-	oCheck:=CheckBox{SELF,Count,Point{29,NewY},Dimension{215,20},Name}
+	oCheck:=CheckBox{self,Count,Point{29,NewY},Dimension{215,20},Name}
 	oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,"V"+AllTrim(Str(ID,-1))}
 	AAdd(self:aPropEx,oCheck)
 	oCheck:Show()
-RETURN NIL
+RETURN nil
 	
 		
 
+
+METHOD SqlDoAndTest(sqlStr) CLASS DonorFollowingReport
+	// Execute an SQL statement an check for errors
+	// Returns .T. if an error occurred, .F. otherwise
+	LOCAL sqlSt as SQLStatement
+	LOCAL sqlErrinfo as SQLErrorInfo
+	LOCAL errStr as STRING
+
+// 	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+
+	sqlSt:=SQLStatement{sqlStr,oConn}
+	sqlSt:Execute()
+ 	sqlErrinfo:=sqlSt:ErrInfo
+    IF !sqlErrinfo:ErrorFlag
+    	sqlSt:FreeStmt(SQL_DROP)
+    	RETURN .F.
+    ENDIF
+
+ 	// An SQL error occured
+ 	errStr:='SQL Error: "' + sqlErrinfo:ErrorMessage + '" **** In SQL statement: "' 
+	IF Len(sqlStr)>1000
+		errStr += SubStr(sqlStr,1,1000) + '..."'
+	ELSE
+		errStr += sqlStr + '"'
+	ENDIF
+	     	
+	(ErrorBox{self,errStr}):Show()
+  	sqlSt:FreeStmt(SQL_DROP)
+
+	RETURN .T.
+   
 
 ACCESS StatBox1() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#StatBox1)
@@ -1579,7 +1619,7 @@ RETURN uValue
 
 METHOD ToAccButton(lUnique ) CLASS DonorFollowingReport
 	Default(@lUnique,FALSE)
-	AccountSelect(SELF,AllTrim(oDCToAccount:TEXTValue ),"Till Account",lUnique,"GiftAlwd",,)
+	AccountSelect(self,AllTrim(oDCToAccount:TEXTValue ),"Till Account",lUnique,"GiftAlwd",,)
 
 ACCESS ToAccount() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#ToAccount)
@@ -1640,15 +1680,7 @@ STATIC DEFINE DONORFOLLOWINGREPORT_TOACCBUTTON := 106
 STATIC DEFINE DONORFOLLOWINGREPORT_TOACCOUNT := 105 
 STATIC DEFINE DONORFOLLOWINGREPORT_TODATE := 139 
 STATIC DEFINE DONORFOLLOWINGREPORT_TYPE := 114 
-CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCClassesBox AS LISTBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  Protect oCaller as Object
-RESOURCE DonorFolwngSelClasses DIALOGEX  5, 20, 271, 125
+resource DonorFolwngSelClasses DIALOGEX  5, 20, 271, 125
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Donor following Report - export classes of persons"
 FONT	8, "MS Shell Dlg"
@@ -1658,28 +1690,36 @@ BEGIN
 	CONTROL	"OK", DONORFOLWNGSELCLASSES_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 22, 55, 11
 END
 
+CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
+
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCClassesBox as LISTBOX
+	PROTECT oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  Protect oCaller as Object
 METHOD Init(oParent,uExtra) CLASS DonorFolwngSelClasses 
-LOCAL DIM aFonts[1] AS OBJECT
+LOCAL dim aFonts[1] as OBJECT
 
 self:PreInit(oParent,uExtra)
 
-SUPER:Init(oParent,ResourceID{"DonorFolwngSelClasses",_GetInst()},TRUE)
+SUPER:Init(oParent,ResourceID{"DonorFolwngSelClasses",_GetInst()},true)
 
 aFonts[1] := Font{,9,"Microsoft Sans Serif"}
 
-oDCFixedText1 := FixedText{SELF,ResourceID{DONORFOLWNGSELCLASSES_FIXEDTEXT1,_GetInst()}}
-oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Select one or more classes of persons to be exported",NULL_STRING,NULL_STRING}
+oDCFixedText1 := FixedText{self,ResourceID{DONORFOLWNGSELCLASSES_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Select one or more classes of persons to be exported",null_string,null_string}
 oDCFixedText1:Font(aFonts[1], FALSE)
 
-oDCClassesBox := ListBox{SELF,ResourceID{DONORFOLWNGSELCLASSES_CLASSESBOX,_GetInst()}}
-oDCClassesBox:HyperLabel := HyperLabel{#ClassesBox,NULL_STRING,"Click on a row to (de)select",NULL_STRING}
-oDCClassesBox:UseHLforToolTip := True
+oDCClassesBox := ListBox{self,ResourceID{DONORFOLWNGSELCLASSES_CLASSESBOX,_GetInst()}}
+oDCClassesBox:HyperLabel := HyperLabel{#ClassesBox,null_string,"Click on a row to (de)select",null_string}
+oDCClassesBox:UseHLforToolTip := true
 
-oCCOKButton := PushButton{SELF,ResourceID{DONORFOLWNGSELCLASSES_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+oCCOKButton := PushButton{self,ResourceID{DONORFOLWNGSELCLASSES_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 
-SELF:Caption := "Donor following Report - export classes of persons"
-SELF:HyperLabel := HyperLabel{#DonorFolwngSelClasses,"Donor following Report - export classes of persons",NULL_STRING,NULL_STRING}
+self:Caption := "Donor following Report - export classes of persons"
+self:HyperLabel := HyperLabel{#DonorFolwngSelClasses,"Donor following Report - export classes of persons",null_string,null_string}
 
 self:PostInit(oParent,uExtra)
 
@@ -1695,7 +1735,7 @@ do WHILE NpOS>0
 ENDDO
 self:EndDialog() 
 
-RETURN NIL
+RETURN nil
 method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 	//Put your PostInit additions here 
 	// fill selectbox:
@@ -1704,34 +1744,12 @@ method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 		oCaller:=uExtra[1]
 		oDCClassesBox:FillUsing(uExtra[2])
 	endif
-	return NIL
+	return nil
 
 STATIC DEFINE DONORFOLWNGSELCLASSES_CLASSESBOX := 101 
 STATIC DEFINE DONORFOLWNGSELCLASSES_FIXEDTEXT1 := 100 
 STATIC DEFINE DONORFOLWNGSELCLASSES_OKBUTTON := 102 
-CLASS DonorProject INHERIT DataWindowExtra 
-
-	EXPORT oDCFromdate AS DATESTANDARD
-	EXPORT oDCTodate AS DATESTANDARD
-	EXPORT oDCDestinations AS GROUPBOX
-	EXPORT oDCFixedText3 AS FIXEDTEXT
-	EXPORT oCCOKButton AS PUSHBUTTON
-	EXPORT oCCCancelButton AS PUSHBUTTON
-	EXPORT oDCFixedText6 AS FIXEDTEXT
-	EXPORT oDCFixedText7 AS FIXEDTEXT
-	EXPORT oDCFixedText5 AS FIXEDTEXT
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	PROTECT aDestGrp:={} as ARRAY // {name,{acc1,acc2,...}
-	PROTECT aGiftAcc:={} as ARRAY // accountIds+name for projects ( non-member accounts with gift allowed and home member entities)
-	PROTECT aGiftAccHomeMbr:={} as ARRAY // accountIds+name for home members (non entity)
-	PROTECT aGiftAccForeignMbr:={} as ARRAY // accountIds+name for non home members
-	PROTECT aDestAccSet:={} as ARRAY // array with listbox controls
-	PROTECT aDestName:={} as ARRAY // array with singlelineedit controls
-	PROTECT nID as int
-	PROTECT pwvs as WindowVerticalScrollBar     
-
-RESOURCE DonorProject DIALOGEX  34, 31, 442, 1308
+resource DonorProject DIALOGEX  34, 31, 442, 1308
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1746,117 +1764,139 @@ BEGIN
 	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
 END
 
+CLASS DonorProject INHERIT DataWindowExtra 
+
+	EXPORT oDCFromdate as DATESTANDARD
+	EXPORT oDCTodate as DATESTANDARD
+	EXPORT oDCDestinations as GROUPBOX
+	EXPORT oDCFixedText3 as FIXEDTEXT
+	EXPORT oCCOKButton as PUSHBUTTON
+	EXPORT oCCCancelButton as PUSHBUTTON
+	EXPORT oDCFixedText6 as FIXEDTEXT
+	EXPORT oDCFixedText7 as FIXEDTEXT
+	EXPORT oDCFixedText5 as FIXEDTEXT
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT aDestGrp:={} as ARRAY // {name,{acc1,acc2,...}
+	PROTECT aGiftAcc:={} as ARRAY // accountIds+name for projects ( non-member accounts with gift allowed and home member entities)
+	PROTECT aGiftAccHomeMbr:={} as ARRAY // accountIds+name for home members (non entity)
+	PROTECT aGiftAccForeignMbr:={} as ARRAY // accountIds+name for non home members
+	PROTECT aDestAccSet:={} as ARRAY // array with listbox controls
+	PROTECT aDestName:={} as ARRAY // array with singlelineedit controls
+	PROTECT nID as int
+	PROTECT pwvs as WindowVerticalScrollBar     
+
 METHOD CancelButton( ) CLASS DonorProject
-	SELF:EndWindow()
-	RETURN NIL
+	self:EndWindow()
+	RETURN nil
 METHOD Close(oEvent) CLASS DonorProject
 	SUPER:Close(oEvent)
 	//Put your changes here
-	SELF:EndWindow()
-	RETURN NIL
+	self:EndWindow()
+	RETURN nil
 
 METHOD DeselectAccount(nCur,nPos) CLASS DonorProject
 	// remove deselected account form group
-	LOCAL myDim AS Dimension
-	LOCAL myOrg AS Point
-	LOCAL i AS INT
-	LOCAL oControl AS Control
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
+	LOCAL i as int
+	LOCAL oControl as CONTROL
 	// remove from own accounts:
-	ADel(SELF:aDestGrp[nCur,2],nPos)
-	ASize(SELF:aDestGrp[nCur,2],Len(SELF:aDestGrp[nCur,2])-1)
-	IF nCur>3 .and.Len(SELF:aDestGrp[nCur,2])=0
+	ADel(self:aDestGrp[nCur,2],nPos)
+	ASize(self:aDestGrp[nCur,2],Len(self:aDestGrp[nCur,2])-1)
+	IF nCur>3 .and.Len(self:aDestGrp[nCur,2])=0
 	// empty group, remove it:
-		ADel(SELF:aDestGrp,nCur)
-		ASize(SELF:aDestGrp,Len(SELF:aDestGrp)-1)
-		(SELF:aDestName[nCur-2]):Destroy()
-		(SELF:aDestAccSet[nCur-2]):Destroy()
-		ADel(SELF:aDestName,nCur-2)
-		ASize(SELF:aDestName,Len(SELF:aDestName)-1)
-		ADel(SELF:aDestAccSet,nCur-2)
-		ASize(SELF:aDestAccSet,Len(SELF:aDestAccSet)-1)
+		ADel(self:aDestGrp,nCur)
+		ASize(self:aDestGrp,Len(self:aDestGrp)-1)
+		(self:aDestName[nCur-2]):Destroy()
+		(self:aDestAccSet[nCur-2]):Destroy()
+		ADel(self:aDestName,nCur-2)
+		ASize(self:aDestName,Len(self:aDestName)-1)
+		ADel(self:aDestAccSet,nCur-2)
+		ASize(self:aDestAccSet,Len(self:aDestAccSet)-1)
 		// shift groups below up
-		FOR i:=nCur-2 TO Len(SELF:aDestAccSet)
-			oControl:=SELF:aDestAccSet[i]
+		FOR i:=nCur-2 to Len(self:aDestAccSet)
+			oControl:=self:aDestAccSet[i]
 			myOrg:=oControl:Origin
 			myOrg:y+=115
 			oControl:Origin:=myOrg
-			oControl:=SELF:aDestName[i]
+			oControl:=self:aDestName[i]
 			myOrg:=oControl:Origin
 			myOrg:y+=115
 			oControl:Origin:=myOrg
 		NEXT
 		// shortens groupbox
-		myDim:=SELF:oDCDestinations:Size
+		myDim:=self:oDCDestinations:Size
 		myDim:Height-=115
-		SELF:oDCDestinations:Size:=myDim
-		myOrg:=SELF:oDCDestinations:Origin
+		self:oDCDestinations:Size:=myDim
+		myOrg:=self:oDCDestinations:Origin
 		myOrg:y+=115
-		SELF:oDCDestinations:Origin:=myOrg	
+		self:oDCDestinations:Origin:=myOrg	
 		// shortens window
-		myDim:=SELF:Size
+		myDim:=self:Size
 		myDim:Height-=115
-		SELF:Size:=myDim
-		myOrg:=SELF:Origin
+		self:Size:=myDim
+		myOrg:=self:Origin
 		myOrg:y+=115
-		SELF:Origin:=myOrg		
+		self:Origin:=myOrg		
 		nCur:=0
 	ENDIF						
 	
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject 
-LOCAL DIM aFonts[2] AS OBJECT
+LOCAL dim aFonts[2] as OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"DonorProject",_GetInst()},iCtlID)
 
 aFonts[1] := Font{,8,"Microsoft Sans Serif"}
-aFonts[1]:Bold := TRUE
+aFonts[1]:Bold := true
 aFonts[2] := Font{,10,"Microsoft Sans Serif"}
-aFonts[2]:Bold := TRUE
+aFonts[2]:Bold := true
 
-oDCFromdate := DateStandard{SELF,ResourceID{DONORPROJECT_FROMDATE,_GetInst()},Point{73, 2070},Dimension{180, 22}}
-oDCFromdate:FieldSpec := Transaction_DAT{}
-oDCFromdate:HyperLabel := HyperLabel{#Fromdate,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCFromdate := DateStandard{self,ResourceID{DONORPROJECT_FROMDATE,_GetInst()},Point{73, 2070},Dimension{180, 22}}
+oDCFromdate:FieldSpec := transaction_DAT{}
+oDCFromdate:HyperLabel := HyperLabel{#Fromdate,null_string,null_string,null_string}
 
-oDCTodate := DateStandard{SELF,ResourceID{DONORPROJECT_TODATE,_GetInst()},Point{292, 2070},Dimension{180, 22}}
-oDCTodate:FieldSpec := Transaction_DAT{}
-oDCTodate:HyperLabel := HyperLabel{#Todate,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCTodate := DateStandard{self,ResourceID{DONORPROJECT_TODATE,_GetInst()},Point{292, 2070},Dimension{180, 22}}
+oDCTodate:FieldSpec := transaction_DAT{}
+oDCTodate:HyperLabel := HyperLabel{#Todate,null_string,null_string,null_string}
 
-oDCDestinations := GroupBox{SELF,ResourceID{DONORPROJECT_DESTINATIONS,_GetInst()},Point{12, 2022},Dimension{625, 40}}
-oDCDestinations:HyperLabel := HyperLabel{#Destinations,"Compose groups of projects",NULL_STRING,NULL_STRING}
+oDCDestinations := GroupBox{self,ResourceID{DONORPROJECT_DESTINATIONS,_GetInst()},Point{12, 2022},Dimension{625, 40}}
+oDCDestinations:HyperLabel := HyperLabel{#Destinations,"Compose groups of projects",null_string,null_string}
 
-oDCFixedText3 := FixedText{SELF,ResourceID{DONORPROJECT_FIXEDTEXT3,_GetInst()},Point{301, 2029},Dimension{248, 20}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Click to (de)select corresponding accounts:",NULL_STRING,NULL_STRING}
+oDCFixedText3 := FixedText{self,ResourceID{DONORPROJECT_FIXEDTEXT3,_GetInst()},Point{301, 2029},Dimension{248, 20}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Click to (de)select corresponding accounts:",null_string,null_string}
 oDCFixedText3:Font(aFonts[1], FALSE)
 oDCFixedText3:TextColor := Color{128,64,64}
 
-oCCOKButton := PushButton{SELF,ResourceID{DONORPROJECT_OKBUTTON,_GetInst()},Point{571, 2095},Dimension{80, 20}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+oCCOKButton := PushButton{self,ResourceID{DONORPROJECT_OKBUTTON,_GetInst()},Point{571, 2095},Dimension{80, 20}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 oCCOKButton:UseHLforToolTip := False
 oCCOKButton:OwnerAlignment := OA_PX
 
-oCCCancelButton := PushButton{SELF,ResourceID{DONORPROJECT_CANCELBUTTON,_GetInst()},Point{571, 2071},Dimension{80, 20}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+oCCCancelButton := PushButton{self,ResourceID{DONORPROJECT_CANCELBUTTON,_GetInst()},Point{571, 2071},Dimension{80, 20}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
 oCCCancelButton:OwnerAlignment := OA_PX
 
-oDCFixedText6 := FixedText{SELF,ResourceID{DONORPROJECT_FIXEDTEXT6,_GetInst()},Point{12, 2072},Dimension{57, 20}}
-oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"From Date:",NULL_STRING,NULL_STRING}
+oDCFixedText6 := FixedText{self,ResourceID{DONORPROJECT_FIXEDTEXT6,_GetInst()},Point{12, 2072},Dimension{57, 20}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"From Date:",null_string,null_string}
 
-oDCFixedText7 := FixedText{SELF,ResourceID{DONORPROJECT_FIXEDTEXT7,_GetInst()},Point{264, 2072},Dimension{24, 20}}
-oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Till:",NULL_STRING,NULL_STRING}
+oDCFixedText7 := FixedText{self,ResourceID{DONORPROJECT_FIXEDTEXT7,_GetInst()},Point{264, 2072},Dimension{24, 20}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Till:",null_string,null_string}
 
-oDCFixedText5 := FixedText{SELF,ResourceID{DONORPROJECT_FIXEDTEXT5,_GetInst()},Point{13, 2095},Dimension{542, 22}}
-oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Give insight who has given to which destination during a certain period of time",NULL_STRING,NULL_STRING}
+oDCFixedText5 := FixedText{self,ResourceID{DONORPROJECT_FIXEDTEXT5,_GetInst()},Point{13, 2095},Dimension{542, 22}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Give insight who has given to which destination during a certain period of time",null_string,null_string}
 oDCFixedText5:Font(aFonts[2], FALSE)
 
-SELF:Caption := "Donor versus Project Report"
-SELF:HyperLabel := HyperLabel{#DonorProject,"Donor versus Project Report",NULL_STRING,NULL_STRING}
-SELF:OwnerAlignment := OA_TOP_AUTOSIZE
-SELF:PreventAutoLayout := False
+self:Caption := "Donor versus Project Report"
+self:HyperLabel := HyperLabel{#DonorProject,"Donor versus Project Report",null_string,null_string}
+self:OwnerAlignment := OA_TOP_AUTOSIZE
+self:PreventAutoLayout := False
 
 if !IsNil(oServer)
-	SELF:Use(oServer)
+	self:Use(oServer)
 ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -1864,29 +1904,29 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListBoxSelect(oControlEvent) CLASS DonorProject
-	LOCAL oControl AS Control, uValue AS USUAL
-	LOCAL lSelected AS LOGIC
-	LOCAL nItem,i,j,k,nCur,nSel AS INT
-	LOCAL oList AS ListBox
+	LOCAL oControl as CONTROL, uValue as USUAL
+	LOCAL lSelected as LOGIC
+	LOCAL nItem,i,j,k,nCur,nSel as int
+	LOCAL oList as ListBox
 
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	// select or deselect account
 	// adapt arrays
 	// resfresh screen
 	IF Upper(oControl:Name)="SUBACCSET"
-		nCur:=AScan(SELF:aDestAccSet,{|oList|oList:Name==oControl:Name})+2
-		oList:=SELF:aDestAccSet[nCur-2]
+		nCur:=AScan(self:aDestAccSet,{|oList|oList:Name==oControl:Name})+2
+		oList:=self:aDestAccSet[nCur-2]
 		
-		IF oList:SelectedCount>Len(SELF:aDestGrp[nCur,2])
+		IF oList:SelectedCount>Len(self:aDestGrp[nCur,2])
 			// more selected than before
 			// determine new item:
 			k:=oList:FirstSelected()
 			nSel:=0
 			DO WHILE k>0
-				IF (AScan(SELF:aDestGrp[nCur,2],oList:GetItemValue(k)))=0
-					EXIT
+				IF (AScan(self:aDestGrp[nCur,2],oList:GetItemValue(k)))=0
+					exit
 				ENDIF
 				k:=oList:NextSelected()
 			ENDDO
@@ -1894,21 +1934,21 @@ METHOD ListBoxSelect(oControlEvent) CLASS DonorProject
 			uValue:=oList:GetItemValue(k)
 			oList:SetTop(k)
 			// add to own accounts:
-			AAdd(SELF:aDestGrp[nCur,2],uValue)					
+			AAdd(self:aDestGrp[nCur,2],uValue)					
 			// remove from other groups:
-			FOR i:=3 TO Len(SELF:aDestGrp)
+			FOR i:=3 to Len(self:aDestGrp)
 				IF i#nCur
-					IF (j:=AScan(SELF:aDestGrp[i,2],uValue))>0
+					IF (j:=AScan(self:aDestGrp[i,2],uValue))>0
 						// deselect item:
-						oList:=SELF:aDestAccSet[i-2]
+						oList:=self:aDestAccSet[i-2]
 						k:=oList:FirstSelected()
 						DO WHILE k>0
 							IF uValue==oList:GetItemValue(k)
 								oList:DeselectItem(k)
 								//ADel(SELF:aDestGrp[i,2],j)
 								//ASize(SELF:aDestGrp[i,2],Len(SELF:aDestGrp[i,2])-1)
-								SELF:DeselectAccount(i,j)
-								EXIT
+								self:DeselectAccount(i,j)
+								exit
 							ENDIF
 							k:=oList:NextSelected()
 						ENDDO
@@ -1917,7 +1957,7 @@ METHOD ListBoxSelect(oControlEvent) CLASS DonorProject
 						IF k>0
 							oList:SetTop(k)
 						ENDIF
-						EXIT
+						exit
 					ENDIF
 				ENDIF
 			NEXT
@@ -1926,70 +1966,70 @@ METHOD ListBoxSelect(oControlEvent) CLASS DonorProject
 			// determine item:
 			oList:=oControl
 			nSel:=0
-			FOR i:=1 TO Len(SELF:aDestGrp[nCur,2])
+			FOR i:=1 to Len(self:aDestGrp[nCur,2])
 				k:=oList:FirstSelected()
 				nSel:=0
 				DO WHILE k>0
-					IF SELF:aDestGrp[nCur,2,i]==oList:GetItemValue(k)
+					IF self:aDestGrp[nCur,2,i]==oList:GetItemValue(k)
 						nSel:=i
-						EXIT
+						exit
 					ENDIF
 					k:=oList:NextSelected()
 				ENDDO
 				IF nSel==0
 					// found:
-					uValue:=SELF:aDestGrp[nCur,2,i]
+					uValue:=self:aDestGrp[nCur,2,i]
 					// remove from own accounts:
-					SELF:DeselectAccount(@nCur,i)						
+					self:DeselectAccount(@nCur,i)						
 					// make it current again:
-					FOR j:=1 TO oList:ItemCount
+					FOR j:=1 to oList:ItemCount
 						IF uValue==oList:GetItemValue(j)
 							oList:SetTop(j)
-							EXIT
+							exit
 						ENDIF
 					NEXT
 					// add to last group:
-					IF nCur=Len(SELF:aDestGrp)
+					IF nCur=Len(self:aDestGrp)
 						// add new group:
-						AAdd(SELF:aDestGrp,{"Other projects"+Str(nCur-1,-1),{uValue}})
-						SELF:SetDestGrp(nCur+1)
+						AAdd(self:aDestGrp,{"Other projects"+Str(nCur-1,-1),{uValue}})
+						self:SetDestGrp(nCur+1)
 					ELSE
-						AAdd(SELF:aDestGrp[Len(SELF:aDestGrp),2],uValue)
+						AAdd(self:aDestGrp[Len(self:aDestGrp),2],uValue)
 					ENDIF
-					SELF:SetSelected(Len(SELF:aDestGrp))
-					EXIT
+					self:SetSelected(Len(self:aDestGrp))
+					exit
 				ENDIF
 			NEXT
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN nil
 METHOD OKButton( ) CLASS DonorProject
 	// fill oSys:DestGrps with selected accounts per group:
-	LOCAL i, j AS INT
+	LOCAL i, j as int
 	LOCAL oSys as SQLSelect
-	LOCAL cXMLDoc:="<groups>",cName AS STRING
-	LOCAL myBox AS BoundingBox
-	LOCAL myArea AS BoundingBox
-	LOCAL myDim AS Dimension
+	LOCAL cXMLDoc:="<groups>",cName as STRING
+	LOCAL myBox as BoundingBox
+	LOCAL myArea as BoundingBox
+	LOCAL myDim as Dimension
 
-	myDim:=SELF:Size
-	myBox:=SELF:CanvasArea
-	myArea:=SELF:WindowArea
+	myDim:=self:Size
+	myBox:=self:CanvasArea
+	myArea:=self:WindowArea
 
 	oSys:=SQLSelect{"select destgrps from sysparms",oConn}
 	IF oSys:RecCount>0
 		FOR i:=3 to Len(aDestGrp)
 			cName:=AllTrim((self:aDestName[i-2]):CurrentText)
 			IF Empty(cName)
-				(errorbox{SELF,"Group name must not be empty!"}):Show()
-				(SELF:aDestName[i-2]):SetFocus()
-				RETURN NIL
+				(ErrorBox{self,"Group name must not be empty!"}):Show()
+				(self:aDestName[i-2]):SetFocus()
+				RETURN nil
 			ENDIF
 			self:aDestGrp[i,1]:=cName			
 			cXMLDoc+="<group><name>"+cName+"</name>"
 			IF i>2
 				// save only selected accounts of projects:
-				FOR j:=1 TO Len(aDestGrp[i,2])
+				FOR j:=1 to Len(aDestGrp[i,2])
 					cXMLDoc+="<account>"+Str(aDestGrp[i,2,j],-1)+"</account>"
 				NEXT
 			ENDIF
@@ -2002,16 +2042,16 @@ METHOD OKButton( ) CLASS DonorProject
 		SQLStatement{"commit",oConn}:Execute()
 		oSys:Close()          	
 	ENDIF
-	oSys:=NULL_OBJECT
+	oSys:=null_object
 
-	IF SELF:oDCTodate:SelectedDate < SELF:oDCFromdate:SelectedDate
-		(errorbox{SELF,"To Date must be behind From Date"}):show()
+	IF self:oDCTodate:SelectedDate < self:oDCFromdate:SelectedDate
+		(ErrorBox{self,"To Date must be behind From Date"}):show()
 	ELSE
-		SELF:Pointer := Pointer{POINTERHOURGLASS}
-		SELF:Statusmessage("Collecting data for the report, please wait...")
-		SELF:PrintReport()
-		SELF:Close()
-		SELF:Pointer := Pointer{POINTERARROW}
+		self:Pointer := Pointer{POINTERHOURGLASS}
+		self:STATUSMESSAGE("Collecting data for the report, please wait...")
+		self:PrintReport()
+		self:Close()
+		self:Pointer := Pointer{POINTERARROW}
 	ENDIF
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	//Put your PostInit additions here
@@ -2024,15 +2064,15 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	self:SetTexts()
 	myDim:=self:Size
 	myDim:Height-=2000
-	SELF:Size:=myDim
-	myOrg:=SELF:Origin
+	self:Size:=myDim
+	myOrg:=self:Origin
 	myOrg:y+=2000
-	SELF:Origin:=myOrg
+	self:Origin:=myOrg
    	
 	// generate controls and preselect required items per group
-	FOR h:=3 TO Len(aDestGrp)
-		SELF:SetDestGrp(h)
-		SELF:SetSelected(h)
+	FOR h:=3 to Len(aDestGrp)
+		self:SetDestGrp(h)
+		self:SetSelected(h)
 	NEXT
                       
 	if !Empty(GlBalYears)
@@ -2045,19 +2085,19 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	oDCFromdate:DateRange:=DateRange{StartDate,Today()+31}
 	oDCTodate:DateRange:=DateRange{StartDate,Today()+31}
 
-	SELF:oDCFromdate:Value:=Today()-360
-	SELF:oDCFromdate:Value:=SELF:oDCFromdate:Value - Day(SELF:oDCFromdate:Value)+1
-	SELF:oDCTodate:Value:=Today() - Day(Today())
-	RETURN NIL
+	self:oDCFromdate:Value:=Today()-360
+	self:oDCFromdate:Value:=self:oDCFromdate:Value - Day(self:oDCFromdate:Value)+1
+	self:oDCTodate:Value:=Today() - Day(Today())
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	//Put your PreInit additions here
 	LOCAL oSys as SQLSelect
 	LOCAL oAcc as SQLSelect
-	LOCAL oXMLDoc AS XMLDocument
-	LOCAL childfound, recordfound AS LOGIC
-	LOCAL ChildName AS STRING
-	LOCAL Pntr:=0 AS INT
-	LOCAL i,j AS INT
+	LOCAL oXMLDoc as XMLDocument
+	LOCAL childfound, recordfound as LOGIC
+	LOCAL ChildName as STRING
+	LOCAL Pntr:=0 as int
+	LOCAL i,j as int
 	LOCAL cAcc as int
 
 	AAdd(aDestGrp,{"Members of "+sLand,{}})
@@ -2220,19 +2260,19 @@ METHOD PrintReport() CLASS DonorProject
 			DO CASE
 			CASE i==1
 				FWriteLine(ptrHandle,"<td>")
-				FOR j:=1 TO Len(aGiftAccHomeMbr)
+				FOR j:=1 to Len(aGiftAccHomeMbr)
 					FWriteLine(ptrHandle,aGiftAccHomeMbr[j]+"<br>")
 				NEXT				
 				FWriteLine(ptrHandle,"</td>")
 			CASE i==2
 				FWriteLine(ptrHandle,"<td>")
-				FOR j:=1 TO Len(aGiftAccForeignMbr)
+				FOR j:=1 to Len(aGiftAccForeignMbr)
 					FWriteLine(ptrHandle,aGiftAccForeignMbr[j]+"<br>")
 				NEXT				
 				FWriteLine(ptrHandle,"</td>")
 			CASE i>2
 				FWriteLine(ptrHandle,"<td>")
-				FOR j:=1 TO Len(aDestGrp[i,2])
+				FOR j:=1 to Len(aDestGrp[i,2])
 					acc:=AScan(aGiftProj,{|x|x[2]==aDestGrp[i,2,j]})
 					IF acc>0
 						FWriteLine(ptrHandle,aGiftProj[acc,1]+"<br>")
@@ -2254,34 +2294,34 @@ METHOD PrintReport() CLASS DonorProject
 	RETURN nil
   METHOD SetDestGrp( Count) CLASS DonorProject
   	// initialize controls for a destination group
-	LOCAL oSingle AS SingleLineEdit
-	LOCAL oList AS ListBox
-	LOCAL oDCGroupBoxDest AS GroupBox
-	LOCAL Name , ID , Values AS STRING
-	LOCAL myDim AS Dimension
-	LOCAL myOrg AS Point
-	LOCAL aValues AS ARRAY
-	LOCAL pwvs AS WindowVerticalScrollBar
-	LOCAL oEvent AS ResizeEvent
+	LOCAL oSingle as SingleLineEdit
+	LOCAL oList as ListBox
+	LOCAL oDCGroupBoxDest as GROUPBOX
+	LOCAL Name , ID , Values as STRING
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
+	LOCAL aValues as ARRAY
+	LOCAL pwvs as WindowVerticalScrollBar
+	LOCAL oEvent as ResizeEvent
 	Name:=aDestGrp[Count,1]
 	nID++
 	ID:=Str(nID,-1)
 	//
 	// enlarge window
-	myDim:=SELF:Size
+	myDim:=self:Size
 	myDim:Height+=115
-	SELF:Size:=myDim
-	myOrg:=SELF:Origin
+	self:Size:=myDim
+	myOrg:=self:Origin
 	myOrg:y-=115
-	SELF:Origin:=myOrg
+	self:Origin:=myOrg
 	//
 	// enlarge destinations group:
-	myDim:=SELF:oDCDestinations:Size
+	myDim:=self:oDCDestinations:Size
 	myDim:Height+=115
-	SELF:oDCDestinations:Size:=myDim
-	myOrg:=SELF:oDCDestinations:Origin
+	self:oDCDestinations:Size:=myDim
+	myOrg:=self:oDCDestinations:Origin
 	myOrg:y-=115
-	SELF:oDCDestinations:Origin:=myOrg
+	self:oDCDestinations:Origin:=myOrg
 	//
 	//	insert controls in destinations group:	
 	// listbox:
@@ -2296,24 +2336,24 @@ METHOD PrintReport() CLASS DonorProject
 	// name
 	myOrg:x:=22
 	myOrg:y+=83
-	oSingle:=SingleLineEdit{SELF,Count+200,myOrg,Dimension{230,20},EDITAUTOHSCROLL	}
-	oSingle:HyperLabel := HyperLabel{String2Symbol("DestName"+ID),"DestName"+ID,NULL_STRING,NULL_STRING}
+	oSingle:=SingleLineEdit{self,Count+200,myOrg,Dimension{230,20},EDITAUTOHSCROLL	}
+	oSingle:HyperLabel := HyperLabel{String2Symbol("DestName"+ID),"DestName"+ID,null_string,null_string}
 	oSingle:FocusSelect := FSEL_HOME
-	AAdd(SELF:aControls,oSingle)
+	AAdd(self:aControls,oSingle)
 	oSingle:Show()
 	oSingle:Value:=Name
-	AAdd(SELF:aDestName,oSingle)
+	AAdd(self:aDestName,oSingle)
 
-RETURN NIL
+RETURN nil
 METHOD SetSelected(count) CLASS DonorProject
 	// set corresponding accounts as selected in Listbox of a destination group
-	LOCAL h,i,j,k,grp AS INT
-	LOCAL oList AS ListBox
-	LOCAL aAcc:= aDestGrp[count,2] AS ARRAY
+	LOCAL h,i,j,k,grp as int
+	LOCAL oList as ListBox
+	LOCAL aAcc:= aDestGrp[count,2] as ARRAY
 	LOCAL search as int
-	oList:=SELF:aDestAccSet[count-2]
+	oList:=self:aDestAccSet[count-2]
 	// select required items:
-	FOR j:=1 TO oList:ItemCount
+	FOR j:=1 to oList:ItemCount
 		search:=oList:GetItemValue(j)
 		IF AScan(aAcc,search)>0
 			// select all preselected items:
@@ -2325,7 +2365,7 @@ METHOD SetSelected(count) CLASS DonorProject
 			oList:SetTop(k)
 		ENDIF
 	NEXT
-RETURN NIL	
+RETURN nil	
 STATIC DEFINE DONORPROJECT_CANCELBUTTON := 105 
 STATIC DEFINE DONORPROJECT_DESTINATIONS := 102 
 STATIC DEFINE DONORPROJECT_FIXEDTEXT3 := 103 
@@ -2336,16 +2376,16 @@ STATIC DEFINE DONORPROJECT_FROMDATE := 100
 STATIC DEFINE DONORPROJECT_OKBUTTON := 104 
 STATIC DEFINE DONORPROJECT_TODATE := 101 
 CLASS ListboxDonorReport INHERIT ListBoxExtra 
-declare method GetAccnts
+	declare method GetAccnts
 METHOD GetAccnts(dummy:=nil as string) as array CLASS ListboxDonorReport
 	// get accounts for subset of listbox
-LOCAL aAcc:={} AS ARRAY
-LOCAL cExchAcc, cStart, cEnd AS STRING
-LOCAL oParent:=SELF:Owner AS DonorFollowingReport
-LOCAL aMemHome:=oParent:aMemHome AS ARRAY
-LOCAL aMemNonHome:=oParent:aMemNonHome AS ARRAY
-LOCAL aProjects:=oParent:aProjects AS ARRAY
-LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox AS LOGIC
+LOCAL aAcc:={} as ARRAY
+LOCAL cExchAcc, cStart, cEnd as STRING
+LOCAL oParent:=self:Owner as DonorFollowingReport
+LOCAL aMemHome:=oParent:aMemHome as ARRAY
+LOCAL aMemNonHome:=oParent:aMemNonHome as ARRAY
+LOCAL aProjects:=oParent:aProjects as ARRAY
+LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox as LOGIC
 * Enforce correct sequence:
 cStart:=LTrimZero(oParent:FromAccount)
 cEnd:=LTrimZero(oParent:ToAccount)
@@ -2367,7 +2407,7 @@ IF lProjects
 	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
 ENDIF
 RETURN aAcc
-RESOURCE TotalsMembers DIALOGEX  12, 11, 225, 99
+resource TotalsMembers DIALOGEX  12, 11, 225, 99
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -2384,22 +2424,22 @@ END
 
 CLASS TotalsMembers INHERIT DataWindowMine 
 
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCFixedText5 AS FIXEDTEXT
-	PROTECT oDCFromYear AS SINGLELINEEDIT
-	PROTECT oDCFromMonth AS SINGLELINEEDIT
-	PROTECT oDCToYear AS SINGLELINEEDIT
-	PROTECT oDCToMonth AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCFixedText5 as FIXEDTEXT
+	PROTECT oDCFromYear as SINGLELINEEDIT
+	PROTECT oDCFromMonth as SINGLELINEEDIT
+	PROTECT oDCToYear as SINGLELINEEDIT
+	PROTECT oDCToMonth as SINGLELINEEDIT
+	PROTECT oDCFixedText2 as FIXEDTEXT
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	PROTECT oReport AS PrintDialog
+	PROTECT oReport as PrintDialog
 	
 METHOD CancelButton( ) CLASS TotalsMembers
-		SELF:endWindow()
-RETURN NIL
+		self:EndWindow()
+RETURN nil
 METHOD Close(oEvent) CLASS TotalsMembers
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -2407,76 +2447,76 @@ METHOD Close(oEvent) CLASS TotalsMembers
 		IF oLan:Used
 			oLan:Close()
 		ENDIF
-		oLan:=NULL_OBJECT
+		oLan:=null_object
 	ENDIF
 	self:Destroy()
-	RETURN NIL
+	RETURN nil
 
 ACCESS FromMonth() CLASS TotalsMembers
-RETURN SELF:FieldGet(#FromMonth)
+RETURN self:FieldGet(#FromMonth)
 
 ASSIGN FromMonth(uValue) CLASS TotalsMembers
-SELF:FieldPut(#FromMonth, uValue)
+self:FieldPut(#FromMonth, uValue)
 RETURN uValue
 
 ACCESS FromYear() CLASS TotalsMembers
-RETURN SELF:FieldGet(#FromYear)
+RETURN self:FieldGet(#FromYear)
 
 ASSIGN FromYear(uValue) CLASS TotalsMembers
-SELF:FieldPut(#FromYear, uValue)
+self:FieldPut(#FromYear, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers 
-	LOCAL DIM aFonts[1] AS OBJECT
+	LOCAL dim aFonts[1] as OBJECT
 
 	self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 	SUPER:Init(oWindow,ResourceID{"TotalsMembers",_GetInst()},iCtlID)
 
 	aFonts[1] := Font{,10,"Microsoft Sans Serif"}
-	aFonts[1]:Bold := TRUE
+	aFonts[1]:Bold := true
 
-	oCCOKButton := PushButton{SELF,ResourceID{TOTALSMEMBERS_OKBUTTON,_GetInst()}}
-	oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+	oCCOKButton := PushButton{self,ResourceID{TOTALSMEMBERS_OKBUTTON,_GetInst()}}
+	oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 
-	oCCCancelButton := PushButton{SELF,ResourceID{TOTALSMEMBERS_CANCELBUTTON,_GetInst()}}
-	oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+	oCCCancelButton := PushButton{self,ResourceID{TOTALSMEMBERS_CANCELBUTTON,_GetInst()}}
+	oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
 
-	oDCFixedText3 := FixedText{SELF,ResourceID{TOTALSMEMBERS_FIXEDTEXT3,_GetInst()}}
-	oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"From month:",NULL_STRING,NULL_STRING}
+	oDCFixedText3 := FixedText{self,ResourceID{TOTALSMEMBERS_FIXEDTEXT3,_GetInst()}}
+	oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"From month:",null_string,null_string}
 
-	oDCFixedText5 := FixedText{SELF,ResourceID{TOTALSMEMBERS_FIXEDTEXT5,_GetInst()}}
-	oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Till month:",NULL_STRING,NULL_STRING}
+	oDCFixedText5 := FixedText{self,ResourceID{TOTALSMEMBERS_FIXEDTEXT5,_GetInst()}}
+	oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Till month:",null_string,null_string}
 
-	oDCFromYear := SingleLineEdit{SELF,ResourceID{TOTALSMEMBERS_FROMYEAR,_GetInst()}}
-	oDCFromYear:HyperLabel := HyperLabel{#FromYear,NULL_STRING,NULL_STRING,NULL_STRING}
-	oDCFromYear:FieldSpec := YEARW{}
+	oDCFromYear := SingleLineEdit{self,ResourceID{TOTALSMEMBERS_FROMYEAR,_GetInst()}}
+	oDCFromYear:HyperLabel := HyperLabel{#FromYear,null_string,null_string,null_string}
+	oDCFromYear:FieldSpec := YearW{}
 	oDCFromYear:Picture := "9999"
 
-	oDCFromMonth := SingleLineEdit{SELF,ResourceID{TOTALSMEMBERS_FROMMONTH,_GetInst()}}
+	oDCFromMonth := SingleLineEdit{self,ResourceID{TOTALSMEMBERS_FROMMONTH,_GetInst()}}
 	oDCFromMonth:Picture := "99"
-	oDCFromMonth:FieldSpec := MONTHW{}
-	oDCFromMonth:HyperLabel := HyperLabel{#FromMonth,NULL_STRING,NULL_STRING,NULL_STRING}
+	oDCFromMonth:FieldSpec := MonthW{}
+	oDCFromMonth:HyperLabel := HyperLabel{#FromMonth,null_string,null_string,null_string}
 
-	oDCToYear := SingleLineEdit{SELF,ResourceID{TOTALSMEMBERS_TOYEAR,_GetInst()}}
-	oDCToYear:HyperLabel := HyperLabel{#ToYear,NULL_STRING,NULL_STRING,NULL_STRING}
-	oDCToYear:FieldSpec := YEARW{}
+	oDCToYear := SingleLineEdit{self,ResourceID{TOTALSMEMBERS_TOYEAR,_GetInst()}}
+	oDCToYear:HyperLabel := HyperLabel{#ToYear,null_string,null_string,null_string}
+	oDCToYear:FieldSpec := YearW{}
 	oDCToYear:Picture := "9999"
 
-	oDCToMonth := SingleLineEdit{SELF,ResourceID{TOTALSMEMBERS_TOMONTH,_GetInst()}}
+	oDCToMonth := SingleLineEdit{self,ResourceID{TOTALSMEMBERS_TOMONTH,_GetInst()}}
 	oDCToMonth:Picture := "99"
-	oDCToMonth:FieldSpec := MONTHW{}
-	oDCToMonth:HyperLabel := HyperLabel{#ToMonth,NULL_STRING,NULL_STRING,NULL_STRING}
+	oDCToMonth:FieldSpec := MonthW{}
+	oDCToMonth:HyperLabel := HyperLabel{#ToMonth,null_string,null_string,null_string}
 
-	oDCFixedText2 := FixedText{SELF,ResourceID{TOTALSMEMBERS_FIXEDTEXT2,_GetInst()}}
-	oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Give the total amounts of assessable gifts, personal funds and charges",NULL_STRING,NULL_STRING}
+	oDCFixedText2 := FixedText{self,ResourceID{TOTALSMEMBERS_FIXEDTEXT2,_GetInst()}}
+	oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Give the total amounts of assessable gifts, personal funds and charges",null_string,null_string}
 	oDCFixedText2:Font(aFonts[1], FALSE)
 
-	SELF:Caption := "Totals Members during Balance Year"
-	SELF:HyperLabel := HyperLabel{#TotalsMembers,"Totals Members during Balance Year",NULL_STRING,NULL_STRING}
+	self:Caption := "Totals Members during Balance Year"
+	self:HyperLabel := HyperLabel{#TotalsMembers,"Totals Members during Balance Year",null_string,null_string}
 
 	if !IsNil(oServer)
-		SELF:Use(oServer)
+		self:Use(oServer)
 	ENDIF
 
 	self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -2644,30 +2684,30 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PostInit additions here
 	self:SetTexts()
 	IF Month(Today()) <=9
-		SELF:FromYear:=Year(Today())-2
-		SELF:ToYear:=Year(Today())-1
+		self:FromYear:=Year(Today())-2
+		self:ToYear:=Year(Today())-1
 	ELSE
-		SELF:FromYear:=Year(Today())-1
-		SELF:ToYear:=Year(Today())
+		self:FromYear:=Year(Today())-1
+		self:ToYear:=Year(Today())
 	ENDIF
-	SELF:FromMonth:=10
-	SELF:ToMonth:=9
-	RETURN NIL
+	self:FromMonth:=10
+	self:ToMonth:=9
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PreInit additions here
-	RETURN NIL
+	RETURN nil
 ACCESS ToMonth() CLASS TotalsMembers
-RETURN SELF:FieldGet(#ToMonth)
+RETURN self:FieldGet(#ToMonth)
 
 ASSIGN ToMonth(uValue) CLASS TotalsMembers
-SELF:FieldPut(#ToMonth, uValue)
+self:FieldPut(#ToMonth, uValue)
 RETURN uValue
 
 ACCESS ToYear() CLASS TotalsMembers
-RETURN SELF:FieldGet(#ToYear)
+RETURN self:FieldGet(#ToYear)
 
 ASSIGN ToYear(uValue) CLASS TotalsMembers
-SELF:FieldPut(#ToYear, uValue)
+self:FieldPut(#ToYear, uValue)
 RETURN uValue
 
 STATIC DEFINE TOTALSMEMBERS_CANCELBUTTON := 101 
