@@ -1303,10 +1303,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
 	SELF:GoTop()
 	RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPROP_PAGE
-	//Put your PreInit additions here
+	//Put your PreInit additions here 
+	local cPropTypes as string
+	cPropTypes:="case type"
+	AEval(prop_types,{|x| cPropTypes+=" when "+Str(x[2],-1)+" then '"+x[1]+"'"})
+	cPropTypes+=" end as typedescr"
 	self:oCaller := uExtra 
-	self:oProp:=SQLSelect{"select id,name,`values`,case type when 0 then 'Text' when 1 then 'CheckBox' when 2 then 'DropDownList' END as typedescr  from person_properties order by name",oConn}
-	RETURN NIL
+	self:oProp:=SQLSelect{"select id,name,`values`,"+cPropTypes+" from person_properties order by name",oConn}
+	RETURN nil
 
 METHOD RemoveButton( ) CLASS TabProp_Page 
 STATIC DEFINE TABPROP_PAGE_DELETEBUTTON := 103 
