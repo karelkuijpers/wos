@@ -721,12 +721,12 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		ENDIF
 	ENDIF
 
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS followingtrans")
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS followingtrans2")
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS freqtrans")
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS freqtrans2")
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS perslist")
-	self:SqlDoAndTest("DROP  TABLE IF EXISTS persclass")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS followingtrans")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS followingtrans2")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS freqtrans")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS freqtrans2")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS perslist")
+	self:SqlDoAndTest("DROP TABLE IF EXISTS persclass")
 
 	// Build sqlStr2 to contain the subperiod classification string
 	if Len(aPeriod)>2
@@ -743,7 +743,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
 
 	// Make followingtrans contain all the relevant transactions
-	if self:SqlDoAndTest("CREATE  TABLE followingtrans (subperiod int) " ;
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
 		+ UnionTrans("SELECT transid,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
 		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
 		+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
@@ -757,7 +757,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	
 	
 	// Find persid's of all givers   
-	if self:SqlDoAndTest("CREATE  TABLE perslist (persid INT, PRIMARY KEY (persid)) SELECT DISTINCT persid FROM followingtrans ORDER BY persid")
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE perslist (persid INT, PRIMARY KEY (persid)) SELECT DISTINCT persid FROM followingtrans ORDER BY persid")
 		return nil
 	endif
 
@@ -825,7 +825,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		
 		// freqtrans will contain all transactions in the frequency periods.
 		// We use a crude persid check here. A more exact one will follow below.
-		if self:SqlDoAndTest("CREATE  TABLE freqtrans (freq1 int, freq2 int) AS " ;
+		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
 			+ UnionTrans("SELECT t.transid,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
@@ -837,7 +837,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		// Now join with perslist to remove uninteresting persons. We could not do this in the previous statement
 		// because UnionTrans may generate multiple SELECT statements and perslist is a temporary table and therefore
 		// can only be used once in a statement.
-		if self:SqlDoAndTest("CREATE  TABLE freqtrans2 AS SELECT t.persid,freq1,freq2 FROM freqtrans t,perslist WHERE t.persid=perslist.persid")
+		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans2 AS SELECT t.persid,freq1,freq2 FROM freqtrans t,perslist WHERE t.persid=perslist.persid")
 			return nil
 		endif
 		
@@ -966,7 +966,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Determine classes per person:
 	
-	if self:SqlDoAndTest("CREATE  TABLE persclass (" ;
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE persclass (" ;
 		+ "persid int(11) NOT NULL," ; 
 		+ "classindex int(11) NOT NULL," ;
 		+ "prevclassindex int(11) NOT NULL," ;
@@ -1108,7 +1108,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Create consolidated table
 
-	if self:SqlDoAndTest("CREATE  TABLE followingtrans2 as (" ;
+	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
 		+ "SELECT f.transid,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
 		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
 		+ "GROUP by f.persid,f.subperiod)")
