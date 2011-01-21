@@ -1,50 +1,49 @@
 CLASS DonorFollowingReport INHERIT DataWindowMine 
 
-	PROTECT oDCProjectsBox as CheckBox
-	PROTECT oDCHomeBox as CheckBox
-	PROTECT oDCNonHomeBox as CheckBox
-	PROTECT oDCFromAccount as SingleLineEdit
-	PROTECT oCCFromAccButton as PUSHBUTTON
-	PROTECT oDCToAccount as SingleLineEdit
-	PROTECT oCCToAccButton as PUSHBUTTON
-	PROTECT oDCFixedText2 as FIXEDTEXT
-	PROTECT oDCSubPerLen as combobox
-	PROTECT oDCPropertiesBox as GROUPBOX
-	PROTECT oDCGender as CheckBox
-	PROTECT oDCAge as CheckBox
-	PROTECT oCCRange10 as RadioButton
-	PROTECT oCCRange20 as RadioButton
-	PROTECT oDCType as CheckBox
-	PROTECT oDCFrequency as CheckBox
-	PROTECT oDCRanges as RadioButtonGroup
-	PROTECT oDCStatisticsBox as GROUPBOX
-	PROTECT oDCStatBox1 as CheckBox
-	PROTECT oDCStatBox2 as CheckBox
-	PROTECT oDCStatBox3 as CheckBox
-	PROTECT oDCStatBox4 as CheckBox
-	PROTECT oDCStatBox5 as CheckBox
-	PROTECT oDCStatBox6 as CheckBox
-	PROTECT oDCStatBox7 as CheckBox
-	PROTECT oDCStatBox8 as CheckBox
-	PROTECT oDCNumberRanges as SingleLineEdit
-	PROTECT oDCFixedTextRanges as FIXEDTEXT
-	PROTECT oDCGroupBox1 as GROUPBOX
-	PROTECT oDCFixedText1 as FIXEDTEXT
-	PROTECT oDCFixedText3 as FIXEDTEXT
-	PROTECT oDCTextfrom as FIXEDTEXT
-	PROTECT oDCTextTill as FIXEDTEXT
-	PROTECT oDCFixedText7 as FIXEDTEXT
-	PROTECT oCCOKButton as PUSHBUTTON
-	PROTECT oDCSubSet as ListboxDonorReport
-	PROTECT oCCCancelButton as PUSHBUTTON
-	PROTECT oDCDiffBox as CheckBox
-	PROTECT oDCFromdate as DATESTANDARD
-	PROTECT oDCTodate as DATESTANDARD
-	PROTECT oDCFixedText6 as FIXEDTEXT
-	PROTECT oDCFixedText8 as FIXEDTEXT
-	PROTECT oDCGroupBox3 as GROUPBOX
-	PROTECT oDCFixedText9 as FIXEDTEXT
-	PROTECT oDCFixedText10 as FIXEDTEXT
+	PROTECT oDCProjectsBox AS CHECKBOX
+	PROTECT oDCHomeBox AS CHECKBOX
+	PROTECT oDCNonHomeBox AS CHECKBOX
+	PROTECT oDCFromAccount AS SINGLELINEEDIT
+	PROTECT oCCFromAccButton AS PUSHBUTTON
+	PROTECT oDCToAccount AS SINGLELINEEDIT
+	PROTECT oCCToAccButton AS PUSHBUTTON
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCSubPerLen AS COMBOBOX
+	PROTECT oDCPropertiesBox AS GROUPBOX
+	PROTECT oDCGender AS CHECKBOX
+	PROTECT oDCAge AS CHECKBOX
+	PROTECT oCCRange10 AS RADIOBUTTON
+	PROTECT oCCRange20 AS RADIOBUTTON
+	PROTECT oDCType AS CHECKBOX
+	PROTECT oDCFrequency AS CHECKBOX
+	PROTECT oDCRanges AS RADIOBUTTONGROUP
+	PROTECT oDCStatisticsBox AS GROUPBOX
+	PROTECT oDCStatBox1 AS CHECKBOX
+	PROTECT oDCStatBox2 AS CHECKBOX
+	PROTECT oDCStatBox3 AS CHECKBOX
+	PROTECT oDCStatBox4 AS CHECKBOX
+	PROTECT oDCStatBox5 AS CHECKBOX
+	PROTECT oDCStatBox6 AS CHECKBOX
+	PROTECT oDCStatBox7 AS CHECKBOX
+	PROTECT oDCNumberRanges AS SINGLELINEEDIT
+	PROTECT oDCFixedTextRanges AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCTextfrom AS FIXEDTEXT
+	PROTECT oDCTextTill AS FIXEDTEXT
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCSubSet AS LISTBOXDONORREPORT
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCDiffBox AS CHECKBOX
+	PROTECT oDCFromdate AS DATESTANDARD
+	PROTECT oDCTodate AS DATESTANDARD
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCGroupBox3 AS GROUPBOX
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oDCFixedText10 AS FIXEDTEXT
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE ProjectsBox
@@ -65,7 +64,6 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	INSTANCE StatBox5
 	INSTANCE StatBox6
 	INSTANCE StatBox7
-	INSTANCE StatBox8
 	INSTANCE NumberRanges
 	INSTANCE SubSet
 	INSTANCE DiffBox
@@ -100,7 +98,7 @@ BEGIN
 	CONTROL	"Type of Person", DONORFOLLOWINGREPORT_TYPE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 221, 80, 11
 	CONTROL	"Frequency of giving", DONORFOLLOWINGREPORT_FREQUENCY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 235, 80, 11
 	CONTROL	"Ranges", DONORFOLLOWINGREPORT_RANGES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 59, 200, 99, 20
-	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 257, 304, 112
+	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 257, 304, 104
 	CONTROL	"amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX1, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 267, 251, 11
 	CONTROL	"percentage of total amount given, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX2, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 279, 253, 11
 	CONTROL	"number of givers per class of givers", DONORFOLLOWINGREPORT_STATBOX3, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 291, 251, 11
@@ -108,7 +106,6 @@ BEGIN
 	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 316, 153, 11
 	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 329, 155, 11
 	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 342, 191, 11
-	CONTROL	"export givers per class", DONORFOLLOWINGREPORT_STATBOX8, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|WS_DISABLED, 19, 355, 155, 11
 	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 342, 17, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 342, 63, 12
 	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 30, 377, 82
@@ -121,8 +118,8 @@ BEGIN
 	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
 	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
 	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
-	CONTROL	"20. januar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
-	CONTROL	"20. januar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
+	CONTROL	"21. januar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
+	CONTROL	"21. januar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
 	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
 	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
 	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
@@ -360,9 +357,6 @@ oDCStatBox6:HyperLabel := HyperLabel{#StatBox6,"median amount given per class of
 oDCStatBox7 := CheckBox{SELF,ResourceID{DONORFOLLOWINGREPORT_STATBOX7,_GetInst()}}
 oDCStatBox7:HyperLabel := HyperLabel{#StatBox7,"spread over ranges of amounts given per class of givers ",NULL_STRING,NULL_STRING}
 
-oDCStatBox8 := CheckBox{SELF,ResourceID{DONORFOLLOWINGREPORT_STATBOX8,_GetInst()}}
-oDCStatBox8:HyperLabel := HyperLabel{#StatBox8,"export givers per class",NULL_STRING,NULL_STRING}
-
 oDCNumberRanges := SingleLineEdit{SELF,ResourceID{DONORFOLLOWINGREPORT_NUMBERRANGES,_GetInst()}}
 oDCNumberRanges:Picture := "99"
 oDCNumberRanges:HyperLabel := HyperLabel{#NumberRanges,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -548,10 +542,6 @@ METHOD OKButton( ) CLASS DonorFollowingReport
 		self:oDCStatBox1:SetFocus()
 		RETURN
 	ENDIF
-	if StatBox8
-		oSelpers:=Selpers{self,"MAILINGCODE"}
-		(SelPersMailCd{self,{oSelpers,"","Additional specifications of persons to be exported"}}):Show() 
-	endif
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:PrintReport()
 	self:Pointer := Pointer{POINTERARROW}
@@ -615,9 +605,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL oPers as SQLSelect
 	LOCAL oTransFreq as SQLSelect
 	LOCAL aPers:={} as ARRAY // of each giver its CLN  
-	#ifdef USE_STATBOX8
-		local aPersExp:={} as Array // {pos.recno.exportable} of each person from aPers: if it is exportable conform selpersmailcode
-	#endif   
 	LOCAL aPersPrvFreq,aPersFreq as ARRAY // of each person from aPers: frequency of giving: 1: first giver, 2: not last 2 years, 3: not last year, 4:last year once, 5: more than once last year
 	LOCAL periodNo, classNo, i,j,k,m,nRange,nCSt,maxlevel as int
 	LOCAL cName as STRING
@@ -637,7 +624,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL aRelevantClass as ARRAY // Each member indicates if the corresponding element in aClassTuples has any donation entries
 	LOCAL aDropValues as ARRAY
 	LOCAL oCheck as CheckBox
-	LOCAL cSearch,cSearchOrg,cSep,cClassName as STRING
+	LOCAL cSearch,cSearchOrg,cSep,insSep,cClassName as STRING
 	LOCAL uFieldValue as USUAL, nFreq as int
 	LOCAL nClassPtr,nClassPtr1,nClassPtr2,nCount,nAge,nPersPtr as int
 	LOCAL aClassPtr as ARRAY // ptrs to rows in aClass
@@ -645,7 +632,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL oXMLDoc as XMLDocument
 	LOCAL fType as int //(0: normal FIELD,1: birthdate, 2: extra property checkbx,3:  extra property dropdown
 	LOCAL PerTotal,PerCount as ARRAY
-	LOCAL donationsCount,median,TrCnt as int
+	LOCAL donationsCount,median,TrCnt,insCount as int
 	LOCAL rangeVal  // max and min value per period and value per range per period
 	LOCAL gMes:="Finding transactions" as STRING
 	LOCAL sMes:="Collecting data for the report" as STRING
@@ -655,9 +642,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL Frequency_types:={{"First giver",1},{"Not given last 2 years",2},{"Not given last year",3},{"Given last year",4},{"Regular giver",5}}
 	LOCAL time1 as STRING
 	LOCAL lDiff:=self:DiffBox as LOGIC
-	local pKondp as _CODEBLOCK 
-	LOCAL aTitle := {'Compact Person report','Extended Person report','Labels',;
-		'Letters','Giro accepts','Export persons','Add/Remove Mailing Codes'} as array
 
 	time1:=Time()
 	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
@@ -737,12 +721,12 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		ENDIF
 	ENDIF
 
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS followingtrans")
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS followingtrans2")
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS freqtrans")
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS freqtrans2")
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS perslist")
-	self:SqlDoAndTest("DROP TEMPORARY TABLE IF EXISTS persclass")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS followingtrans")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS followingtrans2")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS freqtrans")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS freqtrans2")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS perslist")
+	self:SqlDoAndTest("DROP  TABLE IF EXISTS persclass")
 
 	// Build sqlStr2 to contain the subperiod classification string
 	if Len(aPeriod)>2
@@ -759,7 +743,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
 
 	// Make followingtrans contain all the relevant transactions
-	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
+	if self:SqlDoAndTest("CREATE  TABLE followingtrans (subperiod int) " ;
 		+ UnionTrans("SELECT transid,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
 		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
 		+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
@@ -773,18 +757,24 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	
 	
 	// Find persid's of all givers   
-	if self:SqlDoAndTest("CREATE TEMPORARY TABLE perslist (persid INT, PRIMARY KEY (persid)) SELECT DISTINCT persid FROM followingtrans ORDER BY persid")
+	if self:SqlDoAndTest("CREATE  TABLE perslist (persid INT, PRIMARY KEY (persid)) SELECT DISTINCT persid FROM followingtrans ORDER BY persid")
 		return nil
 	endif
 
 	oTrans:=SQLSelect{"SELECT persid FROM perslist",oConn} 
-	
+	        
+	IF oTrans:RECCOUNT=0
+		(WarningBox{self,"Warning","No givers match the specified selection"}):Show()
+		oTrans:Close()
+   	return nil
+	ENDIF
+
 	do WHILE !oTrans:EoF
 		AAdd(aPers,oTrans:persid)
 		oTrans:Skip()
-	ENDDO  
-	oTrans:Close()
+	ENDDO
 	ASort(aPers)
+	oTrans:Close()
 
 	IF self:Frequency
 		// Determine frequency periods:
@@ -835,7 +825,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		
 		// freqtrans will contain all transactions in the frequency periods.
 		// We use a crude persid check here. A more exact one will follow below.
-		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
+		if self:SqlDoAndTest("CREATE  TABLE freqtrans (freq1 int, freq2 int) AS " ;
 			+ UnionTrans("SELECT t.transid,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
@@ -847,7 +837,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		// Now join with perslist to remove uninteresting persons. We could not do this in the previous statement
 		// because UnionTrans may generate multiple SELECT statements and perslist is a temporary table and therefore
 		// can only be used once in a statement.
-		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans2 AS SELECT t.persid,freq1,freq2 FROM freqtrans t,perslist WHERE t.persid=perslist.persid")
+		if self:SqlDoAndTest("CREATE  TABLE freqtrans2 AS SELECT t.persid,freq1,freq2 FROM freqtrans t,perslist WHERE t.persid=perslist.persid")
 			return nil
 		endif
 		
@@ -857,22 +847,24 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		sqlStr:="SELECT persid,freq1,COUNT(*) xcount FROM freqtrans2 GROUP BY persid,freq1"  
 		oTransFreq:=SQLSelect{sqlStr,oConn} 
 
-		DO WHILE !oTransFreq:EoF
-			k:=AScanBin(aPers,oTransFreq:persid) 
-			DO CASE
-			CASE oTransFreq:freq1=1 // Two years previously
-				IF aPersFreq[k]<3
-					aPersFreq[k]:=3 // Given two years previously
-				ENDIF
-			CASE oTransFreq:freq1=2 // Last year
-				IF Val(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
-					aPersFreq[k]:=5 // Given >=2 times last year
-				ELSE
-					aPersFreq[k]:=4 // Given once last year
-				ENDIF
-			ENDCASE
-			oTransFreq:Skip()
-		ENDDO
+		IF oTransFreq:RECCOUNT>0
+			DO WHILE !oTransFreq:EoF
+				k:=AScanBin(aPers,oTransFreq:persid) 
+				DO CASE
+				CASE oTransFreq:freq1=1 // Two years previously
+					IF aPersFreq[k]<3
+						aPersFreq[k]:=3 // Given two years previously
+					ENDIF
+				CASE oTransFreq:freq1=2 // Last year
+					IF Val(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
+						aPersFreq[k]:=5 // Given >=2 times last year
+					ELSE
+						aPersFreq[k]:=4 // Given once last year
+					ENDIF
+				ENDCASE
+				oTransFreq:Skip()
+			ENDDO
+		ENDIF
 		oTransFreq:Close()
 
 		IF lDiff  
@@ -881,28 +873,30 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			sqlStr:="SELECT persid,freq2,COUNT(*) xcount FROM freqtrans2 GROUP BY persid,freq2"  
 			oTransFreq:=SQLSelect{sqlStr,oConn} 
 
-			DO WHILE !oTransFreq:EoF
-				k:=AScanBin(aPers,oTransFreq:persid) 
-				DO CASE
-				CASE oTransFreq:freq2=1 // Two years previously
-					IF aPersPrvFreq[k]<3
-						aPersPrvFreq[k]:=3 // Given two years previously
-					ENDIF
-				CASE oTransFreq:freq2=2 // Last year
-					IF Val(oTransFreq:xcount)>=2
-						aPersPrvFreq[k]:=5 // Given >=2 times last year
-					ELSE
-						aPersPrvFreq[k]:=4 // Given once last year
-					ENDIF
-				ENDCASE
-				oTransFreq:Skip()
-			ENDDO                          
+			IF oTransFreq:RECCOUNT>0
+				DO WHILE !oTransFreq:EoF
+					k:=AScanBin(aPers,oTransFreq:persid) 
+					DO CASE
+					CASE oTransFreq:freq2=1 // Two years previously
+						IF aPersPrvFreq[k]<3
+							aPersPrvFreq[k]:=3 // Given two years previously
+						ENDIF
+					CASE oTransFreq:freq2=2 // Last year
+						IF Val(oTransFreq:xcount)>=2
+							aPersPrvFreq[k]:=5 // Given >=2 times last year
+						ELSE
+							aPersPrvFreq[k]:=4 // Given once last year
+						ENDIF
+					ENDCASE
+					oTransFreq:Skip()
+				ENDDO
+			ENDIF
 			oTransFreq:Close()
 		ENDIF		
 	ENDIF   // frequency        
 
 
-	self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")")
+	self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")  0% done")
 	// Determine Person classes:
 	IF self:Age
 		j:=0
@@ -965,24 +959,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	IF maxlevel<1
 		// default class all
 		AAdd(aClassIndex,{"ALL",1,1,0}) // add to overview 
-		AAdd(aClass,{"ALL","All",0,"all"})
+		AAdd(aClass,{"ALL","All",0,"All"})
 		maxlevel:=1
 	ENDIF
 	self:AddClass(aClassTuples,"",1,maxlevel,aClassIndex)
 
 	// Determine classes per person:
 	
-	#ifdef USE_STATBOX8
-		aPersExp:=ArrayCreate(Len(aPers))
-		IF self:StatBox8
-			IF .not.Empty(oSelPers:selx_kondp)
-				pKondp := &("{||"+ oSelPers:selx_kondp+"}")
-			ENDIF
-		endif             
-	#endif
-
-
-	if self:SqlDoAndTest("CREATE TEMPORARY TABLE persclass (" ;
+	if self:SqlDoAndTest("CREATE  TABLE persclass (" ;
 		+ "persid int(11) NOT NULL," ; 
 		+ "classindex int(11) NOT NULL," ;
 		+ "prevclassindex int(11) NOT NULL," ;
@@ -993,10 +977,18 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 
 	TrCnt:=0
-	oPers:=SQLSelect{"select * from person",oConn} 		
-	DO WHILE !oPers:EoF
+	insCount:=0
+	insSep:=""
+	sqlStr2:=""
+	oPers:=SQLSelect{"select * from person",oConn}
+	IF oPers:RECCOUNT=0
+		(ErrorBox{self,"Database table 'person' is empty"}):Show()
+		oPers:Close()
+		return nil
+	ENDIF
+	do WHILE !oPers:EoF
 		TrCnt++
-		IF TrCnt>=100
+		IF TrCnt>=500
 			self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")   " + Str(oPers:RecNo*100/oPers:RECCOUNT,-1,0) + "% done")
 			TrCnt:=0
 		ENDIF	
@@ -1009,18 +1001,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 		cSearch:=""
 		cSep:=""
-		// #ifdef USE_STATBOX8
-		// 		if maxlevel>1  .or.!aClassIndex[1,1]=="ALL".or.self:StatBox8
-		// 			oPers:=SQLSelect{"select * from person where persid=" + aPers[k],oConn} 		
-		// 			if oPers:EoF
-		// 				aPersExp[k]:={"",0,false} 
-		// 				loop
-		// 			ENDIF
-		// 			if self:StatBox8 
-		// 				aPersExp[k]:={oPers:POS,oPers:RecNo,(oPers:Eval(pKondp,,,1).and.oSelPers:EvalExtraProp(oPers))}
-		// 			ENDIF
-		// 		endif
-		// #endif
 
 		// In the following code, for most classes nClassPtr will be set to the index of the relevant entry in aClass, but
 		// for the FREQUENCY class, nClassPtr2 will be the index of the entry for the current period and nClassPtr1 will be 
@@ -1093,29 +1073,42 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				ELSE
 					persValuePtrPrv:=persValuePtr
 				ENDIF
-				sqlStr:="INSERT INTO persclass (persid, classindex, prevclassindex) VALUES (" ;
+				sqlStr2+=insSep + "(" ;
 					+Str(oPers:persid,-1)+"," ;
 					+Str(persValuePtr,-1)+"," ;
-					+Str(persValuePtrPrv,-1)+")"
+					+Str(persValuePtrPrv,-1)+")" 
 			ELSE
-				sqlStr:="INSERT INTO persclass (persid, classindex, prevclassindex) VALUES (" ;
+				sqlStr2+=insSep + "(" ;
 					+Str(oPers:persid,-1)+"," ;
 					+Str(persValuePtr,-1)+"," ;
-					+"0)"
+ 					+"0)"
 			ENDIF
-			if self:SqlDoAndTest(sqlStr)
-				return nil
-			endif
+			insSep:=","  
+			
+			insCount++
+			IF insCount>=200
+				if self:SqlDoAndTest("INSERT INTO persclass (persid, classindex, prevclassindex) VALUES " + sqlStr2)
+					return nil
+				endif
+				sqlStr2:=""
+				insSep:=""
+				insCount:=0
+			ENDIF
 		ENDIF
 		oPers:Skip()
 	ENDDO
 	oPers:Close()
+   IF insCount>=1
+		if self:SqlDoAndTest("INSERT INTO persclass (persid, classindex, prevclassindex) VALUES " + sqlStr2)
+			return nil
+		endif
+	ENDIF
 
 	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
 
 	// Create consolidated table
 
-	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
+	if self:SqlDoAndTest("CREATE  TABLE followingtrans2 as (" ;
 		+ "SELECT f.transid,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
 		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
 		+ "GROUP by f.persid,f.subperiod)")
@@ -1174,7 +1167,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 					ELSE
 						cClassName+=oLan:Get(aClass[k,2])+"="+AllTrim(Str(aClass[k,3]))+" - "+AllTrim(Str(aClass[k,4]))+" "
 					ENDIF
-				ELSEIF aClass[k,1]="TYPE" .or. aClass[k,1]="GENDER" .or. aClass[k,1]="FREQUENCY"
+				ELSEIF aClass[k,1]="TYPE" .or. aClass[k,1]="GENDER" .or. aClass[k,1]="FREQUENCY" .or. aClass[k,1]="ALL"
 					cClassName+=oLan:Get(aClass[k,4])+" "
 				ELSE
 					cClassName+=oLan:Get(aClass[k,2])+"="+oLan:Get(aClass[k,4])+" "
@@ -1207,35 +1200,38 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Note: oTrans:xcount is a Bigint therefore we need to use Val() on it 
 
-	DO WHILE !oTrans:EoF
-		aMatrix1[oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
-		aMatrix3[oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
-		oTrans:Skip()
-	ENDDO 
+	IF oTrans:RECCOUNT>0
+		DO WHILE !oTrans:EoF
+			aMatrix1[oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
+			aMatrix3[oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
+			oTrans:Skip()
+		ENDDO
+	ENDIF
 	oTrans:Close()
 
 	oTrans:=SQLSelect{"SELECT subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
 		+ "FROM followingtrans2 GROUP BY subperiod",oConn}
 
-	DO WHILE !oTrans:EoF
-		// determine ranges from average per period:
-		IF oTrans:subperiod>PrevPeriodCount.and.Val(oTrans:xcount)>0
-			rangeVal:=Round(oTrans:sumamount/(NumberRanges*Val(oTrans:xcount)), 0)
-			IF rangeVal >0
-				FOR m:=1 to self:NumberRanges-1
-					aMatrix7[oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
-					
-				NEXT
-				aMatrix7[oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
-			ENDIF			
-		ENDIF
-		PerTotal[oTrans:subperiod]:=oTrans:sumamount
-		PerCount[oTrans:subperiod]:=Val(oTrans:xcount)
-		oTrans:Skip()
-	ENDDO
+	IF oTrans:RECCOUNT>0
+		DO WHILE !oTrans:EoF
+			// determine ranges from average per period:
+			IF oTrans:subperiod>PrevPeriodCount.and.Val(oTrans:xcount)>0
+				rangeVal:=Round(oTrans:sumamount/(NumberRanges*Val(oTrans:xcount)), 0)
+				IF rangeVal >0
+					FOR m:=1 to self:NumberRanges-1
+						aMatrix7[oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
+					NEXT
+					aMatrix7[oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
+				ENDIF			
+			ENDIF
+			PerTotal[oTrans:subperiod]:=oTrans:sumamount
+			PerCount[oTrans:subperiod]:=Val(oTrans:xcount)
+			oTrans:Skip()
+		ENDDO
+	ENDIF
   	oTrans:Close()
 
-	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  0% done")
+	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
 	
 	// Fill	Matrices:
 	FOR periodNo:=1 to Len(aPeriod)-1
@@ -1303,47 +1299,8 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			ENDIF
 			oTrans:Close()
 		ENDIF
-
-		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  " + Str(periodNo*100/Len(aPeriod)-1,-1,0) + "% done")
 	NEXT  
-	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")  100% done")
-
-	#ifdef USE_STATBOX8
-		IF self:StatBox8
-			// let user select required classes to export:
-			FOR i:=1 to Len(aValues)   // classes
-				nCount:=0 
-				FOR j:=1 to Len(aPeriod)-1
-					nCount+=aMatrix3[j+1,i+1]
-				NEXT
-				AAdd(aExportClass,{aMatrix3[1,i+1]+"("+Str(nCount,-1)+" persons)",i})
-			NEXT
-			(DonorFolwngSelClasses{self,{self,aExportClass}}):show()
-			// make export files:
-			FOR m:=1 to Len(self:aSelectedClasses)
-				i:=self:aSelectedClasses[m]
-				oSelPers:aNN:={}
-				FOR j:=1 to Len(aValues[i,2])    //periods 
-					IF !IsNil(aValues[i,2][j])
-						FOR k:=1 to Len(aValues[i,2][j])  //persons
-							nPersPtr:=AScan(aPers,aValues[i,2][j][k,1])
-							IF nPersPtr>0
-								IF !IsNil(aPersExp[nPersPtr]) .and. aPersExp[nPersPtr,3]
-									IF AScan(oSelPers:aNN,{|x|x[2]=aPersExp[nPersPtr,2]})==0
-										AAdd(oSelPers:aNN,{aPersExp[nPersPtr,1],aPersExp[nPersPtr,2]})
-									ENDIF
-								ENDIF
-							ENDIF					
-						NEXT
-					ENDIF
-				NEXT
-				cClassName:=aMatrix1[1,i+1]
-				IF Len(oSelPers:aNN)>0
-					oSelPers:PrintToOutput(aTitle," - "+cClassName)
-				ENDIF
-			NEXT
-		ENDIF
-	#endif
+	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
 
 	// Markup report from matrix:
 	oFileSpec:=AskFileName(self,"DonorFollowing"+DToS(StartDate)+"_"+DToS(EndDate-1),"Creating Donor Following-report",'*.XLS',"Excel Spreadsheet") 
@@ -1362,7 +1319,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Get("Destinations")+":<br><ol>")
 		FOR i:=1 to Len(aAcc)
 			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[i],-1) ,oConn}
-			IF !oAcc:EoF
+			IF oAcc:RECCOUNT>0
 				FWriteLine(ptrHandle,"<li>"+AllTrim(oAcc:Description)+"</li>")
 			ENDIF      
 			oAcc:Close()
@@ -1491,9 +1448,6 @@ METHOD SetPropExtra( Count) CLASS DonorFollowingReport
 	myOrg:=self:oDCFixedTextRanges:Origin
 	myOrg:y-=25
 	self:oDCFixedTextRanges:Origin:=myOrg
-	myOrg:=self:oDCStatBox8:Origin
-	myOrg:Y-=25
-	self:oDCStatBox8:Origin:=myOrg
 	myOrg:=self:oDCDiffBox:Origin
 	myOrg:y-=25
 	self:oDCDiffBox:Origin:=myOrg
@@ -1513,9 +1467,7 @@ METHOD SetPropExtra( Count) CLASS DonorFollowingReport
 	oCheck:Show()
 RETURN nil
 	
-		
-
-
+	
 METHOD SqlDoAndTest(sqlStr) CLASS DonorFollowingReport
 	// Execute an SQL statement an check for errors
 	// Returns .T. if an error occurred, .F. otherwise
@@ -1523,7 +1475,7 @@ METHOD SqlDoAndTest(sqlStr) CLASS DonorFollowingReport
 	LOCAL sqlErrinfo as SQLErrorInfo
 	LOCAL errStr as STRING
 
-// 	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+//  	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 
 	sqlSt:=SQLStatement{sqlStr,oConn}
 	sqlSt:Execute()
@@ -1596,13 +1548,6 @@ ASSIGN StatBox7(uValue) CLASS DonorFollowingReport
 SELF:FieldPut(#StatBox7, uValue)
 RETURN uValue
 
-ACCESS StatBox8() CLASS DonorFollowingReport
-RETURN SELF:FieldGet(#StatBox8)
-
-ASSIGN StatBox8(uValue) CLASS DonorFollowingReport
-SELF:FieldPut(#StatBox8, uValue)
-RETURN uValue
-
 ACCESS SubPerLen() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#SubPerLen)
 
@@ -1636,28 +1581,28 @@ SELF:FieldPut(#Type, uValue)
 RETURN uValue
 
 STATIC DEFINE DONORFOLLOWINGREPORT_AGE := 111 
-STATIC DEFINE DONORFOLLOWINGREPORT_CANCELBUTTON := 136 
-STATIC DEFINE DONORFOLLOWINGREPORT_DIFFBOX := 137 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT1 := 129 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT10 := 144 
+STATIC DEFINE DONORFOLLOWINGREPORT_CANCELBUTTON := 135 
+STATIC DEFINE DONORFOLLOWINGREPORT_DIFFBOX := 136 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT1 := 128 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT10 := 143 
 STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT2 := 107 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT3 := 130 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT6 := 140 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT7 := 133 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT8 := 141 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT9 := 143 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXTRANGES := 127 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT3 := 129 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT6 := 139 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT7 := 132 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT8 := 140 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT9 := 142 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXTRANGES := 126 
 STATIC DEFINE DONORFOLLOWINGREPORT_FREQUENCY := 115 
 STATIC DEFINE DONORFOLLOWINGREPORT_FROMACCBUTTON := 104 
 STATIC DEFINE DONORFOLLOWINGREPORT_FROMACCOUNT := 103 
-STATIC DEFINE DONORFOLLOWINGREPORT_FROMDATE := 138 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMDATE := 137 
 STATIC DEFINE DONORFOLLOWINGREPORT_GENDER := 110 
-STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX1 := 128 
-STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX3 := 142 
+STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX1 := 127 
+STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX3 := 141 
 STATIC DEFINE DONORFOLLOWINGREPORT_HOMEBOX := 101 
 STATIC DEFINE DONORFOLLOWINGREPORT_NONHOMEBOX := 102 
-STATIC DEFINE DONORFOLLOWINGREPORT_NUMBERRANGES := 126 
-STATIC DEFINE DONORFOLLOWINGREPORT_OKBUTTON := 134 
+STATIC DEFINE DONORFOLLOWINGREPORT_NUMBERRANGES := 125 
+STATIC DEFINE DONORFOLLOWINGREPORT_OKBUTTON := 133 
 STATIC DEFINE DONORFOLLOWINGREPORT_PROJECTSBOX := 100 
 STATIC DEFINE DONORFOLLOWINGREPORT_PROPERTIESBOX := 109 
 STATIC DEFINE DONORFOLLOWINGREPORT_RANGE10 := 112 
@@ -1670,16 +1615,23 @@ STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX4 := 121
 STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX5 := 122 
 STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX6 := 123 
 STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX7 := 124 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX8 := 125 
 STATIC DEFINE DONORFOLLOWINGREPORT_STATISTICSBOX := 117 
 STATIC DEFINE DONORFOLLOWINGREPORT_SUBPERLEN := 108 
-STATIC DEFINE DONORFOLLOWINGREPORT_SUBSET := 135 
-STATIC DEFINE DONORFOLLOWINGREPORT_TEXTFROM := 131 
-STATIC DEFINE DONORFOLLOWINGREPORT_TEXTTILL := 132 
+STATIC DEFINE DONORFOLLOWINGREPORT_SUBSET := 134 
+STATIC DEFINE DONORFOLLOWINGREPORT_TEXTFROM := 130 
+STATIC DEFINE DONORFOLLOWINGREPORT_TEXTTILL := 131 
 STATIC DEFINE DONORFOLLOWINGREPORT_TOACCBUTTON := 106 
 STATIC DEFINE DONORFOLLOWINGREPORT_TOACCOUNT := 105 
-STATIC DEFINE DONORFOLLOWINGREPORT_TODATE := 139 
+STATIC DEFINE DONORFOLLOWINGREPORT_TODATE := 138 
 STATIC DEFINE DONORFOLLOWINGREPORT_TYPE := 114 
+CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
+
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCClassesBox as LISTBOX
+	PROTECT oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  Protect oCaller as Object
 resource DonorFolwngSelClasses DIALOGEX  5, 20, 271, 125
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Donor following Report - export classes of persons"
@@ -1690,14 +1642,6 @@ BEGIN
 	CONTROL	"OK", DONORFOLWNGSELCLASSES_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 22, 55, 11
 END
 
-CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
-
-	PROTECT oDCFixedText1 as FIXEDTEXT
-	PROTECT oDCClassesBox as LISTBOX
-	PROTECT oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  Protect oCaller as Object
 METHOD Init(oParent,uExtra) CLASS DonorFolwngSelClasses 
 LOCAL dim aFonts[1] as OBJECT
 
@@ -1749,21 +1693,6 @@ method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 STATIC DEFINE DONORFOLWNGSELCLASSES_CLASSESBOX := 101 
 STATIC DEFINE DONORFOLWNGSELCLASSES_FIXEDTEXT1 := 100 
 STATIC DEFINE DONORFOLWNGSELCLASSES_OKBUTTON := 102 
-resource DonorProject DIALOGEX  34, 31, 442, 1308
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
-	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
-	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
-	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
-	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
-	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
-	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
-	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
-END
-
 CLASS DonorProject INHERIT DataWindowExtra 
 
 	EXPORT oDCFromdate as DATESTANDARD
@@ -1785,6 +1714,21 @@ CLASS DonorProject INHERIT DataWindowExtra
 	PROTECT aDestName:={} as ARRAY // array with singlelineedit controls
 	PROTECT nID as int
 	PROTECT pwvs as WindowVerticalScrollBar     
+
+resource DonorProject DIALOGEX  34, 31, 442, 1308
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
+	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
+	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
+	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
+	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
+	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
+	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
+	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
+END
 
 METHOD CancelButton( ) CLASS DonorProject
 	self:EndWindow()
@@ -2407,21 +2351,6 @@ IF lProjects
 	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
 ENDIF
 RETURN aAcc
-resource TotalsMembers DIALOGEX  12, 11, 225, 99
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", TOTALSMEMBERS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 160, 77, 54, 12
-	CONTROL	"Cancel", TOTALSMEMBERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 96, 77, 54, 12
-	CONTROL	"From month:", TOTALSMEMBERS_FIXEDTEXT3, "Static", WS_CHILD, 12, 40, 54, 12
-	CONTROL	"Till month:", TOTALSMEMBERS_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 54, 12
-	CONTROL	"", TOTALSMEMBERS_FROMYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 36, 34, 11, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_FROMMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 134, 37, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_TOYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 56, 34, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_TOMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 55, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
-END
-
 CLASS TotalsMembers INHERIT DataWindowMine 
 
 	PROTECT oCCOKButton as PUSHBUTTON
@@ -2437,6 +2366,21 @@ CLASS TotalsMembers INHERIT DataWindowMine
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	PROTECT oReport as PrintDialog
 	
+resource TotalsMembers DIALOGEX  12, 11, 225, 99
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", TOTALSMEMBERS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 160, 77, 54, 12
+	CONTROL	"Cancel", TOTALSMEMBERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 96, 77, 54, 12
+	CONTROL	"From month:", TOTALSMEMBERS_FIXEDTEXT3, "Static", WS_CHILD, 12, 40, 54, 12
+	CONTROL	"Till month:", TOTALSMEMBERS_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 54, 12
+	CONTROL	"", TOTALSMEMBERS_FROMYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 36, 34, 11, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_FROMMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 134, 37, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_TOYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 56, 34, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_TOMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 55, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
+END
+
 METHOD CancelButton( ) CLASS TotalsMembers
 		self:EndWindow()
 RETURN nil
