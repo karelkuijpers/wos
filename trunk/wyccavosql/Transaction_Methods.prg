@@ -4027,3 +4027,43 @@ else
 endif 
 return cCompStmnt
  
+function UnionTrans2(cStatement as string, BegDat as date, EndDat as date) as string
+// combine select statemenst on transaction with unions on historic trnsaction tables
+* 
+* cStatement should be in terms of Transaction table as t  
+*
+Local i as int
+Local Maxdat as date
+local cCompStmnt as String
+
+// determine required dates in cStatement: 
+cStatement:=Lower(cStatement) 
+if At("transaction",cStatement)=0
+	return cStatement
+endif
+
+
+Maxdat:=Today()+60
+if Empty(EndDat)
+	EndDat:=Maxdat
+endif
+
+if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+	return cStatement
+else
+	// compose Statement: 
+	// actual period:
+	If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
+		cCompStmnt:="("+cStatement+")"
+	endif
+	if Empty(BegDat)
+		BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
+	endif
+	for i:=2 to Len(GlBalYears)
+		if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
+			cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+		endif
+	next
+endif 
+return cCompStmnt
+ 
