@@ -134,7 +134,8 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
    endif
    self:cAccSelection:=" a.accid='"+pAccount+"'"
    cStatement:= self:SQLGetBalance(PeriodStartYear*100+ PeriodStartMonth, PeriodEndYear*100+PeriodEndMonth-;
-	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true))
+	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true)) 
+	LogEvent(,cStatement,"logsql")
 	oAccBal:=SQLSelect{cStatement,oConn}
 	if !Empty(oAccBal:Status).or.oAccBal:RecCount<1
 		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"logerrors")
@@ -229,7 +230,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	* Generated SQL retrieves the following values:
 	* per_deb (+per_debf)			: calculated debit balance value during required period  (+ foreign currency)
 	* per_cre (+per_creF)  			: idem for credit
-	* prvper_deb (+prvper_debf)	: calculated debit balance value at begin of previous period
+	* prvper_deb (+prvper_debf)	: calculated debit balance at the end of previous period
 	* prvper_cre (+prvper_cref)	: idem for credit
 	* prvyr_deb (+prvyr_debf)  	: calculated debit balance value during previous year
 	* prvyr_cre (+prvyr_creF)  	: idem for credit
@@ -386,9 +387,6 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	else
 		cprvperCondition:="if((mb.year*12+mb.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodStart-1,-1)						
 	endif
-	if lForeignCurr
-		cprvperCondition+=" and mb.currency='"+sCURR+"'"
-	endif
 
 	// condition for selecting mbalance mb:
 	IF PrvYearNotClosed 
@@ -440,7 +438,6 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 		// current year contains balances of previous year:
 		cAccBalYrCondition:="ay.yearstart="+Str(CurrStartYear,-1)+" and ay.monthstart="+Str(CurrStartMonth,-1) 		
 	endif
-// 	cAccBalYrCondition+=" and ay.currency='"+sCURR+"'"
 
 	// condition for selecting accountbalanceyear into sum of balance year 2: 
 	IF PrvYearNotClosed
