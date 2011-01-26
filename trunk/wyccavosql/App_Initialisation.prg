@@ -773,6 +773,9 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			self:FirstOfDay:=FALSE
 		else	
 			self:FirstOfDay:=true
+			if !Empty(oSel:status)
+				self:lNewDb:=true    // apparently partly new database which need to be converted
+			endif
 		endif
 	ENDIF
 	// 	self:FirstOfDay:=true 
@@ -807,9 +810,9 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		HelpDir:="C:"
 	ENDIF
 	// copy helpfile to c because it cannot read from a server:
-	oMyFileSpec1:=FileSpec{cWorkdir+"\WycHlp.chm"}
+	oMyFileSpec1:=FileSpec{cWorkdir+"\WOSHlp.chm"}
 	IF oMyFileSpec1:Find()
-		oMyFileSpec2:=FileSpec{HelpDir+"\WycHlp.chm"}
+		oMyFileSpec2:=FileSpec{HelpDir+"\WOSHlp.chm"}
 		IF oMyFileSpec2:Find()
 			IF oMyFileSpec2:DateChanged<oMyFileSpec1:DateChanged .or.;
 					(oMyFileSpec2:DateChanged=oMyFileSpec1:DateChanged .and. oMyFileSpec2:TimeChanged<oMyFileSpec1:TimeChanged)
@@ -820,9 +823,9 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		ENDIF
 	ENDIF	
 	// copy WhtaIsNewfile to c because it cannot read from a server:
-	oMyFileSpec1:=FileSpec{cWorkdir+"\WyccavoNew.chm"}
+	oMyFileSpec1:=FileSpec{cWorkdir+"\WosSQLNew.chm"}
 	IF oMyFileSpec1:Find()
-		oMyFileSpec2:=FileSpec{HelpDir+"\WyccavoNew.chm"}
+		oMyFileSpec2:=FileSpec{HelpDir+"\WosSQLNew.chm"}
 		IF oMyFileSpec2:Find()
 			IF oMyFileSpec2:DateChanged<oMyFileSpec1:DateChanged .or.;
 					(oMyFileSpec2:DateChanged=oMyFileSpec1:DateChanged .and. oMyFileSpec2:TimeChanged<oMyFileSpec1:TimeChanged)
