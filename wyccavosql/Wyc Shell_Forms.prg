@@ -81,7 +81,7 @@ METHOD HelpContents CLASS StandardWycWindow
 	LOCAL nResult AS DWORD
 nResult := HTMLHelp(;
             SELF:Handle(),;
-            psz(_cast,HelpDir+"/" + "WycHlp.chm::/Introduction.htm"), ;
+            psz(_cast,HelpDir+"/" + "WOSHlp.chm::/Introduction.htm"), ;
             HH_DISPLAY_TOPIC,;
             0)
 
@@ -109,7 +109,7 @@ METHOD HelpIndex CLASS StandardWycWindow
 	LOCAL nResult AS DWORD
 nResult := HTMLHelp(;
             SELF:Handle(),;
-            psz(_cast,HelpDir+"/"+ "WycHlp.chm::/Introduction.htm"), ;
+            psz(_cast,HelpDir+"/"+ "WOSHlp.chm::/Introduction.htm"), ;
             HH_DISPLAY_INDEX,;
             0)
 
@@ -272,7 +272,7 @@ METHOD WhatIsNew CLASS StandardWycWindow
 	LOCAL nResult as DWORD
 nResult := HTMLHelp(;
             self:Handle(),;
-            psz(_cast,HelpDir+"/" + "WyccavoNew.chm::/WhatIsNew2_6.htm"), ;
+            psz(_cast,HelpDir+"/" + "WosSQLNew.chm::/WhatIsNew2_6.htm"), ;
             HH_DISPLAY_TOPIC,;
             0)
 
