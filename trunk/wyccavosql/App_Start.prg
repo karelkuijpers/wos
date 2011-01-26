@@ -53,7 +53,7 @@ local oStJournal as StandingOrderJournal
 		ENDIF
   		SetDeleted( true )
 	#IFNDEF __debug__
-		(SplashScreen{self}):Show()
+// 		(SplashScreen{self}):Show()
 	#ENDIF		 
    	oInit:=Initialize{oMainWindow} 
    	oInit:Initialize()
