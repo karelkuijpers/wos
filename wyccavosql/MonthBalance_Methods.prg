@@ -135,7 +135,7 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
    self:cAccSelection:=" a.accid='"+pAccount+"'"
    cStatement:= self:SQLGetBalance(PeriodStartYear*100+ PeriodStartMonth, PeriodEndYear*100+PeriodEndMonth-;
 	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true)) 
-	LogEvent(,cStatement,"logsql")
+// 	LogEvent(,cStatement,"logsql")
 	oAccBal:=SQLSelect{cStatement,oConn}
 	if !Empty(oAccBal:Status).or.oAccBal:RecCount<1
 		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"logerrors")
@@ -492,16 +492,16 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
    ",y.prvyrytd_deby+y.svjdyr2 as prvyrytd_deb,y.prvyrytd_crey+y.svjcyr2 as prvyrytd_cre,"+;
 	"y.prvper_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby,0) as prvper_deb,"+;
 	"y.prvper_crey+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3+y.prvyr_crey,0) as prvper_cre,"+;
-	"y.per_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby+prvper_deby,0) as per_deb,"+;
-	"y.per_crey+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3+y.prvyr_crey+prvper_crey,0) as per_cre,"+;
+	"y.per_deby+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3+y.prvyr_deby+y.prvper_deby,0) as per_deb,"+;
+	"y.per_crey+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3+y.prvyr_crey+y.prvper_crey,0) as per_cre,"+;
 	"y.pl_deb,y.pl_cre,y.prvyrpl_deb,y.prvyrpl_cre"+;    
 	iif(lForeignCurr,;
    ",y.svjdyr3f+y.prvyr_debyf as prvyr_debf,y.svjcyr3f+y.prvyr_creyf as prvyr_cref"+;
    ",y.prvyrytd_debyf+y.svjdyr2f as prvyrytd_debf,y.prvyrytd_creyf+y.svjcyr2f as prvyrytd_cref"+;
 	",y.prvper_debyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf,0) as prvper_debf"+;
 	",y.prvper_creyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf,0) as prvper_cref"+;
-	",y.per_debyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3f+y.prvyr_debyf+prvper_debyf,0) as per_debf"+;
-	",y.per_creyf+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjcyr3f+y.prvyr_creyf+prvper_creyf,0) as per_cref";
+	",y.per_debyf+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjdyr3f+y.prvyr_debyf+y.prvper_debyf,0) as per_debf"+;
+	",y.per_creyf+if(category='"+LIABILITY+"' or category='"+ASSET+"',y.svjcyr3f+y.prvyr_creyf+y.prvper_creyf,0) as per_cref";
 	,"")+;
 	iif(lBudget,",sum("+cprvperConditionBud+",bu.amount,0)) as prvper_bud,sum("+cPerConditionBud+",bu.amount,0)) as per_bud,sum("+cYrConditionBud+",bu.amount,0)) as yr_bud","")+;
 	" from ("+cSelecty+") as y "+;
