@@ -365,7 +365,8 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL DestAmnt as FLOAT
 	LOCAL oAfl as UpdateHouseHoldID
 	LOCAL datelstafl as date
-	LOCAL cDestAcc,cNoteText,cError as STRING 
+	LOCAL cDestAcc,cNoteText,cError,cStmsg as STRING 
+	local nStep as int
 	local nRow, nPage as int
 	Local cAccCng as string,  nAnswer as int 
 	local oAsk as AskSend 
@@ -414,8 +415,9 @@ METHOD PrintReport() CLASS PMISsend
 		Return
 	endif
 	PMCUpload:= iif(self:oSys:PMCUPLD=1,true,false)
-	// fExChRate:=self:mxrate
-	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the sending, please wait")+"...")
+	// fExChRate:=self:mxrate 
+	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
+	self:STATUSMESSAGE(cStmsg)
 
 	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
 
@@ -445,7 +447,7 @@ METHOD PrintReport() CLASS PMISsend
 	// select the member data
 	oMbr:=SQLSelect{"select a.accid,a.accnumber,a.description,a.currency,b.category as type,m.*,pp.ppname as homeppname,"+;
 		"group_concat(cast(d.desttyp as char),'#;#',cast(d.destamt as char),'#;#',d.destpp,'#;#',d.destacc,'#;#',cast(d.lstdate as char),'#;#',cast(d.seqnbr as char),'#;#',"+;
-		"d.descrptn,'#;#',d.currency,'#;#',cast(d.amntsnd as char),'#;#',cast(d.singleuse as char),'#;#',dfir,'#;#',dfia,'#;#',checksave,'#;#',pd.ppname separator '#%#,') as distr" +;
+		"d.descrptn,'#;#',d.currency,'#;#',cast(d.amntsnd as char),'#;#',cast(d.singleuse as char),'#;#',dfir,'#;#',dfia,'#;#',checksave,'#;#',pd.ppname separator '#%#') as distr" +;
 		" from account a,balanceitem b,member m left join ppcodes pp on (pp.ppcode=m.homepp) "+;
 		" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) left join ppcodes pd on (d.destpp=pd.ppcode) "+; 
 	" where a.accid=m.accid and a.balitemid=b.balitemid group by m.accid order by m.accid",oConn}
@@ -462,9 +464,13 @@ METHOD PrintReport() CLASS PMISsend
 		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oTrans:Status:description+')'}:Show()
 		SQLStatement{"rollback",oConn}:Execute() 
 		return
-	endif
+	endif 
+	nStep:=Ceil(oMbr:RecCount/20)
 	DO WHILE .not.oMbr:EOF
 		CurrentAccID:=oMbr:accid
+		if oMbr:Recno%nStep=0
+			self:STATUSMESSAGE(cStmsg+' ('+Str((oMbr:Recno*5)/nStep,3,0)+'% )')
+		endif
 		me_accid:=Str(CurrentAccID,-1) 
 		me_mbrid:=Str(oMbr:mbrid,-1)
 		me_accnbr:=oMbr:ACCNUMBER 
@@ -631,7 +637,8 @@ METHOD PrintReport() CLASS PMISsend
 				ENDCASE
 				oTrans:skip()
 			endif
-		ENDDO
+		ENDDO 
+
 		if !lSkipMbr	
 			AssInt:=Round(AssInt+mbrint,DecAantal)
 			AssField:=Round(AssField+mbrfield,DecAantal)
@@ -973,8 +980,11 @@ METHOD PrintReport() CLASS PMISsend
 				ENDIF
 			ENDIF
 			oMapi := MAPISession{}
-			self:Pointer := Pointer{POINTERHOURGLASS} 
-			self:STATUSMESSAGE(self:oLan:WGet("Recording transactions, please wait")+"...")
+			self:Pointer := Pointer{POINTERHOURGLASS}
+			cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
+			self:STATUSMESSAGE(cStmsg)  
+			nStep:=Ceil(batchcount/20)
+
 			
 			IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
 				SQLStatement{"update sysparms set iesmailacc='PMC-Files_Intl@sil.org'",oConn}:Execute()
@@ -1002,6 +1012,9 @@ METHOD PrintReport() CLASS PMISsend
 			nSeqnr:=0
 			nSeqnrDT:=0
 			FOR a_tel = 1 to batchcount
+				if a_tel%nStep=0
+					self:STATUSMESSAGE(cStmsg+' ('+Str((a_tel*5)/nStep,3,0)+'% )')
+				endif
 				* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
 				*          1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
 				me_accid:=aMemberTrans[a_tel,1]
