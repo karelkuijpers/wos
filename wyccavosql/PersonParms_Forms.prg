@@ -847,12 +847,10 @@ oDBTYPEDESCR := DataColumn{28}
 oDBTYPEDESCR:Width := 28
 oDBTYPEDESCR:HyperLabel := HyperLabel{#TypeDescr,"Type",NULL_STRING,NULL_STRING} 
 oDBTYPEDESCR:Caption := "Type"
-oDBTypeDescr:Block := {|x| PropTypeDesc(x:type)}
-oDBTypeDescr:BlockOwner := self:server
 self:Browser:AddColumn(oDBTYPEDESCR)
 
 
-self:ViewAs( #BrowseView )
+SELF:ViewAs(#BrowseView)
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
