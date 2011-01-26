@@ -597,7 +597,7 @@ Method ReEvaluate() Class Reevaluation
 		cCur:= oAccnt:Currency
 		// determine balance in foreign currency:
 		oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,cCur)
-		if oMBal:per_deb # 0 .or. oMBal:per_cre # 0
+		if oMBal:per_debF # 0 .or. oMBal:per_creF # 0
 			// calculate new balance in local currency: 
 			if (nCurPntr:=AScan(aROE,{|x|x[1]== cCur}))>0
 				CurRate:=aROE[nCurPntr,2]
@@ -608,9 +608,8 @@ Method ReEvaluate() Class Reevaluation
 			endif
 			if CurRate > 0
 				lError:=true
-				mDiff1:=Round((oMBal:per_cre - oMBal:per_deb)*CurRate,DecAantal)
+				mDiff1:=Round((oMBal:per_creF - oMBal:per_debF)*CurRate,DecAantal)
 				// determine old balance in local currency:
-				oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,sCURR)
 				mDiff2:=Round(oMBal:per_cre - oMBal:per_deb,DecAantal)
 				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
 				if mDiff <> 0
