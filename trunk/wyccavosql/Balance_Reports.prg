@@ -1099,12 +1099,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BalanceReport
 	//Put your PostInit additions here 
 	local aBal:={} as array
 self:SetTexts()
-// aBal:=GetBalYear(Year(Today()),Month(Today()))
-// self:MONTHSTART:=aBal[2]
+aBal:=GetBalYear(Year(Today()-28),Month(Today()-28))
+// self:MONTHSTART:=aBal[4]
 // self:MONTHEND:=aBal[4]
 self:MONTHSTART:=Month(Today()-28)
 self:MONTHEND:=self:MONTHSTART
-self:oDCBalYears:CurrentItemNo:=1
+self:oDCBalYears:Value:=Str(aBal[1],4,0)+StrZero(aBal[2],2,0)
 self:WhatDetails:=true
 self:WhoDetails:=true
 self:mBalNumber:="0: Balance Structure"
