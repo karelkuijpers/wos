@@ -1853,8 +1853,8 @@ METHOD BlockColumns() CLASS GeneralJournal1
 	SELF:oDBACCNUMBER:SetStandardStyle(GBSREADONLY)
 	SELF:oDBDEB:SetStandardStyle(GBSREADONLY)
 	SELF:oDBCRE:SetStandardStyle(GBSREADONLY)
-	SELF:oDBGC:SetStandardStyle(GBSREADONLY)
-	SELF:oDBREKOMS:SetStandardStyle(GBSREADONLY)
+	self:oDBGC:SetStandardStyle(gbsReadOnly)
+	self:oDBACCDESC:SetStandardStyle(gbsReadOnly)
 	RETURN NIL
 METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	LOCAL recnr AS INT
@@ -2571,7 +2571,8 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	LOCAL lSuccess, lNameCheck AS LOGIC
 	LOCAL oEditPersonWindow AS NewPersonWindow
 	local CurRate as float
-	local nMsgPos as int
+	local nMsgPos as int 
+	local Destname, cSpecMessage as string
 	local oPersCnt as PersonContainer
 	local myAcc as SQLSelect
 	local oPersBank,oSel as SQLSelect
@@ -2652,10 +2653,27 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	else
 		self:mDebAmnt:=Round(CurRate*self:mDebAmntF,DecAantal)
 	endif
-	lNameCheck:=true
+	lNameCheck:=true 
+	* Analyse name and address from Bank: 
+	oPersCnt:=PersonContainer{}
+	oPersCnt:m51_lastname:=AllTrim(oTmt:m56_contra_name)
+	oPersCnt:m51_pos:=oTmt:m56_zip
+	oPersCnt:m51_ad1:=oTmt:m56_address
+	oPersCnt:m51_city:=oTmt:m56_town
+	oPersCnt:m51_country:=oTmt:m56_country
+	oPersCnt:m56_banknumber:= oTmt:m56_contra_bankaccnt
+	oPersCnt:m51_type:="individual"
+	oPersCnt:m51_gender:="unknown"
+	if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
+		oPersCnt:m51_ad1:=AllTrim(oTmt:m56_description) 
+		oPersCnt:Naw_Analyse()
+	else
+		oPersCnt:Naw_Analyse(,,,!Empty(oPersCnt:m51_pos),!Empty(oPersCnt:m51_city),!Empty(oPersCnt:m51_ad1))
+	endif
+
 	//IF Empty(oTmt:m56_contra_bankaccnt).or.oTmt:m56_addsub =="A".or.(Acceptgiro.and.!Empty(Val(mCLNGiver))).or.;
 	//	(ADMIN="HO".and.(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL"))
-	IF oTmt:m56_addsub =="A".or.(Acceptgiro.and.!Empty(Val(mCLNGiver))).or.;
+	IF oTmt:m56_addsub =="A".or.(self:Acceptgiro.and.!Empty(Val(self:mCLNGiver))).or.;
 			(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL")
 		lNameCheck:=FALSE
 		SELF:InitGifts()
@@ -2680,7 +2698,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN}	
 			//ELSEIF Acceptgiro 
 		ELSEIF !empty(self:mCLNGiver)
-			self:PersonButton(true,,true,PersonContainer{})
+			self:PersonButton(true,,true,oPersCnt)
 			// 				m51_assrec:=self:oPers:Recno
 			if Acceptgiro
 				self:oDCmPerson:Disable()
@@ -2697,41 +2715,23 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	ENDIF
 	IF lNameCheck
 		Recognised:=FALSE
-		* Analyse name and address from Bank: 
-		oPersCnt:=PersonContainer{}
-		oPersCnt:m51_lastname:=AllTrim(oTmt:m56_contra_name)
-		oPersCnt:m51_pos:=oTmt:m56_zip
-		oPersCnt:m51_ad1:=oTmt:m56_address
-		oPersCnt:m51_city:=oTmt:m56_town
-		oPersCnt:m51_country:=oTmt:m56_country
-		oPersCnt:m56_banknumber:= oTmt:m56_contra_bankaccnt
-		oPersCnt:m51_type:="individual"
-		oPersCnt:m51_gender:="unknown"
-		if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
-			oPersCnt:m51_ad1:=AllTrim(oTmt:m56_description)
-			oPersCnt:Naw_Analyse()
-		else
-			oPersCnt:Naw_Analyse(,,,!Empty(oPersCnt:m51_pos),!Empty(oPersCnt:m51_city),!Empty(oPersCnt:m51_ad1))
-		endif
 		
 		IF !Empty(oTmt:m56_contra_bankaccnt) 
-			oPersBank:=SQLSelect{"select persid from personbank where banknumber='"+oTmt:m56_contra_bankaccnt+"'",oConn}
-			if oPersBank:RecCount>0 
-				oPers:=SQLSelectPerson{"Select * from person where persid="+Str(oPersBank:persid,-1),oConn} 
-				if oPers:RecCount>0
-					Recognised:=TRUE
-// 					m51_assrec:=self:oPers:Recno
-					IF AllTrim(oPersCnt:m51_pos)#alltrim(oPers:postalcode) .and. Len(AllTrim(oPersCnt:m51_pos))>=7
-						* address changed:
-						oEditPersonWindow := NewPersonWindow{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
-						oEditPersonWindow:Caption:="Address changed of: "+AllTrim( oPers:GetFullNAW())
-						oEditPersonWindow:Show()
-					ELSE
-						SELF:Regperson(oPers)
-					ENDIF
-					SELF:oDCmPerson:Disable()
-					self:oCCPersonButton:Disable()
+			oPers:=SQLSelectPerson{"Select p.* from person p, personbank pb where p.persid=pb.persid and banknumber='"+oTmt:m56_contra_bankaccnt+"'",oConn}
+			if oPers:RecCount>0
+				Recognised:=TRUE
+				// 					m51_assrec:=self:oPers:Recno
+				IF AllTrim(oPersCnt:m51_pos)#alltrim(oPers:postalcode) .and. Len(AllTrim(oPersCnt:m51_pos))>=7
+					* address changed: 
+					oPersCnt:persid:=Str(oPers:persid,-1)
+					oEditPersonWindow := NewPersonWindow{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
+					oEditPersonWindow:Caption:="Address changed of: "+AllTrim( oPers:GetFullNAW())
+					oEditPersonWindow:Show()
+				ELSE
+					SELF:Regperson(oPers)
 				ENDIF
+				SELF:oDCmPerson:Disable()
+				self:oCCPersonButton:Disable()
 			ENDIF
 		ENDIF
 		IF !Recognised
@@ -2756,23 +2756,21 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				self:PersonButton(,"Giver/Payer ",,oPersCnt)  // to prevent to many persons screen open
 			endif
 		ENDIF
-		// determine extra messsage in description of transaction:
-		/*	if !Empty(self:mCLNGiver)
-		// determine city of person: 
-		if !self:oPers:OrderInfo( DBOI_NAME )=="ASSRE"
-		self:oPers:SetOrder("ASSRE")
+		// determine extra messsage in description of transaction: 
+		if !self:Acceptgiro .and.  !Empty(oHm:AccDesc)
+			nMsgPos:=At('%%',oTmt:m56_description)
+			if nMsgPos>0 
+				Destname:=GetTokens(oHm:AccDesc)[1,1]
+				cSpecMessage:=SubStr(oTmt:m56_description,nMsgPos+2)
+				if AtC('gift',cSpecMessage)=0 .and.AtC('bijdrage',cSpecMessage)=0 .and.AtC('donatie',cSpecMessage)=0 .and.AtC(Destname,SubStr(oTmt:m56_description,nMsgPos+2))=0
+					oHm:DESCRIPTN+=" "+SubStr(oTmt:m56_description,nMsgPos+2)
+				endif
+			endif
 		endif
-		if self:oPers:SEEK(mCLNGiver)
-		nMsgPos:=At(AllTrim(self:oPers:city),oTmt:m56_description)
-		if nMsgPos>0
-		oHm:DESCRIPTN+=" "+SubStr(oTmt:m56_description,nMsgPos+Len(AllTrim(self:oPers:city)))
-		endif 
-		endif		
-		endif   */
 	ENDIF
 	self:oDCcGirotelText:Caption:=AllTrim(oTmt:m56_contra_name)+iif(Empty(AllTrim(oTmt:m56_contra_bankaccnt)),'','('+AllTrim(oTmt:m56_contra_bankaccnt)+')')+' '+;
-	iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
-		Compress(self:oTmt:m56_description+" "+self:oTmt:m56_address+", "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
+		iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
+	Compress(self:oTmt:m56_description+" "+self:oTmt:m56_address+", "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
 	SELF:oDCmDat:Disable()
 	SELF:oDCDebitAccount:Disable()
 	self:oDCmDebAmntF:Disable()
@@ -2830,8 +2828,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 			if !self:lTeleBank
 				// search standard gift with DefBest: 
 				oSub:=SQLSelect{"select s.amount from subscription s "+;
-				"where personid="+self:mCLNGiver+" and accid="+self:DefBest+" limit 1",oConn}
-				oSub:Execute()
+				"where personid="+self:mCLNGiver+" and accid="+self:defbest+" limit 1",oConn}
 				if oSub:Reccount>0
 					self:mDebAmntF := oSub:amount
 					self:DebCurrency:=sCurr
@@ -3050,7 +3047,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	LOCAL lNewGift:= TRUE AS LOGIC
 	Default(@cItemname,NULL_STRING)
 	Default(@lOK,FALSE)
-	IF Empty(oCLN) .or. oCln:reccount<1
+	IF Empty(oCLN) .or. (IsInstanceOf(oCLN,#SQLSELECT) .and. oCLN:RecCount<1)
 		//	self:cGiverName:=self:cOrigName
 		self:oDCmPerson:Value:=self:cOrigName
 		RETURN
@@ -3657,8 +3654,15 @@ METHOD CheckUpdates(lNil:=nil as logic) as logic CLASS TempTrans
 		(Errorbox{,"Transaction already sent to PMC"}):Show()
    	RETURN FALSE
 	ENDIF
+	ThisRec:=self:RecNo
+   if !Empty(AMirror)
+		if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.!(Empty(aMIRROR[ThisRec,2]).and.Empty(aMIRROR[ThisRec,3]))
+   		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):show()
+    		RETURN FALSE
+		ENDIF
+   endif
 	IF self:BFM=="C"
-		(ErrorBox{,"Transaction already sent to AccPac"}):Show()
+		(ErrorBox{,"Transaction already sent to AccPac/RIA"}):show()
    	RETURN FALSE
 	ENDIF
 	IF self:BFM=="T"
@@ -3669,13 +3673,6 @@ METHOD CheckUpdates(lNil:=nil as logic) as logic CLASS TempTrans
    	 (ErrorBox{,'Modification of telebanking account not allowed'}):show()
     	RETURN FALSE
 	ENDIF 
-	ThisRec:=self:RecNo
-   if !Empty(aMIRROR)
-		if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.!(Empty(aMIRROR[ThisRec,2]).and.Empty(aMIRROR[ThisRec,3]))
-   		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):show()
-    		RETURN FALSE
-		ENDIF
-   endif
 				
 RETURN TRUE
 METHOD m54w_rek_pers() CLASS TempTrans
@@ -3869,12 +3866,12 @@ METHOD ShowSelection() CLASS TransInquiry
 	IF !Empty(self:StartTransNbr)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid>="'+self:StartTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction>="+self:StartTransNbr 
-		self:cOrder:="t.transid desc" 
+		self:cOrder:="transid desc" 
 	ENDIF
 	IF !Empty(self:EndTransNbr)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid<="'+self:EndTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction<="+self:EndTransNbr
-		self:cOrder:="t.transid desc" 
+		self:cOrder:="transid desc" 
 	ENDIF
 	IF !Empty(self:DocIdSelected)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.docid like '"+self:DocIdSelected+"%'"
@@ -3972,61 +3969,67 @@ METHOD ShowSelection() CLASS TransInquiry
 
 	RETURN
 function UnionTrans(cStatement as string) as string
-// combine select statemenst on transaction with unions on historic trnsaction tables
-* 
-* cStatement should be in terms of Transaction table as t  
-* date conditions should be specified as: t.dat>='yyy-mm-dd' or t.dat<='yyy-mm-dd'
-*
-Local nWhere, nDat1, nDat2,i as int
-Local BegDat, EndDat, Maxdat as date
-local cDat, cCompStmnt as String
-     */  
+	// combine select statemenst on transaction with unions on historic trnsaction tables
+	* 
+	* cStatement should be in terms of Transaction table as t  
+	* date conditions should be specified as: t.dat>='yyy-mm-dd' or t.dat<='yyy-mm-dd' or t.dat='yyyy-mm-dd'
+	*
+	Local nWhere, nDat1, nDat2,i as int
+	Local BegDat, EndDat, Maxdat as date
+	local cDat, cCompStmnt as String
+	*/  
 
-// determine required dates in cStatement: 
-cStatement:=Lower(cStatement) 
-if At("transaction",cStatement)=0
-	return cStatement
-endif
-// nWhere:=At("where",cStatement) 
+	// determine required dates in cStatement: 
+	cStatement:=Lower(cStatement) 
+	if At("transaction",cStatement)=0
+		return cStatement
+	endif
+	// nWhere:=At("where",cStatement) 
 
-// if nWhere>0
+	// if nWhere>0
 	cDat:=GetDateFormat()
-	SetDateFormat("YYYY-MM-DD")
-	nDat1:=At3("t.dat>=",cStatement,nWhere+5)
+	SetDateFormat("YYYY-MM-DD") 
+	nDat1:=At3("t.dat=",cStatement,nWhere+5)
 	if nDat1>0
-		BegDat:=CToD(SubStr(cStatement,nDat1+8,10))
-	endif	
-	nDat2:=At3("t.dat<=",cStatement,nWhere+5) 
-	if nDat2>0 
-		EndDat:=CToD(SubStr(cStatement,nDat2+8,10))	
-	endif	
+		BegDat:=CToD(SubStr(cStatement,nDat1+7,10))
+		EndDat:=BegDat	
+	else
+		nDat1:=At3("t.dat>=",cStatement,nWhere+5)
+		if nDat1>0
+			BegDat:=CToD(SubStr(cStatement,nDat1+8,10))
+		endif	
+		nDat2:=At3("t.dat<=",cStatement,nWhere+5) 
+		if nDat2>0 
+			EndDat:=CToD(SubStr(cStatement,nDat2+8,10))	
+		endif
+	endif
 	SetDateFormat(cDat)
 	
-// endif	
-Maxdat:=Today()+60
-if Empty(EndDat)
-	EndDat:=Maxdat
-endif
+	// endif	
+	Maxdat:=Today()+60
+	if Empty(EndDat)
+		EndDat:=Maxdat
+	endif
 
-if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
-	return cStatement
-else
-	// compose Statement: 
-	// actual period:
-	If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
-		cCompStmnt:="("+cStatement+")"
-	endif
-	if Empty(BegDat)
-		BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
-	endif
-	for i:=2 to Len(GlBalYears)
-		if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
-			cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+		return cStatement
+	else
+		// compose Statement: 
+		// actual period:
+		If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
+			cCompStmnt:="("+cStatement+")"
 		endif
-	next
-endif 
-return cCompStmnt
- 
+		if Empty(BegDat)
+			BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
+		endif
+		for i:=2 to Len(GlBalYears)
+			if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
+				cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+			endif
+		next
+	endif 
+	return cCompStmnt
+	
 function UnionTrans2(cStatement as string, BegDat as date, EndDat as date) as string
 // combine select statemenst on transaction with unions on historic trnsaction tables
 * 
