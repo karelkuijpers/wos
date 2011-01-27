@@ -2651,7 +2651,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	LOCAL Content:=Template,Line,Asscln,repltxt as STRING
 	LOCAL h2,h1,AddrPntr,i,j,tel as int
 	LOCAL repeatTxt,repeatSection,repeatGroup as STRING
-	LOCAL TotalAmnt:=0.00 AS FLOAT
+	LOCAL TotalAmnt:=0.00 as FLOAT 
+	self:oPers:=self:oDB
 
 	self:m_AdressLines:=MarkUpAddress(self:oPers,0,0,0)
 	Asscln:=Str(self:oPers:persid,-1)
