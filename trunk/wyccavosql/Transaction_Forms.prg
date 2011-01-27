@@ -3614,6 +3614,7 @@ METHOD OKButton( ) CLASS TransactionMonth
 		// 			oReport := PrintDialog{oParent,self:oLan:WGet("Account statements per month"),,97}
 		oReport:show()
 		IF oReport:lPrintOk
+		   SetDecimalSep(Asc(DecSeparator))
 			IF oAccStm==null_object
 				oAccStm:=AccountStatements{,self:SkipInactive}
 			ENDIF
@@ -3623,7 +3624,9 @@ METHOD OKButton( ) CLASS TransactionMonth
 			self:oAccStm:lMinimalInfo:=self:oDCSimpleStmnt:Checked
 			self:oAccStm:MonthPrint(self:nFromAccount,self:nToAccount,self:FromYear,self:FromMonth,self:ToYear,self:ToMonth,@nRow,@nPage,,self:oLan)				
 			oReport:prstart()
-			oReport:prstop()
+			oReport:prstop() 
+		   SetDecimalSep(Asc('.'))
+
 		ENDIF
 		IF Empty(self:ToAccount)
 			self:nToAccount:=" "
