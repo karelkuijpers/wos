@@ -1045,6 +1045,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	if !oHm:lFilling
 		self:lStop:=false
 	endif
+	//"a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"
 	CurGC:=oHm:GC
 	IF Empty(omAcc).or.omAcc==null_object .or.omAcc:Reccount<1
 		crek:=Space(11)
@@ -1061,7 +1062,8 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 			cPersId:=Str(oAccount:persid,-1)
 		endif
 		//       cNum:=oAccount:balitemid
-		oHm:CURRENCY:= oAccount:CURRENCY
+		oHm:CURRENCY:= oAccount:CURRENCY 
+		cNum:=Str(oAccount:balitemid,-1)
 		MultiCur:=iif(oAccount:MULTCURR=1,true,false)
 		cType:=oAccount:type
 	ENDIF
