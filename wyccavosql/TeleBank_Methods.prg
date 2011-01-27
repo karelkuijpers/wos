@@ -367,22 +367,46 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	RETURN FALSE
 method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref string,lv_persid ref string, lv_bankid ref string,lv_kind ref string) as void pascal class TeleMut
 // analyse if description of transaction contains a payment pattern (betalingkenmerk) 
-local cText as string
-	if	IsDigit(SubStr(lv_Oms,1,1)) .and. Empty(lv_budget)
+local cText as string 
+local oDue as SQLSelect
+	if	Empty(lv_budget)
 		cText	:=	SubStr(lv_Oms,1,16)
 		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
 			//	betalingskenmerk
 			lv_kind:="AC"
-		else
+		elseif Upper(SubStr(lv_Oms,1,32))="BETALINGSKENM"
+			lv_budget:=AllTrim(SubStr(lv_Oms,At3(Space(1),lv_Oms,14)+1,16))
+			if	Len(lv_budget)=16	.and.	isnum(lv_budget) .and. IsMod11(lv_budget)
+				if	lv_addsub='A'
+					cText:=SubStr(lv_budget,1)
+					lv_persid:=ZeroTrim(SubStr(cText,1,5))	  // terugboeking
+					lv_kind:="COL"
+					//	 Look	for Due amount:
+					oDue:=SQLSelect{"select	s.personid as persid,a.accnumber	from dueamount	d,	account a, subscription	s where "+;
+					"s.subscribid=d.subscribid	and s.personid="+lv_persid+" and	d.invoicedate='"+;
+					SQLdate(SToD(SubStr(cText,6,8)))+"' and seqnr="+ZeroTrim(SubStr(cText,14))+" and d.accid=a.accid",oConn}	  
+					if	oDue:Reccount>0	//	without check digit
+						lv_persid:=Str(oDue:persid,-1)
+						lv_budget:=oDue:ACCNUMBER
+					else
+						lv_budget:=""
+						lv_persid:=""
+					endif
+				else
+					lv_kind:="AC"
+				endif
+			endif
+		elseif IsDigit(lv_Oms)
 			cText	:=	StrTran(SubStr(lv_Oms,1,19),' ','')
 			IF	isnum(cText) .and. Len(cText)=16	.and.	IsMod11(cText)							
 				//	betalingskenmerk
 				lv_kind:="AC"
 			endif
+			
 		endif
 		if	lv_kind=="AC"
 			if	lv_addsub =	"B"
-				lv_persid:=SubStr(cText,-5)
+				lv_persid:=ZeroTrim(SubStr(cText,-5))
 				lv_bankid:=SubStr(cText,2,6)
 				lv_budget:=SubStr(cText,2,Len(cText)-6)
 				if	Val(SubStr(lv_budget,6))==0
@@ -1429,7 +1453,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	local Cur_RekNrOwn, Cur_enRoute,lv_messagebegin, lv_addresssep as string
 	LOCAL lv_Amount AS FLOAT
 	LOCAL cSep AS STRING
-	local oBank as SQLSelect, oDue as SQLSelect , oBord as SQLSelect 
+	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp AS Filespec
 	LOCAL ld_bookingdate as date 
@@ -1514,12 +1538,12 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				* get contra bank account number:
 				IF Len(oHlM:MTLINE)>nEndAmnt+nDC+20
 					cText:=AllTrim(StrTran(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+3,16),"P",""))
-					IF isnum(AllTrim(cText))
+					IF isnum(cText)
 						lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))
 					ENDIF
 					* get contra name:
 					IF Len(oHlM:MTLINE)>nEndAmnt+nDC+35
-						lv_NameContra:=AllTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+19))
+						lv_NameContra:=ZeroTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+19))
 					ENDIF
 				ENDIF
 				oHlM:Skip()
@@ -1577,7 +1601,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						lv_kind:="BGC"
 	    			elseif Upper(SubStr(lv_Oms,1,32))="EUROBETALING SHA"
 			    		lv_BankAcntContra:=""   // ignore account in case of payment from other country in Euro 
-					elseif lMTExtended.and.lv_addsub=='B' .and.!Upper(SubStr(lv_Oms,1,32))="AFROMEN" 
+					elseif lMTExtended.and.lv_addsub=='B' .and.!Upper(SubStr(lv_Oms,1,32))="AFROMEN" .and.!Upper(SubStr(lv_Oms,1,32))="BETALINGSKENM" 
 						lv_addresssep:='%%' // separator for address and message
 	   	 		endif
 					lv_messagebegin:=lv_Oms
@@ -1597,28 +1621,11 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
 							lv_description+=" "+lv_Oms
-							if (Upper(SubStr(lv_messagebegin,1,32))="RESTITUTIE INCASSO".or.Upper(SubStr(lv_messagebegin,1,32))="TERUGBOEKING")
-								if Empty(lv_persid)
-									lv_budget:=SubStr(lv_Oms,2) // ???
-									lv_persid:=SubStr(lv_budget,1,5)
-								endif
-								lv_kind:="COL" 
-								lv_addresssep:=''
-			   	 			//  Look for Due amount:
-		   			 		oDue:=SQLSelect{"select s.personid as persid,a.accnumber from dueamount d, account a, subscription s where "+;
-		    					"s.subscribid=d.subscribid and s.personid="+lv_persid+" and d.invoicedate='"+;
-				    			SQLdate(SToD(SubStr(lv_budget,6,8)))+"' and seqnr="+ZeroTrim(SubStr(lv_budget,14))+" and d.accid=a.accid",oConn}    
-		   			 		if oDue:Reccount>0   // without check digit
-		    						lv_persid:=Str(oDue:persid,-1)
-    								lv_budget:=oDue:ACCNUMBER
-				    			else
-    								lv_budget:=""
-									lv_persid:=""
-				    			endif
-		   	 			elseif Upper(SubStr(lv_messagebegin,1,32))="NAAM/NUMMER STEMMEN NIET OVEREEN" .and.!Empty(lv_bankid)  //filled betalingskenmerk
+		   	 			if Upper(SubStr(lv_messagebegin,1,32))="NAAM/NUMMER STEMMEN NIET OVEREEN" 
 								lv_addresssep:=''
 				    			// look for bankorder:
-								oBord:=SQLSelect{"select a.accnumber from	bankorder o, account	a where id="+ZeroTrim(lv_bankid)+" and	a.accid=b.accntfrom", oConn} 
+								oBord:=SQLSelect{"select a.accnumber from	bankorder o, account	a where banknbrcre="+lv_BankAcntContra+;
+								" and datepayed>'"+SQLdate(ld_bookingdate-10)+"'"+' and a.accid=o.accntfrom', oConn} 
 								if	oBord:Reccount>0	 
 									lv_budget:=AllTrim(oBord:ACCNUMBER)
 		 						else
@@ -1660,8 +1667,8 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 							",addsub='"+lv_addsub +"'"+; 
 							",seqnr='"+Str(Val(lv_reference),-1)+"'"+;
 							iif(Empty(lv_kind),'',",kind='"+lv_kind +"'")+;
-							iif(Empty(lv_budget),'',",budgetcd='"+lv_budget	+"'")+;
-							iif(Empty(lv_persid),"",",persid='"+lv_persid +"'")+;
+							iif(Empty(lv_budget),'',iif(SQLSelect{"select accnumber from account where accnumber='"+lv_budget+"'",oConn}:Reccount>0,",budgetcd='"+lv_budget	+"'",''))+;
+							iif(Empty(lv_persid),"",iif(SQLSelect{"select persid from person where persid='"+lv_persid+"'",oConn}:Reccount>0,",persid='"+lv_persid +"'",''))+;
 							",description='"+lv_description +"'",oConn}
 						oStmnt:Execute()
 						if oStmnt:NumSuccessfulRows>0
