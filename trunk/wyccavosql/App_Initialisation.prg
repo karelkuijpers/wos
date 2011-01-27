@@ -857,10 +857,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	endif
 	SetDigit(18)
 
-	// get LOCAL List separator:
+	// get LOCAL separator:
 	oReg:=Class_HKCU{}
 	Listseparator:=oReg:GetString("Control Panel\International","sList")   // delimiter for CSV
-	oReg:=null_object
+	Decseparator:=oReg:GetString("Control Panel\International","sDecimal")   // delimiter for decimals
+	oReg:=null_object 
+
 
 	mmj := CMonth(Today())
 	mdw := CDoW(Today())
