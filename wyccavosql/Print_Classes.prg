@@ -957,7 +957,6 @@ FUNCTION GenKeyword()
 {"Lastname member destination","%LSTNAMEDESTINATION","g"},;
 {"Salutation member destination","%SALUTDESTINATION","g"},;
 {"Department name","%DEPRMNTNAME","d"},;
-{"Report month","%REPORTMONTH","b"},;
 
 */
 
@@ -983,6 +982,7 @@ RETURN {;
 {"Total gift/payments","%TOTALAMOUNT","b"},;
 {"Destination gift/ due amounts","%DESTINATION","b"},;
 {"Complete name and address (6 lines)","%NAMEADDRESS","c"},; 
+{"Report month","%REPORTMONTH","b"},;
 {"Page skip","%PAGESKIP","b"}}
 
 CLASS LabelBottom INHERIT FIELDSPEC
@@ -2426,16 +2426,16 @@ RETURN NIL
 METHOD SaveButton( ) CLASS MarkupLetter
 LOCAL oAskname AS AskLetterName
 LOCAL ptrhandle AS USUAL
-IF Empty(LetterName)
+IF Empty(self:LetterName)
 	* Ask for name for Letter:
 	(oAskname := AskLetterName{SELF,cExt}):Show()
-	Lettername:=oAskName:cName
+	self:LetterName:=oAskname:cName
 ENDIF
 SetPath(CurPath)
-ptrHandle := FCreate(CurPath+"\"+Lettername)
+ptrhandle := FCreate(CurPath+"\"+self:LetterName)
 FWrite(ptrHandle, SELF:oDCEditLetter:Currenttext)
 FClose(ptrHandle)
-SELF:Owner:Lettername:=Lettername
+self:Owner:Templatename:=self:LetterName
 SELF:EndDialog()
 RETURN
 STATIC DEFINE MARKUPLETTER_EDITLETTER := 100 
@@ -2911,7 +2911,7 @@ LOCAL skippage:=FALSE AS LOGIC
 LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
 LOCAL lXls:=FALSE AS LOGIC
 Default(@skipaant,0)
-if !Empty(LineNbr).and.LineNbr==(row-1)
+if !Empty(LineNbr).and.LineNbr==(self:row-1)
 	self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
 	LineNbr++
 	return
