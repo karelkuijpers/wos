@@ -1011,7 +1011,8 @@ METHOD OkButton CLASS NewPersonWindow
 	LOCAL oContr as Control
 	LOCAL myCombo as COMBOBOX
 	local lSuccess as logic
-	local cStmnt as string 
+	local cStmnt as string
+	local oPersCnt as PersonContainer 
 
 	self:mCodInt := MakeCod({self:mCod1,self:mCod2,self:mCod3,self:mCod4,self:mCod5,self:mCod6,self:mCod7,self:mCod8,self:mCod9,self:mCod10})
 	//	IF ValidateControls( SELF, SELF:AControls ) .and. ;
@@ -1124,10 +1125,13 @@ METHOD OkButton CLASS NewPersonWindow
 		IF lAddressChanged
 			IF IsObject(oCaller)
 				IF IsMethod(oCaller,#Regperson)
-					oCaller:Regperson(oPers,oLan:Get("Address changed!"))
-				ENDIF
+					oPersCnt:=PersonContainer{}    
+					oPersCnt:persid:=self:mPersId
+					oCaller:Regperson(oPersCnt,self:oLan:Get("Address changed!"))
+				endif
 			ENDIF
 		ENDIF
+		self:EndWindow()
 		// refresh owner: 
 		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser)
 			self:oCaller:SearchCLN:=self:mPersId
@@ -1135,26 +1139,12 @@ METHOD OkButton CLASS NewPersonWindow
 			if self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
 				self:oCaller:SELECT()   // go direct to
 			endif 
-			// 			self:oCaller:oPers:SuspendNotification() 
-			// 			// reposition owner at current person:
-			// 			self:oCaller:gotop()
-			// 			do while !self:oCaller:oPers:EOF .and. !self:oCaller:oPers:persid==Val(self:mPersId)
-			// 				self:oCaller:oPers:Skip()
-			// 			enddo
-			// 			nCurRec:=self:oCaller:oPers:Recno
-			// 			self:oCaller:oPers:ResetNotification()
-			// 			if !Empty(nCurRec)
-			// 				self:oCaller:goto(nCurRec)
-			// 			endif
 		endif
-		// 		SELF:Commit()
 		IF self:lImport
-			//SELF:NextImport(SELF)
 			self:oImport:NextImport(self,true)
 			RETURN nil
 		ENDIF
 		self:Close()
-		self:EndWindow()
 	ENDIF
 
 	
@@ -1317,8 +1307,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		if !Empty(self:oPersCnt:persid)
 			self:mPersId:=self:oPersCnt:persid 
 			self:SetState()
-		elseif !Empty(self:oPersCnt:externid)
-			self:mExternId:=self:oPersCnt:externid 
+		elseif !Empty(self:oPersCnt:m51_exid)
+			self:mExternId:=self:oPersCnt:m51_exid 
 			self:SetState()
 		endif
 	ENDIF
@@ -1442,34 +1432,6 @@ STATIC DEFINE NEWPERSONWINDOW_SC_TEL3 := 167
 STATIC DEFINE NEWPERSONWINDOW_SC_TEL4 := 171 
 STATIC DEFINE NEWPERSONWINDOW_SC_TIT := 105 
 STATIC DEFINE NEWPERSONWINDOW_SC_VRN := 102 
-RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
-	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
-	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
-	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
-	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
-	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
-	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
-	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
-	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
-	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
-	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
-	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
-	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
-	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
-	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
-	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
-	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
-	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
-	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
-	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
-	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
-	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
-END
-
 CLASS PersonBrowser INHERIT DataWindowMine 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -1516,6 +1478,34 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	export oPersCnt as PersonContainer  
 	
 	declare method PersonSelect 
+RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", PERSONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 14, 116, 13
+	CONTROL	"&Lastname:", PERSONBROWSER_SC_NA1, "Static", WS_CHILD, 16, 33, 36, 12
+	CONTROL	"&Zip code:", PERSONBROWSER_SC_POS, "Static", WS_CHILD, 16, 49, 38, 13
+	CONTROL	"", PERSONBROWSER_SEARCHSLE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 80, 12
+	CONTROL	"", PERSONBROWSER_SEARCHSZP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 79, 12
+	CONTROL	"", PERSONBROWSER_SEARCHBANK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 62, 79, 13
+	CONTROL	"", PERSONBROWSER_SEARCHCLN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 77, 79, 12
+	CONTROL	"", PERSONBROWSER_PERSONSUBFORM, "static", WS_CHILD|WS_BORDER, 16, 109, 431, 164
+	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
+	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
+	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
+	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
+	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
+	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
+	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
+	CONTROL	"Persons", PERSONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 96, 500, 184
+	CONTROL	"Search person with:", PERSONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 3, 209, 89
+	CONTROL	"Intern ID:", PERSONBROWSER_FIXEDTEXT3, "Static", WS_CHILD, 16, 78, 33, 12
+	CONTROL	"Universal like google:", PERSONBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 14, 72, 13
+	CONTROL	"Find", PERSONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 14, 53, 13
+	CONTROL	"Found:", PERSONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 37, 28, 12
+	CONTROL	"", PERSONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 36, 47, 13
+END
+
 METHOD EditButton(lNew) CLASS PersonBrowser
 
 	Default(@lNew,FALSE)
@@ -1551,13 +1541,13 @@ METHOD FindButton( ) CLASS PersonBrowser
 	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","attention","email","remarks","telbusiness","telhome","mobile"} as array 
 	self:cWhere:=""
 	cMyFrom:="person as p"
-	if !Empty(self:SearchBank)
+	if !Empty(self:SearchCLN)
+			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'"
+	elseif !Empty(self:SearchBank)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" b.banknumber = '"+AllTrim(self:SearchBank)+"' and p.persid=b.persid " 
 		cMyFrom+=",personbank as b"
 	else
-		if !Empty(self:SearchCLN)
-			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'"
-		elseif !Empty(self:SearchUni) 
+		if !Empty(self:SearchUni) 
 			aKeyw:=GetTokens(AllTrim(self:SearchUni))
 			for i:=1 to Len(aKeyw)
 				self:cWhere+=iif(i>1," and ("," (") 
@@ -1574,14 +1564,14 @@ METHOD FindButton( ) CLASS PersonBrowser
 					self:cWhere+=iif(lStart," or ","")+"p.persid in (select b.persid from personbank as b where b.banknumber='"+aKeyw[i,1]+"')"
 				endif
 				self:cWhere+=")"
-			next 
-			if !Empty(self:SearchSLE)
-				self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.lastname like '"+StrTran(AllTrim(self:SearchSLE),"'","\'")+"%'"
-			endif
-			if !Empty(self:SearchSZP)
-				self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.postalcode like '"+StandardZip(self:SearchSZP)+"%'"
-			endif 
+			next
 		endif
+		if !Empty(self:SearchSLE)
+			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.lastname like '"+StrTran(AllTrim(self:SearchSLE),"'","\'")+"%'"
+		endif
+		if !Empty(self:SearchSZP)
+			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.postalcode like '"+StandardZip(self:SearchSZP)+"%'"
+		endif 
 	endif 
 	if !Empty(self:cFilter)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"("+self:cFilter+")"
@@ -1745,12 +1735,16 @@ self:SetTexts()
   
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PreInit additions here
-	SELF:oCaller := uExtra
 // 	SELF:oExtServer:=oServer && save external server 
 	self:cFields:= "p.persid,lastname,initials,firstname,prefix,datelastgift,address,postalcode,city,country"
 	self:cFrom:="person as p"
-	self:cOrder:="lastname"
-	self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn} 
+	self:cOrder:="lastname" 
+	self:oCaller := uExtra 
+	if !Empty(oServer)
+		self:oPers:=oServer
+	else
+		self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn}
+	endif
 	self:oPersCnt:=PersonContainer{}
 	RETURN NIL
 METHOD PrintButton( ) CLASS PersonBrowser
@@ -1846,13 +1840,9 @@ class PersonContainer
 	EXPORT m51_initials, m51_lastname, m51_firstname, m51_title, m51_prefix, m51_pos, m51_ad1,m51_city, m56_banknumber as STRING
 	export persid, m51_exid, m51_country, m51_gender, m51_type as STRING
 	EXPORT md_address1, md_address2, md_address3, md_address4 as STRING 
-	export current_PersonID as int
-
-RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
+	export current_PersonID as int 
+	
+	declare method Adres_Analyse
 
 CLASS PersonSubForm INHERIT DataWindowMine 
 
@@ -1862,11 +1852,17 @@ CLASS PersonSubForm INHERIT DataWindowMine
 	PROTECT oDBPREFIX as JapDataColumn
 	PROTECT oDBADDRESS as JapDataColumn
 	PROTECT oDBPOSTALCODE as JapDataColumn
-	PROTECT oDBDLG as JapDataColumn
+	PROTECT oDBDATELASTGIFT as JapDataColumn
 	PROTECT oDBCITY as JapDataColumn
 	PROTECT oDBCOUNTRY as JapDataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE PersonSubForm DIALOGEX  29, 27, 429, 163
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 ACCESS address() CLASS PersonSubForm
 RETURN SELF:FieldGet(#address)
 
@@ -1895,11 +1891,11 @@ ASSIGN country(uValue) CLASS PersonSubForm
 SELF:FieldPut(#country, uValue)
 RETURN uValue
 
-ACCESS DLG() CLASS PersonSubForm
-RETURN SELF:FieldGet(#DLG)
+ACCESS datelastgift() CLASS PersonSubForm
+RETURN SELF:FieldGet(#datelastgift)
 
-ASSIGN DLG(uValue) CLASS PersonSubForm
-SELF:FieldPut(#DLG, uValue)
+ASSIGN datelastgift(uValue) CLASS PersonSubForm
+SELF:FieldPut(#datelastgift, uValue)
 RETURN uValue
 
 ACCESS firstname() CLASS PersonSubForm
@@ -1966,13 +1962,12 @@ oDBPOSTALCODE:HyperLabel := HyperLabel{#postalcode,"Zip code",NULL_STRING,"Perso
 oDBPOSTALCODE:Caption := "Zip code"
 self:Browser:AddColumn(oDBPOSTALCODE)
 
-oDBDLG := JapDataColumn{13}
-oDBDLG:Width := 13
-oDBDLG:HyperLabel := HyperLabel{#DLG,"Last Gift","date last gift",NULL_STRING} 
-oDBDLG:Caption := "Last Gift"
-oDBDLG:Block := {|x| iif(empty(x:dlg),'',dtoc(stod(x:dlg)))}
-oDBDLG:BlockOwner := SELF:SERVER
-self:Browser:AddColumn(oDBDLG)
+oDBDATELASTGIFT := JapDataColumn{13}
+oDBDATELASTGIFT:Width := 13
+oDBDATELASTGIFT:HyperLabel := HyperLabel{#datelastgift,"Last Gift","date last gift",NULL_STRING} 
+oDBDATELASTGIFT:Caption := "Last Gift"
+oDBdatelastgift:BlockOwner := SELF:SERVER
+self:Browser:AddColumn(oDBDATELASTGIFT)
 
 oDBCITY := JapDataColumn{Person_PLA{}}
 oDBCITY:Width := 13
@@ -2036,7 +2031,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class PersonSubForm
 STATIC DEFINE PERSONSUBFORM_ADDRESS := 101 
 STATIC DEFINE PERSONSUBFORM_CITY := 104 
 STATIC DEFINE PERSONSUBFORM_COUNTRY := 105 
-STATIC DEFINE PERSONSUBFORM_DLG := 107 
+STATIC DEFINE PERSONSUBFORM_DATELASTGIFT := 107 
 STATIC DEFINE PERSONSUBFORM_FIRSTNAME := 108 
 STATIC DEFINE PERSONSUBFORM_GIRONR := 107 
 STATIC DEFINE PERSONSUBFORM_INITIALS := 102 
@@ -2046,6 +2041,26 @@ STATIC DEFINE PERSONSUBFORM_PREFIX := 106
 STATIC DEFINE SELPERSABON_CANCELBUTTON := 102 
 STATIC DEFINE SELPERSABON_OKBUTTON := 101 
 STATIC DEFINE SELPERSABON_SELX_REK := 100 
+CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
+
+	PROTECT oDCmCodAdd5 AS COMBOBOX
+	PROTECT oDCmCodAdd4 AS COMBOBOX
+	PROTECT oDCmCodAdd3 AS COMBOBOX
+	PROTECT oDCmCodAdd2 AS COMBOBOX
+	PROTECT oDCmCodAdd1 AS COMBOBOX
+	PROTECT oDCCodeBox AS GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmCodDel5 AS COMBOBOX
+	PROTECT oDCmCodDel4 AS COMBOBOX
+	PROTECT oDCmCodDel3 AS COMBOBOX
+	PROTECT oDCmCodDel2 AS COMBOBOX
+	PROTECT oDCmCodDel1 AS COMBOBOX
+	PROTECT oDCCodeBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS OBJECT
 RESOURCE SelPersChangeMailCodes DIALOGEX  8, 18, 404, 146
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Add/Remove Mailing Codes"
@@ -2068,26 +2083,6 @@ BEGIN
 	CONTROL	"Cancel", SELPERSCHANGEMAILCODES_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 277, 116, 53, 12
 END
 
-CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
-
-	PROTECT oDCmCodAdd5 AS COMBOBOX
-	PROTECT oDCmCodAdd4 AS COMBOBOX
-	PROTECT oDCmCodAdd3 AS COMBOBOX
-	PROTECT oDCmCodAdd2 AS COMBOBOX
-	PROTECT oDCmCodAdd1 AS COMBOBOX
-	PROTECT oDCCodeBox AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmCodDel5 AS COMBOBOX
-	PROTECT oDCmCodDel4 AS COMBOBOX
-	PROTECT oDCmCodDel3 AS COMBOBOX
-	PROTECT oDCmCodDel2 AS COMBOBOX
-	PROTECT oDCmCodDel1 AS COMBOBOX
-	PROTECT oDCCodeBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS OBJECT
 METHOD CancelButton( ) CLASS SelPersChangeMailCodes
 	oCaller:selx_OK := FALSE
 	self:EndDialog()
@@ -2663,9 +2658,9 @@ METHOD OKButton( ) CLASS SelPersMailCd
 				enddo
 				AAdd(aPropExValues,{myCombo:Name,DROPDOWN,aCurVal})
 			ENDIF
-		ELSE
+		ELSEIF ClassName(oContr)= #CHECKBOX
 			IF !IsNil(oContr:Value)
-				AAdd(aPropExValues,{oContr:Name,CHECKBX,{oContr:VALUE}})
+				AAdd(aPropExValues,{oContr:Name,CHECKBX,{iif(oContr:Value,'T','F')}})
 			ENDIF
 		ENDIF
 	NEXT
@@ -2857,31 +2852,6 @@ STATIC DEFINE SELPERSMAILCD_SORTBUTTON1 := 109
 STATIC DEFINE SELPERSMAILCD_SORTBUTTON2 := 110 
 STATIC DEFINE SELPERSMAILCD_SORTORDER := 108 
 STATIC DEFINE SELPERSMAILCD_TYPES := 132 
-CLASS SelPersOpen INHERIT DialogWinDowExtra 
-
-	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
-	PROTECT oDCbegin_verv AS DATESTANDARD
-	PROTECT oDCeind_verv AS DATESTANDARD
-	PROTECT oCCSelOpenButton2 AS RADIOBUTTON
-	PROTECT oDCSelx_rek AS COMBOBOX
-	PROTECT oCCSelOpenButton1 AS RADIOBUTTON
-	PROTECT oCCSelOpenButton3 AS RADIOBUTTON
-	PROTECT oDCmPayMethod AS RADIOBUTTONGROUP
-	PROTECT oCCRadioButtonGiro AS RADIOBUTTON
-	PROTECT oCCRadioButtonCollection AS RADIOBUTTON
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCAccountText AS FIXEDTEXT
-	PROTECT oDCdatedirectdebit AS WORKDAYDATE
-	PROTECT oDCDateDirectText AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS SelPers
-  PROTECT cType as STRING 
-  declare method Abon_Con
 RESOURCE SelPersOpen DIALOGEX  24, 38, 266, 187
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select Persons with Unpaid Items"
@@ -2907,6 +2877,31 @@ BEGIN
 	CONTROL	"Date direct debit:", SELPERSOPEN_DATEDIRECTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 80, 88, 56, 12
 END
 
+CLASS SelPersOpen INHERIT DialogWinDowExtra 
+
+	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
+	PROTECT oDCbegin_verv AS DATESTANDARD
+	PROTECT oDCeind_verv AS DATESTANDARD
+	PROTECT oCCSelOpenButton2 AS RADIOBUTTON
+	PROTECT oDCSelx_rek AS COMBOBOX
+	PROTECT oCCSelOpenButton1 AS RADIOBUTTON
+	PROTECT oCCSelOpenButton3 AS RADIOBUTTON
+	PROTECT oDCmPayMethod AS RADIOBUTTONGROUP
+	PROTECT oCCRadioButtonGiro AS RADIOBUTTON
+	PROTECT oCCRadioButtonCollection AS RADIOBUTTON
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCAccountText AS FIXEDTEXT
+	PROTECT oDCdatedirectdebit AS WORKDAYDATE
+	PROTECT oDCDateDirectText AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS SelPers
+  PROTECT cType as STRING 
+  declare method Abon_Con,MakeCliop03File
 METHOD ButtonClick(oControlEvent) CLASS SelPersOpen
 	LOCAL oControl AS Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -3026,31 +3021,31 @@ METHOD OKButton( ) CLASS SelPersOpen
 	LOCAL keuze := Val(self:oDCkeus21:VALUE)
 	LOCAL oAcc as SQLselect
 	LOCAL begin_due:=oDCbegin_verv:SelectedDate, end_due:=oDCeind_verv:SelectedDate, process_date:=self:oDCdatedirectdebit:SelectedDate as date
-	oCaller:cWhereOther := ;
+	self:oCaller:cWhereOther := ;
 	"and d.invoicedate>='"+Transform(DToS(begin_due),"9999-99-99")+;
 	"' and invoicedate<='"+Transform(DToS(end_due),"9999-99-99")+;
 	"' and amountrecvd<amountinvoice"+;
 	" and s.paymethod='"+AllTrim(self:oDCmPayMethod:VALUE)+"'"
 	IF self:keus21=1
-		oCaller:cWhereOther+='and s.category="D"'
+		self:oCaller:cWhereOther+='and s.category="D"'
 	ELSEIF self:keus21=2
-		oCaller:cWhereOther+='and s.category="A"'
+		self:oCaller:cWhereOther+='and s.category="A"'
 	ENDIF		
-	oCaller:selx_voorw := ' and invoicedate between '+;
+	self:oCaller:selx_voorw := ' and invoicedate between '+;
 	DToC(oDCbegin_verv:VALUE)+' and '+DToC(oDCeind_verv:VALUE)
-	oCaller:selx_rek := if(IsNil(oDCselx_rek:VALUE),null_string,oDCselx_rek:VALUE)
+	self:oCaller:selx_rek := if(IsNil(self:oDCselx_rek:VALUE),null_string,Str(self:oDCselx_rek:VALUE,-1))
 	//CountryCode:="47"
 	IF keuze ==2           && abonnementen
 *		(SelPersAbon{self}):Show()
 		keuze:=keuze
 	ELSEIF keuze == 1    && donateurs
 		IF self:oDCmPayMethod:Value="C" // automatic collection?
-			//oCaller:selx_rek:=NULL_STRING
-			oCaller:Selx_OK:=FALSE // do not continue with caller 
+			//self:oCaller:selx_rek:=NULL_STRING
+			self:oCaller:Selx_OK:=FALSE // do not continue with caller 
 			if CountryCode="47"
 				self:MakeKIDFile(begin_due,end_due,process_date)
 			elseif CountryCode="31"
-				if !self:MakeCliop03File(begin_due,end_due,process_date)
+				if !self:MakeCliop03File(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
 					return
 				endif
 			endif
@@ -3058,16 +3053,16 @@ METHOD OKButton( ) CLASS SelPersOpen
 			RETURN nil
 		ENDIF			
 	ELSE                  && fakturen
-		oCaller:selx_rek := SDEB
+		self:oCaller:selx_rek := SDEB
 	ENDIF
 	*DueAmount:
-	oCaller:cWhereOther := 's.accid="'+oCaller:selx_rek+" and s.subscribid=t.subscribid "+oCaller:cWhereOther
+	self:oCaller:cWhereOther := 's.accid="'+self:oCaller:selx_rek+" and s.subscribid=t.subscribid "+self:oCaller:cWhereOther
 
-	oAcc:=SQLSelect{"select accnumber from account where accid='"+oCaller:selx_rek+"'",oConn}
+	oAcc:=SQLSelect{"select accnumber from account where accid='"+self:oCaller:selx_rek+"'",oConn}
 	if oAcc:RecCount>0
-		oCaller:selx_voorw := 'accountnbr' + '=' +oAcc:ACCNUMBER+oCaller:selx_voorw
+		self:oCaller:selx_voorw := 'accountnbr' + '=' +oAcc:ACCNUMBER+self:oCaller:selx_voorw
 	endif
-	oCaller:Selx_OK:=true
+	self:oCaller:Selx_OK:=true
 	self:EndDialog() 
   	RETURN nil
 METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
