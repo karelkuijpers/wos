@@ -16,6 +16,8 @@ GLOBAL CountryCode as string
 GLOBAL CurPath as STRING
 global dbname as string
 GLOBAL DecAantal:= 2 as SHORT
+global DecSeparator as string
+
 GLOBAL Departments as LOGIC
 GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining'}
 global emailclient as string 
