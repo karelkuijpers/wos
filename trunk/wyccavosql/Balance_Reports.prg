@@ -593,6 +593,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	hfdkop:=self:prkop(self:cSummary,r_cat[1],1,,d_dep,d_parentdep,d_depname,;
 		r_balid,r_heading,r_footer,r_parentid)
 	hfdkop[1]:= BoldOn+YellowOn+ hfdkop[1]+YellowOff+BoldOff
+   SetDecimalSep(Asc(DecSeparator))
 
 	SELF:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 		r_cat,r_balpryrtot,r_balPrYrYtD,r_balPrvPer,r_balPer,r_indmain,r_parentid,;
@@ -694,7 +695,9 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		NEXT
 		self:WhatDetails:=lSaveWhat
 		self:WhoDetails:=lSaveWho
-	ENDIF
+	ENDIF 
+   SetDecimalSep(Asc('.'))      //back to .
+
 	SELF:Pointer := Pointer{POINTERARROW}
 	* Reset arrays to free memory:
 	r_balid:={}
@@ -2031,7 +2034,9 @@ if oAcc:RecCount<1
 		ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
 	endif
 	return
-endif
+endif 
+SetDecimalSep(Asc(DecSeparator))
+
 do WHILE !oAcc:Eof
 	nDep:=oAcc:DepId
 	cDepName:=CleanFileName(AllTrim(StrTran(oAcc:DESCRIPTN,"."," "))) 
@@ -2106,6 +2111,7 @@ do WHILE !oAcc:Eof
 	endif
 
 ENDDO
+SetDecimalSep(Asc('.'))
 
 cFileName:=oReport:prstart((SendingMethod="SeperateFile"))    // generate rtf-format when seperate files
 IF IsString(cFileName)
@@ -2927,11 +2933,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
 	nRow := 0
 	cPeriod:=Str(ReportYear,4)+Space(1)+iif(ReportMonth=1,'',oLan:Get('up incl'))+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")
-	* Adapt Top of TransHistory to oldest year:
-	// 	oTrans:ResetHistory(ReportYear,1,ReportYear,ReportMonth)
-
-	// 	oAcc:SetFilter("GiftAlwd")
-	// 	oAcc:Seek(FromAccount)
 	IF SendingMethod=="SeperateFileMail"
 		oMapi := MAPISession{}	
 		IF !oMapi:Open( "" , "" )
@@ -2979,7 +2980,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
 		return
 	endif 
-
+   SetDecimalSep(Asc(DecSeparator))
 	do WHILE !oAcc:EOF
 		mAccid:=Str(oAcc:accid,-1)
 		lSkip:=FALSE
@@ -3229,7 +3230,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			loop
 		ENDIF
 		if	!self:Memberstmnt=="NOST"
-			nRow:=0	&&	enforce page skip
 			*	If	associated accounts for	this member, print also	corresponding accountstatements for	this month:
 			IF	!Empty(oAcc:persid) .and.!Empty(oAcc:assacc)
 				IF	oTransMonth==null_object
@@ -3243,8 +3243,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					IF	!Empty(aASS[i])
 						oAccAss:=SQLSelect{"select accnumber from account where accid='"+aASS[i]+"'",oConn}
 						if oAccAss:RecCount>0
-							oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,,oLan)
 							nRow:=0	&&	forceer bladskip
+							oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,,oLan)
 						endif
 					ENDIF
 				NEXT
@@ -3283,7 +3283,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			oPro:AdvancePro()
 		endif
 
-	ENDDO
+	ENDDO 
+   SetDecimalSep(Asc('.'))      //back to .
+
 	IF !oPro==null_object
 		oPro:EndDialog()
 		oPro:Destroy()
@@ -3293,7 +3295,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	IF IsString(cFileName)
 		IF SendingMethod=="SeperateFileMail"
 			oSelpers:=Selpers{self,,}
-			oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1,0)
+			oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
 			
 			FOR i:=1 to Len(aMailMember)
 				self:STATUSMESSAGE(self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")+"...")
@@ -3317,9 +3319,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				ENDIF
 				IF oRecip1 != null_object
 					IF !Empty(oEMLFrm:Template)
-						oPers:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn}
-						oSelpers:oDB:=oPers 
-						oSelpers:ReportMonth:=cPeriod
+						oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
+						oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:Get('up incl'))+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
 						mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 					ELSE
 						mailcontent:=""
@@ -3846,10 +3847,10 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 			FOR i=1 to 12
 				hlptxt:=hlptxt+Str(Round(aAssmntAmount[asmntRow,i],nDecFrac1),8,nDecFrac1)
 			NEXT
-			oReport:PrintLine(@nRow,@nPage,Pad(aAsmntDescr[asmntRow],40)+hlptxt,aHeading)
+			oReport:PrintLine(@nRow,@nPage,Pad(aAsmntDescr[asmntRow],40)+hlptxt,aHeading,20)
 		ENDIF
 	NEXT
-	oReport:PrintLine(@nRow,@nPage,separator,aHeading)
+	oReport:PrintLine(@nRow,@nPage,separator,aHeading,20-AsmntRowCnt)
 
 	FOR gvr=1 to Len(aGiversdata)
 		++RowCnt
