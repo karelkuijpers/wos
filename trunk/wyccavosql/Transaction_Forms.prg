@@ -186,7 +186,7 @@ STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Bst:", GENERAL_JOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 52, 1, 41, 13
-	CONTROL	"maandag 17 januari 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
+	CONTROL	"woensdag 26 januari 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
 	CONTROL	"", GENERAL_JOURNAL_MPOSTSTATUS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 276, 1, 72, 50
 	CONTROL	"", GENERAL_JOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 312, 18, 132, 12, WS_EX_CLIENTEDGE
 	CONTROL	"OK&&Remember", GENERAL_JOURNAL_SAVEBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 284, 53, 12
@@ -215,7 +215,7 @@ BEGIN
 	CONTROL	"Find", GENERAL_JOURNAL_FINDNEXT, "Button", BS_DEFPUSHBUTTON|WS_CHILD|NOT WS_VISIBLE, 353, 40, 39, 12
 	CONTROL	"Previous", GENERAL_JOURNAL_FINDPREVIOUS, "Button", WS_CHILD|NOT WS_VISIBLE, 393, 40, 39, 12
 	CONTROL	"x", GENERAL_JOURNAL_FINDCLOSE, "Button", WS_CHILD|NOT WS_VISIBLE, 440, 40, 13, 12
-	CONTROL	"Found:", GENERAL_JOURNAL_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 140, 295, 27, 12
+	CONTROL	"Found:", GENERAL_JOURNAL_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 140, 295, 28, 12
 	CONTROL	"lines", GENERAL_JOURNAL_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 168, 295, 36, 12
 END
 
@@ -587,9 +587,11 @@ oCCFindClose:UseHLforToolTip := True
 
 oDCFoundtext := FixedText{SELF,ResourceID{GENERAL_JOURNAL_FOUNDTEXT,_GetInst()}}
 oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
+oDCFoundtext:OwnerAlignment := OA_Y
 
 oDCFound := FixedText{SELF,ResourceID{GENERAL_JOURNAL_FOUND,_GetInst()}}
 oDCFound:HyperLabel := HyperLabel{#Found,"lines",NULL_STRING,NULL_STRING}
+oDCFound:OwnerAlignment := OA_Y
 
 SELF:Caption := "Journal General"
 SELF:HyperLabel := HyperLabel{#General_Journal,"Journal General",NULL_STRING,NULL_STRING}
@@ -3813,9 +3815,9 @@ endif
 		RETURN
 	ENDIF
 	* Fill rows of TempTrans with transaction:
-	self:oMyTrans:=SQLSelect{"select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
+	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
-	" where a.accid=t.accid and b.balitemid=a.balitemid and t.TransId="+cTransnr,oConn}
+	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
 	if self:oMyTrans:RecCount<1
 		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
 	endif 
