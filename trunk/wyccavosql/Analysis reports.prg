@@ -609,7 +609,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL periodNo, classNo, i,j,k,m,nRange,nCSt,maxlevel as int
 	LOCAL cName as STRING
 	LOCAL NextYear, NextMonth, PrevYear, PrevMonth as int
-	LOCAL StartDate,EndDate,PerStart,PerEnd,FrequencyEnd,FrequencyStart, PerStart1, PerStart2 as date
+	LOCAL StartDate,EndDate,PerStart,PerEnd,FrequencyEnd, PerStart1, PerStart2 as date
 	LOCAL PeriodCount:=0 as int // Number of subperiods in total date range
 	LOCAL PrevPeriodCount as int
 	LOCAL cFileName as USUAL, oFileSpec as FileSpec
@@ -744,7 +744,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Make followingtrans contain all the relevant transactions
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
-		+ UnionTrans("SELECT transid,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
+		+ UnionTrans("SELECT transid,seqnr,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
 		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
 		+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
 		+ " t.dat<='" + SQLdate(EndDate-1) + "' AND";
@@ -791,8 +791,9 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		PerStart2:=PerStart1-360
 		PerStart2:=ConDate(Year(PerStart2), Month(PerStart2), 1)
 		
-		freqStr1:="CASE WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 1 ";
-			+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(StartDate) +"' THEN 2 ";
+		freqStr1:="CASE WHEN t.dat<'" + SQLdate(PerStart2) + "' THEN 1 ";
+			+ "WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 2 ";
+			+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(StartDate) +"' THEN 3 ";
 			+ "ELSE 0 END freq1"
 
 		IF lDiff
@@ -806,14 +807,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			PerStart2:=PerStart1-360
 			PerStart2:=ConDate(Year(PerStart2), Month(PerStart2), 1)
 
-			freqStr2:="CASE WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 1 ";
-				+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(aPeriod[1]) +"' THEN 2 ";
+			freqStr2:="CASE WHEN t.dat<'" + SQLdate(PerStart2) + "' THEN 1 ";
+				+ "WHEN t.dat>='" + SQLdate(PerStart2) + "' AND t.dat<'" + SQLdate(PerStart1) + "' THEN 2 ";
+				+ "WHEN t.dat>='" + SQLdate(PerStart1) + "' AND t.dat<'" + SQLdate(aPeriod[1]) +"' THEN 3 ";
 				+ "ELSE 0 END freq2"
 		ELSE
 			freqStr2:="0 freq2"
 		ENDIF
 
-		FrequencyStart:=PerStart2 // First interesting date for frequency considerations
 		FrequencyEnd:=StartDate   // Day after last interesting date for frequency considerations 
 
 		// create and fill frequencies:
@@ -821,16 +822,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		IF lDiff
 			aPersPrvFreq:=AReplicate(1,Len(aPers))    // initialize as new givers
 		ENDIF     
-		
-		
+
 		// freqtrans will contain all transactions in the frequency periods.
 		// We use a crude persid check here. A more exact one will follow below.
 		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
-			+ UnionTrans("SELECT t.transid,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
+			+ UnionTrans2("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-			+ " t.dat>='" +  SQLdate(FrequencyStart) + "' AND" ;
-			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB "))
+			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB ",ConDate(1997,1,1),FrequencyEnd))        // Begin at a very old date 
 			return nil
 		endif
 
@@ -850,12 +849,16 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		IF oTransFreq:RECCOUNT>0
 			DO WHILE !oTransFreq:EoF
 				k:=AScanBin(aPers,oTransFreq:persid) 
-				DO CASE
-				CASE oTransFreq:freq1=1 // Two years previously
+				DO CASE                
+				CASE oTransFreq:freq1=1 // Earlier than two years previously
+					IF aPersFreq[k]<2
+						aPersFreq[k]:=2  // Given earlier than two years previously
+					ENDIF						
+				CASE oTransFreq:freq1=2 // Two years previously
 					IF aPersFreq[k]<3
 						aPersFreq[k]:=3 // Given two years previously
 					ENDIF
-				CASE oTransFreq:freq1=2 // Last year
+				CASE oTransFreq:freq1=3 // Last year
 					IF Val(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
 						aPersFreq[k]:=5 // Given >=2 times last year
 					ELSE
@@ -877,11 +880,15 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				DO WHILE !oTransFreq:EoF
 					k:=AScanBin(aPers,oTransFreq:persid) 
 					DO CASE
-					CASE oTransFreq:freq2=1 // Two years previously
+					CASE oTransFreq:freq2=1 // Earlier than two years previously
+						IF aPersPrvFreq[k]<2
+							aPersPrvFreq[k]:=2  // Given earlier than two years previously
+						ENDIF						
+					CASE oTransFreq:freq2=2 // Two years previously
 						IF aPersPrvFreq[k]<3
 							aPersPrvFreq[k]:=3 // Given two years previously
 						ENDIF
-					CASE oTransFreq:freq2=2 // Last year
+					CASE oTransFreq:freq2=3 // Last year
 						IF Val(oTransFreq:xcount)>=2
 							aPersPrvFreq[k]:=5 // Given >=2 times last year
 						ELSE
@@ -1109,7 +1116,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	// Create consolidated table
 
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
-		+ "SELECT f.transid,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
+		+ "SELECT f.transid,f.seqnr,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
 		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
 		+ "GROUP by f.persid,f.subperiod)")
 		return nil
@@ -1475,7 +1482,7 @@ METHOD SqlDoAndTest(sqlStr) CLASS DonorFollowingReport
 	LOCAL sqlErrinfo as SQLErrorInfo
 	LOCAL errStr as STRING
 
-//  	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 
 	sqlSt:=SQLStatement{sqlStr,oConn}
 	sqlSt:Execute()
