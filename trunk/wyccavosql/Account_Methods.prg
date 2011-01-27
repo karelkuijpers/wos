@@ -103,7 +103,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 
 // 	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,b.category as type" as string
 // 	local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
-	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
+	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
 
 	
 	IF lUnique.and.Empty(BrwsValue)
