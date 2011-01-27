@@ -135,9 +135,14 @@ LOCAL aWord as ARRAY
 if Empty(cAddress)
 	return {cPostcode,cAddress,cCity}
 endif
-straat:=cAddress
-postcode:=cPostcode
-woonplaats:=cCity
+straat:=AllTrim(cAddress)
+postcode:=AllTrim(cPostcode)
+cCity:=AllTrim(cCity)
+if cCity=="WYK BY DUURSTEDE"
+	cCity:="WIJK BIJ DUURSTEDE"
+endif
+woonplaats:=cCity 
+
 housenrOrg:=(GetStreetHousnbr(cAddress))[2]
 
 // remove housenbr addition from address:
@@ -233,7 +238,7 @@ if !Empty(output)
 			if (woonplaats=="'S-GRAVENHAGE")
 				woonplaats:='DEN HAAG'
 			elseif (woonplaats=="'S-HERTOGENBOSCH")
-				woonplaats:="DEN BOSCH"
+				woonplaats:="DEN BOSCH" 
 			endif
 			woonplaats:=Upper(SubStr(woonplaats,1,1))+Lower(SubStr(woonplaats,2))				
 		endif
@@ -996,7 +1001,15 @@ ENDIF
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
 		AAdd(aPropEx,oDropDown)
-		oDropDown:Show()
+		oDropDown:Show() 
+	ELSEIF nType==DATEFIELD
+		oSingle:=SingleLineEdit{self,Count,Point{EditX,myOrg:y+13},Dimension{215,20} }
+		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name+":"}
+		oSingle:FocusSelect := FSEL_HOME
+		oSingle:Picture:="99-99-9999"
+		oSingle:FieldSpec:=PropExtra_Date{}
+		oSingle:Show()
+		AAdd(aPropEx,oSingle)
 	ENDIF
 	IF nType#CHECKBX
 //		oFix:=FixedText{SELF,Count,Point{17,88}, Dimension{82,20},Name+":"}
@@ -1066,13 +1079,13 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmType:Value:=self:oPerson:TYPE
 	IF self:lAddressChanged
 		IF !Empty(self:oPersCnt:m51_pos)
-			self:mPos := StandardZip(self:oPersCnt:m51_pos)
+			self:mPostalcode := StandardZip(self:oPersCnt:m51_pos)
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_ad1)
 			self:mAddress := self:oPersCnt:m51_ad1
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_city)
-			self:mpla := self:oPersCnt:m51_city
+			self:mCity := self:oPersCnt:m51_city
 		ENDIF
 	ENDIF
 
@@ -1521,7 +1534,7 @@ METHOD SkipNext() CLASS PersonBrowser
 	RETURN TRUE
 METHOD SkipPrevious() CLASS PersonBrowser
 	RETURN SELF:oSFPersonSubForm:SkipPrevious()
-METHOD Adres_Analyse(woorden, nStartAnalyse,lZipCode,lCity,lAddress,lFromName) CLASS PersonContainer
+METHOD Adres_Analyse(aWord as array, nStartAnalyse:=1 as int,lZipCode:=false ref logic,lCity:=false ref logic,lAddress:=false ref logic,lFromName:=false as logic) as int CLASS PersonContainer
 *  Determines Zipcode, street and city from an array with NAW-words {{Token, Separator},...}
 *	Returns startposition of address in the array
 *	nStartAnalyse: startword to start analyses (default=1)
@@ -1530,35 +1543,46 @@ METHOD Adres_Analyse(woorden, nStartAnalyse,lZipCode,lCity,lAddress,lFromName) C
 *  lFromName: Find address in name field in stead of address field
 *
 LOCAL i,j,wp,l,  nNumPosition:=0, nZipPosition, nCityPosition, nStart, nStartAddress as int
-LOCAL aStreetPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY
-Default(@nStartAnalyse,1)
-Default(@lZipCode,FALSE)
-Default(@lCity,FALSE)
-Default(@lAddress,FALSE)
-Default(@lFromName,FALSE)
+LOCAL aStreetPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY 
+local lBelgium as logic
 
 * vaststellen of postkode gevonden:
-wp:=Len(woorden)
+wp:=Len(aWord)
 IF wp<2 && (first streetname, housenumber, first part zipcode)
 	RETURN wp+1
 ENDIF
+if aWord[Len(aWord),1]=='BE' 
+	// apparently Belgium:
+	self:m51_city='België'
+	ASize(aWord,Len(aWord)-1) 
+	lBelgium:=true
+endif
+
 IF !lZipCode
 	m51_pos:=""
 	*Search Zipcode:
 	FOR i:=nStartAnalyse+1 to wp
-		IF isnum(woorden[i-1,1])
-			IF Len(woorden[i-1,1])=4
-				IF Len(woorden[i,1])=2
-					IF IsAlpha(woorden[i,1])
-						* postkode gevonden:
-						self:m51_pos:=woorden[i-1,1]+" "+woorden[i,1]
+		IF isnum(aWord[i-1,1])
+			IF Len(aWord[i-1,1])=4
+				IF Len(aWord[i,1])=2
+					IF IsAlpha(aWord[i,1])
+						* dutch zipcode found:
+						self:m51_pos:=aWord[i-1,1]+" "+aWord[i,1]
 						nZipPosition:=i-1
-						woorden[i]:={"",""} // empty word
-						woorden[i-1]:={"",""} // empty word
+						aWord[i]:={"",""} // empty word
+						aWord[i-1]:={"",""} // empty word
 						lZipCode:=true
 						exit
 					ENDIF
 				ENDIF
+			ENDIF
+			if lBelgium .and. Len(aWord[i,1])=4
+			// probably Belgium zip code:
+				self:m51_pos:=aWord[i,1]
+				nZipPosition:=i
+				aWord[i]:={"",""}	//	empty	word
+				lZipCode:=true
+				exit
 			ENDIF
 		ENDIF
 	NEXT
@@ -1575,22 +1599,22 @@ IF !lAddress
 	* Search streetname:
 	* Search backwards till housenbr:
 	FOR l:=nStart to nStartAnalyse step -1
-		IF isnum(woorden[l,1]).and.l>1.and.Empty(nNumPosition)
-//		IF IsDigit(woorden[l,1]).and.l>1.and.Empty(nNumPosition)
+		IF isnum(aWord[l,1]).and.l>1.and.Empty(nNumPosition)
+//		IF IsDigit(aWord[l,1]).and.l>1.and.Empty(nNumPosition)
 			* Housenbr found:
 			nNumPosition:=l
 			// check housenbr addition:
 			if l<nStart
-				if Empty(woorden[l+1,1]) .and. (l+1)<nStart   // separation for addition: - / 
+				if Empty(aWord[l+1,1]) .and. (l+1)<nStart   // separation for addition: - / 
 					nNumPosition+=2
-				elseif Len(woorden[l+1,1])=1 .or.woorden[l+1,2]="-" 
+				elseif Len(aWord[l+1,1])=1 .or.aWord[l+1,2]="-" 
 					nNumPosition++  // addition part of address
 				endif
 			endif
-		ELSEIF IsAlpha(woorden[l,1]).and.!Empty(nNumPosition)
+		ELSEIF IsAlpha(aWord[l,1]).and.!Empty(nNumPosition)
 			* Streetname found:
 			if lFromName
-				IF l>nStartAnalyse.and.(Len(woorden[l-1,1])<3.or. AScanExact(aStreetPrefix,woorden[l-1,1])>0)
+				IF l>nStartAnalyse.and.(Len(aWord[l-1,1])<3.or. AScanExact(aStreetPrefix,aWord[l-1,1])>0)
 					* join one/two char/prefix before streetname
 					nStartAddress:=l-1
 				ELSE			
@@ -1603,8 +1627,8 @@ IF !lAddress
 				nCityPosition:=nNumPosition+1
 			ENDIF
 			FOR j=nStartAddress to Max(nNumPosition,nZipPosition-1)
-				self:m51_ad1:=self:m51_ad1+Upper(SubStr(woorden[j,1],1,1))+Lower(SubStr(woorden[j,1],2))+woorden[j,2]
-				woorden[j]:={"",""} // empty word			
+				self:m51_ad1:=self:m51_ad1+Upper(SubStr(aWord[j,1],1,1))+Lower(SubStr(aWord[j,1],2))+aWord[j,2]
+				aWord[j]:={"",""} // empty word			
 				lAddress:=true
 			NEXT
 			exit
@@ -1615,14 +1639,19 @@ IF !lCity
 	m51_city:=""
 	IF nCityPosition<=wp .and. nCityposition>0
 		FOR j:=nCityPosition to wp
-			IF Len(m51_city)+Len(woorden[j,1])>=18.or.woorden[j,1]=="FAM".or.woorden[j,1]=="GIFT".or.woorden[j,1]=="TGV";
-				.or.woorden[j,1]=="TNV".or.woorden[j,1]=="VOOR".or.IsDigit(woorden[j,1])
+			IF Len(m51_city)+Len(aWord[j,1])>=18.or.aWord[j,1]=="FAM".or.aWord[j,1]=="GIFT".or.aWord[j,1]=="TGV";
+				.or.aWord[j,1]=="TNV".or.aWord[j,1]=="VOOR".or.IsDigit(aWord[j,1])
 				exit
 			ENDIF
-			self:m51_city:=self:m51_city+" "+woorden[j,1]
-			woorden[j]:={"",""} // empty word
+			self:m51_city:=self:m51_city+" "+aWord[j,1]
+			aWord[j]:={"",""} // empty word
 		NEXT
-		self:m51_city:=Pad(AllTrim(self:m51_city),18)
+		self:m51_city:=AllTrim(self:m51_city)
+// 		if upper(SubStr(self:m51_city,len(self:m51_city)-2,3))==' BE'
+// 			// apperently belgium
+// 			self:m51_country:="België"
+// 			self:m51_city:=SubStr(self:m51_city,1,Len(self:m51_city)-3)
+// 		endif			
 		lCity:=true
 	ENDIF
 ENDIF
@@ -1638,210 +1667,241 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 	* True: if subfield is allready known
 	* False: if the subfield has to be disassembled.
 	*
-LOCAL nLength, i,j as int
-LOCAL aWord as ARRAY
-LOCAL aFirstPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY
-LOCAL aSecondPrefix:={"DEN","DER","HET","DE"} as ARRAY
-LOCAL aSalutation:={"DHR","HR","MW","MEJ","HR/MW","FAM","MR","MRS","PROF","DR","IR","DS","ARTS","DRS"} as ARRAY
-LOCAL aSalutationSep:={"EN","E/O",""} as ARRAY
-LOCAL nInitialsPos, nSalutationPos, nPrefixPos, nStart, nCityPosition as int
-Default(@lAddress,FALSE)
-Default(@lInitials,FALSE)
-Default(@lSalutation,FALSE)
-Default(@lMiddleName,FALSE)
-aWord:=GetTokens(m51_lastname)
-IF !lAddress
-	* If no address found, try to find within m51_lastname:
-	nLength:=self:Adres_Analyse(aWord,2,@lZipCode,@lCity,@lAddress,true)-1
-	IF nLength<Len(aWord)
-		lAddress:=true
-		* Limit to start of address:
-		ASize(aWord,nLength)
-	ENDIF
-ENDIF
-nLength:=Len(aWord)
-*
-*  Determine initials:
-*
-IF !lInitials
-	self:m51_initials:=""
-	FOR i:=1 to nLength
-		IF Len(aWord[i,1])==1.and.IsAlpha(aWord[i,1]).and.!aWord[i,2]="-".and.!aWord[i,2]="/".and.; //not followed by -/
-			!(i>1.and.(aWord[i-1,2]="-".or.aWord[i-1,2]="/")) //no "-/" preceding
-			m51_initials:=m51_initials+Upper(aWord[i,1])+"."
-			IF !lInitials
-				nInitialsPos:=i
-				lInitials:=true
-			ENDIF
-			aWord[i]:={"",""} // empty word
-		ELSEIF lInitials
-			exit
+	LOCAL nLength, i,j as int
+	LOCAL aWord as ARRAY
+	LOCAL aFirstPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY
+	LOCAL aSecondPrefix:={"DEN","DER","HET","DE"} as ARRAY
+	LOCAL aSalutation:={"DHR","HR","MW","MEJ","HR/MW","FAM","MR","MRS","PROF","DR","IR","DS","ARTS","DRS"} as ARRAY
+	LOCAL aSalutationSep:={"EN","E/O",""} as ARRAY
+	LOCAL nInitialsPos, nSalutationPos, nPrefixPos, nStart, nCityPosition as int
+	Default(@lAddress,FALSE)
+	Default(@lInitials,FALSE)
+	Default(@lSalutation,FALSE)
+	Default(@lMiddleName,FALSE)
+	aWord:=GetTokens(self:m51_lastname)
+	IF !lAddress
+		* If no address found, try to find within m51_lastname:
+		nLength:=self:Adres_Analyse(aWord,2,@lZipCode,@lCity,@lAddress,true)-1
+		IF nLength<Len(aWord)
+			lAddress:=true
+			* Limit to start of address:
+			ASize(aWord,nLength)
 		ENDIF
-	NEXT
-ENDIF
+	ENDIF
+	nLength:=Len(aWord)
+	*
+	*  Determine initials:
+	*
+	IF !lInitials
+		self:m51_initials:=""
+		FOR i:=1 to nLength
+			IF Len(aWord[i,1])==1.and.IsAlpha(aWord[i,1]).and.!aWord[i,2]="-".and.!aWord[i,2]="/".and.; //not followed by -/
+				!(i>1.and.(aWord[i-1,2]="-".or.aWord[i-1,2]="/")) //no "-/" preceding
+				m51_initials:=m51_initials+Upper(aWord[i,1])+"."
+				IF !lInitials
+					nInitialsPos:=i
+					lInitials:=true
+				ENDIF
+				aWord[i]:={"",""} // empty word
+			ELSEIF lInitials
+				exit
+			ENDIF
+		NEXT
+	ENDIF
 
-*  Determine salutation:
-*
-m51_title:=""
-IF !lSalutation .and. (!lInitials .or. nInitialsPos> 1 .or. Empty(nInitialsPos))
-	* enough space for salutation:
-	IF lInitials
-		*	Salutation should be before initials:
-		IF !Empty(nInitialsPos)
-			nLength:=nInitialsPos-1
+	*  Determine salutation:
+	*
+	m51_title:=""
+	IF !lSalutation .and. (!lInitials .or. nInitialsPos> 1 .or. Empty(nInitialsPos))
+		* enough space for salutation:
+		IF lInitials
+			*	Salutation should be before initials:
+			IF !Empty(nInitialsPos)
+				nLength:=nInitialsPos-1
+			ENDIF
+		ENDIF
+		FOR i:=1 to nLength
+			IF AScanExact(aSalutation,aWord[i,1])>0
+				m51_title:=m51_title+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+aWord[i,2]
+				IF !lSalutation
+					nSalutationPos:=i
+					lSalutation:=true
+				ENDIF
+			ELSE
+				IF lSalutation
+					IF AScanExact(aSalutationSep,aWord[i,1])>0
+						m51_title:=m51_title+Lower(aWord[i,1])+aWord[i,2]
+					ELSE
+						* search for e/o, etc
+						IF i+1< nLength.and.AScanExact(aSalutationSep,aWord[i,1]+aWord[i,2]+aWord[i+1,1])>0
+							m51_title:=m51_title+Lower(aWord[i,1]+aWord[i,2]+aWord[i+1,1]+aWord[i+1,2])
+							++i
+						ELSE
+							* End of Salutation:
+							exit
+						ENDIF
+					ENDIF
+				ENDIF
+			ENDIF
+		NEXT
+	ENDIF
+	IF nSalutationPos>0
+		* End of Salutation:
+		IF lInitials.and.i<nInitialsPos
+			*	Salutation not united with initials:
+			m51_title:=""
+			lSalutation:=FALSE
+			nSalutationPos:=0
+		ELSE
+			*	Remove words with salutation
+			FOR j:=nSalutationPos to i-1
+				aWord[j]:={"",""} // empty word
+			NEXT
 		ENDIF
 	ENDIF
-	FOR i:=1 to nLength
-		IF AScanExact(aSalutation,aWord[i,1])>0
-			m51_title:=m51_title+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+aWord[i,2]
-			IF !lSalutation
-				nSalutationPos:=i
-				lSalutation:=true
+
+	IF ! lMiddleName
+		* Determine Prefix:
+		m51_prefix:=""
+		nLength:=Len(aWord)
+		for i:=1 to nLength
+			IF AScanExact(aFirstPrefix,aWord[i,1])>0 
+				IF IsAlpha(aWord[i,1]).and.!aWord[i,2]="-".and.!aWord[i,2]="/".and.; //not followed by -/
+					!(i>1.and.(aWord[i-1,2]="-".or.aWord[i-1,2]="/")) //no "-/" preceding
+					
+					m51_prefix:=Lower(aWord[i,1])
+					nPrefixPos:=i
+					aWord[i]:={"",""}	//	empty	word
+					IF	i<nLength
+						IF	AScanExact(aSecondPrefix,aWord[i+1,1])>0
+							m51_prefix:=m51_prefix+" "+Lower(aWord[i+1,1])
+							aWord[i+1]:={"",""} // empty word
+						ENDIF
+					ENDIF
+					exit
+				endif
+			ELSE
+				* search	for o/h,	etc:
+				IF	i<nLength .and.AScanExact(aFirstPrefix,aWord[i,1]+aWord[i,2]+aWord[i+1,1])>0
+					m51_prefix:=Lower(aWord[i,1]+aWord[i,2]+aWord[i+1,1])
+					nPrefixPos:=i
+					aWord[i]:={"",""} // empty word
+					aWord[i+1]:={"",""} // empty word 
+					exit
+				ENDIF
 			ENDIF
+		next
+		// 		*	Prefix direct behind initials/salutation:
+		// 		nStart:=Max(nInitialsPos,nSalutationPos)+1
+		// 		IF nStart <=nLength
+		// 			nStart:=AScanExact(aWord,{|x| !Empty(x[1])},nStart)
+		// 			// any word direct after salutation/initial or start
+		// 			IF nStart>0
+		// 				IF AScanExact(aFirstPrefix,aWord[nStart,1])>0
+		// 					m51_prefix:=Lower(aWord[nStart,1])
+		// 					nPrefixPos:=nStart
+		// 					aWord[nStart]:={"",""} // empty word
+		// 					IF nStart<nLength
+		// 						IF AScanExact(aSecondPrefix,aWord[nStart+1,1])>0
+		// 							m51_prefix:=m51_prefix+" "+Lower(aWord[nStart+1,1])
+		// 							aWord[nStart+1]:={"",""} // empty word
+		// 						ENDIF
+		// 					ENDIF
+		// 				ELSE
+		// 					* search for o/h, etc:
+		// 					IF nStart<nLength .and.AScanExact(aFirstPrefix,aWord[nStart,1]+aWord[nStart,2]+aWord[nStart+1,1])>0
+		// 						m51_prefix:=Lower(aWord[nStart,1]+aWord[nStart,2]+aWord[nStart+1,1])
+		// 						nPrefixPos:=nStart
+		// 						aWord[nStart]:={"",""} // empty word
+		// 						aWord[nStart+1]:={"",""} // empty word
+		// 					ENDIF
+		// 				ENDIF
+		// 			ENDIF
+		// 		ENDIF
+	ENDIF
+	*
+	*	Determine initials if not yet found from 2 character word:
+	IF !lInitials
+		i:=AScanExact(aWord,{|x| !Empty(x[1])})
+		IF !Empty(i).and.Len(aWord[i,1])==2.and.IsAlpha(aWord[i,1])
+			nInitialsPos:=i
+			lInitials:=true
+			m51_initials:=SubStr(aWord[nInitialsPos,1],1,1)+"."+SubStr(aWord[nInitialsPos,1],2,1)+"."
+			aWord[nInitialsPos]:={"",""}
+		ENDIF
+	ENDIF
+	IF  !lAddress
+		*	Determine City if no address found up till now:
+		nStart:=Max(nInitialsPos,Max(nSalutationPos,nPrefixPos))+1
+		IF nStart <=nLength
+			nStart:=AScanExact(aWord,{|x| !Empty(x[1])},nStart)
 		ELSE
-			IF lSalutation
-				IF AScanExact(aSalutationSep,aWord[i,1])>0
-					m51_title:=m51_title+Lower(aWord[i,1])+aWord[i,2]
+			nStart:=0
+		ENDIF
+		IF nLength-nStart>0.and.!Empty(nStart)
+			*	>=Two words for name and city:
+			* first try to find section after comma:
+			nCityPosition:=AScanExact(aWord,{|x| x[2]=","},nStart)
+			IF nCityPosition>0
+				* all after comma regarded as city name:
+				FOR i:=nCityPosition+1 to nLength
+					self:m51_city:=self:m51_city+aWord[i,1]+aWord[i,2]
+					aWord[i]:={"",""}
+				NEXT
+			ELSE
+				* last word is cityname:
+				IF !Upper(aWord[nLength-1,1])=="EN" .and.; // not couple with "EN" between names:
+					!Len(aWord[nLength,1])>18.and.!aWord[nLength-1,2]=="-".and.!aWord[nLength-1,2]=="/"; // no double name with - /
+					.and.AScanExact(aFirstPrefix,aWord[nLength-1,1])=0 // no prefix preceding city name
+					self:m51_city:=aWord[nLength,1]
+					aWord[nLength]:={"",""}
+					IF Len(aWord[nLength-1,1])==1
+						* One char before cityname (like s gravenhage):
+						self:m51_city:=aWord[nLength-1,1]+aWord[nLength-1,2]+self:m51_city
+						aWord[nLength-1]:={"",""}
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	*  Determine Lastname:
+	m51_lastname:=""
+	nStart:=0    // start at beginning to find name
+	FOR i:=if(Empty(nStart),1,nStart) to nLength
+		if !Empty(aWord[i,1])
+			IF Len(m51_lastname)+Len(aWord[i,1])<=28
+				IF !aWord[i,1]=="EN" .and.!aWord[i,1]=="EO".and.!aWord[i,1]=="CJ".and.!aWord[i,1]=="VOOR";
+						.and.!aWord[i,1]=="GIFT".and.!aWord[i,1]=="TGV".and.!IsDigit(aWord[i,1])
+					m51_lastname:=m51_lastname+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+if(aWord[i,2]==","," ",aWord[i,2])
 				ELSE
-					* search for e/o, etc
-					IF i+1< nLength.and.AScanExact(aSalutationSep,aWord[i,1]+aWord[i,2]+aWord[i+1,1])>0
-						m51_title:=m51_title+Lower(aWord[i,1]+aWord[i,2]+aWord[i+1,1]+aWord[i+1,2])
-						++i
+					if aWord[i,1]=="EN" .or.!aWord[i,1]=="EO".or.!aWord[i,1]=="CJ"
+						self:m51_gender:="couple"
+					endif 
+					IF i==nStart
+						loop
 					ELSE
-						* End of Salutation:
+						* Next word probably part of streetname in case of "EN OF". "EO" or "CJ":
+						IF lAddress .and. i+2==nLength .and.aWord[i+1,1]=="OF"
+							m51_ad1:=Upper(SubStr(aWord[i+2,1],1,1))+Lower(SubStr(aWord[i+2,1],2))+" "+m51_ad1
+						ELSEIF lAddress.and.i+1==nLength .and.(aWord[i,1]=="EO".or.aWord[i,1]=="CJ")
+							m51_ad1:=Upper(SubStr(aWord[i+1,1],1,1))+Lower(SubStr(aWord[i+1,1],2))+" "+m51_ad1
+						ENDIF
 						exit
 					ENDIF
 				ENDIF
-			ENDIF
-		ENDIF
-	NEXT
-ENDIF
-IF nSalutationPos>0
-	* End of Salutation:
-	IF lInitials.and.i<nInitialsPos
-	*	Salutation not united with initials:
-		m51_title:=""
-		lSalutation:=FALSE
-		nSalutationPos:=0
-	ELSE
-		*	Remove words with salutation
-		FOR j:=nSalutationPos to i-1
-			aWord[j]:={"",""} // empty word
-		NEXT
-	ENDIF
-ENDIF
-
-IF ! lMiddleName
-	* Determine Prefix:
-	m51_prefix:=""
-	nLength:=Len(aWord)
-	*	Prefix direct behind initials/salutation:
-	nStart:=Max(nInitialsPos,nSalutationPos)+1
-	IF nStart <=nLength
-		nStart:=AScanExact(aWord,{|x| !Empty(x[1])},nStart)
-		// any word direct after salutation/initial or start
-		IF nStart>0
-			IF AScanExact(aFirstPrefix,aWord[nStart,1])>0
-				m51_prefix:=Lower(aWord[nStart,1])
-				nPrefixPos:=nStart
-				aWord[nStart]:={"",""} // empty word
-				IF nStart<nLength
-					IF AScanExact(aSecondPrefix,aWord[nStart+1,1])>0
-						m51_prefix:=m51_prefix+" "+Lower(aWord[nStart+1,1])
-						aWord[nStart+1]:={"",""} // empty word
-					ENDIF
-				ENDIF
 			ELSE
-				* search for o/h, etc:
-				IF nStart<nLength .and.AScanExact(aFirstPrefix,aWord[nStart,1]+aWord[nStart,2]+aWord[nStart+1,1])>0
-					m51_prefix:=Lower(aWord[nStart,1]+aWord[nStart,2]+aWord[nStart+1,1])
-					nPrefixPos:=nStart
-					aWord[nStart]:={"",""} // empty word
-					aWord[nStart+1]:={"",""} // empty word
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
-ENDIF
-*
-*	Determine initials if not yet found from 2 character word:
-IF !lInitials
-	i:=AScanExact(aWord,{|x| !Empty(x[1])})
-	IF !Empty(i).and.Len(aWord[i,1])==2.and.IsAlpha(aWord[i,1])
-		nInitialsPos:=i
-		lInitials:=true
-		m51_initials:=SubStr(aWord[nInitialsPos,1],1,1)+"."+SubStr(aWord[nInitialsPos,1],2,1)+"."
-		aWord[nInitialsPos]:={"",""}
-	ENDIF
-ENDIF
-*	Determine City if no address found up till now:
-nStart:=Max(nInitialsPos,Max(nSalutationPos,nPrefixPos))+1
-IF nStart <=nLength
-	nStart:=AScanExact(aWord,{|x| !Empty(x[1])},nStart)
-ELSE
-	nStart:=0
-ENDIF
-IF  !lAddress
-	IF nLength-nStart>0.and.!Empty(nStart)
-		*	>=Two words for name and city:
-		* first try to find section after comma:
-		nCityPosition:=AScanExact(aWord,{|x| x[2]=","},nStart)
-		IF nCityPosition>0
-			* all after comma regarded as city name:
-			FOR i:=nCityPosition+1 to nLength
-				self:m51_city:=self:m51_city+aWord[i,1]+aWord[i,2]
-				aWord[i]:={"",""}
-			NEXT
-		ELSE
-			* last word is cityname:
-			IF !Upper(aWord[nLength-1,1])=="EN" .and.; // not couple with "EN" between names:
-				!Len(aWord[nLength,1])>18.and.!aWord[nLength-1,2]=="-".and.!aWord[nLength-1,2]=="/"; // no double name with - /
-				.and.AScanExact(aFirstPrefix,aWord[nLength-1,1])=0 // no prefix preceding city name
-				self:m51_city:=aWord[nLength,1]
-				aWord[nLength]:={"",""}
-				IF Len(aWord[nLength-1,1])==1
-					* One char before cityname (like s gravenhage):
-					self:m51_city:=aWord[nLength-1,1]+aWord[nLength-1,2]+self:m51_city
-					aWord[nLength-1]:={"",""}
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
-ENDIF
-*  Determine Lastname:
-m51_lastname:=""
-FOR i:=if(Empty(nStart),1,nStart) to nLength
-	IF Len(m51_lastname)+Len(aWord[i,1])<=28
-		IF !aWord[i,1]=="EN" .and.!aWord[i,1]=="EO".and.!aWord[i,1]=="CJ".and.!aWord[i,1]=="VOOR";
-			.and.!aWord[i,1]=="GIFT".and.!aWord[i,1]=="TGV".and.!IsDigit(aWord[i,1])
-			m51_lastname:=m51_lastname+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+if(aWord[i,2]==","," ",aWord[i,2])
-		ELSE
-			if aWord[i,1]=="EN" .or.!aWord[i,1]=="EO".or.!aWord[i,1]=="CJ"
-				self:m51_gender:="couple"
-			endif 
-			IF i==nStart
-				loop
-			ELSE
-				* Next word probably part of streetname in case of "EN OF". "EO" or "CJ":
-				IF lAddress .and. i+2==nLength .and.aWord[i+1,1]=="OF"
-					m51_ad1:=Upper(SubStr(aWord[i+2,1],1,1))+Lower(SubStr(aWord[i+2,1],2))+" "+m51_ad1
-				ELSEIF lAddress.and.i+1==nLength .and.(aWord[i,1]=="EO".or.aWord[i,1]=="CJ")
-					m51_ad1:=Upper(SubStr(aWord[i+1,1],1,1))+Lower(SubStr(aWord[i+1,1],2))+" "+m51_ad1
-				ENDIF
 				exit
 			ENDIF
-		ENDIF
-	ELSE
-		exit
-	ENDIF
-NEXT
-m51_lastname:=Compress(m51_lastname)
+		endif
+	NEXT
+	m51_lastname:=Compress(m51_lastname)
 
-RETURN
+	RETURN
 METHOD NAW_ANALYSE(lInitials,lSalutation,lMiddleName,lZipCode,lCity,lAddress) CLASS PersonContainer
 *  Analyse strings m15_achternaam and m51_ad1 containing NAW-data (e.g. from TeleBanking)
 LOCAL nLength  as int
 LOCAL aWord as ARRAY
+// local lZipCode:=lZipCodeP,lCity:=lCityP,lAddress:=lAddressP as logic
 *{" ",",",".","&","/","-"}
 * Supposed sequence: salutation initials Prefixname lastname  address
 
@@ -1855,15 +1915,12 @@ Default(@lMiddleName,FALSE)
 Default(@lZipCode,FALSE)
 Default(@lCity,FALSE)
 Default(@lAddress,FALSE)
-IF Empty(m51_lastname+" "+m51_AD1)
+IF Empty(self:m51_lastname+" "+self:m51_AD1)
 	RETURN
 ENDIF
 *	First try te find address within m51_ad1:
-aWord:=GetTokens(m51_ad1)
+aWord:=GetTokens(m51_AD1)
 nLength:=self:Adres_Analyse(aWord,,@lZipCode,@lCity,@lAddress,false)-1
-/*IF nLength<Len(aWord) .and. nLength >0
-	lAddress:=TRUE
-ENDIF */
 self:NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity)
 RETURN
 FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String) as logic
@@ -1880,12 +1937,13 @@ FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String)
 	ENDIF
 	RETURN (oPers:RecCount>0)
 FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUnique:=false as logic,cFilter:="" as string,;
-cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
+		cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 	LOCAL oPersBw as PersonBrowser
 	LOCAL lSuccess,lParmUni as LOGIC 
 	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
 	local oSel as SQLSelect 
 	LOCAL iEnd := At(",",cValue) as int
+	local cFields:= "p.persid,lastname,initials,firstname,prefix,datelastgift,address,postalcode,city,country"
 	
 	// 	IF lUnique 
 	if !Empty(oPersCnt)
@@ -1896,24 +1954,24 @@ cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 			cWhere:="externid='"+oPersCnt:m51_exid+"'"
 			lParmUni:=true
 		elseif !Empty(oPersCnt:m56_banknumber)
-			cWhere:="b.banknumber='"+oPersCnt:m56_banknumber+"'"
+			cWhere:="b.persid=p.persid and b.banknumber='"+oPersCnt:m56_banknumber+"'"
 			cFrom+=",personbank as b"
 			lParmUni:=true
 		else
 			if !Empty(oPersCnt:m51_AD1)
-				cWhere+=iif(Empty(cWhere),""," and ")+"address like '"+oPersCnt:m51_ad1+"%'"
+				cWhere+=iif(Empty(cWhere),""," and ")+"address like '"+AddSlashes(oPersCnt:m51_AD1)+"%'"
 			ENDIF
 			if !Empty(oPersCnt:m51_lastname)
-				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+oPersCnt:m51_lastname+"%'"
+				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(oPersCnt:m51_lastname)+"%'"
 			ENDIF
 			if !Empty(oPersCnt:m51_city)
-				cWhere+=iif(Empty(cWhere),""," and ")+"city like '"+oPersCnt:m51_city+"%'"
+				cWhere+=iif(Empty(cWhere),""," and ")+"city like '"+AddSlashes(oPersCnt:m51_city)+"%'"
 			ENDIF
 			if !Empty(oPersCnt:m51_pos)
 				cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+oPersCnt:m51_pos+"%'"
 			ENDIF
 			if !Empty(oPersCnt:m51_country)
-				cWhere+=iif(Empty(cWhere),""," and ")+"city like '"+oPersCnt:m51_city+"%'"
+				cWhere+=iif(Empty(cWhere),""," and ")+"city like '"+AddSlashes(oPersCnt:m51_city)+"%'"
 			ENDIF
 		endif
 	endif
@@ -1929,46 +1987,104 @@ cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 			endif
 		elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
 			// search on name
-			cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+cValue+"%'" 
+			cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
 		endif
 	endif
-// 	if !Empty(cFilter)
-// 		cWhere+=iif(Empty(cWhere),""," and ")+"("+cFilter+")" 			
-// 	endif
-	IF lUnique 
-		oSel:=SQLSelect{"select p.persid from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder,oConn}
-		if oSel:RecCount=1		
-			// 		IF oPersCnt:FindPers(cValue)
-			IF IsMethod(oCaller, #RegPerson)
-				oCaller:RegPerson(oSel,cItemname)
-			ENDIF	
-			RETURN
-		ENDIF
+
+	oSel:=SQLSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder,oConn}
+	IF lUnique .and. oSel:RecCount=1		
+		IF IsMethod(oCaller, #RegPerson)
+			oCaller:RegPerson(oSel,cItemname)
+		ENDIF	
+		RETURN
 	ENDIF
 	
-	oPersBw := PersonBrowser{oCaller:Owner,,,oCaller} 
+	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller} 
 	oPersBw:cWhere:= cWhere
 	oPersBw:cFrom:=cFrom
 	oPersBw:cOrder:=cOrder
 	oPersBw:cFilter:=cFilter
-	oPersBw:oPers:SQLString:="select "+oPersBw:cFields+" from "+cFrom+iif(Empty(cWhere).and.Empty(cFilter),""," where ")+cWhere+;
-	iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder 
-	oPersBw:oPers:Execute()
 	oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1)
- 
+	if oSel:RecCount<1
+		// use findbutton fields only: 
+		cWhere:=""
+		cFrom:="person as p" 
+		if !Empty(oPersCnt)
+			if !Empty(oPersCnt:m56_banknumber) .and.!Empty(oPersCnt:persid) 
+				cWhere:="b.persid=p.persid and b.banknumber='"+oPersCnt:m56_banknumber+"'"
+				cFrom+=",personbank as b"
+				if Empty(cValue)
+					cValue:=oPersCnt:m56_banknumber
+				endif
+			else
+				if !Empty(oPersCnt:m51_pos)
+					cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+oPersCnt:m51_pos+"%'"
+					if Empty(cValue)
+						cValue:=oPersCnt:m51_pos
+					endif
+				elseif !Empty(oPersCnt:m51_lastname)
+					cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(oPersCnt:m51_lastname)+"%'"
+					if Empty(cValue)
+						cValue:=oPersCnt:m51_lastname
+					endif
+				ENDIF
+
+			endif
+			if !Empty(oPersCnt:persid) 
+				oPersCnt:persid:=''  // apparently wrong persid
+			endif
+		endif
+		if !Empty(cValue) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname))
+			If IsDigit(cValue)
+				if Len(cValue)>=7.and.isnum(cValue) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber))
+					cWhere+=iif(Empty(cWhere),""," and ")+"p.persid=b.persid and b.banknumber='"+cValue+"'"
+					cFrom+=",personbank as b" 
+				elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_pos)
+					cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+StandardZip(cValue)+"%'" 
+					cOrder:="postalcode"
+				endif
+			elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
+				// search on name
+				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
+			endif
+		endif			
+		
+		oPersBw:oPers:SQLString:="select "+oPersBw:cFields+" from "+cFrom+iif(Empty(cWhere).and.Empty(cFilter),""," where ")+cWhere+;
+			iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder 
+		oPersBw:oPers:Execute()
+		oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1)
+	endif 
 	//position at current person: 
 	if Empty(oPersCnt)
 		oPersCnt:=PersonContainer{}
-	endif
+	ENDIF
 	if oPersBw:oPers:RecCount>1 .and.!Empty(oPersCnt)
 		if !Empty(oPersCnt:current_PersonID) 
 			do while !oPersBw:oPers:persid==oPersCnt:current_PersonID
 				oPersBw:Skip()
 			enddo
-		endif
-	endif
+		ENDIF
+	ENDIF
 	oPersBw:PersonSelect(oCaller,cValue,cItemname,lUnique,oPersCnt)	
 	RETURN
+CLASS PropExtra_Date INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS PropExtra_Date
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#PropExtra_Date, "date", "propextra field of type date", "" },  "D", 8, 0 )
+    cPict       := "99-99-9999"
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 function Salutation(GENDER as int) as string
 	// Return salutation of a person:	
 	return pers_salut[iif(Empty(GENDER),5,GENDER),1]
@@ -3369,8 +3485,9 @@ METHOD MakeOrType() CLASS SelPersMailCd
 RETURN TRUE
 METHOD SetPropExtra( Count, Left) CLASS SelPersMailCd
 // LOCAL oCheck AS CheckBox
-LOCAL oDropDown as Listbox
-LOCAL oFix AS FixedText
+lOCAL oDropDown as Listbox
+LOCAL oCheck as CheckBox
+LOCAL oFix as FixedText
 // LOCAL oDCGroupBoxExtra	AS GroupBox
 LOCAL Name as STRING,nType, ID as int, Values as STRING
 LOCAL myDim AS Dimension
@@ -3409,20 +3526,29 @@ ELSE
 ENDIF
 	//
 //	insert extra properties in group extra properties:	
-IF nType==DROPDOWN .or. nType==CHECKBX
+IF nType==DROPDOWN  
 	oDropDown:=ListBox{self,Count,Point{EditX,myOrg:y+8},Dimension{185,40},LBS_SORT+LBS_MULTIPLESEL}
 	oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
-	IF nType==DROPDOWN
+// 	IF nType==DROPDOWN
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
-	else
-		oDropDown:FillUsing({{"true","T"},{"false","F"}})
-	endif
+// 	else
+// 		oDropDown:FillUsing({{"true","T"},{"false","F"}})
+// 	endif
 	AAdd(aPropEx,oDropDown)
 	oDropDown:Show()
 	oFix:=FixedText{self,Count,Point{FixX,myOrg:y+28}, Dimension{135,20},Name+":"}
 	oFix:Show()
 ENDIF
+IF nType==CHECKBX 
+	oCheck:=CheckBox{self,Count,Point{EditX,myOrg:y+8},Dimension{185,40}}
+	oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
+	AAdd(aPropEx,oCheck)
+	oCheck:Show()
+ENDIF
+if nType==DATEFIELD
+	
+endif
 left:=-1*left
 
 RETURN NIL
@@ -3446,7 +3572,7 @@ METHOD Abon_Con(dummy:=nil as logic) as array CLASS SelPersOpen
 		
 ACCESS keus21 CLASS SelPersOpen
 	RETURN Val(SELF:oDCkeus21:Value)
-Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
+Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,accid as int) as logic CLASS SelPersOpen
 	// make CLIEOP03 file for automatic collection for Dutch Banks
 	LOCAL oDue as SQLSelect 
 	local oPers as SQLSelect
@@ -3457,7 +3583,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
 	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds as STRING
 	Local oWarn as TextBox
-	Local aTrans:={} as array // persid,Dtos(invoicedate)+seqnr,accid,amountinvoice, banknumber, Description 
+	Local aTrans:={} as array // accid,persid,amount,description,membertype,mailcode,account type,id 
 	Local aDir as array
 	local oPro as ProgressPer 
 	local oSel as SQLSelect
@@ -3465,7 +3591,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 
 	if Empty(BANKNBRDEB)
 		(ErrorBox{,"Bank account invoices/ direct debit not specified in system data"}):Show()
-		return
+		return false
 	endif 
 	if Len(BANKNBRDEB)=9 .and.!IsDutchBanknbr(BANKNBRDEB)
 		(ErrorBox{,"Bank account number "+BANKNBRDEB+;
@@ -3503,6 +3629,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 		"where s.subscribid=d.subscribid "+;
 		"and s.paymethod='C' and invoicedate between '"+SQLdate(begin_due)+;
 		"' and '"+SQLdate(end_due)+"' and d.amountrecvd<d.amountinvoice and "+;
+		iif(Empty(accid),''," s.accid='"+Str(accid,-1)+"' and ")+;
 		"s.bankaccnt not in (select p.banknumber from personbank p where p.persid=s.personid)",oConn}
 	if oDue:RecCount>0
 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
@@ -3517,10 +3644,11 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 
 	oDue:=SQLSelect{"select d.dueid,s.personid,s.accid,d.amountinvoice,d.invoicedate,d.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+SQLAccType()+" as type,"+;
 		"p.datelastgift,"+SQLFullName(0,'p')+" as personname "+;
-		" from account a left join member m on (a.accid=m.accid),balanceitem b,person p, dueamount d,Subscription s "+;
+		" from account a left join member m on (a.accid=m.accid),balanceitem b,person p, dueamount d,subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
-		"and invoicedate between '"+SQLdate(begin_due)+;
-		"' and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
+		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
+		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
+		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
 	IF oDue:RecCount<1
 		(WarningBox{self,"Producing CLIEOP03 file","No due amounts to be debited direct!"}):Show()
 		RETURN false
@@ -3600,6 +3728,10 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 		AAdd(aTrans,{oDue:accid,oDue:personid,oDue:AmountInvoice,cDescr,oDue:Type,oDue:CLC,oDue:acctype,Str(oDue:dueid,-1)})
 		oDue:skip()		
 	ENDDO
+
+
+
+
 	// Write closing lines:
 	FWriteLine(ptrHandle,"9990A"+StrZero(fSum*100,18,0)+SubStr(Str(GrandTotal,-1,0),-10)+StrZero(Len(aTrans),7,0)+Space(10))
 	FWriteLine(ptrHandle,"9999A"+Space(45))
@@ -3738,7 +3870,7 @@ Method MakeCliop03File(begin_due,end_due, process_date) CLASS SelPersOpen
 
 		self:Pointer := Pointer{POINTERARROW}
 		(InfoBox{self,"Producing CLIEOP03 file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" amounts"}):Show()
-		LogEvent(self, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits")
+		LogEvent(self, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(GrandTotal,-1)+")")
 
 	endif
 	RETURN true
