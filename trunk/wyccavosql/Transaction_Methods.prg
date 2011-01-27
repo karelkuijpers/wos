@@ -136,7 +136,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 					ASize(self:oReport:oPrintJob:aFIFO,nBeginmember)
 				endif
 
-				IF !self:beginreport
+				IF !self:beginreport .and.!self:oTrans:EOF
 					nPage:=0 //reset page for next account
 				endif
 			endif
