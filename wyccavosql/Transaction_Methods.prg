@@ -1593,7 +1593,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
 	local oStmnt as SQLStatement 
-	local oPers,oMyTele,oMyImp as SQLSelect
+	local oPers,oMyTele,oMyImp,oAccFld as SQLSelect
 	// 	Default(@lSave,FALSE)
 	oHm := SELF:Server
 	IF !SELF:fTotal==0
@@ -1723,7 +1723,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			// 			DO WHILE ! oHm:EOF
 			For i:=1 to Len(oHm:AMirror)
 				oHm:RecNo:=oHm:AMirror[i,6]  // recno
-				IF !oHm:Cre==oHm:Deb // skip dummy lines
+				if !oHm:Cre==oHm:Deb // skip dummy lines
 					nSeqNbr++ 
 					cStatement:="insert into transaction set "+;
 						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
@@ -1756,15 +1756,73 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 						endif
 						*	Update monthbalance value of corresponding account:
-						ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre
-// 						if At("persid=",cStatement)>0 .and.!Empty(self:mCLNGiver)
+						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre
 							lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,self:mDAT,self:mBST,cTransnr,@nSeqnbr)
-// 						ENDIF
+							if !lError
+								if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
+									// correct rabat assessment if needed: 
+									if Empty(oHm:gc) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
+										oAccFld:=SQLSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
+										AllTrim(oHm:REFERENCE)+"'",oConn}
+										if oAccFld:category==LIABILITY
+											if ChgBalance(SEXP, self:mDAT,Round(oHm:Cre - oHm:Deb,DecAantal),0,Round(oHm:Cre - oHm:Deb,DecAantal),0,sCURR)
+												nSeqnbr++ 
+												cStatement:="insert into transaction set "+;
+												"transid="+cTransnr+;
+												",dat='"+SQLdate(self:mDAT)+"'"+;
+												",docid='"+self:mBST+"'"+;
+												",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense for assessment field&int')))+"'"+; 
+												",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+												",accid='"+SEXP+"'"+;
+												",deb="+Str(oHm:Cre	- oHm:Deb,-1)+;
+												",userid='"+LOGON_EMP_ID +"'"+;
+												",debforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+												",seqnr="+Str(nSeqnbr,-1)+;
+												",poststatus=2" 
+												oStmnt:=SQLStatement{cStatement,oConn}
+												oStmnt:Execute()
+												if oStmnt:NumSuccessfulRows>0
+													if ChgBalance(samFld,self:mDAT,0,Round(oHm:Cre	- oHm:Deb,DecAantal), 0	,Round(oHm:Cre	- oHm:Deb,DecAantal),sCURR)
+														nSeqnbr++ 
+														cStatement:="insert into transaction set "+;
+														"transid="+cTransnr+;
+														",dat='"+SQLdate(self:mDAT)+"'"+;
+														",docid='"+self:mBST+"'"+;
+														",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense	for assessment	field&int')))+"'"+; 
+														",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+														",accid='"+samFld+"'"+;
+														",cre="+Str(oHm:Cre	- oHm:Deb,-1)+;
+														",userid='"+LOGON_EMP_ID +"'"+;
+														",creforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+														",seqnr="+Str(nSeqnbr,-1)+;
+														",poststatus=2" 
+														oStmnt:=SQLStatement{cStatement,oConn}
+														oStmnt:Execute()
+														if	!oStmnt:NumSuccessfulRows>0
+															lError:=true
+														endif
+													else
+														lError:=true
+													endif
+												else
+													lError:=true
+												endif
+											else
+												lError:=true
+											endif
+										endif
+									endif
+								endif
+							endif
+						ELSE
+							lError:=true
+						endif
 					ELSE
 						lError:=true
 					endif
-					if !lError
-						//	Update balances of subscriptions/due amounts/ donations:
+				endif
+				if !lError
+					//	Update balances of subscriptions/due amounts/ donations:
 						IF	!Empty(self:mCLNGiver)
 							IF	(oHm:KIND= 'D'	.or. oHm:KIND=	'A' .or.	oHm:KIND	= 'F'	.or.(oHm:deb >	oHm:cre .and.oHm:gc<>'CH' ))			 // storno also
 								if	!ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:deb,oHm:cre)
@@ -1773,15 +1831,14 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 								endif
 							ENDIF
 						endif
-					endif
-					if lError
-						LogEvent(,"Error:"+cStatement,"LogErrors")
-						ErrorBox{self,"transaction could not be stored:"+iif(!Empty(oStmnt:Status),AllTrim(oStmnt:Status:Description),'')}:show()
-						SQLStatement{"rollback",oConn}:Execute()
-						Break
-						return true
-					endif
-				ENDIF
+				endif
+				if lError
+					LogEvent(,"Error:"+cStatement,"LogErrors")
+					ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
+					SQLStatement{"rollback",oConn}:Execute()
+					Break
+					return true
+				endif
 			next
 			IF self:lTeleBank
 				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
@@ -2579,6 +2636,9 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	local myAcc as SQLSelect
 	local oPersBank,oSel as SQLSelect
 	local oPers as SQLSelectPerson 
+	local lSpecmessage as logic
+	local aNospecmess:={ 'bijdrage','gift','onderst'}  as array
+	local aSpecmess:={'project','pensioen'} as array 
 
 	self:Reset()
 	AutoCollect:=FALSE 
@@ -2763,8 +2823,19 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			nMsgPos:=At('%%',oTmt:m56_description)
 			if nMsgPos>0 
 				Destname:=GetTokens(oHm:AccDesc)[1,1]
-				cSpecMessage:=SubStr(oTmt:m56_description,nMsgPos+2)
-				if AtC('gift',cSpecMessage)=0 .and.AtC('bijdrage',cSpecMessage)=0 .and.AtC('donatie',cSpecMessage)=0 .and.AtC(Destname,SubStr(oTmt:m56_description,nMsgPos+2))=0
+				cSpecMessage:=SubStr(oTmt:m56_description,nMsgPos+2) 
+				lSpecmessage:=false 
+				AEval(aSpecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,true,lSpecmessage)})
+				if !lSpecmessage
+					lSpecmessage:=true
+					AEval(aNospecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})
+               if lSpecmessage
+               	if AtC(Destname,SubStr(oTmt:m56_description,nMsgPos+2))>0
+							lSpecmessage:=false 
+               	endif
+               endif
+				endif
+				if lSpecmessage 
 					oHm:DESCRIPTN+=" "+SubStr(oTmt:m56_description,nMsgPos+2)
 				endif
 			endif
