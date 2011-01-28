@@ -157,13 +157,13 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
  	RETURN FALSE
 METHOD CheckPattern(dummy:=nil as logic) as logic  CLASS TeleMut
 LOCAL i AS INT
-LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub, tD:= self:m56_description as STRING
+LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub,tD:=self:m56_description  as STRING
 i := AScan(self:Teleptrn,{|x| (Empty(x[1]) .or. ;
 					tG	== x[1])	.and.;
 					tS	= x[2]	.and.;
 					tN	= x[3]	.and.;
 					tC 	== x[4]	.and.;
-					tD 	= x[5]})
+					CompareKeyString(x[5],tD)})
 IF i>0
 	self:m56_accid:= self:Teleptrn[i,6]
 	self:m56_recognised:=true
@@ -2545,13 +2545,14 @@ METHOD InitTeleNonGift() CLASS TeleMut
 	LOCAL lSuc as LOGIC
 	local oTelPat as SQLSelect
 // 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and addsub<>'' and description<>''",oConn}
-	oTelPat:=SQLSelect{"select * from telebankpatterns where accid>0 and kind<>'' and addsub<>''",oConn}
+	oTelPat:=SQLSelect{"select * from telebankpatterns where accid>0",oConn} 
+	oTelPat:Execute()
 	DO WHILE !oTelPat:EOF
 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
 			oTelPat:kind,;
 			oTelPat:contra_name,;
 			oTelPat:AddSub,;
-			oTelPat:description,;
+			split(oTelPat:description,space(1)),;
 			Str(oTelPat:accid,-1),;
 			iif(oTelPat:ind_autmut==1,true,false)})
 		oTelPat:skip()
