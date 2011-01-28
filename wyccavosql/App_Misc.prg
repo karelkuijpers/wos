@@ -163,6 +163,22 @@ else
 	return oFileSpec:FileName
 endif
 			
+Function CompareKeyString(aKeyW as array, cValue as string ) as logic  
+	// compare if each of given keywords in aKey is contained in string cValue
+	Local i, lK  as int
+	local lKeyFound as logic
+	lK:=Len(aKeyW)
+	LogEvent(,'keys:'+Implode(aKeyW,',')+' value:'+cValue,'logtest')
+	for i:=1 to lK 
+// 		if lK=2 .and.(Lower(aKeyW[i])=='salaris'.or.Lower(aKeyW[i])=='grootheest')
+// 			LogEvent(,'key:'+aKeyW[i]+' value:'+cValue,'logtest')
+// 		endif  
+
+		if AtC(aKeyW[i],cValue)=0
+			return false
+		endif
+	next
+	return true
 FUNCTION Comparr(aStruct1 as array,aStruct2 as array) as logic
 	// compare equality of two arrays
 	LOCAL nLen2:=ALen(aStruct2),nLen1:=ALen(aStruct1),i as int
@@ -2231,12 +2247,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2244,6 +2254,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
