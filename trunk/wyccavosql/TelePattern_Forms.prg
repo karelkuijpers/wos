@@ -11,7 +11,7 @@ BEGIN
 	CONTROL	"Name:", EDITTELEBANKPATTERN_SC_CONTRA_NAME, "Static", WS_CHILD, 154, 30, 24, 13
 	CONTROL	"Description:", EDITTELEBANKPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 13, 73, 45, 13
 	CONTROL	"Account:", EDITTELEBANKPATTERN_SC_REK, "Static", WS_CHILD, 13, 52, 31, 13
-	CONTROL	"description:", EDITTELEBANKPATTERN_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 67, 73, 217, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Oms:", EDITTELEBANKPATTERN_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 67, 73, 217, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITTELEBANKPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 148, 51, 14, 13
 	CONTROL	"Debit/Credit", EDITTELEBANKPATTERN_MADDSUB, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 67, 91, 57, 46
 	CONTROL	"Debit", EDITTELEBANKPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 101, 39, 11
@@ -130,7 +130,8 @@ oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account:",NULL_STRING,NULL_STRING}
 
 oDCmdescription := SingleLineEdit{SELF,ResourceID{EDITTELEBANKPATTERN_MDESCRIPTION,_GetInst()}}
 oDCmdescription:FieldSpec := TeleBankPatterns_description{}
-oDCmdescription:HyperLabel := HyperLabel{#mdescription,"description:",null_string,"TeleBankPatterns_description"}
+oDCmdescription:HyperLabel := HyperLabel{#mdescription,"Oms:",NULL_STRING,"TeleBankPatterns_description"}
+oDCmdescription:TooltipText := "enter one or more keywords from transaction description"
 
 oCCAccButton := PushButton{SELF,ResourceID{EDITTELEBANKPATTERN_ACCBUTTON,_GetInst()}}
 oCCAccButton:HyperLabel := HyperLabel{#AccButton,"v","Browse in accounts",NULL_STRING}
