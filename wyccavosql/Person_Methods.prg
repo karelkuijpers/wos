@@ -1551,10 +1551,12 @@ wp:=Len(aWord)
 IF wp<2 && (first streetname, housenumber, first part zipcode)
 	RETURN wp+1
 ENDIF
-if aWord[Len(aWord),1]=='BE' 
+i:=iif(isnum(aWord[wp,1]),wp-1,wp)
+if aWord[i,1]=='BE' 
 	// apparently Belgium:
-	self:m51_city='België'
-	ASize(aWord,Len(aWord)-1) 
+	self:m51_country:='België'
+	ASize(aWord,i-1)
+	wp:=i-1 
 	lBelgium:=true
 endif
 
@@ -1572,6 +1574,9 @@ IF !lZipCode
 						aWord[i]:={"",""} // empty word
 						aWord[i-1]:={"",""} // empty word
 						lZipCode:=true
+						nStart:=nZipPosition-1
+						nCityPosition:=nZipPosition+2
+						nStartAddress:=nZipPosition
 						exit
 					ENDIF
 				ENDIF
@@ -1580,6 +1585,9 @@ IF !lZipCode
 			// probably Belgium zip code:
 				self:m51_pos:=aWord[i,1]
 				nZipPosition:=i
+				nStart:=nZipPosition-1
+				nCityPosition:=nZipPosition+1
+				nStartAddress:=nZipPosition
 				aWord[i]:={"",""}	//	empty	word
 				lZipCode:=true
 				exit
@@ -1587,11 +1595,7 @@ IF !lZipCode
 		ENDIF
 	NEXT
 ENDIF
-IF !Empty(nZipPosition)
-	nStart:=nZipPosition-1
-	nCityPosition:=nZipPosition+2
-	nStartAddress:=nZipPosition
-ELSE
+IF Empty(nZipPosition)
 	nStart:=Min(6,wp)
 ENDIF
 IF !lAddress
