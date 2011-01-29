@@ -17,30 +17,30 @@ LOCAL oFTP:=myFTP  as cFtp
 Local aInsRem as Array 
 Local oFs as MyFileSpec, LocalDate as date, RemoteDate as date
 // remove old version if still present:
-oFs:=MyFileSpec{cWorkdir+"InstallUpgOld.EXE"}
+oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
 if oFs:Find()
 	//oFs:DELETE()
 	FErase(oFs:FullPath)
 	oFs:Find()
 endif
 
-oFs:=MyFileSpec{cWorkdir+"InstallUpg.EXE"}
+oFs:=MyFileSpec{cWorkdir+"InstallSQLUpg.EXE"}
 LocalDate:=oFs:DateChanged
 
-aInsRem:=oFTP:Directory("InstallUpg.EXE")
+aInsRem:=oFTP:Directory("InstallSQLUpg.EXE")
 if Len(aInsRem)>0
 	RemoteDate:=aInsRem[1,F_DATE]
 	if LocalDate < RemoteDate
 		// apparently new version: 
 		if oFs:Find()
-			oFs:Rename("InstallUpgOld.EXE")
+			oFs:Rename("InstallSQLUpgOld.EXE")
 		endif
-		IF !oFTP:GetFile("InstallUpg.EXE",cWorkdir+"InstallUpg.EXE")
+		IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
 			__RaiseFTPError(oFTP) 
-			oFs:=MyFileSpec{cWorkdir+"InstallUpgOld.EXE"}
+			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
 			if oFs:Find()
 				// rename back
-				if !oFs:Rename("InstallUpg.EXE")
+				if !oFs:Rename("InstallSQLUpg.EXE")
 				    return false
 				endif
 			else
@@ -48,16 +48,16 @@ if Len(aInsRem)>0
 			endif
 		ENDIF
 		if oFs:Find()
-			oFs:=MyFileSpec{cWorkdir+"InstallUpgOld.EXE"}
+			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
 			if oFs:Find()
 				FErase(oFs:FullPath)
 				oFs:Find()
 			endif
 		else
-			oFs:=MyFileSpec{cWorkdir+"InstallUpgOld.EXE"}
+			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
 			if oFs:Find()
 				// rename back
-				if oFs:Rename("InstallUpg.EXE")
+				if oFs:Rename("InstallSQLUpg.EXE")
 				    return true
 				endif
 			endif
@@ -65,7 +65,7 @@ if Len(aInsRem)>0
 		endif 
 	endif
 else
-	IF !oFTP:GetFile("InstallUpg.EXE",cWorkdir+"InstallUpg.EXE")
+	IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
 		__RaiseFTPError(oFTP) 
 		return false
 	endif 	
@@ -120,25 +120,25 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 				if (TextBox{,"New "+cVersion+"of Wycliffe Office System available!","Do you want to install it?"+cWarning,BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
 					// load first latest version of install program:
 					if !self:LoadInstallUpg(oFTP,cWorkdir)
-						(ErrorBox{,"Could not load" +cWorkdir+"InstallUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
+						(ErrorBox{,"Could not load" +cWorkdir+"InstallSQLUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
 						ret:=false
 					else	
 						if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
 							// load initial upgrade with all files first:
 							if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
 								// make InstallUpg.Bat:
-								ptrHandle:=FCreate(cWorkdir+"InstallUpg.bat") 
+								ptrHandle:=FCreate(cWorkdir+"InstallSQLUpg.bat") 
 								if ptrHandle = F_ERROR
-									(ErrorBox{,"Could not start" +cWorkdir+"InstallUpg.bat"+": "+DosErrString(FError())}):Show()
+									(ErrorBox{,"Could not start" +cWorkdir+"InstallSQLUpg.bat"+": "+DosErrString(FError())}):Show()
 									ret:=false
 								else
 									FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
 									FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
 									FWriteLine(ptrHandle,'CD "'+CurPath+'"')
-									FWriteLine(ptrHandle,'"'+cWorkdir+'"WycOffSy.exe"')
+									FWriteLine(ptrHandle,'"'+cWorkdir+'"WosSQL.exe"')
 									FWriteLine(ptrHandle,"Exit")
 									FClose(ptrHandle)
-									startfile:=cWorkdir+"InstallUpg.bat"
+									startfile:=cWorkdir+"InstallSQLUpg.bat"
 								endif
 							else 
 								__RaiseFTPError(oFTP)
@@ -146,7 +146,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 						else
 							// load only upgrade
 							IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
-								startfile:=cWorkdir+"InstallUpg.EXE"
+								startfile:=cWorkdir+"InstallSQLUpg.EXE"
 							ELSE
 								__RaiseFTPError(oFTP)
 							ENDIF 
@@ -164,7 +164,6 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 class Initialize
 // initialise system
 protect sIdentChar as string 
-PROTECT oMain as Window 
 protect lNewDb:=false as logic
 protect aCurTable:={} as array
 export FirstOfDay as logic  
@@ -244,7 +243,7 @@ for i:=1 to Len(aFileDB)
 	endif
 next	
 if lConversion
-	TextBox{oMain,"Conversion from DBF","Conversion completed"}:Show()
+	TextBox{oMainWindow,"Conversion from DBF","Conversion completed"}:Show()
 endif 
 return  
 method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,CurPath as string, aColumn as array) as logic class Initialize
@@ -625,7 +624,7 @@ Local oPP as SQLSelect
 		
 		
 return {COUNTRYCOD, CountryName,PPCode,PPNAME, CurrencyCode,cCurrSym}
-method init(oMainWindow) class Initialize
+method init() class Initialize
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
 	local aDB:={} as array 
@@ -636,7 +635,6 @@ method init(oMainWindow) class Initialize
 	local aWord:={} as array
 	local i as int 
 
-	self:oMain:=oMainWindow
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 	SetDefault(CurPath)
@@ -685,7 +683,10 @@ method init(oMainWindow) class Initialize
 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
 		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 		if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
-			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show()
+			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
+			if oMainWindow==null_object
+				oMainWindow := StandardWycWindow{self}
+			endif
 			FileStart(WorkDir()+"ODBCInstall.html",oMainWindow)
 			if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
 				loop
@@ -720,6 +721,7 @@ method init(oMainWindow) class Initialize
 	endif
 	if (i:=AScan(aDB,{|x|Lower(x)==Lower(dbname)}))==0
 		self:lNewDb:=true
+		self:FirstOfDay:=true 
 		//create database: 
 		oStmt:=SQLStatement{'Create Database '+sIdentChar+dbname+sIdentChar,oConn}
 		oStmt:Execute()
@@ -736,6 +738,18 @@ method init(oMainWindow) class Initialize
 		ErrorBox{,"Could not connect to database "+dbname+"; error:"+oStmt:ERRINFO:errormessage}:Show()
 		Break
 	endif
+	if !self:lNewDb
+		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= curdate()",oConn}
+		if oSel:RecCount>0
+			self:FirstOfDay:=FALSE
+		else	
+			self:FirstOfDay:=true
+			if !Empty(oSel:status)
+				self:lNewDb:=true    // apparently partly new database which need to be converted
+			endif
+		endif
+	ENDIF
+
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
@@ -752,12 +766,9 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	LOCAL oMyFileSpec1,oMyFileSpec2,oDBFileSpec1 as FileSpec
 	LOCAL oReg as CLASS_HKCU
 	LOCAL lCopy as LOGIC
-	LOCAL cWorkdir := WorkDir(),startfile as STRING
-	// LOCAL cFileName as STRING 
+	LOCAL cWorkdir := WorkDir() as STRING
 	Local CurVersion as string ,DBVers, PrgVers as float
 	Local aDir,aLocal as array
-	local oUpg as CheckUPGRADE
-	local lStop as logic 
 	local cStatement as string
 	local oStmnt as SQLStatement
 	local mindate as date
@@ -765,9 +776,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-	if self:lNewDb
-		self:FirstOfDay:=true 
-	else
+	if !self:lNewDb
 		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= curdate()",oConn}
 		if oSel:RecCount>0
 			self:FirstOfDay:=FALSE
@@ -778,26 +787,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			endif
 		endif
 	ENDIF
-	// 	self:FirstOfDay:=true 
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
 
 	if self:FirstOfDay 
-		oUpg:=CheckUPGRADE{}
-		lStop:=oUpg:LoadUpgrade(@startfile,WorkDir())
-		if lStop					
-			if	self:Run(startfile)<33
-				(ErrorBox{,"Could not start installation program "+startfile}):Show()
-				lStop:=False
-			endif
-		endif
-		if lStop
-			break
-		endif
-		// Initialize db 
 		self:InitializeDB()
 		
 	endif
-// 		self:InitializeDB()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -2214,7 +2209,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		cStatement+=iif(Empty(cStatement),'',', ')+ cAddIndex
 	endif
 	if !Empty(cStatement) 
-		oMain:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
+		oMainWindow:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
 		SQLStatement{"start transaction",oConn}:Execute()
 		oStmnt:=SQLStatement{'alter table'+Sp+cTableName+' '+cStatement,oConn} 
 		oStmnt:Execute() 
@@ -2227,7 +2222,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			SQLStatement{"commit",oConn}:Execute()
 			LogEvent(,"Table "+cTableName+" reformated with:"+oStmnt:SQLString)
 		endif
-		oMain:STATUSMESSAGE(Space(80))
+		oMainWindow:STATUSMESSAGE(Space(80))
 		
 	endif			
 	
