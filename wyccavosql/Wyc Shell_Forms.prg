@@ -31,11 +31,28 @@ CLASS StandardWycWindow INHERIT ShellWindow
 METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
+method CheckNewVersion() class StandardWycWindow
+local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
+cWorkDir:=WorkDir()
+oUpg:=CheckUPGRADE{}
+lStop:=oUpg:LoadUpgrade(@startfile,cWorkDir)
+if lStop					
+	if	myApp:Run(startfile)<33
+		(ErrorBox{,"Could not start installation program "+startfile}):Show()
+		lStop:=False
+	endif
+else
+	(TextBox{,"Check new version","No new version found"}):Show()
+endif
+if lStop
+	myApp:Quit()
+endif 
+return
+	
 METHOD Close(oCloseEvent) CLASS StandardWycWindow
 
 	SELF:Owner:Quit()
 	SUPER:Close(oCloseEvent)
-	
 METHOD CloseAll() CLASS StandardWycWindow
 	
 	DO WHILE ALen(aChildWindows) > 0
@@ -233,26 +250,6 @@ if !Empty(LOGON_EMP_ID)
 	self:Caption+=Space(30)+"("+LOGON_EMP_ID+")"
 endif
 RETURN	
-// METHOD ChangeMailCode() CLASS StandardWycWindow
-// 	(Selpers{SELF,"CHANGEMAILINGCODE"}):Show()
-// 	RETURN
-// method CheckNewVersion() class StandardWycWindow
-// local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
-// cWorkDir:=WorkDir()
-// oUpg:=CheckUPGRADE{}
-// lStop:=oUpg:LoadUpgrade(@startfile,cWorkDir)
-// if lStop					
-// 	if	myApp:Run(startfile)<33
-// 		(ErrorBox{,"Could not start installation program "+startfile}):Show()
-// 		lStop:=False
-// 	endif
-// else
-// 	(TextBox{,"Check new version","No new version found"}):Show()
-// endif
-// if lStop
-// 	myApp:Quit()
-// endif 
-// return
 METHOD StandardGiversMail() CLASS StandardWycWindow
 	(SelPers{self,"STANDARD GIVERS"}):Show()
 	RETURN
