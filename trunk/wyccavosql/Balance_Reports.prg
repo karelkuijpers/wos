@@ -3798,7 +3798,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 		ENDIF
 		AAdd(aMbrAddresses,{CurPersid,aAddress})
 		gvr:=0
-// 		lFirst:=true
+		// 		lFirst:=true
 		do while true
 			gvr:=AScan(aGiversdata,{|x|x[PRSID]==CurPersid},gvr+1)
 			if gvr==0
@@ -3814,7 +3814,8 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 				" in "+self:oLan:WGet(MonthEn[aGiversdata[gvr,5]],,"!")+' '+self:oLan:WGet('to')+': "'+description+'" '+self:oLan:WGet('not found'),BUTTONOKAYCANCEL}):Show();
 				==BOXREPLYCANCEL
 			RETURN
-		ENDIF	
+		ENDIF
+		aGiversdata[gvr,6]:=0
 	ENDIF				
 
 	*	Print givers with their gifts:
@@ -3864,23 +3865,28 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 			NoteRef[i]:=Space(8)
 		next
 		aRow:={}
-		AddrPnt++
-		AAdd(aRow,Pad(Space(4)+ if(Empty(aMbrAddresses[AddrPnt,2,1]),"",aMbrAddresses[AddrPnt,2,1]),40))
-		AAdd(aRow,Pad(Str(RowCnt,3) + ' ' + if(Empty(aMbrAddresses[AddrPnt,2,2]),"",aMbrAddresses[AddrPnt,2,2]),40))
-		AAdd(aRow,Pad(Space(4) + if(Empty(aMbrAddresses[AddrPnt,2,3]),"",aMbrAddresses[AddrPnt,2,3]),40))
-		AddressRow:=3
-		IF !Empty(aMbrAddresses[AddrPnt,2,4])
-			AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,4],40))
-			++AddressRow
-			IF !Empty(aMbrAddresses[AddrPnt,2,5])
-				AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,5],40))
+		if aGiversdata[gvr,6]=0
+			aRow:=AReplicate(Space(40),3)
+			AddressRow:=3
+		else
+			AddrPnt++ 
+			AAdd(aRow,Pad(Space(4)+ if(Empty(aMbrAddresses[AddrPnt,2,1]),"",aMbrAddresses[AddrPnt,2,1]),40))
+			AAdd(aRow,Pad(Str(RowCnt,3) + ' ' + if(Empty(aMbrAddresses[AddrPnt,2,2]),"",aMbrAddresses[AddrPnt,2,2]),40))
+			AAdd(aRow,Pad(Space(4) + if(Empty(aMbrAddresses[AddrPnt,2,3]),"",aMbrAddresses[AddrPnt,2,3]),40))
+			AddressRow:=3
+			IF !Empty(aMbrAddresses[AddrPnt,2,4])
+				AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,4],40))
 				++AddressRow
-				IF !Empty(aMbrAddresses[AddrPnt,2,6])
-					AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,6],40))
+				IF !Empty(aMbrAddresses[AddrPnt,2,5])
+					AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,5],40))
 					++AddressRow
+					IF !Empty(aMbrAddresses[AddrPnt,2,6])
+						AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,6],40))
+						++AddressRow
+					ENDIF
 				ENDIF
 			ENDIF
-		ENDIF
+		endif
 		PersidSav := aGiversdata[gvr,PRSID]
 		gvrCur:=gvr
 		FOR gvr=gvrcur to Len(aGiversdata)
@@ -3930,9 +3936,12 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 			+NoteRef[4]+NoteRef[5]+NoteRef[6]+NoteRef[7]+;
 			NoteRef[8]+NoteRef[9]+NoteRef[10]+;
 			NoteRef[11]+NoteRef[12],aHeading)
-		FOR i=4 to AddressRow
-			oReport:PrintLine(@nRow,@nPage,aRow[i],aHeading)
-		NEXT
+			
+		if AddressRow>3 
+			FOR i=4 to AddressRow
+				oReport:PrintLine(@nRow,@nPage,aRow[i],aHeading)
+			NEXT
+		endif
 		oReport:PrintLine(@nRow,@nPage,separator,aHeading)
 	NEXT
 
