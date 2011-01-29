@@ -3903,8 +3903,9 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 			GiftAmnt[iMonth]:=GiftAmnt[iMonth]+aGiversdata[gvr,amnt]
 			IF iMonth=ReportMonth.or.Footnotes="All"
 				*          	processing Footnotes:
-				IF .not.Empty(aGiversdata[gvr,DESCR]).and.Upper(aGiversdata[gvr,DESCR]) # GiftDesc;
-						.and. aGiversdata[gvr,AMNT] # 0.and.aGiversdata[gvr,DESCR] # NonEarDesc
+				IF .not.Empty(aGiversdata[gvr,DESCR]).and.Upper(aGiversdata[gvr,DESCR]) # GiftDesc; 
+					.and. AtC('maandelijks',aGiversdata[gvr,DESCR])=0 .and.AtC('kwartaal',aGiversdata[gvr,DESCR])=0 ;
+					.and. aGiversdata[gvr,amnt] # 0.and.aGiversdata[gvr,DESCR] # NonEarDesc
 					IF Empty(NoteRef[iMonth])
 						++NoteNumber
 						NoteRef[iMonth]:=Pad("    *"+AllTrim(Str(NoteNumber,3)),8)
