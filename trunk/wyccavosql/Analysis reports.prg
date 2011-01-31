@@ -2394,12 +2394,6 @@ RETURN nil
 METHOD Close(oEvent) CLASS TotalsMembers
 	SUPER:Close(oEvent)
 	//Put your changes here
-	IF !oLan==null_object
-		IF oLan:Used
-			oLan:Close()
-		ENDIF
-		oLan:=null_object
-	ENDIF
 	self:Destroy()
 	RETURN nil
 
