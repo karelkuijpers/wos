@@ -4720,24 +4720,6 @@ METHOD CancelButton( ) CLASS TrialBalance
 METHOD Close(oEvent) CLASS TrialBalance
 	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oAcc==null_object
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=null_object
-ENDIF
-IF !oMBal==null_object
-	IF oMBal:Used
-		oMBal:Close()
-	ENDIF
-	oMBal:=null_object
-ENDIF
-IF !oLan==null_object
-	IF oLan:Used
-		oLan:Close()
-	ENDIF
-	oLan:=null_object
-ENDIF
 self:Destroy()
 	
 	RETURN
@@ -4856,14 +4838,15 @@ return lCondense := uValue
 METHOD ListBoxSelect(oControlEvent) CLASS TrialBalance
 	LOCAL oControl as CONTROL
 	LOCAL uValue as USUAL
+	LOCAL aBal:={} as array
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	IF oControlEvent:NameSym==#YearTrial
 		uValue:=oControlEvent:CONTROL:Value
-		oMBal:GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
-		MonthStart:=oMBal:MonthStart
-		MonthEnd:=oMBal:MonthEnd
+		aBal := GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
+		MonthStart:=aBal[2]
+		MonthEnd:=aBal[4]
 	ENDIF
 	RETURN nil
 
@@ -4937,7 +4920,7 @@ BalSt  := TrialYear * 12 + BalMonth
 BalEnd := aYearStartEnd[3] * 12 + aYearStartEnd[4]
 
 if CurSt>CurEnd
-   (ErrorBox{self:OWNER,self:oLan:WGet('Starting month must precede ending month')}):Show()
+  (ErrorBox{self:OWNER,self:oLan:WGet('Starting month must precede ending month')}):Show()
 	RETURN
 ENDIF
 IF CurSt > BalEnd .or. CurSt < BalSt
@@ -5007,22 +4990,22 @@ AAdd(Heading,' ')
 vw_deb:=0
 vw_cre:=0
 DO WHILE !oAcc:EoF
-	cSoort:= oMBal:category
+	cSoort:= oAcc:category
   	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]
 	IF cSoort=="KO" .or. cSoort=="BA"
-		PerDeb:=oMBal:per_deb
-		PerCre:=oMBal:per_cre
+		PerDeb:=oAcc:per_deb
+		PerCre:=oAcc:per_cre
 	ELSE
 		// determine sum of transactions by comparing with previous month for balance accounts:
-		PerDeb:=Round(oMBal:per_deb - oMBal:PrvPer_deb,DecAantal)
-		PerCre:=Round(oMBal:per_cre - oMBal:PrvPer_cre,DecAantal)
+		PerDeb:=Round(oAcc:per_deb - oAcc:PrvPer_deb,DecAantal)
+		PerCre:=Round(oAcc:per_cre - oAcc:PrvPer_cre,DecAantal)
 	ENDIF
-   IF !self:lCondense .or. !PerDeb == PerCre .or. !oMBal:PrvPer_deb == oMBal:PrvPer_cre
+   IF !self:lCondense .or. !PerDeb == PerCre .or. !oAcc:PrvPer_deb == oAcc:PrvPer_cre
 
       && total percentage invullen van alles tot nu toe
       omzet:= PerDeb-PerCre
       IF omzet<> 0
-         IF oMBal:category = "BA"
+         IF oAcc:category = "BA"
             omzet:=-omzet
          ENDIF
       ENDIF
@@ -5037,28 +5020,28 @@ DO WHILE !oAcc:EoF
       ENDIF
   	  IF lPrint
       	oReport:PrintLine(@nRow,@nPage,Pad(oAcc:ACCNUMBER+" "+oAcc:description,43)+;
-      	cTab+PadC(cType,11)+cTab+Str(oMBal:prvper_deb-oMBal:PrvPer_cre,11,DecAantal) +;
+      	cTab+PadC(cType,11)+cTab+Str(oAcc:PrvPer_deb-oAcc:PrvPer_cre,11,DecAantal) +;
       	cTab+Str(PerDeb,11,decaantal)+cTab+Str(PerCre,11,decaantal)+;
-      	cTab+Str(oMBal:prvper_deb-oMBal:prvper_cre+PerDeb-PerCre,11,DecAantal)+;
+      	cTab+Str(oAcc:PrvPer_deb-oAcc:prvper_cre+PerDeb-PerCre,11,DecAantal)+;
       	cTab+Str(Round(m_bud,DecAantal),10,DecAantal)+cTab+omztxt,Heading,0)
       ENDIF
       totdeb:=Round(totdeb+PerDeb,DecAantal)
       totcre:=Round(totcre+PerCre,DecAantal)
 /*      IF cSoort=="KO" .or. cSoort=="BA"
-	  	totBeginCostProfit :=Round(totBeginCostProfit+oMBal:prvper_deb-oMBal:prvper_cre,decaantal)
+	  	totBeginCostProfit :=Round(totBeginCostProfit+oAcc:prvper_deb-oAcc:prvper_cre,decaantal)
 	  ENDIF      */
-      totBegin:=Round(totBegin+oMBal:prvper_deb-oMBal:prvper_cre,DecAantal)
+      totBegin:=Round(totBegin+oAcc:PrvPer_deb-oAcc:prvper_cre,DecAantal)
    	ENDIF
    * Indien voorgaande jaar nog niet afgesloten, dan som van V&W bepalen om
    * bij kapitaal op te tellen (immers nog niet bijgeboekt):
-   IF PrvYearNotClosed .and. (oMBal:category="KO".or.oMBal:category="BA")
+   IF PrvYearNotClosed .and. (oAcc:category="KO".or.oAcc:category="BA")
    		IF BalMonth==1
    			TrialEnd:=(TrialYear-1)*100+12
    		ELSE
    			TrialEnd:=TrialYear*100+BalMonth-1
    		ENDIF
-		vw_deb:=Round(vw_deb + oMBal:PrvPer_deb,DecAantal)
-		vw_cre:=Round(vw_cre + oMBal:PrvPer_cre,DecAantal)
+		vw_deb:=Round(vw_deb + oAcc:PrvYr_deb,DecAantal)
+		vw_cre:=Round(vw_cre + oAcc:PrvYr_cre,DecAantal)
    ENDIF
 
    oAcc:Skip()
