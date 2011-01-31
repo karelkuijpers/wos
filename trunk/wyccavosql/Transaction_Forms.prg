@@ -760,23 +760,10 @@ METHOD PersonButton(lUnique,WithCln ) CLASS General_Journal
 	RETURN NIL
 METHOD PostButton( ) CLASS General_Journal
 // mark transactions as Posted: 
-Local oTrans as Transaction
-oTrans:=Transaction{}
-IF !oTrans:used
-	RETURN 
-ENDIF
-oTrans:SetOrder( "TRANSNR" )
+Local oTrans as SQLStatement
 
-oTrans:Seek( mTRANSAKTNR)
-DO WHILE oTrans:TransId == mTRANSAKTNR.and..not.oTrans:EOF
-	oTrans:RecLock(oTrans:RECNO)
-   oTrans:POSTSTATUS:=2
-	oTrans:USERID:=LOGON_EMP_ID
-   oTrans:Skip()
-enddo
-oTrans:Unlock()
-oTrans:Commit() 
-oTrans:Close()
+oTrans:=SQLStatement{"update transaction set poststatus=2,userid='"+LOGON_EMP_ID+"' where transid="+mTRANSAKTNR,oConn}
+oTrans:Execute() 
 self:oInqBrowse:REFresh()
 self:EndWindow()
 
@@ -3414,36 +3401,6 @@ METHOD CancelButton( ) CLASS TransactionMonth
 METHOD Close(oEvent) CLASS TransactionMonth
 *	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oLan==NULL_OBJECT
-	IF oLan:Used
-		oLan:Close()
-	ENDIF
-	oLan:=NULL_OBJECT
-ENDIF
-IF !oAcc==NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
-IF !oTrans==NULL_OBJECT
-	IF oTrans:Used
-		oTrans:Close()
-	ENDIF
-	oTrans:=NULL_OBJECT
-ENDIF
-IF !oSys==NULL_OBJECT
-	IF oSys:Used
-		oSys:Close()
-	ENDIF
-	oSys:=NULL_OBJECT
-ENDIF
-IF !oBal==NULL_OBJECT
-	IF oBal:Used
-		oBal:Close()
-	ENDIF
-	oBal:=NULL_OBJECT
-ENDIF
 SELF:oAccStm:=NULL_OBJECT
 SELF:Destroy()
 	// force garbage collection
@@ -4105,35 +4062,31 @@ RETURN uValue
 
 METHOD Post(status as int ) as void pascal CLASS TransInquiry
 // mark transactions with PostStatus status 
-local oTransH:=self:Server as TransHistory, oTrans as Transaction 
+local oTransH:=self:Server as SQLSelect, oTrans as SQLStatement 
 local cTransnr as string 
-oTrans:=Transaction{}
-if !oTrans:used
-	return
-endif
 
 self:STATUSMESSAGE(self:oLan:WGet(iif(status=2,"Posting","Ready")+" transactions, moment please"))
 self:Pointer := Pointer{POINTERHOURGLASS}
 
-oTrans:SetOrder("TRANSNR") 
 oTrans:SuspendNotification()
 oTransH:SuspendNotification()
-oTransH:GoTop()
+oTransH:GoTop() 
+SQLStatement{"start transaction",oConn}:execute()
 do while !oTransH:EOF 
-	cTransnr:=oTransH:TransId
-	if oTrans:Seek(cTransnr)
-		do while !oTrans:EOF .and. oTrans:TransId== cTransnr
-			oTrans:RecLock()
-			oTrans:POSTSTATUS:=status
-			oTrans:USERID:=LOGON_EMP_ID
-			oTrans:Skip()
-		enddo
-	Endif
+	cTransnr:=Str(oTransH:TransId,-1)
+	oTrans:=SQLStatement{"update transaction set poststatus='"+Str(status,-1)+",userid='"+LOGON_EMP_ID+"' where transid="+ cTransnr,oConn}
+	oTrans:execute()
+	if !Empty(oTrans:status)
+		exit
+	endif
 	oTransH:Skip()
-Enddo
-oTrans:Unlock()
-oTrans:Commit()
-oTrans:Close()
+Enddo 
+if !Empty(oTrans:status)
+	SQLStatement{"rollback",oConn}:execute()
+	ErrorBox{,self,self:oLan:WGet("transactions could't be posted")+" ("+oTrans:ErrInfo:errormessage+")"}:Show()
+else
+	SQLStatement{"commit",oConn}:execute()
+endif
 oTransH:GoTop()
 oTransH:ResetNotification()
 self:STATUSMESSAGE(Space(40))
