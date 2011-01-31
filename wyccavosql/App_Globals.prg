@@ -1,6 +1,9 @@
 global aAsmt as array
 GLOBAL aBalType:={} as ARRAY 
 GLOBAL ADMIN as STRING
+global aLanM:={} as array    // language table of menu items
+global aLanR:={} as array    // language table of report items
+global aLanW:={} as array    // language table of window items
 GLOBAL Alg_Taal as STRING
 GLOBAL AutoGiro as LOGIC
 GLOBAL BankAccs:={} as ARRAY
