@@ -1792,7 +1792,7 @@ METHOD SELECT() CLASS PersonBrowser
 	IF !self:oCaller==null_object
 	    IF IsMethod(self:oCaller, #Regperson)
     		IF !self:Server==null_object
-    			IF self:Server:Used
+    			IF self:Server:Reccount>0
 					self:Hide()
 					self:oCaller:Regperson(self:oPers,self:cItemName,true,self)
 				ENDIF
@@ -2296,7 +2296,7 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	IF IsArray(uExtra) .and.Len(uExtra)>1
 		self:Caption:=uExtra[2]
 	endif
-	self:oDCExportFormat:Value:="TXT"
+	self:oDCExportFormat:Value:="CSV"
 	RETURN NIL
 METHOD PreInit(oParent,uExtra) CLASS SelPersExport
 	//Put your PreInit additions here
@@ -2668,92 +2668,92 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	self:ExtraPropCondition(aPropExValues)
 
 	IF !Empty(oDCeerste:TEXTvalue)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.postalcode>="';
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.postalcode>="';
 		+StandardZip(oDCeerste:TEXTvalue)+'%"'
 	ENDIF
 	IF !Empty(oDClaatste:TEXTvalue)
-		oCaller:cWherep := oCaller:cWherep+;
-		iif(.not.Empty(oCaller:cWherep),' and ',"")+'p.postalcode<="';
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.postalcode<="';
 		+StandardZip(oDClaatste:TEXTvalue)+'%"'
 	ENDIF
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
 	IF !empty(oDCDLG_Start:Value)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCDLG_End:VALUE)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
 		IF empty(oDCDLG_Start:Value)
-			oCaller:cWherep := oCaller:cWherep+' and p.datelastgift>"0000-00-00"'
+			self:oCaller:cWherep := self:oCaller:cWherep+' and p.datelastgift>"0000-00-00"'
 		ENDIF
 	ENDIF
 // 	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE)
 	IF !Empty(self:oDCBdat_Start:VALUE)
-		oCaller:cWherep := oCaller:cWherep+;
-		iif(!Empty(oCaller:cWherep),' and ',"")+'p.creationdate>="'+DToC(self:oDCBdat_Start:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		iif(!Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate>="'+DToC(self:oDCBdat_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCBdat_End:VALUE)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.creationdate<="'+DToC(self:oDCBdat_End:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate<="'+DToC(self:oDCBdat_End:VALUE)+'"'
 		IF empty(oDCBdat_Start:Value)
-			oCaller:cWherep := oCaller:cWherep+' and p.creationdate>"0000-00-00"'
+			self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
 		ENDIF
 	ENDIF
 	IF !empty(oDCMutd_Start:Value)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.alterdate>="'+DToC(oDCMutd_Start:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate>="'+DToC(oDCMutd_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCMutd_End:VALUE)
-		oCaller:cWherep := oCaller:cWherep+;
-		IF(.not.Empty(oCaller:cWherep),' and ',"")+'p.alterdate<="'+DToC(oDCMutd_End:VALUE)+'"'
+		self:oCaller:cWherep := self:oCaller:cWherep+;
+		IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate<="'+DToC(oDCMutd_End:VALUE)+'"'
 		IF empty(oDCMutd_Start:Value)
-			oCaller:cWherep := oCaller:cWherep+' and p.creationdate>"0000-00-00"'
+			self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
 		ENDIF
 	ENDIF
 	SetDateFormat(cDat)
 	IF !Empty(oDCeerste:TEXTvalue).or.!Empty(oDClaatste:TEXTvalue)
-		oCaller:selx_voorw := oCaller:selx_voorw + ;
-		IF(.not.Empty(oCaller:selx_voorw),' and ',"")+'Zip code between '+;
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+		IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Zip code between '+;
 		+AllTrim(oDCeerste:TEXTvalue)+' & '+ AllTrim(oDClaatste:TEXTValue)
 	ENDIF
 	IF !oDCDLG_Start:TextValue==DToC(NULL_DATE).or.!oDCDLG_End:TextValue==DToC(NULL_DATE)
-		oCaller:selx_voorw := oCaller:selx_voorw + ;
-		IF(.not.Empty(oCaller:selx_voorw),' and ',"")+'Last Gift between '+;
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+		IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Gift between '+;
 		+AllTrim(oDCDLG_Start:TEXTvalue)+' & '+ AllTrim(oDCDLG_End:TEXTValue)
 	ENDIF
 	IF !oDCMutd_Start:TextValue==DToC(NULL_DATE).or.!oDCMutd_End:TextValue==DToC(NULL_DATE)
-		oCaller:selx_voorw := oCaller:selx_voorw + ;
-		IF(.not.Empty(oCaller:selx_voorw),' and ',"")+'Last Altered between '+;
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+		IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Altered between '+;
 		+AllTrim(oDCMutd_Start:TEXTvalue)+' and '+ AllTrim(oDCMutd_End:TEXTValue)
 	ENDIF
 	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE).or.!oDCBdat_End:TextValue==DToC(NULL_DATE)
-		oCaller:selx_voorw := oCaller:selx_voorw + ;
-		IF(.not.Empty(oCaller:selx_voorw),' and ',"")+'Created between '+;
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+		IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Created between '+;
 		+AllTrim(oDCBdat_Start:TEXTvalue)+' and '+ AllTrim(oDCBdat_End:TEXTValue)
 	ENDIF
 // 	IF oDCReport1:Checked .or.oDCReport2:Checked.or.oDCReport3:Checked;
 // 	.or.oDCReport4:Checked.or.oDCReport5:Checked.or.oDCReport6:Checked.or.oDCReport7:Checked
-// 		oCaller:RepCompact := oDCReport1:Checked
-// 		oCaller:RepExt := oDCReport2:Checked
-// 		oCaller:RepLabel := oDCReport3:Checked
-// 		oCaller:RepLetter := oDCReport4:Checked
-// 		oCaller:RepGiro := oDCReport5:Checked
-// 		oCaller:RepExport := oDCReport6:Checked
-// 		oCaller:RepMailcds := oDCReport7:Checked
+// 		self:oCaller:RepCompact := oDCReport1:Checked
+// 		self:oCaller:RepExt := oDCReport2:Checked
+// 		self:oCaller:RepLabel := oDCReport3:Checked
+// 		self:oCaller:RepLetter := oDCReport4:Checked
+// 		self:oCaller:RepGiro := oDCReport5:Checked
+// 		self:oCaller:RepExport := oDCReport6:Checked
+// 		self:oCaller:RepMailcds := oDCReport7:Checked
 	if !Empty(self:oDCOutputAction:VALUE)
-// 		self:oCaller:ReportAction:= Val(self:oDCOutputAction:TEXTvalue)
-		self:oCaller:ReportAction:= val(self:oDCOutputAction:Value)
+// 		self:self:oCaller:ReportAction:= Val(self:oDCOutputAction:TEXTvalue)
+		self:oCaller:ReportAction:= Val(self:oDCOutputAction:VALUE)
 	ELSE
 		(WarningBox{self,'Selecting Persons','Specify at least one report type!'}):Show() 
 		self:oCCAction1:SetFocus()
 // 		oDCReport1:SetFocus()
 		RETURN NIL
 	ENDIF
-	oCaller:SortOrder := oDCSortOrder:Value 
-	oCaller:selx_OK := true
+	self:oCaller:SortOrder := oDCSortOrder:Value 
+	self:oCaller:selx_OK := true
 
 	SELF:EndDialog()
 	
