@@ -1330,7 +1330,7 @@ IF SELF:IsVisible() .and. !SELF:oCaller==NULL_OBJECT
 	// apparently not clicked on OK
     IF IsMethod(SELF:oCaller, #RegPerson)
    	IF !self:Server==null_object
-   		IF self:Server:Used
+   		IF self:Server:RECCOUNT>0
 				self:Hide()
 				self:oCaller:RegPerson(,self:cItemName,true,self)
 			ENDIF
@@ -2253,6 +2253,7 @@ else
 endif	
 	
 RETURN TRUE	
+
 METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	LOCAL i,j,k, n as int
 	LOCAL aMapping, aExpF:={}, aPerF as ARRAY
@@ -2862,9 +2863,8 @@ METHOD INIT(oParent , uExtra , oPerson ) CLASS SelPers
 	IF !Empty(oPerson) .and. IsInstanceOf(oPerson,#SQLSelectPerson) 
 		self:oDB:=oPerson
 		self:oPers:=oPerson
-	ENDIF
+	ENDIF                                                  
 	self:oLan:=Language{} 
-	if oLan:Used
 		cCouple:= oLan:Rget("Mr&Mrs")
 		cMr:= oLan:get("Mr",,"!")
 		cMrs:= oLan:get("Mrs",,"!")
@@ -2874,7 +2874,6 @@ METHOD INIT(oParent , uExtra , oPerson ) CLASS SelPers
 		cAbrv:=oLan:Rget("Abbreviated mailingcodes")
 		cFax:=oLan:Rget("fax")
 		cMobile:=oLan:Rget("mobile")
-	endif
 
 RETURN SELF
 	
@@ -3392,10 +3391,10 @@ METHOD MakeAndCod() CLASS SelPersMailCd
 				oCaller:lEO:=TRUE
 			ENDIF
 		NEXT
-		oCaller:cWherep := if(Empty(oCaller:cWherep),"",;
-		oCaller:cWherep+" and ") + cCod + ")"
-		oCaller:selx_voorw := if(Empty(oCaller:selx_voorw),"",;
-		oCaller:selx_voorw+" and ") + cTekst + ")"
+		self:oCaller:cWherep := if(Empty(self:oCaller:cWherep),"",;
+		self:oCaller:cWherep+" and ") + cCod + ")"
+		self:oCaller:selx_voorw := if(Empty(self:oCaller:selx_voorw),"",;
+		self:oCaller:selx_voorw+" and ") + cTekst + ")"
 	ENDIF
 RETURN TRUE
 METHOD MakeNonCod() CLASS SelPersMailCd
@@ -3430,7 +3429,6 @@ METHOD MakeOrCod() CLASS SelPersMailCd
 	LOCAL cCod  AS STRING
 	LOCAL cTekst AS STRING
 	aCod2:=self:oDCOrCod:GetSelectedItems()
-
 	IF !Empty(aCod2)
 		FOR i=1 TO Len(aCod2)
 			cCod := cCod +if(i=1,'(',' or ')+"instr(p.mailingcodes,'"+aCod2[i]+"')>0"
@@ -3457,12 +3455,12 @@ METHOD MakeOrGender() CLASS SelPersMailCd
 	aGender:=self:oDCGenders:GetSelectedItems()
 
 	IF !Empty(aGender)
+		cGender := Implode(aGender,",")
 		FOR i=1 to Len(aGender)
-			cGender := cGender +Str(aGender[i],-1)+","
 			cTekst := cTekst +if(i=1,'(',' or ')+pers_gender[AScan(pers_gender,{|x|x[2]==aGender[i]}),1]
 		NEXT
 		oCaller:cWherep := if(Empty(oCaller:cWherep),"",;
-		oCaller:cWherep+" and ")+"instr('"+cGender+"',p.gender)"
+		oCaller:cWherep+" and ")+"p.gender in ("+cGender+")"
 		oCaller:selx_voorw := if(Empty(oCaller:selx_voorw),"",;
 		oCaller:selx_voorw+" and ") + cTekst + ")"
 	ENDIF
@@ -3476,14 +3474,14 @@ METHOD MakeOrType() CLASS SelPersMailCd
 	aType:=self:oDCTypes:GetSelectedItems()
 
 	IF !Empty(aType)
+		cType :=Implode(aType,",")
 		
-		FOR i=1 TO Len(aType)
-			cType += Str(aType[i],-1)+","
+		FOR i=1 to Len(aType)
 			cTekst += iif(i=1,'(',' or ')+pers_types[AScan(pers_types,{|x|x[2]==aType[i]}),1]
 		NEXT
 // 		oCaller:cWherep+" and ")+"(','+Str(Type,-1)+','$'" + cType + "')"
 		oCaller:cWherep := iif(Empty(oCaller:cWherep),"",;
-		oCaller:cWherep+" and ")+"instr('"+cType+"',p.type)"
+		oCaller:cWherep+" and ")+"p.type in ("+cType+")"
 		oCaller:selx_voorw := if(Empty(oCaller:selx_voorw),"",;
 		oCaller:selx_voorw+" and ") + cTekst + ")"
 	ENDIF
@@ -4298,68 +4296,9 @@ endcase
 // 	self:Goto(nCurRec)
 // endif
 return (AllTrim(naam1))
-METHOD GetFullNAW(PersNbr,country,Purpose) CLASS SQLSelectPerson
-* Samenstellen van te tonen NAW
-* country: default country (optional)
-LOCAL f_regel:="" as STRING
-// LOCAL nCurRec as int
-Default(@country,null_string)
-Default(@PersNbr,nil)
-Default(@Purpose,1)
-
-IF !self:Used
-	RETURN null_string
-ENDIF 
-// nCurRec:=self:RecNo
-IF !IsNil(PersNbr) .and.!PersNbr==self:FIELDGET(#persid)
-	IF IsString(PersNbr)
-		IF Empty(PersNbr)
-			RETURN ""
-		ENDIF
-		self:seek(#persid,PersNbr)
-	ENDIF
-ENDIF
-f_regel:=self:GetFullName(,Purpose)
-
-
-/*f_regel:=SELF:Salutation
-IF .not. Empty(f_regel)
-   f_regel+=' '
-ENDIF
-IF sFirstNmInAdr .and..not.Empty(SELF:firstname)
-   f_regel+=AllTrim(SELF:firstname)+' '
-ELSEIF .not. Empty(SELF:initials)  && anders voorletters gebruiken
-   f_regel+=AllTrim(SELF:initials)+' '
-ENDIF
-IF .not. Empty(SELF:prefix)
-   f_regel+=AllTrim(SELF:prefix)+' '
-ENDIF
-IF .not. Empty(SELF:lastname)
-   f_regel+=AllTrim(SELF:lastname)
-ENDIF    */
-f_regel:=f_regel+', '
-IF .not.Empty(self:FIELDGET(#address))
-   f_regel+=AllTrim(self:FIELDGET(#address))+" "
-ENDIF
-IF .not.Empty(self:FIELDGET(#postalcode))
-   f_regel+=Trim(self:FIELDGET(#postalcode))+" "
-ENDIF
-IF .not.Empty(self:FIELDGET(#city))
-   f_regel+=Trim(self:FIELDGET(#city))+" "
-ENDIF
-IF .not.Empty(self:FIELDGET(#country) )
-   f_regel+=Trim(self:FIELDGET(#country) )
-ELSEIF .not.Empty(country)
-   f_regel+=country
-ENDIF
-// if !IsNil(PersNbr) .and.!nCurRec==self:RecNo
-// 	self:Goto(nCurRec)
-// endif
-RETURN AllTrim(f_regel)
 Method Init(cSQLSelect, oSQLConnection) class SQLSelectPerson
 	super:Init(cSQLSelect, oSQLConnection)
 	self:oLan:=Language{}
-	if oLan:Used
 		cCouple:= oLan:Rget("Mr&Mrs")
 		cMr:= oLan:get("Mr",,"!")
 		cMrs:= oLan:get("Mrs",,"!")
@@ -4370,7 +4309,6 @@ Method Init(cSQLSelect, oSQLConnection) class SQLSelectPerson
 		cFax:=oLan:Rget("fax")
 		cMobile:=oLan:Rget("mobile")
 
-	endif
 	return self 
 
 	
