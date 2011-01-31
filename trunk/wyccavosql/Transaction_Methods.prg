@@ -2787,7 +2787,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 					* address changed: 
 					oPersCnt:persid:=Str(oPers:persid,-1)
 					oEditPersonWindow := NewPersonWindow{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
-					oEditPersonWindow:Caption:="Address changed of: "+AllTrim( oPers:GetFullNAW())
+					oEditPersonWindow:Caption:="Address changed of: "+AllTrim( GetFullNAW(oPersCnt:persid))
 					oEditPersonWindow:Show()
 				ELSE
 					SELF:Regperson(oPers)
