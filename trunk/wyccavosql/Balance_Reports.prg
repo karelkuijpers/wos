@@ -4958,7 +4958,7 @@ oMBal:=Balances{}
 oMBal:AccSelection:=iif(Empty(self:WhoFrom),"","a.department in ("+Implode(d_dep,",")+")")
 cStatement := oMBal:SQLGetBalance(YEARSTART * 100 + MONTHSTART, YEAREND * 100 + MONTHEND,true,false,true,true)
 
-oAcc:=SQLSelect{cStatement,oConn}
+oAcc:=SQLSelect{cStatement + " order by category",oConn}
 
 * Add balances of accounts to the balance item values: 
 oAcc:GoTop() 
