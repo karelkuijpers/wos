@@ -199,9 +199,6 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 		ENDIF
 	ENDIF
 	oLan:=Language{}
-	IF oLan==NULL_OBJECT .or. !oLan:Used
-		RETURN aMenu
-	ENDIF
 	
 	aMenu:={{99,0,"Overall Menu","","",0,0}}  // dummy overall menu
 	AAdd(aMenu,{0,1, oLan:MGet("&File"),"","",0,0,"PFM"})
@@ -422,8 +419,6 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 		NEXT
 	ENDIF
 
-	oLan:Close()
-	oLan:=NULL_OBJECT
 	RETURN aMenu
 FUNCTION InitSystemMenu() as array
 * Initialise table wth standard system menus
@@ -432,9 +427,6 @@ LOCAL nMax:=0 as int
 LOCAL nFirst, nSub as int
 LOCAL oLan as Language
 	oLan:=Language{}
-	IF oLan==null_object .or. !oLan:Used
-		RETURN aMenu
-	ENDIF
 
 * Add print and exit functions to first menu:
 * Look for first submenu:
@@ -475,7 +467,6 @@ AAdd(aMenu,{nMax,1, oLan:MGet("&Content"),"HelpContents",oLan:MGet("Contents"),0
 AAdd(aMenu,{nMax,2, oLan:MGet("&Index	F1"),"HelpIndex",oLan:MGet("Index"),0,WOMENU_Help_Index_ID})
 AAdd(aMenu,{nMax,3,,,,,})           // separator
 AAdd(aMenu,{nMax,4, oLan:MGet("&About"),"HelpAboutDialog",,0,0})
-oLan:Close()
 RETURN aMenu
 DEFINE MACCEL:=7
 DEFINE MAUTH:=8
