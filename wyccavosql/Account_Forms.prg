@@ -282,7 +282,7 @@ return self
 METHOD OKButton( ) CLASS AccountBrowser
 *	LOCAL oMyColumn AS OBJECT
 Local oAcc:=self:Server, oAcct as SQLSelect
-if oAcc:Used
+if oAcc:Reccount>0
 	self:EndWindow()
 	IF !self:oCaller==null_object
 	    IF IsMethod(self:oCaller, #RegAccount)
