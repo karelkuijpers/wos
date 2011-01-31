@@ -287,12 +287,6 @@ CLASS DataDialogMine INHERIT DataDialog
 	Export oLan as Language 
 	declare method FillMbrProjArray
 METHOD Close() CLASS DataDialogMine
-if !self:oLan==null_object
-	if self:oLan:Used
-		self:oLan:Close()
-		self:oLan:=null_object
-	endif
-endif
 	CollectForced()
 RETURN SUPER:Close() 
 METHOD FillMbrProjArray(dummy as string) as void pascal CLASS DataDialogMine
@@ -359,12 +353,6 @@ METHOD Close(oEvent)  CLASS DataWindowExtra
 	IF !_DynCheck()
 		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
 	ENDIF    */
-if !self:oLan==null_object
-	if self:oLan:Used
-		self:oLan:Close()
-		self:oLan:=null_object
-	endif
-endif
 
 RETURN SUPER:Close(oEvent)
 method CompareKeyWords(aValue as array) as logic class DataWindowExtra 
@@ -418,12 +406,6 @@ CLASS DataWindowMine INHERIT DataWindow
 	
 	declare method FillMbrProjArray
 METHOD Close() CLASS DataWindowMine
-if !self:oLan==null_object
-	if self:oLan:Used
-		self:oLan:Close()
-		self:oLan:=null_object
-	endif
-endif
 	CollectForced()
 /*	IF !_DynCheck()
 		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
@@ -948,7 +930,6 @@ local oLan as Language
 oLan:=Language{}
 pers_gender:=  {{oLan:WGet("female"),FEMALE},{oLan:WGet("male"),MASCULIN},{oLan:WGet("couple"),COUPLE},{oLan:WGet("non-person"),ORGANISATION},{oLan:WGet("unknown"),0}}
 pers_salut:={{oLan:Get("Mrs",,"!"),FEMALE},{oLan:Get("Mr",,"!"),MASCULIN},{oLan:Get("Mr&Mrs"),COUPLE},{"",ORGANISATION},{"",0}}
-oLan:Close()
 return
 FUNCTION FillPersProp ()
 	* Fill global Array pers_propextra with description + id of extra person properties
@@ -1219,20 +1200,22 @@ for i:=1 to 5
  	cText:=StrTran(cText,aKey[i],aRepl[i])
 next
 Return cText
-FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int)
-// Implode array to string seperated by cSep 
-// Optionaly you can indicate a column to implode in case of a multidimenional array
-LOCAL i, l:=Len(aText) as int, cRet:="" as STRING
-if Empty(nCount)
-	nCount:=l-nStart+1 
-endif
-nCount:=Min(nCount,l-nStart+1)
-IF nCount>0 
-	FOR i:=1 to nCount
-		cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(iif(Empty(nCol),aText[nStart+i-1],aText[nStart+i-1][nCol]),""))
-	NEXT
-ENDIF
-RETURN cRet
+FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int)
+	// Implode array to string seperated by cSep 
+	// Optionaly you can indicate a column to implode in case of a multidimenional array
+	LOCAL i, l:=Len(aText) as int, cRet:="" as STRING 
+	if l>0
+		if Empty(nCount)
+			nCount:=l-nStart+1 
+		endif
+		nCount:=Min(nCount,l-nStart+1)
+		IF nCount>0 
+			FOR i:=1 to nCount
+				cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(iif(Empty(nCol),aText[nStart+i-1],aText[nStart+i-1][nCol]),""))
+			NEXT
+		ENDIF 
+	endif
+	RETURN cRet
 function InitGlobals() 
 	LOCAL oLan as Language
 // 	Local oPP as PPCodes
@@ -1359,7 +1342,6 @@ function InitGlobals()
 	endif
 
 	oLan:=Language{}
-	IF oLan:Used
 		Maand := {	oLan:Get('January',,"!"),oLan:Get('February',,"!"),oLan:Get('March',,"!"),;
 			oLan:Get('April',,"!"),oLan:Get('May',,"!"),oLan:Get('June',,"!"),;
 			oLan:Get('July',,"!"),oLan:Get('August',,"!"),oLan:Get('September',,"!"),;
@@ -1367,8 +1349,6 @@ function InitGlobals()
 		PaymentDescription:={;
 			oLan:Get("Donation",,"!"),oLan:Get("Gift",,"!"),oLan:Get("Invoice",,"!"),;
 			oLan:Get("subscription",,"!")}
-		oLan:Close()
-	ENDIF
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
 	
@@ -2443,7 +2423,6 @@ if self:oLan==null_object
 	self:oLan:=Language{}
 endif 
 oWLan:=self:oLan
-if oWLan:Used
 	aChilds:=self:GetAllChildren() 
 	for i:=1 to Len(aChilds)
 		cName:=ClassName(aChilds[i])
@@ -2460,7 +2439,6 @@ if oWLan:Used
 		endif
 	next
 	self:Caption:=oWLan:WGet(self:Caption)
-endif 
 return
 CLASS WorkDayDate inherit DateStandard
  Method ParentNotify(nNotifyCode, lParam) class WorkDayDate
