@@ -4648,13 +4648,15 @@ class TrialBalance inherit DataWindowMine
 	instance lCondense 
   	PROTECT oAcc as SQLSelect
 	PROTECT oMBal as SQLSelect
-	PROTECT oReport AS PrintDialog
-	PROTECT lPrint AS LOGIC
+	PROTECT oReport as PrintDialog
+	PROTECT lPrint as LOGIC
 	PROTECT oDep as SQLSelect
-	PROTECT WhoFrom AS STRING
-	PROTECT	d_dep:={} AS ARRAY
-	PROTECT cCurDep AS STRING
-RESOURCE TrialBalance DIALOGEX  20, 18, 266, 153
+	PROTECT WhoFrom as STRING
+	PROTECT	d_dep:={} as ARRAY
+	PROTECT cCurDep as STRING
+
+	DECLARE METHOD AddSubDep
+resource TrialBalance DIALOGEX  20, 18, 266, 153
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -4672,88 +4674,97 @@ BEGIN
 	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
 END
 
-METHOD AddSubDep(ParentNum, nCurrentRec)  CLASS TrialBalance
-* Find subdepartments and add to arrays with departments
-	LOCAL nChildRec			AS INT
-	LOCAL nCurNum			AS STRING
-	//Default(@nCurrentRec,NULL_STRING)
+METHOD AddSubDep(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array,d_dep as array) as int CLASS TrialBalance
+	* Find subdepartments and add to arrays with departments
+	local oDep as SQLSelect
+	LOCAL nChildRec	as int
+	LOCAL nCurNum		as int
+	local lFirst		as logic
+	
+	if Empty(aItem)
+		oDep:=SQLSelect{"SELECT depid as itemid, parentdep as parentid	FROM `department` order by deptmntnbr",oConn}
+		if oDep:reccount>0
+			do while !oDep:EoF
+				AAdd(aItem,{oDep:itemid,oDep:parentid}) 
+				//           1                 2               
+				oDep:Skip()
+			enddo
+		endif
+	endif
 
-	// reposition the customer server to the searched record
-	IF !Empty(nCurrentRec)
-		oDep:GoTo(nCurrentRec)
-	ENDIF
-	IF Empty(nCurrentRec).or.!oDep:ParentDep==ParentNum
-		oDep:Seek(ParentNum)
-	ELSE
-		oDep:Skip()
-	ENDIF
-	IF oDep:EoF .or. !oDep:ParentDep==ParentNum
+	IF !Empty(nCurrentRec).and.!aItem[nCurrentRec,2]==ParentNum
+		nCurrentRec:=0
+	endif
+	lFirst:=Empty(nCurrentRec)
+	nCurrentRec:=AScan(aItem,{|x|x[2]==ParentNum},nCurrentRec+1)
+	IF Empty(nCurrentRec)
 		RETURN 0
 	ENDIF
-	nCurrentRec:=oDep:RecNo
-	nCurNum:= oDep:DepId
- 	AAdd(d_dep,oDep:DepId)
-
-	// add all child departments:
-	DO WHILE TRUE
-		nChildRec:=SELF:AddSubDep(nCurNum, nChildRec)
+	// add subdepartments:
+	nCurNum:= aItem[nCurrentRec,1]
+	AAdd(d_dep,aItem[nCurrentRec,1])
+	do WHILE true	
+		// add child records of this sub department:
+		nChildRec:=self:AddSubDep(nCurNum,nChildRec,aItem,d_dep)
 		IF Empty(nChildRec)
-			EXIT
+			exit
 		ENDIF
 	ENDDO
-RETURN nCurrentRec
+	
+	RETURN nCurrentRec
+	
 METHOD CancelButton( ) CLASS TrialBalance
-	SELF:endWindow()
+	self:endWindow()
 	RETURN
 	
 METHOD Close(oEvent) CLASS TrialBalance
 	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oAcc==NULL_OBJECT
+IF !oAcc==null_object
 	IF oAcc:Used
 		oAcc:Close()
 	ENDIF
-	oAcc:=NULL_OBJECT
+	oAcc:=null_object
 ENDIF
-IF !oMBal==NULL_OBJECT
+IF !oMBal==null_object
 	IF oMBal:Used
 		oMBal:Close()
 	ENDIF
-	oMBal:=NULL_OBJECT
+	oMBal:=null_object
 ENDIF
-IF !oLan==NULL_OBJECT
+IF !oLan==null_object
 	IF oLan:Used
 		oLan:Close()
 	ENDIF
-	oLan:=NULL_OBJECT
+	oLan:=null_object
 ENDIF
-SELF:Destroy()
+self:Destroy()
 	
 	RETURN
 
 METHOD DepButton( ) CLASS TrialBalance
-	LOCAL cCurValue AS STRING
-	LOCAL nPntr AS INT
+	LOCAL cCurValue as STRING
+	LOCAL nPntr as int
 
 	cCurValue:=AllTrim(oDCmDepartment:TextValue)
 	nPntr:=At(":",cCurValue)
 	IF nPntr>1
 		cCurValue:=SubStr(cCurValue,1,nPntr-1)
 	ENDIF
-	(DepartmentExplorer{SELF:Owner,"Department",WhoFrom,SELF,cCurValue}):show()
-RETURN NIL
+	(DepartmentExplorer{self:Owner,"Department",WhoFrom,self,cCurValue}):show()
+RETURN nil
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TrialBalance
-	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
-	LOCAL cCurValue AS USUAL
-	LOCAL nPntr AS INT
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
-	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	LOCAL oControl as CONTROL
+	LOCAL lGotFocus as LOGIC
+	LOCAL cCurValue as USUAL
+	LOCAL nPntr as int
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
+	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !Departments
-		RETURN NIL
+		RETURN nil
 	ENDIF
 	IF !lGotFocus
 		IF oControl:NameSym==#mDepartment .and.!AllTrim(oControl:TextValue)==cCurDep
@@ -4763,14 +4774,14 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TrialBalance
 			IF nPntr>1
 				cCurValue:=SubStr(cCurValue,1,nPntr-1)
 			ENDIF
-			IF SELF:oDep:FindDep(@cCurValue)
-				SELF:RegDepartment(cCurValue,"")
+			IF self:oDep:FindDep(@cCurValue)
+				self:RegDepartment(cCurValue,"")
 			ELSE
-				SELF:DepButton()
+				self:DepButton()
 			ENDIF
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN nil
 
 METHOD GetBalYears() CLASS TrialBalance
 	// get array with balance years
@@ -4782,50 +4793,50 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 super:Init(oWindow,ResourceID{"TrialBalance",_GetInst()},iCtlID)
 
 oDCmDepartment := SingleLineEdit{self,ResourceID{TRIALBALANCE_MDEPARTMENT,_GetInst()}}
-oDCmDepartment:HyperLabel := HyperLabel{#mDepartment,NULL_STRING,"From Who is it: Department",NULL_STRING}
+oDCmDepartment:HyperLabel := HyperLabel{#mDepartment,null_string,"From Who is it: Department",null_string}
 oDCmDepartment:TooltipText := "Enter number or name of required Top of department structure"
 
 oCCDepButton := PushButton{self,ResourceID{TRIALBALANCE_DEPBUTTON,_GetInst()}}
-oCCDepButton:HyperLabel := HyperLabel{#DepButton,"v","Browse in Departments",NULL_STRING}
+oCCDepButton:HyperLabel := HyperLabel{#DepButton,"v","Browse in Departments",null_string}
 oCCDepButton:TooltipText := "Browse in Departments"
 
-oDCYearTrial := combobox{self,ResourceID{TRIALBALANCE_YEARTRIAL,_GetInst()}}
-oDCYearTrial:FillUsing(Self:GetBalYears( ))
-oDCYearTrial:HyperLabel := HyperLabel{#YearTrial,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCYearTrial := ComboBox{self,ResourceID{TRIALBALANCE_YEARTRIAL,_GetInst()}}
+oDCYearTrial:FillUsing(self:GetBalYears( ))
+oDCYearTrial:HyperLabel := HyperLabel{#YearTrial,null_string,null_string,null_string}
 
 oDCMonthStart := SingleLineEdit{self,ResourceID{TRIALBALANCE_MONTHSTART,_GetInst()}}
-oDCMonthStart:HyperLabel := HyperLabel{#MonthStart,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCMonthStart:FieldSpec := MONTHW{}
+oDCMonthStart:HyperLabel := HyperLabel{#MonthStart,null_string,null_string,null_string}
+oDCMonthStart:FieldSpec := MonthW{}
 
 oDCMonthEnd := SingleLineEdit{self,ResourceID{TRIALBALANCE_MONTHEND,_GetInst()}}
-oDCMonthEnd:HyperLabel := HyperLabel{#MonthEnd,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCMonthEnd:FieldSpec := MONTHW{}
+oDCMonthEnd:HyperLabel := HyperLabel{#MonthEnd,null_string,null_string,null_string}
+oDCMonthEnd:FieldSpec := MonthW{}
 
 oDClCondense := CheckBox{self,ResourceID{TRIALBALANCE_LCONDENSE,_GetInst()}}
-oDClCondense:HyperLabel := HyperLabel{#lCondense,"Condense",NULL_STRING,NULL_STRING}
+oDClCondense:HyperLabel := HyperLabel{#lCondense,"Condense",null_string,null_string}
 
 oCCOKButton := PushButton{self,ResourceID{TRIALBALANCE_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 
 oCCCancelButton := PushButton{self,ResourceID{TRIALBALANCE_CANCELBUTTON,_GetInst()}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
 
 oDCFixedText1 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT1,_GetInst()}}
-oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Financial year",NULL_STRING,NULL_STRING}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Financial year",null_string,null_string}
 
 oDCFixedText2 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"From month:",NULL_STRING,NULL_STRING}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"From month:",null_string,null_string}
 
 oDCFixedText3 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"To month:",NULL_STRING,NULL_STRING}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"To month:",null_string,null_string}
 
 oDCFixedText4 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Department:",NULL_STRING,NULL_STRING}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Department:",null_string,null_string}
 
 self:Caption := "Trial Balance"
-self:HyperLabel := HyperLabel{#TrialBalance,"Trial Balance",NULL_STRING,NULL_STRING}
-self:EnableStatusBar(True)
-self:PreventAutoLayout := True
+self:HyperLabel := HyperLabel{#TrialBalance,"Trial Balance",null_string,null_string}
+self:EnableStatusBar(true)
+self:PreventAutoLayout := true
 
 if !IsNil(oServer)
 	self:Use(oServer)
@@ -4836,89 +4847,96 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 access lCondense() class TrialBalance
-return self:FieldGet(#lCondense)
+return self:FIELDGET(#lCondense)
 
 assign lCondense(uValue) class TrialBalance
-self:FieldPut(#lCondense, uValue)
+self:FIELDPUT(#lCondense, uValue)
 return lCondense := uValue
 
 METHOD ListBoxSelect(oControlEvent) CLASS TrialBalance
-	LOCAL oControl AS Control
-	LOCAL uValue AS USUAL
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	LOCAL oControl as CONTROL
+	LOCAL uValue as USUAL
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	IF oControlEvent:NameSym==#YearTrial
-		uValue:=oControlEvent:Control:Value
-		oMbal:GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
-		MonthStart:=oMBal:MONTHSTART
-		MonthEnd:=oMBal:MONTHEND
+		uValue:=oControlEvent:CONTROL:Value
+		oMBal:GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
+		MonthStart:=oMBal:MonthStart
+		MonthEnd:=oMBal:MonthEnd
 	ENDIF
-	RETURN NIL
+	RETURN nil
 
 access mDepartment() class TrialBalance
-return self:FieldGet(#mDepartment)
+return self:FIELDGET(#mDepartment)
 
 assign mDepartment(uValue) class TrialBalance
-self:FieldPut(#mDepartment, uValue)
+self:FIELDPUT(#mDepartment, uValue)
 return mDepartment := uValue
 
 access MonthEnd() class TrialBalance
-return self:FieldGet(#MonthEnd)
+return self:FIELDGET(#MonthEnd)
 
 assign MonthEnd(uValue) class TrialBalance
-self:FieldPut(#MonthEnd, uValue)
+self:FIELDPUT(#MonthEnd, uValue)
 return MonthEnd := uValue
 
 access MonthStart() class TrialBalance
-return self:FieldGet(#MonthStart)
+return self:FIELDGET(#MonthStart)
 
 assign MonthStart(uValue) class TrialBalance
-self:FieldPut(#MonthStart, uValue)
+self:FIELDPUT(#MonthStart, uValue)
 return MonthStart := uValue
 
 METHOD OKButton( ) CLASS TrialBalance
-LOCAL perlengte,YEARSTART,YEAREND, TrialYear,BalMonth AS INT
+LOCAL perlengte,YEARSTART,YEAREND, TrialYear,BalMonth as int
 LOCAL nRow, nPage as int
-LOCAL CurSt, CurEnd,BalSt, BalEnd, TrialEnd AS INT
-LOCAL omzetdeel, totdeb,totcre,vw_deb, vw_cre, m_bud, omzet, totBegin, totBeginCostProfit,PerDeb,PerCre AS FLOAT
+LOCAL CurSt, CurEnd,BalSt, BalEnd, TrialEnd as int
+LOCAL omzetdeel, totdeb,totcre,vw_deb, vw_cre, m_bud, omzet, totBegin, totBeginCostProfit,PerDeb,PerCre as FLOAT
 LOCAL Heading:={} as ARRAY, ad_banmsg, omztxt as STRING
-LOCAL PrvYearNotClosed AS LOGIC
-LOCAL aDep:={} AS ARRAY
-LOCAL cType,cSoort AS STRING
-LOCAL nChildRec			AS INT
-LOCAL Gran AS LOGIC
-LOCAL cTab:=CHR(9) AS STRING
-
+LOCAL PrvYearNotClosed as LOGIC
+LOCAL aDep:={} as ARRAY
+LOCAL cType,cSoort as STRING
+LOCAL nChildRec			as int
+LOCAL Gran as LOGIC
+LOCAL cTab:=CHR(9) as STRING  
+LOCAL aYearStartEnd:={} as ARRAY
+LOCAL aItem:={} as ARRAY
+local oMBal as balances
+local cStatement as string   // string with selection of accounts and their total values 
 
 *LOCAL cFilter AS STRING
 
 * Check values:
 * Check input data:
-IF !ValidateControls( SELF, SELF:AControls )
+IF !ValidateControls( self, self:AControls )
 	RETURN
 END
+                                
+aYearStartEnd := GetBalYear(Val(SubStr(YearTrial,1,4)),Val(SubStr(YearTrial,5,2)))                              
 
-oMbal:GetBalYear(Val(SubStr(YearTrial,1,4)),Val(SubStr(YearTrial,5,2)))
-YEARSTART:=oMBal:YEARSTART
-TrialYear:=YEARSTART
-BalMonth:= oMBal:MONTHSTART
-YEAREND:=oMBal:YEAREND
-IF oMBal:MONTHSTART>oMBal:MONTHEND // spanning two calendar years?
-	IF MONTHSTART < oMBal:MONTHSTART
+YEARSTART := aYearStartEnd[1]
+TrialYear := YEARSTART
+BalMonth  := aYearStartEnd[2]
+YEAREND   := aYearStartEnd[3]
+
+IF aYearStartEnd[2] > aYearStartEnd[4] // spanning two calendar years?
+	IF MonthStart < aYearStartEnd[2]
 		* apparently in next year:
 		++YEARSTART
 	ENDIF
-	IF MONTHEND > oMBal:MONTHEND
-		* appenntly in previous year:
+	IF MonthEnd > aYearStartEnd[4]
+		* apparently in previous year:
 		--YEAREND
 	ENDIF
 ENDIF
-CurSt:=YEARSTART*12+MONTHSTART
-CurEnd:=YEAREND*12+MONTHEND
-BalSt:=TrialYear*12+BalMonth
-BalEnd:=oMBal:YEAREND*12+oMBal:MONTHEND
-IF CurSt>CurEnd
+
+CurSt  := YEARSTART * 12 + MonthStart
+CurEnd := YEAREND * 12 + MonthEnd
+BalSt  := TrialYear * 12 + BalMonth
+BalEnd := aYearStartEnd[3] * 12 + aYearStartEnd[4]
+
+if CurSt>CurEnd
    (ErrorBox{self:OWNER,self:oLan:WGet('Starting month must precede ending month')}):Show()
 	RETURN
 ENDIF
@@ -4932,50 +4950,40 @@ IF CurEnd < BalSt .or. CurEnd > BalEnd
 ENDIF
 PrvYearNotClosed:=(BalSt>(Year(LstYearClosed)*12+Month(LstYearClosed)))
 
-perlengte:= YEAREND*12+MonthEnd+1-(YEARSTART*12+MonthStart)
+perlengte := YEAREND * 12 + MonthEnd + 1 - (YEARSTART * 12 + MonthStart)
+
 * Check and fill requested Departments:
-d_dep:={}
+d_dep := {}
 IF Empty(WhoFrom)
 	* Top department is WO Office:
-	d_dep:={Space(11)}
+	d_dep := {Space(11)}
 ELSE
-	IF !oDep:OrderInfo(DBOI_NAME)=="DEPID"
-		oDep:SetOrder("DEPID")
-	ENDIF
-	oDep:Seek(WhoFrom)
-	d_dep:={oDep:DEPID}
-ENDIF
-IF !oDep:OrderInfo(DBOI_NAME)=="SUBDEP"
-	oDep:SetOrder("SUBDEP")
+	d_dep:={Val(WhoFrom)}
 ENDIF
 
 * Add all subdepartments down from WhoFrom:
-DO WHILE TRUE
-	nChildRec:=SELF:AddSubDep(WhoFrom, nChildRec)
+aItem:={}
+DO WHILE true
+	nChildRec := self:AddSubDep(Val(self:WhoFrom),nChildRec,aItem,d_dep)
 	IF Empty(nChildRec)
-		EXIT
+		exit
 	ENDIF
 ENDDO
 
-aDep:=d_Dep
+aDep:=d_dep
+oMBal:=Balances{}
+oMBal:AccSelection:=iif(Empty(self:WhoFrom),"","a.department in ("+Implode(d_dep,",")+")")
+cStatement := oMBal:SQLGetBalance(YEARSTART * 100 + MONTHSTART, YEAREND * 100 + MONTHEND,true,false,true,true)
 
-// IF oAcc==NULL_OBJECT
-// 	oAcc:=Account{}
-// 	IF !oAcc:Used
-// 		SELF:EndWindow()
-// 	ENDIF
-// ENDIF
-// IF oAcc:OrderInfo(DBOI_NAME)#"ACCNTNBR"
-// 	oAcc:SetOrder("AccNtNbr")
-// ENDIF
-*cFilter:="AScan(aDep,Department)>0"
-*pFilter:=&("{||"+ cFilter+"}")
-*lSuccess:=oAcc:SetFilter(,cFilter)
+oAcc:=SQLSelect{cStatement,oConn}
 
-*lSuccess:=oAcc:SetFilter({|x| AScan(aDep,x:Department)>0})
-oAcc:GoTop()
-* aanmaken naam report bestand
-*store 1 TO blad,r
+* Add balances of accounts to the balance item values: 
+oAcc:GoTop() 
+
+
+
+* Create name report file
+* store 1 TO blad,r
 IF lPrint
 	oReport := PrintDialog{oParent,self:oLan:RGet('Trial Balance'),,121,,"xls"}
 	oReport:Show()
@@ -4984,49 +4992,37 @@ IF lPrint
 	ENDIF
 ENDIF
 
-* Stel kop samen:
-oLan:=Language{}
-IF !oLan:Used
-	SELF:EndWindow()
-ENDIF
 IF Lower(oReport:Extension) #"xls"
 	cTab:=Space(1)
 	Heading:={oLan:Get('Trial Balance',,"!")}
 ENDIF
-SELF:Pointer := Pointer{POINTERHOURGLASS}
+self:Pointer := Pointer{POINTERHOURGLASS}
 self:STATUSMESSAGE(self:oLan:WGet("Collecting data, moment please"))
 
-AAdd(Heading,oLan:Get('Account',43,"!")+cTab+oLan:Get('Type',11,"!","C")+cTab+oLan:Get('BEGIN Balnc',11,"!","R")+cTab+oLan:Get('Debit',11,"!","R")+cTab+oLan:Get('Credit',11,"!","R")+;
-cTab+oLan:Get('Balance',11,"!","R")+cTab+oLan:Get('Budget',10,"!","R") )
-AAdd(Heading,oLan:Get('year',,"!")+cTab+oDCYearTrial:TextValue+;
+AAdd(Heading,self:oLan:Get('Account',43,"!")+cTab+self:oLan:Get('Type',11,"!","C")+cTab+self:oLan:Get('BEGIN Balnc',11,"!","R")+cTab+self:oLan:Get('Debit',11,"!","R")+cTab+self:oLan:Get('Credit',11,"!","R")+;
+cTab+self:oLan:Get('Balance',11,"!","R")+cTab+self:oLan:Get('Budget',10,"!","R") )
+AAdd(Heading,self:oLan:Get('year',,"!")+cTab+oDCYearTrial:TextValue+;
 '  '+maand[MonthStart]+' - '+maand[MonthEnd])
 AAdd(Heading,' ')
 vw_deb:=0
 vw_cre:=0
-DO WHILE !oAcc:EOF
-	IF AScan(aDep,oAcc:Department)=0
-		oAcc:Skip()
-		LOOP
-	ENDIF
-   * Bepalen maandsaldo:
-	oMBal:GetBalance(oAcc:accid,oAcc:balitemid,YEARSTART*100+MonthStart,YEAREND*100+MonthEnd)
-	m_bud:=oAcc:GetPerBudget(YEARSTART,MONTHSTART,perlengte,@Gran)
-	cSoort:= oMBal:cRubrSoort
+DO WHILE !oAcc:EoF
+	cSoort:= oMBal:category
   	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]
 	IF cSoort=="KO" .or. cSoort=="BA"
-		PerDeb:=oMBAL:per_deb
+		PerDeb:=oMBal:per_deb
 		PerCre:=oMBal:per_cre
 	ELSE
 		// determine sum of transactions by comparing with previous month for balance accounts:
-		PerDeb:=Round(oMBAL:per_deb - oMBAL:begin_deb,decaantal)
-		PerCre:=Round(oMBal:per_cre - oMBAL:begin_cre,decaantal)
+		PerDeb:=Round(oMBal:per_deb - oMBal:PrvPer_deb,DecAantal)
+		PerCre:=Round(oMBal:per_cre - oMBal:PrvPer_cre,DecAantal)
 	ENDIF
-   IF !self:lCondense .or. PerDeb # PerCre .or. oMbal:begin_deb#oMBAL:begin_cre
+   IF !self:lCondense .or. !PerDeb == PerCre .or. !oMBal:PrvPer_deb == oMBal:PrvPer_cre
 
       && total percentage invullen van alles tot nu toe
       omzet:= PerDeb-PerCre
       IF omzet<> 0
-         IF oMBal:cRubrSoort = "BA"
+         IF oMBal:category = "BA"
             omzet:=-omzet
          ENDIF
       ENDIF
@@ -5041,55 +5037,54 @@ DO WHILE !oAcc:EOF
       ENDIF
   	  IF lPrint
       	oReport:PrintLine(@nRow,@nPage,Pad(oAcc:ACCNUMBER+" "+oAcc:description,43)+;
-      	cTab+PadC(cType,11)+cTab+Str(oMBal:begin_deb-oMBal:begin_cre,11,decaantal) +;
+      	cTab+PadC(cType,11)+cTab+Str(oMBal:prvper_deb-oMBal:PrvPer_cre,11,DecAantal) +;
       	cTab+Str(PerDeb,11,decaantal)+cTab+Str(PerCre,11,decaantal)+;
-      	cTab+Str(oMBal:begin_deb-oMBal:begin_cre+PerDeb-PerCre,11,decaantal)+;
-      	cTab+Str(Round(m_bud,DecAantal),10,decaantal)+cTab+omztxt,Heading,0)
+      	cTab+Str(oMBal:prvper_deb-oMBal:prvper_cre+PerDeb-PerCre,11,DecAantal)+;
+      	cTab+Str(Round(m_bud,DecAantal),10,DecAantal)+cTab+omztxt,Heading,0)
       ENDIF
-      totdeb:=Round(totdeb+PerDeb,decaantal)
-      totcre:=Round(totcre+PerCre,decaantal)
+      totdeb:=Round(totdeb+PerDeb,DecAantal)
+      totcre:=Round(totcre+PerCre,DecAantal)
 /*      IF cSoort=="KO" .or. cSoort=="BA"
-	  	totBeginCostProfit :=Round(totBeginCostProfit+oMBal:begin_deb-oMBal:begin_cre,decaantal)
+	  	totBeginCostProfit :=Round(totBeginCostProfit+oMBal:prvper_deb-oMBal:prvper_cre,decaantal)
 	  ENDIF      */
-      totBegin:=Round(totBegin+oMBal:begin_deb-oMBal:begin_cre,decaantal)
+      totBegin:=Round(totBegin+oMBal:prvper_deb-oMBal:prvper_cre,DecAantal)
    	ENDIF
    * Indien voorgaande jaar nog niet afgesloten, dan som van V&W bepalen om
    * bij kapitaal op te tellen (immers nog niet bijgeboekt):
-   IF PrvYearNotClosed .and. (oMBal:cRubrSoort="KO".or.oMBal:cRubrSoort="BA")
+   IF PrvYearNotClosed .and. (oMBal:category="KO".or.oMBal:category="BA")
    		IF BalMonth==1
    			TrialEnd:=(TrialYear-1)*100+12
    		ELSE
    			TrialEnd:=TrialYear*100+BalMonth-1
    		ENDIF
-		oMbal:GetBalance(oAcc:accid,oAcc:balitemid,Year(LstYearClosed)*100+Month(LstYearClosed),TrialEnd)  && balans t/m vorig balansjaar
-		vw_deb:=Round(vw_deb + oMBal:per_deb,decaantal)
-		vw_cre:=Round(vw_cre + oMBal:per_cre,decaantal)
+		vw_deb:=Round(vw_deb + oMBal:PrvPer_deb,DecAantal)
+		vw_cre:=Round(vw_cre + oMBal:PrvPer_cre,DecAantal)
    ENDIF
 
-   oAcc:SKIP()
+   oAcc:Skip()
 ENDDO
 IF PrvYearNotClosed .and. (vw_deb#0.or.vw_cre#0)
 	IF lPrint
 	   oReport:PrintLine(@nRow,@nPage,oLan:Get('Balance income and expense prev.year',64,"!");
-	   +Replicate(cTab,4)+Str(vw_deb,11,decaantal)+cTab+Str(vw_cre,11,decaantal)+;
+	   +Replicate(cTab,4)+Str(vw_deb,11,DecAantal)+cTab+Str(vw_cre,11,DecAantal)+;
 	   cTab+Str(vw_deb-vw_cre,11,DecAantal),Heading,0)
 	ENDIF
-    totdeb:=totdeb+Round(vw_deb,decaantal)
-    totcre:=totcre+Round(vw_cre,decaantal)
+    totdeb:=totdeb+Round(vw_deb,DecAantal)
+    totcre:=totcre+Round(vw_cre,DecAantal)
 ENDIF
-totdeb:=Round(totdeb,decaantal)
-totcre:=Round(totcre,decaantal)
-totBegin=Round(totBegin,decaantal)
+totdeb:=Round(totdeb,DecAantal)
+totcre:=Round(totcre,DecAantal)
+totBegin=Round(totBegin,DecAantal)
 IF lPrint
 	oReport:PrintLine(@nRow,@nPage,' ',Heading,1)
 	oReport:PrintLine(@nRow,@nPage,Space(43)+cTab+Space(11)+cTab+Str(totBegin,11,DecAantal)+cTab+Str(totdeb,11,DecAantal)+;
-	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal),NULL_ARRAY,0)
+	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal),null_array,0)
 ENDIF
 /*oReport:PrintLine(@nRow,@nPage,Space(65)+"Total begin Cost/Profit:"+Str(totBeginCostProfit,12,decaantal))
 oReport:PrintLine(@nRow,@nPage,Space(89)+Replicate("-",12))
 oReport:PrintLine(@nRow,@nPage,Space(89)+Str(Round(totdeb-totcre+totBeginCostProfit,decaantal),12,decaantal))   */
 *oVBal:Close()
-SELF:Pointer := Pointer{POINTERARROW}
+self:Pointer := Pointer{POINTERARROW}
 IF lPrint
 	oReport:prstart()
 	oReport:prstop()
@@ -5105,7 +5100,7 @@ self:SetTexts()
 	IF ADMIN="WO"
 		aYearStartEnd := GetBalYear(Year(Today()),Month(Today()))
 		oDCYearTrial:Value := Str(aYearStartEnd[1],4,0)+StrZero(aYearStartEnd[2],2,0)
-		MONTHSTART := aYearStartEnd[2]
+		MonthStart := aYearStartEnd[2]
 		MonthEnd := aYearStartEnd[4]
 	ELSE
 		oDCYearTrial:CurrentItemNo:=1
@@ -5123,13 +5118,13 @@ self:SetTexts()
 	ENDIF
 
 	
-	RETURN NIL
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TrialBalance
 	//Put your PreInit additions here
 	// oMBal:=MBalance{,DBSHARED,DBREADONLY}
-	RETURN NIL
+	RETURN nil
 METHOD RegDepartment(myNum,myItemName) CLASS TrialBalance
-	Default(@myItemname,NULL_STRING)
+	Default(@myItemname,null_string)
 	IF !myNum==WhoFrom
 		WhoFrom:=myNum
 		IF Empty(WhoFrom)
@@ -5140,7 +5135,7 @@ METHOD RegDepartment(myNum,myItemName) CLASS TrialBalance
        		IF !oDep:OrderInfo(DBOI_NAME)=="DEPID"
 				oDep:SetOrder("DEPID")
 			ENDIF
-			IF oDep:seek(WhoFrom)
+			IF oDep:Seek(WhoFrom)
 				cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
 				mDepartment:=cCurDep
 				oDCmDepartment:TextValue:=cCurDep
@@ -5150,10 +5145,10 @@ METHOD RegDepartment(myNum,myItemName) CLASS TrialBalance
 RETURN
 
 access YearTrial() class TrialBalance
-return self:FieldGet(#YearTrial)
+return self:FIELDGET(#YearTrial)
 
 assign YearTrial(uValue) class TrialBalance
-self:FieldPut(#YearTrial, uValue)
+self:FIELDPUT(#YearTrial, uValue)
 return YearTrial := uValue
 
 STATIC DEFINE TRIALBALANCE_CANCELBUTTON := 107 
