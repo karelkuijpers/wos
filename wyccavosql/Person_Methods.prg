@@ -3603,7 +3603,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	ENDIF
 	IF Empty(sIDORG)
 		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
-		RETURN
+		RETURN FALSE
 	ENDIF
 	cOrgName:=GetFullName(sIDORG,2)
 	if Empty(cOrgName)
