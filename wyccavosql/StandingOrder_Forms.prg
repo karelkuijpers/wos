@@ -509,18 +509,6 @@ RETURN NIL
 METHOD Close(oEvent) CLASS PeriodicBrowser
 *	SUPER:Close(oEvent)
 	//Put your changes here
-IF !oAcc==NULL_OBJECT
-	IF oAcc:Used
-		oAcc:Close()
-	ENDIF
-	oAcc:=NULL_OBJECT
-ENDIF
-IF !oAccSearch==NULL_OBJECT
-	IF oAccSearch:Used
-		oAccSearch:Close()
-	ENDIF
-	oAccSearch:=NULL_OBJECT
-ENDIF
 SELF:oSFPeriodicBrowser_DETAIL:Close()
 SELF:oSFPeriodicBrowser_DETAIL:Destroy()
 SELF:destroy()
