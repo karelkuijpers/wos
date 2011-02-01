@@ -1040,14 +1040,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	//Put your PostInit additions here
 self:SetTexts()
 	IF cType=="STANDARD GIFTS"
-		self:Caption:=(Language{}):WGet("Browse in Periodic Gifts") 
+		self:Caption:=self:oLan:WGet("Browse in Periodic Gifts") 
 	ELSEIF cType=="DONATIONS"
-		self:Caption:=(Language{}):WGet("Browse in Donations")
+		self:Caption:=self:oLan:WGet("Browse in Donations")
 /*		SELF:oDCmAccount:Hide()
 		SELF:oDCSC_AR1:Hide()
 		SELF:oCCAccButton:Hide() */
 	ELSEIF cType=="SUBSCRIPTIONS"
-		self:Caption:=(Language{}):WGet("Browse in Subscriptions")
+		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
 	ENDIF
   	self:oDCFound:TextValue:=Str(self:oSub:RecCount,-1)
 
