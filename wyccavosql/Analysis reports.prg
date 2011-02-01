@@ -555,8 +555,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	  
 	self:SetTexts()
 
-	self:oDCHomeBox:Caption:=(Language{}):WGet("Members of")+" "+sLand
-	self:oDCNonHomeBox:Caption:=(Language{}):WGet("Members not of")+" "+sLand
+	self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
+	self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
 	self:ProjectsBox:=true
 	self:AccFil()
 
