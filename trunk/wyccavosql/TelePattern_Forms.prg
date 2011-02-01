@@ -451,7 +451,7 @@ LOCAL nRow as int
 LOCAL nPage as int
 LOCAL oReport AS PrintDialog
 
-oReport := PrintDialog{SELF,oLan:Get("Telebank Patterns"),,119}
+oReport := PrintDialog{self,oLan:RGet("Telebank Patterns"),,119}
 
 oReport:Show()
 IF .not.oReport:lPrintOk
@@ -460,9 +460,9 @@ ENDIF
 oTele := SELF:Server
 oTele:suspendnotification()
 oTele:GoTop()
-kopregels := {oLan:Get('Telebank Patterns',,"@!"),' ',;
-oLan:Get("Number",12,"!")+oLan:Get("Account",21,"!")+oLan:Get("CounterAcc",15,"!","R")+" "+;
-oLan:Get("Name",26,"!")+oLan:Get("Description",26,"!")+oLan:Get("D/C",4,"!")+oLan:Get("Aut",4,"!")+oLan:Get('DATE',10,"!")}
+kopregels := {oLan:RGet('Telebank Patterns',,"@!"),' ',;
+oLan:RGet("Number",12,"!")+oLan:RGet("Account",21,"!")+oLan:RGet("CounterAcc",15,"!","R")+" "+;
+oLan:RGet("Name",26,"!")+oLan:RGet("Description",26,"!")+oLan:RGet("D/C",4,"!")+oLan:RGet("Aut",4,"!")+oLan:RGet('DATE',10,"!")}
 nRow := 0
 nPage := 0
 DO WHILE .not. oTele:EOF
