@@ -883,14 +883,14 @@ METHOD PrintReport() CLASS PMISsend
 	NEXT
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,3)
 	oReport:PrintLine(@nRow,@nPage,;
-		Pad('Subtotal:',20)+" "+Str(mo_tot+mo_direct,11,2)+"  ("+AllTrim(Str(batchcount,-1,0))+" "+oLan:Get("lines")+")",heading,3-nRowCnt)
+		Pad('Subtotal:',20)+" "+Str(mo_tot+mo_direct,11,2)+"  ("+AllTrim(Str(batchcount,-1,0))+" "+oLan:Rget("lines")+")",heading,3-nRowCnt)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment intern.+field',40)+Str(AssInt+AssField,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO standard',40)+Str(AssOffice,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO Projects',40)+Str(AssOfficeProj,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
 	IF mo_direct#0
-		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:Get("lines")+")",heading,0)
+		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:Rget("lines")+")",heading,0)
 	ENDIF
 	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(mo_tot/fExChRate,11,2),heading)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
@@ -1072,7 +1072,7 @@ METHOD PrintReport() CLASS PMISsend
 				IF aMemberTrans[a_tel,4]==DT
 					nSeqnrDT++
 					oStmnt:=SQLStatement{"insert into transaction set accid="+aMemberTrans[a_tel,7][5]+",cre='"+Str(me_saldo,-1)+"',creforgn='"+Str(me_saldo,-1)+;
-						"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(aMemberTrans[a_tel,9]+"	"+oLan:Get("From")+"	"+AllTrim(aMemberTrans[a_tel,3]))+;
+						"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(aMemberTrans[a_tel,9]+"	"+oLan:Rget("From")+"	"+AllTrim(aMemberTrans[a_tel,3]))+;
 						"',dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnrDT+",seqnr="+Str(nSeqnrDT,-1),oConn}
 					oStmnt:Execute()
