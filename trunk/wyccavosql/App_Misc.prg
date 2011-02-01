@@ -289,7 +289,7 @@ CLASS DataDialogMine INHERIT DataDialog
 METHOD Close() CLASS DataDialogMine
 	CollectForced()
 RETURN SUPER:Close() 
-METHOD FillMbrProjArray(dummy as string) as void pascal CLASS DataDialogMine
+METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMine
 LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
@@ -327,8 +327,6 @@ DO WHILE !oSQL:EOF
 	ENDIF
 	oSQL:Skip()
 ENDDO
-oSQL:Close()
-oSQL:=null_object
 CLASS DataWindowExtra INHERIT DataWindow
 *	PROTECT uControlValue AS USUAL
 *	PROTECT cControlName AS STRING
@@ -449,8 +447,6 @@ DO WHILE !oSQL:EOF
 	ENDIF
 	oSQL:Skip()
 ENDDO
-oSQL:Close()
-oSQL:=null_object
 
 DEFINE DATEFIELD:=3
 CLASS DateStandard INHERIT DATETIMEPICKER
@@ -921,6 +917,9 @@ pers_codes:={}
 mail_abrv:={}
 oMailCd := SQLSelect{"select * from perscod",oConn}
 pers_codes:=oMailCd:GetLookupTable(500,#description,#PERS_CODE)
+ASize(pers_codes,Len(pers_codes)+1)
+AIns(pers_codes,1) 
+pers_codes[1]:={' ',''}
 oMailCd:GoTop()
 mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE)
 RETURN 
@@ -929,7 +928,7 @@ FUNCTION FillPersGender() as void pascal
 local oLan as Language
 oLan:=Language{}
 pers_gender:=  {{oLan:WGet("female"),FEMALE},{oLan:WGet("male"),MASCULIN},{oLan:WGet("couple"),COUPLE},{oLan:WGet("non-person"),ORGANISATION},{oLan:WGet("unknown"),0}}
-pers_salut:={{oLan:Get("Mrs",,"!"),FEMALE},{oLan:Get("Mr",,"!"),MASCULIN},{oLan:Get("Mr&Mrs"),COUPLE},{"",ORGANISATION},{"",0}}
+pers_salut:={{oLan:RGet("Mrs",,"!"),FEMALE},{oLan:RGet("Mr",,"!"),MASCULIN},{oLan:RGet("Mr&Mrs"),COUPLE},{"",ORGANISATION},{"",0}}
 return
 FUNCTION FillPersProp ()
 	* Fill global Array pers_propextra with description + id of extra person properties
@@ -1342,13 +1341,13 @@ function InitGlobals()
 	endif
 
 	oLan:=Language{}
-		Maand := {	oLan:Get('January',,"!"),oLan:Get('February',,"!"),oLan:Get('March',,"!"),;
-			oLan:Get('April',,"!"),oLan:Get('May',,"!"),oLan:Get('June',,"!"),;
-			oLan:Get('July',,"!"),oLan:Get('August',,"!"),oLan:Get('September',,"!"),;
-			oLan:Get('October',,"!"),oLan:Get('November',,"!"),oLan:Get('December',,"!")}
+		Maand := {	oLan:RGet('January',,"!"),oLan:RGet('February',,"!"),oLan:RGet('March',,"!"),;
+			oLan:RGet('April',,"!"),oLan:RGet('May',,"!"),oLan:RGet('June',,"!"),;
+			oLan:RGet('July',,"!"),oLan:RGet('August',,"!"),oLan:RGet('September',,"!"),;
+			oLan:RGet('October',,"!"),oLan:RGet('November',,"!"),oLan:RGet('December',,"!")}
 		PaymentDescription:={;
-			oLan:Get("Donation",,"!"),oLan:Get("Gift",,"!"),oLan:Get("Invoice",,"!"),;
-			oLan:Get("subscription",,"!")}
+			oLan:RGet("Donation",,"!"),oLan:RGet("Gift",,"!"),oLan:RGet("Invoice",,"!"),;
+			oLan:RGet("subscription",,"!")}
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
 	
@@ -1640,11 +1639,11 @@ IF !Empty(cEnd).and. cStart>cEnd
 ENDIF
  
 if !Empty(cStart).and.!Empty(cEnd)
-	cWhere:="accnumber between "+cStart+" and "+cEnd
+	cWhere:="accnumber between '"+cStart+"' and '"+cEnd+"'"
 elseif !Empty(cStart)
-	cWhere:="accnumber>="+cStart
+	cWhere:="accnumber>='"+cStart+"'"
 else
-	cWhere:="accnumber<="+cStart
+	cWhere:="accnumber<='"+cStart+"'"
 endif
 
 oSQL:=SQLSelect{"select accnumber,description,accid from account where giftalwd=1 and "+cWhere ,oConn}
@@ -1706,7 +1705,7 @@ RETURN aAcc
 	
 METHOD Refill() CLASS ListBoxExtra
 LOCAL i as int
-IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
+// IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
 	* Range has been changed, thus new selection:
 	self:FillUsing( self:GetAccnts(null_string))
 	cCurStart:=cAccStart
@@ -1716,7 +1715,7 @@ IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
     	self:SelectItem(i)
     NEXT
 
-ENDIF
+// ENDIF
 RETURN nil
 ACCESS Server CLASS ListBoxExtra
 RETURN oAccount
