@@ -12,7 +12,7 @@ Default(@InvoiceID,null_string)
 	oReport:PrintLine(@nRow,@nPage,' ')
 	oReport:PrintLine(@nRow,@nPage," ")
 	oReport:PrintLine(@nRow,@nPage,' ')
-	oReport:PrintLine(@nRow,@nPage,Space(5)+oLan:get('Invoice number',,"!")+': '+invoicenbr)
+	oReport:PrintLine(@nRow,@nPage,Space(5)+oLan:Rget('Invoice number',,"!")+': '+invoicenbr)
 	oReport:PrintLine(@nRow,@nPage,Space(5)+AllTrim(Destination))
 	oReport:PrintLine(@nRow,@nPage,' ')
 	oReport:PrintLine(@nRow,@nPage,' ')
@@ -2344,9 +2344,9 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	endif
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
-	fSecStart:=Seconds()
+// 	fSecStart:=Seconds()
 	oSel:Execute() 
-	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
+// 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(AtC('gr.',oSel:SQlString)>0,' persons',' gifts')+' found')}):Show()
 	IF oSel:RECCOUNT=0
@@ -2865,17 +2865,17 @@ METHOD INIT(oParent , uExtra , oPerson ) CLASS SelPers
 		self:oPers:=oPerson
 	ENDIF                                                  
 	self:oLan:=Language{} 
-		cCouple:= oLan:Rget("Mr&Mrs")
-		cMr:= oLan:get("Mr",,"!")
-		cMrs:= oLan:get("Mrs",,"!")
-		cTel:=oLan:get("Telephone",,"!")
-		cDay:=oLan:Rget('at day')
-		cNight:=oLan:Rget("at night")
-		cAbrv:=oLan:Rget("Abbreviated mailingcodes")
-		cFax:=oLan:Rget("fax")
-		cMobile:=oLan:Rget("mobile")
+	cCouple:= oLan:Rget("Mr&Mrs")
+	cMr:= oLan:Rget("Mr",,"!")
+	cMrs:= oLan:Rget("Mrs",,"!")
+	cTel:=oLan:Rget("Telephone",,"!")
+	cDay:=oLan:Rget('at day')
+	cNight:=oLan:Rget("at night")
+	cAbrv:=oLan:Rget("Abbreviated mailingcodes")
+	cFax:=oLan:Rget("fax")
+	cMobile:=oLan:Rget("mobile")
 
-RETURN SELF
+	RETURN SELF
 	
 METHOD MarkUpDestination(persid as int) as void pascal CLASS SelPers
 	* Markup values for template fields %FRSTNAMEDESTINATION,%LSTNAMEDESTINATION and %SALUTDESTINATION
@@ -3151,7 +3151,7 @@ local oReport as PrintDialog
 		RETURN FALSE
 	ENDIF
 	self:Pointer := Pointer{POINTERHOURGLASS}
-	kopregels := {self:oLan:get('PERSONS',,"@!")}
+	kopregels := {self:oLan:Rget('PERSONS',,"@!")}
 	FOR i=1 to MLCount(cVoorw,79)
 		AAdd(kopregels,MemoLine(cVoorw,79,i))
 	NEXT
@@ -3161,7 +3161,7 @@ local oReport as PrintDialog
 	nPage := 0
 
 	oSel:GoTop()
-	fSecStart:=Seconds()
+// 	fSecStart:=Seconds()
 	do while !oSel:Eof
 		// 	oPers:Goto(aNN[i,2])
 		IF nType = 1
@@ -3171,10 +3171,10 @@ local oReport as PrintDialog
 		ENDIF
 		oSel:skip()
 	enddo
-	LogEvent(self,"elapsed time for print:"+Str(Seconds()-fSecStart,-1),"LogSql")
+// 	LogEvent(self,"elapsed time for print:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
 	oReport:PrintLine(@nRow,@nPage,'',kopregels,1)
-	oReport:PrintLine(@nRow,@nPage,Str(oSel:RECCOUNT,-1)+' '+self:oLan:get('Persons',,"!"),kopregels)
+	oReport:PrintLine(@nRow,@nPage,Str(oSel:RECCOUNT,-1)+' '+self:oLan:Rget('Persons',,"!"),kopregels)
 	oReport:prstart()
 	oReport:prstop()
 	RETURN TRUE
@@ -3243,12 +3243,12 @@ METHOD Show() CLASS SelPers
 	ELSEIF cType=="FIRSTNONEAR"
 		selx_keus1 := 1
 	ELSE
-		(SelPersPrimary{oWindow,SELF}):Show()
+		(SelPersPrimary{self:oWindow,self}):Show()
 	ENDIF 
 
 	IF SELF:selx_ok
 		IF selx_keus1 == 2
-			(SelPersOpen{oWindow,{self,cType}}):Show()
+			(SelPersOpen{,{self,cType}}):Show()
 			self:cFrom+=",dueamount as d,subscription as t"
 			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
 // 		ELSEIF selx_keus1 == 3
@@ -3257,7 +3257,7 @@ METHOD Show() CLASS SelPers
 // 			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.personid" 
 		ELSEIF selx_keus1 == 4
 			//		(SelPersPayments{oWindow,SELF}):Show()
-			(SelPersPayments{oWindow,self}):Show()
+			(SelPersPayments{,,,self}):Show()
 			IF selx_MinAmnt>0.or.selx_MaxAmnt>0 // selection of minimum total amount:
 				selx_keus1 := 5
 			ENDIF
@@ -3269,27 +3269,27 @@ METHOD Show() CLASS SelPers
 		RETURN
 	ENDIF
 	IF self:selx_Ok
-		(SelPersMailCd{oWindow,{SELF,cType}}):Show()
+		(SelPersMailCd{self:oWindow,{self,cType}}):Show()
 	ELSE
 		self:EndWindow()
 		self:Close()
 		RETURN
 	ENDIF
-	IF !Selx_OK
+	IF !self:selx_Ok
 		SELF:EndWindow()
 		RETURN
 	ENDIF
-	IF IsNil(cWhereOther)
-		cWhereOther:=null_string
+	IF IsNil(self:cWhereOther)
+		self:cWhereOther:=null_string
 	ENDIF
 	IF IsNil(self:cWherep)
 		self:cWherep:=null_string
 	ENDIF
-	if !(Empty(self:cWherep).and.Empty(cWhereOther))
+	if !(Empty(self:cWherep).and.Empty(self:cWhereOther))
 		if Empty(self:cWherep)
-			self:cWherep:=" where "+cWhereOther
+			self:cWherep:=" where "+self:cWhereOther
 		else
-			self:cWherep:=" where "+self:cWherep+iif(Empty(cWhereOther),""," and "+cWhereOther)
+			self:cWherep:=" where "+self:cWherep+iif(Empty(self:cWhereOther),""," and "+self:cWhereOther)
 		endif
 	endif
 	self:cWherep+=" and p.persid>0"
@@ -3302,21 +3302,21 @@ METHOD Show() CLASS SelPers
 	self:oDB:=SQLSelectPerson{"",oConn}
 	SELF:oWindow:Pointer := Pointer{POINTERARROW}
 
-	oWindow:=GetParentWindow(SELF)
+	self:oWindow:=GetParentWindow(self)
 
-	oWindow:Pointer := Pointer{POINTERHOURGLASS}
+	self:oWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SELF:oWindow:StatusMessage("Producing reports, please wait...")
 
 	* Print the required report: 
 
-	lSucc:=self:PrintToOutput(oWindow,aTitle,"")
-	oWindow:Pointer := Pointer{POINTERARROW}
+	lSucc:=self:PrintToOutput(self:oWindow,aTitle,"")
+	self:oWindow:Pointer := Pointer{POINTERARROW}
 
 	IF lSucc
 		* remove eventually EG/EO-codes:
 		IF SELF:lEG .or. SELF:lEO  // EG or EO selected?
 			* Ask for removing codes:
-			IF (TextBox{oWindow, "Printing of persons", "Has code for "+;
+			IF (TextBox{self:oWindow, "Printing of persons", "Has code for "+;
 					IF(SELF:lEG,"First gift received","") +;
 					IF(SELF:lEO,IF(SELF:lEG," and ","")+"First non-earm gift","")+" to be removed?",;
 					BUTTONYESNO}):Show() == BOXREPLYYES
@@ -3627,21 +3627,34 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	
 	// Check if all bankaccounts are valid, belonging to the direct debited person:   
 
-	oDue:=SQLSelect{"select distinct s.bankaccnt,s.personid,"+SQLFullName(0,'ps')+" as fullname from dueamount d,subscription s "+;
-		"left join person ps on (ps.persid=s.personid) "+;
+	oDue:=SQLSelect{"select distinct s.bankaccnt,s.subscribid,s.personid,"+SQLFullName(0,'ps')+" as fullname,group_concat(pb.banknumber separator ',') as bankaccounts from dueamount d,subscription s "+;
+		"left join person ps on (ps.persid=s.personid) left join personbank pb on (pb.persid=ps.persid) "+;
 		"where s.subscribid=d.subscribid "+;
 		"and s.paymethod='C' and invoicedate between '"+SQLdate(begin_due)+;
-		"' and '"+SQLdate(end_due)+"' and d.amountrecvd<d.amountinvoice and "+;
-		iif(Empty(accid),''," s.accid='"+Str(accid,-1)+"' and ")+;
-		"s.bankaccnt not in (select p.banknumber from personbank p where p.persid=s.personid)",oConn}
-	if oDue:RecCount>0
-		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
+		"' and '"+SQLdate(end_due)+"' and d.amountrecvd<d.amountinvoice "+;
+		iif(Empty(accid),""," and s.accid='"+Str(accid,-1)+"'")+" and "+;
+		"s.bankaccnt not in (select p.banknumber from personbank p where p.persid=s.personid)"+;
+		" group by s.personid",oConn} 
+	if oDue:RecCount>0 
+		// try to correct donations: 
+	
+// 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
 		do while !oDue:EoF
-			cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+			if !Empty(oDue:bankaccounts)
+				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"' where subscribid="+Str(oDue:subscribid,-1),oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")" 
+				endif
+			else
+				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+			endif
 			oDue:skip()
 		enddo
-		ErrorBox{self,cErrMsg}:Show()
-		return false
+		if !Empty(cErrMsg)
+			ErrorBox{self,cErrMsg}:Show()
+			return false
+		endif
 	endif
 	
 
@@ -3657,7 +3670,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		RETURN false
 	ENDIF
 
-	headinglines:={self:oLan:Get("Overview of generated automatic collection (CLIEOP03)"),self:oLan:Get("Name",41)+self:oLan:Get("Bankaccount",11)+self:oLan:Get("Amount",12,,"R")+" "+self:oLan:Get("Destination",12)+self:oLan:Get("Due Date",11)+" "+self:oLan:Get("Description",20),Replicate('-',120)}
+	headinglines:={self:oLan:Rget("Overview of generated automatic collection (CLIEOP03)"),self:oLan:Rget("Name",41)+self:oLan:Rget("Bankaccount",11)+self:oLan:Rget("Amount",12,,"R")+" "+self:oLan:Rget("Destination",12)+self:oLan:Rget("Due Date",11)+" "+self:oLan:Rget("Description",20),Replicate('-',120)}
 	// write Header
 	// remove old clieop03-files:
 	aDir := Directory(CurPath +"\CLIEOP03*.txt") 
@@ -3928,7 +3941,7 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 // 		RETURN
 // 	ENDIF
 // 	oPers:SetOrder("ASSRE")
-	headinglines:={oLan:Get("Overview of generated automatic collection (KID)"),oLan:Get("Session:")+cSession,oLan:Get("Name",41)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("KID",13),Replicate('-',67)}
+	headinglines:={oLan:Rget("Overview of generated automatic collection (KID)"),oLan:RGet("Session:")+cSession,oLan:RGet("Name",41)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("KID",13),Replicate('-',67)}
 	// write Header
 	FWriteLine(ptrHandle,"NY000010"+PadL(SQLSelect{"select cntrnrcoll from sysparms",oConn}:CNTRNRCOLL,8,"0")+PadL(cSession,7,"0")+PadR("0000808",57,"0"))
 	FWriteLine(ptrHandle,"NY210020000000000"+PadL(cSession,7,"0")+PadL(BANKNBRDEB,11,"0")+Replicate("0",45))
@@ -3989,9 +4002,9 @@ METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPa
 			self:cAccountBeginName := AllTrim(oAcc:Description)
 			self:oDCTextfrom:TEXTValue:=self:cAccountBeginName
 		ENDIF
-		SELF:oDCFixedText7:Show()
-		SELF:oDCSubSet:Show()
-		SELF:oDCSubSet:AccNbrStart:=SELF:mRekSt
+		self:oDCSubSet:AccNbrStart:=self:mRekSt
+		self:oDCFixedText7:Show()
+		self:oDCSubSet:Show()
 	ELSE
 		IF Empty(oAcc).or.oAcc:reccount<1
 			SELF:mRekEnd :=  ""
@@ -4009,8 +4022,8 @@ METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPa
 		SELF:oDCFixedText7:Show()
 		SELF:oDCSubSet:Show()
 	ENDIF
-		
-RETURN TRUE		
+	
+	RETURN TRUE		
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON1 := 101 
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON2 := 102 
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON3 := 103 
@@ -4300,9 +4313,9 @@ Method Init(cSQLSelect, oSQLConnection) class SQLSelectPerson
 	super:Init(cSQLSelect, oSQLConnection)
 	self:oLan:=Language{}
 		cCouple:= oLan:Rget("Mr&Mrs")
-		cMr:= oLan:get("Mr",,"!")
-		cMrs:= oLan:get("Mrs",,"!")
-		cTel:=oLan:get("Telephone",,"!")
+		cMr:= oLan:Rget("Mr",,"!")
+		cMrs:= oLan:Rget("Mrs",,"!")
+		cTel:=oLan:Rget("Telephone",,"!")
 		cDay:=oLan:Rget('at day')
 		cNight:=oLan:Rget("at night")
 		cAbrv:=oLan:Rget("Abbreviated mailingcodes")
