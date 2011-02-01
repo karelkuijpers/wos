@@ -1099,8 +1099,8 @@ IF .not.oReport:lPrintOk
 ENDIF
 oDB := SQLSelect{"select abbrvtn,description from perscod order by abbrvtn",oConn}
 oDB:GoTop()
-kopregels := {oLan:get("Mailing codes",,"!"),oLan:get("ABBREVATION",12,"@!")+' '+;
-oLan:Get("DESCRIPTION",20,"@!"),' '}
+kopregels := {oLan:RGet("Mailing codes",,"!"),oLan:RGet("ABBREVATION",12,"@!")+' '+;
+oLan:RGet("DESCRIPTION",20,"@!"),' '}
 nRow := 0
 nPage := 0
 DO WHILE .not. oDB:EOF
