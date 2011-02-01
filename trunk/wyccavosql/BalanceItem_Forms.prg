@@ -103,7 +103,7 @@ METHOD FilePrint CLASS BalanceItemExplorer
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	kopregels := {oLan:get("Balance Items structure",,"!")}
+	kopregels := {oLan:RGet("Balance Items structure",,"!")}
 	nRow := 0
 	nPage := 0
 	oReport:PrintLine(@nRow,@nPage,self:cRootName,kopregels)
