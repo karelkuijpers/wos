@@ -139,14 +139,14 @@ oDue:SuspendNotification()
 
 IF oReport:Extension#"xls"
 	cTab:=Space(1)
-	kopregels :={oLan:Get('Due Amounts',,"@!"),' '}
+	kopregels :={oLan:RGet('Due Amounts',,"@!"),' '}
 ELSE
 	kopregels :={}
 ENDIF
 
 AAdd(kopregels, ;
-oLan:Get("Account",20,"@!")+cTab+oLan:Get("person",30,"@!")+cTab+oLan:Get("amount",10,"@!","R")+;
-cTab+oLan:Get("due date",12,"@!"))
+oLan:RGet("Account",20,"@!")+cTab+oLan:RGet("person",30,"@!")+cTab+oLan:RGet("amount",10,"@!","R")+;
+cTab+oLan:RGet("due date",12,"@!"))
 IF oReport:Extension#"xls"
 	AAdd(kopregels,' ')
 ENDIF
