@@ -2,7 +2,7 @@ Define IDM_LANGUAGE_NAME := "Language"
 Define IDM_Language_USERID := "parous…ºw@™Ðw"
 CLASS Language 
 declare method Get,RGet,MGet,WGet,MarkUpLanItem
-METHOD Get(cSentenceEnglish as string,nLength:=80 as int,cPicture:='' as string,cPad:='' as string,cLocation:='R' as string) as string CLASS Language
+METHOD Get(cSentenceEnglish as string,nLength:=0 as int,cPicture:='' as string,cPad:='' as string,cLocation:='R' as string) as string CLASS Language
 return self:RGet(cSentenceEnglish,nLength,cPicture,cPad)
 METHOD Init( ) CLASS Language
 local olanT as SQLSelect 
