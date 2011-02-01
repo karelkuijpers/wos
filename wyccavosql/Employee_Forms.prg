@@ -875,7 +875,7 @@ LOCAL oReport as PrintDialog
 Local cEmpStmnt as string
 
 
-oReport := PrintDialog{SELF,oLan:Get("Employees"),,86}
+oReport := PrintDialog{self,oLan:RGet("Employees"),,86}
 
 oReport:Show()
 IF .not.oReport:lPrintOk
@@ -890,9 +890,9 @@ oEmp:=SQLSelect{"",oConn}
 oEmp:SQLString:=cEmpStmnt 
 
 oEmp:GoTop()
-kopregels := {oLan:Get('Employees',,"@!"),' ',;
-oLan:Get("Name",25,"!")+" "+oLan:Get("Logon Id",20,"!")+;
-oLan:Get("User Type",25,"!","C")+oLan:Get("Date Last Password",18,"!","C"),' '}
+kopregels := {oLan:RGet('Employees',,"@!"),' ',;
+oLan:RGet("Name",25,"!")+" "+oLan:RGet("Logon Id",20,"!")+;
+oLan:RGet("User Type",25,"!","C")+oLan:RGet("Date Last Password",18,"!","C"),' '}
 nRow := 0
 nPage := 0
 DO WHILE .not. oEmp:EOF
