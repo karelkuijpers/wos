@@ -1127,7 +1127,7 @@ METHOD OkButton CLASS NewPersonWindow
 				IF IsMethod(oCaller,#Regperson)
 					oPersCnt:=PersonContainer{}    
 					oPersCnt:persid:=self:mPersId
-					oCaller:Regperson(oPersCnt,self:oLan:Get("Address changed!"))
+					oCaller:Regperson(oPersCnt,self:oLan:RGet("Address changed!"))
 				endif
 			ENDIF
 		ENDIF
@@ -3071,7 +3071,7 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 	LOCAL rmnd := Month(Today()) as int 
 	self:SetTexts()
    if CountryCode=="47"
-   	self:oCCRadioButtonCollection:Caption+="("+(Language{}):WGet("KID file")+")"
+   	self:oCCRadioButtonCollection:Caption+="("+self:oLan:WGet("KID file")+")"
    endif
 	oDCeind_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2)) 
 	rmnd--
@@ -3103,7 +3103,7 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 		oDCmPayMethod:Value:="C"
 		self:oDCdatedirectdebit:Show() 
 		self:oDCDateDirectText:Show()
-		self:Caption:=(Language{}):WGet("Select Persons for Payment Requests Donation Prolongations")
+		self:Caption:=self:oLan:WGet("Select Persons for Payment Requests Donation Prolongations")
 	ELSEIF cType=="SUBSCRIPTIONS"
 	oDCkeus21:Value := "2"
 		oCCSelOpenButton1:Hide()
@@ -3115,13 +3115,13 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 		oDCmPayMethod:Value:="C"
 		oDCSelx_rek:Show()
 		SELF:oDCAccountText:Show()
-		self:Caption:=(Language{}):WGet("Select Persons for Invoicing Subscription Prolongations")
+		self:Caption:=self:oLan:WGet("Select Persons for Invoicing Subscription Prolongations")
 	ELSEIF cType=="REMINDERS"
 		oCCSelOpenButton1:Hide()
 		oDCkeus21:Value := "3"
 		rjaar := Year(Today()-60)
 		rmnd := Month(Today()-60)
-		self:Caption:=(Language{}):WGet("Select Persons for Reminding")
+		self:Caption:=self:oLan:WGet("Select Persons for Reminding")
 	ENDIF
 	self:oDCSelx_rek:CurrentItemNo:=1  
 	oCaller:selx_OK := FALSE
@@ -3213,8 +3213,8 @@ BEGIN
 	CONTROL	"", SELPERSPAYMENTS_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 260, 19, 134, 195, WS_EX_CLIENTEDGE
 	CONTROL	"Range of destinations:", SELPERSPAYMENTS_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 4, 2, 394, 89
 	CONTROL	"Payment date", SELPERSPAYMENTS_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 2, 110, 251, 42
-	CONTROL	"woensdag 1 september 2010", SELPERSPAYMENTS_SELX_BEGIN, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 8, 129, 118, 13
-	CONTROL	"woensdag 1 september 2010", SELPERSPAYMENTS_SELX_END, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 129, 129, 118, 13
+	CONTROL	"dinsdag 1 februari 2011", SELPERSPAYMENTS_SELX_BEGIN, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 8, 129, 118, 13
+	CONTROL	"dinsdag 1 februari 2011", SELPERSPAYMENTS_SELX_END, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 129, 129, 118, 13
 	CONTROL	"", SELPERSPAYMENTS_MINTOTAL, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 7, 178, 118, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", SELPERSPAYMENTS_MAXTOTAL, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 130, 178, 118, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Ok", SELPERSPAYMENTS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 333, 217, 53, 13
@@ -3504,7 +3504,7 @@ METHOD OKButton( ) CLASS SelPersPayments
 	self:Close()
 
 RETURN
-METHOD PostInit(oParent,uExtra) CLASS SelPersPayments
+METHOD PostInit(oParent,iCtlID,oServer,uExtra) CLASS SelPersPayments
 	//Put your PostInit additions here
 	LOCAL StartDate AS DATE
 	self:SetTexts()
@@ -3530,7 +3530,7 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersPayments
 	RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SelPersPayments
 	//Put your PreInit additions here
-	self:FillMbrProjArray('')
+	self:FillMbrProjArray()
 	RETURN nil
 ACCESS ProjectsBox() CLASS SelPersPayments
 RETURN SELF:FieldGet(#ProjectsBox)
