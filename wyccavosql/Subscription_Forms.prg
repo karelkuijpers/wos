@@ -594,9 +594,9 @@ self:SetTexts()
 		endif	
     ENDIF
 	IF self:mtype=="D"
-		self:oDCTypeText:Value:=(Language{}):WGet("Donation")
+		self:oDCTypeText:Value:=self:oLan:WGet("Donation")
 		self:cHeading:="Donation Account"
-		self:Caption:=(Language{}):WGet("Edit ")
+		self:Caption:=self:oLan:WGet("Edit ")
 		if CountryCode="31"
 			self:oDCBankText:show()
 			self:oDCmBankAccnt:show()
@@ -604,11 +604,11 @@ self:SetTexts()
 		endif                                                                        c
 
 	ELSEIF self:mtype == "A"
- 		self:oDCTypeText:Value:=(Language{}):WGet("Subscription")
-		self:cHeading:=(Language{}):WGet("Subscription Account")
+ 		self:oDCTypeText:Value:=self:oLan:WGet("Subscription")
+		self:cHeading:=self:oLan:WGet("Subscription Account")
  	ELSE
-  		self:oDCTypeText:Value:=(Language{}):WGet("Periodic Gift")
-		self:cHeading:=(Language{}):WGet("Periodic Gift Account")
+  		self:oDCTypeText:Value:=self:oLan:WGet("Periodic Gift")
+		self:cHeading:=self:oLan:WGet("Periodic Gift Account")
 	ENDIF
 	self:Caption:="Edit "+self:oDCTypeText:Value
 	IF self:mtype=="A"
@@ -904,11 +904,11 @@ local oSel as SQLSelect
 local cField:=self:cFields as string
 
 IF self:cType=="STANDARD GIFTS"
-	oms3:=oLan:get("Periodic gifts",,"!")
+	oms3:=oLan:RGet("Periodic gifts",,"!")
 ELSEIF self:cType=="DONATIONS"
-	oms3:=oLan:get("Donations",,"!")
+	oms3:=oLan:RGet("Donations",,"!")
 ELSEIF self:cType=="SUBSCRIPTIONS"
-	oms3:=oLan:get("Subscriptions",,"!")
+	oms3:=oLan:RGet("Subscriptions",,"!")
 endif
 oReport := PrintDialog{self,oms3,,111,,"xls"}
 oReport:Show()
@@ -917,9 +917,9 @@ IF .not.oReport:lPrintOk
 ENDIF
 SELF:StatusMessage("Collecting data, moment please")
 SELF:Pointer := Pointer{POINTERHOURGLASS}
-AAdd(aDescription,self:oLan:get("subscription",,"!"))
-AAdd(aDescription,self:oLan:get("donation",,"!"))
-AAdd(aDescription,self:oLan:get("gift",,"!"))
+AAdd(aDescription,self:oLan:RGet("subscription",,"!"))
+AAdd(aDescription,self:oLan:RGet("donation",,"!"))
+AAdd(aDescription,self:oLan:RGet("gift",,"!"))
 cFields+=",duedate,term,amount,INVOICEID,BANKACCNT"
 oSel:=SQLSelect{"select "+cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn} 
 
@@ -931,8 +931,8 @@ ELSE
 ENDIF
 
 AAdd(aHeading, ;
-self:oLan:get("account",20,"@!")+cTab+self:oLan:get("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:get("KID",13,"@!"),self:oLan:get("Bankaccount",13,"@!"))+cTab+self:oLan:get("amount",12,"@!","R")+;
-+cTab+self:oLan:get("Period",6,"@!")+cTab+self:oLan:get("due date",12,"@!")+cTab+self:oLan:get("type",12,"@!") )
+self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
++cTab+self:oLan:RGet("Period",6,"@!")+cTab+self:oLan:RGet("due date",12,"@!")+cTab+self:oLan:RGet("type",12,"@!") )
 do WHILE !oSel:EOF
 	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
 	cTab+Str(oSel:amount,12,DecAantal)+cTab+PadR(Str(oSel:term,-1),6)+cTab+;
