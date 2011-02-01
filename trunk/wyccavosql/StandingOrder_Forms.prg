@@ -597,15 +597,15 @@ self:oStOrd:SuspendNotification()
 self:oStOrd:goTop()
 IF oReport:Extension#"xls"
 	cTab:=Space(1)
-	aHeading :={oLan:Get("Standing Orders",,"@!")}
+	aHeading :={oLan:RGet("Standing Orders",,"@!")}
 ELSE
 	aHeading :={}
 ENDIF
 
 AAdd(aHeading,;
-oLan:Get("Order#",6,"@!")+cTab+oLan:Get("account",21,"@!")+cTab+oLan:Get("STARTDATE",10,"@!")+cTab;
-+oLan:Get("RECORDDAY",9,"@!")+cTab+oLan:Get("Deb",11,"@!","R")+cTab+oLan:Get("Cre",11,"@!","R")+cTab+oLan:Get("ENDDATE",10,"@!")+cTab;
-+oLan:Get("DESCRIPTION",,"@!"))
+oLan:RGet("Order#",6,"@!")+cTab+oLan:RGet("account",21,"@!")+cTab+oLan:RGet("STARTDATE",10,"@!")+cTab;
++oLan:RGet("RECORDDAY",9,"@!")+cTab+oLan:RGet("Deb",11,"@!","R")+cTab+oLan:RGet("Cre",11,"@!","R")+cTab+oLan:RGet("ENDDATE",10,"@!")+cTab;
++oLan:RGet("DESCRIPTION",,"@!"))
 do WHILE !self:oStOrd:EOF
 	oReport:PrintLine(@nRij,@nBlad,Str(self:oStOrd:STORDRID,6,0)+cTab+ Pad(self:oStOrd:ACCNUMBER+Space(1)+self:oStOrd:accountname,21)+cTab+;
 	Transform(self:oStOrd:IDAT,'99-99-9999')+cTab+PadC(Transform(self:oStOrd:day,'999'),9)+cTab+;
