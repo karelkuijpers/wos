@@ -41,7 +41,7 @@ aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
 YrSt:=aYearStartEnd[1]
 MnSt:=aYearStartEnd[2]
 
-oReport := PrintDialog{self,oLan:Get("Accounts"),,136,DMORIENT_LANDSCAPE,"xls"}
+oReport := PrintDialog{self,oLan:RGet("Accounts"),,136,DMORIENT_LANDSCAPE,"xls"}
 
 oReport:Show()
 IF .not.oReport:lPrintOk
@@ -49,13 +49,13 @@ IF .not.oReport:lPrintOk
 ENDIF
 IF Lower(oReport:Extension) #"xls"
 	cTab:=Space(1)
-	kopregels :={oLan:Get('Accounts',,"@!"),' '}
+	kopregels :={oLan:RGet('Accounts',,"@!"),' '}
 ENDIF
 
 AAdd(kopregels, ;
-oLan:Get("Number",LENACCNBR,"!")+cTab+oLan:Get("Name",25,"!")+cTab+oLan:Get("Rep.item",20,"!")+cTab+;
-oLan:Get("Gift",6,"!")+cTab+PadL(AllTrim(oLan:Get("Budget",7,"!","R"))+Str(YrSt,4,0),11)+cTab+oLan:Get("Subsc.pr",9,"!","R")+cTab+;
-oLan:Get("Mailcd",6,"!")+cTab+oLan:RGet("Currency",8,"!")+cTab+oLan:RGet("Multi",5,"!")+cTab+oLan:RGet("Reevl",5,"!")+cTab+if(Departments,oLan:Get("Department",20,"!"),""))
+oLan:RGet("Number",LENACCNBR,"!")+cTab+oLan:RGet("Name",25,"!")+cTab+oLan:RGet("Rep.item",20,"!")+cTab+;
+oLan:RGet("Gift",6,"!")+cTab+PadL(AllTrim(oLan:RGet("Budget",7,"!","R"))+Str(YrSt,4,0),11)+cTab+oLan:RGet("Subsc.pr",9,"!","R")+cTab+;
+oLan:RGet("Mailcd",6,"!")+cTab+oLan:RGet("Currency",8,"!")+cTab+oLan:RGet("Multi",5,"!")+cTab+oLan:RGet("Reevl",5,"!")+cTab+if(Departments,oLan:RGet("Department",20,"!"),""))
 IF oReport:Destination#"File"
 	AAdd(kopregels,' ')
 ENDIF
@@ -530,9 +530,11 @@ Function ValidateAccTransfer (cParendId as string,mAccId as string) as string
 	LOCAL cNewClass, cError  as STRING
 	LOCAL lValid:=true,lSucc as LOGIC
 	LOCAL oAcc as SQLSelect, oMbr as SQLSelect  
-	local oAccB as SQLSelect 
+	local oAccB as SQLSelect
+	local oLan as Language 
 	IF Empty(cParendId)
-		RETURN Language{}:WGet("Root not allowed as parent of an account")
+		oLan:=Language{}
+		RETURN oLan:WGet("Root not allowed as parent of an account")
 	ENDIF	
 
 	* Member account .or. transactions for this account:
@@ -545,8 +547,11 @@ Function ValidateAccTransfer (cParendId as string,mAccId as string) as string
 			IF	!oAcc:category== cNewClass
 				IF	!(cNewClass	$ expense+income	.and.	oAcc:category $ expense+income .or. cNewClass $ asset+liability .and. oAcc:category $ asset+liability)
 					oAccB:=SQLSelect{"select accid from accountbalanceyear where accid='"+mAccId+"' and (svjc-svjd)<>0.00",oConn}
-					IF oAccB:RecCount>0 
-						cError:=Language{}:WGet("Balancegroup of account")+" "+AllTrim(oAcc:ACCNUMBER)+" "+Language{}:WGet('cannot be changed to different category after year closing')
+					IF oAccB:RecCount>0
+						if oLan==null_object 
+							oLan:=Language{}
+						endif
+						cError:=oLan:WGet("Balancegroup of account")+" "+AllTrim(oAcc:ACCNUMBER)+" "+oLan:WGet('cannot be changed to different category after year closing')
 						lValid:=FALSE
 					ENDIF 
 				ENDIF
