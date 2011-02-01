@@ -2164,7 +2164,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
 		lAcceptNorway:=uExtra
 	ENDIF
 	IF lAcceptNorway
-		self:Caption:=(Language{}):WGet("Specification of Accept GIRO format")
+		self:Caption:=self:oLan:WGet("Specification of Accept GIRO format")
 	ENDIF
 	* Set default values:
 	IF Empty( brfWidth)
@@ -2417,7 +2417,7 @@ METHOD PostInit(oParent,uExtra) CLASS MarkupLetter
 		ENDIF
 	ENDIF
 	IF !Empty(cType).and. !cType=="brf"
-		self:Caption:=(Language{}):WGet("Markup " + iif(cType="acc","AcceptGiro remarks","eMail content") )
+		self:Caption:=self:oLan:WGet("Markup " + iif(cType="acc","AcceptGiro remarks","eMail content") )
 	END IF
 	RETURN NIL
 METHOD RepeatButton( ) CLASS MarkupLetter
@@ -2879,7 +2879,7 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 
 	endif
 	IF Empty(Pagetext)
-		Pagetext:=oLan:Get('Page',,"!")
+		Pagetext:=oLan:RGet('Page',,"!")
 	END IF
 
 	
