@@ -81,7 +81,7 @@ local cWhere as string
 local cFrom as string 
 local cTab:=Space(1) as string
 
-oReport := PrintDialog{self,oLan:Get("BankAccounts"),,142,DMORIENT_LANDSCAPE }
+oReport := PrintDialog{self,oLan:RGet("BankAccounts"),,142,DMORIENT_LANDSCAPE }
 
 oReport:Show()
 IF .not.oReport:lPrintOk
@@ -91,9 +91,9 @@ cFields:="b.*,a.description,a.accnumber,sd.description as accountsingle,pa.descr
 cFrom:="Account a, bankaccount b"+;
 		" left join account sd on (sd.accid=b.singledst) left join account pa on (pa.accid=b.payahead)"
 oSel := SQLSelect{"select "+cFields+" from "+cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
-kopregels := {oLan:Get('BankAccounts',,"@!"),' ',;
-oLan:Get("Number",20,"!")+cTab+oLan:Get("Account",25,"!")+cTab+;
-oLan:Get("Gifts/Payments",14,"!","C")+cTab+oLan:Get("TeleBanking",11,"!","C")+cTab+;
+kopregels := {oLan:RGet('BankAccounts',,"@!"),' ',;
+oLan:RGet("Number",20,"!")+cTab+oLan:RGet("Account",25,"!")+cTab+;
+oLan:RGet("Gifts/Payments",14,"!","C")+cTab+oLan:RGet("TeleBanking",11,"!","C")+cTab+;
 oLan:RGet("Account en route",20)+cTab+;
 oLan:RGet("Single destintn",20)+cTab+;
 oLan:RGet("FrstGvrs mlc",12)+cTab+;
@@ -1256,7 +1256,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		(WarningBox{self,"Producing CLIEOP03 file","No bank orders to be sent to the bank!"}):Show()
 		RETURN FALSE
 	ENDIF
-	headinglines:={oLan:Get("Overview of payment orders (CLIEOP03)"),oLan:Get("bankaccount",11)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("Destination",12)+oLan:Get("Due Date",11)+" "+oLan:Get("Name",25)+oLan:Get("Description",20),Replicate('-',105)}
+	headinglines:={oLan:RGet("Overview of payment orders (CLIEOP03)"),oLan:RGet("bankaccount",11)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("Destination",12)+oLan:RGet("Due Date",11)+" "+oLan:RGet("Name",25)+oLan:RGet("Description",20),Replicate('-',105)}
 	// write Header
 	oReport := PrintDialog{self,"Producing of CLIEOP03 file for payments",,105}
 	oReport:Show()
