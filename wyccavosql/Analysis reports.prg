@@ -444,7 +444,7 @@ METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PeriodCount,aRelevantClass,ixOff)
 	LOCAL i,j,m as int, line as STRING
 	LOCAL diff as FLOAT
 	// header record:
-	FWriteLine(ptrHandle,"<tr><td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>"+oLan:Get(cHeading)+"</td></tr>")
+	FWriteLine(ptrHandle,"<tr><td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>"+oLan:Rget(cHeading)+"</td></tr>")
 	FOR j:=1 to Len(aMatrix[1]) 
 		IF j<=ixOff .or. aRelevantClass[j-ixOff]
 			line:="<tr>"
@@ -1170,14 +1170,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				k:=Val(aClassPtr[j])
 				IF aClass[k,1]="BIRTHDATE"
 					IF aClass[k,3]=0
-						cClassName+=oLan:Get(aClass[k,2])+" is unknown "
+						cClassName+=oLan:Rget(aClass[k,2])+" is unknown "
 					ELSE
-						cClassName+=oLan:Get(aClass[k,2])+"="+AllTrim(Str(aClass[k,3]))+" - "+AllTrim(Str(aClass[k,4]))+" "
+						cClassName+=oLan:Rget(aClass[k,2])+"="+AllTrim(Str(aClass[k,3]))+" - "+AllTrim(Str(aClass[k,4]))+" "
 					ENDIF
 				ELSEIF aClass[k,1]="TYPE" .or. aClass[k,1]="GENDER" .or. aClass[k,1]="FREQUENCY" .or. aClass[k,1]="ALL"
-					cClassName+=oLan:Get(aClass[k,4])+" "
+					cClassName+=oLan:Rget(aClass[k,4])+" "
 				ELSE
-					cClassName+=oLan:Get(aClass[k,2])+"="+oLan:Get(aClass[k,4])+" "
+					cClassName+=oLan:RGet(aClass[k,2])+"="+oLan:RGet(aClass[k,4])+" "
 				ENDIF
 			NEXT
 			aMatrix1[1,classNo+1]:=cClassName
@@ -1321,9 +1321,9 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		oFileSpec:FullPath:=cFileName
 		// header record:
 		FWriteLine(ptrHandle,"<html><body><table style='font-family: Arial;' border='2'><tr style='font-weight: bold; color:navy;'>"+;
-			"<td style='text-align : center;' colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Get("Donor Following Report")+"  "+;
-			oLan:Get("period")+": "+DToC(StartDate)+" - "+DToC(EndDate-1)+"</td></tr>")
-		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Get("Destinations")+":<br><ol>")
+			"<td style='text-align : center;' colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Rget("Donor Following Report")+"  "+;
+			oLan:Rget("period")+": "+DToC(StartDate)+" - "+DToC(EndDate-1)+"</td></tr>")
+		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Rget("Destinations")+":<br><ol>")
 		FOR i:=1 to Len(aAcc)
 			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[i],-1) ,oConn}
 			IF oAcc:RECCOUNT>0
@@ -2177,15 +2177,15 @@ METHOD PrintReport() CLASS DonorProject
 	IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 		oFileSpec:FullPath:=cFileName
 		* header record:
-		FWriteLine(ptrHandle,"<html><body><table border=1><tr><td align='center' colspan='"+Str(Len(self:aDestGrp)+2,-1)+"'>"+oLan:Get("Donor versus Project Report")+"  "+oLan:Get("period")+": "+DToC(self:oDCFromdate:SelectedDate)+" - "+DToC(self:oDCTodate:SelectedDate)+"</td></tr>")
+		FWriteLine(ptrHandle,"<html><body><table border=1><tr><td align='center' colspan='"+Str(Len(self:aDestGrp)+2,-1)+"'>"+oLan:Rget("Donor versus Project Report")+"  "+oLan:Rget("period")+": "+DToC(self:oDCFromdate:SelectedDate)+" - "+DToC(self:oDCTodate:SelectedDate)+"</td></tr>")
 		FWriteLine(ptrHandle,"<tr><td></td>")
 		FOR i:=1 to Len(aDestGrp)
-			FWriteLine(ptrHandle,"<td align='right'><b>"+oLan:Get(aDestGrp[i,1])+"</b></td>")	
+			FWriteLine(ptrHandle,"<td align='right'><b>"+oLan:Rget(aDestGrp[i,1])+"</b></td>")	
 		NEXT
-		FWriteLine(ptrHandle,"<td>"+oLan:Get("TOTAL")+"</td>")
+		FWriteLine(ptrHandle,"<td>"+oLan:Rget("TOTAL")+"</td>")
 		* detail records:
 		FOR i = 1 to Len(pers_types)
-			FWriteLine(ptrHandle,"</tr><tr><td>"+oLan:Get(pers_types[i,1])+"</td>")
+			FWriteLine(ptrHandle,"</tr><tr><td>"+oLan:Rget(pers_types[i,1])+"</td>")
 			RowTotal:=0
 			FOR j:=1 to Len(aDestGrp)
 				FWriteLine(ptrHandle,"<td>"+AllTrim(Str(aMatrix[j,i],,0))+"</td>")
@@ -2206,7 +2206,7 @@ METHOD PrintReport() CLASS DonorProject
 		FOR i:=1 to Len(aDestGrp)
 			FWriteLine(ptrHandle,"<td><b>"+aDestGrp[i,1]+"</b></td>")	
 		NEXT
-		FWriteLine(ptrHandle,"<tr><td valign='top'>"+oLan:Get("Accounts")+"</td>")
+		FWriteLine(ptrHandle,"<tr><td valign='top'>"+oLan:Rget("Accounts")+"</td>")
 		FOR i:=1 to Len(aDestGrp)
 			DO CASE
 			CASE i==1
