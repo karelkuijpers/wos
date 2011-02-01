@@ -95,7 +95,7 @@ METHOD FilePrint CLASS DepartmentExplorer
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	kopregels := {oLan:get("department Hierarchy",,"!")}
+	kopregels := {oLan:RGet("department Hierarchy",,"!")}
 	nRow := 0
 	nPage := 0
 	oDep:=SQLSelect{"SELECT distinct gr.itemid,gr.parentid,gr.description,gr.number,gr.type from ("+;
