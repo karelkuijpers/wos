@@ -59,7 +59,7 @@ METHOD FilePrint CLASS MemberBrowser
 	local fBud as float 
 
 
-	oReport := PrintDialog{SELF,oLan:Get("Members"),,if(Admin=="WO",127,86),,"xls"}
+	oReport := PrintDialog{self,oLan:RGet("Members"),,if(Admin=="WO",127,86),,"xls"}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
@@ -76,18 +76,18 @@ METHOD FilePrint CLASS MemberBrowser
 	oSel:=SQLSelect{"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid order by "+self:cOrder,oConn} 
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
-		kopregels :={oLan:Get('Members',,"@!"),' '}
+		kopregels :={oLan:RGet('Members',,"@!"),' '}
 	ENDIF
 
-	//oLan:Get("Members",,"@!"),' ',;
+	//oLan:RGet("Members",,"@!"),' ',;
 	AAdd(kopregels, ;
-		oLan:Get("Account",11,"!")+cTab+oLan:get("name",25,"!")+cTab+;
-		IF(Admin=="WO",oLan:get("State",6,"!","C")+cTab+oLan:Get("home rate",10,"!","C")+cTab+;
-		oLan:Get("HomePP",6,"!")+cTab+oLan:Get("HomeAccount",11,"!")+cTab+oLan:Get("HouseCd",7,"!")+cTab,"")+;
-		PadL(AllTrim(oLan:Get("Budget",6,"!","R"))+Str(YrSt,4,0),11)+cTab+;
-		oLan:Get("Associated accounts",37,"!","L")+;
+		oLan:RGet("Account",11,"!")+cTab+oLan:RGet("name",25,"!")+cTab+;
+		IF(Admin=="WO",oLan:RGet("State",6,"!","C")+cTab+oLan:RGet("home rate",10,"!","C")+cTab+;
+		oLan:RGet("HomePP",6,"!")+cTab+oLan:RGet("HomeAccount",11,"!")+cTab+oLan:RGet("HouseCd",7,"!")+cTab,"")+;
+		PadL(AllTrim(oLan:RGet("Budget",6,"!","R"))+Str(YrSt,4,0),11)+cTab+;
+		oLan:RGet("Associated accounts",37,"!","L")+;
 		IF(oReport:Destination#"File","",;
-		cTab+oLan:Get("Distribution Instructions",,"!")))
+		cTab+oLan:RGet("Distribution Instructions",,"!")))
 
 	IF oReport:Destination#"File"
 		AAdd(kopregels,' ')
