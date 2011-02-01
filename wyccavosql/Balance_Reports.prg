@@ -561,34 +561,34 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	*
 	self:STATUSMESSAGE(self:oLan:WGet("Printing summary")) 
 	// prefill fixed textes:
-   self:cSummary:=oLan:Get("SUMMARY",,"@!")
-   self:cDirectText:=oLan:Get("Direct Records",,"!")
-   self:cDirectOn:=oLan:Get("Direct on",,"!") 
-   self:cIncome:= oLan:Get('INCOME',,"@!") 
-   self:cIncomeL:=oLan:Get('Income',13,"!","R")
-   self:cExpense:=oLan:Get('EXPENSE',,"@!") 
-   self:cExpenseL:=oLan:Get('Expense',11,"!","R")
-   self:cLiability:=oLan:Get('LIABILITIES AND FUNDS',,"@!")
-   self:cAsset:=oLan:Get('ASSET',,"@!")
-   self:cDetailed:=oLan:Get('DETAILED',,"@!")
-   self:cInscriptionInEx:=oLan:Get('INCOME AND EXPENSE',,"@!")
-	self:cInscriptionAsLi:=oLan:Get('BALANCE SHEET',,"@!")
-	self:cFrom:=oLan:Get('from',6)
-	self:cTo:=oLan:Get('to',5,,'C')
-	self:cYear:=oLan:Get('Year',7,"!","L") 
-	self:cFullyear:=oLan:Get('FULL YEAR',21,"@!","C")
-	self:cDescription:=oLan:Get('Description',iif(lXls,24,self:BalColWidth),"!")+iif(lXls,Replicate(self:TAB,self:MaxLevel),"")
-	self:cPrvYrYTD:=oLan:get('PREVIOUS YEAR TO DATE',21,'@!','R')
-	self:cCurPeriod:=oLan:Get('CURRENT PERIOD',15,"@!","R")
-	self:cYtD:=oLan:Get('YEAR TO DATE',20,"@!","R")
-	self:cSurPlus:=oLan:Get('Surplus',9,"!","R")
-	self:cClsBal:=oLan:Get('Cls.Balance',11,"!","R")
-	self:cClosingBal:=oLan:Get('CLOSING BALANCE',,"!")
-	self:cAmount:=oLan:Get('Amount',11,"!","R") 
-	self:cBudget:=oLan:Get('Budget-%',8,"!","R")
-	self:cOpeningBal:=Pad(oLan:Get('OPENING FUND BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))
-	self:cNegative:=oLan:Get('Negative',,"!")
-	self:cPositive:=oLan:Get('Posative',,"!")
+   self:cSummary:=oLan:RGet("SUMMARY",,"@!")
+   self:cDirectText:=oLan:RGet("Direct Records",,"!")
+   self:cDirectOn:=oLan:RGet("Direct on",,"!") 
+   self:cIncome:= oLan:RGet('INCOME',,"@!") 
+   self:cIncomeL:=oLan:RGet('Income',13,"!","R")
+   self:cExpense:=oLan:RGet('EXPENSE',,"@!") 
+   self:cExpenseL:=oLan:RGet('Expense',11,"!","R")
+   self:cLiability:=oLan:RGet('LIABILITIES AND FUNDS',,"@!")
+   self:cAsset:=oLan:RGet('ASSET',,"@!")
+   self:cDetailed:=oLan:RGet('DETAILED',,"@!")
+   self:cInscriptionInEx:=oLan:RGet('INCOME AND EXPENSE',,"@!")
+	self:cInscriptionAsLi:=oLan:RGet('BALANCE SHEET',,"@!")
+	self:cFrom:=oLan:RGet('from',6)
+	self:cTo:=oLan:RGet('to',5,,'C')
+	self:cYear:=oLan:RGet('Year',7,"!","L") 
+	self:cFullyear:=oLan:RGet('FULL YEAR',21,"@!","C")
+	self:cDescription:=oLan:RGet('Description',iif(lXls,24,self:BalColWidth),"!")+iif(lXls,Replicate(self:TAB,self:MaxLevel),"")
+	self:cPrvYrYTD:=oLan:RGet('PREVIOUS YEAR TO DATE',21,'@!','R')
+	self:cCurPeriod:=oLan:RGet('CURRENT PERIOD',15,"@!","R")
+	self:cYtD:=oLan:RGet('YEAR TO DATE',20,"@!","R")
+	self:cSurPlus:=oLan:RGet('Surplus',9,"!","R")
+	self:cClsBal:=oLan:RGet('Cls.Balance',11,"!","R")
+	self:cClosingBal:=oLan:RGet('CLOSING BALANCE',,"!")
+	self:cAmount:=oLan:RGet('Amount',11,"!","R") 
+	self:cBudget:=oLan:RGet('Budget-%',8,"!","R")
+	self:cOpeningBal:=Pad(oLan:RGet('OPENING FUND BALANCE',,"!"),BalColWidth+iif(self:SimpleDepStmnt,2,46))
+	self:cNegative:=oLan:RGet('Negative',,"!")
+	self:cPositive:=oLan:RGet('Posative',,"!")
 
 	hfdkop:=self:prkop(self:cSummary,r_cat[1],1,,d_dep,d_parentdep,d_depname,;
 		r_balid,r_heading,r_footer,r_parentid)
@@ -1977,7 +1977,7 @@ local addHeading as string
 local oAcc,oAccAss as SQLSelect
 local cLastName as string 
 local mDepNumber as string
-PeriodText:=Str(self:YEARSTART,4)+' '+maand[self:MONTHSTART]+" "+oLan:Get('up incl')+Str(self:YEAREND,4)+' '+maand[self:MonthEnd]
+PeriodText:=Str(self:YEARSTART,4)+' '+maand[self:MONTHSTART]+" "+oLan:RGet('up incl')+Str(self:YEAREND,4)+' '+maand[self:MonthEnd]
 //TotalWidth=137
 lPrintFile:=(self:oReport:Destination=="File")
 IF self:SendingMethod=="SeperateFileMail"
@@ -2096,7 +2096,7 @@ do WHILE !oAcc:Eof
 		oAccAss:=SQLSelect{"select accnumber from account where accid in ("+Implode(aASS)+")",oConn} 
 		self:Statusmessage("Printing Associated Accountstatements for "+cDepName+", please wait...")
 		Do While !oAccAss:Eof
-			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:Get("Associated",,"@!"),self:oLan)
+			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
 			nRow:=0  && force page skip
 			oAccAss:Skip()
 		enddo
@@ -2147,7 +2147,7 @@ IF IsString(cFileName)
 					ENDIF
 					oFileSpec:=FileSpec{cFileName}
 					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+" "+oAcc:DESCRIPTN
-					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:Get('Department Statements',,"@!")+": "+PeriodText,brieftxt)
+					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Department Statements',,"@!")+": "+PeriodText,brieftxt)
 				ENDIF
 			ENDIF
 		NEXT
@@ -2932,7 +2932,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
 	nRow := 0
-	cPeriod:=Str(ReportYear,4)+Space(1)+iif(ReportMonth=1,'',oLan:Get('up incl'))+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")
+	cPeriod:=Str(ReportYear,4)+Space(1)+iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")
 	IF SendingMethod=="SeperateFileMail"
 		oMapi := MAPISession{}	
 		IF !oMapi:Open( "" , "" )
@@ -3012,16 +3012,16 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			ENDIF
 		ENDIF
 		if !Alg_taal==CurLanguage
-			aTrType:={{"AG",oLan:Get("Assessed Gifts (-10%)",,"!")},{"CH",oLan:Get("Charges",,"!")},{"MG",oLan:Get("Member Gifts",,"!")},{"PF",oLan:Get("Personal Funds",,"!")}}
-			cHeading1:=Str(ReportYear,4)+Space(1)+iif(ASsStart # ReportMonth,oLan:Get(MonthEn[1],,"!")+Space(1)+oLan:Get("up incl")+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")+Space(1),;
-			oLan:Get(MonthEn[ReportMonth],,"!")+Space(2))+oLan:Get('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
+			aTrType:={{"AG",oLan:RGet("Assessed Gifts (-10%)",,"!")},{"CH",oLan:RGet("Charges",,"!")},{"MG",oLan:RGet("Member Gifts",,"!")},{"PF",oLan:RGet("Personal Funds",,"!")}}
+			cHeading1:=Str(ReportYear,4)+Space(1)+iif(ASsStart # ReportMonth,oLan:RGet(MonthEn[1],,"!")+Space(1)+oLan:RGet("up incl")+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1),;
+			oLan:RGet(MonthEn[ReportMonth],,"!")+Space(2))+oLan:RGet('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
 			* Compose heading:
-			aHeading:={Space(1),Space(1),oLan:Get("Doc-id",10,"!")+Space(1)+oLan:Get("Date",10,"!")+Space(1)+;
-			oLan:Get("Description",75,"!")+oLan:Get("Debit",12,"!","R")+Space(1)+;
-			oLan:Get("Credit",12,"!","R")+Space(1)+oLan:Get("Transnbr",10,"!","R"),;
+			aHeading:={Space(1),Space(1),oLan:RGet("Doc-id",10,"!")+Space(1)+oLan:RGet("Date",10,"!")+Space(1)+;
+			oLan:RGet("Description",75,"!")+oLan:RGet("Debit",12,"!","R")+Space(1)+;
+			oLan:RGet("Credit",12,"!","R")+Space(1)+oLan:RGet("Transnbr",10,"!","R"),;
 			Replicate ('-',133)} 
-			cSubTotal:=oLan:Get('Subtotal',,"!")
-			cFrom:=oLan:Get("from",,"!")
+			cSubTotal:=oLan:RGet('Subtotal',,"!")
+			cFrom:=oLan:RGet("from",,"!")
 			CurLanguage:=Alg_taal
 		endif
 		aHeading[1]:=StrTran(cHeading1,'%description%',oAcc:ACCNUMBER+Space(1)+oAcc:description+Space(1)+iif(empty(me_hbn),'',' HOUSECD:'+me_hbn+space(1))+self:Country)
@@ -3037,11 +3037,11 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				lFirstInMonth:=true
 			ENDIF
 			IF	lFirst .and.lFirstInMonth
-				oReport:PrintLine(@nRow,@nPage,oLan:Get(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
+				oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
 				lFirst:=FALSE
 				oMBal:GetBalance(mAccid,,previousyear*100+previousmonth)
 				oReport:PrintLine(@nRow,@nPage,;
-					Pad(oLan:Get("Beginning Account balance",,"!")+Space(1)+oLan:Get(MonthEn[nMonth],,"!"),97)+;
+					Pad(oLan:RGet("Beginning Account balance",,"!")+Space(1)+oLan:RGet(MonthEn[nMonth],,"!"),97)+;
 					IF(oMBal:Per_deb-oMBal:Per_cre<0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
 					Str(oMBal:Per_deb-oMBal:Per_cre,12,DecAantal)),aHeading) 
 				lFirstInMonth:=false
@@ -3100,7 +3100,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 								lFirstInMonth:=FALSE
 								//	separation line
 								oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
-								oReport:PrintLine(@nRow,@nPage,oLan:Get(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
+								oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
 							ENDIF
 							IF	self:SendingMethod="SeperateFile"
 								description:=StrTran(StrTran(StrTran(oTrans:description,"\","\\"),"{","\{"),"}","\}")
@@ -3189,13 +3189,13 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 						//	still	IES
 						IF	m71_gifthb#0
 							oReport:PrintLine(@nRow,@nPage,;
-								Pad(oLan:Get("Total gifts/own funds",,"!")+Space(1)+oLan:Get("sent to")+' PMC',110)+;
+								Pad(oLan:RGet("Total gifts/own funds",,"!")+Space(1)+oLan:RGet("sent to")+' PMC',110)+;
 								Str(m71_gifthb,12,DecAantal),aHeading)
 						ENDIF
 						IF	m71_giftrst#0
 							oReport:PrintLine(@nRow,@nPage,;
-								Pad(oLan:Get("Total gifts/own funds",,"!")+Space(1)+;
-								IF(ADMIN="WO".or.ADMIN="HO",""+oLan:Get("not yet send TO",,"!")+" PMC",""),110)+;
+								Pad(oLan:RGet("Total gifts/own funds",,"!")+Space(1)+;
+								IF(ADMIN="WO".or.ADMIN="HO",""+oLan:RGet("not yet send TO",,"!")+" PMC",""),110)+;
 								Str(m71_giftrst,12,DecAantal),aHeading)
 						ENDIF
 					ELSE
@@ -3203,22 +3203,22 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 							//	separation line
 							oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
 							oReport:PrintLine(@nRow,@nPage,;
-								Pad(oLan:Get("Total gifts/own funds (See below)",,"!")+Space(1),110)+;
+								Pad(oLan:RGet("Total gifts/own funds (See below)",,"!")+Space(1),110)+;
 								Str(m71_gifthb+m71_giftrst,12,DecAantal),aHeading)
 						ENDIF				
 					ENDIF
 					oReport:PrintLine(@nRow,@nPage,Space(97)+'------------ ------------',aHeading,3)
 					oReport:PrintLine(@nRow,@nPage,;
-						Pad(oLan:Get('total',,"!")+Space(1)+oLan:Get('transactions'),97)+;
+						Pad(oLan:RGet('total',,"!")+Space(1)+oLan:RGet('transactions'),97)+;
 						Str(m71_deb,12,decaantal)+Space(1)+Str(m71_cre,12,decaantal),aHeading)
 					oReport:PrintLine(@nRow,@nPage,;
-						Pad(oLan:Get('Balance',,"!")+Space(1)+oLan:Get('transactions'),97)+;
+						Pad(oLan:RGet('Balance',,"!")+Space(1)+oLan:RGet('transactions'),97)+;
 						IF(m71_deb-m71_cre<=0,Space(13)+Str(m71_cre-m71_deb,12,DecAantal),;
 						Str(m71_deb-m71_cre,12,DecAantal)),aHeading) 
 					oMBal:GetBalance(mAccid,,ReportYear*100+nMonth)
 					
 					oReport:PrintLine(@nRow,@nPage,;
-						BoldOn+Pad(oLan:Get('Account balance',,"!")+Space(1)+oLan:Get(MonthEn[nMonth],,"!"),97)+;
+						BoldOn+Pad(oLan:RGet('Account balance',,"!")+Space(1)+oLan:RGet(MonthEn[nMonth],,"!"),97)+;
 						IF(oMBal:Per_deb-oMBal:Per_cre<=0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
 						RedOn+Str(oMBal:Per_deb-oMBal:Per_cre,12,DecAantal)+RedOff)+BoldOff,aHeading)
 				ENDIF
@@ -3320,14 +3320,14 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				IF oRecip1 != null_object
 					IF !Empty(oEMLFrm:Template)
 						oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
-						oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:Get('up incl'))+Space(1)+oLan:Get(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
+						oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
 						mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 					ELSE
 						mailcontent:=""
 					ENDIF
 					oFileSpec:=FileSpec{cFileName}
 					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+Space(1)+StrTran(StrTran(aMailMember[i,1,1],"\",""),"/","")
-					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:Get('GIFTREPORT',,"@!")+Space(1)+memberName+": "+cPeriod,mailcontent)
+					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('GIFTREPORT',,"@!")+Space(1)+memberName+": "+cPeriod,mailcontent)
 				ENDIF
 			NEXT
 			oMapi:Close()
@@ -3987,22 +3987,22 @@ method InitializeTexts(ReportYear as int,ReportMonth as int) as void pascal clas
 	if !self:CurLanguage== Alg_taal
 		self:CurLanguage := Alg_taal
 		// different language? Tranlate texts again
-		self:aAsmntDescr:={self:oLan:Get("Total Gifts/Own Funds",28,"!"),self:oLan:Get("Assessable Gifts",36,"!"),;
-			self:oLan:Get("Personal Funds",36,"!"),self:oLan:Get("Member Gifts",36,"!")}
-		self:GiftDesc:=self:oLan:Get("gift",,"@!")
-		self:NonEarDesc:=self:oLan:Get("Allotted non-designated gift",,"@!")
+		self:aAsmntDescr:={self:oLan:RGet("Total Gifts/Own Funds",28,"!"),self:oLan:RGet("Assessable Gifts",36,"!"),;
+			self:oLan:RGet("Personal Funds",36,"!"),self:oLan:RGet("Member Gifts",36,"!")}
+		self:GiftDesc:=self:oLan:RGet("gift",,"@!")
+		self:NonEarDesc:=self:oLan:RGet("Allotted non-designated gift",,"@!")
 		mtxt:=''
 		FOR i=1 to 12
-			mtxt:=mtxt+' '+PadL(self:oLan:Get(MonthEn[i],,"!"),7)
+			mtxt:=mtxt+' '+PadL(self:oLan:RGet(MonthEn[i],,"!"),7)
 		NEXT
-		cPeriodTxt:=Str(ReportYear,4)+' '+iif(ReportMonth=1,'',self:oLan:Get('up incl'))+' '+self:oLan:Get(MonthEn[ReportMonth],,"!")
-		self:cHeading1:=self:oLan:Get('Year',,"!")+' '+cPeriodTxt+Space(15)+self:oLan:Get('GIFTREPORT',,"@!")+': %description%'+;
+		cPeriodTxt:=Str(ReportYear,4)+' '+iif(ReportMonth=1,'',self:oLan:RGet('up incl'))+' '+self:oLan:RGet(MonthEn[ReportMonth],,"!")
+		self:cHeading1:=self:oLan:RGet('Year',,"!")+' '+cPeriodTxt+Space(15)+self:oLan:RGet('GIFTREPORT',,"@!")+': %description%'+;
 			'   '+self:Country+' HOUSECD: %hbn%'
-		self:cHeading2:=Pad(self:oLan:Get('name',,"!")+' '+self:oLan:Get('and')+' '+self:oLan:Get('address')+' '+;
-			self:oLan:Get('giver'),40)+mtxt
-		self:cHeading3:=self:oLan:Get('footnotes',,"@!")
-		self:cHeading4:=self:oLan:Get('Explanation',,"!")+' '+self:oLan:Get('of')+' '+self:oLan:Get('codes')
-		self:cHeading5:=self:oLan:Get("non-designated",,"!")+' '+self:oLan:Get('gift')
+		self:cHeading2:=Pad(self:oLan:RGet('name',,"!")+' '+self:oLan:RGet('and')+' '+self:oLan:RGet('address')+' '+;
+			self:oLan:RGet('giver'),40)+mtxt
+		self:cHeading3:=self:oLan:RGet('footnotes',,"@!")
+		self:cHeading4:=self:oLan:RGet('Explanation',,"!")+' '+self:oLan:RGet('of')+' '+self:oLan:RGet('codes')
+		self:cHeading5:=self:oLan:RGet("non-designated",,"!")+' '+self:oLan:RGet('gift')
 	endif
 
 DEFINE GT:=2
@@ -4487,7 +4487,7 @@ IF .not.oReport:lPrintOk
 ENDIF
 headinglines:={"Overview of generated Tax reduction report"}
 oLan:=Language{}
-headinglines:={oLan:Get("Overview of Tax reduction report")+" "+Str(TaxYear,4),oLan:Get("Name",41)+oLan:Get("Amount",12,,"R")+" "+oLan:Get("Person Number",13),Replicate('-',67)}
+headinglines:={oLan:RGet("Overview of Tax reduction report")+" "+Str(TaxYear,4),oLan:RGet("Name",41)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("Person Number",13),Replicate('-',67)}
 ToFileFS:=AskFileName(self,cFileName,"Save Taxreport to file","*.txt","TEXT file")
 
 self:STATUSMESSAGE("Producing report, please wait...")
@@ -4977,14 +4977,14 @@ ENDIF
 
 IF Lower(oReport:Extension) #"xls"
 	cTab:=Space(1)
-	Heading:={oLan:Get('Trial Balance',,"!")}
+	Heading:={oLan:RGet('Trial Balance',,"!")}
 ENDIF
 self:Pointer := Pointer{POINTERHOURGLASS}
 self:STATUSMESSAGE(self:oLan:WGet("Collecting data, moment please"))
 
-AAdd(Heading,self:oLan:Get('Account',43,"!")+cTab+self:oLan:Get('Type',11,"!","C")+cTab+self:oLan:Get('BEGIN Balnc',11,"!","R")+cTab+self:oLan:Get('Debit',11,"!","R")+cTab+self:oLan:Get('Credit',11,"!","R")+;
-cTab+self:oLan:Get('Balance',11,"!","R")+cTab+self:oLan:Get('Budget',10,"!","R") )
-AAdd(Heading,self:oLan:Get('year',,"!")+cTab+oDCYearTrial:TextValue+;
+AAdd(Heading,self:oLan:RGet('Account',43,"!")+cTab+self:oLan:RGet('Type',11,"!","C")+cTab+self:oLan:RGet('BEGIN Balnc',11,"!","R")+cTab+self:oLan:RGet('Debit',11,"!","R")+cTab+self:oLan:RGet('Credit',11,"!","R")+;
+cTab+self:oLan:RGet('Balance',11,"!","R")+cTab+self:oLan:RGet('Budget',10,"!","R") )
+AAdd(Heading,self:oLan:RGet('year',,"!")+cTab+oDCYearTrial:TextValue+;
 '  '+maand[MonthStart]+' - '+maand[MonthEnd])
 AAdd(Heading,' ')
 vw_deb:=0
@@ -5048,7 +5048,7 @@ DO WHILE !oAcc:EoF
 ENDDO
 IF PrvYearNotClosed .and. (vw_deb#0.or.vw_cre#0)
 	IF lPrint
-	   oReport:PrintLine(@nRow,@nPage,oLan:Get('Balance income and expense prev.year',64,"!");
+	   oReport:PrintLine(@nRow,@nPage,oLan:RGet('Balance income and expense prev.year',64,"!");
 	   +Replicate(cTab,4)+Str(vw_deb,11,DecAantal)+cTab+Str(vw_cre,11,DecAantal)+;
 	   cTab+Str(vw_deb-vw_cre,11,DecAantal),Heading,0)
 	ENDIF
@@ -5504,7 +5504,7 @@ METHOD OKButton( ) CLASS YearClosing
 			"transid="+cTransnr+;
 			",dat='"+SQLdate(self:BalanceEndDate)+"'"+;
 			",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
-			",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
+			",description='"+self:oLan:RGet('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
 			",accid='"+Str(ProfitLossAccount[i],-1)+"'"+;
 			",deb="+Str(-ProfitLossDeb[i],-1)+;
 			",cre="+Str(-ProfitLossCre[i],-1)+;
@@ -5687,7 +5687,7 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 				iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
 				"dat='"+SQLdate(self:BalanceEndDate)+"'"+;
 				",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
-				",description='"+self:oLan:Get('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
+				",description='"+self:oLan:RGet('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
 				",accid='"+Str(self:d_netasset[p_depptr],-1)+"'"+;
 				",deb="+Str(PL_totdeb,-1)+;
 				",cre="+Str(PL_totcre,-1)+;
