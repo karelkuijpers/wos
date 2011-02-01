@@ -3058,7 +3058,7 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 	oHm := SELF:Server
 	*		oHm:zap()
 	SELF:append()
-	oHm:DESCRIPTN:=oLan:Get("Allotted non-designated gift",,"!")
+	oHm:DESCRIPTN:=oLan:RGet("Allotted non-designated gift",,"!")
 	oHm:CRE:= mDebAmnt
 	oHm:CREFORGN:=mDebAmnt 
 	oHm:Currency:=sCurr
