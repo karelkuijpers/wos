@@ -528,7 +528,7 @@ DO WHILE Len(AFields)>1
 		cStatement:=iif(Empty(impDat),"",",transdate='"+SQLdate(impDat) +"'")+;
 		",docid='Import'"+; 
 		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
-		",descriptn='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
+		",descriptn='"+self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
 		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
 		iif(ptCre<= Len(AFields),",creditamnt="+StrTran(AFields[ptCre],"."),"")+;
 		iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AFields[ptAccName]+"'"+iif(Empty(cAccNumber),"",",accountnr='"+cAccNumber+"'")+iif(Empty(cAssmnt),"",",assmntcd='AG'"),"")+;
@@ -544,7 +544,7 @@ DO WHILE Len(AFields)>1
 		cStatement:=iif(Empty(impDat),"",",transdate='"+SQLdate(impDat) +"'")+;
 		",docid='Import'"+; 
 		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
-		",descriptn='"+self:oLan:Get("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
+		",descriptn='"+self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
 		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
 		iif(ptCre<= Len(AFields),",debitamnt="+StrTran(AFields[ptCre],"."),"")+;
 		",accountnr='"+cBank+"'"+;
