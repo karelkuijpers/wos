@@ -4647,7 +4647,6 @@ class TrialBalance inherit DataWindowMine
 	instance MonthEnd 
 	instance lCondense 
   	PROTECT oAcc as SQLSelect
-	PROTECT oMBal as SQLSelect
 	PROTECT oReport as PrintDialog
 	PROTECT lPrint as LOGIC
 	PROTECT oDep as SQLSelect
@@ -4875,7 +4874,8 @@ METHOD OKButton( ) CLASS TrialBalance
 LOCAL perlengte,YEARSTART,YEAREND, TrialYear,BalMonth as int
 LOCAL nRow, nPage as int
 LOCAL CurSt, CurEnd,BalSt, BalEnd, TrialEnd as int
-LOCAL omzetdeel, totdeb,totcre,vw_deb, vw_cre, m_bud, omzet, totBegin, totBeginCostProfit,PerDeb,PerCre as FLOAT
+LOCAL omzetdeel, totdeb,totcre, m_bud, omzet, totBegin, totBeginCostProfit,PerDeb,PerCre as FLOAT 
+local pl_deb,pl_cre as float // profit loss previous year
 LOCAL Heading:={} as ARRAY, ad_banmsg, omztxt as STRING
 LOCAL PrvYearNotClosed as LOGIC
 LOCAL aDep:={} as ARRAY
@@ -4888,9 +4888,6 @@ LOCAL aItem:={} as ARRAY
 local oMBal as balances
 local cStatement as string   // string with selection of accounts and their total values 
 
-*LOCAL cFilter AS STRING
-
-* Check values:
 * Check input data:
 IF !ValidateControls( self, self:AControls )
 	RETURN
@@ -4958,12 +4955,10 @@ oMBal:=Balances{}
 oMBal:AccSelection:=iif(Empty(self:WhoFrom),"","a.department in ("+Implode(d_dep,",")+")")
 cStatement := oMBal:SQLGetBalance(YEARSTART * 100 + MONTHSTART, YEAREND * 100 + MONTHEND,true,false,true,true)
 
-oAcc:=SQLSelect{cStatement + " order by category",oConn}
+oAcc:=SQLSelect{cStatement + " order by category,accnumber",oConn}
 
 * Add balances of accounts to the balance item values: 
 oAcc:GoTop() 
-
-
 
 * Create name report file
 * store 1 TO blad,r
@@ -4987,14 +4982,14 @@ cTab+self:oLan:RGet('Balance',11,"!","R")+cTab+self:oLan:RGet('Budget',10,"!","R
 AAdd(Heading,self:oLan:RGet('year',,"!")+cTab+oDCYearTrial:TextValue+;
 '  '+maand[MonthStart]+' - '+maand[MonthEnd])
 AAdd(Heading,' ')
-vw_deb:=0
-vw_cre:=0
 DO WHILE !oAcc:EoF
 	cSoort:= oAcc:category
   	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]
 	IF cSoort=="KO" .or. cSoort=="BA"
 		PerDeb:=oAcc:per_deb
 		PerCre:=oAcc:per_cre
+		pl_cre:=Round(pl_cre+oAcc:pl_cre,DecAantal)
+		pl_deb:=Round(pl_deb+oAcc:pl_deb,DecAantal)
 	ELSE
 		// determine sum of transactions by comparing with previous month for balance accounts:
 		PerDeb:=Round(oAcc:per_deb - oAcc:PrvPer_deb,DecAantal)
@@ -5002,7 +4997,7 @@ DO WHILE !oAcc:EoF
 	ENDIF
    IF !self:lCondense .or. !PerDeb == PerCre .or. !oAcc:PrvPer_deb == oAcc:PrvPer_cre
 
-      && total percentage invullen van alles tot nu toe
+      && calcaulate total percentage of everything up till now
       omzet:= PerDeb-PerCre
       IF omzet<> 0
          IF oAcc:category = "BA"
@@ -5027,33 +5022,20 @@ DO WHILE !oAcc:EoF
       ENDIF
       totdeb:=Round(totdeb+PerDeb,DecAantal)
       totcre:=Round(totcre+PerCre,DecAantal)
-/*      IF cSoort=="KO" .or. cSoort=="BA"
-	  	totBeginCostProfit :=Round(totBeginCostProfit+oAcc:prvper_deb-oAcc:prvper_cre,decaantal)
-	  ENDIF      */
       totBegin:=Round(totBegin+oAcc:PrvPer_deb-oAcc:prvper_cre,DecAantal)
    	ENDIF
-   * Indien voorgaande jaar nog niet afgesloten, dan som van V&W bepalen om
-   * bij kapitaal op te tellen (immers nog niet bijgeboekt):
-   IF PrvYearNotClosed .and. (oAcc:category="KO".or.oAcc:category="BA")
-   		IF BalMonth==1
-   			TrialEnd:=(TrialYear-1)*100+12
-   		ELSE
-   			TrialEnd:=TrialYear*100+BalMonth-1
-   		ENDIF
-		vw_deb:=Round(vw_deb + oAcc:PrvYr_deb,DecAantal)
-		vw_cre:=Round(vw_cre + oAcc:PrvYr_cre,DecAantal)
-   ENDIF
 
    oAcc:Skip()
 ENDDO
-IF PrvYearNotClosed .and. (vw_deb#0.or.vw_cre#0)
+IF PrvYearNotClosed .and. (pl_deb#0.or.pl_cre#0) 
+	// in case previous year not yet closed add total cost/profit to total as increase of netasset:
 	IF lPrint
 	   oReport:PrintLine(@nRow,@nPage,oLan:RGet('Balance income and expense prev.year',64,"!");
-	   +Replicate(cTab,4)+Str(vw_deb,11,DecAantal)+cTab+Str(vw_cre,11,DecAantal)+;
-	   cTab+Str(vw_deb-vw_cre,11,DecAantal),Heading,0)
+	   +Replicate(cTab,4)+Str(pl_deb,11,DecAantal)+cTab+Str(pl_cre,11,DecAantal)+;
+	   cTab+Str(pl_deb-pl_cre,11,DecAantal),Heading,0)
 	ENDIF
-    totdeb:=totdeb+Round(vw_deb,DecAantal)
-    totcre:=totcre+Round(vw_cre,DecAantal)
+    totdeb:=totdeb+Round(pl_deb,DecAantal)
+    totcre:=totcre+Round(pl_cre,DecAantal)
 ENDIF
 totdeb:=Round(totdeb,DecAantal)
 totcre:=Round(totcre,DecAantal)
@@ -5063,10 +5045,6 @@ IF lPrint
 	oReport:PrintLine(@nRow,@nPage,Space(43)+cTab+Space(11)+cTab+Str(totBegin,11,DecAantal)+cTab+Str(totdeb,11,DecAantal)+;
 	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal),null_array,0)
 ENDIF
-/*oReport:PrintLine(@nRow,@nPage,Space(65)+"Total begin Cost/Profit:"+Str(totBeginCostProfit,12,decaantal))
-oReport:PrintLine(@nRow,@nPage,Space(89)+Replicate("-",12))
-oReport:PrintLine(@nRow,@nPage,Space(89)+Str(Round(totdeb-totcre+totBeginCostProfit,decaantal),12,decaantal))   */
-*oVBal:Close()
 self:Pointer := Pointer{POINTERARROW}
 IF lPrint
 	oReport:prstart()
