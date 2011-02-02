@@ -5238,13 +5238,15 @@ METHOD OKButton( ) CLASS YearClosing
 	local cStatement as string
 	local oStmnt as SQLStatement
 	local nSeqNbr as int // sequence number of generated transaction lines 
-	local fTotal as float  // to check if year is correct in balance
+	local fTotal as float  // to check if year is correct in balance 
+	local cMess as string
 
 	IF Today() <= self:BalanceEndDate
 		(ErrorBox{self:OWNER,self:oLan:WGet('End of year not yet reached')}):Show()
 		self:EndWindow()
 		RETURN true
 	ENDIF
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	if !Empty(SPROJ)
 		* Are there sill non-earmarekd gifts?
 		if SQLSelect{"select transid from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:BalanceEndDate)+"' and accid='"+SPROJ+"'",oConn}:reccount>0
@@ -5258,15 +5260,17 @@ METHOD OKButton( ) CLASS YearClosing
 		self:EndWindow()
 		RETURN true
 	ENDIF
+	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	* Are there gifts to be send to PMC?
-	if ADMIN=='WO'
-		oTrans:=SQLSelect{"select t.transid,t.dat,a.accnumber,a.description from transaction t, account a "+;
-			",member m where a.accid=m.accid and m.householdid<>'' and grade<>'staf' and "+;
-			" a.accid=t.accid and t.bfm='' and t.dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn}
+	oMainwindow:STATUSMESSAGE("Checking data...")
+	if ADMIN=='WO' 
+		oTrans:=SQLSelect{"select t.transid,t.dat,t.description from transaction t "+;
+		"where t.accid in (select m.accid from member m where m.householdid<>'' and grade<>'staf' and t.bfm='') "+;
+		"and t.dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn}
 		if oTrans:reccount>0
 			do while !oTrans:EOF
-				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+' to '+oTrans:ACCNUMBER+'-'+oTrans:Description
+				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+': '+oTrans:Description
 				oTrans:skip()
 			enddo
 			ErrorBox{self:OWNER,self:oLan:WGet("The following transactions have to be send to PMC first")+":"+self:cError}:Show()
@@ -5274,6 +5278,7 @@ METHOD OKButton( ) CLASS YearClosing
 			return true
 		endif
 	endif
+	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	// Check if all reevaluations has been done: 
 	if SQLSelect{"select lstreeval from Sysparms",oConn}:LSTREEVAL <  self:BalanceEndDate 
@@ -5296,6 +5301,8 @@ METHOD OKButton( ) CLASS YearClosing
 		RETURN true
 	ENDIF
 	* Read departments into arrays:
+	oMainwindow:STATUSMESSAGE("Collecting data...")
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:d_dep:={0}
 	self:d_netasset:={Val(SKAP)}
 	self:d_parentdep:={nil}
@@ -5372,6 +5379,7 @@ METHOD OKButton( ) CLASS YearClosing
 		oSel:Execute()  // reread
 		oSel:Gotop()
 	enddo
+	self:Pointer := Pointer{POINTERHOURGLASS}
    SQLStatement{"start transaction",oConn}:Execute()
 	// lock employee table:
 	oStmnt:=SQLStatement{"select empid from employee for update",oConn}
@@ -5384,7 +5392,7 @@ METHOD OKButton( ) CLASS YearClosing
 	
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-	self:OWNER:STATUSMESSAGE(self:oLan:WGet("Collecting balance data, please wait")+"...")
+	self:OWNER:STATUSMESSAGE(self:oLan:WGet("Closing balance data, please wait")+"...")
 	* save balances of profit/loss accounts over year to be closed into arrays ProfitLossDeb/Cre
 	AfterBalance :=Year(self:BalanceEndDate+1)*100+Month(self:BalanceEndDate+1) 
    oBal:=Balances{}
