@@ -1,21 +1,29 @@
+RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 36, 204, 251, WS_EX_CLIENTEDGE
+	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 3, 53, 13
+	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 18, 53, 12
+	CONTROL	"", SELBANKACC_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 64, 18, 47, 12
+	CONTROL	"Found:", SELBANKACC_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 32, 18, 27, 12
+	CONTROL	"Find", SELBANKACC_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 72, 3, 40, 13
+	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
+END
+
 CLASS SelBankAcc INHERIT DataDialogMine 
 
 	PROTECT oDCListBoxBank AS LISTBOX
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export oCaller as TeleMut 
   declare method FillBank
-RESOURCE SelBankAcc DIALOGEX  4, 3, 208, 289
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 25, 188, 251, WS_EX_CLIENTEDGE
-	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 144, 3, 53, 13
-	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 80, 4, 54, 12
-END
-
 METHOD CancelButton( ) CLASS SelBankAcc 
    self:EndWindow(1)
 RETURN NIL
@@ -23,13 +31,39 @@ method Close(oEvent) class SelBankAcc
 	super:Close(oEvent)
 	//Put your changes here
 	if !self:oCaller:lOK
-		self:oCaller:m57_gironr:={}
+		self:oCaller:m57_BankAcc:={}
 	endif 
 	return NIL
 
 METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc
 	RETURN FillBankAccount('b.Telebankng=1')
 
+METHOD FindButton( ) CLASS SelBankAcc 
+	local aKeyw:={} as array
+	local i,j,nPos, nFound as int
+	local cvalue as string
+	if !Empty(self:SearchUni)
+		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
+		aKeyw:=GetTokens(self:SearchUni)
+		for nPos:=1 to self:oDCListBoxBank:ItemCount 
+			cvalue:=self:oDCListBoxBank:getItem(nPos)
+			self:oDCListBoxBank:SelectItem(nPos)		
+			for i:=1 to Len(aKeyw)
+				if AtC(aKeyw[i,1],cvalue)=0
+					self:oDCListBoxBank:DeselectItem(nPos)
+					exit
+				endif
+				self:oDCListBoxBank:SelectItem(nPos)
+				nFound++		
+			next
+		next
+	endif
+   if nFound>0
+   	self:oDCListBoxBank:SetTop(self:oDCListBoxBank:FirstSelected())
+   endif
+	self:oDCFound:TextValue :=Str(nFound,-1)
+
+	RETURN NIL
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS SelBankAcc 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -45,6 +79,21 @@ oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
 oCCCancelButton := PushButton{SELF,ResourceID{SELBANKACC_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCFound := FixedText{SELF,ResourceID{SELBANKACC_FOUND,_GetInst()}}
+oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFoundtext := FixedText{SELF,ResourceID{SELBANKACC_FOUNDTEXT,_GetInst()}}
+oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
+
+oCCFindButton := PushButton{SELF,ResourceID{SELBANKACC_FINDBUTTON,_GetInst()}}
+oCCFindButton:HyperLabel := HyperLabel{#FindButton,"Find",NULL_STRING,NULL_STRING}
+
+oDCSearchUni := SingleLineEdit{SELF,ResourceID{SELBANKACC_SEARCHUNI,_GetInst()}}
+oDCSearchUni:HyperLabel := HyperLabel{#SearchUni,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCSearchUni:FocusSelect := FSEL_TRIM
+oDCSearchUni:TooltipText := "Enter one or more (part of) key values "
+oDCSearchUni:UseHLforToolTip := True
 
 SELF:Caption := "Select bank accounts to be processed"
 SELF:HyperLabel := HyperLabel{#SelBankAcc,"Select bank accounts to be processed",NULL_STRING,NULL_STRING}
@@ -64,28 +113,37 @@ ASSIGN ListBoxBank(uValue) CLASS SelBankAcc
 SELF:FieldPut(#ListBoxBank, uValue)
 RETURN uValue
 
+method ListBoxSelect(oControlEvent) class SelBankAcc
+	local oControl as Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	super:ListBoxSelect(oControlEvent)
+	//Put your changes here 
+	self:oDCFound:TextValue :=Str(self:oDCListBoxBank:SelectedCount,-1)
+
+	return NIL
+
 METHOD OKButton( ) CLASS SelBankAcc 
-// set filter on oServer with selected bank accounts:
-LOCAL nPos,i,l as int
-local aBank:={}, aGironr:=oCaller:m57_gironr as array 
-nPos :=self:oDCListBoxBank:FirstSelected()
-do WHILE nPos>0
-	AAdd(aBank,self:oDCListBoxBank:getItemValue(nPos))
-	nPos:=self:oDCListBoxBank:NextSelected()
-ENDDO 
-// reduce m57_gironr:
-l:=Len(aGironr)
-for i:=1 to l
-	if AScan(aBank,aGironr[i][1])==0
-		ADel(aGironr,i)
-		l--
-		ASize(aGironr,l)
-		i--
-	endif
-next
-self:oCaller:lOK:= true
-self:EndWindow(true)
-RETURN nil
+	// set filter on oServer with selected bank accounts:
+	LOCAL nPos,i,l as int
+	local aBank:={}, aBankAcc:=oCaller:m57_BankAcc as array 
+	nPos :=self:oDCListBoxBank:FirstSelected()
+	do WHILE nPos>0
+		AAdd(aBank,self:oDCListBoxBank:getItemValue(nPos))
+		nPos:=self:oDCListBoxBank:NextSelected()
+	ENDDO 
+	// reduce m57_BankAcc:
+	l:=Len(aBankAcc)
+	for i:=1 to l
+		if AScan(aBank,aBankAcc[i][1])==0
+			ADel(aBankAcc,i)
+			l--
+			ASize(aBankAcc,l)
+			i--
+		endif
+	next
+	self:oCaller:lOK:= true
+	self:EndWindow(true)
+	RETURN nil
 method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankAcc
 	//Put your PostInit additions here
 	Local nPos as int 
@@ -94,11 +152,23 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankAcc
 	for nPos:=1 to self:oDCListBoxBank:ItemCount
 		self:oDCListBoxBank:SelectItem(nPos)		
 	next
-   self:oCaller:lOK:=false
-	return NIL
+	self:oCaller:lOK:=false
+	self:oDCFound:TextValue :=Str(self:oDCListBoxBank:ItemCount,-1)
+	return nil
+ACCESS SearchUni() CLASS SelBankAcc
+RETURN SELF:FieldGet(#SearchUni)
+
+ASSIGN SearchUni(uValue) CLASS SelBankAcc
+SELF:FieldPut(#SearchUni, uValue)
+RETURN uValue
+
 STATIC DEFINE SELBANKACC_CANCELBUTTON := 102 
+STATIC DEFINE SELBANKACC_FINDBUTTON := 105 
+STATIC DEFINE SELBANKACC_FOUND := 103 
+STATIC DEFINE SELBANKACC_FOUNDTEXT := 104 
 STATIC DEFINE SELBANKACC_LISTBOXBANK := 100 
 STATIC DEFINE SELBANKACC_OKBUTTON := 101 
+STATIC DEFINE SELBANKACC_SEARCHUNI := 106 
 CLASS TeleMut
 
 	PROTECT m56_recnr AS INT
@@ -118,14 +188,14 @@ CLASS TeleMut
 	EXPORT teleptrn:={} as ARRAY //{contra_bankaccnt,kind,contra_name,addsub,description,accid,ind_autmut}
 	EXPORT oTelTr as SQLSelect
 	EXPORT oParent AS OBJECT
-	EXPORT m57_gironr := {} as ARRAY   //met: banknumber, usedforgifts, betaalind, datlaatst 
+	EXPORT m57_BankAcc := {} as ARRAY   //met: banknumber, usedforgifts, betaalind, datlaatst 
 	PROTECT bankacc := {} as ARRAY  // all bankaccounts 
 	export cBankAcc as string   // all bankaccounts 
 	//export aBankProc:={} as array // bankaccounts to be processed 
 	export CurTelId as int
 	PROTECT lv_mm, lv_jj AS INT
 	PROTECT lv_aant_toe:=0, lv_aant_vrw AS INT
-	PROTECT CurTelePtr AS INT // pointer to current telebanking account within m57_gironr
+	PROTECT CurTelePtr as int // pointer to current telebanking account within m57_BankAcc
 	PROTECT NonTeleAcc:={} as ARRAY
 	EXport lOK as logic 
 	export oLan as Language 
@@ -138,9 +208,9 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 	local oSEl as SQLSelect 
 	local cStatement as string
 	// check if transaction has allready been imported
-	IF transdate <= m57_gironr[CurTelePtr,3] 
+	IF transdate <= m57_BankAcc[CurTelePtr,3] 
 		cStatement:="select teletrid from teletrans where "+;
-		"bankaccntnbr='" +m57_gironr[CurTelePtr,1]+"'"+;
+		"bankaccntnbr='" +m57_BankAcc[CurTelePtr,1]+"'"+;
 		" and bookingdate='"+SQLdate(transdate)+"' and "+;
 		"amount="+Str(transamount,-1)+" and "+;
 		"addsub='"+codedebcre+"' and "+;
@@ -224,7 +294,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	self:m56_accnumber:=Space(11) 
 	self:m56_description:=""
 	self:m56_contra_name:=""
-	if Empty(self:m57_gironr)    // skip if no telebanking accounts
+	if Empty(self:m57_BankAcc)    // skip if no telebanking accounts
 		Return false
 	endif
 	cSelect:="b.usedforgifts=1 "+;
@@ -470,10 +540,10 @@ METHOD Import() CLASS TeleMut
 		oSel:execute()
 		Do while !oSel:EOF 
 			if !Empty(oSel:FIELDGET(1))
-				i:=AScan(m57_gironr,{|x|x[1]==oSel:FIELDGET(1)}) 
+				i:=AScan(m57_BankAcc,{|x|x[1]==oSel:FIELDGET(1)}) 
 				if i>0
 					if !Empty(oSel:maxdat)
-						m57_gironr[i,3]:=oSel:maxdat
+						m57_BankAcc[i,3]:=oSel:maxdat
 					endif
 				endif
 			endif
@@ -2283,7 +2353,7 @@ DO WHILE recordfound
 		childfound:=UADocument:GetNextChild()			
 	ENDDO
 	IF nCol>9
-		i := AScan(m57_gironr,{|x| x[1]==lv_bankAcntOwn})
+		i := AScan(m57_BankAcc,{|x| x[1]==lv_bankAcntOwn})
 		IF i==0
 			recordfound:=UADocument:GetNextSibbling()
 			LOOP
@@ -2491,7 +2561,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	*       false: next nongift
 	local oSelBank as SelBankAcc
 	local oBank,oAcc as SQLSelect
-	// 	local m57_bank:=self:m57_gironr as array
+	// 	local m57_bank:=self:m57_BankAcc as array
 	local cReq as string 
 	self:oLan:=Language{}
 	oBank := SQLSelect{"select banknumber from bankaccount where banknumber<>''",oConn}
@@ -2507,22 +2577,22 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	oBank:SQLString:= "select banknumber,usedforgifts from bankaccount where banknumber<>'' and telebankng=1"
 	oBank:GoToP()
 	DO WHILE .not.oBank:EOF
-		AAdd(self:m57_gironr,{oBank:banknumber,iif(oBank:usedforgifts=1,true, false),null_date})
+		AAdd(self:m57_BankAcc,{oBank:banknumber,iif(oBank:usedforgifts=1,true, false),null_date})
 		oBank:skip()
 	ENDDO
-	ASort(self:m57_gironr,,,{|x,y| x[1]<=y[1]} ) 
+	ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
 	self:m56_kind:=Space(6)
 	self:m56_contra_name:=Space(10)
 	self:oParent:=oOwner
-	self:cReqTeleBnk:=Implode(self:m57_gironr,",",1,,1) 
+	self:cReqTeleBnk:=Implode(self:m57_BankAcc,",",1,,1) 
 	self:Import(oBank)
 	// 	oTelTr:= SQLSelect{"select * from teletrans where processed='' and bankaccntnbr<>''" ,oConn}
 	self:lGift := Gift
-	if Len(self:m57_gironr)>1 
+	if Len(self:m57_BankAcc)>1 
 		oSelBank:=SelBankAcc{,,,self}
 		oSelBank:Show() 
 	endif
-	self:cReqTeleBnk:=Implode(self:m57_gironr,",",1,,1) 
+	self:cReqTeleBnk:=Implode(self:m57_BankAcc,",",1,,1) 
 	// determine ACCNUMBER of sKruis:
 	IF !Gift .and.!Empty(SKruis)
 		* Seek accountnumber of skruis: 
@@ -2614,7 +2684,7 @@ return
 METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) as logic CLASS TeleMut
 	// check if found banknumber is part of telebanking accounts within the system
 	// 	Default(@NbrDays,120)
-	IF (self:CurTelePtr:=AScan(m57_gironr,{|x| x[1]==AllTrim(banknbr)}))=0
+	IF (self:CurTelePtr:=AScan(m57_BankAcc,{|x| x[1]==AllTrim(BankNbr)}))=0
 		IF AScan(SELF:NonTeleAcc,AllTrim(banknbr))=0
 			(Errorbox{,"Bank account "+banknbr+" not as telebanking account in system data"}):Show()
 			AAdd(SELF:NonTeleAcc,AllTrim(banknbr))
@@ -2622,7 +2692,7 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 		RETURN true
 	ENDIF
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
-	IF transdate +NbrDays < m57_gironr[self:CurTelePtr,3]
+	IF transdate +NbrDays < m57_BankAcc[self:CurTelePtr,3]
 		RETURN TRUE
 	ENDIF
 	RETURN FALSE
