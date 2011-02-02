@@ -100,7 +100,7 @@ PROTECT cCurBatchNbr,cCurOrigin AS STRING, dCurDate AS DATE
 EXPORT lOK AS LOGIC
 PROTECT aImportFiles:={} as ARRAY
 export mxrate as float
-export oLan as SQLSelect
+export oLan as Language
 protect curimpid as int 
 protect lv_imported as int
 
@@ -1044,7 +1044,7 @@ SetPath(CurPath)
 SetDefault(CurPath)
 Default(@ReadOnly,FALSE)
 Default(@Share,FALSE)
-oLan:=Language{}
+self:oLan:=Language{}
 oParent:=oOwner
 //self:Import()
 self:oHM:=oHulpMut
