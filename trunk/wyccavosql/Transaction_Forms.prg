@@ -870,7 +870,7 @@ METHOD TeleBankButton( ) CLASS General_Journal
 		oTmt:Close()
 	endif
 	oTmt:=TeleMut{FALSE,self} 
-	if Empty(oTmt:m57_gironr)
+	if Empty(oTmt:m57_BankAcc)
 		lTeleBank:=false
 		return nil
 	endif
@@ -3259,7 +3259,7 @@ METHOD TeleBankButton( ) CLASS PaymentJournal
 		oTmt:Close()
 	endif
 	oTmt:=TeleMut{true,self} 
-	if Empty(oTmt:m57_gironr)
+	if Empty(oTmt:m57_BankAcc)
 		lTeleBank:=false
 		return nil
 	endif
