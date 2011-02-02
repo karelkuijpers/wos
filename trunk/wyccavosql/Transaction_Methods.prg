@@ -2640,7 +2640,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	local oPersBank,oSel as SQLSelect
 	local oPers as SQLSelectPerson 
 	local lSpecmessage as logic
-	local aNospecmess:={ 'bijdrage','gift','onderst'}  as array
+	local aNospecmess:={ 'bijdrage','maand','mnd','kwartaal','werk','onderh',,'onderst'}  as array
 	local aSpecmess:={'project','pensioen'} as array 
 
 	self:Reset()
@@ -2691,7 +2691,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	IF oTmt:m56_addsub ="B"
 		self:mDebAmntF:= oTmt:m56_amount
 		//	IF (Trim(oTmt:m56_kind)="AC" .or.(SubStr(oTmt:m56_description,17,2)="AC")).and. (!Empty(oTmt:m56_persid).or.isnum(Pad(SubStr(oTmt:m56_description,1,16),16,"A")))
-		IF (Trim(oTmt:m56_kind)="AC" .or.(SubStr(oTmt:m56_description,17,2)="AC"))
+		IF (Trim(oTmt:m56_kind)="AC" .or.(SubStr(oTmt:m56_description,17,2)=="AC").and.isnum(SubStr(oTmt:m56_description,1,16)))
 			Acceptgiro:=true
 			*   		SELF:mCLNGiver := SubStr(oTmt:m56_description,2,5)   // juiste formaat door fout verkeerd om
 			IF !Empty(oTmt:m56_persid)
