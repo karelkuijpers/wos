@@ -3172,7 +3172,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		self:cAccFilter:=if(Empty(self:cAccFilter),"",self:cAccFilter+',')+SHB
 	ENDIF
 	self:cDestFilter:=self:cAccFilter
-	if SQLSelect{"select accid from bankaccount where telebankng=1 and usedforgifts=1",oConn}:RecCount>0
+	if SQLSelect{"select accid from bankaccount where telebankng=1 and usedforgifts=1",oConn}:reccount>0
 		TeleBanking := true 
 	else
 		TeleBanking := FALSE
@@ -3204,10 +3204,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	else
 		self:cDestFilter:="a.active=1"
 	endif
+	self:cDestFilter+=" and (a.giftalwd=1"+iif(empty(sdeb),""," or a.accid="+sdeb)+")"
 	
 	IF !Empty(SPROJ)
 		* check if there are non earmarked gifts: 
-		if SQLSelect{"select accid from transaction where accid="+sproj+" and bfm='O' limit 1",oConn}:RecCount>0
+		if SQLSelect{"select accid from transaction where accid="+SPROJ+" and bfm='O' limit 1",oConn}:reccount>0
 			oCCNonEarmarked:Show()
 		endif
 	endif
