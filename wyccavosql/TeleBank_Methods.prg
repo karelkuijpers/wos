@@ -265,7 +265,7 @@ METHOD CloseMut(oHlp ,lSave,oCaller)  CLASS TeleMut
 		oNewTeleWindow := EditTeleBankPattern{ oCaller,,,self}
 		oNewTeleWindow:maccid := oHlp:accid
 		oNewTeleWindow:mAccount:=oHlp:accdesc
-		oNewTeleWindow:mdescription := SubStr(self:m56_description,1,32)
+		oNewTeleWindow:mdescription := self:m56_description
 		oNewTeleWindow:mkind := self:m56_kind
  		oNewTeleWindow:mcontra_bankaccnt := self:m56_contra_bankaccnt
  		oNewTeleWindow:mcontra_name := self:m56_contra_name
@@ -439,16 +439,21 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 // analyse if description of transaction contains a payment pattern (betalingkenmerk) 
 local cText as string 
 local oDue as SQLSelect
-	if	Empty(lv_budget)
+	if	Empty(lv_budget) 
+		if Upper(SubStr(lv_oms,1,10))=='ACCEPTGIRO'
+			lv_kind='AC'
+			return
+		endif
 		cText	:=	SubStr(lv_Oms,1,16)
-		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
+// 		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
+		IF	isnum(AllTrim(cText)) .and. IsMod11(cText) 
 			//	betalingskenmerk
 			lv_kind:="AC"
-		elseif Upper(SubStr(lv_Oms,1,32))="BETALINGSKENM"
-			lv_budget:=AllTrim(SubStr(lv_Oms,At3(Space(1),lv_Oms,14)+1,16))
+		elseif Upper(SubStr(lv_Oms,1,13))=="BETALINGSKENM" .or. Upper(SubStr(lv_Oms,1,12))=="BET. KENMERK"
+			lv_budget:=AllTrim(SubStr(lv_Oms,At3(Space(1),lv_Oms,12)+1,16))
 			if	Len(lv_budget)=16	.and.	isnum(lv_budget) .and. IsMod11(lv_budget)
+				cText:=lv_budget
 				if	lv_addsub='A'
-					cText:=SubStr(lv_budget,1)
 					lv_persid:=ZeroTrim(SubStr(cText,1,5))	  // terugboeking
 					lv_kind:="COL"
 					//	 Look	for Due amount:
@@ -475,7 +480,7 @@ local oDue as SQLSelect
 			
 		endif
 		if	lv_kind=="AC"
-			if	lv_addsub =	"B"
+			if	lv_addsub =	"B" .and.isnum(cText)
 				lv_persid:=ZeroTrim(SubStr(cText,-5))
 				lv_bankid:=SubStr(cText,2,6)
 				lv_budget:=SubStr(cText,2,Len(cText)-6)
@@ -1521,11 +1526,11 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_bankAcntOwn, lv_description, lv_Oms, lv_addsub, lv_AmountStr, lv_reference, lv_NameContra as STRING
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as USUAL, cText,lv_budget,lv_kind,lv_persid,lv_bankid as STRING 
 	local Cur_RekNrOwn, Cur_enRoute,lv_messagebegin, lv_addresssep as string
-	LOCAL lv_Amount AS FLOAT
-	LOCAL cSep AS STRING
+	LOCAL lv_Amount as FLOAT
+	LOCAL cSep as STRING
 	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL lSuccess:=true as LOGIC
-	LOCAL oHlp AS Filespec
+	LOCAL oHlp as Filespec
 	LOCAL ld_bookingdate as date 
 	local lMTExtended as logic
 	local aBudg:={} as array
@@ -1533,7 +1538,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 
 	
-	oHlM :=HlpMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
 	cSep:=CHR(SetDecimalSep()) 
 	lMTExtended:=(AtC('ME940',oFm:FileName)>0)
 	*Look for 25: record with accountname
@@ -1552,9 +1557,9 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	nImp:=0
 	DO WHILE .not.oHlM:EOF
 		* Search 25 record:
-		IF !SubStr(oHLM:MTLINE,1,4)==":25:"
+		IF !SubStr(oHlM:MTLINE,1,4)==":25:"
 			oHlM:Skip()
-			LOOP
+			loop
 		ENDIF
 		lv_bankAcntOwn:=AllTrim(SubStr(oHlM:MTLINE,5))
 		lv_bankAcntOwn:=ZeroTrim(StrTran(lv_bankAcntOwn,".",""))
@@ -1568,19 +1573,19 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 			endif
 		endif
 		lv_reference:=""
-		oHlm:Skip()
+		oHlM:Skip()
 		DO WHILE .not.oHlM:EOF
 			* Search for :61: (amount,book date), :86: (account, name, description) combinations:
 			* Stop if new 25:
-			IF SubStr(oHLM:MTLINE,1,4)==":25:"
-				EXIT
+			IF SubStr(oHlM:MTLINE,1,4)==":25:"
+				exit
 			ENDIF
 			IF SubStr(oHlM:MTLINE,1,4)==":28:"  // statement number + sequence number
 				lv_reference:=AllTrim(SubStr(oHlM:MTLINE,5))
 			ENDIF
-			IF !SubStr(oHLM:MTLINE,1,4)==":61:"
+			IF !SubStr(oHlM:MTLINE,1,4)==":61:"
 				oHlM:Skip()
-				LOOP
+				loop
 			ENDIF
 			do while SubStr(oHlM:MTLINE,1,4)==":61:" 
 				// go through lines with amount and description
@@ -1619,7 +1624,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				oHlM:Skip()
 				lv_description:="" 
 				lv_messagebegin:=""
-				IF SubStr(oHLM:MTLINE,1,4)==":86:"
+				IF SubStr(oHlM:MTLINE,1,4)==":86:"
 					* description of transaction:
 					lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5))
 					IF !lMTExtended
@@ -1677,20 +1682,20 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 					lv_messagebegin:=lv_Oms
 // 					lv_description+='%%'   // separator for address and message
 					self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
-					oHlm:Skip()
+					oHlM:Skip()
 					DO WHILE SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description
 						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5)) 
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
 							lv_description+=" "+lv_Oms
 						endif
-						oHlm:Skip()
+						oHlM:Skip()
 					ENDDO 
-					DO WHILE !(Occurs(":",SubStr(oHLM:MTLINE,1,6))=2)  // no TAG
+					DO WHILE !(Occurs(":",SubStr(oHlM:MTLINE,1,6))=2)  // no TAG
 						lv_Oms:=AllTrim(oHlM:MTLINE)
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
-							lv_description+=" "+lv_Oms
+							lv_description+=iif(Len(lv_Oms)<6,''," ")+lv_Oms
 		   	 			if Upper(SubStr(lv_messagebegin,1,32))="NAAM/NUMMER STEMMEN NIET OVEREEN" 
 								lv_addresssep:=''
 				    			// look for bankorder:
@@ -1703,7 +1708,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				 				endif
 							endif
 						endif
-						oHlm:Skip()
+						oHlM:Skip()
 					ENDDO
 					lv_description := Compress(lv_messagebegin+iif(Empty(lv_description),'', lv_addresssep+ lv_description))
 				ENDIF 
@@ -1756,9 +1761,9 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	ENDDO
 	
 
-	oHlp:=Filespec{oHLM:FileSpec:Fullpath}
+	oHlp:=FileSpec{oHlM:Filespec:Fullpath}
 	oHlM:Close()
-	oHlM:=NULL_OBJECT
+	oHlM:=null_object
 	LogEvent(,"Imported MT940 file:"+oFm:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions","Log")
 	oHlp:DELETE()
 	RETURN true
