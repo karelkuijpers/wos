@@ -1066,14 +1066,14 @@ METHOD OkButton CLASS NewPersonWindow
 			ENDIF
 		ENDIF
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(self:oDCmlastname:VALUE))+"',nameext='"+Upper(AddSlashes(self:oDCmNameExt:VALUE))+"'",;
-			"lastname='"+AddSlashes(self:oDCmlastname:VALUE)+"',nameext='"+AddSlashes(self:oDCmNameExt:VALUE))+"'"+;
-			",initials='"+AddSlashes(self:oDCmInitials:VALUE)+"'"+;
+			"lastname='"+AddSlashes(self:oDCmlastname:TextValue)+"',nameext='"+AddSlashes(self:oDCmNameExt:TextValue))+"'"+;
+			",initials='"+AddSlashes(self:oDCmInitials:TextValue)+"'"+;
 			",title='"+AddSlashes(cTit)+"'"+;
-			",attention='"+AddSlashes(self:oDCmAttention:VALUE)+"'"+;
-			",prefix='"+AddSlashes(self:oDCmPrefix:VALUE)+"'"+;
-			",firstname='"+AddSlashes(self:mFirstName)+"'"+;
-			",address='"+AddSlashes(self:mAddress)+"'"+;
-			",country='"+AddSlashes(self:mCountry)+"'"+;
+			",attention='"+AddSlashes(self:oDCmAttention:TextValue)+"'"+;
+			",prefix='"+AddSlashes(self:oDCmPrefix:TextValue)+"'"+;
+			",firstname='"+AddSlashes(self:oDCmFirstName:TextValue)+"'"+;
+			",address='"+AddSlashes(self:oDCmAddress:TextValue)+"'"+;
+			",country='"+AddSlashes(self:oDCmCountry:TextValue)+"'"+;
 			",postalcode='"+AddSlashes(self:mPostalcode)+"'"+;
 			",mailingcodes='"+AllTrim(self:mCod)+"'"+;
 			",externid='"+ZeroTrim(self:mExternid)+"'"+;
@@ -1204,7 +1204,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		ENDIF
 		self:oDCmPersid:TextValue:="       "
 		IF !Empty(self:oPersCnt:m51_lastname)
-			self:mlastname:= Lower(self:oPersCnt:m51_lastname)
+			self:oDCmLastName:TextValue := Lower(self:oPersCnt:m51_lastname)
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_initials)
 			self:mInitials := self:oPersCnt:m51_initials
