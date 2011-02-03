@@ -1510,7 +1510,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","contra_bankaccnt","char(25)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
 		{"telebankpatterns","addsub","char(1)","NO","",""},;
-		{"telebankpatterns","description","char(32)","NO","",""},;
+		{"telebankpatterns","description","varchar(128)","NO","",""},;
 		{"telebankpatterns","accid","int(11)","NO","0",""},;
 		{"telebankpatterns","ind_autmut","tinyint(1)","NO","0",""},;
 		{"telebankpatterns","recdate","date","NO","0000-00-00",""},;
