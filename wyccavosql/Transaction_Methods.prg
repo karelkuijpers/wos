@@ -3199,7 +3199,7 @@ Method SpecialMessage() class PaymentJournal
 	local Destname, cSpecMessage as string
 	local lSpecmessage as logic
 	local aNospecmess:={'donatie','steun','bijdrage','maand','mnd','kwartaal','algeme','werk','onderh','onderst','wycliffe','betalingskenm'}  as array
-	local aSpecmess:={'project','pensioen','lijfrente'} as array 
+	local aSpecmess:={'project','pensioen','lijfrente','nalaten'} as array 
 	// determine extra messsage in description of transaction: 
 	if !self:Acceptgiro .and.  !Empty(oHm:AccDesc)
 		nMsgPos:=At('%%',self:oTmt:m56_description)
