@@ -129,7 +129,6 @@ oDCSC_REK := FixedText{SELF,ResourceID{EDITTELEBANKPATTERN_SC_REK,_GetInst()}}
 oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account:",NULL_STRING,NULL_STRING}
 
 oDCmdescription := SingleLineEdit{SELF,ResourceID{EDITTELEBANKPATTERN_MDESCRIPTION,_GetInst()}}
-oDCmdescription:FieldSpec := TeleBankPatterns_description{}
 oDCmdescription:HyperLabel := HyperLabel{#mdescription,"Oms:",NULL_STRING,"TeleBankPatterns_description"}
 oDCmdescription:TooltipText := "enter one or more keywords from transaction description"
 
@@ -298,9 +297,9 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 	cStatement:=iif(lNew,"insert into","update")+" telebankpatterns set "+;
 		"contra_bankaccnt='"+self:mcontra_bankaccnt+"'"+;
 		",accid ="+maccid+;
-		",description ='"+SubStr(AllTrim(self:mdescription),1,32)+"'"+;
+		",description='"+iif(Empty(self:mdescription),'',self:mdescription)+"'"+;
 		",kind ='"+AllTrim(self:mkind)+"'"+;
-		",contra_name ='"+SubStr(AllTrim(self:mcontra_name),1,32)+"'"+;
+		",contra_name ='"+self:mcontra_name+"'"+;
 		",addsub ='"+self:mAddSub+"'"+;
 		",ind_autmut ="+iif(self:mInd_AutMut,'1','0')+;
 		",recdate=Now()"+;
@@ -314,7 +313,7 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 				AllTrim(self:mkind),;
 				SubStr(AllTrim(self:mcontra_name),1,32),;
 				self:mAddSub,;
-				SubStr(AllTrim(self:mdescription),1,32),;
+				Split(AllTrim(self:mdescription),Space(1)),;
 				maccid,;
 				logic(_cast,self:mInd_AutMut)})
 			IF !oTele:oTelTr:EOF
