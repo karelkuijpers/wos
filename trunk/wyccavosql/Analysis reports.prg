@@ -118,8 +118,8 @@ BEGIN
 	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
 	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
 	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
-	CONTROL	"21. januar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
-	CONTROL	"21. januar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
+	CONTROL	"4. februar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
+	CONTROL	"4. februar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
 	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
 	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
 	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
@@ -829,7 +829,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			+ UnionTrans2("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB ",ConDate(1997,1,1),FrequencyEnd))        // Begin at a very old date 
+			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB ",ConDate(1950,1,1),FrequencyEnd))        // Begin at a very old date 
 			return nil
 		endif
 
@@ -1318,6 +1318,8 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	ptrHandle := MakeFile(self,@cFileName,"Creating DonorFollowing-report")
 
 	IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
+		SetDecimalSep(Asc(DecSeparator))
+		
 		oFileSpec:FullPath:=cFileName
 		// header record:
 		FWriteLine(ptrHandle,"<html><body><table style='font-family: Arial;' border='2'><tr style='font-weight: bold; color:navy;'>"+;
@@ -1358,6 +1360,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		FClose(ptrHandle)
 		self:STATUSMESSAGE("")
 		self:Pointer := Pointer{POINTERARROW}
+		SetDecimalSep(Asc('.'))
 
 		// Show with excel:
 		FileStart(oFileSpec:FullPath,self)
