@@ -168,7 +168,7 @@ endif
 method Close(oEvent) class ImportMapping
 	//Put your changes here 
 	SetAnsi(true) 
-   if self:lImportFile
+   if self:lImportFile .and.!Empty(self:ptrHandle)
    	FClose(self:ptrHandle)
    else
    	if Used()
@@ -321,21 +321,21 @@ return AllTrim(cTargetStr)
 METHOD Import(oEdit as DataWindow) as void pascal CLASS ImportMapping
 * Import sourcefile to TargetDB
 IF self:lImportFile
-	IF self:ImportCount<2.and. !Empty(ptrHandle)
-		FClose(ptrHandle)
-		ptrHandle:=null_ptr
+	IF self:ImportCount<2.and. !Empty(self:ptrHandle)
+		FClose(self:ptrHandle)
+		self:ptrHandle:=null_ptr
 	ENDIF
 		
-	IF Empty(ptrHandle)
-		ptrHandle:=FOpen(SourceFile,FO_READ)
-		IF ptrHandle = F_ERROR
+	IF Empty(self:ptrHandle)
+		self:ptrHandle:=FOpen(SourceFile,FO_READ)
+		IF self:ptrHandle = F_ERROR
 			(ErrorBox{,"Could not open file; Error:"+DosErrString(FError())}):show()
 			RETURN
 		ENDIF
-		cBuffer:=FReadLine(ptrHandle,4096)   // skip title line
+		cBuffer:=FReadLine(self:ptrHandle,4096)   // skip title line
 	ENDIF
-	cBuffer:=FReadLine(ptrHandle,4096) // read first/next data line
-	if Empty(cBuffer).and.FEof(ptrHandle)
+	cBuffer:=FReadLine(self:ptrHandle,4096) // read first/next data line
+	if Empty(cBuffer).and.FEof(self:ptrHandle)
 		RETURN
 	ENDIF
 ELSE
@@ -1036,7 +1036,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 			ELSEIF IDs=#mtype
 				IVarPutSelf(self:oEdit:oPersCnt,#m51_type,cTargetStr) 			
 			ELSEIF IDs=#mTitle
-				IVarPutSelf(self:oEdit:oPersCnt,#m51_title,Transform( self:oEdit:mtit,"XXX"))
+				IVarPutSelf(self:oEdit:oPersCnt,#m51_title,Transform( self:oEdit:mTitle,"XXX"))
 			ENDIF				
 		ENDIF
 	NEXT
