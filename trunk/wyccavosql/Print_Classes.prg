@@ -2714,7 +2714,7 @@ CLASS PrintDialog INHERIT _PrintDialog
 	PROTECT row:=0 AS INT
 	EXPORT Extension as STRING 
 	
-	declare method prstart
+	declare method prstart,ReInitPrint
 ACCESS Beginreport() CLASS PrintDialog
 RETURN SELF:FIELDGET(#_Beginreport)
 
@@ -2760,32 +2760,32 @@ METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS
 	SELF:lPrintOk := FALSE
 	SELF:ToFileFS := FileSpec{}
 
-	oPrinter	:= PrintingDevice{}
+	self:oPrinter	:= PrintingDevice{}
 	IF Empty(nOrientation)
 		nOrientation := WycIniFS:GetInt("Runtime", "PrintOrientation" )
 	ENDIF
 	IF !Empty(nOrientation)
-		oPrinter:Orientation:=nOrientation
+		self:oPrinter:Orientation:=nOrientation
 	ELSE	
-		oPrinter:Orientation:= DMORIENT_PORTRAIT  // default portrait
+		self:oPrinter:Orientation:= DMORIENT_PORTRAIT  // default portrait
 	ENDIF
 
-	oDCPrinterText:Value := "Default Printer - ( " + AllTrim( oPrinter:Device ) + ;
-		" on " + AllTrim( oPrinter:Port ) + " )"
+	self:oDCPrinterText:Value := "Default Printer - ( " + AllTrim( self:oPrinter:Device ) + ;
+		" on " + AllTrim( self:oPrinter:Port ) + " )"
 	SetPath(CurPath)
 	IF Label
-		oDCPrinterText:Hide()
-		oCCPrinterRadioButton:Hide()
-		oCCScreenRadioButton:Hide()
-		oCCToFileRadioButton:Hide()
-		oDCDestination:Hide() 
+		self:oDCPrinterText:Hide()
+		self:oCCPrinterRadioButton:Hide()
+		self:oCCScreenRadioButton:Hide()
+		self:oCCToFileRadioButton:Hide()
+		self:oDCDestination:Hide() 
 		self:oDCDestination:Value := "Printer"
 		self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,false}
 	else 	
 		self:oDCDestination:Value := "Screen"
 	ENDIF
-	IF MaxWidth > 0
-		oDialFont:Font:SetPointSize(Min(10,Round((900*WinScale)/SELF:MaxWidth,0)))
+	IF self:MaxWidth > 0
+		self:oDialFont:Font:SetPointSize(Min(10,Round((900*WinScale)/self:MaxWidth,0)))
 	ENDIF
 
 	
@@ -2803,12 +2803,11 @@ METHOD InitRange(mRange) CLASS PrintDialog
 	
 	RETURN NIL
 
-METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
+METHOD OkButton(cDest) CLASS PrintDialog
 
 	LOCAL nMax, nMin,nRet AS INT
 	Local cDefFolder as string 
 	local lError as logic
-	Default(@SendToMail,FALSE)
 
 	IF IsNil(cDest)
 		self:Destination := self:oDCDestination:Value
@@ -2822,7 +2821,7 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 			self:Extension:="txt"
 		endif
 	endif
-	self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,SendToMail}
+	self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,self:Extension}
 	IF self:oDCPageRange:Value == "Selection"
 		nMin := Integer(Val(self:oDCFromPage:TextValue))
 		nMax := Integer(Val(self:oDCToPage:TextValue))
@@ -2839,27 +2838,12 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 	SELF:lPrintOk := TRUE
 
 	IF self:Destination == "File" 
-		// 		cDefFolder:=(oSys:=Sysparms{}):DOCPATH
-		//       if Empty(cDefFolder)
-		//       	cDefFolder:=CurPath+"\"
-		//       endif
 		ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
 		
 		IF ToFileFs==NULL_OBJECT
 			self:lPrintOk := FALSE 
-			// 		else
-			// 			if !cDefFolder==ToFileFS:Drive+ ToFileFS:Path
-			// 				if ToFileFS:Drive == SubStr(WorkDir(),1,2) .or.ToFileFS:Drive == CurDrive()+":"
-			// 					// save current location:
-			// 					oSys:RecLock()
-			// 					oSys:DOCPATH:=ToFileFS:Drive+ ToFileFS:Path
-			// 					oSys:Commit()
-			// 					oSys:Close()
-			// 					oSys:=null_object
-			// 				endif
-			// 			endif
-		ENDIF
-	ENDIF
+		ENDIF 
+	endif
 	if self:Label
 		* Check if number of rows below minimum (4 of 3 +KIXcode-row):
 		IF CountryCode="31"
@@ -2878,39 +2862,36 @@ METHOD OkButton(cDest,SendToMail) CLASS PrintDialog
 		endif
 
 	endif
-	IF Empty(Pagetext)
-		Pagetext:=oLan:RGet('Page',,"!")
-	END IF
+	IF Empty(self:Pagetext)
+		self:Pagetext:=self:oLan:RGet('Page',,"!")
+	ENDIF
 
 	
 	SELF:EndDialog()
 	
 	RETURN
-METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipaant)  CLASS PrintDialog
-* Afdrukken op printer of scherm van een LineContent
+METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS PrintDialog
+* Output to printer or window of LineContent
 *
-* Aanroep met: PrintLine(@LineNbr,@PageNbr,LineContent,{kop1,kop2,...},skipaant)
+* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
 * Parameters:
-* LineNbr: nieuwe waarde wordt teruggegeven; terugzetten naar 0 geeft bladskip 
-*          gelijk aan vorig LineNbr: voeg tekst achteraan LineContent
+* LineNbr: new value returned; reset to zero causes page skip 
+*          equal to last linenbr means: add content at the end of last line content
 * PageNbr : idem
-* LineContent  : Inhoud van af te drukken LineContent; indien NIL, alleen test bladskip
-* HeadingLines: Array met HeadingLines; 1st niet langer dan 60 vanwege datum+pagina
-* Skipaant: Optioneel aantal extra LineContents vooruit te testen voor bladskip
-* Beginreport: optionele aanduiding of dit het begin van het report betreft; indien
-*				niet naar nieuwe pagina gesprongen wordt, worden toch de HeadingLines afgedrukt
-*				Deze waarde kan via PrintDialog:Beginreport:=true gezet worden
-* Benodigde global variabelen:
+* LineContent  : Content of to be outputted line; when nil, only test page skip
+* HeadingLines: Array with HeadingLines; 1st less than 60 because of needed space for date and page number
+* skipcount: Optional to force page skip if not enough space for this line content + skipcount lines
+* Beginreport: optionele indication of report start which forces printing of the heading lines independent of a page skip; 
+*				Setting of this values: PrintDialog:Beginreport:=true 
+* Used export variabels:
 * - self:PaperHeight
-* - alg_prdev
-* - alg_papier
 *
 
 LOCAL i AS INT,kopdate AS STRING
 LOCAL skippage:=FALSE AS LOGIC
 LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
 LOCAL lXls:=FALSE AS LOGIC
-Default(@skipaant,0)
+Default(@skipcount,0)
 if !Empty(LineNbr).and.LineNbr==(self:row-1)
 	self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
 	LineNbr++
@@ -2920,16 +2901,16 @@ IF SELF:Extension=="xls" .and. SELF:Destination="File"
 	lXls:=TRUE
 ENDIF
 IF self:_Beginreport
-	IF !lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipaant,4)> Integer(self:oPrintJob:PaperHeight)
-		// niet eerste pagina en meer dan halve pagina bedrukt:
+	IF !lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipcount,4)> Integer(self:oPrintJob:PaperHeight)
+		// When not first page and more than half of the page printed:
 		skippage:=TRUE
 		IF Destination == "Printer".or.;
 		Destination == "File"
 			AAdd(SELF:oPrintJob:aFIFO,PAGE_END)
 		ENDIF
 	ENDIF
-	LineNbr:=self:row // zet weer terug op oorspronkelijke waarde
-ELSEIF (Empty(PageNbr) .or. ((self:row+skipaant+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!lXls)
+	LineNbr:=self:row // reset to original value
+ELSEIF (Empty(PageNbr) .or. ((self:row+skipcount+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!lXls)
 	skippage:=TRUE
 	IF (PageNbr>0.or.LineNbr>0).and.(Destination == "Printer".or.;
 		Destination == "File")
@@ -2941,7 +2922,7 @@ IF skippage .or. self:_Beginreport.or.PageNbr=0 .or. lXls.and.Empty(LineNbr)
 		++PageNbr
 		LineNbr := 0
 	ELSEIF LineNbr>0
-		// voeg 2 spatieLineContents toe:
+		// add two space lines:
 		AAdd(SELF:oPrintJob:aFIFO," ")
 		AAdd(SELF:oPrintJob:aFIFO," ")
 		LineNbr+=2
@@ -2974,7 +2955,7 @@ IF !IsNil(LineContent)
 ENDIF
 self:row:=LineNbr
 RETURN
-METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS PrintDialog
+METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 * lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
 * cRTFHeading: start rtf-text for specifying format
 	LOCAL oPrintShow as Window
@@ -2982,7 +2963,8 @@ METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS Pri
 	LOCAL MyFileName, RetFileName,cFileName as STRING
 	LOCAL ptrHandle
 	LOCAL scrFont as myFont
-	local mySize as dimension
+	local mySize as dimension 
+	local lRTF as logic
 /*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}}"+;
 	"{\colortbl ;\red0\green0\blue0;}\viewkind4\uc1\pard\cf1\lang1043\viewkind1\paperw16838\paperh11906"+;
 	"\lndscpsxn\margl1400\margr1200\margt600\margb600\f0\fs"   */
@@ -3009,7 +2991,7 @@ METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS Pri
 
 // 	Default(@lRTF,FALSE)
 // 	Default(@lModeless,false)
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:Pointer := Pointer{POINTERHOURGLASS} 
 * Starten van printer
 	IF SELF:Destination == "Printer"
 		oPrintJob:oWaitPrint := Wait_for_printer{SELF}
@@ -3039,19 +3021,17 @@ METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS Pri
 		RETURN oPrintShow
 	ELSEIF Len(SELF:oPrintJob:aFIFO)>0
 *		write to file?
-		
+		if self:Extension=='doc'
+			lRTF:=true
+		endif
 		IF SELF:oPrintJob:aFIFO[1] = MEMBER_START
 			IF lRTF
-				//SELF:ToFileFS:Extension:="rtf"
-				SELF:ToFileFS:Extension:="doc"
+				self:ToFileFS:Extension:="doc"
 			ENDIF
 			MyFileName:= AllTrim(SELF:ToFileFS:FileName)
 			RETFileName:=SELF:ToFileFS:FullPath
 			SELF:ToFileFS:FileName:=MyFileName+" "+StrTran(SELF:oPrintJob:aFIFO[1],MEMBER_START,,1,1)
 		ENDIF
-*		ptrHandle := FCreate(SELF:ToFileFS:FullPath)
-*	    IF ptrHandle = F_ERROR
-*			(WarningBox{,,"Printing to file","Error: "+DosErrString(FError())+" when creating file "+SELF:ToFileFS:FullPath}):Show() 
 		cFileName:= self:ToFileFS:FullPath
 		ptrHandle:=MakeFile(,@cFileName,"Printing to file")
 		IF ptrHandle==NIL
@@ -3066,7 +3046,7 @@ METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS Pri
 					ELSE						
 						FWriteLine(ptrHandle,CHR(ASC_FF ))
 					ENDIF
-				ELSEIF SELF:oPrintJob:aFIFO[i] = MEMBER_START
+				ELSEIF self:oPrintJob:aFIFO[i] = MEMBER_START
 					IF lRTF
 						FWriteLine(ptrHandle,"\par }")
 					ENDIF						
@@ -3076,13 +3056,14 @@ METHOD prstart(lRTF:=false as logic,lModeless:=true as logic) as usual CLASS Pri
 					IF lRTF
 						FWriteLine(ptrHandle,cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
 					ENDIF						
-				ELSE
-					IF lRTF
-						FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i]+"\par")
-					else
-						FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i])
+				ELSEIF lRTF
+					if i==1
+						FWriteLine(ptrHandle,cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
 					endif
-				ENDIF
+					FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i]+"\par")
+				else
+					FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i])
+				endif
 			NEXT
 			IF lRTF
 				FWriteLine(ptrHandle,"\par }")
@@ -3104,11 +3085,10 @@ ENDIF
 RETURN TRUE
 
 
-METHOD ReInitPrint(SendToMail) CLASS PrintDialog
-Default(@SendToMail,FALSE)
+METHOD ReInitPrint(SendToMail:=false as logic) as void pascal CLASS PrintDialog
 SELF:oPrintJob:= NULL_OBJECT
 SELF:oPrintJob := Printjob{cCaption,SELF:oPrinter,SELF:Label,SELF:MaxWidth,,SendToMail}
-RETURN TRUE
+RETURN 
 METHOD SetupButton( ) CLASS PrintDialog
 LOCAL structDevMode AS _WINDevMode
 	IF self:oPrinter:IsValid()
@@ -3166,7 +3146,7 @@ CLASS Printjob INHERIT Printer
 	EXPORT oRange AS Range
 	EXPORT nCurPage AS INT
 	EXPORT Label AS LOGIC
-	EXPORT SendToMail AS LOGIC
+	EXPORT Extension as string
 	EXPORT lLblFinish AS LOGIC
 	EXPORT oPers as SQLSelect
 	EXPORT oWaitPrint AS wait_for_printer
@@ -3184,14 +3164,14 @@ CLASS Printjob INHERIT Printer
 
 METHOD GetFont()  CLASS Printjob
 RETURN SELF:Font
-METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,SendToMail) CLASS Printjob
+METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,Extension) CLASS Printjob
 	LOCAL oSize AS Dimension
 	LOCAL oKixSize AS Dimension
 	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH AS INT
 	LOCAL nResolution:=600 // dots per inch
-	Default(@SendToMail,FALSE)
+	Default(@Extension,null_string)
 	iPointSize:=12
-   self:SendToMail:=SendToMail
+   self:Extension:=Extension
 	SUPER:INIT(cJobname,oPrintingDev)
 	self:Label := lLabel
 
@@ -3240,7 +3220,7 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 			self:nLblKIXHeight := oKixSize:Height+Round((2*nResolution)/25.4,0)
 		ENDIF
 	ELSE
-		IF self:SendToMail .or. self:CanvasArea==null_object .or.Empty(self:CanvasArea:Height)
+		IF self:Extension=='doc' .or. self:CanvasArea==null_object .or.Empty(self:CanvasArea:Height)
 			// Fixed A4-size landscape when sending print by e-mail:
 			// In Twips (rtf): paperw16838\paperh11906margl1400\margr1200\margt600\margb600
 			// twips=1/20 pt, 1pt=1/1440 inch=2,54/1440cm
