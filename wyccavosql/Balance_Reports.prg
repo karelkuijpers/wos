@@ -1882,26 +1882,26 @@ SELF:FieldPut(#BeginReport, uValue)
 RETURN uValue
 
 METHOD ButtonClick(oControlEvent) CLASS DeptReport
-	LOCAL oControl AS Control
-	LOCAL nDep AS STRING
+	LOCAL oControl as Control
+	LOCAL nDep as STRING
 	LOCAL filename as STRING
 	local aBal:={} as array
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
 	filename:=oControl:Name
 	IF !filename="SEPARATEFILE" .and. filename #"PRINTALL"
 		RETURN
 	ENDIF
-	IF ValidateControls( SELF, SELF:AControls )
+	IF ValidateControls( self, self:AControls )
 		IF filename == "SEPARATEFILEMAIL"
 			IF !IsMAPIAvailable()
-				(errorbox{SELF:Owner,"Outlook not default mailing system or no interface to it"}):show()
+				(errorbox{self:Owner,"Outlook not default mailing system or no interface to it"}):show()
 				RETURN
 			ENDIF
 		ENDIF
-		IF Empty(SELF:FromDep)
-			(errorbox{SELF:Owner,"Specify From Department"}):show()
+		IF Empty(self:FromDep)
+			(errorbox{self:Owner,"Specify From Department"}):show()
 		ELSE
 			aBal:=GetBalYear(Val(SubStr(BalYears,1,4)),Val(SubStr(BalYears,5,2)))
 			self:YEARSTART:=aBal[1]
@@ -1917,7 +1917,7 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 				ENDIF
 			ENDIF
 
-		   self:oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,137,DMORIENT_LANDSCAPE}
+		   self:oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,137,DMORIENT_LANDSCAPE,iif(filename = "SEPARATEFILE",'doc','')}
 			IF filename = "SEPARATEFILE"
 				self:oReport:OkButton("File",true)
 			ELSE
@@ -1926,9 +1926,9 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 			IF .not. self:oReport:lPrintOk
 				RETURN
 			ENDIF
-			SELF:DepstmntPrint()
+			self:DepstmntPrint()
 			self:oReport:PrStop()
-			SELF:StatusMessage("Done",4)
+			self:StatusMessage("Done",4)
 		ENDIF
 	ENDIF
 	RETURN
@@ -1954,21 +1954,21 @@ SELF:destroy()
 	RETURN NIL
 
 METHOD DepstmntPrint() CLASS DeptReport
-LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth AS LOGIC
+LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth as LOGIC
 LOCAL scheiding = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
 '-------|-------|-------|-------|-------|-------|-------|'
 LOCAL regtel,medtel,GClen,i,nRow,nPage as int
-LOCAL aDep:={} AS ARRAY
+LOCAL aDep:={} as ARRAY
 LOCAL PeriodText, mailname as STRING
 local nDep as int
 LOCAL  DueRequired,GiftsRequired,AddressRequired,RepeatingPossible as LOGIC
-LOCAL brieftxt AS STRING
-LOCAL oSelpers AS Selpers
-LOCAL oMapi AS MAPISession
+LOCAL brieftxt as STRING
+LOCAL oSelpers as Selpers
+LOCAL oMapi as MAPISession
 LOCAL oRecip1,oRecip2 as MAPIRecip
-LOCAL aMailDepartment:={} AS ARRAY
-LOCAL cFileName AS USUAL, oFileSpec AS FileSpec
-LOCAL oEMLFrm AS eMailFormat
+LOCAL aMailDepartment:={} as ARRAY
+LOCAL cFileName as USUAL, oFileSpec as FileSpec
+LOCAL oEMLFrm as eMailFormat
 LOCAL aASS,aAcc,aAccGift as ARRAY
 LOCAL FileInit, cDepName as STRING 
 local oBal as SQLSelect 
@@ -1981,27 +1981,27 @@ PeriodText:=Str(self:YEARSTART,4)+' '+maand[self:MONTHSTART]+" "+oLan:RGet('up i
 //TotalWidth=137
 lPrintFile:=(self:oReport:Destination=="File")
 IF self:SendingMethod=="SeperateFileMail"
-	(oEMLFrm := eMailFormat{oParent}):Show()
+	(oEMLFrm := eMailFormat{oParent}):show()
 	IF oEMLFrm:lCancel
 		RETURN FALSE
 	ENDIF
 ENDIF
 
-SELF:Pointer := Pointer{POINTERHOURGLASS}
-SELF:Statusmessage("Collecting data for the report, please wait...")
+self:Pointer := Pointer{POINTERHOURGLASS}
+self:STATUSMESSAGE("Collecting data for the report, please wait...")
 IF SendingMethod=="SeperateFileMail"
-	oMAPI := MAPISession{}	
-	IF !oMAPI:Open( "" , "" )
+	oMapi := MAPISession{}	
+	IF !oMapi:Open( "" , "" )
 		MessageBox( 0 , "MAPI-Services not available." , "Problem" , MB_ICONEXCLAMATION )
 		RETURN
 	ENDIF		
 ENDIF
 aDep:=self:oDCSubSet:GetSelectedItems()
 if Empty(aDep)
-	ErrorBox{self,self:oLan:Wget("No departments selected in Subset")}:Show()
+	ErrorBox{self,self:oLan:WGet("No departments selected in Subset")}:show()
 	return
 endif
-IF oBalReport==NULL_OBJECT
+IF oBalReport==null_object
 	oBalReport:=BalanceReport{}
 ENDIF 
 		
@@ -2031,7 +2031,7 @@ oAcc:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.a
 if oAcc:RecCount<1
 	if !Empty(oAcc:Status)
 		LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
-		ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
+		ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:show()
 	endif
 	return
 endif 
@@ -2086,7 +2086,7 @@ do WHILE !oAcc:Eof
 
 	FOR i=1 to Len(aAcc)
 		nRow:=0  && force page skip
-		self:oTransMonth:MonthPrint(aAcc[i],aAcc[i],self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading,self:oLan)
+		self:oTransMonth:MonthPrint(aAcc[i],aAcc[i],self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MONTHEND,@nRow,@nPage,addHeading,self:oLan)
 	NEXT
 	
 	*	If associated accounts for this department, print also corresponding accountstatements for this month:
@@ -2096,7 +2096,7 @@ do WHILE !oAcc:Eof
 		oAccAss:=SQLSelect{"select accnumber from account where accid in ("+Implode(aASS)+")",oConn} 
 		self:Statusmessage("Printing Associated Accountstatements for "+cDepName+", please wait...")
 		Do While !oAccAss:Eof
-			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
+			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MONTHEND,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
 			nRow:=0  && force page skip
 			oAccAss:Skip()
 		enddo
@@ -2104,7 +2104,7 @@ do WHILE !oAcc:Eof
 	// Print gift reports for each gift allowed account:
 	self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
 	self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName)
-	if	nCurFiFo==Len(self:oReport:oPrintJob:aFIFO)
+	if	nCurFifo==Len(self:oReport:oPrintJob:aFIFO)
 		// nothing printed:
 		self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
 		
@@ -2113,11 +2113,11 @@ do WHILE !oAcc:Eof
 ENDDO
 SetDecimalSep(Asc('.'))
 
-cFileName:=oReport:prstart((SendingMethod="SeperateFile"))    // generate rtf-format when seperate files
+cFileName:=oReport:prstart()    // generate rtf-format when seperate files
 IF IsString(cFileName)
 	IF SendingMethod=="SeperateFileMail" 
-		FOR i:=1 TO Len(aMailDepartment)
-			SELF:Statusmessage("Placing mail messages in outbox of mailing system, please wait...")
+		FOR i:=1 to Len(aMailDepartment)
+			self:STATUSMESSAGE("Placing mail messages in outbox of mailing system, please wait...")
 			oAcc:Goto(aMailDepartment[i])
 			if !empty(oAcc:Persid) .or.!empty(oAcc:Persid2) 
 				oSelpers:=Selpers{}
@@ -2155,7 +2155,7 @@ IF IsString(cFileName)
 	ENDIF
 ENDIF
 
-SELF:Pointer := Pointer{POINTERARROW}
+self:Pointer := Pointer{POINTERARROW}
 
 RETURN
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DeptReport
@@ -3291,7 +3291,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:Destroy()
 	ENDIF
 
-	cFileName:=oReport:prstart(!Empty(SendingMethod))    // generate rtf-format when seperate files
+	cFileName:=oReport:prstart()    // generate rtf-format when seperate files
 	IF IsString(cFileName)
 		IF SendingMethod=="SeperateFileMail"
 			oSelpers:=Selpers{self,,}
@@ -3521,7 +3521,7 @@ ASSIGN NonHomeBox(uValue) CLASS GiftReport
 SELF:FieldPut(#NonHomeBox, uValue)
 RETURN uValue
 
-METHOD OKButton( ) CLASS GiftReport
+METHOD OkButton( ) CLASS GiftReport
 	LOCAL nAcc as STRING
 	LOCAL nRow, nPage as int
 
@@ -3553,9 +3553,9 @@ METHOD OKButton( ) CLASS GiftReport
 				self:ToAccount := self:FromAccount
 				self:FromAccount := nAcc
 			ENDIF
-			self:oReport := PrintDialog{oParent,self:oLan:RGet("Giftreport")+Str(self:PeilJaar,4)+StrZero(self:PeilMnd,2),,137,DMORIENT_LANDSCAPE}
+			self:oReport := PrintDialog{oParent,self:oLan:RGet("Giftreport")+Str(self:PeilJaar,4)+StrZero(self:PeilMnd,2),,137,DMORIENT_LANDSCAPE,"doc"}
 			IF	SendingMethod="SeperateFile"
-				self:oReport:OKButton("File",true)
+				self:oReport:OkButton("File",true)
 			ELSE
 				self:oReport:show()
 			ENDIF
