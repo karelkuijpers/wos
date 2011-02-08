@@ -896,7 +896,7 @@ METHOD PrintReport() CLASS PMISsend
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
 	self:Pointer := Pointer{POINTERARROW}
 	uRet:=nil
-	uRet:=oReport:prstart(false,false)
+	uRet:=oReport:prstart(false)
 
 	oReport:prstop()
 	oWindow:Pointer := Pointer{POINTERARROW}
