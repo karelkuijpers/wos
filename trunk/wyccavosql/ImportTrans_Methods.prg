@@ -385,7 +385,7 @@ METHOD Import() CLASS ImportBatch
 	NEXT
 	IF lv_aant_toe>0
 		* Clear old batches: 
-		oStmnt:=SQLStatement{"delete from importtrans where processed='X' and transdate<'"+SQLdate(Today()-300)+"'",oConn}
+		oStmnt:=SQLStatement{"delete from importtrans where processed=1 and transdate<'"+SQLdate(Today()-300)+"'",oConn}
 		oStmnt:Execute()
 		// delete files:
 		for nf:=1 to Len(aFiles)
@@ -420,7 +420,8 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local aDat as array, impDat as date, cAcc,cAccNumber,cAssmnt, cdat as string , lUnique as logic 
 	local oStmnt as SQLStatement
 	local oSel,oImpTr,oAcc as SQLSelect
-	local cStatement as string
+	local cStatement as string 
+	local lError as logic 
 //    Default(@Testformat,False)
    
 cSep:=CHR(SetDecimalSep())
@@ -465,8 +466,6 @@ else
 	cBank:=oSel:ACCNUMBER
 endif
 
-oAcc:SetOrder("REKOMS")
-oAcc:SetFilter("GIFTALWD=TRUE") 
 // determine max fieldnumber:
 aPt:={ptDate,ptTrans,ptAccName,ptDesc,ptCre,ptPers,ptDoc}
 ASort(aPt)
@@ -474,7 +473,9 @@ maxPt=aPt[Len(aPt)]
 cBuffer:=ptrHandle:FReadLine()
 aFields:=Split(cBuffer,cDelim)
 linenr=1 
-oImpTr:=SQLSelect{"select imptrid from ImportTrans where origin='"+cOrigin+"' and transactnr=?",oConn} 
+oImpTr:=SQLSelect{"select imptrid from ImportTrans where origin='"+cOrigin+"' and 'transactnr'=?",oConn} 
+oParent:Pointer := Pointer{POINTERHOURGLASS} 
+
 DO WHILE Len(AFields)>1
 	linenr++  
 
@@ -483,9 +484,9 @@ DO WHILE Len(AFields)>1
 		* Check if batchtransaction not yet loaded: 
 		oImpTr:execute(AllTrim(AFields[ptTrans ]))
 		if oImpTr:RecCount>0
-			lv_loaded:=FALSE
+			lv_loaded:=true
 		ELSE
-			lv_loaded:=true 
+			lv_loaded:=false 
 		ENDIF
 	ENDIF 
 	cStatement:=""
@@ -500,8 +501,9 @@ DO WHILE Len(AFields)>1
 			endif
 			if impDat==null_date
 				(ErrorBox{,"Wrong date format in "+oFr:FullPath+"; should be: dd.mm.yyyy"}):show() 
-				ptrHandle:Close()
-				return false
+				ptrHandle:Close() 
+				lError:=true
+				exit
 			endif
 		endif
 		if ptAccName>0 .and. ptAccName<=Len(AFields)
@@ -519,8 +521,8 @@ DO WHILE Len(AFields)>1
 				cAccNumber:=""
 			endif
 			cAssmnt:=""
-			if !Empty(cAccNumber)
-				if SQLSelect{"select mbrid from member where accid="+oAcc:accid,oConn}:reccount>0
+			if !Empty(oAcc:accid) 
+				if SQLSelect{"select mbrid from member where accid="+Str(oAcc:accid,-1),oConn}:RecCount>0
 					cAssmnt:="AG"
 				endif
 			endif
@@ -530,7 +532,7 @@ DO WHILE Len(AFields)>1
 		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
 		",descriptn='"+self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
 		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
-		iif(ptCre<= Len(AFields),",creditamnt="+StrTran(AFields[ptCre],"."),"")+;
+		iif(ptCre<= Len(AFields),",creditamnt="+StrTran(StrTran(AFields[ptCre],".",''),",","."),'')+;
 		iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AFields[ptAccName]+"'"+iif(Empty(cAccNumber),"",",accountnr='"+cAccNumber+"'")+iif(Empty(cAssmnt),"",",assmntcd='AG'"),"")+;
 		iif(ptPers>0 .and. ptPers<=Len(AFields),",externid='"+AFields[ptPers]+"'","")+;
 		",origin='"+cOrigin+"'"
@@ -539,14 +541,15 @@ DO WHILE Len(AFields)>1
 		if oStmnt:NumSuccessfulRows<1
 			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
-			return false
+		lError:=true
+				exit
 		endif
 		cStatement:=iif(Empty(impDat),"",",transdate='"+SQLdate(impDat) +"'")+;
 		",docid='Import'"+; 
 		iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
 		",descriptn='"+self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],"")+"'"+;
 		iif(ptDoc<= Len(AFields),",giver='"+AFields[ptDoc]+"'","")+;
-		iif(ptCre<= Len(AFields),",debitamnt="+StrTran(AFields[ptCre],"."),"")+;
+		iif(ptCre<= Len(AFields),",debitamnt="+StrTran(StrTran(AFields[ptCre],".",''),",","."),'')+;
 		",accountnr='"+cBank+"'"+;
 		iif(ptPers>0 .and. ptPers<=Len(AFields),",externid='"+AFields[ptPers]+"'","")+;
 		",origin='"+cOrigin+"'"
@@ -555,16 +558,23 @@ DO WHILE Len(AFields)>1
 		if oStmnt:NumSuccessfulRows<1
 			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
-			return false
+			lError:=true
+			exit
 		endif
-		self:lv_imported++		
+		self:lv_imported++ 
+		nCnt++
+		oMainWindow:STATUSMESSAGE("imported "+Str(nCnt,-1))		
 	ENDIF
 	cBuffer:=ptrHandle:FReadLine()
 	aFields:=Split(cBuffer,cDelim)
 ENDDO
 ptrHandle:Close()
-
+oParent:Pointer := Pointer{POINTERARROW}
+if lError
+	return false
+endif
 RETURN true
+
 METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testformat:=false as logic) as logic CLASS ImportBatch
 	* Import of one batchfile with  transaction data into ImportTrans.dbf 
 	* Testformat: only test if this a file to be imported
