@@ -515,7 +515,7 @@ function SQLAccType() as string
 			"if(a.accid='"+SDEB+"','F',"+;              //invoice
 				"if(a.accid='"+scre+"','C',"+;           // bankorder
 					"if(a.giftalwd=1,"+;
-						"if(m.co<>'','M','G'),"+;        // member, else project
+						"if(m.co IS NOT NULL and m.co<>'','M','G'),"+;        // member, else project
 						"if(a.accid='"+SDON+"','D','')"+;  // debitors, else nothing
 					")"+;
 				")"+;
