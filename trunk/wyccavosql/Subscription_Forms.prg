@@ -829,7 +829,7 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 		mSubid:=Str(self:oSub:subscribid,-1)
 		posit:=oSub:Recno 
 		mtype:=oSub:category
-		oStmnt:=SQLStatement{"delete from Subscription where subscribid="+mSubid,oConn}
+		oStmnt:=SQLStatement{"delete from subscription where subscribid="+mSubid,oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0
 			self:oSub:Execute() 
