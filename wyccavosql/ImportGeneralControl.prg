@@ -599,7 +599,9 @@ oTreeView:=SELF:oDCTreeView1
 	* Add fields of target: 
 	self:aTargetDB:={}
 	oTargetDB:=SQLSelect{"SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
-		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME='"+TargetDB+"' order by ORDINAL_POSITION",oConn}
+		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME='"+Lower(TargetDB)+"' order by ORDINAL_POSITION",oConn}
+// 	oSel:=SQLSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
+// 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
 	if oTargetDB:RecCount<1
 		return
 	endif
