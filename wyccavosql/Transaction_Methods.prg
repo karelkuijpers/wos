@@ -1242,8 +1242,8 @@ METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) 
 local cStatement as string
 local oStmnt as SQLStatement 
 lGiver:=(oMutNew:GC='PF'.or.oMutNew:GC = 'AG' .or. oMutNew:GC = 'MG';
-.or. oMutNew:category= 'G'.or. oMutNew:category= 'D';
-.or. oMutNew:category= 'A' .or. oMutNew:category = 'F' .or. oMutNew:category = 'C') 
+.or. oMutNew:KIND= 'G'.or. oMutNew:KIND= 'D';
+.or. oMutNew:KIND= 'A' .or. oMutNew:KIND = 'F' .or. oMutNew:KIND = 'C') 
 if Empty(oMutNew:SEQNR)
 	self:nLstSEqNr++
 endif
@@ -1254,21 +1254,21 @@ cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "
 ",debforgn="+Str(oMutNew:debforgn,-1)+;
 ",creforgn="+Str(oMutNew:CREFORGN,-1)+;
 ",currency='"+oMutNew:Currency+"'"+;
-",docid='"+self:mBST+"'"+;
+",docid='"+AllTrim(self:mBST)+"'"+;
 ",dat='"+SQLdate(self:mDAT)+"'"+;
-",gc='"+oMutNew:GC+"'"+;
+",gc='"+AllTrim(oMutNew:GC)+"'"+;
 ",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
 ",userid='"+LOGON_EMP_ID+"'"+; 
-",ppdest='"+oMutNew:PPDEST+"'"+;
-",persid="+iif(lGiver,self:mCLNGiver,"0")+;
-",transid="+Str(self:mTRANSAKTNR,-1)+; 
+",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
+",persid='"+iif(lGiver,AllTrim(self:mCLNGiver),"0")+"'"+;
+",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
 ",seqnr="+Str(iif(empty(oMutNew:SEQNR),self:nLstSEqNr,oMutNew:Recno),-1)+;
 ",description='"+AllTrim(oMutNew:DESCRIPTN)+"'"+;
-",reference='"+oMutNew:REFERENCE+"'"+;
+",reference='"+AllTrim(oMutNew:REFERENCE)+"'"+;
 iif(Posting,",poststatus="+ self:mPostStatus,"")+;
 iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
-iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=' '",""))+;  // change from earmarked gift to non-earmarked 
-iif(Empty(oMutNew:SEQNR),""," where transid="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oMutNew:SEQNR,-1)
+iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
+iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(oMutNew:SEQNR,-1)
 
 oStmnt:=SQLStatement{cStatement,oConn}
 oStmnt:Execute()
@@ -3201,7 +3201,7 @@ Method SpecialMessage() class PaymentJournal
 	local aNospecmess:={'donatie','steun','bijdrage','maand','mnd','kwartaal','algeme','werk','onderh','onderst','wycliffe','betalingskenm'}  as array
 	local aSpecmess:={'project','pensioen','lijfrente','nalaten'} as array 
 	// determine extra messsage in description of transaction: 
-	if !self:Acceptgiro .and.  !Empty(oHm:AccDesc)
+	if !self:Acceptgiro .and.  !Empty(oHm:AccDesc) .and.!Empty(self:oTmt)
 		nMsgPos:=At('%%',self:oTmt:m56_description)
 		if nMsgPos>0 
 			Destname:=GetTokens(oHm:AccDesc)[1,1]
