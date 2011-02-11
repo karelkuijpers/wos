@@ -1434,7 +1434,7 @@ SELF:EditButton(TRUE)
 	RETURN NIL
 METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Unique as logic, oPersCnt as PersonContainer) as logic CLASS PersonBrowser
 	LOCAL iEnd := At(",",cValue) as int
-// 	Default(@cValue,null_string)
+	// 	Default(@cValue,null_string)
 	self:oCaller := oExtCaller
 	self:oPersCnt:=oPersCnt
 	IF !Empty(Itemname)
@@ -1468,32 +1468,32 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 		endif
 	ENDIF
 	
-// 	IF lUnique.and.(lFoundUnique.or.Empty(cValue))
-// 		IF IsMethod(oExtCaller, #RegPerson)
-// 			IF Empty(cValue)
-// 				oExtCaller:RegPerson(,Itemname)
-// 			ELSE
-// 				oExtCaller:RegPerson(oPers,Itemname)
-// 			ENDIF
-// 		ENDIF	
-// 	ELSE 
+	// 	IF lUnique.and.(lFoundUnique.or.Empty(cValue))
+	// 		IF IsMethod(oExtCaller, #RegPerson)
+	// 			IF Empty(cValue)
+	// 				oExtCaller:RegPerson(,Itemname)
+	// 			ELSE
+	// 				oExtCaller:RegPerson(oPers,Itemname)
+	// 			ENDIF
+	// 		ENDIF	
+	// 	ELSE 
 
-		IF !Empty(oPersCnt).and.!Empty(oPersCnt:m51_lastname)
-			self:caption+=Compress(" "+oPersCnt:m51_lastname+","+oPersCnt:m51_title+;
+	IF !Empty(oPersCnt).and.!Empty(oPersCnt:m51_lastname)
+		self:caption+=Compress(" "+oPersCnt:m51_lastname+","+oPersCnt:m51_title+;
 			" "+oPersCnt:m51_initials+" "+oPersCnt:m51_prefix+"; "+oPersCnt:m51_ad1+" "+;
 			oPersCnt:m51_pos+" "+oPersCnt:m51_city)
-		else
-			self:caption+=Compress(" "+cValue)
-		ENDIF 
-	   if self:oPers:RecCount>0
-		  	self:oCCOKButton:Enable()
-	   else
-   		self:oCCOKButton:Disable()
-	   endif
+	else
+		self:caption+=Compress(" "+cValue)
+	ENDIF 
+	if self:oPers:RecCount>0
+		self:oCCOKButton:Enable()
+	else
+		self:oCCOKButton:Disable()
+	endif
 
-		self:Show() 
-// 		self:GoTop()
-// 	ENDIF
+	self:Show() 
+	// 		self:GoTop()
+	// 	ENDIF
 	RETURN true
 
 method RegPerson(oCLN) class PersonBrowser 
@@ -1994,6 +1994,9 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 			cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
 		endif
 	endif
+	if Empty(cWhere).and.Empty(cFilter)
+		cWhere:="1=0"    // impossible condition
+	endif
 
 	oSel:=SQLSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder,oConn}
 	IF lUnique .and. oSel:RecCount=1		
@@ -2002,14 +2005,14 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		ENDIF	
 		RETURN
 	ENDIF
-	
+	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller}
 	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller} 
 	oPersBw:cWhere:= cWhere
 	oPersBw:cFrom:=cFrom
 	oPersBw:cOrder:=cOrder
 	oPersBw:cFilter:=cFilter
 	oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1)
-	if oSel:RecCount<1
+	if !oSel==null_object .and. oSel:RecCount<1
 		// use findbutton fields only: 
 		cWhere:=""
 		cFrom:="person as p" 
@@ -2052,7 +2055,10 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
 			endif
 		endif			
-		
+		if Empty(cWhere).and.Empty(cFilter)
+			cWhere:="1=0"    // impossible condition
+		endif
+
 		oPersBw:oPers:SQLString:="select "+oPersBw:cFields+" from "+cFrom+iif(Empty(cWhere).and.Empty(cFilter),""," where ")+cWhere+;
 			iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder 
 		oPersBw:oPers:Execute()
