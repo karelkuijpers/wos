@@ -2348,7 +2348,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				if !Empty(self:mDebAmnt)
 					IF self:mDebAmnt>0
 						oHm:GC := iif(oHm:KIND='M' .and.self:lMemberGiver,'MG',defGc)
-						oHm:DESCRIPTN := 'Gift'
+						oHm:DESCRIPTN := self:oLan:WGet('Gift')
 						IF self:GiftsAutomatic
 							self:AutoRec:=true
 						ENDIF
@@ -2416,7 +2416,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				oHm:GC := iif(oHm:KIND='M' .and.self:lMemberGiver,'MG',self:defGc)
 			endif
 			if Empty(oHm:DESCRIPTN)
-				oHm:DESCRIPTN := 'Gift'
+				oHm:DESCRIPTN := self:oLan:WGet('Gift')
 			endif  		
 		endif
       self:SpecialMessage()
@@ -2424,6 +2424,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 		oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 		oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
 		oHm:aMirror[oHm:RECNO,4]:=oHm:GC  && save in mirror
+		oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
 		* In case of one possible destination and matching amount, assign it to that:
 		IF self:m51_agift =1 .and. (!MultiDest.or.oHm:Original==oHm:cre).and.self:GiftsAutomatic
 			self:AutoRec:=true
@@ -2531,6 +2532,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 							* Save in Mirror:
 							oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 							oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
+							oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
 							self:AutoRec:=true
 							exit
 						else
@@ -2546,7 +2548,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 					if nMsgPos=0
 						nMsgPos:=-1
 					endif 
-					cMess:=AllTrim(StrTran(Lower(SubStr(self:oTmt:m56_description,nMsgPos+2)),'gift'))
+					cMess:=AllTrim(StrTran(Lower(SubStr(self:oTmt:m56_description,nMsgPos+2)),self:oLan:WGet('gift')))
 					if !Empty(cMess) 
 						oHm:GoTop()
 						do WHILE !oHm:EOF
@@ -3080,6 +3082,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			oHm:AccNumber := oAccount:AccNumber
 			oHm:CURRENCY:= oAccount:CURRENCY
 			MultiCur:=iif(oAccount:MULTCURR=1,true,false)
+			oHm:Multiple:=MultiCur
 			oHm:GetCategory()
 			* Default applied amount:
 			oHm:Original := 0
@@ -3092,7 +3095,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 					oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDat),DecAantal)
 				endif
 				oHm:aMirror[oHm:RECNO]:=;
-					{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oAccount:type,oHm:DESCRIPTN}
+					{oHm:ACCNUMBER,oHm:Original,oHm:Cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN}
 				self:oSFPaymentDetails:DebCreProc(false)
 			ELSE
 				if !oHm:CURRENCY==oHm:aMirror[oHm:RECNO,10]
@@ -3104,7 +3107,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 				endif	
 				//				oHm:aMirror[AScan(oHm:aMirror,{|x|x[6]==oHm:Recno})]:=;
 				oHm:aMirror[oHm:RECNO]:=;
-					{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oAccount:type,oHm:DESCRIPTN}
+					{oHm:ACCNUMBER,oHm:Original,oHm:Cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN}
 				self:oSFPaymentDetails:DebCreProc(true)
 			ENDIF
 		ELSE
@@ -3117,7 +3120,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			oHm:AccID:="" 
 			oHm:Multiple:=false
 			oHm:aMirror[oHm:RECNO]:=;
-				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN}
+				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,false,0,'',oHm:DESCRIPTN}
 		ENDIF 
 		self:oSFPaymentDetails:AddCurr()
 		self:Totalise(false,false)
@@ -3475,7 +3478,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					if self:lEarmarking
 						oStmnt:=SQLStatement{"update transaction set bfm='T',userid='"+AddSlashes(LOGON_EMP_ID)+"' where transid="+Str(self:nEarmarkTrans,-1)+" and accid="+SPROJ,oConn}
 						oStmnt:Execute()
-						if oStmnt:NumSuccessfulRows<1
+						if !Empty(oStmnt:status)
 							lError:=true
 							LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						endif
@@ -3487,8 +3490,25 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				lError:=true
 			endif
 			if lError
-				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:Errormessage)}:show()
+				IF !Empty(self:mCLNGiver)
+					FOR i=1 to Len(oHm:Amirror)
+						IF	!Empty(oHm:Amirror[i,12]) 
+							**	update due amount
+							oStmnt:=	SQLStatement{"update	dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
+								"where dueid="+oHm:Amirror[i,12],oConn}
+							oStmnt:Execute() 
+							if	!empty(oStmnt:Status)
+								lError:=true
+								LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+								exit
+							endif
+						ENDIF
+					next
+				endif
+			endif
+			if lError
 				SQLStatement{"rollback",oConn}:Execute()
+				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:Errormessage)}:show()
 				Break
 				return true
 			else
@@ -3546,12 +3566,12 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 							endif
 						endif  
 					endif
-					IF !Empty(oHm:aMirror[i,12]) 
-						** update due amount
-						oStmnt:= SQLStatement{"update dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
-							"where dueid="+oHm:Amirror[i,12],oConn}
-						oStmnt:execute()
-					ENDIF
+// 					IF !Empty(oHm:aMirror[i,12]) 
+// 						** update due amount
+// 						oStmnt:= SQLStatement{"update dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
+// 							"where dueid="+oHm:Amirror[i,12],oConn}
+// 						oStmnt:execute()
+// 					ENDIF
 				NEXT
 				*  Update person info of giver:
 				i:= AScan(oHm:Amirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
@@ -3715,6 +3735,8 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 		if !Empty(cExtraText)
 			self:DESCRIPTN +="; "+AllTrim(cExtraText)
 		endif
+		self:aMirror[self:RECNO]:=;
+				{self:ACCNUMBER,self:Original,self:Cre,self:gc,self:KIND,self:RECNO,self:AccID,self:ACCNUMBER,self:CREFORGN,self:CURRENCY,self:Multiple,0,self:KIND,self:DESCRIPTN}
 	ENDIF
 	RETURN	
 METHOD m54w_rek_pers() CLASS TempGift
