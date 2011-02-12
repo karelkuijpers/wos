@@ -1058,7 +1058,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		crek := Str(oAccount:AccID,-1)
 		oHm:AccDesc := oAccount:Description
 		oHm:ACCNUMBER:=oAccount:ACCNUMBER
-		oHm:KIND:=oAccount:accounttype
+		oHm:KIND:=Upper(oAccount:accounttype)
 		if !oHm:KIND=="M"
 			oHm:gc:=" "
 		else
