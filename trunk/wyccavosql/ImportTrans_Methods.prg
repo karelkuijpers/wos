@@ -265,7 +265,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			IF !Empty(oImpB:AccNumber)
 				self:oHM:accid := Str(oImpB:accid,-1)
 				self:oHM:accdesc:=oImpB:accountname
-				self:oHM:kind:=oImpB:accounttype
+				self:oHM:kind:=Upper(oImpB:accounttype)
 				if Empty(oImpB:Currency).and.!Empty(oImpB:AccCurrency) 
 					self:oHM:CURRENCY:=oImpB:AccCurrency
 				endif 
