@@ -3779,9 +3779,9 @@ endif
 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
-	if self:oMyTrans:RecCount<1
-		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
-	endif 
+// 	if self:oMyTrans:RecCount<1
+// 		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
+// 	endif 
 	self:oHm:aMirror:={}
 	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF
 		self:oHm:append()
@@ -3808,10 +3808,10 @@ endif
 		self:oHm:FROMRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
 		self:oHm:lFromRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
 		self:oHm:OPP:=self:oMyTrans:OPP
-		self:oHm:PPDEST := self:oMyTrans:PPDEST
+		self:oHm:PPDEST := Upper(self:oMyTrans:PPDEST)
 		self:oHm:REFERENCE:=self:oMyTrans:REFERENCE
 		self:oHm:SEQNR := self:oMyTrans:SEQNR
-		self:oHm:KIND := self:oMyTrans:accounttype
+		self:oHm:KIND := Upper(self:oMyTrans:accounttype)
 		IF !Empty(self:oMyTrans:persid)
 			OrigPerson := Str(self:oMyTrans:persid,-1)
 		ENDIF 
@@ -3819,7 +3819,8 @@ endif
 
 		* Add to mirror:
 		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type}
-		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:RECNBR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE})
+//                                                1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
+		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE})
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
