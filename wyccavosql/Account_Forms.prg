@@ -1439,7 +1439,7 @@ METHOD OkButton CLASS EditAccount
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:status)
-			LogEvent(,cStatement,"LogErrors")
+			LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors")
 			(ErrorBox{self,"Fout:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
 			return nil
 		endif
