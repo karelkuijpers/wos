@@ -588,6 +588,7 @@ CLASS TempTrans INHERIT DBSERVEREXTRA
 	EXPORT aTeleAcc as ARRAY
 	EXPORT oDat as date
 	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type}
+//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
    
    declare method CheckUpdates
 
