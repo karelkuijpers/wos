@@ -511,7 +511,7 @@ function SetDepFilter(WhoFrom as int) as string
 function SQLAccType() as string
 // compose sql code for determining account type: of account a, member m:
 	return ;
-		"if(a.subscriptionprice>0,'A',"+;                          // subscribtion
+		"upper(if(a.subscriptionprice>0,'A',"+;                          // subscribtion
 			"if(a.accid='"+SDEB+"','F',"+;              //invoice
 				"if(a.accid='"+scre+"','C',"+;           // bankorder
 					"if(a.giftalwd=1,"+;
@@ -520,7 +520,7 @@ function SQLAccType() as string
 					")"+;
 				")"+;
 			")"+;
-		")"
+		"))"
 
 Function ValidateAccTransfer (cParendId as string,mAccId as string) as string 
 	* Check if transfer of current account mAccId to another balance item with identifciation cParentid is allowed
