@@ -1578,10 +1578,10 @@ METHOD GetSelectedItems () CLASS ListBoxBal
 LOCAL aDep:={} as ARRAY
 LOCAL nPos as int
 * Check if listbox has been activated since last rnage change:
-IF !self:cDepStart==self:cCurStart
-	* RETURN all Departments within range:
-	RETURN (AEvalA(self:GetDepnts(),{|x| x[2]}))
-ENDIF
+// IF !self:cDepStart==self:cCurStart
+// 	* RETURN all Departments within range:
+// 	RETURN (AEvalA(self:GetDepnts(),{|x| x[2]}))
+// ENDIF
 nPos :=self:FirstSelected()
 DO WHILE nPos>0
 	AAdd(aDep,self:getItemValue(nPos))
@@ -1689,10 +1689,10 @@ METHOD GetSelectedItems (dummy:=nil as logic) as array CLASS ListBoxExtra
 LOCAL aAcc:={} as ARRAY
 LOCAL nPos as int
 * Check if listbox has been activated since last range change:
-IF !self:cAccStart==self:cCurStart.or.!self:cAccEnd==self:cCurEnd
-	* RETURN all accounts within range:
-	RETURN (AEvalA(self:GetAccnts(null_string),{|x| x[2]}))
-ENDIF
+// IF !self:cAccStart==self:cCurStart.or.!self:cAccEnd==self:cCurEnd
+// 	* RETURN all accounts within range:
+// 	RETURN (AEvalA(self:GetAccnts(null_string),{|x| x[2]}))
+// ENDIF
 nPos :=self:FirstSelected()
 DO WHILE nPos>0
 	AAdd(aAcc,self:getItemValue(nPos))
