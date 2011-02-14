@@ -1882,26 +1882,26 @@ SELF:FieldPut(#BeginReport, uValue)
 RETURN uValue
 
 METHOD ButtonClick(oControlEvent) CLASS DeptReport
-	LOCAL oControl as Control
-	LOCAL nDep as STRING
+	LOCAL oControl AS Control
+	LOCAL nDep AS STRING
 	LOCAL filename as STRING
 	local aBal:={} as array
-	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
 	filename:=oControl:Name
 	IF !filename="SEPARATEFILE" .and. filename #"PRINTALL"
 		RETURN
 	ENDIF
-	IF ValidateControls( self, self:AControls )
+	IF ValidateControls( SELF, SELF:AControls )
 		IF filename == "SEPARATEFILEMAIL"
 			IF !IsMAPIAvailable()
-				(errorbox{self:Owner,"Outlook not default mailing system or no interface to it"}):show()
+				(errorbox{SELF:Owner,"Outlook not default mailing system or no interface to it"}):show()
 				RETURN
 			ENDIF
 		ENDIF
-		IF Empty(self:FromDep)
-			(errorbox{self:Owner,"Specify From Department"}):show()
+		IF Empty(SELF:FromDep)
+			(errorbox{SELF:Owner,"Specify From Department"}):show()
 		ELSE
 			aBal:=GetBalYear(Val(SubStr(BalYears,1,4)),Val(SubStr(BalYears,5,2)))
 			self:YEARSTART:=aBal[1]
@@ -1926,9 +1926,9 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 			IF .not. self:oReport:lPrintOk
 				RETURN
 			ENDIF
-			self:DepstmntPrint()
+			SELF:DepstmntPrint()
 			self:oReport:PrStop()
-			self:StatusMessage("Done",4)
+			SELF:StatusMessage("Done",4)
 		ENDIF
 	ENDIF
 	RETURN
@@ -1954,174 +1954,183 @@ SELF:destroy()
 	RETURN NIL
 
 METHOD DepstmntPrint() CLASS DeptReport
-LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth as LOGIC
-LOCAL scheiding = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
-'-------|-------|-------|-------|-------|-------|-------|'
-LOCAL regtel,medtel,GClen,i,nRow,nPage as int
-LOCAL aDep:={} as ARRAY
-LOCAL PeriodText, mailname as STRING
-local nDep as int
-LOCAL  DueRequired,GiftsRequired,AddressRequired,RepeatingPossible as LOGIC
-LOCAL brieftxt as STRING
-LOCAL oSelpers as Selpers
-LOCAL oMapi as MAPISession
-LOCAL oRecip1,oRecip2 as MAPIRecip
-LOCAL aMailDepartment:={} as ARRAY
-LOCAL cFileName as USUAL, oFileSpec as FileSpec
-LOCAL oEMLFrm as eMailFormat
-LOCAL aASS,aAcc,aAccGift as ARRAY
-LOCAL FileInit, cDepName as STRING 
-local oBal as SQLSelect 
-local nCurFifo,i as int
-local addHeading as string 
-local oAcc,oAccAss as SQLSelect
-local cLastName as string 
-local mDepNumber as string
-PeriodText:=Str(self:YEARSTART,4)+' '+maand[self:MONTHSTART]+" "+oLan:RGet('up incl')+Str(self:YEAREND,4)+' '+maand[self:MonthEnd]
-//TotalWidth=137
-lPrintFile:=(self:oReport:Destination=="File")
-IF self:SendingMethod=="SeperateFileMail"
-	(oEMLFrm := eMailFormat{oParent}):show()
-	IF oEMLFrm:lCancel
-		RETURN FALSE
+	LOCAL lPrintFile, lSkip, lFirst, lFirstInMonth AS LOGIC
+	LOCAL scheiding = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
+		'-------|-------|-------|-------|-------|-------|-------|'
+	LOCAL regtel,medtel,GClen,i,nRow,nPage as int
+	LOCAL aDep:={} AS ARRAY
+	LOCAL PeriodText, mailname as STRING
+	local nDep as int
+	LOCAL  DueRequired,GiftsRequired,AddressRequired,RepeatingPossible as LOGIC
+	LOCAL mailcontent as STRING
+	LOCAL oSelpers AS Selpers
+	LOCAL oMapi AS MAPISession
+	LOCAL oRecip1,oRecip2 as MAPIRecip
+	LOCAL aMailDepartment:={} AS ARRAY
+	LOCAL cFileName AS USUAL, oFileSpec AS FileSpec
+	LOCAL oEMLFrm AS eMailFormat
+	LOCAL aASS,aAcc,aAccGift as ARRAY
+	LOCAL FileInit, cDepName as STRING 
+	local oBal as SQLSelect 
+	local nCurFifo,i as int
+	local addHeading as string 
+	local oAcc,oAccAss as SQLSelect
+	local cLastName,cFileNameBasic as string 
+	local mDepNumber as string
+	PeriodText:=Str(self:YEARSTART,4)+Space(1)+maand[self:MONTHSTART]+Space(1)+oLan:RGet('up incl')+Space(1)+Str(self:YEAREND,4)+Space(1)+maand[self:MonthEnd]
+	//TotalWidth=137
+	lPrintFile:=(self:oReport:Destination=="File")
+	cFileNameBasic:=self:oReport:ToFileFS:FileName
+	IF self:SendingMethod=="SeperateFileMail"
+		(oEMLFrm := eMailFormat{oParent}):Show()
+		IF oEMLFrm:lCancel
+			RETURN FALSE
+		ENDIF
 	ENDIF
-ENDIF
 
-self:Pointer := Pointer{POINTERHOURGLASS}
-self:STATUSMESSAGE("Collecting data for the report, please wait...")
-IF SendingMethod=="SeperateFileMail"
-	oMapi := MAPISession{}	
-	IF !oMapi:Open( "" , "" )
-		MessageBox( 0 , "MAPI-Services not available." , "Problem" , MB_ICONEXCLAMATION )
-		RETURN
-	ENDIF		
-ENDIF
-aDep:=self:oDCSubSet:GetSelectedItems()
-if Empty(aDep)
-	ErrorBox{self,self:oLan:WGet("No departments selected in Subset")}:show()
-	return
-endif
-IF oBalReport==null_object
-	oBalReport:=BalanceReport{}
-ENDIF 
-		
-self:oBalReport:BalYears:=self:BalYears
-self:oBalReport:lCondense:=true
-self:oBalReport:ind_accstmnt:=FALSE
-self:oBalReport:ind_toel:=FALSE
-self:oBalReport:WhatDetails:=true
-self:oBalReport:WhoDetails:=FALSE
-self:oBalReport:WhatFrom:=0
-self:oBalReport:MONTHEND:=self:MONTHEND
-self:oBalReport:MONTHSTART:=self:MONTHSTART
-self:oBalReport:oReport:=self:oReport
-self:oBalReport:showopeningclosingfund:=true 
-self:oBalReport:SimpleDepStmnt:= self:oDCSimpleDepStmnt:Checked
-IF self:SendingMethod="SeperateFile"
-	self:oBalReport:SendToMail:=true
-else
-	self:oBalReport:SendToMail:=false	
-ENDIF
-self:oBalReport:BeginReport:=self:BeginReport	
-//DO WHILE oDep:DEPTMNTNBR <= ToDep .and. !oDep:EOF
-oAcc:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.assacc3,d.persid,d.persid2,a.accnumber,a.description,a.giftalwd,a.accid"+;
-",p1.lastname as lastname1,p1.email as email1,"+SQLFullName(0,"p1")+" as fullname1,p2.lastname as lastname2,p2.email as email2,"+SQLFullName(0,"p2")+" as fullname2 "+;
-"from account a,department d left join person p1 on(p1.persid=d.persid) left join person p2 on (p2.persid=d.persid2) "+;
-"where a.department=d.depid and d.depid in ("+Implode(aDep,",")+")",oConn}
-if oAcc:RecCount<1
-	if !Empty(oAcc:Status)
-		LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
-		ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:show()
+	SELF:Pointer := Pointer{POINTERHOURGLASS}
+	SELF:Statusmessage("Collecting data for the report, please wait...")
+	IF SendingMethod=="SeperateFileMail"
+		oMAPI := MAPISession{}	
+		IF !oMAPI:Open( "" , "" )
+			MessageBox( 0 , "MAPI-Services not available." , "Problem" , MB_ICONEXCLAMATION )
+			RETURN
+		ENDIF		
+	ENDIF
+	aDep:=self:oDCSubSet:GetSelectedItems()
+	if Empty(aDep)
+		ErrorBox{self,self:oLan:Wget("No departments selected in Subset")}:Show()
+		return
 	endif
-	return
-endif 
-SetDecimalSep(Asc(DecSeparator))
-
-do WHILE !oAcc:Eof
-	nDep:=oAcc:DepId
-	cDepName:=CleanFileName(AllTrim(StrTran(oAcc:DESCRIPTN,"."," "))) 
-	mDepNumber:=oAcc:DEPTMNTNBR
-	nCurFifo:=Len(self:oReport:oPrintJob:aFIFO) 
-	addHeading:=self:oLan:RGet("Department")+Space(1)+cDepName
-	self:STATUSMESSAGE("Collecting data for for "+cDepName+", please wait...")
-	self:oBalReport:WhoFrom:=oAcc:DepId
-	self:oBalReport:iPage:=nPage
-	* Insert departmentname if print to seperate file:
-	FileInit:=""
-	IF lPrintFile .and. self:SendingMethod="SeperateFile"
-		FileInit:=MEMBER_START+cDepName
-	ENDIF
-
-	self:oBalReport:BalancePrint(FileInit)
-	self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
-
-   IF self:oTransMonth==null_object
-   	self:oTransMonth:=AccountStatements{60}
-   ENDIF
-	self:oTransMonth:oReport:=self:oReport
-	self:oTransMonth:BeginReport:=self:BeginReport
-	self:oTransMonth:SendingMethod:=SendingMethod 
-
-// Proces e-mail:
-	IF lPrintFile.and. SendingMethod=="SeperateFileMail"
-		IF !Empty(oAcc:persid).or.!Empty(oAcc:persid2)
-			AAdd(aMailDepartment,oAcc:RECNO)
-		endif
-	ENDIF
-
-	// Print accountstatements of all department accounts:
-	nPage:=self:oBalReport:iPage
-	aAcc:={}
-	aAccGift:={}
-	nRow:=0
-	DO WHILE !oAcc:Eof .and. oAcc:DepId==nDep
-		AAdd(aAcc,oAcc:ACCNUMBER)
-		if oAcc:Giftalwd==1
-			AAdd(aAccGift,oAcc:accid)
-		endif
-		oAcc:Skip()
-	ENDDO
-	ASort(aAcc,,,{|x,y|x<=y})
- 	self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
-
-	FOR i=1 to Len(aAcc)
-		nRow:=0  && force page skip
-		self:oTransMonth:MonthPrint(aAcc[i],aAcc[i],self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MONTHEND,@nRow,@nPage,addHeading,self:oLan)
-	NEXT
+	IF oBalReport==NULL_OBJECT
+		oBalReport:=BalanceReport{}
+	ENDIF 
 	
-	*	If associated accounts for this department, print also corresponding accountstatements for this month:
-	IF !Empty(oAcc:ASSACC1).or.!Empty(oAcc:ASSACC2).or.!Empty(oAcc:ASSACC3)
-		nRow:=0  && force page skip 
-		aASS:={oAcc:ASSACC1,oAcc:ASSACC2,oAcc:ASSACC3}
-		oAccAss:=SQLSelect{"select accnumber from account where accid in ("+Implode(aASS)+")",oConn} 
-		self:Statusmessage("Printing Associated Accountstatements for "+cDepName+", please wait...")
-		Do While !oAccAss:Eof
-			self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MONTHEND,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
-			nRow:=0  && force page skip
-			oAccAss:Skip()
-		enddo
+	self:oBalReport:BalYears:=self:BalYears
+	self:oBalReport:lCondense:=true
+	self:oBalReport:ind_accstmnt:=FALSE
+	self:oBalReport:ind_toel:=FALSE
+	self:oBalReport:WhatDetails:=true
+	self:oBalReport:WhoDetails:=FALSE
+	self:oBalReport:WhatFrom:=0
+	self:oBalReport:MONTHEND:=self:MONTHEND
+	self:oBalReport:MONTHSTART:=self:MONTHSTART
+	self:oBalReport:oReport:=self:oReport
+	self:oBalReport:showopeningclosingfund:=true 
+	self:oBalReport:SimpleDepStmnt:= self:oDCSimpleDepStmnt:Checked
+	IF self:SendingMethod="SeperateFile"
+		self:oBalReport:SendToMail:=true
+	else
+		self:oBalReport:SendToMail:=false	
 	ENDIF
-	// Print gift reports for each gift allowed account:
-	self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
-	self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName)
-	if	nCurFifo==Len(self:oReport:oPrintJob:aFIFO)
-		// nothing printed:
-		self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
+	self:oBalReport:BeginReport:=self:BeginReport	
+	//DO WHILE oDep:DEPTMNTNBR <= ToDep .and. !oDep:EOF
+	oAcc:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.assacc3,d.persid,d.persid2,a.accnumber,a.description,a.giftalwd,a.accid"+;
+		",p1.lastname as lastname1,p1.email as email1,"+SQLFullName(0,"p1")+" as fullname1,p2.lastname as lastname2,p2.email as email2,"+SQLFullName(0,"p2")+" as fullname2 "+;
+		"from account a,department d left join person p1 on(p1.persid=d.persid) left join person p2 on (p2.persid=d.persid2) "+;
+		"where a.department=d.depid and d.depid in ("+Implode(aDep,",")+")",oConn}
+	if oAcc:RecCount<1
+		if !Empty(oAcc:Status)
+			LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
+			ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
+		endif
+		return
+	endif 
+	SetDecimalSep(Asc(DecSeparator))
+
+	do WHILE !oAcc:Eof
+		nDep:=oAcc:DepId
+		cDepName:=CleanFileName(AllTrim(StrTran(oAcc:DESCRIPTN,"."," "))) 
+		mDepNumber:=oAcc:DEPTMNTNBR
+		nCurFifo:=Len(self:oReport:oPrintJob:aFIFO) 
+		addHeading:=self:oLan:RGet("Department")+Space(1)+cDepName
+		self:STATUSMESSAGE("Collecting data for for "+cDepName+", please wait...")
+		self:oBalReport:WhoFrom:=oAcc:DepId
+		self:oBalReport:iPage:=nPage
+		* Insert departmentname if print to seperate file:
+		FileInit:=""
+		IF lPrintFile.and.!Empty(self:SendingMethod) 
+			// rename filename to add department name:                   
+			self:oReport:ToFileFS:FileName:= cFileNameBasic+Space(1)+cDepName
+			nRow := 0
+			// 		FileInit:=MEMBER_START+cDepName
+		ENDIF
+
+		self:oBalReport:BalancePrint(FileInit)
+		self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
+
+		IF self:oTransMonth==null_object
+			self:oTransMonth:=AccountStatements{60}
+		ENDIF
+		self:oTransMonth:oReport:=self:oReport
+		self:oTransMonth:BeginReport:=self:BeginReport
+		self:oTransMonth:SendingMethod:=SendingMethod 
+
+
+		// Print accountstatements of all department accounts:
+		nPage:=self:oBalReport:iPage
+		aAcc:={}
+		aAccGift:={}
+		nRow:=0
+		DO WHILE !oAcc:Eof .and. oAcc:DepId==nDep
+			AAdd(aAcc,oAcc:ACCNUMBER)
+			if oAcc:Giftalwd==1
+				AAdd(aAccGift,oAcc:accid)
+			endif
+			oAcc:Skip()
+		ENDDO
+		ASort(aAcc,,,{|x,y|x<=y})
+		self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
+
+		FOR i=1 to Len(aAcc)
+			nRow:=0  && force page skip
+			self:oTransMonth:MonthPrint(aAcc[i],aAcc[i],self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading,self:oLan)
+		NEXT
 		
+		*	If associated accounts for this department, print also corresponding accountstatements for this month:
+		IF !Empty(oAcc:ASSACC1).or.!Empty(oAcc:ASSACC2).or.!Empty(oAcc:ASSACC3)
+			nRow:=0  && force page skip 
+			aASS:={oAcc:ASSACC1,oAcc:ASSACC2,oAcc:ASSACC3}
+			oAccAss:=SQLSelect{"select accnumber from account where accid in ("+Implode(aASS)+")",oConn} 
+			self:Statusmessage("Printing Associated Accountstatements for "+cDepName+", please wait...")
+			Do While !oAccAss:Eof
+				self:oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
+				nRow:=0  && force page skip
+				oAccAss:Skip()
+			enddo
+		ENDIF
+		// Print gift reports for each gift allowed account:
+		self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
+		self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName)
+		if	nCurFiFo==Len(self:oReport:oPrintJob:aFIFO) .and.nPage=0 .and.nRow=0
+			// nothing printed:
+			self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
+		endif
+		IF lPrintFile.and.!Empty(self:SendingMethod) 
+			// separate files:
+			cFileName:=self:oReport:prstart() // save separate file
+			// Proces e-mail:
+			IF SendingMethod=="SeperateFileMail"
+				IF !Empty(oAcc:persid).or.!Empty(oAcc:persid2)
+					AAdd(aMailDepartment,{oAcc:RECNO,cFileName})
+				endif
+			ENDIF
+		endif
+
+	ENDDO
+	SetDecimalSep(Asc('.'))
+	IF !lPrintFile.or.Empty(self:SendingMethod)
+		self:oReport:prstart()    
 	endif
 
-ENDDO
-SetDecimalSep(Asc('.'))
-
-cFileName:=oReport:prstart()    // generate rtf-format when seperate files
-IF IsString(cFileName)
 	IF SendingMethod=="SeperateFileMail" 
+		oSelpers:=Selpers{self,,}
+		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@RepeatingPossible,1)
+		oSelpers:ReportMonth:=PeriodText
 		FOR i:=1 to Len(aMailDepartment)
-			self:STATUSMESSAGE("Placing mail messages in outbox of mailing system, please wait...")
-			oAcc:Goto(aMailDepartment[i])
+			SELF:Statusmessage("Placing mail messages in outbox of mailing system, please wait...")
+			oAcc:Goto(aMailDepartment[i,1])
 			if !empty(oAcc:Persid) .or.!empty(oAcc:Persid2) 
-				oSelpers:=Selpers{}
-				oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@RepeatingPossible,1)
 				oRecip1:=null_object
 				oRecip2:=null_object
 				if !Empty(oAcc:persid) 
@@ -2139,25 +2148,29 @@ IF IsString(cFileName)
 					cLastName:=StrTran(StrTran(oAcc:Lastname2,"\",""),"/","")
 					oRecip2 := oMapi:ResolveName( cLastName,oAcc:persid2,oAcc:fullname2,oAcc:email2)
 				endif
-				IF oRecip1 != null_object
-					IF !Empty(oEMLFrm:Template) 
-						brieftxt:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
+				IF oRecip1 != null_object                         
+					IF !Empty(oEMLFrm:Template)
+						oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif( !Empty(oAcc:persid),Str(oAcc:persid,-1),Str(oAcc:persid2,-1))+"'",oConn} 
+						mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
 					ELSE
-						brieftxt:=""
+						mailcontent:=""
 					ENDIF
-					oFileSpec:=FileSpec{cFileName}
-					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+" "+oAcc:DESCRIPTN
-					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Department Statements',,"@!")+": "+PeriodText,brieftxt)
+					IF !Empty(oEMLFrm:Template) 
+						mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
+					ELSE
+						mailcontent:=""
+					ENDIF
+					oFileSpec:=FileSpec{aMailDepartment[i,2]}
+					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Department Statements',,"@!")+": "+PeriodText,mailcontent)
 				ENDIF
 			ENDIF
 		NEXT
 		oMAPI:Close()
 	ENDIF
-ENDIF
 
-self:Pointer := Pointer{POINTERARROW}
+	SELF:Pointer := Pointer{POINTERARROW}
 
-RETURN
+	RETURN
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DeptReport
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
@@ -2896,7 +2909,8 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	local oAcc,oTrans,oAccAss as SQLSelect
 	local oPers as SQLSelectPerson
 	LOCAL oPro as ProgressPer
-	local CurLanguage as string 
+	local CurLanguage as string
+	local cFileNameBasic as string  // standard part of filename
 
 	IF self:SendingMethod="SeperateFile"
 		BoldOn:="{\b "
@@ -2905,11 +2919,13 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		RedOff:="\cf0 "
 	ENDIF
 
-	IF .not.oReport:lPrintOk
+	IF .not.self:oReport:lPrintOk
 		RETURN 
 	ENDIF
-	lPrintFile:=(oReport:Destination=="File")
-	IF SendingMethod=="SeperateFileMail"
+	lPrintFile:=(self:oReport:Destination=="File")
+	cFileNameBasic:=self:oReport:ToFileFS:FileName
+
+	IF self:SendingMethod=="SeperateFileMail"
 		(oEMLFrm := eMailFormat{oParent}):Show()
 		IF oEMLFrm:lCancel
 			RETURN 
@@ -2933,7 +2949,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
 	nRow := 0
 	cPeriod:=Str(ReportYear,4)+Space(1)+iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")
-	IF SendingMethod=="SeperateFileMail"
+	IF self:SendingMethod=="SeperateFileMail"
 		oMapi := MAPISession{}	
 		IF !oMapi:Open( "" , "" )
 			MessageBox( 0 , self:oLan:WGet("MAPI-Services not available") , self:oLan:WGet("Problem") , MB_ICONEXCLAMATION )
@@ -2964,7 +2980,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		" from balanceitem b,account a left join member m on (a.accid=m.accid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
-		" and a.accid in ('"+Implode(aAcc,"','")+"' ) group by a.accid order by a.accnumber",oConn}
+		" and a.accid in ('"+Implode(aAcc,"','")+"' ) group by a.accid order by "+iif(Empty(self:SendingMethod),"a.accnumber","a.accid"),oConn}
 	if oAcc:RecCount>1
 		oPro:=ProgressPer{,oMainWindow}
 		oPro:Caption:="Printing giftreports and member statements"
@@ -2972,15 +2988,16 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:SetUnit(1)
 		oPro:Show()
 	endif
-	oTrans:=SQLSelect{UnionTrans("select t.docid,t.transid,a.accid,t.persid,t.dat,t.deb,t.cre,t.fromrpp,bfm,t.opp,t.gc,t.description "+;
-		"from transaction t, account a "+;
-		"where a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
-		" and t.accid in ('"+Implode(aAcc,"','")+"') order by accnumber,dat"),oConn}
+	oTrans:=SQLSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
+		'from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
+		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
+		" and t.accid in ('"+Implode(aAcc,"','")+"') order by "+iif(Empty(self:SendingMethod),"a.accnumber","t.accid")+",dat"),oConn} 
 	if oTrans:RecCount<1
 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
 		return
-	endif 
-   SetDecimalSep(Asc(DecSeparator))
+	endif
+
+	SetDecimalSep(Asc(DecSeparator)) 
 	do WHILE !oAcc:EOF
 		mAccid:=Str(oAcc:accid,-1)
 		lSkip:=FALSE
@@ -2992,14 +3009,13 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				aAssmntAmount[i,j]:=0.00
 			next
 		next
-// 		aAssmntAmount:={{0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0},;
-// 			{0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0}}
 		nPage :=0
 		* Insert membername if print to seperate file: 
-		nBeginmember:=Len(oReport:oPrintJob:aFiFo) 
+		nBeginmember:=Len(self:oReport:oPrintJob:aFiFo) 
 		lTransFound:=false
-		IF lPrintFile.and.!Empty(SendingMethod)
-			AAdd(oReport:oPrintJob:aFiFo,MEMBER_START+AllTrim(StrTran(StrTran(oAcc:description,".",Space(1)),"/","")))
+		IF lPrintFile.and.!Empty(self:SendingMethod) 
+			// rename filename to add member name:                   
+			self:oReport:ToFileFS:FileName:= cFileNameBasic+Space(1)+CleanFileName(AllTrim(StrTran(oAcc:description,"."," ")))
 			nRow := 0
 		ENDIF
 		myLang:=Alg_taal
@@ -3014,12 +3030,12 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		if !Alg_taal==CurLanguage
 			aTrType:={{"AG",oLan:RGet("Assessed Gifts (-10%)",,"!")},{"CH",oLan:RGet("Charges",,"!")},{"MG",oLan:RGet("Member Gifts",,"!")},{"PF",oLan:RGet("Personal Funds",,"!")}}
 			cHeading1:=Str(ReportYear,4)+Space(1)+iif(ASsStart # ReportMonth,oLan:RGet(MonthEn[1],,"!")+Space(1)+oLan:RGet("up incl")+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1),;
-			oLan:RGet(MonthEn[ReportMonth],,"!")+Space(2))+oLan:RGet('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
+				oLan:RGet(MonthEn[ReportMonth],,"!")+Space(2))+oLan:RGet('ACCOUNTBALANCE',,"@!")+":"+Space(1)+'%description%'
 			* Compose heading:
 			aHeading:={Space(1),Space(1),oLan:RGet("Doc-id",10,"!")+Space(1)+oLan:RGet("Date",10,"!")+Space(1)+;
-			oLan:RGet("Description",75,"!")+oLan:RGet("Debit",12,"!","R")+Space(1)+;
-			oLan:RGet("Credit",12,"!","R")+Space(1)+oLan:RGet("Transnbr",10,"!","R"),;
-			Replicate ('-',133)} 
+				oLan:RGet("Description",75,"!")+oLan:RGet("Debit",12,"!","R")+Space(1)+;
+				oLan:RGet("Credit",12,"!","R")+Space(1)+oLan:RGet("Transnbr",10,"!","R"),;
+				Replicate ('-',133)} 
 			cSubTotal:=oLan:RGet('Subtotal',,"!")
 			cFrom:=oLan:RGet("from",,"!")
 			CurLanguage:=Alg_taal
@@ -3030,25 +3046,26 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 
 
 		memberName:=AllTrim(oAcc:Description)
+		self:STATUSMESSAGE(self:oLan:WGet('Printing the report of')+Space(1)+memberName)
 
 		FOR nMonth:=1 to ReportMonth step 1
 			IF ReportMonth=nMonth.or.self:Memberstmnt=="ALLST"
 				store 0 to m71_deb,m71_cre,m71_gifthb,m71_giftrst,m71_chdeb,m71_chcre
 				lFirstInMonth:=true
 			ENDIF
-			IF	lFirst .and.lFirstInMonth
-				oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
-				lFirst:=FALSE
-				oMBal:GetBalance(mAccid,,previousyear*100+previousmonth)
-				oReport:PrintLine(@nRow,@nPage,;
-					Pad(oLan:RGet("Beginning Account balance",,"!")+Space(1)+oLan:RGet(MonthEn[nMonth],,"!"),97)+;
-					IF(oMBal:Per_deb-oMBal:Per_cre<0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
-					Str(oMBal:Per_deb-oMBal:Per_cre,12,DecAantal)),aHeading) 
-				lFirstInMonth:=false
-			ENDIF
 
 			aOPP:={}
 			DO WHILE !oTrans:EOF .and.oTrans:accid==oAcc:accid .and. Month(oTrans:dat)<=nMonth 
+				IF	lFirst .and.lFirstInMonth
+					self:oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
+					lFirst:=FALSE
+					oMBal:GetBalance(mAccid,,previousyear*100+previousmonth)
+					self:oReport:PrintLine(@nRow,@nPage,;
+						Pad(oLan:RGet("Beginning Account	balance",,"!")+Space(1)+oLan:RGet(MonthEn[nMonth],,"!"),97)+;
+						IF(oMBal:Per_deb-oMBal:Per_cre<0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
+						Str(oMBal:Per_deb-oMBal:Per_cre,12,DecAantal)),aHeading)	
+					lFirstInMonth:=false
+				ENDIF
 				if	self:Memberstmnt=="NOST"
 					IF	ReportMonth==Month(oTrans:dat) 
 						lTransFound:=true
@@ -3099,15 +3116,15 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 							IF	lFirstInMonth
 								lFirstInMonth:=FALSE
 								//	separation line
-								oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
-								oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
+								self:oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
+								self:oReport:PrintLine(@nRow,@nPage,oLan:RGet(MonthEn[nMonth],,"@!")+Space(1)+Str(ReportYear,4,0),aHeading)	
 							ENDIF
 							IF	self:SendingMethod="SeperateFile"
 								description:=StrTran(StrTran(StrTran(oTrans:description,"\","\\"),"{","\{"),"}","\}")
 							ELSE
 								description:=oTrans:description
 							ENDIF
-							oReport:PrintLine(@nRow,@nPage,;
+							self:oReport:PrintLine(@nRow,@nPage,;
 								Pad(oTrans:docid,10)+space(1)+DToC(oTrans:dat)+space(1)+MemoLine(description,74,1)+space(1)+;
 								Str(oTrans:deb,12,DecAantal)+Space(1)+Str(oTrans:cre,12,DecAantal)+PadL(oTrans:TransId,11),aHeading)
 							IF	Len(aHeading)>4
@@ -3115,7 +3132,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 							ENDIF
 							nMem:=2
 							DO	WHILE	!Empty(cDesc:=MemoLine(description,74,nMem))
-								oReport:PrintLine(@nRow,@nPage,Space(22)+cDesc,aHeading)
+								self:oReport:PrintLine(@nRow,@nPage,Space(22)+cDesc,aHeading)
 								nMem++
 							ENDDO
 						ENDIF
@@ -3141,21 +3158,25 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					aAssmntAmount[AssmntRow,iMonth]:=aAssmntAmount[AssmntRow,iMonth]+fAmnt
 				ENDIF
 				oTrans:Skip()
-			ENDDO 
-			IF ReportMonth=nMonth.and.self:SkipInactive .and. !lTransFound
+			ENDDO     
+			IF ReportMonth=nMonth .and. self:SkipInactive .and. !lTransFound
 				*  Skip members without transactions:
 				* remove added member lines:
-				ASize(oReport:oPrintJob:aFiFo,nBeginmember)
+				ASize(self:oReport:oPrintJob:aFiFo,nBeginmember)
 				lSkip:=true
+				IF lPrintFile.and.!Empty(self:SendingMethod) 
+					self:oReport:prstart()   // close file
+					self:oReport:ToFileFS:DELETE()  // remove file of skipped account
+				endif
 				exit
-			ENDIF
-			if !self:Memberstmnt=="NOST"
+			ENDIF     
+			IF !self:Memberstmnt=="NOST"
 				* processing end of month:
 				IF	ReportMonth=nMonth.or.self:Memberstmnt=="ALLST"
 					*	Print closing lines account statement:
 					IF	Len(aOPP)>0	.or. m71_gifthb#0	.or. m71_giftrst#0
-						oReport:PrintLine(@nRow,@nPage,+Space(97)+'------------ ------------',aHeading,3)
-						oReport:PrintLine(@nRow,@nPage,;
+						self:oReport:PrintLine(@nRow,@nPage,+Space(97)+'------------ ------------',aHeading,3)
+						self:oReport:PrintLine(@nRow,@nPage,;
 							Pad(Space(11)+cSubTotal,97)+;
 							Str(m71_chdeb,12,decaantal)+space(1)+Str(m71_chcre,12,decaantal),aHeading)
 					ENDIF
@@ -3172,13 +3193,13 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 						IF	j>0
 							cTypeOPP:=aTrType[j,2]
 						ENDIF
-						oReport:PrintLine(@nRow,@nPage,;
+						self:oReport:PrintLine(@nRow,@nPage,;
 							Pad(cFrom+Space(1)+cOPP+": "+cTypeOPP,87),aHeading)
 						FOR j:=1	to	Len(aOPP[i,5])
-							oReport:PrintLine(@nRow,@nPage,aOPP[i,5][j],aHeading)									
+							self:oReport:PrintLine(@nRow,@nPage,aOPP[i,5][j],aHeading)									
 						NEXT
-						oReport:PrintLine(@nRow,@nPage,Space(97)+'------------ ------------',aHeading)
-						oReport:PrintLine(@nRow,@nPage,;
+						self:oReport:PrintLine(@nRow,@nPage,Space(97)+'------------ ------------',aHeading)
+						self:oReport:PrintLine(@nRow,@nPage,;
 							Pad(Space(11)+cSubTotal+Space(1)+cFrom+Space(1)+cOPP+": "+cTypeOPP,97)+;
 							Str(aOPP[i,3],12,decaantal)+Space(1)+Str(aOPP[i,4],12,decaantal),aHeading)				
 					NEXT
@@ -3188,12 +3209,12 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					IF	PMCLastSend<Today()-400
 						//	still	IES
 						IF	m71_gifthb#0
-							oReport:PrintLine(@nRow,@nPage,;
+							self:oReport:PrintLine(@nRow,@nPage,;
 								Pad(oLan:RGet("Total gifts/own funds",,"!")+Space(1)+oLan:RGet("sent to")+' PMC',110)+;
 								Str(m71_gifthb,12,DecAantal),aHeading)
 						ENDIF
 						IF	m71_giftrst#0
-							oReport:PrintLine(@nRow,@nPage,;
+							self:oReport:PrintLine(@nRow,@nPage,;
 								Pad(oLan:RGet("Total gifts/own funds",,"!")+Space(1)+;
 								IF(ADMIN="WO".or.ADMIN="HO",""+oLan:RGet("not yet send TO",,"!")+" PMC",""),110)+;
 								Str(m71_giftrst,12,DecAantal),aHeading)
@@ -3201,28 +3222,28 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					ELSE
 						IF	m71_gifthb+m71_giftrst#0
 							//	separation line
-							oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
-							oReport:PrintLine(@nRow,@nPage,;
+							self:oReport:PrintLine(@nRow,@nPage,Space(1),aHeading,2)
+							self:oReport:PrintLine(@nRow,@nPage,;
 								Pad(oLan:RGet("Total gifts/own funds (See below)",,"!")+Space(1),110)+;
 								Str(m71_gifthb+m71_giftrst,12,DecAantal),aHeading)
 						ENDIF				
 					ENDIF
-					oReport:PrintLine(@nRow,@nPage,Space(97)+'------------ ------------',aHeading,3)
-					oReport:PrintLine(@nRow,@nPage,;
+					self:oReport:PrintLine(@nRow,@nPage,Space(97)+'------------ ------------',aHeading,3)
+					self:oReport:PrintLine(@nRow,@nPage,;
 						Pad(oLan:RGet('total',,"!")+Space(1)+oLan:RGet('transactions'),97)+;
 						Str(m71_deb,12,decaantal)+Space(1)+Str(m71_cre,12,decaantal),aHeading)
-					oReport:PrintLine(@nRow,@nPage,;
+					self:oReport:PrintLine(@nRow,@nPage,;
 						Pad(oLan:RGet('Balance',,"!")+Space(1)+oLan:RGet('transactions'),97)+;
 						IF(m71_deb-m71_cre<=0,Space(13)+Str(m71_cre-m71_deb,12,DecAantal),;
 						Str(m71_deb-m71_cre,12,DecAantal)),aHeading) 
 					oMBal:GetBalance(mAccid,,ReportYear*100+nMonth)
 					
-					oReport:PrintLine(@nRow,@nPage,;
+					self:oReport:PrintLine(@nRow,@nPage,;
 						BoldOn+Pad(oLan:RGet('Account balance',,"!")+Space(1)+oLan:RGet(MonthEn[nMonth],,"!"),97)+;
 						IF(oMBal:Per_deb-oMBal:Per_cre<=0,Space(13)+Str(oMBal:Per_cre-oMBal:Per_deb,12,DecAantal),;
 						RedOn+Str(oMBal:Per_deb-oMBal:Per_cre,12,DecAantal)+RedOff)+BoldOff,aHeading)
 				ENDIF
-			ENDIF
+			ENDIF     
 		NEXT
 		IF lSkip
 			oAcc:Skip()
@@ -3236,7 +3257,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					oTransMonth:=AccountStatements{79}
 				ENDIF
 				oTransMonth:oReport:=self:oReport
-				oTransMonth:SendingMethod:=SendingMethod
+				oTransMonth:SendingMethod:=self:SendingMethod
 				aASS:=Split(oAcc:assacc,',')
 				//aASS:={oMbr:REK1,oMbr:REK2,oMbr:REK3}
 				FOR i:=1	to	Len(aASS)
@@ -3257,13 +3278,17 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				oGftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
 			next
 		next
-		oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,@nRow,@nPage)
+		oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,@nRow,@nPage)
+		IF lPrintFile.and.!Empty(self:SendingMethod)
+			// separate files:
+			cFileName:=self:oReport:prstart() // save separate file
+		endif 
 		*	
 		*	Proces e-mail:
-		IF lPrintFile.and. SendingMethod=="SeperateFileMail"
+		IF lPrintFile.and. self:SendingMethod=="SeperateFileMail"
 			IF !Empty(oAcc:persid)  // skip funds
 				aOneMember:={}          //
-				AAdd(aOneMember,{AllTrim(StrTran(oAcc:description,".",Space(1))),oAcc:persid,oAcc:email})
+				AAdd(aOneMember,{AllTrim(StrTran(oAcc:description,".",Space(1))),oAcc:persid,oAcc:email,cFileName})
 				IF !Empty(oAcc:CONTACT)
 					IF self:mailcontact .and.Empty(oAcc:RPTDEST)
 						AAdd(aOneMember,{2,oAcc:contactlstname,oAcc:CONTACT,oAcc:contactfullname,oAcc:contactemail})
@@ -3274,7 +3299,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					AAdd(aOneMember,{0,""})
 				ENDIF
 				AAdd(aMailMember,aOneMember)
-				//			AAdd(aMailMember,{AllTrim(StrTran(oAcc:description,".",space(1))),oAcc:persid})
 			ENDIF
 		ENDIF
 		oAcc:Skip()
@@ -3284,61 +3308,58 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		endif
 
 	ENDDO 
-   SetDecimalSep(Asc('.'))      //back to .
-
+	SetDecimalSep(Asc('.'))      //back to .
 	IF !oPro==null_object
 		oPro:EndDialog()
 		oPro:Destroy()
 	ENDIF
-
-	cFileName:=oReport:prstart()    // generate rtf-format when seperate files
-	IF IsString(cFileName)
-		IF SendingMethod=="SeperateFileMail"
-			oSelpers:=Selpers{self,,}
-			oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
-			
-			FOR i:=1 to Len(aMailMember)
-				self:STATUSMESSAGE(self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")+"...")
-				oRecip1:=null_object
-				oRecip2:=null_object
-				// 					memberName:=StrTran(StrTran(GetFullName(aMailMember[i,1,2]),"\",""),"/","")
-				memberName:=StrTran(StrTran(aMailMember[i,1,1],"\",""),"/","")
-				IF aMailMember[i,2,1]<>1    // Destination 0: member, 1: contact, 2: member+contact
-					* Resolve membername:
-					oRecip1 := oMapi:ResolveName( memberName,aMailMember[i,1,2],memberName,aMailMember[i,1,3])
-					IF !IsNil(aMailMember[i,2,1]).and.!Empty(aMailMember[i,2,1])
-						IF aMailMember[i,2,1]=2
-							* Resolve contactname for cc:
-							oRecip2 := oMapi:ResolveName(aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
-						ENDIF
+	IF !lPrintFile.or.Empty(self:SendingMethod)
+		self:oReport:prstart()    
+	endif
+	IF self:SendingMethod=="SeperateFileMail"
+		oSelpers:=Selpers{self,,}
+		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
+		
+		FOR i:=1 to Len(aMailMember)
+			self:STATUSMESSAGE(self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")+"...")
+			oRecip1:=null_object
+			oRecip2:=null_object
+			// 					memberName:=StrTran(StrTran(GetFullName(aMailMember[i,1,2]),"\",""),"/","")
+			memberName:=StrTran(StrTran(aMailMember[i,1,1],"\",""),"/","")
+			IF aMailMember[i,2,1]<>1    // Destination 0: member, 1: contact, 2: member+contact
+				* Resolve membername:
+				oRecip1 := oMapi:ResolveName( memberName,aMailMember[i,1,2],memberName,aMailMember[i,1,3])
+				IF !IsNil(aMailMember[i,2,1]).and.!Empty(aMailMember[i,2,1])
+					IF aMailMember[i,2,1]=2
+						* Resolve contactname for cc:
+						oRecip2 := oMapi:ResolveName(aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
 					ENDIF
+				ENDIF
+			ELSE
+				// only contact:
+				* Resolve contactname for to:
+				oRecip1 := oMapi:ResolveName( aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
+			ENDIF
+			IF oRecip1 != null_object
+				IF !Empty(oEMLFrm:Template)
+					oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
+					oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
+					mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 				ELSE
-					// only contact:
-					* Resolve contactname for to:
-					oRecip1 := oMapi:ResolveName( aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
+					mailcontent:=""
 				ENDIF
-				IF oRecip1 != null_object
-					IF !Empty(oEMLFrm:Template)
-						oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
-						oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
-						mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
-					ELSE
-						mailcontent:=""
-					ENDIF
-					oFileSpec:=FileSpec{cFileName}
-					oFileSpec:FileName:=AllTrim(oFileSpec:FileName)+Space(1)+StrTran(StrTran(aMailMember[i,1,1],"\",""),"/","")
-					oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('GIFTREPORT',,"@!")+Space(1)+memberName+": "+cPeriod,mailcontent)
-				ENDIF
-			NEXT
-			oMapi:Close()
-		ENDIF
+				oFileSpec:=FileSpec{aMailMember[i,1,4]}
+				oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('GIFTREPORT',,"@!")+Space(1)+memberName+": "+cPeriod,mailcontent)
+			ENDIF
+		NEXT
+		oMapi:Close()
 	ENDIF
 	self:Pointer := Pointer{POINTERARROW}
 	IF !oSelpers==null_object
 		oSelpers:Close()
 		oSelpers:=null_object
 	ENDIF
-	oReport:prstop()
+	self:oReport:prstop()
 	// remove old giftreports:
 	aFilePF:=Directory(CurPath+"\"+self:oLan:RGet("Giftreport")+"*.doc")
 	FOR i:=1 to Len(aFilePF)
@@ -3521,7 +3542,7 @@ ASSIGN NonHomeBox(uValue) CLASS GiftReport
 SELF:FieldPut(#NonHomeBox, uValue)
 RETURN uValue
 
-METHOD OkButton( ) CLASS GiftReport
+METHOD OKButton( ) CLASS GiftReport
 	LOCAL nAcc as STRING
 	LOCAL nRow, nPage as int
 
@@ -3555,7 +3576,7 @@ METHOD OkButton( ) CLASS GiftReport
 			ENDIF
 			self:oReport := PrintDialog{oParent,self:oLan:RGet("Giftreport")+Str(self:PeilJaar,4)+StrZero(self:PeilMnd,2),,137,DMORIENT_LANDSCAPE,"doc"}
 			IF	SendingMethod="SeperateFile"
-				self:oReport:OkButton("File",true)
+				self:oReport:OKButton("File",true)
 			ELSE
 				self:oReport:show()
 			ENDIF
@@ -3809,14 +3830,15 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 		oPers:Skip()
 	enddo
 	// check if all giverdate are assigned to a person:
-	if (gvr:=ascan(aGiversdata,{|x|empty(x[6])}))>0
+	gvr:=0
+	do while (gvr:=ascan(aGiversdata,{|x|empty(x[6])},gvr+1))>0
 		if (TextBox{,self:oLan:WGet("GiftReport"),self:oLan:WGet("Giver of gift")+" :"+AllTrim(Str(aGiversdata[gvr,1]))+" "+AllTrim(aGiversdata[gvr,3])+;
 				" in "+self:oLan:WGet(MonthEn[aGiversdata[gvr,5]],,"!")+' '+self:oLan:WGet('to')+': "'+description+'" '+self:oLan:WGet('not found'),BUTTONOKAYCANCEL}):Show();
 				==BOXREPLYCANCEL
 			RETURN
 		ENDIF
 		aGiversdata[gvr,6]:=0
-	ENDIF				
+	enddo				
 
 	*	Print givers with their gifts:
 	*	Sort in ascending order
