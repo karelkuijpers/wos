@@ -2713,6 +2713,17 @@ CLASS PrintDialog INHERIT _PrintDialog
 	PROTECT _Beginreport:=FALSE AS LOGIC
 	PROTECT row:=0 AS INT
 	EXPORT Extension as STRING 
+	Protect ptrHandle
+	Protect LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
+	Protect LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+		"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
+	Protect LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+		"{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
+	Protect LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
+	Protect cRTFHeader as STRING
+	Protect RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
+	Protect lRTF,lXls as logic
+
 	
 	declare method prstart,ReInitPrint
 ACCESS Beginreport() CLASS PrintDialog
@@ -2838,11 +2849,26 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	SELF:lPrintOk := TRUE
 
 	IF self:Destination == "File" 
-		ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
+		self:ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
 		
-		IF ToFileFs==NULL_OBJECT
+		IF self:ToFileFS==null_object
 			self:lPrintOk := FALSE 
-		ENDIF 
+		ENDIF
+		IF self:Extension=="xls" .and. self:Destination="File"
+			self:lXls:=true
+		ENDIF
+		if	self:Extension=='doc'
+			self:lRTF:=true
+			IF sEntity=="RUS"
+				self:cRTFHeader:=self:LanguageRus+self:RTFFormat
+			ELSEIF sEntity=="JPN"
+				self:cRTFHeader:=self:LanguageJap+self:RTFFormat
+			ELSEIF sEntity=="CZR" .or. sEntity=="POL" .or. sEntity=="SKD"
+				self:cRTFHeader:=self:LanguageCZ+self:RTFFormat
+			ELSE
+				self:cRTFHeader:=self:LanguageDefault+self:RTFFormat
+			ENDIF
+		endif		
 	endif
 	if self:Label
 		* Check if number of rows below minimum (4 of 3 +KIXcode-row):
@@ -2871,134 +2897,152 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	
 	RETURN
 METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS PrintDialog
-* Output to printer or window of LineContent
-*
-* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
-* Parameters:
-* LineNbr: new value returned; reset to zero causes page skip 
-*          equal to last linenbr means: add content at the end of last line content
-* PageNbr : idem
-* LineContent  : Content of to be outputted line; when nil, only test page skip
-* HeadingLines: Array with HeadingLines; 1st less than 60 because of needed space for date and page number
-* skipcount: Optional to force page skip if not enough space for this line content + skipcount lines
-* Beginreport: optionele indication of report start which forces printing of the heading lines independent of a page skip; 
-*				Setting of this values: PrintDialog:Beginreport:=true 
-* Used export variabels:
-* - self:PaperHeight
-*
+	* Output to printer or window of LineContent
+	*
+	* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
+	* Parameters:
+	* LineNbr: new value returned; reset to zero causes page skip 
+	*          equal to last linenbr means: add content at the end of last line content
+	* PageNbr : idem
+	* LineContent  : Content of to be outputted line; when nil, only test page skip
+	* HeadingLines: Array with HeadingLines; 1st less than 60 because of needed space for date and page number
+	* skipcount: Optional to force page skip if not enough space for this line content + skipcount lines
+	* Beginreport: optionele indication of report start which forces printing of the heading lines independent of a page skip; 
+	*				Setting of this values: PrintDialog:Beginreport:=true 
+	* Used export variabels:
+	* - self:PaperHeight
+	*
 
-LOCAL i AS INT,kopdate AS STRING
-LOCAL skippage:=FALSE AS LOGIC
-LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
-LOCAL lXls:=FALSE AS LOGIC
-Default(@skipcount,0)
-if !Empty(LineNbr).and.LineNbr==(self:row-1)
-	self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
-	LineNbr++
-	return
-endif
-IF SELF:Extension=="xls" .and. SELF:Destination="File"
-	lXls:=TRUE
-ENDIF
-IF self:_Beginreport
-	IF !lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipcount,4)> Integer(self:oPrintJob:PaperHeight)
-		// When not first page and more than half of the page printed:
-		skippage:=TRUE
-		IF Destination == "Printer".or.;
-		Destination == "File"
-			AAdd(SELF:oPrintJob:aFIFO,PAGE_END)
-		ENDIF
-	ENDIF
-	LineNbr:=self:row // reset to original value
-ELSEIF (Empty(PageNbr) .or. ((self:row+skipcount+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!lXls)
-	skippage:=TRUE
-	IF (PageNbr>0.or.LineNbr>0).and.(Destination == "Printer".or.;
-		Destination == "File")
-		AAdd(SELF:oPrintJob:aFIFO,PAGE_END)
-    ENDIF
-ENDIF
-IF skippage .or. self:_Beginreport.or.PageNbr=0 .or. lXls.and.Empty(LineNbr)
-	IF skippage.or.PageNbr=0
-		++PageNbr
-		LineNbr := 0
-	ELSEIF LineNbr>0
-		// add two space lines:
-		AAdd(SELF:oPrintJob:aFIFO," ")
-		AAdd(SELF:oPrintJob:aFIFO," ")
-		LineNbr+=2
-	ENDIF
-	IF .not.Empty(HeadingLines)
-		FOR i = 1 to Len(HeadingLines)
-			IF lXls
-				AAdd(self:oPrintJob:aFIFO,HeadingLines[i])					
-			ELSE
-				IF LineNbr=0
-					kopdate:="  "+DToC(DATE())+' '+PageText+' '+;
-					LTrim(Str(PageNbr,4))
-					AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate)
-				ELSE
-					AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))	
+	LOCAL i AS INT,kopdate AS STRING
+	LOCAL skippage:=FALSE AS LOGIC
+	LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
+	LOCAL cFileName as STRING
+	Default(@skipcount,0)
+	IF Destination == "File" .and.Empty(self:ptrHandle)
+		cFileName:= self:ToFileFS:FullPath
+		self:ptrHandle:=MakeFile(,@cFileName,"Printing to file")
+		IF Empty(self:ptrHandle)
+			RETURN FALSE
+		ELSEIF self:ptrHandle = F_ERROR
+			RETURN true
+		endif
+		if self:lRTF
+			FWriteLine(self:ptrHandle,self:cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
+		endif
+	endif
+		
+	if !Empty(LineNbr).and.LineNbr==(self:row-1)
+		self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
+		LineNbr++
+		return
+	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0
+		// print prepared line
+		FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+iif(self:lRTF,"\par",''))
+		self:oPrintJob:aFIFO:={} // reset fifo
+	endif
+	IF self:_Beginreport
+		IF !self:lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipcount,4)> Integer(self:oPrintJob:PaperHeight)
+			// When not first page and more than half of the page printed:
+			skippage:=TRUE
+			IF self:Destination == "Printer"
+				AAdd(self:oPrintJob:aFIFO,PAGE_END)
+			elseif self:Destination == "File"
+				IF self:lRTF
+					FWriteLine(self:ptrHandle,"\page")
+				ELSE						
+					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
 				ENDIF
 			ENDIF
-			++LineNbr
-		NEXT
+		ENDIF
+		LineNbr:=self:row // reset to original value
+	ELSEIF (Empty(PageNbr) .or. ((self:row+skipcount+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!self:lXls)
+		skippage:=TRUE
+		IF (PageNbr>0.or.LineNbr>0)
+			if self:Destination == "Printer"
+				AAdd(self:oPrintJob:aFIFO,PAGE_ENd)
+			elseif self:Destination == "File"
+				IF self:lRTF
+					FWriteLine(self:ptrHandle,"\page")
+				ELSE						
+					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
+				ENDIF
+			endif
+		ENDIF
 	ENDIF
-ENDIF
-self:_Beginreport:=FALSE
-IF !IsNil(LineContent)
-	IF lXls
-		AAdd(self:oPrintJob:aFIFO,LineContent)
-	ELSE	
-		AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
+	IF skippage .or. self:_Beginreport.or.PageNbr=0 .or. self:lXls.and.Empty(LineNbr)
+		IF skippage.or.PageNbr=0
+			++PageNbr
+			LineNbr := 0
+		ELSEIF LineNbr>0
+			// add two space lines:
+			if self:Destination == "File"
+				FWriteLine(self:ptrHandle, '')
+				FWriteLine(self:ptrHandle, '')
+			else
+				AAdd(self:oPrintJob:aFIFO," ")
+				AAdd(self:oPrintJob:aFIFO," ")
+			endif
+			LineNbr+=2
+		ENDIF
+		IF .not.Empty(HeadingLines)
+			FOR i = 1 to Len(HeadingLines)
+				IF self:lXls
+					FWriteLine(self:ptrHandle, HeadingLines[i])
+				ELSE
+					IF LineNbr=0
+						kopdate:="  "+DToC(DATE())+' '+PageText+' '+;
+							LTrim(Str(PageNbr,4))
+						if self:Destination=="File"
+							FWriteLine(self:ptrHandle, Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
+						else
+							AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate)
+						endif
+					ELSE
+						if self:Destination=="File"
+							FWriteLine(self:ptrHandle, SubStr(HeadingLines[i],1,Widthpage)+iif(self:lRTF,"\par",''))
+						else
+							AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))
+						endif	
+					ENDIF
+				ENDIF
+				++LineNbr
+			NEXT
+		ENDIF
 	ENDIF
-   ++LineNbr
-ENDIF
-self:row:=LineNbr
-RETURN
+	self:_Beginreport:=FALSE
+	IF !IsNil(LineContent)
+		IF self:lXls
+			AAdd(self:oPrintJob:aFIFO,LineContent)
+		ELSE	
+			AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
+		ENDIF
+		++LineNbr
+	ENDIF
+	self:row:=LineNbr
+	RETURN
 METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
-* lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
-* cRTFHeading: start rtf-text for specifying format
+	* lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
+	* cRTFHeading: start rtf-text for specifying format
 	LOCAL oPrintShow as Window
 	LOCAL i AS INT
 	LOCAL MyFileName, RetFileName,cFileName as STRING
-	LOCAL ptrHandle
 	LOCAL scrFont as myFont
 	local mySize as dimension 
-	local lRTF as logic
-/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}}"+;
+	/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}}"+;
 	"{\colortbl ;\red0\green0\blue0;}\viewkind4\uc1\pard\cf1\lang1043\viewkind1\paperw16838\paperh11906"+;
 	"\lndscpsxn\margl1400\margr1200\margt600\margb600\f0\fs"   */
-/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
+	/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
 	"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"+;
 	"{\colortbl ;\red0\green0\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs" */
-	LOCAL LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
-	LOCAL LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
-	"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
-	LOCAL LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
-	"{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
-	Local LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
-	LOCAL cRTFHeader AS STRING
-	LOCAL RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
-    IF sEntity=="RUS"
-    	cRTFHeader:=LanguageRus+RTFFormat
-    ELSEIF sEntity=="JPN"
-    	cRTFHeader:=LanguageJap+RTFFormat
-    ELSEIF sEntity=="CZR" .or. sEntity=="POL" .or. sEntity=="SKD"
-    	cRTFHeader:=LanguageCZ+RTFFormat
-    ELSE
-    	cRTFHeader:=LanguageDefault+RTFFormat
-	ENDIF
 
-// 	Default(@lRTF,FALSE)
-// 	Default(@lModeless,false)
 	self:Pointer := Pointer{POINTERHOURGLASS} 
-* Starten van printer
+	* Starten van printer
 	IF SELF:Destination == "Printer"
-		oPrintJob:oWaitPrint := Wait_for_printer{SELF}
-		oPrintJob:oWaitPrint:Caption := SELF:Caption
-		oPrintJob:oWaitPrint:Show()
-		oPrintJob:Idle()
-		oPrintJob:Start(SELF:oRange)
+		self:oPrintJob:oWaitPrint := Wait_for_printer{self}
+		self:oPrintJob:oWaitPrint:Caption := self:Caption
+		self:oPrintJob:oWaitPrint:Show()
+		self:oPrintJob:Idle()
+		self:oPrintJob:Start(self:oRange)
 		SELF:Pointer := Pointer{POINTERARROW}
 		
 		RetFileName:= "1"
@@ -3015,66 +3059,31 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 		mySize:Height:=0.8*oMainWindow:Size:Height
 		oPrintShow:Size:=mySize
 		oPrintShow:Show(SHOWCENTERED)
-// 		oPrintShow:Show(SHOWZOOMED)
+		// 		oPrintShow:Show(SHOWZOOMED)
 		
 		RetFileName:= "2"
 		RETURN oPrintShow
-	ELSEIF Len(SELF:oPrintJob:aFIFO)>0
-*		write to file?
-		if self:Extension=='doc'
-			lRTF:=true
+	ELSE
+		*		write to file
+		IF Len(self:oPrintJob:aFIFO)>0
+			// print last line: 
+			IF self:lRTF
+				FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+"\par")
+			else
+				FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1])
+			endif
+			self:oPrintJob:aFIFO:={} // reset fifo
 		endif
-		IF SELF:oPrintJob:aFIFO[1] = MEMBER_START
-			IF lRTF
-				self:ToFileFS:Extension:="doc"
-			ENDIF
-			MyFileName:= AllTrim(SELF:ToFileFS:FileName)
-			RETFileName:=SELF:ToFileFS:FullPath
-			SELF:ToFileFS:FileName:=MyFileName+" "+StrTran(SELF:oPrintJob:aFIFO[1],MEMBER_START,,1,1)
-		ENDIF
-		cFileName:= self:ToFileFS:FullPath
-		ptrHandle:=MakeFile(,@cFileName,"Printing to file")
-		IF ptrHandle==NIL
-			RETURN FALSE
-		ELSEIF ptrHandle = F_ERROR
-			RETURN TRUE
-		ELSE
-			FOR i = 1 to Len(self:oPrintJob:aFIFO)
-				IF SELF:oPrintJob:aFIFO[i] == PAGE_END
-					IF lRTF
-						FWriteLine(ptrHandle,"\page")
-					ELSE						
-						FWriteLine(ptrHandle,CHR(ASC_FF ))
-					ENDIF
-				ELSEIF self:oPrintJob:aFIFO[i] = MEMBER_START
-					IF lRTF
-						FWriteLine(ptrHandle,"\par }")
-					ENDIF						
-					SELF:ToFileFS:FileName:=MyFileName+" "+StrTran(SELF:oPrintJob:aFIFO[i],MEMBER_START,,1,1)
-					FClose(ptrHandle)
-					ptrHandle := FCreate(SELF:ToFileFS:FullPath)
-					IF lRTF
-						FWriteLine(ptrHandle,cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
-					ENDIF						
-				ELSEIF lRTF
-					if i==1
-						FWriteLine(ptrHandle,cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
-					endif
-					FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i]+"\par")
-				else
-					FWriteLine(ptrHandle, self:oPrintJob:aFIFO[i])
-				endif
-			NEXT
-			IF lRTF
-				FWriteLine(ptrHandle,"\par }")
-			ENDIF						
-			SELF:oPrintJob:lLblFinish:=TRUE
-			FClose(ptrHandle)
-		ENDIF
-		SELF:Pointer := Pointer{POINTERARROW}
+		if self:lRTF
+			FWriteLine(self:ptrHandle,"\par }")
+		endif
+		FClose(self:ptrHandle) 
+		self:ptrHandle:=null_ptr
 	ENDIF
+	self:oPrintJob:lLblFinish:=true
+	self:Pointer := Pointer{POINTERARROW}
 
-RETURN(RetFileName)
+	RETURN(self:ToFileFS:FullPath)
 METHOD prstop(Noskip) CLASS PrintDialog
 
 IF IsObject(oPrintJob)
@@ -3085,9 +3094,9 @@ ENDIF
 RETURN TRUE
 
 
-METHOD ReInitPrint(SendToMail:=false as logic) as void pascal CLASS PrintDialog
+METHOD ReInitPrint(dummy:=nil as logic) as void pascal CLASS PrintDialog
 SELF:oPrintJob:= NULL_OBJECT
-SELF:oPrintJob := Printjob{cCaption,SELF:oPrinter,SELF:Label,SELF:MaxWidth,,SendToMail}
+self:oPrintJob := PrintJob{cCaption,self:oPrinter,self:Label,self:MaxWidth,,self:Extension}
 RETURN 
 METHOD SetupButton( ) CLASS PrintDialog
 LOCAL structDevMode AS _WINDevMode
