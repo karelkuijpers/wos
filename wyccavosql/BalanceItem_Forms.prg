@@ -178,8 +178,8 @@ METHOD InitData() CLASS BalanceItemExplorer
 
 	self:cRootName:= "0:Balance Items"
 	self:cRootValue:=0
-	self:sColumnmain:=#HFDRBRNUM
-	self:sColumnSub:=#NUM
+	self:sColumnmain:=#balitemidparent
+	self:sColumnSub:=#balitemid
 	SUPER:InitData()
 	RETURN NIL
 METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aBal as array, nCurrentRec:=0 as int, oReport as PrintDialog,kopregels as array) as int  CLASS BalanceItemExplorer
@@ -220,7 +220,7 @@ METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aB
 	ENDDO
 RETURN nCurrentRec
 
-METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
+METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 * Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
 * if lDBUpfate true: Update corresponding database items
 *
@@ -237,9 +237,10 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 	IF lDBUpdate
 		* Update database first:
 		* Dragged item identifier:
-		nNum:=self:GetIdFromSymbol(sItemDrag)
+		nNum:=self:GetIdFromSymbol(aItemDrag[1] )
 
-		IF self:IsAccountSymbol(sItemDrag)
+// 		IF self:IsAccountSymbol(sItemDrag) 
+		if aItemDrag[2] :ImageIndex==3       // account?
 			* update account:
 				* check transfer allowed:
 				cError:=ValidateAccTransfer(nMain,nNum)
@@ -268,7 +269,7 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 		ENDIF
 	ENDIF
 
-	SUPER:TransferItem(sItemDrag,oItemDrop)
+	SUPER:TransferItem(aItemDrag,oItemDrop)
 
 
 RETURN
@@ -320,7 +321,7 @@ METHOD SortByType(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	RETURN 0
 
 CLASS BalanceTreeView INHERIT TreeView  
-declare method AddSubItem, AddTreeItem,ExpandTree 
+declare method AddSubItem, AddTreeItem,ExpandTree,GetChildItem 
 METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int) as int CLASS BalanceTreeView
 	LOCAL nChildRec			as int
 	LOCAL cCurNum			as int
@@ -437,7 +438,7 @@ METHOD ExpandTree (oTreeItem as TreeViewItem,nLevel:=0 as int,nMaxLevel:=99 as i
 		ENDIF
 	ENDDO
 	RETURN
-METHOD GetChildItem( symItem ) CLASS BalanceTreeView
+METHOD GetChildItem( symItem as symbol ) as Treeviewitem CLASS BalanceTreeView
 
     LOCAL symFoundItem AS SYMBOL
     LOCAL sItem IS _WINTV_ITEM
@@ -477,7 +478,7 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	Protect oLan as Language
 export aAccnts:={} as array
 export aItem:={} as array 
-declare method BuildTreeViewItems
+declare method BuildTreeViewItems,GetChild,GetTreeFromListItem
 METHOD Append ()  CLASS CustomExplorer
 	SELF:EditButton(TRUE)
 	RETURN
@@ -552,7 +553,7 @@ METHOD Cut()  CLASS CustomExplorer
 		oListViewItem:=oListView:GetItemAttributes(i)
 		IF oListViewItem:Selected
 			* Determine corresponding Treeview item
-			AAdd(aDragList,SELF:GetTreeFromListItem(oListViewItem))
+			AAdd(aDragList,{self:GetTreeFromListItem(oListViewItem),oListViewItem})
 			oListViewItem:Selected:=FALSE
 			oListView:SetItemAttributes(oListViewItem)
 		ENDIF
@@ -567,7 +568,7 @@ METHOD Cut()  CLASS CustomExplorer
 				RETURN
 			ENDIF
 			SELF:lTreeDragging := TRUE
-			SELF:aDragList:={oTVItemDrag:NameSym}
+			self:aDragList:={{oTVItemDrag:NameSym,oTVItemDrag}}
 		ENDIF
 	ENDIF
 RETURN
@@ -576,10 +577,12 @@ METHOD DELETE() CLASS CustomExplorer
 	LOCAL oListView			as BalanceListView
 	LOCAL oListViewItem		as ListViewItem
 	LOCAL nNum, cNumber as STRING
+	local cNameSym as symbol
 	LOCAL lAccount as LOGIC
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
-	local lBalance:=(ClassName(self)==#BALANCEITEMEXPLORER) as logic 
+	local lBalance:=(ClassName(self)==#BALANCEITEMEXPLORER) as logic
+	local nPos as int 
 
 	oListView := self:ListView
 	oListViewItem:=oListView:GetSelectedItem()
@@ -587,6 +590,7 @@ METHOD DELETE() CLASS CustomExplorer
 		nNum:=Str(oListViewItem:GetValue(#Identifier),-1)
 		cNumber:=oListViewItem:GetText(#Identifier)
 		lAccount:=(oListViewItem:MyImageIndex==3)
+		cNameSym:= self:GetTreeFromListItem(oListViewItem)
 	ENDIF
 	IF Empty(nNum)
 		(ErrorBox{,self:oLan:WGet('Select a record within the right pane first')}):Show()
@@ -609,7 +613,7 @@ METHOD DELETE() CLASS CustomExplorer
 		IF ( oTextbox:Show() == BOXREPLYYES ) 
 
 			* Check presence of childitems:
-			oSel:=SQLSelect{"select	* from "+self:cSubitemserver+" where "+ Symbol2String(self:sColumnmain)+"='"+nNum+"'",oConn}
+			oSel:=SQLSelect{"select	* from "+self:cSubitemserver+" where "+ Lower(Symbol2String(self:sColumnmain))+"='"+nNum+"'",oConn}
 			if	oSel:RecCount>0
 				(ErrorBox{,self:oLan:WGet('Remove child items first')}):Show()
 				RETURN
@@ -621,9 +625,21 @@ METHOD DELETE() CLASS CustomExplorer
 					RETURN
 				ENDIF
 			ENDIF
-			oStmnt:=SQLStatement{'delete from '+self:cSubitemserver+' where '+Symbol2String(self:sColumnSub)+"='"+nNum+"'",oConn}
+			oStmnt:=SQLStatement{'delete from '+self:cSubitemserver+' where '+Lower(Symbol2String(self:sColumnSub))+"='"+nNum+"'",oConn}
 			oStmnt:Execute()	
 			if	oStmnt:NumSuccessfulRows>0
+				// delete from aItem with all balance items  
+				nPos:=AScan(self:aItem,{|x|x[1]==Val(nNum)})
+				if nPos>0
+					ADel(self:aItem,nPos)
+					aSize(self:aItem,len(self:aItem)-1)
+				endif
+				// delete also from aSearch with searchinfo
+				nPos:=AScan(self:aSearch,{|x|x[2]==cNameSym})
+				if nPos>0
+					ADel(self:aSearch,nPos)
+					aSize(self:aSearch,len(self:aSearch)-1)
+				endif
 				self:ListView:DeleteItem(oListViewItem:ItemIndex)
 				self:TreeView:DeleteItem(String2Symbol("Parent_" +	nNum))
 			ENDIF
@@ -696,13 +712,15 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 				oTreeView:=self:TreeView
 				oTreeViewItem:=oTreeView:GetSelectedItem()
 				nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
-				lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
+// 				lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
+				lAccount:=(oTreeViewItem:ImageIndex==3)				
 			endif
 		else
 			oTreeView:=self:TreeView
 			oTreeViewItem:=oTreeView:GetSelectedItem()
 			nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
-			lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
+			lAccount:=(oTreeViewItem:ImageIndex==3)				
+// 			lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
 		endif
 		IF Empty(nNum)
 			(ErrorBox{,"Select a record within the right pane first"}):Show()
@@ -720,7 +738,7 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 		ENDIF
 	ENDIF
 	RETURN {nMain,nNum}
-METHOD GetChild(aChild, ParentSym) CLASS CustomExplorer
+METHOD GetChild(aChild as array, ParentSym as symbol) as void pascal CLASS CustomExplorer
 * Add all child of a parent with symbolname ParentSym to array aChild
 	LOCAL oTVChild AS TreeViewItem
 	oTVChild := SELF:TreeView:GetChildItem( ParentSym )
@@ -729,7 +747,7 @@ METHOD GetChild(aChild, ParentSym) CLASS CustomExplorer
 		SELF:GetChild(aChild, oTVChild:NameSym)
 		oTVChild := SELF:TreeView:GetNextSiblingItem( oTVChild:NameSym )
 	ENDDO
-	RETURN NIL
+	RETURN 
 METHOD GetIdFromSymbol(NameSym) CLASS CustomExplorer
 	LOCAL nId AS STRING
 	LOCAL wlen AS INT
@@ -738,12 +756,13 @@ METHOD GetIdFromSymbol(NameSym) CLASS CustomExplorer
 	nId:=Symbol2String(NameSym)
 	wLen:=At("_",nId)
 RETURN SubStr(nId,wLen+1)
-METHOD GetTreeFromListItem(oListViewItem) CLASS CustomExplorer
+METHOD GetTreeFromListItem(oListViewItem as ListViewItem ) as symbol CLASS CustomExplorer
 LOCAL nNUm AS STRING, lAccount AS LOGIC
 * Determine corresponding Treeview item namesys:
 nNUm:=Str(oListViewItem:GetValue(#Identifier),-1)
-lAccount:=(oListViewItem:GetValue(#Type)=="Account")
-RETURN String2Symbol(IF(lAccount,"ACCOUNT","Parent")+"_" + nNum)
+// lAccount:=(oListViewItem:GetValue(#Type)=="Account")
+lAccount:=(oListViewItem:ImageIndex == 3)  //  Account?
+RETURN String2Symbol(if(lAccount,"ACCOUNT","Parent")+"_" + nNUm)
 METHOD Init(oOwner,SymTree,SymList) CLASS CustomExplorer
 	LOCAL oDimension	AS Dimension
 	LOCAL oImageList	AS ImageList
@@ -931,7 +950,7 @@ METHOD Refresh() CLASS CustomExplorer
 *	SELF:DeleteTreeViewItems()
 *	SELF:BuildTreeViewItems()
 	self:DeleteListViewItems() 
-	self:aItem:={}
+// 	self:aItem:={}
 	Send(self,#BuildListViewItems,Val(self:uCurrentMain))
 RETURN
 METHOD RefreshTree()  CLASS CustomExplorer
@@ -977,7 +996,8 @@ IF Empty(nPntr)
 ENDIF
 nStartSearch:=nPntr
 SELF:TreeView:SelectItem( aSearch[nPntr,2])
-if !self:IsAccountSymbol((self:TreeView:GetSelectedItem()):NameSym)
+// if !self:IsAccountSymbol((self:TreeView:GetSelectedItem()):NameSym)
+if !(self:TreeView:GetSelectedItem()):ImageIndex==3
 	self:SelectedItem:=self:GetIdFromSymbol((self:TreeView:GetSelectedItem()):NameSym)
 ENDIF
 
@@ -987,7 +1007,7 @@ RETURN true
 
 	
 
-METHOD TransferItem(sItemDrag,oItemDrop) CLASS CustomExplorer
+METHOD TransferItem(aItemDrag,oItemDrop) CLASS CustomExplorer
 * Transfer item on screen:
 LOCAL aChilds:={} AS ARRAY
 LOCAL oTreeView			AS BalanceTreeView
@@ -995,12 +1015,13 @@ LOCAL oTreeViewItem		AS TreeViewItem
 LOCAL i AS INT
 LOCAL lSuccess AS LOGIC
 
-	IF SELF:lShowAccount.or.!SELF:IsAccountSymbol(sItemDrag)
-		oTreeView:=SELF:TreeView
+// 	IF SELF:lShowAccount.or.!SELF:IsAccountSymbol(sItemDrag)
+	IF self:lShowAccount.or.!aItemDrag[2]:ImageIndex==3   // no account?
+		oTreeView:=self:TreeView
 		//  Get all childs to move them:
-		SELF:GetChild(aChilds, sItemDrag )
-    	oTreeViewItem:=oTreeView:GetItemAttributes(sItemDrag)
-		lSuccess:=oTreeView:DeleteItem( sItemDrag )
+		self:GetChild(aChilds, aItemDrag[1] )
+    	oTreeViewItem:=oTreeView:GetItemAttributes(aItemDrag[1] )
+		lSuccess:=oTreeView:DeleteItem( aItemDrag[1]  )
 		lSuccess:=oTreeView:AddItem( oItemDrop:NameSym , oTreeViewItem )
 		FOR i := 1 TO ALen( aChilds )
 			oTreeView:AddItem( aChilds[i,1] , aChilds[i,2] )
@@ -1041,7 +1062,7 @@ METHOD TreeViewDragBegin( oEvent ) CLASS CustomExplorer
 			oListViewItem:=oListView:GetItemAttributes(i)
 			IF oListViewItem:Selected
 				* Determine corresponding Treeview item namesys:
-				AAdd(aDragList,SELF:GetTreeFromListItem(oListViewItem))
+				AAdd(aDragList,{self:GetTreeFromListItem(oListViewItem),oListViewItem})
 			ENDIF
 		NEXT
 		IF  ALen(aDragList)>0
@@ -1053,7 +1074,7 @@ METHOD TreeViewDragBegin( oEvent ) CLASS CustomExplorer
 			RETURN
 		ENDIF
 		SELF:lTreeDragging := TRUE
-		SELF:aDragList:={oTVItemDrag:NameSym}
+		self:aDragList:={{oTVItemDrag:NameSym,oTVItemDrag}}
 	ENDIF
 
 	SELF:oTVItemDrop := NULL_OBJECT
@@ -1092,8 +1113,8 @@ METHOD TreeViewDragEnd( X , Y ) CLASS CustomExplorer
 	IF oTVItemDrop != NULL_OBJECT .and.!Empty(SELF:aDragList)
 		* Determine current selected TreeViewItem for ListView:
 		FOR i:=1 TO Len(aDragList)
-			IF aDragList[i] != SELF:oTVItemDrop:NameSym
-				SELF:TransferItem(aDragList[i], SELF:oTVItemDrop, TRUE )
+			IF aDragList[i,1] != self:oTVItemDrop:NameSym
+				self:TransferItem(aDragList[i], self:oTVItemDrop, true )
 			ENDIF
 		NEXT
 		oTreeView:SelectItem( oTVItemDrop , #DropHighlight, FALSE )
@@ -1121,7 +1142,7 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 	LOCAL r IS _WINRect
 	LOCAL lCanDrop AS LOGIC
 	LOCAL Xorig, Yorig AS INT
-	LOCAL aMyDrags AS ARRAY
+// 	LOCAL aMyDrags AS ARRAY
 
 	oTreeView:=SELF:TreeView
 	oListView:=SELF:ListView
@@ -1161,7 +1182,7 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 
 *	ImageList_DragLeave( hTV )
 	ImageList_DragLeave(SELF:Handle() )
-	aMyDrags:=aDragList
+// 	aMyDrags:=aDragList
 	IF oTVItem != NULL_OBJECT
 		* Drag within TreeView pane:
 *		IF lCanDrop.and.!oTVItem:ImageIndex==3.and.AScan(aMyDrags,{|x| x:NameSym==oTVItem:NameSym})==0 //no account .and. not equal to drag item
@@ -1236,7 +1257,8 @@ METHOD TreeViewMouseButtonDown(oTreeViewMouseEvent) CLASS CustomExplorer
 	IF oTVItem != NULL_OBJECT
 		IF oTreeViewMouseEvent:IsRightButton
 			self:TreeView:SelectItem( oTVItem:NameSym ) 
-		elseif !self:IsAccountSymbol(oTVItem:NameSym)
+// 		elseif !self:IsAccountSymbol(oTVItem:NameSym)
+		elseif oTVItem:ImageIndex==3
 			self:SelectedItem:=self:GetIdFromSymbol(oTVItem:NameSym)
 		ENDIF
 	ENDIF
@@ -1310,12 +1332,12 @@ FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
 	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
-	CONTROL	"footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
+	CONTROL	"Footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
 	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
-	CONTROL	"Balancegroup#:", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
-	CONTROL	"footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Main group#:", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
 	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
 	CONTROL	"Income", EDITBALANCEITEM_RADIOBUTTONBA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 101, 80, 11
@@ -1362,15 +1384,14 @@ oDCSC_KOPTEKST := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_KOPTEKST,_GetInst
 oDCSC_KOPTEKST:HyperLabel := HyperLabel{#SC_KOPTEKST,"Header:",NULL_STRING,NULL_STRING}
 
 oDCSC_VOETTEKST := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_VOETTEKST,_GetInst()}}
-oDCSC_VOETTEKST:HyperLabel := HyperLabel{#SC_VOETTEKST,"footer:",null_string,null_string}
+oDCSC_VOETTEKST:HyperLabel := HyperLabel{#SC_VOETTEKST,"Footer:",NULL_STRING,NULL_STRING}
 
 oDCSC_HFDRBRNUM := FixedText{SELF,ResourceID{EDITBALANCEITEM_SC_HFDRBRNUM,_GetInst()}}
 oDCSC_HFDRBRNUM:HyperLabel := HyperLabel{#SC_HFDRBRNUM,"Parent Group#:",NULL_STRING,NULL_STRING}
 
 oDCmNUM := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MNUM,_GetInst()}}
-oDCmNUM:FieldSpec := BalanceItem_NUMBER{}
-oDCmNUM:HyperLabel := HyperLabel{#mNUM,"Balancegroup#:","number of balance group","Rubriek_NUM"}
-oDCmNUM:TooltipText := "number of balance group"
+oDCmNUM:HyperLabel := HyperLabel{#mNUM,NULL_STRING,"Number of balance group","Rubriek_NUM"}
+oDCmNUM:TooltipText := "Number of balance group"
 
 oDCmKOPTEKST := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MKOPTEKST,_GetInst()}}
 oDCmKOPTEKST:FieldSpec := BalanceItem_KOPTEKST{}
@@ -1379,13 +1400,12 @@ oDCmKOPTEKST:TooltipText := "Header printed at beginning of this item on the rep
 
 oDCmVOETTEKST := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MVOETTEKST,_GetInst()}}
 oDCmVOETTEKST:FieldSpec := BalanceItem_VOETTEKST{}
-oDCmVOETTEKST:HyperLabel := HyperLabel{#mVOETTEKST,"footer:","footer of balance group","Rubriek_VOETTEKST"}
-oDCmVOETTEKST:TooltipText := "footer printed at end of this item on the report"
+oDCmVOETTEKST:HyperLabel := HyperLabel{#mVOETTEKST,"Footer:","Footer of balance group","Rubriek_VOETTEKST"}
+oDCmVOETTEKST:TooltipText := "Footer printed at end of this item on the report"
 
 oDCmHFDRBRNUM := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MHFDRBRNUM,_GetInst()}}
-oDCmHFDRBRNUM:FieldSpec := BalanceItem_NUMBER{}
-oDCmHFDRBRNUM:HyperLabel := HyperLabel{#mHFDRBRNUM,"Main group#:","number of main group item belongs to","Rubriek_HFDRBRNUM"}
-oDCmHFDRBRNUM:TooltipText := "number of main group item belongs to"
+oDCmHFDRBRNUM:HyperLabel := HyperLabel{#mHFDRBRNUM,NULL_STRING,"Number of main group item belongs to","Rubriek_HFDRBRNUM"}
+oDCmHFDRBRNUM:TooltipText := "Number of main group item belongs to"
 
 oCCRadioButtonKO := RadioButton{SELF,ResourceID{EDITBALANCEITEM_RADIOBUTTONKO,_GetInst()}}
 oCCRadioButtonKO:HyperLabel := HyperLabel{#RadioButtonKO,"Expenses",NULL_STRING,NULL_STRING}
@@ -1468,7 +1488,8 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	LOCAL cError as STRING 
 	local cSQLStatement as string
 	local oStmnt as SQLStatement
-	local mType:=self:mSoort,mParent:=self:cMainId as string
+	local mType:=self:mSoort,mParent:=self:cMainId as string 
+	local nPos,nBalid as int
 
 	IF Empty(self:mNum)
 		(ErrorBox{,"Please fill number of item"}):Show()
@@ -1490,9 +1511,9 @@ METHOD OKButton( ) CLASS EditBalanceItem
    self:cMainId:=mParent
 
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+"balanceitem set "+;
-		"number='"+AllTrim(self:mNUM)+"'"+;
-		",heading='"+AllTrim(self:mKOPTEKST)+"'"+;
-		",footer='"+AllTrim(self:mVOETTEKST)+"'"+;
+		"number='"+addslashes(AllTrim(self:mNUM))+"'"+;
+		",heading='"+AddSlashes(AllTrim(self:mKOPTEKST))+"'"+;
+		",footer='"+AddSlashes(AllTrim(self:mVOETTEKST))+"'"+;
 		",category='"+self:mSoort+"'"+;
 	",balitemidparent='"+self:cMainId+"'"+;
 		iif(self:lNew,""," where balitemid='"+self:mBalId+"'")
@@ -1500,10 +1521,17 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	oStmnt:Execute() 
 	if oStmnt:NumSuccessfulRows>0
 		IF self:lNew
-			self:mBalId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+			self:mBalId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+			AAdd(self:oCaller:aItem,{Val(self:mBalId),Val(self:cMainId),AllTrim(self:mKOPTEKST),AllTrim(self:mNum),self:mSoort}) 
 			oCaller:Treeview:AddTreeItem(Val(self:cMainId),Val(self:mBalId),AllTrim(self:mNum)+":"+self:mKopTekst, false)
 			oCaller:Refresh()
 		else
+			// update aitem:
+			nBalid:=Val(self:mBalId)
+			nPos:=AScan(self:oCaller:aItem,{|x|x[1]==nBalid} )
+			if nPos>0
+				self:oCaller:aItem[nPos]:={Val(self:mBalId),Val(self:cMainId),AllTrim(self:mKOPTEKST),AllTrim(self:mNum),self:mSoort}
+			endif
 			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNUM 
 				oCaller:RefreshTree()
 			ENDIF
@@ -1795,8 +1823,8 @@ local oBalCur,oBalPar as SQLSelect
 IF cNewParentNbr=="0" .and. cNewParentId="0"
 	RETURN ""
 ENDIF
-oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+"number='"+cNewParentNbr+"'",oConn}
-IF Str(oBalPar:balitemid,-1)==CurBalId
+oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+"balitemid='"+cNewParentId+"'",oConn}
+IF oBalPar:reccount>0 .and. Str(oBalPar:balitemid,-1)== CurBalId
 	cError:="Parent must be unqual to self"
 	RETURN cError
 ENDIF
@@ -1810,7 +1838,7 @@ if CurBalId=="0" .or.Empty(CurBalId)
 	ENDIF
 else
 	oBalCur:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where balitemid="+CurBalId,oConn} 
-	IF oBalPar:number==oBalCur:number
+	IF oBalCur:reccount>0 .and. oBalPar:number==oBalCur:number
 		cError:="Parent must be unqual to self"
 		RETURN cError
 	endif
