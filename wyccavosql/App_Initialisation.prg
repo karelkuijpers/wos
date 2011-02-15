@@ -1201,7 +1201,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"balanceitem","footer","char(25)","NO","",""},;
 		{"balanceitem","balitemidparent","int(11)","NO","0",""},;
 		{"balanceitem","category","char(2)","NO","",""},;
-		{"balanceitem","number","char(6)","YES","NULL",""},;
+		{"balanceitem","number","char(10)","YES","NULL",""},;
 		{"balanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"balanceyear","monthstart","smallint(6)","NO","0",""},;
 		{"balanceyear","yearlength","smallint(6)","NO","0",""},;
@@ -1240,7 +1240,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"currencyrate","aedunit","char(3)","NO","",""},;
 		{"department","depid","int(11)","NO","NULL","auto_increment"},;
 		{"department","descriptn","char(40)","YES","NULL",""},;
-		{"department","deptmntnbr","char(6)","YES","NULL",""},;
+		{"department","deptmntnbr","char(10)","YES","NULL",""},;
 		{"department","netasset","int(11)","NO","0",""},;
 		{"department","parentdep","int(11)","NO","0",""},;
 		{"department","persid","int(11)","NO","0",""},;
