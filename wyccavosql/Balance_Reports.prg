@@ -1160,12 +1160,9 @@ METHOD prAmounts(pr_soort,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	NEXT 
 
 	levelrest:=self:MaxLevel-pr_level 
-	if Left(pr_oms,3)="299"
-		pr_oms:=pr_oms
-	endif
 	HeadingCache:={}
 
-	IF pr_soort==EXPENSE.or.pr_soort==LIABILITY
+	IF pr_soort==INCOME .or.pr_soort==LIABILITY
 		mvjsaltot:=-pr_salvjtot
 		mvrgsal:=-pr_salvrg
 		msal:=-pr_sal
