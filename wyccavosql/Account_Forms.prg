@@ -391,8 +391,8 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"AccountBrowser_DETAIL",_GetInst()},iCtlID)
 
-SELF:Caption := "DataWindow Caption"
-SELF:HyperLabel := HyperLabel{#AccountBrowser_DETAIL,"DataWindow Caption",NULL_STRING,NULL_STRING}
+SELF:Caption := ""
+SELF:HyperLabel := HyperLabel{#AccountBrowser_DETAIL,NULL_STRING,NULL_STRING,NULL_STRING}
 SELF:OwnerAlignment := OA_HEIGHT
 SELF:DeferUse := False
 SELF:PreventAutoLayout := True
@@ -412,9 +412,9 @@ self:Browser:AddColumn(oDBACCNUMBER)
 
 oDBACTIVEDESCR := DataColumn{6}
 oDBACTIVEDESCR:Width := 6
-oDBACTIVEDESCR:HyperLabel := HyperLabel{#ActiveDescr,"Active",NULL_STRING,NULL_STRING} 
+oDBACTIVEDESCR:HyperLabel := HyperLabel{#activedescr,"Active",NULL_STRING,NULL_STRING} 
 oDBACTIVEDESCR:Caption := "Active"
-oDBActiveDescr:TextColor := Color{COLORRED}
+oDBactivedescr:TextColor := Color{COLORRED}
 self:Browser:AddColumn(oDBACTIVEDESCR)
 
 oDBDESCRIPTION := DataColumn{account_OMS{}}
