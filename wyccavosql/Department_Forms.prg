@@ -654,18 +654,17 @@ METHOD OKButton( ) CLASS EditDepartment
 			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
 			RETURN
 		ENDIF		
-		oDep:Append()
 	ENDIF
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
-	"deptmntnbr='"+AllTrim(self:mDepartmntNbr)+"',"+;
-	"descriptn='"+AllTrim(self:mDescription)+"',"+;
+	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
+	"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
 	"parentdep='"+cMainId+"',"+;
 	"netasset='"+self:NbrCAPITAL+"',"+;
-	"assacc1 ='"+ mAcc1+"',"+;
-	"assacc2 ='"+ mAcc2+"',"+;
-	"assacc3 ='"+ mAcc3+"',"+;
-	"persid ='"+ mCLN1+"',"+;
-	"persid2 ='"+ mCLN2+"'"+;
+	"assacc1 ='"+ self:mAcc1+"',"+;
+	"assacc2 ='"+ self:mAcc2+"',"+;
+	"assacc3 ='"+ self:mAcc3+"',"+;
+	"persid ='"+ self:mCLN1+"',"+;
+	"persid2 ='"+ self:mCLN2+"'"+;
 	iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
@@ -678,7 +677,7 @@ METHOD OKButton( ) CLASS EditDepartment
 			ENDIF
 		else
 			self:mDepId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-			oCaller:Treeview:AddTreeItem(Val(cMainId),self:mDepId,AllTrim(mDepartmntNbr)+":"+mDescription,false)
+			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(mDepartmntNbr)+":"+mDescription,false)
 		ENDIF
 	endif
 	self:EndWindow()
@@ -714,8 +713,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			OrgParent :="0"
 		ELSE
 			oSel:=SQLSelect{"select deptmntnbr from department where depid='"+cMainId+"'",oConn}
-			IF self:oDep:Reccount>0
-				mParentDep:=oDep:deptmntnbr
+			IF oSel:Reccount>0
+				mParentDep:=oSel:deptmntnbr
 				OrgParent :=mParentDep
 			endif
 		ENDIF
