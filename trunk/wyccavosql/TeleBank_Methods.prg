@@ -2020,25 +2020,25 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	RETURN true
 METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	* Import of SA Standard\Bank data into teletrans.dbf
-	LOCAL oHlS AS HulpSA
-	LOCAL m57_laatste := {} AS ARRAY
-	LOCAL i, TelPtr AS INT
-	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) AS INT
+	LOCAL oHlS as HulpSA
+	LOCAL m57_laatste := {} as ARRAY
+	LOCAL i, TelPtr as int
+	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
 	LOCAL lv_loaded as LOGIC,  hlpbank as USUAL
 	LOCAL lv_description, lv_bankAcntOwn,lv_addsub as STRING
-	LOCAL cSep AS INT
-	LOCAL lSuccess:=TRUE AS LOGIC
+	LOCAL cSep as int
+	LOCAL lSuccess:=true as LOGIC
 	LOCAL cDelim:=CHR(9) as STRING
-	LOCAL ptrHandle AS MyFile
-	LOCAL hl_boekdat AS STRING
-	LOCAL oFs:=oFb AS FileSpec
-	LOCAL cBuffer AS STRING, nRead AS INT
-	LOCAL aStruct:={} AS ARRAY // array with fieldnames
-	LOCAL aFields:={} AS ARRAY // array with fieldvalues
+	LOCAL ptrHandle as MyFile
+	LOCAL hl_boekdat as STRING
+	LOCAL oFs:=oFb as FileSpec
+	LOCAL cBuffer as STRING, nRead as int
+	LOCAL aStruct:={} as ARRAY // array with fieldnames
+	LOCAL aFields:={} as ARRAY // array with fieldvalues
 	LOCAL ptDate, ptPay, ptDesc, ptDep, ptBal, nVnr as int
-	LOCAL pbType AS STRING
+	LOCAL pbType as STRING
 	LOCAL lv_amount, Hl_balan as FLOAT
-	LOCAL ld_bookingdate as date
+	LOCAL ld_bookingdate as date 
 	local oStmnt as SQLStatement
 
     lv_bankAcntOwn:=SubStr(oFs:FileName,11)
@@ -2074,45 +2074,44 @@ cBuffer:=ptrHandle:FReadLine(ptrHandle)   // skip first line
 cBuffer:=ptrHandle:FReadLine(ptrHandle)
 aFields:=Split(cBuffer,cDelim)
 
-DO WHILE Len(aFields)>4
-	hl_boekdat:=aFields[ptDate]
+DO WHILE Len(AFields)>4
+	hl_boekdat:=AFields[ptDate]
 	ld_bookingdate:=SToD(SubStr(hl_boekdat,1,4)+SubStr(hl_boekdat,6,2)+SubStr(hl_boekdat,9,2))
 	IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
-		LOOP
+		loop
 	ENDIF
     lv_description:=AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"',''))
-    lv_amount:=AbsFloat(Val(aFIELDs[ptPay]))
-    IF lv_Amount=0
-	    lv_Amount:=Val(AFields[ptDep])
+    lv_amount:=AbsFloat(Val(AFields[ptPay]))
+    IF lv_amount=0
+	    lv_amount:=Val(AFields[ptDep])
 	    lv_addsub:="B"
 	ELSE
 		lv_addsub:="A"
 	ENDIF
-    IF Empty(lv_Amount)  && geen lege mutaties laden
+    IF Empty(lv_amount)  && geen lege mutaties laden
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
-    	LOOP
+    	loop
     ENDIF
-	lv_amount:=Round(lv_amount,decaantal)
-	Hl_balan:=Val(aFields[ptBal])
+	lv_amount:=Round(lv_amount,DecAantal)
+	Hl_balan:=Val(AFields[ptBal])
   	lv_description:=AddSlashes(AllTrim(lv_description))
     * controleer op reeds geladen zijn van mutatie:
-	IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"SAB","","","")
+	IF self:AllreadyImported(ld_bookingdate,lv_amount,lv_addsub,lv_description,"SAB","","","")
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
-        LOOP
+        loop
 	ENDIF
-
 	oStmnt:=SQLStatement{"insert into teletrans set	"+;
 		"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
-		",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
+		",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate))+"'"+;  // no dates in the future)+"'"+;
 		",kind='SAB'"+;
-		",amount='"+Str(lv_Amount,-1)+"'"+;
+		",amount='"+Str(lv_amount,-1)+"'"+;
 		",addsub='"+lv_addsub	+"'"+;
 		",code_mut_r='M'"+;
-		",seqnr='"+Str(Val(SubStr(lv_description,-4,4)),-1)+"'",;
+		",seqnr='"+Str(Val(SubStr(lv_description,-4,4)),-1)+"'"+;
 		",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
 	if	oStmnt:NumSuccessfulRows>0
@@ -2122,9 +2121,9 @@ DO WHILE Len(aFields)>4
 	aFields:=Split(cBuffer,cDelim)
 ENDDO
 ptrHandle:Close()
-ptrHandle:=NULL_OBJECT
+ptrHandle:=null_object
 SetDecimalSep(cSep)  // restore decimal separator
-RETURN TRUE
+RETURN true
 METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	* Import of Total IN  data of Swedisch PlusGiroT into teletrans.dbf
 *	Import of one TL1 telebnk transaction file
