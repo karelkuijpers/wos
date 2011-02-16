@@ -628,12 +628,14 @@ method init() class Initialize
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
 	local aDB:={} as array 
-	local cServer as string
+	local cServer,cUIDPW as string
 	local cWosIni as FileSpec
 	local ptrHandle as ptr
 	local cLine as string
 	local aWord:={} as array
-	local i as int 
+	local i,j as int
+	local aIniKey:={'database','password','server','username'} as array
+	local dim akeyval[4] as string 
 
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
@@ -647,40 +649,45 @@ method init() class Initialize
 	if cWosIni:Find()
 		ptrHandle:=FOpen2(cWosIni:FullPath, FO_READ + FO_SHARED)
 		IF ptrHandle != F_ERROR
-			do WHILE empty(cServer).or.empty(dbname)
-				cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
-				if Empty(cLine).and. FEof(ptrHandle)
-					exit
-				endif
+			cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
+			do WHILE !(Empty(cLine).and. FEof(ptrHandle))
 				if !SubStr(cLine,1,1)=='#'   // skip comment lines
-					aWord:=GetTokens(cLine,{"="}) 
-					i:=ascan(aWord,{|x|lower(alltrim(x[1]))=="server"})
-					if i>0 .and.i<Len(aWord)
-						cServer:=AllTrim(aWord[2,1])
-					else
-						i:=AScan(aWord,{|x|Lower(AllTrim(x[1]))=="database"})
-						if i>0 .and.i<Len(aWord)
-							dbname:=AllTrim(aWord[2,1])
+					aWord:=Split(cLine,"=")
+					for i:=1 to Len(aIniKey) 
+						j:=AScan(aWord,{|x|Lower(AllTrim(x))==aIniKey[i]})
+						if j>0 .and.j<Len(aWord)
+							akeyval[i]:=AllTrim(aWord[2])
+							exit
 						endif
-					endif
+					next
 				endif
+				cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
 			ENDDO
 		ENDIF
 		FClose(ptrHandle)
 	endif
-	if Empty(cServer)
+	if Empty(akeyval[3])
 		cServer:=GetServername(CurPath)
+	else
+		cServer:=Lower(akeyval[3])
 	endif
-	if Empty(dbname)
+	if Empty(akeyval[1])
 		// Determine database:
 		dbname:=CurDir(CurDrive())
 		if RAt('\',dbname)>0
 			dbname:=SubStr(dbname,RAt('\',dbname)+1)
 		endif
+	else
+		dbname:=akeyval[1]
 	endif
 	dbname:=Lower(dbname)
+	if Empty(akeyval[4]) .or.Empty(akeyval[2])
+		cUIDPW:=GetSQLUIDPW()
+	else
+		cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2]
+	endif 
 	SQLConnectErrorMsg(FALSE)
-	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+GetSQLUIDPW()) 
+	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
 		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 		if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
 			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
@@ -700,8 +707,9 @@ method init() class Initialize
 		endif
 		
 		// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
-		if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0
-			ErrorBox{,"Let your administrator enter first the userid for the WOS database in MYSQL"}:Show()
+		if AtC("Access denied for user",oConn:ErrInfo:errormessage)>0 
+			LogEvent(,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
+			ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
 			break
 		endif
 		ShowError(oConn:ERRINFO)
