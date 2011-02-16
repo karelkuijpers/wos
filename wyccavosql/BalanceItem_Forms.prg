@@ -331,7 +331,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 		oBal:=SQLSelect{"SELECT balitemid as itemid,balitemidparent as parentid,heading as description,number as number,category from balanceitem order by balitemidparent,balitemid",oConn}
 		if oBal:RecCount>0
 			do while !oBal:EoF
-				AAdd(aItem,{oBal:itemid,oBal:parentid,oBal:description,oBal:NUMber,oBal:category}) 
+				AAdd(aItem,{oBal:itemid,oBal:parentid,iif(empty(oBal:description),'',oBal:description),oBal:number,oBal:category}) 
 				//                1            2                 3          4          5        
 				oBal:Skip()
 			enddo
