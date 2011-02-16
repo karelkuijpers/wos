@@ -819,7 +819,7 @@ local nCurrec as int
 // 		",COMALL="+iif(self:mCOMALL,"1","0")+;
 // 	 	",COMFL="+iif(self:mCOMFL,"1","0")+;
 
-	IF ValidateControls( self, self:AControls ) .and. self:ValidateBank()
+	IF self:ValidateBank()
 		cStatement:=iif(self:lNew,"insert into ","update ")+"bankaccount set "+;
 		"accid="+self:mRek +;
 		",telebankng="+iif(self:mTelebankng,"1","0")+;
