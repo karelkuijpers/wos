@@ -4205,13 +4205,13 @@ ENDIF
 IF Empty(self:cTransferAcc)
 	RETURN
 ENDIF
-oAccFrom:=SQLSelect{"select a.multcurr,a.currency,b.category from Account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:FromAccId,oConn} 
+oAccFrom:=SQLSelect{"select a.multcurr,a.currency,b.category from account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:FromAccId,oConn} 
 if oAccFrom:reccount<1
 	return
 endif
 cCurrorg:=iif(Empty(oAccFrom:Currency),sCurr,oAccFrom:Currency)
 lMultiOrg:=iif(oAccFrom:MULTCURR=1,true,false)
-oAccTo:=SQLSelect{"select a.multcurr,a.currency,b.category from Account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:cTransferAcc,oConn} 
+oAccTo:=SQLSelect{"select a.multcurr,a.currency,b.category from account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:cTransferAcc,oConn} 
 if oAccTo:reccount<1
 	return
 endif
