@@ -311,7 +311,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 					// determine system currency:
 					sCURR:=SQLSelect{"select currency from sysparms",oConn}:Currency
 				endif
-				oMainWindow:STATUSMESSAGE((cIM:="Converting table "+dbasename+"..."))
+// 				oMainWindow:STATUSMESSAGE((cIM:="Converting table "+dbasename+"..."))
 				oPro:=ProgressPer{,self}
 				oPro:Caption:=cIM
 				oPro:SetRange(1,RECCOUNT())
