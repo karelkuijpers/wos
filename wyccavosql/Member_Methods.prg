@@ -56,7 +56,8 @@ METHOD FilePrint CLASS MemberBrowser
 	LOCAL Gran AS LOGIC
 	local cFrom as string
 	local cFields as string
-	local fBud as float 
+	local fBud as float
+	local cStatement as string 
 
 
 	oReport := PrintDialog{self,oLan:RGet("Members"),,if(Admin=="WO",127,86),,"xls"}
@@ -67,13 +68,17 @@ METHOD FilePrint CLASS MemberBrowser
 	aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
 	YrSt:=aYearStartEnd[1]
 	MnSt:=aYearStartEnd[2]
-	cFields:= "p.persid,a.description,a.accnumber,m.*,group_concat(distinct ass.accnumber separator ',') as assacc"+;
+	cFields:= "p.persid,a.description,a.accnumber,m.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,group_concat(distinct ass.accnumber separator ',') as assacc"+;
 	",group_concat(IF(d.desttyp<2,concat(cast(d.destamt as char),if(d.desttyp=1,'%',''),' to ',d.destpp,' ',d.destacc),concat('Remaining to ',d.destpp,' ',d.destacc)) separator ',') as distr"
 	 
 	cFrom:="account as a, person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
-	" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) " 
-
-	oSel:=SQLSelect{"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid order by "+self:cOrder,oConn} 
+	" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) "  
+   cStatement:= "select y.*,sum(bu.amount) as budget from ("+;
+	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid ) as y"+;
+	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.accid "+;
+	" order by "+self:cOrder 
+	LogEvent(self,cStatement,"logsql")
+	oSel:=SQLSelect{cStatement,oConn} 
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
 		kopregels :={oLan:RGet('Members',,"@!"),' '}
@@ -96,17 +101,15 @@ METHOD FilePrint CLASS MemberBrowser
 	nRow := 0
 	nPage := 0
 	DO WHILE .not. oSel:EOF
-		fBud:=GetPerBudget(YrSt,MnSt,12,@Gran,Str(oSel:accid,-1))		
 		oReport:PrintLine(@nRow,@nPage,Pad(oSel:ACCNUMBER,11)+cTab+Pad(oSel:description,25)+cTab+;
 			IF(Admin=="WO".or.Admin="HO",;
 			PadC(iif(oSel:co=="M",oSel:Grade,"Entity"),6)+cTab+PadC(iif(Empty(oSel:OFFCRATE),"",oSel:OFFCRATE),10)+cTab+;
-			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+cTab,cTab)+Str(fBud,11,0)+cTab+;
+			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+;
+			cTab,cTab)+Str(iif(Empty(oSel:budget),0,oSel:budget),11,0)+cTab+;
 			Pad(AllTrim(iif(Empty(oSel:assacc),"",oSel:assacc)),37) +;
 			iif(oReport:Extension #"xls" .or. oSel:HOMEPP#SEntity,"",cTab+iif(Empty(oSel:Distr),"",oSel:Distr)),kopregels) 
 		oSel:Skip()
 	ENDDO
-	//oSFMemberBrowser_DETAIL:Browser:RestoreUpdate()
-	//oDB:GoTO(nCurRec)
 	oReport:prstart()
 	oReport:prstop()
 	RETURN nil
