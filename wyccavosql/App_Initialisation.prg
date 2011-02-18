@@ -849,13 +849,14 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			myApp:Quit()
 			break 
 		elseif DBVers < PrgVers 			
-			if !FirstOfDay
-				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
-					myApp:Quit() 
-					break
-				endif
-				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-			endif
+			SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+// 			if !FirstOfDay
+// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
+// 					myApp:Quit() 
+// 					break
+// 				endif
+// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+// 			endif
 		endif
 	endif
 	SetDigit(18)
