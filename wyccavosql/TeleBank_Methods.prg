@@ -2577,7 +2577,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 		oBank:skip()
 	ENDDO
 	ASort(self:bankacc,,,{|x,y| x<=y} ) 
-	self:cBankAcc:=Implode(self:bankacc,",")
+	self:cBankAcc:="'"+Implode(self:bankacc,"','")+"'"
 	oBank:SQLString:= "select banknumber,usedforgifts from bankaccount where banknumber<>'' and telebankng=1"
 	oBank:GoToP()
 	DO WHILE .not.oBank:EOF
