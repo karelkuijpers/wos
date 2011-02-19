@@ -122,35 +122,6 @@ else
 	AEval(fu_anaam,{|x|m_som:=Round(m_som+x[fu_col],DecAantal)},fu_start,m_count)
 endif
 RETURN(Round(m_som,DecAantal))
-FUNCTION Attentie
-* Laten horen van attentie-signaal
-Tone(1200, 1)
-Tone(400, 1)
-Tone(1200, 1)
-Tone(400, 1)
-RETURN
-FUNCTION BEPDATUM (pDay,pMonth,pYear)
-* Bepalen van een (eerstvorige) geldige datum
-LOCAL nwdat as date, i as int
-IF pDay > 31
-   pDay:=31
-ENDIF
-IF pMonth > 12
-   pYear:=pYear+Integer(pMonth/12)
-   pMonth := pMonth%12
-ELSEIF pMonth<=0
-	pYear:=pYear+Round((pMonth-12)/12,0)
-	pMonth:=pMonth%12
-ENDIF
-FOR i=0 to 3  && corrigeer voor kortere maand
-    nwdat:=SToD(Str(pYear,4,0)+StrZero(pMonth,2,0)+StrZero(pDay-i,2,0))
-    IF .not.Empty(nwdat)
-       exit
-    ENDIF
-NEXT
-RETURN(nwdat)
-
-
 DEFINE CHECKBX:=1
 Function CleanFileName(cFileName as string) as string
 // removes illegal characters from cFileName to return an for Windows acceptable file name:
@@ -170,10 +141,6 @@ Function CompareKeyString(aKeyW as array, cValue as string ) as logic
 	lK:=Len(aKeyW)
 	LogEvent(,'keys:'+Implode(aKeyW,',')+' value:'+cValue,'logtest')
 	for i:=1 to lK 
-// 		if lK=2 .and.(Lower(aKeyW[i])=='salaris'.or.Lower(aKeyW[i])=='grootheest')
-// 			LogEvent(,'key:'+aKeyW[i]+' value:'+cValue,'logtest')
-// 		endif  
-
 		if AtC(aKeyW[i],cValue)=0
 			return false
 		endif
@@ -213,24 +180,6 @@ DO WHILE At("  ",f_tekst)>0
    f_tekst:=StrTran(f_tekst,"  "," ")
 ENDDO
 RETURN f_tekst
-FUNC Conv2Array( cList, cDim )
-
-   LOCAL nPos              // Position of cDelimiter in cList
-   LOCAL aList := {}       // Define an empty array
-
-   Default(@cDim, ",")
-
-   // Loop while there are more items to extract
-   DO WHILE ( nPos := At( cDim, cList )) != 0
-
-      // Add the item to aList and remove it from cList
-      AAdd( aList, SubStr( cList, 1, nPos - 1 ))
-      cList := SubStr( cList, nPos + 1 )
-
-   ENDDO
-   AAdd( aList, cList )                         // Add final element
-
-   RETURN ( aList )                             // Return the array
 Function Correspondence(Str1 as string, Str2 as string) as int
 // determine percentage correspondence of Str2 to Str1 
 Local i, Len1, Len2, MinL, Score, Divdr as int
@@ -253,27 +202,26 @@ Score:=(Score*100)/Divdr
 return Score
 DEFINE COUPLE := 3
 DEFINE CR                   := _chr(12) 
-FUNCTION dat_controle(m_datum, m_geen_melding)
-* Deze functie controleert of opgeven boekingsdatum een toegestane waarde heeft
-* De functie is geschikt als 'valid'-functie
-* m_geen_melding: leeg: er wordt een foutboodschap op scherm getoond en
+FUNCTION dat_controle(m_date as date, m_no_message:=false as logic)
+* This functie check if give date  is valid
+* m_no_message: leeg: er wordt een foutboodschap op scherm getoond en
 *                       een .t. of .f. waarde teruggegeven
 *                 true : er wordt alleen een foutboodschap teruggegeven
 LOCAL dat_message:="" as STRING
-IF m_datum < MinDate
+IF m_date < MinDate
     dat_message := 'Entering of records in closed year not allowed'
-ELSEIF m_datum > Today() + 31
+ELSEIF m_date > Today() + 31
     dat_message := 'Date more than 1 month from now not allowed'
 ENDIF
 IF .not.Empty(dat_message)
-   IF Empty(m_geen_melding)
+   IF Empty(m_no_message)
 		(ErrorBox{,dat_message}):show()
-      	RETURN FALSE
+      RETURN FALSE
    ELSE
       RETURN dat_message
    ENDIF
 ELSE
-   IF Empty(m_geen_melding)
+   IF Empty(m_no_message)
       RETURN true
    ELSE
       RETURN ""
@@ -503,33 +451,6 @@ do while !(Empty(cBuffer).and. FEof(ptrHandle))
 enddo
 FClose(ptrHandle) 
 return true
-Method CheckSelRel() class DBServerExtra
-LOCAL iRel, nSel:=Len(self:aSelRelation), nRel:=Len(self:aRelationChildren), nPtr as int
-// test selective relations: 
-if nSel>0
-	For iRel:=1 to nSel
-		nPtr:= int(_cast,self:aSelRelation[iRel])
-		if nPtr <=nRel
-			if (self:aRelationChildren[nPtr]):EOF
-				Return false
-			endif
-		endif
-	NEXT
-endif
-return true 
-Method ClearFilter() class DBServerExtra
-	self:aSelRelation:={} 
-return SUPER:ClearFilter()
-METHOD ClearIndex(uOrder,cOrdBag) CLASS DBServerExtra
-	LOCAL i as int, lRet as LOGIC
-	IF IsNil(uOrder).and.IsNil(cOrdBag)
-		FOR i = 1 to Len(self:IndexList)
-			lRet:=self:ClearIndex(1,self:IndexList[i,DBC_INDEXNAME])
-		NEXT
-	ELSE
-		lRet:=SUPER:ClearIndex(uOrder,cOrdBag)
-	ENDIF
-RETURN lRet
 METHOD CreateDbf(oFileSp as FILESPEC,xDriver as STRING) as LOGIC CLASS DBServerExtra
 * Creeren van een Dbf-file tijdens pre-init dbserver, indien dbf-file nog niet bestaat
     LOCAL aFieldDesc  as ARRAY
@@ -691,32 +612,7 @@ METHOD Error(oError,SymMethod) CLASS DBServerExtra
 self:lRetry:=	MyError(oError,SymMethod)
 	
 	RETURN
-Method GoBottom() class DBServerExtra
-if Super:GoBottom()
-	if !self:CheckSelRel()
-	   return self:XSkip(-1)
-	endif
-	return true
-endif 
-return false
-method GoTo(nRecordnumber) class DBServerExtra
-local nSkip:=1 as int
-super:GoTo( nRecordnumber)
-if !self:CheckSelRel()
-	if self:EOF
-		nSkip:=-1
-	endif
-	return self:XSkip(nSkip)  
-endif 
-return true
-Method GoTop() class DBServerExtra
-if Super:GoTop()
-	if !self:CheckSelRel()
-		return self:XSkip(1)
-   endif
-	return true   
-endif
-return false
+
 METHOD INIT(oFileSpec, lSharedMode, lReadOnlyMode , xDriver ) CLASS DBServerExtra
 	
 	IF lInitial.or.!Empty(oFileSpec:Path)  // File has to be created:
@@ -736,64 +632,6 @@ if !NoErrorMsg .and.!self:Used .and. self:lRetry
 	enddo
 endif
 RETURN self
-METHOD RefreshClients() CLASS DBServerExtra
-LOCAL i as int
-FOR i:=1 to self:nClients
-	IF IsMethod(self:aClients[i],#refresh)
-		self:aClients[i]:refresh()
-	ENDIF
-NEXT
-METHOD SetFilter( cbFilterBlock, cFilterText)  CLASS DBServerExtra
-// 	self:aSelRelation:={}
-   Return Super:SetFilter( cbFilterBlock, cFilterText ) 
-METHOD SetIndex(oFSIndexfile) CLASS DBServerExtra
-	LOCAL i as int, lRet as LOGIC
-	IF IsNil(oFSIndexfile)
-		FOR i = 1 to Len(self:IndexList)
-			lRet:=self:SetIndex(self:IndexList[i,DBC_INDEXNAME])
-		NEXT
-	ELSE
-		lRet:=SUPER:SetIndex(oFSIndexfile)
-	ENDIF
-RETURN lRet
-Method SetSelectiveRelation(oDBChild,URelation,cRelation) class DBServerExtra 
-// Create a good fucntioning setselectiverelation: only matching records are included into the collection
-// DBServerExtra uses his own Goto, GoTop, GoBottom and Skip functions to implement this 
-Local lSuccess as logic
-lSuccess:= Super:SetRelation(oDBChild,URelation,cRelation)
-if lSuccess
-	AAdd(self:aSelRelation,Len(self:aRelationChildren) )
-endif
-return lSuccess
-Method Skip(nLines) Class DBServerExtra
-Default(@nLines,1)
-return self:XSkip(nLines)
-METHOD XSkip(nLines) CLASS DBServerExtra
-*
-* Skip to next nLines record 
-*
-LOCAL Ind,nSkip:=1, iRel  as int
-Default(@nLines,1)
-
-IF nLines < 0
-	nSkip:=-1
-	nLines:=-nLines
-ENDIF
-
-Ind:=1
-Do while Ind<= nLines
-	SUPER:Skip(nSkip)
-	IF SUPER:EoF.and.nSkip>0.or.;	// forwards and EOF?
-		SUPER:BoF.and.nSkip<0	// backwards and BOF?
-		return self:CheckSelRel()
-	endif
-	// test selective relations: 
-	if self:CheckSelRel()
-		Ind++    // valid skip
-	endif		
-Enddo 
-
-RETURN true
 CLASS Description INHERIT FIELDSPEC
 
 
@@ -1202,7 +1040,16 @@ Return cText
 FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int)
 	// Implode array to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of a multidimenional array
-	LOCAL i, l:=Len(aText) as int, cRet:="" as STRING 
+	LOCAL i, l:=Len(aText) as int, cRet:="", cQuote as STRING
+	if Len(cSep)>2
+		// test if surrounded by quotes:
+		cQuote:= Left(cSep,1)
+		if cQuote==Right(cSep,1)
+			if !(cQuote=="'" .or. cQuote=='"')
+				cQuote:=null_string
+			endif
+		endif
+	endif
 	if l>0
 		if Empty(nCount)
 			nCount:=l-nStart+1 
@@ -1214,7 +1061,7 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 			NEXT
 		ENDIF 
 	endif
-	RETURN cRet
+	RETURN cQuote+cRet+cQuote
 function InitGlobals() 
 	LOCAL oLan as Language
 // 	Local oPP as PPCodes
@@ -2244,9 +2091,6 @@ METHOD AdvancePro(iAdv) CLASS ProgressPer
 										// while processing.
 	 self:oDCProgressBar:Advance(iAdv)
 	RETURN true
-METHOD CancelButton( ) CLASS ProgressPer
-	oServer:lStopRecord:=true
-	
 METHOD Close(oEvent) CLASS ProgressPer
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -2359,13 +2203,6 @@ function SQLDate2Date(sqldat as string) as date
 return SToD(StrTran(sqldat,"-",""))
 Function SQLGetMyConnection()
 return oConn
-method Destroy() class SQLSelect
-return 
-method SetOrder(cOrdername) class SQLSelect   
-// dummy because of generated setorder in browse screen
-return true
-method Destroy() class SQLTable
-return 
 Method Locate(ForCondition) class SQLTable
 // implement locate method like for DBServer
 // position table on first occurrence which satisfies ForCondition  
@@ -2374,8 +2211,6 @@ Do while !self:EoF .and.!Eval(CODEBLOCK(_cast,ForCondition))
 	self:Skip()
 enddo
 return !self:EoF
-assign RECNO(uValue) class SQLTable
-	return self:GoTo(uValue) 
 METHOD RefreshClients() CLASS SQLTable
 LOCAL i as int
 FOR i:=1 to self:nClients
@@ -2393,9 +2228,6 @@ if Empty(cFilterText)
 	endif
 endif
 self:Where(cFilterText) 
-return true
-method SetOrder(cOrdername) class SQLTable   
-self:OrderBy(cOrdername)   
 return true
 DEFINE TEXTBX:=0
 FUNCTION ValidateControls( oDW, aControls )
