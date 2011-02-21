@@ -775,7 +775,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 	//Put your changes here
 	IF !lGotFocus
 
-		IF oControl:NameSym==#mNum.and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurBal
+		IF oControl:NameSym==#mBalitemid.and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurBal
 			cCurValue:=AllTrim(oControl:VALUE)
 			self:cCurBal:=cCurValue
 			nPntr:=At(":",cCurValue)
