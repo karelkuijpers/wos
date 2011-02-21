@@ -3204,7 +3204,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	else
 		self:cDestFilter:="a.active=1"
 	endif
-	self:cDestFilter+=" and (a.giftalwd=1"+iif(empty(sdeb),""," or a.accid="+sdeb)+")"
+// 	self:cDestFilter+=" and (a.giftalwd=1"+iif(empty(sdeb),""," or a.accid="+sdeb)+")"
 	
 	IF !Empty(SPROJ)
 		* check if there are non earmarked gifts: 
