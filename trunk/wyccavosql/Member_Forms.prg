@@ -2715,13 +2715,16 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 	LOCAL ptrHandle AS MyFile
 	LOCAL cBuffer AS STRING, nRead AS INT
 	LOCAL HouseOld, HouseNew AS STRING
-	LOCAL cReport AS STRING, nUpd, nRemoved AS INT
+	LOCAL cReport as STRING, nUpd, nRemoved as int
+	local cPersonName as string
+	local oSel as SQLSelect
+	local ostmnt as SQLStatement
 
 
 	oFs:=FileSpec{"affiliated_person_account_list*.csv"}
 	oFs:Path:=CurPath
-    IF oFs:Find()
-    	// Process changes:
+	IF oFs:Find()
+		// Process changes:
 		ptrHandle:=MyFile{oFs}
 		IF FError() >0
 			(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
@@ -2749,22 +2752,37 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 
 		DO WHILE Len(aFields)>8
 			HouseOld:=AllTrim(aFields[ptOld])
-			HouseNew:=AllTrim(AFields[ptNew]) 
-			if !Lower(AllTrim(AFields[PTReason]))="completion" .and.!Lower(AllTrim(AFields[PTReason]))="household name" .and.!Empty(AllTrim( AFields[PTReason]))
-				IF Empty(HouseNew)
-					// removal:
-					// Disconnect corresponding persons:
-					SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type=1 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
-					* Disconnect corresponding account:
-					SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),GIFTALWD=0 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
-					cReport+= SQLSelect{"select "+SQLFullName(0,) +"as personname from person where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:personname+ " removed because: "+AllTrim(AFields[PTReason])+CRLF
-					// delete corresponding Distribution Instructions:
-					SQLStatement{"delete from DistributionInstruction where mbrid in (select mbrid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
-					// disconnect member:
-					SQLStatement{"delete from member where householdid='"+HouseOld+"'",oConn}:Execute() 
-				else
-					// update household code:
-					SQLStatement{"update member set householdid='"+HouseNew+"' where householdid='"+HouseOld+"'",oConn}:Execute()
+			HouseNew:=AllTrim(AFields[ptNew])
+			if !HouseNew==HouseOld 
+				if !Lower(AllTrim(AFields[PTReason]))="completion" .and.!Lower(AllTrim(AFields[PTReason]))="household name" .and.!Empty(AllTrim( AFields[PTReason]))
+					IF Empty(HouseNew)
+						// removal:
+						// Disconnect corresponding persons:
+						ostmnt:= SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type=1 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
+						ostmnt:Execute()
+						if ostmnt:NumSuccessfulRows>0 
+						* Disconnect corresponding account:
+						SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),GIFTALWD=0 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:Execute()
+						cPersonName:=""
+						oSel:= SQLSelect{"select "+SQLFullName(0,) +"as personname from person where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
+						if oSel:RecCount>0
+							cPersonName:=oSel:personname 
+							cReport+=cPersonName+ " removed because: "+AllTrim(AFields[PTReason])+CRLF
+							nRemoved++ 
+						endif
+						// delete corresponding Distribution Instructions:
+						SQLStatement{"delete from distributioninstruction where mbrid in (select mbrid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
+						// disconnect member:
+						SQLStatement{"delete from member where householdid='"+HouseOld+"'",oConn}:Execute()
+						endif 
+					else
+						// update household code:
+						ostmnt:=SQLStatement{"update member set householdid='"+HouseNew+"' where householdid='"+HouseOld+"'",oConn}
+						ostmnt:Execute()
+						if ostmnt:NumSuccessfulRows>0
+							nUpd++
+						endif
+					endif 
 				endif 
 			endif
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
@@ -2772,7 +2790,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 		ENDDO
 		ptrHandle:Close()
 		// update date of last account changes report:
-		SQLStatement{"update SysParms set DATLSTAFL='"+SQLdate( oFs:DateChanged)+"'",oConn}:Execute()
+		SQLStatement{"update sysparms set datlstafl='"+SQLdate( oFs:DateChanged)+"'",oConn}:Execute()
 		ptrHandle:=NULL_OBJECT
 		oFs:Delete()
 		cReport:=Str(nUpd,-1)+" updated household codes; "+Str(nRemoved,-1)+" members removed:"+CRLF+ cReport
@@ -2780,7 +2798,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 	ELSE
 		RETURN FALSE
 	ENDIF
-RETURN TRUE
+	RETURN true
 METHOD Init() CLASS UpdateHouseHoldID
 	RETURN SELF
 	
