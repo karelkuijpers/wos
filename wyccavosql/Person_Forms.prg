@@ -251,28 +251,28 @@ CLASS NewPersonWindow INHERIT DataWindowExtra
 	PROTECT oDCmExternid AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  INSTANCE 	mLastName
-	INSTANCE mPrefix
-	INSTANCE mFirstName
-	INSTANCE mInitials
-	INSTANCE mNameExt
-	INSTANCE mTitle
-	INSTANCE mAddress
-	INSTANCE mPostalcode
-	INSTANCE mCity
-	INSTANCE mAttention
-	INSTANCE mCountry
-	INSTANCE mTelbusiness
-	INSTANCE mTelhome
-	INSTANCE mFAX
-	INSTANCE mMobile
-	INSTANCE mBankNumber
-	INSTANCE mEmail
-	INSTANCE mRemarks
-	INSTANCE mType
-	INSTANCE mBirthDate
-	INSTANCE mGender
-	INSTANCE mExternid
+//   INSTANCE 	mLastName
+// 	INSTANCE mPrefix
+// 	INSTANCE mFirstName
+// 	INSTANCE mInitials
+// 	INSTANCE mNameExt
+// 	INSTANCE mTitle
+// 	INSTANCE mAddress
+// 	INSTANCE mPostalcode
+// 	INSTANCE mCity
+// 	INSTANCE mAttention
+// 	INSTANCE mCountry
+// 	INSTANCE mTelbusiness
+// 	INSTANCE mTelhome
+// 	INSTANCE mFAX
+// 	INSTANCE mMobile
+// 	INSTANCE mBankNumber
+// 	INSTANCE mEmail
+// 	INSTANCE mRemarks
+// 	INSTANCE mType
+// 	INSTANCE mBirthDate
+// 	INSTANCE mGender
+// 	INSTANCE mExternid
  
   PROTECT lAddressChanged as LOGIC
   PROTECT oCaller AS OBJECT
@@ -287,6 +287,7 @@ CLASS NewPersonWindow INHERIT DataWindowExtra
 
   EXPORT aPropEx:={} as ARRAY 
   export oPersCnt as PersonContainer
+  
   
 Method AddBankAcc(cBankAcc) Class NewPersonWindow
 // add a bank account to person:
@@ -1131,6 +1132,10 @@ METHOD OkButton CLASS NewPersonWindow
 				endif
 			ENDIF
 		ENDIF
+		IF self:lImport
+			self:oImport:NextImport(self,true)
+			RETURN nil
+		ENDIF
 		self:EndWindow()
 		// refresh owner: 
 		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser)
@@ -1140,10 +1145,6 @@ METHOD OkButton CLASS NewPersonWindow
 				self:oCaller:SELECT()   // go direct to
 			endif 
 		endif
-		IF self:lImport
-			self:oImport:NextImport(self,true)
-			RETURN nil
-		ENDIF
 		self:Close()
 	ENDIF
 
@@ -1165,13 +1166,13 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	self:oPersCnt:=PersonContainer{}
 	IF IsNil(aExtra)
 		self:lNew:=FALSE
-		lAddressChanged:=FALSE
+		self:lAddressChanged:=FALSE
 	ELSEIF !IsArray(aExtra)
 		Default(@aExtra,FALSE)
 		self:lNew:=aExtra
 	ELSE
 		self:lNew:=aExtra[1]
-		lAddressChanged:=aExtra[2]
+		self:lAddressChanged:=aExtra[2]
 		oCaller:=aExtra[3] 
 		if Len(aExtra)>3
 			self:oPersCnt:=aExtra[4]
@@ -1183,7 +1184,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	//if !self:lExists
 	self:InitExtraProperties()
 	//endif
-	oDCmType:FillUsing(pers_types) 
+	self:oDCmType:FillUsing(pers_types) 
 	if CITYUPC
 		self:oDCmCity:Picture:="@!"
 	else
@@ -1198,38 +1199,38 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	endif
 	IF self:lNew
 		IF!Empty(SCLC)
-			oDCmCOD1:Value  := if(Empty(SubStr(SCLC,1,2)),nil,SubStr(SCLC,1,2))
-			oDCmCOD2:Value  := if(Empty(SubStr(SCLC,4,2)),nil,SubStr(SCLC,4,2))
-			oDCmCOD3:Value  := if(Empty(SubStr(SCLC,7,2)),nil,SubStr(SCLC,7,2))
+			self:oDCmCOD1:Value  := if(Empty(SubStr(SCLC,1,2)),nil,SubStr(SCLC,1,2))
+			self:oDCmCOD2:Value  := if(Empty(SubStr(SCLC,4,2)),nil,SubStr(SCLC,4,2))
+			self:oDCmCOD3:Value  := if(Empty(SubStr(SCLC,7,2)),nil,SubStr(SCLC,7,2))
 		ENDIF
 		self:oDCmPersid:TextValue:="       "
 		IF !Empty(self:oPersCnt:m51_lastname)
 			self:oDCmLastName:TextValue := Lower(self:oPersCnt:m51_lastname)
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_initials)
-			self:mInitials := self:oPersCnt:m51_initials
+			self:oDCmInitials:TextValue := self:oPersCnt:m51_initials
 		ENDIF
 		if !Empty(self:oPersCnt:m51_title) 
 			cTit:= Lower(self:oPersCnt:m51_title)
 			titPtr:=AScan(Pers_Titles,{|x|x[1]==cTit})
 			IF titPtr>0
-				self:mTitle := pers_titles[titPtr,2]
+				self:oDCmTitle:TextValue := pers_titles[titPtr,2]
 			endif
 		endif
 		IF !Empty(self:oPersCnt:m51_prefix)
-			self:mPrefix := self:oPersCnt:m51_prefix
+			self:oDCmPrefix:TextValue := self:oPersCnt:m51_prefix
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_pos)
-			self:mPostalcode := StandardZip(self:oPersCnt:m51_pos)
+			self:oDCmPostalcode:TextValue := StandardZip(self:oPersCnt:m51_pos)
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_ad1)
-			self:mAddress := self:oPersCnt:m51_ad1
+			self:oDCmAddress:TextValue := self:oPersCnt:m51_ad1
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_city)
-			self:mCity := self:oPersCnt:m51_city
+			self:oDCmCity:TextValue := self:oPersCnt:m51_city
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_country)
-			self:mCountry := self:oPersCnt:m51_country
+			self:oDCmCountry:TextValue := self:oPersCnt:m51_country
 		ENDIF
 		IF !Empty(self:oPersCnt:m56_banknumber)
 			//mBankNumber := self:oPersCnt:m56_banknumber 
@@ -1239,12 +1240,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 			self:OrigaBank:={}
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_exid)
-			self:mExternId := self:oPersCnt:m51_exid
+			self:oDCmExternid:TextValue := self:oPersCnt:m51_exid
 		else
 			self:oDCmExternid:TextValue:="       "
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_firstname)
-			self:mFirstName := self:oPersCnt:m51_firstname
+			self:oDCmFirstName:TextValue := self:oPersCnt:m51_firstname
 		ENDIF
 		if !Empty(self:oPersCnt:m51_title)
 			title:=Upper(AllTrim(self:oPersCnt:m51_title) )
@@ -1277,25 +1278,25 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		IF !Empty(self:oPersCnt:m51_gender)
 			self:oDCmGender:TextValue := self:oPersCnt:m51_gender
 		ENDIF
-		if CountryCode="31" .and.Empty(self:mCountry)
-			aNAW:=ExtractPostCode(self:mCity,self:mAddress,self:mPostalcode)
-			self:mPostalcode:=aNAW[1]
-			self:mCity:=aNAW[3]
-			self:mAddress:=aNAW[2] 
+		if CountryCode="31" .and.Empty(self:oDCmCountry:TextValue) .and.!(Empty(self:oDCmCity:TextValue).and.Empty(self:oDCmAddress:TextValue).and.Empty(self:oDCmPostalcode:TextValue))
+			aNAW:=ExtractPostCode(self:oDCmCity:TextValue,self:oDCmAddress:TextValue,self:oDCmPostalcode:TextValue)
+			self:oDCmPostalcode:TextValue:=aNAW[1]
+			self:oDCmCity:TextValue:=aNAW[3]
+			self:oDCmAddress:TextValue:=aNAW[2] 
 		endif	
-		self:mCreationDate:= Today()
-		self:mOPC:=LOGON_EMP_ID
-		self:mAlterDate:=Today()
+		self:oDCmcreationdate:Value := Today()
+		self:oDCmOPC:TextValue:=LOGON_EMP_ID
+		self:oDCmalterdate:Value:=Today()
 		// remove mbr and ent from listbox:
 		pos:=SELF:oDCmType:FindItem("Member",TRUE)
 		IF pos>0
-			oDCmType:CurrentItemNo:=pos
-			oDCmType:DeleteItem()
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
 		ENDIF
 		pos:=SELF:oDCmType:FindItem("Wycliffe Entity",TRUE)
 		IF pos>0
-			oDCmType:CurrentItemNo:=pos
-			oDCmType:DeleteItem()
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_type)
 			self:oDCmType:TextValue := self:oPersCnt:m51_type
@@ -1305,19 +1306,19 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		
 	ELSE
 		if !Empty(self:oPersCnt:persid)
-			self:mPersId:=self:oPersCnt:persid 
+			self:oDCmPersid:TextValue:=self:oPersCnt:persid 
 			self:SetState()
 		elseif !Empty(self:oPersCnt:m51_exid)
-			self:mExternId:=self:oPersCnt:m51_exid 
+			self:oDCmExternid:TextValue:=self:oPersCnt:m51_exid 
 			self:SetState()
 		endif
 	ENDIF
 	IF AScan(aMenu,{|x| x[4]=="PersonEdit"})=0
 		SELF:oCCOKButton:Hide()
 	ENDIF
-	self:curmAddress:=AllTrim(self:mAddress)
-	self:curmPos:=AllTrim(self:mPostalcode) 
-	self:curmCity:=AllTrim(self:mCity)
+	self:curmAddress:=AllTrim(self:oDCmAddress:TextValue)
+	self:curmPos:=AllTrim(self:oDCmPostalcode:TextValue) 
+	self:curmCity:=AllTrim(self:oDCmCity:TextValue)
 	
 	myDim:=self:Size
 	myDim:Height-=500
@@ -1493,7 +1494,7 @@ BEGIN
 	CONTROL	"&Edit", PERSONBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 107, 53, 12
 	CONTROL	"&New", PERSONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 146, 54, 12
 	CONTROL	"&Delete", PERSONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 185, 54, 13
-	CONTROL	"Merge", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
+	CONTROL	"Merge to", PERSONBROWSER_UNIONBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 452, 223, 54, 12
 	CONTROL	"Select", PERSONBROWSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 452, 260, 54, 13
 	CONTROL	"&Bankaccount:", PERSONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 16, 64, 46, 12
 	CONTROL	"Select&&Print", PERSONBROWSER_PRINTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 452, 65, 54, 12
@@ -1649,7 +1650,7 @@ oCCDeleteButton:HyperLabel := HyperLabel{#DeleteButton,_chr(38)+"Delete",NULL_ST
 oCCDeleteButton:OwnerAlignment := OA_PX
 
 oCCUnionButton := PushButton{SELF,ResourceID{PERSONBROWSER_UNIONBUTTON,_GetInst()}}
-oCCUnionButton:HyperLabel := HyperLabel{#UnionButton,"Merge","Merge with another person",NULL_STRING}
+oCCUnionButton:HyperLabel := HyperLabel{#UnionButton,"Merge to","Merge with another person",NULL_STRING}
 oCCUnionButton:UseHLforToolTip := True
 oCCUnionButton:OwnerAlignment := OA_PX
 
