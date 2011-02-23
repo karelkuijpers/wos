@@ -214,10 +214,10 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 		" and bookingdate='"+SQLdate(transdate)+"' and "+;
 		"amount="+Str(transamount,-1)+" and "+;
 		"addsub='"+codedebcre+"' and "+;
-		"kind='"+SubStr(AllTrim(TransType),1,4)+"' and "+;
+		"kind='"+AllTrim(SubStr(TransType,1,4))+"' and "+;
 		"contra_bankaccnt='"+ZeroTrim(ContrBankNbr)+"' and "+;
 		"contra_name='"+AllTrim(ContraName)+"' and "+;
-		"budgetcd='"+SubStr(AllTrim(BudgetCode),1,20)+"' and "+;
+		"budgetcd='"+AllTrim(SubStr(BudgetCode,1,20))+"' and "+;
 		"description='"+AllTrim(transdescription)+"'"
 		oSEl:=SQLSelect{cStatement,oConn}
 		if oSEl:Reccount>0
@@ -583,8 +583,9 @@ METHOD Import() CLASS TeleMut
 		FOR nf:=1 to Len(aFileINN)
 			cFileName:=aFileINN[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportBBSInnbetal(oBF)
-			AAdd(aFiles,oBF)
+			if self:ImportBBSInnbetal(oBF)
+				AAdd(aFiles,oBF)
+			endif
 		NEXT
 		// Norwegian BBS Bank:
 		FOR nf:=1 to Len(aFileBBS)
@@ -721,8 +722,8 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	LOCAL ld_bookingdate as date
 	Local cBankAcc as string
 	local oStmnt as SQLStatement
+	local nTrans,nImp as int
 
-cSep:=SetDecimalSep(Asc(","))
 ptrHandle:=MyFile{oFs}
 IF FError() >0
 	(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
@@ -747,10 +748,13 @@ IF ptDate==0 .or. ptDesc==0 .or. ptPay==0 .or. ptDep==0
 	(ErrorBox{,"Wrong fileformat of importfile from BBS Bank: "+oFs:FullPath+"(See help)"}):show()
 	RETURN FALSE
 ENDIF
+cSep:=SetDecimalSep(Asc(","))
 // Determine Bankaccount of Wycliffe at BBS:
 lv_bankAcntOwn:=ZeroTrim(BANKNBRDEB)
 cBuffer:=ptrHandle:FReadLine(ptrHandle)
 aFields:=Split(cBuffer,cDelim)
+nImp:=0
+nTrans:=0
 
 DO WHILE Len(aFields)>3
 	ld_bookingdate:=CToD(AFields[ptDate])
@@ -790,7 +794,7 @@ DO WHILE Len(aFields)>3
     * check if allready loaded:
   	lv_description:=AddSlashes(AllTrim(lv_description))
   	lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra)
-   
+	nTrans++
 	IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_addsub,"","","")
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
@@ -807,13 +811,17 @@ DO WHILE Len(aFields)>3
 	",description='"+lv_description	+"'",oConn}
 	oStmnt:Execute()
 	if	oStmnt:NumSuccessfulRows>0
-		++lv_aant_toe
+		++self:lv_aant_toe
+		++nImp
+	else
+		LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 	endif
 	cBuffer:=ptrHandle:FReadLine(ptrHandle)
 	aFields:=Split(cBuffer,cDelim)
 ENDDO
 ptrHandle:Close()
 ptrHandle:=NULL_OBJECT
+LogEvent(,"Imported BBS file:"+oFb:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions","Log")
 SetDecimalSep(cSep)  // restore decimal separator
 RETURN TRUE
 METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
@@ -830,6 +838,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oSel as SQLSelect
 	local cPersId as string
 	local oStmnt as SQLStatement
+	local nTrans,nImp as int
 
 	
 	oHlM :=HlpMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
@@ -850,6 +859,8 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	if oSel:reccount>0
 		AccSDON:=oSel:ACCNUMBER
 	ENDIF
+	nImp:=0
+	nTrans:=0
 	DO WHILE .not.oHlM:EOF
 		* Search NY090020 record:
 		IF !SubStr(oHLM:MTLINE,1,8)=="NY090020"
@@ -881,7 +892,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_reference:=SubStr(oHLM:MTLINE,5,2)
 				lv_persid:=SubStr(lv_InvoiceID,2,5)
 			  	lv_description:=AddSlashes(AllTrim(lv_description))
-				
+				nTrans++
 				* save transaction:
 				IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 					IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KID","","",lv_Budgetcd) .and.!Empty(lv_Amount) 
@@ -904,9 +915,11 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 							iif(Empty(cPersId),'',",persid="+cPersId),oConn}
 						oStmnt:Execute() 
 						lv_description:=""
-
-						if oStmnt:NumSuccessfulRows>0
-							++lv_aant_toe
+						if	oStmnt:NumSuccessfulRows>0
+							++self:lv_aant_toe
+							++nImp
+						else
+							LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 						endif
 					ENDIF
 				ENDIF
@@ -918,7 +931,8 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 
 	oHlp:=Filespec{oHLM:FileSpec:Fullpath}
 	oHlM:Close()
-	oHlM:=NULL_OBJECT
+	oHlM:=null_object
+	LogEvent(,"Imported Innbetalinger fra BBS file:"+oFm:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions","Log")
 	oHlp:Delete()
 	RETURN true
 METHOD ImportBRI(oFm as MyFileSpec) as logic CLASS TeleMut
