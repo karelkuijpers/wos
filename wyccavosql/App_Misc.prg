@@ -1085,7 +1085,7 @@ function InitGlobals()
 	EXCEL:= excelpath +"Excel.exe "
 	oReg:=null_object
 	oSys:=SQLSelect{"select * from sysparms",oConn}
-	IF oSys:RecCount=1
+	IF oSys:RecCount>0
 		oSel:=SQLSelect{"select * from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
 			nMindate:=oSel:YEARSTART*12+oSel:YEARLENGTH+oSel:MONTHSTART 
@@ -1915,46 +1915,28 @@ function PersonUnion(id1 as string, id2 as string)
 	4. transfer all givers/creditors in standing orders from id2 to id1
 	5. members?? not allowed 
 	*/ 
-	Local oPers1,oPers2 as SQLSelect,  oTrans as SQLSelect
+	Local oPers1,oPers2,oTrans,oSel as SQLSelect
 	LOCAL oXMLDocPrs2,oXMLDocPrs1 as XMLDocument 
 	local ChildName, cValue as string, recordfound, lSuccess as logic 	
 	local oStmt as SQLStatement 
 	local cAccId as string
-	local cStatement as string
+	local cStatement as string 
+	local cError as string 
+	local aTrTable:={} as array
+	local i,nTrans as int
 
-	oStmt:=SQLStatement{'',oConn}
 
 	// transactions:
-	cStatement:=UnionTrans("select persid,transid,seqnr from transaction t where t.dat>='"+SQLdate(Today()+80)+"' and persid="+id2)
-	oTrans:=SQLSelect{cStatement,oConn}
-	if oTrans:RecCount>0  
-		do while !oTrans:EOF 
-			oTrans:persid:=id1 
-			oTrans:Skip()
-		enddo
-	endif
-	oStmt:SQLString:='Update personbank Set persid="'+id1+'" where persid="'+id2+'"'
-	oStmt:Execute()
-
-	oStmt:SQLString:='Update subscription Set personid="'+id1+'" where personid="'+id2+'"'
-	oStmt:Execute()
-
-// 	oStmt:SQLString:='Update DueAmount Set persid="'+id1+'" where persid="'+id2+'"'
-// 	oStmt:Execute()
-	
-	// givers/creditors within standing order:
-	oStmt:SQLString:='UPDATE standingorder SET persid="'+id1+'" where persid="'+id2+'"'
-	oStmt:Execute(true)
-	oStmt:Commit() 
-	oStmt:SQLString:='UPDATE standingorderline SET creditor="'+id1+'" where creditor="'+id2+'"'
-	oStmt:Execute(true)
-	oStmt:Commit() 
-	// creditor within bankorders:
-// 	oStmt:SQLString:='UPDATE bankorder SET idfrom="'+id1+'" where idfrom="'+id2+'"'
-// 	oStmt:Execute(true)
-// 	oStmt:Commit() 
-
-
+	// 	cStatement:=UnionTrans("select persid,transid,seqnr from transaction t where t.dat>='"+SQLdate(Today()+80)+"' and persid="+id2)
+	// 	oTrans:=SQLSelect{cStatement,oConn}
+	// 	if oTrans:RecCount>0  
+	// 		do while !oTrans:EOF 
+	// 			oTrans:persid:=id1 
+	// 			oTrans:Skip()
+	// 		enddo
+	// 	endif 
+	SQLStatement{"start transaction",oConn}:Execute()
+	oStmt:=SQLStatement{'',oConn}
 	// Unify persons self:
 	oPers1:=SQLSelect{"select p.*,m.accid from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
 	oPers2:=SQLSelect{"select p.*,m.accid from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
@@ -1963,106 +1945,171 @@ function PersonUnion(id1 as string, id2 as string)
 		return false
 	endif
 	if !Empty( oPers1:accid) .and. !Empty( oPers2:accid)
-		(ErrorBox{,"Not possible to unify two members. Transactions has however been transfered  to "+GetFullName(id2)}):Show()
+		(ErrorBox{,"Not possible to unify two members"}):Show()
 		return false
 	endif
-	cStatement:=""
-	if (oPers1:gender==1.or.oPers1:gender==0) .and.oPers2:gender==2 .or.(oPers1:gender==2.or.oPers1:gender==0) .and.oPers2:gender==1 .or.oPers2:gender==3
-		cStatement+=",gender=3" //couple
-		if oPers1:gender==2
-			if !Empty(oPers1:firstname) .and.!Empty(oPers2:firstname)
-				cStatement+=",firstname='"+oPers1:firstname+"&"+oPers2:firstname+"'"
-			endif
-		elseif !Empty(oPers1:firstname) .and.!Empty(oPers2:firstname) .and.AllTrim(oPers1:firstname)<>AllTrim(oPers2:firstname)
-			cStatement+=",firstname='"+oPers1:firstname+"&"+oPers2:firstname+"'" 
-		elseif Empty(oPers1:firstname)
-			cStatement+=",firstname='"+oPers2:firstname+"'"
+	oSel:=SQLSelect{"SELECT TABLE_NAME FROM information_schema.TABLES "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME like 'tr%' order by TABLE_NAME",oConn}
+	aTrTable:=oSel:getlookuptable(50, #table_name, #table_name) 
+	for i:=1 to Len(aTrTable)
+		oStmt:SQLString:="update "+aTrTable[i,1]+" set persid='"+id1+"' where persid="+id2
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
+			exit
+		elseif oSel:NumSuccessfulRows>0 
+			nTrans+=oSel:NumSuccessfulRows
 		endif
-	else
-		if Empty(oPers1:firstname)
-			cStatement+=",firstname='"+oPers2:firstname+"'"
-		endif
-	endif
-	if Empty(oPers1:initials)
-		cStatement+=",initials='"+oPers2:initials+"'"
-	endif
-	if Empty( oPers1:Title)
-		cStatement+=",title="+Str(oPers2:Title,-1)
-	endif
-	if Empty( oPers1:telbusiness)
-		cStatement+=",telbusiness='"+ oPers2:telbusiness+"'"
-	endif
-	if Empty( oPers1:telhome)
-		cStatement+=",telhome='"+ oPers2:telhome+"'"
-	endif
-	if Empty( oPers1:MOBILE)
-		cStatement+=",mobile='"+ oPers2:MOBILE+"'"
-	endif
-	if Empty( oPers1:FAX)
-		cStatement+=",fax='"+ oPers2:FAX+"'"
-	endif
-	if Empty( oPers1:EMAIL)
-		cStatement+=",email='"+ oPers2:EMAIL+"'"
-	endif
-	if Empty( oPers1:birthdate)
-		cStatement+=",birthdate='"+ SQLdate(oPers2:birthdate)+"'"
-	endif
-	if !Empty(oPers2:remarks)
-		cStatement+=",remarks=concat(remarks,' ','"+oPers2:remarks+"')"
-	endif
-	cStatement+=",mailingcodes='"+MakeCod(Split(oPers1:mailingcodes+" "+oPers2:mailingcodes))+"'"
-	if Empty(oPers1:creationdate) .or.(!Empty(oPers2:creationdate) .and.oPers1:creationdate>oPers2:creationdate)
-		cStatement+=",creationdate='"+SQLdate(oPers2:creationdate)+"'"
-	endif
-	if Empty(oPers1:alterdate) .or.oPers1:alterdate< oPers2:alterdate
-		cStatement+=",alterdate='"+SQLdate(oPers2:alterdate)  +"'"
-	endif
-	if Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift
-		cStatement+=",datelastgift='"+SQLdate(oPers2:datelastgift)  +"'"
-	endif
-	if Empty(oPers1:address) .and. Empty(oPers1:city)
-		cStatement+=",address='"+oPers2:address +"'"
-		cStatement+=",postalcode='"+oPers2:postalcode+"'"
-		cStatement+=",city='"+oPers2:city  +"'"
-		cStatement+=",country='"+ oPers2:country+"'" 
-		cStatement+=",attention='"+oPers2:attention +"'"
-	endif
-	// extra properties:
-	oXMLDocPrs2:=XMLDocument{oPers2:PROPEXTR}
-	oXMLDocPrs1:=XMLDocument{oPers1:PROPEXTR} 
-	if oXMLDocPrs2:GetElement("velden")
-		recordfound:=oXMLDocPrs2:GetFirstChild()
-		do while recordfound
-			ChildName:=oXMLDocPrs2:ChildName
-			cValue:=oXMLDocPrs2:ChildContent
-			if oXMLDocPrs1:GetElement(ChildName)
-				if Empty(oXMLDocPrs1:GetContentCurrentElement())
-					oXMLDocPrs1:UpdateContentCurrentElement(cValue)
-				endif
-			else
-				oXMLDocPrs1:AddElement(ChildName,cValue,"velden")
-			endif
-			recordfound:=oXMLDocPrs2:GetNextChild()			
-		ENDDO
-		cStatement+=",propextr='"+ oXMLDocPrs1:GetBuffer() +"'"
-	endif
-	if !Empty(oPers2:accid)
-		// connect member to Id1:
-		cStatement+=",type="+Str(oPers2:type,-1)
-	endif
-	oStmt:=SQLStatement{SubStr(cStatement,2),oConn}
-	oStmt:Execute()
-	if Empty(oStmt:status) .and.!Empty(oPers2:accid) 
-		oStmt:=SQLStatement{"update member set persid="+id1+" where persid="+id2,oConn}:Execute()
-		if oStmt:NumSuccessfulRows>0 
-			oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute() 
+	next
+	if Empty(cError)
+		oStmt:SQLString:='update personbank set persid="'+id1+'" where persid="'+id2+'"'
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
 		endif
 	endif
-	// update employee if applicable
-	SQLStatement{"update employee set persid='"+Crypt_Emp(true,"persid",id1)+"' where persid='"+Crypt_Emp(true,"persid",id2)+"'",oConn}:Execute()
-	// delete person id2:
-	SQLStatement{"delete from person where persid="+id2,oConn}:Execute()
+	if Empty(cError)
+		// givers/creditors within standing order:
+		oStmt:SQLString:='UPDATE standingorder SET persid="'+id1+'" where persid="'+id2+'"'
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
+		endif
+	endif
+	if Empty(cError)
+		oStmt:SQLString:='UPDATE standingorderline SET creditor="'+id1+'" where creditor="'+id2+'"'
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
+		endif
+	endif
+	if Empty(cError)
+		oStmt:SQLString:='update subscription set personid="'+id1+'" where personid="'+id2+'"'
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
+		endif
+	endif
+	if Empty(cError)
+		// creditor within bankorders:
+		oStmt:SQLString:='UPDATE bankorder SET idfrom="'+id1+'" where idfrom="'+id2+'"'
+		oStmt:Execute()
+		if !Empty(oStmt:status) 
+			cError:=oStmt:ErrInfo:ErrorMessage
+		endif
+	endif
 
+	if Empty(cError)
+		cStatement:=""
+		if (oPers1:gender==1.or.oPers1:gender==0) .and.oPers2:gender==2 .or.(oPers1:gender==2.or.oPers1:gender==0) .and.oPers2:gender==1 .or.oPers2:gender==3
+			cStatement+=",gender=3" //couple
+			if oPers1:gender==2
+				if !Empty(oPers1:firstname) .and.!Empty(oPers2:firstname)
+					cStatement+=",firstname='"+AddSlashes(oPers1:firstname)+"&"+AddSlashes(oPers2:firstname)+"'"
+				endif
+			elseif !Empty(oPers1:firstname) .and.!Empty(oPers2:firstname) .and.AllTrim(oPers1:firstname)<>AllTrim(oPers2:firstname)
+				cStatement+=",firstname='"+AddSlashes(oPers1:firstname)+"&"+AddSlashes(oPers2:firstname)+"'" 
+			elseif Empty(oPers1:firstname)
+				cStatement+=",firstname='"+AddSlashes(oPers2:firstname)+"'"
+			endif
+		else
+			if Empty(oPers1:firstname)
+				cStatement+=",firstname='"+AddSlashes(oPers2:firstname)+"'"
+			endif
+		endif
+		if Empty(oPers1:initials)
+			cStatement+=",initials='"+oPers2:initials+"'"
+		endif
+		if Empty( oPers1:Title)
+			cStatement+=",title="+Str(oPers2:Title,-1)
+		endif
+		if Empty( oPers1:telbusiness)
+			cStatement+=",telbusiness='"+ oPers2:telbusiness+"'"
+		endif
+		if Empty( oPers1:telhome)
+			cStatement+=",telhome='"+ oPers2:telhome+"'"
+		endif
+		if Empty( oPers1:MOBILE)
+			cStatement+=",mobile='"+ oPers2:MOBILE+"'"
+		endif
+		if Empty( oPers1:FAX)
+			cStatement+=",fax='"+ oPers2:FAX+"'"
+		endif
+		if Empty( oPers1:EMAIL)
+			cStatement+=",email='"+ AddSlashes(oPers2:EMAIL)+"'"
+		endif
+		if Empty( oPers1:birthdate)
+			cStatement+=",birthdate='"+ SQLdate(oPers2:birthdate)+"'"
+		endif
+		if !Empty(oPers2:remarks)
+			cStatement+=",remarks=concat(remarks,' ','"+AddSlashes(oPers2:remarks)+"')"
+		endif
+		cStatement+=",mailingcodes='"+MakeCod(Split(oPers1:mailingcodes+" "+oPers2:mailingcodes))+"'"
+		if Empty(oPers1:creationdate) .or.(!Empty(oPers2:creationdate) .and.oPers1:creationdate>oPers2:creationdate)
+			cStatement+=",creationdate='"+SQLdate(oPers2:creationdate)+"'"
+		endif
+		if Empty(oPers1:alterdate) .or.oPers1:alterdate< oPers2:alterdate
+			cStatement+=",alterdate='"+SQLdate(oPers2:alterdate)  +"'"
+		endif
+		if Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift
+			cStatement+=",datelastgift='"+SQLdate(oPers2:datelastgift)  +"'"
+		endif
+		if Empty(oPers1:address) .and. Empty(oPers1:city)
+			cStatement+=",address='"+AddSlashes(oPers2:address) +"'"
+			cStatement+=",postalcode='"+oPers2:postalcode+"'"
+			cStatement+=",city='"+AddSlashes(oPers2:city)  +"'"
+			cStatement+=",country='"+ AddSlashes(oPers2:country)+"'" 
+			cStatement+=",attention='"+AddSlashes(oPers2:attention) +"'"
+		endif
+		// extra properties:
+		oXMLDocPrs2:=XMLDocument{oPers2:PROPEXTR}
+		oXMLDocPrs1:=XMLDocument{oPers1:PROPEXTR} 
+		if oXMLDocPrs2:GetElement("velden")
+			recordfound:=oXMLDocPrs2:GetFirstChild()
+			do while recordfound
+				ChildName:=oXMLDocPrs2:ChildName
+				cValue:=oXMLDocPrs2:ChildContent
+				if oXMLDocPrs1:GetElement(ChildName)
+					if Empty(oXMLDocPrs1:GetContentCurrentElement())
+						oXMLDocPrs1:UpdateContentCurrentElement(cValue)
+					endif
+				else
+					oXMLDocPrs1:AddElement(ChildName,cValue,"velden")
+				endif
+				recordfound:=oXMLDocPrs2:GetNextChild()			
+			ENDDO
+			cStatement+=",propextr='"+ AddSlashes(oXMLDocPrs1:GetBuffer()) +"'"
+		endif
+		if !Empty(oPers2:accid)
+			// connect member to Id1:
+			cStatement+=",type="+Str(oPers2:type,-1)
+		endif
+		oStmt:=SQLStatement{"update person set "+SubStr(cStatement,2)+" where persid='"+id1+"'",oConn}
+		oStmt:Execute()
+		if !Empty(oStmt:status)
+			cError:=oStmt:ErrInfo:ErrorMessage 
+		endif
+		if Empty(cError)
+			if !Empty(oPers2:accid) 
+				oStmt:=SQLStatement{"update member set persid="+id1+" where persid="+id2,oConn}:Execute()
+				if oStmt:NumSuccessfulRows>0 
+					oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute() 
+				endif
+			endif 
+			
+			// update employee if applicable
+			SQLStatement{"update employee set persid='"+Crypt_Emp(true,"persid",id1)+"' where persid='"+Crypt_Emp(true,"persid",id2)+"'",oConn}:Execute()
+			// delete person id2:
+			SQLStatement{"delete from person where persid="+id2,oConn}:Execute() 
+			SQLStatement{"commit",oConn}:Execute()
+		endif
+	endif
+	if !Empty(cError)
+		SQLStatement{"rollback",oConn}:Execute() 
+		ErrorBox{,"could not merge persons: "+cError}:Show()
+		return false
+	endif
+   TextBox{,"Person merge","Person merged"}:Show()
 	return true
 Function PersTypeValue(abrv as string) as string
 // get id of person type with abbriviation abrv
@@ -2247,13 +2294,24 @@ FUNCTION ValidateControls( oDW, aControls )
 	NEXT	
 
 	RETURN i > Len( aControls )
+Method Reset() class Window 
+	Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string
+	aChilds:=self:GetAllChildren() 
+	for i:=1 to Len(aChilds)
+		cName:=ClassName(aChilds[i])
+		if cName==#SINGLELINEEDIT .or. cName==#COMBOBOX .or. cName==#MULTILINEEDIT
+			oContr:=aChilds[i] 
+			oContr:TextValue:=null_string
+		endif
+	next
+	return
 Method SetTexts() class Window 
-Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string
-local oWLan as Language
-if self:oLan==null_object
-	self:oLan:=Language{}
-endif 
-oWLan:=self:oLan
+	Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string
+	local oWLan as Language
+	if self:oLan==null_object
+		self:oLan:=Language{}
+	endif 
+	oWLan:=self:oLan
 	aChilds:=self:GetAllChildren() 
 	for i:=1 to Len(aChilds)
 		cName:=ClassName(aChilds[i])
@@ -2270,7 +2328,7 @@ oWLan:=self:oLan
 		endif
 	next
 	self:Caption:=oWLan:WGet(self:Caption)
-return
+	return
 CLASS WorkDayDate inherit DateStandard
  Method ParentNotify(nNotifyCode, lParam) class WorkDayDate
 		if DoW(self:SelectedDate)=1       // not on sunday
