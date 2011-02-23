@@ -838,14 +838,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 
 	if self:TargetDB=="Person" .or.!self:lExists 
 		* Clear all fields:
-		FOR i:=1 to Len(self:aTargetDB) 
-			IF AScan(aNonImport,String2Symbol(self:aTargetDB[i,1]))==0 
-				IDs:=String2Symbol("m"+self:aTargetDB[i,1]) 
-				if IsAssign(self:oEdit,IDs)
-					IVarPutSelf(self:oEdit,IDs," ")
-				endif
-			endif
-		NEXT
+		self:oEdit:Reset()
 		IF self:TargetDB=="Person"
 			// clear also extra properties:
 			FOR i:=1 to Len(self:oEdit:aPropEx)
@@ -965,41 +958,55 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 						endif
 					ENDIF
 				ELSEIF IDs=#mLastname
-					if self:lOverwrite .or.Empty(IVarGetSelf(self:oEdit,IDs))
-						IVarPutSelf(self:oEdit,#mLastname,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
+					if self:lOverwrite .or.Empty(self:oEdit:FIELDGET(#mLastname))
+// 						IVarPutSelf(self:oEdit,#mLastname,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
+						self:oEdit:mLastName:=iif(LSTNUPC,Upper(cTargetStr),cTargetStr)
 					endif
 					// 					self:AnalyzeSurName(cTargetStr,self:lExists,self:lOverwrite)
 				ELSEIF IDs=#mCity
-					if self:lOverwrite .or.Empty(IVarGetSelf(self:oEdit,IDs))
-						IVarPutSelf(self:oEdit,#mCity,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
+// 					if self:lOverwrite .or.Empty(IVarGetSelf(self:oEdit,IDs))
+					if self:lOverwrite .or.Empty(self:oEdit:mCity)
+// 						IVarPutSelf(self:oEdit,#mCity,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
+						self:oEdit:mCity:=iif(CITYUPC,Upper(cTargetStr),cTargetStr)
 					endif
 				ELSEIF IDs=#mRemarks
-					mOPM:=AllTrim(IVarGetSelf(self:oEdit,IDs))
+// 					mOPM:=AllTrim(IVarGetSelf(self:oEdit,IDs))
+// 					mOPM:=mOPM+iif(Empty(mOPM),""," "+CRLF)+cTargetStr
+// 					IVarPutSelf(self:oEdit,#mRemarks,mOPM)
+					mOPM:=if(Empty(self:oEdit:FIELDGET(#mRemarks)),'',AllTrim(self:oEdit:FIELDGET(#mRemarks))
 					mOPM:=mOPM+iif(Empty(mOPM),""," "+CRLF)+cTargetStr
-					IVarPutSelf(self:oEdit,#mRemarks,mOPM)
+					self:oEdit:FIELDPUT(#mRemarks,mOPM)
 				elseif IDs=#mbalitemid
 					// find balance item
 					cTargetStr:=ZeroTrim(cTargetStr) 
 					obal:=SQLSelect{"select balitemid,heading,number from balanceitem where number='"+cTargetStr+"' or balitemid='"+cTargetStr+"'",oConn}
 					if oBal:RecCount>0 
-						IVarPutSelf(self:oEdit,#mNumSave,Str(obal:balitemid,-1)) 
-						IVarPutSelf(self:oEdit,#mbalitemid,obal:number+":"+obal:Heading)
+// 						IVarPutSelf(self:oEdit,#mNumSave,Str(obal:balitemid,-1)) 
+// 						IVarPutSelf(self:oEdit,#mbalitemid,obal:number+":"+obal:Heading)
+						self:oEdit:mNumSave:=Str(obal:balitemid,-1) 
+						self:oEdit:mbalitemid:=obal:number+":"+obal:Heading
 						self:oEdit:oAccCnt:m51_balid:=Str(obal:balitemid,-1)
 					else
-						IVarPutSelf(self:oEdit,#mNumSave,"") 
-						IVarPutSelf(self:oEdit,#mbalitemid,"")					
+						self:oEdit:FIELDPUT(#mNumSave,"")
+						self:oEdit:FIELDPUT(#mbalitemid,"")
+// 						IVarPutSelf(self:oEdit,#mNumSave,"") 
+// 						IVarPutSelf(self:oEdit,#mbalitemid,"")					
 					endif					
 				elseif IDs=#mDepartment
 					// find department
 					cTargetStr:=ZeroTrim(cTargetStr) 
 					oDep:=SQLSelect{"select depid,deptmntnbr,descriptn from department where deptmntnbr='"+cTargetStr+"' or depid='"+cTargetStr+"'",oConn}
 					if oDep:RecCount>0
-						IVarPutSelf(self:oEdit,#mDepartment,AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN)
-						IVarPutSelf(self:oEdit,#mDep,Str(oDep:DepId,-1))
+// 						IVarPutSelf(self:oEdit,#mDepartment,AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN)
+// 						IVarPutSelf(self:oEdit,#mDep,Str(oDep:DepId,-1))
+						self:oEdit:mDepartment:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
+						self:oEdit:mDep:=Str(oDep:DepId,-1)
 						self:oEdit:oAccCnt:m51_depid:=Str(oDep:DepId,-1) 
 					else
-						IVarPutSelf(self:oEdit,#mDep,"") 
-						IVarPutSelf(self:oEdit,#mDepartment,"")					
+// 						IVarPutSelf(self:oEdit,#mDep,"") 
+// 						IVarPutSelf(self:oEdit,#mDepartment,"")					
+						self:oEdit:mDep:="" 
+						self:oEdit:mDepartment:=""					
 					endif
 				elseif IDs=#mBankNumber
 					aBank:=Split(cTargetStr) 
@@ -1007,16 +1014,16 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 						self:oEdit:AddBankAcc(aBank[j])
 					next
 					
-				ELSE 
-					if self:lOverwrite .or.Empty(IVarGetSelf(self:oEdit,IDs)) 
-						IVarPutSelf(self:oEdit,IDs,cTargetStr)                            
+				else 
+					if self:lOverwrite .or.Empty(self:oEdit:FIELDGET(IDs)) 
+						self:oEdit:FIELDPUT(IDs,cTargetStr)                            
 					endif 
 				ENDIF
 			endif
 		ENDIF
 		IF self:TargetDB=="Person" .and. !Empty(self:oEdit:oPersCnt)
 			IF IDs=#mLastname
-				IVarPutSelf(self:oEdit:oPersCnt,#m51_lastname,self:oEdit:mLastname)
+				IVarPutSelf(self:oEdit:oPersCnt,#m51_lastname,cTargetStr)
 			ELSEIF IDs=#mInitials
 				IVarPutSelf(self:oEdit:oPersCnt,#m51_initials,cTargetStr)
 			ELSEIF IDs=#mPrefix
@@ -1045,22 +1052,22 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#NewPersonWindow
 		// add default codes even when mCod not mapped:
 		self:oEdit:StateExtra(aMapping)
-		IF "FI"$cCodes .and. Empty(IVarGetSelf(self:oEdit,#mDateLastGift))
-			IVarPutSelf(self:oEdit,#mDateLastGift,Today()-4000)
+		if "FI"$cCodes .and. Empty(self:oEdit:FIELDGET(#mDateLastGift))
+			self:oEdit:mDateLastGift:=Today()-4000
 		ENDIF
-		myBDAT:=IVarGetSelf(self:oEdit,#mCreationDate)
-		myMUTD:=IVarGetSelf(self:oEdit,#mAlterDate)
+		myBDAT:=self:oEdit:FIELDGET(#mCreationDate)
+		myMUTD:=self:oEdit:FIELDGET(#mAlterDate)
 		IF Empty(myBDAT) .and. !Empty(myMUTD)
-			IVarPutSelf(self:oEdit,#mCreationDate,SToD("19800101"))
+			self:oEdit:FIELDPUT(#mCreationDate,SToD("19800101") )
 		ELSEIF !Empty(myBDAT) .and. Empty(myMUTD)
-			IVarPutSelf(self:oEdit,#mAlterDate,myBDAT)
+			self:oEdit:FIELDPUT(#mAlterDate,myBDAT)
 		ELSEIF Empty(myBDAT) .and. Empty(myMUTD)
-			IVarPutSelf(self:oEdit,#mCreationDate,SToD("19800101"))
-			IVarPutSelf(self:oEdit,#mAlterDate,SToD("19800101"))		
+			self:oEdit:FIELDPUT(#mCreationDate,SToD("19800101"))
+			self:oEdit:FIELDPUT(#mAlterDate,SToD("19800101"))		
 		ENDIF
 		
-		IF !Empty(cCodes) .and. Empty(IVarGetSelf(self:oEdit,#mCity))
-			IVarPutSelf(self:oEdit,#mCity,"??")
+		IF !Empty(cCodes) .and. Empty(self:oEdit:mCity)
+			self:oEdit:FIELDPUT(#mCity,"??")
 		ENDIF		
 	ENDIF
 	if lStop
