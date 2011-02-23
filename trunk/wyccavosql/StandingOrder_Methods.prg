@@ -454,7 +454,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 	elseIF AScan(oStOrdLH:aMirror,{|x| x[4]=="AG".or.x[4]=="MG"})>0
 		i:= AScan(oStOrdLH:aMirror,{|x| x[4]=="CH".and.x[2]<x[1]})
 		IF i > 0
-			self:mCLNFrom:=oStOrdLH:Amirror[i,10]
+			self:mCLNFrom:=Transform(oStOrdLH:Amirror[i,10],"")
          curRec:=i  // RECNO
          if !Empty(self:mCLN).and. !self:mCLNFrom==self:mCLN
            	cError := GetFullName(self:mCLNFrom)+";  " +GetFullName(self:mCLN)
@@ -468,7 +468,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 					if Empty(cError)
 		           	cError := GetFullName(self:mCLNFrom)+";  "
 					endif				
-					cError += GetFullName(oStOrdLH:aMirror[i,10])+"; "
+					cError += GetFullName(Transform(oStOrdLH:Amirror[i,10],""))+"; "
 					lValid := FALSE
 				endif
 			ENDDO
@@ -482,7 +482,17 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 			self:oDCmPerson:SetFocus() 			
 		endif
 	endif 
-	
+	if lValid
+		// check no empty descriptions:
+// 		oStOrdLH:SuspendNotification()
+		oStOrdLH:GoTop()
+		if oStOrdLH:Locate({||Empty( oStOrdLH:DESCRIPTN)})
+// 			oStOrdLH:ResetNotification()
+			self:GoTo(oStOrdLH:RECNO) 
+			cError:=self:oLan:WGet("description should not be empty")
+			lValid:=false
+		endif
+	endif
 
  	IF ! lValid
 		(ErrorBox{,cError}):Show()
