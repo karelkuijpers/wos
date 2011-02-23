@@ -4151,7 +4151,8 @@ function UnionTrans(cStatement as string) as string
 		EndDat:=Maxdat
 	endif
 
-	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+// 	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+	if BegDat>=LstYearClosed    
 		return cStatement
 	else
 		// compose Statement: 
