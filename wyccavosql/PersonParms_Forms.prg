@@ -1,3 +1,21 @@
+FUNCTION CtoN(cKey as string) as int
+* Translate a code of nLen printable characters to a sequence number nNbr, which is returned
+*
+LOCAL i,nPos,nNbr as int
+nNbr:=0
+FOR i:=1 to Len(cKey)
+	nPos:=Asc(SubStr(cKey,i,1))
+	IF nPos>=123         // skip lower case
+		nPos-=66
+	ELSE
+		nPos-=40
+	ENDIF
+	nNbr :=nNbr*61 +nPos
+NEXT
+IF nNbr<0
+	nNbr:=0
+ENDIF
+RETURN nNbr
 RESOURCE EditMailCd DIALOGEX  13, 12, 288, 57
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -31,6 +49,16 @@ METHOD Close(oEvent) CLASS EditMailCd
 	//Put your changes here
 	SELF:destroy()
 	RETURN NIL
+Method GetNextKey() as string class EditMailCd
+// determine next free key for mailingcode
+local oSel as SQLSelect
+local nKey as int
+	oSel := SQLSelect{"select max(pers_code) as maxvalue from perscod",oConn}
+	if oSel:RecCount<1
+		return NtoC(1,3)
+	endif
+	nKey:=CtoN(oSel:maxvalue)+1
+	return NtoC(nKey,3)
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd 
 
@@ -119,12 +147,12 @@ METHOD OKButton( ) CLASS EditMailCd
 				ENDIF
 			ENDIF
 		ENDIF
-		IF SELF:lNew
+		IF self:lNew 
 			oMcd:Append()
+			oMcd:pers_code:=self:GetNextKey()
 		ENDIF
-        oMcd:description      := self:mOms
-        oMcd:abbrvtn  := Upper(self:mAbbrvtn)
-		self:Commit() 
+      oMcd:Description      := self:mOms
+      oMcd:abbrvtn  := Upper(self:mAbbrvtn)
 		self:EndWindow()
 RETURN NIL
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd
@@ -406,6 +434,16 @@ STATIC DEFINE EDITPERSPROP_MPROPNAME := 101
 STATIC DEFINE EDITPERSPROP_MTYPE := 103 
 STATIC DEFINE EDITPERSPROP_MVALUES := 105 
 STATIC DEFINE EDITPERSPROP_OKBUTTON := 108 
+RESOURCE EditPersTitle DIALOGEX  6, 6, 294, 56
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITPERSTITLE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITPERSTITLE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITPERSTITLE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITPERSTITLE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+END
+
 CLASS EditPersTitle INHERIT DataWindowMine
 
 	PROTECT oDCSC_OMS AS FIXEDTEXT
@@ -419,16 +457,6 @@ CLASS EditPersTitle INHERIT DataWindowMine
 EXPORT oCaller AS OBJECT
 PROTECT mId AS INT
 PROTECT lNew AS LOGIC
-RESOURCE EditPersTitle DIALOGEX  6, 6, 294, 56
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITPERSTITLE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITPERSTITLE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITPERSTITLE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITPERSTITLE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-END
-
 METHOD CancelButton( ) CLASS EditPersTitle
 		SELF:EndWindow()
 RETURN
@@ -524,18 +552,6 @@ STATIC DEFINE EDITPERSTITLE_CANCELBUTTON := 103
 STATIC DEFINE EDITPERSTITLE_MDESCRPTN := 101 
 STATIC DEFINE EDITPERSTITLE_OKBUTTON := 102 
 STATIC DEFINE EDITPERSTITLE_SC_OMS := 100 
-RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
-END
-
 class EditPersType inherit DataWindowExtra 
 
 	protect oDCSC_OMS as FIXEDTEXT
@@ -550,6 +566,18 @@ class EditPersType inherit DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 EXPORT oCaller AS OBJECT
 PROTECT mId AS INT
+
+RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
+END
 
 METHOD CancelButton( ) CLASS EditPersType
 	SELF:EndWindow()
@@ -682,6 +710,33 @@ STATIC DEFINE MAILCDREGOUD_OMS := 103
 STATIC DEFINE MAILCDREGOUD_PERS_CODE := 102 
 STATIC DEFINE MAILCDREGOUD_SC_OMS := 101 
 STATIC DEFINE MAILCDREGOUD_SC_PERS_CODE := 100 
+FUNCTION NtoC(nNbr as int,nLen as int) as string
+* Translate a sequence number nNbr to code of nLen printable characters, which is returned
+* E.g. three printable characters is sufficient for a sequence number up to 61*61*61=226981
+*
+LOCAL i,nIntrm,nPos as int
+LOCAL cKey as STRING
+nIntrm:=nNbr
+FOR i:=nLen DOWNTO 1
+	nPos:=nIntrm%61
+	IF nPos>=57         // skip lower case
+		nPos+=66
+	ELSE
+		nPos+=40
+	ENDIF
+	cKey:=CHR(nPos)+cKey
+	nIntrm/=61
+NEXT
+RETURN cKey
+
+RESOURCE PersonParms DIALOGEX  10, 9, 388, 269
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Mailcodes", PERSONPARMS_TABMAIL, "SysTabControl32", WS_CHILD, 4, 22, 379, 239
+	CONTROL	"Person Parameters", PERSONPARMS_PERSON_PARAMETERS, "Static", SS_CENTER|WS_CHILD, 8, 4, 321, 13
+END
+
 class PersonParms inherit DataWindowExtra 
 
 	protect oDCTabMail as TABCONTROL
@@ -692,14 +747,6 @@ class PersonParms inherit DataWindowExtra
 	protect oDCPerson_Parameters as FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE PersonParms DIALOGEX  10, 9, 388, 269
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Mailcodes", PERSONPARMS_TABMAIL, "SysTabControl32", WS_CHILD, 4, 22, 379, 239
-	CONTROL	"Person Parameters", PERSONPARMS_PERSON_PARAMETERS, "Static", SS_CENTER|WS_CHILD, 8, 4, 321, 13
-END
-
 method Init(oWindow,iCtlID,oServer,uExtra) class PersonParms 
 local dim aFonts[1] AS OBJECT
 
@@ -808,18 +855,18 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS Sub_MailCdReg
 	RETURN NIL
 STATIC DEFINE SUB_MAILCDREG_ABBRVTN := 101 
 STATIC DEFINE SUB_MAILCDREG_OMS := 100 
-CLASS Sub_PersPropReg INHERIT DataWindowMine 
-
-	PROTECT oDBNAME as DataColumn
-	PROTECT oDBTYPEDESCR as DataColumn
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Sub_PersPropReg DIALOGEX  12, 11, 226, 186
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
+CLASS Sub_PersPropReg INHERIT DataWindowMine 
+
+	PROTECT oDBNAME as DataColumn
+	PROTECT oDBTYPEDESCR as DataColumn
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Sub_PersPropReg 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1044,12 +1091,12 @@ METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 	LOCAL mCod,mOms as STRING 
 	local oStmnt as SQLStatement
 	LOCAL oMcd:=self:server, oSel as SQLSelect
-	IF oMcd:EOF.or.oMcd:BOF
+	IF oMcd:EOF.or.oMcd:BOF .or. oMcd:RecCount<1
 		(Errorbox{,self:oLan:WGet("Select a mailing code first")}):Show()
 		RETURN
 	ENDIF
 	mOms:=AllTrim(oMcd:Description)
-	if oMcd:Pers_Code="FI" .or.oMcd:Pers_Code="MW".or.oMcd:Pers_Code="EG".or.Empty(oMcd:Pers_Code)
+	if Empty(oMcd:Pers_Code) .or. oMcd:Pers_Code="FI" .or.oMcd:Pers_Code="MW".or.oMcd:Pers_Code="EG"
 		Errorbox{,self:oLan:WGet("this code can't be removed")}:show()
 		return nil
 	endif  
@@ -1442,17 +1489,6 @@ STATIC DEFINE TABTITLE_PAGE_EDITBUTTON := 101
 STATIC DEFINE TABTITLE_PAGE_FIXEDTEXT1 := 104 
 STATIC DEFINE TABTITLE_PAGE_NEWBUTTON := 102 
 STATIC DEFINE TABTITLE_PAGE_SUB_PERSTITLEREG := 100 
-RESOURCE TABTYPE_PAGE DIALOGEX  14, 13, 373, 222
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TABTYPE_PAGE_SUB_PERSTYPEREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
-	CONTROL	"Edit", TABTYPE_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 289, 68, 53, 13
-	CONTROL	"New", TABTYPE_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
-	CONTROL	"Delete", TABTYPE_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
-	CONTROL	"Type of person: individual, company, member, direct income, ...", TABTYPE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 338, 13
-END
-
 CLASS TABTYPE_PAGE INHERIT DataWindowExtra 
 
 	PROTECT oCCEditButton AS PUSHBUTTON
@@ -1464,6 +1500,17 @@ CLASS TABTYPE_PAGE INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT oCaller as OBJECT 
   export oType as SQLSelect
+RESOURCE TABTYPE_PAGE DIALOGEX  14, 13, 373, 222
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TABTYPE_PAGE_SUB_PERSTYPEREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
+	CONTROL	"Edit", TABTYPE_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 289, 68, 53, 13
+	CONTROL	"New", TABTYPE_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
+	CONTROL	"Delete", TABTYPE_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
+	CONTROL	"Type of person: individual, company, member, direct income, ...", TABTYPE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 338, 13
+END
+
   METHOD DeleteButton( ) CLASS TABTYPE_PAGE
 	LOCAL oPers as SQLSelect
 	LOCAL  mOms AS STRING
