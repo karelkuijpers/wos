@@ -2977,7 +2977,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		" from balanceitem b,account a left join member m on (a.accid=m.accid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
-		" and a.accid in ('"+Implode(aAcc,"','")+"' ) group by a.accid order by "+iif(Empty(self:SendingMethod),"a.accnumber","a.accid"),oConn}
+		" and a.accid in ("+Implode(aAcc,"','")+" ) group by a.accid order by "+iif(Empty(self:SendingMethod),"a.accnumber","a.accid"),oConn}
 	if oAcc:RecCount>1
 		oPro:=ProgressPer{,oMainWindow}
 		oPro:Caption:="Printing giftreports and member statements"
@@ -2988,10 +2988,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	oTrans:=SQLSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
 		'from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
 		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
-		" and t.accid in ('"+Implode(aAcc,"','")+"') order by "+iif(Empty(self:SendingMethod),"a.accnumber","t.accid")+",dat"),oConn} 
+		" and t.accid in ("+Implode(aAcc,"','")+") order by "+iif(Empty(self:SendingMethod),"a.accnumber","t.accid")+",dat"),oConn} 
 	if oTrans:RecCount<1
 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
-		return
 	endif
 
 	SetDecimalSep(Asc(DecSeparator)) 
