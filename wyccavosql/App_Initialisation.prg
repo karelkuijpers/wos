@@ -204,7 +204,6 @@ local aC:={;            // dbasename, keyname, sqlname
 {"perstype","","persontype"},;
 {"ppcodes","ppcode",""},;
 {"storderl","STORDRID","standingorderline"},;
-{"syskey","syskey",""},;
 {"teleptrn","teleacc","teleBankPatterns"},;
 {"ipcaccounts","",""};
 } as array
@@ -1142,8 +1141,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"personbank","MyIsam","utf8_unicode_ci"},;
 		{"persontype","MyIsam","utf8_unicode_ci"},;
 		{"ppcodes","MyIsam","utf8_unicode_ci"},;
-		{"subscription","MyIsam","utf8_unicode_ci"},;
-		{"syskey","MyIsam","utf8_unicode_ci"},;
+		{"subscription","InnoDB","utf8_unicode_ci"},;
 		{"sysparms","InnoDB","utf8_unicode_ci"},;
 		{"telebankpatterns","MyIsam","utf8_unicode_ci"},;
 		{"teletrans","InnoDB","utf8_unicode_ci"},;
@@ -1432,8 +1430,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","invoiceid","char(20)","NO","",""},;
 		{"subscription","bankaccnt","char(25)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
-		{"syskey","syskey_id","char(10)","NO","",""},;
-		{"syskey","value","char(10)","NO","",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
 		{"sysparms","lstreportmonth","int(6)","NO","0",""},;
 		{"sysparms","mindate","date","NO","0000-00-00",""},;
@@ -1661,7 +1657,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","1","personid","2","accid"},;
 		{"subscription","1","accid","1","accid"},;
 		{"subscription","1","INVOICEID","1","invoiceid"},;
-		{"syskey","0","PRIMARY","1","SYSKEY_ID"},;
 		{"telebankpatterns","0","PRIMARY","1","telpatID"},;
 		{"telebankpatterns","1","contra_bankaccnt","1","accid"},;
 		{"telebankpatterns","1","contra_bankaccnt","2","contra_name"},;
