@@ -565,12 +565,13 @@ Method Init(oWindow) class Reevaluation
 self:oCall:=oWindow
 return self
 Method ReEvaluate() Class Reevaluation
-	local UltimoMonth as date
+	local UltimoMonth,UltimoYear as date
 	local oAccnt,oSys as SQLSelect, oMBal as Balances, oTrans as SQLStatement
 	Local oCurr as Currency 
 	Local CurRate,mDiff, mDiff1, mDiff2 as float, TransId, cStatement as string 
 	LOCAL first:=true as LOGIC
-	Local aROE:={} as Array 
+	Local aROE:={} as Array
+	local aBalYr:={} as array 
 	Local cCur as string, nCurPntr as int 
 	local lError as logic
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
@@ -580,7 +581,12 @@ Method ReEvaluate() Class Reevaluation
 		self:Close()
 		Return
 	endif
-	UltimoMonth:=SToD(SubStr(DToS(Today()),1,6)+"01")-1
+	UltimoMonth:=SToD(SubStr(DToS(Today()),1,6)+"01")-1 
+	aBalYr:=GetBalYear(Year(Today())-1,Month(Today()))
+	UltimoYear:=stod(str(aBalYr[3],4,0)+strzero(aBalYr[4],2)+strzero(MonthEnd(aBalYr[3],aBalYr[4]),2))	
+	if oSys:lstreeval < UltimoYear .and. UltimoMonth> UltimoYear
+		UltimoMonth:=UltimoYear
+	endif
 	oCurr:=Currency{"Reevaluation"}
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
 	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
