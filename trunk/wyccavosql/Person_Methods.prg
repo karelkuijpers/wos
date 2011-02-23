@@ -1026,7 +1026,7 @@ METHOD SetState() CLASS NewPersonWindow
 	local aBank:={} as array
 	self:oPerson:=SQLSelect{"select p.*,m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
-	"where "+iif(!Empty(self:mPersid),"p.persid="+self:mPersid,"p.externid='"+self:mExternid+"'")+" group by p.persid",oConn}
+	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
 	self:oDCmLastname:Value := self:oPerson:lastname
 	self:ODCmPrefix:Value  := self:oPerson:prefix
 	self:oDCmTitle:Value  := self:oPerson:Title
@@ -1079,13 +1079,13 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmType:Value:=self:oPerson:TYPE
 	IF self:lAddressChanged
 		IF !Empty(self:oPersCnt:m51_pos)
-			self:mPostalcode := StandardZip(self:oPersCnt:m51_pos)
+			self:oDCmPOStalcode:TextValue := StandardZip(self:oPersCnt:m51_pos)
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_ad1)
-			self:mAddress := self:oPersCnt:m51_ad1
+			self:oDCmAddress:TextValue := self:oPersCnt:m51_ad1
 		ENDIF
 		IF !Empty(self:oPersCnt:m51_city)
-			self:mCity := self:oPersCnt:m51_city
+			self:ODCmCity:TextValue := self:oPersCnt:m51_city
 		ENDIF
 	ENDIF
 
@@ -1101,9 +1101,9 @@ METHOD SetState() CLASS NewPersonWindow
 			i:= self:FillBankNbr(aBank[j],cDescr,i)
 		NEXT
 	endif
-	self:Curlastname:=self:mLastName
-	self:curNa2:=self:mInitials
-	self:curHisn:=self:mPrefix
+	self:Curlastname:=self:oDCmLastname:TextValue
+	self:curNa2:=self:oDCmInitials:TextValue
+	self:curHisn:=self:ODCmPrefix:TextValue
 
 	SELF:StateExtra()
 	
@@ -1512,10 +1512,11 @@ IF !Empty(oCLN)
 	
 	IF ( oTextBox:Show() == BOXREPLYYES ) 
 		CurRec:=oCLN:RECNO 
-		PersonUnion(Id1,Id2)
-		self:GoTop() 
-		self:oSFPersonSubForm:Browser:refresh()
-		self:Server:RECNO:=CurRec 		
+		if PersonUnion(Id1,Id2)
+			self:GoTop() 
+			self:oSFPersonSubForm:Browser:refresh()
+			self:Server:RECNO:=CurRec
+		endif 		
 	endif
 
 ENDIF
@@ -3583,8 +3584,7 @@ ACCESS keus21 CLASS SelPersOpen
 	RETURN Val(SELF:oDCkeus21:Value)
 Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,accid as int) as logic CLASS SelPersOpen
 	// make CLIEOP03 file for automatic collection for Dutch Banks
-	LOCAL oDue as SQLSelect 
-	local oPers as SQLSelect
+	LOCAL oDue,oPers as SQLSelect 
 	LOCAL ptrHandle
 	LOCAL cFilename, cOrgName, cDescr,cTransnr,m56_Payahead,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING
 	LOCAL fSum:=0,fAmnt as FLOAT, GrandTotal:=0 as float
@@ -3643,8 +3643,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		" group by s.personid",oConn} 
 	if oDue:RecCount>0 
 		// try to correct donations: 
-	
-// 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
+		
+		// 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
 		do while !oDue:EoF
 			if !Empty(oDue:bankaccounts)
 				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"' where subscribid="+Str(oDue:subscribid,-1),oConn}
@@ -3779,7 +3779,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		self:oCCCancelButton:Disable()
 		self:oCCOKButton:Disable()
 
-		self:Owner:STATUSMESSAGE("Producing cliop03 file, moment please") 
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
 		// make transactions:
@@ -3909,26 +3908,19 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL oLan AS Language
 	LOCAL cSession AS STRING
 
-	cFilter:=	'paymethod="C".and.dtos(invoicedate)>="'+DToS(begin_due)+;
-	'".and.dtos(invoicedate)<="'+DToS(end_due)+;
-	'".and.amountrecvd<amountinvoice'
-	cSession:=Str(Year(Today()),4,0)+StrZero((Today()-SToD(Str(Year(Today()),4,0)+"0101"))+1,3)
-//     oDue:=DueAmount{,DBSHARED,DBREADONLY}
-//     IF !oDue:Used
-//     	RETURN
-//     ENDIF
-// 	oDue:SetOrder("OPENDAT")
-// 	Success:=oDue:SetFilter(cFilter)
-	oDue:GoTop()
-	IF !oDue:EoF
-	   * Datafile aanmaken:
-		cFileName := CurPath + "\a-girowycliffe"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.txt'
-		ptrHandle := MakeFile(SELF,cFilename,"Creating KID-file")
-		IF ptrHandle = F_ERROR .or. ptrHandle==NIL
-			RETURN
-		ENDIF
-	ELSE
-		(WarningBox{SELF,"Producing KID file","No due amounts to be auto collected!"}):Show()
+	oDue:=SQLSelect{"select s.invoiceid,d.amountinvoice,d.invoicedate,p.lastname "+;
+		" from person p, dueamount d,subscription s "+;
+		"where s.subscribid=d.subscribid and s.paymethod='C' "+;
+		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
+		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid order by lastname",oConn}
+	IF oDue:RecCount<1
+		(WarningBox{self,"Producing KID file","No due amounts to be auto collected!"}):Show()
+		RETURN false
+	ENDIF
+	* Datafile aanmaken:
+	cFileName := CurPath + "\a-girowycliffe"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.txt'
+	ptrHandle := MakeFile(SELF,cFilename,"Creating KID-file")
+	IF ptrHandle = F_ERROR .or. ptrHandle==NIL
 		RETURN
 	ENDIF
 	oReport := PrintDialog{self,"Producing of KID file",,70}
@@ -3936,17 +3928,6 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-// 	oSub:=SubScription{,DBSHARED,DBREADONLY}
-// 	IF !oSub:Used
-// 		RETURN
-// 	ENDIF
-// 	oSub:SetFilter({||oSub:PAYMETHOD=="C"},"PAYMETHOD=='C'")
-// 	oSub:SetOrder("POL")
-// 	oPers:=Person{,DBSHARED,DBREADONLY}
-// 	IF !oPers:Used
-// 		RETURN
-// 	ENDIF
-// 	oPers:SetOrder("ASSRE")
 	headinglines:={oLan:Rget("Overview of generated automatic collection (KID)"),oLan:RGet("Session:")+cSession,oLan:RGet("Name",41)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("KID",13),Replicate('-',67)}
 	// write Header
 	FWriteLine(ptrHandle,"NY000010"+PadL(SQLSelect{"select cntrnrcoll from sysparms",oConn}:CNTRNRCOLL,8,"0")+PadL(cSession,7,"0")+PadR("0000808",57,"0"))
@@ -3955,35 +3936,33 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	DueDateFirst:=oDue:invoicedate
 	DueDateLast:=oDue:invoicedate
 	DO WHILE !oDue:EoF
-		IF oSub:Seek(oDue:persid+oDue:accid)
-			IF oPers:Seek(oDue:persid)
-				nSeq++
-				FWriteLine(ptrHandle,"NY210230"+StrZero(nSeq,7,0)+StrZero(Day(oDue:invoicedate),2,0)+StrZero(Month(oDue:invoicedate),2,0)+SubStr(StrZero(Year(oDue:invoicedate),4,0),3,2)+;
-				Space(11)+StrZero(oDue:AmountInvoice*100,17,0)+Space(12)+PadR(AllTrim(oSub:INVOICEID),19,"0"))
-				FWriteLine(ptrHandle,"NY210231"+StrZero(nSeq,7,0)+PadR(oPers:lastname,60)+"00000")
-				nLine+=2
-				fSum+=oDue:AmountInvoice
-				IF DueDateFirst>oDue:invoicedate
-					DueDateFirst:=oDue:invoicedate
-				ENDIF
-				IF DueDateLast<oDue:invoicedate
-					DueDateLast:=oDue:invoicedate
-				ENDIF
-				oReport:PrintLine(@nRow,@nPage,;
-				Pad(oPers:GetFullName(),40)+" "+Str(oDue:AmountInvoice,12,2)+' '+Pad(oSub:INVOICEID,13),headinglines)
-
+		IF oPers:Seek(oDue:persid)
+			nSeq++
+			FWriteLine(ptrHandle,"NY210230"+StrZero(nSeq,7,0)+StrZero(Day(oDue:invoicedate),2,0)+StrZero(Month(oDue:invoicedate),2,0)+SubStr(StrZero(Year(oDue:invoicedate),4,0),3,2)+;
+				Space(11)+StrZero(oDue:AmountInvoice*100,17,0)+Space(12)+PadR(AllTrim(oDue:INVOICEID),19,"0"))
+			FWriteLine(ptrHandle,"NY210231"+StrZero(nSeq,7,0)+PadR(oDue:lastname,60)+"00000")
+			nLine+=2
+			fSum+=oDue:AmountInvoice
+			IF DueDateFirst>oDue:invoicedate
+				DueDateFirst:=oDue:invoicedate
 			ENDIF
-		ENDIF		
+			IF DueDateLast<oDue:invoicedate
+				DueDateLast:=oDue:invoicedate
+			ENDIF
+			oReport:PrintLine(@nRow,@nPage,;
+				Pad(oPers:GetFullName(),40)+" "+Str(oDue:AmountInvoice,12,2)+' '+Pad(oDue:INVOICEID,13),headinglines)
+
+		ENDIF
 		oDue:skip()		
 	ENDDO
 	// Write closing lines:
 	FWriteLine(ptrHandle,"NY210088"+StrZero(nSeq,8,0)+StrZero(nLine,8,0)+StrZero(Round(fSum*100,0),17,0)+;
-	StrZero(Day(DueDateFirst),2,0)+StrZero(Month(DueDateFirst),2,0)+SubStr(StrZero(Year(DueDateFirst),4,0),3,2)+;
-	StrZero(Day(DueDateLast),2,0)+StrZero(Month(DueDateLast),2,0)+SubStr(StrZero(Year(DueDateLast),4,0),3,2)+;
-	Replicate("0",27))
+		StrZero(Day(DueDateFirst),2,0)+StrZero(Month(DueDateFirst),2,0)+SubStr(StrZero(Year(DueDateFirst),4,0),3,2)+;
+		StrZero(Day(DueDateLast),2,0)+StrZero(Month(DueDateLast),2,0)+SubStr(StrZero(Year(DueDateLast),4,0),3,2)+;
+		Replicate("0",27))
 	FWriteLine(ptrHandle,"NY000089"+StrZero(nSeq,8,0)+StrZero(nLine+2,8,0)+StrZero(Round(fSum*100,0),17,0)+;
-	StrZero(Day(DueDateLast),2,0)+StrZero(Month(DueDateLast),2,0)+SubStr(StrZero(Year(DueDateLast),4,0),3,2)+;
-	Replicate("0",33))
+		StrZero(Day(DueDateLast),2,0)+StrZero(Month(DueDateLast),2,0)+SubStr(StrZero(Year(DueDateLast),4,0),3,2)+;
+		Replicate("0",33))
 	
 	FClose(ptrHandle)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',67),headinglines,3)
@@ -3991,7 +3970,8 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	oReport:prstart()
 	oReport:prstop()
 	(InfoBox{SELF,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"}):Show()
-RETURN
+	LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
+	RETURN
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
 		IF Empty(oAcc).or.oAcc:reccount<1
