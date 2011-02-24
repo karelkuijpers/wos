@@ -3489,7 +3489,7 @@ METHOD OKButton( ) CLASS SelPersPayments
 	IF !Empty(self:oCaller:selx_AccStart) .and.  self:oCaller:selx_AccStart==self:oCaller:selx_Accend
 		self:oCaller:cWhereOther+=" and t.accid='"+self:oCaller:selx_rek+"'"
 	elseif !Empty( aWhereOther)
-		self:oCaller:cWhereOther+=" and t.accid in ('"+Implode(aWhereOther,"','")+"')"
+		self:oCaller:cWhereOther+=" and t.accid in ("+Implode(aWhereOther,"','")+")"
 	ENDIF
 
 	self:oCaller:selx_dat := DToS(MyBegin)
