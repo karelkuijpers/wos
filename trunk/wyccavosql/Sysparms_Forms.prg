@@ -2993,7 +2993,7 @@ METHOD OKButton( ) CLASS TabSysParms
 		oMainWindow:Menu:=WOMenu{}
 		oMainWindow:Menu:ToolBar:Hide() 
 	elseif !Empty(oStmnt:Status)
-		LogEvent(self,"error:"+oStmnt:SQLString)
+		LogEvent(self,"error:"+oStmnt:SQLString,"LogErrors")
 	ENDIF
 	self:EndWindow()
 	RETURN nil
