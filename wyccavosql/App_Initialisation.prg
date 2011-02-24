@@ -573,7 +573,7 @@ BEGIN SEQUENCE
 	oStmt:=SQLStatement{cCreate,oConn}
 	oStmt:Execute(true)
 	IF !IsNil( oStmt:Status )
-		LogEvent(self,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cCreate+")")
+		LogEvent(self,"Error:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cCreate+")","LogErrors")
 		ShowError( oStmt:ERRINFO )
 		oStmt:FreeStmt(SQL_CLOSE)
 	endif
@@ -2219,7 +2219,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		oStmnt:Execute() 
 		if !Empty(oStmnt:Status)
 			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogError")
+			LogEvent(,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 			ErrorBox{,"Could not reformat table "+cTableName}:show()
 			break 
 		else
