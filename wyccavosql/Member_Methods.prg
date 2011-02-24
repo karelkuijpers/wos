@@ -77,7 +77,6 @@ METHOD FilePrint CLASS MemberBrowser
 	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid ) as y"+;
 	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.accid "+;
 	" order by "+self:cOrder 
-	LogEvent(self,cStatement,"logsql")
 	oSel:=SQLSelect{cStatement,oConn} 
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
