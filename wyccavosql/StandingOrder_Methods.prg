@@ -670,7 +670,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif
 		endif
 		if lError
-			LogEvent(,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum))
+			LogEvent(,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum),"LogErrors")
 			ErrorBox{,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum)}:Show()
 			SQLStatement{"rollback",oConn}:execute()
 		endif
