@@ -2351,6 +2351,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	endif
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
+	LogEvent(self,oSel:SQLString,"LogErrors")
 // 	fSecStart:=Seconds()
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
@@ -3097,7 +3098,6 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 		IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
 			self:oTransH:=SQLSelect{UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination "+;
 			"from transaction t, account a, person p where a.accid=t.accid and "+self:cWhereOther+" order by p."+self:SortOrder),oConn}
-			LogEvent(self,self:oTransH:sqlString,"logsql")
 		endif
 		DO WHILE !lReady
 			(oLtrFrm := LetterFormat{oParent,,,lAcceptNorway}):Show()
@@ -3147,7 +3147,6 @@ local oReport as PrintDialog
 	oSel:= SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep+" order by "+self:SortOrder),oConn} 
 	
 	oSel:Execute()
-	LogEvent(self,oSel:SQLString,"LogError")
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ ' persons found')}):Show() 
 	if oSel:RECCOUNT<1
 		return false
@@ -3821,7 +3820,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						lError:=true
 						exit
 					endif
@@ -3844,7 +3843,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'"+iif(cType=='M',",GC='AG'",""),oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						lError:=true
 						exit
 					endif
@@ -4223,7 +4222,6 @@ local i,j as int
 		cSQLString:="select gr2.*,group_concat(pb.banknumber separator ',') as banknumbers from ("+cSQLString+") as gr2 left join personbank pb on (pb.persid=gr2.persid) group by gr2.persid order by "+cSortOrder
 	endif 
 	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
-	LogEvent(,cSQLString,'logsql')
 	return cSQLString
 	
 class SQLSelectPerson inherit SQLSelect
