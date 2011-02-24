@@ -839,6 +839,17 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	if self:TargetDB=="Person" .or.!self:lExists 
 		* Clear all fields:
 		self:oEdit:Reset()
+		self:oEdit:mCod:=null_string 
+// 		FOR i:=1 to Len(self:aTargetDB)
+// 			IF AScan(aNonImport,String2Symbol(self:aTargetDB[i,1]))==0
+// 				IDs:=String2Symbol("m"+self:aTargetDB[i,1])
+// 				if IsAssign(self:oEdit,IDs)
+// 					self:oEdit:FIELDPUT(IDs,null_string)
+// 				else
+// 					IvarPut(self:oEdit,IDS,null_string)
+// 				endif
+// 			endif
+// 		NEXT
 		IF self:TargetDB=="Person"
 			// clear also extra properties:
 			FOR i:=1 to Len(self:oEdit:aPropEx)
@@ -847,8 +858,8 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 			self:oEdit:mBankNumber:=""
 			self:oEdit:PostInit(self:Owner,,,true)
 			self:oEdit:StateExtra()
-			IVarPutSelf(self:oEdit,#mtype,"individual")
-			IVarPutSelf(self:oEdit,#mGender,"unknown")
+			self:oEdit:FIELDPUT(#mtype,"individual")
+			self:oEdit:FIELDPUT(#mGender,"unknown")
 			self:oEdit:ClearBankAccs() 
 		ENDIF
 		IF self:TargetDB=="Account"
