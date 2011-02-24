@@ -440,7 +440,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	oStmnt:=SQLStatement{cUpdate+" where EMPID="+self:mEmpID,oConn}
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status) 
-		LogEvent(self,'Update employee Error:'+oStmnt:Status:Description+"; statement:"+oStmnt:SQLString)
+		LogEvent(self,'Update employee Error:'+oStmnt:Status:Description+"; statement:"+oStmnt:SQLString,"LogErrors")
 		(ErrorBox{self,'Update employee Error:'+oStmnt:Status:Description}):Show() 
 		return false 
 	endif
@@ -593,7 +593,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		oEmp:=SQLSelect{cEmpStmnt,oConn} 
 		oEmp:Execute()
 		if !IsNil(oEmp:Status)
-			LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")")
+			LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
 			return		
 		endif
 		self:mLogon_name := oEmp:LOGINNAME
