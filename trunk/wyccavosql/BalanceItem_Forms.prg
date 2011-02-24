@@ -143,6 +143,7 @@ METHOD Init(oOwner,myType,myNum,myCaller,mySearch) CLASS BalanceItemExplorer
 	Default(@mYCaller,NULL_OBJECT)
 	Default(@mySearch,NULL_STRING)
 	self:cType:=myType
+	self:CItemname:=myType
 	self:cNum:=myNum
 	self:cSearch:=mySearch
 	self:oCaller:= myCaller
@@ -908,15 +909,16 @@ method ListViewMouseButtonDown(oListViewMouseEvent) class CustomExplorer
 	endif
    return
 METHOD OKButton CLASS CustomExplorer
-//	nMain:=SELF:GetIdFromSymbol((oTreeView:GetSelectedItem()):NameSym)
-	IF !oCaller==NULL_OBJECT
-		IF cType="Balance"
+Local cItem as string
+	cItem:=self:GetIdFromSymbol((oTreeView:GetSelectedItem()):NameSym)
+	IF !self:oCaller==null_object
+		IF self:cType="Balance"
 		    IF IsMethod(SELF:oCaller, #RegBalance)
-				self:oCaller:RegBalance(self:SelectedItem,cItemName)
+				self:oCaller:RegBalance(self:SelectedItem,self:cItemName)
 			ENDIF
-		ELSEIF cType="Department"
+		ELSEIF self:cType="Department"
 	    	IF IsMethod(SELF:oCaller, #RegDepartment)
-				self:oCaller:RegDepartment(self:SelectedItem,cItemName)
+				self:oCaller:RegDepartment(self:SelectedItem,self:cItemName)
 			ENDIF
 		ENDIF
 	ENDIF
@@ -1258,7 +1260,7 @@ METHOD TreeViewMouseButtonDown(oTreeViewMouseEvent) CLASS CustomExplorer
 		IF oTreeViewMouseEvent:IsRightButton
 			self:TreeView:SelectItem( oTVItem:NameSym ) 
 // 		elseif !self:IsAccountSymbol(oTVItem:NameSym)
-		elseif oTVItem:ImageIndex==3
+		elseif oTVItem:ImageIndex==1
 			self:SelectedItem:=self:GetIdFromSymbol(oTVItem:NameSym)
 		ENDIF
 	ENDIF
