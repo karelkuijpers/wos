@@ -154,7 +154,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	oEmp:=SQLSelect{cEmpStmnt,oConn}
 	oEmp:Execute() 
 	IF !IsNil( oEmp:Status )
-		LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")")
+		LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
 	endif	
 	if oEmp:RecCount=1
 		if !EvalCheckDigit()
@@ -214,7 +214,7 @@ SQLStatement{"select sysparms for update",oConn}:Execute()
 oStmnt:= SQLStatement{'update sysparms set checkemp="'+CalcCheckDigit(oConn)+'"',oConn}
 oStmnt:Execute()
 if !Empty(oStmnt:Status)
-	LogEvent(,"Error:"+oStmnt:Status:Description)
+	LogEvent(,"Error:"+oStmnt:Status:Description,"LogErrors")
 	SQLStatement{"rollback",oConn}:Execute()
 else
 	SQLStatement{"commit",oConn}:Execute()
