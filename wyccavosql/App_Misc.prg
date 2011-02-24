@@ -139,7 +139,6 @@ Function CompareKeyString(aKeyW as array, cValue as string ) as logic
 	Local i, lK  as int
 	local lKeyFound as logic
 	lK:=Len(aKeyW)
-	LogEvent(,'keys:'+Implode(aKeyW,',')+' value:'+cValue,'logtest')
 	for i:=1 to lK 
 		if AtC(aKeyW[i],cValue)=0
 			return false
@@ -2299,7 +2298,7 @@ Method Reset() class Window
 	aChilds:=self:GetAllChildren() 
 	for i:=1 to Len(aChilds)
 		cName:=ClassName(aChilds[i])
-		if cName==#SINGLELINEEDIT .or. cName==#COMBOBOX .or. cName==#MULTILINEEDIT
+		if cName==#SINGLELINEEDIT .or. cName==#COMBOBOX .or. cName==#MULTILINEEDIT .or. cName==#LISTBOX
 			oContr:=aChilds[i] 
 			oContr:TextValue:=null_string
 		endif
