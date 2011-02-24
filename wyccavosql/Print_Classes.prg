@@ -2791,7 +2791,7 @@ METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS
 		self:oCCToFileRadioButton:Hide()
 		self:oDCDestination:Hide() 
 		self:oDCDestination:Value := "Printer"
-		self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination,false}
+		self:oPrintJob := PrintJob{self:cCaption,self:oPrinter,self:Label,self:MaxWidth,self:Destination}
 	else 	
 		self:oDCDestination:Value := "Screen"
 	ENDIF
