@@ -442,7 +442,9 @@ METHOD PrintReport() CLASS PMISsend
 	nRow:=0
 	nPage:=0
 	store 0 to a_tel
-	+nRowCnt :=0
+	+nRowCnt :=0 
+	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
+
 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
 	// select the member data
 	oMbr:=SQLSelect{"select a.accid,a.accnumber,a.description,a.currency,b.category as type,m.*,pp.ppname as homeppname,"+;
