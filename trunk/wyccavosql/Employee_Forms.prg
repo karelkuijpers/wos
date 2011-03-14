@@ -383,14 +383,14 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	endif
 	* check duplicate loginname:
 	IF lNew .or. !cLName==Lower(self:cLoginNameOrg)
-		if SQLSelect{"select EmpId from employee where "+Crypt_Emp(false,"loginname")+'="'+cLName+'"'+iif(self:lNew,""," and empid<>"+self:mEmpID),oConn}:reccount>0 
+		if SQLSelect{"select empid from employee where "+Crypt_Emp(false,"loginname")+'="'+cLName+'"'+iif(self:lNew,""," and empid<>"+self:mEmpID),oConn}:reccount>0 
 			ErrorBox{self,self:oLan:WGet("UserId allready exists")+"!"}:Show()
 			RETURN
 		ENDIF
 	ENDIF
 	// check duplicate person:
 	IF lNew .or. !self:mCln==self:mCLNOrg
-		if SQLSelect{"select EmpId from employee where "+Crypt_Emp(false,"persid")+'="'+self:mCLN+'"'+iif(self:lNew,""," and empid<>"+self:mEmpId),oConn}:Reccount>0 
+		if SQLSelect{"select empid from employee where "+Crypt_Emp(false,"persid")+'="'+self:mCln+'"'+iif(self:lNew,""," and empid<>"+self:mEmpID),oConn}:reccount>0 
 			ErrorBox{self,self:oLan:WGet("Person allready an employee")+"!"}:Show()
 			RETURN
 		ENDIF
@@ -410,7 +410,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 		LOGON_EMP_ID:=cLName   // adapt current login id
 	endif
 	cUpdate:="update employee set persid="+Crypt_Emp(true,"persid",self:mCLN,nEmpId)
-	oStmnt:=SQLStatement{cUpdate+" where EMPID='"+AllTrim(self:mEmpID)+"'",oConn}
+	oStmnt:=SQLStatement{cUpdate+" where empid='"+AllTrim(self:mEmpID)+"'",oConn}
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status)
 		(ErrorBox{self,'Update employee: Error:'+oStmnt:Status:Description}):Show() 
@@ -418,26 +418,26 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	endif
 	oStmnt:Commit()
 	
-	cUpdate:="update employee set loginName="+Crypt_Emp(true,"loginname",cLName)
+	cUpdate:="update employee set loginname="+Crypt_Emp(true,"loginname",cLName)
 	if lNew .or.(!Empty(mPassword) .and.!HashPassword(nEmpId,self:oDCmPASSWORD:TextValue )== self:PasswordOrg) 
 		Start:=(Today()-10000) 
-		cUpdate+=", LSTUPDPW='"+SQLdate(iif(lNew.and.lOwnServer,Today(),Start))+"', Password='"+HashPassword(nEmpId,mPassword)+"'"
+		cUpdate+=", lstupdpw='"+SQLdate(iif(lNew.and.lOwnServer,Today(),Start))+"', password='"+HashPassword(nEmpId,mPassword)+"'"
 	ENDIF
 	IF lNew.and.lOwnServer
 		IF SQLSelect{"select count(*) as nbr from employee",oConn}:nbr=="1"
 			self:mType:="A"
-			cUpdate+=", Type="+ Crypt_Emp(true,"type","A")
+			cUpdate+=", type="+ Crypt_Emp(true,"type","A")
 			LOGON_EMP_ID := cLName
 		ENDIF
 	ELSE
-		cUpdate+=", Type="+Crypt_Emp(true,"type",self:mType)
+		cUpdate+=", type="+Crypt_Emp(true,"type",self:mType)
 	ENDIF
 	if self:mType=="A"
-		cUpdate+=", DEPID="+Crypt_Emp(true,"depid","")
+		cUpdate+=", depid="+Crypt_Emp(true,"depid","")
 	else 
-		cUpdate+=", DEPID="+Crypt_Emp(true,"depid",self:WhoFrom)
+		cUpdate+=", depid="+Crypt_Emp(true,"depid",self:WhoFrom)
 	endif
-	oStmnt:=SQLStatement{cUpdate+" where EMPID="+self:mEmpID,oConn}
+	oStmnt:=SQLStatement{cUpdate+" where empid="+self:mEmpID,oConn}
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status) 
 		LogEvent(self,'Update employee Error:'+oStmnt:Status:Description+"; statement:"+oStmnt:SQLString,"LogErrors")
@@ -476,7 +476,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 						
 		endif 
 		// read current authfunc:
-		oAuth := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from AuthFunc where EMPID="+self:mEmpId+" order by mfuncname",oConn}
+		oAuth := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from authfunc where empid="+self:mEmpID+" order by mfuncname",oConn}
 		oAuth:GoTop() 
 		do while !oAuth:Eof
 			AAdd(aAuth,oAuth:mfuncname) 
@@ -2027,7 +2027,7 @@ IF !Empty( self:oDCNewPasswordSLE:TextValue )
 			* shift passwords:
 			oStmnt:= SQLStatement{"update employee set pswprv3='"+iif(IsNil(oEmp:PSWPRV2),"",oEmp:PSWPRV2)+;
 			"',pswprv2='"+iif(IsNil(oEmp:PSWPRV1),"",oEmp:PSWPRV1)+"',pswprv1='"+oEmp:Password+;
-			"',password = '"+HashPassword(Val(MYEMPID),self:oDCNewPasswordSLE:TextValue)+"',lstupdpw=NOW()",oConn}  
+			"',password = '"+HashPassword(Val(MYEMPID),self:oDCNewPasswordSLE:TextValue)+"',lstupdpw=NOW() where empid="+MYEMPID,oConn}  
 			oStmnt:Execute()
 			oStmnt:Commit()
 			self:ChangePsw:=true
