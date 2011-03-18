@@ -566,7 +566,7 @@ self:oCall:=oWindow
 return self
 Method ReEvaluate() Class Reevaluation
 	local UltimoMonth,UltimoYear as date
-	local oAccnt,oSys as SQLSelect, oMBal as Balances, oTrans as SQLStatement
+	local oAccnt,oSys,oBal as SQLSelect, oMBal as Balances, oTrans as SQLStatement
 	Local oCurr as Currency 
 	Local CurRate,mDiff, mDiff1, mDiff2 as float, TransId, cStatement as string 
 	LOCAL first:=true as LOGIC
@@ -620,6 +620,15 @@ Method ReEvaluate() Class Reevaluation
 				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
 				if mDiff <> 0
 					SQLStatement{"start transaction",oConn}:execute()
+					oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Str(oAccnt:GAINLSACC,-1)+','+Str(oAccnt:accid,-1)+")"+;
+					" and	year="+Str(Year(UltimoMonth),-1)+;
+					" and	month="+Str(Month(UltimoMonth),-1)+" order by mbalid for update",oConn}
+					if	!Empty(oBal:status)
+						ErrorBox{self,self:oLan:WGet("balance records locked by someone else")}:Show()
+						SQLStatement{"rollback",oConn}:Execute()
+						return 
+					endif	  
+
 					cStatement:="insert into transaction set "+;
 						"accid='"+Str(oAccnt:GAINLSACC,-1)+"'"+;
 						",dat='"+SQLdate(UltimoMonth)+"'"+;
