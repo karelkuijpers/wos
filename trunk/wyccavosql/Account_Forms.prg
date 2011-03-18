@@ -1,3 +1,25 @@
+RESOURCE AccountBrowser DIALOGEX  4, 3, 348, 278
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", ACCOUNTBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 22, 116, 12
+	CONTROL	"&Number:", ACCOUNTBROWSER_SC_REK, "Static", WS_CHILD, 20, 36, 31, 13
+	CONTROL	"&Description:", ACCOUNTBROWSER_SC_OMS, "Static", WS_CHILD, 20, 51, 39, 13
+	CONTROL	"", ACCOUNTBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 36, 116, 13
+	CONTROL	"", ACCOUNTBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 51, 116, 13
+	CONTROL	"Find", ACCOUNTBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 232, 22, 53, 12
+	CONTROL	"", ACCOUNTBROWSER_ACCOUNTBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 17, 105, 250, 141
+	CONTROL	"&Edit", ACCOUNTBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 104, 54, 12
+	CONTROL	"&New", ACCOUNTBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 147, 54, 13
+	CONTROL	"&Delete", ACCOUNTBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 190, 54, 13
+	CONTROL	"Select", ACCOUNTBROWSER_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 278, 233, 54, 13
+	CONTROL	"Accounts", ACCOUNTBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 92, 336, 164
+	CONTROL	"Search accounts with:", ACCOUNTBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 8, 217, 69
+	CONTROL	"Universal like google:", ACCOUNTBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 20, 22, 72, 12
+	CONTROL	"", ACCOUNTBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 268, 40, 47, 12
+	CONTROL	"Found:", ACCOUNTBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 40, 27, 12
+END
+
 CLASS AccountBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -30,28 +52,6 @@ CLASS AccountBrowser INHERIT DataWindowExtra
 	export oAcc as SQLSelect 
 	
 	declare method AccountSelect
-RESOURCE AccountBrowser DIALOGEX  4, 3, 348, 278
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", ACCOUNTBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 22, 116, 12
-	CONTROL	"&Number:", ACCOUNTBROWSER_SC_REK, "Static", WS_CHILD, 20, 36, 31, 13
-	CONTROL	"&Description:", ACCOUNTBROWSER_SC_OMS, "Static", WS_CHILD, 20, 51, 39, 13
-	CONTROL	"", ACCOUNTBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 36, 116, 13
-	CONTROL	"", ACCOUNTBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 51, 116, 13
-	CONTROL	"Find", ACCOUNTBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 232, 22, 53, 12
-	CONTROL	"", ACCOUNTBROWSER_ACCOUNTBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 17, 105, 250, 141
-	CONTROL	"&Edit", ACCOUNTBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 104, 54, 12
-	CONTROL	"&New", ACCOUNTBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 147, 54, 13
-	CONTROL	"&Delete", ACCOUNTBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 190, 54, 13
-	CONTROL	"Select", ACCOUNTBROWSER_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 278, 233, 54, 13
-	CONTROL	"Accounts", ACCOUNTBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 92, 336, 164
-	CONTROL	"Search accounts with:", ACCOUNTBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 8, 217, 69
-	CONTROL	"Universal like google:", ACCOUNTBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 20, 22, 72, 12
-	CONTROL	"", ACCOUNTBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 268, 40, 47, 12
-	CONTROL	"Found:", ACCOUNTBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 40, 27, 12
-END
-
 METHOD DeleteButton( ) CLASS AccountBrowser 
 	* Delete a account occurrence
 	LOCAL oTrans as SQLSelect
@@ -155,6 +155,14 @@ METHOD EditButton(lNew) CLASS AccountBrowser
 	(EditAccount{self:Owner,,,{lNew,self,self:oAccCnt} }):Show()
 
 	RETURN
+method EnableSelect() class AccountBrowser
+// enable/disbale select button
+  	if self:oAcc:Reccount>0
+  		self:oCCOKButton:Enable()
+  	else
+  		self:oCCOKButton:Disable()
+  	endif
+return
 METHOD FindButton( ) CLASS AccountBrowser
 	local aKeyw:={} as array
 	local i as int                                           
@@ -185,14 +193,9 @@ METHOD FindButton( ) CLASS AccountBrowser
    self:GoTop()
    self:oSFAccountBrowser_DETAIL:Browser:refresh()
   	self:FOUND :=Str(self:oAcc:Reccount,-1)
-  	if self:oAcc:Reccount>0
-  		self:oCCOKButton:Enable()
-  	else
-  		self:oCCOKButton:Disable()
-  	endif
+   self:EnableSelect()
 
-
-RETURN NIL
+RETURN nil 
 ASSIGN FOUND(uValue) CLASS AccountBrowser
 self:FIELDPUT(#Found, uValue)
 RETURN uValue
@@ -809,7 +812,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 				self:aProp[nPntr][1]:=cNewValue 
 				oDCPropBox:FillUsing(self:FillProps( ))
 			endif
-		ELSEIF oControl:NameSym==#mGLAccount .and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurGainLossAcc
+		ELSEIF oControl:NameSym==#mGainLossacc .and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurGainLossAcc
 			self:cCurGainLossAcc:=AllTrim(oControl:VALUE)
          self:GLAccButton()
 		ENDIF
@@ -828,7 +831,7 @@ oIPC:GoTop()
 return oIPC:GetLookupTable(,#Descriptn,#IPCAccount) 
 METHOD GLAccButton(lUnique ) CLASS EditAccount 
 	Default(@lUnique,FALSE)	
-	AccountSelect(self,AllTrim(self:oDCmGLAccount:textValue ),"Gain/Loss account",lUnique,"CURRENCY=='"+sCurr+"'"+iif(Empty(self:mAccId),"",".and.accid=='"+mAccId+"'"),self,false)
+	AccountSelect(self,AllTrim(self:oDCmGainLossacc:textValue ),"Gain/Loss account",lUnique,"currency='"+sCurr+"'"+iif(Empty(self:mAccId),""," and a.accid='"+self:mGainLsacc+"'"))
 
 RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount 
@@ -1432,7 +1435,7 @@ METHOD OkButton CLASS EditAccount
 		iif(self:mGIFTALWD,", clc='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',propxtra='"+Transform(cExtra,"@B")+"'",", clc='',propxtra=''")+;
 		", multcurr="+ iif(self:mMultCurr,"1","0")+; 
 		iif(!self:mMultCurr,;
-			iif(self:mCurrency # sCURR,", currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1","0")+",gainlsacc="+self:mGainLsacc,;
+			iif(self:mCurrency # sCURR,", currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1,gainlsacc="+self:mGainLsacc,"0,gainlsacc=0"),;
 				", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0")+;
 		iif(self:lNew,""," where accid="+self:mAccId)
@@ -1534,6 +1537,8 @@ METHOD OkButton CLASS EditAccount
 				if !Empty(self:nCurRec)
 					self:oCaller:goto(self:nCurRec)
 				endif
+			  	self:oCaller:FOUND :=Str(self:oCaller:oAcc:Reccount,-1)
+				self:oCaller:EnableSelect()
 			endif
 		ENDIF
 		IF self:lImport
