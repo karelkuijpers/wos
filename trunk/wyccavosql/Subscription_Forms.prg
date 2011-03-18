@@ -350,7 +350,7 @@ SELF:FieldPut(#mType, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditSubscription
-	LOCAL i, nPrevRec as int
+	LOCAL i, nPrevRec,m,d,y,me as int
 	local mCurRek, mCurCLN as string 
 	local oDue as SQLSelect
 	local cStatement as string
@@ -393,11 +393,24 @@ METHOD OKButton( ) CLASS EditSubscription
 					self:oDCmEndDate:SetFocus()
 					RETURN nil
 				ENDIF
-				IF Empty(mterm)
+				IF Empty(self:mterm)
 					(ErrorBox{,self:oLan:WGet("Term obliged in case of donor/subscription") }):Show()
 					self:oDCmterm:SetFocus()
 					RETURN NIL
 				ENDIF
+				d:=Day(self:oDCmDueDate:SelectedDate)
+				if d>28
+					m:=Month(self:oDCmDueDate:SelectedDate) 
+					y:=Year(self:oDCmDueDate:SelectedDate)
+					for i:=self:mterm to 144 step self:mterm
+						me:=MonthEnd((m+i)%12,y+(m+i-1)/12) 
+						if d>me
+							(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date with a day before")+Space(1)+Str(me+1,-1)}):Show()
+							self:oDCmDueDate:SetFocus()
+							RETURN nil
+						endif
+					next
+				endif					
 			ENDIF
 			IF !Empty(mInvoiceID)
 				IF CountryCode=="47"
@@ -539,6 +552,9 @@ self:SetTexts()
 		self:cAccountName :=""
 		self:oDCmbegindate:SelectedDate:=Today()
 		self:oDCmDueDate:SelectedDate:=Today()
+		if Day(Today())>28
+			self:oDCmDueDate:SelectedDate:=stod(substr(dtos(today()),1,6)+'28')
+		endif			
 		self:oDCmEndDate:SelectedDate:=Today()+365*100
 		self:mterm   := 1
   		self:mamount   := 0
