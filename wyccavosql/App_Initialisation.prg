@@ -145,6 +145,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 							ENDIF
 						else
 							// load only upgrade
+							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 							IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
 								startfile:=cWorkdir+"InstallSQLUpg.EXE"
 							ELSE
@@ -310,7 +311,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 					// determine system currency:
 					sCURR:=SQLSelect{"select currency from sysparms",oConn}:Currency
 				endif
-// 				oMainWindow:STATUSMESSAGE((cIM:="Converting table "+dbasename+"..."))
+				cIM:="Converting table "+dbasename+"..."
 				oPro:=ProgressPer{,self}
 				oPro:Caption:=cIM
 				oPro:SetRange(1,RECCOUNT())
@@ -576,6 +577,7 @@ BEGIN SEQUENCE
 		LogEvent(self,"Error:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cCreate+")","LogErrors")
 		ShowError( oStmt:ERRINFO )
 		oStmt:FreeStmt(SQL_CLOSE)
+		Break
 	endif
 
 	oStmt:Commit()
@@ -715,7 +717,11 @@ method init() class Initialize
 		Break
 	enddo
 	oSel:=SQLSelect{"show databases",oConn}
-	oSel:Execute() 
+	oSel:Execute()
+	if !Empty(oSel:Status)
+		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
+		break
+	endif 
 	do while !oSel:EoF
 		AAdd(aDB,oSel:FIELDGET(1))
 		oSel:Skip()
@@ -798,8 +804,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 	if self:FirstOfDay 
 		self:InitializeDB()
-		
 	endif
+  	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
 
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
@@ -1556,7 +1562,9 @@ method InitializeDB() as void Pascal  class Initialize
 	{"transaction","reference","varchar(127)","NO","",""},;
 		{"transaction","seqnr","smallint(4)","NO","NULL",""},;
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
-		{"transaction","ppdest","char(3)","NO","",""}; 
+		{"transaction","ppdest","char(3)","NO","",""},;
+		{"transaction","lock_id","int(11)","NO","0",""},;
+		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
 	} as array  
 	
 	// specify indexes per table:
@@ -1689,6 +1697,10 @@ method InitializeDB() as void Pascal  class Initialize
 	dbname:=AddSlashes(dbname) 
 	oSel:=SQLSelect{"SELECT TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME",oConn}
+	if !Empty(oSel:status)
+		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
+		break
+	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),oSel:table_collation})
@@ -1698,6 +1710,10 @@ method InitializeDB() as void Pascal  class Initialize
 	//read current columns:
 	oSel:=SQLSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
+	if !Empty(oSel:status)
+		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
+		break
+	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(aCurColumn,{oSel:table_name,oSel:COLUMN_NAME,oSel:COLUMN_TYPE,oSel:IS_NULLABLE,iif(IsNil(oSel:COLUMN_DEFAULT),"NULL",;
@@ -1707,6 +1723,10 @@ method InitializeDB() as void Pascal  class Initialize
 	endif
 	// read current indexes:
 	oSel:=SQLSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME from information_schema.statistics where TABLE_SCHEMA='"+dbname+"'",oConn}
+	if !Empty(oSel:status)
+		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
+		break
+	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
 			AAdd(aCurIndex,{oSel:table_name,oSel:NON_UNIQUE,oSel:INDEX_NAME,oSel:SEQ_IN_INDEX,oSel:COLUMN_NAME})
