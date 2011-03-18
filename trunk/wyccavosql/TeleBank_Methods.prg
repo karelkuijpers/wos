@@ -315,16 +315,19 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		// select next row not yet locked by somebody else:
 		self:oTelTr:= SQLSelect{"select t.*,b.accid,b.payahead,b.giftsall,b.openall from teletrans t, bankaccount b where processed='' and "+;
 			"t.bankaccntnbr<>'' and t.bankaccntnbr=b.banknumber and b.telebankng=1 and "+;
-			+"(t.lock_id=0 or t.lock_id="+MYEMPID+" or t.lock_time < addtime(now(),'00-20-00'))"+;
+			+"(t.lock_id=0 or t.lock_id="+MYEMPID+" or t.lock_time < subdate(now(),interval 20 minute))"+;
 			iif(Empty(self:CurTelId),''," and teletrid>"+Str(self:CurTelId,-1))+;
 			+" and "+cSelect+" order by teletrid limit 1 for UPDATE" ,oConn}
 		
-		if self:oTelTr:reccount<1
-			LogEvent(,self:oTelTr:SQLString,"LogErrors") 
+		if !Empty(self:oTelTr:status) .or. self:oTelTr:reccount<1
+			IF !Empty(self:oTelTr:status) 
+				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"logsql") 
+			endif
+			SQLStatement{"rollback",oConn}:execute()
 			return false
 		endif
 		// software lock teletrans row:
-		oLockSt:=SQLStatement{"update teletrans set lock_id="+MYEMPID+",lock_time=Now() where teletrid="+Str(self:oTelTr:teletrid,-1),oConn}
+		oLockSt:=SQLStatement{"update teletrans set lock_id="+MYEMPID+",lock_time=now() where teletrid="+Str(self:oTelTr:teletrid,-1),oConn}
 		oLockSt:execute()		
 		if oLockSt:NumSuccessfulRows < 1
 			SQLStatement{"rollback",oConn}:execute()
@@ -353,7 +356,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		if !Empty(self:oTelTr:BUDGETCD)
 			self:m56_budgetcd:=ZeroTrim(self:oTelTr:BUDGETCD)
 			nBudLen:=At(' ',self:m56_budgetcd)
-			if nBudlen>0
+			if nBudLen>0
 				self:m56_budgetcd:=SubStr(self:m56_budgetcd,1,nBudLen-1)
 			endif
 		else
@@ -374,8 +377,8 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			endif
 		endif
 		
-		if "</" $ self:oTelTr:description .and. XMLPos>0 
-			oXMLDoc:=XMLDocument{SubStr(self:oTelTr:description,XMLPos)}
+		if "</" $ self:oTelTr:Description .and. XMLPos>0 
+			oXMLDoc:=XMLDocument{SubStr(self:oTelTr:Description,XMLPos)}
 			IF oXMLDoc:GetElement("n")
 				self:m56_contra_name:=Upper(oXMLDoc:GetContentCurrentElement())
 			ENDIF
@@ -432,7 +435,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			oParent:GiftsAutomatic := iif(self:oTelTr:GIFTSALL=1,true,false)
 			oParent:DueAutomatic := iif(self:oTelTr:OPENALL=1,true,false)
 		ENDIF
-		RETURN TRUE
+		RETURN true
 	ENDDO
 	RETURN FALSE
 method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref string,lv_persid ref string, lv_bankid ref string,lv_kind ref string) as void pascal class TeleMut
@@ -529,7 +532,8 @@ METHOD Import() CLASS TeleMut
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
 	aFileINN:=Directory(CurPath+"\ocrinnbet.txt")
 	aFileBBS:=Directory(CurPath+"\TRANSLISTE.CSV")
-	aFileVWI:=Directory(CurPath+"\*????????verwinfo??.txt")
+// 	aFileVWI:=Directory(CurPath+"\*????????verwinfo??.txt")
+	aFileVWI:=Directory(CurPath+"\*verwinfo*.txt")
 	aFilePG:=Directory(CurPath+"\PG_8502000149_BG4_20??-??-??*.txt")
 	aFileRabo:=Directory(CurPath+"\BR0?????????.0??") 
 	aFileTL:=Directory(CurPath+"\PG_TOTALIN_TL1_*.txt")  
@@ -2656,10 +2660,6 @@ RETURN FALSE
 METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 	* Give next telebanking transaction from teletrans
 LOCAL oAcc as SQLSelect
-// IF !self:oTelTr:reccount<1
-// * no telebanking transaction:
-// 	RETURN FALSE
-// ENDIF
 DO WHILE self:GetNxtMut(false)
 	self:m56_recognised:=FALSE
 	self:m56_autmut:=FALSE
@@ -2689,7 +2689,7 @@ DO WHILE self:GetNxtMut(false)
 		self:m56_autmut:=true 
 	endif
 	IF !self:m56_recognised
-		SELF:CheckPattern()
+		self:CheckPattern()
 	ENDIF
 	RETURN true
 ENDDO
