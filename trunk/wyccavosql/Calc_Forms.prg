@@ -112,9 +112,9 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD OKButton( ) CLASS Calculator
-	LOCAL fValue AS FLOAT
-	LOCAL myServer AS OBJECT
-	LOCAL myOwner AS Window
+	LOCAL fValue as FLOAT
+	LOCAL myServer as OBJECT
+	LOCAL myOwner as Window
 	IF IsObject(oEdit)
 		IF lClear
 			fValue:=0
@@ -138,40 +138,40 @@ METHOD OKButton( ) CLASS Calculator
 		***************************************
 /*		oEdit:Selection:=Selection{0,-1)
 		oEdit:Paste(Str(Round(fMemory,2)))*/
-		SELF:oEdit:CalcActive:=FALSE
+		self:oEdit:CalcActive:=FALSE
 		oEdit:TextValue:=(Str(Round(fMemory,2)))
-		IF !oBrowser==NULL_OBJECT
+		IF !oBrowser==null_object
 			*SELF:oColumn:SetValue(Str(Round(fMemory,2)))
 			myOwner:=oBrowser:owner
 			myServer:=myOwner:Server
 			myServer:FIELDPUT(self:fieldSym,Round(fMemory,2))
-			IF !myOwner:owner==NULL_OBJECT
+			IF !myOwner:owner==null_object
 				IF IsMethod(myOwner,#DebCreProc)
-					myOwner:DebCreProc()
+					myOwner:DebCreProc(false)
 				ENDIF
 				IF IsMethod(myOwner:owner,#Totalise)
-					myOwner:Owner:Totalise()
+					myOwner:owner:Totalise(false,false)
 				ENDIF
 			else
 				IF IsMethod(myOwner,#DebCreProc)
-					myOwner:DebCreProc()
+					myOwner:DebCreProc(false)
 				ENDIF
 				IF IsMethod(myOwner:owner,#Totalise)
-					myOwner:owner:Totalise()
+					myOwner:owner:Totalise(false,false)
 				ENDIF
 			ENDIF
 		else
 			myOwner:=self:oEdit:oOwner
 			IF IsMethod(myOwner,#DebCreProc)
-				myOwner:DebCreProc()
+				myOwner:DebCreProc(false)
 			ENDIF
 			IF IsMethod(myOwner,#Totalise)
-				myOwner:Totalise()
+				myOwner:Totalise(false,false)
 			ENDIF
 		ENDIF
 	ENDIF
 SetDecimal(nDec)
-SELF:EndDialog()
+self:EndDialog()
 *SELF:EndWindow()
 METHOD PostInit(oParent,uExtra) CLASS Calculator
 	//Put your PostInit additions here
