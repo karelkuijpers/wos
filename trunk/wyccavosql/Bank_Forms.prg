@@ -1202,31 +1202,31 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	endif
 	oBank:=SQLSelect{"select payahead,accid from bankaccount where banknumber='"+BANKNBRCRE+"' and telebankng=1",oConn}
 	if oBank:Reccount<1
-		(ErrorBox{,"Bank account number "+BANKNBRCRE+;
-			" not specified as telebanking in system data"}):Show()
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRCRE+Space(1)+;
+			self:oLan:WGet("not specified as telebanking in system data")}):Show()
 		RETURN FALSE
 	else
 		cAccFrom:=Str(oBank:accid,-1)
 		m56_Payahead:=Str(oBank:payahead,-1) 
 		if Empty(m56_Payahead)
-			(ErrorBox{,"For bank account number "+BANKNBRCRE+;
-				" no account for Payments en route specified in system data"}):Show()
+			(ErrorBox{self,self:oLan:WGet("For bank account number")+space(1)+BANKNBRCRE+space(1)+;
+				self:oLan:WGet("no account for Payments en route specified in system data")}):Show()
 			RETURN FALSE
 		endif
 	endif
 
 	if Len(BANKNBRCRE)=9 .and.!IsDutchBanknbr(BANKNBRCRE)
-		(ErrorBox{self,"Bank account number "+BANKNBRCRE+;
-			" for Payments is not correct"}):Show()
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRCRE+Space(1)+;
+			self:oLan:WGet("for Payments is not correct")}):Show()
 		RETURN FALSE
 	ENDIF
 	IF Empty(sIDORG)
-		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF
 	cOrgName:=GetFullName(sIDORG,2)
 	if Empty(cOrgName)
-		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF
 	fBANKNBRCRE:=Val(BANKNBRCRE)
@@ -1239,9 +1239,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
 			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-				iif(empty(oBord:stordrid),;
+				iif(Empty(oBord:stordrid),;
 				iif(Empty(oBord:IDFrom),"unknown account",self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"),;
-				self:oLan:WGet("standing order")+Space(1)+Str(oBord:STORDRID,-1))
+				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1))
 			oBord:skip()
 		enddo
 		ErrorBox{self,cErrMsg}:Show()
@@ -1340,7 +1340,18 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 
 		self:Owner:STATUSMESSAGE("Producing cliop03 file, moment please")
 		self:Pointer := Pointer{POINTERHOURGLASS}
+		// add accounts for add to income
+		
 		SQLStatement{"start transaction",oConn}:execute()
+		// lock mbalance record for update:
+		oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+m56_Payahead+','+cAccFrom+")"+;
+			" and	year="+Str(Year(process_date),-1)+;
+			" and	month="+Str(Month(process_date),-1)+" order by mbalid for update",oConn}
+		if	!Empty(oMBal:Status)
+			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:Show()
+			SQLStatement{"rollback",oConn}:execute()
+			return true
+		endif	  
 		// Reconcile Bank Order:
 		oStmnt:=SQLStatement{"update bankorder set datepayed='"+SQLdate(process_date)+"' "+;
 			"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'",oConn}
@@ -1375,12 +1386,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 					lError:=true
 					exit
 				endif
-// 				if !ChgBalance(m56_Payahead,process_date,0,fAmnt,0,fAmnt,sCURR)
-// 					lError:=true
-// 					exit
-// 				endif
 				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-				// record debdit on from account:
+				// record debit on from account:
 				oStmnt:=SQLStatement{"insert into transaction set "+;
 				"transid='"+cTransnr+"'"+;
 				",dat='"+SQLdate(process_date)+"'"+;
@@ -1397,10 +1404,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 					lError:=true
 					exit
 				endif
-// 				if !ChgBalance(BANKNBRCRE,process_date,fAmnt,0,fAmnt,0,sCURR)  //accid,Cre
-// 					lError:=true
-// 					exit
-// 				ENDIF
 				nSeq:=2
 			next
 			if !lError
