@@ -152,7 +152,8 @@ METHOD OKButton( ) CLASS EditMailCd
 			oMcd:pers_code:=self:GetNextKey()
 		ENDIF
       oMcd:Description      := self:mOms
-      oMcd:abbrvtn  := Upper(self:mAbbrvtn)
+      oMcd:abbrvtn  := Upper(self:mAbbrvtn) 
+		FillPersCode()
 		self:EndWindow()
 RETURN NIL
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd
@@ -380,6 +381,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
+		FillPersProp()
 		if !Empty(cRemoveCond)
 			// remove propertu from persons:
 			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+Str(mId,-1)+">')-1)"+;
