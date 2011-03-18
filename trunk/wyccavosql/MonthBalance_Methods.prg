@@ -511,7 +511,8 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string)  as logic
 	******************************************************************************
 	*              Update of month balance values per account
-	*					Should be used between Start transaction and commit
+	*					Should be used between Start transaction and commit and  
+	*              record to be changed should be locked for update beforehand                                        
 	*  Auteur    : K. Kuijpers
 	*  Datum     : 19-08-1991
 	******************************************************************************
@@ -520,21 +521,16 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 	local oStmnt as SQLStatement
 	local oMBal,oAcc as SQLSelect 
 	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
-		// intential lock:
-		oMBal:=SQLSelect{"select mbalid from mbalance where accid="+pAccount+;
+		// try update existing:  
+		oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebAmnt,-1)+",2),cre=round(cre+"+Str(pCreAmnt,-1)+",2) where accid="+pAccount+;
 			" and year="+Str(Year(pRecordDate),-1)+;
-			" and Month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"' for update",oConn}
-		if oMBal:RecCount>0  
-			// update existing:  
-			oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebAmnt,-1)+",2),cre=round(cre+"+Str(pCreAmnt,-1)+",2) where accid="+pAccount+;
-				" and year="+Str(Year(pRecordDate),-1)+;
-				" and month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"'",oConn}
-			oStmnt:Execute()
-			if !Empty(oStmnt:status)
-				LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-				return false
-			endif
-		else
+			" and month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"'",oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:status)
+			LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+			return false
+		endif
+		if oStmnt:NumSuccessfulRows<1
 			// insert new one
 			oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
 				sCurr+"',deb="+Str(pDebAmnt,-1)+",cre="+Str(pCreAmnt,-1),oConn}
@@ -549,21 +545,16 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 		oAcc:=SQLSelect{"select currency,multcurr from account where accid="+pAccount,oConn}
 		if oAcc:RecCount>0
 			if !(Empty(oAcc:Currency).or.oAcc:Currency==sCurr.or.oAcc:MULTCURR=1)
-				// intential lock:
-				oMBal:=SQLSelect{"select mbalid from mbalance where accid="+pAccount+;
-					" and year="+Str(Year(pRecordDate),-1)+;
-					" and month="+Str(Month(pRecordDate),-1)+" and currency='"+oAcc:Currency+"' for update",oConn}
-				if oMBal:RecCount>0
-					// update existing:  
-					oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebFORGN,-1)+",2),cre=round(cre+"+Str(pCreFORGN,-1)+",2) where accid="+pAccount+;
+				// try update existing:  
+				oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebFORGN,-1)+",2),cre=round(cre+"+Str(pCreFORGN,-1)+",2) where accid="+pAccount+;
 					" and year="+Str(Year(pRecordDate),-1)+;
 					" and Month="+Str(Month(pRecordDate),-1)+" and currency='"+oAcc:Currency+"'",oConn}
-					oStmnt:Execute()
-					if !Empty(oStmnt:status)
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-						return false
-					endif
-				else
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+					return false
+				endif
+				if oStmnt:NumSuccessfulRows<1
 					// insert new one
 					oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
 						oAcc:Currency+"',deb="+Str(pDebFORGN,-1)+",cre="+Str(pCreFORGN,-1),oConn}
