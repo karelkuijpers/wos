@@ -158,6 +158,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	oAccBw:Found:=Str(oAccBw:oAcc:RecCount,-1) 
 	
 	oAccBw:AccountSelect(oCaller,BrwsValue,ItemName,lUnique)
+	
 	RETURN FALSE // false means not directly found
 Function AddSubDep(d_dep as array,ParentNum as int, nCurrentRec as int,aDepIncl ref array) as int
 	* Find subdepartments and add to arrays with departments
@@ -298,9 +299,9 @@ METHOD RegAccount(oRek,ItemName) CLASS EditAccount
 
 	IF ItemName=="Gain/Loss account"
 		//self:mGLAccount:=  AllTrim(oRek:description)
-		self:oDCmGainLsacc:TEXTValue := AllTrim(oRek:Description)
+		self:oDCmGainLossacc:TEXTValue := AllTrim(oRek:Description)
 		self:cCurGainLossAcc := AllTrim(oRek:Description)
-		self:mGainLsacc := oRek:accid
+		self:mGainLsacc := Str(oRek:accid,-1)
 	ENDIF
 	
 RETURN true 
