@@ -615,8 +615,8 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 			self:oDCmDestAcc:SetFocus() 
 		else
 			// check if bank number can be found in person data:
-		  	oPersBank:=SQLSelect{"select banknumber form personbank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
-			if !oPersBank:RecCount=0
+		  	oPersBank:=SQLSelect{"select banknumber from personbank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
+			if oPersBank:RecCount=0
 				cError:="Bankaccount "+AllTrim(mDestAcc)+" not found in Person data!"
 				lValid:=False
 				self:oDCmDestAcc:SetFocus() 
@@ -1467,12 +1467,11 @@ METHOD OkButton CLASS EditMember
 			oStmnt:Execute()
 		next
 		* Reset BFM for not-reporting backwards to IES/PMC:  ( at this moment dReportDate always empty) 
-		IF lResetBFM.and. dReportDate>LstYearClosed
-			* Reset all transactions: 
-			oStmnt:SQLString:="update transaction set bfm='H' where accid="+self:mREK+" and bfm='' and dat<"+SQLdate(dReportDate)
-			oStmnt:Execute()
-		ENDIF
-		oStmnt:Commit()
+// 		IF lResetBFM.and. dReportDate>LstYearClosed
+// 			* Reset all transactions: 
+// 			oStmnt:SQLString:="update transaction set bfm='H' where accid="+self:mREK+" and bfm='' and dat<"+SQLdate(dReportDate)
+// 			oStmnt:Execute()
+// 		ENDIF
 		// refresh oCaller:
 		if !Empty( self:oCaller)
 			self:oCaller:oMem:Execute()
