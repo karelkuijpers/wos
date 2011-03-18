@@ -542,7 +542,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 	local MultiFrom, lError as logic 
 	local deb,cre, DEBFORGN,CREFORGN as float
 	local CurStOrdrid as int
-	local oPersBank as SQLSelect 
+	local oPersBank,oBal as SQLSelect 
 	local oTrans,oBord,oStmnt as SQLStatement
 	local i as int
 	local aTrans:={} as array  //array with transactions to record: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank,13:STORDRID},...}
@@ -626,39 +626,47 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 	if !lError 
 		SQLStatement{"start transaction",oConn}:execute()
 		cTrans:= ""
-		for i:=1 to Len(aTrans) 
-			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr"+iif(i==1,"",",TransId")+;
-				") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
-				"','"+Str(aTrans[i,5],-1)+"','"+Str(aTrans[i,6],-1)+;
-				"','"+Str(aTrans[i,7],-1)+"','"+Str(aTrans[i,8],-1)+;
-				"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+iif(i==1,"","','"+cTrans)+"')",oConn}
-			oTrans:execute()
-			if oTrans:NumSuccessfulRows<1 
-				LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:Status:description,"LogErrors")
-				lError:=true
-				exit
-			endif
-			if Empty(cTrans)
-				cTrans:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-			endif
-			if !ChgBalance(aTrans[i,1], datum, aTrans[i,5], aTrans[i,6], aTrans[i,7], aTrans[i,8],aTrans[i,9])
-				lError:=true
-				exit
-			endif
-			if aTrans[i,1]==sCRE .and. !Empty(aTrans[i,12])
-				// payment to creditor
-				if CountryCode="31"  
-					// make bankorder:
-					oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values ('"+sCRE+"','"+;
-						Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+AddSlashes(aTrans[i,3])+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
-					oBord:execute()
-					if oBord:NumSuccessfulRows<1
-						lError:=true
-						exit
+		// lock mbalance records:
+		oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Implode(aTrans,',',,,1)+")"+;
+			" and	year="+Str(Year(aTrans[1,2]),-1)+;
+			" and	month="+Str(Month(aTrans[1,2]),-1)+" order by mbalid for update",oConn}
+		if	!Empty(oBal:status)
+			lError:=true
+
+			for i:=1 to Len(aTrans) 
+				oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr"+iif(i==1,"",",TransId")+;
+					") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
+					"','"+Str(aTrans[i,5],-1)+"','"+Str(aTrans[i,6],-1)+;
+					"','"+Str(aTrans[i,7],-1)+"','"+Str(aTrans[i,8],-1)+;
+					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+iif(i==1,"","','"+cTrans)+"')",oConn}
+				oTrans:execute()
+				if oTrans:NumSuccessfulRows<1 
+					LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:Status:description,"LogErrors")
+					lError:=true
+					exit
+				endif
+				if Empty(cTrans)
+					cTrans:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+				endif
+				if !ChgBalance(aTrans[i,1], datum, aTrans[i,5], aTrans[i,6], aTrans[i,7], aTrans[i,8],aTrans[i,9])
+					lError:=true
+					exit
+				endif
+				if aTrans[i,1]==sCRE .and. !Empty(aTrans[i,12])
+					// payment to creditor
+					if CountryCode="31"  
+						// make bankorder:
+						oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values ('"+sCRE+"','"+;
+							Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+AddSlashes(aTrans[i,3])+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
+						oBord:execute()
+						if oBord:NumSuccessfulRows<1
+							lError:=true
+							exit
+						endif
 					endif
 				endif
-			endif
-		next
+			next 
+		endif
 		if !lError
 			&&skip to next month
 			oStmnt:=SQLStatement{"update standingorder set lstrecording='"+SQLdate(datum)+"' where stordrid="+Str(CurStOrdrid,-1),oConn}
