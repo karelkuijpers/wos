@@ -2154,7 +2154,7 @@ CLASS Selpers INHERIT DataWindowExtra
 	export ExportFormat as string 
 	export ReportMonth as string 
 	export GrpFormat as string
-	export oDB as SQLSelectPerson 
+	export oDB as SQLSelect 
 	protect cFrom:="person as p" as string // list with tables to read from
 	protect cFields as string  // fields to be retrieved from the database 
 	export cTel,cDay,cNight,cFax,cMobile,cAbrv,cMr,cMrs,cCouple as string  // texts for use in reports
@@ -2586,7 +2586,7 @@ IF lAcceptNorway
 	ind_openpost:=TRUE
 ENDIF
 FOR i=oRange:Min TO oRange:Max
-	self:oPers:GoTo(i)
+	self:oDB:GoTo(i)
 	brieftxt:=self:FillText(brief,self:selx_keus1,ind_openpost,ind_gift,ind_naw,ind_herh,brfWidth)
 	blad:=0
 	teladdr:=1
@@ -2638,9 +2638,9 @@ FOR i=oRange:Min TO oRange:Max
 		{self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})],' '})
 	NEXT
     IF lAcceptNorway
-    	SELF:oPers:GetGiroNaw()
+    	self:oDB:GetGiroNaw()
     	AcceptNorway(oReport,@Rij,@Blad,oLan,Val(self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TOTALAMOUNT"})]),;
-		self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})],self:oPers,;
+		self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})],self:oDB,;
     	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})],self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%INVOICEID"})])
     ENDIF
 NEXT
@@ -2668,22 +2668,22 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	self:oPers:=self:oDB
 
 	self:m_AdressLines:=MarkUpAddress(self:oPers,0,0,0)
-	Asscln:=Str(self:oPers:persid,-1)
+	Asscln:=Str(self:oDB:persid,-1)
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%SALUTATION"})]:=Salutation(self:oPers:Gender)
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TITLE"})]:=Title(self:oPers:Title)
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%INITIALS"})]:=self:oPers:initials
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%PREFIX"})]:=self:oPers:prefix
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})]:=self:oPers:lastname
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%FIRSTNAME"})]:=self:oPers:firstname
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%NAMEEXTENSION"})]:=self:oPers:nameext
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ADDRESS"})]:=self:oPers:address
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ZIPCODE"})]:=self:oPers:postalcode
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%CITYNAME"})]:=self:oPers:city
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%COUNTRY"})]:=self:oPers:country
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ATTENTION"})]:=self:oPers:attention
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(self:oPers:datelastgift))
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATELSTGIFT"})]:=AllTrim(DToC(self:oPers:datelastgift))
-	// 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%BANKACCOUNT"})]:=iif(empty(self:oPers:banknumbers),'',split(self:oPers:banknumbers,',')[1]
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TITLE"})]:=Title(self:oDB:Title)
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%INITIALS"})]:=self:oDB:initials
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%PREFIX"})]:=self:oDB:prefix
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})]:=self:oDB:lastname
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%FIRSTNAME"})]:=self:oDB:firstname
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%NAMEEXTENSION"})]:=self:oDB:nameext
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ADDRESS"})]:=self:oDB:address
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ZIPCODE"})]:=self:oDB:postalcode
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%CITYNAME"})]:=self:oDB:city
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%COUNTRY"})]:=self:oDB:country
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ATTENTION"})]:=self:oDB:attention
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(self:oDB:datelastgift))
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATELSTGIFT"})]:=AllTrim(DToC(self:oDB:datelastgift))
+	// 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%BANKACCOUNT"})]:=iif(empty(self:oDB:banknumbers),'',split(self:oDB:banknumbers,',')[1]
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%REPORTMONTH"})]:=self:ReportMonth
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%PAGESKIP"})]:=PAGE_END
 
@@ -2699,7 +2699,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 		self:m_values[j]:=""
 		FOR i=1 to Len(self:m_AdressLines)
 			IF Empty(self:m_AdressLines[i])
-				LOOP
+				loop
 			ELSE
 				IF Empty(self:m_values[j])
 					self:m_values[j]:=self:m_AdressLines[i]
@@ -2709,27 +2709,27 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			ENDIF
 		NEXT
 	ENDIF
+	IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
+		IF GiftsRequired
+			self:oTransH:Execute(oDB:persid)
+		endif
+	endif
 	IF RepeatingPossible
 		DO WHILE .t.
 			repeatGroup:=''
 			h1:=AtC("[",Content)
 			IF Empty(h1)
-				EXIT
+				exit
 			ENDIF
 			h2:=AtC("]",SubStr(Content,h1+1))
 			IF Empty(h2)
-				EXIT
+				exit
 			ENDIF
 			h2:=h1+h2
 			repeatTxt:=SubStr(Content,h1+1,h2-h1-1)
 			IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
-				* cWhereOther: string met selektiekonditie
 				IF GiftsRequired
-					// skip to first corresponding transaction:
-					do while !self:oTransH:EOF .and. !self:oTransH:persid=self:oPers:persid
-						self:oTransH:skip()
-					enddo 
-					DO WHILE !oTransH:EOF.and.oTransH:persid==self:oPers:persid 
+					DO WHILE !oTransH:EOF
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=DToC(oTransH:dat)
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=Str(oTransH:amountgift,-1)
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=oTransH:DOCID
@@ -2742,14 +2742,14 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 						repeatSection:=StrTran(repeatSection,"%DOCID",AllTrim(oTransH:DOCID))
 						repeatSection:=StrTran(repeatSection,"%REFERENCE",AllTrim(oTransH:REFERENCE))
 						repeatSection:=StrTran(repeatSection,"%DESTINATION",oTransH:Destination)
-						// 								repeatSection:=StrTran(repeatSection,"%FRSTNAMEDESTINATION",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%FRSTNAMEDESTINATION"})])
-						// 								repeatSection:=StrTran(repeatSection,"%LSTNAMEDESTINATION",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LSTNAMEDESTINATION"})])
+						repeatSection:=StrTran(repeatSection,"%FRSTNAMEDESTINATION",oTransH:FirstnameDestination)
+						repeatSection:=StrTran(repeatSection,"%LSTNAMEDESTINATION",oTransH:lastnameDestination)
 						// 								repeatSection:=StrTran(repeatSection,"%SALUTDESTINATION",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%SALUTDESTINATION"})])
 						repeatSection:=StrTran(repeatSection,"%PAGESKIP",PAGE_ENd)
 						repeatGroup := repeatGroup + repeatSection
 						oTransH:skip()
 					ENDDO
-					self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TOTALAMOUNT"})]:=Str(self:oPers:totamnt,-1)
+					self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TOTALAMOUNT"})]:=Str(self:oDB:totamnt,-1)
 				ENDIF
 // 			ELSEIF selectionType=2
 // 				IF DueRequired
@@ -2759,7 +2759,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 // 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
 // 							TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
 // 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oPers:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
+// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oDB:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
 // 							oAcc:seek(oDue:accid)
 // 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
 // 							oSub:Seek(oDue:persid+oDue:accid)
@@ -2788,7 +2788,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 // 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
 // 						TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
 // 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oPers:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
+// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oDB:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
 // 						oAcc:seek(oDue:accid)
 // 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
 // 						oSub:Seek(oDue:persid+oDue:accid)
@@ -2821,8 +2821,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			* cWhereOther: string met selektiekonditie
 			* selx_accid: gewenste bestemming
 			IF GiftsRequired
-				oTransH:seek( asscln)
-				DO WHILE  !oTransH:EOF.and.oTransH:persid==Asscln
+				oTransH:GoTop()
+				DO WHILE  !oTransH:EOF
 					IF oTransH:Eval(pKond,,,1) && &oSelPers:cWhereOther
 						IF Empty(self:cWhereOtherA).or.AScan(self:cWhereOtherA,oTransH:accid)>0
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(oTransH:dat))
@@ -2848,18 +2848,18 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	NEXT
 	IF AddressRequired
 		* Compleet adres invullen:
-		DO WHILE TRUE
+		DO WHILE true
 			FOR tel = 1 to MLCount(Content,brfWidth)
 				Line:=MemoLine(Content,brfWidth,tel)
 				AddrPntr:=AtC("%NAMEADDRESS",Line)  && Zorgen voor inspringen
 				IF AddrPntr>0
 					repltxt:=StrTran(self:m_values[AScan(self:m_fieldnames,{|x| x[2]=="c"})],CHR(13)+CHR(10),CHR(13)+CHR(10)+Space(AddrPntr-1))
 					Content:=StrTran(Content,"%NAMEADDRESS",repltxt,,1)
-					EXIT
+					exit
 				ENDIF
 			NEXT
 			IF .not."%NAMEADDRESS" $ Content
-				EXIT
+				exit
 			ENDIF
 		ENDDO
 	ENDIF
@@ -3087,17 +3087,19 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			cHaving+=iif(Empty(cHaving)," having "," and ")+"maxamnt >= "+Str(self:selx_minindamnt,-1)
 		endif
       cSQLString:=UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)
-      self:oPers:=SQLSelect{"select "+cGrFields+" from ("+cSQLString+") as gr group by gr.persid "+cHaving+" order by "+self:SortOrder,oConn}
+      self:oDB:=SQLSelect{"select "+cGrFields+" from ("+cSQLString+") as gr group by gr.persid "+cHaving+" order by "+self:SortOrder,oConn}
 	else
-		self:oPers:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder,oConn} 
+		self:oDB:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder,oConn} 
 	endif
-//    LogEvent(self,self:oPers:sqlString,"logsql")
-	self:oPers:Execute()
-	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(self:oPers:RECCOUNT)+ ' persons found')}):Show()
-	if !self:oPers:RECCOUNT=0 
+//    LogEvent(self,self:oDB:sqlString,"logsql")
+	self:oDB:Execute()
+	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(self:oDB:RECCOUNT)+ ' persons found')}):Show()
+	if !self:oDB:RECCOUNT=0 
 		IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
-			self:oTransH:=SQLSelect{UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination "+;
-			"from transaction t, account a, person p where a.accid=t.accid and "+self:cWhereOther+" order by p."+self:SortOrder),oConn}
+			self:oTransH:=SQLSelect{UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination,"+;
+			"pd.firstname as firstnamedestination,pd.lastname as lastnamedestination "+;
+			"from transaction t, person p, account a left join member m on (m.accid=a.accid) left join person pd on(pd.persid=m.persid) "+;
+			"where a.accid=t.accid and "+self:cWhereOther+" and "+sIdentChar+"t.persid"+sIdentChar+"=? order by p."+self:SortOrder),oConn}
 		endif
 		DO WHILE !lReady
 			(oLtrFrm := LetterFormat{oParent,,,lAcceptNorway}):Show()
@@ -3110,7 +3112,7 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			endif
 			brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
 			oReport := PrintDialog{oParent,cTitel,,brfWidth}
-			oReport:InitRange(Range{nTo+1,self:oPers:RECCOUNT})
+			oReport:InitRange(Range{nTo+1,self:oDB:RECCOUNT})
 			oReport:Show()
 			IF .not.oReport:lPrintOk
 				RETURN FALSE
@@ -3305,7 +3307,7 @@ METHOD Show() CLASS SelPers
 		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
 	endif
 
-	self:oDB:=SQLSelectPerson{"",oConn}
+	self:oDB:=SQLSelect{"",oConn}
 	SELF:oWindow:Pointer := Pointer{POINTERARROW}
 
 	self:oWindow:=GetParentWindow(self)
@@ -3589,43 +3591,43 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	LOCAL fSum:=0,fAmnt as FLOAT, GrandTotal:=0 as float
 	LOCAL lError as LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
-	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds as STRING
+	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds,cAccs as STRING
 	Local oWarn as TextBox
 	Local aTrans:={} as array // accid,persid,amount,description,membertype,mailcode,account type,id 
 	Local aDir as array
 	local oPro as ProgressPer 
-	local oSel as SQLSelect
+	local oSel,oMBal as SQLSelect
 	local oStmnt as SQLStatement
 
 	if Empty(BANKNBRDEB)
-		(ErrorBox{,"Bank account invoices/ direct debit not specified in system data"}):Show()
+		(ErrorBox{,self:oLan:WGet("Bank account invoices/ direct debit not specified in system data")}):Show()
 		return false
 	endif 
 	if Len(BANKNBRDEB)=9 .and.!IsDutchBanknbr(BANKNBRDEB)
-		(ErrorBox{,"Bank account number "+BANKNBRDEB+;
-			" for Payments is not correct"}):Show()
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRDEB+;
+			Space(1)+self:oLan:WGet("for Payments is not correct")}):Show()
 		RETURN FALSE
 	ENDIF
 	IF Empty(sIDORG)
-		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF
 	cOrgName:=GetFullName(sIDORG,2)
 	if Empty(cOrgName)
-		(ErrorBox{self,"No own organisation specified in System Parameters"}):Show()
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN false
 	ENDIF
 
 	oSel:=SQLSelect{"select payahead from bankaccount where banknumber='"+BANKNBRDEB+"' and telebankng=1",oConn}
 	if oSel:RecCount<1
-		(ErrorBox{,"Bank account number "+BANKNBRDEB+;
-			" not specified as telebanking in system data"}):Show()
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
+			self:oLan:WGet("not specified as telebanking in system data")}):Show()
 		RETURN FALSE
 	else
 		m56_Payahead:=Str(oSel:PAYAHEAD,-1)
 		if Empty(m56_Payahead)
-			(ErrorBox{,"For bank account number "+BANKNBRDEB+;
-				" no account for Payments en route specified in system data"}):Show() 
+			(ErrorBox{self,self:oLan:WGet("For bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
+				self:oLan:WGet("no account for Payments en route specified in system data")}):Show() 
 			return false
 		endif
 	endif 
@@ -3657,7 +3659,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			oDue:skip()
 		enddo
 		if !Empty(cErrMsg)
-			ErrorBox{self,cErrMsg}:Show()
+			ErrorBox{self,self:oLan:WGet("Of the following donations the bankaccount does not belong to the person")+':'+cErrMsg}:Show()
 			return false
 		endif
 	endif
@@ -3688,7 +3690,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			nSeq++
 		endif
 	NEXT
-	oReport := PrintDialog{self,"Producing of CLIEOP03"+DToS(Today())+Str(nSeq,-1)+" file",,120}
+	oReport := PrintDialog{self,self:oLan:WGet("Producing of ")+"CLIEOP03"+DToS(Today())+Str(nSeq,-1)+" file",,120}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
@@ -3750,9 +3752,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		oDue:skip()		
 	ENDDO
 
-
-
-
 	// Write closing lines:
 	FWriteLine(ptrHandle,"9990A"+StrZero(fSum*100,18,0)+SubStr(Str(GrandTotal,-1,0),-10)+StrZero(Len(aTrans),7,0)+Space(10))
 	FWriteLine(ptrHandle,"9999A"+Space(45))
@@ -3780,22 +3779,48 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
-		// make transactions:
+		// make transactions: 
+		cAccs:=m56_Payahead
+		for i:=1 to Len(aTrans)
+			cAccID:=Str(aTrans[i,1],-1)
+			if At(','+cAccID+',',cAccs)=0
+				cAccs+=','+cAccID
+			endif
+		next
+		// add accounts for add to income
+		if	(!Empty(SINCHOME) .or.!Empty(SINC)) 
+			IF	!Empty(SINC)
+				cAccs+=','+SEXP+','+ SINC
+			endif	 			
+			IF	!Empty(SINCHOME)
+				cAccs+=','+SINCHOME+','+SEXPHOME
+			endif	
+		endif
+
 		oStmnt:=SQLStatement{"start transaction",oConn}
 		oStmnt:Execute()
 		if !Empty(oStmnt:status)
 			lError:=true
 		endif
+		ArrayDeProtect(aTrans)
 		if !lError
+			// lock mbalance record for update:
+			oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
+				" and	year="+Str(Year(process_date),-1)+;
+				" and	month="+Str(Month(process_date),-1)+" order by mbalid for update",oConn}
+			if	!Empty(oMBal:status)
+				ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:Show()
+				SQLStatement{"rollback",oConn}:Execute()
+				return true
+			endif	  
 			// Reconcile Due Amounts:
-			ArrayDeProtect(aTrans)
 			oStmnt:=SQLStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+Implode(aTrans,",",,,8)+")",oConn}
 			oStmnt:Execute()
 			oPro:AdvancePro()
-			ArrayProtect(aTrans)
 			if !Empty(oStmnt:status)
 				lError:=true
-			else
+			else 
+				oPers:=SQLSelect{"select mailingcodes,datelastgift	from person	where	"+sIdentChar+"persid"+sIdentChar+"=?",oConn} 
 				for i:=1 to Len(aTrans) 
 					oPro:AdvancePro()
 					// make transaction:
@@ -3820,15 +3845,15 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-						lError:=true
-						exit
-					endif
-					if !ChgBalance(m56_Payahead,process_date,fAmnt,0,fAmnt,0,sCURR)
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
 						lError:=true
 						exit
 					endif
 					cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+					if !ChgBalance(m56_Payahead,process_date,fAmnt,0,fAmnt,0,sCURR)
+						lError:=true
+						exit
+					endif
 					// record credit on destination account:
 					oStmnt:=SQLStatement{"insert into transaction set "+;
 						"transid='"+cTransnr+"'"+;
@@ -3843,7 +3868,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'"+iif(cType=='M',",GC='AG'",""),oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
 						lError:=true
 						exit
 					endif
@@ -3857,34 +3882,40 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						lError:=true
 						exit
 					endif
-					IF !Empty(cType) 
-						*  Update person info of giver: 
-						if cType == 'G' .or. cType == 'M' .or. cType == 'D'
-							oPers:=SQLSelect{"select mailingcodes,datelastgift from person where persid="+ cPersId,oConn} 
-							if oPers:RecCount>0
-								cCod:=oPers:mailingcodes
-								PersonGiftdata(cType,@cCod,oPers:datelastgift,iif(cType=='M','AG',""),,,cAccMlCd)
-								&& Update date last gift:
-								IF oPers:datelastgift < process_date .or. !AllTrim(cCod)==oPers:mailingcodes 
-									SQLStatement{"update person set datelastgift='"+SQLdate(process_date)+"',mailingcodes='"+cCod+"' where persid="+cPersId,oConn}:Execute()
-								ENDIF
+				next
+				if	lError
+					SQLStatement{"rollback",oConn}:Execute()
+					self:Pointer := Pointer{POINTERARROW}
+					LogEvent(self,self:oLan:WGet("could	not record direct	debit	transaction"),"LogErrors")
+					ErrorBox{self,self:oLan:WGet("could	not record direct	debit	transaction")}:Show()
+					RETURN false
+				else
+					SQLStatement{"commit",oConn}:Execute() 
+					// update person data:
+					for i:=1 to Len(aTrans) 
+						cPersId:=Str(aTrans[i,2],-1)
+						cType:=Transform(aTrans[i,5],"")
+						cAccMlCd:=Transform(aTrans[i,6],"")	
+						IF	!Empty(cType) 
+							*	Update person info of giver: 
+							if	cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D'
+								oPers:Execute(cPersId)
+								if	oPers:RecCount>0
+									cCod:=oPers:mailingcodes
+									PersonGiftdata(cType,@cCod,oPers:datelastgift,iif(cType=='M','AG',""),,,cAccMlCd)
+									&&	Update date	last gift:
+									IF	oPers:datelastgift <	process_date .or.	!AllTrim(cCod)==oPers:mailingcodes 
+										SQLStatement{"update	person set datelastgift='"+SQLdate(process_date)+"',mailingcodes='"+cCod+"' where persid="+cPersId,oConn}:Execute()
+									ENDIF
+								endif
 							endif
 						endif
-					endif
-				next
+					next
+				endif
 			endif 
 		endif
 		oPro:EndDialog()
 		oPro:Close() 
-		if lError
-			SQLStatement{"rollback",oConn}:Execute()
-			self:Pointer := Pointer{POINTERARROW}
-			LogEvent(self,self:oLan:WGet("could not record direct debit transaction"),"LogErrors")
-			ErrorBox{self,self:oLan:WGet("could not record direct debit transaction")}:Show()
-			RETURN false
-		else
-			SQLStatement{"commit",oConn}:Execute()
-		endif
 		self:oCCCancelButton:Enable()
 		self:oCCOKButton:Enable()
 
