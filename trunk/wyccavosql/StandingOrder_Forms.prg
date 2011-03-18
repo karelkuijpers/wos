@@ -353,6 +353,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:oDCmIDAT:SelectedDate:=Today()
 		self:oDCmEDAT:SelectedDate:=Today()+40000 
 		self:mCurrency:=sCurr
+		self:oDCSTORDRID:TextValue :=''
 		self:Append()
 	ELSE
 		self:nCurRec:=oPer:RecNo
@@ -363,7 +364,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:mCLN:=Str(oPer:persid,-1) 
 		self:oDCmEDAT:SelectedDate := oPer:Edat
 		self:mday := oPer:day
-		self:mdocid := oPer:docid
+		self:mdocid := oPer:docid 
+		self:DATLTSBOEK:=oPer:lstrecording
 		self:oStOrdL := SQLSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,m.co,m.persid as persid"+;
 			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid)"+;
 			" where l.stordrid="+Str(oPer:Stordrid,-1)+" order by seqnr",oConn}
