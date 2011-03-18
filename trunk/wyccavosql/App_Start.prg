@@ -46,7 +46,7 @@ method Start() class App
 		oUpg:=CheckUPGRADE{} 
 		cWorkdir:=WorkDir()
 		oInit:=Initialize{} 
-		lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir)
+		lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 		if lStop
 			if oConn:Connected
 				oConn:Disconnect()
