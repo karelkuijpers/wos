@@ -154,7 +154,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	oEmp:=SQLSelect{cEmpStmnt,oConn}
 	oEmp:Execute() 
 	IF !IsNil( oEmp:Status )
-		LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
+		LogEvent(,"Error:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
 	endif	
 	if oEmp:RecCount=1
 		if !EvalCheckDigit()
@@ -176,7 +176,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			// record login date and set user online: 
 			InitSystemMenu()
 			cDepmntIncl:=SetDepFilter(Val(oEmp:mDepId))
-// 			oMainWindow:SetCaption(SQLSelect{"select sysname from sysparms",oConn}:SYSNAME)
+			oMainWindow:SetCaption()
 			cAccAlwd:=""
 			if !Empty(cDepmntIncl)
 				oSQL:=SQLSelect{"select accid from emplacc where empid='"+MYEMPID+"'",oConn} 
