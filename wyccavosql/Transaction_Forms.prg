@@ -176,7 +176,8 @@ CLASS General_Journal INHERIT DataWindowExtra
 	declare method FindNext, FindPrevious
 // EXPORT pFilter as _CODEBLOCK
 	protect oCurr as Currency 
-	export nLstSeqNr as int
+	export nLstSeqNr as int 
+	protect cOrgAccs as string
 //   	export ticks1,ticks2 as DWORD 
   	
   	declare method Totalise,ValidateTempTrans,FillTeleBanking, FillRecord, ShowBankBalance, ValStore, ;
@@ -3754,7 +3755,8 @@ SELF:Destroy()
 METHOD EditButton( ) CLASS TransInquiry
 	LOCAL cTransnr AS STRING
 	LOCAL OrigPerson,OrigBst, OrigUser as STRING,Origdat as date, OrigPost as int
-	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int 
+	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int
+	local lLocked as logic 
 	IF SELF:NoUpdate
 		RETURN
 	ENDIF 
@@ -3776,14 +3778,21 @@ endif
 		RETURN
 	ENDIF
 	* Fill rows of TempTrans with transaction:
-	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
+// 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
+// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
+// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
+	self:oMyTrans:=SQLSelect{UnionTrans2("select t.*,if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
-	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
-// 	if self:oMyTrans:RecCount<1
-// 		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
-// 	endif 
+	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr,Origdat,Origdat),oConn}
+
+	if self:oMyTrans:RecCount<1
+		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
+	endif 
 	self:oHm:aMirror:={}
-	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF
+	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF 
+		if self:oMyTrans:locked='1'
+			lLocked:=true
+		endif
 		self:oHm:append()
 		self:oHm:AccID := Str(self:oMyTrans:AccID,-1)
 		self:oHm:AccDesc:=self:oMyTrans:AccDesc
@@ -3824,9 +3833,8 @@ endif
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
-	oGen:FillRecord(cTransnr,self:oSFTransInquiry_DETAIL:Browser,OrigPerson,Origdat,OrigBst,OrigUser,OrigPost,self)
+	oGen:FillRecord(cTransnr,self:oSFTransInquiry_DETAIL:Browser,OrigPerson,Origdat,OrigBst,OrigUser,OrigPost,self,lLocked)
 	oGen:AddCur()
-
 	oGen:Show()
 RETURN nil	
 METHOD ExportButton( ) CLASS TransInquiry 
@@ -3965,7 +3973,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 	
 	RETURN
 METHOD FindButton( ) CLASS TransInquiry
-	self:cWhereSpec:="transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
+	self:cWhereSpec:="t.transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:cOrder:="transid desc"
 	self:oTrans:SQLString:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
@@ -4145,7 +4153,7 @@ self:SetTexts()
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	//Put your PreInit additions here 
 	local oSel as SQLSelect
-	oSel:= SQLSelect{"select max(TransId) as maxtr from transaction",oConn}
+	oSel:= SQLSelect{"select max(transid) as maxtr from transaction",oConn}
 	if oSel:RecCount>0
 		if !Empty(oSel:maxtr)
 			self:lsttrnr:=oSel:maxtr
@@ -4156,16 +4164,16 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and department in ("+cDepmntIncl+")") 
 	if !Empty( cAccAlwd)
 		if USERTYPE=="D"
-			self:cWhereBase+=" and t.Userid='"+LOGON_EMP_ID+"'"
+			self:cWhereBase+=" and t.userid='"+LOGON_EMP_ID+"'"
 			// 			+iif(MinDate >LstYearClosed,".and.DToS(Dat)>='"+DToS(MinDate)+"'",""))
 		else
 			self:cWhereBase+=" and (t.accid in("+cAccAlwd+") or t.userid='"+LOGON_EMP_ID+"')"
 		endif		
 	endif
-	cWhereSpec:="transid>"+Str(self:lsttrnr-100,-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
-	self:cOrder:="t.transid desc" 
-	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec +" order by "+self:cOrder
-	self:oTrans:=SQLSelect{UnionTrans(self:cSelectStmnt),oConn}
+	cWhereSpec:="transid>"+Str(self:lsttrnr-100,-1)+" and t.dat>='"+SQLdate(MinDate)+"'"
+	self:cOrder:="transid desc" 
+	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
+	self:oTrans:=SQLSelect{UnionTrans(self:cSelectStmnt)+" order by "+self:cOrder,oConn} 
 	return NIL
 
 METHOD ReadyButton( ) CLASS TransInquiry 
