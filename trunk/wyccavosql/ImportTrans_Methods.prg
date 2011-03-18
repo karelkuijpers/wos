@@ -199,8 +199,8 @@ ELSE
 ENDIF
 METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	* Give next import batch with transaction from ImportTrans
-	LOCAL OrigBst, CurBatchNbr, cGiverName AS STRING
-	LOCAL CurDate AS DATE, CurOrigin AS STRING
+	LOCAL OrigBst, CurBatchNbr, cGiverName as STRING
+	LOCAL CurDate as date, CurOrigin as STRING
 	LOCAL cOms, cExId as STRING
 	local MultiCur:=false as logic 
 	local nPostStatus as int 
@@ -210,7 +210,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	SQLStatement{"start transaction",oConn}:execute() 
 	oImpTr1:=SQLSelect{"select transactnr,origin from importtrans "+;
 	"where processed=0 "+;
-	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < addtime(now(),'00-20-00'))"+;
+	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < subdate(now(),interval 20 minute))"+;
 	iif(Empty(self:curimpid),''," and imptrid>"+Str(self:curimpid,-1))+;
 	" order by imptrid limit 1 for update",oConn}
 	if oImpTr1:reccount<1
@@ -267,7 +267,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 				self:oHM:accdesc:=oImpB:accountname
 				self:oHM:kind:=Upper(oImpB:accounttype)
 				if Empty(oImpB:Currency).and.!Empty(oImpB:AccCurrency) 
-					self:oHM:CURRENCY:=oImpB:AccCurrency
+					self:oHM:currency:=oImpB:AccCurrency
 				endif 
 				MultiCur:=iif(oImpB:MULTCURR=1,true,false)
 			ELSE
@@ -278,8 +278,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		ENDIF
 		self:oHM:deb := oImpB:debitamnt
 		self:oHM:cre := oImpB:creditamnt
-		self:oHM:debforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:debitamnt,oImpB:debforgn)
-		self:oHM:creforgn := iif(self:oHM:CURRENCY==sCurr,oImpB:creditamnt,oImpB:creforgn)
+		self:oHM:debforgn := iif(self:oHM:currency==sCurr,oImpB:debitamnt,oImpB:debforgn)
+		self:oHM:creforgn := iif(self:oHM:currency==sCurr,oImpB:creditamnt,oImpB:creforgn)
 		self:oHM:BFM:= " "
 		self:oHM:FROMRPP:=iif(oImpB:FROMRPP=1,true,false)
 		self:oHM:lFromRPP:=iif(oImpB:FROMRPP=1,true,false)
@@ -300,7 +300,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			cExId:=oImpB:EXTERNID
 		endif
 		* Add TO mirror:
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:CURRENCY,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE})
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE})
 		cOms:=oImpB:descriptn 
 		self:curimpid:=oImpB:imptrid 
 		oImpB:Skip()
@@ -315,7 +315,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:oHM:ResetNotification()
 	self:oHM:GoTop()
 	self:oHM:Skip()
-RETURN TRUE
+RETURN true
 METHOD Import() CLASS ImportBatch
 	* Import of batches of  transaction data into ImportTrans.dbf
 	LOCAL oBF AS FileSpec
