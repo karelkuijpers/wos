@@ -121,7 +121,7 @@ METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem as array, leve
 		oBal:=SQLSelect{"select * from balanceitem order by number",oConn} 
 		if oBal:reccount>0
 			do while !oBal:EoF
-				AAdd(aItem,{oBal:balitemid,oBal:number,oBal:balitemidparent,oBal:category,oBal:Heading,oBal:Footer})   
+				AAdd(aItem,{oBal:balitemid,oBal:number,oBal:balitemidparent,oBal:category,iif(Empty(oBal:Heading),'',oBal:Heading),iif(Empty(oBal:Footer),''oBal:Footer)})   
 				//                  1             2              3                  4             5            6
 				oBal:Skip()
 			enddo
@@ -5236,6 +5236,7 @@ METHOD OKButton( ) CLASS YearClosing
 	local nSeqNbr as int // sequence number of generated transaction lines 
 	local fTotal as float  // to check if year is correct in balance 
 	local cMess as string
+	local dLstReeval as date
 
 	IF Today() <= self:BalanceEndDate
 		(ErrorBox{self:OWNER,self:oLan:WGet('End of year not yet reached')}):Show()
@@ -5276,8 +5277,9 @@ METHOD OKButton( ) CLASS YearClosing
 	endif
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-	// Check if all reevaluations has been done: 
-	if SQLSelect{"select lstreeval from Sysparms",oConn}:LSTREEVAL <  self:BalanceEndDate 
+	// Check if all reevaluations has been done:
+	dLstReeval:=SQLSelect{"select lstreeval from sysparms",oConn}:LSTREEVAL 
+	if dLstReeval <  self:BalanceEndDate 
 		if SQLSelect{"select accid from account where multicurr=0 and currency<>'"+sCURR+"'",oConn}:reccount>0
 			(ErrorBox{self:OWNER,self:oLan:WGet('perform first required reevaluations')}):Show()
 			self:EndWindow()
@@ -5562,7 +5564,7 @@ METHOD OKButton( ) CLASS YearClosing
 	* Archiving Transactions: 
 	// create archive table: 
 	self:STATUSMESSAGE(self:oLan:WGet("Creating archive file, moment please"))
-	cName:= 'Tr'+Str(self:YearStart,4)+StrZero(self:MonthStart,2)
+	cName:= 'tr'+Str(self:YearStart,4)+StrZero(self:MonthStart,2)
 	oStmnt:=SQLStatement{"create table "+cName+" (primary key (transid,seqnr)) engine=MyIsam select * from transaction where dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn} 
 	oStmnt:Execute()                        
 	if Empty(oStmnt:Status)
@@ -5626,7 +5628,7 @@ METHOD OKButton( ) CLASS YearClosing
 		TextBox{self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+space(1)+self:YearBalance+space(1)+self:oLan:WGet("not closed")}:Show()
 		return		
 	endif
-	FillBalYears()  // refill GLBalYears
+	InitGlobals()
 	self:EndWindow() 
 	self:Close()
 	RETURN
