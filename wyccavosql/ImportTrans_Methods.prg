@@ -842,10 +842,15 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	// Proces records:
 	PMISDocument:=XMLDocument{cBuffer}
 	// first check intehrity of document:
-	If !PMISDocument:GetElement("RPP_Records")
-		(ErrorBox{,self:oLan:WGet('No correct RPP file')+' '+AllTrim(oFr:FileName)}):show()
-		FClose(ptrHandle)
-		RETURN false
+	If !PMISDocument:GetElement("RPP_Records") 
+		If PMISDocument:GetElement("Message") 
+			FClose(ptrHandle)
+		   return true
+		else
+			(ErrorBox{,self:oLan:WGet('No correct RPP file')+' '+AllTrim(oFr:FileName)}):show()
+			FClose(ptrHandle)
+			RETURN false
+		endif
 	ENDIF
 	
 	recordfound:= PMISDocument:GetElement("Record")
