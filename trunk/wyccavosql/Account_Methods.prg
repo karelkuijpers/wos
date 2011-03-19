@@ -22,6 +22,7 @@ local
 // 	ELSE
 		self:Server:GoTop()
 		self:Show()
+		self:FindButton()
 // 	ENDIF
 	RETURN true
 METHOD FilePrint CLASS AccountBrowser
