@@ -831,7 +831,7 @@ oIPC:GoTop()
 return oIPC:GetLookupTable(,#Descriptn,#IPCAccount) 
 METHOD GLAccButton(lUnique ) CLASS EditAccount 
 	Default(@lUnique,FALSE)	
-	AccountSelect(self,AllTrim(self:oDCmGainLossacc:textValue ),"Gain/Loss account",lUnique,"currency='"+sCurr+"'"+iif(Empty(self:mAccId),""," and a.accid='"+self:mGainLsacc+"'"))
+	AccountSelect(self,AllTrim(self:oDCmGainLossacc:textValue ),"Gain/Loss account",lUnique,"currency='"+sCurr+"'"+iif(Empty(self:mGainLsacc),""," and a.accid='"+self:mGainLsacc+"'"))
 
 RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount 
