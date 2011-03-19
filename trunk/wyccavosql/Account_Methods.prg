@@ -1,12 +1,12 @@
 METHOD AccountSelect(Caller as object,BrwsValue:="" as string,ItemName as string,Unique:=false as logic ) as logic CLASS AccountBrowser
-local 
+	local 
 	self:oCaller := Caller
 	IF Empty(Unique)
 		self:lUnique := FALSE
 	ELSE
 		self:lUnique := true
 	ENDIF 
-		
+	
 	IF !Empty(BrwsValue)
 		IF IsDigit(BrwsValue)
 			self:SearchREK := BrwsValue
@@ -17,13 +17,11 @@ local
 	ENDIF
 	self:CallerName := ItemName
 	self:Caption := "Select "+ItemName
-// 	IF lUnique.and.self:lFoundUnique
-// 		self:OKButton()
-// 	ELSE
-		self:Server:GoTop()
-		self:Show()
+	self:Server:GoTop()
+	self:Show()
+	if !Empty(BrwsValue)
 		self:FindButton()
-// 	ENDIF
+	endif
 	RETURN true
 METHOD FilePrint CLASS AccountBrowser
 LOCAL oDB as SQLselect
