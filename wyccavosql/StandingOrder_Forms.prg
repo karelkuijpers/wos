@@ -276,7 +276,7 @@ METHOD OKButton( ) CLASS EditPeriodic
 	IF ValidateControls( self, self:AControls ) .and. self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
 		if Len(oStOrdLH:aMirror)=0 .or. AScan(oStOrdLH:aMirror,{|x|x[2]<>x[1]})=0
 			if !lNew
-				self:oCaller:owner:owner:DeleteButton()
+				self:oCaller:DeleteButton()
 			endif
 			self:EndWindow()
 			return
@@ -590,7 +590,7 @@ LOCAL nBlad AS INT
 LOCAL oReport AS PrintDialog
 LOCAL cTab:=CHR(9) as STRING
 
-oReport := PrintDialog{self,self:oLan:WGet("Standing Orders"),,120,,"xls"}
+oReport := PrintDialog{self,self:oLan:WGet("Standing Orders"),,138,,"xls"}
 oReport:Show()
 IF .not.oReport:lPrintOk
 	RETURN FALSE
@@ -606,12 +606,13 @@ ENDIF
 
 AAdd(aHeading,;
 oLan:RGet("Order#",6,"@!")+cTab+oLan:RGet("account",21,"@!")+cTab+oLan:RGet("STARTDATE",10,"@!")+cTab;
-+oLan:RGet("RECORDDAY",9,"@!")+cTab+oLan:RGet("Deb",11,"@!","R")+cTab+oLan:RGet("Cre",11,"@!","R")+cTab+oLan:RGet("ENDDATE",10,"@!")+cTab;
-+oLan:RGet("DESCRIPTION",,"@!"))
++oLan:RGet("RECORDDAY",9,"@!")+cTab+oLan:RGet("PERIOD",6,"@!")+cTab+oLan:RGet("Deb",11,"@!","R")+cTab+oLan:RGet("Cre",11,"@!","R")+cTab+oLan:RGet("ENDDATE",10,"@!")+cTab+oLan:RGet("LST BOOKED",10,"@!")+cTab;
++oLan:RGet("DESCRIPTION",,"@!")) 
+self:oStOrd:goTop()
 do WHILE !self:oStOrd:EOF
-	oReport:PrintLine(@nRij,@nBlad,Str(self:oStOrd:STORDRID,6,0)+cTab+ Pad(self:oStOrd:ACCNUMBER+Space(1)+self:oStOrd:accountname,21)+cTab+;
-	Transform(self:oStOrd:IDAT,'99-99-9999')+cTab+PadC(Transform(self:oStOrd:day,'999'),9)+cTab+;
-	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+Transform(self:oStOrd:edat,'99-99-9999')+cTab+self:oStOrd:DESCRIPTN,aHeading,0)
+	oReport:PrintLine(@nRij,@nBlad,Str(self:oStOrd:STORDRID,6,0)+cTab+ Pad(Transform(self:oStOrd:ACCNUMBER,"")+Space(1)+Transform(self:oStOrd:accountname,""),21)+cTab+;
+	DToC(self:oStOrd:IDAT)+cTab+PadC(Transform(self:oStOrd:day,'999'),9)+cTab+PadC(Transform(self:oStOrd:period,'999'),6)+cTab+;
+	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+dtoc(self:oStOrd:edat)+cTab+dtoc(self:oStOrd:lstrecording)+cTab+self:oStOrd:DESCRIPTN,aHeading,0)
 	self:oStOrd:skip()
 ENDDO
 oReport:prstart()
