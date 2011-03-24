@@ -450,7 +450,7 @@ do while !(Empty(cBuffer).and. FEof(ptrHandle))
 enddo
 FClose(ptrHandle) 
 return true
-METHOD CreateDbf(oFileSp as FILESPEC,xDriver as STRING) as LOGIC CLASS DBServerExtra
+METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBServerExtra
 * Creeren van een Dbf-file tijdens pre-init dbserver, indien dbf-file nog niet bestaat
     LOCAL aFieldDesc  as ARRAY
     LOCAL oMyFileSpec   as FILESPEC, oDBFileSpec as DBFileSpec
@@ -613,7 +613,7 @@ self:lRetry:=	MyError(oError,SymMethod)
 	RETURN
 
 METHOD INIT(oFileSpec, lSharedMode, lReadOnlyMode , xDriver ) CLASS DBServerExtra
-	
+	Default(@xDriver,null_string)
 	IF lInitial.or.!Empty(oFileSpec:Path)  // File has to be created:
 		IF Empty(oFileSpec:Path)
 			oFileSpec:Path := CurPath
