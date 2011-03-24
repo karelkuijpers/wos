@@ -1069,22 +1069,27 @@ self:SetTexts()
 
 	RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
-	//Put your PreInit additions here
-	Default(@uExtra,NULL_STRING)
+	//Put your PreInit additions here   
+	// uExtra can contain extra filter
+	local cFilter as string 
+	Default(@uExtra,null_string)
 	self:cType:=uExtra
-		IF self:cType=="SUBSCRIPTIONS"
+	IF self:cType="SUBSCRIPTIONS"
 		self:mtype:="A"
-	ELSEIF self:cType=="DONATIONS"
+	ELSEIF self:cType="DONATIONS"
 		self:mtype:="D"
-	ELSEIF self:cType=="STANDARD GIFTS"
+	ELSEIF self:cType="STANDARD GIFTS"
 		self:mtype:="G"
+	elseif !Empty(uExtra)
+		// apparently filter
+		cFilter:=uExtra
 	ENDIF
  
 	self:cFields:=SQLFullName(0,"p")+" as PersonName,a.description as Accountname,s.begindate,s.duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid"
 	self:cFrom:="person p, account a, subscription s" 
 	self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'" 
 	self:cOrder:="personname"
-	self:oSub:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn} 
+	self:oSub:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cFilter),''," and "+cFilter)+" order by "+self:cOrder,oConn} 
 	RETURN nil                 
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
