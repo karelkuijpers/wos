@@ -1084,7 +1084,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		//		oHm:SuspendNotification() 
 		fDebSav:=oHm:aMirror[oHm:RecNo,2]
 		fCreSav:=oHm:aMirror[oHm:RecNo,3]
-		self:oSFGeneralJournal1:DebCreProc()
+		self:oSFGeneralJournal1:DebCreProc(false)
 		if oHm:aMirror[ThisRec,11] # sCurr .and. fCreSav # fDebSav
 			// 	if foreign currency recalculate debforeign, creforeign 
 			if self:oCurr==null_object
@@ -1973,6 +1973,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	LOCAL nCurRec, CurRec, ThisRec AS INT
 	LOCAL mRek as STRING
 	Local ROE:=1 as float
+	local oTransH as SQLSelect
 	oHm := self:Server
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
@@ -1992,7 +1993,10 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 		self:owner:Totalise(false,false)
 		RETURN
 	ENDIF
-	IF !oHm:CheckUpdates()
+	if !Empty(self:oOwner:oOwner)
+		oTransH:=self:oOwner:oOwner:oMyTrans
+	endif
+	IF !oHm:CheckUpdates(oTransH)
 		* recover old values
 		oHm:deb:=oHm:aMirror[oHm:Recno,2]
 		oHm:cre:=oHm:aMirror[oHm:Recno,3]
@@ -3859,9 +3863,10 @@ METHOD CheckTeleAccount()   CLASS TempTrans
 	 	ENDIF
    ENDIF
 RETURN FALSE
-METHOD CheckUpdates(lNil:=nil as logic) as logic CLASS TempTrans
+METHOD CheckUpdates(oTransH:=nil as SQLSelect) as logic CLASS TempTrans
    * Check if it is allowed to update or delete a transaction (accid,DEB,CRE,GC)
-   LOCAL ThisRec as int
+	// otransH could be original transactions in case of update
+   LOCAL ThisRec,mRecno:=self:RECNO as int,amMirror:=self:aMIRROR as array,mSeqnr as int
 	IF !self:lInqUpd  && no update?
 		RETURN TRUE
 	ENDIF
@@ -3872,12 +3877,26 @@ METHOD CheckUpdates(lNil:=nil as logic) as logic CLASS TempTrans
 		(Errorbox{,"Transaction already sent to PMC"}):Show()
    	RETURN FALSE
 	ENDIF
-	ThisRec:=self:RecNo
-   if !Empty(AMirror)
-		if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.!(Empty(aMIRROR[ThisRec,2]).and.Empty(aMIRROR[ThisRec,3]))
+	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
+   if !Empty(aMIRROR) .and. ThisRec>0
+   	if !Empty(aMirror[ThisRec,7]) .and. !empty(oTransH) //seqnr
+   		mSeqnr:=aMIRROR[ThisRec,7]
+   		oTransH:GoTop()
+   		do while !oTransH:SEQNR==mSeqnr
+   			oTransH:Skip()
+   		enddo
+   		if !oTransH:EOF
+   			if empty(oTransH:debforgn) .and.empty(oTransH:creforgn) .and.(!empty(oTransH:deb) .or. !empty(oTransH:cre))
+	   		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):Show()
+   	 			RETURN FALSE
+				endif
+   		endif
+   	else
+			if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.(!Empty(aMIRROR[ThisRec,2]).or.!Empty(aMIRROR[ThisRec,3]))
    		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):show()
-    		RETURN FALSE
-		ENDIF
+    			RETURN FALSE
+			endif
+		endif
    endif
 	IF self:BFM=="C"
 		(ErrorBox{,"Transaction already sent to AccPac/RIA"}):show()
@@ -4231,7 +4250,7 @@ function UnionTrans(cStatement as string) as string
 	endif
 
 // 	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
-	if BegDat>=LstYearClosed    
+	if BegDat>=LstYearClosed .or. Empty(GlBalYears)    
 		return cStatement
 	else
 		// compose Statement: 
