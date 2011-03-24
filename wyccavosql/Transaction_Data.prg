@@ -15,7 +15,7 @@ CLASS Hulp_OMS INHERIT FIELDSPEC
 METHOD Init() CLASS Hulp_OMS
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#OMS, "Description", "", "" },  "M", 10, 0 )
+    SUPER:Init( HyperLabel{#OMS, "Description", "", "" },  "C", 511, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -229,7 +229,7 @@ Define IDM_Transaction_USERID := "parouÿÐHgwÐ€Tv"
 CLASS TempGift INHERIT DBSERVEREXTRA
 	INSTANCE cDBFPath	  := "" AS STRING
 	INSTANCE cName		  := "c:/GiftHulpMut.dbf" AS STRING
-	INSTANCE xDriver	  := "DBFCDX"		 AS USUAL
+	INSTANCE xDriver	  := "DBFNTX"		 AS USUAL
 	INSTANCE lReadOnlyMode:= .F.		 AS LOGIC
 	INSTANCE lSharedMode  := NIL	 AS USUAL
 	INSTANCE nOrder 	  := 0	 AS INT
@@ -578,7 +578,7 @@ METHOD Init() CLASS TempGift_Rek
 CLASS TempTrans INHERIT DBSERVEREXTRA
 	INSTANCE cDBFPath	  := "" AS STRING
 	INSTANCE cName		  := "C:/HulpGenM.dbf" AS STRING
-	INSTANCE xDriver	  := "DBFCDX"		 AS USUAL
+	INSTANCE xDriver	  := "DBFNTX"		 AS USUAL
 	INSTANCE lReadOnlyMode:= .F.		 AS LOGIC
 	INSTANCE lSharedMode  := .F.	 AS USUAL
 	INSTANCE nOrder 	  := 0	 AS INT
