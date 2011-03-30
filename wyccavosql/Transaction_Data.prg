@@ -947,10 +947,22 @@ METHOD Init() CLASS Transaction_BFM
 
     RETURN SELF
 CLASS transaction_BST INHERIT FIELDSPEC
-METHOD Init() CLASS transaction_BST
-super:Init(HyperLabel{"docid","docid","","transaction_BST"},"C",10,0)
 
-RETURN SELF
+
+METHOD Init() CLASS transaction_BST
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#BST, "Bst", "", "transaction_BST" },  "C", 31, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS transaction_CLN INHERIT FIELDSPEC
 METHOD Init() CLASS transaction_CLN
 super:Init(HyperLabel{"persid","persid","","transaction_CLN"},"N",11,0)
