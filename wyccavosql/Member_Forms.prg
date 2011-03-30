@@ -2711,7 +2711,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 	LOCAL aFields:={} AS ARRAY // array with fieldvalues
 	LOCAL ptOld, ptNew,PTReason AS INT
 	LOCAL cDelim:="," AS STRING
-	LOCAL ptrHandle AS MyFile
+	LOCAL ptrHandle 
 	LOCAL cBuffer AS STRING, nRead AS INT
 	LOCAL HouseOld, HouseNew AS STRING
 	LOCAL cReport as STRING, nUpd, nRemoved as int
@@ -2749,7 +2749,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
 
-		DO WHILE Len(aFields)>8
+		DO WHILE !(FEof(ptrHandle) .and. !Empty(cBuffer)) .and. Len(AFields)>8 
 			HouseOld:=AllTrim(aFields[ptOld])
 			HouseNew:=AllTrim(AFields[ptNew])
 			if !HouseNew==HouseOld 
