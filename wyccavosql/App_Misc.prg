@@ -771,7 +771,7 @@ FUNCTION FillPersProp ()
 	* Fill global Array pers_propextra with description + id of extra person properties
 	LOCAL oPersProp as SQLSelect
 	pers_propextra:={}
-	oPersProp := SQLSelect{"SELECT * FROM `person_properties`",oConn} 
+	oPersProp := SQLSelect{"SELECT * FROM `person_properties` order by id",oConn} 
 	if oPersProp:RecCount>0
 		DO WHILE !oPersProp:EOF
 			AAdd(pers_propextra,{oPersProp:FIELDGET(2), oPersProp:ID,oPersProp:type,Lower(oPersProp:VALUES)})
