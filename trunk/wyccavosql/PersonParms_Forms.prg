@@ -376,7 +376,7 @@ METHOD OKButton( ) CLASS EditPersProp
 			endif
 		endif
 	endif
-	cStatement:=iif(self:lNew,"insert into ","update ")+"person_properties set name='"+AllTrim(self:MPROPNAME)+"',type="+Str(mType,-1)+",`VALUES`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
+	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(mType,-1)+",`values`='"+AddSlashes(AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'"))))+"'"+;
 	iif(self:lNew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
@@ -1250,7 +1250,8 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 	LOCAL oProp,oSel,oPers as SQLSelect
 	LOCAL oXML AS XMLDocument
 	LOCAL lTagFound AS LOGIC
-	local oStmnt as SQLStatement
+	local oStmnt as SQLStatement 
+	local nUpd as int
 	oProp:=self:Server
 	IF oProp:EOF.or.oProp:BOF
 		(ErrorBox{,self:oLan:WGet("Select a property first")}):Show()
@@ -1274,11 +1275,12 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+mId+">')-1)"+;
 			",substring(propextr,instr(propextr,'</V"+mId+">')+"+Str(Len(mId)+4,-1)+"))"+;
 			" where instr(propextr,'<V"+mId+">')>0",oConn}
-			oStmnt:execute()
+			oStmnt:execute() 
+			nUpd:= oStmnt:NumSuccessfulRows
 		endif
 		SELF:Pointer := Pointer{POINTERARROW}
 		FillPersProp()
-		TextBox{,self:oLan:WGet("Removal property"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:WGet("persons updated")}:Show()
+		TextBox{,self:oLan:WGet("Removal property"),Str(nUpd,-1)+" "+self:oLan:WGet("persons updated")}:Show()
 
 	ENDIF		
 
