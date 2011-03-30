@@ -145,7 +145,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 							ENDIF
 						else
 							// load only upgrade
-							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
+// 							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 							IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
 								startfile:=cWorkdir+"InstallSQLUpg.EXE"
 							ELSE
