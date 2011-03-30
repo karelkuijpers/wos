@@ -632,7 +632,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			" and	month="+Str(Month(aTrans[1,2]),-1)+" order by mbalid for update",oConn}
 		if	!Empty(oBal:status)
 			lError:=true
-
+		else
 			for i:=1 to Len(aTrans) 
 				oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr"+iif(i==1,"",",TransId")+;
 					") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
