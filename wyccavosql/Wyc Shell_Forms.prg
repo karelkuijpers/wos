@@ -231,8 +231,13 @@ METHOD RemoveChild( oChild ) CLASS StandardWycWindow
 		ADel(aChildWindows, nChild)
 		ASize(aChildWindows, ALen(aChildWindows) - 1)
 	ENDIF
-METHOD SetCaption(sysname) CLASS StandardWycWindow 
-
+METHOD SetCaption() CLASS StandardWycWindow 
+	local sysname as string
+	local oSys as SQLSelect
+	oSys:=SQLSelect{"select sysname from sysparms",oConn}
+	if oSys:RecCount>0
+		sysname:=oSys:sysname
+	endif
 	IF !Empty(sysname)
 		SELF:Caption:=AllTrim(sysname)
 	ELSE
@@ -246,10 +251,10 @@ METHOD SetCaption(sysname) CLASS StandardWycWindow
 			SELF:Caption := "Wycliffe Office System"
 		ENDIF
 	ENDIF 
-if !Empty(LOGON_EMP_ID) 
-	self:Caption+=Space(30)+"("+LOGON_EMP_ID+")"
-endif
-RETURN	
+	if !Empty(LOGON_EMP_ID) 
+		self:Caption+=Space(30)+"("+LOGON_EMP_ID+")"
+	endif
+	RETURN	
 METHOD StandardGiversMail() CLASS StandardWycWindow
 	(SelPers{self,"STANDARD GIVERS"}):Show()
 	RETURN
