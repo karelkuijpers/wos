@@ -558,16 +558,19 @@ METHOD AccntProc(cAccValue) CLASS General_Journal
 	RETURN nil
 METHOD append() CLASS General_Journal
 	LOCAL cOms,cOpp AS STRING
-	LOCAL oHm as TempTrans
-	oHm:=SELF:Server	
-	IF !SELF:Server:eof
-		oHm:GoBottom()
+	LOCAL oHm:=self:server as TempTrans 
+	local lSuccess as logic
+	IF !oHm:eof
+		if !oHm:RECNO==oHm:Reccount
+			self:GoBottom()
+		endif
 		cOms:=oHm:DESCRIPTN
 		cOPP:=oHm:OPP
 	ENDIF
-		
-	SUPER:append()
-	IF oHm:Recno==2
+// 	lSuccess:=self:StatusOK()	
+	lSuccess:=SUPER:append()
+	
+	If Len(oHm:aMirror)=1
 		IF	fTotal>0
 			oHm:CREFORGN:=fTotal
 			oHm:Cre:=fTotal
@@ -619,8 +622,8 @@ LOCAL ThisRec, CurRec AS INT
 LOCAL oHm as TempTrans
 LOCAL Success AS LOGIC
 
-oHm := SELF:server
-CurRec:=oHm:RecNo
+oHm:=self:oSFGeneralJournal1:Server	
+// CurRec:=oHm:RecNo
 
 IF Empty(oHm:aMirror)  && nothing to delete?
 	RETURN FALSE
@@ -633,12 +636,15 @@ IF (self:lTeleBank .or. oHm:FROMRPP) .and. oHm:Recno==1
     RETURN FALSE
 ENDIF		
 
-//ThisRec:=AScan(oHm:aMirror, {|x| x[6]==CurRec})
-IF !Empty(CurRec) .and.!(oHm:Eof.and.oHm:Bof)
-	ADel(oHm:aMirror,CurRec)  && remove row from mirror
+// ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
+ThisRec:=oHm:RECNO
+
+IF !Empty(ThisRec) .and.!(oHm:Eof.and.oHm:BOF)
+	ADel(oHm:aMirror,ThisRec)  && remove row from mirror
 	ASize(oHm:aMirror,Len(oHm:aMirror)-1)
 	SUPER:Delete(TRUE)
-	Success:=oHm:Pack()
+	Success:=oHm:Pack() 
+	self:AddCur()
 	self:Totalise(true,false)
 	IF oHm:EoF
 		oHm:gotop()
@@ -864,7 +870,7 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 	self:cGiverName := ""
 	self:mPerson := ""
 	self:mDAT:=self:oTmt:m56_bookingdate
-	self:mBst:=self:oTmt:m56_kind+Str(self:oTmt:m56_seqnr,-1,0)
+	self:mBst:=AllTrim(self:oTmt:m56_kind)+Str(self:oTmt:m56_seqnr,-1)
 	oHm:AccID := self:oTmt:m56_sgir
 	IF Empty(self:oTmt:m56_contra_name).or.Empty(self:oTmt:m56_description)
 		m53_komma:=''
@@ -1048,7 +1054,6 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		else
 			cPersId:=Str(oAccount:persid,-1)
 		endif
-		//       cNum:=oAccount:balitemid
 		oHm:CURRENCY:= oAccount:CURRENCY 
 		cNum:=Str(oAccount:balitemid,-1)
 		MultiCur:=iif(oAccount:MULTCURR=1,true,false)
@@ -1066,8 +1071,8 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		oHm:GC:=CurGC
 	ENDIF
 	* save in mirror-array
-	//	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:Recno})
-	ThisRec:=oHm:RecNo
+// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
+	ThisRec:=oHm:RECNO
 	oHm:aMirror[ThisRec,1]:=AllTrim(cRek)
 	oHm:aMirror[ThisRec,4]:=oHm:Gc
 	oHm:aMirror[ThisRec,5]:=oHm:KIND
@@ -1082,8 +1087,8 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	self:oSFGeneralJournal1:AddCurr()
 	IF !oHm:lFilling.and.!Empty(cRek)
 		//		oHm:SuspendNotification() 
-		fDebSav:=oHm:aMirror[oHm:RecNo,2]
-		fCreSav:=oHm:aMirror[oHm:RecNo,3]
+		fDebSav:=oHm:aMirror[ThisRec,2]
+		fCreSav:=oHm:aMirror[ThisRec,3]
 		self:oSFGeneralJournal1:DebCreProc(false)
 		if oHm:aMirror[ThisRec,11] # sCurr .and. fCreSav # fDebSav
 			// 	if foreign currency recalculate debforeign, creforeign 
@@ -1202,7 +1207,7 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 		// Append new record:
 			self:Append()
 			self:Commit()
-			self:oSFGeneralJournal1:Browser:refresh()
+// 			self:oSFGeneralJournal1:Browser:refresh()
 			self:oSFGeneralJournal1:GoTo(nCurRec)
 			//SELF:oSFGeneralJournal1:Browser:bNeglectSkip:=TRUE
 			RETURN TRUE
@@ -1516,10 +1521,11 @@ METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as log
 	LOCAL cError AS STRING
 	LOCAL oHm as TempTrans
 	LOCAL mRek AS STRING
-	LOCAL i:=0 AS INT
+	LOCAL i:=0, nCurRec as int
 	oHm := SELF:Server
 // 	Default(@lNoMessage,FALSE)
-oHm:SuspendNotification()
+oHm:SuspendNotification() 
+nCurRec:=oHm:Recno
 DO WHILE lValid .and. i < Len(oHm:aMirror)
 	++i
 	IF oHm:aMirror[i,2] == oHm:aMirror[i,3] //deb=cre: skip empty line
@@ -1561,13 +1567,14 @@ DO WHILE lValid .and. i < Len(oHm:aMirror)
 			endif
 		endif
 	ENDIF
-ENDDO
+ENDDO 
 oHm:ResetNotification()
 IF !lValid.and.!lNomessage
 	(ErrorBox{,cError}):Show()
 	oHm:recno:=oHm:aMirror[i,6]
 	ErrorLine:=i
 ENDIF
+oHm:GoTo(nCurRec)
 RETURN lValid
 METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL nErrRec AS INT
@@ -1700,8 +1707,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			// add rabat accounts:
 			if oHm:lFromRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
 				for nMir:=1 to Len(oHm:AMirror)
-					IF	(nMir:=AScan(oHm:AMirror,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
-						oHm:RecNo=nMir	
+					IF	(j:=AScan(oHm:AMirror,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
+						oHm:RecNo=j	
 						IF	oHm:OPP== sEntity
 							if	At(cAccs,','+SEXP+',')=0
 								cAccs+=','+SEXP
@@ -1709,7 +1716,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cAccs+=','+	samFld
 							exit
 						endif
-						nMir++
+						nMir:=j
 					endif
 				next
 			endif
@@ -1718,9 +1725,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		IF	!Empty(self:mCLNGiver) .and. !lInqUpd
 			for nMir:=1 to Len(oHm:AMirror) 
 				// search for: KIND= 'D'	.or. KIND=	'A' .or.	KIND	= 'F'	.or.(Deb >	Cre .and.gc<>'CH' )     // storno also
-				IF	(nMir:=AScan(oHm:AMirror,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
+				IF	(j:=AScan(oHm:AMirror,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
 					cDueAccs+=iif(Empty(cDueAccs),'',',')+oHm:AMirror[nMir,1]	
-					nMir++
+					nMir:=j
 				endif
 			next
 		endif 
@@ -1996,30 +2003,31 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	if !Empty(self:oOwner:oOwner)
 		oTransH:=self:oOwner:oOwner:oMyTrans
 	endif
-	IF !oHm:CheckUpdates(oTransH)
+// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
+	ThisRec:=oHm:RECNO
+	if !oHm:CheckUpdates(oTransH)
 		* recover old values
-		oHm:deb:=oHm:aMirror[oHm:Recno,2]
-		oHm:cre:=oHm:aMirror[oHm:Recno,3]
-		oHm:DEBFORGN:=oHm:aMirror[oHm:Recno,13]
-		oHm:CREFORGN:=oHm:aMirror[oHm:Recno,14]
+		oHm:deb:=oHm:aMirror[ThisRec,2]
+		oHm:cre:=oHm:aMirror[ThisRec,3]
+		oHm:DEBFORGN:=oHm:aMirror[ThisRec,13]
+		oHm:CREFORGN:=oHm:aMirror[ThisRec,14]
 		self:Owner:Totalise(false,false)
 		RETURN
 	ENDIF
 *	save new values into aMirror: 
-	if !self:Server:lFilling
+	if !oHm:lFilling
 		self:Owner:lStop:=false  // give warning when cancel
 	endif
 
-	CurRec := oHm:RecNo
-	oHm:aMirror[CurRec,2]:=oHm:deb
-	oHm:aMirror[CurRec,3]:=oHm:cre
-	oHm:aMirror[CurRec,13]:=oHm:DEBFORGN
-	oHm:aMirror[CurRec,14]:=oHm:CREFORGN
+	oHm:aMirror[ThisRec,2]:=oHm:deb
+	oHm:aMirror[ThisRec,3]:=oHm:cre
+	oHm:aMirror[ThisRec,13]:=oHm:DEBFORGN
+	oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
 	IF oHm:KIND == 'M'		
 		mRek:=AllTrim(oHm:AccID)
 		IF oHm:Deb > oHm:Cre  .and. !self:oParent:mBST="COL"     // inverse direct debit
 			oHm:gc := 'CH'
-			oHm:aMirror[CurRec,4]:=oHm:gc  && save in mirror
+			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 			* Convert present AG's into MG's:
 			recnr := oHm:RecNo
 			FOR i=1 TO Len(oHm:aMirror)
@@ -2033,7 +2041,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 			NEXT
 		ELSEIF oHm:deb = oHm:cre
 			oHm:gc := '  '
-			oHm:aMirror[CurRec,4]:=oHm:gc  && save in mirror
+			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 		ELSE
 			IF !oHm:gc == 'PF' .and. !(oHm:FROMRPP .and. !Empty(oHm:GC))
 				oHm:gc := 'AG'
@@ -2050,7 +2058,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 						EXIT
 					ENDIF
 				NEXT
-				oHm:aMirror[CurRec,4]:=oHm:gc  && save in mirror
+				oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 			ENDIF
 		ENDIF
 	ELSE
@@ -2064,13 +2072,14 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 			ENDDO
 		ENDIF
 		oHm:gc := '  '
-		oHm:aMirror[CurRec,4]:=oHm:gc  && save in mirror
+		oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 	ENDIF
-	oHm:SuspendNotification()
+// 	oHm:SuspendNotification()
 	self:Owner:Totalise(false,false)
-	oHm:ResetNotification() 
+// 	oHm:ResetNotification() 
 
-	self:Browser:Refresh()
+//  	self:Browser:Refresh()
+	self:Owner:Goto(ThisRec)
 RETURN
 METHOD RegAccount(oRek,ItemName) CLASS InquirySelection
 	LOCAL oAccount as SQLSelect
@@ -2167,7 +2176,8 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 		RETURN
 	ENDIF
 	myColumn:= oColumn
-	ThisRec:=oHm:RecNo
+	ThisRec:=oHm:RECNO
+// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
 	IF myColumn:NameSym == #AccNumber
 		IF !AllTrim(myColumn:TextValue) == ;
 		AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
@@ -2243,6 +2253,7 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	ENDIF
 	myColumn:= oColumn 
 	ThisRec:=oHm:RECNO
+// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
 	IF myColumn:NameSym == #AccNumber
 		IF !AllTrim(myColumn:TextValue) == ;
 		AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
@@ -2762,7 +2773,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	endif	
 	self:ShowDebbal()
 	self:mDAT := oTmt:m56_bookingdate
-	self:mBst := AllTrim(oTmt:m56_kind)+AllTrim(Str(oTmt:m56_seqnr,-1,0)) 
+	self:mBst := AllTrim(oTmt:m56_kind)+AllTrim(Str(oTmt:m56_seqnr,-1)) 
 	self:oDCmBST:Value:=self:mBst
 	if !self:DebCurrency==sCurr
 		if self:oCurr==null_object
@@ -3877,8 +3888,9 @@ METHOD CheckUpdates(oTransH:=nil as SQLSelect) as logic CLASS TempTrans
 		(Errorbox{,"Transaction already sent to PMC"}):Show()
    	RETURN FALSE
 	ENDIF
-	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
-   if !Empty(aMIRROR) .and. ThisRec>0
+// 	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
+	ThisRec:=mRecno
+   if !Empty(aMirror) .and. ThisRec>0
    	if !Empty(aMirror[ThisRec,7]) .and. !empty(oTransH) //seqnr
    		mSeqnr:=aMIRROR[ThisRec,7]
    		oTransH:GoTop()
@@ -4062,7 +4074,7 @@ METHOD ShowSelection() CLASS TransInquiry
 
 	self:m54_selectTxt:="" 
 	self:cWhereSpec:="" 
-	self:cOrder:="dat,accnumber"
+	self:cOrder:="dat,accnumber,transid,seqnr"
 
 	cDepmntXtr:=""
 	if !Empty(self:DepIdSelected)
@@ -4103,12 +4115,12 @@ METHOD ShowSelection() CLASS TransInquiry
 	IF !Empty(self:StartTransNbr)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid>="'+self:StartTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction>="+self:StartTransNbr 
-		self:cOrder:="transid desc" 
+		self:cOrder:="transid desc,seqnr" 
 	ENDIF
 	IF !Empty(self:EndTransNbr)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.transid<="'+self:EndTransNbr+'"'
 		self:m54_selectTxt:=self:m54_selectTxt+" Transaction<="+self:EndTransNbr
-		self:cOrder:="transid desc" 
+		self:cOrder:="transid desc,seqnr" 
 	ENDIF
 	IF !Empty(self:DocIdSelected)
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.docid like '"+self:DocIdSelected+"%'"
