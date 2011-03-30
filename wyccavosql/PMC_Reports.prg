@@ -330,7 +330,7 @@ self:sWithldOffM := self:oSys:withldoffM
 self:sWithldOffH := self:oSys:withldoffH
 self:sPercAssInt := self:oSys:assmntint
 self:mxrate := oSys:EXCHRATE
-self:oDCAfsldag:DateRange:=DateRange{Today()-365,Today()}
+self:oDCAfsldag:DateRange:=DateRange{mindate,Today()}
 
 self:closingDate := Today()
 self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last send on: '+DToC(self:oSys:PMISLSTSND)
@@ -379,7 +379,8 @@ METHOD PrintReport() CLASS PMISsend
 	local oTrans,oMbr,oAccD,oPers,oPersB,oBal as SQLSelect	 
 	local oMBal as Balances
 	local oStmnt as SQLStatement
-	local aTransLock:={},aDisLock:={} as array
+	local aTransLock:={},aDisLock:={} as array 
+	local cTransLock as string
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -470,8 +471,9 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif
 	// set software lock:
-	AEval(oTrans:GetLookupTable(80000,#transid,#seqnr),{|x|AAdd(aTransLock,Str(x[1],-1)+';'+Str(x[2],-1))})
-	oStmnt:=SQLStatement{"update transaction set lock_id="+MYEMPID+",lock_time=now() where concat(cast(transid as char),';',cast(seqnr as char)) in ("+Implode(aTransLock,"','")+")",oConn}
+	AEval(oTrans:GetLookupTable(80000,#transid,#seqnr),{|x|AAdd(aTransLock,Str(x[1],-1)+';'+Str(x[2],-1))}) 
+	cTransLock:=Implode(aTransLock,"','")
+	oStmnt:=SQLStatement{"update transaction set lock_id="+MYEMPID+",lock_time=now() where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("could not lock required transactions")}:Show()
@@ -827,7 +829,7 @@ METHOD PrintReport() CLASS PMISsend
 	ENDDO 
 	if !Empty(cError)
 		(ErrorBox{self,cError}):Show()
-		self:ResetLocks(aTransLock)
+		self:ResetLocks(MYEMPID)
 		return
 	endif
 	if !Empty(cErrMsg)
@@ -990,14 +992,14 @@ METHOD PrintReport() CLASS PMISsend
 			endif
 		endif
 		if lStop 
-			self:ResetLocks(aTransLock)
+			self:ResetLocks(MYEMPID)
 			return
 		else
 			IF self:oSys:PMISLSTSND<ToDay()-400
 				// still IES:
 				IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
 						self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
-					self:ResetLocks(aTransLock)
+					self:ResetLocks(MYEMPID)
 					RETURN
 				ENDIF
 			ENDIF
@@ -1045,7 +1047,7 @@ METHOD PrintReport() CLASS PMISsend
 			endif	  
 			if Empty(cError)
 				*	Change status of transactions to "Send to PMC": bfm='H':
-				oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+Implode(aTransLock,"','")+")",oConn}
+				oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows <1
 					cError:=self:oLan:WGet("could no record mark transactions as sent to PMC")
@@ -1374,7 +1376,7 @@ METHOD PrintReport() CLASS PMISsend
 				SQLStatement{"commit",oConn}:Execute()
 			else
 				SQLStatement{"rollback",oConn}:Execute()
-				self:ResetLocks(aTransLock)
+				self:ResetLocks(MYEMPID)
 				ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
 				return
 			ENDIF
@@ -1447,19 +1449,22 @@ METHOD PrintReport() CLASS PMISsend
 
 	self:Pointer := Pointer{POINTERARROW}
 	RETURN
-Method ResetLocks(aTransLock as array) class PMISsend
+Method ResetLocks(cEmpId as string) class PMISsend
 	// reset software lock:
 	local oTrans as SQLSelect
 	local oStmnt as SQLStatement 
+	self:STATUSMESSAGE(self:oLan:WGet('unlocking member transactions')+'...')
+
 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
 	// select the transaction data
-	oTrans:=SQLSelect{"select transid,seqnr from transaction t where concat(cast(transid as char),';',cast(seqnr as char)) in ("+Implode(aTransLock,"','")+") order by t.transid,seqnr for update",oConn}
-	oTrans:Execute() 
-	if Empty(oTrans:Status)
-		oStmnt:=SQLStatement{"update transaction set lock_id=0 where concat(cast(transid as char),';',cast(seqnr as char)) in ("+Implode(aTransLock,"','")+")",oConn}
+// 	oTrans:=SQLSelect{"select transid,seqnr from transaction t where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+") order by t.transid,seqnr for update",oConn}
+// 	oTrans:Execute() 
+// 	if Empty(oTrans:Status)
+// 		oStmnt:=SQLStatement{"update transaction set lock_id=0 where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+		oStmnt:=SQLStatement{"update transaction set lock_id=0 where lockid="+MYEMPID,oConn}
 		oStmnt:Execute()
 		SQLStatement{"commit",oConn}:Execute()
-	endif 
+// 	endif 
 	return
 METHOD WritePMCTrans(ptrHandle,me_kind,me_acc,me_amnt,me_oms,me_percd,me_date,me_type,me_destAcc,me_destPP) CLASS PMISsend
 	LOCAL transcode AS STRING
