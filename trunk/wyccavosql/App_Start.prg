@@ -114,7 +114,7 @@ method Start() class App
 			oMainWindow:Menu:ToolBar:Hide()
 			// Run program
 			* Process standing orders:
-			IF FirstOfDay
+// 			IF FirstOfDay
 				oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
@@ -123,7 +123,7 @@ method Start() class App
 				do while ProlongateAll(oMainWindow)
 				enddo		
 				oMainWindow:Pointer := Pointer{POINTERARROW} 
-			ENDIF
+// 			ENDIF
 			// Idem for reevaluation: 
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0	
 				Reevaluation{oMainWindow}:ReEvaluate()
