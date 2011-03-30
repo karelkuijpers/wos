@@ -903,127 +903,125 @@ METHOD MatchImport(synctype) CLASS NewPersonWindow
 // add person:
 RETURN FALSE
 
-METHOD SetPropExtra( Count, Left) CLASS NewPersonWindow
-LOCAL oSingle AS SingleLineEdit
-LOCAL oCheck AS CheckBox
-LOCAL oDropDown AS COMBOBOX
-LOCAL oFix AS FixedText
-LOCAL Name as STRING,nType, ID as int, Values as STRING
-LOCAL myDim AS Dimension
-LOCAL myOrg AS Point
-LOCAL aValues AS ARRAY
-LOCAL EditX:=152, FixX:=17 AS INT
-Default(@Left,TRUE)
-Name:=pers_propextra[Count,1]
-nType:=pers_propextra[Count,3]
-Values:=pers_propextra[Count,4]
-ID := pers_propextra[Count,2]
-IF Left
+METHOD SetPropExtra( count, Left) CLASS NewPersonWindow
+	LOCAL oSingle as SingleLineEdit
+	LOCAL oCheck as CheckBox
+	LOCAL oDropDown as COMBOBOX
+	LOCAL oFix as FixedText
+	LOCAL Name as STRING,nType, ID as int, Values as STRING
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
+	LOCAL aValues as ARRAY
+	LOCAL EditX:=152, FixX:=17 as int
+	Default(@left,true)
+	Name:=pers_propextra[count,1]
+	nType:=pers_propextra[count,3]
+	Values:=pers_propextra[count,4]
+	ID := pers_propextra[count,2]
+	IF left
+		//
+		// enlarge window
+		myDim:=self:Size
+		myDim:Height+=25
+		self:Size:=myDim
+		myOrg:=self:Origin
+		myOrg:y-=25
+		self:Origin:=myOrg
+		//
+		// shift systemgroup down
+		myOrg:=self:oDCmAlterDate:Origin
+		myOrg:y-=25
+		self:oDCmAlterDate:Origin:=myOrg
+		myOrg:=self:oDCmCreationDate:Origin
+		myOrg:y-=25
+		self:oDCmCreationDate:Origin:=myOrg
+		myOrg:=self:oDCmDateLastGift:Origin
+		myOrg:y-=25
+		self:oDCmDateLastGift:Origin:=myOrg
+		myOrg:=self:oDCmOPC:Origin
+		myOrg:y-=25
+		self:oDCmOPC:Origin:=myOrg
+		myOrg:=self:oDCmPersId:Origin
+		myOrg:y-=25
+		self:oDCmPersId:Origin:=myOrg
+		myOrg:=self:oDCmExternId:Origin
+		myOrg:y-=25
+		self:oDCmExternId:Origin:=myOrg
+		myOrg:=self:oDCGroupBoxSystem:Origin
+		myOrg:y-=25
+		self:oDCGroupBoxSystem:Origin:=myOrg
+		myOrg:=self:oDCSC_BDAT:Origin
+		myOrg:y-=25
+		self:oDCSC_BDAT:Origin:=myOrg
+		myOrg:=self:oDCSC_MUTD:Origin
+		myOrg:y-=25
+		self:oDCSC_MUTD:Origin:=myOrg
+		myOrg:=self:oDCSC_DLG:Origin
+		myOrg:y-=25
+		self:oDCSC_DLG:Origin:=myOrg
+		myOrg:=self:oDCSC_OPC:Origin
+		myOrg:y-=25
+		self:oDCSC_OPC:Origin:=myOrg
+		myOrg:=self:oDCSC_CLN:Origin
+		myOrg:y-=25
+		self:oDCSC_CLN:Origin:=myOrg
+		myOrg:=self:oDCSC_Externid:Origin
+		myOrg:y-=25
+		self:oDCSC_Externid:Origin:=myOrg
+		// enlarge personal group:
+		myDim:=self:oDCGroupBoxPersonal:Size
+		myDim:Height+=25
+		self:oDCGroupBoxPersonal:Size:=myDim
+		myOrg:=self:oDCGroupBoxPersonal:Origin
+		myOrg:y-=25
+		self:oDCGroupBoxPersonal:Origin:=myOrg
+	ELSE
+		EditX:=511
+		FixX:=376
+		myOrg:=self:oDCGroupBoxPersonal:Origin
+	ENDIF
 	//
-	// enlarge window
-	myDim:=SELF:Size
-	myDim:Height+=25
-	SELF:Size:=myDim
-	myOrg:=SELF:Origin
-	myOrg:y-=25
-	SELF:Origin:=myOrg
-	//
-	// shift systemgroup down
-	myOrg:=self:oDCmAlterDate:Origin
-	myOrg:y-=25
-	self:oDCmAlterDate:Origin:=myOrg
-	myOrg:=self:oDCmCreationDate:Origin
-	myOrg:y-=25
-	self:oDCmCreationDate:Origin:=myOrg
-	myOrg:=self:oDCmDateLastGift:Origin
-	myOrg:y-=25
-	self:oDCmDateLastGift:Origin:=myOrg
-	myOrg:=SELF:oDCmOPC:Origin
-	myOrg:y-=25
-	SELF:oDCmOPC:Origin:=myOrg
-	myOrg:=self:oDCmPersId:Origin
-	myOrg:y-=25
-	self:oDCmPersId:Origin:=myOrg
-	myOrg:=self:oDCmExternId:Origin
-	myOrg:y-=25
-	self:oDCmExternId:Origin:=myOrg
-	myOrg:=self:oDCGroupBoxSystem:Origin
-	myOrg:y-=25
-	SELF:oDCGroupBoxSystem:Origin:=myOrg
-	myOrg:=SELF:oDCSC_BDAT:Origin
-	myOrg:y-=25
-	SELF:oDCSC_BDAT:Origin:=myOrg
-	myOrg:=SELF:oDCSC_MUTD:Origin
-	myOrg:y-=25
-	SELF:oDCSC_MUTD:Origin:=myOrg
-	myOrg:=SELF:oDCSC_DLG:Origin
-	myOrg:y-=25
-	SELF:oDCSC_DLG:Origin:=myOrg
-	myOrg:=SELF:oDCSC_OPC:Origin
-	myOrg:y-=25
-	SELF:oDCSC_OPC:Origin:=myOrg
-	myOrg:=SELF:oDCSC_CLN:Origin
-	myOrg:y-=25
-	SELF:oDCSC_CLN:Origin:=myOrg
-	myOrg:=self:oDCSC_Externid:Origin
-	myOrg:y-=25
-	self:oDCSC_Externid:Origin:=myOrg
-	// enlarge personal group:
-	myDim:=SELF:oDCGroupBoxPersonal:Size
-	myDim:Height+=25
-	SELF:oDCGroupBoxPersonal:Size:=myDim
-	myOrg:=SELF:oDCGroupBoxPersonal:Origin
-	myOrg:y-=25
-	SELF:oDCGroupBoxPersonal:Origin:=myOrg
-ELSE
-	EditX:=511
-	FixX:=376
-	myOrg:=SELF:oDCGroupBoxPersonal:Origin
-ENDIF
-	//
-//	insert extra properties in group personal:
+	//	insert extra properties in group personal:
 	IF nType==TEXTBX
-		oSingle:=SingleLineEdit{self,Count,Point{EditX,myOrg:y+13},Dimension{215,20} }
+		oSingle:=SingleLineEdit{self,count,Point{EditX,myOrg:y+13},Dimension{215,20} }
 		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name+":"}
 		oSingle:FocusSelect := FSEL_HOME
-		oSingle:Show()
-		AAdd(aPropEx,oSingle)
+		oSingle:show()
+		AAdd(self:aPropEx,oSingle)
 	ELSEIF nType==CHECKBX
-//		oCheck:=CheckBox{SELF,Count,Point{99,88},Dimension{215,20},Name}
-		oCheck:=CheckBox{SELF,Count,Point{EditX,myOrg:Y+13},Dimension{215,20},Name}
+		oCheck:=CheckBox{self,count,Point{EditX,myOrg:y+13},Dimension{215,20},Name}
 		oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,Name}
-		AAdd(aPropEx,oCheck)
-		oCheck:Show()
+		AAdd(self:aPropEx,oCheck)
+		oCheck:show()
 	ELSEIF nType==DROPDOWN
-//		oDropDown:=Combobox{SELF,Count,Point{99,28},Dimension{215,80},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
-		oDropDown:=Combobox{SELF,Count,Point{EditX,myOrg:Y-127},Dimension{215,160},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
-		oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,NULL_STRING,NULL_STRING}
+		oDropDown:=ComboBox{self,count,Point{EditX,myOrg:y-127},Dimension{215,160},BOXDROPDOWNLIST,CBS_SORT+CBS_LOWERCASE}
+		oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
-		AAdd(aPropEx,oDropDown)
-		oDropDown:Show() 
+		AAdd(self:aPropEx,oDropDown)
+		oDropDown:show() 
 	ELSEIF nType==DATEFIELD
-		oSingle:=SingleLineEdit{self,Count,Point{EditX,myOrg:y+13},Dimension{215,20} }
+		oSingle:=SingleLineEdit{self,count,Point{EditX,myOrg:y+13},Dimension{215,20} }
 		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name+":"}
 		oSingle:FocusSelect := FSEL_HOME
-		oSingle:Picture:="99-99-9999"
+		oSingle:Picture:="@D"
 		oSingle:FieldSpec:=PropExtra_Date{}
-		oSingle:Show()
-		AAdd(aPropEx,oSingle)
+		oSingle:show()
+		AAdd(self:aPropEx,oSingle)
 	ENDIF
 	IF nType#CHECKBX
-//		oFix:=FixedText{SELF,Count,Point{17,88}, Dimension{82,20},Name+":"}
-		oFix:=FixedText{SELF,Count,Point{FixX,myOrg:Y+13}, Dimension{135,20},Name+":"}
-		oFix:Show()
+		oFix:=FixedText{self,count,Point{FixX,myOrg:y+13}, Dimension{135,20},Name+":"}
+		oFix:show()
 	ENDIF
-RETURN NIL
+	RETURN nil
 METHOD SetState() CLASS NewPersonWindow
 	LOCAL i:=1,j, pos as int
 	LOCAL oPersBank as SQLSelect
 	// 	LOCAL oMbr AS Members
 	LOCAL oXMLDoc AS XMLDocument
 	LOCAL cDescr:="Bank# " as STRING
-	local aBank:={} as array
+	local aBank:={} as array 
+	local oContr as Control
 	self:oPerson:=SQLSelect{"select p.*,m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
@@ -1058,7 +1056,12 @@ METHOD SetState() CLASS NewPersonWindow
 	oXMLDoc:=XMLDocument{self:oPerson:PROPEXTR}
 	FOR i:=1 to Len(self:aPropEx) 
 		IF oXMLDoc:GetElement(aPropEx[i]:Name)
-			aPropEx[i]:Value:=oXMLDoc:GetContentCurrentElement()
+			oContr:=  aPropEx[i]  
+			if ClassName(oContr)=#SingleLineEdit .and.oContr:Picture='@D'
+				aPropEx[i]:Value:=SToD(oXMLDoc:GetContentCurrentElement())
+			else				
+				aPropEx[i]:Value:=oXMLDoc:GetContentCurrentElement()
+			endif
 		ENDIF
 	NEXT
 	IF Empty(self:oPerson:accid)      // no member
@@ -2080,7 +2083,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	RETURN
 CLASS PropExtra_Date INHERIT FIELDSPEC
 
-
+
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS PropExtra_Date
     LOCAL   cPict                   AS STRING
@@ -2283,7 +2286,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	local oSQL,oSel as SQLSelect 
 	local oBnk as BankAcc
 	local sField as symbol
-	Local fSecStart as float 
+	Local fSecStart as float
+	local aType:={'C','L','C','D'} as array // textbx checkbx dropdown DATEFIELD  
 
 	* Determine fields within ExportPersons:
 	SetPath(CurPath)
@@ -2332,7 +2336,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 		Name:=pers_propextra[i,1]
 		ID := "V"+AllTrim(Str(pers_propextra[i,2],-1))
 		myHyp:=HyperLabel{String2Symbol(ID),Name,Name}
-		myField:=FieldSpec{myHyp,"C",10,0}
+		myField:=FieldSpec{myHyp,aType[pers_propextra[i,3]+1],10,0}
 		AAdd(aExpF,{String2Symbol(ID),"p.propextr",myField,})
 	NEXT	
 
@@ -2351,7 +2355,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	endif
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
-	LogEvent(self,oSel:SQLString,"LogErrors")
+//	LogEvent(self,oSel:SQlString,"LogErrors")
 // 	fSecStart:=Seconds()
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
@@ -2475,7 +2479,11 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 				elseif lPropXtr
 					// extra properties:
 					IF oXMLDoc:GetElement(Symbol2String(self:myFields[j,1]))
-						cLine+=oXMLDoc:GetContentCurrentElement()
+						if self:myFields[j,3]:ValType='D'
+							cLine+=DToC(stod(oXMLDoc:GetContentCurrentElement()))
+						else	
+							cLine+=oXMLDoc:GetContentCurrentElement()
+						endif
 					endif
 				endif
 			else
@@ -3358,7 +3366,11 @@ for i:=1 to Len(aPropExValues)
 		cExtra+=" and "
 	endif
 	for j:=1 to Len(aPropExValues[i,3])
-		cExtra+=iif(j==1,"("," or ")+"instr(p.PROPEXTR,'<"+aPropExValues[i,1]+">"+aPropExValues[i,3,j]+"</"+aPropExValues[i,1]+">')>0"      //<name> value </name>			
+		if aPropExValues[i,2]=DATEFIELD
+			cExtra+=iif(j==1,"("," or ")+"p.propextr like '%<"+aPropExValues[i,1]+">_%</"+aPropExValues[i,1]+">%' and substr(p.propextr,instr(p.propextr,'</"+aPropExValues[i,1]+">')-8,8)"+aPropExValues[i,3,j]      			
+		else
+			cExtra+=iif(j==1,"("," or ")+"p.propextr like '%<"+aPropExValues[i,1]+">"+iif(aPropExValues[i,2]=TEXTBX,'%','')+aPropExValues[i,3,j]+iif(aPropExValues[i,2]=TEXTBX,'%','')+"</"+aPropExValues[i,1]+">%'"      //<name> value </name>
+		endif			
 	next
 	cExtra+=")"
 next
@@ -3368,18 +3380,18 @@ oCaller:cWherep+" and ") + cExtra
 return 
 METHOD InitExtraProperties() CLASS SelPersMailCd
 	// Initialize extra properties
-	LOCAL count AS INT
-	LOCAL left:=1 AS USUAL, first:=TRUE AS LOGIC
-	SELF:oDCExtraPropGroup:Hide()	
+	LOCAL count as int
+	LOCAL left:=true as LOGIC, first:=true as LOGIC
+	if Len(pers_propextra)<1 
+		self:oDCExtraPropGroup:Hide()
+	else	
 
-	FOR count:=1 TO Len(pers_propextra) STEP 1
-		SELF:SetPropExtra(count,@left)
-		IF first .and.!left=1
-			SELF:oDCExtraPropGroup:show()
-			first:=FALSE
-		ENDIF
-	NEXT
-RETURN NIL
+		FOR count:=1 to Len(pers_propextra) step 1
+			self:SetPropExtra(count,Left)
+			left:=!left
+		NEXT 
+	endif
+	RETURN nil
 METHOD MakeAndCod() CLASS SelPersMailCd
 * Compose mailingcodes from parts andCod1 .. anandCod
 	LOCAL aCod := {}
@@ -3494,77 +3506,98 @@ METHOD MakeOrType() CLASS SelPersMailCd
 		oCaller:selx_voorw+" and ") + cTekst + ")"
 	ENDIF
 RETURN TRUE
-METHOD SetPropExtra( Count, Left) CLASS SelPersMailCd
-// LOCAL oCheck AS CheckBox
-lOCAL oDropDown as Listbox
-LOCAL oCheck as CheckBox
-LOCAL oFix as FixedText
-// LOCAL oDCGroupBoxExtra	AS GroupBox
-LOCAL Name as STRING,nType, ID as int, Values as STRING
-LOCAL myDim AS Dimension
-LOCAL myOrg AS Point
-LOCAL aValues AS ARRAY
-LOCAL EditX:=152, FixX:=17 as int, vertDist:=41 as int
-Default(@Left,1)
-Name:=pers_propextra[Count,1]
-nType:=pers_propextra[Count,3]
-Values:=pers_propextra[Count,4]
-ID := pers_propextra[Count,2]
-IF nType==TEXTBX
-	RETURN NIL
-ENDIF
-IF Left==1
+METHOD SetPropExtra( count, Left) CLASS SelPersMailCd
+	LOCAL oSingle as SingleLineEdit
+	LOCAL oCheck as CheckBox
+	LOCAL oDropDown as Listbox
+	LOCAL oFix as FixedText
+	LOCAL Name as STRING,nType, ID as int, Values as STRING
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
+	LOCAL aValues as ARRAY
+	LOCAL EditX:=152, FixX:=17 as int, vertDist:=41 as int
+	Default(@left,true)
+	Name:=pers_propextra[count,1]
+	nType:=pers_propextra[count,3]
+	Values:=pers_propextra[count,4]
+	ID := pers_propextra[count,2]
+	IF left
+		if pers_propextra[count,3]==DROPDOWN .or. (Len(pers_propextra)>count .and.pers_propextra[count+1,3]==DROPDOWN )
+			vertDist:=41
+		else
+			vertDist:=21
+		endif
+		//enlarge window
+		myDim:=self:Size
+		myDim:Height+=vertDist
+		self:Size:=myDim
+		myOrg:=self:Origin
+		myOrg:y-=vertDist
+		self:Origin:=myOrg
+		// enlarge personal group:
+		myDim:=self:oDCGroupBoxPersonal:Size
+		myDim:Height+=vertDist
+		self:oDCGroupBoxPersonal:Size:=myDim
+		myOrg:=self:oDCGroupBoxPersonal:Origin
+		myOrg:y-=vertDist
+		self:oDCGroupBoxPersonal:Origin:=myOrg 
+	ELSE
+		EditX:=511
+		FixX:=376
+		myOrg:=self:oDCGroupBoxPersonal:Origin
+	ENDIF
 	//
-	// enlarge window
-	myDim:=SELF:Size
-	myDim:Height+=vertDist
-	SELF:Size:=myDim
-	myOrg:=SELF:Origin
-	myOrg:y-=vertDist
-	SELF:Origin:=myOrg
-	//
-	// enlarge extra properties group:
-	myDim:=SELF:oDCExtraPropGroup:Size
-	myDim:Height+=vertDist
-	SELF:oDCExtraPropGroup:Size:=myDim
-	myOrg:=SELF:oDCExtraPropGroup:Origin
-	myOrg:y-=vertDist
-	SELF:oDCExtraPropGroup:Origin:=myOrg
-ELSE
-	EditX:=481
-	FixX:=346
-	myOrg:=SELF:oDCExtraPropGroup:Origin
-ENDIF
-	//
-//	insert extra properties in group extra properties:	
-IF nType==DROPDOWN  
-	oDropDown:=ListBox{self,Count,Point{EditX,myOrg:y+8},Dimension{185,40},LBS_SORT+LBS_MULTIPLESEL}
-	oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
-// 	IF nType==DROPDOWN
+	//	insert extra properties in group extra properties:	
+	IF nType==DROPDOWN  
+		oDropDown:=ListBox{self,count,Point{EditX,myOrg:y+8},Dimension{185,40},LBS_SORT+LBS_MULTIPLESEL}
+		oDropDown:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
 		aValues:=Split(Values,",")
 		oDropDown:FillUsing(aValues)
-// 	else
-// 		oDropDown:FillUsing({{"true","T"},{"false","F"}})
-// 	endif
-	AAdd(aPropEx,oDropDown)
-	oDropDown:Show()
-	oFix:=FixedText{self,Count,Point{FixX,myOrg:y+28}, Dimension{135,20},Name+":"}
-	oFix:Show()
-ENDIF
-IF nType==CHECKBX 
-	oCheck:=CheckBox{self,Count,Point{EditX,myOrg:y+8},Dimension{185,40}}
-	oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
-	AAdd(aPropEx,oCheck)
-	oCheck:Show()
-ENDIF
-if nType==DATEFIELD
-	
-endif
-left:=-1*left
+		AAdd(self:aPropEx,oDropDown)
+		oDropDown:show()
+		oFix:=FixedText{self,count,Point{FixX,myOrg:y+8}, Dimension{135,20},Name+":"}
+		oFix:show()
+	ENDIF
+	IF nType==CHECKBX 
+		oCheck:=CheckBox{self,count,Point{EditX,myOrg:y+8},Dimension{185,20}}
+		oCheck:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
+		AAdd(self:aPropEx,oCheck)
+		oCheck:show()
+	ENDIF
+	if nType==DATEFIELD
+		oFix:=FixedText{self,count,Point{FixX,myOrg:y+8}, Dimension{135,20},Name+":"}
+		oFix:show()
+		oSingle:=SingleLineEdit{self,count,Point{EditX,myOrg:y+8},Dimension{60,20},EDITAUTOHSCROLL} 
+		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))+'from'),Name,null_string,null_string}
+		oSingle:Picture:='@D'
+		oSingle:FieldSpec:=PropExtra_Date{}
+		oSingle:FocusSelect := FSEL_HOME	
+		oSingle:show()
+		AAdd(self:aPropEx,oSingle)
+		oFix:=FixedText{self,count,Point{EditX+63,myOrg:y+8}, Dimension{10,20},'- '}
+		oFix:show()
+		oSingle:=SingleLineEdit{self,count,Point{EditX+75,myOrg:y+8},Dimension{60,20},EDITAUTOHSCROLL} 
+		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))+'to'),Name,null_string,null_string}
+		oSingle:Picture:='@D'
+		oSingle:FieldSpec:=PropExtra_Date{}
+		oSingle:FocusSelect := FSEL_HOME	
+		oSingle:show()
+		AAdd(self:aPropEx,oSingle)	
+	endif
+	IF nType==TEXTBX 
+		oSingle:=SingleLineEdit{self,count,Point{EditX,myOrg:y+8},Dimension{185,20},EDITAUTOHSCROLL}
+		oSingle:ToolTipText:=self:oLan:WGet("text which should be contained in this field") 
+		oSingle:HyperLabel := HyperLabel{String2Symbol("V"+AllTrim(Str(ID,-1))),Name,null_string,null_string}
+		AAdd(self:aPropEx,oSingle)
+		oSingle:show()
+		oFix:=FixedText{self,count,Point{FixX,myOrg:y+8}, Dimension{135,20},Name+":"}
+		oFix:show()
+	ENDIF
 
-RETURN NIL
+
+	RETURN nil
 	
-		
+	
 METHOD Abon_Con(dummy:=nil as logic) as array CLASS SelPersOpen
 	LOCAL oAcc as SQLSelect
 	LOCAL lSuccess AS LOGIC
