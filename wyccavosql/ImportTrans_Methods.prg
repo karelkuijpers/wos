@@ -569,7 +569,7 @@ DO WHILE Len(AFields)>1
 	aFields:=Split(cBuffer,cDelim)
 ENDDO
 ptrHandle:Close()
-oParent:Pointer := Pointer{POINTERARROW}
+self:oParent:Pointer := Pointer{POINTERARROW} 
 if lError
 	return false
 endif
@@ -777,7 +777,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	local oCurr as CURRENCY 
 	local RPP_date as date
 	LOCAL oExch as GetExchRate
-	Local oInST as Insite, cAccCng,cDescription as string
+	Local oInST as Insite, cAccCng,cDescription,cMsg as string
 	Local cExId as string
 	local osel as SQLSelect 
 	local cStatement as string
@@ -803,15 +803,16 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		(ErrorBox{,self:oLan:WGet("Could not read file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF 
+  	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
 
 	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
 	if datelstafl<Today()  
 		/*	oInST:=Insite{}
 		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
 		oInST:Close()   */
-
+		self:oParent:STATUSMESSAGE(self:oLan:WGet('Processing account changes report')+'...')
 		oAfl:=UpdateHouseHoldID{}
-		if !oAfl:Processaffiliated_person_account_list(cAccCng)
+		if ! oAfl:Processaffiliated_person_account_list(cAccCng)
 			IF !oAfl:Importaffiliated_person_account_list()
 				IF datelstafl<(Today()-31) 
 					nAnswer:= (TextBox{,self:oLan:WGet("Import RPP"),;
@@ -823,7 +824,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				ENDIF
 			ENDIF
 		ENDIF
-	ENDIF
+	ENDIF 
+  	self:oParent:Pointer := Pointer{POINTERARROW} 
+
 	IF Empty(sCURR)
 		(ErrorBox{,self:oLan:WGet('First specify the currency in System parameters')}):show()
 		FClose(ptrHandle)
@@ -873,6 +876,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	if cPmisCurrency=="USD"
 		lUSD:=true
 	endif
+  	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
+	cMsg:=self:oLan:WGet('Importing RPP transactions')+'...'
+	self:oParent:STATUSMESSAGE(cMsg)
 	DO WHILE recordfound
 		childfound:=PMISDocument:GetFirstChild()
 		docid:=""
@@ -952,6 +958,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				endif
 			endif
 			nCnt++
+			self:oParent:STATUSMESSAGE(cMsg+Str(nCnt,-1))
 			if !Empty(mxrate)
 				amount:=Round(mxrate*USDAmount,DecAantal)
 			endif
@@ -1046,6 +1053,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			IF oStmnt:NumSuccessfulRows<1
 				LogEvent(,"error:"+cStatement,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
+				oParent:Pointer := Pointer{POINTERARROW}
 				return false
 			endif
 			self:lv_imported++
@@ -1053,6 +1061,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		recordfound:=PMISDocument:GetNextSibbling()
 	ENDDO
 	FClose(ptrHandle)
+	oParent:Pointer := Pointer{POINTERARROW}
+
 	RETURN true
 METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch
 SetPath(CurPath)
