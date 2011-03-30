@@ -77,7 +77,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 	local oROE as SQLSelect
 	
 	// check if ROE allready in currency rates:
-	if Empty(CodeROE)
+	if Empty(CodeROE) .or. CodeROE==self:cBaseCur
 		return 1
 	endif
 	oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
