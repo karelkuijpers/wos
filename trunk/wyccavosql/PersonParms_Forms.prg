@@ -359,13 +359,13 @@ METHOD OKButton( ) CLASS EditPersProp
 		for i:=1 to Len(self:CurDropVal)
 			CurValue:=CurDropVal[i]
 			if AScan(aNewDropValues,CurValue)=0 
-				oProp:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+AddSlashes(CurValue)+"</v"+Str(self:mId,-1)+">')>0",oConn}
+				oProp:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
 				if oProp:RecCount>0
 					cTotal:=oProp:total
 				else
 					cTotal:="0"
 				endif
-				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(propextr,'<V"+Str(self:mId,-1)+">"+AddSlashes(CurValue)+"</v"+Str(self:mId,-1)+">')>0"
+				cRemoveCond+=iif(Empty(cRemoveCond),""," or ")+"instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0"
 				cRemoved+=CurValue+Space(1)+self:oLan:WGet("used in")+Space(1)+cTotal+Space(1)+self:oLan:WGet("persons")+CRLF
 			endif 
 		next
@@ -376,7 +376,7 @@ METHOD OKButton( ) CLASS EditPersProp
 			endif
 		endif
 	endif
-	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(mType,-1)+",`values`='"+AddSlashes(AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'"))))+"'"+;
+	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
 	iif(self:lNew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
