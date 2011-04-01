@@ -3968,10 +3968,12 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL DueDateFirst, DueDateLast AS DATE
 	LOCAL Success AS LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage as int
-	LOCAL oLan AS Language
+	//LOCAL oLan AS Language
 	LOCAL cSession AS STRING
 
-	oDue:=SQLSelect{"select s.invoiceid,d.amountinvoice,d.invoicedate,p.lastname "+;
+	cSession:=Str(Year(Today()),4,0)+StrZero((Today()-SToD(Str(Year(Today()),4,0)+"0101"))+1,3)
+
+	oDue:=SQLSelect{"select s.invoiceid,d.amountinvoice,d.invoicedate,p.persid,p.lastname "+;
 		" from person p, dueamount d,subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' "+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
@@ -3998,8 +4000,9 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	nLine:=2
 	DueDateFirst:=oDue:invoicedate
 	DueDateLast:=oDue:invoicedate
-	DO WHILE !oDue:EoF
-		IF oPers:Seek(oDue:persid)
+	SetDecimalSep(Asc(DecSeparator))
+	do WHILE !oDue:EoF
+//		IF oPers:Seek(oDue:persid)
 			nSeq++
 			FWriteLine(ptrHandle,"NY210230"+StrZero(nSeq,7,0)+StrZero(Day(oDue:invoicedate),2,0)+StrZero(Month(oDue:invoicedate),2,0)+SubStr(StrZero(Year(oDue:invoicedate),4,0),3,2)+;
 				Space(11)+StrZero(oDue:AmountInvoice*100,17,0)+Space(12)+PadR(AllTrim(oDue:INVOICEID),19,"0"))
@@ -4013,9 +4016,9 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 				DueDateLast:=oDue:invoicedate
 			ENDIF
 			oReport:PrintLine(@nRow,@nPage,;
-				Pad(oPers:GetFullName(),40)+" "+Str(oDue:AmountInvoice,12,2)+' '+Pad(oDue:INVOICEID,13),headinglines)
+				Pad(GetFullName(Str(oDue:persid,-1)),40)+" "+Str(oDue:AmountInvoice,12,2)+' '+Pad(oDue:INVOICEID,13),headinglines)
 
-		ENDIF
+		//ENDIF
 		oDue:skip()		
 	ENDDO
 	// Write closing lines:
@@ -4032,7 +4035,8 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	oReport:PrintLine(@nRow,@nPage,Space(41)+Str(Round(fSum,2),12,2),headinglines)
 	oReport:prstart()
 	oReport:prstop()
-	(InfoBox{SELF,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"}):Show()
+	SetDecimal(Asc('.'))
+	(InfoBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"}):Show()
 	LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
 	RETURN
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
