@@ -181,28 +181,25 @@ STATIC DEFINE EDITMAILCD_MABBRVTN := 102
 STATIC DEFINE EDITMAILCD_MOMS := 101 
 STATIC DEFINE EDITMAILCD_OKBUTTON := 103 
 STATIC DEFINE EDITMAILCD_SC_OMS := 100 
-class EditPersProp inherit DataWindowExtra 
+CLASS EditPersProp INHERIT DataWindowExtra 
 
 	PROTECT oDBMPROPNAME as DataColumn
-	protect oDCFixedText1 as FIXEDTEXT
-	protect oDCmPropName as SINGLELINEEDIT
-	protect oDCFixedText2 as FIXEDTEXT
-	protect oDCmType as COMBOBOX
-	protect oDCFixedText3 as FIXEDTEXT
-	protect oDCmValues as MULTILINEEDIT
-	protect oDCFixedText4 as FIXEDTEXT
-	protect oCCCancelButton as PUSHBUTTON
-	protect oCCOKButton as PUSHBUTTON
-	instance mPropName 
-	instance mType 
-	instance mValues 
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmPropName AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCmType AS COMBOBOX
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCmValues AS MULTILINEEDIT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT oCaller AS OBJECT
   PROTECT mID as int 
   export CurDropVal as array
 
-RESOURCE EditPersProp DIALOGEX  12, 11, 333, 91
+RESOURCE EditPersProp DIALOGEX  13, 12, 333, 170
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -211,7 +208,7 @@ BEGIN
 	CONTROL	"Property type:", EDITPERSPROP_FIXEDTEXT2, "Static", WS_CHILD, 16, 28, 53, 13
 	CONTROL	"", EDITPERSPROP_MTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 83, 25, 102, 61
 	CONTROL	"Drop Down Values:", EDITPERSPROP_FIXEDTEXT3, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 45, 63, 12
-	CONTROL	"", EDITPERSPROP_MVALUES, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 83, 44, 241, 37, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITPERSPROP_MVALUES, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|ES_RIGHT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 83, 44, 241, 111, WS_EX_CLIENTEDGE
 	CONTROL	"(seperated by comma)", EDITPERSPROP_FIXEDTEXT4, "Static", WS_CHILD|NOT WS_VISIBLE, 15, 54, 53, 21
 	CONTROL	"Cancel", EDITPERSPROP_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 27, 54, 12
 	CONTROL	"OK", EDITPERSPROP_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 6, 54, 13
@@ -226,47 +223,47 @@ METHOD Close(oEvent) CLASS EditPersProp
 	SELF:destroy()
 	RETURN NIL
 
-method Init(oWindow,iCtlID,oServer,uExtra) class EditPersProp 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"EditPersProp",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"EditPersProp",_GetInst()},iCtlID)
 
-oDCFixedText1 := FixedText{self,ResourceID{EDITPERSPROP_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1 := FixedText{SELF,ResourceID{EDITPERSPROP_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Property name:",NULL_STRING,NULL_STRING}
 
-oDCmPropName := SingleLineEdit{self,ResourceID{EDITPERSPROP_MPROPNAME,_GetInst()}}
+oDCmPropName := SingleLineEdit{SELF,ResourceID{EDITPERSPROP_MPROPNAME,_GetInst()}}
 oDCmPropName:HyperLabel := HyperLabel{#mPropName,NULL_STRING,"Name to be shown op Person Window",NULL_STRING}
 oDCmPropName:UseHLforToolTip := True
 
-oDCFixedText2 := FixedText{self,ResourceID{EDITPERSPROP_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2 := FixedText{SELF,ResourceID{EDITPERSPROP_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Property type:",NULL_STRING,NULL_STRING}
 
-oDCmType := combobox{self,ResourceID{EDITPERSPROP_MTYPE,_GetInst()}}
+oDCmType := combobox{SELF,ResourceID{EDITPERSPROP_MTYPE,_GetInst()}}
 oDCmType:HyperLabel := HyperLabel{#mType,NULL_STRING,"Field type",NULL_STRING}
 oDCmType:FillUsing(prop_types)
 
-oDCFixedText3 := FixedText{self,ResourceID{EDITPERSPROP_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3 := FixedText{SELF,ResourceID{EDITPERSPROP_FIXEDTEXT3,_GetInst()}}
 oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Drop Down Values:",NULL_STRING,NULL_STRING}
 
-oDCmValues := MultiLineEdit{self,ResourceID{EDITPERSPROP_MVALUES,_GetInst()}}
+oDCmValues := MultiLineEdit{SELF,ResourceID{EDITPERSPROP_MVALUES,_GetInst()}}
 oDCmValues:HyperLabel := HyperLabel{#mValues,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCFixedText4 := FixedText{self,ResourceID{EDITPERSPROP_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4 := FixedText{SELF,ResourceID{EDITPERSPROP_FIXEDTEXT4,_GetInst()}}
 oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"(seperated by comma)",NULL_STRING,NULL_STRING}
 
-oCCCancelButton := PushButton{self,ResourceID{EDITPERSPROP_CANCELBUTTON,_GetInst()}}
+oCCCancelButton := PushButton{SELF,ResourceID{EDITPERSPROP_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 
-oCCOKButton := PushButton{self,ResourceID{EDITPERSPROP_OKBUTTON,_GetInst()}}
+oCCOKButton := PushButton{SELF,ResourceID{EDITPERSPROP_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
-self:Caption := "Edit Self Defined Property"
-self:HyperLabel := HyperLabel{#EditPersProp,"Edit Self Defined Property",NULL_STRING,NULL_STRING}
+SELF:Caption := "Edit Self Defined Property"
+SELF:HyperLabel := HyperLabel{#EditPersProp,"Edit Self Defined Property",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
-	self:Use(oServer)
-endif
+	SELF:Use(oServer)
+ENDIF
 self:Browser := DataBrowser{self}
 
 oDBMPROPNAME := DataColumn{11}
@@ -276,7 +273,7 @@ oDBMPROPNAME:Caption := ""
 self:Browser:AddColumn(oDBMPROPNAME)
 
 
-self:ViewAs(#FormView)
+SELF:ViewAs(#FormView)
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -301,26 +298,26 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditPersProp
     ENDIF
 	RETURN NIL
 
-access mPropName() class EditPersProp
-return self:FieldGet(#mPropName)
+ACCESS mPropName() CLASS EditPersProp
+RETURN SELF:FieldGet(#mPropName)
 
-assign mPropName(uValue) class EditPersProp
-self:FieldPut(#mPropName, uValue)
-return mPropName := uValue
+ASSIGN mPropName(uValue) CLASS EditPersProp
+SELF:FieldPut(#mPropName, uValue)
+RETURN uValue
 
-access mType() class EditPersProp
-return self:FieldGet(#mType)
+ACCESS mType() CLASS EditPersProp
+RETURN SELF:FieldGet(#mType)
 
-assign mType(uValue) class EditPersProp
-self:FieldPut(#mType, uValue)
-return mType := uValue
+ASSIGN mType(uValue) CLASS EditPersProp
+SELF:FieldPut(#mType, uValue)
+RETURN uValue
 
-access mValues() class EditPersProp
-return self:FieldGet(#mValues)
+ACCESS mValues() CLASS EditPersProp
+RETURN SELF:FieldGet(#mValues)
 
-assign mValues(uValue) class EditPersProp
-self:FieldPut(#mValues, uValue)
-return mValues := uValue
+ASSIGN mValues(uValue) CLASS EditPersProp
+SELF:FieldPut(#mValues, uValue)
+RETURN uValue
 
 METHOD OKButton( ) CLASS EditPersProp
 	LOCAL oProp as SQLSelect 
@@ -349,7 +346,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	* check if Property allready exists:
 	IF self:lnew .or. AllTrim(oProp:FIELDGET(#NAME)) # AllTrim(self:MPROPNAME)
 		if SQLSelect{"select name from person_properties where name='"+AddSlashes(AllTrim(self:MPROPNAME))+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0
-			(Errorbox{,'Property Name '+ alltrim(mPropName) +' already exists' }):Show()
+			(ErrorBox{,'Property Name '+ alltrim(self:mPropName) +' already exists' }):Show()
 			RETURN nil
 		ENDIF
 	ENDIF 
@@ -376,7 +373,7 @@ METHOD OKButton( ) CLASS EditPersProp
 			endif
 		endif
 	endif
-	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
+	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(self:mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
 	iif(self:lNew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
@@ -384,8 +381,8 @@ METHOD OKButton( ) CLASS EditPersProp
 		FillPersProp()
 		if !Empty(cRemoveCond)
 			// remove propertu from persons:
-			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+Str(mId,-1)+">')-1)"+;
-			",substring(propextr,instr(propextr,'</V"+Str(mId,-1)+">')+"+Str(Len(Str(mId,-1))+4,-1)+"))"+;
+			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+Str(self:mId,-1)+">')-1)"+;
+			",substring(propextr,instr(propextr,'</V"+Str(self:mId,-1)+">')+"+Str(Len(Str(self:mId,-1))+4,-1)+"))"+;
 			" where ("+cRemoveCond+")",oConn}
 			oStmnt:Execute() 
 			TextBox{,self:oLan:WGet("Removal property values"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:WGet("persons updated")}:Show()
