@@ -1340,7 +1340,6 @@ METHOD OkButton CLASS EditMember
 	LOCAL nMWPos AS INT
 	LOCAL cFilter, cStatement as STRING
 	LOCAL lResetBFM:=false as LOGIC
-	LOCAL oTrans AS Transaction
 	LOCAL oLVI	as ListViewItem, x as int, cAss, mCLNPrv, mRekPrv,mCOPrv as STRING
 	local oStmnt as SQLStatement
 	local cStatement as string
