@@ -3964,7 +3964,8 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL oDue as SQLSelect, oPers as SQLSelect, oSub as SQLSelect
 	LOCAL ptrHandle
 	LOCAL cFilename AS STRING
-	LOCAL nSeq, nLine AS INT, fSum:=0 AS FLOAT
+	Local ToFileFS as Filespec
+	LOCAL nSeq, nLine as int, fSum:=0 as FLOAT
 	LOCAL DueDateFirst, DueDateLast AS DATE
 	LOCAL Success AS LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage as int
@@ -3983,9 +3984,14 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 		RETURN false
 	ENDIF
 	* Datafile aanmaken:
-	cFileName := CurPath + "\a-girowycliffe"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.txt'
-	ptrHandle := MakeFile(SELF,cFilename,"Creating KID-file")
-	IF ptrHandle = F_ERROR .or. ptrHandle==NIL
+	cFilename := "a-girowycliffe"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4) 
+	ToFileFS:=AskFileName(self,cFilename,oLan:WGet("Creating KID-file"),".txt","text file")
+	if Empty(ToFileFS)
+		return false
+	endif
+	cFilename:=ToFileFS:FullPath
+	ptrHandle := MakeFile(self,@cFilename,oLan:WGet("Creating KID-file"))
+	IF ptrHandle = F_ERROR .or. ptrHandle==nil
 		RETURN
 	ENDIF
 	oReport := PrintDialog{self,"Producing of KID file",,70}
