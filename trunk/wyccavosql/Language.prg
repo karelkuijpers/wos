@@ -146,10 +146,22 @@ ENDIF
 return self:MarkUpLanItem(cText,cPicture,cPad,nLength)
 
 CLASS language_LENGTH INHERIT FIELDSPEC
-METHOD Init() CLASS language_LENGTH
-super:Init(HyperLabel{"LENGTH","Length","","language_LENGTH"},"N",11,0)
 
-RETURN SELF
+
+METHOD Init() CLASS language_LENGTH
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#LENGTH, "Length", "", "language_LENGTH" },  "N", 2, 0 )
+    cPict       := "99"
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS language_LOCATION INHERIT FIELDSPEC
 METHOD Init() CLASS language_LOCATION
 super:Init(HyperLabel{"LOCATION","Location","","language_LOCATION"},"C",1,0)
