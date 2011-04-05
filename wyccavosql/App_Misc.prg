@@ -740,7 +740,7 @@ if oSel:RecCount>0
 		oSel:Skip()
 	enddo
 endif
-return
+return GlBalYears
 FUNCTION FillBankAccount( cFilter:="" as string) as array
  
 return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
@@ -1173,11 +1173,11 @@ function InitGlobals()
 		endif
 	ENDIF 
 	// determine available balance years: 
-	FillBalYears() 
+	GlBalYears:=FillBalYears() 
 	// determine local date format for retrieval with mysql:
 	LocalDateFormat:=StrTran(StrTran(StrTran(DToC(SToD("19991230")),"1999","%Y"),"30","%d"),"12","%m")
 
-	aBalType:={{"AK","Assets"},{"BA","Income"},{"KO","Expense"},{"PA","Liabilities"}}
+	aBalType:={{ASSET,"Assets"},{INCOME,"Income"},{EXPENSE,"Expense"},{LIABILITY,"Liabilities"}}
 	USRTypes:={{"System Administrator","A"},{"Financial Administrator","F"},{"Person Administrator","P"}}
 	if Admin="WA"
 		AAdd(USRTypes,{"Declarer expenses","D"})
