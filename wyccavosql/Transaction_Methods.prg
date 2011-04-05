@@ -653,77 +653,83 @@ IF !Empty(ThisRec) .and.!(oHm:Eof.and.oHm:BOF)
 ENDIF
 RETURN TRUE
 METHOD FilePrint() CLASS General_Journal
-LOCAL oHm:=self:Server as TempTrans
-LOCAL nRow, i, nCurRec,nMem, nWidth:=136 as int, cDesc as STRING
-LOCAL nPage as int
-LOCAL aHeader as ARRAY
-LOCAL oReport as PrintDialog 
-local multicurr as logic
-if AScan( oHm:aMirror,{|x|!Empty(x[11]).and.x[11] # sCURR})>0
-	multicurr:=true
-	nWidth+=30
-endif
-oReport := PrintDialog{self,"Financial Records",,nWidth,DMORIENT_LANDSCAPE}
-oReport:Show()
-IF .not.oReport:lPrintOk
-	RETURN FALSE
-ENDIF
-aHeader:= {oLan:RGet("Financial Record",,"!"),' ',' '}
-nCurRec:=oHm:RecNo
-oHm:SuspendNotification()
-oHm:Gotop()
-nRow:=0
-nPage:=0
-oReport:PrintLine(@nRow,@nPage,;
-Pad(oLan:RGet("transaction number",,"!")+":",20)+Str(self:mTRANSAKTNR,-1)+if(lInqUpd,"","(prior)"),aHeader)
-oReport:PrintLine(@nRow,@nPage," ",aHeader)  //Regel overslaan
-oReport:PrintLine(@nRow,@nPage,;
-Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),aHeader)
-oReport:PrintLine(@nRow,@nPage," ")  //Regel overslaan
-oReport:PrintLine(@nRow,@nPage,;
-Pad(oLan:RGet("document id",,"!")+":",20)+mBst,aHeader)
-oReport:PrintLine(@nRow,@nPage," ")  //Regel overslaan
-IF !Empty(mCLNGiver)
-// 	oPers:Seek(AllTrim(mCLNGiver))
-    oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Person",,"!")+":",aHeader)
-//    	oReport:PrintLine(@nRow,@nPage,oPers:GetFullNAW(),aHeader)
-   	oReport:PrintLine(@nRow,@nPage,self:cGiverName,aHeader)
-	oReport:PrintLine(@nRow,@nPage," ",aHeader)  //Regel overslaan
-ENDIF
+	LOCAL oHm:=self:Server as TempTrans
+	LOCAL nRow, i, nCurRec,nMem, nWidth:=136 as int, cDesc as STRING
+	LOCAL nPage as int
+	LOCAL aHeader:={} as ARRAY
+	LOCAL oReport as PrintDialog 
+	local multicurr as logic
+	local cTab:=CHR(9) as string
+	local lXls:=true as logic
+	local cColumns as string 
+	if AScan( oHm:aMirror,{|x|!Empty(x[11]).and.x[11] # sCURR})>0
+		multicurr:=true
+		nWidth+=30
+	endif
+	oReport := PrintDialog{self,"Financial Records",,nWidth,DMORIENT_LANDSCAPE,"xls"}
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	IF Lower(oReport:Extension) #"xls"
+		cTab:=Space(1)
+		lXls:=false
+		aHeader :={self:oLan:RGet("Financial Records",,"!")}
+	ENDIF 
+	cColumns:=self:oLan:RGet("Account",52,"@!")+cTab+self:oLan:RGet("Reference",12,"@!")+cTab+self:oLan:RGet("Description",40,"@!")+cTab+self:oLan:RGet("Debit",12,"@!","R");
+		+cTab+self:oLan:RGet("Credit",12,"@!","R")+iif(multicurr,cTab+self:oLan:RGet("Cur",3,"@!")+;
+		cTab+PadL(self:oLan:RGet("Debit",,"@!")+"-"+sCURR,12);
+		+cTab+PadL(self:oLan:RGet("Credit",,"@!")+"-"+sCURR,12),"") +cTab+self:oLan:RGet("Ass",3,"@!")
+	if lXls
+		AAdd(aHeader,cColumns)
+	endif
+	nCurRec:=oHm:RecNo
+	oHm:SuspendNotification()
+	oHm:Gotop()
+	nRow:=0
+	nPage:=0
+	oReport:PrintLine(@nRow,@nPage,;
+		Pad(oLan:RGet("transaction number",,"!")+":",20)+Str(self:mTRANSAKTNR,-1)+if(lInqUpd,"","(prior)"),aHeader)
+	oReport:PrintLine(@nRow,@nPage,;
+		Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),aHeader)
+	oReport:PrintLine(@nRow,@nPage,;
+		Pad(oLan:RGet("document id",,"!")+":",20)+mBst,aHeader)
+	IF !Empty(mCLNGiver)
+		oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Person",,"!")+":",aHeader)
+		oReport:PrintLine(@nRow,@nPage,self:cGiverName,aHeader)
+	ENDIF
+	oReport:PrintLine(@nRow,@nPage," ")  //empty line
 
-oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Transaction lines",nWidth,"@!","C"),aHeader)
-oReport:PrintLine(@nRow,@nPage,;
-self:oLan:RGet("Account",52,"@!")+' '+self:oLan:RGet("Reference",12,"@!")+' '+self:oLan:RGet("Description",40,"@!")+' '+self:oLan:RGet("Debit",12,"@!","R");
-+" "+self:oLan:RGet("Credit",12,"@!","R")+iif(multicurr,' '+self:oLan:RGet("Cur",3,"@!")+;
-' '+PadL(self:oLan:RGet("Debit",,"@!")+"-"+sCurr,12);
-+" "+PadL(self:oLan:RGet("Credit",,"@!")+"-"+sCurr,12),"") +' '+self:oLan:RGet("Ass",3,"@!"),aHeader)
-oReport:PrintLine(@nRow,@nPage,Replicate('-',nWidth),aHeader)
+	oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Transaction lines",nWidth,"@!","C"),aHeader)
+	if !lXls
+		AAdd(aHeader,cColumns) 
+		oReport:PrintLine(@nRow,@nPage,cColumns,aHeader)
+		oReport:PrintLine(@nRow,@nPage,Replicate('-',nWidth),aHeader)
+	endif
 
-DO WHILE !oHm:EOF
-/*	oReport:PrintLine(@nRow,@nPage,;
-    SubStr(oHm:accnumber,1,11)+' '+PadR(oHm:AccDesc,40)+' '+;
-    PadR(oHm:DESCRIPTN,40)+' '+Str(oHm:deb,12,decaantal)+' '+Str(oHm:cre,12,decaantal)+;
-    ' '+PadC(oHm:gc,3),aHeader) */
-
-    oReport:PrintLine(@nRow,@nPage,;
-    SubStr(oHm:ACCNUMBER,1,11)+' '+PadR(oHm:AccDesc,40)+' '+; 
-    PadR( oHm:REFERENCE,12)+' '+;
-	+MemoLine(oHm:DESCRIPTN,40,1)+' '+;
-	iif(multicurr,Str(oHm:DEBFORGN,12,DecAantal)+' '+Str(oHm:CREFORGN,12,DecAantal)+' '+oHm:CURRENCY+' ',"")+;	
-	Str(oHm:deb,12,decaantal)+' '+Str(oHm:cre,12,decaantal)+;
-    ' '+PadC(oHm:gc,3),aHeader)
-	nMem:=2
-	DO WHILE !Empty(cDesc:=MemoLine(oHm:DESCRIPTN,40,nMem))
-		oReport:PrintLine(@nRow,@nPage,Space(53)+cDesc,aHeader)
-		nMem++
+	DO WHILE !oHm:EOF
+		oReport:PrintLine(@nRow,@nPage,;
+			iif(lXls,AllTrim(oHm:ACCNUMBER),SubStr(oHm:ACCNUMBER,1,11))+Space(1)+iif(lXls,AllTrim(oHm:AccDesc),PadR(oHm:AccDesc,40))+cTab+; 
+		PadR( oHm:REFERENCE,12)+cTab+;
+			+iif(lXls,oHm:DESCRIPTN,MemoLine(oHm:DESCRIPTN,40,1))+cTab+;
+			iif(multicurr,Str(oHm:DEBFORGN,12,DecAantal)+cTab+Str(oHm:CREFORGN,12,DecAantal)+cTab+oHm:CURRENCY+cTab,"")+;	
+		Str(oHm:deb,12,decaantal)+cTab+Str(oHm:cre,12,decaantal)+;
+			' '+PadC(oHm:gc,3),aHeader)
+		nMem:=2
+		DO WHILE !Empty(cDesc:=MemoLine(oHm:DESCRIPTN,40,nMem))
+			oReport:PrintLine(@nRow,@nPage,Space(53)+cDesc,aHeader)
+			nMem++
+		ENDDO
+		oHm:Skip()
 	ENDDO
-	oHm:Skip()
-ENDDO
-oHm:RecNo:=nCurRec
-oHm:ResetNotification()
-oReport:prstart()
-oReport:prstop()
-RETURN NIL
+	oHm:RecNo:=nCurRec
+	oHm:ResetNotification()
+	oReport:prstart()
+	oReport:prstop()
+	RETURN nil
 METHOD FillBatch(pBst as string,pDat as date,cGiver as string,cOms as string, cExId as string, nPostStatus:=0 as int) CLASS General_Journal
 Local lFound as logic 
 Local aWord as array,lenAW as int
