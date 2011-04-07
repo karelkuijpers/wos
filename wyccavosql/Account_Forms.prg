@@ -174,15 +174,15 @@ METHOD FindButton( ) CLASS AccountBrowser
 	if !Empty(self:SearchUni) 
 		aKeyw:=GetTokens(AllTrim(self:SearchUni))
 		for i:=1 to Len(aKeyw)
-			cWhere+=" and (accnumber like '%"+aKeyw[i,1]+"%' or description like '%"+StrTran(aKeyw[i,1],"'","\'")+"%')"
+			cWhere+=" and (accnumber like '%"+AddSlashes(aKeyw[i,1])+"%' or description like '%"+AddSlashes(aKeyw[i,1])+"%')"
 		next
 	endif
 	if !Empty(self:searchOms)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" description like '"+StrTran(AllTrim(self:searchOms),"'","\'")+"%'"
+		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" description like '"+AddSlashes(AllTrim(self:searchOms))+"%'"
 		self:cOrder:="description"
 	endif
 	if !Empty(self:searchRek)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" accnumber like '"+AllTrim(self:searchRek)+"%'"
+		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" accnumber like '"+AddSlashes(AllTrim(self:searchRek))+"%'"
 	endif
    self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
    self:oAcc:Execute() 
