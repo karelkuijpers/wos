@@ -3937,7 +3937,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 			ENDIF
 			* detail records: 
 			// Get transactnbrs: 
-			oTrans2:=SQLSelect{"select distinct TransId from transaction t where "+self:cWhereSpec+" order by TransId",oConn}
+			oTrans2:=SQLSelect{"select distinct transid from transaction t where "+self:cWhereSpec+" order by TransId",oConn}
 			do while !oTrans2:EoF
 				cTrans+=","+Str(oTrans2:TransId,-1)
 				oTrans2:Skip()
