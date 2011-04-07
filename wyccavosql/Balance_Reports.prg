@@ -236,7 +236,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	**********************************************************************************************
 	*
 	LOCAL aant_gev,rektel, i,j,BalStrt  as int
-	LOCAL mType,m_cat:="",cHeading,m_accid,m_balId, cBalName as STRING
+	LOCAL mType,m_cat:="",cHeading,CurHeading,m_accid,m_balId, cBalName as STRING
 	LOCAL Totalize as LOGIC
 	LOCAL BalYear,BalMonth,CurBalId as int
 	LOCAL PrvYr_YtD as FLOAT
@@ -604,6 +604,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	* Printing explanation details per account:      
 	IF self:ind_explanation .and. (self:WhatDetails .or. self:WhoDetails)
 		self:STATUSMESSAGE(self:oLan:WGet("Printing details, moment please"))
+		iLine:=0  && force iPageskip 
 		if !self:WhoDetails
 			// details per balance item over all accounts:
 			// assemble accounts from all departments from d_acc: {balsoort+Pad(cBalName,25)+Str(oAcc:balitemid,11,0)+Str(oAcc:recno,11,0)+"P")
@@ -635,8 +636,9 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 				// details per department: 
 				self:mainheading:=self:prheading(self:cDetailed,'DEP',Dep_Ptr,,d_dep,d_parentdep,d_depname,;
 					r_balid,r_heading,r_footer,r_parentid)
-				iLine:=0  && force iPageskip 
-				store 0.00 to fPrvYr_bal,fPrvYr_YtD,fPrvPer_bal,fper_bal,fYr_Bud,fPer_Bud,fYTDbud
+// 				iLine:=0  && force iPageskip 
+				store 0.00 to fPrvYr_bal,fPrvYr_YtD,fPrvPer_bal,fper_bal,fYr_Bud,fPer_Bud,fYTDbud 
+				CurHeading:=''
 			endif
 			FOR rektel=1 to Len(accnts)
 				if self:WhatDetails
@@ -682,10 +684,12 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 						if self:WhatDetails    // only then usefull totalization
 							Totalize:=true
 						endif
-// 						iLine:=0  && force iPageskip 
-						self:oReport:PrintLine(@iLine,@iPage,cHeading,self:mainheading,12)
-						self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1)
-						self:oReport:PrintLine(@iLine,@iPage,iif(self:WhatDetails,r_heading[Bal_Ptr],d_depname[Dep_Ptr]),self:mainheading,0)
+						if !cHeading==CurHeading
+							self:oReport:PrintLine(@iLine,@iPage,cHeading,self:mainheading,12)
+// 							self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1) 
+							CurHeading:=cHeading
+						endif
+						self:oReport:PrintLine(@iLine,@iPage,iif(self:WhatDetails,r_heading[Bal_Ptr],d_depname[Dep_Ptr]),self:mainheading,11)
 					ENDIF
 					self:prAmounts(oAcc:category,oAcc:PrvYr_deb-oAcc:PrvYr_cre,PrvYr_YtD,;
 						oAcc:PrvPer_deb-oAcc:PrvPer_cre,oAcc:per_deb-oAcc:per_cre,;
@@ -706,7 +710,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 						r_balPrvPer[Bal_Ptr],r_balPer[Bal_Ptr],r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],1,r_footer[Bal_Ptr],r_heading,0.00,0.00,@iLine,@iPage)
 				endif
 				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1)
-				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
+// 				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
 			ENDIF
 			iLine:=0  && force bladskip		
 		NEXT
@@ -1133,7 +1137,8 @@ self:MONTHSTART:=Month(Today()-28)
 self:MONTHEND:=self:MONTHSTART
 self:oDCBalYears:Value:=Str(aBal[1],4,0)+StrZero(aBal[2],2,0)
 self:WhatDetails:=true
-self:WhoDetails:=true
+self:WhoDetails:=false 
+self:lCondense:=true
 self:mBalNumber:="0: Balance Structure"
 self:mDepartment:="0:"+sEntity+" "+sLand
 self:cCurBal:=mBalNumber
