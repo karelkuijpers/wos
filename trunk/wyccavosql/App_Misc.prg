@@ -425,19 +425,21 @@ CLASS DBServerExtra INHERIT DBSERVER
 	declare method CreateDbf
 method appendSDF(oMyFileSpec,cSource, aoDFFieldID, cForCondition, cbWhileCondition, nRecords) CLASS DBServerExtra
 local aStruct:=self:DBStruct as array , cBuffer as string , i,off,totlen as int
-local ptrHandle as ptr  	
-ptrHandle := FOpen2(oMyFileSpec:FullPath,FO_READ + FO_SHARED)
-IF ptrHandle = F_ERROR 
+local ptrHandle as MyFile
+  	
+// ptrHandle := FOpen2(oMyFileSpec:FullPath,FO_READ + FO_SHARED)
+ptrHandle:=MyFile{oMyFileSpec}
+IF FError() >0
 	(ErrorBox{,"Could not open file "+alltrim(oMyFileSpec:Fullpath)+":"+DOSErrString(FError())}):show()
 	RETURN FALSE
 ENDIF
-cBuffer:=FReadLine(ptrHandle,1024)
+cBuffer:=ptrHandle:FReadLine()
 IF Empty(cBuffer)
 	(ErrorBox{,"Could not read file: "+oMyFileSpec:FullPath+"; Error:"+DosErrString(FError())}):show()
 	RETURN FALSE
 ENDIF
 totlen:=asum(aStruct,,,DBS_LEN)
-do while !(Empty(cBuffer).and. FEof(ptrHandle))  
+do while !Empty(cBuffer)  
 	if Len(cBuffer)>0
 		off:=1
 		self:Append()
@@ -446,9 +448,9 @@ do while !(Empty(cBuffer).and. FEof(ptrHandle))
 			off+=aStruct[ i,DBS_LEN]
 		next
 	endif
-	cBuffer:=FReadLine(ptrHandle,1024)
+	cBuffer:=ptrHandle:FReadLine()
 enddo
-FClose(ptrHandle) 
+ptrHandle:Close() 
 return true
 METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBServerExtra
 * Creeren van een Dbf-file tijdens pre-init dbserver, indien dbf-file nog niet bestaat
@@ -1829,7 +1831,7 @@ METHOD FreadLine CLASS MyFile
 	IF nPos==0
 		* read next buffer:
 		cLine:=SubStr(cBuffer,nStart+1)
-	    cBuffer:=FReadStr(ptrHandle,4096)
+	   cBuffer:=FReadStr(ptrHandle,4096)
 		IF Empty(cBuffer)
 			RETURN null_string
 		ENDIF
@@ -1844,12 +1846,12 @@ METHOD FreadLine CLASS MyFile
 	nStart:=nPos+nIncr
 	RETURN cLine+SubStr(cBuffer,nSt,nLen)
 METHOD Init(oFr) CLASS MyFile
-	ptrHandle:=FOpen(oFr:FullPath)
+	ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
 	IF ptrHandle = F_ERROR
 		(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
 		RETURN self
 	ENDIF
-    cBuffer:=FReadStr(ptrHandle,4096)
+   cBuffer:=FReadStr(ptrHandle,4096)
 	IF ptrHandle = F_ERROR.or.(cBuffer==null_string .and.FEof(ptrHandle))
 		(ErrorBox{,"Could not read file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
 		RETURN self
