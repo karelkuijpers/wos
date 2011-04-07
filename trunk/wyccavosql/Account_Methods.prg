@@ -113,7 +113,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	ENDIF
 	myWhere:=cWhere
 	if !Empty(BrwsValue)
-		myWhere+=" and (accnumber like '"+BrwsValue+"%' or description like '"+BrwsValue+"%')" 
+		myWhere+=" and (accnumber like '"+AddSlashes(BrwsValue)+"%' or description like '"+AddSlashes(BrwsValue)+"%')" 
 	endif
 	if !lNoDepartmentRestriction .and.!Empty(cDepmntIncl)
 		cAccFilter+=	iif(Empty(cAccFilter),""," and ")+"(department IN ("+cDepmntIncl+")"+;
@@ -143,7 +143,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	endif
 	oAccCnt:cFields:=cFields
 	oAccCnt:cFrom:=cFrom
-	oAccCnt:cWhere:=cWhere+iif(Empty(BrwsValue),''," and (accnumber like '"+BrwsValue+"%' or description like '%"+BrwsValue+"%')") 
+	oAccCnt:cWhere:=cWhere+iif(Empty(BrwsValue),''," and (accnumber like '"+AddSlashes(BrwsValue)+"%' or description like '%"+AddSlashes(BrwsValue)+"%')") 
 	oAccCnt:cAccFilter:=cAccFilter
 	oAccCnt:cOrder:=cOrder
 	oAccBw := AccountBrowser{oWindow,,,{oCaller,oAccCnt}}
