@@ -2703,7 +2703,8 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 	// check if found banknumber is part of telebanking accounts within the system
 	// 	Default(@NbrDays,120)
 	IF (self:CurTelePtr:=AScan(m57_BankAcc,{|x| x[1]==AllTrim(BankNbr)}))=0
-		IF AScan(SELF:NonTeleAcc,AllTrim(banknbr))=0
+		IF AScan(self:NonTeleAcc,AllTrim(banknbr))=0
+			LogEvent(self,"Bank account "+banknbr+" not as telebanking account in system data")
 			(Errorbox{,"Bank account "+banknbr+" not as telebanking account in system data"}):Show()
 			AAdd(SELF:NonTeleAcc,AllTrim(banknbr))
 		ENDIF		
