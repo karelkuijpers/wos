@@ -1133,7 +1133,30 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		ENDDO
 	ENDIF
 	oTrans:Close()
-
+   
+   
+   // Use of the aMatrix arrays is as follows:
+	//     For period number p and class number c,
+   //         aMatrix1[p+1,c+1]   is the total amount given
+   //         aMatrix2[p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
+	//         aMatrix3[p+1,c+1]   is the number of givers
+   //         aMatrix4[p+1,c+1]   is the fraction aMatrix3[p+1,c+1]/aMatrix3[all periods,c+1] (expressed in percent)
+	//         aMatrix5[p+1,c+1]   is the average amount per giver
+	//         aMatrix6[p+1,c+1]   is the mean amount per giver
+	//         aMatrix7[p+1,c+2,m] is the number of givers in amount range m
+ 	//
+   // Special indices for aMatrix1 to aMatrix6:
+   //     aMatrixN[1,c+1]   is the class name for class c
+   //     aMatrixN[p+1,1]   is the date range for period p
+   //     aMatrixN[1,1]     is nil  
+	//
+   // Special indices for aMatrix7:
+   //     aMatrix7[1,c+2]   is the class name for class c
+   //     aMatrix7[p+1,1]   is the date range for period p
+   //     aMatrix7[p+1,2,m] is the upper limit for amount range m
+   //     aMatrix7[1,1]     is nil  
+   //     aMatrix7[1,2]     is nil  
+   
 	// Note: Len(aPeriod) is one greater that the number of periods
 	aMatrix1:=ArrayNew(Len(aPeriod))
 	aMatrix2:=ArrayNew(Len(aPeriod))
@@ -1485,7 +1508,7 @@ METHOD SqlDoAndTest(sqlStr) CLASS DonorFollowingReport
 	LOCAL sqlErrinfo as SQLErrorInfo
 	LOCAL errStr as STRING
 
-	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+//	SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 
 	sqlSt:=SQLStatement{sqlStr,oConn}
 	sqlSt:Execute()
