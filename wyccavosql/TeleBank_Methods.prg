@@ -321,7 +321,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		
 		if !Empty(self:oTelTr:status) .or. self:oTelTr:reccount<1
 			IF !Empty(self:oTelTr:status) 
-				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"logsql") 
+				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"logErrors") 
 			endif
 			SQLStatement{"rollback",oConn}:execute()
 			return false
