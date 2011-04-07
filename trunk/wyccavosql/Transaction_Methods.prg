@@ -4093,7 +4093,7 @@ METHOD ShowSelection() CLASS TransInquiry
 
 	IF !Empty(self:FromAccId) 
 		if self:ToAccNbr==self:FromAccNbr
-			cFilter:=iif(Empty(cFilter),'',cFilter+' and ')+'t.accid="'+self:FromAccId+'"'
+			cFilter:=iif(Empty(cFilter),'',cFilter+' and ')+'t.accid="'+AddSlashes(self:FromAccId)+'"'
 			self:m54_selectTxt:="Account="+self:FromAccNbr
 			IF Empty(self:StartDate).or.self:StartDate>=LstYearClosed
 				IF !self:NoUpdate .and. AScan(self:aTeleAcc, Val(self:FromAccId))=0 
@@ -4103,7 +4103,7 @@ METHOD ShowSelection() CLASS TransInquiry
 			ENDIF
 		else
 			// Add to filter 
-			cFilter+=iif(Empty(cFilter),'',' and ')+"a.accnumber>='"+self:FromAccNbr+"' and a.accnumber<='"+self:ToAccNbr+"'"
+			cFilter+=iif(Empty(cFilter),'',' and ')+"a.accnumber>='"+AddSlashes(self:FromAccNbr)+"' and a.accnumber<='"+AddSlashes(self:ToAccNbr)+"'"
 			self:m54_selectTxt:="Account>="+self:FromAccNbr+" - "+self:ToAccNbr
 		endif
 	ELSEif Empty(self:DepIdSelected)
