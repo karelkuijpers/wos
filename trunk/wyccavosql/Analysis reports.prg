@@ -1,3 +1,54 @@
+RESOURCE DonorFollowingReport DIALOGEX  33, 9, 391, 400
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Projects", DONORFOLLOWINGREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 40, 80, 11
+	CONTROL	"Members of", DONORFOLLOWINGREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 51, 211, 11
+	CONTROL	"Members not of", DONORFOLLOWINGREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 62, 215, 11
+	CONTROL	"", DONORFOLLOWINGREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 86, 79, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 86, 15, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 85, 78, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 85, 16, 12
+	CONTROL	"Sub period length:", DONORFOLLOWINGREPORT_FIXEDTEXT2, "Static", WS_CHILD, 13, 164, 72, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_SUBPERLEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 111, 163, 71, 72
+	CONTROL	"Divide givers into classes according to their property:", DONORFOLLOWINGREPORT_PROPERTIESBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 182, 231, 70
+	CONTROL	"Gender", DONORFOLLOWINGREPORT_GENDER, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 194, 80, 11
+	CONTROL	"Age", DONORFOLLOWINGREPORT_AGE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 208, 32, 11
+	CONTROL	"10 years", DONORFOLLOWINGREPORT_RANGE10, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 64, 208, 41, 11
+	CONTROL	"20 years", DONORFOLLOWINGREPORT_RANGE20, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 114, 208, 40, 11
+	CONTROL	"Type of Person", DONORFOLLOWINGREPORT_TYPE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 221, 80, 11
+	CONTROL	"Frequency of giving", DONORFOLLOWINGREPORT_FREQUENCY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 235, 80, 11
+	CONTROL	"Ranges", DONORFOLLOWINGREPORT_RANGES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 59, 200, 99, 20
+	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 257, 304, 104
+	CONTROL	"amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX1, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 267, 251, 11
+	CONTROL	"percentage of total amount given, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX2, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 279, 253, 11
+	CONTROL	"number of givers per class of givers", DONORFOLLOWINGREPORT_STATBOX3, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 291, 251, 11
+	CONTROL	"percentage of total number of givers, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX4, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 304, 255, 11
+	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 316, 153, 11
+	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 329, 155, 11
+	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 342, 191, 11
+	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 342, 17, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 342, 63, 12
+	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 30, 377, 82
+	CONTROL	"From:", DONORFOLLOWINGREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 75, 52, 10
+	CONTROL	"To:", DONORFOLLOWINGREPORT_FIXEDTEXT3, "Static", WS_CHILD, 136, 75, 56, 10
+	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTFROM, "Static", WS_CHILD, 13, 98, 111, 12
+	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTTILL, "Static", WS_CHILD, 136, 98, 111, 12
+	CONTROL	"Subset:", DONORFOLLOWINGREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 40, 53, 9
+	CONTROL	"OK", DONORFOLLOWINGREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 324, 380, 53, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
+	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
+	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
+	CONTROL	"11. april 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
+	CONTROL	"11. april 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
+	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
+	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
+	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
+	CONTROL	"Give insight in the effects of e.g. a mailing on the donor behaviour:", DONORFOLLOWINGREPORT_FIXEDTEXT9, "Static", WS_CHILD, 7, 4, 376, 12
+	CONTROL	"which part of the different groups of givers have given during a certain period of time and how much have they given", DONORFOLLOWINGREPORT_FIXEDTEXT10, "Static", WS_CHILD, 7, 17, 371, 12
+	CONTROL	"Show data per account", DONORFOLLOWINGREPORT_PERACCOUNTBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 369, 172, 11
+END
+
 CLASS DonorFollowingReport INHERIT DataWindowMine 
 
 	PROTECT oDCProjectsBox AS CHECKBOX
@@ -44,6 +95,7 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	PROTECT oDCGroupBox3 AS GROUPBOX
 	PROTECT oDCFixedText9 AS FIXEDTEXT
 	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oDCPerAccountBox AS CHECKBOX
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE ProjectsBox
@@ -67,6 +119,7 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	INSTANCE NumberRanges
 	INSTANCE SubSet
 	INSTANCE DiffBox
+	INSTANCE PerAccountBox
 	PROTECT MaxJaar,MinJaar, StartJaar as int
 	PROTECT aPropEx:={} as ARRAY
 	EXPORT cFromAccName as STRING
@@ -77,56 +130,6 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 
    
    	
-RESOURCE DonorFollowingReport DIALOGEX  33, 9, 391, 400
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Projects", DONORFOLLOWINGREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 40, 80, 11
-	CONTROL	"Members of", DONORFOLLOWINGREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 51, 211, 11
-	CONTROL	"Members not of", DONORFOLLOWINGREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 62, 215, 11
-	CONTROL	"", DONORFOLLOWINGREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 86, 79, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DONORFOLLOWINGREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 86, 15, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 85, 78, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DONORFOLLOWINGREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 85, 16, 12
-	CONTROL	"Sub period length:", DONORFOLLOWINGREPORT_FIXEDTEXT2, "Static", WS_CHILD, 13, 164, 72, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_SUBPERLEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 111, 163, 71, 72
-	CONTROL	"Divide givers into classes according to their property:", DONORFOLLOWINGREPORT_PROPERTIESBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 182, 231, 70
-	CONTROL	"Gender", DONORFOLLOWINGREPORT_GENDER, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 194, 80, 11
-	CONTROL	"Age", DONORFOLLOWINGREPORT_AGE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 208, 32, 11
-	CONTROL	"10 years", DONORFOLLOWINGREPORT_RANGE10, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 64, 208, 41, 11
-	CONTROL	"20 years", DONORFOLLOWINGREPORT_RANGE20, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 114, 208, 40, 11
-	CONTROL	"Type of Person", DONORFOLLOWINGREPORT_TYPE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 221, 80, 11
-	CONTROL	"Frequency of giving", DONORFOLLOWINGREPORT_FREQUENCY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 235, 80, 11
-	CONTROL	"Ranges", DONORFOLLOWINGREPORT_RANGES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 59, 200, 99, 20
-	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 257, 304, 104
-	CONTROL	"amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX1, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 267, 251, 11
-	CONTROL	"percentage of total amount given, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX2, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 279, 253, 11
-	CONTROL	"number of givers per class of givers", DONORFOLLOWINGREPORT_STATBOX3, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 291, 251, 11
-	CONTROL	"percentage of total number of givers, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX4, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 304, 255, 11
-	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 316, 153, 11
-	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 329, 155, 11
-	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 342, 191, 11
-	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 342, 17, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 342, 63, 12
-	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 30, 377, 82
-	CONTROL	"From:", DONORFOLLOWINGREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 75, 52, 10
-	CONTROL	"To:", DONORFOLLOWINGREPORT_FIXEDTEXT3, "Static", WS_CHILD, 136, 75, 56, 10
-	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTFROM, "Static", WS_CHILD, 13, 98, 111, 12
-	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTTILL, "Static", WS_CHILD, 136, 98, 111, 12
-	CONTROL	"Subset:", DONORFOLLOWINGREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 40, 53, 9
-	CONTROL	"OK", DONORFOLLOWINGREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 324, 380, 53, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
-	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
-	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
-	CONTROL	"4. februar 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
-	CONTROL	"4. februar 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
-	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
-	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
-	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
-	CONTROL	"Give insight in the effects of e.g. a mailing on the donor behaviour:", DONORFOLLOWINGREPORT_FIXEDTEXT9, "Static", WS_CHILD, 7, 4, 376, 12
-	CONTROL	"which part of the different groups of givers have given during a certain period of time and how much have they given", DONORFOLLOWINGREPORT_FIXEDTEXT10, "Static", WS_CHILD, 7, 17, 371, 12
-END
-
 METHOD AccFil() CLASS DonorFollowingReport
 	LOCAL i as int
 	LOCAL SubLen as int
@@ -420,6 +423,9 @@ oDCFixedText9:Font(aFonts[1], FALSE)
 oDCFixedText10 := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FIXEDTEXT10,_GetInst()}}
 oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"which part of the different groups of givers have given during a certain period of time and how much have they given",NULL_STRING,NULL_STRING}
 
+oDCPerAccountBox := CheckBox{SELF,ResourceID{DONORFOLLOWINGREPORT_PERACCOUNTBOX,_GetInst()}}
+oDCPerAccountBox:HyperLabel := HyperLabel{#PerAccountBox,"Show data per account",NULL_STRING,NULL_STRING}
+
 oDCRanges := RadioButtonGroup{SELF,ResourceID{DONORFOLLOWINGREPORT_RANGES,_GetInst()}}
 oDCRanges:FillUsing({ ;
 						{oCCRange10,"10"}, ;
@@ -439,51 +445,79 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PeriodCount,aRelevantClass,ixOff)	CLASS	DonorFollowingReport
+METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PrevPeriodCount,aRelevantClass,ixOff,AccDesc)	CLASS	DonorFollowingReport
 	// fill excel matrix with data
-	LOCAL i,j,m as int, line as STRING
-	LOCAL diff as FLOAT
-	// header record:
-	FWriteLine(ptrHandle,"<tr><td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>"+oLan:Rget(cHeading)+"</td></tr>")
-	FOR j:=1 to Len(aMatrix[1]) 
-		IF j<=ixOff .or. aRelevantClass[j-ixOff]
-			line:="<tr>"
-			FOR i:=1 to Len(aMatrix)
-				IF IsNumeric(aMatrix[i,j])
-					// determine difference with previous period:
-					IF i>PeriodCount .and. self:DiffBox
-						IF IsNumeric(aMatrix[i-PeriodCount,j]) .and. aMatrix[i-PeriodCount,j]>0
-							diff:=(aMatrix[i,j]*100)/aMatrix[i-PeriodCount,j]-100
-							line+="<td>"+Str(aMatrix[i,j],-1)+" ("+iif(diff<0,"","+")+Str(diff,-1,0)+"%)"+"</td>"
+	LOCAL accIx,periodNo,classNo,m as int, line as STRING
+	LOCAL diff as FLOAT      
+	LOCAL perMin:=2+PrevPeriodCount, perMax:=Len(aMatrix[1]) as int // Min and max middle index into aMatrix[*,*,*]       
+	
+	// Heading (containing type of statistics)
+	FWriteLine(ptrHandle,"<tr><td></td>")
+	FOR accIx:=1 to Len(aMatrix) 
+		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(perMax-PrevPeriodCount-1,-1)+"'>"+oLan:Rget(cHeading)+"</td>")
+	NEXT
+	FWriteLine(ptrHandle,"</tr>")
+
+	// Date range headings	
+	FWriteLine(ptrHandle,"<tr><td></td>")
+	FOR accIx:=1 to Len(aMatrix)
+		FOR periodNo:=perMin to perMax
+			FWriteLine(ptrHandle,"<td style='background-color:lightblue;'>"+aMatrix[1,periodNo,1]+"</td>")
+		NEXT
+	NEXT
+	FWriteLine(ptrHandle,"</tr>")
+
+	// Amount range headings
+	IF ixOff=2
+		// We are handling aMatrix7
+		FWriteLine(ptrHandle,"<tr><td></td>")
+		FOR accIx:=1 to Len(aMatrix)
+			FOR periodNo:=perMin to perMax
+				FWriteLine(ptrHandle,"<td><table style='border-collapse:collapse;' border='1'><tr>")
+				FOR m:=1 to Len(aMatrix[accIx,periodNo,2])
+					FWriteLine(ptrHandle,"<td style='background-color:#F0E68C;text-align:center;'>"+iif(m=NumberRanges,">"+Str(aMatrix[accIx,periodNo,2,m-1],-1),"<="+Str(aMatrix[accIx,periodNo,2,m],-1))+"</td>")
+				NEXT
+				FWriteLine(ptrHandle,"</tr></table></td>")
+			NEXT
+		NEXT
+	ENDIF
+
+	FOR classNo:=ixOff+1 to Len(aMatrix[1,1]) 
+		IF aRelevantClass[classNo-ixOff]
+			line:="<tr>"	 
+			// Class name
+			line+="<td style='background-color:#AFEEEE;'>"+aMatrix[1,1,classNo]+"</td>"
+
+			FOR accIx:=1 to Len(aMatrix)
+				FOR periodNo:=perMin to perMax
+					IF IsNumeric(aMatrix[accIx,periodNo,classNo])
+						// determine difference with previous period:
+						IF self:DiffBox
+							IF IsNumeric(aMatrix[accIx,periodNo-prevPeriodCount,classNo]) .and. aMatrix[accIx,periodNo-prevPeriodCount,classNo]>0
+								diff:=(aMatrix[accIx,periodNo,classNo]*100)/aMatrix[accIx,periodNo-PrevPeriodCount,classNo]-100
+								line+="<td>"+Str(aMatrix[accIx,periodNo,classNo],-1)+" ("+iif(diff<0,"","+")+Str(diff,-1,0)+"%)"+"</td>"
+							ELSE
+								line+="<td>"+iif(aMatrix[accIx,periodNo,classNo]>0,Str(aMatrix[accIx,periodNo,classNo],-1)+" (new)","")+"</td>"
+							ENDIF							
 						ELSE
-							line+="<td>"+iif(aMatrix[i,j]>0,Str(aMatrix[i,j],-1)+" (new)","")+"</td>"
-						ENDIF							
-					ELSE
-						line+="<td>"+Str(aMatrix[i,j],-1)+"</td>"
-					ENDIF
-				ELSEIF IsString(aMatrix[i,j])
-					line+="<td "+iif(i=1,"style='background-color:#AFEEEE;'",iif(j=1,"style='background-color:lightblue;'",""))+">"+aMatrix[i,j]+"</td>"
-				ELSEIF IsArray(aMatrix[i,j])
-					line+="<td><table style='border-collapse:collapse;' border='1'><tr>"
-					FOR m:=1 to Len(aMatrix[i,j])
-						IF j=2
-							line+="<td style='background-color:#F0E68C;text-align:center;'>"+iif(m=NumberRanges,">"+Str(aMatrix[i,j,m-1],-1),"<="+Str(aMatrix[i,j,m],-1))+"</td>"
-						ELSE	
-							line+="<td>"+Str(aMatrix[i,j,m],-1)+"</td>"
+							line+="<td>"+Str(aMatrix[accIx,periodNo,classNo],-1)+"</td>"
 						ENDIF
-					NEXT
-					line+="</tr></table></td>"
-				ELSE
-					line+="<td></td>"
-				ENDIF
-				IF i=1
-					i:=PeriodCount+1 // skip previous period
-				ENDIF
+					ELSEIF IsArray(aMatrix[accIx,periodNo,classNo])
+						// We are handling aMatrix7
+						line+="<td><table style='border-collapse:collapse;' border='1'><tr>"
+						FOR m:=1 to Len(aMatrix[accIx,periodNo,classNo])
+							line+="<td>"+Str(aMatrix[accIx,periodNo,classNo,m],-1)+"</td>"
+						NEXT
+						line+="</tr></table></td>"
+					ELSE
+						line+="<td></td>"
+					ENDIF
+				NEXT
 			NEXT
 			FWriteLine(ptrHandle,line+"</tr>")
 		ENDIF
 	NEXT
-	FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aMatrix)-PeriodCount,-1)+"'>&nbsp;<br></td></tr>")
+	FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aMatrix)*(perMax-PrevPeriodCount-1)+1,-1)+"'>&nbsp;<br></td></tr>")
 	RETURN nil
 method MouseButtonDown(oMouseEvent) class DonorFollowingReport
 	local nButtonID as int
@@ -546,6 +580,13 @@ METHOD OKButton( ) CLASS DonorFollowingReport
 	self:PrintReport()
 	self:Pointer := Pointer{POINTERARROW}
 	RETURN
+ACCESS PerAccountBox() CLASS DonorFollowingReport
+RETURN SELF:FieldGet(#PerAccountBox)
+
+ASSIGN PerAccountBox(uValue) CLASS DonorFollowingReport
+SELF:FieldPut(#PerAccountBox, uValue)
+RETURN uValue
+
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	//Put your PostInit additions here
 	LOCAL count as int
@@ -592,6 +633,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	self:oDCFixedTextRanges:show()
 	self:oDCNumberRanges:show()
 	DiffBox:=true
+	PerAccountBox:=false
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	//Put your PreInit additions here
@@ -611,7 +653,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL NextYear, NextMonth, PrevYear, PrevMonth as int
 	LOCAL StartDate,EndDate,PerStart,PerEnd,FrequencyEnd, PerStart1, PerStart2 as date
 	LOCAL PeriodCount:=0 as int // Number of subperiods in total date range
-	LOCAL PrevPeriodCount as int
+	LOCAL PrevPeriodCount:=0 as int
 	LOCAL cFileName as USUAL, oFileSpec as FileSpec
 	LOCAL ptrHandle
 	LOCAL aAcc:={} as ARRAY
@@ -641,8 +683,11 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL fMes:="Determining frequency of givers" as STRING
 	LOCAL Frequency_types:={{"First giver",1},{"Not given last 2 years",2},{"Not given last year",3},{"Given last year",4},{"Regular giver",5}}
 	LOCAL time1 as STRING
-	LOCAL lDiff:=self:DiffBox as LOGIC
-
+	LOCAL lDiff:=self:DiffBox as LOGIC         
+	LOCAL perAccount:=self:PerAccountBox as LOGIC
+	LOCAL accIx,maxAccIx,colCount as int   
+	LOCAL accdesc:={} as ARRAY // Account description
+	
 	time1:=Time()
 	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
 
@@ -695,6 +740,27 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			EndDate:=aPeriod[Len(aPeriod)]
 		ENDIF
 	ENDIF   
+
+
+	if perAccount
+		// Calculate number of columns
+		if StatBox7
+			colCount:=(Len(aAcc)+1)*(Len(aPeriod)-1)*NumberRanges+1
+		else
+			colCount:=(Len(aAcc)+1)*(Len(aPeriod)-1)+1
+		endif    
+		if colCount>16385
+			if (TextBox{self,"Warning","The spreadsheet will contain " + Str(colCount,-1) + " columns. Excel can only handle 16385 columns. (Older versions of Excel can only handle 256 columns.)",;
+				BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
+					return nil
+			endif
+		elseif colCount>256                              
+			if (TextBox{self,"Warning","The spreadsheet will contain " + Str(colCount,-1) + " columns. Older versions of Excel can only handle 256 columns.",;
+				BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
+					return nil
+			endif
+		endif
+	endif
 	
 	IF lDiff
 		// also for the previous period:
@@ -1116,7 +1182,9 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	// Create consolidated table
 
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
-		+ "SELECT f.transid,f.seqnr,f.subperiod,f.persid,sum(f.amount) amount,IF (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
+		+ "SELECT f.transid,f.seqnr,";
+		+ iif(perAccount,"f.accid","0");
+		+ " accid,f.subperiod,f.persid,sum(f.amount) amount,if (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
 		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
 		+ "GROUP by f.persid,f.subperiod)")
 		return nil
@@ -1136,54 +1204,74 @@ METHOD PrintReport() CLASS DonorFollowingReport
    
    
    // Use of the aMatrix arrays is as follows:
-	//     For period number p and class number c,
-   //         aMatrix1[p+1,c+1]   is the total amount given
-   //         aMatrix2[p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
-	//         aMatrix3[p+1,c+1]   is the number of givers
-   //         aMatrix4[p+1,c+1]   is the fraction aMatrix3[p+1,c+1]/aMatrix3[all periods,c+1] (expressed in percent)
-	//         aMatrix5[p+1,c+1]   is the average amount per giver
-	//         aMatrix6[p+1,c+1]   is the mean amount per giver
-	//         aMatrix7[p+1,c+2,m] is the number of givers in amount range m
- 	//
+	//     For account number a, period number p, and class number c,
+   //         aMatrix1[a+1,p+1,c+1]   is the total amount given
+   //         aMatrix2[a+1,p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
+	//         aMatrix3[a+1,p+1,c+1]   is the number of givers
+   //         aMatrix4[a+1,p+1,c+1]   is the fraction aMatrix3[p+1,c+1]/aMatrix3[all periods,c+1] (expressed in percent)
+	//         aMatrix5[a+1,p+1,c+1]   is the average amount per giver
+	//         aMatrix6[a+1,p+1,c+1]   is the mean amount per giver
+	//         aMatrix7[a+1,p+1,c+2,m] is the number of givers in amount range m
+   //         aMatrix7[a+1,p+1,2,m]   is the upper limit for amount range m
+	//     For all arrays, setting the first index to 1 gives the total for all accounts
+	//
    // Special indices for aMatrix1 to aMatrix6:
-   //     aMatrixN[1,c+1]   is the class name for class c
-   //     aMatrixN[p+1,1]   is the date range for period p
-   //     aMatrixN[1,1]     is nil  
+   //     aMatrixN[1,1,1]     is nil  
+   //     aMatrixN[1,1,c+1]   is the class name for class c
+   //     aMatrixN[1,p+1,1]   is the date range for period p
+   //     aMatrixN[a+1,1]     is the account id for account number a
+   //                         aMatrixN[a+1,1,*] does not exit
+   //     aMatrixN[a+1,p+1,1] is nil
 	//
    // Special indices for aMatrix7:
-   //     aMatrix7[1,c+2]   is the class name for class c
-   //     aMatrix7[p+1,1]   is the date range for period p
-   //     aMatrix7[p+1,2,m] is the upper limit for amount range m
-   //     aMatrix7[1,1]     is nil  
-   //     aMatrix7[1,2]     is nil  
+   //     aMatrix7[1,1,1]     is nil  
+   //     aMatrix7[1,1,2]     is nil  
+   //     aMatrix7[1,1,c+2]   is the class name for class c
+   //     aMatrix7[1,p+1,1]   is the date range for period p
+   //     aMatrix7[a+1,1]     is the account id for account number a
+   //                         aMatrix7[a+1,1,*] does not exit
+   //     aMatrix7[a+1,p+1,1] is nil
+   //     aMatrix7[a+1,p+1,2] is nil
    
-	// Note: Len(aPeriod) is one greater that the number of periods
-	aMatrix1:=ArrayNew(Len(aPeriod))
-	aMatrix2:=ArrayNew(Len(aPeriod))
-	aMatrix3:=ArrayNew(Len(aPeriod))
-	aMatrix4:=ArrayNew(Len(aPeriod))
-	aMatrix5:=ArrayNew(Len(aPeriod))
-	aMatrix6:=ArrayNew(Len(aPeriod))
-	aMatrix7:=ArrayNew(Len(aPeriod))    
+	maxAccIx:=iif(perAccount,1+Len(aAcc),1)
 
-	for periodNo:=1 to Len(aPeriod)
-		aMatrix1[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix2[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix3[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix4[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix5[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix6[periodNo]:=AReplicate(0,Len(aClassTuples)+1)
-		aMatrix7[periodNo]:=AReplicate(0,Len(aClassTuples)+2)
+	aMatrix1:=ArrayNew(maxAccIx)	
+	aMatrix2:=ArrayNew(maxAccIx)	
+	aMatrix3:=ArrayNew(maxAccIx)	
+	aMatrix4:=ArrayNew(maxAccIx)	
+	aMatrix5:=ArrayNew(maxAccIx)	
+	aMatrix6:=ArrayNew(maxAccIx)	
+	aMatrix7:=ArrayNew(maxAccIx)	
 
-		aMatrix1[periodNo,1]:=nil
-		aMatrix2[periodNo,1]:=nil
-		aMatrix3[periodNo,1]:=nil
-		aMatrix4[periodNo,1]:=nil
-		aMatrix5[periodNo,1]:=nil
-		aMatrix6[periodNo,1]:=nil
-		aMatrix7[periodNo,1]:=nil
-		aMatrix7[periodNo,2]:=iif(periodNo=1, nil, AReplicate(0,NumberRanges))
-	NEXT		
+	FOR accIx:=1 to maxAccIx
+		// Note: Len(aPeriod) is one greater that the number of periods
+		aMatrix1[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix2[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix3[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix4[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix5[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix6[accIx]:=ArrayNew(Len(aPeriod))
+		aMatrix7[accIx]:=ArrayNew(Len(aPeriod))    
+
+		for periodNo:=1 to Len(aPeriod)
+			aMatrix1[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix2[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix3[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix4[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix5[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix6[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+1)
+			aMatrix7[accIx,periodNo]:=AReplicate(0,Len(aClassTuples)+2)
+
+			aMatrix1[accIx,periodNo,1]:=nil
+			aMatrix2[accIx,periodNo,1]:=nil
+			aMatrix3[accIx,periodNo,1]:=nil
+			aMatrix4[accIx,periodNo,1]:=nil
+			aMatrix5[accIx,periodNo,1]:=nil
+			aMatrix6[accIx,periodNo,1]:=nil
+			aMatrix7[accIx,periodNo,1]:=nil
+			aMatrix7[accIx,periodNo,2]:=iif(periodNo=1, nil, AReplicate(0,NumberRanges))
+		NEXT
+	NEXT
 	
 	FOR classNo:=1 to Len(aClassTuples)
 		if aRelevantClass[classNo]
@@ -1203,28 +1291,35 @@ METHOD PrintReport() CLASS DonorFollowingReport
 					cClassName+=oLan:RGet(aClass[k,2])+"="+oLan:RGet(aClass[k,4])+" "
 				ENDIF
 			NEXT
-			aMatrix1[1,classNo+1]:=cClassName
-			aMatrix2[1,classNo+1]:=cClassName
-			aMatrix3[1,classNo+1]:=cClassName
-			aMatrix4[1,classNo+1]:=cClassName
-			aMatrix5[1,classNo+1]:=cClassName
-			aMatrix6[1,classNo+1]:=cClassName
-			aMatrix7[1,classNo+2]:=cClassName
+			aMatrix1[1,1,classNo+1]:=cClassName
+			aMatrix2[1,1,classNo+1]:=cClassName
+			aMatrix3[1,1,classNo+1]:=cClassName
+			aMatrix4[1,1,classNo+1]:=cClassName
+			aMatrix5[1,1,classNo+1]:=cClassName
+			aMatrix6[1,1,classNo+1]:=cClassName
+			aMatrix7[1,1,classNo+2]:=cClassName
 		ENDIF
 	NEXT
 	FOR periodNo:=1 to Len(aPeriod)-1
-		aMatrix1[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix2[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix3[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix4[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix5[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix6[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
-		aMatrix7[periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix1[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix2[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix3[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix4[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix5[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix6[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
+		aMatrix7[1,periodNo+1,1]:=DToC(aPeriod[periodNo])+" - "+DToC(aPeriod[periodNo+1]-1)
 	NEXT
-	// determine subtotals per period:
-	PerTotal:=AReplicate(0.00,Len(aPeriod)-1)
-	PerCount:=AReplicate(0,Len(aPeriod)-1)
+	
+	// determine subtotals per period:    
+	PerTotal:=ArrayNew(maxAccIx)
+	PerCount:=ArrayNew(maxAccIx)
+	FOR accIx:=1 to maxAccIx
+		PerTotal[accIx]:=AReplicate(0.00,Len(aPeriod)-1)
+		PerCount[accIx]:=AReplicate(0,Len(aPeriod)-1)
+	NEXT
 
+
+	// Get total and count for all accounts by subperiod and classindex
 	oTrans:=SQLSelect{"SELECT subperiod,classindex,sum(amount) sumamount,count(*) xcount " ;
 		+ "FROM followingtrans2 GROUP BY subperiod,classindex",oConn}
 
@@ -1232,13 +1327,34 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	IF oTrans:RECCOUNT>0
 		DO WHILE !oTrans:EoF
-			aMatrix1[oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
-			aMatrix3[oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
+			aMatrix1[1, oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
+			aMatrix3[1, oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
 			oTrans:Skip()
 		ENDDO
 	ENDIF
 	oTrans:Close()
+	
+	IF perAccount
+		// Get total and count per account by subperiod and classindex
+		oTrans:=SQLSelect{"SELECT accid,subperiod,classindex,sum(amount) sumamount,count(*) xcount " ;
+			+ "FROM followingtrans2 GROUP BY accid,subperiod,classindex",oConn}
+     
+		// Note: oTrans:xcount is a Bigint therefore we need to use Val() on it 
 
+		IF oTrans:RECCOUNT>0
+			DO WHILE !oTrans:EoF
+				accIx:=AScanBin(aAcc,oTrans:accid) 
+	
+				aMatrix1[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
+				aMatrix3[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
+				oTrans:Skip()
+			ENDDO
+		ENDIF
+		oTrans:Close()
+	ENDIF
+	
+
+	// Get total and count by subperiod 
 	oTrans:=SQLSelect{"SELECT subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
 		+ "FROM followingtrans2 GROUP BY subperiod",oConn}
 
@@ -1249,88 +1365,134 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				rangeVal:=Round(oTrans:sumamount/(NumberRanges*Val(oTrans:xcount)), 0)
 				IF rangeVal >0
 					FOR m:=1 to self:NumberRanges-1
-						aMatrix7[oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
+						aMatrix7[1,oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
 					NEXT
-					aMatrix7[oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
+					aMatrix7[1,oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
 				ENDIF			
 			ENDIF
-			PerTotal[oTrans:subperiod]:=oTrans:sumamount
-			PerCount[oTrans:subperiod]:=Val(oTrans:xcount)
+			PerTotal[1,oTrans:subperiod]:=oTrans:sumamount
+			PerCount[1,oTrans:subperiod]:=Val(oTrans:xcount)
 			oTrans:Skip()
 		ENDDO
 	ENDIF
   	oTrans:Close()
 
 	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
+
+	IF perAccount
+		// Get total and count per account by subperiod and classindex
+        	  oTrans:=SQLSelect{"SELECT accid,subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
+			+ "FROM followingtrans2 GROUP BY accid,subperiod",oConn}
+
+		IF oTrans:RECCOUNT>0
+			DO WHILE !oTrans:EoF
+				accIx:=AScanBin(aAcc,oTrans:accid) 
+
+				// determine ranges from average per period:
+				IF oTrans:subperiod>PrevPeriodCount.and.Val(oTrans:xcount)>0
+					rangeVal:=Round(oTrans:sumamount/(NumberRanges*Val(oTrans:xcount)), 0)
+					IF rangeVal >0
+						FOR m:=1 to self:NumberRanges-1
+							aMatrix7[accIx+1,oTrans:subperiod+1,2,m]:=Round(m*rangeVal,0)
+						NEXT
+						aMatrix7[accIx+1,oTrans:subperiod+1,2,NumberRanges]:=oTrans:maxamount
+					ENDIF			
+				ENDIF
+				PerTotal[accIx+1,oTrans:subperiod]:=oTrans:sumamount
+				PerCount[accIx+1,oTrans:subperiod]:=Val(oTrans:xcount)
+				oTrans:Skip()
+			ENDDO
+		ENDIF
+	  	oTrans:Close()
+
+		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
+	ENDIF
 	
-	// Fill	Matrices:
-	FOR periodNo:=1 to Len(aPeriod)-1
-		FOR classNo:=1 to Len(aClassTuples)
-			IF aRelevantClass[classNo]
-				IF PerTotal[periodNo]>0
-					aMatrix2[periodNo+1,classNo+1]:=Round((aMatrix1[periodNo+1,classNo+1]*100)/PerTotal[periodNo],2)
-				ENDIF
-				IF PerCount[periodNo]>0
-					aMatrix4[periodNo+1,classNo+1]:=Round((aMatrix3[periodNo+1,classNo+1]*100)/PerCount[periodNo],2)
-				ENDIF
+	// Fill	Matrices:    
+	FOR accIx:=1 to maxAccIx
+		FOR periodNo:=1 to Len(aPeriod)-1
+			FOR classNo:=1 to Len(aClassTuples)
+				IF aRelevantClass[classNo]
+					IF PerTotal[accIx,periodNo]>0
+						aMatrix2[accIx,periodNo+1,classNo+1]:=Round((aMatrix1[accIx,periodNo+1,classNo+1]*100)/PerTotal[accIx,periodNo],2)
+					ENDIF
+					IF PerCount[accIx,periodNo]>0
+						aMatrix4[accIx,periodNo+1,classNo+1]:=Round((aMatrix3[accIx,periodNo+1,classNo+1]*100)/PerCount[accIx,periodNo],2)
+					ENDIF
 
-				// aMatrix3[periodNo+1,classNo+2] contains the number of donations with subperiod=periodNo and classindex=classNo
-				donationsCount:=aMatrix3[periodNo+1,classNo+1]
-				IF donationsCount>0
-					aMatrix5[periodNo+1,classNo+1]:=Round(aMatrix1[periodNo+1,classNo+1]/donationsCount,2)
+					// aMatrix3[accIx,periodNo+1,classNo+2] contains the number of donations with subperiod=periodNo and classindex=classNo
+					donationsCount:=aMatrix3[accIx,periodNo+1,classNo+1]
+					IF donationsCount>0
+						aMatrix5[accIx,periodNo+1,classNo+1]:=Round(aMatrix1[accIx,periodNo+1,classNo+1]/donationsCount,2)
 
-					IF StatBox6
-						// Median calculation:
+						IF StatBox6
+							// Median calculation:
 						
-						sqlStr:="SELECT amount FROM " ;
-							+ "(SELECT amount FROM followingtrans2 WHERE subperiod=" + Str(periodNo,-1) + " AND classindex=" + Str(classNo,-1) + " ORDER BY amount) t " ;
-							+ "LIMIT " + Str(Floor((donationsCount-1)/2),-1) + ",2"
+							IF accIx=1
+								// Looking at all accounts
+								sqlStr:="SELECT amount FROM " ;
+									+ "(SELECT amount FROM followingtrans2 WHERE subperiod=" + Str(periodNo,-1) + " AND classindex=" + Str(classNo,-1) + " ORDER BY amount) t " ;
+									+ "LIMIT " + Str(Floor((donationsCount-1)/2),-1) + ",2"
+							ELSE
+								// Looking at account aAcc[accIx-1]
+								sqlStr:="SELECT amount FROM " ;
+									+ "(SELECT amount FROM followingtrans2 WHERE accid=" + Str(aAcc[accIx-1],-1) + " AND subperiod=" + Str(periodNo,-1) + " AND classindex=" + Str(classNo,-1) + " ORDER BY amount) t " ;
+									+ "LIMIT " + Str(Floor((donationsCount-1)/2),-1) + ",2"      
+							ENDIF
 
-						oTrans:=SQLSelect{sqlStr, oConn}       
+							oTrans:=SQLSelect{sqlStr, oConn}       
 // 						SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 
-						median:=oTrans:amount
+							median:=oTrans:amount
 
-						IF donationsCount%2=0
-							// We have an even number of entries
-							oTrans:Skip()
-							median:=(median+oTrans:amount)/2
-						ENDIF
-						aMatrix6[periodNo+1,classNo+1]:=median
-						oTrans:Close()
-					endif
+							IF donationsCount%2=0
+								// We have an even number of entries
+								oTrans:Skip()
+								median:=(median+oTrans:amount)/2
+							ENDIF
+							aMatrix6[accIx,periodNo+1,classNo+1]:=median
+							oTrans:Close()
+						endif
+					ENDIF
+
+					aMatrix7[accIx,periodNo+1,classNo+2]:=AReplicate(0,NumberRanges)
 				ENDIF
+			NEXT
 
-				aMatrix7[periodNo+1,classNo+2]:=AReplicate(0,NumberRanges)
-			ENDIF      
-		NEXT
 
-		IF StatBox7.and.periodNo>PrevPeriodCount
-			// sqlStr2 is the range classifier
-			sqlStr2:="CASE "
-			for j:=1 to NumberRanges-1
-				sqlStr2+="WHEN amount<=" + Str(aMatrix7[periodNo+1,2,j],-1) + " THEN " + Str(j) + " "
-			next
-			sqlStr2+="ELSE " + Str(NumberRanges,-1) + " END"
+			IF StatBox7.and.periodNo>PrevPeriodCount
+				// sqlStr2 is the range classifier
+				sqlStr2:="CASE "
+				for j:=1 to NumberRanges-1
+					sqlStr2+="WHEN amount<=" + Str(aMatrix7[accIx,periodNo+1,2,j],-1) + " THEN " + Str(j) + " "
+				next
+				sqlStr2+="ELSE " + Str(NumberRanges,-1) + " END"
 			
-			sqlStr:="SELECT " + sqlStr2 + " xrange, classindex, count(*) xcount FROM followingtrans2 " ;
-				+ "WHERE subperiod=" + Str(periodNo,-1) + " GROUP BY classindex,xrange"
-			
-			oTrans:=SQLSelect{sqlStr,oConn}				
+				IF accIx=1
+					// Looking at all accounts
+					sqlStr:="SELECT " + sqlStr2 + " xrange, classindex, count(*) xcount FROM followingtrans2 " ;
+						+ "WHERE subperiod=" + Str(periodNo,-1) + " GROUP BY classindex,xrange"
+				ELSE
+					// Looking at account aAcc[accIx-1]
+					sqlStr:="SELECT " + sqlStr2 + " xrange, classindex, count(*) xcount FROM followingtrans2 " ;
+						+ "WHERE accid=" + Str(aAcc[accIx-1],-1) + " AND subperiod=" + Str(periodNo,-1) + " GROUP BY classindex,xrange"
+				ENDIF			
+				oTrans:=SQLSelect{sqlStr,oConn}				
 // 			SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 			
-			if oTrans:RECCOUNT<>0 
-				DO WHILE !oTrans:EoF
-					IF oTrans:xcount<>0
-						aMatrix7[periodNo+1,oTrans:classindex+2,oTrans:xrange]:=Val(oTrans:xcount)
-					endif
-					oTrans:Skip()
-				ENDDO
+				if oTrans:RECCOUNT<>0 
+					DO WHILE !oTrans:EoF
+						IF oTrans:xcount<>0
+							aMatrix7[accIx,periodNo+1,oTrans:classindex+2,oTrans:xrange]:=Val(oTrans:xcount)
+						endif
+						oTrans:Skip()
+					ENDDO
+				ENDIF
+				oTrans:Close()
 			ENDIF
-			oTrans:Close()
-		ENDIF
-	NEXT  
-	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
+		NEXT  
+		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
+	NEXT
 
 	// Markup report from matrix:
 	oFileSpec:=AskFileName(self,"DonorFollowing"+DToS(StartDate)+"_"+DToS(EndDate-1),"Creating Donor Following-report",'*.XLS',"Excel Spreadsheet") 
@@ -1346,37 +1508,56 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		oFileSpec:FullPath:=cFileName
 		// header record:
 		FWriteLine(ptrHandle,"<html><body><table style='font-family: Arial;' border='2'><tr style='font-weight: bold; color:navy;'>"+;
-			"<td style='text-align : center;' colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Rget("Donor Following Report")+"  "+;
+			"<td style='text-align : center;' colspan='"+Str(maxAccIx*(Len(aPeriod)-PrevPeriodCount-1)+1,-1)+"'>"+oLan:Rget("Donor Following Report")+"  "+;
 			oLan:Rget("period")+": "+DToC(StartDate)+" - "+DToC(EndDate-1)+"</td></tr>")
-		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(Len(aPeriod)-PrevPeriodCount,-1)+"'>"+oLan:Rget("Destinations")+":<br><ol>")
-		FOR i:=1 to Len(aAcc)
-			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[i],-1) ,oConn}
+		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(maxAccIx*(Len(aPeriod)-PrevPeriodCount-1)+1,-1)+"'>"+oLan:Rget("Destinations")+":<br><ol>")
+
+		FOR accIx:=1 to Len(aAcc)
+			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[accIx],-1) ,oConn}
 			IF oAcc:RECCOUNT>0
+				AAdd(accdesc,AllTrim(oAcc:Description))
 				FWriteLine(ptrHandle,"<li>"+AllTrim(oAcc:Description)+"</li>")
 			ENDIF      
 			oAcc:Close()
 		NEXT
 		FWriteLine(ptrHandle,"</ol></td></tr>")
+
+		FWriteLine(ptrHandle,"<tr><td></td>")
+		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+oLan:Rget("All accounts")+"</td>")
+		FOR accIx:=2 to maxAccIx
+			FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+AccDesc[accIx-1]+"</td>")
+		NEXT
+		FWriteLine(ptrHandle,"</tr>")
+
+
+		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		IF StatBox1
-			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox2
-			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox3
-			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox4
-			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox5
-			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox6
-			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
+			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox7
-			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,aRelevantClass,2)
+			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,aRelevantClass,2,AccDesc)
+			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		// closing record:
 		FWriteLine(ptrHandle,"<table></body></html>")
@@ -1484,6 +1665,9 @@ METHOD SetPropExtra( Count) CLASS DonorFollowingReport
 	myOrg:=self:oDCDiffBox:Origin
 	myOrg:y-=25
 	self:oDCDiffBox:Origin:=myOrg
+	myOrg:=self:oDCPerAccountBox:Origin
+	myOrg:Y-=25
+	self:oDCPerAccountBox:Origin:=myOrg
 	
 	// enlarge PropertiesBox group:
 	myDim:=self:oDCPropertiesBox:Size
@@ -1636,6 +1820,7 @@ STATIC DEFINE DONORFOLLOWINGREPORT_HOMEBOX := 101
 STATIC DEFINE DONORFOLLOWINGREPORT_NONHOMEBOX := 102 
 STATIC DEFINE DONORFOLLOWINGREPORT_NUMBERRANGES := 125 
 STATIC DEFINE DONORFOLLOWINGREPORT_OKBUTTON := 133 
+STATIC DEFINE DONORFOLLOWINGREPORT_PERACCOUNTBOX := 144 
 STATIC DEFINE DONORFOLLOWINGREPORT_PROJECTSBOX := 100 
 STATIC DEFINE DONORFOLLOWINGREPORT_PROPERTIESBOX := 109 
 STATIC DEFINE DONORFOLLOWINGREPORT_RANGE10 := 112 
@@ -1726,6 +1911,21 @@ method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 STATIC DEFINE DONORFOLWNGSELCLASSES_CLASSESBOX := 101 
 STATIC DEFINE DONORFOLWNGSELCLASSES_FIXEDTEXT1 := 100 
 STATIC DEFINE DONORFOLWNGSELCLASSES_OKBUTTON := 102 
+resource DonorProject DIALOGEX  34, 31, 442, 1308
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
+	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
+	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
+	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
+	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
+	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
+	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
+	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
+END
+
 CLASS DonorProject INHERIT DataWindowExtra 
 
 	EXPORT oDCFromdate as DATESTANDARD
@@ -1747,21 +1947,6 @@ CLASS DonorProject INHERIT DataWindowExtra
 	PROTECT aDestName:={} as ARRAY // array with singlelineedit controls
 	PROTECT nID as int
 	PROTECT pwvs as WindowVerticalScrollBar     
-
-resource DonorProject DIALOGEX  34, 31, 442, 1308
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
-	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
-	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
-	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
-	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
-	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
-	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
-	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
-END
 
 METHOD CancelButton( ) CLASS DonorProject
 	self:EndWindow()
@@ -2384,21 +2569,6 @@ IF lProjects
 	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
 ENDIF
 RETURN aAcc
-CLASS TotalsMembers INHERIT DataWindowMine 
-
-	PROTECT oCCOKButton as PUSHBUTTON
-	PROTECT oCCCancelButton as PUSHBUTTON
-	PROTECT oDCFixedText3 as FIXEDTEXT
-	PROTECT oDCFixedText5 as FIXEDTEXT
-	PROTECT oDCFromYear as SINGLELINEEDIT
-	PROTECT oDCFromMonth as SINGLELINEEDIT
-	PROTECT oDCToYear as SINGLELINEEDIT
-	PROTECT oDCToMonth as SINGLELINEEDIT
-	PROTECT oDCFixedText2 as FIXEDTEXT
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	PROTECT oReport as PrintDialog
-	
 resource TotalsMembers DIALOGEX  12, 11, 225, 99
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -2414,6 +2584,21 @@ BEGIN
 	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
 END
 
+CLASS TotalsMembers INHERIT DataWindowMine 
+
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCFixedText5 as FIXEDTEXT
+	PROTECT oDCFromYear as SINGLELINEEDIT
+	PROTECT oDCFromMonth as SINGLELINEEDIT
+	PROTECT oDCToYear as SINGLELINEEDIT
+	PROTECT oDCToMonth as SINGLELINEEDIT
+	PROTECT oDCFixedText2 as FIXEDTEXT
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT oReport as PrintDialog
+	
 METHOD CancelButton( ) CLASS TotalsMembers
 		self:EndWindow()
 RETURN nil
