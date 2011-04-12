@@ -505,7 +505,7 @@ self:SetTexts()
 		SELF:mDFIR:="322273379"
 	ENDIF
 	if !self:OwnPPCode==SEntity
-		oPP:= SQLSelect{"select PPCODE,ppname from PPCodes where ppcode='AAA' or PPCODE='"+SEntity+"'",oConn} 
+		oPP:= SQLSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
 // 		oPP:SetFilter({||oPP:PPCODE=="AAA".or. oPP:PPCODE==SEntity})
 		oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
 // 		oPP:Close()
