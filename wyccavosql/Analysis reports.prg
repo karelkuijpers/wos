@@ -445,7 +445,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PrevPeriodCount,aRelevantClass,ixOff,AccDesc)	CLASS	DonorFollowingReport
+METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PrevPeriodCount,aRelevantClass,ixOff)	CLASS	DonorFollowingReport
 	// fill excel matrix with data
 	LOCAL accIx,periodNo,classNo,m as int, line as STRING
 	LOCAL diff as FLOAT      
@@ -453,16 +453,20 @@ METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PrevPeriodCount,aRelevantClass,ix
 	
 	// Heading (containing type of statistics)
 	FWriteLine(ptrHandle,"<tr><td></td>")
-	FOR accIx:=1 to Len(aMatrix) 
-		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(perMax-PrevPeriodCount-1,-1)+"'>"+oLan:Rget(cHeading)+"</td>")
+	FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(perMax-PrevPeriodCount-1,-1)+"'>"+oLan:Rget(cHeading)+"</td>")
+	FOR accIx:=2 to Len(aMatrix) 
+		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(perMax-PrevPeriodCount-1,-1)+"'>&nbsp;</td>")
 	NEXT
 	FWriteLine(ptrHandle,"</tr>")
 
 	// Date range headings	
 	FWriteLine(ptrHandle,"<tr><td></td>")
-	FOR accIx:=1 to Len(aMatrix)
+	FOR periodNo:=perMin to perMax
+		FWriteLine(ptrHandle,"<td style='background-color:lightblue;'>"+aMatrix[1,periodNo,1]+"</td>")
+	NEXT
+	FOR accIx:=2 to Len(aMatrix)
 		FOR periodNo:=perMin to perMax
-			FWriteLine(ptrHandle,"<td style='background-color:lightblue;'>"+aMatrix[1,periodNo,1]+"</td>")
+			FWriteLine(ptrHandle,"<td style='background-color:lightblue;'>&nbsp;</td>")
 		NEXT
 	NEXT
 	FWriteLine(ptrHandle,"</tr>")
@@ -686,7 +690,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL lDiff:=self:DiffBox as LOGIC         
 	LOCAL perAccount:=self:PerAccountBox as LOGIC
 	LOCAL accIx,maxAccIx,colCount as int   
-	LOCAL accdesc:={} as ARRAY // Account description
 	
 	time1:=Time()
 	self:STATUSMESSAGE(sMes+" ("+ElapTime(time1,Time())+")")
@@ -1219,8 +1222,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
    //     aMatrixN[1,1,1]     is nil  
    //     aMatrixN[1,1,c+1]   is the class name for class c
    //     aMatrixN[1,p+1,1]   is the date range for period p
-   //     aMatrixN[a+1,1]     is the account id for account number a
-   //                         aMatrixN[a+1,1,*] does not exit
    //     aMatrixN[a+1,p+1,1] is nil
 	//
    // Special indices for aMatrix7:
@@ -1228,8 +1229,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
    //     aMatrix7[1,1,2]     is nil  
    //     aMatrix7[1,1,c+2]   is the class name for class c
    //     aMatrix7[1,p+1,1]   is the date range for period p
-   //     aMatrix7[a+1,1]     is the account id for account number a
-   //                         aMatrix7[a+1,1,*] does not exit
    //     aMatrix7[a+1,p+1,1] is nil
    //     aMatrix7[a+1,p+1,2] is nil
    
@@ -1515,8 +1514,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		FOR accIx:=1 to Len(aAcc)
 			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[accIx],-1) ,oConn}
 			IF oAcc:RECCOUNT>0
-				AAdd(accdesc,AllTrim(oAcc:Description))
-				FWriteLine(ptrHandle,"<li>"+AllTrim(oAcc:Description)+"</li>")
+				FWriteLine(ptrHandle,"<li>"+Str(aAcc[accIx],-1) + " " + AllTrim(oAcc:Description)+"</li>")
 			ENDIF      
 			oAcc:Close()
 		NEXT
@@ -1525,38 +1523,38 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		FWriteLine(ptrHandle,"<tr><td></td>")
 		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+oLan:Rget("All accounts")+"</td>")
 		FOR accIx:=2 to maxAccIx
-			FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+AccDesc[accIx-1]+"</td>")
+			FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+Str(aAcc[accIx-1],-1)+"</td>")
 		NEXT
 		FWriteLine(ptrHandle,"</tr>")
 
 
 		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		IF StatBox1
-			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix1,"amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox2
-			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix2,"percentage of total amount given, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox3
-			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix3,"number of givers per class of givers",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox4
-			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix4,"percentage of total number of givers, a certain class of givers has contributed",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox5
-			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix5,"average amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox6
-			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,aRelevantClass,1,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix6,"median amount given per class of givers",PrevPeriodCount,aRelevantClass,1)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		IF StatBox7
-			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,aRelevantClass,2,AccDesc)
+			self:MarkupMatrix(ptrHandle,aMatrix7,"spread over ranges of amounts given per class of givers ",PrevPeriodCount,aRelevantClass,2)
 			self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")") 
 		ENDIF
 		// closing record:
