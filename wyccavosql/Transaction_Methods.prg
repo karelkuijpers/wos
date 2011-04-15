@@ -4144,33 +4144,33 @@ METHOD ShowSelection() CLASS TransInquiry
 		self:m54_selectTxt:=self:m54_selectTxt+" Descr="+self:DescrpSelected
 	ENDIF
 	IF self:TransTypeSelected=="A" // all types
-		IF !Empty(self:StartAmount)
+		IF !Empty(Val(self:StartAmount))
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'abs(t.cre-t.deb)>='+self:StartAmount
 			self:m54_selectTxt:=self:m54_selectTxt+" Amount>="+self:StartAmount
 		ENDIF
-		IF !Empty(self:ToAmount)
+		IF !Empty(Val(self:ToAmount)) 
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'abs(t.cre-t.deb)<='+self:ToAmount
 			self:m54_selectTxt:=self:m54_selectTxt+" Amount<="+self:ToAmount
 		ENDIF
 	ELSEIF self:TransTypeSelected=="D" // debit amounts
 		self:m54_selectTxt:=self:m54_selectTxt+" Debit amount>="+self:StartAmount
-		IF !Empty(self:StartAmount)
+		IF !Empty(Val(self:StartAmount))
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.deb>='+self:StartAmount
 		ELSE
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'!Empty(deb)'
 		ENDIF
-		IF !Empty(self:ToAmount)
+		IF !Empty(Val(self:ToAmount)) 
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.deb<='+self:ToAmount
 			self:m54_selectTxt:=self:m54_selectTxt+" Debit amount<="+self:ToAmount
 		ENDIF
 	ELSEIF self:TransTypeSelected=="C" // credit amounts
 		self:m54_selectTxt:=self:m54_selectTxt+" Credit amount>="+self:StartAmount
-		IF !Empty(self:StartAmount)
+		IF !Empty(Val(self:StartAmount))
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre>='+self:StartAmount
 		ELSE
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre<>0'
 		ENDIF
-		IF !Empty(self:ToAmount)
+		IF !Empty(Val(self:ToAmount)) 
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre<='+self:ToAmount
 			self:m54_selectTxt:=self:m54_selectTxt+" Credit amount<="+self:ToAmount
 		ENDIF
