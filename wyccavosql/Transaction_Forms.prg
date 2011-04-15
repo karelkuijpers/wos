@@ -3,113 +3,19 @@ CLASS BedragStr INHERIT FIELDSPEC
 
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS BedragStr
-
-    LOCAL   oHlTemp                 AS OBJECT
     LOCAL   cPict                   AS STRING
-    LOCAL   nMinLen                 AS INT
-    LOCAL   lRequired               AS LOGIC
-    LOCAL   symHlName               AS SYMBOL
-    LOCAL   cTypeDiag               AS STRING
-    LOCAL   cTypeHelp               AS STRING
-    LOCAL   cLenDiag                AS STRING
-    LOCAL   cLenHelp                AS STRING
-    LOCAL   cMinLenDiag             AS STRING
-    LOCAL   cMinLenHelp             AS STRING
-    LOCAL   cRangeDiag              AS STRING
-    LOCAL   cRangeHelp              AS STRING
-    LOCAL   cReqDiag                AS STRING
-    LOCAL   cReqHelp                AS STRING
-    LOCAL   cValidDiag              AS STRING
-    LOCAL   cValidHelp              AS STRING
-    LOCAL   nMinRange               AS USUAL
-    LOCAL   nMaxRange               AS USUAL
-    LOCAL   xValidation             AS USUAL
 
-    symHlName   := #BedragStr
-
+    SUPER:Init( HyperLabel{#BedragStr, "", "Amount", "" },  "C", 13, 0 )
     cPict       := ""
-    cTypeDiag   := ""
-    cTypeHelp   := ""
-    cLenDiag    := ""
-    cLenHelp    := ""
-    cMinLenDiag := ""
-    cMinLenHelp := ""
-    cRangeDiag  := ""
-    cRangeHelp  := ""
-    cValidDiag  := ""
-    cValidHelp  := ""
-    cReqDiag    := ""
-    cReqHelp    := ""
-
-    nMinLen     := -1
-    nMinRange   := NIL
-    nMaxRange   := NIL
-    xValidation := NIL
-    lRequired   := .F.
-
-
-    SUPER:Init( HyperLabel{symHlName, "", "Amount", "" },  "C", 13, 0 )
-
-
     IF SLen(cPict) > 0
         SELF:Picture := cPict
     ENDIF
 
-
-    IF SLen(cTypeDiag) > 0 .OR. SLen(cTypeHelp) > 0
-        SELF:oHLType := HyperLabel{symHlName,, cTypeDiag, cTypeHelp }
-    ENDIF
-
-
-    IF SLen(cLenDiag) > 0 .OR. SLen(cLenHelp) > 0
-        SELF:oHLLength := HyperLabel{symHlName,, cLenDiag, cLenHelp }
-    ENDIF
-
-
-    IF nMinLen != -1
-        IF SLen(cMinLenDiag) > 0 .OR. SLen(cMinLenHelp) > 0
-            oHlTemp := HyperLabel{symHlName,, cMinLenDiag, cMinLenHelp }
-
-            SELF:SetMinLength(nMinLen, oHlTemp)
-        ELSE
-            SELF:SetMinLength(nMinLen)
-        ENDIF
-    ENDIF
-
-
-    IF !IsNIL(nMinRange) .OR. !IsNIL(nMaxRange)
-        IF SLen(cRangeDiag) > 0 .OR. SLen(cRangeHelp) > 0
-            oHlTemp := HyperLabel{symHlName,, cRangeDiag, cRangeHelp }
-            SELF:SetRange(nMinRange, nMaxRange, oHlTemp)
-        ELSE
-            SELF:SetRange(nMinRange, nMaxRange)
-        ENDIF
-    ENDIF
-
-
-    IF !IsNIL(xValidation)
-        IF SLen(cValidDiag) > 0 .OR. SLen(cValidHelp) > 0
-            SELF:oHLValidation:= HyperLabel{symHlName,, cValidDiag, cValidHelp }
-
-            SELF:SetValidation(xValidation, SELF:oHLValidation)
-        ELSE
-            SELF:SetValidation(xValidation)
-        ENDIF
-    ENDIF
-
-
-    IF lRequired
-        IF SLen(cReqDiag) > 0 .OR. SLen(cReqHelp) > 0
-            oHLTemp := HyperLabel{symHlName,, cReqDiag, cReqHelp }
-
-            SELF:SetRequired(lRequired, oHLTemp)
-        ELSE
-            SELF:SetRequired(lRequired)
-        ENDIF
-    ENDIF
-
-
     RETURN SELF
+
+
+
+
 CLASS General_Journal INHERIT DataWindowExtra 
 
 	PROTECT oDBMBST as DataColumn
@@ -1412,8 +1318,8 @@ BEGIN
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
 	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
-	CONTROL	"donderdag 29 juli 2010", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
-	CONTROL	"donderdag 29 juli 2010", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
+	CONTROL	"donderdag 14 april 2011", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
+	CONTROL	"donderdag 14 april 2011", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
 	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
 	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
 	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
@@ -1668,12 +1574,12 @@ oDCFixedText4 := FixedText{SELF,ResourceID{INQUIRYSELECTION_FIXEDTEXT4,_GetInst(
 oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Till:",NULL_STRING,NULL_STRING}
 
 oDCFromTransnr := SingleLineEdit{SELF,ResourceID{INQUIRYSELECTION_FROMTRANSNR,_GetInst()}}
-oDCFromTransnr:FieldSpec := TRANSACTION_TRANSAKTNR{}
 oDCFromTransnr:HyperLabel := HyperLabel{#FromTransnr,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCFromTransnr:Picture := "99999999999"
 
 oDCToTransnr := SingleLineEdit{SELF,ResourceID{INQUIRYSELECTION_TOTRANSNR,_GetInst()}}
-oDCToTransnr:FieldSpec := TRANSACTION_TRANSAKTNR{}
 oDCToTransnr:HyperLabel := HyperLabel{#ToTransnr,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCToTransnr:Picture := "99999999999"
 
 oDCFromAmount := SingleLineEdit{SELF,ResourceID{INQUIRYSELECTION_FROMAMOUNT,_GetInst()}}
 oDCFromAmount:HyperLabel := HyperLabel{#FromAmount,"Minimal Amount",NULL_STRING,NULL_STRING}
@@ -1794,6 +1700,7 @@ SELF:Caption := "Selection of Financial Transactions"
 SELF:HyperLabel := HyperLabel{#InquirySelection,"Selection of Financial Transactions",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
 SELF:AllowServerClose := True
+SELF:QuitOnClose := False
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
@@ -1858,8 +1765,8 @@ local nAcc as string
  	self:oOwner:ReferenceSelected:=if(Empty(self:Reference),null_string,AllTrim(self:Reference))
  	self:oOwner:StartDate:=self:oDCFromdate:SelectedDate
 	self:oOwner:EndDate:=self:oDCTodate:SelectedDate
- 	self:oOwner:StartAmount:=AllTrim(self:FromAmount )
- 	self:oOwner:ToAmount:=AllTrim(self:ToAmount)
+ 	self:oOwner:StartAmount:=AllTrim(self:oDCFromAmount:TextValue )
+ 	self:oOwner:ToAmount:=AllTrim(self:oDCToAmount:TextValue)
    self:oOwner:TransTypeSelected:=self:AmountType
    self:oOwner:cDepOrg:=cDep
 //    self:oOwner:cBalOrg:=cBal
@@ -1971,10 +1878,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS InquirySelection
 	IF !Empty(self:oOwner:EndDate)
 		self:oDCTodate:SelectedDate:=self:oOwner:EndDate
 	ENDIF
-	IF !Empty(self:oOwner:StartAmount)
+	IF !Empty(Val(self:oOwner:StartAmount))
 		self:FromAmount:=self:oOwner:StartAmount
 	ENDIF
-	IF !Empty(self:oOwner:ToAmount)
+	IF !Empty(Val(self:oOwner:ToAmount))
 		self:ToAmount:=self:oOwner:ToAmount
 	ENDIF
 	IF !Empty(self:oOwner:DescrpSelected)
