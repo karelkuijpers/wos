@@ -1268,11 +1268,11 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			lValid:=FALSE
 		ENDIF
 	ENDIF
-	IF lValid .and. Len(aBankAcc)>0
+	IF lValid .and. Len(self:aBankAcc)>0
 		* Check duplicate bankaccount:
-		FOR i:=1 to Len(aBankAcc)
-			IF !Empty(aBankAcc[i,2]).and.!Empty(aBankAcc[1,2])
-				cSelBank+=iif(Empty(cSelBank),"("," or ")+"banknumber='"+aBankAcc[i,2]+"'"
+		FOR i:=1 to Len(self:aBankAcc)
+			IF !Empty(self:aBankAcc[i,2]).and.!Empty(self:aBankAcc[1,2])
+				cSelBank+=iif(Empty(cSelBank),"("," or ")+"banknumber='"+self:aBankAcc[i,2]+"'"
 			endif
 		next
 		IF !Empty(cSelBank) 
