@@ -1135,21 +1135,22 @@ METHOD OkButton CLASS NewPersonWindow
 			oStmnt:Execute()
 		ENDIF
 		// 		ENDIF
-		FOR i=1 to Len(aBankAcc)
+		FOR i=1 to Len(self:aBankAcc)
 			IF i<=Len(OrigaBank)
-				IF !aBankAcc[i,2] ==OrigaBank[i] // change of value? 
-					IF Empty(aBankAcc[i,2]).or.Empty(aBankAcc[i,2])  // removed?
+				IF !self:aBankAcc[i,2] ==OrigaBank[i] // change of value? 
+					IF Empty(self:aBankAcc[i,2]).or.Empty(self:aBankAcc[i,2])  // removed?
 						oStmnt:=SQLStatement{"delete from personbank where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					else   // changed
-						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
+						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+self:aBankAcc[i,2]+"' where banknumber='"+self:OrigaBank[i]+"'",oConn}
 					endif
 					oStmnt:Execute()
 				ENDIF
-			ELSEIF Len(aBankAcc[i,2])>1 
-				oStmnt:=SQLStatement{"Insert into personbank set persid="+self:mPersId+",banknumber='"+aBankAcc[i,2]+"'",oConn}
+			ELSEIF Len(self:aBankAcc[i,2])>1 
+				oStmnt:=SQLStatement{"Insert into personbank set persid="+self:mPersId+",banknumber='"+self:aBankAcc[i,2]+"'",oConn}
 				oStmnt:Execute() 
 			ENDIF
 		NEXT
+		self:ClearBankAccs()
 		IF lAddressChanged
 			IF IsObject(oCaller)
 				IF IsMethod(oCaller,#Regperson)
@@ -1191,6 +1192,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	local titPtr as int 
 	self:SetTexts()
 	self:oPersCnt:=PersonContainer{}
+	self:aBankAcc:={}
 	IF IsNil(aExtra)
 		self:lNew:=FALSE
 		self:lAddressChanged:=FALSE
