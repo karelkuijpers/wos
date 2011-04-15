@@ -309,13 +309,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	ENDIF
 	// Options:
 	AAdd(aMenu,{0,6, oLan:MGet("&Options"),,,,,})
-// 	AAdd(aMenu,{6,7, oLan:MGet("&Debug_financial_data"),,"",0,44,"F"})
-// 	AAdd(aMenu,{7,1, oLan:MGet("Check &Account Balance"),"DebugAccBal","",0,22,"F"})
-// 	AAdd(aMenu,{7,2, oLan:MGet("&Check Transactions in balance"),"DebugTransBal","",0,77,"F"}) 
-// 	if TeleBanking
-// 		AAdd(aMenu,{7,2, oLan:MGet("&Check duplicate telebanking transactions"),"DebugDoubleTrans","",0,91,"F"})
-// 	endif
-// 	AAdd(aMenu,{7,3, oLan:MGet("&Debug correspondence transactions and monthly balances"),"DebugMonthbal","",0,44,"F"})
+// 	AAdd(aMenu,{6,7, oLan:MGet("&Check consitency financial data"),"DebugMonthbal","",0,44,"F"})
 	AAdd(aMenu,{6,7,,,,,})           // separator
 	AAdd(aMenu,{6,8, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
 	IF lSystemAdmin
