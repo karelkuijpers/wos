@@ -55,10 +55,10 @@ local oSel as SQLSelect
 local nKey as int
 	oSel := SQLSelect{"select max(pers_code) as maxvalue from perscod",oConn}
 	if oSel:RecCount<1
-		return NtoC(1,3)
+		return NtoC(1,2)
 	endif
 	nKey:=CtoN(oSel:maxvalue)+1
-	return NtoC(nKey,3)
+	return NtoC(nKey,2)
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd 
 
@@ -113,7 +113,8 @@ SELF:FieldPut(#mOMS, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditMailCd
-	LOCAL oMcd, oMcdCheck as SQLSelect
+	LOCAL oMcd, oMcdCheck as SQLSelect 
+	local oStmnt as SQLStatement
 	oMcd:=SELF:server
 	IF !SELF:lNew
 		IF Empty(self:mCod)
@@ -147,12 +148,18 @@ METHOD OKButton( ) CLASS EditMailCd
 				ENDIF
 			ENDIF
 		ENDIF
-		IF self:lNew 
+		IF self:lNew
+// 			oStmnt:=SQLStatement{"insert into perscod set pers_code='"+self:GetNextKey()+"',description='"+AllTrim(self:mOms)+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'",oConn}
+// 			oStmnt:Execute()
+// 			if oStmnt:NumSuccessfulRows>0
+// 				oMcd:Execute() 
+// 			endif
 			oMcd:Append()
-			oMcd:pers_code:=self:GetNextKey()
+			oMcd:pers_code:=self:GetNextKey() 
 		ENDIF
       oMcd:Description      := self:mOms
       oMcd:abbrvtn  := Upper(self:mAbbrvtn) 
+      oMcd:Commit()
 		FillPersCode()
 		self:EndWindow()
 RETURN NIL
