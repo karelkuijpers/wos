@@ -543,7 +543,7 @@ METHOD PrintReport() CLASS PMISsend
 							cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+", not found banknbr:"+cDestAcc
 							exit					
 						endif
-						if CountryCode=="31".and.Len(cDestAcc)=9
+						if CountryCode=="31".and.Len(cDestAcc)>7
 							if !IsDutchBanknbr(cDestAcc)
 								cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+",no dutch banknbr:"+cDestAcc
 								exit
