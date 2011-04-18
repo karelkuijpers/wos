@@ -1215,7 +1215,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		endif
 	endif
 
-	if Len(BANKNBRCRE)=9 .and.!IsDutchBanknbr(BANKNBRCRE)
+	if Len(BANKNBRCRE)>7 .and.!IsDutchBanknbr(BANKNBRCRE)
 		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRCRE+Space(1)+;
 			self:oLan:WGet("for Payments is not correct")}):Show()
 		RETURN FALSE
@@ -1287,7 +1287,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	FWriteLine(ptrHandle,"0030B1"+StrZero(Day(process_date),2)+StrZero(Month(process_date),2)+SubStr(StrZero(Year(process_date),4,0),3,2)+PadR(cOrgName,35)+"P"+Space(2))
 	DO WHILE !oBord:EoF
 		cBank:=oBord:BANKNBRCRE
-		if Len(cBank)=9
+		if Len(cBank)>7
 			if !IsDutchBanknbr(cBank)
 				(ErrorBox{self,"bankaccount "+cBank+" in bank order is not correct!"}):Show()
 				FClose(ptrHandle) 
