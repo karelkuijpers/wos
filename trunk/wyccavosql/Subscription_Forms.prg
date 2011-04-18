@@ -433,7 +433,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				ENDIF 
 			else
 				IF CountryCode="31"
-					if Len(AllTrim(mBankAccnt))=9
+					if Len(AllTrim(mBankAccnt))>7
 						if !IsDutchBanknbr(AllTrim(mBankAccnt))
 							(ErrorBox{,self:oLan:WGet("Bankaccount")+space(1)+AllTrim(mBankAccnt)+space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
 							self:oDCmBankAccnt:SetFocus()
