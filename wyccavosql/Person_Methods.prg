@@ -3636,7 +3636,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		(ErrorBox{,self:oLan:WGet("Bank account invoices/ direct debit not specified in system data")}):Show()
 		return false
 	endif 
-	if Len(BANKNBRDEB)=9 .and.!IsDutchBanknbr(BANKNBRDEB)
+	if Len(BANKNBRDEB)>7 .and.!IsDutchBanknbr(BANKNBRDEB)
 		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRDEB+;
 			Space(1)+self:oLan:WGet("for Payments is not correct")}):Show()
 		RETURN FALSE
