@@ -3744,7 +3744,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 	do WHILE !oDue:EoF
 		cBank:=oDue:BANKACCNT
-		if Len(cBank)=9
+		if Len(cBank)>7
 			if !IsDutchBanknbr(cBank)
 				(ErrorBox{self,"Bankaccount "+cBank+" of person "+oDue:PersonName+"(Intern ID "+Str(oDue:personid,-1)+") is not correct!"}):Show()
 				FClose(ptrHandle)
