@@ -622,7 +622,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 				self:oDCmDestAcc:SetFocus() 
 			endif
 			if lValid .and.CountryCode="31"
-				if Len(AllTrim(self:mDestAcc))=9
+				if Len(AllTrim(self:mDestAcc))>7
 					if !IsDutchBanknbr(AllTrim(self:mDestAcc))
 						cError:="Bankaccount "+AllTrim(self:mDestAcc)+" is not correct!!"
 						lValid:=False
