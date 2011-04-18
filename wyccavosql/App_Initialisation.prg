@@ -1262,6 +1262,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"department","assacc2","int(11)","NO","0",""},;
 		{"department","assacc3","int(11)","NO","0",""},;
 		{"department","ipcproject","int(5)","NO","0",""},;
+		{"department","incomeacc","int(11)","NO","0",""},;
+		{"department","expenseacc","int(11)","NO","0",""},;
 		{"distributioninstruction","mbrid","int(11)","NO","NULL",""},;
 		{"distributioninstruction","seqnbr","int(3)","NO","0",""},;
 		{"distributioninstruction","destacc","varchar(70)","NO","",""},;
@@ -1341,7 +1343,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"mbalance","deb","decimal(20,2)","NO","0",""},;
 		{"mbalance","cre","decimal(20,2)","NO","0",""},;
 		{"member","mbrid","int(11)","NO","NULL","auto_increment"},;
-		{"member","accid","int(11)","NO","NULL",""},;
+		{"member","accid","int(11)","YES","NULL",""},;
 		{"member","persid","int(11)","NO","NULL",""},;
 		{"member","householdid","char(20)","NO","",""},;
 		{"member","has","tinyint(1)","NO","0",""},;
@@ -1354,6 +1356,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","offcrate","char(1)","NO","m",""},;
 		{"member","contact","int(11)","NO","0",""},;
 		{"member","rptdest","int(2)","NO","0",""},; 
+		{"member","depid","int(11)","YES","NULL",""},;
 	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","",""},;
@@ -1630,6 +1633,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"mbalance","0","accmonth","4","currency"},;
 		{"member","0","PRIMARY","1","mbrid"},;
 		{"member","0","accid","1","accid"},;
+		{"member","0","depid","1","depid"},;
 		{"member","0","persid","1","persid"},;
 		{"member","1","householdid","1","householdid"},;
 		{"memberassacc","0","PRIMARY","1","mbrid"},;	
