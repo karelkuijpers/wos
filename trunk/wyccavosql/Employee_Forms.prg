@@ -397,7 +397,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 		lCalcCheck:=true
 	ENDIF
 	IF lNew 
-		oStmnt:=SQLStatement{"insert Employee set loginname='dummy'",oConn}
+		oStmnt:=SQLStatement{"insert employee set loginname='dummy'",oConn}
 		oStmnt:Execute()
 		if !IsNil(oStmnt:Status)
 			(ErrorBox{self,'Add employee Error:'+oStmnt:Status:Description}):Show()
