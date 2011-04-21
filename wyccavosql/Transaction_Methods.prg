@@ -2398,7 +2398,8 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	LOCAL Original:={}, Applied:={} as ARRAY
 	LOCAL DebAmount:=self:mDebAmnt as FLOAT 
 	local cMess,Destname as string
-	local nMsgPos as int 
+	local nMsgPos as int
+	local aWord:={} as array 
 	oHm := self:server
 	aApplied := {}
 	m51_abest := Len(oHm:aMirror)
@@ -2487,7 +2488,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				oHm:DESCRIPTN := self:oLan:WGet('Gift')
 			endif  		
 		endif
-      self:SpecialMessage()
+		self:SpecialMessage()
 		* Save in Mirror:
 		oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 		oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
@@ -2521,7 +2522,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 					oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 				endif
 			ENDIF
-	      self:SpecialMessage()
+			self:SpecialMessage()
 			* Save in Mirror:
 			oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 			oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
@@ -2566,7 +2567,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 						oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 					endif
 				ENDIF
-		      self:SpecialMessage()
+				self:SpecialMessage()
 				* Save in Mirror:
 				oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 				oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
@@ -2596,7 +2597,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 								oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 							endif
 							m51_totcre := self:mDebAmnt
-					      self:SpecialMessage()
+							self:SpecialMessage()
 							* Save in Mirror:
 							oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 							oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
@@ -2620,20 +2621,24 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 					if !Empty(cMess) 
 						oHm:GoTop()
 						do WHILE !oHm:EOF
-							Destname:=GetTokens(alltrim(strtran(lower(oHm:AccDesc),'ink.')))[1,1]
-							if AtC(Destname,cMess)>0
-								oHm:cre:=self:mDebAmnt
-								if oHm:CURRENCY==sCurr
-									oHm:CREFORGN:=oHm:cre 
-								else
-									oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetRoe(oHm:CURRENCY,self:mDAT),DecAantal)
+							aWord:=GetTokens(AllTrim(StrTran(Lower(oHm:AccDesc),'ink.')))
+							if Len(aWord)>0
+								Destname:=aWord[1,1]
+								if AtC(Destname,cMess)>0
+									oHm:cre:=self:mDebAmnt
+									if oHm:CURRENCY==sCurr
+										oHm:CREFORGN:=oHm:cre 
+									else
+										oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetRoe(oHm:CURRENCY,self:mDAT),DecAantal)
+									endif
+									m51_totcre := self:mDebAmnt
+									self:SpecialMessage()
+									* Save in Mirror:
+									oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
+									oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
+									// 							self:AutoRec:=true 
+									exit
 								endif
-								m51_totcre := self:mDebAmnt
-					      	self:SpecialMessage()
-								* Save in Mirror:
-								oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
-								oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
-// 							self:AutoRec:=true
 							endif
 							oHm:Skip()
 						ENDDO
@@ -2922,7 +2927,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			endif
 		ENDIF
 		// determine extra messsage in description of transaction:
-// 		self:SpecialMessage() 
+		// 		self:SpecialMessage() 
 	ENDIF
 	self:oDCcGirotelText:Caption:=AllTrim(oTmt:m56_contra_name)+iif(Empty(AllTrim(oTmt:m56_contra_bankaccnt)),'','('+AllTrim(oTmt:m56_contra_bankaccnt)+')')+' '+;
 		iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
