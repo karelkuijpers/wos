@@ -953,13 +953,16 @@ function GetServername(fullpathname as string) as string
 		endif
 	endif
 	return cServerName
-FUNCTION GetTokens(cText,aSep)
+FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
 *	Determine Tokens in a string of text
 *	aSep: optionaly array with separators
 *	Returns array with Tokens {{Token,Seperator},...}
 
-LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING, nLength,i as int,EndOfWord as LOGIC
-Default(@aSep,{" ",",",".","&","/","-"})
+LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING, nLength,i as int,EndOfWord as LOGIC 
+if Empty(aSep)
+	aSep:= {" ",",",".","&","/","-"}
+endif
+// Default(@aSep,{" ",",",".","&","/","-"})
 
 chText:=Compress(cText)
 nLength:=Len(chText)
