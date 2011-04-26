@@ -508,7 +508,7 @@ METHOD Import() CLASS TeleMut
 	LOCAL lv_eind as date
 	Local oLock,oSel as SQLSelect
 	local aFiles:={} as array  // files to be deleted 
-	// force only one person is importing: 
+	// force only one person is importing:
 	SQLStatement{"start transaction",oConn}:execute()
 	oLock:=SQLSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
 
@@ -1558,7 +1558,8 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	
 	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
 	cSep:=CHR(SetDecimalSep()) 
-	lMTExtended:=(AtC('ME940',oFm:FileName)>0)
+	lMTExtended:=(AtC('ME940',oFm:FileName)>0) 
+
 	*Look for 25: record with accountname
 	*	Look for next line until line :25:
 	*		if 61: amount
@@ -1642,7 +1643,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				oHlM:Skip()
 				lv_description:="" 
 				lv_messagebegin:=""
-				IF SubStr(oHlM:MTLINE,1,4)==":86:"
+				IF !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"
 					* description of transaction:
 					lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5))
 					IF !lMTExtended
@@ -1701,7 +1702,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 // 					lv_description+='%%'   // separator for address and message
 					self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
 					oHlM:Skip()
-					DO WHILE SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description
+					DO WHILE !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description
 						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5)) 
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
@@ -1709,7 +1710,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						endif
 						oHlM:Skip()
 					ENDDO 
-					DO WHILE !(Occurs(":",SubStr(oHlM:MTLINE,1,6))=2)  // no TAG
+					DO WHILE !oHlM:EOF .and. !(Occurs(":",SubStr(oHlM:MTLINE,1,6))=2)  // no TAG
 						lv_Oms:=AllTrim(oHlM:MTLINE)
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
@@ -1839,11 +1840,11 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 		* save transaction:
 		IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 			IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"PGA","","",lv_Budgetcd) .and.!Empty(lv_Amount)
-				oSub:=SQLSelect{"select personid from Subscription where invoiceid='"+lv_InvoiceID+"'",oConn}
+				oSub:=SQLSelect{"select personid from subscription where invoiceid='"+lv_InvoiceID+"'",oConn}
 				if oSub:RecCount>0
-					lv_persid:=oSub:Personid
-				else
-					lv_persid:=""
+					lv_persid:=Str(oSub:Personid,-1)
+// 				else
+// 					lv_persid:=""
 				endif
 				oStmnt:=SQLStatement{"insert into teletrans set	"+;
 					"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
@@ -1867,16 +1868,10 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 	ENDDO
 	
 
-	oTeltr:Commit()
 	oHlp:=FileSpec{oHlM:FileSpec:Fullpath}
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE()
-// 	IF !oFm:DELETE()
-// 		if !FErase(oFm:Fullpath)
-// 			(WarningBox{,"Import of PG Autogiro transactions","Could not delete file "+oFm:Fullpath}):Show()
-// 		endif
-// 	ENDIF
 	RETURN true
 METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	* Import of postgiro data into teletrans
@@ -2606,7 +2601,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	self:m56_kind:=Space(6)
 	self:m56_contra_name:=Space(10)
 	self:oParent:=oOwner
-	self:cReqTeleBnk:=Implode(self:m57_BankAcc,",",1,,1) 
+	self:cReqTeleBnk:=Implode(self:m57_BankAcc,"','",1,,1) 
 	self:Import(oBank)
 	// 	oTelTr:= SQLSelect{"select * from teletrans where processed='' and bankaccntnbr<>''" ,oConn}
 	self:lGift := Gift
@@ -2614,7 +2609,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 		oSelBank:=SelBankAcc{,,,self}
 		oSelBank:Show() 
 	endif
-	self:cReqTeleBnk:=Implode(self:m57_BankAcc,",",1,,1) 
+	self:cReqTeleBnk:=Implode(self:m57_BankAcc,"','",1,,1) 
 	// determine ACCNUMBER of sKruis:
 	IF !Gift .and.!Empty(SKruis)
 		* Seek accountnumber of skruis: 
