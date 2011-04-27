@@ -660,7 +660,8 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL PrevPeriodCount:=0 as int
 	LOCAL cFileName as USUAL, oFileSpec as FileSpec
 	LOCAL ptrHandle
-	LOCAL aAcc:={} as ARRAY
+	LOCAL aAcc:={} as ARRAY  // Account IDs
+	LOCAL aAccNo as ARRAY  // Account numbers
 	LOCAL aClass:={} as ARRAY // person classes: {symname,fieldname, value[,value]}
 	LOCAL aClassIndex:={} as ARRAY // list with overview of classes: fieldname, startnbr, endnbr,type (type:0 normal field, 1: age range,2:giving frequency, 3: extra property dropdn, 4: extra property checkbx
 	LOCAL aExportClass:={} as Array // contains list of possible classes to be exported: {{name,index}, ...}
@@ -696,7 +697,6 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Build accStr to be a comma separated list of account numbers enclosed in parentheses
 	aAcc:=self:oDCSubSet:GetSelectedItems()
-	ASort(aAcc)          
 	accStr:="("
 	for i:=1 to Len(aAcc)-1
 		accStr+=Str(aAcc[i],-1) + ","
@@ -1207,7 +1207,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
    
    
    // Use of the aMatrix arrays is as follows:
-	//     For account number a, period number p, and class number c,
+	//     For account a, period p, and class c,
    //         aMatrix1[a+1,p+1,c+1]   is the total amount given
    //         aMatrix2[a+1,p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
 	//         aMatrix3[a+1,p+1,c+1]   is the number of givers
@@ -1342,7 +1342,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 		IF oTrans:RECCOUNT>0
 			DO WHILE !oTrans:EoF
-				accIx:=AScanBin(aAcc,oTrans:accid) 
+				accIx:=AScan(aAcc,oTrans:accid) 
 	
 				aMatrix1[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
 				aMatrix3[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := Val(oTrans:xcount)   
@@ -1385,7 +1385,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 		IF oTrans:RECCOUNT>0
 			DO WHILE !oTrans:EoF
-				accIx:=AScanBin(aAcc,oTrans:accid) 
+				accIx:=AScan(aAcc,oTrans:accid) 
 
 				// determine ranges from average per period:
 				IF oTrans:subperiod>PrevPeriodCount.and.Val(oTrans:xcount)>0
@@ -1511,10 +1511,12 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			oLan:Rget("period")+": "+DToC(StartDate)+" - "+DToC(EndDate-1)+"</td></tr>")
 		FWriteLine(ptrHandle,"<tr><td colspan='"+Str(maxAccIx*(Len(aPeriod)-PrevPeriodCount-1)+1,-1)+"'>"+oLan:Rget("Destinations")+":<br><ol>")
 
+		aAccNo:=AReplicate(0,Len(aAcc))
 		FOR accIx:=1 to Len(aAcc)
-			oAcc:=SQLSelect{"select description from account where giftalwd and accid=" + Str(aAcc[accIx],-1) ,oConn}
+			oAcc:=SQLSelect{"select description,accnumber from account where giftalwd and accid=" + Str(aAcc[accIx],-1) ,oConn}
 			IF oAcc:RECCOUNT>0
-				FWriteLine(ptrHandle,"<li>"+Str(aAcc[accIx],-1) + " " + AllTrim(oAcc:Description)+"</li>")
+				FWriteLine(ptrHandle,"<li>" + oAcc:accnumber + " " + AllTrim(oAcc:Description)+"</li>")
+				aAccNo[accIx]:=oAcc:accnumber
 			ENDIF      
 			oAcc:Close()
 		NEXT
@@ -1523,7 +1525,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		FWriteLine(ptrHandle,"<tr><td></td>")
 		FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+oLan:Rget("All accounts")+"</td>")
 		FOR accIx:=2 to maxAccIx
-			FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+Str(aAcc[accIx-1],-1)+"</td>")
+			FWriteLine(ptrHandle,"<td style='font-weight: bold;italic; color:blue;text-align : center;'  colspan='"+Str(Len(aPeriod)-PrevPeriodCount-1,-1)+"'>"+aAccNo[accIx-1] + "</td>")
 		NEXT
 		FWriteLine(ptrHandle,"</tr>")
 
