@@ -803,29 +803,26 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		(ErrorBox{,self:oLan:WGet("Could not read file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF 
-  	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
+	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
+	oAfl:=UpdateHouseHoldID{}
+	oAfl:Importaffiliated_person_account_list()
 
-	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
-	if datelstafl<Today()  
-		/*	oInST:=Insite{}
-		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
-		oInST:Close()   */
-		self:oParent:STATUSMESSAGE(self:oLan:WGet('Processing account changes report')+'...')
-		oAfl:=UpdateHouseHoldID{}
-		if ! oAfl:Processaffiliated_person_account_list(cAccCng)
-			IF !oAfl:Importaffiliated_person_account_list()
-				IF datelstafl<(Today()-31) 
-					nAnswer:= (TextBox{,self:oLan:WGet("Import RPP"),;
-						self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):show()
-					IF nAnswer == BOXREPLYYES 
-						FClose(ptrHandle)
-						RETURN FALSE
-					ENDIF
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF 
-  	self:oParent:Pointer := Pointer{POINTERARROW} 
+	// 	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
+	// 	if datelstafl<Today()  
+	// 		self:oParent:STATUSMESSAGE(self:oLan:WGet('Processing account changes report')+'...')
+	// 		oAfl:=UpdateHouseHoldID{}
+	// 		IF !oAfl:Importaffiliated_person_account_list()
+	// 			IF datelstafl<(Today()-31) 
+	// 				nAnswer:= (TextBox{,self:oLan:WGet("Import RPP"),;
+	// 					self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):show()
+	// 				IF nAnswer == BOXREPLYYES 
+	// 					FClose(ptrHandle)
+	// 					RETURN FALSE
+	// 				ENDIF
+	// 			ENDIF
+	// 		ENDIF
+	// 	ENDIF
+	self:oParent:Pointer := Pointer{POINTERARROW} 
 
 	IF Empty(sCURR)
 		(ErrorBox{,self:oLan:WGet('First specify the currency in System parameters')}):show()
@@ -848,7 +845,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	If !PMISDocument:GetElement("RPP_Records") 
 		If PMISDocument:GetElement("Message") 
 			FClose(ptrHandle)
-		   return true
+			return true
 		else
 			(ErrorBox{,self:oLan:WGet('No correct RPP file')+' '+AllTrim(oFr:FileName)}):show()
 			FClose(ptrHandle)
@@ -876,7 +873,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	if cPmisCurrency=="USD"
 		lUSD:=true
 	endif
-  	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
+	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
 	cMsg:=self:oLan:WGet('Importing RPP transactions')+'...'
 	self:oParent:STATUSMESSAGE(cMsg)
 	DO WHILE recordfound
