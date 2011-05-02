@@ -79,6 +79,44 @@ METHOD NewButton CLASS AccountBrowser
 	self:EditButton(true)
 	
 	RETURN nil
+METHOD RegBalance(myNum) CLASS AccountBrowser
+local oBal as SQLSelect
+	Default(@myNum,null_string)
+	IF Empty(myNum) .or. myNum='0'
+		self:cCurBal:="0:Balance Items"
+		self:WhatFrom:=''
+	ELSE
+		oBal:=SQLSelect{"select number,heading,balitemid from balanceitem where balitemid='"+myNum+"'",oConn} 
+		IF oBal:RecCount>0
+			self:cCurBal:=AllTrim(oBal:number)+":"+oBal:heading
+			self:WhatFrom:=Str(oBal:balitemid,-1)
+		ENDIF
+	ENDIF
+	self:oDCFromBal:TextValue:=self:cCurBal 
+	self:FindButton()	
+RETURN
+ 
+METHOD RegDepartment(myNum,ItemName) CLASS AccountBrowser
+	LOCAL depnr:="", deptxt:=""  as STRING
+	local oDep as SQLSelect
+	Default(@myNum,null_string)
+	Default(@Itemname,null_string)
+	IF Empty(myNum) .or. myNum='0'
+		depnr:="0"
+		deptxt:=sEntity+" "+sLand
+	ELSE
+		oDep:=SQLSelect{"select depid,descriptn  from department where depid="+myNum,oConn}
+		if oDep:RecCount>0
+			depnr:=Str(oDep:DEPID,-1)
+			deptxt:=oDep:DESCRIPTN
+		ENDIF
+	ENDIF	
+	IF ItemName == "From Department"
+		self:WhoFrom:= depnr
+		self:oDCFromDep:TextValue := deptxt
+	ENDIF
+	self:FindButton()	
+RETURN
 FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,lUnique:=false as logic,cAccFilter:="" as string ,;
 		oWindow:=null_object as Window,lNoDepartmentRestriction:=false as logic,oAccCnt:=null_object as AccountContainer) as logic
 	* oWindow: to be used as owner of AccountBrowser
@@ -159,6 +197,21 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	oAccBw:AccountSelect(oCaller,BrwsValue,ItemName,lUnique)
 	
 	RETURN FALSE // false means not directly found
+Function AddSubBal(a_bal as array,ParentNum as int, nCurrentRec as int,aBalIncl ref array) as int
+	* Find subdepartments and add to arrays with balance items
+	local nSubRec as int
+	local lFirst:=true as logic
+	// reposition the customer server to the searched record
+	nCurrentRec:=AScan(a_bal,{|x|x[2]==ParentNum},nCurrentRec+1)
+	IF Empty(nCurrentRec)
+		return nCurrentRec
+	ENDIF
+	AAdd(aBalIncl,a_bal[nCurrentRec,1])
+	do WHILE nSubRec > 0 .or. lFirst
+		lFirst:=false
+		nSubRec:=AddSubBal(a_bal,a_bal[nCurrentRec,1],nSubRec,@aBalIncl)
+	ENDDO	
+	RETURN nCurrentRec
 Function AddSubDep(d_dep as array,ParentNum as int, nCurrentRec as int,aDepIncl ref array) as int
 	* Find subdepartments and add to arrays with departments
 	local nSubRec as int
@@ -492,6 +545,22 @@ if !Empty(cFilter)
 else
 	Return ''
 endif
+function SetAccFilter(WhatFrom as int) as string 
+	// compose filter for balance items branch from given WhatFrom balitemid 
+	LOCAL i,j			as int
+	local a_bal:={},aBalIncl:={} as array
+	local oBal as SQLSelect
+	
+	IF !Empty(WhatFrom)
+		oBal:=SQLSelect{"select balitemid,balitemidparent from balanceitem order by balitemidparent,balitemid",oConn}
+		if oBal:RecCount>0
+			aBalIncl:={WhatFrom} 
+			a_bal:=oBal:getlookuptable(1000) 
+			do WHILE (i:=AddSubBal(a_bal,WhatFrom,i,@aBalIncl))>0
+			ENDDO 
+		endif
+	endif
+	return Implode(aBalIncl,",")
 function SetDepFilter(WhoFrom as int) as string 
 	// compose filter for department branch from given WhoFrom depid 
 	LOCAL i,j			as int
