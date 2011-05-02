@@ -321,7 +321,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		
 		if !Empty(self:oTelTr:status) .or. self:oTelTr:reccount<1
 			IF !Empty(self:oTelTr:status) 
-				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"logErrors") 
+				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"LogErrors") 
 			endif
 			SQLStatement{"rollback",oConn}:execute()
 			return false
@@ -883,7 +883,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,20,2)+SubStr(oHlM:MTLINE,18,2)+SubStr(oHlM:MTLINE,16,2)) // valuta date
 				lv_addsub:="B"
 				lv_AmountStr:=SubStr(oHlM:MTLINE,33,17)
-				lv_Amount:=Round(Val(lv_AmountStr)/100,2)
+				lv_Amount:=Round(Val(lv_AmountStr)/100.00,2)
 				// Determine from KIDnr personid and accountnbr:
 				lv_InvoiceID:=SubStr(oHlM:MTLINE,64,11)
 				lv_description:=lv_InvoiceID
@@ -1824,7 +1824,7 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 		ld_bookingdate:=SToD(SubStr(oHlM:MTLINE,3,8)) // valuta date
 		lv_addsub:="B"
 		lv_AmountStr:=SubStr(oHlM:MTLINE,32,12)
-		lv_Amount:=Round(Val(lv_AmountStr)/100,2)
+		lv_Amount:=Round(Val(lv_AmountStr)/100.00,2)
 		lv_bankAcntOwn:=ZeroTrim(SubStr(oHlM:MTLINE,44,10))
 		// Determine from KIDnr personid and accountnbr:
 		lv_InvoiceID:=ZeroTrim(SubStr(oHlM:MTLINE,16,16))
@@ -2188,12 +2188,12 @@ DO WHILE .not.oHlM:EOF
 	if SubStr(oHlM:MTLINE,1,2)=="20"
 		// proces Payment: 
 		lv_reference:=ALLTRIM(SubStr(oHlM:MTLINE,3,35))	// banken transactiecode
-		lv_Amount:=Val(AllTrim(SubStr(oHlM:MTLINE,38,15)))/100
+		lv_Amount:=Round(Val(AllTrim(SubStr(oHlM:MTLINE,38,15)))/100.00,2)
 		//lv_BankAcntContra:=ZeroTrim(AllTrim(SubStr(oHlM:MTLINE,70,8)))
 		lv_addsub:="B" 
 	elseif SubStr(oHlM:MTLINE,1,2)=="25"     
 		lv_reference:=AllTrim(SubStr(oHlM:MTLINE,3,35))	// invoice id
-		lv_Amount:=Val(AllTrim(SubStr(oHlM:MTLINE,38,15)))/100
+		lv_Amount:=Round(Val(AllTrim(SubStr(oHlM:MTLINE,38,15)))/100.00,2)
 		lv_addsub:="A" 		
 	endif 
 	// Initialize values:
@@ -2456,7 +2456,7 @@ DO WHILE .not.oHlM:EOF
 	ENDIF
 	lv_bankAcntOwn:=ZeroTrim(AllTrim(SubStr(oHlM:MTLINE,27,10)))
 	lv_BankAcntContra:=ZeroTrim(AllTrim(StrTran(SubStr(oHlM:MTLINE,17,10),"P","")))
-	lv_Amount:=Val(AllTrim(SubStr(oHlM:MTLINE,4,13)))/100
+	lv_Amount:=Round(Val(AllTrim(SubStr(oHlM:MTLINE,4,13)))/100.00,2)
 	lv_addsub:=iif(batchsoort=="A","A","B") 
 	lv_Oms:=""
 	lv_budget:=""
@@ -2553,8 +2553,8 @@ DO WHILE .not.oHlM:EOF
 			",kind='"+lv_reference +"'"+;
 			",amount='"+Str(lv_Amount,-1)+"'"+;
 			",addsub='"+lv_addsub	+"'"+;
-			",budgetcd='"+lv_budget	+"'"+;
-			iif(Empty(lv_persid),"",",persid='"+lv_persid +"'")+;
+			iif(Empty(lv_budget),'',iif(SQLSelect{"select accnumber from account where accnumber='"+lv_budget+"'",oConn}:Reccount>0,",budgetcd='"+lv_budget	+"'",''))+;
+			iif(Empty(lv_persid),"",iif(SQLSelect{"select persid from person where persid='"+lv_persid+"'",oConn}:Reccount>0,",persid='"+lv_persid +"'",''))+;
 			",description='"+lv_description	+"'",oConn}
 			oStMnt:Execute()
 			if	oStMnt:NumSuccessfulRows>0
