@@ -464,7 +464,7 @@ END
 
 CLASS GetExchRate INHERIT DataDialogMine 
 
-	PROTECT oDCmExchRate AS SINGLELINEEDIT
+	PROTECT oDCmExchRate AS MYSINGLEEDIT
 	PROTECT oDCROEText1 AS FIXEDTEXT
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oDCCurName AS FIXEDTEXT
@@ -487,7 +487,7 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"GetExchRate",_GetInst()},iCtlID)
 
-oDCmExchRate := SingleLineEdit{SELF,ResourceID{GETEXCHRATE_MEXCHRATE,_GetInst()}}
+oDCmExchRate := mySingleEdit{SELF,ResourceID{GETEXCHRATE_MEXCHRATE,_GetInst()}}
 oDCmExchRate:TooltipText := "Give dollar exchange rate"
 oDCmExchRate:HyperLabel := HyperLabel{#mExchRate,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmExchRate:FieldSpec := EXCHANGERATE{}
