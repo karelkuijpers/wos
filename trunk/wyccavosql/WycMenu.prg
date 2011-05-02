@@ -309,7 +309,9 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	ENDIF
 	// Options:
 	AAdd(aMenu,{0,6, oLan:MGet("&Options"),,,,,})
-// 	AAdd(aMenu,{6,7, oLan:MGet("&Check consitency financial data"),"DebugMonthbal","",0,44,"F"})
+	if SuperUser
+		AAdd(aMenu,{6,7, oLan:MGet("&Check consistency financial data"),"CheckFinancialData","",0,44,"F"})
+	endif
 	AAdd(aMenu,{6,7,,,,,})           // separator
 	AAdd(aMenu,{6,8, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
 	IF lSystemAdmin
