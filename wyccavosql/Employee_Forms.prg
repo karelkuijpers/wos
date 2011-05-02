@@ -1874,7 +1874,8 @@ METHOD OkButton() CLASS LogonDialog
 				ENDIF
 			ENDIF
 		ELSE
-			if IsAdminUser(cUser,AllTrim( oDCPassword:Textvalue ) )
+			if IsAdminUser(cUser,AllTrim( oDCPassword:Textvalue ) ) 
+				SuperUser:=true
 			   cEmpStmnt:="select empid,"+Crypt_Emp(false,"loginname")+" as loginname from employee where ";
 				+ Crypt_Emp(false,"type")+'="A"'
 				oEmp := SQLSelect{cEmpStmnt,oConn} 
