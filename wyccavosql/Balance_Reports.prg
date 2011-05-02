@@ -1740,7 +1740,7 @@ DO WHILE true
 		exit
 	ELSE
 		self:SubNetDepartment(subDepPtr,d_parentdep,d_dep,@d_PLdeb,@d_PLcre,d_netnum,r_balid,@rd_BalPer,@rd_BalPrvYr,@rd_BalPrvYrYtD,@rd_BalPrvPer,;
-		rd_bud,@rd_budper,@rd_budytd,d_PrfLssPrYr)
+		@rd_bud,@rd_budper,@rd_budytd,d_PrfLssPrYr)
 		* consolidate values of subdepartment into itself:
 		d_PLdeb[p_depptr]:=Round(d_PLdeb[p_depptr]+d_PLdeb[subDepPtr],DecAantal)
 		d_PLcre[p_depptr]:=Round(d_PLcre[p_depptr]+d_PLcre[subDepPtr],DecAantal)
@@ -2065,7 +2065,7 @@ METHOD DepstmntPrint() CLASS DeptReport
 		"where a.department=d.depid and d.depid in ("+Implode(aDep,",")+")",oConn}
 	if oAcc:RecCount<1
 		if !Empty(oAcc:Status)
-			LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"logerrors") 
+			LogEvent(self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString,"LogErrors") 
 			ErrorBox{self,"Error:"+oAcc:ErrInfo:ErrorMessage+CRLF+"statement:"+oAcc:SQLString}:Show()
 		endif
 		return
@@ -4810,7 +4810,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TrialBalance
 			IF nPntr>1
 				cCurValue:=SubStr(cCurValue,1,nPntr-1)
 			ENDIF
-			IF self:oDep:FindDep(@cCurValue)
+			IF FindDep(@cCurValue)
 				self:RegDepartment(cCurValue,"")
 			ELSE
 				self:DepButton()
