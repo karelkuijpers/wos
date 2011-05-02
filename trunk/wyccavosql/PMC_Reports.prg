@@ -385,27 +385,30 @@ METHOD PrintReport() CLASS PMISsend
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
 	oWindow:Pointer := Pointer{POINTERHOURGLASS}
-	datelstafl:=self:oSys:DATLSTAFL 
-	if datelstafl<Today() 
-		/*	oInST:=Insite{}
-		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
-		oInST:Close()   */
+	oAfl:=UpdateHouseHoldID{}
+	oAfl:Importaffiliated_person_account_list()
 
-		oAfl:=UpdateHouseHoldID{}
-		if !oAfl:Processaffiliated_person_account_list(cAccCng)
-			IF !oAfl:Importaffiliated_person_account_list()
-				IF datelstafl<(Today()-31) 
-					nAnswer:= (TextBox{oWindow,self:oLan:WGet("Import RPP"),;
-						self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):Show()
-					IF nAnswer == BOXREPLYYES 
-						oWindow:Pointer := Pointer{POINTERARROW} 
-						FileStart(WorkDir()+"Insite.html",self)
-						RETURN FALSE
-					ENDIF
-				ENDIF
-			ENDIF
-		ENDIF
-	ENDIF
+// 	datelstafl:=self:oSys:DATLSTAFL 
+// 	if datelstafl<Today() 
+// 		/*	oInST:=Insite{}
+// 		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
+// 		oInST:Close()   */
+
+// 		oAfl:=UpdateHouseHoldID{}
+// 		if !oAfl:Processaffiliated_person_account_list(cAccCng)
+// 			IF !oAfl:Importaffiliated_person_account_list()
+// 				IF datelstafl<(Today()-31) 
+// 					nAnswer:= (TextBox{oWindow,self:oLan:WGet("Import RPP"),;
+// 						self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):Show()
+// 					IF nAnswer == BOXREPLYYES 
+// 						oWindow:Pointer := Pointer{POINTERARROW} 
+// 						FileStart(WorkDir()+"Insite.html",self)
+// 						RETURN FALSE
+// 					ENDIF
+// 				ENDIF
+// 			ENDIF
+// 		ENDIF
+// 	ENDIF
 	oWindow:Pointer := Pointer{POINTERARROW}
 
 	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
@@ -519,11 +522,17 @@ METHOD PrintReport() CLASS PMISsend
 				//   1       2      3      4       5       6      7          8      9        10      11   12     13         14
 				cDestPersonId:=""
 				IF aDistr[i,3]=="ACH"  //destpp
-					if Empty(aDistr[i,11]).or. Empty(aDistr[i,12]) .or.Empty(aDistr[i,13])
+// 					if Empty(aDistr[i,11]).or. Empty(aDistr[i,12]) .or.Empty(aDistr[i,13])
+// 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
+// 						exit
+// 					endif				
+// 					cDestAcc:="#"+AllTrim(aDistr[i,11])+"#"+aDistr[i,13]+"#"+AllTrim(aDistr[i,12])+"#"+SubStr(me_pers,1,22)+"#"+AllTrim(oMbr:householdid)+"#"
+					cDestAcc:=AllTrim(aDistr[i,4]) 			
+					if !Empty(cDestAcc) .and.(!cDestAcc=='1'.or.cDestAcc=='2')
 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
 						exit
 					endif				
-					cDestAcc:="#"+AllTrim(aDistr[i,11])+"#"+aDistr[i,13]+"#"+AllTrim(aDistr[i,12])+"#"+SubStr(me_pers,1,22)+"#"+AllTrim(oMbr:householdid)+"#"
+					cDestAcc:=AllTrim(oMbr:householdid)+iif(Empty(cDestAcc),"",+'#'+cDestAcc)  // household code is sufficient from 2011-04-03
 				ELSE
 					if oMbr:HOMEPP # SEntity .and. (aDistr[i,3] # SEntity .and.aDistr[i,3] # "AAA") .and. oMbr:co == "M"
 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
@@ -1043,15 +1052,15 @@ METHOD PrintReport() CLASS PMISsend
 				" and	Month="+Str(Month(self:closingDate),-1)+" order by mbalid for update",oConn}
 			if	!Empty(oBal:Status)
 				cError:=self:oLan:WGet("balance records locked by someone else, thus	skipped")
-				LogEvent(self,cError+':'+oBal:ErrInfo:errormessage+CRLF+"Statement:"+oBal:SQLString,"logerrors")
+				LogEvent(self,cError+':'+oBal:ErrInfo:errormessage+CRLF+"Statement:"+oBal:SQLString,"LogErrors")
 			endif	  
-			if Empty(cError)
+			if Empty(cError) .and.!Empty(cTransLock)
 				*	Change status of transactions to "Send to PMC": bfm='H':
 				oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows <1
-					cError:=self:oLan:WGet("could no record mark transactions as sent to PMC")
-					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+					cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 				ENDIF
 			endif
 			if Empty(cError)
@@ -1062,7 +1071,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute(Str(aDisLock[i,3],-1),iif(aDisLock[i,4],'1','0'),aDisLock[i,1],aDisLock[i,2])
 					if !Empty(oStmnt:Status)
 						cError:=self:oLan:WGet("could not update distribution instruction for members")
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					endif
 				next
 			endif
@@ -1115,7 +1124,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could no record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						exit
 					endif
 					IF aMemberTrans[a_tel,4]==DT
@@ -1139,7 +1148,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 							exit
 						ENDIF						
 						if !ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_saldo, 0, me_saldo,aMemberTrans[a_tel,11]) 
@@ -1158,7 +1167,7 @@ METHOD PrintReport() CLASS PMISsend
 							oStmnt:Execute()
 							if oStmnt:NumSuccessfulRows<1
 								cError:=self:oLan:WGet("could	no	record bankorder for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-								LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+								LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 								exit
 							ENDIF						
 						endif
@@ -1186,7 +1195,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record assessment for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 							exit
 						ENDIF						
 						if !ChgBalance(me_accid, self:closingDate, me_saldo,0, me_saldoF,0,aMemberTrans[a_tel,11])
@@ -1207,7 +1216,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record assessment projects total")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						elseif !ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
 							cError:=self:oLan:WGet("could no update balance for assessment projects")+' ('+oStmnt:Status:description+')'
 						endif
@@ -1224,7 +1233,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
 						cError:=self:oLan:WGet("could	no	update balance	for assessment")+' ('+oStmnt:Status:description+')'
 					endif
@@ -1239,7 +1248,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Reversal income for office assessment home assigned")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
 						cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
@@ -1252,7 +1261,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record Reversal income for office assessment home assigned")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
 							cError:=self:oLan:WGet("could	no	update balance	for expense home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 						endif
@@ -1267,7 +1276,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Reversal income for office assessment field assigned")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
 						cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif 
@@ -1280,7 +1289,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record Reversal income for office assessment field assigned")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						elseif !ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR)
 							cError:=self:oLan:WGet("could	no	update balance	for expense field assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 						endif
@@ -1297,7 +1306,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
 						cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
@@ -1310,7 +1319,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						elseif !ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
 							cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 						endif
@@ -1325,7 +1334,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
 						cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
@@ -1338,7 +1347,7 @@ METHOD PrintReport() CLASS PMISsend
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows<1
 							cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCurr)
 							cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 						endif
@@ -1358,7 +1367,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					elseif !ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
 						cError:=self:oLan:WGet("could	no	update balance	for RIA account")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
@@ -1368,7 +1377,7 @@ METHOD PrintReport() CLASS PMISsend
 					oStmnt:Execute()
 					if !Empty(oStmnt:Status)
 						cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"logerrors")
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 					endif
 				endif
 			endif
