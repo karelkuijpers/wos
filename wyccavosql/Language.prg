@@ -416,16 +416,70 @@ oReport:prstart()
 oReport:prstop()
 RETURN NIL
 METHOD FindNext( ) as void pascal CLASS LanguageWindow 
-local oLan:=self:Server as Language
+local oLan:=self:Server as SQLSelect
 local oMyAB:=self as LanguageWindow 
-Super:FindNext({||oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY})})
 
+oLan:SuspendNotification()
+
+IF (self:oCCFindNext:Caption == "Find")
+	oLan:GoTop()
+	self:aKeyW:=GetTokens(AllTrim(self:FindText))
+   self:cFindText := AllTrim(self:FindText)
+ELSE
+	oLan:Skip()
+ENDIF
+	
+do while (!oLan:EOF)
+	if (oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY}))
+		oLan:ResetNotification()
+		self:GoTo(oLan:RECNO)
+      self:oCCFindNext:Caption := "Next"
+      self:oCCFindPrevious:Show()
+		exit
+	ENDIF  
+	oLan:Skip()
+ENDDO
+
+IF (oLan:EOF .or. oLan:RECNO = oLan:RECCOUNT)
+	IF (oLan:EOF)
+		oLan:ResetNotification()
+	   IF (self:oCCFindNext:Caption == "Find")
+			self:STATUSMESSAGE("Not found", MESSAGEPERMANENT)
+   	ELSE
+   		self:STATUSMESSAGE("No more found", MESSAGEPERMANENT)
+	   ENDIF
+	ELSE
+		// NEXT button disabled
+		self:oCCFindNext:Disable()
+	ENDIF
+ENDIF
 
 RETURN 
 METHOD FindPrevious( ) as void pascal CLASS LanguageWindow 
-local oLan:=self:Server as Language
+local oLan:=self:Server as SQLSelect
 local oMyAB:=self as LanguageWindow
-Super:FindPrevious({||oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY})})
+
+self:oCCFindNext:Enable()
+oLan:SuspendNotification()
+oLan:Skip(-1)
+DO WHILE (!oLan:BOF)
+	if (oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY}))
+		oLan:ResetNotification()
+		self:GoTo(oLan:RECNO)
+		exit
+	ENDIF  
+	oLan:Skip(-1)
+ENDDO
+
+IF (oLan:BOF .or. oLan:RECNO = 1)
+	IF (oLan:BOF)
+		oLan:ResetNotification()
+		self:STATUSMESSAGE("No more found", MESSAGEPERMANENT)
+	ELSE
+		self:oCCFindPrevious:Hide()
+	ENDIF  
+ENDIF
+
 RETURN 
 
 ACCESS FindText() CLASS LanguageWindow
