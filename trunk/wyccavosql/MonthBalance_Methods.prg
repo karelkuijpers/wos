@@ -138,7 +138,7 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
 // 	LogEvent(,cStatement,"logsql")
 	oAccBal:=SQLSelect{cStatement,oConn}
 	if !Empty(oAccBal:Status).or.oAccBal:RecCount<1
-		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"logerrors")
+		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"LogErrors")
 		return
 	endif
 	
