@@ -17,13 +17,13 @@ BEGIN
 	CONTROL	"Member:", EDITDISTRIBUTION_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 54, 13
 	CONTROL	"%", EDITDISTRIBUTION_PERC, "Static", WS_CHILD, 210, 89, 31, 12
 	CONTROL	"", EDITDISTRIBUTION_MDESTAMT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 160, 88, 48, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 62, 253, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 62, 253, 13, WS_EX_CLIENTEDGE
 	CONTROL	"PP Codes", EDITDISTRIBUTION_MDESTPP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 35, 123, 142
 	CONTROL	"type of amount to be distributed of gifts", EDITDISTRIBUTION_MDESTTYP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 88, 62, 72
 	CONTROL	"Type of amount", EDITDISTRIBUTION_FIXEDTEXT10, "Static", WS_CHILD, 8, 88, 56, 12
 	CONTROL	"amount", EDITDISTRIBUTION_AMOUNTTXT, "Static", WS_CHILD, 133, 89, 27, 13
 	CONTROL	"Receiving PP", EDITDISTRIBUTION_FIXEDTEXT8, "Static", WS_CHILD, 8, 35, 56, 13
-	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 62, 60, 12
+	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD, 8, 62, 59, 13
 	CONTROL	"Description", EDITDISTRIBUTION_FIXEDTEXT9, "Static", WS_CHILD, 10, 126, 53, 12
 	CONTROL	"", EDITDISTRIBUTION_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 125, 253, 12, WS_EX_CLIENTEDGE
 	CONTROL	"OK", EDITDISTRIBUTION_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 148, 54, 12
@@ -32,13 +32,6 @@ BEGIN
 	CONTROL	"own currency", EDITDISTRIBUTION_CURRENCYBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 252, 89, 68, 11
 	CONTROL	"US Dollar", EDITDISTRIBUTION_CURRENCYBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 253, 104, 61, 11
 	CONTROL	"Active", EDITDISTRIBUTION_CHECKBOXACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 213, 10, 34, 11
-	CONTROL	"Routing Number:", EDITDISTRIBUTION_ACHFIX1, "Static", WS_CHILD, 8, 52, 58, 12
-	CONTROL	"", EDITDISTRIBUTION_MDFIR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 67, 51, 123, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Account Number:", EDITDISTRIBUTION_ACHFIX2, "Static", WS_CHILD, 8, 67, 58, 13
-	CONTROL	"", EDITDISTRIBUTION_MDFIA, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 66, 123, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Checking or Saving?", EDITDISTRIBUTION_MCHECKSAVE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 200, 60, 86, 20
-	CONTROL	"Check", EDITDISTRIBUTION_CHECKBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 204, 68, 37, 11
-	CONTROL	"Saving", EDITDISTRIBUTION_SAVEBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 242, 68, 39, 11
 	CONTROL	"Single use", EDITDISTRIBUTION_CHECBOXSINGELUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 212, 25, 80, 12
 END
 
@@ -63,13 +56,6 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	PROTECT oCCCurrencyButton1 AS RADIOBUTTON
 	PROTECT oCCCurrencyButton2 AS RADIOBUTTON
 	PROTECT oDCCheckBoxActive AS CHECKBOX
-	PROTECT oDCACHFix1 AS FIXEDTEXT
-	PROTECT oDCmDFIR AS SINGLELINEEDIT
-	PROTECT oDCACHFix2 AS FIXEDTEXT
-	PROTECT oDCmDFIA AS SINGLELINEEDIT
-	PROTECT oDCmCHECKSAVE AS RADIOBUTTONGROUP
-	PROTECT oCCCheckButton AS RADIOBUTTON
-	PROTECT oCCSaveButton AS RADIOBUTTON
 	PROTECT oDCChecBoxSingelUse AS CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -198,28 +184,6 @@ oDCCheckBoxActive := CheckBox{SELF,ResourceID{EDITDISTRIBUTION_CHECKBOXACTIVE,_G
 oDCCheckBoxActive:HyperLabel := HyperLabel{#CheckBoxActive,"Active","Apply this instruction when sending to PMC?",NULL_STRING}
 oDCCheckBoxActive:UseHLforToolTip := True
 
-oDCACHFix1 := FixedText{SELF,ResourceID{EDITDISTRIBUTION_ACHFIX1,_GetInst()}}
-oDCACHFix1:HyperLabel := HyperLabel{#ACHFix1,"Routing Number:",NULL_STRING,NULL_STRING}
-
-oDCmDFIR := SingleLineEdit{SELF,ResourceID{EDITDISTRIBUTION_MDFIR,_GetInst()}}
-oDCmDFIR:HyperLabel := HyperLabel{#mDFIR,NULL_STRING,"Routing Number of Destination bank like ECCU",NULL_STRING}
-oDCmDFIR:UseHLforToolTip := True
-oDCmDFIR:Picture := "999999999"
-
-oDCACHFix2 := FixedText{SELF,ResourceID{EDITDISTRIBUTION_ACHFIX2,_GetInst()}}
-oDCACHFix2:HyperLabel := HyperLabel{#ACHFix2,"Account Number:",NULL_STRING,NULL_STRING}
-
-oDCmDFIA := SingleLineEdit{SELF,ResourceID{EDITDISTRIBUTION_MDFIA,_GetInst()}}
-oDCmDFIA:HyperLabel := HyperLabel{#mDFIA,NULL_STRING,"Account number of member at destination bank",NULL_STRING}
-oDCmDFIA:UseHLforToolTip := True
-oDCmDFIA:FieldSpec := DistributionInstruction_DFIA{}
-
-oCCCheckButton := RadioButton{SELF,ResourceID{EDITDISTRIBUTION_CHECKBUTTON,_GetInst()}}
-oCCCheckButton:HyperLabel := HyperLabel{#CheckButton,"Check",NULL_STRING,NULL_STRING}
-
-oCCSaveButton := RadioButton{SELF,ResourceID{EDITDISTRIBUTION_SAVEBUTTON,_GetInst()}}
-oCCSaveButton:HyperLabel := HyperLabel{#SaveButton,"Saving",NULL_STRING,NULL_STRING}
-
 oDCChecBoxSingelUse := CheckBox{SELF,ResourceID{EDITDISTRIBUTION_CHECBOXSINGELUSE,_GetInst()}}
 oDCChecBoxSingelUse:HyperLabel := HyperLabel{#ChecBoxSingelUse,"Single use",NULL_STRING,NULL_STRING}
 oDCChecBoxSingelUse:TooltipText := "Deactivate after distribution"
@@ -230,13 +194,6 @@ oDCCurrencyGroup:FillUsing({ ;
 								{oCCCurrencyButton2,"dollar"} ;
 								})
 oDCCurrencyGroup:HyperLabel := HyperLabel{#CurrencyGroup,"Currency of amount",NULL_STRING,NULL_STRING}
-
-oDCmCHECKSAVE := RadioButtonGroup{SELF,ResourceID{EDITDISTRIBUTION_MCHECKSAVE,_GetInst()}}
-oDCmCHECKSAVE:FillUsing({ ;
-							{oCCCheckButton,"C"}, ;
-							{oCCSaveButton,"S"} ;
-							})
-oDCmCHECKSAVE:HyperLabel := HyperLabel{#mCHECKSAVE,"Checking or Saving?",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Edit Distribution Instruction"
 SELF:HyperLabel := HyperLabel{#EditDistribution,"Edit Distribution Instruction",NULL_STRING,NULL_STRING}
@@ -283,35 +240,35 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditDistribution
 			SELF:oCCCurrencyButton2:Hide()
 		ENDIF
 	ELSEIF oControlEvent:NameSym==#mDestPP
-		IF SELF:oDCmDestPP:Value="ACH"
-			IF Empty(mDFIR)
-				SELF:mDFIR:="322273379"
-			ENDIF
-			SELF:oDCmDestAcc:Hide()
-			SELF:odcAccountFix:Hide()
-			SELF:oDCACHFix1:show()
-			SELF:oDCACHFix2:show()
-			SELF:oDCmDFIA:Show()
-			SELF:oDCmDFIR:Show()
-			SELF:oDCmCHECKSAVE:Show()
-			SELF:oCCCheckButton:Show()
-			SELF:oCCSaveButton:show()
-		ELSE
+// 		IF SELF:oDCmDestPP:Value="ACH"
+// 			IF Empty(mDFIR)
+// 				SELF:mDFIR:="322273379"
+// 			ENDIF
+// 			SELF:oDCmDestAcc:Hide()
+// 			SELF:odcAccountFix:Hide()
+// 			SELF:oDCACHFix1:show()
+// 			SELF:oDCACHFix2:show()
+// 			SELF:oDCmDFIA:Show()
+// 			SELF:oDCmDFIR:Show()
+// 			SELF:oDCmCHECKSAVE:Show()
+// 			SELF:oCCCheckButton:Show()
+// 			SELF:oCCSaveButton:show()
+// 		ELSE
 			SELF:oDCmDestAcc:Show()
-			SELF:odcAccountFix:Show()
-			SELF:oDCACHFix1:Hide()
-			SELF:oDCACHFix2:Hide()
-			SELF:oDCmDFIA:Hide()
-			SELF:oDCmDFIR:Hide()
-			SELF:oDCmCHECKSAVE:Hide()
-			SELF:oCCCheckButton:Hide()
-			self:oCCSaveButton:Hide()
+			self:odcAccountFix:Show()
+// 			SELF:oDCACHFix1:Hide()
+// 			SELF:oDCACHFix2:Hide()
+// 			SELF:oDCmDFIA:Hide()
+// 			SELF:oDCmDFIR:Hide()
+// 			SELF:oDCmCHECKSAVE:Hide()
+// 			SELF:oCCCheckButton:Hide()
+// 			self:oCCSaveButton:Hide()
 			if self:oDCmDestPP:Value="AAA"
 				self:odcAccountFix:TextValue:="Bank Number:"
 			else
 				self:odcAccountFix:TextValue:="Account:"				
 			endif
-		ENDIF					
+// 		ENDIF					
 	ENDIF
 	RETURN NIL
 
@@ -386,17 +343,17 @@ IF SELF:ValidateDistribution()
 	endif
 	aDis[DESCRPTN]:=AllTrim(self:mDescription)
 	aDis[DESTPP]:= AllTrim(self:mDestPP)
-	if mDestPP="ACH"
-		aDis[DESTACC]:=""
-		aDis[DFIR]:= self:mDFIR
-		aDis[DFIA]:= self:mDFIA
-		aDis[CHECKSAVE]:= self:mCHECKSAVE
-	else
+// 	if mDestPP="ACH"
+// 		aDis[DESTACC]:=""
+// 		aDis[DFIR]:= self:mDFIR
+// 		aDis[DFIA]:= self:mDFIA
+// 		aDis[CHECKSAVE]:= self:mCHECKSAVE
+// 	else
 		aDis[DESTACC]:= iif(Empty(self:mDestPP),"",AllTrim(self:mDestAcc))
-		aDis[DFIR]:=""
-		aDis[DFIA]:=""
-		aDis[CHECKSAVE]:=""
-	endif
+// 		aDis[DFIR]:=""
+// 		aDis[DFIA]:=""
+// 		aDis[CHECKSAVE]:=""
+// 	endif
 	aDis[DESTAMT]:=iif(Empty(self:mDestPP),0.00,self:mDestAmt)
 	aDis[DESTTYP]:= iif(Empty(self:mDestPP),0,oDCmDestTyp:CurrentItemNo-1)
 	aDis[CURRENCY]:=iif(self:CurrencyGroup=="dollar",1,0)
@@ -430,9 +387,9 @@ self:SetTexts()
 		ENDIF 
 		self:ChecBoxSingelUse:=iif(self:aDis[SINGLEUSE]=1,true,false)
 		self:mDestAcc := self:aDis[DESTACC]
-		self:mDFIA:= self:aDis[DFIA]
-		self:mDFIR:= self:aDis[DFIR]
-		self:mCHECKSAVE:=self:aDis[CHECKSAVE]
+// 		self:mDFIA:= self:aDis[DFIA]
+// 		self:mDFIR:= self:aDis[DFIR]
+// 		self:mCHECKSAVE:=self:aDis[CHECKSAVE]
 		self:mDestAmt:=self:aDis[DESTAMT]
 		mDestPP := self:aDis[DESTPP]
 		
@@ -516,32 +473,32 @@ self:SetTexts()
 		endif
 	endif
 		
-	IF SELF:mDestPP="ACH"
-		SELF:oDCmDestAcc:Hide()
-		SELF:odcAccountFix:Hide()
-		SELF:oDCACHFix1:show()
-		SELF:oDCACHFix2:show()
-		SELF:oDCmDFIA:Show()
-		SELF:oDCmDFIR:Show()
-		SELF:oDCmCHECKSAVE:Show()
-		SELF:oCCCheckButton:Show()
-		SELF:oCCSaveButton:show()
-	ELSE
+// 	IF SELF:mDestPP="ACH"
+// 		SELF:oDCmDestAcc:Hide()
+// 		SELF:odcAccountFix:Hide()
+// 		SELF:oDCACHFix1:show()
+// 		SELF:oDCACHFix2:show()
+// 		SELF:oDCmDFIA:Show()
+// 		SELF:oDCmDFIR:Show()
+// 		SELF:oDCmCHECKSAVE:Show()
+// 		SELF:oCCCheckButton:Show()
+// 		SELF:oCCSaveButton:show()
+// 	ELSE
 		SELF:oDCmDestAcc:Show()
 		SELF:odcAccountFix:Show()
-		SELF:oDCACHFix1:Hide()
-		SELF:oDCACHFix2:Hide()
-		SELF:oDCmDFIA:Hide()
-		SELF:oDCmDFIR:Hide()
-		SELF:oDCmCHECKSAVE:Hide()
-		SELF:oCCCheckButton:Hide()
-		self:oCCSaveButton:Hide()
+// 		SELF:oDCACHFix1:Hide()
+// 		SELF:oDCACHFix2:Hide()
+// 		SELF:oDCmDFIA:Hide()
+// 		SELF:oDCmDFIR:Hide()
+// 		SELF:oDCmCHECKSAVE:Hide()
+// 		SELF:oCCCheckButton:Hide()
+// 		self:oCCSaveButton:Hide()
 		if self:oDCmDestPP:Value="AAA"
 			self:odcAccountFix:TextValue:="Bank Number:"
 		else
 			self:odcAccountFix:TextValue:="Account:"				
 		endif			
-	ENDIF			
+// 	ENDIF			
 	SELF:oCCCurrencyButton1:Caption:=sCURR
 	IF it=0 .or. it=2
 		SELF:oDCCurrencyGroup:Show()
@@ -579,7 +536,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditDistribution
 
 METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 	LOCAL lValid := true as LOGIC
-	LOCAL cError as STRING
+	LOCAL cError,cAcc as STRING
 	LOCAL oTextBox as TextBox
 	LOCAL uRet as USUAL
 	LOCAL propsum as FLOAT
@@ -598,15 +555,23 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 		self:oDCmDestAmt:SetFocus()
 	ENDIF
 	IF lValid .and. self:mDestPP="ACH"
-		IF Len(AllTrim(self:mDFIR))<9
-			lValid := FALSE
-			cError :=  "Routing number should have a length of 9 digits!"
-			self:oDCmDFIR:SetFocus()
-		ELSEIF Empty(AllTrim(self:mDFIA))
-			lValid := FALSE
-			cError :=  "Account number should be filled!"
-			self:oDCmDFIA:SetFocus()
-		ENDIF			
+// 		IF Len(AllTrim(self:mDFIR))<9
+// 			lValid := FALSE
+// 			cError :=  "Routing number should have a length of 9 digits!"
+// 			self:oDCmDFIR:SetFocus()
+// 		ELSEIF Empty(AllTrim(self:mDFIA))
+// 			lValid := FALSE
+// 			cError :=  "Account number should be filled!"
+// 			self:oDCmDFIA:SetFocus()
+// 		ENDIF
+		IF !Empty(self:mDestAcc)
+			cAcc:=AllTrim(self:mDestAcc)
+			IF !(cAcc=='1' .or. cAcc=='2')
+				lValid:=False
+				cError:="Account should be filled with sequence number of member account at ACH: 1 or 2"
+				self:oDCmDestAcc:SetFocus() 
+			ENDIF
+		ENDIF	 			
 	ENDIF
 	if lValid .and. self:oDCmDestPP:Value="AAA" // to local bank
 		if Empty(self:mDestAcc) 
@@ -681,7 +646,7 @@ STATIC DEFINE EDITDISTRIBUTION_ACHFIX1 := 119
 STATIC DEFINE EDITDISTRIBUTION_ACHFIX2 := 121 
 STATIC DEFINE EDITDISTRIBUTION_AMOUNTTXT := 108 
 STATIC DEFINE EDITDISTRIBUTION_CANCELBUTTON := 114 
-STATIC DEFINE EDITDISTRIBUTION_CHECBOXSINGELUSE := 126 
+STATIC DEFINE EDITDISTRIBUTION_CHECBOXSINGELUSE := 119 
 STATIC DEFINE EDITDISTRIBUTION_CHECKBOXACTIVE := 118 
 STATIC DEFINE EDITDISTRIBUTION_CHECKBUTTON := 124 
 STATIC DEFINE EDITDISTRIBUTION_CURRENCYBUTTON1 := 116 
@@ -1450,11 +1415,11 @@ METHOD OkButton CLASS EditMember
 		next
 		// add distribution instructions:
 		for i:=1 to Len(self:aDistr)
+// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;
 			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"',",;
 			"update distributioninstruction set ")+;
 			"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
 			",destpp='"+ self:aDistr[i,DESTPP]+"'"+;                      
-			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;
 			",destacc='"+ self:aDistr[i,DESTACC]+"'"+;
 			",destamt  ="+ Str(self:aDistr[i,DESTAMT],-1) +;
 			",desttyp  ="+ str(self:aDistr[i,Desttyp],-1)+;
@@ -2155,17 +2120,18 @@ METHOD CloseButton( ) CLASS MemberBrowser
 	RETURN NIL
 METHOD DeleteButton CLASS MemberBrowser
 	LOCAL oTextBox AS TextBox
-	LOCAL mMbrId,mRek as STRING
+	LOCAL mMbrId,mRek,cMemName as STRING
 	local oStmnt as SQLStatement
 	local oMBAL as Balances
 	
 	IF SELF:Server:EOF.or.SELF:Server:BOF
 		(Errorbox{,"Select a member first"}):Show()
 		RETURN
-	ENDIF
+	ENDIF 
+	cMemName:=AllTrim(oSFMemberBrowser_DETAIL:Server:Description)
 	oTextBox := TextBox{ SELF, "Delete Record",;
-		"Delete Member " + AllTrim(oSFMemberBrowser_DETAIL:Server:description) + "?" }
-		
+		"Delete Member " +cMemName  + "?" }
+	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
 	IF ( oTextBox:Show() == BOXREPLYYES )
@@ -2174,31 +2140,32 @@ METHOD DeleteButton CLASS MemberBrowser
 		oMBAL :=Balances{}
 		oMBAL:GetBalance(mRek)
 		IF !oMBAL:per_deb==oMBal:per_cre
-			(ErrorBox{,"No zero balance"}):Show()
-			RETURN
-		ELSE
-			* Delete this member:
-			oStmnt:=SQLStatement{"delete from member where MbrId='"+mMbrId+"'",oConn}
-			oStmnt:execute()
-			if oStmnt:NumSuccessfulRows<1
-				(ErrorBox{,"Could not delete member"}):Show()
+			if TextBox{self,self:oLan:WGet("Deleting member")+Space(1)+cMemName,;
+					self:oLan:WGet("No zero balance")+'! '+self:oLan:WGet("Do you really want to delete this member")+'?',BUTTONYESNO+BOXICONHAND}:Show()==BOXREPLYNO 
 				RETURN
-			endif			
-			* Disconnect corresponding person:
-			SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
+			endif
+		endif
+		* Delete this member:
+		oStmnt:=SQLStatement{"delete from member where MbrId='"+mMbrId+"'",oConn}
+		oStmnt:execute()
+		if oStmnt:NumSuccessfulRows<1
+			(ErrorBox{,"Could not delete member"}):Show()
+			RETURN
+		endif			                                   
+		* Disconnect corresponding person:
+		SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
 			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(oSFMemberBrowser_Detail:Server:persid,-1)+"'",oConn}:execute()
-			// delete corresponding Distribution Instructions:
-			oStmnt:=SQLStatement{"delete from DistributionInstruction where MbrId='"+mMbrId+"'",oConn}
-			oStmnt:execute()
-			// remove associated accounts:
-			SQLStatement{"delete from memberassacc where mbrid="+mMbrId,oConn}:execute() 
+		// delete corresponding Distribution Instructions:
+		oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid='"+mMbrId+"'",oConn}
+		oStmnt:execute()
+		// remove associated accounts:
+		SQLStatement{"delete from memberassacc where mbrid="+mMbrId,oConn}:execute() 
 
-			* disconnect corresponding account 
-			SQLStatement{"update account set description=concat('disconnected:',description),GIFTALWD=0 where accid="+mREK,oConn}:Execute() 
-			self:oMem:execute()
-			oSFMemberBrowser_Detail:GoTop()
-
-		ENDIF
+		* disconnect corresponding account 
+		SQLStatement{"update account set description=concat('disconnected:',description),giftalwd=0 where accid="+mREK,oConn}:Execute() 
+		LogEvent(self,"member "+cMemName+" deleted")
+		self:oMem:execute()
+		oSFMemberBrowser_DETAIL:GoTop()
 	ENDIF
 
 	RETURN NIL
@@ -2710,7 +2677,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 	LOCAL aFields:={} AS ARRAY // array with fieldvalues
 	LOCAL ptOld, ptNew,PTReason AS INT
 	LOCAL cDelim:="," AS STRING
-	LOCAL ptrHandle 
+	LOCAL ptrHandle as MyFile
 	LOCAL cBuffer AS STRING, nRead AS INT
 	LOCAL HouseOld, HouseNew AS STRING
 	LOCAL cReport as STRING, nUpd, nRemoved as int
@@ -2728,7 +2695,7 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 			(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 			RETURN FALSE
 		ENDIF
-		cBuffer:=ptrHandle:FReadLine(ptrHandle)
+		cBuffer:=ptrHandle:FReadLine()
 		IF Empty(cBuffer)
 			(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 			RETURN FALSE
@@ -2745,45 +2712,45 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 			(ErrorBox{,"Wrong fileformat of importfile from Insite: "+oFs:FullPath+"(See help)"}):show()
 			RETURN FALSE
 		ENDIF
-		cBuffer:=ptrHandle:FReadLine(ptrHandle)
+		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
 
-		DO WHILE !(FEof(ptrHandle) .and. !Empty(cBuffer)) .and. Len(AFields)>8 
+		DO WHILE !Empty(cBuffer) .and. Len(AFields)>8 
 			HouseOld:=AllTrim(aFields[ptOld])
 			HouseNew:=AllTrim(AFields[ptNew])
-			if !HouseNew==HouseOld 
-				if !Lower(AllTrim(AFields[PTReason]))="completion" .and.!Lower(AllTrim(AFields[PTReason]))="household name" .and.!Empty(AllTrim( AFields[PTReason]))
-					IF Empty(HouseNew)
-						// removal:
-						// Disconnect corresponding persons:
-						ostmnt:= SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type=1 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
-						ostmnt:Execute()
-						if ostmnt:NumSuccessfulRows>0 
-						* Disconnect corresponding account:
-						SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),GIFTALWD=0 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:Execute()
-						cPersonName:=""
-						oSel:= SQLSelect{"select "+SQLFullName(0,) +"as personname from person where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
-						if oSel:RecCount>0
-							cPersonName:=oSel:personname 
-							cReport+=cPersonName+ " removed because: "+AllTrim(AFields[PTReason])+CRLF
-							nRemoved++ 
-						endif
-						// delete corresponding Distribution Instructions:
-						SQLStatement{"delete from distributioninstruction where mbrid in (select mbrid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
-						// disconnect member:
-						SQLStatement{"delete from member where householdid='"+HouseOld+"'",oConn}:Execute()
-						endif 
-					else
+			if !HouseNew==HouseOld .and. !Empty(HouseNew)    // process only new household id cecause we can't trust other changes
+// 				if !Lower(AllTrim(AFields[PTReason]))="completion" .and.!Lower(AllTrim(AFields[PTReason]))="household name" .and.!Empty(AllTrim( AFields[PTReason]))
+// 					IF Empty(HouseNew)
+// 						// removal:
+// 						// Disconnect corresponding persons:
+// 						ostmnt:= SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type=1 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
+// 						ostmnt:Execute()
+// 						if ostmnt:NumSuccessfulRows>0 
+// 						* Disconnect corresponding account:
+// 						SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),GIFTALWD=0 where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}:Execute()
+// 						cPersonName:=""
+// 						oSel:= SQLSelect{"select "+SQLFullName(0,) +"as personname from person where persid in (select persid from member where householdid='"+HouseOld+"')",oConn}
+// 						if oSel:RecCount>0
+// 							cPersonName:=oSel:personname 
+// 							cReport+=cPersonName+ " removed because: "+AllTrim(AFields[PTReason])+CRLF
+// 							nRemoved++ 
+// 						endif
+// 						// delete corresponding Distribution Instructions:
+// 						SQLStatement{"delete from distributioninstruction where mbrid in (select mbrid from member where householdid='"+HouseOld+"')",oConn}:Execute() 
+// 						// disconnect member:
+// 						SQLStatement{"delete from member where householdid='"+HouseOld+"'",oConn}:Execute()
+// 						endif 
+// 					else
 						// update household code:
 						ostmnt:=SQLStatement{"update member set householdid='"+HouseNew+"' where householdid='"+HouseOld+"'",oConn}
 						ostmnt:Execute()
 						if ostmnt:NumSuccessfulRows>0
 							nUpd++
 						endif
-					endif 
-				endif 
+// 					endif 
+// 				endif 
 			endif
-			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			cBuffer:=ptrHandle:FReadLine()
 			aFields:=Split(cBuffer,cDelim)
 		ENDDO
 		ptrHandle:Close()
@@ -2791,8 +2758,11 @@ METHOD Importaffiliated_person_account_list CLASS UpdateHouseHoldID
 		SQLStatement{"update sysparms set datlstafl='"+SQLdate( oFs:DateChanged)+"'",oConn}:Execute()
 		ptrHandle:=NULL_OBJECT
 		oFs:Delete()
-		cReport:=Str(nUpd,-1)+" updated household codes; "+Str(nRemoved,-1)+" members removed:"+CRLF+ cReport
-		(TEXTBox{,"Importing Account Change Report",cReport}):show()	
+		if nUpd>0
+			cReport:=Str(nUpd,-1)+" updated household codes; "
+			LogEvent(self,cReport)
+			(TextBox{,"Importing Account Change Report",cReport}):show()
+		endif	
 	ELSE
 		RETURN FALSE
 	ENDIF
@@ -2836,8 +2806,13 @@ METHOD Processaffiliated_person_account_list(cDownload as string) as logic CLASS
 	do WHILE Len(AFields)>8
 		HouseOld:=AllTrim(AFields[ptOld])
 		HouseNew:=AllTrim(AFields[ptNew]) 
-		if !Lower(AllTrim(AFields[PTReason]))="completion"
-			oMem:Execute(HouseOld)
+		if !Empty(HouseNew)   // only process new house hold id because we can't trust other changes
+			oStmnt:=SQLStatement{"update member set householdid='"+HouseNew+"' where householdid='"+HouseOld+"'",oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows>0
+				nUpd++
+			endif
+		/*	oMem:Execute(HouseOld)
 			do WHILE !oMem:EoF
 				mMbrId:=Str(oMem:Mbrid,-1)
 				IF Empty(HouseNew)
@@ -2858,21 +2833,22 @@ METHOD Processaffiliated_person_account_list(cDownload as string) as logic CLASS
 						* Disconnect corresponding account: 
 						oStmnt:=SQLStatement{"update account set description=concat(description,' ','"+AllTrim(AFields[PTReason])+"'),giftalwd=0 where accid="+mAccId,oConn}
 						oStmnt:Execute()
-					endif
+					endif  
 				ELSE
 					oStmnt:=SQLStatement{"update member set householdid='"+HouseNew+"' where mbrid="+mMbrId,oConn}
 					oStmnt:Execute()
 					nUpd++
 				ENDIF
 				oMem:skip()
-			ENDDO
+			ENDDO         */
 		endif
 		cBuffer:=MLine4(cDownload,@ptrN)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
 	SQLStatement{"update sysparms set datlstafl=CurDate()",oConn}:Execute()
 	if nRemoved>0 .or.nUpd>0
-		cReport:=Str(nUpd,-1)+" updated household codes; "+Str(nRemoved,-1)+" members removed:"+CRLF+ cReport
+		cReport:=Str(nUpd,-1)+" updated household codes; "+Str(nRemoved,-1)+" members removed:"+CRLF+ cReport 
+		LogEvent(self,cReport)
 		(TextBox{,"Importing Account Change Report",cReport}):show()
 	endif	
 	RETURN true
