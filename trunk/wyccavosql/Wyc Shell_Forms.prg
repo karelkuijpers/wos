@@ -31,6 +31,10 @@ CLASS StandardWycWindow INHERIT ShellWindow
 METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
+Method CheckFinancialData() CLASS StandardWycWindow
+	* Check correspondence between transactions and monthvalues in MonthBalance
+	CheckConsistency(self,false,true) 
+return
 method CheckNewVersion() class StandardWycWindow
 local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
 cWorkDir:=WorkDir()
