@@ -29,7 +29,6 @@ method Start() class App
 	
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
-
 	BEGIN SEQUENCE
 		Enable3dControls() 
 		SetMaxDynSize(67108864)   //64MB max dynamic memory
@@ -46,6 +45,7 @@ method Start() class App
 		oUpg:=CheckUPGRADE{} 
 		cWorkdir:=WorkDir()
 		oInit:=Initialize{} 
+
 		lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 		if lStop
 			if oConn:Connected
@@ -113,17 +113,20 @@ method Start() class App
 			oMainWindow:Menu:=WOMenu{}
 			oMainWindow:Menu:ToolBar:Hide()
 			// Run program
+			IF FirstOfDay
+				// Check consistency data
+				CheckConsistency(oMainWindow,true,false) 
+				// Process prolongations of subscriptions (donations): 
+				do while ProlongateAll(oMainWindow)
+				enddo		
+				oMainWindow:Pointer := Pointer{POINTERARROW}
+			ENDIF
 			* Process standing orders:
 // 			IF FirstOfDay
 				oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
 				oStJournal:=null_object
-				// Idem for prolongations of subscriptions (donations): 
-				do while ProlongateAll(oMainWindow)
-				enddo		
-				oMainWindow:Pointer := Pointer{POINTERARROW} 
-// 			ENDIF
 			// Idem for reevaluation: 
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0	
 				Reevaluation{oMainWindow}:ReEvaluate()
