@@ -789,11 +789,11 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	oHm := SELF:Server
 	//oTransH:=oBrowse:Owner:Server
 	self:oOwner:=oCaller
-	mBst := mOrigBst
+	self:mBST := mOrigBst
 	self:mDat:=mOrigDat
 	self:CurDate:=mOrigDat
 	OrigDat := mOrigDat
-	OrigBst := mBst
+	OrigBst := AllTrim(self:mBST)
 	SELF:oDCUserdIdTxt:TextValue:=cOrigUser
 	lInqUpd := TRUE
 	oHm:lInqUpd := TRUE
@@ -1293,7 +1293,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 	ENDIF
 	oNew:SetOrder(FileSpec{NewIndex})
 	oNew:GoTop()
-   GetHelpDir()
+	GetHelpDir()
 	OrigMut:=HelpDir+"\OR"+StrTran(Time(),":")
 	oOrig:=TempTrans{OrigMut+'.dbf'}
 	IF !oOrig:Used.or.!oNew:Used.or.!lSucc
@@ -1356,7 +1356,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 				oOrig:=NULL_OBJECT
 				FErase (Origmut+".dbf")
 				FErase (Origmut+".fpt")
-// 				oTransH:Unlock()
+				// 				oTransH:Unlock()
 				oNew:ClearIndex(NewIndex)
 				NewIndex:= NewIndex+oNew:INdexExt
 				FErase(NewIndex)
@@ -1374,7 +1374,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 		RETURN FALSE
 	ENDIF
 
-	DO WHILE !oOrig:EOF
+	DO WHILE !oOrig:EOF 
 		DO CASE
 		CASE oOrig:SEQNR== oNew:SEQNR .and. !oNew:Deb==oNew:cre
 			* Transaction line updates??:
@@ -1490,6 +1490,25 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 			oNew:Skip()
 		ENDCASE
 	ENDDO
+	// process new records:
+	do while !oNew:EOF
+		* Transaction line added:
+		IF !oNew:Deb==oNew:cre // Ignore dummy transaction line
+			* Append line from TempTrans
+			if !self:UpdateLine(oNew,oOrig,@lGiver)
+				return false
+			endif
+			* Update balance:
+			if !ChgBalance(oNew:AccID,self:mDat,oNew:deb,oNew:cre,oNew:DEBFORGN,oNew:CREFORGN,oNew:Currency)
+				return false
+			endif
+			if !self:ChgDueAmnts("T", oOrig, oNew)
+				return false
+			endif
+		ENDIF
+		
+		oNew:Skip()
+	enddo
 	if mCLNGiver # OrigPerson .and. !lNewPers
 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
 	endif
@@ -1791,7 +1810,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						.or. (oHm:KIND= 'G').or. oHm:KIND= 'D';
 						.or. oHm:KIND= 'A' .or. oHm:KIND = 'F'.or. oHm:KIND="C","persid='"+self:mCLNGiver+"',","")+;
 						"dat='"+SQLdate(self:mDAT)+"'"+;
-						",docid='"+self:mBST+"'"+;
+						",docid='"+Transform(self:mBST,"")+"'"+;
 						",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN))+"'"+; 
 					",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 						",accid='"+AllTrim(oHm:AccID)+"'"+;
@@ -1818,7 +1837,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						*	Update monthbalance value of corresponding account:
 						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre
 							lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,;
-							self:mDAT,self:mBST,cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+							self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
 							if !lError
 								if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
 									// correct rabat assessment if needed: 
@@ -4095,14 +4114,14 @@ METHOD ShowSelection() CLASS TransInquiry
 		endif
 	endif
 	self:oCCTransferButton:Hide()
-
+	lTransferShown:=false
 	IF !Empty(self:FromAccId) 
 		if self:ToAccNbr==self:FromAccNbr
 			cFilter:=iif(Empty(cFilter),'',cFilter+' and ')+'t.accid="'+AddSlashes(self:FromAccId)+'"'
 			self:m54_selectTxt:="Account="+self:FromAccNbr
 			IF Empty(self:StartDate).or.self:StartDate>=LstYearClosed
 				IF !self:NoUpdate .and. AScan(self:aTeleAcc, Val(self:FromAccId))=0 
-					oCCTransferButton:Show()
+					self:oCCTransferButton:Show()
 					lTransferShown:=true
 				ENDIF
 			ENDIF
@@ -4111,8 +4130,8 @@ METHOD ShowSelection() CLASS TransInquiry
 			cFilter+=iif(Empty(cFilter),'',' and ')+"a.accnumber>='"+AddSlashes(self:FromAccNbr)+"' and a.accnumber<='"+AddSlashes(self:ToAccNbr)+"'"
 			self:m54_selectTxt:="Account>="+self:FromAccNbr+" - "+self:ToAccNbr
 		endif
-	ELSEif Empty(self:DepIdSelected)
-		oCCTransferButton:Hide()
+// 	ELSEif Empty(self:DepIdSelected)
+// 		self:oCCTransferButton:Hide()
 	ENDIF
 	IF AScan(aMenu,{|x| x[4]=="TransactionEdit"})=0
 		self:oCCTransferButton:Hide() 
@@ -4221,7 +4240,13 @@ METHOD ShowSelection() CLASS TransInquiry
 	if self:oTrans:Reccount<1
 		self:oSFTransInquiry_DETAIL:Browser:refresh()
 	endif
-
+	if	lTransferShown
+		// check if there is no locked transaction:
+		if SQLSelect{"select t.transid from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" and t.lock_id=1 and t.lock_time < subdate(now(),interval 60 minute),0,1)",oConn}:Reccount>0
+			self:oCCTransferButton:Hide() 
+			lTransferShown:=false
+		endif
+	endif
 	self:oSFTransInquiry_DETAIL:GoTop()
 	self:Pointer := Pointer{POINTERARROW}
 	self:oDCFound:TextValue :=Str(self:oTrans:Reccount,-1)
