@@ -139,7 +139,13 @@ METHOD OKButton( ) CLASS Calculator
 /*		oEdit:Selection:=Selection{0,-1)
 		oEdit:Paste(Str(Round(fMemory,2)))*/
 		self:oEdit:CalcActive:=FALSE
-		oEdit:TextValue:=(Str(Round(fMemory,2)))
+		if !Empty(self:oEdit:Picture)
+			self:oEdit:TEXTvalue:=Transform(fMemory,self:oEdit:Picture)
+		elseif !Empty(self:oEdit:FieldSpec)
+			self:oEdit:TEXTvalue:=self:oEdit:Fieldspec:Transform(fMemory)
+		else
+			self:oEdit:TEXTvalue:=(Str(Round(fMemory,2)))
+		endif
 		IF !oBrowser==null_object
 			*SELF:oColumn:SetValue(Str(Round(fMemory,2)))
 			myOwner:=oBrowser:owner
@@ -176,20 +182,21 @@ self:EndDialog()
 METHOD PostInit(oParent,uExtra) CLASS Calculator
 	//Put your PostInit additions here
 	IF IsArray(uExtra)
-		oEdit:=uExtra[1]
-		oDCResult:Value:=AllTrim(oEdit:CurrentText)
-		fMemory:= Val(oDCResult:TextValue)
-		cFunction:=uExtra[2]
-		oDCListResult:Additem(Str(fMemory)+" "+cFunction)
+		self:oEdit:=uExtra[1]
+		self:oDCResult:VALUE:=AllTrim(self:oEdit:CurrentText)
+		self:fMemory:= Val(oDCResult:TEXTvalue)
+		self:cFunction:=uExtra[2]
+		self:oDCListResult:Additem(Str(fMemory)+" "+cFunction)
 		IF Len(uExtra)>2
 			SELF:oBrowser:=uExtra[3]
 		ENDIF
 		IF Len(uExtra)>3
 			self:fieldSym:=uExtra[4]
 		ENDIF
-		lClear:=true
-		nDec:=SetDecimal(32)
-		oDCResult:SetFocus()
+		self:lClear:=true
+		self:nDec:=SetDecimal(32)
+// 		self:oDCResult:Picture:=self:oEdit:Picture
+		self:oDCResult:SetFocus()
 
 	ENDIF
 	RETURN NIL
