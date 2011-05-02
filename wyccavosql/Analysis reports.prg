@@ -2758,10 +2758,10 @@ METHOD OKButton( ) CLASS TotalsMembers
 		if Empty(iPos) 
 			if !Empty(oTransH:aaccid)
 				if !Empty(oTransH:mbrid)
-					AAdd(aTotM,{MemberId,iif(oTransH:HOMEPP==sEntity,iif(oTransH:CO="M",1,iif(oTransH:Department==MainDeP,2,3)),4),0,0,0,0,0,0,0,AllTrim(oTransH:adesc)})
+					AAdd(aTotM,{MemberId,iif(oTransH:HOMEPP==sEntity,iif(oTransH:CO="M",1,iif(oTransH:Department==MainDeP,2,3)),4),0,0,0,0,0,0,0,AllTrim(Transform(oTransH:adesc,""))})
 				else
 					// add as unknown member:
-					AAdd(aTotM,{MemberId,5,0,0,0,0,0,0,0,AllTrim(oTransH:adesc)})
+					AAdd(aTotM,{MemberId,5,0,0,0,0,0,0,0,AllTrim(Transform(oTransH:adesc,""))})
 				endif
 			else
 				// add as totally unknown member: 
