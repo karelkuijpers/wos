@@ -1,6 +1,6 @@
 global aAsmt as array
 GLOBAL aBalType:={} as ARRAY 
-GLOBAL ADMIN as STRING
+GLOBAL ADMIN as STRING 
 global aLanM:={} as array    // language table of menu items
 global aLanR:={} as array    // language table of report items
 global aLanW:={} as array    // language table of window items
@@ -107,11 +107,12 @@ GLOBAL sSalutation as LOGIC
 GLOBAL sSTRZIPCITY as int
 GLOBAL sSurnameFirst as LOGIC
 Global sToPP as string
+Global SuperUser:=false as logic
 GLOBAL TeleBanking as LOGIC 
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.14" as string
+global Version:="3.0.0.29" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
