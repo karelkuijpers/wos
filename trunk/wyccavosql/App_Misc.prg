@@ -123,6 +123,150 @@ else
 endif
 RETURN(Round(m_som,DecAantal))
 DEFINE CHECKBX:=1
+function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=false as logic) as logic 
+	local nFromYear,i as int
+	local oStmnt as SQLStatement
+	local oSel as SQLSelect
+	local cError as string
+	local lTrMError as logic
+	local aMBal:={},aMBalF:={} as array   // array with corrections of Mbalance {{accid,year,month,deb,cre},...}
+	nFromYear:=Year(LstYearClosed)  
+	if lShow
+		oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
+	endif
+	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
+
+	*	Select only monthbalances in years after last balance year for standard currency:
+	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,sum(deb) as debtot,sum(cre) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:Execute()
+	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
+	oSel:Execute()                                                                                    
+	oSel:=SQLSelect{"select m.*,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
+	oSel:Execute()
+	if oSel:RECCOUNT>0
+		cError:="No correspondence between transactions and month balances per account"+CRLF
+		lTrMError:=true
+		do while !oSel:EoF
+			cError+=Space(4)+"Account:"+oSel:accnumber+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,iif(empty(oSel:debtot),0.00,oSel:debtot),iif(empty(oSel:cretot),0.00,oSel:cretot)}) 
+			oSel:Skip()
+		enddo 
+	endif
+	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
+	if oSel:RECCOUNT>0
+		if Empty(cError)
+			cError:="No correspondence between transactions and month balances per account"+CRLF
+		endif
+		lTrMError:=true
+		do while !oSel:EoF
+			cError+=Space(4)+"Account:"+oSel:accnumber+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
+			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,oSel:debtot,oSel:cretot}) 
+			oSel:Skip()
+		enddo
+	endif
+	
+	// Idem for foreign currencies:
+	*	Select only monthbalances in years after last balance year for foreign currency:
+	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,sum(debforgn) as debtot,sum(creforgn) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:Execute()
+	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
+	oSel:Execute()                                                                                    
+	oSel:=SQLSelect{"select m.*,t.debtot,t.cretot,a.accnumber from mbalance m left join transsumf t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency<>'"+sCurr+"'",oConn}
+	oSel:Execute()
+	if oSel:RECCOUNT>0
+		if Empty(cError)
+			cError:="No correspondence between transactions and month balances per account"+CRLF
+		endif
+		lTrMError:=true
+		do while !oSel:EoF
+			cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,iif(Empty(oSel:debtot),0.00,oSel:debtot),iif(Empty(oSel:cretot),0.00,oSel:cretot),oSel:Currency}) 
+			oSel:Skip()
+		enddo
+	endif
+	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
+	if oSel:RECCOUNT>0
+		if Empty(cError)
+			cError:="No correspondence between transactions and month balances per account"+CRLF
+		endif
+		lTrMError:=true
+		do while !oSel:EoF
+			cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
+			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,oSel:debtot,oSel:cretot,oSel:Currency}) 
+			oSel:Skip()
+		enddo
+	endif
+	
+	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
+	oSel:Execute()
+	if !oSel:totdebcre==0.00
+		cError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
+	endif
+	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from mbalance where currency='"+sCurr+"' and year>="+Str(nFromYear,-1),oConn}
+	oSel:Execute()
+	if !oSel:totdebcre==0.00
+		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
+	endif
+	oSel:=SQLSelect{"select transid,dat from transaction group by transid having sum(cre-deb)<>0 order by transid",oConn}
+	oSel:Execute()
+	if oSel:RECCOUNT>0
+		cError+="Not all transactions are balanced for "+sCurr+":"+CRLF
+		do while !oSel:EoF
+			cError+=Space(4)+"Transaction:"+Str(oSel:transid,-1)+" date:"+DToC(oSel:dat)+CRLF 
+			oSel:Skip()
+		enddo
+	endif
+	if lShow
+		oMainWindow:Pointer := Pointer{POINTERARROW} 
+	endif
+	if Empty(cError) 
+		oMainWindow:STATUSMESSAGE(Space(100))
+		if lShow
+			TextBox{,"Checking consistency financial data","all data are correct"}:Show()
+		endif
+		return true
+	else
+		LogEvent(oWindow,cError,"LogErrors")
+		if lShow
+			TextBox{,"Checking consistency financial data: correspondence transactions and month balances, each transaction balanced",SubStr(cError,1,3000)}:Show()
+			lCorrect:=false
+			if lTrMError
+				lCorrect:=(TextBox{,"Checking consistency financial data",'Should balances be corrected?',BUTTONYESNO}:Show()=BOXREPLYYES) 
+			endif
+		endif
+		if	lTrMError .and.lCorrect
+			if lShow
+				oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
+			endif
+			for i:=1 to Len(aMBal)
+				oStmnt:=SQLStatement{"update mbalance set deb="+Str(aMBal[i,4],-1)+",cre="+Str(aMBal[i,5],-1)+;
+					" where accid="+Str(aMBal[i,1],-1)+" and year="+Str(aMBal[i,2],-1)+" and month="+Str(aMBal[i,3],-1),oConn}
+				oStmnt:Execute()
+				if oStmnt:NumSuccessfulRows<1
+					// insert new one
+					oStmnt:=SQLStatement{"insert into mbalance set accid="+Str(aMBal[i,1],-1)+",year="+Str(aMBal[i,2],-1)+",month="+Str(aMBal[i,3],-1)+",currency='"+;
+						sCurr+"',deb="+Str(aMBal[i,4],-1)+",cre="+Str(aMBal[i,5],-1),oConn}
+					oStmnt:Execute()
+				endif				
+			next
+			for i:=1 to Len(aMBalF)
+				oStmnt:=SQLStatement{"update mbalance set deb="+Str(aMBalF[i,4],-1)+",cre="+Str(aMBalF[i,5],-1)+;
+					" where accid="+Str(aMBalF[i,1],-1)+" and year="+Str(aMBalF[i,2],-1)+" and month="+Str(aMBalF[i,3],-1)+" and currency='"+aMBalF[i,6]+"'",oConn}
+				oStmnt:Execute()
+				if oStmnt:NumSuccessfulRows<1
+					// insert new one
+					oStmnt:=SQLStatement{"insert into mbalance set accid="+Str(aMBalF[i,1],-1)+",year="+Str(aMBalF[i,2],-1)+",month="+Str(aMBalF[i,3],-1)+",currency='"+;
+						sCurr+"',deb="+Str(aMBalF[i,4],-1)+",cre="+Str(aMBalF[i,5],-1)+",currency='"+aMBalF[i,6]+"'",oConn}
+					oStmnt:Execute()
+				endif				
+			next
+			if lShow
+				oMainWindow:Pointer := Pointer{POINTERARROW} 
+			endif
+		endif
+		oMainWindow:STATUSMESSAGE(Space(100))
+	endif
+	return false
 Function CleanFileName(cFileName as string) as string
 // removes illegal characters from cFileName to return an for Windows acceptable file name:
 LOCAL oFileSpec as Filespec
@@ -1274,17 +1418,21 @@ FOR p_num_tel:=1 to Len(p_str)
 NEXT
 RETURN true
 FUNCTION IsDutchBanknbr(cGetal)
-* check if bankaccount# of a ducth bank is "11-proef"
-LOCAL nL,i, nCheck as int
-cGetal:=Str(Val(StrTran(cGetal,".","")),-1)
-nL:=Len(cGetal)
-if nL#9
-	return false
-endif
-FOR i:=1 to nL
-	nCheck+=Val(SubStr(cGetal,i,1))*(10-i)
-NEXT
-return (Mod(nCheck,11)==0)
+	* check if bankaccount# of a ducth bank is "11-proef"
+	LOCAL nL,i, nCheck as int
+	cGetal:=Str(Val(StrTran(cGetal,".","")),-1)
+	nL:=Len(cGetal)
+	if nL<9 .or. nL>10
+		return false
+	endif
+	if nL==9
+		FOR i:=1 to nL
+			nCheck+=Val(SubStr(cGetal,i,1))*(10-i)
+		NEXT
+		return (Mod(nCheck,11)==0)
+	else
+		return true
+	endif
 FUNCTION IsMod10(cGetal)
 // test if cGetal (string of a mod10 number) satisfies mod10 criteria (Luhn algoritme)
 LOCAL sum,i,length:=Len(cGetal),temp as int
@@ -1323,7 +1471,7 @@ IF Empty(m_str)
 ENDIF
 p_str:=RTrim(m_str)
 FOR p_num_tel:=1 to Len(p_str)
-    IF IsAlpha(psz(_cast,SubStr(p_str,p_num_tel,1)))
+    IF IsAlpha(psz(_cast,SubStr(p_str,p_num_tel,1))) .or.Empty(SubStr(p_str,p_num_tel,1))
        RETURN FALSE
     ENDIF
 NEXT
@@ -1827,7 +1975,7 @@ RETURN
 	
 	
 		
-METHOD FreadLine CLASS MyFile
+METHOD FReadLine() CLASS MyFile
 	LOCAL nSt,nLen,nPos:=0 as int
 	LOCAL cLine:="" as STRING
 	nPos:=At3(cDelim, cBuffer,nStart)
@@ -2124,6 +2272,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2131,12 +2285,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
