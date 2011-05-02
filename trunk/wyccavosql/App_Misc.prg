@@ -427,7 +427,8 @@ PROTECT lImportAutomatic:=true as LOGIC // In case of General Import: no asking 
 EXPORT lImportFile as LOGIC
 EXPORT oImport as ImportMapping
 Export oLan as Language
-protect nFindRec as int, aKeyW as array
+protect nFindRec as int, aKeyW as array 
+protect cFindText as string
 declare method CompareKeyWords
                          
 METHOD Close(oEvent)  CLASS DataWindowExtra
@@ -460,6 +461,22 @@ for i:=1 to lK
 	endif
 next
 return true
+method EditChange(oControlEvent) class DataWindowExtra
+	local oControl as Control
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+	super:EditChange(oControlEvent)
+	//Put your changes here 
+	if !IsNil(oControl:TextValue)
+		if oControl:Name=="FINDTEXT" .and. !oControl:TextValue== self:cFindText
+			self:oCCFindNext:Caption:="Find"
+			self:oCCFindPrevious:hide()
+			self:cFindText:=oControl:TextValue
+			self:nFindRec:=0
+			self:STATUSMESSAGE("",MESSAGEPERMANENT)
+		endif
+	endif
+	return nil
+
 method Find() class DataWindowExtra 
 self:oDCGroupBoxFind:show()
 self:oDCFindText:show() 
@@ -472,7 +489,7 @@ self:oCCFindPrevious:hide()
 self:oDCFindText:value:=""
 self:nFindRec:=0
 self:oDCFindText:SetFocus()
-return
+return 
 METHOD FindClose( ) CLASS DataWindowExtra 
 self:oDCGroupBoxFind:Hide()
 self:oDCFindText:Hide()
@@ -2272,12 +2289,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2285,6 +2296,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
