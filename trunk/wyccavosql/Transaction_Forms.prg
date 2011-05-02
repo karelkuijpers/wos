@@ -93,7 +93,7 @@ STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Bst:", GENERAL_JOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 52, 1, 41, 13
-	CONTROL	"zaterdag 26 maart 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
+	CONTROL	"vrijdag 22 april 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
 	CONTROL	"", GENERAL_JOURNAL_MPOSTSTATUS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 276, 1, 72, 50
 	CONTROL	"", GENERAL_JOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 312, 18, 132, 12, WS_EX_CLIENTEDGE
 	CONTROL	"OK&&Remember", GENERAL_JOURNAL_SAVEBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 284, 53, 12
@@ -399,7 +399,6 @@ SUPER:Init(oWindow,ResourceID{"General_Journal",_GetInst()},iCtlID)
 aBrushes[1] := Brush{Color{COLORWHITE}}
 
 oDCmBST := SingleLineEdit{SELF,ResourceID{GENERAL_JOURNAL_MBST,_GetInst()}}
-oDCmBST:FieldSpec := Transaction_BST{}
 oDCmBST:HyperLabel := HyperLabel{#mBST,"Bst:",NULL_STRING,"Transaction_BST"}
 
 oDCmDat := DateStandard{SELF,ResourceID{GENERAL_JOURNAL_MDAT,_GetInst()}}
@@ -532,7 +531,7 @@ if !IsNil(oServer)
 ENDIF
 self:Browser := DataBrowser{self}
 
-oDBMBST := DataColumn{Transaction_BST{}}
+oDBMBST := DataColumn{6}
 oDBMBST:Width := 6
 oDBMBST:HyperLabel := oDCMBST:HyperLabel 
 oDBMBST:Caption := "Bst:"
@@ -553,7 +552,7 @@ self:Browser:AddColumn(oDBMTRANSAKTNR)
 
 SELF:ViewAs(#FormView)
 
-oSFGeneralJournal1 := GeneralJournal1{self,GENERAL_JOURNAL_GENERALJOURNAL1}
+oSFGeneralJournal1 := GeneralJournal1{SELF,GENERAL_JOURNAL_GENERALJOURNAL1}
 oSFGeneralJournal1:show()
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
@@ -3706,9 +3705,9 @@ if self:Server:EOF .or. self:Server:RecCount<1
 	return
 endif
 	cTransnr:=Str(self:Server:TransId,-1)
-	OrigBst:=self:Server:docid
+	OrigBst:=alltrim(self:Server:docid)
 	Origdat:=SELF:Server:Dat
-	OrigUser:=self:Server:USERID 
+	OrigUser:=AllTrim(self:Server:USERID) 
 	OrigPost:=self:Server:PostStatus
    GetHelpDir()
 	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
