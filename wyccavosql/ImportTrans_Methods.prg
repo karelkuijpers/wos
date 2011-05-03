@@ -397,7 +397,8 @@ METHOD Import() CLASS ImportBatch
 		next
 	endif
 	SQLStatement{"commit",oConn}:Execute()  // release lock
-	IF lv_aant_toe>0
+	LogEvent(self,self:oLan:WGet("Import of batches")+': '+AllTrim(Str(lv_aant_toe,4))+" "+self:oLan:WGet("batch file")+iif(lv_aant_toe>1,"s","")+" "+self:oLan:WGet("with")+" "+Str(lv_imported,-1)+" "+self:oLan:WGet("transactions imported"))
+	IF lv_aant_toe>0 
 		(InfoBox{,self:oLan:WGet("Import of batches"),AllTrim(Str(lv_aant_toe,4))+" "+self:oLan:WGet("batch file")+if(lv_aant_toe>1,"s","")+" "+self:oLan:WGet("with")+" "+Str(lv_imported,-1)+" "+self:oLan:WGet("transactions imported")}):Show()
 	ENDIF
 
