@@ -185,6 +185,19 @@ RETURN SELF
  	EXPORT cLocation:="R" as STRING
  CLASS LanguageScreen INHERIT LanguageWindow
  	EXPORT cLocation:="W" as STRING
+RESOURCE LanguageSubWindow DIALOGEX  33, 30, 507, 262
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"English part of a sentence:", LANGUAGESUBWINDOW_SC_SENTENCEEN, "Static", WS_CHILD, 13, 14, 86, 13
+	CONTROL	"Sentence My Language:", LANGUAGESUBWINDOW_SC_SENTENCEMY, "Static", WS_CHILD, 13, 29, 80, 12
+	CONTROL	"English part of a sentence:", LANGUAGESUBWINDOW_SENTENCEEN, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 110, 14, 241, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Part of a Sentence in My Language:", LANGUAGESUBWINDOW_SENTENCEMY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 110, 29, 241, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Length", LANGUAGESUBWINDOW_LENGTH, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 388, 14, 16, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Length:", LANGUAGESUBWINDOW_FIXEDTEXT2, "Static", WS_CHILD, 360, 15, 24, 12
+	CONTROL	"OK", LANGUAGESUBWINDOW_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 338, 60, 54, 12
+END
+
 CLASS LanguageSubWindow INHERIT DATAWINDOW 
 
 	PROTECT oDBSENTENCEEN as DataColumn
@@ -200,19 +213,6 @@ CLASS LanguageSubWindow INHERIT DATAWINDOW
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
    PROTECT oLanguage as Language
-RESOURCE LanguageSubWindow DIALOGEX  33, 30, 507, 262
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"English part of a sentence:", LANGUAGESUBWINDOW_SC_SENTENCEEN, "Static", WS_CHILD, 13, 14, 86, 13
-	CONTROL	"Sentence My Language:", LANGUAGESUBWINDOW_SC_SENTENCEMY, "Static", WS_CHILD, 13, 29, 80, 12
-	CONTROL	"English part of a sentence:", LANGUAGESUBWINDOW_SENTENCEEN, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 110, 14, 241, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Part of a Sentence in My Language:", LANGUAGESUBWINDOW_SENTENCEMY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 110, 29, 241, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Length", LANGUAGESUBWINDOW_LENGTH, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 388, 14, 16, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Length:", LANGUAGESUBWINDOW_FIXEDTEXT2, "Static", WS_CHILD, 360, 15, 24, 12
-	CONTROL	"OK", LANGUAGESUBWINDOW_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 338, 60, 54, 12
-END
-
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS LanguageSubWindow 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -338,18 +338,6 @@ STATIC DEFINE LANGUAGESUBWINDOW_SENTENCEEN := 102
 STATIC DEFINE LANGUAGESUBWINDOW_SENTENCEMY := 103 
 
 STATIC DEFINE LANGUAGETABLE_LANGUAGEWINDOW := 100 
-CLASS LanguageWindow INHERIT DataWindowExtra 
-
-	PROTECT oCCFindPrevious AS PUSHBUTTON
-	PROTECT oCCFindNext AS PUSHBUTTON
-	PROTECT oDCFindText AS SINGLELINEEDIT
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oSFLanguageSubWindow AS LanguageSubWindow
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)   
-  	declare method FindNext, FindPrevious
-   EXPORT oLanguage as SQLSelect 
-
 RESOURCE LanguageWindow DIALOGEX  4, 3, 534, 289
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -359,7 +347,21 @@ BEGIN
 	CONTROL	"Find", LANGUAGEWINDOW_FINDNEXT, "Button", BS_DEFPUSHBUTTON|WS_CHILD, 168, 3, 38, 13
 	CONTROL	"", LANGUAGEWINDOW_FINDTEXT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 3, 133, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Find:", LANGUAGEWINDOW_FIXEDTEXT1, "Static", WS_CHILD, 4, 4, 32, 12
+	CONTROL	"", LANGUAGEWINDOW_STATUSTEXT, "Static", WS_CHILD, 252, 3, 133, 13
 END
+
+CLASS LanguageWindow INHERIT DataWindowExtra 
+
+	PROTECT oCCFindPrevious AS PUSHBUTTON
+	PROTECT oCCFindNext AS PUSHBUTTON
+	PROTECT oDCFindText AS SINGLELINEEDIT
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCStatusText AS FIXEDTEXT
+	PROTECT oSFLanguageSubWindow AS LanguageSubWindow
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)   
+  	declare method FindNext, FindPrevious
+   EXPORT oLanguage as SQLSelect 
 
 METHOD Close(oEvent) CLASS LanguageWindow
 	//GetUserMenu(LOGON_EMP_ID)
@@ -425,16 +427,19 @@ IF (self:oCCFindNext:Caption == "Find")
 	oLan:GoTop()
 	self:aKeyW:=GetTokens(AllTrim(self:FindText))
    self:cFindText := AllTrim(self:FindText)
+  	self:oDCStatusText:textvalue:=""
 ELSE
-	oLan:Skip()
+	oLan:GoTo(self:nFindRec+1)
 ENDIF
 	
 do while (!oLan:EOF)
 	if (oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY}))
 		oLan:ResetNotification()
-		self:GoTo(oLan:RECNO)
+		self:nFindRec:=oLan:RECNO
+		self:GoTo(self:nFindRec)
       self:oCCFindNext:Caption := "Next"
       self:oCCFindPrevious:Show()
+	  	self:oDCStatusText:textvalue:=""
 		exit
 	ENDIF  
 	oLan:Skip()
@@ -444,13 +449,11 @@ IF (oLan:EOF .or. oLan:RECNO = oLan:RECCOUNT)
 	IF (oLan:EOF)
 		oLan:ResetNotification()
 	   IF (self:oCCFindNext:Caption == "Find")
-			self:STATUSMESSAGE("Not found", MESSAGEPERMANENT)
+	   	self:oDCStatusText:textvalue:=self:oLan:WGet("Not found")
    	ELSE
-   		self:STATUSMESSAGE("No more found", MESSAGEPERMANENT)
+	   	self:oDCStatusText:textvalue:=self:oLan:WGet("No more found")
 	   ENDIF
-	ELSE
-		// NEXT button disabled
-		self:oCCFindNext:Disable()
+		self:oCCFindNext:Hide()
 	ENDIF
 ENDIF
 
@@ -459,13 +462,15 @@ METHOD FindPrevious( ) as void pascal CLASS LanguageWindow
 local oLan:=self:Server as SQLSelect
 local oMyAB:=self as LanguageWindow
 
-self:oCCFindNext:Enable()
+self:oCCFindNext:Show()
 oLan:SuspendNotification()
-oLan:Skip(-1)
+oLan:GoTo(self:nFindRec-1)
 DO WHILE (!oLan:BOF)
 	if (oMyAB:CompareKeyWords({AllTrim(oLan:SENTENCEEN),oLan:SENTENCEMY}))
 		oLan:ResetNotification()
-		self:GoTo(oLan:RECNO)
+		self:nFindRec:=oLan:RECNO
+		self:GoTo(self:nFindRec)
+	  	self:oDCStatusText:textvalue:=""
 		exit
 	ENDIF  
 	oLan:Skip(-1)
@@ -474,10 +479,9 @@ ENDDO
 IF (oLan:BOF .or. oLan:RECNO = 1)
 	IF (oLan:BOF)
 		oLan:ResetNotification()
-		self:STATUSMESSAGE("No more found", MESSAGEPERMANENT)
-	ELSE
-		self:oCCFindPrevious:Hide()
+   	self:oDCStatusText:textvalue:=self:oLan:WGet("No more found")
 	ENDIF  
+	self:oCCFindPrevious:Hide()
 ENDIF
 
 RETURN 
@@ -511,9 +515,12 @@ oDCFindText:HyperLabel := HyperLabel{#FindText,NULL_STRING,NULL_STRING,NULL_STRI
 oDCFixedText1 := FixedText{SELF,ResourceID{LANGUAGEWINDOW_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Find:",NULL_STRING,NULL_STRING}
 
+oDCStatusText := FixedText{SELF,ResourceID{LANGUAGEWINDOW_STATUSTEXT,_GetInst()}}
+oDCStatusText:HyperLabel := HyperLabel{#StatusText,NULL_STRING,NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Translation table from English to my language:"
 SELF:HyperLabel := HyperLabel{#LanguageWindow,"Translation table from English to my language:","Translation for text in reports",NULL_STRING}
-SELF:Menu := WOBrowserMENUShort{}
+SELF:Menu := WOBrowserMENU{}
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
@@ -537,21 +544,17 @@ METHOD OKButton( ) CLASS LanguageWindow
 	SELF:ViewTable()
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LanguageWindow
 	//Put your PostInit additions here
-	LOCAL oLan:=Language{} as Language
 	LOCAL cFilter:=self:cLocation as STRING
 	local lSuccess as logic 
-//	self:SetTexts()
-	self:Caption:=oLan:WGet(self:Caption) 
+	self:SetTexts()
+	self:Caption:=self:oLan:WGet(self:Caption) 
 	If self:cLocation=="M"
-		self:Caption+=oLan:WGet("Menus")
+		self:Caption+=self:oLan:WGet("Menus")
 	elseif self:cLocation=="R"
-		self:Caption+=oLan:WGet("Reports")
+		self:Caption+=self:oLan:WGet("Reports")
 	elseif self:cLocation=="W"
-		self:Caption+=oLan:WGet("Windows")
+		self:Caption+=self:oLan:WGet("Windows")
 	endif
-//	oLanguage := SQLSelect{"Select * from Language where Location = " + cFilter, oConn}
-//	lSuccess:=self:Server:SetFilter('LOCATION=="'+cFilter+'"') 
-// This fails for SQLServer. Should use Where clause instead	
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class LanguageWindow
 
@@ -571,3 +574,4 @@ STATIC DEFINE LANGUAGEWINDOW_SC_SENTENCEEN := 100
 STATIC DEFINE LANGUAGEWINDOW_SC_SENTENCEMY := 101 
 STATIC DEFINE LANGUAGEWINDOW_SENTENCEEN := 102 
 STATIC DEFINE LANGUAGEWINDOW_SENTENCEMY := 103 
+STATIC DEFINE LANGUAGEWINDOW_STATUSTEXT := 105 
