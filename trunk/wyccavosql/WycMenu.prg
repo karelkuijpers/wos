@@ -312,12 +312,13 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if SuperUser
 		AAdd(aMenu,{6,7, oLan:MGet("&Check consistency financial data"),"CheckFinancialData","",0,44,"F"})
 	endif
-	AAdd(aMenu,{6,7,,,,,})           // separator
-	AAdd(aMenu,{6,8, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
+	AAdd(aMenu,{6,8, oLan:MGet("&Show log"),"LogReport","",0,46,"A"})
+	AAdd(aMenu,{6,8,,,,,})           // separator
+	AAdd(aMenu,{6,9, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
 	IF lSystemAdmin
-		AAdd(aMenu,{6,9, oLan:MGet("&User_ids and passwords")+"...","EmployeeBrowser",,0,45,"A"})
+		AAdd(aMenu,{6,10, oLan:MGet("&User_ids and passwords")+"...","EmployeeBrowser",,0,45,"A"})
 	ENDIF
-	AAdd(aMenu,{6,10,,,,,})           // separator
+	AAdd(aMenu,{6,11,,,,,})           // separator
 	AAdd(aMenu,{6,12, oLan:MGet("&System Data"),,,,,})
 	AAdd(aMenu,{12,1, oLan:MGet("&System parameters")+"...","TabSysparms","",0,62,"A"})
 	IF !Admin="WA"
