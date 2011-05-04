@@ -468,11 +468,15 @@ method EditChange(oControlEvent) class DataWindowExtra
 	//Put your changes here 
 	if !IsNil(oControl:TextValue)
 		if oControl:Name=="FINDTEXT" .and. !oControl:TextValue== self:cFindText
-			self:oCCFindNext:Caption:="Find"
+			self:oCCFindNext:Caption:="Find" 
+			self:oCCFindNext:Show()
 			self:oCCFindPrevious:hide()
 			self:cFindText:=oControl:TextValue
 			self:nFindRec:=0
 			self:STATUSMESSAGE("",MESSAGEPERMANENT)
+			if IsObject(self:oDCStatusText)
+				self:oDCStatusText:TextValue:=""
+			endif
 		endif
 	endif
 	return nil
@@ -1742,6 +1746,11 @@ RETURN oAccount
 Access MyImageIndex() class ListViewItem
 RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
+*	Logging of info to table log 
+SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
+RETURN true
+FUNCTION LogEventOld(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
 *	Logging of info to file <Logname>.txt
 LOCAL ToFileFS as FileSpec
 LOCAL cFileName, selftext as STRING
