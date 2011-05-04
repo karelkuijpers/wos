@@ -1131,11 +1131,12 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","InnoDB","utf8_unicode_ci"},;
 		{"dueamount","InnoDB","utf8_unicode_ci"},;
 		{"emplacc","MyIsam","utf8_unicode_ci"},; 
-	{"employee","MyIsam","latin1_swedish_ci"},; 
-	{"importlock","InnoDB","utf8_unicode_ci"},;
+		{"employee","MyIsam","latin1_swedish_ci"},; 
+		{"importlock","InnoDB","utf8_unicode_ci"},;
 		{"importtrans","InnoDB","utf8_unicode_ci"},;
 		{"ipcaccounts","MyIsam","utf8_unicode_ci"},;  
-	{"language","MyIsam","utf8_unicode_ci"},;
+		{"language","MyIsam","utf8_unicode_ci"},;
+		{"log","MyIsam","utf8_unicode_ci"},;	
 		{"mbalance","InnoDB","utf8_unicode_ci"},;
 		{"member","MyIsam","utf8_unicode_ci"},;
 		{"memberassacc","MyIsam","utf8_unicode_ci"},;
@@ -1152,7 +1153,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","MyIsam","utf8_unicode_ci"},;
 		{"teletrans","InnoDB","utf8_unicode_ci"},;
 		{"titles","MyIsam","utf8_unicode_ci"},;
-		{"transaction","InnoDB","utf8_unicode_ci"}} as array       // longer is too large for the compiler
+		{"transaction","InnoDB","utf8_unicode_ci"}	} as array       // longer is too large for the compiler
 
 	// required tables structure:
 
@@ -1207,7 +1208,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","supplier","char(30)","NO","",""},;
 		{"article","accountstock","int(11)","NO","0",""},;
 		{"article","accountpurchase","int(11)","NO","0",""},;   
-	{"authfunc","empid","int(11)","NO","NULL",""},;
+		{"authfunc","empid","int(11)","NO","NULL",""},;
 		{"authfunc","funcname","char(32)","NO","",""},;
 		{"balanceitem","balitemid","int(11)","NO","NULL","auto_increment"},;
 		{"balanceitem","heading","char(25)","YES","NULL",""},;
@@ -1278,8 +1279,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","dfir","char(9)","NO","",""},;
 		{"distributioninstruction","dfia","char(17)","NO","",""},;
 		{"distributioninstruction","checksave","char(1)","NO","",""},; 
-	{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
-	{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
+		{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
+		{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
 		{"dueamount","invoicedate","date","NO","0000-00-00",""},;
 		{"dueamount","seqnr","int(2)","NO","0",""},;
 		{"dueamount","amountinvoice","decimal(13,2)","NO","0",""},;
@@ -1298,7 +1299,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","pswprv3","varchar(64)","NO","",""},;
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
-	{"employee","lstreimb","date","NO","0000-00-00",""},;
+		{"employee","lstreimb","date","NO","0000-00-00",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
@@ -1325,9 +1326,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","currency","char(3)","NO","",""},;
 		{"importtrans","reference","varchar(127)","NO","",""},;
 		{"importtrans","seqnr","int(4)","NO","0",""},; 
-	{"importtrans","poststatus","int(1)","NO","0",""},; 
-	{"importtrans","ppdest","char(3)","NO","",""},; 
-	{"importtrans","lock_id","int(11)","NO","0",""},;
+		{"importtrans","poststatus","int(1)","NO","0",""},; 
+		{"importtrans","ppdest","char(3)","NO","",""},; 
+		{"importtrans","lock_id","int(11)","NO","0",""},;
 		{"importtrans","lock_time","timestamp","NO","0000-00-00",""},;
 		{"ipcaccounts","ipcaccount","int(7)","NO","NULL",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
@@ -1335,6 +1336,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"language","sentencemy","varchar(80)","NO","",""},;
 		{"language","length","int(2)","NO","80",""},;
 		{"language","location","char(1)","NO","",""},;
+		{"log","logid","int(11)","NO","NULL","auto_increment"},;
+		{"log","collection","varchar(20)","NO","log",""},;
+		{"log","source","varchar(40)","NO","",""},;
+		{"log","logtime","datetime","NO","0000-00-00",""},;
+		{"log","message","mediumtext","NO","",""},;
 		{"mbalance","mbalid","int(11)","NO","NULL","auto_increment"},;
 		{"mbalance","accid","int(11)","NO","0",""},;
 		{"mbalance","year","smallint(6)","NO","0",""},;
@@ -1626,6 +1632,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
 		{"language","0","PRIMARY","1","location"},;
 		{"language","0","PRIMARY","2","sentenceen"},;
+		{"log","0","PRIMARY","1","logid"},;
+		{"log","1","coltime","1","collection"},;
+		{"log","1","coltime","2","logtime"},;
 		{"mbalance","0","PRIMARY","1","mbalid"},;
 		{"mbalance","0","accmonth","1","accid"},;
 		{"mbalance","0","accmonth","2","year"},;
