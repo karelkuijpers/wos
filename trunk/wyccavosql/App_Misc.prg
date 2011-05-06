@@ -1746,41 +1746,44 @@ RETURN oAccount
 Access MyImageIndex() class ListViewItem
 RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
-*	Logging of info to table log 
-SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
-RETURN true
-FUNCTION LogEventOld(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
 *	Logging of info to file <Logname>.txt
 LOCAL ToFileFS as FileSpec
 LOCAL cFileName, selftext as STRING
-LOCAL ptrHandle 
+LOCAL ptrHandle
+*	Logging of info to table log 
+SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
+if Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0
+	// write to file
+	ToFileFS:=FileSpec{Logname}
+	ToFileFS:Extension:="TXT"
+	ToFileFS:Path:=CurPath
+	cFileName:=ToFileFS:FullPath
+	IF	ToFileFS:Find()
+		ptrHandle := FOpen(ToFileFS:FullPath,FO_READWRITE+FO_DENYNONE)
+	ELSE
+		ptrHandle := FCreate(ToFileFS:FullPath)
+	ENDIF	
+	IF	ptrHandle==nil	.or.ptrHandle = F_ERROR
+		RETURN FALSE
+	ENDIF
+	* position file at end:
+	FSeek(ptrHandle, 0, FS_END)
+	selftext:=DToS(Today())+" "+Time()+" -	"+strText
+	IF	IsObject(oWindow)
+		selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
+	ENDIF
+	FWriteLine(ptrHandle,selftext)
+	FClose(ptrHandle)
+	ErrorBox{oWindow,"MySQL server has gone away"}:Show() 
+	break
+endif
 
-ToFileFS:=FileSpec{Logname}
-ToFileFS:Extension:="TXT"
-ToFileFS:Path:=CurPath
-cFileName:=ToFileFS:FullPath
-IF ToFileFS:Find()
-	ptrHandle := FOpen(ToFileFS:FullPath,FO_READWRITE+FO_DENYNONE)
-ELSE
-	ptrHandle := FCreate(ToFileFS:FullPath)
-ENDIF	
-IF ptrHandle==nil .or.ptrHandle = F_ERROR
-	RETURN FALSE
-ENDIF
-* position file at end:
-FSeek(ptrHandle, 0, FS_END)
-selftext:=DToS(Today())+" "+Time()+" - "+strText
-IF IsObject(oWindow)
-	selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
-ENDIF
-FWriteLine(ptrHandle,selftext)
-// FWriteLine(ptrHandle,strText)
-FClose(ptrHandle)
-selftext:=null_string
-cFileName:=null_string
-CollectForced()
-
+RETURN true
+FUNCTION LogEventNew(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
+*	Logging of info to table log 
+SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
 RETURN true
 FUNCTION LTrimZero(cString as STRING) as STRING
 * Left trim leading zeroes in string
