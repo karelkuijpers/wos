@@ -4155,8 +4155,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD OKButton( ) CLASS MonthClose 
-self:Server:Mindate:=self:oDCMindate:SelectedDate
-self:Commit()
+SQLStatement{"update sysparms set mindate='"+SQLdate(oDCMindate:SelectedDate)+"'",oConn}:Execute()
 Mindate:=self:oDCMindate:SelectedDate
 self:EndWindow()
 RETURN NIL
