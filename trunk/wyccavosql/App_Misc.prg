@@ -136,7 +136,9 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	endif
 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
 
-	*	Select only monthbalances in years after last balance year for standard currency:
+	*	Select only monthbalances in years after last balance year for standard currency: 
+	oStmnt:=SQLStatement{"drop temporary table if exists transsum",oConn}
+	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,sum(deb) as debtot,sum(cre) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
@@ -1749,11 +1751,13 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 *	Logging of info to file <Logname>.txt
 LOCAL ToFileFS as FileSpec
 LOCAL cFileName, selftext as STRING
-LOCAL ptrHandle
+LOCAL ptrHandle 
+local oStmnt as SQLStatement
 *	Logging of info to table log 
-SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
-if Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0
+oStmnt:=SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}
+oStmnt:execute()
+If !Empty(oStmnt:status) 
 	// write to file
 	ToFileFS:=FileSpec{Logname}
 	ToFileFS:Extension:="TXT"
@@ -1774,9 +1778,13 @@ if Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >
 		selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
 	ENDIF
 	FWriteLine(ptrHandle,selftext)
-	FClose(ptrHandle)
-	ErrorBox{oWindow,"MySQL server has gone away"}:Show() 
-	break
+	FClose(ptrHandle) 
+endif
+if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
+	ErrorBox{oWindow,"MySQL server has gone away"}:Show()
+	if !Empty(oStmnt:status) 
+		break
+	endif
 endif
 
 RETURN true
