@@ -476,9 +476,6 @@ method EditChange(oControlEvent) class DataWindowExtra
 			self:cFindText:=oControl:TextValue
 			self:nFindRec:=0
 			self:STATUSMESSAGE("",MESSAGEPERMANENT)
-			if IsObject(self:oDCStatusText)
-				self:oDCStatusText:TextValue:=""
-			endif
 		endif
 	endif
 	return nil
