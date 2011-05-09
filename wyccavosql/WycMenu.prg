@@ -261,7 +261,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	IF CountryCode=="47"
 		AAdd(aMenu,{3,9,   oLan:MGet("&Tax Report")+"...","TaxReport","",0,6,"F"})
 	ENDIF
-	//AAdd(aMenu,{3,10,   oLan:MGet("&Year balancing and closing")+"...","","",0,5,"A"})
+	AAdd(aMenu,{3,10,   oLan:MGet("&Month closing")+"...","MonthClose",oLan:MGet("Restricting journaling to certain period"),0,7,"A"}) 
 	AAdd(aMenu,{3,10,   oLan:MGet("&Year balancing and closing")+"...","YearClosing","",0,5,"A"}) 
 	if !Admin="WA"
 		AAdd(aMenu,{0,4, oLan:MGet("&Mail/Invoice"),,,,,})
