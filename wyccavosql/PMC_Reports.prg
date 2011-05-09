@@ -442,6 +442,9 @@ METHOD PrintReport() CLASS PMISsend
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	self:oSys:EXCHRATE := fExChRate
+	// Check consistency data
+	CheckConsistency(self,true,false) 
+
 	oMBal:=Balances{}
 	separatorline:= '--------------------|-----------|'+Replicate('-',126)+'|'
 	nRow:=0
