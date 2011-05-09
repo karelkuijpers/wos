@@ -1,4 +1,4 @@
-function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as float) as logic
+function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as float) as string
 	******************************************************************************
 	*  Name      : ChgDueAmnt
 	*              Assign received amount to due amounts of a donation or subscription
@@ -17,7 +17,7 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 	local oDue,oSub as SQLSelect 
 	local oStmnt as SQLStatement
 	IF Empty(p_cln) 
-		RETURN true  && apparently no due amount
+		RETURN ""  && apparently no due amount
 	ENDIF
 	p_amount:=round(p_cre - p_deb,decaantal)
 	if p_amount>0
@@ -33,7 +33,7 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 				if oStmnt:NumSuccessfulRows>0
 					p_amount:=Round(p_amount-Min(p_amount,open_amount),DecAantal)
 				elseif !Empty(oStmnt:Status)
-					return false					
+					return oStmnt:ErrInfo:errormessage					
 				endif
 				if p_amount<=0
 					exit
@@ -53,7 +53,7 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 				if oStmnt:NumSuccessfulRows>0
 					p_amount:=p_amount-Min(payed_amount,p_amount)
 				elseif !Empty(oStmnt:Status)
-					return false					
+					return oStmnt:ErrInfo:errormessage					
 				endif
 				oDue:skip()
 			ENDDO
@@ -65,12 +65,12 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 				oStmnt:=SQLStatement{"insert into dueamount (subscribid,invoicedate,seqnr,amountrecvd) values ("+Str(oSub:subscribid,-1)+",Now(),1,"+Str(p_amount,-1)+")",oConn}
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
-					return false					
+					return oStmnt:ErrInfo:errormessage					
 				endif
 			endif
 		ENDIF
 	ENDIF
-	RETURN true
+	RETURN ""
 
 METHOD RegAccount(oAcc,ItemName) CLASS DueAmountBrowser
 	IF Empty(oAcc)
