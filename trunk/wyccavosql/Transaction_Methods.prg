@@ -547,7 +547,7 @@ METHOD AccntProc(cAccValue) CLASS General_Journal
 		self:lStop:=false 
 	endif
 	IF !oHm:lFilling    && in case of update existing transaction skip
-		IF !oHm:CheckUpdates()
+		IF !Empty(oHm:CheckUpdates())
 			oHm:AccID:=oHm:aMirror[oHm:Recno,1]  && reset old values
 			RETURN FALSE
 		ENDIF
@@ -586,13 +586,14 @@ METHOD append() CLASS General_Journal
 	AAdd(oHm:aMirror,{'           ',oHm:deb,oHm:cre,'  ',' ',oHm:Recno,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"",""})
 	oHm:DESCRIPTN:=cOms
 RETURN true
-METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as logic CLASS General_Journal
+METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
 * Update of corresponding due amounts:
 * Action W : update of account/person
 *        WB: update amount only
 *        T : add of transaction line
 *        D : delete of transaction line
-*
+* 
+local cError as string
 IF (oOrig:KIND=="D".or.oOrig:KIND=="A".or.oOrig:KIND=="F".or.oOrig:KIND=="M".or.oOrig:KIND=="G");
 .and..not.Empty(self:OrigPerson)
    IF action=="WB"
@@ -601,8 +602,9 @@ IF (oOrig:KIND=="D".or.oOrig:KIND=="A".or.oOrig:KIND=="F".or.oOrig:KIND=="M".or.
       oNew:cre - oOrig:cre)
    ELSEIF action=="W".or.action=="D"
       * Reverse amount received:
-      if !ChgDueAmnt(self:OrigPerson,oOrig:AccID,-oOrig:deb,-oOrig:cre)
-      	return false
+      cError:= ChgDueAmnt(self:OrigPerson,oOrig:AccID,-oOrig:Deb,-oOrig:Cre)
+      if !Empty(cError)
+      	return cError
       endif
    ENDIF
 ENDIF
@@ -615,7 +617,7 @@ IF action=="W".or.action=="T"
    ENDIF
 ENDIF
 
-RETURN TRUE
+RETURN ""
  METHOD Delete() CLASS General_Journal
  * delete record of TempTrans:
 LOCAL ThisRec, CurRec AS INT
@@ -628,7 +630,7 @@ oHm:=self:oSFGeneralJournal1:Server
 IF Empty(oHm:aMirror)  && nothing to delete?
 	RETURN FALSE
 ENDIF
-IF !oHm:CheckUpdates()
+IF !Empty(oHm:CheckUpdates())
 	RETURN FALSE
 ENDIF
 IF (self:lTeleBank .or. oHm:FROMRPP) .and. oHm:Recno==1
@@ -1098,10 +1100,12 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		self:oSFGeneralJournal1:DebCreProc(false)
 		if oHm:aMirror[ThisRec,11] # sCurr .and. fCreSav # fDebSav
 			// 	if foreign currency recalculate debforeign, creforeign 
+			self:lwaitingForExchrate:=true
 			if self:oCurr==null_object
 				self:oCurr:=Currency{}
 			endif
 			ROE:=self:oCurr:GetROE(oHm:CURRENCY,self:mDat)
+			self:lwaitingForExchrate:=false
 			if self:oCurr:lStopped
 				self:EndWindow()
 				return
@@ -1152,7 +1156,8 @@ METHOD ReSet() CLASS General_Journal
 	fTotal:=0 
 	self:lStop:=true
 	oDCDebitCreditText:Caption := Str(fTotal)
-	SELF:lMemberGiver:=FALSE
+	self:lMemberGiver:=FALSE 
+	self:lwaitingForExchrate:=false
 	RETURN
 				
 METHOD ShowBankBalance() as void pascal CLASS General_Journal
@@ -1232,7 +1237,7 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
  	self:oDCFoundtext:TextValue:=Str(oHm:RecCount,-1)
 
 RETURN TRUE
-METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as logic CLASS General_Journal
+METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as string CLASS General_Journal
 * Wijzigen van velden van mutatie a.h.v. waarden in oMutNew
 local cStatement as string
 local oStmnt as SQLStatement 
@@ -1268,12 +1273,12 @@ iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR
 
 oStmnt:=SQLStatement{cStatement,oConn}
 oStmnt:Execute()
-if Empty(oStmnt:Status)
-	return true
+if !Empty(oStmnt:Status)
+	return oStmnt:ErrInfo:errormessage
 else
-	return false
+	return ""
 endif
-METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
+METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	* Update of an existing transaction with the modified data in TempTrans:
 	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost AS STRING, NewMut AS Filespec
 	LOCAL oOrig, oNew as TempTrans
@@ -1283,22 +1288,25 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 	Local lNewPers,lGiver  as logic 
 	local oTransH:=self:oOwner:oMyTrans as SQLSelect
 	local oStmnt as SQLStatement
+	local cError as string
 
 	oNew:=SELF:server
 	NewIndex:=oNew:FileSpec:Drive+oNew:FileSpec:Path+oNew:FileSpec:FileName
 	lSucc:=oNew:CreateIndex(FileSpec{NewIndex},"StrZero(SEQNR,6)+ACCID",{||StrZero(oNew:SEQNR,6)+oNew:AccID})
-	IF !lSucc
-		(errorbox{SELF:owner,'Not able to make indexfile for updates'}):show()
-		RETURN FALSE
+	IF !lSucc 
+		cError:='Not able to make indexfile for updates'
+		(ErrorBox{self:Owner,cError}):show()
+		RETURN cError
 	ENDIF
 	oNew:SetOrder(FileSpec{NewIndex})
 	oNew:GoTop()
 	GetHelpDir()
 	OrigMut:=HelpDir+"\OR"+StrTran(Time(),":")
 	oOrig:=TempTrans{OrigMut+'.dbf'}
-	IF !oOrig:Used.or.!oNew:Used.or.!lSucc
-		(errorbox{SELF:owner,'Not able to make helpfile for updates'}):show()
-		RETURN FALSE
+	IF !oOrig:Used.or.!oNew:Used.or.!lSucc 
+		cError:=  'Not able to make helpfile for updates'
+		(ErrorBox{self:Owner,cError}):show()
+		RETURN cError
 	ENDIF
 
 	nSavRec:=oInqBrowse:Owner:Server:Recno
@@ -1350,8 +1358,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 			!AllTrim(oNew:aMirror[pnt,1])==AllTrim(oOrig:AccID).or.; //account changed?
 			!(oNew:aMIRROR[pnt,2]-oNew:aMIRROR[pnt,3])==(oOrig:DEB-oOrig:CRE) .or.; //amount changed?
 			!AllTrim(oNew:aMIRROR[pnt,4])==AllTrim(oOrig:GC) .or.; //ass.code changed? 
-			!oNew:CURRENCY == oOrig:CURRENCY  // currency changed?
-			IF !oOrig:CheckUpdates()
+			!oNew:Currency == oOrig:Currency  // currency changed? 
+			cError:= oOrig:CheckUpdates()
+			IF !Empty(cError)
 				oOrig:Close()
 				oOrig:=NULL_OBJECT
 				FErase (Origmut+".dbf")
@@ -1360,7 +1369,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 				oNew:ClearIndex(NewIndex)
 				NewIndex:= NewIndex+oNew:INdexExt
 				FErase(NewIndex)
-				RETURN FALSE
+				RETURN cError
 			ENDIF
 		ENDIF
 		oTransH:Skip()
@@ -1369,9 +1378,10 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 	lSucc:=oOrig:CreateIndex(FileSpec{OrigMut},"StrZero(SEQNR,6)+ACCID")
 	oOrig:SetOrder(FileSpec{origmut})
 	oOrig:GoTop()
-	IF !lSucc
-		(errorbox{SELF:owner,'Not able to make indexfile for updates'}):show()
-		RETURN FALSE
+	IF !lSucc 
+		cError:= 'Not able to make indexfile for updates'
+		(ErrorBox{self:Owner,cError}):show()
+		RETURN cError
 	ENDIF
 
 	DO WHILE !oOrig:EOF 
@@ -1400,15 +1410,16 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 					oOrig:cre # oNew:cre
 				* Reverse balances on old date:
 				if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
-					return false
+					return "balance not changed"
 				endif
 				* Update balances on new date:
 				if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
-					return false
+					return "balance not changed"
 				endif
 				* Update fields of the transaction line:
-				if !self:UpdateLine(oNew,oOrig,@lGiver)
-					return false
+				cError:=self:UpdateLine(oNew,oOrig,@lGiver)
+				if !Empty(cError)
+					return cError
 				endif
 			ELSE
 				* Update fields of the transaction line:
@@ -1421,8 +1432,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 						mCLNGiver # OrigPerson .or. ;
 						oOrig:PPDEST # oNew:PPDEST .or.;
 						(Posting .and.oOrig:POSTSTATUS # self:mPostStatus)
-					if !self:UpdateLine(oNew,oOrig,@lGiver)
-						return false
+					cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+					if !Empty(cError)
+						return cError
 					endif
 					if lGiver
 						lNewPers := true
@@ -1430,8 +1442,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 				ENDIF
 			ENDIF
 			IF.not.Empty(AktiePost)
-				if !self:ChgDueAmnts(AktiePost,oOrig,oNew)
-					return false
+				cError:= self:ChgDueAmnts(AktiePost,oOrig,oNew)
+				if !Empty(cError)
+					return cError
 				endif
 			ENDIF
 			oNew:skip()
@@ -1442,15 +1455,16 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 			oStmnt:=SQLStatement{"delete from transaction where transid="+self:mTRANSAKTNR+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
-				return false
+				return oStmnt:ErrInfo:errormessage
 			endif
 			lDeleted:=TRUE
 			* Update balance:
 			if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
-				return false
+				return "balance not changed"
 			endif
-			if !self:ChgDueAmnts("D",oOrig, oNew)
-				return false
+			cError:= self:ChgDueAmnts("D",oOrig, oNew)
+			if !Empty(cError)
+				return cError
 			endif
 			oNew:skip()
 			oOrig:skip()
@@ -1462,29 +1476,32 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 			oStmnt:=SQLStatement{"delete from transaction where transid="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
-				return false
+				return oStmnt:ErrInfo:errormessage
 			endif
 			* Update balance:
 			if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
-				return false
+				return "balance not changed"
 			endif
-			if !self:ChgDueAmnts("D",oOrig, oNew)
-				return false
+			cError:= self:ChgDueAmnts("D",oOrig, oNew)
+			if !Empty(cError)
+				return cError
 			endif
 			oOrig:skip()
 		CASE oNew:SEQNR = 0
 			* Transaction line added:
 			IF !oNew:Deb==oNew:Cre // Ignore dummy transaction line
 				* Append line from TempTrans
-				if !self:UpdateLine(oNew,oOrig,@lGiver)
-					return false
+				cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+				if !Empty(cError)
+					return cError
 				endif
 				* Update balance:
 				if !ChgBalance(oNew:AccID,self:mDat,oNew:deb,oNew:cre,oNew:DEBFORGN,oNew:CREFORGN,oNew:Currency)
-					return false
+					return "balance not changed"
 				endif
-				if !self:ChgDueAmnts("T", oOrig, oNew)
-					return false
+				cError:= self:ChgDueAmnts("T", oOrig, oNew)
+				if !Empty(cError)
+					return cError
 				endif
 			ENDIF
 			oNew:Skip()
@@ -1495,15 +1512,17 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 		* Transaction line added:
 		IF !oNew:Deb==oNew:cre // Ignore dummy transaction line
 			* Append line from TempTrans
-			if !self:UpdateLine(oNew,oOrig,@lGiver)
-				return false
+			cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+			if !Empty(cError)
+				return cError
 			endif
 			* Update balance:
-			if !ChgBalance(oNew:AccID,self:mDat,oNew:deb,oNew:cre,oNew:DEBFORGN,oNew:CREFORGN,oNew:Currency)
-				return false
+			if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
+				return "balance not changed"
 			endif
-			if !self:ChgDueAmnts("T", oOrig, oNew)
-				return false
+			cError:= self:ChgDueAmnts("T", oOrig, oNew)
+			if !Empty(cError)
+				return cError
 			endif
 		ENDIF
 		
@@ -1539,7 +1558,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as Logic CLASS General_Journal
 		self:oOwner:ShowSelection()
 	endif
 	oInqBrowse:Owner:GoTo(nSavRec)
-	RETURN true
+	RETURN ""
 METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as logic CLASS General_Journal
 	* lNoMessage: True: Do not show error message
 	LOCAL lValid := TRUE AS LOGIC
@@ -1627,7 +1646,10 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		lError := TRUE
 	ELSEIF 	!self:ValidateTempTrans(FALSE,@ErrorLine)
 		lError := TRUE
-		*		RETURN NIL
+		*		RETURN NIL 
+	elseif self:lwaitingForExchrate
+		(ErrorBox{self,self:oLan:WGet("wait for exchange rate")}):show()
+		lError := true
 	ELSE
 		*		Check only one membergiver:
 		IF ADMIN=="WO" .and. !oHm:lFromRPP .and. (AScan(oHm:AMirror,{|x| x[4]=="AG".or.x[4]=="MG"})>0)
@@ -1773,7 +1795,12 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		IF lInqUpd
 			* Update transaction
 			oHm:SuspendNotification()	
-			lError:=!(SELF:UpdateTrans())
+			cError:=self:UpdateTrans()
+			if !Empty(cError)
+				lError:=true
+			else
+				lError:=false
+			endif
 		ELSE
 			* add new transaction:
 			self:Owner:STATUSMESSAGE( self:oLan:WGet("Recording transaction")+" "+cTransnr)
@@ -1886,6 +1913,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 													endif
 												else
 													lError:=true
+													cError:=oStmnt:ErrInfo:errormessage
 												endif
 											else
 												lError:=true
@@ -1898,6 +1926,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							lError:=true
 						endif
 					ELSE
+						cError:=oStmnt:ErrInfo:errormessage
 						lError:=true
 					endif
 				endif
@@ -1905,7 +1934,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					//	Update balances of subscriptions/due amounts/ donations:
 					IF	!Empty(self:mCLNGiver)
 						IF	(oHm:KIND= 'D'	.or. oHm:KIND=	'A' .or.	oHm:KIND	= 'F'	.or.(oHm:deb >	oHm:cre .and.oHm:gc<>'CH' ))			 // storno also
-							if	!ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:deb,oHm:cre)
+							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:cre)
+							if !Empty(cError)
 								lError:=true
 								exit
 							endif
@@ -1914,7 +1944,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				endif
 				if lError
 					self:Pointer := Pointer{POINTERARROW}
-					LogEvent(,"Error:"+cStatement,"LogErrors")
+					LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 					ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
 					SQLStatement{"rollback",oConn}:Execute()
 // 					Break
@@ -1931,7 +1961,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			oHm:ResetNotification()	
 		ENDIF
 		if !lError
-			SQLStatement{"commit",oConn}:Execute()
+			oStmnt:=SQLStatement{"commit",oConn}
+			oStmnt:Execute() 
+			if Empty(oStmnt:Status) 
 			IF !Empty(self:mCLNGiver)
 				*  update data of giver:
 				i:= AScan(oHm:AMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
@@ -1950,6 +1982,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				ENDIF
 			ENDIF
 			self:mTRANSAKTNR := cTransnr
+		endif
 		ENDIF
 	ENDIF
 	IF lError
@@ -2009,7 +2042,9 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	oHm := self:Server
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
+			self:Owner:lwaitingForExchrate:=true 
 			ROE:=oCurr:GetROE(oHm:CURRENCY,self:Owner:mDat)
+			self:Owner:lwaitingForExchrate:=false 
 			if oCurr:lStopped
 				self:Owner:EndWindow()
 				return
@@ -2030,7 +2065,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	endif
 // 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
 	ThisRec:=oHm:RECNO
-	if !oHm:CheckUpdates(oTransH)
+	if !Empty(oHm:CheckUpdates(oTransH))
 		* recover old values
 		oHm:deb:=oHm:aMirror[ThisRec,2]
 		oHm:cre:=oHm:aMirror[ThisRec,3]
@@ -2239,7 +2274,7 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 			oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
 			myColumn:TextValue:= myColumn:VALUE
 			oHm:gc:=myColumn:VALUE
-			IF !oHm:CheckUpdates()
+			IF !Empty(oHm:CheckUpdates())
 				* oude waarden terugzetten
 				oHm:gc:=oHm:aMirror[ThisRec,4]  && zet oude waarde terug
 				RETURN
@@ -3904,19 +3939,21 @@ METHOD CheckTeleAccount()   CLASS TempTrans
 	 	ENDIF
    ENDIF
 RETURN FALSE
-METHOD CheckUpdates(oTransH:=nil as SQLSelect) as logic CLASS TempTrans
+METHOD CheckUpdates(oTransH:=nil as SQLSelect) as string CLASS TempTrans
    * Check if it is allowed to update or delete a transaction (accid,DEB,CRE,GC)
 	// otransH could be original transactions in case of update
    LOCAL ThisRec,mRecno:=self:RECNO as int,amMirror:=self:aMIRROR as array,mSeqnr as int
+   local cError as string
 	IF !self:lInqUpd  && no update?
-		RETURN TRUE
+		RETURN ""
 	ENDIF
    IF self:EOF.or.Empty(self:SEQNR)  && apparently new transaction
-      RETURN TRUE
+      RETURN ""
    ENDIF
-	IF SELF:BFM=="H"
-		(Errorbox{,"Transaction already sent to PMC"}):Show()
-   	RETURN FALSE
+	IF self:BFM=="H"
+		cError:= "Transaction already sent to PMC"
+		(ErrorBox{,cError}):show()
+   	RETURN cError
 	ENDIF
 // 	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
 	ThisRec:=mRecno
@@ -3928,32 +3965,37 @@ METHOD CheckUpdates(oTransH:=nil as SQLSelect) as logic CLASS TempTrans
    			oTransH:Skip()
    		enddo
    		if !oTransH:EOF
-   			if empty(oTransH:debforgn) .and.empty(oTransH:creforgn) .and.(!empty(oTransH:deb) .or. !empty(oTransH:cre))
-	   		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):Show()
-   	 			RETURN FALSE
+   			if empty(oTransH:debforgn) .and.empty(oTransH:creforgn) .and.(!empty(oTransH:deb) .or. !empty(oTransH:cre)) 
+   				cError:= 'Modification of reevaluation record not allowed'
+	   		 	(ErrorBox{,cError}):show()
+   	 			RETURN cError
 				endif
    		endif
    	else
 			if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.(!Empty(aMIRROR[ThisRec,2]).or.!Empty(aMIRROR[ThisRec,3]))
-   		 	(ErrorBox{,'Modification of reevaluation record not allowed'}):show()
-    			RETURN FALSE
+				cError:= 'Modification of reevaluation record not allowed'
+   		 	(ErrorBox{,cError}):show()
+    			RETURN cError
 			endif
 		endif
    endif
-	IF self:BFM=="C"
-		(ErrorBox{,"Transaction already sent to AccPac/RIA"}):show()
-   	RETURN FALSE
+	IF self:BFM=="C" 
+		cError:= "Transaction already sent to AccPac/RIA"
+		(ErrorBox{,cError}):show()
+   	RETURN cError
 	ENDIF
-	IF self:BFM=="T"
-		(Errorbox{,"Gift without destination already allotted"}):Show()
-		RETURN FALSE
+	IF self:BFM=="T" 
+		cError:= "Gift without destination already allotted"
+		(ErrorBox{,cError}):show()
+		RETURN cError
 	ENDIF
-	IF SELF:CheckTeleAccount()
-   	 (ErrorBox{,'Modification of telebanking account not allowed'}):show()
-    	RETURN FALSE
+	IF self:CheckTeleAccount() 
+		cError:= 'Modification of telebanking account not allowed'
+   	 (ErrorBox{,cError}):show()
+    	RETURN cError
 	ENDIF 
 				
-RETURN TRUE
+RETURN ""
 METHOD m54w_rek_pers() CLASS TempTrans
 *Controleren of persoon is toegestaan
 LOCAL m54_pers_sta:=' ' AS STRING
@@ -4233,10 +4275,13 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec  
 	self:cSelectStmnt:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
 	self:oTrans:SQLString:=self:cSelectStmnt 
-// 	fSecStart:=Seconds()
+// 	fSecStart:=Seconds() 
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:oTrans:Execute()
 // 	LogEvent(self,Str(Seconds()-fSecStart,-1)+" sec for "+Str(self:oTrans:Reccount,-1)+" records with:"+self:oTrans:SQLString+CRLF+"explain:"+CRLF+GetExplain(self:oTrans:SQLString),"LogSql")
 	self:GoTop()
+	self:Pointer := Pointer{POINTERARROW}
+
 	if self:oTrans:Reccount<1
 		self:oSFTransInquiry_DETAIL:Browser:refresh()
 	endif
