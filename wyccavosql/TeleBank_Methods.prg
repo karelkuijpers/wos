@@ -319,7 +319,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			iif(Empty(self:CurTelId),''," and teletrid>"+Str(self:CurTelId,-1))+;
 			+" and "+cSelect+" order by teletrid limit 1 for UPDATE" ,oConn}
 		
-		if !Empty(self:oTelTr:status) .or. self:oTelTr:reccount<1
+		if self:oTelTr:reccount<1 .or.!Empty(self:oTelTr:status) 
 			IF !Empty(self:oTelTr:status) 
 				LogEvent(self,"error:"+self:oTelTr:errinfo:errormessage+"; statement:"+self:oTelTr:SQlString,"LogErrors") 
 			endif
