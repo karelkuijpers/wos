@@ -158,7 +158,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 		enddo
 	endif
 	// ask for rate:
-	oExch:=GetExchRate{,,,{self:cBaseCur+" ("+DToC(DateROE)+")",CodeROE,self:cCurCaption,self}}
+	oExch:=GetExchRate{oMainWindow,,,{self:cBaseCur+" ("+DToC(DateROE)+")",CodeROE,self:cCurCaption,self}}
 	oExch:Show()  && mxrate will be filled in by oExch
 	if oExch:lStopped
 		self:lStopped:=true
