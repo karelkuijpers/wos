@@ -5334,7 +5334,8 @@ METHOD OKButton( ) CLASS YearClosing
 		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):Show()
 		self:EndWindow()
 		RETURN true
-	ENDIF
+	ENDIF 
+
 	* Read departments into arrays:
 	oMainwindow:STATUSMESSAGE("Collecting data...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
@@ -5379,6 +5380,8 @@ METHOD OKButton( ) CLASS YearClosing
 		self:EndWindow()
 		RETURN true
 	ENDIF
+   	// Check consistency data
+	CheckConsistency(oMainwindow,true,false) 
 
 	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
 	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
