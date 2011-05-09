@@ -383,7 +383,9 @@ method EditChange(oControlEvent) class LanguageWindow
 	local oControl as Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	super:EditChange(oControlEvent)
-	//Put your changes here
+	//Put your changes here 
+	self:oDCStatusText:TextValue:=""
+
 	return NIL
 
 
