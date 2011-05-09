@@ -79,13 +79,14 @@ CLASS General_Journal INHERIT DataWindowExtra
 	export oHlpMut as TempTrans
 	protect mPayahead as string  // account used for direct debit 
 	
-	declare method FindNext, FindPrevious
 // EXPORT pFilter as _CODEBLOCK
 	protect oCurr as Currency 
 	export nLstSeqNr as int 
 	protect cOrgAccs as string
-//   	export ticks1,ticks2 as DWORD 
+//   	export ticks1,ticks2 as DWORD
+	export lwaitingForExchrate as logic
   	
+	declare method FindNext, FindPrevious
   	declare method Totalise,ValidateTempTrans,FillTeleBanking, FillRecord, ShowBankBalance, ValStore, ;
   	UpdateLine,FillBatch,RegAccount,FindNext,FindPrevious,ChgDueAmnts,UpdateTrans
 RESOURCE General_Journal DIALOGEX  62, 55, 466, 315
@@ -952,7 +953,8 @@ method AddCurr() class GeneralJournal1
 	elseif !lAddC
 		oBrowse:RemoveColumn( oDBCRE)
 		oBrowse:RemoveColumn( oDBDEB)
-		oBrowse:RemoveColumn( oDBCURRENCY) 
+		oBrowse:RemoveColumn( oDBCURRENCY)
+		self:Owner:lwaitingForExchrate:=false 
 	endif 
 	if !Empty(sToPP) .and. ADMIN=="WA"
 		AEval(oHm:aMirror,{|x|lAddPP:=iif(x[1]==sToPP,true,lAddPP)})
