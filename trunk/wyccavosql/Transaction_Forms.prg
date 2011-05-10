@@ -1479,22 +1479,22 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS InquirySelection
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MPERSON".and.!AllTrim(oControl:Value)==AllTrim(cGiverName)
-           	cGiverName:=AllTrim(oControl:textVALUE)
+		IF oControl:Name == "MPERSON".and.!AllTrim(oControl:VALUE)==AllTrim(self:cGiverName)
+			self:cGiverName:=AllTrim(oControl:textVALUE)
 			self:PersonButton(true)
 		ELSEIF oControl:Name == "MACCOUNT"
-			IF !Upper(AllTrim(oControl:textVALUE))==Upper(cAccName)
-            cAccName:=AllTrim(oControl:VALUE)
+			IF !Upper(AllTrim(oControl:textVALUE))==Upper(self:cAccName)
+				self:cAccName:=AllTrim(oControl:VALUE)
 				SELF:AccButton(TRUE)
 			ENDIF
 		ELSEIF oControl:Name == "MTOACCOUNT"
 			IF !Upper(AllTrim(oControl:textVALUE))==Upper(self:cAccNameTo)
-            cAccNameTo:=AllTrim(oControl:VALUE)
+				self:cAccNameTo:=AllTrim(oControl:VALUE)
 				self:AccButtonTo(true)
 			ENDIF
-		elseIF oControl:NameSym==#FromDep .and.!AllTrim(oControl:VALUE)==cCurDep
-			cCurDep:=AllTrim(oControl:VALUE)
-			cCurValue:=cCurDep
+		elseIF oControl:NameSym==#FromDep .and.!AllTrim(oControl:VALUE)==self:cCurDep
+			self:cCurDep:=AllTrim(oControl:VALUE)
+			cCurValue:=self:cCurDep
 			nPntr:=At(":",cCurValue)
 			IF nPntr>1
 				cCurValue:=SubStr(cCurValue,1,nPntr-1)
@@ -1506,7 +1506,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS InquirySelection
 			ENDIF
 		ENDIF
 	ENDIF
-		
+	
 	RETURN NIL
 ACCESS FromAmount() CLASS InquirySelection
 RETURN SELF:FieldGet(#FromAmount)
