@@ -186,7 +186,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
-	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
+	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber,a.currency from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
 			cError:="No correspondence between transactions and month balances per account"+CRLF
@@ -258,7 +258,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 				if oStmnt:NumSuccessfulRows<1
 					// insert new one
 					oStmnt:=SQLStatement{"insert into mbalance set accid="+Str(aMBalF[i,1],-1)+",year="+Str(aMBalF[i,2],-1)+",month="+Str(aMBalF[i,3],-1)+",currency='"+;
-						sCurr+"',deb="+Str(aMBalF[i,4],-1)+",cre="+Str(aMBalF[i,5],-1)+",currency='"+aMBalF[i,6]+"'",oConn}
+						aMBalF[i,6]+"',deb="+Str(aMBalF[i,4],-1)+",cre="+Str(aMBalF[i,5],-1),oConn}
 					oStmnt:Execute()
 				endif				
 			next
@@ -525,36 +525,36 @@ LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
 oSQL:GoTop()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	oSQL:Skip()
 ENDDO
 // select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
+oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
 oSQL:Execute()
 oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
@@ -962,13 +962,15 @@ FUNCTION FillPropTypes()
 * Fill Array with person property types
 prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
 return
-FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as string) as void
-// add conditinally accstr to aAcc
-LOCAL accstr:=LTrimZero(SubStr(accarr[1],1,LENACCNBR)) as STRING
-IF accstr>=cStart .and. accstr<=cEnd
-	AAdd(aAcc,accarr)
-ENDIF
-RETURN
+FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as string,aBalIncl:=null_array as array,aDepIncl:=null_array as array) as void
+	// add conditinally accstr to aAcc
+	LOCAL accstr:=LTrimZero(SubStr(accarr[1],1,LENACCNBR)) as STRING
+	IF accstr>=cStart .and. accstr<=cEnd
+		if (Empty(aBalIncl) .or. AScan(aBalIncl,Str(accarr[3],-1))>0) .and. (Empty(aDepIncl) .or. AScan(aDepIncl,Str(accarr[3],-1))>0) 
+			AAdd(aAcc,{accarr[1],accarr[2]})
+		endif
+	ENDIF
+	RETURN
 FUNCTION FullName( cFirstName as STRING, cLastName as STRING ) as STRING
 
 	LOCAL cFullName as STRING
@@ -1620,88 +1622,102 @@ IF !cDepStart==cCurStart
 
 ENDIF
 RETURN nil
-CLASS ListboxExtra INHERIT ListBox
-* Special version of listbox to support multiple selction of accounts
-export cAccStart, cAccEnd as STRING  // range of accountnumbers
-export cCurStart,cCurEnd as STRING // Current values used in list
-PROTECT oAccount as SQLSelect  
+CLASS ListBoxExtra INHERIT ListBox
+	* Special version of listbox to support multiple selction of accounts
+	export cAccStart, cAccEnd as STRING  // range of accountnumbers
+	export cCurStart,cCurEnd as STRING // Current values used in list 
+	PROTECT oAccount as SQLSelect  
+  	export aBalIncl,aDepIncl as array
 
-declare method GetAccnts,GetAccounts,GetSelectedItems
+	declare method GetAccnts,GetAccounts,GetSelectedItems
 ACCESS AccNbrEnd CLASS ListBoxExtra
-RETURN cAccEnd
+	RETURN cAccEnd
 ASSIGN AccNbrEnd(cValue) CLASS ListBoxExtra
-cAccEnd:=cValue
-self:Refill()
-RETURN cValue
+	cAccEnd:=cValue
+	self:Refill()
+	RETURN cValue
 ACCESS AccNbrStart CLASS ListBoxExtra
-RETURN cAccStart
+	RETURN self:cAccStart
 ASSIGN AccNbrStart(cValue) CLASS ListBoxExtra
-cAccStart:=cValue
-self:Refill()
-RETURN cValue
+	self:cAccStart:=cValue
+	self:Refill()
+	RETURN cValue
 METHOD GetAccnts(dummy:=nil as string) as array CLASS ListBoxExtra
-// LOCAL oAcc as account 
-Local oSQL as SQLSelect
-LOCAL aAcc:={} as ARRAY
-LOCAL cExchAcc, cStart, cEnd, cWhere as STRING
-LOCAL lSuc as LOGIC
-* Enforce correct sequence:
-cStart:=LTrimZero(cAccStart)
-cEnd:=LTrimZero(cAccEnd)
-IF Empty(cStart).and.Empty(cEnd)
-	RETURN {}
-ENDIF
-IF !Empty(cEnd).and. cStart>cEnd
-	cExchAcc := cEnd
-	cEnd:=cStart
-	cStart:=cExchAcc
-ENDIF
- 
-if !Empty(cStart).and.!Empty(cEnd)
-	cWhere:="accnumber between '"+cStart+"' and '"+cEnd+"'"
-elseif !Empty(cStart)
-	cWhere:="accnumber>='"+cStart+"'"
-else
-	cWhere:="accnumber<='"+cStart+"'"
-endif
+	// LOCAL oAcc as account 
+	Local oSQL as SQLSelect
+	LOCAL aAcc:={} as ARRAY
+	LOCAL cExchAcc, cStart, cEnd, cWhere as STRING
+	LOCAL lSuc as LOGIC
+	local cBalIncl,cDepIncl as string
+	* Enforce correct sequence:
+	cStart:=LTrimZero(self:cAccStart)
+	cEnd:=LTrimZero(self:cAccEnd)
+	IF Empty(cStart).and.Empty(cEnd)
+		RETURN {}
+	ENDIF
+	IF !Empty(cEnd).and. cStart>cEnd
+		cExchAcc := cEnd
+		cEnd:=cStart
+		cStart:=cExchAcc
+	ENDIF
+	
+	if !Empty(cStart).and.!Empty(cEnd)
+		cWhere:="accnumber between '"+cStart+"' and '"+cEnd+"'"
+	elseif !Empty(cStart)
+		cWhere:="accnumber>='"+cStart+"'"
+	else
+		cWhere:="accnumber<='"+cStart+"'"
+	endif
+	if !Empty(self:cWhoFrom)
+		cDepIncl:=SetDepFilter(Val(self:cWhoFrom))
+		if !Empty(cDepIncl)
+			cWhere+=iif(Empty(cWhere),""," and ")+" department in ("+cDepIncl+")" 
+		endif
+	endif
+	if !Empty(self:cWhatFrom)
+		cBalIncl:=SetAccFilter(Val(self:cWhatFrom))
+		if !Empty(cBalIncl)
+			cWhere+=iif(Empty(cWhere),""," and ")+" balitemid in ("+cBalIncl+")" 
+		endif
+	endif
 
-oSQL:=SQLSelect{"select accnumber,description,accid from account where giftalwd=1 and "+cWhere ,oConn}
-oSQL:Execute()
-DO WHILE !oSQL:EoF
-	AAdd(aAcc,{Pad(oSQL:accnumber,LENACCNBR)+" "+oSQL:description,oSQL:accid})
-	oSQL:Skip()
-ENDDO
-RETURN aAcc
+	oSQL:=SQLSelect{"select accnumber,description,accid,department,balitemid from account where giftalwd=1 and "+cWhere ,oConn}
+	oSQL:Execute()
+	DO WHILE !oSQL:EoF
+		AAdd(aAcc,{Pad(oSQL:accnumber,LENACCNBR)+" "+oSQL:description,oSQL:accid})
+		oSQL:Skip()
+	ENDDO
+	RETURN aAcc
 METHOD GetAccounts(dummy:=nil as string) as array CLASS ListBoxExtra
 	// get accounts for subset of listbox
-LOCAL aAcc:={} as ARRAY
-LOCAL cExchAcc, cStart, cEnd as STRING
-LOCAL oParent:=self:Owner as DataWindow
-LOCAL aMemHome:=oParent:aMemHome as ARRAY
-LOCAL aMemNonHome:=oParent:aMemNonHome as ARRAY
-LOCAL aProjects:=oParent:aProjects as ARRAY
-LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox as LOGIC
-* Enforce correct sequence:
-cStart:=LTrimZero(oParent:selx_rek)
-cEnd:=LTrimZero(oParent:selx_rekend)
-IF Empty(cStart).and.Empty(cEnd)
-	RETURN {}
-ENDIF
-IF !Empty(cEnd).and. cStart>cEnd
-	cExchAcc := cEnd
-	cEnd:=cStart
-	cStart:=cExchAcc
-ENDIF
-IF lHome
-	AEval(aMemHome,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
-ENDIF
-IF lNonHome
-	AEval(aMemNonHome,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
-ENDIF
-IF lProjects
-	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
-ENDIF
-RETURN aAcc   
+	LOCAL aAcc:={} as ARRAY
+	LOCAL cExchAcc, cStart, cEnd as STRING
+	LOCAL oParent:=self:Owner as DataWindow
+	LOCAL aMemHome:=oParent:aMemHome as ARRAY
+	LOCAL aMemNonHome:=oParent:aMemNonHome as ARRAY
+	LOCAL aProjects:=oParent:aProjects as ARRAY
+	LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox as LOGIC
+	* Enforce correct sequence:
+	cStart:=LTrimZero(oParent:selx_rek)
+	cEnd:=LTrimZero(oParent:selx_rekend)
+	IF Empty(cStart).and.Empty(cEnd)
+		RETURN {}
+	ENDIF
+	IF !Empty(cEnd).and. cStart>cEnd
+		cExchAcc := cEnd
+		cEnd:=cStart
+		cStart:=cExchAcc
+	ENDIF
+	IF lHome
+		AEval(aMemHome,{|x| FilterAcc(aAcc,x,cStart,cEnd,{},{})})
+	ENDIF
+	IF lNonHome
+		AEval(aMemNonHome,{|x| FilterAcc(aAcc,x,cStart,cEnd,,)})
+	ENDIF
+	IF lProjects
+		AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd,,)})
+	ENDIF
+	RETURN aAcc   
 METHOD GetRetValues () CLASS ListBoxExtra
 	RETURN self:aRetValues
 METHOD GetSelectedItems (dummy:=nil as logic) as array CLASS ListBoxExtra
@@ -1723,25 +1739,41 @@ RETURN aAcc
 
 	
 METHOD Refill() CLASS ListBoxExtra
-LOCAL i as int
-// IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
+	LOCAL i as int
+	// IF !cAccStart==cCurStart.or.!cAccEnd==cCurEnd
 	* Range has been changed, thus new selection:
 	self:FillUsing( self:GetAccnts(null_string))
 	cCurStart:=cAccStart
 	cCurEnd:=cAccEnd
 	* Select all:
-    FOR i = 1 to self:ItemCount
-    	self:SelectItem(i)
-    NEXT
+	FOR i = 1 to self:ItemCount
+		self:SelectItem(i)
+	NEXT
 
-// ENDIF
-RETURN nil
+	// ENDIF
+	RETURN nil
 ACCESS Server CLASS ListBoxExtra
 RETURN oAccount
 ASSIGN Server(oAcc) CLASS ListBoxExtra
 oAccount:=null_object
 oAccount:=oAcc
 RETURN oAccount
+ASSIGN WhatFrom(cValue) CLASS ListBoxExtra 
+	self:aBalIncl:={}
+	if !Empty(cValue)
+		self:aBalIncl:=Split(SetAccFilter(Val(cValue)),",")
+	endif
+
+	self:Refill()
+	RETURN cValue
+ASSIGN WhoFrom(cValue) CLASS ListBoxExtra 
+	self:aDepIncl:={}
+	if !Empty(cValue)
+		self:aDepIncl:=Split(SetDepFilter(Val(cValue)),',')
+	endif
+
+	self:Refill()
+	RETURN cValue
 Access MyImageIndex() class ListViewItem
 RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
@@ -1752,7 +1784,7 @@ LOCAL ptrHandle
 local oStmnt as SQLStatement
 *	Logging of info to table log 
 oStmnt:=SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"',"+sIdentChar+"userid"+sIdentChar+"='" +LOGON_EMP_ID+"'",oConn}
 oStmnt:execute()
 If !Empty(oStmnt:status) 
 	// write to file
@@ -2306,6 +2338,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2313,12 +2351,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
