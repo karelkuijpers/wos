@@ -466,7 +466,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class AccountBrowser
 		self:oDCFromDep:Show()
 		self:oCCFromDepButton:Show()
 		self:cCurDep:=iif(Empty(cDepmntIncl),"",Split(cDepmntIncl,",")[1])
-		self:RegDepartment(cCurDep,"From Department")
+		self:RegDepartment(self:cCurDep,"From Department")
 	endif
    self:RegBalance(self:cCurBal)
 	RETURN nil
