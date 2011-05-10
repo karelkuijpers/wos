@@ -1,54 +1,3 @@
-RESOURCE DonorFollowingReport DIALOGEX  33, 9, 391, 400
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Projects", DONORFOLLOWINGREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 40, 80, 11
-	CONTROL	"Members of", DONORFOLLOWINGREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 51, 211, 11
-	CONTROL	"Members not of", DONORFOLLOWINGREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 62, 215, 11
-	CONTROL	"", DONORFOLLOWINGREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 86, 79, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DONORFOLLOWINGREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 86, 15, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 85, 78, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DONORFOLLOWINGREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 85, 16, 12
-	CONTROL	"Sub period length:", DONORFOLLOWINGREPORT_FIXEDTEXT2, "Static", WS_CHILD, 13, 164, 72, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_SUBPERLEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 111, 163, 71, 72
-	CONTROL	"Divide givers into classes according to their property:", DONORFOLLOWINGREPORT_PROPERTIESBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 182, 231, 70
-	CONTROL	"Gender", DONORFOLLOWINGREPORT_GENDER, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 194, 80, 11
-	CONTROL	"Age", DONORFOLLOWINGREPORT_AGE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 208, 32, 11
-	CONTROL	"10 years", DONORFOLLOWINGREPORT_RANGE10, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 64, 208, 41, 11
-	CONTROL	"20 years", DONORFOLLOWINGREPORT_RANGE20, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 114, 208, 40, 11
-	CONTROL	"Type of Person", DONORFOLLOWINGREPORT_TYPE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 221, 80, 11
-	CONTROL	"Frequency of giving", DONORFOLLOWINGREPORT_FREQUENCY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 235, 80, 11
-	CONTROL	"Ranges", DONORFOLLOWINGREPORT_RANGES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 59, 200, 99, 20
-	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 257, 304, 104
-	CONTROL	"amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX1, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 267, 251, 11
-	CONTROL	"percentage of total amount given, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX2, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 279, 253, 11
-	CONTROL	"number of givers per class of givers", DONORFOLLOWINGREPORT_STATBOX3, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 291, 251, 11
-	CONTROL	"percentage of total number of givers, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX4, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 304, 255, 11
-	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 316, 153, 11
-	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 329, 155, 11
-	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 342, 191, 11
-	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 342, 17, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 342, 63, 12
-	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 30, 377, 82
-	CONTROL	"From:", DONORFOLLOWINGREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 75, 52, 10
-	CONTROL	"To:", DONORFOLLOWINGREPORT_FIXEDTEXT3, "Static", WS_CHILD, 136, 75, 56, 10
-	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTFROM, "Static", WS_CHILD, 13, 98, 111, 12
-	CONTROL	"Fixed Text", DONORFOLLOWINGREPORT_TEXTTILL, "Static", WS_CHILD, 136, 98, 111, 12
-	CONTROL	"Subset:", DONORFOLLOWINGREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 40, 53, 9
-	CONTROL	"OK", DONORFOLLOWINGREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 324, 380, 53, 12
-	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 50, 125, 201, WS_EX_CLIENTEDGE
-	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 365, 53, 12
-	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 382, 172, 11
-	CONTROL	"11. april 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 126, 120, 13
-	CONTROL	"11. april 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 145, 120, 13
-	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 126, 46, 12
-	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 145, 41, 12
-	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 113, 232, 68
-	CONTROL	"Give insight in the effects of e.g. a mailing on the donor behaviour:", DONORFOLLOWINGREPORT_FIXEDTEXT9, "Static", WS_CHILD, 7, 4, 376, 12
-	CONTROL	"which part of the different groups of givers have given during a certain period of time and how much have they given", DONORFOLLOWINGREPORT_FIXEDTEXT10, "Static", WS_CHILD, 7, 17, 371, 12
-	CONTROL	"Show data per account", DONORFOLLOWINGREPORT_PERACCOUNTBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 369, 172, 11
-END
-
 CLASS DonorFollowingReport INHERIT DataWindowMine 
 
 	PROTECT oDCProjectsBox AS CHECKBOX
@@ -58,6 +7,10 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	PROTECT oCCFromAccButton AS PUSHBUTTON
 	PROTECT oDCToAccount AS SINGLELINEEDIT
 	PROTECT oCCToAccButton AS PUSHBUTTON
+	PROTECT oDCFromBal AS SINGLELINEEDIT
+	PROTECT oCCFromBalButton AS PUSHBUTTON
+	PROTECT oDCFromDep AS SINGLELINEEDIT
+	PROTECT oCCFromDepButton AS PUSHBUTTON
 	PROTECT oDCFixedText2 AS FIXEDTEXT
 	PROTECT oDCSubPerLen AS COMBOBOX
 	PROTECT oDCPropertiesBox AS GROUPBOX
@@ -96,6 +49,10 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	PROTECT oDCFixedText9 AS FIXEDTEXT
 	PROTECT oDCFixedText10 AS FIXEDTEXT
 	PROTECT oDCPerAccountBox AS CHECKBOX
+	PROTECT oDCSC_DEP AS FIXEDTEXT
+	PROTECT oDCSC_BAL AS FIXEDTEXT
+	PROTECT oDCfound AS FIXEDTEXT
+	PROTECT oDCFixedText14 AS FIXEDTEXT
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE ProjectsBox
@@ -127,15 +84,76 @@ CLASS DonorFollowingReport INHERIT DataWindowMine
 	PROTECT FromYear,FromMonth,ToYear,ToMonth as int
 	export oSelpers as Selpers 
 	export aSelectedClasses as arraY
+   export cCurBal,WhatFrom,WhoFrom,cCurDep as STRING 
+
 
    
    	
+RESOURCE DonorFollowingReport DIALOGEX  33, 9, 391, 434
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Projects", DONORFOLLOWINGREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 40, 80, 11
+	CONTROL	"Members of", DONORFOLLOWINGREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 51, 131, 11
+	CONTROL	"Members not of", DONORFOLLOWINGREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 62, 131, 11
+	CONTROL	"", DONORFOLLOWINGREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 32, 107, 78, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_FROMACCBUTTON, "Button", WS_CHILD, 110, 107, 15, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 152, 107, 78, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_TOACCBUTTON, "Button", WS_CHILD, 229, 107, 16, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_FROMBAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 73, 105, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_FROMBALBUTTON, "Button", WS_CHILD, 192, 73, 13, 13
+	CONTROL	"", DONORFOLLOWINGREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 88, 88, 105, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DONORFOLLOWINGREPORT_FROMDEPBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 192, 88, 13, 12
+	CONTROL	"Sub period length:", DONORFOLLOWINGREPORT_FIXEDTEXT2, "Static", WS_CHILD, 13, 187, 72, 13
+	CONTROL	"", DONORFOLLOWINGREPORT_SUBPERLEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 111, 187, 71, 72
+	CONTROL	"Divide givers into classes according to their property:", DONORFOLLOWINGREPORT_PROPERTIESBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 206, 231, 69
+	CONTROL	"Gender", DONORFOLLOWINGREPORT_GENDER, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 217, 80, 11
+	CONTROL	"Age", DONORFOLLOWINGREPORT_AGE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 231, 32, 11
+	CONTROL	"10 years", DONORFOLLOWINGREPORT_RANGE10, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 64, 231, 41, 11
+	CONTROL	"20 years", DONORFOLLOWINGREPORT_RANGE20, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 114, 231, 40, 11
+	CONTROL	"Type of Person", DONORFOLLOWINGREPORT_TYPE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 244, 80, 12
+	CONTROL	"Frequency of giving", DONORFOLLOWINGREPORT_FREQUENCY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 258, 80, 11
+	CONTROL	"Ranges", DONORFOLLOWINGREPORT_RANGES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 59, 223, 99, 20
+	CONTROL	"Required statistical data", DONORFOLLOWINGREPORT_STATISTICSBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 11, 280, 304, 105
+	CONTROL	"amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX1, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 291, 251, 11
+	CONTROL	"percentage of total amount given, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX2, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 19, 302, 253, 11
+	CONTROL	"number of givers per class of givers", DONORFOLLOWINGREPORT_STATBOX3, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 315, 251, 11
+	CONTROL	"percentage of total number of givers, a certain class of givers has contributed", DONORFOLLOWINGREPORT_STATBOX4, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 19, 327, 255, 11
+	CONTROL	"average amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX5, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 339, 153, 11
+	CONTROL	"median amount given per class of givers", DONORFOLLOWINGREPORT_STATBOX6, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 352, 155, 11
+	CONTROL	"spread over ranges of amounts given per class of givers ", DONORFOLLOWINGREPORT_STATBOX7, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 19, 365, 191, 11
+	CONTROL	"", DONORFOLLOWINGREPORT_NUMBERRANGES, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 291, 365, 17, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Number of ranges:", DONORFOLLOWINGREPORT_FIXEDTEXTRANGES, "Static", WS_CHILD|NOT WS_VISIBLE, 227, 365, 63, 12
+	CONTROL	"Members/funds", DONORFOLLOWINGREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 29, 377, 103
+	CONTROL	"From:", DONORFOLLOWINGREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 107, 20, 9
+	CONTROL	"To:", DONORFOLLOWINGREPORT_FIXEDTEXT3, "Static", WS_CHILD, 136, 107, 15, 9
+	CONTROL	"", DONORFOLLOWINGREPORT_TEXTFROM, "Static", WS_CHILD, 16, 118, 111, 12
+	CONTROL	"", DONORFOLLOWINGREPORT_TEXTTILL, "Static", WS_CHILD, 138, 118, 107, 12
+	CONTROL	"Subset:", DONORFOLLOWINGREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 40, 42, 9
+	CONTROL	"OK", DONORFOLLOWINGREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 324, 403, 53, 13
+	CONTROL	"", DONORFOLLOWINGREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 51, 125, 222, WS_EX_CLIENTEDGE
+	CONTROL	"Cancel", DONORFOLLOWINGREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 388, 53, 13
+	CONTROL	"Show differences with the previous period", DONORFOLLOWINGREPORT_DIFFBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 405, 172, 11
+	CONTROL	"dinsdag 10 mei 2011", DONORFOLLOWINGREPORT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 149, 120, 14
+	CONTROL	"dinsdag 10 mei 2011", DONORFOLLOWINGREPORT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 62, 168, 120, 14
+	CONTROL	"From Date:", DONORFOLLOWINGREPORT_FIXEDTEXT6, "Static", WS_CHILD, 13, 149, 46, 12
+	CONTROL	"Till Date:", DONORFOLLOWINGREPORT_FIXEDTEXT8, "Static", WS_CHILD, 13, 168, 41, 12
+	CONTROL	"Report Period", DONORFOLLOWINGREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 136, 232, 68
+	CONTROL	"Give insight in the effects of e.g. a mailing on the donor behaviour:", DONORFOLLOWINGREPORT_FIXEDTEXT9, "Static", WS_CHILD, 7, 4, 376, 12
+	CONTROL	"which part of the different groups of givers have given during a certain period of time and how much have they given", DONORFOLLOWINGREPORT_FIXEDTEXT10, "Static", WS_CHILD, 7, 17, 371, 12
+	CONTROL	"Show data per account", DONORFOLLOWINGREPORT_PERACCOUNTBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 392, 172, 11
+	CONTROL	"Department from:", DONORFOLLOWINGREPORT_SC_DEP, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 88, 67, 12
+	CONTROL	"Balance item from:", DONORFOLLOWINGREPORT_SC_BAL, "Static", WS_CHILD, 12, 75, 72, 13
+	CONTROL	"", DONORFOLLOWINGREPORT_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 300, 40, 26, 10
+	CONTROL	"accounts", DONORFOLLOWINGREPORT_FIXEDTEXT14, "Static", SS_CENTERIMAGE|WS_CHILD, 329, 41, 44, 10
+END
+
 METHOD AccFil() CLASS DonorFollowingReport
 	LOCAL i as int
 	LOCAL SubLen as int
 	self:FromAccount:="0"
 	self:ToAccount:="zzzzzzzzz"
-	self:oDCSubSet:FillUsing(self:oDCSubSet:GetAccnts())
+	self:oDCSubSet:FillUsing(self:oDCSubSet:GetAccnts(nil))
 	* Select all:
 	SubLen:=self:oDCSubSet:ItemCount
 	FOR i = 1 to SubLen
@@ -148,7 +166,8 @@ METHOD AccFil() CLASS DonorFollowingReport
 	self:ToAccount:= LTrimZero(self:oDCSubSet:GetItem(SubLen,LENACCNBR))
 	self:oDCToAccount:TEXTValue := ToAccount
 	self:cToAccName := ToAccount
-	self:oDCTextTill:Caption := AllTrim(SubStr(self:oDCSubSet:GetItem(SubLen),LENACCNBR+1))
+	self:oDCTextTill:Caption := AllTrim(SubStr(self:oDCSubSet:GetItem(SubLen),LENACCNBR+1)) 
+	self:oDCfound:TEXTValue:=Str(self:oDCSubSet:SelectedCount,-1)
 RETURN
 
 
@@ -204,6 +223,15 @@ METHOD ButtonClick(oControlEvent) CLASS DonorFollowingReport
 	ELSEIF oControl:NameSym=#HomeBox .or. oControl:NameSym=#NonHomeBox .or. oControl:NameSym=#ProjectsBox
 		self:AccFil()
 	ENDIF
+	if self:oDCAge:Checked .or. self:oDCGender:Checked .or.  self:oDCType:Checked  .or.  self:oDCFrequency:Checked
+		self:oDCStatBox2:Show()
+		self:oDCStatBox4:Show()
+	else
+		self:oDCStatBox2:Hide()
+		self:oDCStatBox4:Hide()
+		self:StatBox2:=false
+		self:StatBox4:=false
+	endif
 	RETURN nil
 METHOD CancelButton( ) CLASS DonorFollowingReport
 	self:EndWindow()
@@ -223,6 +251,8 @@ RETURN uValue
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DonorFollowingReport
 	LOCAL oControl as CONTROL
 	LOCAL lGotFocus as LOGIC
+	LOCAL cCurValue as USUAL
+	LOCAL nPntr as int
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
@@ -238,9 +268,34 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DonorFollowingReport
 				cToAccName:=AllTrim(oControl:VALUE)
 				self:ToAccButton(true)
 			ENDIF
+		ELSEIF oControl:NameSym==#FromDep .and.!AllTrim(oControl:TextValue)==self:cCurDep
+			cCurValue:=AllTrim(oControl:TextValue)
+			self:cCurDep:=cCurValue
+			nPntr:=At(":",cCurValue)
+			IF nPntr>1
+				cCurValue:=SubStr(cCurValue,1,nPntr-1)
+			ENDIF
+			IF FindDep(@cCurValue)
+				self:RegDepartment(cCurValue,"From Department")
+			ELSE
+				self:FromDepButton()
+			ENDIF
+		elseIF oControl:NameSym==#FromBal .and.!AllTrim(oControl:TextValue)==self:cCurBal
+			cCurValue:=AllTrim(oControl:TextValue)
+			self:cCurBal:=cCurValue
+			nPntr:=At(":",cCurValue)
+			IF nPntr>1
+				cCurValue:=SubStr(cCurValue,1,nPntr-1)
+			ENDIF
+			IF FindBal(@cCurValue)
+				self:RegBalance(cCurValue)
+			ELSE
+				self:FromBalButton()
+			ENDIF
+
 		ENDIF
 	ENDIF
-	RETURN
+	return 
 
 ACCESS Frequency() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#Frequency)
@@ -259,6 +314,36 @@ ASSIGN FromAccount(uValue) CLASS DonorFollowingReport
 SELF:FieldPut(#FromAccount, uValue)
 RETURN uValue
 
+ACCESS FromBal() CLASS DonorFollowingReport
+RETURN SELF:FieldGet(#FromBal)
+
+ASSIGN FromBal(uValue) CLASS DonorFollowingReport
+SELF:FieldPut(#FromBal, uValue)
+RETURN uValue
+
+METHOD FromBalButton( ) CLASS DonorFollowingReport 
+	LOCAL cCurValue as STRING
+	LOCAL nPntr as int
+
+	cCurValue:=AllTrim(self:oDCFromBal:TextValue)
+	(BalanceItemExplorer{self:Owner,"BalanceItem",self:cCurBal,self,cCurValue,"From Balance Item"}):Show()
+
+RETURN nil
+ACCESS FromDep() CLASS DonorFollowingReport
+RETURN SELF:FieldGet(#FromDep)
+
+ASSIGN FromDep(uValue) CLASS DonorFollowingReport
+SELF:FieldPut(#FromDep, uValue)
+RETURN uValue
+
+ METHOD FromDepButton( ) CLASS DonorFollowingReport 
+	LOCAL cCurValue as STRING
+	LOCAL nPntr as int
+
+	cCurValue:=AllTrim(self:oDCFromDep:TextValue)
+	(DepartmentExplorer{self:Owner,"Department",self:cCurDep,self,cCurValue,"From Department"}):Show()
+
+RETURN NIL
 ACCESS Gender() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#Gender)
 
@@ -307,6 +392,23 @@ oDCToAccount:FieldSpec := Account_AccNumber{}
 oCCToAccButton := PushButton{SELF,ResourceID{DONORFOLLOWINGREPORT_TOACCBUTTON,_GetInst()}}
 oCCToAccButton:HyperLabel := HyperLabel{#ToAccButton,"v",NULL_STRING,NULL_STRING}
 oCCToAccButton:TooltipText := "Browse in Accounts"
+
+oDCFromBal := SingleLineEdit{SELF,ResourceID{DONORFOLLOWINGREPORT_FROMBAL,_GetInst()}}
+oDCFromBal:HyperLabel := HyperLabel{#FromBal,NULL_STRING,"Number of Balancegroup",NULL_STRING}
+oDCFromBal:TooltipText := "Enter number or name of required Top of balance structure"
+
+oCCFromBalButton := PushButton{SELF,ResourceID{DONORFOLLOWINGREPORT_FROMBALBUTTON,_GetInst()}}
+oCCFromBalButton:HyperLabel := HyperLabel{#FromBalButton,"v","Browse in balance items",NULL_STRING}
+oCCFromBalButton:TooltipText := "Browse in balance items"
+
+oDCFromDep := SingleLineEdit{SELF,ResourceID{DONORFOLLOWINGREPORT_FROMDEP,_GetInst()}}
+oDCFromDep:HyperLabel := HyperLabel{#FromDep,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCFromDep:FieldSpec := Description{}
+oDCFromDep:TooltipText := "Enter number or name of required Top of department structure"
+
+oCCFromDepButton := PushButton{SELF,ResourceID{DONORFOLLOWINGREPORT_FROMDEPBUTTON,_GetInst()}}
+oCCFromDepButton:HyperLabel := HyperLabel{#FromDepButton,"v","Browse in departments",NULL_STRING}
+oCCFromDepButton:TooltipText := "Browse in departments"
 
 oDCFixedText2 := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Sub period length:",NULL_STRING,NULL_STRING}
@@ -377,10 +479,10 @@ oDCFixedText3 := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FIXEDTEXT3,_GetI
 oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"To:",NULL_STRING,NULL_STRING}
 
 oDCTextfrom := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_TEXTFROM,_GetInst()}}
-oDCTextfrom:HyperLabel := HyperLabel{#Textfrom,"Fixed Text",NULL_STRING,NULL_STRING}
+oDCTextfrom:HyperLabel := HyperLabel{#Textfrom,NULL_STRING,NULL_STRING,NULL_STRING}
 
 oDCTextTill := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_TEXTTILL,_GetInst()}}
-oDCTextTill:HyperLabel := HyperLabel{#TextTill,"Fixed Text",NULL_STRING,NULL_STRING}
+oDCTextTill:HyperLabel := HyperLabel{#TextTill,NULL_STRING,NULL_STRING,NULL_STRING}
 
 oDCFixedText7 := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FIXEDTEXT7,_GetInst()}}
 oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Subset:",NULL_STRING,NULL_STRING}
@@ -426,6 +528,18 @@ oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"which part of the differen
 oDCPerAccountBox := CheckBox{SELF,ResourceID{DONORFOLLOWINGREPORT_PERACCOUNTBOX,_GetInst()}}
 oDCPerAccountBox:HyperLabel := HyperLabel{#PerAccountBox,"Show data per account",NULL_STRING,NULL_STRING}
 
+oDCSC_DEP := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_SC_DEP,_GetInst()}}
+oDCSC_DEP:HyperLabel := HyperLabel{#SC_DEP,"Department from:",NULL_STRING,NULL_STRING}
+
+oDCSC_BAL := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_SC_BAL,_GetInst()}}
+oDCSC_BAL:HyperLabel := HyperLabel{#SC_BAL,"Balance item from:",NULL_STRING,NULL_STRING}
+
+oDCfound := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FOUND,_GetInst()}}
+oDCfound:HyperLabel := HyperLabel{#found,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText14 := FixedText{SELF,ResourceID{DONORFOLLOWINGREPORT_FIXEDTEXT14,_GetInst()}}
+oDCFixedText14:HyperLabel := HyperLabel{#FixedText14,"accounts",NULL_STRING,NULL_STRING}
+
 oDCRanges := RadioButtonGroup{SELF,ResourceID{DONORFOLLOWINGREPORT_RANGES,_GetInst()}}
 oDCRanges:FillUsing({ ;
 						{oCCRange10,"10"}, ;
@@ -444,6 +558,15 @@ ENDIF
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
+
+method ListBoxSelect(oControlEvent) class DonorFollowingReport
+	local oControl as Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	super:ListBoxSelect(oControlEvent)
+	//Put your changes here 
+	self:oDCfound:TEXTValue:=Str(self:oDCSubSet:SelectedCount,-1)
+
+	return NIL
 
 METHOD MarkupMatrix(ptrHandle,aMatrix,cHeading,PrevPeriodCount,aRelevantClass,ixOff)	CLASS	DonorFollowingReport
 	// fill excel matrix with data
@@ -603,7 +726,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
 	self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
 	self:ProjectsBox:=true
-	self:AccFil()
 
 	
 	if !Empty(GlBalYears)
@@ -628,16 +750,26 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 		self:SetPropExtra(count)
 	NEXT
 	StatBox1:=true
-	StatBox2:=true
+	StatBox2:=false
 	StatBox3:=true
-	StatBox4:=true
+	StatBox4:=false
 	StatBox5:=true
 	StatBox6:=true
 	StatBox7:=true
 	self:oDCFixedTextRanges:show()
 	self:oDCNumberRanges:show()
-	DiffBox:=true
-	PerAccountBox:=false
+	DiffBox:=false
+	PerAccountBox:=false 
+	if Departments
+		self:oDCSC_DEP:Show()
+		self:oDCFromDep:Show()
+		self:oCCFromDepButton:Show()
+		self:cCurDep:=iif(Empty(cDepmntIncl),"",Split(cDepmntIncl,",")[1])
+		self:RegDepartment(cCurDep,"From Department")
+	endif
+   self:RegBalance(self:cCurBal)
+// 	self:AccFil()
+
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	//Put your PreInit additions here
@@ -1595,19 +1727,63 @@ METHOD RegAccount(omAcc,ItemName) CLASS DonorFollowingReport
 	oAccount:=omAcc
 	IF ItemName == "From Account"
 		self:FromAccount:= LTrimZero(oAccount:accnumber)
-		self:oDCFromAccount:TEXTValue := FromAccount
+		self:oDCFromAccount:TextValue := self:FromAccount
 		self:cFromAccName := FromAccount
 		self:oDCTextfrom:Caption := AllTrim(oAccount:Description)
 		self:oDCSubSet:AccNbrStart:=self:FromAccount
+		self:oDCfound:TextValue:=Str(self:oDCSubSet:SelectedCount,-1)
 	ELSEIF ItemName == "Till Account"
 		self:ToAccount:= LTrimZero(oAccount:accnumber)
-		self:oDCToAccount:TEXTValue := ToAccount
-		self:cToAccName := ToAccount
+		self:oDCToAccount:TextValue := self:ToAccount
+		self:cToAccName := self:ToAccount
 		self:oDCTextTill:Caption := AllTrim(oAccount:Description)
-		self:oDCSubSet:AccNbrEnd:=ToAccount
+		self:oDCSubSet:AccNbrEnd:=self:ToAccount
+		self:oDCfound:TextValue:=Str(self:oDCSubSet:SelectedCount,-1)
 	ENDIF
 		
 RETURN true
+METHOD RegBalance(myNum) CLASS DonorFollowingReport
+local oBal as SQLSelect
+	Default(@myNum,null_string)
+	IF Empty(myNum) .or. myNum='0'
+		self:cCurBal:="0:Balance Items"
+		self:WhatFrom:=''
+	ELSE
+		oBal:=SQLSelect{"select number,heading,balitemid from balanceitem where balitemid='"+myNum+"'",oConn} 
+		IF oBal:RecCount>0
+			self:cCurBal:=AllTrim(oBal:number)+":"+oBal:heading
+			self:WhatFrom:=Str(oBal:balitemid,-1)
+		ENDIF
+	ENDIF
+	self:oDCFromBal:TextValue:=self:cCurBal 
+	self:oDCSubSet:WhatFrom :=self:WhatFrom 
+
+	self:AccFil()
+RETURN
+ 
+METHOD RegDepartment(myNum,ItemName) CLASS DonorFollowingReport
+	LOCAL depnr:="", deptxt:=""  as STRING
+	local oDep as SQLSelect
+	Default(@myNum,null_string)
+	Default(@Itemname,null_string)
+	IF Empty(myNum) .or. myNum='0'
+		depnr:="0"
+		deptxt:=sEntity+" "+sLand
+	ELSE
+		oDep:=SQLSelect{"select depid,descriptn  from department where depid="+myNum,oConn}
+		if oDep:RecCount>0
+			depnr:=Str(oDep:DEPID,-1)
+			deptxt:=oDep:DESCRIPTN
+		ENDIF
+	ENDIF
+	IF ItemName == "From Department"
+		self:WhoFrom:= depnr
+		self:oDCFromDep:TextValue := deptxt
+		self:cCurDep:=deptxt
+		self:oDCSubSet:WhoFrom :=depnr
+	endif
+	self:AccFil()
+RETURN
 METHOD SetPropExtra( Count) CLASS DonorFollowingReport
 	LOCAL oCheck as CheckBox
 	LOCAL oDCGroupBoxExtra	as GROUPBOX
@@ -1797,59 +1973,59 @@ ASSIGN Type(uValue) CLASS DonorFollowingReport
 SELF:FieldPut(#Type, uValue)
 RETURN uValue
 
-STATIC DEFINE DONORFOLLOWINGREPORT_AGE := 111 
-STATIC DEFINE DONORFOLLOWINGREPORT_CANCELBUTTON := 135 
-STATIC DEFINE DONORFOLLOWINGREPORT_DIFFBOX := 136 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT1 := 128 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT10 := 143 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT2 := 107 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT3 := 129 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT6 := 139 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT7 := 132 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT8 := 140 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT9 := 142 
-STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXTRANGES := 126 
-STATIC DEFINE DONORFOLLOWINGREPORT_FREQUENCY := 115 
+STATIC DEFINE DONORFOLLOWINGREPORT_AGE := 115 
+STATIC DEFINE DONORFOLLOWINGREPORT_CANCELBUTTON := 139 
+STATIC DEFINE DONORFOLLOWINGREPORT_DIFFBOX := 140 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT1 := 132 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT10 := 147 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT14 := 152 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT2 := 111 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT3 := 133 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT6 := 143 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT7 := 136 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT8 := 144 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXT9 := 146 
+STATIC DEFINE DONORFOLLOWINGREPORT_FIXEDTEXTRANGES := 130 
+STATIC DEFINE DONORFOLLOWINGREPORT_FOUND := 151 
+STATIC DEFINE DONORFOLLOWINGREPORT_FREQUENCY := 119 
 STATIC DEFINE DONORFOLLOWINGREPORT_FROMACCBUTTON := 104 
 STATIC DEFINE DONORFOLLOWINGREPORT_FROMACCOUNT := 103 
-STATIC DEFINE DONORFOLLOWINGREPORT_FROMDATE := 137 
-STATIC DEFINE DONORFOLLOWINGREPORT_GENDER := 110 
-STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX1 := 127 
-STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX3 := 141 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMBAL := 107 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMBALBUTTON := 108 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMDATE := 141 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMDEP := 109 
+STATIC DEFINE DONORFOLLOWINGREPORT_FROMDEPBUTTON := 110 
+STATIC DEFINE DONORFOLLOWINGREPORT_GENDER := 114 
+STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX1 := 131 
+STATIC DEFINE DONORFOLLOWINGREPORT_GROUPBOX3 := 145 
 STATIC DEFINE DONORFOLLOWINGREPORT_HOMEBOX := 101 
 STATIC DEFINE DONORFOLLOWINGREPORT_NONHOMEBOX := 102 
-STATIC DEFINE DONORFOLLOWINGREPORT_NUMBERRANGES := 125 
-STATIC DEFINE DONORFOLLOWINGREPORT_OKBUTTON := 133 
-STATIC DEFINE DONORFOLLOWINGREPORT_PERACCOUNTBOX := 144 
+STATIC DEFINE DONORFOLLOWINGREPORT_NUMBERRANGES := 129 
+STATIC DEFINE DONORFOLLOWINGREPORT_OKBUTTON := 137 
+STATIC DEFINE DONORFOLLOWINGREPORT_PERACCOUNTBOX := 148 
 STATIC DEFINE DONORFOLLOWINGREPORT_PROJECTSBOX := 100 
-STATIC DEFINE DONORFOLLOWINGREPORT_PROPERTIESBOX := 109 
-STATIC DEFINE DONORFOLLOWINGREPORT_RANGE10 := 112 
-STATIC DEFINE DONORFOLLOWINGREPORT_RANGE20 := 113 
-STATIC DEFINE DONORFOLLOWINGREPORT_RANGES := 116 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX1 := 118 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX2 := 119 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX3 := 120 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX4 := 121 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX5 := 122 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX6 := 123 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX7 := 124 
-STATIC DEFINE DONORFOLLOWINGREPORT_STATISTICSBOX := 117 
-STATIC DEFINE DONORFOLLOWINGREPORT_SUBPERLEN := 108 
-STATIC DEFINE DONORFOLLOWINGREPORT_SUBSET := 134 
-STATIC DEFINE DONORFOLLOWINGREPORT_TEXTFROM := 130 
-STATIC DEFINE DONORFOLLOWINGREPORT_TEXTTILL := 131 
+STATIC DEFINE DONORFOLLOWINGREPORT_PROPERTIESBOX := 113 
+STATIC DEFINE DONORFOLLOWINGREPORT_RANGE10 := 116 
+STATIC DEFINE DONORFOLLOWINGREPORT_RANGE20 := 117 
+STATIC DEFINE DONORFOLLOWINGREPORT_RANGES := 120 
+STATIC DEFINE DONORFOLLOWINGREPORT_SC_BAL := 150 
+STATIC DEFINE DONORFOLLOWINGREPORT_SC_DEP := 149 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX1 := 122 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX2 := 123 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX3 := 124 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX4 := 125 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX5 := 126 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX6 := 127 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATBOX7 := 128 
+STATIC DEFINE DONORFOLLOWINGREPORT_STATISTICSBOX := 121 
+STATIC DEFINE DONORFOLLOWINGREPORT_SUBPERLEN := 112 
+STATIC DEFINE DONORFOLLOWINGREPORT_SUBSET := 138 
+STATIC DEFINE DONORFOLLOWINGREPORT_TEXTFROM := 134 
+STATIC DEFINE DONORFOLLOWINGREPORT_TEXTTILL := 135 
 STATIC DEFINE DONORFOLLOWINGREPORT_TOACCBUTTON := 106 
 STATIC DEFINE DONORFOLLOWINGREPORT_TOACCOUNT := 105 
-STATIC DEFINE DONORFOLLOWINGREPORT_TODATE := 138 
-STATIC DEFINE DONORFOLLOWINGREPORT_TYPE := 114 
-CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
-
-	PROTECT oDCFixedText1 as FIXEDTEXT
-	PROTECT oDCClassesBox as LISTBOX
-	PROTECT oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  Protect oCaller as Object
+STATIC DEFINE DONORFOLLOWINGREPORT_TODATE := 142 
+STATIC DEFINE DONORFOLLOWINGREPORT_TYPE := 118 
 resource DonorFolwngSelClasses DIALOGEX  5, 20, 271, 125
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Donor following Report - export classes of persons"
@@ -1860,6 +2036,14 @@ BEGIN
 	CONTROL	"OK", DONORFOLWNGSELCLASSES_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 22, 55, 11
 END
 
+CLASS DonorFolwngSelClasses INHERIT DialogWinDowExtra 
+
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCClassesBox as LISTBOX
+	PROTECT oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  Protect oCaller as Object
 METHOD Init(oParent,uExtra) CLASS DonorFolwngSelClasses 
 LOCAL dim aFonts[1] as OBJECT
 
@@ -1911,21 +2095,6 @@ method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 STATIC DEFINE DONORFOLWNGSELCLASSES_CLASSESBOX := 101 
 STATIC DEFINE DONORFOLWNGSELCLASSES_FIXEDTEXT1 := 100 
 STATIC DEFINE DONORFOLWNGSELCLASSES_OKBUTTON := 102 
-resource DonorProject DIALOGEX  34, 31, 442, 1308
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
-	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
-	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
-	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
-	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
-	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
-	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
-	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
-	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
-END
-
 CLASS DonorProject INHERIT DataWindowExtra 
 
 	EXPORT oDCFromdate as DATESTANDARD
@@ -1947,6 +2116,21 @@ CLASS DonorProject INHERIT DataWindowExtra
 	PROTECT aDestName:={} as ARRAY // array with singlelineedit controls
 	PROTECT nID as int
 	PROTECT pwvs as WindowVerticalScrollBar     
+
+resource DonorProject DIALOGEX  34, 31, 442, 1308
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
+	CONTROL	"woensdag 24 november 2010", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
+	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
+	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
+	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 380, 7, 53, 12
+	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 380, 22, 53, 12
+	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
+	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
+	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
+END
 
 METHOD CancelButton( ) CLASS DonorProject
 	self:EndWindow()
@@ -2547,7 +2731,8 @@ LOCAL oParent:=self:Owner as DonorFollowingReport
 LOCAL aMemHome:=oParent:aMemHome as ARRAY
 LOCAL aMemNonHome:=oParent:aMemNonHome as ARRAY
 LOCAL aProjects:=oParent:aProjects as ARRAY
-LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox as LOGIC
+LOCAL lHome:=oParent:HomeBox,lNonHome:=oParent:NonHomeBox,lProjects:=oParent:ProjectsBox as LOGIC 
+local aBalIncl:=self:aBalIncl,aDepIncl:=self:aDepIncl as array 
 * Enforce correct sequence:
 cStart:=LTrimZero(oParent:FromAccount)
 cEnd:=LTrimZero(oParent:ToAccount)
@@ -2559,14 +2744,15 @@ IF !Empty(cEnd).and. cStart>cEnd
 	cEnd:=cStart
 	cStart:=cExchAcc
 ENDIF
+
 IF lHome
-	AEval(aMemHome,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
+	AEval(aMemHome,{|x| FilterAcc(aAcc,x,cStart,cEnd,aBalIncl,aDepIncl)})
 ENDIF
 IF lNonHome
-	AEval(aMemNonHome,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
+	AEval(aMemNonHome,{|x| FilterAcc(aAcc,x,cStart,cEnd,aBalIncl,aDepIncl)})
 ENDIF
 IF lProjects
-	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd)})
+	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd,aBalIncl,aDepIncl)})
 ENDIF
 RETURN aAcc
 resource TotalsMembers DIALOGEX  12, 11, 225, 99
