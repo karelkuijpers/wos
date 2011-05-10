@@ -1341,6 +1341,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"log","source","varchar(40)","NO","",""},;
 		{"log","logtime","datetime","NO","0000-00-00",""},;
 		{"log","message","mediumtext","NO","",""},;
+		{"log","userid","varchar(64)","NO","",""},;
 		{"mbalance","mbalid","int(11)","NO","NULL","auto_increment"},;
 		{"mbalance","accid","int(11)","NO","0",""},;
 		{"mbalance","year","smallint(6)","NO","0",""},;
