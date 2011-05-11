@@ -1794,8 +1794,9 @@ local nAcc as string
 			RETURN
 		ENDIF
 	ENDIF
-	self:oOwner:ShowSelection()
-	self:EndWindow()
+	if self:oOwner:ShowSelection()
+		self:EndWindow()
+	endif
 	RETURN
 METHOD PersonButton(lUnique)  CLASS InquirySelection
 LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
@@ -3914,7 +3915,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 	RETURN
 METHOD FindButton( ) CLASS TransInquiry
 	self:cWhereSpec:="t.transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
-	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
+	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:cOrder:="transid desc"
 	self:oTrans:SQLString:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
 	self:oTrans:Execute()
