@@ -966,7 +966,7 @@ FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as strin
 	// add conditinally accstr to aAcc
 	LOCAL accstr:=LTrimZero(SubStr(accarr[1],1,LENACCNBR)) as STRING
 	IF accstr>=cStart .and. accstr<=cEnd
-		if (Empty(aBalIncl) .or. AScan(aBalIncl,Str(accarr[3],-1))>0) .and. (Empty(aDepIncl) .or. AScan(aDepIncl,Str(accarr[3],-1))>0) 
+		if (Empty(aBalIncl) .or. AScanExact(aBalIncl,Str(accarr[3],-1))>0) .and. (Empty(aDepIncl) .or. AScanExact(aDepIncl,Str(accarr[3],-1))>0) 
 			AAdd(aAcc,{accarr[1],accarr[2]})
 		endif
 	ENDIF
