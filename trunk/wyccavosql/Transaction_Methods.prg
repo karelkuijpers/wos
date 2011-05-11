@@ -4135,7 +4135,8 @@ METHOD ShowSelection() CLASS TransInquiry
 	local aPost:={"Not","Ready","Yes"} as array 
 	local aKeyw:={} as array
 	local i as int
-	local fSecStart as float
+	local fSecStart as float 
+	local oSel as SQLSelect
 	self:PersIdSelected:=AllTrim(self:PersIdSelected)
 	self:DocIdSelected:=AllTrim(self:DocIdSelected)
 	IF oPsbw==null_object
@@ -4272,12 +4273,23 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:lShowFind:=false 
 
 	self:cWhereSpec:=cFilter
-	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec  
+	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec  
 	self:cSelectStmnt:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
+	// test nbr liens to be retrieved:
+	oSel:=SQLSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
+	oSel:Execute()
+	if Val(oSel:qty)> 3000
+		if TextBox{self,self:oLan:WGet("transaction inquiry"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+oSel:qty+Space(1)+self:oLan:WGet("transaction lines"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+			return false
+		endif
+	endif
 	self:oTrans:SQLString:=self:cSelectStmnt 
 // 	fSecStart:=Seconds() 
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:oTrans:Execute()
+	if !Empty(self:oTrans:Status)
+		LogEvent(self,"Error:"+self:oTrans:ErrInfo:errormessage+"; statement:"+self:oTrans:SQLString,"LogErrors")
+	endif
 // 	LogEvent(self,Str(Seconds()-fSecStart,-1)+" sec for "+Str(self:oTrans:Reccount,-1)+" records with:"+self:oTrans:SQLString+CRLF+"explain:"+CRLF+GetExplain(self:oTrans:SQLString),"LogSql")
 	self:GoTop()
 	self:Pointer := Pointer{POINTERARROW}
@@ -4297,7 +4309,7 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:oDCFound:TextValue :=Str(self:oTrans:Reccount,-1)
 
 
-	RETURN
+	RETURN true
 function UnionTrans(cStatement as string) as string
 	// combine select statemenst on transaction with unions on historic trnsaction tables
 	* 
