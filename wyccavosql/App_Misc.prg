@@ -1627,7 +1627,8 @@ CLASS ListBoxExtra INHERIT ListBox
 	export cAccStart, cAccEnd as STRING  // range of accountnumbers
 	export cCurStart,cCurEnd as STRING // Current values used in list 
 	PROTECT oAccount as SQLSelect  
-  	export aBalIncl,aDepIncl as array
+	export aBalIncl,aDepIncl as array 
+	EXPORT cDepIncl,cBalIncl as STRING
 
 	declare method GetAccnts,GetAccounts,GetSelectedItems
 ACCESS AccNbrEnd CLASS ListBoxExtra
@@ -1668,17 +1669,11 @@ METHOD GetAccnts(dummy:=nil as string) as array CLASS ListBoxExtra
 	else
 		cWhere:="accnumber<='"+cStart+"'"
 	endif
-	if !Empty(self:cWhoFrom)
-		cDepIncl:=SetDepFilter(Val(self:cWhoFrom))
-		if !Empty(cDepIncl)
-			cWhere+=iif(Empty(cWhere),""," and ")+" department in ("+cDepIncl+")" 
-		endif
+	if !Empty(self:cDepIncl)
+		cWhere+=iif(Empty(cWhere),""," and ")+" department in ("+cDepIncl+")" 
 	endif
-	if !Empty(self:cWhatFrom)
-		cBalIncl:=SetAccFilter(Val(self:cWhatFrom))
-		if !Empty(cBalIncl)
-			cWhere+=iif(Empty(cWhere),""," and ")+" balitemid in ("+cBalIncl+")" 
-		endif
+	if !Empty(cBalIncl)
+		cWhere+=iif(Empty(cWhere),""," and ")+" balitemid in ("+cBalIncl+")" 
 	endif
 
 	oSQL:=SQLSelect{"select accnumber,description,accid,department,balitemid from account where giftalwd=1 and "+cWhere ,oConn}
@@ -1761,7 +1756,8 @@ RETURN oAccount
 ASSIGN WhatFrom(cValue) CLASS ListBoxExtra 
 	self:aBalIncl:={}
 	if !Empty(cValue)
-		self:aBalIncl:=Split(SetAccFilter(Val(cValue)),",")
+		self:cBalIncl:= SetAccFilter(Val(cValue))
+		self:aBalIncl:=Split(self:cBalIncl,",")
 	endif
 
 	self:Refill()
@@ -1769,7 +1765,8 @@ ASSIGN WhatFrom(cValue) CLASS ListBoxExtra
 ASSIGN WhoFrom(cValue) CLASS ListBoxExtra 
 	self:aDepIncl:={}
 	if !Empty(cValue)
-		self:aDepIncl:=Split(SetDepFilter(Val(cValue)),',')
+		self:cDepIncl:= SetDepFilter(Val(cValue))
+		self:aDepIncl:=Split(self:cDepIncl,',')
 	endif
 
 	self:Refill()
