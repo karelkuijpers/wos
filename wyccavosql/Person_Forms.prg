@@ -1566,7 +1566,8 @@ METHOD EditButton(lNew) CLASS PersonBrowser
 	endif
 	oEditPersonWindow := NewPersonWindow{ self:Owner,,self:Server,{lNew,false,self,self:oPersCnt }}
 	oEditPersonWindow:Show()
-
+   // reset person container:
+   self:oPersCnt:=null_object
 	RETURN NIL
 METHOD FindButton( ) CLASS PersonBrowser 
 	LOCAL cMyFrom as STRING
