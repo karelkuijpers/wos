@@ -1150,7 +1150,7 @@ METHOD OkButton CLASS NewPersonWindow
 				oStmnt:Execute() 
 			ENDIF
 		NEXT
-		self:ClearBankAccs()
+		self:ClearBankAccs() 
 		IF lAddressChanged
 			IF IsObject(oCaller)
 				IF IsMethod(oCaller,#Regperson)
@@ -1542,7 +1542,6 @@ BEGIN
 END
 
 METHOD EditButton(lNew) CLASS PersonBrowser
-
 	Default(@lNew,FALSE)
 	IF !lNew.and.(SELF:Server:EOF.or.SELF:Server:BOF)
 		(Errorbox{,"Select a person first"}):Show()
@@ -1566,8 +1565,10 @@ METHOD EditButton(lNew) CLASS PersonBrowser
 	endif
 	oEditPersonWindow := NewPersonWindow{ self:Owner,,self:Server,{lNew,false,self,self:oPersCnt }}
 	oEditPersonWindow:Show()
-   // reset person container:
-   self:oPersCnt:=null_object
+	if Empty(self:oCaller)
+		// reset person container
+		self:oPersCnt:=null_object
+	endif		
 	RETURN NIL
 METHOD FindButton( ) CLASS PersonBrowser 
 	LOCAL cMyFrom as STRING
@@ -1784,7 +1785,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	else
 		self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn}
 	endif
-	self:oPersCnt:=PersonContainer{}
+ 	self:oPersCnt:=PersonContainer{}
 	RETURN NIL
 METHOD PrintButton( ) CLASS PersonBrowser
 	SELF:FilePrint()
