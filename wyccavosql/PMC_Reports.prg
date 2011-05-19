@@ -348,7 +348,7 @@ METHOD PrintReport() CLASS PMISsend
 	local oReport as PrintDialog
 	LOCAL i, a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentAccID as int
 	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend  as FLOAT
-	LOCAL AmntAssessable,AmntMG,AmntCharges,AmntTrans,remainingAmnt,me_amount,availableAmnt,me_asshome,me_assint, amntlimited as FLOAT
+	LOCAL AmntAssessable,AmntMG,AmntCharges,AmntTrans,remainingAmnt,me_amount,availableAmnt,me_asshome,me_assint, amntlimited,AmntCorrection as FLOAT
 	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
 	LOCAL me_has as LOGIC
 	LOCAL me_accid,me_mbrid, me_gc,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
@@ -698,9 +698,9 @@ METHOD PrintReport() CLASS PMISsend
 				ENDIF
 				
 				remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
-				IF me_homePP!=SEntity 
+				IF me_homePP!=SEntity .and.self:closingDate= Today() 
 					// for transactions to be send to homepp:
-					remainingAmnt:=Round(remainingAmnt-AmntAssessable-AmntMG-AmntCharges,DecAantal)
+					AmntCorrection:=Round(remainingAmnt-AmntAssessable-AmntMG-AmntCharges,DecAantal)
 				endif
 				availableAmnt:=remainingAmnt
 				// 2: In case of member from own homePP or non-entity send distribution instructions:
@@ -772,15 +772,6 @@ METHOD PrintReport() CLASS PMISsend
 								endif
 								if destinstr[iDest,11]														//lock distribution record:
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],me_amount,destinstr[iDest,11]})
-									//update prelimenary distribution record:
-									// 									oStmnt:=SQLStatement{"update distributioninstruction set lstdate='"+SQLdate(self:closingDate)+;
-									// 										"',amntsnd='"+Str(me_amount,-1)+"'"+iif(destinstr[iDest,11],",disabled=1",'')+" where  mbrid="+me_mbrid+" and seqnbr="+destinstr[iDest,6],oConn}
-									// 									oStmnt:Execute()
-									// 									if !Empty(oStmnt:Status)
-									// 										SQLStatement{"rollback",oConn}:Execute()
-									// 										ErrorBox{self,self:oLan:WGet("could not update distribution instruction for member")+Space(1)+me_desc}:Show()
-									// 										return
-									// 									endif  
 								endif
 							ENDIF
 						ELSEIF remainingAmnt>0 // remaining amount:
@@ -800,15 +791,6 @@ METHOD PrintReport() CLASS PMISsend
 								IF destinstr[iDest,9] < DestAmnt
 									amntlimited:=Min(remainingAmnt, Round(DestAmnt-destinstr[iDest,9],DecAantal))
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],round(destinstr[iDest,9]+amntlimited,decaantal),destinstr[iDest,11]})
-									//update prelimenary distribution record:
-									// 									oStmnt:=SQLStatement{"update distributioninstruction set lstdate='"+SQLdate(self:closingDate)+;
-									// 										"',amntsnd='"+Str(destinstr[iDest,9]+amntlimited,-1)+"'"+iif(destinstr[iDest,11],",disabled=1",'')+" where  mbrid="+me_mbrid+" and seqnbr="+destinstr[iDest,6],oConn}
-									// 									oStmnt:Execute()
-									// 									if !Empty(oStmnt:Status)
-									// 										SQLStatement{"rollback",oConn}:Execute()
-									// 										ErrorBox{self,self:oLan:WGet("could not update distribution instruction for member")+Space(1)+me_desc}:Show()
-									// 										return
-									// 									endif  
 									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
 									IF me_homePP!=SEntity
 										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
@@ -822,17 +804,16 @@ METHOD PrintReport() CLASS PMISsend
 									AmntCharges:=Round(-remainingAmnt+AmntCharges,DecAantal)
 								endif
 								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],remainingAmnt,destinstr[iDest,11]})
-								//update prelimenary distribution record:
 								remainingAmnt:=0
 							ENDIF
 						ENDIF
 					NEXT
 				ENDIF
 				// 2: In case of member from other homePP seperate transactions for CN,MM and PC:
-				IF me_homePP!=SEntity
-					IF !remainingAmnt=0.00
+				IF me_homePP!=SEntity .and.self:closingDate=Today()
+					IF !AmntCorrection=0.00
 						// send if applicable remaining balance to PMIS
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,remainingAmnt,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency})
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency})
 					ENDIF
 				ENDIF
 			endif
