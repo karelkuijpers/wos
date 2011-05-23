@@ -294,7 +294,7 @@ METHOD OKButton( ) CLASS PMISsend
 	ENDIF
 
 	* Check for presence of hb en am: 
-	oAcc:=SQLSelect{"select Currency from account where accid=?",oConn}
+	oAcc:=SQLSelect{"select currency from account where accid=?",oConn}
 	oAcc:Execute(SHB)
 	if oAcc:reccount<1 
 			(ErrorBox{self:Owner,self:oLan:WGet('Add first account for PMC Clearance')}):Show()
@@ -388,27 +388,27 @@ METHOD PrintReport() CLASS PMISsend
 	oAfl:=UpdateHouseHoldID{}
 	oAfl:Importaffiliated_person_account_list()
 
-// 	datelstafl:=self:oSys:DATLSTAFL 
-// 	if datelstafl<Today() 
-// 		/*	oInST:=Insite{}
-// 		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
-// 		oInST:Close()   */
+	// 	datelstafl:=self:oSys:DATLSTAFL 
+	// 	if datelstafl<Today() 
+	// 		/*	oInST:=Insite{}
+	// 		cAccCng:=oInST:GetAccountChangeReport(datelstafl) 
+	// 		oInST:Close()   */
 
-// 		oAfl:=UpdateHouseHoldID{}
-// 		if !oAfl:Processaffiliated_person_account_list(cAccCng)
-// 			IF !oAfl:Importaffiliated_person_account_list()
-// 				IF datelstafl<(Today()-31) 
-// 					nAnswer:= (TextBox{oWindow,self:oLan:WGet("Import RPP"),;
-// 						self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):Show()
-// 					IF nAnswer == BOXREPLYYES 
-// 						oWindow:Pointer := Pointer{POINTERARROW} 
-// 						FileStart(WorkDir()+"Insite.html",self)
-// 						RETURN FALSE
-// 					ENDIF
-// 				ENDIF
-// 			ENDIF
-// 		ENDIF
-// 	ENDIF
+	// 		oAfl:=UpdateHouseHoldID{}
+	// 		if !oAfl:Processaffiliated_person_account_list(cAccCng)
+	// 			IF !oAfl:Importaffiliated_person_account_list()
+	// 				IF datelstafl<(Today()-31) 
+	// 					nAnswer:= (TextBox{oWindow,self:oLan:WGet("Import RPP"),;
+	// 						self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):Show()
+	// 					IF nAnswer == BOXREPLYYES 
+	// 						oWindow:Pointer := Pointer{POINTERARROW} 
+	// 						FileStart(WorkDir()+"Insite.html",self)
+	// 						RETURN FALSE
+	// 					ENDIF
+	// 				ENDIF
+	// 			ENDIF
+	// 		ENDIF
+	// 	ENDIF
 	oWindow:Pointer := Pointer{POINTERARROW}
 
 	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
@@ -465,6 +465,15 @@ METHOD PrintReport() CLASS PMISsend
 		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
 		return
 	endif
+	// Check if nobody else is busy with sending to PMC:
+	oTrans:=SQLSelect{'select transid from transaction t '+;
+		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"'"+;
+		" and t.accid in (select m.accid from member m) and "+;
+		" t.lock_id>0 and t.lock_time > subdate(now(),interval 120 minute)",oConn}
+	if oTrans:Reccount>0
+		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
+		return
+	endif
 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
 	// select the transaction data
 	oTrans:=SQLSelect{'select transid,seqnr,accid,persid,cre,deb,description,reference,gc,poststatus,fromrpp from transaction t '+;
@@ -487,7 +496,7 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif
 	SQLStatement{"commit",oConn}:Execute()  // save locks
-   oTrans:GoTop()
+	oTrans:GoTop()
 	// collect distribution instrcutions:	
 	nStep:=Max(Ceil(oMbr:Reccount/20.00),1)
 	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
@@ -525,11 +534,11 @@ METHOD PrintReport() CLASS PMISsend
 				//   1       2      3      4       5       6      7          8      9        10      11   12     13         14
 				cDestPersonId:=""
 				IF aDistr[i,3]=="ACH"  //destpp
-// 					if Empty(aDistr[i,11]).or. Empty(aDistr[i,12]) .or.Empty(aDistr[i,13])
-// 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
-// 						exit
-// 					endif				
-// 					cDestAcc:="#"+AllTrim(aDistr[i,11])+"#"+aDistr[i,13]+"#"+AllTrim(aDistr[i,12])+"#"+SubStr(me_pers,1,22)+"#"+AllTrim(oMbr:householdid)+"#"
+					// 					if Empty(aDistr[i,11]).or. Empty(aDistr[i,12]) .or.Empty(aDistr[i,13])
+					// 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
+					// 						exit
+					// 					endif				
+					// 					cDestAcc:="#"+AllTrim(aDistr[i,11])+"#"+aDistr[i,13]+"#"+AllTrim(aDistr[i,12])+"#"+SubStr(me_pers,1,22)+"#"+AllTrim(oMbr:householdid)+"#"
 					cDestAcc:=AllTrim(aDistr[i,4]) 			
 					if !Empty(cDestAcc) .and.(!cDestAcc=='1'.or.cDestAcc=='2')
 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
@@ -984,109 +993,188 @@ METHOD PrintReport() CLASS PMISsend
 				endif
 			endif
 		endif
-		if lStop 
-			self:ResetLocks(MYEMPID)
-			return
-		else
-			IF self:oSys:PMISLSTSND<ToDay()-400
-				// still IES:
-				IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
-						self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
-					self:ResetLocks(MYEMPID)
-					RETURN
-				ENDIF
+	endif
+	if lStop 
+		self:ResetLocks(MYEMPID)
+		return
+	else
+		IF self:oSys:PMISLSTSND<ToDay()-400
+			// still IES:
+			IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
+					self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
+				self:ResetLocks(MYEMPID)
+				RETURN
 			ENDIF
-			oMapi := MAPISession{}
-			self:Pointer := Pointer{POINTERHOURGLASS}
-			cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
-			self:STATUSMESSAGE(cStmsg)  
-			nStep:=Ceil(batchcount/20.00)
-			// determine mbalance accounts to be locked for update 
-			cAccs:=sam+','+shb
-			if !Empty(samProj)
-				cAccs+=','+samProj
+		ENDIF
+		oMapi := MAPISession{}
+		self:Pointer := Pointer{POINTERHOURGLASS}
+		cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
+		self:STATUSMESSAGE(cStmsg)  
+		nStep:=Ceil(batchcount/20.00)
+		// determine mbalance accounts to be locked for update 
+		cAccs:=sam+','+shb
+		if !Empty(samProj)
+			cAccs+=','+samProj
+		endif
+		if !Empty(SINCHOME)
+			cAccs+=','+SINCHOME+","+SEXPHOME
+		endif
+		if !Empty(SINC)
+			cAccs+=','+SINC+","+SEXP
+		endif
+		if !Empty(samFld)
+			cAccs+=','+samFld
+		endif
+		for a_tel:=1 to batchcount
+			if !cCurAcc==aMemberTrans[a_tel,1]
+				cCurAcc:=aMemberTrans[a_tel,1]
+				cAccs+=','+cCurAcc
+			endif 
+			IF aMemberTrans[a_tel,4]==DT
+				if At(','+aMemberTrans[a_tel,7][5]+',',cAccs)=0
+					cAccs+=","+aMemberTrans[a_tel,7][5]
+				endif
 			endif
-			if !Empty(SINCHOME)
-				cAccs+=','+SINCHOME+","+SEXPHOME
-			endif
-			if !Empty(SINC)
-				cAccs+=','+SINC+","+SEXP
-			endif
-			if !Empty(samFld)
-				cAccs+=','+samFld
-			endif
-			for a_tel:=1 to batchcount
-				if !cCurAcc==aMemberTrans[a_tel,1]
-					cCurAcc:=aMemberTrans[a_tel,1]
-					cAccs+=','+cCurAcc
-				endif 
-				IF aMemberTrans[a_tel,4]==DT
-					if At(','+aMemberTrans[a_tel,7][5]+',',cAccs)=0
-						cAccs+=","+aMemberTrans[a_tel,7][5]
-					endif
+		next
+		SQLStatement{"start transaction",oConn}:Execute()
+		IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
+			SQLStatement{"update sysparms set iesmailacc='PMC-Files_Intl@sil.org'",oConn}:Execute()
+		ENDIF
+		//	lock mbalance records:
+		oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
+			" and	year="+Str(Year(self:closingDate),-1)+;
+			" and	Month="+Str(Month(self:closingDate),-1)+" order by mbalid for update",oConn}
+		if	!Empty(oBal:Status)
+			cError:=self:oLan:WGet("balance records locked by someone else, thus	skipped")
+			LogEvent(self,cError+':'+oBal:ErrInfo:errormessage+CRLF+"Statement:"+oBal:SQLString,"LogErrors")
+		endif	  
+		if Empty(cError) .and.!Empty(cTransLock)
+			*	Change status of transactions to "Send to PMC": bfm='H':
+			oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+			oStmnt:Execute()
+			if	oStmnt:NumSuccessfulRows <1
+				cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
+				LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+			ENDIF
+		endif
+		if Empty(cError)
+			*	Record month within fixed amount distribution instructions:
+			oStmnt:=SQLStatement{"update distributioninstruction set lstdate='"+SQLdate(self:closingDate)+;
+				"',"+sIdentChar+"amntsnd"+sIdentChar+"=?,"+sIdentChar+"disabled"+sIdentChar+"=? where  "+sIdentChar+"mbrid"+sIdentChar+"=? and "+sIdentChar+"seqnbr"+sIdentChar+"=?",oConn}
+			for i:=1 Len(aDisLock)      //{me_mbrid.seqnbr,DestAmnt,disabled}
+				oStmnt:Execute(Str(aDisLock[i,3],-1),iif(aDisLock[i,4],'1','0'),aDisLock[i,1],aDisLock[i,2])
+				if !Empty(oStmnt:Status)
+					cError:=self:oLan:WGet("could not update distribution instruction for members")
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 				endif
 			next
-			SQLStatement{"start transaction",oConn}:Execute()
-			IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
-				SQLStatement{"update sysparms set iesmailacc='PMC-Files_Intl@sil.org'",oConn}:Execute()
-			ENDIF
-			//	lock mbalance records:
-			oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
-				" and	year="+Str(Year(self:closingDate),-1)+;
-				" and	Month="+Str(Month(self:closingDate),-1)+" order by mbalid for update",oConn}
-			if	!Empty(oBal:Status)
-				cError:=self:oLan:WGet("balance records locked by someone else, thus	skipped")
-				LogEvent(self,cError+':'+oBal:ErrInfo:errormessage+CRLF+"Statement:"+oBal:SQLString,"LogErrors")
-			endif	  
-			if Empty(cError) .and.!Empty(cTransLock)
-				*	Change status of transactions to "Send to PMC": bfm='H':
-				oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
-				oStmnt:Execute()
-				if	oStmnt:NumSuccessfulRows <1
-					cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
-					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-				ENDIF
-			endif
-			if Empty(cError)
-				*	Record month within fixed amount distribution instructions:
-				oStmnt:=SQLStatement{"update distributioninstruction set lstdate='"+SQLdate(self:closingDate)+;
-					"',"+sIdentChar+"amntsnd"+sIdentChar+"=?,"+sIdentChar+"disabled"+sIdentChar+"=? where  "+sIdentChar+"mbrid"+sIdentChar+"=? and "+sIdentChar+"seqnbr"+sIdentChar+"=?",oConn}
-				for i:=1 Len(aDisLock)      //{me_mbrid.seqnbr,DestAmnt,disabled}
-					oStmnt:Execute(Str(aDisLock[i,3],-1),iif(aDisLock[i,4],'1','0'),aDisLock[i,1],aDisLock[i,2])
-					if !Empty(oStmnt:Status)
-						cError:=self:oLan:WGet("could not update distribution instruction for members")
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					endif
-				next
-			endif
+		endif
 
-			if Empty(cError)
-				cTransnr:=''
-				cTransnrDT:=''
-				nSeqnr:=0
-				nSeqnrDT:=0
-				FOR a_tel = 1 to batchcount
-					if a_tel%nStep=0
-						self:STATUSMESSAGE(cStmsg+' ('+Str((a_tel*5)/nStep,3,0)+'% )')
-					endif
-					* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-					*          1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
-					me_accid:=aMemberTrans[a_tel,1]
-					me_saldo:=aMemberTrans[a_tel,5]
-					* Record transactions for decreasing balance of member:
-					IF aMemberTrans[a_tel,4]=AG
-						me_desc:="Assessment Intern+Field"+self:AssPeriod
+		if Empty(cError)
+			cTransnr:=''
+			cTransnrDT:=''
+			nSeqnr:=0
+			nSeqnrDT:=0
+			FOR a_tel = 1 to batchcount
+				if a_tel%nStep=0
+					self:STATUSMESSAGE(cStmsg+' ('+Str((a_tel*5)/nStep,3,0)+'% )')
+				endif
+				* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
+				*          1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+				me_accid:=aMemberTrans[a_tel,1]
+				me_saldo:=aMemberTrans[a_tel,5]
+				* Record transactions for decreasing balance of member:
+				IF aMemberTrans[a_tel,4]=AG
+					me_desc:="Assessment Intern+Field"+self:AssPeriod
+				ELSE
+					me_desc:=aMemberTrans[a_tel,9]
+					IF aMemberTrans[a_tel,4]=MT
+						me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer of "+AllTrim(aMemberTrans[a_tel,6])+" to home:"+aMemberTrans[a_tel,7][2]
 					ELSE
-						me_desc:=aMemberTrans[a_tel,9]
-						IF aMemberTrans[a_tel,4]=MT
-							me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer of "+AllTrim(aMemberTrans[a_tel,6])+" to home:"+aMemberTrans[a_tel,7][2]
-						ELSE
-							me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer to:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
-						ENDIF 
-						if !aMemberTrans[a_tel,4]==DT
-							me_desc+=" (Exchange rate US $1="+Str(fExChRate,-1,8)+' '+sCurrName+")" 
-						endif
+						me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer to:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
+					ENDIF 
+					if !aMemberTrans[a_tel,4]==DT
+						me_desc+=" (Exchange rate US $1="+Str(fExChRate,-1,8)+' '+sCurrName+")" 
+					endif
+				ENDIF
+				me_saldoF:=me_saldo
+				if !aMemberTrans[a_tel,11]==sCurr
+					self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
+					if self:mxrate>0
+						me_saldoF:=Round(me_saldo/self:mxrate,DecAantal)
+					endif 
+				endif
+				cError:=""
+				if aMemberTrans[a_tel,4]==DT
+					nSeqnrDT:=1
+					cTransnrDT:=''
+				else
+					nSeqnr++
+				endif
+				oStmnt:=SQLStatement{"insert into transaction set accid="+me_accid+",deb='"+Str(me_saldo,-1)+"',debforgn='"+Str(me_saldoF,-1)+"'"+;
+					",currency='"+aMemberTrans[a_tel,11]+"',description='"+AddSlashes(me_desc)+"',dat='"+SQLdate(self:closingDate)+"',bfm='H',gc='CH',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2"+;
+					iif(aMemberTrans[a_tel,4]==DT,",seqnr=1",iif(Empty(cTransnr),",seqnr=1",",transid="+cTransnr+",seqnr="+Str(nSeqnr,-1))),oConn}
+				oStmnt:Execute()
+				if oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could no record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+					exit
+				endif
+				IF aMemberTrans[a_tel,4]==DT
+					if Empty(cTransnrDT)
+						cTransnrDT:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+					endif
+				elseif Empty(cTransnr)
+					cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+				endif
+				if !ChgBalance(me_accid, self:closingDate, me_saldo,0, me_saldoF,0,aMemberTrans[a_tel,11]) 
+					cError:=self:oLan:WGet("could no update balance for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
+					exit
+				endif
+				// record transactions to own PP/ own account Payable directly
+				IF aMemberTrans[a_tel,4]==DT
+					nSeqnrDT++
+					oStmnt:=SQLStatement{"insert into transaction set accid="+aMemberTrans[a_tel,7][5]+",cre='"+Str(me_saldo,-1)+"',creforgn='"+Str(me_saldo,-1)+;
+						"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(aMemberTrans[a_tel,9]+"	"+oLan:Rget("From")+"	"+AllTrim(aMemberTrans[a_tel,3]))+;
+						"',dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+						",poststatus=2,transid="+cTransnrDT+",seqnr="+Str(nSeqnrDT,-1),oConn}
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows<1
+						cError:=self:oLan:WGet("could	no	record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
+						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+						exit
+					ENDIF						
+					if !ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_saldo, 0, me_saldo,aMemberTrans[a_tel,11]) 
+						cError:=self:oLan:WGet("could no update balance for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
+						exit
+					endif
+					if aMemberTrans[a_tel,7][5]==sCRE .and.aMemberTrans[a_tel,7][2]=="AAA" 
+						// to account payable and local bank: make BankOrder:
+						oStmnt:=SQLStatement{"insert into bankorder set "+; 
+						"accntfrom='"+sCRE+"'"+;
+							",amount='"+Str(me_saldo,-1)+"'"+;
+							",description='"+iif(Empty(aMemberTrans[a_tel,9]),me_desc,aMemberTrans[a_tel,9])+"'"+;
+							",banknbrcre='"+AllTrim(aMemberTrans[a_tel,7][1]) +"'"+;
+							",datedue=CURDATE()"+; 
+						",idfrom='"+me_accid+"'",oConn}
+						oStmnt:Execute()
+						if oStmnt:NumSuccessfulRows<1
+							cError:=self:oLan:WGet("could	no	record bankorder for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
+							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+							exit
+						ENDIF						
+					endif
+				ENDIF
+				// Also transaction for Office assessment:
+				IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
+					IF aMemberTrans[a_tel,7][6]="M"
+						me_desc:="Assessment office"+self:AssPeriod
+					ELSE
+						me_desc:="Assessment office projects"+self:AssPeriod
 					ENDIF
+					nSeqnr++
+					me_saldo:=aMemberTrans[a_tel,8]
 					me_saldoF:=me_saldo
 					if !aMemberTrans[a_tel,11]==sCurr
 						self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
@@ -1094,138 +1182,73 @@ METHOD PrintReport() CLASS PMISsend
 							me_saldoF:=Round(me_saldo/self:mxrate,DecAantal)
 						endif 
 					endif
-					cError:=""
-					if aMemberTrans[a_tel,4]==DT
-						nSeqnrDT:=1
-						cTransnrDT:=''
-					else
-						nSeqnr++
-					endif
-					oStmnt:=SQLStatement{"insert into transaction set accid="+me_accid+",deb='"+Str(me_saldo,-1)+"',debforgn='"+Str(me_saldoF,-1)+"'"+;
-						",currency='"+aMemberTrans[a_tel,11]+"',description='"+AddSlashes(me_desc)+"',dat='"+SQLdate(self:closingDate)+"',bfm='H',gc='CH',userid='"+LOGON_EMP_ID+"'"+;
-						",poststatus=2"+;
-						iif(aMemberTrans[a_tel,4]==DT,",seqnr=1",iif(Empty(cTransnr),",seqnr=1",",transid="+cTransnr+",seqnr="+Str(nSeqnr,-1))),oConn}
+					oStmnt:=SQLStatement{"insert into transaction set accid="+me_accid+",deb='"+Str(me_saldo,-1)+"',debforgn='"+Str(me_saldoF,-1)+;
+						"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(me_desc)+;
+						"',dat='"+SQLdate(self:closingDate)+"',bfm='H',gc='CH',userid='"+LOGON_EMP_ID+"'"+;
+						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 					oStmnt:Execute()
-					if oStmnt:NumSuccessfulRows<1
-						cError:=self:oLan:WGet("could no record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
+					if	oStmnt:NumSuccessfulRows<1
+						cError:=self:oLan:WGet("could	no	record assessment for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 						exit
-					endif
-					IF aMemberTrans[a_tel,4]==DT
-						if Empty(cTransnrDT)
-							cTransnrDT:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-						endif
-					elseif Empty(cTransnr)
-						cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-					endif
-					if !ChgBalance(me_accid, self:closingDate, me_saldo,0, me_saldoF,0,aMemberTrans[a_tel,11]) 
+					ENDIF						
+					if !ChgBalance(me_accid, self:closingDate, me_saldo,0, me_saldoF,0,aMemberTrans[a_tel,11])
 						cError:=self:oLan:WGet("could no update balance for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
 						exit
 					endif
-					// record transactions to own PP/ own account Payable directly
-					IF aMemberTrans[a_tel,4]==DT
-						nSeqnrDT++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+aMemberTrans[a_tel,7][5]+",cre='"+Str(me_saldo,-1)+"',creforgn='"+Str(me_saldo,-1)+;
-							"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(aMemberTrans[a_tel,9]+"	"+oLan:Rget("From")+"	"+AllTrim(aMemberTrans[a_tel,3]))+;
-							"',dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnrDT+",seqnr="+Str(nSeqnrDT,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record transaction for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-							exit
-						ENDIF						
-						if !ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_saldo, 0, me_saldo,aMemberTrans[a_tel,11]) 
-							cError:=self:oLan:WGet("could no update balance for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
-							exit
-						endif
-						if aMemberTrans[a_tel,7][5]==sCRE .and.aMemberTrans[a_tel,7][2]=="AAA" 
-							// to account payable and local bank: make BankOrder:
-							oStmnt:=SQLStatement{"insert into bankorder set "+; 
-							"accntfrom='"+sCRE+"'"+;
-								",amount='"+Str(me_saldo,-1)+"'"+;
-								",description='"+iif(Empty(aMemberTrans[a_tel,9]),me_desc,aMemberTrans[a_tel,9])+"'"+;
-								",banknbrcre='"+AllTrim(aMemberTrans[a_tel,7][1]) +"'"+;
-								",datedue=CURDATE()"+; 
-							",idfrom='"+me_accid+"'",oConn}
-							oStmnt:Execute()
-							if oStmnt:NumSuccessfulRows<1
-								cError:=self:oLan:WGet("could	no	record bankorder for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-								LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-								exit
-							ENDIF						
-						endif
-					ENDIF
-					// Also transaction for Office assessment:
-					IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
-						IF aMemberTrans[a_tel,7][6]="M"
-							me_desc:="Assessment office"+self:AssPeriod
-						ELSE
-							me_desc:="Assessment office projects"+self:AssPeriod
-						ENDIF
-						nSeqnr++
-						me_saldo:=aMemberTrans[a_tel,8]
-						me_saldoF:=me_saldo
-						if !aMemberTrans[a_tel,11]==sCurr
-							self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
-							if self:mxrate>0
-								me_saldoF:=Round(me_saldo/self:mxrate,DecAantal)
-							endif 
-						endif
-						oStmnt:=SQLStatement{"insert into transaction set accid="+me_accid+",deb='"+Str(me_saldo,-1)+"',debforgn='"+Str(me_saldoF,-1)+;
-							"',currency='"+aMemberTrans[a_tel,11]+"',description='"+	AddSlashes(me_desc)+;
-							"',dat='"+SQLdate(self:closingDate)+"',bfm='H',gc='CH',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record assessment for member")+Space(1)+aMemberTrans[a_tel,3]+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-							exit
-						ENDIF						
-						if !ChgBalance(me_accid, self:closingDate, me_saldo,0, me_saldoF,0,aMemberTrans[a_tel,11])
-							cError:=self:oLan:WGet("could no update balance for member")+Space(1)+aMemberTrans[a_tel,3]+' ('+oStmnt:Status:description+')'
-							exit
-						endif
-					ENDIF
-				NEXT
-
-				*Record Total amount AM:
-				IF Empty(cError).and.!Empty(samProj)
-					IF AssOfficeProj#0
-						nSeqnr++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+samProj+",cre='"+Str(AssOfficeProj,-1)+"',creforgn='"+Str(AssOfficeProj,-1)+;
-							"',currency='"+sCurr+"',description='AM Office Projects Total'"+;
-							",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record assessment projects total")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-						elseif !ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
-							cError:=self:oLan:WGet("could no update balance for assessment projects")+' ('+oStmnt:Status:description+')'
-						endif
-					ENDIF
-				ELSE
-					AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
 				ENDIF
-				IF Empty(cError).and.AssOffice#0
+			NEXT
+
+			*Record Total amount AM:
+			IF Empty(cError).and.!Empty(samProj)
+				IF AssOfficeProj#0
 					nSeqnr++
-					oStmnt:=SQLStatement{"insert into transaction set accid='"+sam+"',cre='"+Str(AssOffice,-1)+"',creforgn='"+Str(AssOffice,-1)+;
-						"',currency='"+sCurr+"',description='AM Office Total'"+;
+					oStmnt:=SQLStatement{"insert into transaction set accid="+samProj+",cre='"+Str(AssOfficeProj,-1)+"',creforgn='"+Str(AssOfficeProj,-1)+;
+						"',currency='"+sCurr+"',description='AM Office Projects Total'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows<1
-						cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
+						cError:=self:oLan:WGet("could	no	record assessment projects total")+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
-						cError:=self:oLan:WGet("could	no	update balance	for assessment")+' ('+oStmnt:Status:description+')'
+					elseif !ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
+						cError:=self:oLan:WGet("could no update balance for assessment projects")+' ('+oStmnt:Status:description+')'
 					endif
-				ENDIF 
-				// reverse add to income: 
-				if Empty(cError).and.!Empty(AssIncHome) 
+				ENDIF
+			ELSE
+				AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
+			ENDIF
+			IF Empty(cError).and.AssOffice#0
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid='"+sam+"',cre='"+Str(AssOffice,-1)+"',creforgn='"+Str(AssOffice,-1)+;
+					"',currency='"+sCurr+"',description='AM Office Total'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for assessment")+' ('+oStmnt:Status:description+')'
+				endif
+			ENDIF 
+			// reverse add to income: 
+			if Empty(cError).and.!Empty(AssIncHome) 
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+SINCHOME+",deb='"+Str(AssIncHome,-1)+"',debforgn='"+Str(AssIncHome,-1)+;
+					"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment home assigned')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Reversal income for office assessment home assigned")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
+				endif
+				if Empty(cError)
 					nSeqnr++
-					oStmnt:=SQLStatement{"insert into transaction set accid="+SINCHOME+",deb='"+Str(AssIncHome,-1)+"',debforgn='"+Str(AssIncHome,-1)+;
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssIncHome,-1)+"',creforgn='"+Str(AssIncHome,-1)+;
 						"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment home assigned')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
@@ -1233,27 +1256,27 @@ METHOD PrintReport() CLASS PMISsend
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Reversal income for office assessment home assigned")+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
-						cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
-					endif
-					if Empty(cError)
-						nSeqnr++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssIncHome,-1)+"',creforgn='"+Str(AssIncHome,-1)+;
-							"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment home assigned')+"'"+;
-							",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record Reversal income for office assessment home assigned")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-						elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
-							cError:=self:oLan:WGet("could	no	update balance	for expense home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
-						endif
+					elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
+						cError:=self:oLan:WGet("could	no	update balance	for expense home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
 				endif
-				if Empty(cError).and.!Empty(AssInc) 
+			endif
+			if Empty(cError).and.!Empty(AssInc) 
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+SINC+",deb='"+Str(AssInc,-1)+"',debforgn='"+Str(AssInc,-1)+;
+					"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment field assigned')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Reversal income for office assessment field assigned")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
+				endif 
+				if Empty(cError)
 					nSeqnr++
-					oStmnt:=SQLStatement{"insert into transaction set accid="+SINC+",deb='"+Str(AssInc,-1)+"',debforgn='"+Str(AssInc,-1)+;
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssInc,-1)+"',creforgn='"+Str(AssInc,-1)+;
 						"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment field assigned')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
@@ -1261,29 +1284,29 @@ METHOD PrintReport() CLASS PMISsend
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Reversal income for office assessment field assigned")+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
-						cError:=self:oLan:WGet("could	no	update balance	for income home assigned")+Space(1)+'	('+oStmnt:Status:description+')'
-					endif 
-					if Empty(cError)
-						nSeqnr++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssInc,-1)+"',creforgn='"+Str(AssInc,-1)+;
-							"',currency='"+sCurr+"',description='"+self:oLan:RGet('Reversal income for office assessment field assigned')+"'"+;
-							",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record Reversal income for office assessment field assigned")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-						elseif !ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR)
-							cError:=self:oLan:WGet("could	no	update balance	for expense field assigned")+Space(1)+'	('+oStmnt:Status:description+')'
-						endif
+					elseif !ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR)
+						cError:=self:oLan:WGet("could	no	update balance	for expense field assigned")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
 				endif
+			endif
 
-				// add to expense assessment field + int: 
-				if Empty(cError).and.!Empty(AssFldInt)
+			// add to expense assessment field + int: 
+			if Empty(cError).and.!Empty(AssFldInt)
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldInt,-1)+"',debforgn='"+Str(AssFldInt,-1)+;
+					"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
+				endif
+				if Empty(cError)
 					nSeqnr++
-					oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldInt,-1)+"',debforgn='"+Str(AssFldInt,-1)+;
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssFldInt,-1)+"',creforgn='"+Str(AssFldInt,-1)+;
 						"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
@@ -1291,27 +1314,27 @@ METHOD PrintReport() CLASS PMISsend
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
-						cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
-					endif
-					if Empty(cError)
-						nSeqnr++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+SEXP+",cre='"+Str(AssFldInt,-1)+"',creforgn='"+Str(AssFldInt,-1)+;
-							"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int')+"'"+;
-							",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-						elseif !ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
-							cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
-						endif
+					elseif !ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
+						cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
 				endif
-				if Empty(cError).and.!Empty(AssFldIntHome)
+			endif
+			if Empty(cError).and.!Empty(AssFldIntHome)
+				nSeqnr++
+				oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldIntHome,-1)+"',debforgn='"+Str(AssFldIntHome,-1)+;
+					"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int for home assigned members')+"'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
+					cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
+				endif
+				if Empty(cError)
 					nSeqnr++
-					oStmnt:=SQLStatement{"insert into transaction set accid="+samFld+",deb='"+Str(AssFldIntHome,-1)+"',debforgn='"+Str(AssFldIntHome,-1)+;
+					oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssFldIntHome,-1)+"',creforgn='"+Str(AssFldIntHome,-1)+;
 						"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int for home assigned members')+"'"+;
 						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
 						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
@@ -1319,123 +1342,109 @@ METHOD PrintReport() CLASS PMISsend
 					if	oStmnt:NumSuccessfulRows<1
 						cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
 						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
-						cError:=self:oLan:WGet("could	no	update balance	for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
-					endif
-					if Empty(cError)
-						nSeqnr++
-						oStmnt:=SQLStatement{"insert into transaction set accid="+SEXPHOME+",cre='"+Str(AssFldIntHome,-1)+"',creforgn='"+Str(AssFldIntHome,-1)+;
-							"',currency='"+sCurr+"',description='"+self:oLan:RGet('Expense for assessment field&int for home assigned members')+"'"+;
-							",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-							",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows<1
-							cError:=self:oLan:WGet("could	no	record Expense for assessment field&int")+'	('+oStmnt:Status:description+')'
-							LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-						elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCurr)
-							cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
-						endif
-					endif
-				endif
-
-				*Record total amount to PMC 
-				IF Empty(cError).and.mo_tot # 0
-					nSeqnr++
-					if !self:cPMCCurr==sCurr .and. fExChRate>0
-						mo_totF:=Round(mo_tot/fExChRate,DecAantal)
-					endif
-					oStmnt:=SQLStatement{"insert into transaction set accid="+shb+",cre='"+Str(mo_tot,-1)+"',creforgn='"+Str(mo_totF,-1)+;
-						"',currency='"+self:cPMCCurr+"',description='PMC Total'"+;
-						",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
-						",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
-					oStmnt:Execute()
-					if	oStmnt:NumSuccessfulRows<1
-						cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
-					elseif !ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
-						cError:=self:oLan:WGet("could	no	update balance	for RIA account")+Space(1)+'	('+oStmnt:Status:description+')'
-					endif
-				ENDIF
-				if Empty(cError)
-					oStmnt:=SQLStatement{"update sysparms set pmislstsnd=CURDATE(),exchrate='"+Str(fExChRate,-1)+"'",oConn}
-					oStmnt:Execute()
-					if !Empty(oStmnt:Status)
-						cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
-						LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+					elseif !ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCurr)
+						cError:=self:oLan:WGet("could	no	update balance	for Expense for assessment field&int")+Space(1)+'	('+oStmnt:Status:description+')'
 					endif
 				endif
 			endif
+
+			*Record total amount to PMC 
+			IF Empty(cError).and.mo_tot # 0
+				nSeqnr++
+				if !self:cPMCCurr==sCurr .and. fExChRate>0
+					mo_totF:=Round(mo_tot/fExChRate,DecAantal)
+				endif
+				oStmnt:=SQLStatement{"insert into transaction set accid="+shb+",cre='"+Str(mo_tot,-1)+"',creforgn='"+Str(mo_totF,-1)+;
+					"',currency='"+self:cPMCCurr+"',description='PMC Total'"+;
+					",dat='"+SQLdate(self:closingDate)+"',bfm='H',userid='"+LOGON_EMP_ID+"'"+;
+					",poststatus=2,transid="+cTransnr+",seqnr="+Str(nSeqnr,-1),oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record assessment	total")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				elseif !ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
+					cError:=self:oLan:WGet("could	no	update balance	for RIA account")+Space(1)+'	('+oStmnt:Status:description+')'
+				endif
+			ENDIF
 			if Empty(cError)
-				SQLStatement{"commit",oConn}:Execute()
-			else
-				SQLStatement{"rollback",oConn}:Execute()
-				self:ResetLocks(MYEMPID)
-				ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
-				return
-			ENDIF
-			*save period:
-			IF self:oSys:PMISLSTSND<Today()-1000
-				noIES:=true
-			ENDIF
-
-			if PMCUpload
-				LogEvent(self,self:oLan:WGet("Uploaded file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")) 
+				oStmnt:=SQLStatement{"update sysparms set pmislstsnd=CURDATE(),exchrate='"+Str(fExChRate,-1)+"'",oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
+					LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
+				endif
 			endif
-			// sending by email:
-			cPMISMail:=AllTrim(self:oSys:IESMAILACC)
-			cPMISMail:=StrTran(cPMISMail,";"+AllTrim(self:oSys:OWNMAILACC))
-			cPMISMail:=StrTran(cPMISMail,AllTrim(self:oSys:OWNMAILACC))
-			* Send file by email:
-			IF IsMAPIAvailable()
-				* Resolve IESname
-				IF oMapi:Open( "" , "" )
-					oPers:=SQLSelect{"select persid,lastname,firstname,email,"+SQLFullName(3,'')+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
-					if oPers:Reccount>0
-						if PMCUpload
-							oRecip := oMapi:ResolveName( oPers:lastname,oPers:Persid,oPers:fullname,oPers:email)
-						else
-							oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:Persid,oPers:fullname,oPers:email)
-						endif
+		endif
+		if Empty(cError)
+			SQLStatement{"commit",oConn}:Execute()
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			self:ResetLocks(MYEMPID)
+			ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
+			return
+		ENDIF
+		*save period:
+		IF self:oSys:PMISLSTSND<Today()-1000
+			noIES:=true
+		ENDIF
+
+		if PMCUpload
+			LogEvent(self,self:oLan:WGet("Uploaded file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")) 
+		endif
+		// sending by email:
+		cPMISMail:=AllTrim(self:oSys:IESMAILACC)
+		cPMISMail:=StrTran(cPMISMail,";"+AllTrim(self:oSys:OWNMAILACC))
+		cPMISMail:=StrTran(cPMISMail,AllTrim(self:oSys:OWNMAILACC))
+		* Send file by email:
+		IF IsMAPIAvailable()
+			* Resolve IESname
+			IF oMapi:Open( "" , "" )
+				oPers:=SQLSelect{"select persid,lastname,firstname,email,"+SQLFullName(3,'')+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
+				if oPers:Reccount>0
+					if PMCUpload
+						oRecip := oMapi:ResolveName( oPers:lastname,oPers:Persid,oPers:fullname,oPers:email)
+					else
+						oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:Persid,oPers:fullname,oPers:email)
 					endif
-					if !PMCUpload
-						oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
-					endif
-					IF oRecip != null_object .and.(PMCUpload .or.!oRecip2==null_object)
-						cNoteText:="Dear "+oPers:fullname+","+CRLF+;
-							iif(PMCUpload,;
-							self:oLan:RGet("Will you please approve the uploaded OPP file")+Space(1)+FileSpec{cFilename}:Filename+Space(1)+;
-							self:oLan:RGet("by going to Insite")+Space(1)+"https://www.pmc.insitehome.org/OPPUpload.aspx";
-							,;
-							"I send you attached a OPP file and would be grateful if you would approve the file by means of a reply all.")+;
-							CRLF+LOGON_EMP_ID
-						IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
-							(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
-							self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
-							LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
-							lSent:=true
-						ENDIF
+				endif
+				if !PMCUpload
+					oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
+				endif
+				IF oRecip != null_object .and.(PMCUpload .or.!oRecip2==null_object)
+					cNoteText:="Dear "+oPers:fullname+","+CRLF+;
+						iif(PMCUpload,;
+						self:oLan:RGet("Will you please approve the uploaded OPP file")+Space(1)+FileSpec{cFilename}:Filename+Space(1)+;
+						self:oLan:RGet("by going to Insite")+Space(1)+"https://www.pmc.insitehome.org/OPPUpload.aspx";
+						,;
+						"I send you attached a OPP file and would be grateful if you would approve the file by means of a reply all.")+;
+						CRLF+LOGON_EMP_ID
+					IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
+						(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
+						self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
+						LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
+						lSent:=true
 					ENDIF
-					//oMapi:Close()
-				ENDIF 
-				IF	!lSent
-					(InfoBox{self:OWNER,self:oLan:WGet("Partner Monetary Interchange System"),self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
-						iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet('mail to PMC mail address')+" "+;
-						AllTrim(self:oSys:IESMAILACC)+")")}):Show()	
-					LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
-						iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
-						AllTrim(self:oSys:IESMAILACC)+")"))
 				ENDIF
-			endif
-		ENDIF
-		SetDecimalSep(DecSep)
-
-		IF noIES
-			// first time send to PMC, then new menu without IES
-			oMainWindow:RefreshMenu()
-			oMainWindow:SetCaption()
-		ENDIF
-		self:EndWindow()
+				//oMapi:Close()
+			ENDIF 
+			IF	!lSent
+				(InfoBox{self:OWNER,self:oLan:WGet("Partner Monetary Interchange System"),self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
+					iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet('mail to PMC mail address')+" "+;
+					AllTrim(self:oSys:IESMAILACC)+")")}):Show()	
+				LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
+					iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
+					AllTrim(self:oSys:IESMAILACC)+")"))
+			ENDIF
+		endif
 	ENDIF
+	SetDecimalSep(DecSep)
+
+	IF noIES
+		// first time send to PMC, then new menu without IES
+		oMainWindow:RefreshMenu()
+		oMainWindow:SetCaption()
+	ENDIF
+	self:EndWindow()
 	if !PMCUpload .and.!lStop
 		oMapi:Close()
 	endif
@@ -1454,7 +1463,7 @@ Method ResetLocks(cEmpId as string) class PMISsend
 // 	oTrans:Execute() 
 // 	if Empty(oTrans:Status)
 // 		oStmnt:=SQLStatement{"update transaction set lock_id=0 where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
-		oStmnt:=SQLStatement{"update transaction set lock_id=0 where lockid="+MYEMPID,oConn}
+		oStmnt:=SQLStatement{"update transaction set lock_id=0 where lock_id="+MYEMPID,oConn}
 		oStmnt:Execute()
 		SQLStatement{"commit",oConn}:Execute()
 // 	endif 
