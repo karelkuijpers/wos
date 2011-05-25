@@ -1784,7 +1784,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		//	lock mbalance records:
 		oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
 			" and	year="+Str(Year(self:mDAT),-1)+;
-			" and	Month="+Str(Month(self:mDAT),-1)+" order by mbalid for	update",oConn}
+			" and	month="+Str(Month(self:mDAT),-1)+" order by mbalid for	update",oConn}
 		if	!Empty(oMBal:Status)
 			self:Pointer := Pointer{POINTERARROW}
 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
