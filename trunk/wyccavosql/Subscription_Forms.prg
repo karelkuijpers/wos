@@ -447,7 +447,7 @@ METHOD OKButton( ) CLASS EditSubscription
 
 		IF SELF:lNew
 			* check if subscription allready exists: 
-			if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek,oConn}:reccount>0
+			if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
 				(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
 				RETURN NIL
 			ENDIF
