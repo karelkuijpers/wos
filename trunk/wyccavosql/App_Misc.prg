@@ -169,6 +169,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	
 	// Idem for foreign currencies:
 	*	Select only monthbalances in years after last balance year for foreign currency:
+	oStmnt:=SQLStatement{"drop temporary table if exists transsumf",oConn}
+	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,sum(debforgn) as debtot,sum(creforgn) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
