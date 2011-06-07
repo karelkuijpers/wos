@@ -1,3 +1,5 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
 CLASS CARDFILE INHERIT Icon
 resource CARDFILE Icon C:\CAVO28\CRDFLE07.ICO
 METHOD Init() CLASS CARDFILE
@@ -31,8 +33,8 @@ resource FOLDERCLOSE Icon C:\CAVO28\FOLDRS01.ICO
 CLASS FOLDERCLOSE INHERIT Icon
 METHOD Init() CLASS FOLDERCLOSE
    super:init(ResourceID{"FOLDERCLOSE", _GetInst()})
-resource FOLDEROPEN Icon C:\CAVO28\FOLDRS02.ICO
 CLASS FOLDEROPEN INHERIT Icon
+resource FOLDEROPEN Icon C:\CAVO28\FOLDRS02.ICO
 METHOD Init() CLASS FOLDEROPEN
    super:init(ResourceID{"FOLDEROPEN", _GetInst()})
 STATIC GLOBAL hEdit AS PTR
@@ -697,7 +699,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	LOCAL aNonImport:={#persid,#OPC,#accid,#CLC,#PROPEXTR,#PROPXTRA} as ARRAY 
 	local oPersCnt as PersonContainer
 	local oAccCnt as AccountContainer
-	local obal, oDep,oAcc as SQLSelect 
+	local obal, oDep,oAcc,oSel as SQLSelect 
 	local cCurType as string,lMember as logic
 
 	//oTargetDB:=SELF:Server
@@ -755,11 +757,13 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				ExId:=ZeroTrim(ExId)
 			endif
 			if !Empty(ExId)
-				if SQLSelect{"select externid from "+self:TargetDB+" where externid='"+ExId+"'",oConn}:reccount>0
+				oSel:= SQLSelect{"select persid,externid from "+self:TargetDB+" where externid='"+ExId+"'",oConn}
+				if oSel:reccount>0
 					// Person already in database, so update it:
 					self:lExists:=true 
 					self:lOverwrite:=self:oDCReplaceDuplicates:Checked 
 					oPersCnt:m51_exid:=ExId
+					oPersCnt:PERSID:=str(oSel:persid,-1)
 				endif
 			endif
 		endif  
