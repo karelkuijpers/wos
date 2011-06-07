@@ -319,7 +319,8 @@ CASE Purpose==2
 	// identification:
 	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
 endcase
-return (AllTrim(naam1))
+naam1:=AllTrim(naam1)
+return StrTran(naam1,',','',len(naam1),1)
 Function GetFullNAW(PersNbr as string,country:="" as string,Purpose:=1 as int) as string 
 * Compose name and address
 * country: default country (optional)
@@ -2321,6 +2322,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	AAdd(aExpF,{#GENDER,"p.gender", ExportPerson_GENDER{} })
 	AAdd(aExpF,{#BIRTHDATE,"p.birthdate", ExportPerson_BIRTHDAT{} })
 	AAdd(aExpF,{#persid,"p.persid", ExportPerson_CLN{} })
+	AAdd(aExpF,{#EXTERNID, "p.externid", Person_EXTERNID{} })
 	AAdd(aExpF,{#BANKNUMBER,"",Bank{} })
 	IF self:selx_keus1=4.or.self:selx_keus1=5   && selectie op gift aan bestemming
 		AAdd(aExpF,{#GIFTSGROUP,"", Gifts_group{} })
@@ -4134,24 +4136,27 @@ ENDIF
 prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
 fullname := mAlias+"lastname"
 IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
-	frstnm := 'if('+mAlias+'firstname<>"",concat('+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+mAlias+'initials," "),""))'
+	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2,'",",','')+mAlias+'initials," "),""'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",","")',"")+'))'
 ELSE
-	frstnm := 'if('+mAlias+'initials<>"",concat('+mAlias+'initials," "),"")'
+	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'initials," "),'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",",""))',"")
 ENDIF
 do CASE
 CASE Purpose==0
 	//addresslist:
-	fullname:='concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+')'
+// 	fullname:='concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+')'
+	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
 CASE Purpose==1.or.Purpose==3
 	// address conform address specifications:
 	IF sSurnameFirst
    	fullname := 'concat('+fullname+'," ",'+title+'," ",'+frstnm+',' + prefix +')'
 	else
+// 		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
 		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
 	ENDIF	
 CASE Purpose==2
 	// identification:
-	fullname:='trim(concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+'))'
+// 	fullname:='trim(concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+'))'
+	fullname:='trim(concat('+fullname+','+frstnm+','+prefix+'))'
 endcase
 return fullname
 function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSortOrder:="" as string, cMarkupText:="" as string,fMinAmnt:=0 as float,fMaxAmnt:=0 as float,fMinIndVidAmnt:=0 as float) as string 
