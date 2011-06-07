@@ -62,7 +62,7 @@ CLASS Person_EXTERNID INHERIT FIELDSPEC
 METHOD Init() CLASS Person_EXTERNID
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#EXTERNID, "Externid", "", "person_EXTERNID" },  "C", 24, 0 )
+    SUPER:Init( HyperLabel{#EXTERNID, "Externid", "External ID", "person_EXTERNID" },  "C", 24, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
