@@ -1,28 +1,3 @@
-CLASS _PrintDialog INHERIT DialogWinDowExtra 
-
-	PROTECT oDCPrinterText AS FIXEDTEXT
-	PROTECT oDCDestination AS RADIOBUTTONGROUP
-	PROTECT oCCPrinterRadioButton AS RADIOBUTTON
-	PROTECT oCCScreenRadioButton AS RADIOBUTTON
-	PROTECT oCCToFileRadioButton AS RADIOBUTTON
-	PROTECT oDCFileType AS RADIOBUTTONGROUP
-	PROTECT oCCfiletype1 AS RADIOBUTTON
-	PROTECT oCCfiletype2 AS RADIOBUTTON
-	PROTECT oDCPageRange AS RADIOBUTTONGROUP
-	PROTECT oCCAllButton AS RADIOBUTTON
-	PROTECT oCCSelectionButton AS RADIOBUTTON
-	PROTECT oDCFromPage AS SINGLELINEEDIT
-	PROTECT oDCToPage AS SINGLELINEEDIT
-	PROTECT oCCOkButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCSetupButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oCCFontDialogButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT oDialFont AS myDialFontDialog
-	EXPORT lPrintOk AS LOGIC
-	EXPORT MaxWidth := 79 as int
 RESOURCE _PrintDialog DIALOGEX  16, 30, 346, 134
 STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Report"
@@ -48,6 +23,31 @@ BEGIN
 	CONTROL	"Choose Font", _PRINTDIALOG_FONTDIALOGBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 77, 54, 12
 END
 
+CLASS _PrintDialog INHERIT DialogWinDowExtra 
+
+	PROTECT oDCPrinterText AS FIXEDTEXT
+	PROTECT oDCDestination AS RADIOBUTTONGROUP
+	PROTECT oCCPrinterRadioButton AS RADIOBUTTON
+	PROTECT oCCScreenRadioButton AS RADIOBUTTON
+	PROTECT oCCToFileRadioButton AS RADIOBUTTON
+	PROTECT oDCFileType AS RADIOBUTTONGROUP
+	PROTECT oCCfiletype1 AS RADIOBUTTON
+	PROTECT oCCfiletype2 AS RADIOBUTTON
+	PROTECT oDCPageRange AS RADIOBUTTONGROUP
+	PROTECT oCCAllButton AS RADIOBUTTON
+	PROTECT oCCSelectionButton AS RADIOBUTTON
+	PROTECT oDCFromPage AS SINGLELINEEDIT
+	PROTECT oDCToPage AS SINGLELINEEDIT
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCSetupButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oCCFontDialogButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	PROTECT oDialFont AS myDialFontDialog
+	EXPORT lPrintOk AS LOGIC
+	EXPORT MaxWidth := 79 as int
 METHOD ButtonClick(oControlEvent) CLASS _PrintDialog
 	LOCAL oControl AS Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -224,20 +224,6 @@ STATIC DEFINE _PRINTERDIALOG_SETUPBUTTON := 106
 STATIC DEFINE _PRINTERDIALOG_THEFIXEDTEXT1 := 100
 STATIC DEFINE _PRINTERDIALOG_THEGROUPBOX1 := 102 
 DEFINE ACCEPT_START := "#22#"
-RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
-	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
-	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
-	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
-	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
-	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
-	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
-	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
-END
-
 class AcceptFormat inherit DataDialogMine 
 
 	protect oCCNewButton as PUSHBUTTON
@@ -255,6 +241,20 @@ class AcceptFormat inherit DataDialogMine
   EXPORT lCancel AS LOGIC
   EXPORT brief AS STRING
   EXPORT Lettername AS STRING
+RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
+	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
+	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
+	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
+	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
+	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
+	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
+	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
+END
+
 access Brieven() class AcceptFormat
 return self:FieldGet(#Brieven)
 
@@ -380,6 +380,15 @@ STATIC DEFINE ACCEPTFORMAT_GROUPBOX3 := 102
 STATIC DEFINE ACCEPTFORMAT_M12_BD := 107 
 STATIC DEFINE ACCEPTFORMAT_NEWBUTTON := 100 
 STATIC DEFINE ACCEPTFORMAT_OKBUTTON := 103 
+class AskLetterName inherit DialogWinDowExtra 
+
+	protect oDCLettername as SINGLELINEEDIT
+	protect oDCFixedText1 as FIXEDTEXT
+	protect oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT cName AS STRING
+  PROTECT cExt AS STRING
 RESOURCE AskLetterName DIALOGEX  19, 50, 263, 33
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Give name of textformat to save"
@@ -390,15 +399,6 @@ BEGIN
 	CONTROL	"OK", ASKLETTERNAME_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 11, 53, 13
 END
 
-class AskLetterName inherit DialogWinDowExtra 
-
-	protect oDCLettername as SINGLELINEEDIT
-	protect oDCFixedText1 as FIXEDTEXT
-	protect oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT cName AS STRING
-  PROTECT cExt AS STRING
 METHOD Close(oEvent) CLASS AskLetterName
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -931,7 +931,6 @@ ASSIGN Templates(uValue) CLASS eMailFormat
 SELF:FieldPut(#Templates, uValue)
 RETURN uValue
 
-STATIC DEFINE EMAILFORMAT_BRIEVEN := 105 
 STATIC DEFINE EMAILFORMAT_CANCELBUTTON := 100 
 STATIC DEFINE EMAILFORMAT_EDITBUTTON := 104 
 STATIC DEFINE EMAILFORMAT_GROUPBOX := 102 
@@ -1217,29 +1216,6 @@ METHOD Init() CLASS LabelColCnt
 
 
 
-RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Label format:", LABELFORMAT_FIXEDTEXT1, "Static", WS_CHILD, 20, 4, 100, 12
-	CONTROL	"Height:", LABELFORMAT_STCKR_HEIGHT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LABELFORMAT_STCKR_WIDTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 42, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Height label:", LABELFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 10, 21, 56, 12
-	CONTROL	"Width label:", LABELFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 10, 42, 57, 12
-	CONTROL	"", LABELFORMAT_STCKR_TOPMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 64, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Top margin page:", LABELFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 10, 63, 72, 12
-	CONTROL	"", LABELFORMAT_STCKR_LEFTMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 83, 40, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Left margin page:", LABELFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 10, 83, 58, 13
-	CONTROL	"", LABELFORMAT_STCKR_POINTSIZE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 102, 105, 54, 47
-	CONTROL	"OK", LABELFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 177, 20, 53, 13
-	CONTROL	"Cancel", LABELFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 177, 39, 53, 12
-	CONTROL	"Font pointsize", LABELFORMAT_FIXEDTEXT8, "Static", WS_CHILD, 10, 104, 54, 12
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT9, "Static", WS_CHILD, 152, 22, 16, 13
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT10, "Static", WS_CHILD, 152, 43, 16, 13
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT12, "Static", WS_CHILD, 152, 65, 16, 12
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
-END
-
 CLASS LabelFormat INHERIT DataDialogMine 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -1263,6 +1239,29 @@ CLASS LabelFormat INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT Pretesting AS LOGIC
   EXPORT lCancel AS LOGIC
+RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Label format:", LABELFORMAT_FIXEDTEXT1, "Static", WS_CHILD, 20, 4, 100, 12
+	CONTROL	"Height:", LABELFORMAT_STCKR_HEIGHT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LABELFORMAT_STCKR_WIDTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 42, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Height label:", LABELFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 10, 21, 56, 12
+	CONTROL	"Width label:", LABELFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 10, 42, 57, 12
+	CONTROL	"", LABELFORMAT_STCKR_TOPMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 64, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Top margin page:", LABELFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 10, 63, 72, 12
+	CONTROL	"", LABELFORMAT_STCKR_LEFTMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 83, 40, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Left margin page:", LABELFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 10, 83, 58, 13
+	CONTROL	"", LABELFORMAT_STCKR_POINTSIZE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 102, 105, 54, 47
+	CONTROL	"OK", LABELFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 177, 20, 53, 13
+	CONTROL	"Cancel", LABELFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 177, 39, 53, 12
+	CONTROL	"Font pointsize", LABELFORMAT_FIXEDTEXT8, "Static", WS_CHILD, 10, 104, 54, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT9, "Static", WS_CHILD, 152, 22, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT10, "Static", WS_CHILD, 152, 43, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT12, "Static", WS_CHILD, 152, 65, 16, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
+END
+
 METHOD CancelButton( ) CLASS LabelFormat
 	SELF:EndWindow()
 	lCancel := TRUE
@@ -1813,11 +1812,11 @@ METHOD Init() CLASS LabelWidth
 
 
 
-RESOURCE LetterFormat DIALOGEX  9, 8, 247, 251
+RESOURCE LetterFormat DIALOGEX  10, 9, 247, 251
 STYLE	WS_CHILD
-FONT	8, "MS Sans Serif"
+FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"", LETTERFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 81, 72
+	CONTROL	"", LETTERFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 81, 72
 	CONTROL	"Name/address on top", LETTERFORMAT_BRFNAW, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 73, 92, 11
 	CONTROL	"City and date", LETTERFORMAT_BRFDAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 14, 92, 80, 11
 	CONTROL	"Heading", LETTERFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 60, 164, 53
@@ -1826,12 +1825,12 @@ BEGIN
 	CONTROL	"Text starts at column:", LETTERFORMAT_FIXEDTEXT4, "Static", WS_CHILD, 12, 182, 82, 13
 	CONTROL	"City and date starts at column:", LETTERFORMAT_FIXEDTEXT5, "Static", WS_CHILD, 12, 199, 104, 12
 	CONTROL	"City and date starts at row:", LETTERFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 12, 216, 95, 12
-	CONTROL	"", LETTERFORMAT_BRFWIDTH, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 131, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOL, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 148, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFREGN, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 166, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOLT, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 182, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOLA, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 199, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFREGA, "Edit", ES_AUTOHSCROLL|ES_DISABLENOSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 216, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFWIDTH, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 131, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOL, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 148, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 166, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 182, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 199, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 216, 37, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Name/address starts at row:", LETTERFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 12, 166, 104, 12
 	CONTROL	"Positions", LETTERFORMAT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 120, 164, 119
 	CONTROL	"OK", LETTERFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 180, 208, 54, 12
@@ -1841,9 +1840,9 @@ BEGIN
 	CONTROL	"Letter", LETTERFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 164, 53
 END
 
-CLASS LetterFormat INHERIT DataDialogMine
+CLASS LetterFormat INHERIT DataDialogMine 
 
-	PROTECT oDCBrieven AS COMBOBOX
+	PROTECT oDCTemplates AS COMBOBOX
 	PROTECT oDCbrfNAW AS CHECKBOX
 	PROTECT oDCbrfDAT AS CHECKBOX
 	PROTECT oDCGroupBox1 AS GROUPBOX
@@ -1865,83 +1864,71 @@ CLASS LetterFormat INHERIT DataDialogMine
 	PROTECT oCCNewButton AS PUSHBUTTON
 	PROTECT oCCEditButton AS PUSHBUTTON
 	PROTECT oDCGroupBox3 AS GROUPBOX
-	INSTANCE Brieven
-	INSTANCE brfNAW
-	INSTANCE brfDAT
-	INSTANCE brfWidth
-	INSTANCE brfCol
-	INSTANCE brfregn
-	INSTANCE brfColt
-	INSTANCE brfCola
-	INSTANCE brfrega
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT lCancel AS LOGIC
   EXPORT brief AS STRING
   EXPORT Lettername AS STRING
   EXPORT lAcceptNorway AS LOGIC
-access brfCol() class LetterFormat
-return self:FieldGet(#brfCol)
+  EXPORT Templatename as STRING
+ACCESS brfCol() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfCol)
 
-assign brfCol(uValue) class LetterFormat
-self:FieldPut(#brfCol, uValue)
-return brfCol := uValue
+ASSIGN brfCol(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfCol, uValue)
+RETURN uValue
 
-access brfCola() class LetterFormat
-return self:FieldGet(#brfCola)
+ACCESS brfCola() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfCola)
 
-assign brfCola(uValue) class LetterFormat
-self:FieldPut(#brfCola, uValue)
-return brfCola := uValue
+ASSIGN brfCola(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfCola, uValue)
+RETURN uValue
 
-access brfColt() class LetterFormat
-return self:FieldGet(#brfColt)
+ACCESS brfColt() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfColt)
 
-assign brfColt(uValue) class LetterFormat
-self:FieldPut(#brfColt, uValue)
-return brfColt := uValue
+ASSIGN brfColt(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfColt, uValue)
+RETURN uValue
 
-access brfDAT() class LetterFormat
-return self:FieldGet(#brfDAT)
+ACCESS brfDAT() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfDAT)
 
-assign brfDAT(uValue) class LetterFormat
-self:FieldPut(#brfDAT, uValue)
-return brfDAT := uValue
+ASSIGN brfDAT(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfDAT, uValue)
+RETURN uValue
 
-access brfNAW() class LetterFormat
-return self:FieldGet(#brfNAW)
+ACCESS brfNAW() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfNAW)
 
-assign brfNAW(uValue) class LetterFormat
-self:FieldPut(#brfNAW, uValue)
-return brfNAW := uValue
+ASSIGN brfNAW(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfNAW, uValue)
+RETURN uValue
 
-access brfrega() class LetterFormat
-return self:FieldGet(#brfrega)
+ACCESS brfrega() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfrega)
 
-assign brfrega(uValue) class LetterFormat
-self:FieldPut(#brfrega, uValue)
-return brfrega := uValue
+ASSIGN brfrega(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfrega, uValue)
+RETURN uValue
 
-access brfregn() class LetterFormat
-return self:FieldGet(#brfregn)
+ACCESS brfregn() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfregn)
 
-assign brfregn(uValue) class LetterFormat
-self:FieldPut(#brfregn, uValue)
-return brfregn := uValue
+ASSIGN brfregn(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfregn, uValue)
+RETURN uValue
 
-access brfWidth() class LetterFormat
-return self:FieldGet(#brfWidth)
+ACCESS brfWidth() CLASS LetterFormat
+RETURN SELF:FieldGet(#brfWidth)
 
-assign brfWidth(uValue) class LetterFormat
-self:FieldPut(#brfWidth, uValue)
-return brfWidth := uValue
+ASSIGN brfWidth(uValue) CLASS LetterFormat
+SELF:FieldPut(#brfWidth, uValue)
+RETURN uValue
 
 access Brieven() class LetterFormat
 return self:FieldGet(#Brieven)
-
-assign Brieven(uValue) class LetterFormat
-self:FieldPut(#Brieven, uValue)
-return Brieven := uValue
 
 METHOD ButtonClick(oControlEvent) CLASS LetterFormat
 	LOCAL oControl AS Control
@@ -1949,22 +1936,22 @@ METHOD ButtonClick(oControlEvent) CLASS LetterFormat
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
 	IF oControl:NameSym == #brfNAW
-		IF brfNAW
-			oDCbrfCol:Enable()
-			oDCbrfregn:Enable()
+		IF self:brfNAW
+			self:oDCbrfCol:Enable()
+			self:oDCbrfregn:Enable()
 		ELSE
-			oDCbrfCol:Disable()
-			oDCbrfregn:Disable()
+			self:oDCbrfCol:Disable()
+			self:oDCbrfregn:Disable()
 		ENDIF
 	ENDIF
 
 	IF oControl:NameSym == #brfDAT
-		IF brfDAT
-			oDCbrfCola:Enable()
-			oDCbrfrega:Enable()
+		IF self:brfDAT
+			self:oDCbrfCola:Enable()
+			self:oDCbrfrega:Enable()
 		ELSE
-			oDCbrfCola:Disable()
-			oDCbrfrega:Disable()
+			self:oDCbrfCola:Disable()
+			self:oDCbrfrega:Disable()
 		ENDIF
 	ENDIF
 	
@@ -1982,100 +1969,100 @@ SELF:destroy()
 
 METHOD EditButton( ) CLASS LetterFormat
 LOCAL oMark AS MarkupLetter
-oMark:= MarkupLetter{SELF,brieven}
+oMark:= MarkupLetter{self,self:Templates}
 oMark:Show()
 	
 	RETURN
-method Init(oWindow,iCtlID,oServer,uExtra) class LetterFormat 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"LetterFormat",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"LetterFormat",_GetInst()},iCtlID)
 
-oDCBrieven := combobox{self,ResourceID{LETTERFORMAT_BRIEVEN,_GetInst()}}
-oDCBrieven:HyperLabel := HyperLabel{#Brieven,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCBrieven:FillUsing(Self:ListFiles( ))
+oDCTemplates := combobox{SELF,ResourceID{LETTERFORMAT_TEMPLATES,_GetInst()}}
+oDCTemplates:HyperLabel := HyperLabel{#Templates,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCTemplates:FillUsing(Self:ListFiles( ))
 
-oDCbrfNAW := CheckBox{self,ResourceID{LETTERFORMAT_BRFNAW,_GetInst()}}
+oDCbrfNAW := CheckBox{SELF,ResourceID{LETTERFORMAT_BRFNAW,_GetInst()}}
 oDCbrfNAW:HyperLabel := HyperLabel{#brfNAW,"Name/address on top",NULL_STRING,NULL_STRING}
 
-oDCbrfDAT := CheckBox{self,ResourceID{LETTERFORMAT_BRFDAT,_GetInst()}}
+oDCbrfDAT := CheckBox{SELF,ResourceID{LETTERFORMAT_BRFDAT,_GetInst()}}
 oDCbrfDAT:HyperLabel := HyperLabel{#brfDAT,"City and date",NULL_STRING,NULL_STRING}
 
-oDCGroupBox1 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX1,_GetInst()}}
+oDCGroupBox1 := GroupBox{SELF,ResourceID{LETTERFORMAT_GROUPBOX1,_GetInst()}}
 oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Heading",NULL_STRING,NULL_STRING}
 
-oDCFixedText2 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Width of letter:",NULL_STRING,NULL_STRING}
 
-oDCFixedText3 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT3,_GetInst()}}
 oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Name/address starts at column:",NULL_STRING,NULL_STRING}
 
-oDCFixedText4 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT4,_GetInst()}}
 oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Text starts at column:",NULL_STRING,NULL_STRING}
 
-oDCFixedText5 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT5,_GetInst()}}
 oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"City and date starts at column:",NULL_STRING,NULL_STRING}
 
-oDCFixedText6 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT6,_GetInst()}}
 oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"City and date starts at row:",NULL_STRING,NULL_STRING}
 
-oDCbrfWidth := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFWIDTH,_GetInst()}}
+oDCbrfWidth := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFWIDTH,_GetInst()}}
 oDCbrfWidth:Picture := "999"
 oDCbrfWidth:HyperLabel := HyperLabel{#brfWidth,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCbrfWidth:FieldSpec := BRFWIDTH{}
 
-oDCbrfCol := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOL,_GetInst()}}
+oDCbrfCol := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFCOL,_GetInst()}}
 oDCbrfCol:Picture := "99"
 oDCbrfCol:HyperLabel := HyperLabel{#brfCol,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCbrfregn := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFREGN,_GetInst()}}
+oDCbrfregn := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFREGN,_GetInst()}}
 oDCbrfregn:Picture := "99"
 oDCbrfregn:UseHLforToolTip := False
 oDCbrfregn:HyperLabel := HyperLabel{#brfregn,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCbrfColt := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOLT,_GetInst()}}
+oDCbrfColt := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFCOLT,_GetInst()}}
 oDCbrfColt:Picture := "99"
 oDCbrfColt:UseHLforToolTip := False
 oDCbrfColt:HyperLabel := HyperLabel{#brfColt,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCbrfCola := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFCOLA,_GetInst()}}
+oDCbrfCola := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFCOLA,_GetInst()}}
 oDCbrfCola:Picture := "99"
 oDCbrfCola:HyperLabel := HyperLabel{#brfCola,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCbrfrega := SingleLineEdit{self,ResourceID{LETTERFORMAT_BRFREGA,_GetInst()}}
+oDCbrfrega := SingleLineEdit{SELF,ResourceID{LETTERFORMAT_BRFREGA,_GetInst()}}
 oDCbrfrega:Picture := "99"
 oDCbrfrega:HyperLabel := HyperLabel{#brfrega,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCFixedText7 := FixedText{self,ResourceID{LETTERFORMAT_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7 := FixedText{SELF,ResourceID{LETTERFORMAT_FIXEDTEXT7,_GetInst()}}
 oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Name/address starts at row:",NULL_STRING,NULL_STRING}
 
-oDCGroupBox2 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX2,_GetInst()}}
+oDCGroupBox2 := GroupBox{SELF,ResourceID{LETTERFORMAT_GROUPBOX2,_GetInst()}}
 oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Positions",NULL_STRING,NULL_STRING}
 
-oCCOKButton := PushButton{self,ResourceID{LETTERFORMAT_OKBUTTON,_GetInst()}}
+oCCOKButton := PushButton{SELF,ResourceID{LETTERFORMAT_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
-oCCCancelButton := PushButton{self,ResourceID{LETTERFORMAT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton := PushButton{SELF,ResourceID{LETTERFORMAT_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 
-oCCNewButton := PushButton{self,ResourceID{LETTERFORMAT_NEWBUTTON,_GetInst()}}
+oCCNewButton := PushButton{SELF,ResourceID{LETTERFORMAT_NEWBUTTON,_GetInst()}}
 oCCNewButton:HyperLabel := HyperLabel{#NewButton,"New",NULL_STRING,NULL_STRING}
 oCCNewButton:TooltipText := "Add new letter"
 
-oCCEditButton := PushButton{self,ResourceID{LETTERFORMAT_EDITBUTTON,_GetInst()}}
+oCCEditButton := PushButton{SELF,ResourceID{LETTERFORMAT_EDITBUTTON,_GetInst()}}
 oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
 oCCEditButton:TooltipText := "Edit a letter"
 
-oDCGroupBox3 := GroupBox{self,ResourceID{LETTERFORMAT_GROUPBOX3,_GetInst()}}
+oDCGroupBox3 := GroupBox{SELF,ResourceID{LETTERFORMAT_GROUPBOX3,_GetInst()}}
 oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Letter",NULL_STRING,NULL_STRING}
 
-self:Caption := "Specification of Letter format"
-self:HyperLabel := HyperLabel{#LetterFormat,"Specification of Letter format",NULL_STRING,NULL_STRING}
+SELF:Caption := "Specification of Letter format"
+SELF:HyperLabel := HyperLabel{#LetterFormat,"Specification of Letter format",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
-	self:Use(oServer)
-endif
+	SELF:Use(oServer)
+ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -2091,56 +2078,46 @@ METHOD NewButton( ) CLASS LetterFormat
 LOCAL oMark AS MarkupLetter
 oMark:= MarkupLetter{SELF,".brf"}
 oMark:Show()
-SELF:oDCBrieven:FillUsing(SELF:ListFiles( ))
-SELF:oDCBrieven:Value:=SELF:LetterName
+self:oDCTemplates:FillUsing(self:ListFiles( ))
+self:oDCTemplates:Value:=self:TemplateName
 RETURN
 METHOD OKButton( ) CLASS LetterFormat
 LOCAL m96_regels AS INT
 LOCAL cRoot := "WYC\Runtime" AS STRING
 	IF ValidateControls( SELF:Owner, SELF:AControls )
-		IF Empty(oDCBrieven:TextValue)
+		IF Empty(self:oDCTemplates:TextValue)
    			(errorbox{SELF,"No letter selected"}):show()
 			RETURN
 		ENDIF
 
-		IF brfNAW .and.(brfCol < 1 .or. brfCol > brfWidth)
+		IF self:brfNAW .and.(self:brfCol < 1 .or. self:brfCol > self:brfWidth)
 			(errorbox{SELF,"Name/address start column must be within range of letter"}):show()
 			RETURN
 		ENDIF	
-		IF brfColt < 1 .or. brfColt > brfWidth-10
+		IF self:brfColt < 1 .or. self:brfColt > self:brfWidth-10
 			(errorbox{SELF,"Text start column must be within range of lettermargins"}):show()
 			RETURN
 		ENDIF	
-		IF brfDAT.and.(brfCola < 1 .or. brfCola > brfWidth-10)
+		IF self:brfDAT.and.(self:brfCola < 1 .or. self:brfCola > self:brfWidth-10)
 			(errorbox{SELF,"City and date start column must be within range of lettermargins"}):show()
 			RETURN
 		ENDIF	
-		IF brfDAT.and.brfNAW.and.brfCola==brfCol.and.brfregn==brfrega
+		IF self:brfDAT.and.self:brfNAW.and.self:brfCola==self:brfCol.and.self:brfregn==self:brfrega
 			(errorbox{SELF,"Name and City and date cannot be on the same position"}):show()
 			RETURN
 		ENDIF
-		// check number of lines in case of AcceptNorway:
-		IF SELF:lAcceptNorway
-			SELF:brief:=MemoRead(brieven)
-			m96_regels:=MLCount(brief,brfWidth)
-			IF m96_regels > 36-Max(if(brfNAW,brfregn+5,0),if(brfDAT,brfrega,0))-4  // extra 4 for repeating lines
-   				(errorbox{SELF,'Too many lines in message text'}):show()
-				RETURN
-			ENDIF
-		ELSE
-			brief:=NULL_STRING		
-		ENDIF	
+		self:brief:=null_string		
 		* save stettings in the registry:
-		SetRTRegInt( cRoot, "brfNAW", if(brfNAW,1,0) )
-		SetRTRegInt( cRoot, "brfDAT", if(brfDAT,1,0))
-		SetRTRegInt( cRoot, "brfWidth", brfWidth )
-		SetRTRegInt( cRoot, "brfCol", brfCol )
-		SetRTRegInt( cRoot, "brfregn", brfregn )
-		SetRTRegInt( cRoot, "brfrega", brfrega )
-		SetRTRegInt( cRoot, "brfCola", brfCola )
-		SetRTRegInt( cRoot, "brfColt", brfColt )
-		brief:=MemoRead(oDCBrieven:Value)
-		SetRTRegString( cRoot, "LetterName", oDCBrieven:TextValue)
+		SetRTRegInt( cRoot, "brfNAW", if(self:brfNAW,1,0) )
+		SetRTRegInt( cRoot, "brfDAT", if(self:brfDAT,1,0))
+		SetRTRegInt( cRoot, "brfWidth", self:brfWidth )
+		SetRTRegInt( cRoot, "brfCol", self:brfCol )
+		SetRTRegInt( cRoot, "brfregn", self:brfregn )
+		SetRTRegInt( cRoot, "brfrega", self:brfrega )
+		SetRTRegInt( cRoot, "brfCola", self:brfCola )
+		SetRTRegInt( cRoot, "brfColt", self:brfColt )
+		brief:=MemoRead(self:oDCTemplates:VALUE)
+		SetRTRegString( cRoot, "LetterName", self:oDCTemplates:TextValue)
 
 		SELF:EndWindow()
 	ENDIF
@@ -2152,14 +2129,14 @@ RETURN TRUE
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
 	//Put your PostInit additions here
 	self:SetTexts()
-	brfNAW := if(WycIniFS:GetInt( "Runtime", "brfNAW" )==1,true,FALSE)
-	brfDAT := if(WycIniFS:GetInt( "Runtime", "brfDAT" )==1,TRUE,FALSE)
-	brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
-	brfCol := WycIniFS:GetInt( "Runtime", "brfCol" )
-	brfregn := WycIniFS:GetInt( "Runtime", "brfregn" )
-	brfrega := WycIniFS:GetInt( "Runtime", "brfrega" )
-	brfCola := WycIniFS:GetInt( "Runtime", "brfCola" )
-	brfColt := WycIniFS:GetInt( "Runtime", "brfColt" )
+	self:brfNAW := if(WycIniFS:GetInt( "Runtime", "brfNAW" )==1,true,FALSE)
+	self:brfDAT := if(WycIniFS:GetInt( "Runtime", "brfDAT" )==1,true,FALSE)
+	self:brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
+	self:brfCol := WycIniFS:GetInt( "Runtime", "brfCol" )
+	self:brfregn := WycIniFS:GetInt( "Runtime", "brfregn" )
+	self:brfrega := WycIniFS:GetInt( "Runtime", "brfrega" )
+	self:brfCola := WycIniFS:GetInt( "Runtime", "brfCola" )
+	self:brfColt := WycIniFS:GetInt( "Runtime", "brfColt" )
 	IF IsLogic(uExtra)
 		lAcceptNorway:=uExtra
 	ENDIF
@@ -2167,53 +2144,60 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
 		self:Caption:=self:oLan:WGet("Specification of Accept GIRO format")
 	ENDIF
 	* Set default values:
-	IF Empty( brfWidth)
-		brfWidth:=80
+	IF Empty( self:brfWidth)
+		self:brfWidth:=80
 	ENDIF
-	IF Empty( brfCol)
-		brfCol:=1
+	IF Empty( self:brfCol)
+		self:brfCol:=1
 	ENDIF
-	IF Empty( brfregn)
-		brfregn:=1
+	IF Empty( self:brfregn)
+		self:brfregn:=1
 	ENDIF
-	IF Empty( brfColt)
-		brfColt:=8
+	IF Empty( self:brfColt)
+		self:brfColt:=8
 	ENDIF
-	IF Empty( brfCola)
-		brfCola:= 50
+	IF Empty( self:brfCola)
+		self:brfCola:= 50
 	ENDIF
-	IF Empty( brfrega)
-		brfrega:=6
+	IF Empty( self:brfrega)
+		self:brfrega:=6
 	ENDIF
 	
-	IF brfNAW
-		oDCbrfCol:Enable()
-		oDCbrfregn:Enable()
+	IF self:brfNAW
+		self:oDCbrfCol:Enable()
+		self:oDCbrfregn:Enable()
 	ELSE
-		oDCbrfCol:Disable()
-		oDCbrfregn:Disable()
+		self:oDCbrfCol:Disable()
+		self:oDCbrfregn:Disable()
 	ENDIF
 
-	IF brfDAT
-		oDCbrfCola:Enable()
-		oDCbrfrega:Enable()
+	IF self:brfDAT
+		self:oDCbrfCola:Enable()
+		self:oDCbrfrega:Enable()
 	ELSE
-		oDCbrfCola:Disable()
-		oDCbrfrega:Disable()
+		self:oDCbrfCola:Disable()
+		self:oDCbrfrega:Disable()
 	ENDIF
 
 *    SELF:oDCBrieven:ListFiles("*.brf")
-	Brieven := WycIniFS:Getstring("Runtime", "LetterName" )
-	IF Empty(Brieven)
-	    SELF:oDCBrieven:CurrentItemNo:=1
+	self:Templates := WycIniFS:Getstring("Runtime", "LetterName" )
+	IF Empty(self:Templates)
+	    self:oDCTemplates:CurrentItemNo:=1
 	ELSE
-	    SELF:oDCBrieven:TextValue:=Brieven
-		IF SELF:oDCBrieven:CurrentItemNo==0
-		    SELF:oDCBrieven:CurrentItemNo:=1
+	    self:oDCTemplates:TextValue:=self:Templates
+		IF self:oDCTemplates:CurrentItemNo==0
+		    self:oDCTemplates:CurrentItemNo:=1
 		ENDIF
 	ENDIF
 
 	RETURN NIL
+ACCESS Templates() CLASS LetterFormat
+RETURN SELF:FieldGet(#Templates)
+
+ASSIGN Templates(uValue) CLASS LetterFormat
+SELF:FieldPut(#Templates, uValue)
+RETURN uValue
+
 STATIC DEFINE LETTERFORMAT_BRFCOL := 110 
 STATIC DEFINE LETTERFORMAT_BRFCOLA := 113 
 STATIC DEFINE LETTERFORMAT_BRFCOLT := 112 
@@ -2236,6 +2220,15 @@ STATIC DEFINE LETTERFORMAT_GROUPBOX2 := 116
 STATIC DEFINE LETTERFORMAT_GROUPBOX3 := 121 
 STATIC DEFINE LETTERFORMAT_NEWBUTTON := 119 
 STATIC DEFINE LETTERFORMAT_OKBUTTON := 117 
+STATIC DEFINE LETTERFORMAT_TEMPLATES := 100 
+CLASS MarkupGiftsGroup INHERIT DialogWinDowExtra 
+
+	PROTECT oDCEditLetter AS MULTILINEEDIT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCKeyword AS COMBOBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oCaller as OBJECT
 RESOURCE MarkupGiftsGroup DIALOGEX  5, 17, 372, 79
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Markup Gifts Group"
@@ -2246,14 +2239,6 @@ BEGIN
 	CONTROL	"", MARKUPGIFTSGROUP_KEYWORD, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 8, 4, 147, 210
 END
 
-CLASS MarkupGiftsGroup INHERIT DialogWinDowExtra 
-
-	PROTECT oDCEditLetter AS MULTILINEEDIT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCKeyword AS COMBOBOX
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  protect oCaller as OBJECT
 method EditFocusChange(oEditFocusChangeEvent) class MarkupGiftsGroup
 	local oControl as Control
 	local lGotFocus as logic
@@ -2325,7 +2310,7 @@ STATIC DEFINE MARKUPGIFTSGROUP_OKBUTTON := 101
 STATIC DEFINE MARKUPGIFTSGROUPOLD_EDITLETTER := 100 
 STATIC DEFINE MARKUPGIFTSGROUPOLD_KEYWORD := 102 
 STATIC DEFINE MARKUPGIFTSGROUPOLD_SAVEBUTTON := 101 
-RESOURCE MarkupLetter DIALOGEX  13, 24, 366, 227
+RESOURCE MarkupLetter DIALOGEX  13, 25, 366, 226
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Markup Letter"
 FONT	8, "MS Shell Dlg"
@@ -2344,8 +2329,9 @@ CLASS MarkupLetter INHERIT DialogWinDowExtra
 	PROTECT oCCRepeatButton AS PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT LetterName AS STRING
-  	PROTECT cExt AS STRING
+  	PROTECT LetterName as STRING
+  	PROTECT cExt as STRING
+
 METHOD Close(oEvent) CLASS MarkupLetter
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -2435,7 +2421,8 @@ SetPath(CurPath)
 ptrhandle := FCreate(CurPath+"\"+self:LetterName)
 FWrite(ptrHandle, SELF:oDCEditLetter:Currenttext)
 FClose(ptrHandle)
-self:Owner:Templatename:=self:LetterName
+self:Owner:Templatename:=self:LetterName 
+self:Owner:Templates:=self:LetterName
 SELF:EndDialog()
 RETURN
 STATIC DEFINE MARKUPLETTER_EDITLETTER := 100 
@@ -3465,12 +3452,6 @@ ENDIF
 RETURN
 
 STATIC DEFINE PRINTSCREEN_LISTPRINT := 100 
-CLASS PRINTSHOW INHERIT DIALOGWINDOW 
-
-	PROTECT oDCListPrint AS LISTBOX
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  protect oOwner as Window
 RESOURCE PRINTSHOW DIALOGEX  14, 22, 528, 350
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
 CAPTION	"Preview Print"
@@ -3479,11 +3460,11 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 0, 538, 345
 END
 
-CLASS PrintShow2 INHERIT DATAWINDOW 
+CLASS PRINTSHOW INHERIT DIALOGWINDOW 
 
 	PROTECT oDCListPrint AS LISTBOX
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as Window
 RESOURCE PrintShow2 DIALOGEX  4, 3, 537, 373
 STYLE	WS_CHILD
@@ -3492,6 +3473,12 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW2_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 11, 538, 345
 END
 
+CLASS PrintShow2 INHERIT DATAWINDOW 
+
+	PROTECT oDCListPrint AS LISTBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oOwner as Window
 METHOD Close(oEvent) CLASS PRINTSHOW2
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -3601,6 +3588,11 @@ ELSE
 	RETURN "Unknown"
 ENDIF
 
+class Wait_for_printer inherit DialogWinDowExtra 
+
+	protect oCCCancelButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Wait_for_printer DIALOGEX  38, 28, 262, 39
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION
 CAPTION	"Printing"
@@ -3609,11 +3601,6 @@ BEGIN
 	CONTROL	"Cancel", WAIT_FOR_PRINTER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 13
 END
 
-class Wait_for_printer inherit DialogWinDowExtra 
-
-	protect oCCCancelButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS Wait_for_printer
 	SELF:owner:oPrintjob:Abort()
 	ASize(SELF:owner:oPrintjob:aFiFO,0)
