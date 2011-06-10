@@ -149,7 +149,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		cError:="No correspondence between transactions and month balances per account"+CRLF
 		lTrMError:=true
 		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+oSel:accnumber+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
 			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,iif(empty(oSel:debtot),0.00,oSel:debtot),iif(empty(oSel:cretot),0.00,oSel:cretot)}) 
 			oSel:Skip()
 		enddo 
