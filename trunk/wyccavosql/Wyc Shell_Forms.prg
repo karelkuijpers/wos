@@ -85,7 +85,7 @@ METHOD FilePrint() CLASS StandardWycWindow
 	RETURN
 METHOD FilePrinterSetup() CLASS StandardWycWindow
 
-	oPrinter:Setup()
+	self:oPrinter:Setup()
 	
 METHOD FirstGivers() CLASS StandardWycWindow
 	(SelPers{self,"FIRSTGIVERS"}):Show()
@@ -168,7 +168,7 @@ METHOD INIT( oOwnerApp ) CLASS StandardWycWindow
 	
 	SELF:SetCaption()
 	
-	oPrinter := PrintingDevice{}
+	self:oPrinter := PrintingDevice{}
 	SELF:Pointer := Pointer{POINTERARROW}
 
 	
