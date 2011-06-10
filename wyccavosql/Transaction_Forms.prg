@@ -3701,30 +3701,30 @@ METHOD EditButton( ) CLASS TransInquiry
 	IF SELF:NoUpdate
 		RETURN
 	ENDIF 
-// 	ticks1:=GetTickCountLow()
-// 	LogEvent(,"t1:"+Str(ticks1,-1))
-*    oTrans:=SELF:Server 
-if self:Server:EOF .or. self:Server:RecCount<1
-	return
-endif
+	// 	ticks1:=GetTickCountLow()
+	// 	LogEvent(,"t1:"+Str(ticks1,-1))
+	*    oTrans:=SELF:Server 
+	if self:Server:EOF .or. self:Server:RecCount<1
+		return
+	endif
 	cTransnr:=Str(self:Server:TransId,-1)
 	OrigBst:=alltrim(self:Server:docid)
 	Origdat:=SELF:Server:Dat
 	OrigUser:=AllTrim(self:Server:USERID) 
 	OrigPost:=self:Server:PostStatus
-   GetHelpDir()
+	GetHelpDir()
 	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
-//	self:oHm := TempTrans{}
+	//	self:oHm := TempTrans{}
 	IF !self:oHm:Used
 		RETURN
 	ENDIF
 	* Fill rows of TempTrans with transaction:
-// 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
-// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
-// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
+	// 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
+	// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
+	// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
 	self:oMyTrans:=SQLSelect{UnionTrans2("select t.*,if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
-	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
-	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" order by seqnr",Origdat,Origdat),oConn}
+		SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
+		" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" order by seqnr",Origdat,Origdat),oConn}
 
 	if self:oMyTrans:RecCount<1
 		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
@@ -3769,7 +3769,7 @@ endif
 
 		* Add to mirror:
 		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type}
-//                                                1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
+		//                                                1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
 		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE})
 		self:oMyTrans:Skip()
 	ENDDO
@@ -3777,7 +3777,7 @@ endif
 	oGen:FillRecord(cTransnr,self:oSFTransInquiry_DETAIL:Browser,OrigPerson,Origdat,OrigBst,OrigUser,OrigPost,self,lLocked)
 	oGen:AddCur()
 	oGen:Show()
-RETURN nil	
+	RETURN nil	
 METHOD ExportButton( ) CLASS TransInquiry 
 	// export select transaction to file and send - when required - that file by email to headquarters
 	LOCAL oTrans as SQLSelect
@@ -3918,15 +3918,19 @@ METHOD FindButton( ) CLASS TransInquiry
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:cOrder:="transid desc"
 	self:oTrans:SQLString:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
-	self:oTrans:Execute()
-	self:GoTop()
-	if self:oTrans:RecCount<1
-		self:oSFTransInquiry_DETAIL:Browser:refresh()
+	self:oTrans:Execute() 
+	if !Empty(self:oTrans:Status)
+		LogEvent(self,"Could not find last 100 transactions, error:"+self:oTrans:ErrInfo:ErrorMessage,"LogErrors") 
+	else
+		self:GoTop()
+		if self:oTrans:RecCount<1
+			self:oSFTransInquiry_DETAIL:Browser:refresh()
+		endif 
 	endif
-  	self:oDCFound:TextValue :=Str(self:oTrans:RecCount,-1)
+	self:oDCFound:TextValue :=Str(self:oTrans:RecCount,-1)
 
 
-RETURN NIL
+	RETURN NIL
 ACCESS FromTransnr() CLASS TransInquiry
 RETURN SELF:FieldGet(#FromTransnr)
 
