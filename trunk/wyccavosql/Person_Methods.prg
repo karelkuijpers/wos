@@ -4137,10 +4137,10 @@ prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
 fullname := mAlias+"lastname"
 IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
 // 	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2,'",",','')+mAlias+'initials," "),"")),'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",","")',"")
-	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(sSurnameFirst,'" "','", "')+','+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+'", ",'+mAlias+'initials," "),""))'+iif(Purpose==0,",if("+mAlias+'prefix<>"",",","")',"")
+	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "'),'')+','+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
 ELSE
 // 	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'initials," "),'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",",""))',"")
-	frstnm := 'if('+mAlias+'initials<>"",concat('+'", ",'+mAlias+'initials," ")'+iif(Purpose==0,",if("+mAlias+'prefix<>"",",",""))',"")
+	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0.or.Purpose=2,'", ",','')+mAlias+'initials," ")'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",",""))',"")
 ENDIF
 do CASE
 CASE Purpose==0
