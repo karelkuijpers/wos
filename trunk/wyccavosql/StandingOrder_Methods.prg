@@ -618,7 +618,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif	
 			// save in aTrans: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank},...}
 			AAdd(aTrans,{Str(oStOrdL:ACCOUNTID,-1),datum,oStOrdL:DESCRIPTN,oStOrdL:docid,deb,cre,DEBFORGN,CREFORGN,TransCurr,oStOrdL:GC,;
-				iif(oStOrdL:GIFTALWD==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank} )
+				iif(oStOrdL:GIFTALWD==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank,oStOrdL:REFERENCE} )
 		endif
 		oStOrdL:skip()
 	enddo
@@ -634,11 +634,11 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			lError:=true
 		else
 			for i:=1 to Len(aTrans) 
-				oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr"+iif(i==1,"",",TransId")+;
+				oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+iif(i==1,"",",transId")+;
 					") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
 					"','"+Str(aTrans[i,5],-1)+"','"+Str(aTrans[i,6],-1)+;
 					"','"+Str(aTrans[i,7],-1)+"','"+Str(aTrans[i,8],-1)+;
-					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+iif(i==1,"","','"+cTrans)+"')",oConn}
+					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+"','"+AllTrim(aTrans[i,13])+iif(i==1,"","','"+cTrans)+"')",oConn}
 				oTrans:execute()
 				if oTrans:NumSuccessfulRows<1 
 					LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:Status:description,"LogErrors")
@@ -697,7 +697,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
 	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,s.idat,s.edat,s.lstrecording,s.persid,"+;
-	"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,"+; 
+	"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,l.reference,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
 	" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) where l.stordrid=s.stordrid and "+;
 	"(edat is null or edat>=CurDate()) and "+;
