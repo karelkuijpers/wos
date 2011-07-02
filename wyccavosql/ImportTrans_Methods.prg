@@ -162,6 +162,9 @@ FOR nf:=1 TO Len(aImportFiles)
 NEXT
 // Import also import files from Czech WinDuo:
 aTxt:=Directory(CurPath+"\DENIK*.dbf")
+if Len(aTxt)<1
+	aTxt:=Directory(CurPath+"\deník*.dbf")
+endif	
 IF Len(aTxt)>0
 	nlen:=Len(aImportFiles)
 	ASize(aImportFiles,nlen+Len(aTxt))
