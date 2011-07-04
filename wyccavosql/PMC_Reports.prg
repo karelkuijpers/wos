@@ -476,7 +476,7 @@ METHOD PrintReport() CLASS PMISsend
 	endif
 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
 	// select the transaction data
-	oTrans:=SQLSelect{'select transid,seqnr,accid,persid,cre,deb,description,reference,gc,poststatus,fromrpp from transaction t '+;
+	oTrans:=SQLSelect{'select transid,seqnr,accid,persid,cre,deb,description,reference,gc,poststatus,fromrpp,dat from transaction t '+;
 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"'"+;
 		" and t.accid in (select m.accid from member m) order by t.accid,t.transid  for update",oConn}
 	oTrans:Execute() 
@@ -640,7 +640,7 @@ METHOD PrintReport() CLASS PMISsend
 					ENDIF
 					IF me_homePP!=SEntity
 						me_amount:=Round(Round(oTrans:cre-oTrans:deb,decaantal)-round(me_asshome+me_assint,decaantal),decaantal)
-						me_desc:=sCurrName+Str(Round(oTrans:cre-oTrans:deb,DecAantal),-1)
+						me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(Round(oTrans:cre-oTrans:deb,DecAantal),-1) +"("+DToC(oTrans:dat)+")"
 						IF !Empty(oTrans:persid)
 							me_desc:=if(Empty(me_desc),"",me_desc+" ")+"from "+GetFullNAW(Str(oTrans:persid,-1),sLand,0)
 						ENDIF
@@ -652,7 +652,7 @@ METHOD PrintReport() CLASS PMISsend
 					ENDIF
 				CASE me_gc='MG'
 					IF me_homePP!=SEntity
-						me_desc:=sCurrName+Str(Round(oTrans:cre-oTrans:deb,DecAantal),-1)
+						me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(Round(oTrans:cre-oTrans:deb,DecAantal),-1)+"("+DToC(oTrans:dat)+")"
 						IF !Empty(oTrans:persid)
 							me_desc:=if(Empty(me_desc),"",me_desc+" ")+"from "+GetFullNAW(Str(oTrans:persid,-1),sLand,0)
 						ENDIF
