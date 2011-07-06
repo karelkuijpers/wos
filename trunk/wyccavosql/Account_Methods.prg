@@ -522,9 +522,9 @@ IF !Empty(aAccIncl)
 	AEval(aAccIncl,{|x|cIncl+=iif(Val(x)=0,'',iif(Empty(cIncl),"",' or ')+'a.accid='+x)})
 ENDIF	
 IF IsMember=="M"
-	cFilter+=' and a.accid in (select m.accid from member m)'
+	cFilter+=' and a.accid in (select accid from member where accid IS NOT NULL)'
 ELSEIF IsMember=="N"
-	cFilter+=' and a.accid not in (select m.accid from member m)'
+	cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL)'
 ENDIF
 IF giftalwd=0
 	cFilter+=' and a.giftalwd<>1'
