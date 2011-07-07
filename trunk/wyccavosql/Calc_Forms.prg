@@ -21,7 +21,8 @@ CLASS Calculator INHERIT DIALOGWINDOW
 	PROTECT oEdit AS SingleLineEdit
 	PROTECT nDec AS INT
 	PROTECT oBrowser as OBJECT 
-	PROTECT fieldSym as symbol
+	PROTECT fieldSym as symbol 
+	protect CurText as string
 
 METHOD EditChange(oControlEvent) CLASS Calculator
 	LOCAL oControl AS Control
@@ -30,59 +31,64 @@ METHOD EditChange(oControlEvent) CLASS Calculator
 	LOCAL rPos AS selection
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	SUPER:EditChange(oControlEvent)
-	//Put your changes here
-	IF AllTrim(SELF:oDCResult:TEXTValue)==AllTrim(Str(fMemory)) //Dummy call?
+	if AllTrim(self:oDCResult:TEXTValue)==self:CurText .or. ;
+		Val(self:oDCResult:TEXTValue)==self:fMemory .or.; //Dummy call?
+		Empty(self:oDCResult:TEXTValue)
 		RETURN NIL
 	ENDIF
 	rPos:=SELF:oDCResult:Selection
-	LstChar:=SubStr(oDCResult:TextValue,rPos:Start,1)
+	LstChar:=SubStr(self:oDCResult:TEXTValue,rPos:Start,1)
 	IF LstChar $ "/+-*="
-		IF lClear.and.!cFunction=="="
+		IF self:lClear.and.!self:cFunction=="="
 			fValue:=0
 		ELSE
-			fValue:=Val(SubStr(oDCResult:TextValue,1,rPos:Start-1))
+			fValue:=Val(SubStr(self:oDCResult:TEXTValue,1,rPos:Start-1))
 			--rPos:Start
 		/*	oDCResult:Selection:= rPos
-			oDCResult:Clear()   */
-			oDCResult:TextValue:=""
+			oDCResult:Clear()   */ 
+			self:CurText:=""
+			self:oDCResult:TEXTValue:=""
 		ENDIF
-		lClear:=TRUE
-		IF Empty(cFunction)
-			fMemory:=fValue
-			oDCListResult:Additem(Str(fMemory)+" "+LstChar)
+		self:lClear:=true
+		IF Empty(self:cFunction)
+			self:fMemory:=fValue
+			self:oDCListResult:Additem(Str(self:fMemory)+" "+LstChar)
 		ELSE
-			oDCListResult:Additem(Str(fValue)+"  ")
+			self:oDCListResult:Additem(Str(fValue)+"  ")
 			IF cFunction="+"
-				fMemory:=fMemory+fValue
+				self:fMemory:=self:fMemory+fValue
 			ELSEIF cFunction="-"
-				fMemory:=fMemory-fValue
+				self:fMemory:=self:fMemory-fValue
 			ELSEIF cFunction="*"
-				fMemory:=fMemory*fValue
+				self:fMemory:=self:fMemory*fValue
 			ELSEIF cFunction="/"
-				fMemory:=fMemory/fValue
+				self:fMemory:=float(float(self:fMemory) / float(fValue))
 			ENDIF
-			oDCListResult:Additem(Replicate("=",20))
-			oDCListResult:Additem(Str(fMemory)+" "+LstChar)
+			self:oDCListResult:Additem(Replicate("=",20))
+			self:oDCListResult:Additem(Str(self:fMemory)+" "+LstChar)
 			rPos:Start:=0
 			//oDCResult:Selection:=rPos
-			//oDCResult:Paste(Str(fMemory))
-			oDCResult:TextValue:=AllTrim(Str(fMemory))
-			oDCListResult:CurrentItemNo := oDCListResult:ItemCount
+			//oDCResult:Paste(Str(self:fMemory))
+			self:cFunction:=LstChar
+			self:CurText:=AllTrim(Str(self:fMemory))
+			self:oDCListResult:CurrentItemNo := oDCListResult:ItemCount
+			self:oDCResult:TEXTValue:= self:CurText
 		ENDIF
-		cFunction:=LstChar
 	ELSE
-		IF lClear
-			lClear:=FALSE
+		IF self:cFunction=="="
+			self:cFunction:=""
+		ENDIF
+		IF self:lClear
+			self:lClear:=FALSE
 			rPos:Start:=0
 			rPos:Finish:=20
 /*			ODCResult:Selection:Start:=0
 			ODCResult:Selection:Finish:=20*/
-			oDCResult:TextValue:=""
-			oDCResult:Paste(LstChar)
+			self:CurText:=""
+			self:oDCResult:TEXTValue:=""
+// 			self:CurText:=LstChar
+			self:oDCResult:Paste(LstChar)
 			//oDCResult:TextValue:=LstChar
-		ENDIF
-		IF cFunction=="="
-			cFunction:=""
 		ENDIF
 	ENDIF
 	RETURN NIL
@@ -121,36 +127,37 @@ METHOD OKButton( ) CLASS Calculator
 		ELSE
 			fValue:=Val(oDCResult:TextValue)
 		ENDIF
-		IF cFunction="+"
-			fMemory:=fMemory+fValue
-		ELSEIF cFunction="-"
-			fMemory:=fMemory-fValue
-		ELSEIF cFunction="*"
-			fMemory:=fMemory*fValue
-		ELSEIF cFunction="/"
-			fMemory:=fMemory/fValue
+		IF self:cFunction="+"
+			self:fMemory:=self:fMemory+fValue
+		ELSEIF self:cFunction="-"
+			self:fMemory:=self:fMemory-fValue
+		ELSEIF self:cFunction="*"
+			self:fMemory:=self:fMemory*fValue
+		ELSEIF self:cFunction="/"
+			self:fMemory:=self:fMemory/fValue
 		ELSE
-			fMemory:=fValue
+// 			self:fMemory:=fValue
 		ENDIF
 		* Next line gives Kicking limit exceed in case of update of an amount and a later TAB or right/ left arrow:
-*		oEdit:value:=Round(fMemory,2)
-*		oEdit:CurrentText:=Str(Round(fMemory,2))  // same as next tow lines?
+*		oEdit:value:=Round(self:fMemory,2)
+*		oEdit:CurrentText:=Str(Round(self:fMemory,2))  // same as next tow lines?
 		***************************************
 /*		oEdit:Selection:=Selection{0,-1)
-		oEdit:Paste(Str(Round(fMemory,2)))*/
+		oEdit:Paste(Str(Round(self:fMemory,2)))*/
 		self:oEdit:CalcActive:=FALSE
 		if !Empty(self:oEdit:Picture)
-			self:oEdit:TEXTvalue:=Transform(fMemory,self:oEdit:Picture)
+			self:oEdit:TEXTValue:=Transform(self:fMemory,self:oEdit:Picture)
 		elseif !Empty(self:oEdit:FieldSpec)
-			self:oEdit:TEXTvalue:=self:oEdit:Fieldspec:Transform(fMemory)
+			self:oEdit:TEXTValue:=self:oEdit:FieldSpec:Transform(self:fMemory)
 		else
-			self:oEdit:TEXTvalue:=(Str(Round(fMemory,2)))
+			self:oEdit:TEXTValue:=(Str(Round(self:fMemory,2)))
 		endif
 		IF !oBrowser==null_object
-			*SELF:oColumn:SetValue(Str(Round(fMemory,2)))
+			*SELF:oColumn:SetValue(Str(Round(self:fMemory,2)))
 			myOwner:=oBrowser:owner
 			myServer:=myOwner:Server
-			myServer:FIELDPUT(self:fieldSym,Round(fMemory,2))
+// 			myServer:FIELDPUT(self:fieldSym,Round(self:fMemory,2))
+			myServer:FIELDPUT(self:fieldSym,val(self:oEdit:TEXTvalue))
 			IF !myOwner:owner==null_object
 				IF IsMethod(myOwner,#DebCreProc)
 					myOwner:DebCreProc(false)
@@ -183,20 +190,21 @@ METHOD PostInit(oParent,uExtra) CLASS Calculator
 	//Put your PostInit additions here
 	IF IsArray(uExtra)
 		self:oEdit:=uExtra[1]
-		self:oDCResult:VALUE:=AllTrim(self:oEdit:CurrentText)
-		self:fMemory:= Val(oDCResult:TEXTvalue)
+		self:CurText:= AllTrim(self:oEdit:CurrentText)
+		self:fMemory:= Val(self:CurText)
 		self:cFunction:=uExtra[2]
-		self:oDCListResult:Additem(Str(fMemory)+" "+cFunction)
+		self:oDCListResult:Additem(Str(self:fMemory)+" "+self:cFunction)
 		IF Len(uExtra)>2
 			SELF:oBrowser:=uExtra[3]
 		ENDIF
 		IF Len(uExtra)>3
 			self:fieldSym:=uExtra[4]
 		ENDIF
-		self:lClear:=true
-		self:nDec:=SetDecimal(32)
+//		self:lClear:=true
+		self:nDec:=SetDecimal(12)
 // 		self:oDCResult:Picture:=self:oEdit:Picture
 		self:oDCResult:SetFocus()
+//  		self:oDCResult:VALUE:= self:CurText
 
 	ENDIF
 	RETURN NIL
