@@ -29,10 +29,22 @@ super:Init(HyperLabel{"DEPID","Depid","","department_DEPID"},"N",11,0)
 
 RETURN SELF
 CLASS department_DEPTMNTNBR INHERIT FIELDSPEC
-METHOD Init() CLASS department_DEPTMNTNBR
-super:Init(HyperLabel{"DEPTMNTNBR","Deptmntnbr","","department_DEPTMNTNBR"},"C",6,0)
 
-RETURN SELF
+
+METHOD Init() CLASS department_DEPTMNTNBR
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#DEPTMNTNBR, "Deptmntnbr", "", "department_DEPTMNTNBR" },  "C", 10, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS department_DESCRIPTN INHERIT FIELDSPEC
 METHOD Init() CLASS department_DESCRIPTN
 super:Init(HyperLabel{"DESCRIPTN","Descriptn","","department_DESCRIPTN"},"C",40,0)
