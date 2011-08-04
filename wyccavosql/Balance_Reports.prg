@@ -109,7 +109,7 @@ protect cFrom,cTo,cYear,cFullyear,cDescription,cPrvYrYTD,cCurPeriod,cYtD,cSurPlu
 protect cNegative,cPositive as string 
 
 
-declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading
+declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading,BalFishTot
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array, level as int,r_indmain ref array,r_parentid ref array,r_balid ref array,r_balnbr ref array,r_cat ref array,r_heading ref array,r_footer ref array) as int  CLASS BalanceReport
 * Find subbalance items and add to arrays withbalance Items
 	LOCAL nChildRec, iWidth, p	AS INT
@@ -761,7 +761,7 @@ METHOD BalButton( ) CLASS BalanceReport
 	ENDIF
 	(BalanceItemExplorer{self:OWNER,"Balance Item",str(self:WhatFrom,-1),self,cBalValue}):show()
 RETURN NIL
-METHOD BalFishTot(Type,aTot) CLASS BalanceReport
+METHOD BalFishTot(Type as string,aTot as array) as array CLASS BalanceReport
 	// determine totals of income and expense or of assets and liabilities and funds
 	// Type:	I: income and expense
 	//	 		B: assest and libilities
@@ -785,7 +785,9 @@ IF !Empty(aTot)
 
 	IF Empty(Ind1)
 		IF !Empty(Ind2)
-			fAmnt2:=SELF:BalTot(aTot,typ2,aTot[Ind2,2],Ind2)
+			fAmnt2:=self:BalTot(aTot,typ2,aTot[Ind2,2],Ind2)
+// 		else
+// 			return null_array
 		ENDIF
 	ELSE
 		IF Empty(Ind2)
@@ -878,7 +880,7 @@ METHOD DepButton( ) CLASS BalanceReport
 	IF nPntr>1
 		cCurValue:=SubStr(cCurValue,1,nPntr-1)
 	ENDIF
-	(DepartmentExplorer{self:OWNER,"Department",Str(self:WhoFrom,-1),self,cCurValue}):Show()
+	(DepartmentExplorer{self:OWNER,"Department",Str(self:WhoFrom,-1),self,cCurValue,"From Department"}):Show()
 RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS BalanceReport
 	LOCAL oControl AS Control
@@ -1543,6 +1545,9 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 		IF !IsNil(r_balpryrtot[Bal_Ptr]).and.!Empty(r_balpryrtot[Bal_Ptr])
 			AAdd(aTotprv,{m_soort,level,r_balpryrtot[Bal_Ptr]})
 		ENDIF
+		if level==0
+		  level:=0
+		endif
 		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			clbalvj:=0
@@ -1584,7 +1589,7 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 				ASort(aTotprv,,,{|x, y| x[1] < y[1] .or. (x[1]=y[1] .and. x[2] <= y[2])})
 				IF !Empty(kap_num) .and. !IsNil(r_balPer[kap_num]).and.!IsNil(r_balpryrtot[kap_num])
 					//				clbalvj:=-(r_balpryrtot[kap_num]-surplusvj)
-					clbalvj:=-r_balpryrtot[kap_num]
+					clbalvj:=Round(-r_balpryrtot[kap_num] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
 					clbal:=-(r_balPer[kap_num]-surplus)
 					IF SELF:showopeningclosingfund
 						oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,2)
@@ -1597,10 +1602,14 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 					fAmnt:=SELF:BalFishTot("I",aTot)
 					fInc:=fAmnt[1]
 					fExp:=fAmnt[2]
-					fAmnt:=SELF:BalFishTot("B",aTot)
-					clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, decaantal)
-					fAmnt:=SELF:BalFishTot("B",aTotprv)
-					clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
+					IF !Empty(kap_num) .and. !IsNil(r_balPer[kap_num]).and.!IsNil(r_balpryrtot[kap_num]) 
+						// clbal and clbalvj already known
+					else 
+						fAmnt:=self:BalFishTot("B",aTot)
+						clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, DecAantal)
+						fAmnt:=self:BalFishTot("B",aTotprv)
+						clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
+					endif
 					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,self:cDirectOn+" ","")+d_depname[Dep_Ptr] 
 					self:prAmounts("SD",clbalvj,surplusvj,;
 						surplus,clbal,r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
@@ -2208,15 +2217,26 @@ METHOD DepstmntPrint() CLASS DeptReport
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS DeptReport
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
-	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
+	LOCAL nPntr as int
+	LOCAL cCurValue as string
+	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
 		IF oControl:Name == "FROMDEP"
-			IF !Upper(AllTrim(oControl:TEXTValue))==Upper(AllTrim(cFromDepName))
-				self:cFromDepName:=AllTrim(oControl:VALUE)
-				SELF:FromDepButton(TRUE)
+			IF !Upper(AllTrim(oControl:TextValue))==Upper(AllTrim(self:cFromDepName))
+				cCurValue:=AllTrim(oControl:TextValue)
+				self:cFromDepName:=cCurValue
+				nPntr:=At(":",cCurValue)
+				IF nPntr>1
+					cCurValue:=SubStr(cCurValue,1,nPntr-1)
+				ENDIF
+				IF FindDep(@cCurValue)
+					self:RegDepartment(cCurValue,"From Department")
+				ELSE
+					self:FromDepButton(true)
+				ENDIF
 			ENDIF
 		ENDIF
 	ENDIF
@@ -2238,9 +2258,13 @@ RETURN uValue
 METHOD FromDepButton( ) CLASS DeptReport
 	LOCAL cCurValue AS STRING
 	LOCAL nPntr AS INT
+	cCurValue:=AllTrim(self:oDCFromDep:TEXTValue)
+	nPntr:=At(":",cCurValue)
+	IF nPntr>1
+		cCurValue:=SubStr(cCurValue,1,nPntr-1)
+	ENDIF
 
-	cCurValue:=AllTrim(oDCFromDep:TextValue)
-	(DepartmentExplorer{self:Owner,"Department",FromDep,self,cCurValue,"From Department"}):show()
+	(DepartmentExplorer{self:OWNER,"Department",self:FromDep,self,cCurValue,"From Department"}):Show()
 RETURN
 METHOD GetBalYears() CLASS DeptReport
 	// get array with balance years
@@ -2547,10 +2571,10 @@ METHOD RegDepartment(MyNum:='' as string,ItemName:="" as string) as void pascal 
 		depnr:=0
 		deptxt:=sEntity+" "+sLand
 	ELSE
-		oDep:=SQLSelect{"select depid,descriptn from department where depid="+MyNum,oConn}
+		oDep:=SQLSelect{"select deptmntnbr,depid,descriptn from department where depid="+MyNum,oConn}
 		IF oDep:Reccount>0
 			depnr:=oDep:DEPID
-			deptxt:=oDep:DESCRIPTN
+			deptxt:=AllTrim(oDep:deptmntnbr)+":"+oDep:DESCRIPTN 
 		ENDIF
 	ENDIF	
 	IF ItemName == "From Department"
