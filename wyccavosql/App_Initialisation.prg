@@ -630,8 +630,10 @@ method init() class Initialize
 	local oStmt as SQLStatement
 	local aDB:={} as array 
 	local cServer,cUIDPW as string
-	local cWosIni as FileSpec
-	local ptrHandle as ptr
+	local cWosIni as MyFileSpec
+	local	ptrHandle as MyFile
+
+// 	local ptrHandle as ptr
 	local cLine as string
 	local aWord:={} as array
 	local i,j as int
@@ -646,13 +648,13 @@ method init() class Initialize
 	oConn:=SQLConnection{}
 
 	// read and interprete wos.ini file
-	cWosIni:=FileSpec{CurPath+"\Wos.ini"}
+	cWosIni:=MyFileSpec{CurPath+"\Wos.ini"}
 	if cWosIni:Find()
-		ptrHandle:=FOpen2(cWosIni:FullPath, FO_READ + FO_SHARED)
-		IF ptrHandle != F_ERROR
-			cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
-			do WHILE !(Empty(cLine).and. FEof(ptrHandle))
-				if !SubStr(cLine,1,1)=='#'   // skip comment lines
+		ptrHandle:=MyFile{cWosIni}
+		IF FError() =0
+			cLine:=AllTrim(ptrHandle:FReadLine(ptrHandle))
+			do WHILE !ptrHandle:FEof
+				if !Empty(cLine) .and.!SubStr(cLine,1,1)=='#'   // skip comment lines
 					aWord:=Split(cLine,"=")
 					for i:=1 to Len(aIniKey) 
 						j:=AScan(aWord,{|x|Lower(AllTrim(x))==aIniKey[i]})
@@ -662,10 +664,10 @@ method init() class Initialize
 						endif
 					next
 				endif
-				cLine:=AllTrim(FReadLine(ptrHandle,1024)) 
+				cLine:=AllTrim(ptrHandle:FReadLine(ptrHandle))
 			ENDDO
 		ENDIF
-		FClose(ptrHandle)
+		ptrHandle:Close()
 	endif
 	if Empty(akeyval[3])
 		cServer:=GetServername(CurPath)
@@ -695,7 +697,7 @@ method init() class Initialize
 			if oMainWindow==null_object
 				oMainWindow := StandardWycWindow{self}
 			endif
-			FileStart(WorkDir()+"ODBCInstall.html",oMainWindow)
+			FileStart(WorkDir()+iif(Empty(GetEnv('ProgramFiles(x86)')),"ODBCInstall.html","ODBCInstall64.html"),oMainWindow)
 			if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
 				loop
 			endif
@@ -1305,6 +1307,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"emplacc","empid","int(11)","NO","NULL",""},;
 		{"emplacc","accid","int(11)","NO","NULL",""},;
 		{"emplacc","type","tinyint(1)","NO","0",""},;
+		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importtrans","imptrid","int(11)","NO","NULL","auto_increment"},;
 		{"importtrans","transdate","date","NO","0000-00-00",""},;
 		{"importtrans","docid","varchar(31)","NO","",""},;
@@ -1525,7 +1528,6 @@ method InitializeDB() as void Pascal  class Initialize
 	{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
 	{"sysparms","accpacls","date","NO","0000-00-00",""},; 
 	{"sysparms","assfldac","int(11)","NO","0",""},;
-		{"importlock","importfile","char(40)","YES","NULL",""},;
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","char(25)","NO","",""},;
@@ -1627,7 +1629,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","2","accid"},; 
-	{"importtrans","0","PRIMARY","1","imptrID"},;
+	{"importlock","0","IMPORTLOCK","1","importfile"},;
+	{"importtrans","0","PRIMARY","1","imptrid"},;
 		{"importtrans","1","TRANSACTNR","1","origin"},;
 		{"importtrans","1","TRANSACTNR","2","transactnr"},;
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
@@ -1831,13 +1834,13 @@ method InitializeDB() as void Pascal  class Initialize
 			endif
 			self:SyncColumns(aRequiredCol,aCurrentCol,cTable,aRequiredIndex,aCurrentIndex)
 		endif 	
-	next
+	next                                               
 
 	// ensure ImportLock has required record:
-	if SQLSelect{"select importfile from ImportLock where importfile='telelock'",oConn}:RecCount<1
+	if SQLSelect{"select * from importlock where `importfile`='telelock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='telelock'",oConn}:Execute()
 	endif
-	if SQLSelect{"select importfile from ImportLock where importfile='batchlock'",oConn}:RecCount<1
+	if SQLSelect{"select * from importlock where importfile='batchlock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
