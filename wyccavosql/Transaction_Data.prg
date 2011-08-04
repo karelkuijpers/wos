@@ -240,8 +240,8 @@ CLASS TempGift INHERIT DBSERVEREXTRA
 	EXPORT bFilter as _CodeBlock
 	EXPORT oBrowse as Databrowser
 	EXPORT lFromRPP as LOGIC  // for compatibility with general journal and calc forms
-	EXPORT aMIRROR:={} as ARRAY  //Image of TempGift with for each row: {accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description}
-	//                                                                     1    2    3   4    5      6      7      8        9        10      11      12      13      14
+	EXPORT aMIRROR:={} as ARRAY  //Image of TempGift with for each row: {accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description,incexpfd}
+	//                                                                     1    2    3   4    5      6      7      8        9        10      11      12      13      14            15
 	Export Multiple as Logic 
 	
 	declare method GetCategory
@@ -315,7 +315,7 @@ ACCESS FieldDesc CLASS TempGift
 	LOCAL aRet		AS ARRAY
 	LOCAL nFields	AS DWORD
 
-	nFields := 14
+	nFields := 16
 
 	IF nFields > 0
 		aRet := ArrayCreate(nFields)
@@ -349,6 +349,8 @@ ACCESS FieldDesc CLASS TempGift
 		aRet[12] := { #REFERENCE, "REFERENCE",  Transaction_REFERENCE{}}
 		aRet[13] := { #DEB, "DEB",  transaction_DEB{}}
 		aRet[14] := { #DEBFORGN, "DEBFORGN",  transaction_DEB{}}
+		aRet[15] := { #INCEXPFD, "INCEXPFD",  TempGift_INCEXPFD{}}
+		aRet[16] := { #PERSID, "PERSID",  Person_CLN{}}
 
 	ELSE
 		aRet := {}
@@ -369,6 +371,13 @@ ACCESS  ID  CLASS TempGift
 ASSIGN  ID(uValue)  CLASS TempGift
 
     RETURN SELF:FieldPut(#ID, uValue)
+
+ACCESS  INCEXPFD  CLASS TempGift
+
+    RETURN SELF:FieldGet(#INCEXPFD)
+ASSIGN  INCEXPFD(uValue)  CLASS TempGift
+
+    RETURN SELF:FieldPut(#INCEXPFD, uValue)
 
 ACCESS IndexList CLASS TempGift
 	//
@@ -541,6 +550,13 @@ ASSIGN  ORIGINAL(uValue)  CLASS TempGift
 
     RETURN SELF:FieldPut(#ORIGINAL, uValue)
 
+ACCESS  PERSID  CLASS TempGift
+
+    RETURN SELF:FieldGet(#PERSID)
+ASSIGN  PERSID(uValue)  CLASS TempGift
+
+    RETURN SELF:FieldPut(#PERSID, uValue)
+
 METHOD PostInit() class TempGift
 	//Put your PostInit additions here
 	RETURN NIL
@@ -557,6 +573,18 @@ METHOD Init() CLASS TempGift_ID
     LOCAL   cPict                   AS STRING
 
     SUPER:Init( HyperLabel{#ID, "Id", "", "TempGift_ID" },  "C", 16, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+CLASS TempGift_INCEXPFD INHERIT FIELDSPEC
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS TempGift_INCEXPFD
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#INCEXPFD, "Incexpfd", "", "TempGift_INCEXPFD" },  "C", 1, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
@@ -587,8 +615,8 @@ CLASS TempTrans INHERIT DBSERVEREXTRA
 	EXPORT lInqUpd,lFilling,lExisting,lOnlyRead,lFromRPP as LOGIC
 	EXPORT aTeleAcc as ARRAY
 	EXPORT oDat as date
-	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type}
-//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
+	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
+//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19
    
    declare method CheckUpdates
 
@@ -669,7 +697,7 @@ ACCESS FieldDesc CLASS TempTrans
 	LOCAL aRet		AS ARRAY
 	LOCAL nFields	AS DWORD
 
-	nFields := 19
+	nFields := 20
 
 	IF nFields > 0
 		aRet := ArrayCreate(nFields)
@@ -708,6 +736,7 @@ ACCESS FieldDesc CLASS TempTrans
 		aRet[17] := { #SEQNR, "SEQNR",  Transaction_SEQNR{}}
 		aRet[18] := { #POSTSTATUS, "POSTSTATUS",  Transaction_POSTSTATUS{}}
 		aRet[19] := { #PPDEST, "PPDEST",  PPCodes_PPCode{}}
+		aRet[20] := { #INCEXPFD, "INCEXPFD",  TempTrans_INCEXPFD{}}
 
 	ELSE
 		aRet := {}
@@ -728,6 +757,13 @@ ACCESS  GC  CLASS TempTrans
 ASSIGN  GC(uValue)  CLASS TempTrans
 
     RETURN SELF:FieldPut(#GC, uValue)
+
+ACCESS  INCEXPFD  CLASS TempTrans
+
+    RETURN SELF:FieldGet(#INCEXPFD)
+ASSIGN  INCEXPFD(uValue)  CLASS TempTrans
+
+    RETURN SELF:FieldPut(#INCEXPFD, uValue)
 
 ACCESS IndexList CLASS TempTrans
 	//
@@ -935,6 +971,18 @@ ASSIGN  SEQNR(uValue)  CLASS TempTrans
 
     RETURN SELF:FieldPut(#SEQNR, uValue)
 
+CLASS TempTrans_INCEXPFD INHERIT FIELDSPEC
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS TempTrans_INCEXPFD
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#INCEXPFD, "Incexpfd", "", "TempTrans_INCEXPFD" },  "C", 1, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
 CLASS Transaction_BFM INHERIT FIELDSPEC
 METHOD Init() CLASS Transaction_BFM
     LOCAL   cPict                   AS STRING
@@ -994,9 +1042,9 @@ METHOD Init() CLASS transaction_DAT
 super:Init(HyperLabel{"DAT","Dat","","transaction_DAT"},"D",10,0)
 
 RETURN SELF
-CLASS Transaction_DEB INHERIT FIELDSPEC
+CLASS transaction_DEB INHERIT FIELDSPEC
 	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS Transaction_DEB
+METHOD Init() CLASS transaction_DEB
     LOCAL   cPict                   AS STRING
 
     SUPER:Init( HyperLabel{#DEB, "Deb", "", "transaction_DEB" },  "N", 19, 2 )
