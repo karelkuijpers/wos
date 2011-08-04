@@ -5,7 +5,7 @@ LOCAL oItem AS ListViewItem
 	else
 		IF ItemName="Member Account"
 			self:mRek :=  Str(oAcc:accid,-1)
-			self:oDCmAccount:TEXTValue := AllTrim(oAcc:Description)
+			self:oDCmAccDept:TEXTValue := AllTrim(oAcc:Description)
 			self:cAccountName := AllTrim(oAcc:Description)
 			self:cCurType:=oAcc:type
 		ELSEIF ItemName=="Associated Accounts"
@@ -19,6 +19,20 @@ LOCAL oItem AS ListViewItem
 	ENDIF
 RETURN TRUE
 
+METHOD RegDepartment(myNum,myItemName) CLASS EditMember
+	local oDep as SQLSelect
+	Default(@myItemName,null_string)
+	Default(@myNum,null_string) 
+	
+	oDep:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
+	IF oDep:reccount=1 
+		self:mDepid:=myNum
+		self:mAccDept:=oDep:DESCRIPTN 
+		self:cDepartmentName:=oDep:DESCRIPTN
+	else
+		ErrorBox{self,self:olan:WGet("select a department")}:show()
+	ENDIF
+	RETURN
 METHOD RegPerson(oCLN,ItemName) CLASS EditMember
 IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 	IF ItemName=="Member"
