@@ -85,6 +85,7 @@ CLASS General_Journal INHERIT DataWindowExtra
 	protect cOrgAccs as string
 //   	export ticks1,ticks2 as DWORD
 	export lwaitingForExchrate as logic
+	protect aBankAcc:={} as array
   	
 	declare method FindNext, FindPrevious
   	declare method Totalise,ValidateTempTrans,FillTeleBanking, FillRecord, ShowBankBalance, ValStore, ;
@@ -600,8 +601,8 @@ METHOD OKButton(lMySave ) CLASS General_Journal
 	local lSave as logic 
 local oAcc as SQLSelect
 local cWhere:="a.balitemid=b.balitemid"
-local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" 
-local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"
+local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (m.depid=d.depid) " 
+local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd"
 	Default(@lMySave,false)
 	lSave:=lMySave
 
@@ -720,7 +721,15 @@ METHOD PostInit() CLASS General_Journal
 			oBank:Skip()
 		ENDDO 
 	endif
-	self:Server:aTeleAcc:=aTeleAcc 
+	self:Server:aTeleAcc:=aTeleAcc
+	// save all bankaccounts  
+	oBank := SQLSelect{"select accid from bankaccount",oConn} 
+	if oBank:RecCount>0
+		do WHILE !oBank:EOF
+			AAdd(self:aBankAcc,Str(oBank:AccID,-1))
+			oBank:Skip()
+		ENDDO 
+	endif
 	CurDate:=self:oDCmDat:SelectedDate 
 	IF USERTYPE=="D"
 		self:oCCTeleBankButton:Hide()
@@ -897,7 +906,7 @@ CLASS GeneralJournal1 INHERIT DataWindowExtra
 	export mXRate as float 
 	export oOwner as General_Journal
 	
-	declare method DebCreProc
+	declare method DebCreProc,SetMG
 RESOURCE GeneralJournal1 DIALOGEX  78, 72, 620, 280
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -2496,10 +2505,10 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 	PROTECT lEarmarking as LOGIC
 
 	EXPORT fTotal as FLOAT
-	PROTECT mCLNGiver as STRING
+	Export mCLNGiver as STRING
 	PROTECT cGiverName, cOrigName as STRING
 	EXPORT lMemberGiver as LOGIC
-	PROTECT DebAccNbr,DebAccId, DebCln, DebCurrency as STRING
+	PROTECT DebAccNbr,DebAccId, DebCln, DebCurrency,DebCategory as STRING
 	PROTECT DefBest, DefOms, DefGc, DefNbr, DefMlcd, DefCur,DefType as STRING,DefOvrd, DefMulti as logic
 	EXPORT m51_agift,m51_apost as int
 	PROTECT m51_assrec as int
@@ -2533,7 +2542,7 @@ method bankanalyze() class PaymentJournal
 	self:DefCur:=sCurr
 	self:DefMulti:=false 
 	oSel:=SQLSelect{"select giftsall,openall,singledst,fgmlcodes,syscodover,i.category as acctype,a.description,a.accnumber,a.currency,a.multcurr,m.persid "+;
-		"from bankaccount b left join account a on (a.accid=b.singledst) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid) "+;
+		"from bankaccount b left join account a on (a.accid=b.singledst and a.active=1) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid or m.depid=a.department) "+;
 		"where b.accid="+self:DebAccId,oConn}
 	if oSel:reccount>0  
 		self:GiftsAutomatic:=iif(oSel:GIFTSALL=1,true,false)
@@ -2564,7 +2573,7 @@ LOCAL oBox AS WarningBox
 LOCAL oHm as TempGift
 
 IF SELF:lEarMarking
-	self:oTrans:GoTo(nEarmarkTrans)
+// 	self:oTrans:GoTo(nEarmarkTrans)
 	self:ReSet()
 	self:cGiverName:=""
 	self:mCLNGiver:=""
@@ -2699,7 +2708,7 @@ METHOD DebSelect() CLASS PaymentJournal
 			ENDIF
 		endif
 	ENDIF
-	AAdd(aDebAccs,{"<Other>","00000"}) 
+	AAdd(aDebAccs,{"<Other>",""}) 
 	RETURN aDebAccs
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 	LOCAL oControl AS Control
@@ -2899,7 +2908,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 				self:DefBest := ""
 				self:DefOms := ""
 				self:DefNbr:=""
-				self:DefGc := ""
+				self:DefGc := "" 
+				self:DebCategory:=''
 			endif
 		ELSE
 			self:DebAccId := AllTrim(Transform(oControlEvent:Control:value,""))
@@ -2947,20 +2957,24 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 	local oPersCnt as PersonContainer
 
 	IF !self:lEarmarking
-		oAcc:=SQLSelect{"select accnumber,description from account where accid="+sproj,oConn}
+		self:nEarmarkTrans:=0 
+		self:nEarmarkSeqnr:=0
+		oAcc:=SQLSelect{"select a.accnumber,a.description,b.category as debcat from account a, balanceiten b where b.balitemid=a.balitemid and accid="+SPROJ,oConn}
 		if oAcc:RecCount>0
 			self:DebAccId:=sproj
 			self:DebAccNbr:=oAcc:ACCNUMBER
+			self:DebCategory:=oAcc:debcat
 			self:oDCDebitAccount:CurrentText  := oAcc:Description
 			self:ShowDebBal()
 		ENDIF
 	endif
 	* Search for next non-earmarked gift (BFM=O):
-	oTransEM:=SQLSelect{"select t.* from transaction t where accid="+sproj+" and bfm='O' and cre>deb order by transid,seqnr limit 1",oConn}
+	oTransEM:=SQLSelect{"select t.* from transaction t where accid="+sproj+" and bfm='O' and cre>deb"+;
+	iif(Empty(self:nEarmarkTrans),""," and transid*1000+seqnr>"+Str(self:nEarmarkTrans*1000+self:nEarmarkSeqnr,-1))+;
+	+" order by transid,seqnr limit 1",oConn}
 	IF oTransEM:RecCount<1
 		(WarningBox{self,oLan:WGet("Recording Gifts"),self:oLan:WGet("No "+iif(self:lEarmarking,"more ","")+"non-designated gifts found")}):Show()
 		if self:lEarmarking
-			self:lEarmarking:=false
 			self:lEarmarking:=FALSE
 			self:oDCmBST:Enable()
 			self:oDCmDat:Enable()
@@ -2968,9 +2982,11 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 			self:oDCmDebAmntF:Enable()
 			self:oDCmPerson:Enable()
 			self:mDAT := Today()
-			mBst := ""
-			mDebAmnt := 0
-			mDebAmntF := 0
+			self:mBst := ""
+			self:mDebAmnt := 0
+			self:mDebAmntF := 0
+			self:nEarmarkTrans:=0 
+			self:nEarmarkSeqnr:=0
 			oDCDebitAccount:CurrentItemNo := ;
 				oDCDebitAccount:FindItem(cBankPreSet,FALSE)
 			self:mCLNGiver :=  ""
@@ -3088,7 +3104,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	else
 		* Check in case of home front system if there is only one destination:
 		oSel:=SQLSelect{"select a.accid,a.description,a.accnumber,a.CURRENCY,a.multcurr,b.category as acctype,m.persid from balanceitem b, account a left join member on (a.accid=m.accid) "+;
-			" where a.giftalwd=1 and a.balitemid=b.balitemid",oConn}
+			" where a.giftalwd=1 and a.balitemid=b.balitemid and a.active=1",oConn}
 		if oSel:reccount=1
 			self:DefBest := Str(oSel:AccID,-1)
 			self:DefOms := oSel:Description
@@ -3177,6 +3193,7 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	if oSel:reccount>0
 		self:DebAccNbr:=oSel:ACCNUMBER 
 		self:DebCurrency:=oSel:CURRENCY
+		self:DebCategory:=oSel:category
 	else
 		return
 	ENDIF
@@ -3723,15 +3740,15 @@ METHOD EditButton( ) CLASS TransInquiry
 	// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
 	// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
 	self:oMyTrans:=SQLSelect{UnionTrans2("select t.*,if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
-		SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
+		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd from balanceitem b,account a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (m.depid=d.depid), transaction t left join person p on (p.persid=t.persid) "+;
 		" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" order by seqnr",Origdat,Origdat),oConn}
 
 	if self:oMyTrans:RecCount<1
-		LogEvent(,self:oMyTrans:sqlstring,"LogErrors")
+		LogEvent(self,self:oMyTrans:sqlstring,"LogErrors")
 	endif 
 	self:oHm:aMirror:={}
 	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF 
-		if self:oMyTrans:locked='1'
+		if self:oMyTrans:locked=1
 			lLocked:=true
 		endif
 		self:oHm:append()
@@ -3754,7 +3771,8 @@ METHOD EditButton( ) CLASS TransInquiry
 			self:oHm:creforgn :=  self:oMyTrans:creforgn
 		endif
 		self:oHm:GC := self:oMyTrans:GC
-		self:oHm:BFM:= self:oMyTrans:BFM
+		self:oHm:BFM:= self:oMyTrans:BFM 
+		self:oHm:INCEXPFD:=self:oMyTrans:incExpfd
 		self:oHm:FROMRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
 		self:oHm:lFromRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
 		self:oHm:OPP:=self:oMyTrans:OPP
@@ -3768,9 +3786,9 @@ METHOD EditButton( ) CLASS TransInquiry
 		self:oHm:PostStatus:=self:oMyTrans:PostStatus
 
 		* Add to mirror:
-		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type}
-		//                                                1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18
-		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE})
+		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd}
+		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19
+		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:incexpfd})
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
@@ -4156,6 +4174,10 @@ local oAccFrom,oAccTo as SQLSelect
 local cCurrorg,cCurrDest as string, lMultiOrg, lMultiDest as logic
 local cFromText, cToText as string 
 local oStmnt as SQLStatement
+local dCurrDate:=null_date as date
+local oCurr as Currency 
+local fExRate as float
+
 oTrans:=self:Server
 oTrans:GoTop()
 IF oTrans:EOF
@@ -4196,19 +4218,38 @@ ELSE
 		AllTrim(self:cTransferAccName)+"?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
 		RETURN
 	ENDIF
-ENDIF	
+ENDIF
 oTrans:SuspendNotification()
+if !cCurrorg==cCurrDest .and. !cCurrDest==sCurr
+	// determine latest date:
+	oTrans:GoTop()
+	do while !oTrans:EOF
+		if oTrans:DAT> dCurrDate
+			dCurrDate:=oTrans:DAT
+		endif
+		oTrans:Skip()
+	enddo
+	//ask for exchange rate from cCurr to cCurrDest on dCurDate
+	oCurr:=Currency{self:oLan:WGet("get exchange rate for transfering transactions"),cCurrDest}
+	fExRate:=oCurr:GetROE(sCurr,dCurrDate,true) 
+	if oCurr:lStopped
+		return
+	endif
+else
+	fExRate:=1.00
+endif
 self:STATUSMESSAGE("Transfering data, moment please")
 self:Pointer := Pointer{POINTERHOURGLASS}
 SQLStatement{"start transaction",oConn}:Execute() 
 oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
-iif(cCurrDest==sCurr .and.!lMultiDest,",debforgn=deb,creforgn=cre,currency='"+sCurr+"'","")+;
+iif(lMultiDest,"",",debforgn=deb*"+Str(fExRate,-1)+",creforgn=cre*"+Str(fExRate,-1)+",currency='"+cCurrDest+"'")+;
 " where "+self:cWhereSpec,oConn}
 oStmnt:Execute()
-if oStmnt:NumSuccessfulRows>0
+if oStmnt:NumSuccessfulRows>0 
+	oTrans:GoTop()
 	DO WHILE !oTrans:EOF
-		if ChgBalance(FromAccId,oTrans:DAT,-oTrans:DEB,-oTrans:Cre,-oTrans:DEBFORGN,-oTrans:CREFORGN,oTrans:Currency)
-			if ChgBalance(cTransferAcc,oTrans:DAT,oTrans:DEB,oTrans:Cre,oTrans:DEBFORGN,oTrans:CREFORGN,oTrans:Currency)
+		if ChgBalance(FromAccId,oTrans:DAT,-oTrans:DEB,-oTrans:Cre,-oTrans:DEBFORGN,-oTrans:CREFORGN,cCurrorg)
+			if ChgBalance(cTransferAcc,oTrans:DAT,oTrans:DEB,oTrans:Cre,Round(oTrans:DEB*fExRate,2),Round(oTrans:Cre*fExRate,2),cCurrDest)
 			else
 				lError:=true
 				exit
@@ -4249,11 +4290,11 @@ local cFilter as string
 self:cTransferAcc:=""
  
 cFilter:= 'a.accid<>"'+self:FromAccId+'"'
-if self:cCurr==sCurr
-	cFilter+=' and a.currency="'+sCurr+'"'
-else
-	cFilter+=' and (a.currency="'+self:cCurr+'" or a.currency="'+sCurr+'")'
-endif	
+// if self:cCurr==sCurr
+// 	cFilter+=' and a.currency="'+sCurr+'"'
+// else
+// 	cFilter+=' and (a.currency="'+self:cCurr+'" or a.currency="'+sCurr+'")'
+// endif	
 AccountSelect(self,"","Account to transfer to",FALSE,cFilter)
 
 RETURN
