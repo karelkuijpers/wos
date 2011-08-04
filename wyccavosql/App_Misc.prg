@@ -139,7 +139,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	*	Select only monthbalances in years after last balance year for standard currency: 
 	oStmnt:=SQLStatement{"drop temporary table if exists transsum",oConn}
 	oStmnt:Execute()
-	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,sum(deb) as debtot,sum(cre) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,round(sum(deb),2) as debtot,round(sum(cre),2) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
@@ -171,7 +171,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	*	Select only monthbalances in years after last balance year for foreign currency:
 	oStmnt:=SQLStatement{"drop temporary table if exists transsumf",oConn}
 	oStmnt:Execute()
-	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,sum(debforgn) as debtot,sum(creforgn) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,round(sum(debforgn),2) as debtot,round(sum(creforgn),2) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
@@ -1236,7 +1236,7 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 	RETURN cQuote+cRet+cQuote
 function InitGlobals() 
 	LOCAL oLan as Language
-// 	Local oPP as PPCodes
+	// 	Local oPP as PPCodes
 	LOCAL nMindate as int
 	LOCAL lRefreshMenu as LOGIC
 	LOCAL oReg as CLASS_HKLM
@@ -1360,13 +1360,13 @@ function InitGlobals()
 	endif
 
 	oLan:=Language{}
-		Maand := {	oLan:RGet('January',,"!"),oLan:RGet('February',,"!"),oLan:RGet('March',,"!"),;
-			oLan:RGet('April',,"!"),oLan:RGet('May',,"!"),oLan:RGet('June',,"!"),;
-			oLan:RGet('July',,"!"),oLan:RGet('August',,"!"),oLan:RGet('September',,"!"),;
-			oLan:RGet('October',,"!"),oLan:RGet('November',,"!"),oLan:RGet('December',,"!")}
-		PaymentDescription:={;
-			oLan:RGet("Donation",,"!"),oLan:RGet("Gift",,"!"),oLan:RGet("Invoice",,"!"),;
-			oLan:RGet("subscription",,"!")}
+	Maand := {	oLan:RGet('January',,"!"),oLan:RGet('February',,"!"),oLan:RGet('March',,"!"),;
+		oLan:RGet('April',,"!"),oLan:RGet('May',,"!"),oLan:RGet('June',,"!"),;
+		oLan:RGet('July',,"!"),oLan:RGet('August',,"!"),oLan:RGet('September',,"!"),;
+		oLan:RGet('October',,"!"),oLan:RGet('November',,"!"),oLan:RGet('December',,"!")}
+	PaymentDescription:={;
+		oLan:RGet("Donation",,"!"),oLan:RGet("Gift",,"!"),oLan:RGet("Invoice",,"!"),;
+		oLan:RGet("subscription",,"!")}
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
 	
@@ -1399,7 +1399,7 @@ function InitGlobals()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
-   if !SQLSelect{"select count(*) as total from department",oConn}:total=="0"
+	if !SQLSelect{"select count(*) as total from department",oConn}:total=="0"
 		Departments:=true
 	endif
 
@@ -1476,8 +1476,19 @@ LOCAL alt:=FALSE as LOGIC
 	NEXT
 	RETURN ((sum % 10) == 0)
 Function IsMod11(cGetal as string) as logic
-// check if cGetal is  modulo 11 for dutch betalingskenmerk 
-return (cGetal==Mod11(SubStr(cGetal,2)))
+local nL:=Len(cGetal) as int
+// check if cGetal is  modulo 11 for dutch betalingskenmerk
+if nL=7       // 7 is fixed length without check digit
+	return true
+endif
+if nL<7
+	return false
+endif
+if nL=8 .or.nL>=16
+	return (cGetal==Mod11(SubStr(cGetal,2))) 
+else
+	return (cGetal==Mod11(SubStr(cGetal,2))) 	
+endif
 Function IsModulus11(cGetal as string) as logic
 local lres as usual
 lres:=Modulus11(SubStr(cGetal,1,Len(cGetal)-2))
@@ -1783,7 +1794,7 @@ LOCAL ptrHandle
 local oStmnt as SQLStatement
 *	Logging of info to table log 
 oStmnt:=SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"',"+sIdentChar+"userid"+sIdentChar+"='" +LOGON_EMP_ID+"'",oConn}
+iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+AddSlashes(strText)+"',"+sIdentChar+"userid"+sIdentChar+"='" +LOGON_EMP_ID+"'",oConn}
 oStmnt:execute()
 If !Empty(oStmnt:status) 
 	// write to file
@@ -1809,17 +1820,12 @@ If !Empty(oStmnt:status)
 	FClose(ptrHandle) 
 endif
 if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
-	ErrorBox{oWindow,"MySQL server has gone away"}:Show()
+	ErrorBox{oWindow,"MySQL server has gone away:"+CRLF+strText}:Show()
 	if !Empty(oStmnt:status) 
 		break
 	endif
 endif
 
-RETURN true
-FUNCTION LogEventNew(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
-*	Logging of info to table log 
-SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+strText+"'",oConn}:execute()
 RETURN true
 FUNCTION LTrimZero(cString as STRING) as STRING
 * Left trim leading zeroes in string
@@ -1917,8 +1923,12 @@ FUNCTION Mod11(cGetal as string) as string
 LOCAL aGew:={10,5,8,4,2,1,6,3,7,9}
 LOCAL nL,i, nCheck as int
 nL:=Len(cGetal)
-if nL<13
-	cGetal:=Str(Mod(nL,10),1)
+if nL<7
+	return cGetal // it should be fixed 7 without check digit and length but we assume 7+checkdigit
+endif
+if nL>7 .and.nL<13
+	cGetal:=Str(Mod(nL,10),1)+cGetal       // add length digit
+	nL++
 endif
 FOR i:=1 to nL
 	nCheck:=nCheck+Val(SubStr(cGetal,i,1))*aGew[Mod(i-1,10)+1]
@@ -2030,6 +2040,7 @@ PROTECT cBuffer as STRING
 PROTECT cDelim as STRING
 PROTECT nStart:=0, nIncr:=0 as int
 PROTECT ptrHandle
+protect Eof as logic
 METHOD Close CLASS MyFile
 	FClose(ptrHandle)
 	ptrHandle:=null_object
@@ -2040,36 +2051,55 @@ RETURN
 	
 	
 		
+Access FEof() class MyFile
+return self:Eof
 METHOD FReadLine() CLASS MyFile
 	LOCAL nSt,nLen,nPos:=0 as int
 	LOCAL cLine:="" as STRING
-	nPos:=At3(cDelim, cBuffer,nStart)
+	nPos:=At3(cDelim, self:cBuffer,self:nStart)
 	IF nPos==0
 		* read next buffer:
-		cLine:=SubStr(cBuffer,nStart+1)
-	   cBuffer:=FReadStr(ptrHandle,4096)
-		IF Empty(cBuffer)
-			RETURN null_string
+		cLine:=SubStr(self:cBuffer,self:nStart+1)
+		self:cBuffer:=UTF2String{FReadStr(ptrHandle,4096)}:Outbuf
+		IF Empty(self:cBuffer)
+			if FEof(self:ptrHandle) .and. Empty(cLine)
+				self:Eof:=true
+			endif
+// 			RETURN null_string
 		ENDIF
-		nStart:=0
-		nPos:=At3(cDelim, cBuffer,nStart)
+		self:nStart:=0
+		nPos:=At3(cDelim, self:cBuffer,self:nStart)
 		IF nPos==0
-			RETURN null_string
+// 			RETURN null_string 
 		ENDIF
 	ENDIF
-	nSt:=nStart+1
-	nLen:=nPos-nStart-1
-	nStart:=nPos+nIncr
-	RETURN cLine+SubStr(cBuffer,nSt,nLen)
+	nSt:=self:nStart+1
+	nLen:=nPos-self:nStart-1
+	self:nStart:=nPos+nIncr
+	RETURN cLine+SubStr(self:cBuffer,nSt,nLen)
 METHOD Init(oFr) CLASS MyFile
+	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
+	local bufferPtr as string  
+
 	ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
 	IF ptrHandle = F_ERROR
 		(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
+		self:Eof:=true
 		RETURN self
 	ENDIF
-   cBuffer:=FReadStr(ptrHandle,4096)
+	bufferPtr:= FReadStr(ptrHandle,4096)
+	if SubStr(bufferPtr,1,3) == UTF8
+// 		self:CP:=1
+		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
+	elseif SubStr(bufferPtr,1,2)==UTF16
+// 		self:CP:=2
+		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
+	else
+		self:cBuffer:=bufferPtr
+	endif
 	IF ptrHandle = F_ERROR.or.(cBuffer==null_string .and.FEof(ptrHandle))
 		(ErrorBox{,"Could not read file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
+		self:Eof:=true
 		RETURN self
 	ENDIF
 	IF CHR(13)+CHR(10) $ cBuffer
@@ -2337,12 +2367,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2350,6 +2374,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
