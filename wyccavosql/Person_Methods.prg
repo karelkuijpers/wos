@@ -1247,7 +1247,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(self:mExternid)+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
 			oSel:Execute()
 			IF oSel:RecCount>0
-				cError :=self:oLan:WGet("Person")+" "+GetFullName(oSel:persid,2)+" "+self:oLan:WGet("has already external id")+" "+self:mExternid+"!"
+				cError :=self:oLan:WGet("Person")+" "+GetFullName(Str(oSel:persid,-1),2)+" "+self:oLan:WGet("has already external id")+" "+self:mExternid+"!"
 				self:oDCmExternid:SetFocus()
 				lValid:=false
 			ENDIF
@@ -1549,7 +1549,8 @@ METHOD Adres_Analyse(aWord as array, nStartAnalyse:=1 as int,lZipCode:=false ref
 *
 LOCAL i,j,wp,l,  nNumPosition:=0, nZipPosition, nCityPosition, nStart, nStartAddress as int
 LOCAL aStreetPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY 
-local lBelgium as logic
+local lBelgium as logic 
+local aDrWord:={} as array
 
 * vaststellen of postkode gevonden:
 wp:=Len(aWord)
@@ -1667,6 +1668,11 @@ ENDIF
 IF Empty(nStartAddress)
 	RETURN wp+1
 ENDIF
+// Find zip-code:
+If CountryCode="31" .and. !lZipCode .and. lCity .and. lAddress
+	aDrWord:=ExtractPostCode(self:m51_city,self:m51_AD1,self:m51_pos)
+	self:m51_pos:=aDrWord[1]
+endif
 RETURN nStartAddress
 METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CLASS PersonContainer
 	* Disassambly of a assembled name field into lastname, initials, salutation and middlename (and address)
@@ -3700,10 +3706,12 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	endif
 	
 
-	oDue:=SQLSelect{"select d.dueid,s.personid,s.accid,d.amountinvoice,d.invoicedate,d.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+SQLAccType()+" as type,"+;
+	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,du.invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
+	SQLAccType()+" as type,"+;
 		"p.datelastgift,"+SQLFullName(0,'p')+" as personname "+;
-		" from account a left join member m on (a.accid=m.accid),balanceitem b,person p, dueamount d,subscription s "+;
-		"where s.subscribid=d.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
+		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
+		"balanceitem b,person p, dueamount du,subscription s "+;
+		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
 		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
@@ -3956,7 +3964,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 		self:Pointer := Pointer{POINTERARROW}
 		(InfoBox{self,"Producing CLIEOP03 file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" amounts"}):Show()
-		LogEvent(self, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(GrandTotal,-1)+")")
+		LogEvent(self, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(fSum,-1)+")")
 
 	endif
 	RETURN true
