@@ -1,4 +1,4 @@
-STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCnt ref int) as void pascal
+STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCnt ref int, nTot ref int) as void pascal
 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, DATUM as date
 	local oImpTr as SQLSelect
 	local cStatement as string
@@ -31,7 +31,8 @@ STATIC function ImpCZR(aMbrAcc as Array, SamAcc as String, PMCAcc as String, nCn
 	docid:=AllTrim(CZR->FieldGetSym(#DOKLAD))
 	// Check if transaction already present:
 	cOrigin:="WD"+Pad(docid,9)
-	cTransnr:=StrZero(CZR->ICO,10,0) 
+	cTransnr:=StrZero(CZR->ICO,10,0)
+	nTot++ 
 
 // Search for two lines (debit and credit) equal to transaction to be imported:
 	oImpTr:=SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and transactnr='"+cTransnr+"' and "+; 
@@ -103,6 +104,7 @@ export mxrate as float
 export oLan as Language
 protect curimpid as int 
 protect lv_imported as int
+protect aMessages:={} as array  // messages about successfully imported files
 
 declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,ImportBatchCZR,SkipBatch 
 METHOD Close() CLASS ImportBatch
@@ -149,7 +151,7 @@ FOR nf:=1 TO Len(aImportFiles)
 					endif
 				ENDIF
 			ENDIF
-		elseif cFileName="AUSTRIADONATIONS"
+		elseif cFileName="AUSTRIADONATIONS.TXT"
 			if self:ImportAustria(FileSpec{cFileName},dBatchDate,PadR(cFileName,11),true)   // test if correct fileformat
 				loop
 			endif		
@@ -236,7 +238,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		SQLStatement{"commit",oConn}:execute()
 	endif
 	oImpB:=SQLSelect{"select a.description as accountname,a.accid,a.currency as acccurrency,a.multcurr,a.accnumber,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,i.*"+;
-	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
+	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
 	"where i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+"' order by imptrid",oConn}
 	if oImpB:reccount<1
 	   LogEvent(,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
@@ -303,7 +305,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			cExId:=oImpB:EXTERNID
 		endif
 		* Add TO mirror:
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE})
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE,''})
 		cOms:=oImpB:descriptn 
 		self:curimpid:=oImpB:imptrid 
 		oImpB:Skip()
@@ -322,16 +324,16 @@ RETURN true
 METHOD Import() CLASS ImportBatch
 	* Import of batches of  transaction data into ImportTrans.dbf
 	LOCAL oBF AS FileSpec
-	LOCAL nf,lv_aant_toe:=0,lv_imported_tot:=0,  lv_aant_vrw:=0 as int
+	LOCAL nf,lv_aant_toe:=0,lv_imported_tot:=0,  lv_aant_vrw:=0,i as int
 	LOCAL cFileName, cOrigin AS STRING
 	LOCAL nImportDate AS STRING, dBatchDate AS DATE
 	LOCAL oWarn as warningbox
 	local oStmnt as SQLStatement
 	Local oLock as SQLSelect
-	local aFiles:={} as array // files to be deleted
+	local aFiles:={} as array // files to be deleted 
 	// force only one person is importing: 
 	SQLStatement{"start transaction",oConn}:Execute()
-	oLock:=SQLSelect{"select importfile from ImportLock where importfile='telelock' for update",oConn}
+	oLock:=SQLSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
 
 	self:GetImportFiles() 
 	FOR nf:=1 to Len(aImportFiles)
@@ -400,9 +402,11 @@ METHOD Import() CLASS ImportBatch
 		next
 	endif
 	SQLStatement{"commit",oConn}:Execute()  // release lock
-	LogEvent(self,self:oLan:WGet("Import of batches")+': '+AllTrim(Str(lv_aant_toe,4))+" "+self:oLan:WGet("batch file")+iif(lv_aant_toe>1,"s","")+" "+self:oLan:WGet("with")+" "+Str(lv_imported,-1)+" "+self:oLan:WGet("transactions imported"))
-	IF lv_aant_toe>0 
+	IF Len(self:aMessages)>0
 		(InfoBox{,self:oLan:WGet("Import of batches"),AllTrim(Str(lv_aant_toe,4))+" "+self:oLan:WGet("batch file")+if(lv_aant_toe>1,"s","")+" "+self:oLan:WGet("with")+" "+Str(lv_imported,-1)+" "+self:oLan:WGet("transactions imported")}):Show()
+		for i:=1 to Len(self:aMessages)
+			LogEvent(self,self:aMessages[i],"Log")
+		next 
 	ENDIF
 
 
@@ -461,7 +465,7 @@ elseif Testformat
 	return true
 ENDIF
 
-osel:=SQLSelect{"select a.accnumber from bankAccount b,account a where a.accid=b.accid",oConn}
+oSel:=SQLSelect{"select a.accnumber from bankaccount b,account a where a.accid=b.accid",oConn}
 if oSel:RecCount<1
 	(ErrorBox{,self:oLan:WGet("Specify first a bank account with its general ledger account")}):show() 
 	ptrHandle:Close()
@@ -477,7 +481,7 @@ maxPt=aPt[Len(aPt)]
 cBuffer:=ptrHandle:FReadLine()
 aFields:=Split(cBuffer,cDelim)
 linenr=1 
-oImpTr:=SQLSelect{"select imptrid from ImportTrans where origin='"+cOrigin+"' and 'transactnr'=?",oConn} 
+oImpTr:=SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and 'transactnr'=?",oConn} 
 oParent:Pointer := Pointer{POINTERHOURGLASS} 
 
 DO WHILE Len(AFields)>1
@@ -577,6 +581,8 @@ self:oParent:Pointer := Pointer{POINTERARROW}
 if lError
 	return false
 endif
+AAdd(self:aMessages, "Imported Austria file:"+oFr:FileName+" "+Str(nCnt,-1)+" transactions imported ")
+
 RETURN true
 
 METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testformat:=false as logic) as logic CLASS ImportBatch
@@ -591,7 +597,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	LOCAL aStruct:={} AS ARRAY // array with fieldnames
 	LOCAL aFields:={} AS ARRAY // array with fieldvalues
 	LOCAL ptDate, ptDoc, ptTrans, ptAcc, ptDesc, ptDeb, ptCre, ptDebF, ptCreF,ptCur, ptAss,ptAccName, ptPers,ptPPD, ptRef,ptSeq, ptPost as int
-	LOCAL aPt:={} as ARRAY, maxPt , linenr:=0 as int
+	LOCAL aPt:={} as ARRAY, maxPt , linenr:=0, nCnt:=0 as int
 	local osel as SQLSelect 
 	local cStatement as string
 	local oStmnt as SQLStatement
@@ -679,12 +685,13 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
-			self:lv_imported++
+			self:lv_imported++ 
+			nCnt++
 		ENDIF
 		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
-	ptrHandle:Close()
+	AAdd(self:amessages,"Imported batch file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(linenr,-1)+" transactions")
 
 	RETURN true
 method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
@@ -699,7 +706,7 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 	LOCAL ptDate, ptDoc, ptTrans, ptAcc, ptDesc, ptDeb, ptCre, ptAss,ptAccName, ptPers as int
 	LOCAL aPt:={} as ARRAY, maxPt , linenr:=0 as int
 	Local aMbrAcc:={} as array 
-	Local i, nCnt:=0 as int, LastDate:=Today()-200 as date 
+	Local i, nCnt:=0,nTot:=0 as int, LastDate:=Today()-200 as date 
 	Local aMissingFld:={},aNeededFld:={"ICO","POPIS","CASTKA","CASTKAM","DAU","FIRMA","MD_UCET","D_UCET","DOKLAD"} as array
 	
 	oImpCZR:=DbFileSpec{oFr:FullPath,"DBFCDX"}
@@ -755,11 +762,11 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 			Lastdate-=31
 			CZR->DbSetFilter({||CZR->DATUM > LastDate})
 			CZR->DbGotop()
-			CZR->DbEval({|| ImpCZR(aMbrAcc,SamAcc,PMCAcc,@nCnt)})
+			CZR->DbEval({|| ImpCZR(aMbrAcc,SamAcc,PMCAcc,@nCnt,@nTot)})
 			CZR->DBCLOSEAREA()
 			DbSetRestoreWorkarea (false)
 			self:lv_imported+=nCnt
-
+        	AAdd(self:aMessages,"Imported CZ file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 			return true
 		endif
 	ENDIF
@@ -776,7 +783,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	LOCAL transdate, oppdate,rppdate,cmsdate as date
 	LOCAL oAfl AS UpdateHouseHoldID
 	LOCAL datelstafl AS DATE
-	LOCAL nAnswer, nCnt as int 
+	LOCAL nAnswer, nCnt,nTot as int 
 	lOCAL cPmisCurrency as string, lUSD as logic 
 	local oCurr as CURRENCY 
 	local RPP_date as date
@@ -899,6 +906,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		housecode:="" 
 		REFERENCE:=""
 		transtype:="GT"
+		nTot++
 		DO WHILE childfound
 			ChildName:=PMISDocument:ChildName
 			DO CASE
@@ -988,9 +996,16 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			ENDIF
 			IF !Empty(housecode) .and.Empty(accnbrdest)
 				// search corresponding member:
-				osel:=SQLSelect{"select a.accnumber from account a,member m where m.householdid='"+housecode+"' and a.accid=m.accid",oConn}
-				if osel:RecCount>0 
-					accnbrdest:=osel:ACCNUMBER
+// 				osel:=SQLSelect{"select a.accnumber from account a,member m where m.householdid='"+housecode+"' and a.accid=m.accid",oConn}
+				osel:=SQLSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense from member m left join account ad on (ad.accid=m.accid) left join department d on (m.depid=d.depid) left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where m.householdid='"+housecode+"'",oConn}
+				if osel:RecCount>0
+					if !Empty(osel:accdirect) 
+						accnbrdest:=osel:accdirect
+					elseif transtype="CN" .or. transtype="CP".or.transtype="MM"
+  						accnbrdest:=Transform(osel:accincome,"")
+					else
+  						accnbrdest:=Transform(osel:accexpense,"")
+					endif
 				ENDIF
 			ENDIF
 
@@ -1063,6 +1078,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	ENDDO
 	FClose(ptrHandle)
 	oParent:Pointer := Pointer{POINTERARROW}
+  	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 
 	RETURN true
 METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch
