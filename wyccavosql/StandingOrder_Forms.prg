@@ -367,7 +367,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:mdocid := oPer:docid 
 		self:DATLTSBOEK:=oPer:lstrecording
 		self:oStOrdL := SQLSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,m.co,m.persid as persid"+;
-			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid)"+;
+			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid or m.depid=a.department)"+;
+			" left join department d on (d.depid=a.department)"+;
 			" where l.stordrid="+Str(oPer:Stordrid,-1)+" order by seqnr",oConn}
 		oOrdLnH:=self:oSFStOrderLines:Server
 		oOrdLnH:aMirror:={}
