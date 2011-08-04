@@ -1,5 +1,3 @@
-FUNCTION __DBG_EXP( ) AS USUAL PASCAL
-RETURN ( NIL )
 CLASS CARDFILE INHERIT Icon
 resource CARDFILE Icon C:\CAVO28\CRDFLE07.ICO
 METHOD Init() CLASS CARDFILE
@@ -33,8 +31,8 @@ resource FOLDERCLOSE Icon C:\CAVO28\FOLDRS01.ICO
 CLASS FOLDERCLOSE INHERIT Icon
 METHOD Init() CLASS FOLDERCLOSE
    super:init(ResourceID{"FOLDERCLOSE", _GetInst()})
-CLASS FOLDEROPEN INHERIT Icon
 resource FOLDEROPEN Icon C:\CAVO28\FOLDRS02.ICO
+CLASS FOLDEROPEN INHERIT Icon
 METHOD Init() CLASS FOLDEROPEN
    super:init(ResourceID{"FOLDEROPEN", _GetInst()})
 STATIC GLOBAL hEdit AS PTR
@@ -84,7 +82,7 @@ CLASS ImportMapping INHERIT DataWindowExtra
 	PROTECT aMapping:={} AS ARRAY // mapping info (Target Fieldnbr, {Source fieldsnbr1, Source field Nbr 2, ...}}
 	EXPORT lImportAutomatic:=true,lExtra as LOGIC // In case of General Import: no asking for confirmation per record
 	PROTECT oEdit as DataWindowExtra 
-	protect cSelectStatement as string // selection of existing person 
+	protect cSelectStatement as string // selection of existing person  
 // 	protect oPersExist as SQLSelect
 	
 	declare method CongruenceScore , SplitSurName,SyncPerson,NextImport,MapItems,SearchCorrespondingPersons,Import,ComposeImportName
@@ -191,7 +189,7 @@ Method ComposeSelect() class ImportMapping
 	// compose statement for retrieval of existing person for synchronising with imported person
 	LOCAL i, j, titPtr, typPtr as int  
 	Local ID as string,IDs as Symbol
-	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where p.?" as string, lExtra,lBank,lCod as logic
+	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where p."+sIdentchar+"?"+sIdentchar as string, lExtra,lBank,lCod as logic
 	FOR i:=1 to Len(self:aMapping)
 		ID:=Symbol2String(self:aMapping[i,1])
 		IDs:=String2Symbol(SubStr(ID,2))
@@ -202,14 +200,14 @@ Method ComposeSelect() class ImportMapping
 		elseIF IDs=#Cod
 			lCod:=true
 		else
-			CFields+=iif(Empty(CFields),'',',')+'p.'+SubStr(ID,2)
+			CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+SubStr(ID,2)+sIdentchar
 		endif
 	next
 	if lExtra
-		CFields+=iif(Empty(CFields),'',',')+'p.propextr'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'propextr'+sIdentchar
 	endif
 	if lCod.or.!Empty(DefaultCod)
-		CFields+=iif(Empty(CFields),'',',')+'p.mailingcodes'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'mailingcodes'+sIdentchar
 	endif
 	if lBank
 		CFields+=iif(Empty(CFields),'',',')+"group_concat(b.banknumber separator ',') as bankaccounts"
@@ -217,24 +215,24 @@ Method ComposeSelect() class ImportMapping
 		cGroup:=" group by p.persid"
 	endif
 	if AtC('persid',CFields)=0   // always retrieve identifier persid
-		CFields+=iif(Empty(CFields),'',',')+'p.persid'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'persid'+sIdentchar
 	endif
 	if AtC('datelastgift',CFields)=0   // always retrieve identifier datelastgift
-		CFields+=iif(Empty(CFields),'',',')+'p.datelastgift'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'datelastgift' +sIdentchar
 	endif
 	if AtC('firstname',CFields)=0   // always retrieve identifier firstname for congruence score
-		CFields+=iif(Empty(CFields),'',',')+'p.firstname'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'firstname'+sIdentchar
 	endif
 	if AtC('initials',CFields)=0   // always retrieve identifier initials for  congruence score
-		CFields+=iif(Empty(CFields),'',',')+'p.initials'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'initials' +sIdentchar
 	endif
 	if AtC('creationdate',CFields)=0   // always retrieve identifier creationdate
-		CFields+=iif(Empty(CFields),'',',')+'p.creationdate'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'creationdate' +sIdentchar
 	endif
 	if AtC('alterdate',CFields)=0   // always retrieve identifier alterdate
-		CFields+=iif(Empty(CFields),'',',')+'p.alterdate'
+		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'alterdate'+sIdentchar
 	endif
-	self:cSelectStatement:="select "+CFields+cFrom+cWhere+cGroup
+	self:cSelectStatement:="select "+CFields+cFrom+cWhere+cGroup 
 	return
 
 ACCESS ConfirmBox() CLASS ImportMapping
@@ -757,13 +755,15 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				ExId:=ZeroTrim(ExId)
 			endif
 			if !Empty(ExId)
-				oSel:= SQLSelect{"select persid,externid from "+self:TargetDB+" where externid='"+ExId+"'",oConn}
+				oSel:= SQLSelect{"select persid,externid from "+Lower(self:TargetDB)+" where externid='"+ExId+"'",oConn}
 				if oSel:reccount>0
 					// Person already in database, so update it:
 					self:lExists:=true 
 					self:lOverwrite:=self:oDCReplaceDuplicates:Checked 
 					oPersCnt:m51_exid:=ExId
-					oPersCnt:PERSID:=str(oSel:persid,-1)
+					oPersCnt:PERSID:=str(oSel:persid,-1) 
+				else
+					self:lExists:=true
 				endif
 			endif
 		endif  
@@ -1490,12 +1490,13 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	// 	pers_propextra:{AllTrim(oPersProp:NAME), oPersProp:ID,oPersProp:TYPE,Lower(oPersProp:VALUES)} 
 	// type: 0:textbox,1:checkbox;3:drop down list
 
-	// select existing person
+	// select existing person 
+	
 	if !Empty(oPersCnt:PERSID)
 		oPersExist:=SQLSelect{StrTran(self:cSelectStatement,'?',"persid="+oPersCnt:PERSID),oConn}
 	else
 		oPersExist:=SQLSelect{StrTran(self:cSelectStatement,'?',"externid="+oPersCnt:m51_exid),oConn}
-	endif
+	endif 
 	if oPersExist:RecCount<1
 		return false
 	endif
