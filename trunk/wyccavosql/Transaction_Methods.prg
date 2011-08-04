@@ -321,7 +321,7 @@ oReport:PrintLine(@nRow,@nPage," ",Heading)
 
 RETURN
 function AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre as float,deb as float,debforgn as float,creforgn as float,;
-Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as date,mDocId as string,cTransnr as string,nSeqnbr ref int,poststatus:=2 as int) as logic
+		Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as date,mDocId as string,cTransnr as string,nSeqnbr ref int,poststatus:=2 as int) as logic
 	// Add current record to Gifts Income/Expense in case of assessable gift to liability member
 	LOCAL mOms as STRING
 	LOCAL nCre,nCreF as FLOAT
@@ -582,9 +582,9 @@ METHOD append() CLASS General_Journal
 	oHm:CURRENCY:=sCurr
 	oHm:FROMRPP:=oHm:lFromRPP  // duplicate fromrpp-indication
 	oHm:OPP:=cOPP
-	&& add empty row to mirror:
-	AAdd(oHm:aMirror,{'           ',oHm:deb,oHm:cre,'  ',' ',oHm:Recno,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"",""})
 	oHm:DESCRIPTN:=cOms
+	&& add empty row to mirror:
+	AAdd(oHm:aMirror,{'           ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD})
 RETURN true
 METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
 * Update of corresponding due amounts:
@@ -867,8 +867,8 @@ METHOD FillTeleBanking() as void pascal CLASS General_Journal
 	Local CurRate as Float
 local oAcc as SQLSelect
 local cWhere:="a.balitemid=b.balitemid"
-local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" 
-local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"
+local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid)" 
+local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"
 	IF self:Server:Lastrec > 0
 		SELF:Reset()
 	ENDIF
@@ -1002,8 +1002,8 @@ LOCAL cSearch as STRING
 Local CurRate as Float 
 local oAcc as SQLSelect
 local cWhere:="a.balitemid=b.balitemid"
-local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" 
-local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"
+local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid)" 
+local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"
 oHm := self:Server
 IF !Empty(self:oTmt:m56_accid)
 	cWhere+=" and a.accid = "+self:oTmt:m56_accid 
@@ -1057,9 +1057,10 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		oHm:AccDesc := oAccount:Description
 		oHm:ACCNUMBER:=oAccount:ACCNUMBER
 		oHm:KIND:=Upper(oAccount:accounttype)
-		if !oHm:KIND=="M"
-			oHm:gc:=" "
-		else
+		oHm:incexpfd:=oAccount:incexpfd
+// 		if !oHm:KIND=="M" .and.!oHm:KIND='K'
+// 			oHm:gc:=" "
+		if oHm:KIND=="M" .or.oHm:KIND='K'
 			cPersId:=Str(oAccount:persid,-1)
 		endif
 		oHm:CURRENCY:= oAccount:CURRENCY 
@@ -1071,7 +1072,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	IF Empty(cRek)
 		oHm:KIND := " "
 		oHm:AccDesc := ""
-		oHm:Gc := ""
+		oHm:gc := ""
 		oHm:AccNumber:=cRek
 	ENDIF
 	IF oHm:FROMRPP .and. !Empty(CurGC)
@@ -1079,7 +1080,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		oHm:GC:=CurGC
 	ENDIF
 	* save in mirror-array
-// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
+	// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
 	ThisRec:=oHm:RECNO
 	oHm:aMirror[ThisRec,1]:=AllTrim(cRek)
 	oHm:aMirror[ThisRec,4]:=oHm:Gc
@@ -1092,6 +1093,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	oHm:aMirror[ThisRec,16]:=AllTrim(oHm:DESCRIPTN)
 	oHm:aMirror[ThisRec,17]:= cPersId
 	oHm:aMirror[ThisRec,18]:= cType
+	oHm:aMirror[ThisRec,19]:= oHm:incexpfd
 	self:oSFGeneralJournal1:AddCurr()
 	IF !oHm:lFilling.and.!Empty(cRek)
 		//		oHm:SuspendNotification() 
@@ -1133,16 +1135,12 @@ METHOD RegPerson(oCLN) CLASS General_Journal
 		ELSE
 			SELF:lMemberGiver := FALSE
 		ENDIF
-		// 	oCLN:ResetNAW()
+		if !self:server:lFilling
+			self:lStop:=false
+		endif
 	ELSE
-		//	self:mCLNGiver :=  null_string
-		//	SELF:cGiverName := NULL_STRING
 		self:oDCmPerson:Value := self:cOrigName	
-		//	self:lMemberGiver := FALSE  
 	ENDIF
-	if !self:Server:lFilling
-		self:lStop:=false
-	endif
 
 	RETURN NIL
 METHOD ReSet() CLASS General_Journal
@@ -1592,10 +1590,29 @@ DO WHILE lValid .and. i < Len(oHm:aMirror)
 					lValid := FALSE
 					cError := self:oLan:WGet('Donor no member, thus MG not allowed')
 				ENDIF
+			elseif oHm:aMirror[i,19]='I'
+				if !self:lMemberGiver .and.   oHm:aMirror[i,4] = 'CH'
+					cError:=self:oLan:WGet('CH not allowed for income account')
+					lValid := FALSE
+				elseif oHm:aMirror[i,4] = 'PF' 
+					cError:=self:oLan:WGet('PF not allowed for income account')
+					lValid := FALSE
+				endif
 		   ENDIF
-		ELSEIF !Empty(oHm:aMirror[i,4]).and.!oHm:aMirror[i,4]=="OT" //GC
-			lValid := FALSE
-			cError := self:oLan:WGet("Assessment code exclusively for member")
+		ELSE
+			if oHm:aMirror[i,5] = "K"   // member department account, not income
+				if oHm:aMirror[i,19]='E' .and. !oHm:aMirror[i,4] == 'CH'
+					lValid := FALSE
+					cError := self:oLan:WGet("Only assessment code CH allowed for expense account")
+					exit
+				elseif oHm:aMirror[i,19]='F' .and. !oHm:aMirror[i,4] == 'PF'
+					lValid := FALSE
+					cError := self:oLan:WGet("Only assessment code PF allowed for fund account")
+				endif
+			elseIF !Empty(oHm:aMirror[i,4]).and.!oHm:aMirror[i,4]=="OT" //GC
+				lValid := FALSE
+				cError := self:oLan:WGet("Assessment code exclusively for member")
+			endif
 		ENDIF 
 	elseif oHm:aMirror[i,1]==sToPP .and.!Empty(sToPP)
 		oHm:GoTo(i)
@@ -1636,7 +1653,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	local oStmnt as SQLStatement 
 	local oPers,oMyTele,oMyImp,oAccFld,oMBal,oDue as SQLSelect
 	local cAccs as string   // accounts used in transaction 
-	local cDueAccs as string	// accounts for locking dueamounts
+	local cDueAccs as string	// accounts for locking dueamounts 
+	local aMyBank:=self:abankacc as array
 	oHm := self:Server
 	IF !SELF:fTotal==0
 		(ErrorBox{self,self:oLan:WGet("Sum of transactions not equal zero")}):show()
@@ -1862,16 +1880,19 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
 						endif
 						*	Update monthbalance value of corresponding account:
-						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre
-							lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,;
-							self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre 
+							if oHm:gc='AG' .and. (oHm:FROMRPP .or. AScan(oHm:AMirror,{|x|!x[6]==oHm:AMirror[i,6].and.x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})>0)
+								// assessable gift not from income or expense account:
+								lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,;
+									self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+							endif
 							if !lError
 								if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
 									// correct rabat assessment if needed: 
 									if Empty(oHm:gc) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
 										oAccFld:=SQLSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
 											AllTrim(oHm:REFERENCE)+"'",oConn}
-										if oAccFld:category==LIABILITY
+										if oAccFld:category==liability
 											if ChgBalance(SEXP, self:mDAT,Round(oHm:Cre - oHm:Deb,DecAantal),0,Round(oHm:Cre - oHm:Deb,DecAantal),0,sCURR)
 												nSeqnbr++ 
 												cStatement:="insert into transaction set "+;
@@ -1933,8 +1954,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				if !lError
 					//	Update balances of subscriptions/due amounts/ donations:
 					IF	!Empty(self:mCLNGiver)
-						IF	(oHm:KIND= 'D'	.or. oHm:KIND=	'A' .or.	oHm:KIND	= 'F'	.or.(oHm:deb >	oHm:cre .and.oHm:gc<>'CH' ))			 // storno also
-							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:cre)
+						IF	(oHm:KIND= 'D'	.or. oHm:KIND=	'A' .or.	oHm:KIND	= 'F'	.or.(oHm:Deb >	oHm:Cre .and.oHm:gc<>'CH' ))			 // storno also
+							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:Cre)
 							if !Empty(cError)
 								lError:=true
 								exit
@@ -1947,7 +1968,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 					ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
 					SQLStatement{"rollback",oConn}:Execute()
-// 					Break
+					// 					Break
 					return false
 				endif
 			next
@@ -1964,31 +1985,31 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			oStmnt:=SQLStatement{"commit",oConn}
 			oStmnt:Execute() 
 			if Empty(oStmnt:Status) 
-			IF !Empty(self:mCLNGiver)
-				*  update data of giver:
-				i:= AScan(oHm:AMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
-				IF i>0 
-					oPers:=SQLSelect{"select mailingcodes,datelastgift from person where persid="+self:mCLNGiver,oConn}
-					cCodNew:=oPers:mailingcodes
-					DO WHILE i>0
-						PersonGiftdata(oHm:AMirror[i,5],@cCodNew,oPers:datelastgift,oHm:AMirror[i,4],null_string,false)
-						i:= AScan(oHm:AMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
-					ENDDO
-					if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
-						&& fill date last gift:
-						oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
-						oStmnt:Execute()
-					endif 
+				IF !Empty(self:mCLNGiver)
+					*  update data of giver:
+					i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
+					IF i>0 
+						oPers:=SQLSelect{"select mailingcodes,datelastgift from person where persid="+self:mCLNGiver,oConn}
+						cCodNew:=oPers:mailingcodes
+						DO WHILE i>0
+							PersonGiftdata(oHm:AMirror[i,5],@cCodNew,oPers:datelastgift,oHm:AMirror[i,4],null_string,false)
+							i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
+						ENDDO
+						if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
+							&& fill date last gift:
+							oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
+							oStmnt:Execute()
+						endif 
+					ENDIF
 				ENDIF
-			ENDIF
-			self:mTRANSAKTNR := cTransnr
-		endif
+				self:mTRANSAKTNR := cTransnr
+			endif
 		ENDIF
 	ENDIF
 	IF lError
-		SELF:oSFGeneralJournal1:Browser:SetFocus()
+		self:oSFGeneralJournal1:Browser:SetFocus()
 		oHm:GoTop()
-		SELF:oSFGeneralJournal1:Browser:Refresh()
+		self:oSFGeneralJournal1:Browser:Refresh()
 		oHm:GoTo(ErrorLine,6)
 		RETURN FALSE
 	ELSEIF lInqUpd
@@ -1997,7 +2018,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	ENDIF
 	
 	
-	RETURN TRUE		
+	RETURN true		
 	
 CLASS GeneralBrowser INHERIT DatabrowserExtra
 METHOD GetCurCell CLASS GeneralBrowser
@@ -2063,7 +2084,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	if !Empty(self:oOwner:oOwner)
 		oTransH:=self:oOwner:oOwner:oMyTrans
 	endif
-// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
+	// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
 	ThisRec:=oHm:RECNO
 	if !Empty(oHm:CheckUpdates(oTransH))
 		* recover old values
@@ -2074,7 +2095,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 		self:Owner:Totalise(false,false)
 		RETURN
 	ENDIF
-*	save new values into aMirror: 
+	*	save new values into aMirror: 
 	if !oHm:lFilling
 		self:Owner:lStop:=false  // give warning when cancel
 	endif
@@ -2083,64 +2104,75 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	oHm:aMirror[ThisRec,3]:=oHm:cre
 	oHm:aMirror[ThisRec,13]:=oHm:DEBFORGN
 	oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
+	oHm:aMirror[ThisRec,19]:=oHm:INCEXPFD
 	IF oHm:KIND == 'M'		
 		mRek:=AllTrim(oHm:AccID)
 		IF oHm:Deb > oHm:Cre  .and. !self:oParent:mBST="COL"     // inverse direct debit
 			oHm:gc := 'CH'
 			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 			* Convert present AG's into MG's:
-			recnr := oHm:RecNo
-			FOR i=1 TO Len(oHm:aMirror)
-				IF !oHm:aMirror[i,6]==recnr
-					IF (oHm:aMirror[i,4]=='AG'.or.Empty(oHm:aMirror[i,4])).and.oHm:aMirror[i,5]=='M' .and. !oHm:aMIRROR[i,1]==mRek
-						oHm:Goto(oHm:aMirror[i,6])
-						oHM:GC := 'MG'
-						oHm:aMirror[i,4]:=oHm:gc  && save in mirror
-					ENDIF
-				ENDIF
-			NEXT
+			self:SetMG()
 		ELSEIF oHm:deb = oHm:cre
 			oHm:gc := '  '
 			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 		ELSE
 			IF !oHm:gc == 'PF' .and. !(oHm:FROMRPP .and. !Empty(oHm:GC))
 				oHm:gc := 'AG'
-				IF SELF:Owner:lMemberGiver
+				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
+				IF self:owner:lMemberGiver .or.AScan(oHm:aMirror,{|x|x[4]=='CH'})>0
 					oHm:gc := 'MG'
+					oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
+					// 					self:SetMG()
 				ENDIF
-				FOR i:=1 TO Len(oHm:aMirror)
-					IF i!=recnr .and. oHm:aMirror[i,4]=='CH'
-						IF !oHm:aMIRROR[i,1]==mRek
-							oHm:gc := 'MG'
-						ELSE
-							oHM:GC:= 'AG'
-						ENDIF
-						EXIT
-					ENDIF
-				NEXT
-				oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 			ENDIF
 		ENDIF
 	ELSE
-		IF oHm:GC == 'CH'
-			* Reset present MG:
-			recnr := oHm:RecNo
-			oHm:GoTop()
-			DO WHILE oHm:locate(,{|| oHm:gc =='MG'})
-				oHm:GC := 'AG'
-				oHm:aMirror[oHm:Recno,4]:=oHm:gc  && save in mirror
-			ENDDO
-		ENDIF
-		oHm:gc := '  '
+		if oHm:KIND=='K'  //member department
+			if oHm:INCEXPFD='F'
+				oHm:gc := 'PF'
+			ELSEIF oHm:INCEXPFD='E'
+				oHm:gc := 'CH'
+				self:SetMG()
+			ENDIF
+		else
+			IF oHm:GC == 'CH'
+				* Reset present MG:
+				recnr := 0
+				DO WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+					oHm:Goto(recnr)
+					oHm:GC := 'AG'
+					oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
+				ENDDO
+				oHm:Goto(ThisRec)
+			ENDIF
+			oHm:gc := '  '
+		endif
 		oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 	ENDIF
-// 	oHm:SuspendNotification()
+	// 	oHm:SuspendNotification()
 	self:Owner:Totalise(false,false)
-// 	oHm:ResetNotification() 
+	// 	oHm:ResetNotification() 
 
-//  	self:Browser:Refresh()
+	//  	self:Browser:Refresh()
 	self:Owner:Goto(ThisRec)
-RETURN
+	RETURN
+Method SetMG() as void pascal class GeneralJournal1
+	// set assessment code to MG in case of member gift
+	LOCAL oHm:=self:Server as TempTrans
+	LOCAL recnr,i as int
+	local mAccId:=oHm:ACCID as string
+	* Convert present AG's into MG's:
+	recnr := oHm:RECNO
+	FOR i=1 to Len(oHm:aMirror)
+		IF !oHm:aMirror[i,6]==recnr
+			IF (oHm:aMirror[i,4]=='AG'.or.Empty(oHm:aMirror[i,4])).and.oHm:aMirror[i,5]=='M' .and. !oHm:aMirror[i,1]==mAccId
+				oHm:Goto(oHm:aMirror[i,6])
+				oHm:gc := 'MG'
+				oHm:aMirror[i,4]:=oHm:gc  && save in mirror
+			ENDIF
+		ENDIF
+	NEXT
+	return
 METHOD RegAccount(oRek,ItemName) CLASS InquirySelection
 	LOCAL oAccount as SQLSelect
 	LOCAL crek AS STRING
@@ -2237,14 +2269,14 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 	ENDIF
 	myColumn:= oColumn
 	ThisRec:=oHm:RECNO
-// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
+	// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
 	IF myColumn:NameSym == #AccNumber
 		IF !AllTrim(myColumn:TextValue) == ;
-		AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
+				AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
 			oHm:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
 			myOwnerOwner:AccntProc(myColumn:VALUE)
 		ENDIF
-// 	ELSEIF myColumn:NameSym == #DEBFORGN .or. myColumn:NameSym == #DEB
+		// 	ELSEIF myColumn:NameSym == #DEBFORGN .or. myColumn:NameSym == #DEB
 	ELSEIF myColumn:NameSym == #DEBFORGN 
 		IF !Round(myColumn:VALUE,2) == Round(oHm:aMirror[ThisRec,13],2)
 			myOwner:DebCreProc(false)
@@ -2291,10 +2323,10 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 			myOwnerOwner:lStop:=false
 		endif
 		oHm:aMirror[ThisRec,16]:=alltrim(myColumn:Value)
- 	ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
- 		self:SetColumnFocus(#DESCRIPTN)
+	ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
+		self:SetColumnFocus(#DESCRIPTN)
 	ENDIF
-RETURN 
+	RETURN 
 CLASS PaymentBrowser INHERIT GeneralBrowser
 METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	LOCAL oHm as TempGift
@@ -2381,16 +2413,26 @@ METHOD DebCreProc(NoConvert:=false as logic) as void pascal CLASS PaymentDetails
 		IF Empty(oHm:CREFORGN)
 			oHm:gc := '  '
 		ELSE
-			IF !oHm:gc == 'PF'
-				IF SELF:Owner:lMemberGiver
-					oHm:gc := 'MG'
+			if !oHm:gc == 'PF' 
+				if self:Owner:lMemberGiver
+					if Val(self:Owner:mCLNGiver)=oHm:persid
+						oHm:GC := 'PF'
+					else 
+						oHm:GC := 'MG'
+					endif
 				ELSE
 					oHm:gc := 'AG'
 				ENDIF
 			ENDIF
 		ENDIF
-	ELSE
-		oHm:gc := '  '
+	ELSEIF oHm:KIND=='K'  //member department
+		if oHm:incexpfd='F'
+			oHm:gc := 'PF'
+		ELSEIF oHm:incexpfd='E'
+			oHm:gc := 'CH'
+		ENDIF
+	else
+		oHm:gc:='  '
 	ENDIF
 	oHm:aMirror[oHm:RecNo,4]:=oHm:GC  && save in mirror
 	oHm:aMirror[oHm:RecNo,3]:=oHm:cre  && save in mirror
@@ -2418,10 +2460,10 @@ METHOD append() CLASS PaymentJournal
 			self:Server:DESCRIPTN:=oLan:RGet("Allotted non-designated gift",,"!")
 		ENDIF 
 		self:Server:CURRENCY:=sCurr 
-		//{accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description}
+		//{accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description,incexpfd}
 		//   1    2    3   4    5      6      7      8        9        10      11      12      13      14
 
-		AAdd(self:Server:aMirror,{'           ',0,0,'  ',' ',self:Server:Recno,"   "," ",0,sCurr,false,"","",""})
+		AAdd(self:Server:aMirror,{'           ',0,0,'  ',' ',self:Server:Recno,"   "," ",0,sCurr,false,"","","",""})
 	ENDIF
 RETURN lSuc
 METHOD AssignTo() as void pascal CLASS PaymentJournal
@@ -2473,8 +2515,9 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 						oHm:GC := iif(oHm:KIND='M' .and.self:lMemberGiver,'MG',defGc)
 						oHm:DESCRIPTN := self:oLan:WGet('Gift')
 						IF self:GiftsAutomatic
-							self:AutoRec:=true
+							self:autorec:=true
 						ENDIF
+						self:SpecialMessage()
 					ELSE
 						oHm:GC:="CH"
 						if lTeleBank
@@ -2494,7 +2537,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 			endif
 			* save in mirror-array 
 			oHm:aMirror[oHm:RECNO]:=;
-				{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY, self:DefMulti,0,self:deftype,oHm:DESCRIPTN}
+				{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY, self:DefMulti,0,self:deftype,oHm:DESCRIPTN,oHm:INCEXPFD}
 		ENDIF
 		RETURN  // Nothing to assign
 	ENDIF
@@ -2519,7 +2562,8 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 			endif
 			* Save in Mirror:
 			oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror 
-			oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN
+			oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN 
+			oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
 			If self:GiftsAutomatic 
 				self:AutoRec:=true
 			endif
@@ -2542,16 +2586,17 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				oHm:DESCRIPTN := self:oLan:WGet('Gift')
 			endif  		
 		endif
+		* In case of one possible destination and matching amount, assign it to that:
+		IF self:m51_agift =1 .and. (!MultiDest.or.oHm:Original==oHm:cre).and.self:GiftsAutomatic
+			self:autorec:=true
+		ENDIF
 		self:SpecialMessage()
 		* Save in Mirror:
 		oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 		oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
 		oHm:aMirror[oHm:RECNO,4]:=oHm:GC  && save in mirror
 		oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
-		* In case of one possible destination and matching amount, assign it to that:
-		IF self:m51_agift =1 .and. (!MultiDest.or.oHm:Original==oHm:cre).and.self:GiftsAutomatic
-			self:AutoRec:=true
-		ENDIF
+		oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
 		RETURN
 	ENDIF
 	oHm:SuspendNotification()
@@ -2564,6 +2609,26 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	IF AmntFit(1,m51_abest,0,1,{},@Original,@Applied,@DebAmount,@iTeller) == "F"
 		* Unique combination found of n from m:
 		oHm:GoTop()
+		IF self:GiftsAutomatic
+			self:autorec:=true
+		ELSEIF cGiverName = "Comit" .or. cGiverName="Komit".or. cGiverName="Com."
+			* Assign to Home Front directly:
+			self:autorec:=true
+		ELSEIF !MultiDest.and.self:GiftsAutomatic
+			* In case of Home Front System assign directly:
+			self:autorec:=true
+		ELSEIF Len(aApplied) = 1 // one unique destination
+			cSoort:=oHm:aMirror[aApplied[1],5]
+			IF cSoort == "M" .or. cSoort == "G"  //Gift
+				IF self:GiftsAutomatic
+					self:autorec:=true
+				ENDIF
+			ELSE // open post
+				IF self:DueAutomatic
+					self:autorec:=true
+				ENDIF
+			ENDIF
+		ENDIF
 		DO WHILE !oHm:EOF
 			IF AScan(Applied,oHm:RECNO)= 0
 				oHm:cre := 0
@@ -2580,29 +2645,11 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 			* Save in Mirror:
 			oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 			oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
+			oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
+			oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
 			oHm:Skip()
 		ENDDO
 		m51_totcre := self:mDebAmnt
-		IF self:GiftsAutomatic
-			self:AutoRec:=true
-		ELSEIF cGiverName = "Comit" .or. cGiverName="Komit".or. cGiverName="Com."
-			* Assign to Home Front directly:
-			self:AutoRec:=true
-		ELSEIF !MultiDest.and.self:GiftsAutomatic
-			* In case of Home Front System assign directly:
-			self:AutoRec:=true
-		ELSEIF Len(aApplied) = 1 // one unique destination
-			cSoort:=oHm:aMirror[aApplied[1],5]
-			IF cSoort == "M" .or. cSoort == "G"  //Gift
-				IF self:GiftsAutomatic
-					self:AutoRec:=true
-				ENDIF
-			ELSE // open post
-				IF self:DueAutomatic
-					self:AutoRec:=true
-				ENDIF
-			ENDIF
-		ENDIF
 	ELSE
 		iTeller:=0
 		IF AmntFitMult(1,self:m51_agift,0,1,{},@Original,@Applied,@DebAmount,@m51_mult,@iTeller) == "F"  // multiple found of gift amount
@@ -2625,6 +2672,8 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				* Save in Mirror:
 				oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 				oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
+				oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
+				oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
 				oHm:Skip()
 			ENDDO
 			m51_totcre := self:mDebAmnt
@@ -2651,12 +2700,13 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 								oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 							endif
 							m51_totcre := self:mDebAmnt
+							self:autorec:=true
 							self:SpecialMessage()
 							* Save in Mirror:
 							oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 							oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
 							oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
-							self:AutoRec:=true
+							oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
 							exit
 						else
 							exit
@@ -2690,7 +2740,9 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 									* Save in Mirror:
 									oHm:aMirror[oHm:RECNO,3]:=oHm:cre  && save in mirror
 									oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN  && save in mirror
-									// 							self:AutoRec:=true 
+									oHm:aMirror[oHm:RECNO,14]:=oHm:DESCRIPTN  && save in mirror
+									oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
+									//		self:AutoRec:=true 
 									exit
 								endif
 							endif
@@ -2899,7 +2951,6 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	//	(ADMIN="HO".and.(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL"))
 	IF oTmt:m56_addsub =="A".or.(self:Acceptgiro.and.!Empty(Val(self:mCLNGiver))).or.;
 			(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL")
-		lNameCheck:=FALSE
 		self:InitGifts()
 		//oHm:=SELF:Server
 		*	IF (oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL").and.oTmt:m56_addsub ="B"
@@ -2919,7 +2970,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			ENDIF
 			* save in mirror-array
 			oHm:aMirror[oHm:Recno]:=;
-				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN}	
+				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}	
 			//ELSEIF Acceptgiro 
 		ELSEIF !empty(self:mCLNGiver)
 			self:PersonButton(true,,true,oPersCnt)
@@ -3002,7 +3053,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 	IF self:lEarmarking
 		RETURN false
 	ENDIF
-	mCLNGiver:=AllTrim(mCLNGiver)
+	self:mCLNGiver:=AllTrim(mCLNGiver)
 	self:oSFPaymentDetails:Browser:SuspendUpdate()
 	IF self:Server:Lastrec > 0
 		self:Reset()
@@ -3015,9 +3066,8 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				self:append()
 				IF !Empty(self:oTmt:m56_budgetcd)
 					oHm:ACCNUMBER := self:oTmt:m56_budgetcd
-				ELSEIF self:Acceptgiro
-					*				oHm:ACCNUMBER := LTrimZero(SubStr(self:oTmt:m56_description,7,10))  / juiste formaat
-					oHm:ACCNUMBER := LTrimZero(SubStr(self:oTmt:m56_description,2,5))
+// 				ELSEIF self:Acceptgiro
+// 					oHm:ACCNUMBER := LTrimZero(SubStr(self:oTmt:m56_description,2,5))
 				ENDIF
 				oHm:Original := self:oTmt:m56_amount
 				oHM:GC := "AG"
@@ -3036,7 +3086,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				self:oSFPaymentDetails:DebCreProc(true)
 				* save in mirror-array
 				oHm:aMirror[oHm:Recno]:=;
-					{oHm:AccID,oHm:Original,oHm:Cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN}    
+					{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}    
 			ENDIF
 		elseif !Empty(self:DefBest)
 			// single destination bank account: 
@@ -3081,7 +3131,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					self:oSFPaymentDetails:DebCreProc(true)
 					* save in mirror-array
 					oHm:aMirror[oHm:Recno]:=;
-						{oHm:AccID,oHm:Original,oHm:Cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oSub:acctype,oHm:DESCRIPTN} 
+						{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oSub:acctype,oHm:DESCRIPTN,oHm:INCEXPFD} 
 					// check if Subscription InvoiceID equal to description of telebanking record in case of autogiro: 
 					if self:lTeleBank
 						if !Empty(self:oTmt:m56_description) .and.self:oTmt:m56_description==AllTrim(oSub:INVOICEID)
@@ -3121,7 +3171,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					self:oSFPaymentDetails:DebCreProc(true)
 					* save in mirror-array
 					oHm:aMirror[oHm:Recno]:=;
-						{oHm:ACCID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,Str(oDue:dueid,-1),oDue:acctype,oHm:DESCRIPTN}
+						{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,Str(oDue:dueid,-1),oDue:acctype,oHm:DESCRIPTN,oHm:INCEXPFD}
 					++self:m51_apost
 					oDue:SKIP()
 				ENDDO
@@ -3180,7 +3230,8 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 		self:DebitAccount :=  cAcc
 		SELF:DebAccNbr := oAccount:ACCNUMBER
 		self:DebAccId:=cAcc
-		self:DebCln := Str(oAccount:persid,-1)
+		self:DefType:=oAcc:Type
+		self:DebCln := Transform(oAccount:persid,"")
 		self:oDCDebitAccount:TEXTValue := AllTrim(oAccount:Description) 
 		self:DebCurrency:=oAccount:CURRENCY 
 		if !Empty(self:mDebAmntF) .and. !self:DebCurrency==sCurr
@@ -3222,7 +3273,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 					oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDat),DecAantal)
 				endif
 				oHm:aMirror[oHm:RECNO]:=;
-					{oHm:ACCID,oHm:Original,oHm:Cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN}
+					{oHm:AccID,oHm:Original,oHm:cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN,oHm:INCEXPFD}
 				self:oSFPaymentDetails:DebCreProc(false)
 			ELSE
 				if !oHm:CURRENCY==oHm:aMirror[oHm:RECNO,10]
@@ -3234,7 +3285,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 				endif	
 				//				oHm:aMirror[AScan(oHm:aMirror,{|x|x[6]==oHm:Recno})]:=;
 				oHm:aMirror[oHm:RECNO]:=;
-					{oHm:ACCID,oHm:Original,oHm:Cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN}
+					{oHm:AccID,oHm:Original,oHm:cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,MultiCur,0,oAccount:type,oHm:DESCRIPTN,oHm:INCEXPFD}
 				self:oSFPaymentDetails:DebCreProc(true)
 			ENDIF
 		ELSE
@@ -3246,10 +3297,11 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			oHm:CURRENCY:=sCurr
 			oHm:AccID:="" 
 			oHm:Multiple:=false 
+			oHm:INCEXPFD:=" "
 			// {accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description}
 			//    1    2    3   4    5      6      7      8        9        10      11      12      13      14
 			oHm:aMirror[oHm:RECNO]:=;
-				{oHm:AccID,oHm:Original,oHm:Cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,false,0,'',oHm:DESCRIPTN}
+				{oHm:AccID,oHm:Original,oHm:Cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,false,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}
 		ENDIF 
 		self:oSFPaymentDetails:AddCurr()
 		self:Totalise(false,false)
@@ -3330,28 +3382,31 @@ Method SpecialMessage() class PaymentJournal
 	local nMsgPos as int 
 	local Destname, cSpecMessage as string
 	local lSpecmessage as logic
-	local aNospecmess:={'donatie','steun','bijdrage','maand','mnd','kwartaal','algeme','werk','onderh','onderst','wycliffe','betalingskenm'}  as array
-	local aSpecmess:={'project','pensioen','lijfrente','nalaten'} as array 
+	local aNospecmess:={'donatie','steun','bijdrage','maand','mnd','kw','algeme','werk','onderh','onderst','wycliffe','betalingskenm','support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend'}  as array
+	local aSpecmess:={'pensioen','lijfrente','nalaten','extra','jubileum','collecte','opbr','cadeau','contant','zegen'} as array 
 	// determine extra messsage in description of transaction: 
 	if !self:Acceptgiro .and.  !Empty(oHm:AccDesc) .and.!Empty(self:oTmt)
 		nMsgPos:=At('%%',self:oTmt:m56_description)
 		if nMsgPos>0 
 			Destname:=GetTokens(oHm:AccDesc)[1,1]
-			cSpecMessage:=AllTrim(StrTran(Lower(SubStr(self:oTmt:m56_description,nMsgPos+2)),'gift'))
+			cSpecMessage:=AllTrim(StrTran(StrTran(Lower(SubStr(self:oTmt:m56_description,nMsgPos+2)),'giften'),'gift'))
 			if !Empty(cSpecMessage) 
 				lSpecmessage:=false 
 				AEval(aSpecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,true,lSpecmessage)})
 				if !lSpecmessage
 					lSpecmessage:=true
+					if AtC(Destname,SubStr(self:oTmt:m56_description,nMsgPos+2))>0      // skip with name of destination
+						lSpecmessage:=false 
+					endif
 					AEval(aNospecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})
 					if lSpecmessage
-						if AtC(Destname,SubStr(self:oTmt:m56_description,nMsgPos+2))>0
-							lSpecmessage:=false 
-						endif
+						// check month name in message:
+						AEval(Maand,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})    // skip with month name
 					endif
 				endif
 				if lSpecmessage 
-					oHm:DESCRIPTN+=" "+cSpecMessage
+					oHm:DESCRIPTN:=iif(Empty(oHm:DESCRIPTN),cSpecMessage,AllTrim(oHm:DESCRIPTN)+" "+cSpecMessage) 
+					self:autorec:=false  // stop in case of special message with automatic processing of telebanking records
 				endif
 			endif
 		endif
@@ -3420,11 +3475,33 @@ METHOD ValidateTempGift(lNoMessage:=false as logic) as logic CLASS PaymentJourna
 							cError := self:oLan:WGet('Donor no member, thus MG not allowed')
 							EXIT
 						ENDIF
+					elseif oHm:aMirror[i,15]='I'
+						if !self:lMemberGiver .and.   oHm:aMirror[i,4] = 'CH'
+							cError:=self:oLan:WGet('CH not allowed for income account')
+							lValid := FALSE
+							exit
+						elseif oHm:aMirror[i,4] = 'PF' 
+							cError:=self:oLan:WGet('PF not allowed for income account')
+							lValid := FALSE
+							exit
+						endif
 					ENDIF
-				ELSEIF !Empty(oHm:aMirror[i,4]) //GC, Cre
-					lValid := FALSE
-					cError := self:oLan:WGet("Assessment code exclusively for member")
-					EXIT
+				ELSE
+					if oHm:aMirror[i,5] = "K"   // member department account, not income
+						if oHm:aMirror[i,15]='E' .and. !oHm:aMirror[i,4] =='CH'
+							lValid := FALSE
+							cError := self:oLan:WGet("Only assessment code CH allowed for expense account")
+							exit
+						elseif oHm:aMirror[i,15]='F' .and. !oHm:aMirror[i,4] == 'PF'
+							lValid := FALSE
+							cError := self:oLan:WGet("Only assessment code PF allowed for fund account")
+							exit
+						endif
+					elseIF !Empty(oHm:aMirror[i,4]) //GC, Cre 
+						lValid := FALSE
+						cError := self:oLan:WGet("Assessment code exclusively for member")
+						exit
+					endif
 				ENDIF
 			ENDIF
 			IF Empty(oHm:aMirror[i,7]) //accid,cre
@@ -3615,7 +3692,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						oStmnt:Execute()
 						if	oStmnt:NumSuccessfulRows>0
 							if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
-								if !oHm:Cre==0
+								if !oHm:Cre==0 .and. (self:DebCategory==liability .or. self:DebCategory==asset)
 									if !AddToIncome(oHm:GC,false,oHm:AccID,oHm:cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
 										lError:=true
 										exit
@@ -3852,6 +3929,10 @@ if !Empty(AccMlCod)
 	ADDMLCodes(AccMlCod,@cCod)	
 endif
 RETURN 
+function SQLIncExpFd() as string
+// compose sql code for determining type of account of member department: of department d, account a:
+	return "upper(if(d.netasset=a.accid,'F',if(d.incomeacc=a.accid,'I',if(d.expenseacc=a.accid,'E',''))))"
+	
 METHOD CheckUpdates() CLASS TempGift
 RETURN TRUE
 METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal CLASS TempGift
@@ -3860,14 +3941,12 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 	*	cExtratext: text to be added to description of a gift(optional)
 	*
 	local oAcct as SQLSelect
-// 	Default(@cType,null_string)
-// 	Default(@cExtraText,null_string) 
 	IF Empty(self:AccID).and.Empty(self:ACCNUMBER)
 		return
 	endif
 
-	oAcct:=SQLSelect{"select a.accid, a.accnumber,a.description,a.currency,a.multcurr,"+SQLAccType()+" as accounttype "+;
-	"from account a left join member m on (a.accid=m.accid) "+;
+	oAcct:=SQLSelect{"select a.accid, a.accnumber,a.description,a.currency,a.multcurr,m.persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype "+;
+	"from account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=a.department) "+;
 	"where "+iif(Empty(self:AccID),"a.accnumber='"+AllTrim(self:ACCNUMBER)+"'","a.accid="+self:AccID),oConn}
 	oAcct:Execute()
 	if oAcct:Reccount>0
@@ -3875,7 +3954,8 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 		self:accid:=str(oAcct:accid,-1)
 		self:ACCDESC:=oAcct:Description
 		self:KIND:=oAcct:accounttype 
-		self:CURRENCY:=oAcct:CURRENCY
+		self:CURRENCY:=oAcct:CURRENCY 
+		self:incexpfd:=oAcct:incexpfd
 // 		self:Multiple:=iif(oAcct:Multcurr=1,true,false)
 		IF Empty(self:DESCRIPTN).or.AScan(PaymentDescription,AllTrim(self:DESCRIPTN))>0
 			IF self:KIND = "D" 
@@ -3886,6 +3966,7 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 				self:DESCRIPTN := oLan:RGet("Invoice",,"!")
 			ELSEIF self:KIND = "G".or.self:KIND = "M" .or.cType=="G"
 				self:DESCRIPTN := oLan:RGet("Gift",,"!")
+				self:persid:=iif(Empty(oAcct:persid),0,oAcct:persid)
 			ELSE
 				self:DESCRIPTN := ""
 			ENDIF
@@ -3894,9 +3975,9 @@ METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal 
 			self:DESCRIPTN +="; "+AllTrim(cExtraText)
 		endif
 		self:aMirror[self:RECNO]:=;
-				{self:ACCNUMBER,self:Original,self:Cre,self:gc,self:KIND,self:RECNO,self:AccID,self:ACCNUMBER,self:CREFORGN,self:CURRENCY,self:Multiple,0,self:KIND,self:DESCRIPTN}
+				{self:ACCNUMBER,self:Original,self:Cre,self:gc,self:KIND,self:RECNO,self:AccID,self:ACCNUMBER,self:CREFORGN,self:CURRENCY,self:Multiple,0,self:KIND,self:DESCRIPTN,self:incexpfd}
 	ENDIF
-	RETURN	
+	RETURN
 METHOD m54w_rek_pers() CLASS TempGift
 *Controleren of persoon is toegestaan
 LOCAL m54_pers_sta:=' ' AS STRING
@@ -4141,13 +4222,16 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:DocIdSelected:=AllTrim(self:DocIdSelected)
 	IF oPsbw==null_object
 		(ErrorBox{,"You have already closed the inquiry browser window"}):Show()
+		self:EndWindow()
+		self:Close()
 		RETURN
 	ENDIF
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	self:m54_selectTxt:="" 
 	self:cWhereSpec:="" 
-	self:cOrder:="dat,accnumber,transid,seqnr"
+// 	self:cOrder:="dat,accnumber,transid,seqnr"
+	self:cOrder:="dat,transid,seqnr"
 
 	cDepmntXtr:=""
 	if !Empty(self:DepIdSelected)
@@ -4275,7 +4359,7 @@ METHOD ShowSelection() CLASS TransInquiry
 	self:cWhereSpec:=cFilter
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec  
 	self:cSelectStmnt:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
-	// test nbr liens to be retrieved:
+	// test nbr lines to be retrieved:
 	oSel:=SQLSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
 	oSel:Execute()
 	if Val(oSel:qty)> 3000
