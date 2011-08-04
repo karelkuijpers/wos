@@ -143,17 +143,20 @@ METHOD Init(oOwner, myType,myNum,myCaller,mySearch,myItemname) CLASS DepartmentE
 
    self:ListView:ContextMenu := DepartmentListViewMenu{}
 	IF Empty(self:cType)
-		self:Caption := "Exploring department Hierarchy: Of Who is it"
+		self:Caption := self:olan:WGet("Exploring department Hierarchy: Of Who is it")
+	ELSEif AtC("member",self:cType)>0
+		self:Caption := self:olan:WGet("Selecting department(cost centre) of member")
 	ELSE
-		self:Caption := "Selecting department: Of Who is it"
+		self:Caption := self:olan:WGet("Selecting department: Of Who is it")
 	ENDIF
 RETURN SELF
 METHOD InitData() CLASS DepartmentExplorer
 
 	// create, initialize, and set the relation on the data servers
 	self:cSubItemServer:="department"
-	cRootName:="0:"+sEntity+" "+sLAND
-	cRootValue:=0
+	self:cRootName:="0:"+sEntity+" "+sLAND
+	self:cRootValue:=0 
+	self:uCurrentMain:=""
 	*	cRootName:= "0:Departments" 
 	self:nMaxLevel:=1 
 	self:sColumnmain:=#ParentDep
@@ -198,13 +201,13 @@ METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aD
 		ENDIF
 	ENDDO
 RETURN nCurrentRec
-METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
-* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
-* if lDBUpfate true: Update corresponding database items
-*
+METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
+	* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
+	* if lDBUpfate true: Update corresponding database items
+	*
 
 	LOCAL nNum AS USUAL
-	LOCAL nMain,nParId as STRING
+	LOCAL nMain as STRING
 	LOCAL cError AS STRING
 
 	Default(@lDBUpdate,FALSE)
@@ -215,26 +218,32 @@ METHOD TransferItem(sItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 	IF lDBUpdate
 		* Update database first:
 		* Dragged item identifier:
-		nNum:=SELF:GetIdFromSymbol(sItemDrag)
+		nNum:=self:GetIdFromSymbol(aItemDrag[1])
 
-*		IF oItemDrag:ImageIndex==3 //Account?
-		IF SELF:IsAccountSymbol(sItemDrag)
-			* update account: 
-			SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}:execute()
+		*		IF oItemDrag:ImageIndex==3 //Account?
+		IF self:IsAccountSymbol(aItemDrag[1])
+			cError:=ValidateDepTransfer(nMain,nNum)
+			IF Empty(cError) 
+				* update account: 
+				SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}:execute()
+			ELSE
+				(ErrorBox{,cError}):Show()
+				RETURN cError
+			ENDIF
 		ELSE
 			* update department:
-			cError:=ValidateTransition(nParId,nMain,nNum)
+			cError:=ValidateTransition(@nMain,,nNum)
 			IF! Empty(cError)
 				(ErrorBox{,cError}):Show()
 				RETURN cError
 			ENDIF
-			SQLStatement{"update department set parentdep='"+nNum+"' where depid='"+nNum+"'",oConn}:execute()
+			SQLStatement{"update department set parentdep='"+nMain+"' where depid='"+nNum+"'",oConn}:Execute()
 		ENDIF
 	ENDIF
 
-	SUPER:TransferItem(sItemDrag,oItemDrop)
+	SUPER:TransferItem(aItemDrag,oItemDrop)
 
-RETURN
+	RETURN
 CLASS DepartmentTreeView inherit BalanceTreeView 
 declare method AddSubItem
 METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int) as int CLASS DepartmentTreeView
@@ -301,6 +310,42 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	
 RETURN nCurrentRec
  
+RESOURCE EditDepartment DIALOGEX  24, 22, 324, 212
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Department#:", EDITDEPARTMENT_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 53, 12
+	CONTROL	"", EDITDEPARTMENT_MDEPARTMNTNBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 11, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Name:", EDITDEPARTMENT_FIXEDTEXT2, "Static", WS_CHILD, 8, 33, 53, 12
+	CONTROL	"", EDITDEPARTMENT_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 33, 174, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Parent department#:", EDITDEPARTMENT_FIXEDTEXT3, "Static", WS_CHILD, 8, 56, 67, 12
+	CONTROL	"", EDITDEPARTMENT_MPARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 56, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 262, 7, 54, 12
+	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 262, 21, 54, 12
+	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 81, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 180, 81, 15, 12
+	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 63, 12
+	CONTROL	"", EDITDEPARTMENT_MINCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 96, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_INCBUTTON, "Button", WS_CHILD, 179, 96, 17, 12
+	CONTROL	"", EDITDEPARTMENT_MEXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 110, 104, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 180, 110, 16, 13
+	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 314, 32
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 15, 13
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 200, 158, 15, 13
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 304, 158, 15, 13
+	CONTROL	"Contact persons:", EDITDEPARTMENT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 181, 314, 25
+	CONTROL	"Account Income:", EDITDEPARTMENT_SC_INC, "Static", WS_CHILD, 8, 96, 63, 12
+	CONTROL	"Account Expense:", EDITDEPARTMENT_SC_EXP, "Static", WS_CHILD, 8, 110, 63, 13
+	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 189, 86, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 96, 188, 15, 13
+	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 188, 86, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 200, 188, 16, 12
+	CONTROL	"member department", EDITDEPARTMENT_MEMBERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 140, 11, 91, 12
+END
+
 CLASS EditDepartment INHERIT DataWindowExtra 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -312,13 +357,12 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
 	PROTECT oDCmCAPITAL AS SINGLELINEEDIT
-	PROTECT oDCSC_SKAP AS FIXEDTEXT
 	PROTECT oCCCAPButton AS PUSHBUTTON
-	PROTECT oDCmPerson1 AS SINGLELINEEDIT
-	PROTECT oCCPersonButton1 AS PUSHBUTTON
-	PROTECT oDCmPerson2 AS SINGLELINEEDIT
-	PROTECT oCCPersonButton2 AS PUSHBUTTON
-	PROTECT oDCSC_CLN AS FIXEDTEXT
+	PROTECT oDCSC_SKAP AS FIXEDTEXT
+	PROTECT oDCmincomeacc AS SINGLELINEEDIT
+	PROTECT oCCIncButton AS PUSHBUTTON
+	PROTECT oDCmexpenseacc AS SINGLELINEEDIT
+	PROTECT oCCExpButton AS PUSHBUTTON
 	PROTECT oDCGroupBox2 AS GROUPBOX
 	PROTECT oDCmAccount1 AS SINGLELINEEDIT
 	PROTECT oCCRek1Button AS PUSHBUTTON
@@ -326,7 +370,14 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oCCRek2Button AS PUSHBUTTON
 	PROTECT oDCmAccount3 AS SINGLELINEEDIT
 	PROTECT oCCRek3Button AS PUSHBUTTON
-	PROTECT oDCSC_CLN1 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCSC_Inc AS FIXEDTEXT
+	PROTECT oDCSC_Exp AS FIXEDTEXT
+	PROTECT oDCmPerson1 AS SINGLELINEEDIT
+	PROTECT oCCPersonButton1 AS PUSHBUTTON
+	PROTECT oDCmPerson2 AS SINGLELINEEDIT
+	PROTECT oCCPersonButton2 AS PUSHBUTTON
+	PROTECT oDCMemberText AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartmntNbr 
@@ -338,8 +389,8 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	instance mAccount1 
 	instance mAccount2 
 	instance mAccount3 
-   PROTECT cCAPITALName as STRING
-	PROTECT NbrCAPITAL AS STRING
+   PROTECT cCAPITALName,cIncName,cExpname as STRING
+	PROTECT NbrCAPITAL,NbrIncome,NbrExpense as STRING
   	PROTECT lNew AS LOGIC
 	PROTECT oCaller AS OBJECT
 	PROTECT OrgDescription AS STRING
@@ -357,36 +408,6 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	protect oDep as SQLSelect
                                  
 declare method RekButton                                 
-RESOURCE EditDepartment DIALOGEX  24, 22, 320, 204
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Department#:", EDITDEPARTMENT_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 53, 12
-	CONTROL	"", EDITDEPARTMENT_MDEPARTMNTNBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 11, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Name:", EDITDEPARTMENT_FIXEDTEXT2, "Static", WS_CHILD, 8, 33, 53, 12
-	CONTROL	"", EDITDEPARTMENT_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 33, 174, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Parent department#:", EDITDEPARTMENT_FIXEDTEXT3, "Static", WS_CHILD, 8, 56, 67, 12
-	CONTROL	"", EDITDEPARTMENT_MPARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 56, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 262, 7, 54, 12
-	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 262, 21, 54, 12
-	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 80, 103, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 63, 12
-	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 186, 80, 16, 12
-	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 82, 104, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 186, 104, 13, 12
-	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 82, 127, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 186, 126, 13, 13
-	CONTROL	"Contact person 1:", EDITDEPARTMENT_SC_CLN, "Static", WS_CHILD, 9, 105, 65, 12
-	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 246, 32
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 16, 158, 58, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 73, 158, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 94, 158, 58, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 151, 158, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 172, 158, 59, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 230, 158, 15, 13
-	CONTROL	"Contact person 2:", EDITDEPARTMENT_SC_CLN1, "Static", WS_CHILD, 9, 128, 65, 12
-END
-
 METHOD CancelButton( ) CLASS EditDepartment
 	SELF:EndWindow()
 
@@ -394,10 +415,10 @@ METHOD CancelButton( ) CLASS EditDepartment
 METHOD CAPButton( lUnique) CLASS EditDepartment
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrCAPITAL},{liability},"N",0,false)
+	cfilter:=MakeFilter({self:NbrCAPITAL},{liability})
 	if !self:lNew 
 		cfilter+= " and department="+self:mDepId
-		AccountSelect(self,iif(Val(self:mDepId)>0,"",oDCmCAPITAL:TEXTValue ),"Net Asset",lUnique,cfilter,self:owner,false)
+		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmCAPITAL:TextValue ),"Net Asset",lUnique,cfilter,self:owner,false)
 	endif
 	RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
@@ -426,28 +447,65 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 				cContactName2:=AllTrim(oControl:Value)
 				SELF:PersonButton2(TRUE)
 			ENDIF
-		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:Value)==AllTrim(cCAPITALName)
+		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:VALUE)==AllTrim(self:cCAPITALName)
 			IF Empty(oControl:Value) && leeg gemaakt?
 				SELF:NBrCAPITAL:="  "
 				SELF:cCAPITALName := ""
 				SELF:oDCmCAPITAL:TEXTValue := ""
-            ELSE
-				cCAPITALName:=AllTrim(oControl:Value)
+         ELSE
+				self:cCAPITALName:=AllTrim(oControl:VALUE)
 				SELF:CAPButton(TRUE)
 			ENDIF
-		ELSEIF oControl:Name == "MACCOUNT1".and.!AllTrim(oControl:Value)==AllTrim(cAccount1Name)
+		ELSEIF oControl:Name == "MINCOMEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cIncName)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrIncome:="  "
+				self:cIncName := ""
+				self:oDCmincomeacc:TextValue := ""
+         ELSE
+				self:cIncName:=AllTrim(oControl:VALUE)
+				self:IncButton(true)
+			ENDIF
+		ELSEIF oControl:Name == "MEXPENSEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cExpname)
+			IF Empty(oControl:VALUE) && leeg gemaakt?
+				self:NbrExpense:="  "
+				self:cExpname := ""
+				self:oDCmexpenseacc:TextValue := ""
+            ELSE
+				self:cExpname:=AllTrim(oControl:VALUE)
+				self:ExpButton(true)
+			ENDIF
+		ELSEIF oControl:Name == "MACCOUNT1".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccount1Name)
 			cAccount1Name:=AllTrim(oControl:Value)
 			SELF:Rek1Button(TRUE)
-		ELSEIF oControl:Name == "MACCOUNT2".and.!AllTrim(oControl:Value)==AllTrim(cAccount2Name)
-			cAccount2Name:=AllTrim(oControl:Value)
+		ELSEIF oControl:Name == "MACCOUNT2".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccount2Name)
+			self:cAccount2Name:=AllTrim(oControl:VALUE)
 			SELF:Rek2Button(TRUE)
-		ELSEIF oControl:Name == "MACCOUNT3".and.!AllTrim(oControl:Value)==AllTrim(cAccount3Name)
-			cAccount3Name:=AllTrim(oControl:Value)
+		ELSEIF oControl:Name == "MACCOUNT3".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccount3Name)
+			self:cAccount3Name:=AllTrim(oControl:VALUE)
 			SELF:Rek3Button(TRUE)
 ENDIF
 	ENDIF
 
 	RETURN NIL
+METHOD ExpButton(lUnique ) CLASS EditDepartment 
+	LOCAL cfilter as string
+	Default(@lUnique,FALSE)
+	cfilter:=MakeFilter({self:NbrExpense},{expense})
+	if !self:lNew 
+		cfilter+= " and department="+self:mDepId
+		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmexpenseacc:TextValue ),"Expense",lUnique,cfilter,self:owner,false)
+	endif
+
+RETURN NIL
+METHOD IncButton(lUnique ) CLASS EditDepartment 
+	LOCAL cfilter as string
+	Default(@lUnique,FALSE)
+	cfilter:=MakeFilter({self:NbrIncome},{income})
+	if !self:lNew 
+		cfilter+= " and department="+self:mDepId
+		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmincomeacc:TextValue ),"Income",lUnique,cfilter,self:owner,false)
+	endif
+RETURN NIL
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -485,39 +543,34 @@ oDCmCAPITAL := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MCAPITAL,_GetInst()
 oDCmCAPITAL:HyperLabel := HyperLabel{#mCAPITAL,NULL_STRING,"Accountnumber for capital",NULL_STRING}
 oDCmCAPITAL:TooltipText := "Account the department closes to at yera end"
 
-oDCSC_SKAP := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_SKAP,_GetInst()}}
-oDCSC_SKAP:HyperLabel := HyperLabel{#SC_SKAP,"Account Net Asset:",NULL_STRING,NULL_STRING}
-
 oCCCAPButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_CAPBUTTON,_GetInst()}}
 oCCCAPButton:HyperLabel := HyperLabel{#CAPButton,"v","Browse in accounts",NULL_STRING}
 oCCCAPButton:TooltipText := "Browse in accounts"
 
-oDCmPerson1 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON1,_GetInst()}}
-oDCmPerson1:HyperLabel := HyperLabel{#mPerson1,null_string,"The person, who is contact for the department","HELP_CLN"}
-oDCmPerson1:FocusSelect := FSEL_HOME
-oDCmPerson1:UseHLforToolTip := True
+oDCSC_SKAP := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_SKAP,_GetInst()}}
+oDCSC_SKAP:HyperLabel := HyperLabel{#SC_SKAP,"Account Net Asset:",NULL_STRING,NULL_STRING}
 
-oCCPersonButton1 := PushButton{SELF,ResourceID{EDITDEPARTMENT_PERSONBUTTON1,_GetInst()}}
-oCCPersonButton1:HyperLabel := HyperLabel{#PersonButton1,"v","Browse in persons",NULL_STRING}
-oCCPersonButton1:TooltipText := "Browse in Persons"
+oDCmincomeacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MINCOMEACC,_GetInst()}}
+oDCmincomeacc:HyperLabel := HyperLabel{#mincomeacc,NULL_STRING,"Accountnumber for capital",NULL_STRING}
+oDCmincomeacc:TooltipText := "Account the department closes to at yera end"
 
-oDCmPerson2 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON2,_GetInst()}}
-oDCmPerson2:HyperLabel := HyperLabel{#mPerson2,null_string,"The person, who is contact for the department","HELP_CLN"}
-oDCmPerson2:FocusSelect := FSEL_HOME
-oDCmPerson2:UseHLforToolTip := True
+oCCIncButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_INCBUTTON,_GetInst()}}
+oCCIncButton:HyperLabel := HyperLabel{#IncButton,"v","Browse in accounts",NULL_STRING}
+oCCIncButton:TooltipText := "Browse in accounts"
 
-oCCPersonButton2 := PushButton{SELF,ResourceID{EDITDEPARTMENT_PERSONBUTTON2,_GetInst()}}
-oCCPersonButton2:HyperLabel := HyperLabel{#PersonButton2,"v","Browse in persons",NULL_STRING}
-oCCPersonButton2:TooltipText := "Browse in Persons"
+oDCmexpenseacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MEXPENSEACC,_GetInst()}}
+oDCmexpenseacc:HyperLabel := HyperLabel{#mexpenseacc,NULL_STRING,"Accountnumber for capital",NULL_STRING}
+oDCmexpenseacc:TooltipText := "Account the department closes to at yera end"
 
-oDCSC_CLN := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_CLN,_GetInst()}}
-oDCSC_CLN:HyperLabel := HyperLabel{#SC_CLN,"Contact person 1:",NULL_STRING,NULL_STRING}
+oCCExpButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_EXPBUTTON,_GetInst()}}
+oCCExpButton:HyperLabel := HyperLabel{#ExpButton,"v","Browse in accounts",NULL_STRING}
+oCCExpButton:TooltipText := "Browse in accounts"
 
 oDCGroupBox2 := GroupBox{SELF,ResourceID{EDITDEPARTMENT_GROUPBOX2,_GetInst()}}
 oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Associated accounts for reporting:",NULL_STRING,NULL_STRING}
 
 oDCmAccount1 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT1,_GetInst()}}
-oDCmAccount1:HyperLabel := HyperLabel{#mAccount1,null_string,"Number of account associated with the department",null_string}
+oDCmAccount1:HyperLabel := HyperLabel{#mAccount1,NULL_STRING,"Number of account associated with the department",NULL_STRING}
 oDCmAccount1:FocusSelect := FSEL_HOME
 oDCmAccount1:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount1:UseHLforToolTip := True
@@ -527,7 +580,7 @@ oCCRek1Button:HyperLabel := HyperLabel{#Rek1Button,"v","Browse in accounts",NULL
 oCCRek1Button:TooltipText := "Browse in accounts"
 
 oDCmAccount2 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT2,_GetInst()}}
-oDCmAccount2:HyperLabel := HyperLabel{#mAccount2,null_string,"Number of account associated with the department",null_string}
+oDCmAccount2:HyperLabel := HyperLabel{#mAccount2,NULL_STRING,"Number of account associated with the department",NULL_STRING}
 oDCmAccount2:FocusSelect := FSEL_HOME
 oDCmAccount2:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount2:UseHLforToolTip := True
@@ -537,7 +590,7 @@ oCCRek2Button:HyperLabel := HyperLabel{#Rek2Button,"v","Browse in accounts",NULL
 oCCRek2Button:TooltipText := "Browse in accounts"
 
 oDCmAccount3 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MACCOUNT3,_GetInst()}}
-oDCmAccount3:HyperLabel := HyperLabel{#mAccount3,null_string,"Number of account associated with the department",null_string}
+oDCmAccount3:HyperLabel := HyperLabel{#mAccount3,NULL_STRING,"Number of account associated with the department",NULL_STRING}
 oDCmAccount3:FocusSelect := FSEL_HOME
 oDCmAccount3:TooltipText := "Account to be incorperated in memberstatements"
 oDCmAccount3:UseHLforToolTip := True
@@ -546,11 +599,38 @@ oCCRek3Button := PushButton{SELF,ResourceID{EDITDEPARTMENT_REK3BUTTON,_GetInst()
 oCCRek3Button:HyperLabel := HyperLabel{#Rek3Button,"v","Browse in accounts",NULL_STRING}
 oCCRek3Button:TooltipText := "Browse in accounts"
 
-oDCSC_CLN1 := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_CLN1,_GetInst()}}
-oDCSC_CLN1:HyperLabel := HyperLabel{#SC_CLN1,"Contact person 2:",NULL_STRING,NULL_STRING}
+oDCGroupBox1 := GroupBox{SELF,ResourceID{EDITDEPARTMENT_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Contact persons:",NULL_STRING,NULL_STRING}
 
-self:Caption := "Edit of department"
-self:HyperLabel := HyperLabel{#EditDepartment,"Edit of department",null_string,null_string}
+oDCSC_Inc := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_INC,_GetInst()}}
+oDCSC_Inc:HyperLabel := HyperLabel{#SC_Inc,"Account Income:",NULL_STRING,NULL_STRING}
+
+oDCSC_Exp := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_EXP,_GetInst()}}
+oDCSC_Exp:HyperLabel := HyperLabel{#SC_Exp,"Account Expense:",NULL_STRING,NULL_STRING}
+
+oDCmPerson1 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON1,_GetInst()}}
+oDCmPerson1:HyperLabel := HyperLabel{#mPerson1,NULL_STRING,"The person, who is contact for the department","HELP_CLN"}
+oDCmPerson1:FocusSelect := FSEL_HOME
+oDCmPerson1:UseHLforToolTip := True
+
+oCCPersonButton1 := PushButton{SELF,ResourceID{EDITDEPARTMENT_PERSONBUTTON1,_GetInst()}}
+oCCPersonButton1:HyperLabel := HyperLabel{#PersonButton1,"v","Browse in persons",NULL_STRING}
+oCCPersonButton1:TooltipText := "Browse in Persons"
+
+oDCmPerson2 := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPERSON2,_GetInst()}}
+oDCmPerson2:HyperLabel := HyperLabel{#mPerson2,NULL_STRING,"The person, who is contact for the department","HELP_CLN"}
+oDCmPerson2:FocusSelect := FSEL_HOME
+oDCmPerson2:UseHLforToolTip := True
+
+oCCPersonButton2 := PushButton{SELF,ResourceID{EDITDEPARTMENT_PERSONBUTTON2,_GetInst()}}
+oCCPersonButton2:HyperLabel := HyperLabel{#PersonButton2,"v","Browse in persons",NULL_STRING}
+oCCPersonButton2:TooltipText := "Browse in Persons"
+
+oDCMemberText := FixedText{SELF,ResourceID{EDITDEPARTMENT_MEMBERTEXT,_GetInst()}}
+oDCMemberText:HyperLabel := HyperLabel{#MemberText,"member department",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Edit of Department"
+SELF:HyperLabel := HyperLabel{#EditDepartment,"Edit of Department",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
 SELF:AllowServerClose := True
 
@@ -604,6 +684,20 @@ ASSIGN mDescription(uValue) CLASS EditDepartment
 SELF:FieldPut(#mDescription, uValue)
 RETURN uValue
 
+ACCESS mexpenseacc() CLASS EditDepartment
+RETURN SELF:FieldGet(#mexpenseacc)
+
+ASSIGN mexpenseacc(uValue) CLASS EditDepartment
+SELF:FieldPut(#mexpenseacc, uValue)
+RETURN uValue
+
+ACCESS mincomeacc() CLASS EditDepartment
+RETURN SELF:FieldGet(#mincomeacc)
+
+ASSIGN mincomeacc(uValue) CLASS EditDepartment
+SELF:FieldPut(#mincomeacc, uValue)
+RETURN uValue
+
 ACCESS mParentDep() CLASS EditDepartment
 RETURN SELF:FieldGet(#mParentDep)
 
@@ -632,14 +726,21 @@ METHOD OKButton( ) CLASS EditDepartment
 	local cSQLStatement as string
 	local oStmnt as SQLStatement
 
-	IF Empty(mDepartmntNbr)
+	IF Empty(self:mDepartmntNbr)
 		(ErrorBox{,"Please fill number of department"}):Show()
 		RETURN
 	ENDIF
-	IF lNew.or.!AllTrim(mDepartmntNbr)==AllTrim(OrgDepNbr)
+	IF lNew.or.!AllTrim(self:mDepartmntNbr)==AllTrim(self:OrgDepNbr)
 		*Check if Number allready exist:
 		IF SQLSelect{"select depid from department where deptmntnbr='"+AllTrim(mDepartmntNbr)+"'",oConn}:Reccount>0
 			(ErrorBox{,"department number "+ mDepartmntNbr+ " allready exist!"}):Show()
+			RETURN
+		ENDIF
+	ENDIF
+	IF lNew.or.!AllTrim(self:mDescription)==AllTrim(self:OrgDescription)
+		*Check if description allready exist:
+		IF SQLSelect{"select depid from department where descriptn='"+AllTrim(self:mDescription)+"'",oConn}:Reccount>0
+			(ErrorBox{,"department name "+ self:mDescription+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
@@ -655,11 +756,25 @@ METHOD OKButton( ) CLASS EditDepartment
 			RETURN
 		ENDIF		
 	ENDIF
+	IF self:lNew
+		IF !Empty(self:NbrIncome)
+			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
+			RETURN
+		ENDIF		
+	ENDIF
+	IF self:lNew
+		IF !Empty(self:NbrExpense)
+			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
+			RETURN
+		ENDIF		
+	ENDIF
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
 	"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
 	"parentdep='"+cMainId+"',"+;
 	"netasset='"+self:NbrCAPITAL+"',"+;
+	"incomeacc='"+self:NbrIncome+"',"+;
+	"expenseacc='"+self:NbrExpense+"',"+;
 	"assacc1 ='"+ self:mAcc1+"',"+;
 	"assacc2 ='"+ self:mAcc2+"',"+;
 	"assacc3 ='"+ self:mAcc3+"',"+;
@@ -670,15 +785,16 @@ METHOD OKButton( ) CLASS EditDepartment
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		Departments:=true
-		oCaller:Refresh()
 		IF !lNew
 			IF !OrgDescription==mDescription.or.!OrgParent==mParentDep.or.!OrgDepNbr=mDepartmntNbr
 				oCaller:RefreshTree()
 			ENDIF
 		else
 			self:mDepId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(mDepartmntNbr)+":"+mDescription,false)
+			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
+			AAdd(oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
+		oCaller:Refresh()
 	endif
 	self:EndWindow()
 
@@ -701,13 +817,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 	LOCAL cMainId as STRING
 	local oSel as SQLSelect 
 	self:SetTexts()
-	lNew:=uExtra[1]
+	self:lNew:=uExtra[1]
+	self:oCaller:=uExtra[5]
 
 	IF lNew
 		SELF:oDCmDepartmntNbr:SetFocus()
 		cMainId:=uExtra[2]
-		NbrCAPITAL :=""
-		cCAPITALName :="" 
+		self:NbrCAPITAL :=""
+		self:cCAPITALName :="" 
+		self:NbrIncome :=""
+		self:cIncName :="" 
+		self:NbrExpense :=""
+		self:cExpname :="" 
 		IF cMainId=="0"
 			mParentDep:=0
 			OrgParent :="0"
@@ -717,25 +838,43 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 				mParentDep:=oSel:deptmntnbr
 				OrgParent :=mParentDep
 			endif
-		ENDIF
-
+		ENDIF                    
+		if UsualType(self:oCaller:cSearch) = STRING
+      	self:mDescription:=self:oCaller:cSearch
+      endif
 	ELSE
-		self:mDepId:=uExtra[4] 
-		self:oDep:=SQLSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,"+SQLFullName(0,"p1")+" as person1," +;
-		SQLFullName(0,"p2")+" as person2 "+;
+		self:mDepId:=AllTrim(uExtra[4]) 
+		self:oDep:=SQLSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ainc.description as incname,aexp.description as expname,"+;
+		"ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,";
+		+SQLFullName(0,"p1")+" as person1," +;
+		SQLFullName(0,"p2")+" as person2,"+;
+		"m.mbrid "+;
 		"from department d "+;
 		"left join account an on (an.accid=d.netasset) "+; 
+		"left join account ainc on (ainc.accid=d.incomeacc) "+; 
+		"left join account aexp on (aexp.accid=d.expenseacc) "+; 
 		"left join department dp on (dp.depid=d.parentdep) "+; 
 		"left join person p1 on (p1.persid=d.persid) "+; 
 		"left join person p2 on (p2.persid=d.persid2) "+; 
 		"left join account as ass1 on (d.assacc1=ass1.accid) "+;
 		" left join account as ass2 on (d.assacc2=ass2.accid) "+;
 		" left join account as ass3 on (d.assacc3=ass3.accid) "+;
+		" left join member m on (m.depid=d.depid) "+;
 		"where d.depid='"+self:mDepId+"'",oConn} 
 		IF !Empty(self:oDep:NetAsset)
 			self:NbrCAPITAL :=  Str(self:oDep:NetAsset,-1)
-			self:oDCmCAPITAL:TEXTValue := AllTrim(self:oDep:captital)
-			self:cCAPITALName := AllTrim(self:oDep:captital)
+			self:oDCmCAPITAL:TEXTValue := Transform(self:oDep:captital,"")
+			self:cCAPITALName := AllTrim(self:oDCmCAPITAL:TEXTValue)
+		ENDIF
+		IF !Empty(self:oDep:incomeacc)
+			self:NbrIncome :=  Str(self:oDep:incomeacc,-1)
+			self:oDCmincomeacc:TEXTValue := Transform(self:oDep:incname,"")
+			self:cIncName := AllTrim(self:oDCmincomeacc:TEXTValue)
+		ENDIF
+		IF !Empty(self:oDep:expenseacc)
+			self:NbrExpense :=  Str(self:oDep:expenseacc,-1)
+			self:oDCmexpenseacc:TEXTValue := Transform(self:oDep:expname,"")
+			self:cExpname := AllTrim(self:oDCmexpenseacc:TEXTValue)
 		ENDIF
 		if !Empty(self:oDep:ASSACC1)
 			mAcc1 := Str(self:oDep:ASSACC1,-1)
@@ -751,6 +890,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mAcc3 := Str(self:oDep:ASSACC3,-1)
 			mAccount3 := AllTrim(self:oDep:ass3)
 			cAccount3Name := mAccount3
+		endif
+		if !Empty(self:oDep:mbrid)
+			self:oDCMemberText:Show()
+		else
+			self:oDCMemberText:Hide()
 		endif
 		mDepartmntNbr:=self:oDep:deptmntnbr
 		OrgDepNbr:=AllTrim(mDepartmntNbr)
@@ -776,7 +920,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			cContactName2 := mPerson2
 		endif
 	ENDIF
-	oCaller:=uExtra[5]
 	RETURN nil
 METHOD RegAccount(oAccA,ItemName) CLASS EditDepartment
 IF !Empty(oAccA).and.oAccA:reccount>0
@@ -784,6 +927,14 @@ IF !Empty(oAccA).and.oAccA:reccount>0
 		self:NbrCAPITAL :=  Str(oAccA:accid,-1)
 		self:oDCmCAPITAL:TEXTValue := AllTrim(oAccA:Description)
 		self:cCAPITALName := AllTrim(oAccA:Description)
+	ELSEIF ItemName=="Income"
+		self:NbrIncome :=  Str(oAccA:accid,-1)
+		self:oDCmincomeacc:TextValue := AllTrim(oAccA:Description)
+		self:cIncName := AllTrim(oAccA:Description)
+	ELSEIF ItemName=="Expense"
+		self:NbrExpense :=  Str(oAccA:accid,-1)
+		self:oDCmexpenseacc:TextValue := AllTrim(oAccA:Description)
+		self:cExpname := AllTrim(oAccA:Description)
 	ELSEIF ItemName=="Associated Account 1"
 		self:mAcc1 :=  Str(oAccA:accid,-1)
 		self:oDCmAccount1:TEXTValue := AllTrim(oAccA:Description)
@@ -843,15 +994,15 @@ ENDIF
 RETURN TRUE
 METHOD Rek1Button(lUnique ) CLASS EditDepartment 
 	Default(@lUnique,FALSE)
-self:RekButton(logic(_cast,lUnique),AllTrim(oDCmAccount1:TextValue ),"Associated Account 1",mAcc1,mAcc2,mAcc3)
+self:RekButton(logic(_cast,lUnique),AllTrim(self:oDCmAccount1:TextValue ),"Associated Account 1",self:mAcc1,self:mAcc2,self:mAcc3)
 return
 METHOD Rek2Button(lUnique ) CLASS EditDepartment
 	Default(@lUnique,FALSE)
-self:RekButton(lUnique,AllTrim(oDCmAccount2:TextValue ),"Associated Account 2",mAcc2,mAcc1,mAcc3)
+self:RekButton(lUnique,AllTrim(self:oDCmAccount2:TextValue ),"Associated Account 2",self:mAcc2,self:mAcc1,self:mAcc3)
 return 
 METHOD Rek3Button(lUnique ) CLASS EditDepartment
 	Default(@lUnique,FALSE)
-self:RekButton(lUnique,AllTrim(oDCmAccount3:TextValue ),"Associated Account 3",mAcc3,mAcc2,mAcc3)
+self:RekButton(lUnique,AllTrim(self:oDCmAccount3:TextValue ),"Associated Account 3",self:mAcc3,self:mAcc2,self:mAcc3)
 return 
 METHOD RekButton(lUnique:=false as logic,cValue as string,cName as string,myAcc1 as string,myAcc2 as string,myAcc3 as string ) as void pascal CLASS EditDepartment 
 	local aAccIncl:={},aAccExcl:={} as array 
@@ -881,29 +1032,37 @@ METHOD RekButton(lUnique:=false as logic,cValue as string,cName as string,myAcc1
 
 	RETURN 
 STATIC DEFINE EDITDEPARTMENT_CANCELBUTTON := 107 
-STATIC DEFINE EDITDEPARTMENT_CAPBUTTON := 110 
+STATIC DEFINE EDITDEPARTMENT_CAPBUTTON := 109 
+STATIC DEFINE EDITDEPARTMENT_EXPBUTTON := 114 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT1 := 100 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT2 := 102 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT3 := 104 
-STATIC DEFINE EDITDEPARTMENT_GROUPBOX2 := 116 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 117 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 119 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 121 
+STATIC DEFINE EDITDEPARTMENT_GROUPBOX1 := 122 
+STATIC DEFINE EDITDEPARTMENT_GROUPBOX2 := 115 
+STATIC DEFINE EDITDEPARTMENT_INCBUTTON := 112 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 116 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 118 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 120 
 STATIC DEFINE EDITDEPARTMENT_MCAPITAL := 108 
 STATIC DEFINE EDITDEPARTMENT_MDEPARTMNTNBR := 101 
 STATIC DEFINE EDITDEPARTMENT_MDESCRIPTION := 103 
+STATIC DEFINE EDITDEPARTMENT_MEMBERTEXT := 129 
+STATIC DEFINE EDITDEPARTMENT_MEXPENSEACC := 113 
+STATIC DEFINE EDITDEPARTMENT_MINCOMEACC := 111 
 STATIC DEFINE EDITDEPARTMENT_MPARENTDEP := 105 
-STATIC DEFINE EDITDEPARTMENT_MPERSON1 := 111 
-STATIC DEFINE EDITDEPARTMENT_MPERSON2 := 113 
+STATIC DEFINE EDITDEPARTMENT_MPERSON1 := 125 
+STATIC DEFINE EDITDEPARTMENT_MPERSON2 := 127 
 STATIC DEFINE EDITDEPARTMENT_OKBUTTON := 106 
-STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON1 := 112 
-STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON2 := 114 
-STATIC DEFINE EDITDEPARTMENT_REK1BUTTON := 118 
-STATIC DEFINE EDITDEPARTMENT_REK2BUTTON := 120 
-STATIC DEFINE EDITDEPARTMENT_REK3BUTTON := 122 
+STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON1 := 126 
+STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON2 := 128 
+STATIC DEFINE EDITDEPARTMENT_REK1BUTTON := 117 
+STATIC DEFINE EDITDEPARTMENT_REK2BUTTON := 119 
+STATIC DEFINE EDITDEPARTMENT_REK3BUTTON := 121 
 STATIC DEFINE EDITDEPARTMENT_SC_CLN := 115 
 STATIC DEFINE EDITDEPARTMENT_SC_CLN1 := 123 
-STATIC DEFINE EDITDEPARTMENT_SC_SKAP := 109 
+STATIC DEFINE EDITDEPARTMENT_SC_EXP := 124 
+STATIC DEFINE EDITDEPARTMENT_SC_INC := 123 
+STATIC DEFINE EDITDEPARTMENT_SC_SKAP := 110 
 Function FindDep(cDep ref string) as logic
 *	Find a department with the given number/description
 *	Returns: True: if unique department found
@@ -937,12 +1096,12 @@ Function ValidateTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as s
 *
 LOCAL cError as STRING
 local oDepPar,oDepCur as SQLSelect
-IF cNewParentNbr=="0" .and. cNewParentId="0"
+IF cNewParentNbr=="0" .and. (cNewParentId=="0" .or.Empty(cNewParentId))
 	RETURN ""
 ENDIF
-oDepPar:=SQLSelect{"select depid,deptmntnbr,parentdep from department where "+iif(cNewParentId="0".or.Empty(cNewParentId),"deptmntnbr='"+cNewParentNbr,"depid='"+cNewParentId)+"'",oConn}
+oDepPar:=SQLSelect{"select depid,deptmntnbr,parentdep from department where "+iif(cNewParentId=="0".or.Empty(cNewParentId),"deptmntnbr='"+cNewParentNbr,"depid='"+cNewParentId)+"'",oConn}
 if oDepPar:Reccount=0
-		RETURN "parent department does not exist"	
+	RETURN "parent department does not exist"	
 endif
 IF Str(oDepPar:DEPID,-1)==curdepid
 	cError:="Parent must be unqual to self"
