@@ -452,7 +452,7 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 // 	PROTECT oMainItemServer	as SQLTable
 // 	PROTECT oSubItemServer	as SQLTable
 // 	PROTECT oAccount		AS Account
-	PROTECT uCurrentMain AS USUAL
+	PROTECT uCurrentMain:='' as USUAL
 	HIDDEN aDragList AS ARRAY   // array with treeview items to drag
 	PROTECT oTVItemDrop AS TreeViewItem
 	PROTECT oLVItemDrop AS ListViewItem
@@ -464,10 +464,10 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	PROTECT hImageList AS PTR
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCaller AS OBJECT
-	PROTECT cType AS STRING // type of record to be selected: "Balance Item", "Department"
+	Export cType as STRING // type of record to be selected: "Balance Item", "Department","Department member"
 	PROTECT cNum AS STRING // identifier of current item when cType is filled
-	PROTECT cSearch AS STRING // searchstring of required item when cType is filled
-	PROTECT cItemname AS STRING // name of required item when cType is filled
+	export cSearch as STRING // searchstring of required item when cType is filled
+	Export cItemname as STRING // name of required item when cType is filled
 	EXPORT lShowAccount:=TRUE AS LOGIC
 	PROTECT ListParent as int
 	EXPORT oTreeOptions AS ExplorerOptions
@@ -583,7 +583,8 @@ METHOD DELETE() CLASS CustomExplorer
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local lBalance:=(ClassName(self)==#BALANCEITEMEXPLORER) as logic
-	local nPos as int 
+	local nPos as int
+	local oMem as SQLSelect
 
 	oListView := self:ListView
 	oListViewItem:=oListView:GetSelectedItem()
@@ -599,11 +600,14 @@ METHOD DELETE() CLASS CustomExplorer
 	ENDIF
 	IF lAccount
 	   IF AScan(aMenu,{|x| x[4]=="AccountEdit"})>0
-			oStmnt:=SQLStatement{"delete from account where accid='"+nNum+"'",oConn} 
-			oStmnt:Execute()
-			if oStmnt:NumSuccessfulRows>0
+			if DeleteAccount(nNum)
 				self:ListView:DeleteItem(oListViewItem:ItemIndex)
 				self:TreeView:DeleteItem(String2Symbol("ACCOUNT_" + nNum))
+				nPos:=AScan(self:aAccnts,{|x|x[1]==Val(nNum)})
+				if nPos>0
+					ADel(self:aAccnts,nPos)
+					aSize(self:aAccnts,len(self:aAccnts)-1)
+				endif
 			ENDIF
 		ENDIF
 	ELSE
@@ -620,11 +624,19 @@ METHOD DELETE() CLASS CustomExplorer
 				RETURN
 			ELSE
 				* check presence of accounts:
-				IF	SQLSelect{"select	accid from	account where balitemid='"+nNum+"'",oConn}:RecCount>0
+				IF	SQLSelect{"select	accid from	account where "+iif(CheckInstanceOf(self,#DEPARTMENTEXPLORER),"department","balitemid")+"='"+nNum+"'",oConn}:RecCount>0
 //							oAccount:Seek(#NUM,nNum)
 					(ErrorBox{,self:oLan:WGet('Remove/replace child accounts first')}):Show()
 					RETURN
 				ENDIF
+			endif
+			// check if depratment belongs to member:
+			if CheckInstanceOf(self,#DEPARTMENTEXPLORER)
+				oMem:=SQLSelect{"select m.mbrid,"+SQLFullName(0,"p")+" as membername from member m,person as p where m.depid IS NOT NULL and m.depid="+nNum,oConn}
+				if oMem:RecCount>0
+					(ErrorBox{,self:oLan:WGet('This department belongs to member'+":"+oMem:membername)}):Show()
+					RETURN					
+				ENDIF				
 			ENDIF
 			oStmnt:=SQLStatement{'delete from '+self:cSubitemserver+' where '+Lower(Symbol2String(self:sColumnSub))+"='"+nNum+"'",oConn}
 			oStmnt:Execute()	
@@ -730,7 +742,9 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 	ELSE
 		oTreeView:=self:TreeView
 		oTreeViewItem:=oTreeView:GetSelectedItem()
-		nMain:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
+		if !oTreeViewItem==null_object
+			nMain:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
+		endif
 	ENDIF
 	IF lAccount
 		oSel:=SQLSelect{"select balitemid from account where accid='"+nNum+"'",oConn} 
@@ -902,7 +916,7 @@ method ListViewMouseButtonDown(oListViewMouseEvent) class CustomExplorer
 	oListViewItem:=oListViewMouseEvent:ListViewItem 
 	if IsObject( oListViewItem)
 		if IsMethod(oListViewItem,#GetValue)
-			if !oListViewItem:GetValue(#Type)=="Account" 
+			if !oListViewItem:ImageIndex==1 
 				self:SelectedItem:=Str(oListViewItem:GetValue(#Identifier),-1)
 			endif
 		endif
@@ -917,7 +931,8 @@ Local cItem as string
 				self:oCaller:RegBalance(self:SelectedItem,self:cItemName)
 			ENDIF
 		ELSEIF self:cType="Department"
-	    	IF IsMethod(SELF:oCaller, #RegDepartment)
+	    	IF IsMethod(self:oCaller, #RegDepartment)
+	    		
 				self:oCaller:RegDepartment(self:SelectedItem,self:cItemName)
 			ENDIF
 		ENDIF
@@ -953,7 +968,7 @@ METHOD Refresh() CLASS CustomExplorer
 *	SELF:BuildTreeViewItems()
 	self:DeleteListViewItems() 
 // 	self:aItem:={}
-	Send(self,#BuildListViewItems,Val(self:uCurrentMain))
+	Send(self,#BuildListViewItems,Val(Transform(self:uCurrentMain,"")))
 RETURN
 METHOD RefreshTree()  CLASS CustomExplorer
 	// clear and rebuild the tree view items
