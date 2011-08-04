@@ -440,8 +440,8 @@ CLASS ExchangeRate INHERIT FIELDSPEC
 METHOD Init() CLASS ExchangeRate
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#ExchangeRate, "International dollar exchange rate", "", "" },  "N", 12, 8 )
-    cPict       := "99999.9999999999"
+    SUPER:Init( HyperLabel{#ExchangeRate, "International dollar exchange rate", "", "" },  "N", 18, 10 )
+    cPict       := "9999999.9999999999"
     IF SLen(cPict) > 0
         SELF:Picture := cPict
     ENDIF
@@ -491,7 +491,7 @@ oDCmExchRate := mySingleEdit{SELF,ResourceID{GETEXCHRATE_MEXCHRATE,_GetInst()}}
 oDCmExchRate:TooltipText := "Give dollar exchange rate"
 oDCmExchRate:HyperLabel := HyperLabel{#mExchRate,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmExchRate:FieldSpec := EXCHANGERATE{}
-oDCmExchRate:Picture := "99999.9999999999"
+oDCmExchRate:Picture := "9999999.9999999999"
 
 oDCROEText1 := FixedText{SELF,ResourceID{GETEXCHRATE_ROETEXT1,_GetInst()}}
 oDCROEText1:HyperLabel := HyperLabel{#ROEText1,"Exchange rate: 1 ",NULL_STRING,NULL_STRING}
