@@ -144,10 +144,10 @@ LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as st
 // buffer should be ptr to area with XML-data (by reference) 
 if SubStr(bufferPtr,1,3) == UTF8
 	self:CP:=1
-	buffer:=(UTF2String{SubStr(bufferPtr,3)}):OutBuf
+	buffer:=(UTF2String{SubStr(bufferPtr,4)}):OutBuf
 elseif SubStr(bufferPtr,1,2)==UTF16
 	self:CP:=2
-	buffer:=(UTF2String{SubStr(bufferPtr,3)}):OutBuf
+	buffer:=(UTF2String{SubStr(bufferPtr,4)}):OutBuf
 else
 	buffer:=bufferPtr
 endif
