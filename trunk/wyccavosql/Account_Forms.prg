@@ -93,85 +93,84 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 	Local oAcc, oAccSelf:=self:Server as SQLSelect
 	local oStmnt as SQLSTatement
 	LOCAL oTextbox as TextBox
-	LOCAL cRek as STRING
+// 	LOCAL cRek as STRING
 	IF oAccSelf:EOF.or.oAccSelf:BOF
 		(ErrorBox{,oLan:WGet("Select a account first")}):Show()
 		RETURN FALSE
 	ENDIF
 
-	cRek:=Str(oAccSelf:accid,-1)	
-	oTextbox := TextBox{ , oLan:WGet("Delete Record"),;
-		oLan:WGet("Delete Account")+" " + FullName( oAccSelf:ACCNUMBER,	oAccSelf:Description ) + "?",BUTTONYESNO + BOXICONQUESTIONMARK }
-	
-	IF ( oTextBox:Show() == BOXREPLYYES )
-		IF !Empty(oAccSelf:co)
-			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account belongs to a member")+"!"}:Show()
-			RETURN FALSE
-		ENDIF
-		* Check if account net asset of a department:
-		IF !Empty(oAccSelf:Department)
-			oDep:=SQLSelect{"select descriptn,netasset from Department where depid="+Str(oAccSelf:Department,-1),oConn}
-			IF oDep:Reccount=1
-				IF oDep:NETASSET==oAccSelf:accid
-					InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account is net asset account of its department "+oDep:DESCRIPTN)+"!"}:Show()
-					RETURN FALSE
-				ENDIF
-			ENDIF
-		ENDIF
-		oTrans:=SQLSelect{"select transnr from transaction where accid="+cRek,oConn}
-		IF oTrans:Reccount>0
-			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions in non balanced years associated with this account")+"!"}:Show()
-    	ELSE
-			oMBal:=Balances{}
-			oMBal:GetBalance(cRek)
-			IF !oMBal:per_cre - oMBal:per_deb==0
-				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Balance not zero for this account")+"!"}:Show()
-				return false
-			endif
-			// check if account not used as ROE-gain/loss:
-			oAcc:=SQLSelect{"select accnumber from account where gainlsacc="+cRek,oConn}
-			if oAcc:Reccount>0
-				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oAcc:ACCNUMBER)+"!"}:Show()
-				return false
-			endif
-			// check if account used in standorderline:
-			oAcc:=SQLSelect{"select stordrid from standingorderline where accountid="+cRek,oConn}
-			if oAcc:Reccount>0
-				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in standing orders")+"!"}:Show()
-				return false
-			endif
-			// check if account belongs to a member:
-			oAcc:=SQLSelect{"select mbrid from member where accid="+cRek,oConn}
-			if oAcc:Reccount>0
-				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account belongs to a member")+"!"}:Show()
-				return false
-			endif
-			
-			oStmnt:=SQLStatement{"delete from account where accid='"+cRek+"'",oConn}
-			oStmnt:Execute()							
-			if oStmnt:NumSuccessfulRows>0
-				* remove also corresponding subscriptions/donations: 
-				oStmnt:SQLString:="delete from subscription where accid="+cRek
-				oStmnt:Execute()
-				// remove corresponding balance years: 
-				oStmnt:SQLString:="delete from accountbalanceyear where accid="+cRek
-				oStmnt:Execute()
-				// remove also corresponding month balances: 
-				oStmnt:SQLString:="delete from mbalance where accid="+cRek
-				oStmnt:Execute()
-				// remove related telepattern too:
-				oStmnt:SQLString:="delete from telebankpatterns where accid="+cRek
-				oStmnt:Execute()
-				// remove related budget too: 
-				oStmnt:SQLString:="delete from budget where accid="+cRek
-				oStmnt:Execute() 
-				//refresh:
-				self:oAcc:Execute()
-				self:GoTop()
-			ENDIF
-		ENDIF
+	if DeleteAccount(Str(oAccSelf:accid,-1))	
+		// 	oTextbox := TextBox{ , oLan:WGet("Delete Record"),;
+		// 		oLan:WGet("Delete Account")+" " + FullName( oAccSelf:ACCNUMBER,	oAccSelf:Description ) + "?",BUTTONYESNO + BOXICONQUESTIONMARK }
+		// 	
+		// 	IF ( oTextBox:Show() == BOXREPLYYES )
+		// 		// check if account belongs to a member: 
+		// 		// 		oDep:=SQLSelect{"select m.mbrid from member m where (m.accid="+cRek+" or "+cRek+" in (select a.accid from account a, department d where a.accid="+cRek+;
+		// 		// 		" and (d.netasset=a.accid or d.incomeacc=a.accid or d.expenseacc=a.accid)))",oConn}
+		// 		oDep:=SQLSelect{"select m.mbrid from member m where m.accid="+cRek,oConn}
+		// 		IF oDep:Reccount>0
+		// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account belongs to a member")+"!"}:Show()
+		// 			RETURN FALSE
+		// 		ENDIF
+		// 		* Check if account net asset,income or expense of a department:
+		// 		IF !Empty(oAccSelf:Department)
+		// 			oDep:=SQLSelect{"select depid,descriptn from department where depid="+Str(oAccSelf:Department,-1)+ " and incomeacc="+cRek+" or expenseacc="+cRek+" or netasset="+cRek,oConn}
+		// 			IF oDep:Reccount>0
+		// 				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account is net asset, income or expense account of its department "+oDep:DESCRIPTN)+"!"}:Show()
+		// 				RETURN FALSE
+		// 			ENDIF
+		// 		ENDIF
+		// 		oTrans:=SQLSelect{"select count(*) as total from ("+UnionTrans("select t.transid from transaction t where accid="+cRek)+") as tot",oConn}
+		// 		IF oTrans:Reccount>0 .and. Val(oTrans:total)>0
+		// 			// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions in non balanced years associated with this account")+"!"}:Show()
+		// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions associated with this account")+"!"}:Show()
+		// 			return false
+		// 		endif
+		// 		oMBal:=Balances{}
+		// 		oMBal:GetBalance(cRek)
+		// 		IF !oMBal:per_cre - oMBal:per_deb==0
+		// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Balance not zero for this account")+"!"}:Show()
+		// 			return false
+		// 		endif
+		// 		// check if account not used as ROE-gain/loss:
+		// 		oAcc:=SQLSelect{"select accnumber from account where gainlsacc="+cRek,oConn}
+		// 		if oAcc:Reccount>0
+		// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oAcc:ACCNUMBER)+"!"}:Show()
+		// 			return false
+		// 		endif
+		// 		// check if account used in standorderline:
+		// 		oAcc:=SQLSelect{"select stordrid from standingorderline where accountid="+cRek,oConn}
+		// 		if oAcc:Reccount>0
+		// 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in standing orders")+"!"}:Show()
+		// 			return false
+		// 		endif
+		// 		
+		// 		oStmnt:=SQLStatement{"delete from account where accid='"+cRek+"'",oConn}
+		// 		oStmnt:Execute()							
+		// 		if oStmnt:NumSuccessfulRows>0
+		// 			* remove also corresponding subscriptions/donations: 
+		// 			oStmnt:SQLString:="delete from subscription where accid="+cRek
+		// 			oStmnt:Execute()
+		// 			// remove corresponding balance years: 
+		// 			oStmnt:SQLString:="delete from accountbalanceyear where accid="+cRek
+		// 			oStmnt:Execute()
+		// 			// remove also corresponding month balances: 
+		// 			oStmnt:SQLString:="delete from mbalance where accid="+cRek
+		// 			oStmnt:Execute()
+		// 			// remove related telepattern too:
+		// 			oStmnt:SQLString:="delete from telebankpatterns where accid="+cRek
+		// 			oStmnt:Execute()
+		// 			// remove related budget too: 
+		// 			oStmnt:SQLString:="delete from budget where accid="+cRek
+		// 			oStmnt:Execute() 
+		//refresh:
+		self:oAcc:Execute()
+		self:GoTop()
+	else
+		return false
 	ENDIF
-RETURN 
+	// 	ENDIF
+	RETURN true
 
 METHOD EditButton(lNew) CLASS AccountBrowser
 	Default(@lNew,FALSE)
@@ -241,9 +240,9 @@ METHOD FindButton( ) CLASS AccountBrowser
 	local cBalIncl,cDepIncl as string
 	self:cOrder:="accnumber"
 	self:cWhere:="a.balitemid=b.balitemid"
-// 	self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)"
-// 	self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active,b.category as type,m.co"
- 
+	// 	self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)"
+	// 	self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active,b.category as type,m.co"
+	
 	if !Empty(self:SearchUni) 
 		aKeyw:=GetTokens(AllTrim(self:SearchUni))
 		for i:=1 to Len(aKeyw)
@@ -270,21 +269,21 @@ METHOD FindButton( ) CLASS AccountBrowser
 			self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.balitemid in ("+cBalIncl+")" 
 		endif
 	endif
-   if !self:CheckBoxInactive
+	if !self:CheckBoxInactive
 		self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.active=1"  
-   endif   	
-   self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
-   self:oAcc:Execute() 
-   if !Empty(oAcc:status)
-	 	LogEvent(,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
-   endif
- 
-   self:GoTop()
-   self:oSFAccountBrowser_DETAIL:Browser:refresh()
-  	self:FOUND :=Str(self:oAcc:Reccount,-1)
-   self:EnableSelect()
+	endif   	
+	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
+	self:oAcc:Execute() 
+	if !Empty(oAcc:status)
+		LogEvent(,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
+	endif
+	
+	self:GoTop()
+	self:oSFAccountBrowser_DETAIL:Browser:refresh()
+	self:FOUND :=Str(self:oAcc:Reccount,-1)
+	self:EnableSelect()
 
-RETURN nil 
+	RETURN nil 
 ASSIGN FOUND(uValue) CLASS AccountBrowser
 self:FIELDPUT(#Found, uValue)
 RETURN uValue
@@ -483,13 +482,14 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		self:cAccFilter:=self:oAccCnt:cAccFilter
 	else
 		self:cOrder:="accnumber" 
-		self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,b.category as type,m.co"
-		self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" 
+		self:cFields:="a.accid,a.accnumber,a.description,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,a.department,b.category as type"
+		self:cFrom:="balanceitem as b,account as a "
 		self:cWhere:="a.balitemid=b.balitemid"
-		self:cAccFilter:=iif(Empty(cDepmntIncl),"","department IN ("+cDepmntIncl+")")
+		self:cAccFilter:=iif(Empty(cDepmntIncl),"","a.department IN ("+cDepmntIncl+")")
 		self:oAccCnt:=AccountContainer{}
 	endif
-	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
+	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" and a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
+//	LogEvent(self,"error:"+self:oAcc:errinfo:errormessage+"; statement:"+self:oAcc:SQLString,"logerrors")
 	RETURN nil
 ACCESS SearchOMS() CLASS AccountBrowser
 RETURN SELF:FieldGet(#SearchOMS)
@@ -1803,9 +1803,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		// 		oAcc:GoTop() 
 		// 		oAcc:=SQLSelect{"select a.* from account left join (m.persid as mcln from member m ) where a.accid="+self:mAccId,oConn}
 		self:oAcc:=SQLSelect{;
-			"select a.*,b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject, m.persid as mcln from balanceitem as b, account as a "+;
-			"left join member as m on (a.accid=m.accid) "+; 
-		"left join department d on (d.depid=a.department) "+;
+			"select a.*,b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln from balanceitem as b, account as a "+;
+			"left join department d on (d.depid=a.department) "+;
+			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
 			"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
@@ -1864,7 +1864,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		if ADMIN=="WA"
 			self:mReimb:=self:oAcc:REIMB
 		endif
-		IF!Empty(self:oAcc:CLC)
+		IF!Empty(self:oAcc:CLC) 
 			self:mCod1  := if(Empty(SubStr(self:oAcc:CLC,1,2)),nil,SubStr(self:oAcc:CLC,1,2))
 			self:mCod2  := if(Empty(SubStr(self:oAcc:CLC,4,2)),nil,SubStr(self:oAcc:CLC,4,2))
 			self:mCod3  := if(Empty(SubStr(self:oAcc:CLC,7,2)),nil,SubStr(self:oAcc:CLC,7,2))
@@ -1882,17 +1882,17 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				ENDIF
 			NEXT
 			self:oDCPropBox:FillUsing(self:aProp)
-		else
-			self:oDCPropBox:FillUsing({})			
+// 		else
+// 			self:oDCPropBox:FillUsing({})			
 		endif
 		self:oDCmGIFTALWD:Checked:=iif(self:oAcc:GIFTALWD=1,true,false)
 		// 		self:mGIFTALWD := iif(self:oAcc:GIFTALWD=1,true,false)
 		// 		IF !IsNil(self:oAcc:persid) .and. self:oAcc:persid>0
-		IF !Empty(self:oAcc:mCLN)
+		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid.or.self:oAcc:netasset=self:oAcc:accid)
 			* member:
-			self:mGIFTALWD:=true
+// 			self:mGIFTALWD:=true
 			self:oDCmGIFTALWD:Disable()
-			self:mCLN:=Str(self:oAcc:mCLN,-1)
+			self:mCLN:=Transform(self:oAcc:mCLN,"")
 		else
 			self:mCLN:="0"
 			self:oDCmGIFTALWD:Enable()
@@ -1983,7 +1983,7 @@ ASSIGN PropValueCombo(uValue) CLASS EditAccount
 SELF:FieldPut(#PropValueCombo, uValue)
 RETURN uValue
 
-	method PropValueShow(PropId as int, cValue as string) as void pascal class EditAccount
+method PropValueShow(PropId as int, cValue as string) as void pascal class EditAccount
 	local i as int
 	i:=AScan(pers_propextra,{|x|x[2]= PropId}) 
 	if i> 0
