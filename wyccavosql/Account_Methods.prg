@@ -136,11 +136,11 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	local cWhere:="a.balitemid=b.balitemid", myWhere as string
 	local cOrder:="accnumber" as string
 // 	local cFrom:="account as a,balanceitem as b" as string
-	local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)" as string 
+	local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) " as string 
 
 // 	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,b.category as type" as string
 // 	local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
-	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,a.subscriptionprice,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
+	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,a.subscriptionprice,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"  as string
 
 	
 	IF lUnique.and.Empty(BrwsValue)
@@ -227,6 +227,88 @@ Function AddSubDep(d_dep as array,ParentNum as int, nCurrentRec as int,aDepIncl 
 		nSubRec:=AddSubDep(d_dep,d_dep[nCurrentRec,1],nSubRec,@aDepIncl)
 	ENDDO	
 	RETURN nCurrentRec
+Function DeleteAccount(cAccId:="" as string ) as logic 
+	* Delete a account occurrence
+	LOCAL oTrans as SQLSelect
+	LOCAL oMBal as Balances
+	LOCAL oDep as SQLSelect
+	Local oAcc as SQLSelect
+	local oStmnt as SQLSTatement
+	LOCAL oTextbox as TextBox
+	local oLan as language
+	
+	if Empty(cAccId)
+		return false
+	endif
+   oAcc:=SQLSelect{"select accnumber,description,department from account where accid="+cAccId,oConn}
+   if oAcc:RecCount<1
+   	return false
+   endif 
+   oLan:=Language{}
+	oTextbox := TextBox{ , oLan:WGet("Delete Record"),;
+		oLan:WGet("Delete Account")+" " + FullName( oAcc:ACCNUMBER,	oAcc:Description ) + "?",BUTTONYESNO + BOXICONQUESTIONMARK }
+	
+	IF ( oTextBox:Show() == BOXREPLYYES )
+		// check if account belongs to a member: 
+		oDep:=SQLSelect{"select m.mbrid from member m where m.accid="+cAccId,oConn}
+		IF oDep:RecCount>0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account belongs to a member")+"!"}:Show()
+			RETURN FALSE
+		ENDIF
+		* Check if account net asset,income or expense of a department:
+		IF !Empty(oAcc:Department)
+			oDep:=SQLSelect{"select depid,descriptn from department where depid="+Str(oAcc:Department,-1)+ " and incomeacc="+cAccId+" or expenseacc="+cAccId+" or netasset="+cAccId,oConn}
+			IF oDep:RecCount>0
+				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("This account is net asset, income or expense account of its department "+oDep:DESCRIPTN)+"!"}:Show()
+				RETURN FALSE
+			ENDIF
+		ENDIF
+		oTrans:=SQLSelect{"select count(*) as total from ("+UnionTrans("select t.transid from transaction t where accid="+cAccId)+") as tot",oConn}
+		IF oTrans:RecCount>0 .and. Val(oTrans:total)>0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions associated with this account")+"!"}:Show()
+			return false
+		endif
+		oMBal:=Balances{}
+		oMBal:GetBalance(cAccId)
+		IF !oMBal:per_cre - oMBal:per_deb==0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Balance not zero for this account")+"!"}:Show()
+			return false
+		endif
+		// check if account not used as ROE-gain/loss:
+		oAcc:=SQLSelect{"select accnumber from account where gainlsacc="+cAccId,oConn}
+		if oAcc:RecCount>0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oAcc:ACCNUMBER)+"!"}:Show()
+			return false
+		endif
+		// check if account used in standorderline:
+		oAcc:=SQLSelect{"select stordrid from standingorderline where accountid="+cAccId,oConn}
+		if oAcc:RecCount>0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in standing orders")+"!"}:Show()
+			return false
+		endif
+		
+		oStmnt:=SQLStatement{"delete from account where accid='"+cAccId+"'",oConn}
+		oStmnt:Execute()							
+		if oStmnt:NumSuccessfulRows>0
+			* remove also corresponding subscriptions/donations: 
+			oStmnt:SQLString:="delete from subscription where accid="+cAccId
+			oStmnt:Execute()
+			// remove corresponding balance years: 
+			oStmnt:SQLString:="delete from accountbalanceyear where accid="+cAccId
+			oStmnt:Execute()
+			// remove also corresponding month balances: 
+			oStmnt:SQLString:="delete from mbalance where accid="+cAccId
+			oStmnt:Execute()
+			// remove related telepattern too:
+			oStmnt:SQLString:="delete from telebankpatterns where accid="+cAccId
+			oStmnt:Execute()
+			// remove related budget too: 
+			oStmnt:SQLString:="delete from budget where accid="+cAccId
+			oStmnt:Execute() 
+		ENDIF
+	ENDIF
+	RETURN true
+
 METHOD Commit() CLASS EditAccount
  	LOCAL oTextBox as TextBox
 	IF .not. self:Server:Commit()
@@ -330,7 +412,8 @@ Method FillProprst() class EditAccount
 local amProp as array
 amProp:={} 
 AEval(pers_propextra,{|x|AAdd(amProp,{PadR(x[1],30)+Space(20),x[2]})})
-self:aProp:=amProp
+self:aProp:=amProp 
+return
 
 Method FillProps() class EditAccount
 return self:aProp
@@ -470,10 +553,16 @@ METHOD ValidateAccount() CLASS EditAccount
 		lValid:=FALSE
 	ENDIF
 	IF!lNew .and.lValid
-		cError:=ValidateAccTransfer(self:mNumSave,self:mAccNumber)
+		cError:=ValidateAccTransfer(self:mNumSave,self:mAccId)
 		IF !Empty(cError)
 			lValid:=FALSE
 		ENDIF
+		if lValid
+			cError:=ValidateDepTransfer(self:mDep,self:mAccId)
+			IF !Empty(cError)
+				lValid:=FALSE
+			ENDIF		
+		endif
 	ENDIF
 	
 	IF ! lValid
@@ -522,9 +611,9 @@ IF !Empty(aAccIncl)
 	AEval(aAccIncl,{|x|cIncl+=iif(Val(x)=0,'',iif(Empty(cIncl),"",' or ')+'a.accid='+x)})
 ENDIF	
 IF IsMember=="M"
-	cFilter+=' and a.accid in (select accid from member where accid IS NOT NULL)'
+	cFilter+=' and (a.accid in (select accid from member where accid IS NOT NULL) or a.department in (select depid from member where depid IS NOT NULL))'
 ELSEIF IsMember=="N"
-	cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL)'
+	cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL) and a.department not in (select depid from member where depid IS NOT NULL)'
 ENDIF
 IF giftalwd=0
 	cFilter+=' and a.giftalwd<>1'
@@ -579,19 +668,30 @@ function SetDepFilter(WhoFrom as int) as string
 	return Implode(aDepIncl,",")
 function SQLAccType() as string
 // compose sql code for determining account type: of account a, member m:
+// A=subscription
+// F=invoice
+// C=bankorder
+// M=member
+// G=project
+// D=donation
+// K=member department
 	return ;
 		"upper(if(a.subscriptionprice>0,'A',"+;                          // subscribtion
 			"if(a.accid='"+SDEB+"','F',"+;              //invoice
 				"if(a.accid='"+scre+"','C',"+;           // bankorder
-					"if(a.giftalwd=1,"+;
-						"if(m.co IS NOT NULL and m.co<>'','M','G'),"+;        // member, else project
-						"if(a.accid='"+SDON+"','D','')"+;  // debitors, else nothing
+					"if(a.giftalwd=1 and m.depid IS NULL,"+;
+						"if(m.co IS NOT NULL and m.co<>'','M','G')"+;        // member, else project
+					","+; // else
+						"if(a.accid='"+SDON+"','D'"+;  // debitors, 
+						","+;		//else 
+							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M','K'),'')"+;  // income account: member, else member department
+						")"+;
 					")"+;
 				")"+;
 			")"+;
 		"))"
 
-Function ValidateAccTransfer (cParendId as string,mAccId as string) as string 
+Function ValidateAccTransfer (cParentId as string,mAccId as string) as string 
 	* Check if transfer of current account mAccId to another balance item with identifciation cParentid is allowed
 	* Returns Error text if not allowed
 
@@ -601,14 +701,14 @@ Function ValidateAccTransfer (cParendId as string,mAccId as string) as string
 	LOCAL oAcc as SQLSelect, oMbr as SQLSelect  
 	local oAccB as SQLSelect
 	local oLan as Language 
-	IF Empty(cParendId)
+	IF Empty(cParentId)
 		oLan:=Language{}
 		RETURN oLan:WGet("Root not allowed as parent of an account")
 	ENDIF	
 
 	* Member account .or. transactions for this account:
 	* No change of balancegroupclassification allowed
-	oRB:=SQLSelect{"select category from balanceitem where balitemid='"+cParendId+"'",oConn} 
+	oRB:=SQLSelect{"select category from balanceitem where balitemid='"+cParentId+"'",oConn} 
 	if oRB:RecCount=1	
 		cNewClass:= oRb:category 
 		oAcc:=SQLSelect{"select accnumber,balitemid,co,homepp,b.category from balanceitem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
@@ -635,3 +735,18 @@ Function ValidateAccTransfer (cParendId as string,mAccId as string) as string
 	ENDIF
 	// ENDIF
 	RETURN cError
+Function ValidateDepTransfer (cDepartment as string,mAccId as string) as string 
+	* Check if transfer of current account mAccId to another department with identifciation cDepartment is allowed
+	* Returns Error text if not allowed
+
+	LOCAL cError  as STRING
+	LOCAL oAcc as SQLSelect  
+	local oLan as Language 
+
+	oAcc:=SQLSelect{"select d.* from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
+	if oAcc:Reccount>0 .and. Str(oAcc:depid,-1)<>cDepartment
+		oLan:=Language{}
+		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(Transform(oAcc:netasset,"")==mAccId,;
+		oLan:WGet("netasset account"),iif(Transform(oAcc:incomeacc,"")==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
+	endif
+	return cError
