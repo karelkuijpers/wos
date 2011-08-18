@@ -483,7 +483,7 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditAccount
 RETURN
 METHOD ValidateAccount() CLASS EditAccount
 	LOCAL lValid := true as LOGIC
-	LOCAL cError as STRING
+	LOCAL cError,cLastname as STRING
 	local oSel as SQLSelect
 	self:mAccNumber:=AllTrim(self:mAccNumber)
 	IF Empty(self:mAccNumber)
@@ -502,6 +502,15 @@ METHOD ValidateAccount() CLASS EditAccount
 		lValid := FALSE
 		cError := self:oLan:WGet("Description is mandatory")+"!"
 	ENDIF
+	if self:lMemberDep
+		// account should contain lastname of corresponding member
+		cLastname:=SQLSelect{"select lastname from person where persid="+self:mCln,oConn}:lastname
+		if AtC(cLastname,self:oDCmDescription:TextValue) =0
+			cError:=self:oLan:WGet('Description should contain lastname of corresponding member')+': "'+AllTrim(cLastname)+'" '
+			lValid:=FALSE
+			self:oDCmDescription:SetFocus()
+		endif 
+	endif
 
 	IF lValid .and. self:mSubscriptionprice > 0 .and. self:mGIFTALWD
 		lValid := FALSE
