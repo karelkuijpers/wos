@@ -134,7 +134,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	if lShow
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 	endif
-	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
+// 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
 
 	*	Select only monthbalances in years after last balance year for standard currency: 
 	oStmnt:=SQLStatement{"drop temporary table if exists transsum",oConn}
@@ -1193,22 +1193,53 @@ FOR i=0 to 3  && corrigeer voor kortere maand
     ENDIF
 NEXT
 RETURN(nwdat)
-function HtmlDecode(cText as string)
-/*
-Decode html encoded characters:
-'&' (ampersand) becomes '&amp;'
-'"' (double quote) becomes '&quot;' when ENT_NOQUOTES is not set.
-''' (single quote) becomes '&#039;' only when ENT_QUOTES is set.
-'<' (less than) becomes '&lt;'
-'>' (greater than) becomes '&gt;'
-*/
-Local aKey:={'&amp;','&quot;', '&#039;', '&lt;', '&gt;'} as array
-Local aRepl:={'&','"',"'",'<','>'} 
-local i as int
-for i:=1 to 5
- 	cText:=StrTran(cText,aKey[i],aRepl[i])
-next
-Return cText
+Function Hex2Str(cText as string) as string 
+	// convert hexadecimal string dump to ascii string
+	local i,l:=Len(cText),nAsc as int
+	local cRet,cChar as string
+	if Mod(l,2)=1
+		return cText
+	endif
+	for i:=1  to l step 2
+		cChar:=SubStr(cText,i,1)
+		if !IsXDigit(cChar)
+			return cText
+		endif
+		if cChar <'A'
+			nAsc:=Val(cChar) *16
+		else
+			nAsc:=(Asc(cChar)-55)*16
+		endif 
+		cChar:=SubStr(cText,i+1,1)
+		if !IsXDigit(cChar)
+			return cText
+		endif
+		if cChar <'A'
+			nAsc+=Val(cChar) 
+		else
+			nAsc+=(Asc(cChar)-55)
+		endif 
+		cChar:=CHR(nAsc)
+		cRet+=cChar
+	next
+	return cRet
+
+function HtmlDecode(cText as string) as string
+	/*
+	Decode html encoded characters:
+	'&' (ampersand) becomes '&amp;'
+	'"' (double quote) becomes '&quot;' when ENT_NOQUOTES is not set.
+	''' (single quote) becomes '&#039;' only when ENT_QUOTES is set.
+	'<' (less than) becomes '&lt;'
+	'>' (greater than) becomes '&gt;'
+	*/
+	Local aKey:={'&amp;','&quot;', '&#039;', '&lt;', '&gt;'} as array
+	Local aRepl:={'&','"',"'",'<','>'} 
+	local i as int
+	for i:=1 to 5
+		cText:=StrTran(cText,aKey[i],aRepl[i])
+	next
+	Return cText  
 FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int)
 	// Implode array to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of a multidimenional array
@@ -2040,7 +2071,8 @@ PROTECT cBuffer as STRING
 PROTECT cDelim as STRING
 PROTECT nStart:=0, nIncr:=0 as int
 PROTECT ptrHandle
-protect Eof as logic
+protect Eof as logic 
+protect CP as int
 METHOD Close CLASS MyFile
 	FClose(ptrHandle)
 	ptrHandle:=null_object
@@ -2059,8 +2091,12 @@ METHOD FReadLine() CLASS MyFile
 	nPos:=At3(cDelim, self:cBuffer,self:nStart)
 	IF nPos==0
 		* read next buffer:
-		cLine:=SubStr(self:cBuffer,self:nStart+1)
-		self:cBuffer:=UTF2String{FReadStr(ptrHandle,4096)}:Outbuf
+		cLine:=SubStr(self:cBuffer,self:nStart+1) 
+		if self:CP>0
+			self:cBuffer:=UTF2String{FReadStr(ptrHandle,4096)}:Outbuf
+		else
+			self:cBuffer:=FReadStr(ptrHandle,4096)
+		endif
 		IF Empty(self:cBuffer)
 			if FEof(self:ptrHandle) .and. Empty(cLine)
 				self:Eof:=true
@@ -2089,10 +2125,10 @@ METHOD Init(oFr) CLASS MyFile
 	ENDIF
 	bufferPtr:= FReadStr(ptrHandle,4096)
 	if SubStr(bufferPtr,1,3) == UTF8
-// 		self:CP:=1
+		self:CP:=1
 		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
 	elseif SubStr(bufferPtr,1,2)==UTF16
-// 		self:CP:=2
+		self:CP:=2
 		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
 	else
 		self:cBuffer:=bufferPtr
