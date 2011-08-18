@@ -598,6 +598,9 @@ Method ReEvaluate() Class Reevaluation
 		endif
 		oCall:STATUSMESSAGE(cSm)
 	ENDIF
+	// Check first consistency data
+	CheckConsistency(oMainWindow,true,false)
+
 	oMBal:=Balances{}
 	do while !oAccnt:EoF 
 		cCur:= oAccnt:Currency
