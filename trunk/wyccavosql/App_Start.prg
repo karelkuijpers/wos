@@ -128,8 +128,8 @@ method Start() class App
 				oStJournal:recordstorders()
 				oStJournal:=null_object
 			// Idem for reevaluation: 
-			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0	
-				Reevaluation{oMainWindow}:ReEvaluate()
+			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0
+				Reevaluation{oMainWindow}:ReEvaluate()				
 			ENDIF 
 			
 			self:Exec()
