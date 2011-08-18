@@ -1,3 +1,32 @@
+RESOURCE AccountBrowser DIALOGEX  4, 3, 348, 298
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", ACCOUNTBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 22, 116, 12
+	CONTROL	"&Number:", ACCOUNTBROWSER_SC_REK, "Static", WS_CHILD, 20, 36, 31, 13
+	CONTROL	"&Description:", ACCOUNTBROWSER_SC_OMS, "Static", WS_CHILD, 20, 51, 39, 13
+	CONTROL	"", ACCOUNTBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 36, 116, 13
+	CONTROL	"", ACCOUNTBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 51, 116, 13
+	CONTROL	"Find", ACCOUNTBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 232, 22, 53, 12
+	CONTROL	"", ACCOUNTBROWSER_ACCOUNTBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 17, 116, 250, 141
+	CONTROL	"&Edit", ACCOUNTBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 115, 54, 13
+	CONTROL	"&New", ACCOUNTBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 158, 54, 13
+	CONTROL	"&Delete", ACCOUNTBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 201, 54, 13
+	CONTROL	"Select", ACCOUNTBROWSER_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 278, 244, 54, 13
+	CONTROL	"Accounts", ACCOUNTBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 103, 336, 164
+	CONTROL	"Search accounts with:", ACCOUNTBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 8, 217, 88
+	CONTROL	"Universal like google:", ACCOUNTBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 20, 22, 72, 12
+	CONTROL	"", ACCOUNTBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 268, 40, 47, 12
+	CONTROL	"Found:", ACCOUNTBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 40, 27, 12
+	CONTROL	"v", ACCOUNTBROWSER_FROMDEPBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 200, 81, 13, 12
+	CONTROL	"", ACCOUNTBROWSER_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 96, 81, 105, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Department from:", ACCOUNTBROWSER_SC_DEP, "Static", WS_CHILD|NOT WS_VISIBLE, 20, 81, 67, 12
+	CONTROL	"v", ACCOUNTBROWSER_FROMBALBUTTON, "Button", WS_CHILD, 200, 66, 13, 12
+	CONTROL	"", ACCOUNTBROWSER_FROMBAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 66, 105, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Balance item from:", ACCOUNTBROWSER_SC_BAL, "Static", WS_CHILD, 20, 68, 72, 12
+	CONTROL	"Include inactive accounts", ACCOUNTBROWSER_CHECKBOXINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 232, 81, 104, 11
+END
+
 CLASS AccountBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -39,35 +68,6 @@ CLASS AccountBrowser INHERIT DataWindowExtra
 	protect cCurBal,WhatFrom as string 
 	
 	declare method AccountSelect
-RESOURCE AccountBrowser DIALOGEX  4, 3, 348, 298
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", ACCOUNTBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 22, 116, 12
-	CONTROL	"&Number:", ACCOUNTBROWSER_SC_REK, "Static", WS_CHILD, 20, 36, 31, 13
-	CONTROL	"&Description:", ACCOUNTBROWSER_SC_OMS, "Static", WS_CHILD, 20, 51, 39, 13
-	CONTROL	"", ACCOUNTBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 36, 116, 13
-	CONTROL	"", ACCOUNTBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 51, 116, 13
-	CONTROL	"Find", ACCOUNTBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 232, 22, 53, 12
-	CONTROL	"", ACCOUNTBROWSER_ACCOUNTBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 17, 116, 250, 141
-	CONTROL	"&Edit", ACCOUNTBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 115, 54, 13
-	CONTROL	"&New", ACCOUNTBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 158, 54, 13
-	CONTROL	"&Delete", ACCOUNTBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 278, 201, 54, 13
-	CONTROL	"Select", ACCOUNTBROWSER_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 278, 244, 54, 13
-	CONTROL	"Accounts", ACCOUNTBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 103, 336, 164
-	CONTROL	"Search accounts with:", ACCOUNTBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 8, 217, 88
-	CONTROL	"Universal like google:", ACCOUNTBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 20, 22, 72, 12
-	CONTROL	"", ACCOUNTBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 268, 40, 47, 12
-	CONTROL	"Found:", ACCOUNTBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 40, 27, 12
-	CONTROL	"v", ACCOUNTBROWSER_FROMDEPBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 200, 81, 13, 12
-	CONTROL	"", ACCOUNTBROWSER_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 96, 81, 105, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Department from:", ACCOUNTBROWSER_SC_DEP, "Static", WS_CHILD|NOT WS_VISIBLE, 20, 81, 67, 12
-	CONTROL	"v", ACCOUNTBROWSER_FROMBALBUTTON, "Button", WS_CHILD, 200, 66, 13, 12
-	CONTROL	"", ACCOUNTBROWSER_FROMBAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 66, 105, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Balance item from:", ACCOUNTBROWSER_SC_BAL, "Static", WS_CHILD, 20, 68, 72, 12
-	CONTROL	"Include inactive accounts", ACCOUNTBROWSER_CHECKBOXINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 232, 81, 104, 11
-END
-
 method ButtonClick(oControlEvent) class AccountBrowser
 	local oControl as Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -645,7 +645,7 @@ BEGIN
 	CONTROL	"", EDITACCOUNT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 228, 55, 97, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITACCOUNT_DEPBUTTON, "Button", WS_CHILD, 324, 55, 15, 12
 	CONTROL	"Subscriptionprice:", EDITACCOUNT_MSUBSCRIPTIONPRICE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 256, 73, 68, 13
-	CONTROL	"15-1-2011", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
+	CONTROL	"17-8-2011", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
 	CONTROL	"Multi Currency", EDITACCOUNT_MMULTCURR, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 136, 60, 11
 	CONTROL	"", EDITACCOUNT_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 136, 104, 72
 	CONTROL	"Reevaluate", EDITACCOUNT_MREEVALUATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 224, 136, 56, 11
@@ -708,6 +708,7 @@ BEGIN
 	CONTROL	"", EDITACCOUNT_MIPCACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 72, 73, 108, 72
 	CONTROL	"Used for reimbursement?", EDITACCOUNT_MREIMB, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 248, 18, 92, 11
 	CONTROL	"Active", EDITACCOUNT_MACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 308, 36, 36, 12
+	CONTROL	"", EDITACCOUNT_MEMBERTEXT, "Static", SS_RIGHT|SS_CENTERIMAGE|WS_CHILD, 252, 0, 91, 12
 END
 
 CLASS EditAccount INHERIT DataWindowExtra 
@@ -788,6 +789,7 @@ CLASS EditAccount INHERIT DataWindowExtra
 	PROTECT oDCmIPCaccount AS COMBOBOX
 	PROTECT oDCmReimb AS CHECKBOX
 	PROTECT oDCmActive AS CHECKBOX
+	PROTECT oDCmembertext AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 //    		instance mAccNumber 
@@ -823,7 +825,7 @@ CLASS EditAccount INHERIT DataWindowExtra
   	Export  mNumSave,mDep as string
   	PROTECT dCurDate as date
   	PROTECT oCaller as OBJECT
-  	PROTECT lMember as LOGIC
+  	PROTECT lMember,lMemberDep as LOGIC
   	PROTECT mMainId, mAccId as STRING
   	export mGainLsacc as string
   	PROTECT mSoort as STRING
@@ -1264,6 +1266,9 @@ oDCmActive := CheckBox{SELF,ResourceID{EDITACCOUNT_MACTIVE,_GetInst()}}
 oDCmActive:HyperLabel := HyperLabel{#mActive,"Active",NULL_STRING,NULL_STRING}
 oDCmActive:TooltipText := "Can this account be used for recording financial transactions?"
 
+oDCmembertext := FixedText{SELF,ResourceID{EDITACCOUNT_MEMBERTEXT,_GetInst()}}
+oDCmembertext:HyperLabel := HyperLabel{#membertext,NULL_STRING,NULL_STRING,NULL_STRING}
+
 oDCBudgetGranularity := RadioButtonGroup{SELF,ResourceID{EDITACCOUNT_BUDGETGRANULARITY,_GetInst()}}
 oDCBudgetGranularity:FillUsing({ ;
 									{oCCRadioButtonYear,"Year"}, ;
@@ -1588,7 +1593,7 @@ METHOD OkButton CLASS EditAccount
 		", department='"+self:mDep+"'"+;
       iif(ADMIN=="WA",", reimb="+self:mReimb,"")+;
       ", subscriptionprice="+ Str(self:mSubscriptionprice,-1)+;
-		", giftalwd="+iif(self:mCLN="0" .or.Empty(self:mCLN),iif(self:mGIFTALWD,"1","0"),"1")+;
+		", giftalwd="+iif(self:lMember.and.!self:lMemberDep,"1",iif(self:mGIFTALWD,"1","0"))+;
 		",active="+iif(self:mactive,"1","0")+;
 		", ipcaccount="+iif(IsNil(self:mIPCaccount) .or. Empty(self:oDCmIPCaccount:VALUE) .or. IsString(self:oDCmIPCaccount:VALUE),"0",Str(self:oDCmIPCaccount:VALUE,-1))+;
 		iif(self:mGIFTALWD,", clc='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',propxtra='"+Transform(cExtra,"@B")+"'",", clc='',propxtra=''")+;
@@ -1886,15 +1891,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 // 			self:oDCPropBox:FillUsing({})			
 		endif
 		self:oDCmGIFTALWD:Checked:=iif(self:oAcc:GIFTALWD=1,true,false)
-		// 		self:mGIFTALWD := iif(self:oAcc:GIFTALWD=1,true,false)
-		// 		IF !IsNil(self:oAcc:persid) .and. self:oAcc:persid>0
-		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid.or.self:oAcc:netasset=self:oAcc:accid)
+// 		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid.or.self:oAcc:netasset=self:oAcc:accid)
+		self:mCLN:=Transform(self:oAcc:mCLN,"")
+		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid)
 			* member:
-// 			self:mGIFTALWD:=true
 			self:oDCmGIFTALWD:Disable()
-			self:mCLN:=Transform(self:oAcc:mCLN,"")
 		else
-			self:mCLN:="0"
 			self:oDCmGIFTALWD:Enable()
 		ENDIF
 		// Read budget:
@@ -1905,7 +1907,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		IF !Empty(self:oAcc:mCLN)
 			* No update of description allowed:
 			self:lMember:=true
-			self:oDCmDescription:Disable() 
+			if Empty(self:oAcc:incomeacc)
+				self:oDCmDescription:Disable()
+				self:lMemberDep:=false
+				self:odcmembertext:textValue :='member account'
+			else
+				self:lMemberDep:=true
+				self:odcmembertext:textValue :='department member'
+			endif
 		ELSE
 			self:lMember:=false
 			self:oDCmDescription:SetFocus()
@@ -2163,6 +2172,7 @@ STATIC DEFINE EDITACCOUNT_MCOD3 := 159
 STATIC DEFINE EDITACCOUNT_MCURRENCY := 115 
 STATIC DEFINE EDITACCOUNT_MDEPARTMENT := 110 
 STATIC DEFINE EDITACCOUNT_MDESCRIPTION := 107 
+STATIC DEFINE EDITACCOUNT_MEMBERTEXT := 176 
 STATIC DEFINE EDITACCOUNT_MGAINLOSSACC := 120 
 STATIC DEFINE EDITACCOUNT_MGIFTALWD := 106 
 STATIC DEFINE EDITACCOUNT_MGLACCOUNT := 120 
