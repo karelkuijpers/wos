@@ -1803,7 +1803,7 @@ local nAcc as string
 			RETURN
 		ENDIF
 	ENDIF
-	if self:oOwner:ShowSelection()
+	if !Empty(self:oOwner) .and. !Empty(self:oOwner:ShowSelection())
 		self:EndWindow()
 	endif
 	RETURN
