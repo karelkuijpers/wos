@@ -253,7 +253,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 		oBrowse:=self:Server
 // 		self:oDCmAccount:Enable() 
 // 		self:oCCAccButton:Show()
-		self:maccid := Str(self:Server:accid,-1)
+		self:maccid := Transform(self:Server:accid,"")
 		self:mdescription := self:Server:description
 		self:mkind := self:Server:kind
 		self:mcontra_bankaccnt := self:Server:contra_bankaccnt
@@ -261,7 +261,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 		self:mAddSub := self:Server:addsub
 		self:mInd_AutMut := if(Empty(self:Server:Ind_AutMut),FALSE,true)
 		self:CurTelPatId:=str(self:server:telpatid,-1)
-		self:oDCmAccount:TEXTValue := AllTrim(self:Server:accountname)
+		self:oDCmAccount:TextValue := Transform(self:Server:accountname,"")
 		self:oOwner:=uExtra
 	ENDIF
 	RETURN nil
@@ -483,15 +483,16 @@ METHOD FindButton( ) CLASS TelePatternBrowser
 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
 		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
-			self:cWhereSpec+=" and ("
+			self:cWhereSpec+=iif(i>1," and ","")+"("
 			for j:=1 to Len(AFields)
 				self:cWhereSpec+=iif(j=1,""," or ")+AFields[j]+" like '%"+aKeyw[i,1]+"%'"
 			next
 			self:cWhereSpec+=")"
 		next
 	endif
-	self:oTelPat:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+iif(Empty(self:cWhereSpec),"",self:cWhereSpec)+" order by "+self:cOrder
+	self:oTelPat:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+iif(Empty(self:cWhereSpec),"1",self:cWhereSpec)+" order by "+self:cOrder
    self:oTelPat:Execute() 
+
 	if !Empty(self:oTelPat:status) 
 	 	LogEvent(,"findbutton telepattern:"+self:oTelPat:status:description+"( statmnt:"+self:oTelPat:SQLString,"LogErrors")
 	endif
@@ -558,12 +559,12 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	//Put your PreInit additions here 
 	self:cFields:="t.*,a.accnumber,a.description as accountname"
-	self:cFrom:="account a, telebankpatterns t"
-	self:cWhereBase:="a.accid=t.accid"
+	self:cFrom:="telebankpatterns t left join account a on (a.accid=t.accid)"
+	self:cWhereBase:=""
 	self:cWhereSpec:=""
 	self:cOrder:="accnumber"
 
-	self:oTelPat:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+iif(Empty(self:cWhereSpec),""," and "+self:cWhereSpec)+" order by "+self:cOrder,oConn}
+	self:oTelPat:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+iif(Empty(self:cWhereSpec),"1",self:cWhereSpec)+" order by "+self:cOrder,oConn}
 	
 	return NIL
 
