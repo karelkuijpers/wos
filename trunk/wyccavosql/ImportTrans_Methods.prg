@@ -515,13 +515,16 @@ DO WHILE Len(AFields)>1
 			endif
 		endif
 		if ptAccName>0 .and. ptAccName<=Len(AFields)
-			cAcc:=Split(AllTrim(AFields[ptAccName])," ")[1]
-			oAcc:=SQLSelect{"select accnumber,accid from account where "+iif(IsDigit(cAcc)," accnumber like '"+LTrimZero(cAcc)+"'%","description like '"+cAcc+"%'"),oConn}
+			cAcc:=Split(AllTrim(AFields[ptAccName])," ")[1] 
+			if IsDigit(cAcc)
+				cAcc:= LTrimZero(cAcc)
+			endif
+			oAcc:=SQLSelect{"select accnumber,accid from account where "+sIdentChar+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
 			if oAcc:RecCount=1
 				cAccNumber:=oAcc:ACCNUMBER
 			elseif oAcc:RecCount>0  
 				cAcc:=AllTrim(AFields[ptAccName])
-				oAcc:=SQLSelect{"select accnumber,accid from account where "+iif(IsDigit(cAcc)," accnumber like '"+LTrimZero(cAcc)+"'%","description like '"+cAcc+"%'"),oConn}
+				oAcc:=SQLSelect{"select accnumber,accid from account where "+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
 				if oAcc:RecCount=1
 					cAccNumber:=oAcc:ACCNUMBER 
 				endif
@@ -997,13 +1000,20 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			IF !Empty(housecode) .and.Empty(accnbrdest)
 				// search corresponding member:
 // 				osel:=SQLSelect{"select a.accnumber from account a,member m where m.householdid='"+housecode+"' and a.accid=m.accid",oConn}
-				osel:=SQLSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense from member m left join account ad on (ad.accid=m.accid) left join department d on (m.depid=d.depid) left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where m.householdid='"+housecode+"'",oConn}
+				osel:=SQLSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense,an.accnumber as accnetasset "+;
+				"from member m left join account ad on (ad.accid=m.accid) left join department d on (m.depid=d.depid) "+;
+				"left join account ai on (ai.accid=d.incomeacc) "+;
+				"left join account ae on (ae.accid=d.expenseacc) "+;
+				"left join account an on (an.accid=d.netasset) "+;
+				"where m.householdid='"+housecode+"'",oConn}
 				if osel:RecCount>0
 					if !Empty(osel:accdirect) 
 						accnbrdest:=osel:accdirect
 					elseif transtype="CN" .or. transtype="CP".or.transtype="MM"
   						accnbrdest:=Transform(osel:accincome,"")
-					else
+					elseif transtype="PC" .and. amount<0
+	  					accnbrdest:=Transform(osel:accnetasset,"")
+					else							
   						accnbrdest:=Transform(osel:accexpense,"")
 					endif
 				ENDIF
