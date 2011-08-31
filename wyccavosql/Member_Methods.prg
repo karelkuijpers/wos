@@ -7,7 +7,8 @@ LOCAL oItem AS ListViewItem
 			self:mRek :=  Str(oAcc:accid,-1)
 			self:oDCmAccDept:TEXTValue := AllTrim(oAcc:Description)
 			self:cAccountName := AllTrim(oAcc:Description)
-			self:cCurType:=oAcc:type
+			self:cCurType:=oAcc:type 
+			self:mDepid:=''
 		ELSEIF ItemName=="Associated Accounts"
 			oItem:=ListViewItem{}
 			oItem:SetText(oAcc:ACCNUMBER,#Number)
@@ -26,9 +27,10 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditMember
 	
 	oDep:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
 	IF oDep:reccount=1 
-		self:mDepid:=myNum
+		self:mDepid:=AllTrim(myNum)
 		self:mAccDept:=oDep:DESCRIPTN 
-		self:cDepartmentName:=oDep:DESCRIPTN
+		self:cDepartmentName:=oDep:DESCRIPTN 
+		self:mRek:=''
 	else
 		ErrorBox{self,self:olan:WGet("select a department")}:show()
 	ENDIF
