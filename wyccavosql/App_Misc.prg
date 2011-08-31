@@ -375,12 +375,14 @@ ELSE
    ENDIF
 ENDIF
 CLASS DataBrowserExtra INHERIT Databrowser
-CLASS DataDialogMine INHERIT DataDialog
+CLASS DataDialogMine inherit DataDialog
 	EXPORT aMemHome:={} as ARRAY
 	EXPORT aMemNonHome:={} as ARRAY
 	EXPORT aProjects:={} as ARRAY
 	Export oLan as Language 
+	
 	declare method FillMbrProjArray
+
 METHOD Close() CLASS DataDialogMine
 	CollectForced()
 RETURN SUPER:Close() 
@@ -389,17 +391,18 @@ LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
-oSQL:GoTop()
+// select projects:
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
+oSQL:Execute()
 
 DO WHILE !oSQL:EOF
 	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	oSQL:Skip()
-ENDDO
+ENDDO                                                                                               
 // select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
-oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
 		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
@@ -410,9 +413,8 @@ DO WHILE !oSQL:EOF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
 oSQL:Execute()
-oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
 		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
@@ -422,6 +424,7 @@ DO WHILE !oSQL:EOF
 	ENDIF
 	oSQL:Skip()
 ENDDO
+
 CLASS DataWindowExtra INHERIT DataWindow
 *	PROTECT uControlValue AS USUAL
 *	PROTECT cControlName AS STRING
@@ -516,47 +519,53 @@ CLASS DataWindowMine INHERIT DataWindow
 	Export oLan as Language 
 	
 	declare method FillMbrProjArray
+// CLASS DataDialogMine INHERIT DataDialog
+// 	EXPORT aMemHome:={} as ARRAY
+// 	EXPORT aMemNonHome:={} as ARRAY
+// 	EXPORT aProjects:={} as ARRAY
+// 	Export oLan as Language 
+// 	declare method FillMbrProjArray
 METHOD Close() CLASS DataWindowMine
 	CollectForced()
 /*	IF !_DynCheck()
 		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
 	ENDIF   */
 RETURN SUPER:close()
-METHOD FillMbrProjArray(dummy:=nil as logic) as void pascal CLASS DataWindowMine
+METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataWindowMine
 LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.accid from member m where m.accid=a.accid)",oConn}
-oSQL:GoTop()
+// select projects:
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
+oSQL:Execute()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	oSQL:Skip()
-ENDDO
+ENDDO                                                                                               
 // select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m, account as a where m.accid=a.accid and m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
-oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:SQLString:="select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m, account as a where m.accid=a.accid and m.homepp<>'"+SEntity+"'"
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
 oSQL:Execute()
-oSQL:GoTop()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
 	ENDIF
 	oSQL:Skip()
 ENDDO
@@ -2403,6 +2412,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2410,12 +2425,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
