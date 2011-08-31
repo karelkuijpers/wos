@@ -331,7 +331,7 @@ BEGIN
 	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 180, 110, 16, 13
 	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 314, 32
 	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 15, 13
+	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 16, 13
 	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 158, 86, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 200, 158, 15, 13
 	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 158, 86, 13, WS_EX_CLIENTEDGE
@@ -724,7 +724,8 @@ METHOD OKButton( ) CLASS EditDepartment
 	LOCAL cMainId  as STRING
 	LOCAL cError as STRING
 	local cSQLStatement as string
-	local oStmnt as SQLStatement
+	local oStmnt as SQLStatement 
+	local cLastname as string
 
 	IF Empty(self:mDepartmntNbr)
 		(ErrorBox{,"Please fill number of department"}):Show()
@@ -749,25 +750,46 @@ METHOD OKButton( ) CLASS EditDepartment
  		(Errorbox{,cError}):Show()
  		RETURN
 	ENDIF
-
-	IF SELF:lNew
-		IF !Empty(SELF:NbrCAPITAL)
-			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
+	if !lNew .and. !Empty(self:oDep:mpersid) 
+		// member department
+		cLastname:=SQLSelect{"select lastname from person where persid="+Str(self:oDep:mpersid,-1),oConn}:lastname
+		if AtC(cLastname,self:mDescription)=0
+			(ErrorBox{,self:oLan:WGet('Department description should contain lastname of corresponding member')+': "'+AllTrim(cLastname)+'" '}):Show()
+			self:oDCmDescription:SetFocus()
+			return 
+		endif		
+		IF Empty(self:NbrCAPITAL)
+			(ErrorBox{,"Net asset account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
-	ENDIF
-	IF self:lNew
-		IF !Empty(self:NbrIncome)
-			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
+		IF Empty(self:NbrIncome)
+			(ErrorBox{,"Income account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
-	ENDIF
-	IF self:lNew
-		IF !Empty(self:NbrExpense)
-			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
+		IF Empty(self:NbrExpense)
+			(ErrorBox{,"Expense account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
-	ENDIF
+	endif
+// 	IF SELF:lNew
+// 		IF !Empty(SELF:NbrCAPITAL)
+// 			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
+// 			RETURN
+// 		ENDIF		
+// 	ENDIF
+// 	IF self:lNew
+// 		IF !Empty(self:NbrIncome)
+// 			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
+// 			RETURN
+// 		ENDIF		
+// 	ENDIF
+// 	IF self:lNew
+// 		IF !Empty(self:NbrExpense)
+// 			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
+// 			RETURN
+// 		ENDIF		
+// 	ENDIF
+	
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
 	"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
@@ -840,27 +862,27 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			endif
 		ENDIF                    
 		if UsualType(self:oCaller:cSearch) = STRING
-      	self:mDescription:=self:oCaller:cSearch
-      endif
+			self:mDescription:=self:oCaller:cSearch
+		endif
 	ELSE
 		self:mDepId:=AllTrim(uExtra[4]) 
 		self:oDep:=SQLSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ainc.description as incname,aexp.description as expname,"+;
-		"ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,";
-		+SQLFullName(0,"p1")+" as person1," +;
-		SQLFullName(0,"p2")+" as person2,"+;
-		"m.mbrid "+;
-		"from department d "+;
-		"left join account an on (an.accid=d.netasset) "+; 
+			"ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,";
+			+SQLFullName(0,"p1")+" as person1," +;
+			SQLFullName(0,"p2")+" as person2,"+;
+			"m.mbrid,m.persid as mpersid "+;
+			"from department d "+;
+			"left join account an on (an.accid=d.netasset) "+; 
 		"left join account ainc on (ainc.accid=d.incomeacc) "+; 
 		"left join account aexp on (aexp.accid=d.expenseacc) "+; 
 		"left join department dp on (dp.depid=d.parentdep) "+; 
 		"left join person p1 on (p1.persid=d.persid) "+; 
 		"left join person p2 on (p2.persid=d.persid2) "+; 
 		"left join account as ass1 on (d.assacc1=ass1.accid) "+;
-		" left join account as ass2 on (d.assacc2=ass2.accid) "+;
-		" left join account as ass3 on (d.assacc3=ass3.accid) "+;
-		" left join member m on (m.depid=d.depid) "+;
-		"where d.depid='"+self:mDepId+"'",oConn} 
+			" left join account as ass2 on (d.assacc2=ass2.accid) "+;
+			" left join account as ass3 on (d.assacc3=ass3.accid) "+;
+			" left join member m on (m.depid=d.depid) "+;
+			"where d.depid='"+self:mDepId+"'",oConn} 
 		IF !Empty(self:oDep:NetAsset)
 			self:NbrCAPITAL :=  Str(self:oDep:NetAsset,-1)
 			self:oDCmCAPITAL:TEXTValue := Transform(self:oDep:captital,"")
@@ -891,11 +913,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mAccount3 := AllTrim(self:oDep:ass3)
 			cAccount3Name := mAccount3
 		endif
-		if !Empty(self:oDep:mbrid)
-			self:oDCMemberText:Show()
-		else
-			self:oDCMemberText:Hide()
-		endif
 		mDepartmntNbr:=self:oDep:deptmntnbr
 		OrgDepNbr:=AllTrim(mDepartmntNbr)
 		if !Empty(self:oDep:ParentDep)
@@ -920,6 +937,26 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			cContactName2 := mPerson2
 		endif
 	ENDIF
+	if (!Empty(self:oCaller:cTYPE).and. AtC("member",self:oCaller:cTYPE)>0) .or.(!lNew .and. !Empty(self:oDep:mbrid))
+		self:oDCMemberText:Show()
+		self:odcGroupBox2:Hide()
+		self:oDCmAccount1:Hide()
+		self:oCCRek1Button:Hide()
+		self:oDCmAccount2:Hide()
+		self:oCCRek2Button:Hide()
+		self:oDCmAccount3:Hide()
+		self:oCCRek3Button:Hide()
+		self:odcGroupBox1:Hide()
+		self:oDCmPerson1:Hide()
+		self:oCCPersonButton1:Hide()
+		self:oDCmPerson2:Hide()
+		self:oCCPersonButton2:Hide()
+		self:oDCmPerson2:Hide()
+		self:oCCPersonButton2:Hide()
+	else
+		self:oDCMemberText:Hide()
+	endif
+
 	RETURN nil
 METHOD RegAccount(oAccA,ItemName) CLASS EditDepartment
 IF !Empty(oAccA).and.oAccA:reccount>0
