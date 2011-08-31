@@ -1187,7 +1187,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	local aNAW:={} as array
 	LOCAL aMasc:={"DHR","HR","MR","HEER","MR","MON","MNR"} as ARRAY
 	LOCAL aFem:={"MW","MEJ","MRS","MVR","MEVR","MS","MME","MAD","MIS"} as ARRAY
-	LOCAL aCpl:={"DHR EN MW","DHR E/O MW","FAM","HR/MW","MW/HR"} as ARRAY 
+	LOCAL aCpl:={"DHR EN MW","DHR E/O MW","FAM","HR/MW","HR / MW","MW/HR"} as ARRAY 
 	local title,cTit as string 
 	local titPtr as int 
 	self:SetTexts()
