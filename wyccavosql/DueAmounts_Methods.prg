@@ -48,7 +48,7 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 			p_amount:=-p_amount
 			do WHILE !oDue:EOF.and.p_amount>0
 				payed_amount:=oDue:AmountRecvd
-				oStmnt:=SQLStatement{"update dueamount set amountrecvd="+Str( Max(0,oDue:AmountRecvd-p_amount),-1)+" where d.dueid="+Str(oDue:dueid,-1),oConn}
+				oStmnt:=SQLStatement{"update dueamount set amountrecvd="+Str( Max(0,oDue:AmountRecvd-p_amount),-1)+" where dueid="+Str(oDue:dueid,-1),oConn}
 				oStmnt:Execute()
 				if oStmnt:NumSuccessfulRows>0
 					p_amount:=p_amount-Min(payed_amount,p_amount)
@@ -60,7 +60,7 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 		endif
 		IF p_amount>0
 			* Create new due amount:
-			oSub:=SQLSelect{"select subscribid from subscription where personid="+p_cln+" and s.accid="+p_rek,oConn}
+			oSub:=SQLSelect{"select subscribid from subscription where personid="+p_cln+" and accid="+p_rek,oConn}
 			if oSub:RecCount>0   
 				oStmnt:=SQLStatement{"insert into dueamount (subscribid,invoicedate,seqnr,amountrecvd) values ("+Str(oSub:subscribid,-1)+",Now(),1,"+Str(p_amount,-1)+")",oConn}
 				oStmnt:Execute()
