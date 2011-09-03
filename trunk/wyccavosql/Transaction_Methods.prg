@@ -1879,7 +1879,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		//	lock mbalance records:
 		oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
 			" and	year="+Str(Year(self:mDAT),-1)+;
-			" and	month="+Str(Month(self:mDAT),-1)+" order by mbalid for	update",oConn}
+			" and	month="+Str(Month(self:mDAT),-1)+' order by mbalid for update',oConn}
 		if	!Empty(oMBal:Status)
 			self:Pointer := Pointer{POINTERARROW}
 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
@@ -1919,7 +1919,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			endif
 			// set locks for dueamounts:
 			IF	!Empty(cDueAccs)
-				oDue:=SQLSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+" and amountrecvd<amountinvoice order by invoicedate,seqnr for update",oConn}
+				oDue:=SQLSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
 			endif
 			// add to gifts income:
 			For i:=1 to Len(oHm:AMirror)
@@ -2035,17 +2035,16 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:Cre)
 							if !Empty(cError)
 								lError:=true
-								exit
+// 								exit
 							endif
 						ENDIF
 					endif
 				endif
 				if lError
+					SQLStatement{"rollback",oConn}:Execute()
 					self:Pointer := Pointer{POINTERARROW}
 					LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 					ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
-					SQLStatement{"rollback",oConn}:Execute()
-					// 					Break
 					return false
 				endif
 			next
@@ -2058,7 +2057,13 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			lSave:=FALSE
 			oHm:ResetNotification()	
 		ENDIF
-		if !lError
+		if lError
+			SQLStatement{"rollback",oConn}:Execute()
+			self:Pointer := Pointer{POINTERARROW}
+			LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+			ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
+			return false
+		else
 			oStmnt:=SQLStatement{"commit",oConn}
 			oStmnt:Execute() 
 			if Empty(oStmnt:Status) 
@@ -2237,9 +2242,10 @@ Method SetMG() as void pascal class GeneralJournal1
 	// set assessment code to MG in case of member gift
 	LOCAL oHm:=self:Server as TempTrans
 	LOCAL recnr,i as int
-	local mAccId:=oHm:ACCID as string
+	local mAccid as string
 	* Convert present AG's into MG's:
-	recnr := oHm:RECNO
+	recnr := oHm:RECNO 
+	mAccid:=oHm:aMirror[recnr,1]
 	FOR i=1 to Len(oHm:aMirror)
 		IF !oHm:aMirror[i,6]==recnr
 			IF (oHm:aMirror[i,4]=='AG'.or.Empty(oHm:aMirror[i,4])).and.oHm:aMirror[i,5]=='M' .and. !oHm:aMirror[i,1]==mAccId
