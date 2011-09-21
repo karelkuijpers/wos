@@ -366,27 +366,27 @@ METHOD OKButton( ) CLASS EditSubscription
 		*Check obliged fields:
 		IF Empty(mRek)
 			(ErrorBox{,self:oLan:WGet("You have to enter an Account") }):Show()
-			SELF:oDCmAccount:SetFocus()
-			RETURN NIL
+			self:oDCmAccount:SetFocus()
+			RETURN nil
 		ELSEIF Empty(mCLN)
 			(ErrorBox{self,self:oLan:WGet("You should enter a Person") }):Show()
-			SELF:oDCmPerson:SetFocus()
-			RETURN NIL
+			self:oDCmPerson:SetFocus()
+			RETURN nil
 		ELSEIF Empty(mamount)
 			(ErrorBox{self,self:oLan:WGet("You have to enter a periodic amount") }):Show()
-			SELF:oDCmPerson:SetFocus()
-			RETURN NIL
+			self:oDCmPerson:SetFocus()
+			RETURN nil
 		ELSE
 			if mType#'G'
 				IF Empty(oDCmDueDate:SelectedDate)
 					(ErrorBox{self:Owner,self:oLan:WGet("Due date obliged in case of donor/subscription") }):Show()
 					self:oDCmDueDate:SetFocus()
-					RETURN NIL
+					RETURN nil
 				ENDIF
 				IF !Empty(self:oDCmbegindate:SelectedDate).and.self:oDCmbegindate:SelectedDate>self:oDCmDueDate:SelectedDate
 					(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date later than the startdate")}):Show()
 					self:oDCmDueDate:SetFocus()
-					RETURN NIL
+					RETURN nil
 				ENDIF
 				IF !Empty(self:oDCmbegindate:SelectedDate).and. self:oDCmbegindate:SelectedDate>self:oDCmEndDate:SelectedDate
 					(ErrorBox{self:Owner,"Enter a end date later than the startdate"}):Show()
@@ -396,7 +396,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				IF Empty(self:mterm)
 					(ErrorBox{,self:oLan:WGet("Term obliged in case of donor/subscription") }):Show()
 					self:oDCmterm:SetFocus()
-					RETURN NIL
+					RETURN nil
 				ENDIF
 				d:=Day(self:oDCmDueDate:SelectedDate)
 				if d>28
@@ -420,10 +420,10 @@ METHOD OKButton( ) CLASS EditSubscription
 						RETURN nil
 					ENDIF
 				ENDIF
-			ELSEIF SELF:mPayMethod="C"
+			ELSEIF self:mPayMethod="C"
 				(ErrorBox{,self:oLan:WGet("Invoice ID is mandatory in case of Direct Debit") }):Show()
-				SELF:oDCmInvoiceID:SetFocus()
-				RETURN NIL		
+				self:oDCmInvoiceID:SetFocus()
+				RETURN nil		
 			ENDIF
 			IF Empty(mBankAccnt)
 				IF CountryCode="31" .and. self:mPayMethod="C"
@@ -435,7 +435,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				IF CountryCode="31"
 					if Len(AllTrim(mBankAccnt))>7
 						if !IsDutchBanknbr(AllTrim(mBankAccnt))
-							(ErrorBox{,self:oLan:WGet("Bankaccount")+space(1)+AllTrim(mBankAccnt)+space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
+							(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
 							self:oDCmBankAccnt:SetFocus()
 							RETURN nil		
 						endif 
@@ -445,11 +445,11 @@ METHOD OKButton( ) CLASS EditSubscription
 			
 		ENDIF
 
-		IF SELF:lNew
+		IF self:lNew
 			* check if subscription allready exists: 
 			if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
 				(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
-				RETURN NIL
+				RETURN nil
 			ENDIF
 		ENDIF
 // 		mCurRek:=oSub:accid 
@@ -477,11 +477,13 @@ METHOD OKButton( ) CLASS EditSubscription
 // 		if !self:lNew .and.(!self:mCurRek== self:mRek .or. !self:mCurCLN==self:mCLN) 
 // 			SQLStatement{"update dueamount set accid="+self:mRek+",persid="+self:mCLN+" where accid="+self:mCurRek+" and persid="+self:mCurCLN+" and AmountInvoice>AmountRecvd",oConn}:Execute() 
 // 		endif
-		self:oCaller:oSub:Execute()
-		if self:lNew
-			self:oCaller:goTop()
-		else
-			self:oCaller:goto(self:nCurRec)
+		if Empty(oStmnt:status) .and. oStmnt:NumSuccessfulRows>0
+			self:oCaller:oSub:Execute()
+			if self:lNew
+				self:oCaller:goTop()
+			else
+				self:oCaller:goto(self:nCurRec)
+			endif
 		endif
 		self:EndWindow()
 		return nil
@@ -509,7 +511,9 @@ self:SetTexts()
 	IF !self:lNew
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
-		oSub:=SQLSelect{"select s.*,"+SQLFullName(0,"p")+" as PersonName,a.description as Accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
+		oSub:=SQLSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,"+;
+		"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
+		SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
 		"from subscription s, account a,person p "+; 
 		+" left join personbank b on (b.persid=p.persid) " +;
 		" where a.accid=s.accid and p.persid=s.personid and subscribid="+self:msubid+" group by s.personid",oConn}
@@ -521,7 +525,7 @@ self:SetTexts()
 		self:oDCInvoiceText:hide()
 		self:oDCmInvoiceID:hide()
 		self:oDCmPayMethod:hide()
-		SELF:oCCRadioButtonCollection:Hide()
+		self:oCCRadioButtonCollection:hide()
 		self:oCCRadioButtonGiro:hide() 
 		self:oDCmDueDate:hide()
 		self:oDCmterm:hide()
@@ -534,15 +538,15 @@ self:SetTexts()
 	ELSEIF cType=="SUBSCRIPTIONS"
 		self:mtype:="A"
 		if sEntity == "NOR"
-			self:oDCInvoiceText:show()
-			self:oDCmInvoiceID:show()
+			self:oDCInvoiceText:Show()
+			self:oDCmInvoiceID:Show()
 		endif
 
 	ELSEIF cType=="DONATIONS"
 		self:mtype:="D"
 		if CountryCode=="47"
-			self:oDCInvoiceText:show()
-			self:oDCmInvoiceID:show()
+			self:oDCInvoiceText:Show()
+			self:oDCmInvoiceID:Show()
 		endif
 	ELSE
 	ENDIF	
@@ -562,16 +566,16 @@ self:SetTexts()
 	      self:oDCmPayMethod:Value:="C"
 		endif
 		IF self:mtype=="D".and.!Empty(SDON)
-			oSel:=SQLSelect{"select ACCNUMBER,description from account where accid="+SDON,oConn}
+			oSel:=SQLSelect{"select accnumber,description from account where accid="+SDON,oConn}
 			if oSel:RecCount>0
 				self:cAccountName :=oSel:description 
 				self:mAccount:= cAccountName
-				self:mRek:=sdon
+				self:mRek:=SDON
 	      	self:mAccNumber:=oSel:ACCNUMBER
 			ENDIF			
 		ENDIF
     ELSE
-		self:mRek := Str(oSub:accid,-1)
+		self:mRek := Str(oSub:accid,-1)                  
 		self:cAccountName := oSub:AccountName
 		self:mAccount:= cAccountName
 		self:mAccNumber:=oSub:ACCNUMBER
@@ -589,19 +593,19 @@ self:SetTexts()
 		ENDIF
 		self:oDCmEndDate:SelectedDate := iif(Empty(oSub:ENDDATE),Today()+365*100,oSub:ENDDATE)
 
-		self:mterm := oSub:term
+		self:mterm := ConI(oSub:term)
 		self:mamount := oSub:amount
-		self:mlstchange := oSub:lstchange
+		self:mlstchange := oSub:lstchange                 
 		self:mtype := oSub:category
 		IF Empty(oSub:PAYMETHOD)
 	        self:oDCmPayMethod:Value:="G"
 		ELSE
-			SELF:oDCmPayMethod:Value:=oSub:PAYMETHOD
+			self:oDCmPayMethod:Value:=oSub:PAYMETHOD
 		ENDIF
 		self:mInvoiceID:=oSub:INVOICEID
 		self:mReference:=oSub:REFERENCE     
 		IF !Empty(oSub:BankAccs)
-			self:oDCmBankAccnt:FillUsing(Split(oSub:Bankaccs,','))
+			self:oDCmBankAccnt:FillUsing(Split(oSub:BankAccs,','))
 			if !Empty(oSub:BANKACCNT)
 				self:oDCmBankAccnt:CurrentItem:=oSub:BANKACCNT
 			endif
@@ -614,8 +618,8 @@ self:SetTexts()
 		self:cHeading:="Donation Account"
 		self:Caption:=self:oLan:WGet("Edit ")
 		if CountryCode="31"
-			self:oDCBankText:show()
-			self:oDCmBankAccnt:show()
+			self:oDCBankText:Show()
+			self:oDCmBankAccnt:Show()
 			// find bankaccounts if empty:
 		endif                                                                        c
 
@@ -633,7 +637,7 @@ self:SetTexts()
 		self:oDCmamount:Enable()
 	ENDIF
 
-	RETURN NIL
+	RETURN nil
 STATIC DEFINE EDITSUBSCRIPTION_ACCBUTTON := 110 
 STATIC DEFINE EDITSUBSCRIPTION_BANKTEXT := 125 
 STATIC DEFINE EDITSUBSCRIPTION_CANCELBUTTON := 126 
@@ -810,7 +814,7 @@ METHOD AccButton(lUnique ) CLASS SubscriptionBrowser
 	ELSEIF cType=="SUBSCRIPTIONS"
 		cFilter:=MakeFilter(,,,0,false,{SDON})
 	ELSEIF cType=="DONATIONS"
-		cFilter:=MakeFilter({SDON},,,1,false,)
+		cFilter:='('+MakeFilter({SDON},,,1,false,)+" or a.accid in (select accid from subscription where category='D'))"
 	ELSE
 		cFilter:=MakeFilter({SDON},,,1,true,)
 	ENDIF	
@@ -936,7 +940,7 @@ SELF:Pointer := Pointer{POINTERHOURGLASS}
 AAdd(aDescription,self:oLan:RGet("subscription",,"!"))
 AAdd(aDescription,self:oLan:RGet("donation",,"!"))
 AAdd(aDescription,self:oLan:RGet("gift",,"!"))
-cFields+=",duedate,term,amount,INVOICEID,BANKACCNT"
+cFields+=",invoiceid,bankaccnt"
 oSel:=SQLSelect{"select "+cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn} 
 
 IF oReport:Extension#"xls"
@@ -952,7 +956,7 @@ self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif
 do WHILE !oSel:EOF
 	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
 	cTab+Str(oSel:amount,12,DecAantal)+cTab+PadR(Str(oSel:term,-1),6)+cTab+;
-	PadC(DToC(oSel:DueDate),12," ")+cTab+;
+	PadC(DToC(iif(Empty(oSel:DueDate),null_date,oSel:DueDate)),12," ")+cTab+;
 	iif(oSel:category=="A",aDescription[1],;
 	iif(oSel:category=="D",aDescription[2],aDescription[3])),aHeading) 
 	fsum+= oSel:amount
@@ -1065,9 +1069,11 @@ self:SetTexts()
 	ELSEIF cType=="SUBSCRIPTIONS"
 		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
 	ENDIF
-  	self:oDCFound:TextValue:=Str(self:oSub:RecCount,-1)
+   self:oDCFound:TextValue:=Str(ConI(SQLSelect{"select count(*) as totcount from "+self:cFrom+" where "+self:cWhere,oConn}:totcount),-1)
 
-	RETURN NIL
+//   	self:oDCFound:TextValue:=Str(self:oSub:RecCount,-1)
+
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	//Put your PreInit additions here   
 	// uExtra can contain extra filter
@@ -1085,11 +1091,14 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 		cFilter:=uExtra
 	ENDIF
  
-	self:cFields:=SQLFullName(0,"p")+" as PersonName,a.description as Accountname,s.begindate,s.duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid"
+	self:cFields:=SQLFullName(0,"p")+" as personname,a.description as accountname,cast(s.begindate as date) as begindate,"+;
+	"if(s.category='G','Periodic Gift',if(s.category='A','Subscription','Donation')) as catdesc,"+;
+	"cast(s.duedate as date) as duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid"
 	self:cFrom:="person p, account a, subscription s" 
 	self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'" 
 	self:cOrder:="personname"
-	self:oSub:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cFilter),''," and "+cFilter)+" order by "+self:cOrder,oConn} 
+	self:oSub:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cFilter),''," and "+cFilter)+;
+	" order by "+self:cOrder+" limit 200",oConn} 
 	RETURN nil                 
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
@@ -1102,7 +1111,7 @@ CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine
 	PROTECT oDBDUEDATE as DataColumn
 	PROTECT oDBTERM as DataColumn
 	PROTECT oDBAMOUNT as DataColumn
-	PROTECT oDBMTYPE as DataColumn
+	PROTECT oDBCATDESC as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as SubscriptionBrowser
@@ -1166,13 +1175,11 @@ oDBAMOUNT:HyperLabel := HyperLabel{#amount,"Amount",NULL_STRING,NULL_STRING}
 oDBAMOUNT:Caption := "Amount"
 self:Browser:AddColumn(oDBAMOUNT)
 
-oDBMTYPE := DataColumn{13}
-oDBMTYPE:Width := 13
-oDBMTYPE:HyperLabel := HyperLabel{#mType,"Type",NULL_STRING,NULL_STRING} 
-oDBMTYPE:Caption := "Type"
-oDBmType:Block := {|x| if( x:category=='G','Periodic Gift',if(x:category=='A','Subscription','Donation'))}
-oDBmType:BlockOwner := Self:Server
-self:Browser:AddColumn(oDBMTYPE)
+oDBCATDESC := DataColumn{13}
+oDBCATDESC:Width := 13
+oDBCATDESC:HyperLabel := HyperLabel{#catdesc,"Type",NULL_STRING,NULL_STRING} 
+oDBCATDESC:Caption := "Type"
+self:Browser:AddColumn(oDBCATDESC)
 
 
 SELF:ViewAs(#BrowseView)
@@ -1204,6 +1211,7 @@ STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_ACCOUNTNAME := 101
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_ACCOUNTNUMBER := 109 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_AMOUNT := 105 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_BEGINDATE := 102 
+STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_CATDESC := 106 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_DUEDATE := 103 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_lstchange := 114 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_MPERSON := 108 
