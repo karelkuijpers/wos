@@ -128,7 +128,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local cError as string
-	local lTrMError as logic
+	local lTrMError,lFatal as logic
 	local aMBal:={},aMBalF:={} as array   // array with corrections of Mbalance {{accid,year,month,deb,cre},...}
 	nFromYear:=Year(LstYearClosed)  
 	if lShow
@@ -143,7 +143,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
-	oSel:=SQLSelect{"select m.*,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
+	oSel:=SqlSelect{"select m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		cError:="No correspondence between transactions and month balances per account"+CRLF
@@ -154,7 +154,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo 
 	endif
-	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
+	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
 			cError:="No correspondence between transactions and month balances per account"+CRLF
@@ -175,7 +175,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
-	oSel:=SQLSelect{"select m.*,t.debtot,t.cretot,a.accnumber from mbalance m left join transsumf t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency<>'"+sCurr+"'",oConn}
+	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,cast(m.`currency` as char) as currency,t.debtot,t.cretot,a.accnumber from mbalance m left join transsumf t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and m.year>="+Str(nFromYear,-1)+" and m.currency<>'"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		if Empty(cError)
@@ -188,7 +188,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
-	oSel:=SQLSelect{"select m.deb,m.cre,t.*,a.accnumber,a.currency from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
+	oSel:=SqlSelect{"select m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber,a.`currency` from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and t.year>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
 			cError:="No correspondence between transactions and month balances per account"+CRLF
@@ -217,6 +217,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		cError+="Not all transactions are balanced for "+sCurr+":"+CRLF
 		do while !oSel:EoF
 			cError+=Space(4)+"Transaction:"+Str(oSel:transid,-1)+" date:"+DToC(oSel:dat)+CRLF 
+			lFatal:=true
 			oSel:Skip()
 		enddo
 	endif
@@ -266,6 +267,9 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			next
 			if lShow
 				oMainWindow:Pointer := Pointer{POINTERARROW} 
+			endif
+			if !lFatal
+				return true    // after correction correct
 			endif
 		endif
 		oMainWindow:STATUSMESSAGE(Space(100))
@@ -327,6 +331,16 @@ DO WHILE At("  ",f_tekst)>0
    f_tekst:=StrTran(f_tekst,"  "," ")
 ENDDO
 RETURN f_tekst
+function ConI(uValue as usual) as int
+// convert usual from tyniint to int
+return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),Val(uValue)))
+function ConL(uValue as usual) as logic
+// convert usual from tiniint to logic
+return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
+function ConS(uValue as usual) as string
+// convert usual from count total to string
+return AllTrim(Transform(uValue,""))
+
 Function Correspondence(Str1 as string, Str2 as string) as int
 // determine percentage correspondence of Str2 to Str1 
 Local i, Len1, Len2, MinL, Score, Divdr as int
@@ -383,44 +397,41 @@ CLASS DataDialogMine inherit DataDialog
 	
 	declare method FillMbrProjArray
 
-METHOD Close() CLASS DataDialogMine
-	CollectForced()
-RETURN SUPER:Close() 
 METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMine
 LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
 // select projects:
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
 iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
 oSQL:Execute()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	oSQL:Skip()
 ENDDO                                                                                               
 // select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
@@ -525,51 +536,44 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	EXPORT aProjects:={} as ARRAY
 // 	Export oLan as Language 
 // 	declare method FillMbrProjArray
-METHOD Close() CLASS DataWindowMine
-	CollectForced()
-/*	IF !_DynCheck()
-		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
-	ENDIF   */
-RETURN SUPER:close()
 METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataWindowMine
 LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
 
 // select projects:
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
 iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
 oSQL:Execute()
 
 DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	oSQL:Skip()
 ENDDO                                                                                               
 // select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
+oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ELSE
 		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid})
+		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
 	ENDIF
 	oSQL:Skip()
 ENDDO
-
 DEFINE DATEFIELD:=3
 CLASS DateStandard INHERIT DATETIMEPICKER
 	* Standard date for normal use
@@ -909,7 +913,7 @@ local oSel as SQLSelect
 local cYearMonth as string 
 GlBalYears:={} 
 AAdd(GlBalYears,{LstYearClosed,"transaction"})
-oSel:=SQLSelect{"select * from balanceyear order by yearstart desc,monthstart desc",oConn}
+oSel:=SQLSelect{"select yearstart,monthstart from balanceyear order by yearstart desc,monthstart desc",oConn}
 if oSel:RecCount>0
 	do while !oSel:EOF
 		cYearMonth:=Str(oSel:YEARSTART,4,0)+StrZero(oSel:MONTHSTART,2,0)
@@ -929,7 +933,7 @@ FUNCTION FillPersCode ()
 LOCAL oMailCd as SQLSelect
 pers_codes:={}
 mail_abrv:={}
-oMailCd := SQLSelect{"select * from perscod",oConn}
+oMailCd := SQLSelect{"select pers_code,description,abbrvtn from perscod",oConn}
 pers_codes:=oMailCd:GetLookupTable(500,#description,#PERS_CODE)
 ASize(pers_codes,Len(pers_codes)+1)
 AIns(pers_codes,1) 
@@ -948,10 +952,10 @@ FUNCTION FillPersProp ()
 	* Fill global Array pers_propextra with description + id of extra person properties
 	LOCAL oPersProp as SQLSelect
 	pers_propextra:={}
-	oPersProp := SQLSelect{"SELECT * FROM `person_properties` order by id",oConn} 
+	oPersProp := SQLSelect{"SELECT `id`,`name`,`type`,`values` FROM `person_properties` order by `id`",oConn} 
 	if oPersProp:RecCount>0
 		DO WHILE !oPersProp:EOF
-			AAdd(pers_propextra,{oPersProp:FIELDGET(2), oPersProp:ID,oPersProp:type,Lower(oPersProp:VALUES)})
+			AAdd(pers_propextra,{oPersProp:name, oPersProp:ID,oPersProp:type,Lower(oPersProp:VALUES)})
 			oPersProp:Skip()
 		ENDDO 
 	endif
@@ -977,7 +981,7 @@ FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as strin
 	// add conditinally accstr to aAcc
 	LOCAL accstr:=LTrimZero(SubStr(accarr[1],1,LENACCNBR)) as STRING
 	IF accstr>=cStart .and. accstr<=cEnd
-		if (Empty(aBalIncl) .or. AScanExact(aBalIncl,Str(accarr[3],-1))>0) .and. (Empty(aDepIncl) .or. AScanExact(aDepIncl,Str(accarr[3],-1))>0) 
+		if (Empty(aBalIncl) .or. AScanExact(aBalIncl,Str(accarr[3],-1))>0) .and. (Empty(aDepIncl) .or. AScanExact(aDepIncl,Str(accarr[4],-1))>0) 
 			AAdd(aAcc,{accarr[1],accarr[2]})
 		endif
 	ENDIF
@@ -1296,9 +1300,13 @@ function InitGlobals()
 	ENDIF	
 	EXCEL:= excelpath +"Excel.exe "
 	oReg:=null_object
-	oSys:=SQLSelect{"select * from sysparms",oConn}
+	oSys:=SQLSelect{"select `am`,`assproja`,`assfldac`,`defaultcod`,`fgmlcodes`,`capital`,`cash`,`donors`,`donors`,`creditors`,`projects`,`giftincac`,"+;
+	"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
+	"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
+	"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
+	"`yearclosed`,`debtors`,`currency`,`sysname` from sysparms",oConn}
 	IF oSys:RecCount>0
-		oSel:=SQLSelect{"select * from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
+		oSel:=SQLSelect{"select yearstart,yearlength,monthstart from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
 			nMindate:=oSel:YEARSTART*12+oSel:YEARLENGTH+oSel:MONTHSTART 
 			LstYearClosed:=SToD(Str(Integer(nMindate/12),4)+StrZero(nMindate%12,2)+"01")
@@ -1330,8 +1338,10 @@ function InitGlobals()
 		sInhdKntrM := oSys:withldoffm
 		sInhdKntrH := oSys:withldoffh
 		sInhdField := oSys:assmntfield 
-		CITYUPC := iif(oSys:CITYNMUPC==1,true,false)
-		LSTNUPC := iif(oSys:LSTNMUPC==1,true,false)
+// 		CITYUPC := iif(oSys:CITYNMUPC==iif(IsNumeric(oSys:CITYNMUPC),1,'1'),true,false)
+// 		LSTNUPC := iif(oSys:LSTNMUPC==iif(IsNumeric(oSys:LSTNMUPC),1,'1'),true,false)
+		CITYUPC := ConL(oSys:CITYNMUPC)
+		LSTNUPC := ConL(oSys:LSTNMUPC)
 		
 		SEntity	:= AllTrim(oSys:Entity)
 		SHB		:= iif(Empty(oSys:HB),'',Str(oSys:HB,-1))
@@ -1339,9 +1349,9 @@ function InitGlobals()
 		SPOSTZ	:= iif(Empty(oSys:Postage),'',Str(oSys:Postage,-1))
 		STOPP		:= iif(Empty(oSys:ToPPAcct),'',Str(oSys:ToPPAcct,-1) )
 		sCURRNAME:= AllTrim(oSys:CURRNAME) 
-		Posting:=iif(oSys:Posting==1,true,false)
-		LstCurRate := iif(oSys:LSTCURRT==1,true,false)
-		oSel:= SQLSelect{"select * from currencylist where aed='"+AllTrim(oSys:Currency)+"'",oConn}
+		Posting:=iif(ConI(oSys:Posting)=1,true,false)
+		LstCurRate := ConL(oSys:LSTCURRT)
+		oSel:= SQLSelect{"select `aed` from currencylist where aed='"+AllTrim(oSys:Currency)+"'",oConn}
 		if oSel:RecCount>0
 			sCURR   :=  oSel:AED
 		endif
@@ -1354,15 +1364,15 @@ function InitGlobals()
 			ENDIF
 			Admin:=oSys:ADMINTYPE
 		ENDIF
-		requiredemailclient:=oSys:MAILCLIENT
-		sFirstNmInAdr := iif(oSys:FirstName==1,true,false)
+		requiredemailclient:=ConI(oSys:MAILCLIENT)                                 
+		sFirstNmInAdr := ConL(oSys:FirstName)
 		sLand	:= AllTrim(oSys:CountryOwn)
 		OwnCountryNames:=Split(AllTrim(oSys:OWNCNTRY),",")
-		sFirstNmInAdr := iif(oSys:FirstName==1,true,false)
-		sSurnameFirst := iif(oSys:SURNMFIRST==1,true,false)
-		sSalutation := iif(oSys:NOSALUT==1,false,true)
-		TITELINADR := iif(oSys:TITINADR==1,true,false)
-		sSTRZIPCITY := oSys:STRZIPCITY
+		sFirstNmInAdr := ConL(oSys:FirstName)
+		sSurnameFirst := ConL(oSys:SURNMFIRST)
+		sSalutation := ConL(oSys:NOSALUT)
+		TITELINADR := ConL(oSys:TITINADR)
+		sSTRZIPCITY := ConI(oSys:STRZIPCITY)
 		ClosingMonth:=oSys:CLOSEMONTH
 		Alg_Taal := oSys:CrLanguage
 		Mindate:=oSys:Mindate 
@@ -1373,14 +1383,14 @@ function InitGlobals()
 		CountryCode:=AllTrim(oSys:COUNTRYCOD)
 		if !Empty(BANKNBRCRE) .and. SEntity="NED"
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
-			oSel:=SQLSelect{"select * from ppcodes where ppcode='AAA'",oConn}
+			oSel:=SQLSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
 			if oSel:RecCount=0
 				SQLStatement{"insert into ppcodes set ppcode='AAA',ppname='Bank:"+BANKNBRCRE+"'",oConn}:execute()
 			elseif !AllTrim(oSel:PPNAME)=="Bank:"+BANKNBRCRE
 				SQLStatement{"update ppcodes set ppname='Bank:"+BANKNBRCRE+"' where ppcode='AAA'",oConn}:execute()
 			endif
 		endif 
-		oSel:=SQLSelect{"select * from ppcodes where ppcode='ACH'",oConn}
+		oSel:=SQLSelect{"select ppcode from ppcodes where ppcode='ACH'",oConn}
 		if oSel:RecCount=0
 			SQLStatement{"insert into ppcodes set ppcode='ACH',ppname='ACH for member bank deposits'",oConn}:execute()
 		endif
@@ -1410,7 +1420,7 @@ function InitGlobals()
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
 	
-	oSel:=SQLSelect{"select * from bankaccount",oConn}
+	oSel:=SQLSelect{"select accid from bankaccount where accid>0",oConn}
 	IF oSel:RecCount>0
 		// fill global array with bank accounts
 		BankAccs:={}
@@ -1418,7 +1428,7 @@ function InitGlobals()
 			AAdd(BankAccs,Str(oSel:accid,-1))
 			oSel:Skip()
 		ENDDO
-		oSel:=SQLSelect{"select * from bankaccount where telebankng>0 and accid",oConn}
+		oSel:=SQLSelect{"select count(*) from bankaccount where telebankng>0 and accid",oConn}
 		IF oSel:RecCount>0
 			TeleBanking:=true
 		else
@@ -1439,7 +1449,7 @@ function InitGlobals()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
-	if !SQLSelect{"select count(*) as total from department",oConn}:total=="0"
+	if !ConI(SQLSelect{"select count(*) as total from department",oConn}:total)==0
 		Departments:=true
 	endif
 
@@ -1612,7 +1622,7 @@ METHOD GetDepnts() CLASS ListBoxBal
 			"FROM `department` d left join `account` a on(a.department=d.depid) group by d.depid order by parentdep,deptmntnbr",oConn}
 		if oDep:RecCount>0
 			do while !oDep:EoF
-				AAdd(aItem,{oDep:DepId,oDep:parentdep,oDep:descriptn,oDep:deptmntnbr,Val(oDep:acccnt)})
+				AAdd(aItem,{oDep:DepId,oDep:parentdep,oDep:descriptn,oDep:deptmntnbr,ConI(oDep:acccnt)})
 				//          		 1         2           3              4                  5
 				oDep:Skip()
 			enddo
@@ -2230,19 +2240,25 @@ function PersonUnion(id1 as string, id2 as string)
 	SQLStatement{"start transaction",oConn}:Execute()
 	oStmt:=SQLStatement{'',oConn}
 	// Unify persons self:
-	oPers1:=SQLSelect{"select p.*,m.accid from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
-	oPers2:=SQLSelect{"select p.*,m.accid from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
+	oPers1:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
+	"remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	"address,city,postalcode,country,attention,propextr"+;
+	" from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
+	oPers2:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
+	"remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	"address,city,postalcode,country,attention,propextr"+;
+	" from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
 
 	if oPers1:RecCount<1 .or. oPers2:RecCount<1
 		return false
 	endif
-	if !Empty( oPers1:accid) .and. !Empty( oPers2:accid)
+	if !Empty( oPers1:mbrid) .and. !Empty( oPers2:mbrid)
 		(ErrorBox{,"Not possible to unify two members"}):Show()
 		return false
 	endif
 	oSel:=SQLSelect{"SELECT TABLE_NAME FROM information_schema.TABLES "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME like 'tr%' order by TABLE_NAME",oConn}
-	aTrTable:=oSel:getlookuptable(50, #table_name, #table_name) 
+	aTrTable:=oSel:GetLookupTable(50, #table_name, #table_name) 
 	for i:=1 to Len(aTrTable)
 		oStmt:SQLString:="update "+aTrTable[i,1]+" set persid='"+id1+"' where persid="+id2
 		oStmt:Execute()
@@ -2316,7 +2332,7 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",title="+Str(oPers2:Title,-1)
 		endif
 		if Empty( oPers1:telbusiness)
-			cStatement+=",telbusiness='"+ oPers2:telbusiness+"'"
+			cStatement+=",telbusiness='"+ oPers2:telbusiness+"'"            
 		endif
 		if Empty( oPers1:telhome)
 			cStatement+=",telhome='"+ oPers2:telhome+"'"
