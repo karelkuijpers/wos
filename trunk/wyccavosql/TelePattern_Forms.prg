@@ -259,7 +259,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 		self:mcontra_bankaccnt := self:Server:contra_bankaccnt
 		self:mcontra_name := self:Server:contra_name
 		self:mAddSub := self:Server:addsub
-		self:mInd_AutMut := if(Empty(self:Server:Ind_AutMut),FALSE,true)
+		self:mInd_AutMut := ConL(self:Server:Ind_AutMut)
 		self:CurTelPatId:=str(self:server:telpatid,-1)
 		self:oDCmAccount:TextValue := Transform(self:Server:accountname,"")
 		self:oOwner:=uExtra
@@ -465,9 +465,9 @@ oLan:RGet("Name",26,"!")+oLan:RGet("Description",26,"!")+oLan:RGet("D/C",4,"!")+
 nRow := 0
 nPage := 0
 DO WHILE .not. oTele:EOF
-   oReport:PrintLine(@nRow,@nPage,Pad(oTele:ACCNUMBER,12)+Pad(oTele:accountname,20)+" "+Pad(NTrim(oTele:contra_bankaccnt),15)+' '+;
-	Pad(oTele:contra_name,25)+" "+Pad(oTele:description,25)+"  "+Pad(oTele:addsub,4)+if(oTele:IND_AUTMUT,"X"," ")+'  '+;
-    DToC(oTele:RECDATE),kopregels)
+   oReport:PrintLine(@nRow,@nPage,Pad(Transform(oTele:ACCNUMBER,""),12)+Pad(Transform(oTele:accountname,""),20)+" "+Pad(oTele:contra_bankaccnt,15)+' '+;
+	Pad(oTele:contra_name,25)+" "+Pad(oTele:description,25)+"  "+Pad(oTele:addsub,4)+if(ConL(ConI(oTele:IND_AUTMUT)),"X"," ")+'  '+;
+    DToC(iif(Empty(oTele:RECDATE),null_date,oTele:RECDATE)),kopregels)
    oTele:skip()
 ENDDO
 oTele:ResetNotification()
@@ -558,7 +558,8 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	//Put your PreInit additions here 
-	self:cFields:="t.*,a.accnumber,a.description as accountname"
+	self:cFields:="t.telpatid,t.kind,t.contra_bankaccnt,t.contra_name,t.addsub,t.description,t.accid,t.ind_autmut,cast(t.recdate as date) as recdate,"+;
+	"a.accnumber,a.description as accountname"
 	self:cFrom:="telebankpatterns t left join account a on (a.accid=t.accid)"
 	self:cWhereBase:=""
 	self:cWhereSpec:=""
