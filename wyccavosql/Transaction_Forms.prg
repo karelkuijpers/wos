@@ -804,19 +804,19 @@ METHOD SaveButton( ) CLASS General_Journal
 	SELF:OKButton(TRUE)
 	RETURN
 METHOD TeleBankButton( ) CLASS General_Journal
-	IF !oTmt==null_object
-		oTmt:Close()
+	IF !self:oTmt==null_object
+		self:oTmt:Close()
 	endif
-	oTmt:=TeleMut{FALSE,self} 
-	if Empty(oTmt:m57_BankAcc)
-		lTeleBank:=false
+	self:oTmt:=TeleMut{FALSE,self} 
+	if Empty(self:oTmt:m57_BankAcc)
+		self:lTeleBank:=false
 		return nil
 	endif
-	IF oTmt:NextTeleNonGift()
-		oCCTeleBankButton:Hide()
+	IF self:oTmt:NextTeleNonGift()
+		self:oCCTeleBankButton:Hide()
 		self:lTeleBank := true
 		self:FillTeleBanking()
-		IF oTmt:m56_autmut   //nog steeds herkend?
+		IF self:oTmt:m56_autmut   //nog steeds herkend?
 			self:OKButton()
 		ENDIF
 	ELSE
@@ -2545,8 +2545,8 @@ method bankanalyze() class PaymentJournal
 		"from bankaccount b left join account a on (a.accid=b.singledst and a.active=1) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid or m.depid=a.department) "+;
 		"where b.accid="+self:DebAccId,oConn}
 	if oSel:reccount>0  
-		self:GiftsAutomatic:=iif(oSel:GIFTSALL=1,true,false)
-		self:DueAutomatic:=iif(oSel:OPENALL=1,true,false)
+		self:GiftsAutomatic:=iif(ConI(oSel:GIFTSALL)=1,true,false)
+		self:DueAutomatic:=iif(ConI(oSel:OPENALL)=1,true,false)
 		IF MultiDest
 			self:DefBest := iif(Empty(oSel:SINGLEDST),'',Str(oSel:SINGLEDST,-1))
 			* Check if it concerns a bank account with a single destination:
@@ -2559,7 +2559,7 @@ method bankanalyze() class PaymentJournal
 					self:DefGc := "AG"
 				ENDIF
 				self:DefCur:=oSel:Currency
-				self:DefMulti:=iif(oSel:MULTCURR=1,true,false) 
+				self:DefMulti:=iif(ConI(oSel:MULTCURR)=1,true,false) 
 				self:DefMlcd:=oSel:FGMLCODES
 				self:DefOvrd:=iif(oSel:SYSCODOVER="O",true,false)
 				self:DefType:=oSel:acctype
@@ -2672,13 +2672,13 @@ RETURN uValue
 
 METHOD DebSelect() CLASS PaymentJournal
 	*	Selection of bank accounts as candidate debitaccount for payments/gifts
-	LOCAL aDebAccs := {} AS ARRAY
+	LOCAL aDebAccs := {} as ARRAY
 	local oBank,oAcc as SQLSelect
 	oBank:=SQLSelect{"select b.usedforgifts,a.currency,a.description,a.accid,a.accnumber from bankaccount b, account a where a.accid=b.accid and b.telebankng=0 and a.active=1", oConn}
 	oBank:Execute() 
 	do WHILE !oBank:EOF
 		AAdd(aDebAccs,{oBank:Description,oBank:AccID})
-		IF Empty(cBankPreSet) .and.oBank:usedforgifts=1
+		IF Empty(cBankPreSet) .and.ConI(oBank:usedforgifts)=1
 			cBankPreSet := oBank:Description
 			self:DebAccNbr:=oBank:ACCNUMBER
 			self:DebAccId:=Str(oBank:AccID,-1) 
@@ -3110,7 +3110,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 			self:DefOms := oSel:Description
 			self:DefNbr:=oSel:ACCNUMBER
 			self:DefCur:=oSel:Currency
-			self:DefMulti:=iif(oSel:MULTCURR=1,true,false) 
+			self:DefMulti:=iif(ConI(oSel:MULTCURR)=1,true,false) 
 			self:DefType:=oSel:acctype
 			IF !Empty(oSel:persid)
 				self:DefGc := "AG"
@@ -3214,27 +3214,27 @@ METHOD ShowDebBal() CLASS PaymentJournal
 
 	RETURN
 METHOD TeleBankButton( ) CLASS PaymentJournal
-	LOCAL lSuccess AS LOGIC
-	IF !oTmt==null_object
-		oTmt:Close()
+	LOCAL lSuccess as LOGIC
+	IF !self:oTmt==null_object
+		self:oTmt:Close()
 	endif
-	oTmt:=TeleMut{true,self} 
-	if Empty(oTmt:m57_BankAcc)
-		lTeleBank:=false
+	self:oTmt:=TeleMut{true,self} 
+	if Empty(self:oTmt:m57_BankAcc)
+		self:lTeleBank:=false
 		return nil
 	endif
 
-	IF oTmt:NextTeleGift()
-		oCCTeleBankButton:Hide()
-		oCCNonEarmarked:Hide()
+	IF self:oTmt:NextTeleGift()
+		self:oCCTeleBankButton:Hide()
+		self:oCCNonEarmarked:Hide()
 		self:lTeleBank := true
 		self:FillTeleBanking()
-		IF SELF:AutoRec
-			SELF:OKButton()
+		IF self:AutoRec
+			self:OKButton()
 		ENDIF
 	ELSE
 		self:lTeleBank := FALSE
-		(WarningBox{SELF,"Recording Gifts","No Telebanking Gifts found"}):Show()
+		(WarningBox{self,"Recording Gifts","No Telebanking Gifts found"}):Show()
 	ENDIF
 STATIC DEFINE PAYMENTJOURNAL_CANCELBUTTON := 117 
 STATIC DEFINE PAYMENTJOURNAL_CGIROTELTEXT := 124 
@@ -3634,7 +3634,7 @@ STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"", TRANSINQUIRY_TRANSINQUIRY_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 22, 509, 262
-	CONTROL	"Advanced Find", TRANSINQUIRY_SELECTIONBUTTON, "Button", WS_TABSTOP|WS_CHILD, 456, 3, 57, 13
+	CONTROL	"Advanced Find", TRANSINQUIRY_SELECTIONBUTTON, "Button", WS_TABSTOP|WS_CHILD, 448, 3, 65, 13
 	CONTROL	"Details", TRANSINQUIRY_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 462, 288, 54, 12
 	CONTROL	"Ready Batch", TRANSINQUIRY_READYBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
 	CONTROL	"Post Batch", TRANSINQUIRY_POSTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
@@ -3711,24 +3711,24 @@ SELF:Destroy()
 	RETURN SUPER:Close(oEvent)
 *	RETURN NIL
 METHOD EditButton( ) CLASS TransInquiry
-	LOCAL cTransnr AS STRING
+	LOCAL cTransnr as STRING
 	LOCAL OrigPerson,OrigBst, OrigUser as STRING,Origdat as date, OrigPost as int
 	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int
 	local lLocked as logic 
-	IF SELF:NoUpdate
+	IF self:NoUpdate
 		RETURN
 	ENDIF 
 	// 	ticks1:=GetTickCountLow()
 	// 	LogEvent(,"t1:"+Str(ticks1,-1))
 	*    oTrans:=SELF:Server 
-	if self:Server:EOF .or. self:Server:RecCount<1
+	if self:Server:EOF .or. self:Server:reccount<1
 		return
 	endif
 	cTransnr:=Str(self:Server:TransId,-1)
 	OrigBst:=alltrim(self:Server:docid)
-	Origdat:=SELF:Server:Dat
+	Origdat:=self:Server:Dat
 	OrigUser:=AllTrim(self:Server:USERID) 
-	OrigPost:=self:Server:PostStatus
+	OrigPost:=ConI(self:Server:PostStatus)
 	GetHelpDir()
 	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
 	//	self:oHm := TempTrans{}
@@ -3739,15 +3739,17 @@ METHOD EditButton( ) CLASS TransInquiry
 	// 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 	// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
 	// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
-	self:oMyTrans:=SQLSelect{UnionTrans2("select t.*,if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
+	self:oMyTrans:=SQLSelect{UnionTrans2("select t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,"+;
+	"cast(t.poststatus as signed) as poststatus,t.accid,t.currency,t.debforgn,t.creforgn,t.bfm,t.ppdest,t.fromrpp,t.persid,t.opp,"+;
+	"if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd from balanceitem b,account a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (m.depid=d.depid), transaction t left join person p on (p.persid=t.persid) "+;
 		" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" order by seqnr",Origdat,Origdat),oConn}
 
-	if self:oMyTrans:RecCount<1
+	if self:oMyTrans:reccount<1
 		LogEvent(self,self:oMyTrans:sqlstring,"LogErrors")
 	endif 
 	self:oHm:aMirror:={}
-	DO WHILE self:oMyTrans:RecCount>0 .and.!self:oMyTrans:EOF 
+	DO WHILE self:oMyTrans:reccount>0 .and.!self:oMyTrans:EOF 
 		if self:oMyTrans:locked=1
 			lLocked:=true
 		endif
@@ -3772,9 +3774,9 @@ METHOD EditButton( ) CLASS TransInquiry
 		endif
 		self:oHm:GC := self:oMyTrans:GC
 		self:oHm:BFM:= self:oMyTrans:BFM 
-		self:oHm:INCEXPFD:=self:oMyTrans:incExpfd
-		self:oHm:FROMRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
-		self:oHm:lFromRPP:=iif(self:oMyTrans:FROMRPP==1,true,false)
+		self:oHm:INCEXPFD:=self:oMyTrans:INCEXPFD
+		self:oHm:FROMRPP:=iif(ConI(self:oMyTrans:FROMRPP)==1,true,false)
+		self:oHm:lFromRPP:=iif(ConI(self:oMyTrans:FROMRPP)==1,true,false)
 		self:oHm:OPP:=self:oMyTrans:OPP
 		self:oHm:PPDEST := Upper(self:oMyTrans:PPDEST)
 		self:oHm:REFERENCE:=self:oMyTrans:REFERENCE
@@ -3783,12 +3785,12 @@ METHOD EditButton( ) CLASS TransInquiry
 		IF !Empty(self:oMyTrans:persid)
 			OrigPerson := Str(self:oMyTrans:persid,-1)
 		ENDIF 
-		self:oHm:PostStatus:=self:oMyTrans:PostStatus
+		self:oHm:PostStatus:=ConI(self:oMyTrans:PostStatus)
 
 		* Add to mirror:
 		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd}
 		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19
-		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(self:oMyTrans:MULTCURR=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:incexpfd})
+		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD})
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
@@ -3801,28 +3803,28 @@ METHOD ExportButton( ) CLASS TransInquiry
 	LOCAL oTrans as SQLSelect
 	LOCAL oTrans2 as SQLSelect
 	LOCAL oSys as SQLSelect
-	LOCAL lSucc AS LOGIC
-	LOCAL nCurRec AS STRING
-	LOCAL cFilename AS STRING
-	LOCAL oMapi AS MAPISession
-	LOCAL oRecip,oRecip2 AS MAPIRecip
-	LOCAL cExportMail AS STRING
-	LOCAL lSent AS LOGIC
-	LOCAL uRet AS USUAL
-	LOCAL DecSep AS STRING
-	LOCAL cTransnr AS STRING
-	LOCAL oWarn AS warningbox
+	LOCAL lSucc as LOGIC
+	LOCAL nCurRec as STRING
+	LOCAL cFilename as STRING
+	LOCAL oMapi as MAPISession
+	LOCAL oRecip,oRecip2 as MAPIRecip
+	LOCAL cExportMail as STRING
+	LOCAL lSent as LOGIC
+	LOCAL uRet as USUAL
+	LOCAL DecSep as STRING
+	LOCAL cTransnr as STRING
+	LOCAL oWarn as warningbox
 	LOCAL lAppend:=true  as LOGIC
-	LOCAL ToFileFS AS Filespec
+	LOCAL ToFileFS as Filespec
 	LOCAL ptrHandle
-	LOCAL cLine AS STRING
-	LOCAL cDelim:=Listseparator AS STRING
+	LOCAL cLine as STRING
+	LOCAL cDelim:=Listseparator as STRING
 	LOCAL lMail as LOGIC 
 	local aTrans:={} as array 
 	local j as int
 	local cTrans,cSelectSt as string
 
-	oTrans:=SELF:Server
+	oTrans:=self:Server
 	oTrans:GoTop()
 	IF oTrans:EoF
 		RETURN
@@ -3830,16 +3832,16 @@ METHOD ExportButton( ) CLASS TransInquiry
 	IF (TextBox{self,"Export of transactions to file/mail","Should all "+Str(oTrans:RecCount,-1)+" selected transactions be exported?",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show()==BOXREPLYCANCEL
 		RETURN
 	ENDIF
-	IF Empty(sentity)
-		(errorbox{SELF:OWNER,'You have to specify the entitycode in the system parameters with the name of your department'}):Show()
+	IF Empty(SEntity)
+		(ErrorBox{self:OWNER,'You have to specify the entitycode in the system parameters with the name of your department'}):Show()
 		RETURN
 	ENDIF
-	IF (Textbox{SELF:Owner,"Export of transactions to file/mail","Should selected transactions send by mail to the headquarters?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
-		lMail:=TRUE
+	IF (TextBox{self:Owner,"Export of transactions to file/mail","Should selected transactions send by mail to the headquarters?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
+		lMail:=true
 	ENDIF 
 
-	SELF:StatusMessage("Exporting data, moment please")
-	SELF:Pointer := Pointer{POINTERHOURGLASS}
+	self:STATUSMESSAGE("Exporting data, moment please")
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	
 	* Datafile construction:
 	DecSep:=CHR(SetDecimalSep())
@@ -3852,7 +3854,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 		ELSE
 			ptrHandle:=MakeFile(self,@cFilename,"Exporting to spreadsheet")
 		ENDIF
-		IF !ptrHandle = F_ERROR .and. !ptrHandle==NIL
+		IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 			IF !lAppend
 				* Write heading TO file:
 				FWriteLine(ptrHandle,'"TRANSDATE"'+cDelim+'"DOCID"'+cDelim+'"TRANSACTNR"'+cDelim+'"ACCOUNTNR"'+cDelim+'"ACCNAME"'+cDelim+'"DESCRIPTN"'+cDelim;
@@ -3921,7 +3923,6 @@ METHOD ExportButton( ) CLASS TransInquiry
 					IF !cExportMail==oSys:EXPMAILACC
 						oSys:EXPMAILACC:=cExportMail
 					ENDIF
-					oSys:commit()
 				ENDIF
 			else
 				(TextBox{self:OWNER,"Export of transactions","Generated one file:"+cFilename}):Show()		
@@ -3931,24 +3932,32 @@ METHOD ExportButton( ) CLASS TransInquiry
 	self:Pointer := Pointer{POINTERARROW}
 	
 	RETURN
-METHOD FindButton( ) CLASS TransInquiry
+METHOD FindButton( ) CLASS TransInquiry 
+local nQty as int
 	self:cWhereSpec:="t.transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:cOrder:="transid desc"
-	self:oTrans:SQLString:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder
+	nQty:=ConI(SQLSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}:qty)
+	if nQty> 3000
+		if TextBox{self,self:oLan:WGet("transaction inquiry"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+ConS(nQty)+Space(1)+self:oLan:WGet("transaction lines"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+			return nil
+		endif
+	endif
+ 	self:oTrans:sqlstring:=UnionTrans(self:cSelectStmnt) +" order by "+self:cOrder 
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:oTrans:Execute() 
 	if !Empty(self:oTrans:Status)
 		LogEvent(self,"Could not find last 100 transactions, error:"+self:oTrans:ErrInfo:ErrorMessage,"LogErrors") 
 	else
 		self:GoTop()
-		if self:oTrans:RecCount<1
+		if self:oTrans:reccount<1
 			self:oSFTransInquiry_DETAIL:Browser:refresh()
 		endif 
 	endif
-	self:oDCFound:TextValue :=Str(self:oTrans:RecCount,-1)
+	self:oDCFound:TextValue :=Str(self:oTrans:reccount,-1)
+	self:Pointer := Pointer{POINTERARROW} 
 
-
-	RETURN NIL
+	RETURN nil
 ACCESS FromTransnr() CLASS TransInquiry
 RETURN SELF:FieldGet(#FromTransnr)
 
@@ -4119,12 +4128,14 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	local oSel as SQLSelect
 	Default(@uExtra,null_string)
 	oSel:= SQLSelect{"select max(transid) as maxtr from transaction",oConn}
-	if oSel:RecCount>0
+	if oSel:reccount>0
 		if !Empty(oSel:maxtr)
 			self:lsttrnr:=oSel:maxtr
 		endif
 	endif
-	self:cFields:="t.*,a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
+	self:cFields:="t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,t.userid,"+;
+	"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,"+;
+	"a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
 	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and department in ("+cDepmntIncl+")") 
 	if !Empty( cAccAlwd)
@@ -4143,7 +4154,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	self:cOrder:="transid desc" 
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:oTrans:=SQLSelect{UnionTrans(self:cSelectStmnt)+" order by "+self:cOrder,oConn} 
-	return NIL
+	return nil
 
 METHOD ReadyButton( ) CLASS TransInquiry 
 if (TextBox{,"Ready Batch","Are you sure you want to mark all selected transactions as 'Ready to Post'?",BOXICONQUESTIONMARK + BUTTONYESNO}):Show()<> BOXREPLYYES
@@ -4191,13 +4202,13 @@ if oAccFrom:reccount<1
 	return
 endif
 cCurrorg:=iif(Empty(oAccFrom:Currency),sCurr,oAccFrom:Currency)
-lMultiOrg:=iif(oAccFrom:MULTCURR=1,true,false)
+lMultiOrg:=iif(ConI(oAccFrom:MULTCURR)=1,true,false)
 oAccTo:=SQLSelect{"select a.multcurr,a.currency,b.category from account a,balanceitem b where a.balitemid=b.balitemid and a.accid="+self:cTransferAcc,oConn} 
 if oAccTo:reccount<1
 	return
 endif
 cCurrDest:=iif(Empty(oAccTo:Currency),sCurr,oAccTo:Currency)
-lMultiDest:=iif(oAccTo:MULTCURR=1,true,false)
+lMultiDest:=iif(ConI(oAccTo:MULTCURR)=1,true,false)
 if !lMultiDest
 	if cCurrDest<>cCurrorg
 		cFromText:=cCurrorg+" "  
@@ -4224,8 +4235,8 @@ if !cCurrorg==cCurrDest .and. !cCurrDest==sCurr
 	// determine latest date:
 	oTrans:GoTop()
 	do while !oTrans:EOF
-		if oTrans:DAT> dCurrDate
-			dCurrDate:=oTrans:DAT
+		if oTrans:Dat> dCurrDate
+			dCurrDate:=oTrans:Dat
 		endif
 		oTrans:Skip()
 	enddo
@@ -4249,7 +4260,7 @@ if oStmnt:NumSuccessfulRows>0
 	oTrans:GoTop()
 	DO WHILE !oTrans:EOF
 		if ChgBalance(FromAccId,oTrans:DAT,-oTrans:DEB,-oTrans:Cre,-oTrans:DEBFORGN,-oTrans:CREFORGN,cCurrorg)
-			if ChgBalance(cTransferAcc,oTrans:DAT,oTrans:DEB,oTrans:Cre,Round(oTrans:DEB*fExRate,2),Round(oTrans:Cre*fExRate,2),cCurrDest)
+			if ChgBalance(cTransferAcc,oTrans:Dat,oTrans:deb,oTrans:cre,Round(oTrans:deb*fExRate,2),Round(oTrans:cre*fExRate,2),cCurrDest)
 			else
 				lError:=true
 				exit
@@ -4412,8 +4423,6 @@ oDBPOSTINGSTATUS := DataColumn{9}
 oDBPOSTINGSTATUS:Width := 9
 oDBPOSTINGSTATUS:HyperLabel := HyperLabel{#POSTINGSTATUS,"Status",NULL_STRING,NULL_STRING} 
 oDBPOSTINGSTATUS:Caption := "Status"
-oDBPOSTINGSTATUS:Block := {|x|iif(x:Poststatus=2,'Posted',iif(x:Poststatus=1,'Ready','Not posted'))}
-oDBPOSTINGSTATUS:BlockOwner := self:owner:server
 self:Browser:AddColumn(oDBPOSTINGSTATUS)
 
 
