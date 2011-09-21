@@ -165,6 +165,7 @@ METHOD DeleteButton( ) CLASS AccountBrowser
 		// 			oStmnt:Execute() 
 		//refresh:
 		self:oAcc:Execute()
+		self:oSFAccountBrowser_DETAIL:Browser:Refresh()
 		self:GoTop()
 	else
 		return false
@@ -982,7 +983,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 METHOD FillIPC() class EditAccount
 local aIPC:={} as Array
 local oIPC as SQLSelect
-oIPC:=SQLSelect{"select * from ipcaccounts where ipcaccount "+iif(self:mSoort="BA","<60000",">50000"), oConn}
+oIPC:=SQLSelect{"select descriptn,ipcaccount from ipcaccounts where ipcaccount "+iif(self:mSoort="BA","<60000",">50000"), oConn}
 // if self:mSoort="BA"
 // 	oIPC:SetFilter({||oIPC:IPCACCOUNT<60000})
 // else
@@ -1569,7 +1570,7 @@ METHOD OkButton CLASS EditAccount
 	LOCAL i, nPntr as int
 	local cExtra,cValue as string 
 	local amProp:=self:aProp as array
-	local oStmt,oBudUpd,oBudIns as SQLStatement
+	local oStmt,oBudUpd,oBudIns as SQLSTatement
 	local cStatement as string 
 	
 
@@ -1612,7 +1613,7 @@ METHOD OkButton CLASS EditAccount
 		endif
 
 		if self:lNew
-			self:mAccId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+			self:mAccId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 		endif
 		// Save also Budget: 
 		BudYear:=Val(SubStr(self:oDCBalYears:VALUE,1,4))
@@ -1808,7 +1809,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		// 		oAcc:GoTop() 
 		// 		oAcc:=SQLSelect{"select a.* from account left join (m.persid as mcln from member m ) where a.accid="+self:mAccId,oConn}
 		self:oAcc:=SQLSelect{;
-			"select a.*,b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln from balanceitem as b, account as a "+;
+			"select a.accid,a.accnumber,a.description,a.balitemid,department,a.gainlsacc,subscriptionprice,a.currency,a.multcurr,reevaluate,"+; 
+			"reimb,a.active,a.clc,a.propxtra,a.giftalwd,"+;
+			"b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln from balanceitem as b, account as a "+;
 			"left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
 			"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
@@ -1833,7 +1836,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		self:mSoort:=self:oAcc:TYPE 
 		self:mCurrency:=self:oAcc:Currency 
 		if Empty(self:mCurrency)
-			self:mCurrency:=sCurr
+			self:mCurrency:=sCURR
 		endif 
 		oBalncs:=Balances{}
 		oBalncs:GetBalance(mAccId,,,self:mCurrency) 
@@ -1852,20 +1855,20 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		endif 
 		// 		self:mBalance:=self:CurBal
 
-		self:mMultCurr:=iif(self:oAcc:MULTCURR=1,true,false)
-		if !self:mMultCurr .and. !self:mCurrency==sCurr
+		self:mMultCurr:=iif(ConI(self:oAcc:MULTCURR)=1,true,false)
+		if !self:mMultCurr .and. !self:mCurrency==sCURR
 			self:oDCmBalanceF:Show()
 			self:oDCTextForgnCur:Show()
 			self:oDCTextForgnCur:textValue:=self:mCurrency
-			self:oDCmBalanceF:Value:=Round(oBalncs:per_creF-oBalncs:per_debF,DecAantal)
+			self:oDCmBalanceF:VALUE:=Round(oBalncs:per_creF-oBalncs:per_debF,DecAantal)
 		else
 			self:oDCmBalanceF:Hide()
 			self:oDCTextForgnCur:Hide()
 			self:oDCTextForgnCur:textValue :=self:mCurrency
-			self:oDCmBalanceF:Value:=self:CurBal
+			self:oDCmBalanceF:VALUE:=self:CurBal
 		endif
-		self:mReevaluate:=iif(self:oAcc:reevaluate=1,true,false)
-		self:mActive:=iif(self:oAcc:active=1,true,false)
+		self:mReevaluate:=iif(ConI(self:oAcc:reevaluate)=1,true,false)
+		self:mactive:=iif(ConI(self:oAcc:active)=1,true,false)
 		if ADMIN=="WA"
 			self:mReimb:=self:oAcc:REIMB
 		endif
@@ -1890,7 +1893,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 // 		else
 // 			self:oDCPropBox:FillUsing({})			
 		endif
-		self:oDCmGIFTALWD:Checked:=iif(self:oAcc:GIFTALWD=1,true,false)
+		self:oDCmGIFTALWD:Checked:=ConL(self:oAcc:GIFTALWD)
 // 		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid.or.self:oAcc:netasset=self:oAcc:accid)
 		self:mCLN:=Transform(self:oAcc:mCLN,"")
 		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid)
@@ -1938,7 +1941,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		ENDIF
 		self:cCurDep:=self:mDepartment
 	ENDIF
-	if self:mActive
+	if self:mactive
 		self:oDCmActive:TextColor:=Color{COLORBLACK}		
 	else
 		self:oDCmActive:TextColor:=Color{COLORRED}
