@@ -66,8 +66,8 @@ cFields:="a.*,b.Heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootN
 oDB:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+self:cAccFilter)+" group by a.accid order by "+cOrder,oConn}
 do WHILE .not. oDB:EOF
 	oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20,0)+cTab+;
-	IF(oDB:giftalwd=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDb:Budgt),0,oDB:budgt),11,0)+cTab;
-	+Str(oDB:subscriptionprice,9,DecAantal)+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:Currency,8)+cTab+PadC( iif(oDB:MULTCURR=1,"X"," "),5)+cTab+PadC( iif(oDB:REEVALUATE=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),kopregels)
+	iif(ConI(oDB:giftalwd)=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDB:Budgt),0,oDB:Budgt),11,0)+cTab;
+	+Str(oDB:subscriptionprice,9,DecAantal)+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:Currency,8)+cTab+PadC( iif(ConI(oDB:MULTCURR)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:REEVALUATE)=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),kopregels)
 	oDB:skip()
 ENDDO
 oReport:prstart()
@@ -264,7 +264,7 @@ Function DeleteAccount(cAccId:="" as string ) as logic
 			ENDIF
 		ENDIF
 		oTrans:=SQLSelect{"select count(*) as total from ("+UnionTrans("select t.transid from transaction t where accid="+cAccId)+") as tot",oConn}
-		IF oTrans:RecCount>0 .and. Val(oTrans:total)>0
+		IF oTrans:RecCount>0 .and. ConI(oTrans:total)>0
 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Financial transactions associated with this account")+"!"}:Show()
 			return false
 		endif
@@ -719,8 +719,8 @@ Function ValidateAccTransfer (cParentId as string,mAccId as string) as string
 	* No change of balancegroupclassification allowed
 	oRB:=SQLSelect{"select category from balanceitem where balitemid='"+cParentId+"'",oConn} 
 	if oRB:RecCount=1	
-		cNewClass:= oRb:category 
-		oAcc:=SQLSelect{"select accnumber,balitemid,co,homepp,b.category from balanceitem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
+		cNewClass:= oRB:category 
+		oAcc:=SQLSelect{"select accnumber,b.balitemid,co,homepp,b.category from balanceitem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
 		if oAcc:RecCount=1	
 			IF	!oAcc:category== cNewClass
 				IF	!(cNewClass	$ expense+income	.and.	oAcc:category $ expense+income .or. cNewClass $ asset+liability .and. oAcc:category $ asset+liability)
@@ -752,7 +752,7 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string) as string
 	LOCAL oAcc as SQLSelect  
 	local oLan as Language 
 
-	oAcc:=SQLSelect{"select d.* from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
+	oAcc:=SQLSelect{"select d.deptmntnbr,d.descriptn,d.netasset,d.incomeacc,d.expenseacc from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
 	if oAcc:Reccount>0 .and. Str(oAcc:depid,-1)<>cDepartment
 		oLan:=Language{}
 		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(Transform(oAcc:netasset,"")==mAccId,;
