@@ -71,3 +71,32 @@ ACCESS Len CLASS UTF2String
 RETURN self:pWCharCount
 ACCESS OutBuf CLASS UTF2String
 return Mem2String(pWUTF8Char,pWCharCount)
+Function UTFSQL2Str(prtValue as ptr,ptrLength ref dword) as string 
+	LOCAL pszUTF8 as psz
+	LOCAL dwChars, nUniLen as DWORD
+	Local nResult1,nError as DWord
+	local pWChar,pWUTF8Char as ptr
+	local pWCharCount as DWORD
+
+	BEGIN SEQUENCE
+		IF (pWChar := MemAlloc(ptrLength * 2+2)) = null_ptr
+			BREAK
+		ENDIF
+	  pWCharCount := ptrLength
+	  // Convert from UTF8 to UTF-16 (Unicode)
+		IF (nResult1:=MultiByteToWideChar(CP_UTF8, 0, prtValue, ptrLength,pWChar, ptrLength)) = 0
+			BREAK
+		ENDIF
+		nUniLen:=nResult1+6
+		IF (pWUTF8Char := MemAlloc(nUniLen)) = null_ptr
+			BREAK
+		ENDIF
+		IF (pWCharCount:=WideCharToMultiByte( CP_ACP,0,pWChar,nResult1,pWUTF8Char,nUniLen,null_psz,0)) =0
+			BREAK
+		ENDIF
+	RECOVER
+		nError := GetLastError()	// Get the error code
+
+	END SEQUENCE
+   return Mem2String(pWUTF8Char,pWCharCount) 
+
