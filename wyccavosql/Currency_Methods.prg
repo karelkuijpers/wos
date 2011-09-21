@@ -13,12 +13,12 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS CurRateBrowser
 	ENDIF
 	ThisRec:=oCurRt:RecNo
 	IF myColumn:NameSym == #AED 
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oCurRt:AED)
+		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AED,""))
 			myColumn:TextValue:= myColumn:VALUE
 			oCurRt:AED:=myColumn:VALUE
 		endif
 	ELSEIF myColumn:NameSym == #AEDUNIT
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oCurRt:AEDUNIT)
+		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AEDUNIT,""))
 			myColumn:TextValue:= myColumn:VALUE
 			oCurRt:AEDUNIT:=myColumn:VALUE
 		endif
@@ -59,7 +59,7 @@ export mxrate as float
 protect cCurCaption:="Get exchange rate" as string 
 export lStopped as logic 
 declare method GetROE
-Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as float class Currency
+Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
 	// returns rate of exchange: 1 unit CurCode = ROE base currency
@@ -80,7 +80,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 	if Empty(CodeROE) .or. CodeROE==self:cBaseCur
 		return 1
 	endif
-	oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
+	oROE:=SQLSelect{"select roe,rateid,cast(daterate as date) as daterate from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
 	if oROE:RecCount>0
 		RateId:=Str(oROE:RateId,-1) 
 		if !Empty(oROE:ROE).and.!lConfirm
@@ -90,13 +90,13 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 	else
 		lnew:=true
 		// look for most recent rate:
-		oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' and daterate<='"+SQLdate(DateROE)+"' order by daterate desc limit 1",oConn} 
+		oROE:=SQLSelect{"select roe,rateid,cast(daterate as date) as daterate from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' and daterate<='"+SQLdate(DateROE)+"' order by daterate desc limit 1",oConn} 
 		if oROE:RecCount>0
 			self:mxrate:=oROE:ROE 		
 			RateId:=Str(oROE:RateId,-1) 
 		else
 			// 	search last of currency:
-			oROE:=SQLSelect{"select * from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' order by daterate desc",oConn} 
+			oROE:=SQLSelect{"select roe,rateid,cast(daterate as date) as daterate from currencyrate where aed='"+CodeROE+"' and aedunit='"+self:cBaseCur+"' order by daterate desc",oConn} 
 			if oROE:RecCount>0
 				self:mxrate:=oROE:ROE 		
 				RateId:=Str(oROE:RateId,-1) 
@@ -157,6 +157,9 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 			lRow:=oXMLDoc:GetNextSibbling()
 		enddo
 	endif
+	if !lAsk
+		return self:mxrate
+	endif
 	// ask for rate:
 	oExch:=GetExchRate{oMainWindow,,,{self:cBaseCur+" ("+DToC(DateROE)+")",CodeROE,self:cCurCaption,self}}
 	oExch:Show()  && mxrate will be filled in by oExch
@@ -164,6 +167,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic) as f
 		self:lStopped:=true
 		return self:mxrate
 	endif
+	
 	IF Empty(self:mxrate)
 		self:mxrate:=1
 	ENDIF
@@ -268,7 +272,7 @@ endif
 STATIC DEFINE CURRENCYSPEC_CURRENCY := 100 
 STATIC DEFINE CURRENCYSPEC_OKBUTTON := 102 
 STATIC DEFINE CURRENCYSPEC_SC_SMUNT := 101 
-CLASS CurrRateEditor INHERIT DATAWINDOW 
+CLASS CurrRateEditor INHERIT DataWindowMine 
 
 	PROTECT oDCCurrencySelect AS COMBOBOX
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -296,22 +300,41 @@ METHOD append() CLASS CurrRateEditor
 	LOCAL cCurr,cUnit as STRING
 	Local fRate as Float
 	LOCAL oCurRt:=self:Server as SQLSelect
-	IF !oCurRt:eof
-		oCurRt:GoTop()
-		cCurr:=oCurRt:AED 
-		cUnit:=oCurRt:AEDUNIT 
-		fRate:=oCurRt:ROE 
-		if Empty(fRate)
-			fRate:=1.00
-		endif
-		oCurRt:GoBottom()
-	ENDIF
-	
-	self:oSFSub_Rates:append()
-	oCurRt:AED:=cCurr
-	oCurRt:AEDUNIT:=cUnit
-	oCurRt:DATERATE:=Today()
-	oCurRt:ROE:=fRate	
+	local oStmnt as SQLStatement 
+	local oCurr as Currency
+// 	IF !oCurRt:Reccount<1
+// 		oCurRt:GoTop()
+// 		cCurr:=oCurRt:AED 
+// 		cUnit:=oCurRt:AEDUNIT
+// 		oCurr:=Currency{'',cUnit}
+// 		fRate:=oCurr:GetROE(cCurr,Today(),false,false) 
+// 		// 		fRate:=oCurRt:ROE 
+// 		// 		if Empty(fRate)
+// 		// 			fRate:=1.00
+// 		// 		endif
+// 		oCurRt:GoBottom()
+// 	ENDIF
+// 	oStmnt:=SQLStatement{"insert into currencyrate set aed='"+cCurr+"',AEDUNIT='"+cUnit+"',DATERATE='"+SQLdate(Today())+"',roe="+Str(fRate,19,10),oConn}
+// 	oStmnt:Execute()
+// 	if oStmnt:NumSuccessfulRows>0
+// 		oCurRt:Execute()
+// 		self:oSFSub_Rates:Browser:refresh()
+// 		// 	self:oSFSub_Rates:append()
+// 		//  	self:oSFSub_Rates:GoTop()
+// 		// 	self:oSFSub_Rates:AED:=cCurr
+// 		// 	self:oSFSub_Rates:AEDUNIT:=cUnit
+// 		// 	self:oSFSub_Rates:DATERATE:=Today()
+// 		// 	self:oSFSub_Rates:ROE:=fRate
+// 		// 	oCurRt:AED:=cCurr
+// 		// 	oCurRt:AEDUNIT:=cUnit
+// 		// 	oCurRt:DATERATE:=SQLdate(Today())
+// 		// 	oCurRt:ROE:=fRate
+// 		// 	self:oSFSub_Rates:GoTop()
+// 	else
+		self:oSFSub_Rates:GoBottom()
+		self:oSFSub_Rates:append()
+		self:oSFSub_Rates:GoBottom()
+// 	endif
 	RETURN FALSE
 method ButtonClick(oControlEvent) class CurrRateEditor
 	local oControl as Control 
@@ -335,24 +358,36 @@ SELF:FieldPut(#CurrencySelect, uValue)
 RETURN uValue
 
 METHOD DELETE() CLASS CurrRateEditor
- * delete record of TempTrans:
-LOCAL ThisRec, CurRec as int
-LOCAL oCurRt:=self:Server as SQLSelect
-LOCAL Success as LOGIC
+	* delete record of TempTrans:
+	LOCAL ThisRec, CurRec as int
+	LOCAL oCurRt:=self:Server as SQLSelect
+	LOCAL Success as LOGIC 
+	local oStmnt as SQLStatement
 
-CurRec:=oCurRt:Recno
-if oCurRt:RecCount<1  && nothing to delete?
-	return
-endif
+	CurRec:=oCurRt:Recno
+	if oCurRt:RecCount<1  && nothing to delete?
+		return
+	endif
 
-IF !Empty(CurRec) 
-	self:oSFSub_Rates:DELETE(true)
-	IF oCurRt:eof
-		oCurRt:GoTop()
-	ENDIF 
-	self:oSFSub_Rates:Browser:REFresh()
-ENDIF
-RETURN true
+	IF !Empty(CurRec)
+		oStmnt:=SQLStatement{"delete from currencyrate where rateid="+str(oCurRt:rateid,-1),Oconn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows>0
+			oCurRt:Execute()  
+			// 	self:DELETE()
+			// 	self:GoBottom()
+			// 	self:GoTop()
+			// 	IF oCurRt:eof
+			// 		oCurRt:GoTop()
+			// 	ENDIF 
+			self:oSFSub_Rates:Browser:refresh()
+			if CurRec>oCurRt:Reccount
+				CurRec--
+			endif
+			self:GoTo(CurRec) 
+		endif
+	ENDIF
+	RETURN true
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS CurrRateEditor 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -406,27 +441,28 @@ RETURN uValue
 method ListBoxSelect(oControlEvent) class CurrRateEditor
 	local oControl as Control
 	local oCr:=self:oSFSub_Rates:Server as SQLSelect
-	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	super:ListBoxSelect(oControlEvent)
 	//Put your changes here 
 	IF oControl:NameSym==#CurrencySelect
-	   self:oRoe:SQLString:="select * from currencyrate where aed='"+oControl:Value+"' and daterate<=Now() order by aed asc,aedunit asc, daterate desc"
-		self:oRoe:Execute()
+	   self:oROE:SQLString:="select rateid,aed,cast(daterate as date) as daterate,roe,aedunit from currencyrate where aed='"+oControl:Value+"' and daterate<=Now() order by aed asc,aedunit asc, daterate desc"
+		self:oROE:Execute()
 		self:GoTop()
 		self:oSFSub_Rates:Browser:refresh()
 	endif
-	return NIL
+	return nil
 method PostInit(oWindow,iCtlID,oServer,uExtra) class CurrRateEditor
 	//Put your PostInit additions here 
 // 	self:Server:aMirror:={{" "," ",0.00}}
 	self:oSFSub_Rates:lFilling:=false
-	self:LastCurRate:=LstCurRate
+	self:LastCurRate:=LstCurRate 
+	self:SetTexts()
 	
 	return NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class CurrRateEditor
 	//Put your PreInit additions here 
-   self:oRoe:=SQLSelect{"select * from currencyrate order by aed asc,aedunit asc, daterate desc",oConn}
-	return NIL
+	self:oROE:=SQLSelect{"select rateid,aed,cast(daterate as date) as daterate,roe,aedunit from currencyrate order by aed asc,aedunit asc, daterate desc",oConn}
+	return nil
 STATIC DEFINE CURRRATEEDITOR_CURRENCYSELECT := 101 
 STATIC DEFINE CURRRATEEDITOR_FIXEDTEXT1 := 102 
 STATIC DEFINE CURRRATEEDITOR_LASTCURRATE := 103 
@@ -576,8 +612,8 @@ Method ReEvaluate() Class Reevaluation
 	local lError as logic
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
 
-	oSys:=SQLSelect{"select lstreeval from sysparms where DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
-	if oSys:Reccount<1
+	oSys:=SQLSelect{"select cast(lstreeval as date) as lstreeval from sysparms where DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
+	if oSys:RecCount<1
 		self:Close()
 		Return
 	endif
@@ -591,7 +627,7 @@ Method ReEvaluate() Class Reevaluation
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
 	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
 	"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
-	if oAccnt:Reccount>0
+	if oAccnt:RecCount>0
 		if ((TextBox{oCall,"Reevaluation of foreign currency accounts","Do you want to reevaluate up till date "+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
 			self:Close() 
 			return
@@ -622,7 +658,7 @@ Method ReEvaluate() Class Reevaluation
 				mDiff2:=Round(oMBal:per_cre - oMBal:per_deb,DecAantal)
 				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
 				if mDiff <> 0
-					SQLStatement{"start transaction",oConn}:execute()
+					SQLStatement{"start transaction",oConn}:Execute()
 					oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Str(oAccnt:GAINLSACC,-1)+','+Str(oAccnt:accid,-1)+")"+;
 					" and	year="+Str(Year(UltimoMonth),-1)+;
 					" and	month="+Str(Month(UltimoMonth),-1)+" order by mbalid for update",oConn}
@@ -641,9 +677,9 @@ Method ReEvaluate() Class Reevaluation
 						",seqnr=1"+;
 						",bfm='C'"   // regard as allready sent to CMS/AccPac
 					oTrans:=SQLStatement{cStatement,oConn}
-					oTrans:execute()
+					oTrans:Execute()
 					if oTrans:NumSuccessfulRows>0
-						TransId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+						TransId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 						cStatement:="insert into transaction set "+;
 							"accid='"+Str(oAccnt:accid,-1)+"'"+;
 							",seqnr=2"+;
@@ -654,11 +690,11 @@ Method ReEvaluate() Class Reevaluation
 							",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
 							",bfm='C'"   // regard as allready sent to CMS/AccPac
 						oTrans:=SQLStatement{cStatement,oConn}
-						oTrans:execute()
+						oTrans:Execute()
 						if oTrans:NumSuccessfulRows>0
 							if ChgBalance(Str(oAccnt:GAINLSACC,-1),UltimoMonth,mDiff,0,0,0,sCURR)
 								if ChgBalance(Str(oAccnt:accid,-1),UltimoMonth,0,mDiff,0,0,cCur)
-									SQLStatement{"commit",oConn}:execute()
+									SQLStatement{"commit",oConn}:Execute()
 									lError:=false
 								endif
 							endif
@@ -667,7 +703,7 @@ Method ReEvaluate() Class Reevaluation
                if lError
      					LogEvent(self,"Error:"+oTrans:SQLString,"LogErrors")
 						ErrorBox{self:oCall,"reevaluation transaction for account "+oAccnt:accnumber+"could not be stored"}:Show()
-						SQLStatement{"rollback",oConn}:execute()
+						SQLStatement{"rollback",oConn}:Execute()
 						return
                endif
 				endif						
@@ -677,7 +713,7 @@ Method ReEvaluate() Class Reevaluation
 
 		oAccnt:Skip()
 	enddo 
-	SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}:execute()
+	SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}:Execute()
 	self:Close() 
 
 
@@ -688,7 +724,7 @@ FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
-CLASS Sub_Rates INHERIT DATAWINDOW 
+CLASS Sub_Rates INHERIT DataWindowMine 
 
 	PROTECT oDBAED as JapDataColumn
 	PROTECT oDBDATERATE as JapDataColumn
@@ -741,7 +777,7 @@ oDBAED:HyperLabel := HyperLabel{#AED,"Currency",NULL_STRING,NULL_STRING}
 oDBAED:Caption := "Currency"
 self:Browser:AddColumn(oDBAED)
 
-oDBDATERATE := JapDataColumn{17}
+oDBDATERATE := JapDataColumn{CurrencyRate_DATERATE{}}
 oDBDATERATE:Width := 17
 oDBDATERATE:HyperLabel := HyperLabel{#DATERATE,"Date",NULL_STRING,NULL_STRING} 
 oDBDATERATE:Caption := "Date"
