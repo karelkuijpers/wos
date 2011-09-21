@@ -3228,7 +3228,7 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 			nWidth:=Round((16838*nResolution)/1440,0)
 			nHeight:=Round((11906*nResolution)/1440,0)
 		ELSE
-			oSys := SQLSelect{"select TopMargin,LeftMargin,RightMargn,BottomMarg",oConn}
+			oSys := SQLSelect{"select topmargin,leftmargin,rightmargn,bottommarg from sysparms",oConn}
 			IF oSys:RecCount>0
 				nTopM := Round((oSys:TopMargin*nResolution)/25.4,0)
 				nLeft := Round((oSys:LeftMargin*nResolution)/25.4,0)
