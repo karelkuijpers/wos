@@ -352,7 +352,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	local aAuth:={} as array
 
 	
-	IF !ValidateControls( SELF, SELF:AControls )
+	IF !ValidateControls( self, self:AControls )
 		RETURN
 	ENDIF
 	IF Empty(self:mCln)
@@ -383,7 +383,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	endif
 	* check duplicate loginname:
 	IF lNew .or. !cLName==Lower(self:cLoginNameOrg)
-		if SQLSelect{"select empid from employee where "+Crypt_Emp(false,"loginname")+'="'+cLName+'"'+iif(self:lNew,""," and empid<>"+self:mEmpID),oConn}:reccount>0 
+		if SqlSelect{"select empid from employee where "+Crypt_Emp(false,"loginname")+'="'+cLName+'"'+iif(self:lNew,""," and empid<>"+self:mEmpID),oConn}:reccount>0 
 			ErrorBox{self,self:oLan:WGet("UserId allready exists")+"!"}:Show()
 			RETURN
 		ENDIF
@@ -403,7 +403,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 			(ErrorBox{self,'Add employee Error:'+oStmnt:Status:Description}):Show()
 			return false
 		endif
-		self:mEmpID:= SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+		self:mEmpID:= ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	ENDIF
 	nEmpId:=Val(self:mEmpID)
 	if !lNew .and. Lower(self:cLoginNameOrg)==Lower(LOGON_EMP_ID)
@@ -416,7 +416,6 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 		(ErrorBox{self,'Update employee: Error:'+oStmnt:Status:Description}):Show() 
 		return false 
 	endif
-	oStmnt:Commit()
 	
 	cUpdate:="update employee set loginname="+Crypt_Emp(true,"loginname",cLName)
 	if lNew .or.(!Empty(mPassword) .and.!HashPassword(nEmpId,self:oDCmPASSWORD:TextValue )== self:PasswordOrg) 
@@ -424,7 +423,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 		cUpdate+=", lstupdpw='"+SQLdate(iif(lNew.and.lOwnServer,Today(),Start))+"', password='"+HashPassword(nEmpId,mPassword)+"'"
 	ENDIF
 	IF lNew.and.lOwnServer
-		IF SQLSelect{"select count(*) as nbr from employee",oConn}:nbr=="1"
+		IF ConI(SqlSelect{"select count(*) as nbr from employee",oConn}:nbr)==1
 			self:mType:="A"
 			cUpdate+=", type="+ Crypt_Emp(true,"type","A")
 			LOGON_EMP_ID := cLName
@@ -476,7 +475,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 						
 		endif 
 		// read current authfunc:
-		oAuth := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from authfunc where empid="+self:mEmpID+" order by mfuncname",oConn}
+		oAuth := SqlSelect{"select cast("+Crypt_Emp(false,"funcname")+" as char) as mfuncname from authfunc where empid="+self:mEmpID+" order by mfuncname",oConn}
 		oAuth:GoTop() 
 		do while !oAuth:Eof
 			AAdd(aAuth,oAuth:mfuncname) 
@@ -494,14 +493,13 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 					lDeleted:=true
 				ENDIF
 			ENDIF
-			IF SELF:oDCSubSet:Isselected(i)
+			IF self:oDCSubSet:Isselected(i)
 				IF !mType=="A".and.(lNew.or.AScan(aAuth,mFunc)=0)
 					oAuthF:SQLString:="insert authfunc set empid="+self:mEmpID+",funcname="+Crypt_Emp(true,"funcname",mFunc,Val(self:mEmpID) )
 					oAuthF:Execute()
 				ENDIF
 			ENDIF
 		NEXT
-		oAuthF:Commit()
 	// Add allowed accounts:
 	if !Empty(Val(self:WhoFrom) )
 		// read current allowe accounts:
@@ -527,7 +525,6 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 			endif
 		next
 	endif
-	oStmnt:Commit()
 	if lCalcCheck
 		SaveCheckDigit()
 	endif
@@ -537,7 +534,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	endif
 
 
-	SELF:EndWindow()
+	self:EndWindow()
 	
 RETURN
 METHOD PersonButton( lUnique) CLASS EditEmployeeWindow
@@ -571,23 +568,23 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 	ENDIF
 
 	* Fill listbox:
-	aAllItems:=SELF:GetMenuItems()
+	aAllItems:=self:GetMenuItems()
 	oDCSubSet:FillUsing(aAllItems)
 	self:oDCmPASSWORD:Value  := ""
 	self:oDCmPASSWORD2:Value  := ""
 	IF lNew
 		self:mLogon_name := ""
 		self:mType		:= "P"
-		IF SELF:Server:Eof .and. SELF:Server:Bof  // First User?
+		IF self:Server:Eof .and. self:Server:Bof  // First User?
 			self:mType:="A"
 			oDCmTYPE:Disable()
 		ENDIF
-		SELF:SelectSubset()
+		self:SelectSubset()
 	ELSE
-		cEmpStmnt:='select e.empid,'+Crypt_Emp(false,"e.persid");
-		+' as mcln,'+SQLFullName()+' as memplname,';
-		+Crypt_Emp(false,"e.loginname")+" as loginname,online,lstlogin,";
-		+Crypt_Emp(false,"e.type") +" as type, e.password,"+Crypt_Emp(false,"e.depid")+" as depid";
+		cEmpStmnt:='select e.empid,cast('+Crypt_Emp(false,"e.persid");
+		+' as char) as mcln,'+SQLFullName()+' as memplname,';
+		+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as datetime),";
+		+"cast("+Crypt_Emp(false,"e.type") +" as char) as type, e.password,cast("+Crypt_Emp(false,"e.depid")+" as char) as depid";
 		+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+ " and empid="+self:mEmpId + " order by lastname"
 
 		oEmp:=SQLSelect{cEmpStmnt,oConn} 
@@ -601,7 +598,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		// 		PasswordOrg   := AllTrim(Crypt(oEmp:Password,oEmp:EmpId+"er45pofDOIoiijodsoi*)mxcd eDFP456^)_fghj=") )
 		PasswordOrg   := oEmp:PASSWORD
 		// 		self:oDCmTYPE:Value		:= oEmp:mType
-		self:mType:=oEmp:TYPE
+		self:mType:=Transform(oEmp:TYPE,"")
 		self:mCln := oEmp:mCln
 		self:mCLNOrg:=self:mCln 
 		mDEPID:=oEmp:DEPID
@@ -614,7 +611,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 			IF !self:mType=="A"
 				* Select current allowed items:
 				aMyItems:=InitMenu(Val(mEmpId),self:mType)
-				FOR i:=1 TO Len(aMyItems)
+				FOR i:=1 to Len(aMyItems)
 					j:=AScan(aAllItems,{|x| x[2]==aMyItems[i,MACCEL]},jSt)
 					IF j>0
 						jSt:=j+1
@@ -662,9 +659,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 			oSel:Skip()
 		enddo			
 	endif
-	SELF:oDCmPerson:SetFocus()
+	self:oDCmPerson:SetFocus()
 
-	RETURN NIL
+	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 	//Put your PreInit additions here
 	IF IsNil(oServer)
@@ -834,14 +831,14 @@ METHOD DeleteButton CLASS EmployeeBrowser
 local oEmp:=self:Server as SQLSelect 
 local oStmnt as SQLStatement
 
-	LOCAL oTextBox AS TextBox
+	LOCAL oTextBox as TextBox
 	
 	IF oEmp:EmpId==Val(MYEMPID)
 		(ErrorBox{,"You must not delete your own userid"}):Show()
 		RETURN
 	ENDIF
 	
-	oTextBox := TextBox{ SELF, "Delete Record",;
+	oTextBox := TextBox{ self, "Delete Record",;
 		"Delete User " + oEmp:LOGINNAME + "?" }	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
@@ -852,7 +849,6 @@ local oStmnt as SQLStatement
 		oStmnt:SQLString:="delete from employee where empid='"+Str(oEmp:EmpId,-1)+"'" 
 		oStmnt:Execute()
 		
-		oStmnt:Commit()
 		SaveCheckDigit()
 // 		self:oSFEmployeeBrowser_DETAIL:GoTop()  
 		self:oSelEmp:Execute()  // reread
@@ -868,7 +864,7 @@ METHOD EditButton CLASS EmployeeBrowser
 	RETURN NIL
 METHOD FilePrint CLASS EmployeeBrowser
 LOCAL oEmp as SQLSelect
-LOCAL kopregels AS ARRAY
+LOCAL kopregels as ARRAY
 LOCAL nRow as int
 LOCAL nPage as int
 LOCAL oReport as PrintDialog 
@@ -882,8 +878,8 @@ IF .not.oReport:lPrintOk
 	RETURN FALSE
 ENDIF
 cEmpStmnt:='select e.empid,'+SQLFullName()+' as fullname,';
-	+Crypt_Emp(false,"e.loginname")+" as loginname,online,DATE_FORMAT(lstlogin,'%Y%m%d') as lstlogin,";
-	+Crypt_Emp(false,"e.type") +" as type, "+Crypt_Emp(false,"e.depid")+" as depid";
+	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,DATE_FORMAT(lstlogin,'%Y%m%d') as lstlogin,";
+	+"cast("+Crypt_Emp(false,"e.type") +" as char) as type, cast("+Crypt_Emp(false,"e.depid")+" as char) as depid";
 	+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+" order by lastname"
 
 oEmp:=SQLSelect{"",oConn}
@@ -902,7 +898,7 @@ DO WHILE .not. oEmp:EOF
 ENDDO
 oReport:prstart()
 oReport:prstop()
-RETURN SELF
+RETURN self
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -953,7 +949,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	//Put your PreInit additions here 
 	local cEmpStmnt as string
 	cEmpStmnt:='select e.empid,'+SQLFullName(2)+' as fullname,';
-	+Crypt_Emp(false,"e.loginname")+" as loginname,online,lstlogin,"+Crypt_Emp(false,"e.type") +" as type"+;
+	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as datetime) as lstlogin,cast("+Crypt_Emp(false,"e.type") +" as char) as type"+;
 	' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid") + " order by lastname"
 	self:oSelEmp:=SQLSelect{cEmpStmnt,oConn}
 	self:oSelEmp:Execute()
@@ -1028,7 +1024,7 @@ oDBMONLINE:Width := 8
 oDBMONLINE:HyperLabel := HyperLabel{#mOnline,"Online?",NULL_STRING,NULL_STRING} 
 oDBMONLINE:Caption := "Online?"
 oDBmOnline:BlockOwner := self:server
-oDBmOnline:Block := {|x|iif(x:Online=1,'  X  ','')}
+oDBmOnline:Block := {|x|iif(coni(x:Online)=1,'  X  ','')}
 self:Browser:AddColumn(oDBMONLINE)
 
 
@@ -1511,14 +1507,14 @@ ASSIGN mVRNmbr(uValue) CLASS FirstUser
 SELF:FieldPut(#mVRNmbr, uValue)
 RETURN uValue
 
-METHOD OKButton( ) CLASS FirstUser
+METHOD OkButton( ) CLASS FirstUser
 	LOCAL oEmp as SQLStatement
 // 	LOCAL oSys as SQLSelect 
 	local oPers, oSel as SQLSelect 
 	LOCAL mCLN, mRek, mNum, mNum1, mNumAsset, mNumLiability, cP,mPsw as STRING
-	LOCAL i AS INT
-	LOCAL  lAlpha, lNum AS LOGIC
-	LOCAL ptrhandle AS USUAL
+	LOCAL i as int
+	LOCAL  lAlpha, lNum as LOGIC
+	LOCAL ptrhandle as USUAL
 	LOCAL MyName as STRING 
 	Local oStmnt as SQLStatement, cUpdate as string
 	
@@ -1526,59 +1522,59 @@ METHOD OKButton( ) CLASS FirstUser
 	// 		RETURN
 	// 	ENDIF
 	IF IsNil(self:mNA1).or.Empty(self:mNA1)
-		ErrorBox{ SELF, " Fill Your Last Name" }:Show()
+		ErrorBox{ self, " Fill Your Last Name" }:Show()
 		RETURN
 	ENDIF
 	IF IsNil(self:mVRN) .or.Empty(self:mVRN)
-		ErrorBox{ SELF, " Fill Your First Name" }:Show()
+		ErrorBox{ self, " Fill Your First Name" }:Show()
 		RETURN
 	ENDIF
 	IF IsNil(self:mNA2).or.Empty(self:mNA2) 
-		ErrorBox{ SELF, " Fill Your Initials" }:Show()
+		ErrorBox{ self, " Fill Your Initials" }:Show()
 		RETURN
 	ENDIF
 	IF IsNil(self:mAD1) .or.Empty(self:mAD1)  
-		ErrorBox{ SELF, " Fill YourAddress" }:Show()
+		ErrorBox{ self, " Fill YourAddress" }:Show()
 		RETURN
 	ENDIF
 	IF Empty(self:mPLA)
-		ErrorBox{ SELF, " Fill Your City Name" }:Show()
+		ErrorBox{ self, " Fill Your City Name" }:Show()
 		RETURN
 	ENDIF
 	IF Empty(self:mLOGON_NAME)
-		ErrorBox{ SELF, " Fill UserId" }:Show()
+		ErrorBox{ self, " Fill UserId" }:Show()
 		RETURN
 	ENDIF
 	IF Empty(self:mPASSWORD)
-		ErrorBox{ SELF, " Fill Password" }:Show()
+		ErrorBox{ self, " Fill Password" }:Show()
 		RETURN
 	ENDIF
-	IF !Trim(Upper( Trim( SELF:oDCmPassword:TextValue ) )) ==;
-			Trim(Upper( Trim( SELF:oDCmPassword2:TextValue ) ))
-		ErrorBox{ SELF, " Passwords do not match!" }:Show()
+	IF !Trim(Upper( Trim( self:oDCmPassword:Textvalue ) )) ==;
+			Trim(Upper( Trim( self:oDCmPassword2:Textvalue ) ))
+		ErrorBox{ self, " Passwords do not match!" }:Show()
 		RETURN
 	ENDIF
 	IF Empty(self:mAdminType)
-		ErrorBox{ SELF, " Fill Type of Administration" }:Show()
+		ErrorBox{ self, " Fill Type of Administration" }:Show()
 		RETURN
 	ENDIF
 	IF self:mAdminType=="HO" .or. self:mAdminType=="WO" .or. self:mAdminType=="GI"
 		IF Empty(self:mBANKNUMMER)
-			ErrorBox{ SELF, " Fill Bank/Giro" }:Show()
+			ErrorBox{ self, " Fill Bank/Giro" }:Show()
 			RETURN
 		ENDIF
 	endif
 	IF self:mAdminType=="HO" 
 		IF Empty(self:mNA1mbr)
-			ErrorBox{ SELF, " Fill Members Last Name" }:Show()
+			ErrorBox{ self, " Fill Members Last Name" }:Show()
 			RETURN
 		ENDIF
 		IF Empty(self:mVRNmbr)
-			ErrorBox{ SELF, " Fill Members First Name" }:Show()
+			ErrorBox{ self, " Fill Members First Name" }:Show()
 			RETURN
 		ENDIF
 		IF Empty(self:mNA2mbr)
-			ErrorBox{ SELF, " Fill Members Initials" }:Show()
+			ErrorBox{ self, " Fill Members Initials" }:Show()
 			RETURN
 		ENDIF
 	ENDIF 
@@ -1596,8 +1592,7 @@ METHOD OKButton( ) CLASS FirstUser
 			"',address='"+self:mAD1+"',city='"+self:mPLA+"',postalcode='"+StandardZip(self:mPOS)+"',OPC='"+AllTrim(self:mLOGON_NAME)+;
 			"',creationdate='"+SQLdate(Today())+"',alterdate='"+SQLdate(Today())+"'",oConn}
 		oStmnt:Execute()
-		oStmnt:Commit()
-		mCLN:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+		mCLN:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 	ENDIF
 	MyName:= AllTrim(self:mVRN)+' '+if(Empty(self:mHISN),"",AllTrim(self:mHISN)+" ")+AllTrim(self:mNA1)
 	oStmnt:=SQLStatement{"insert into employee set empid=1000, persid="+Crypt_Emp(true,"persid",mCLN,1000),oConn} 
@@ -1613,22 +1608,21 @@ METHOD OKButton( ) CLASS FirstUser
 		+", lstupdpw=NOW(), password='"+HashPassword(1000,self:oDCmPassword:TextValue)+"', type="+Crypt_Emp(true,"type","A")+", depid="+Crypt_Emp(true,"depid","")
 	oStmnt:SQLString:=cUpdate
 	oStmnt:Execute()
-	oStmnt:Commit()
 	LOGON_EMP_ID := AllTrim(self:mLOGON_NAME)
 	MYEMPID := "1000"
 	UserType:="A"
 	* Add balance items:  Income and expense, Balance: Assets&Liabilities, 
 	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values (?,?,?,?,?)",oConn}
 	oStmnt:Execute('400','Income and Expense','Surplus/Deficit',Income,'0')
-	mNum:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+	mNum:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	oStmnt:Execute('4000','Income','Income',Income,mNum)
 	oStmnt:Execute('6000','Expenses','Expenses',Expense,mNum)
 	oStmnt:Execute('100','Balance','Increment Netassets',asset,'0')
-	mNum:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+	mNum:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	oStmnt:Execute('1000','Assets','Assets',asset,mNum)
-	mNumAsset:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+	mNumAsset:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	oStmnt:Execute('2000','Liabilities and Funds','Liabilities and Funds',liability,mNum)
-	mNumLiability:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+	mNumLiability:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	IF self:mAdminType=="HO"
 		* Registrate member:
 		* add Person:
@@ -1643,14 +1637,14 @@ METHOD OKButton( ) CLASS FirstUser
 			",opc='"+AllTrim(self:mLOGON_NAME) +"'"+;
 			",alterdate='"+SQLdate(Today()) +"'",oConn}
 		oStmnt:Execute()
-		mCln:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+		mCLN:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 		oStmnt:=SQLStatement{"insert into account set "+;
 			"description='"+GetFullName(mCLN) +"'"+;
 			",balitemid ='"+ mNumLiability+"'"+;
 			",accnumber='77001'"+;
 			",giftalwd='1'",oConn}
 		oStmnt:Execute()
-		mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)			
+		mRek:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))			
 		// 		SQLStatement{"update person set accid='"+mRek+"' where persid="+mCln,oConn}:Execute() 
 		* Add Member:
 		oStmnt:=SQLStatement{"insert into member set "+;
@@ -1673,7 +1667,7 @@ METHOD OKButton( ) CLASS FirstUser
 			",currency='"+sCurr+"'"+;
 			",balitemid ='"+ mNumAsset +"'",oConn}
 		oStmnt:Execute()
-		mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+		mRek:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 
 		* Add Bankaccount:
 		oStmnt:=SQLStatement{"insert into BankAccount set "+;
@@ -1692,7 +1686,7 @@ METHOD OKButton( ) CLASS FirstUser
 		",balitemid ='"+ mNumLiability+"'"+;
 		",accnumber='15000'",oConn}
 	oStmnt:Execute()
-	mRek:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+	mRek:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 	oStmnt:=SQLStatement{"update sysparms set capital='"+mRek+"',admintype='"+self:mAdminType+"'",oConn}
 	oStmnt:Execute()
 	
@@ -1701,7 +1695,7 @@ METHOD OKButton( ) CLASS FirstUser
 	InitGlobals()
 	(TextBox{,"First use","Go to Help/Index/Configuration for instructions how to setup the system"}):Show()
 
-	SELF:EndWindow()
+	self:EndWindow()
 	
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS FirstUser
@@ -1832,15 +1826,15 @@ METHOD OkButton() CLASS LogonDialog
 	LOCAL nDuration, Cnt as int 
 	Local cUser:=Lower(AllTrim(oDCName:Textvalue)),MyCLN,cEmpStmnt  as string
 	local oSys as SQLSelect
-	Cnt:= Val(SQLSelect{"select count(*) as nbr from employee",oConn}:nbr)
+	Cnt:= ConI(SQLSelect{"select count(*) as nbr from employee",oConn}:nbr)
 	if Cnt=0
 		InfoBox{ self, "Logon", "Employee database is empty! Restore Employee.dbf from backup first!"}:Show()
 		self:logonOk := false
 		wLogonCount:=5
 	ELSE
-	   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mdepid,"+;
-	   Crypt_Emp(false,"loginname")+" as loginname,lstupdpw,password from employee where ";
-		+ Crypt_Emp(false,"loginname")+'="'+cUser+'"'
+		cEmpStmnt:="select empid, cast("+Crypt_Emp(false,"persid")+" as char) as persid,cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid,"+;
+			" cast("+Crypt_Emp(false,"loginname")+" as char) as loginname,cast(lstupdpw as date) as lstupdpw,password from employee where ";
+			+ Crypt_Emp(false,"loginname")+'="'+cUser+'"'
 
 		oEmp := SQLSelect{cEmpStmnt,oConn}
 		oSys:=SQLSelect{"select pswdura,sysname from sysparms",oConn}
@@ -1853,7 +1847,7 @@ METHOD OkButton() CLASS LogonDialog
 				MYEMPID := Str(oEmp:EMPID,-1) 
 				if !GetUserMenu(AllTrim(self:logonID))
 					( ErrorBox{ nil, "Sorry, logon attempt failed!" } ):Show()
-  					// Exit program
+					// Exit program
 					Break
 				endif
 				* check duration of password:
@@ -1874,23 +1868,24 @@ METHOD OkButton() CLASS LogonDialog
 				ENDIF
 			ENDIF
 		ELSE
-			if IsAdminUser(cUser,AllTrim( oDCPassword:Textvalue ) ) 
+			if IsAdminUser(cUser,AllTrim( Transform(self:oDCPassword:Textvalue,"" ) ) )
 				SuperUser:=true
-			   cEmpStmnt:="select empid,"+Crypt_Emp(false,"loginname")+" as loginname from employee where ";
-				+ Crypt_Emp(false,"type")+'="A"'
+				cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname from employee where ";
+					+ Crypt_Emp(false,"type")+"='A'"
 				oEmp := SQLSelect{cEmpStmnt,oConn} 
-				oEmp:Execute() 
-				self:logonOk:=true 
 				UserType:="A"
-				self:logonID := AllTrim(oEmp:LOGINNAME)
-				LOGON_EMP_ID := AllTrim(self:logonID)
+				self:logonOk:=true 
 				IF oEmp:Reccount>0
 					oEmp:GoTop()
 					MYEMPID := Str(oEmp:EMPID,-1) 
+					self:logonID := AllTrim(oEmp:LOGINNAME)
+					LOGON_EMP_ID := AllTrim(self:logonID)
+				else
+					MYEMPID:='0'
 				endif
-				aMenu:=InitMenu(oEmp:EMPID,UserType)
+				aMenu:=InitMenu(Val(MYEMPID),UserType)
 				InitSystemMenu()
-				oMainWindow:SetCaption(oSys:SYSNAME)
+				oMainWindow:SetCaption(oSys:SYSNAME) 
 			else
 				self:logonOk := FALSE
 			endif
@@ -1912,7 +1907,6 @@ METHOD OkButton() CLASS LogonDialog
 
 		oDCName:SetFocus()
 	ENDIF	
-	oEmp:Close()
 	
 	RETURN
 METHOD PostInit(oParent,uExtra) CLASS LogonDialog
@@ -2010,27 +2004,26 @@ return self
 
 METHOD OkButton CLASS NewPasswordDialog
 LOCAL cError, cNew, cCur,cUser:=AllTrim(LOGON_EMP_ID ) as STRING
-LOCAL cP AS STRING
-LOCAL i AS INT
+LOCAL cP as STRING
+LOCAL i as int
 LOCAL lAlpha, lNum as LOGIC 
 local oEmp as SQLSelect 
 local oStmnt as SQLStatement
 
 self:oDCNewPasswordSLE:SetFocus()
-IF !Empty( self:oDCNewPasswordSLE:TextValue )
-	IF AllTrim( self:oDCNewPasswordSLE:TextValue ) ==;
-		AllTrim( self:oDCRetypePasswordSLE:TextValue )
-      if !CheckPassword(self:oDCNewPasswordSLE:TextValue,Val(MYEMPID))
+IF !Empty( self:oDCNewPasswordSLE:Textvalue )
+	IF AllTrim( self:oDCNewPasswordSLE:Textvalue ) ==;
+		AllTrim( self:oDCRetypePasswordSLE:Textvalue )
+      if !CheckPassword(self:oDCNewPasswordSLE:Textvalue,Val(MYEMPID))
         	return false
       endif
 		oEmp:=SQLSelect{"select password,pswprv1,pswprv2 from employee where empid="+MYEMPID,oConn} 
-		if IsNil(oEmp:Status)
+		if Empty(oEmp:Status) 
 			* shift passwords:
 			oStmnt:= SQLStatement{"update employee set pswprv3='"+iif(IsNil(oEmp:PSWPRV2),"",oEmp:PSWPRV2)+;
 			"',pswprv2='"+iif(IsNil(oEmp:PSWPRV1),"",oEmp:PSWPRV1)+"',pswprv1='"+oEmp:Password+;
 			"',password = '"+HashPassword(Val(MYEMPID),self:oDCNewPasswordSLE:TextValue)+"',lstupdpw=NOW() where empid="+MYEMPID,oConn}  
 			oStmnt:Execute()
-			oStmnt:Commit()
 			self:ChangePsw:=true
 			self:EndDialog(1)
 			RETURN 1
@@ -2041,7 +2034,7 @@ IF !Empty( self:oDCNewPasswordSLE:TextValue )
 ELSE
 	cError:="You must enter a new password!"
 ENDIF
-ErrorBox{ SELF, cError }:Show()
+ErrorBox{ self, cError }:Show()
 
 RETURN
 METHOD PostInit() CLASS NewPasswordDialog
