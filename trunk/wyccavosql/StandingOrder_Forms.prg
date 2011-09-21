@@ -270,7 +270,7 @@ RETURN uValue
 METHOD OKButton( ) CLASS EditPeriodic
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp 
 	Local nSeq:=1,nErr as int
-	local cStatement as string
+	local cStatement,cSep as string
 	local oStmnt as SQLStatement
 	local lError as logic
 	IF ValidateControls( self, self:AControls ) .and. self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
@@ -285,9 +285,9 @@ METHOD OKButton( ) CLASS EditPeriodic
 		cStatement:=iif(self:lNew,"insert into","update")+" standingorder set "+;
 			"idat='"+SQLdate(self:oDCmIDAT:SelectedDate)+"'"+;
 			",edat='"+SQLdate(self:oDCmEDAT:SelectedDate)+"'"+;
-			",day="+Str(self:mday,-1)+;
+			",`day`="+Str(self:mday,-1)+;
 			",docid='"+self:mdocid+"'"+;
-			",period="+Str(self:mperiod,-1)+;
+			",`period`="+Str(self:mperiod,-1)+;
 			",currency='"+self:mCurrency+"'"+;
 		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
 			iif(lNew,""," where stordrid="+ self:curStordid)
@@ -297,29 +297,43 @@ METHOD OKButton( ) CLASS EditPeriodic
 			// save Standing Order Lines: 
 			oStOrdLH:GoTop()
 			if lNew 
-				self:curStordid:= SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
-				oStmnt:=SQLStatement{"insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values (?,?,?,?,?,?,?,?,?,?)",oConn}
+				self:curStordid:= Str(ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)),-1) 
+				cStatement:="insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values "
+// 				oStmnt:=SQLStatement{"insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values (?,?,?,?,?,?,?,?,?,?)",oConn}
 				do	while	!oStOrdLH:EoF
-					if oStOrdLH:DEB <> oStOrdLH:CRE       // no empty lines 
-						oStmnt:Execute(self:curStordid,Str(oStOrdLH:ACCOUNTID,-1),Str(nSeq++,3,0),Str(oStOrdLH:DEB,-1),Str(oStOrdLH:CRE,-1),;
-						AllTrim(oStOrdLH:DESCRIPTN),AllTrim(oStOrdLH:GC),AllTrim(oStOrdLH:REFERENCE),Str(oStOrdLH:CREDITOR,-1),oStOrdLH:BANKACCT)
-						if oStmnt:NumSuccessfulRows<1
-							lError:=true
-							exit
-						endif
+					if oStOrdLH:DEB <> oStOrdLH:CRE       // no empty lines
+						cStatement+=cSep+"("+self:curStordid+","+Str(oStOrdLH:ACCOUNTID,-1)+","+Str(nSeq++,3,0)+","+Str(oStOrdLH:DEB,-1)+","+Str(oStOrdLH:CRE,-1)+","+;
+						"'"+AllTrim(oStOrdLH:DESCRIPTN)+"','"+AllTrim(oStOrdLH:GC)+"','"+AllTrim(oStOrdLH:REFERENCE)+"',"+Str(oStOrdLH:CREDITOR,-1)+",'"+AllTrim(oStOrdLH:BANKACCT)+"')" 
+// 						oStmnt:Execute(self:curStordid,Str(oStOrdLH:ACCOUNTID,-1),Str(nSeq++,3,0),Str(oStOrdLH:DEB,-1),Str(oStOrdLH:CRE,-1),;
+// 						AllTrim(oStOrdLH:DESCRIPTN),AllTrim(oStOrdLH:GC),AllTrim(oStOrdLH:REFERENCE),Str(oStOrdLH:CREDITOR,-1),oStOrdLH:BANKACCT)
+// 						if oStmnt:NumSuccessfulRows<1
+// 							lError:=true
+// 							exit
+// 						endif 
+						cSep:=','
 					endif				
 					oStOrdLH:Skip()
-				enddo
+				enddo				
 			else
 				if !self:UpdateStOrd()
 					lError:=true
 				endif
 			endif
+		elseif Empty(oStmnt:Status)
+			lError:=true
+		endif
+		if !lError .and.lNew
+			oStmnt:SQLString:=cStatement
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status) .or. oStmnt:NumSuccessfulRows<1
+				lError:=true
+				exit
+			endif
 		endif
 		if lError
+			SQLStatement{"rollback",oConn}:Execute()
 			LogEvent(,self:oLan:WGet("standingorder could not be saved")+":ID-"+self:curStordid,"LogErrors")
 			ErrorBox{self,self:oLan:WGet("standingorder could not be saved")}:Show()
-			SQLStatement{"rollback",oConn}:Execute()
 		else
 			SQLStatement{"commit",oConn}:Execute()
 			oCaller:ReFresh()
@@ -366,10 +380,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:mday := oPer:day
 		self:mdocid := oPer:docid 
 		self:DATLTSBOEK:=oPer:lstrecording
-		self:oStOrdL := SQLSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,m.co,m.persid as persid"+;
+		self:oStOrdL := SqlSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,m.co,m.persid as persid"+;
 			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid or m.depid=a.department)"+;
 			" left join department d on (d.depid=a.department)"+;
-			" where l.stordrid="+Str(oPer:Stordrid,-1)+" order by seqnr",oConn}
+			" where l.stordrid="+self:curStordid+" order by seqnr",oConn}
 		oOrdLnH:=self:oSFStOrderLines:Server
 		oOrdLnH:aMirror:={}
 
@@ -382,7 +396,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 				oOrdLnH:GC:=self:oStOrdL:GC
 				oOrdLnH:DESCRIPTN:=self:oStOrdL:DESCRIPTN 
 				oOrdLnH:RECNBR:=self:oStOrdL:RecNo
-				oOrdLnH:SEQNR:=self:oStOrdL:SEQNR
+				oOrdLnH:SEQNR:=self:oStOrdL:SEQNR 
+				oOrdLnH:INCEXPFD:=self:oStOrdL:INCEXPFD
 				if self:oStOrdL:ACCOUNTID=Val(sCRE) .and. self:oStOrdL:CRE > self:oStOrdL:DEB .and. !Empty(self:oStOrdL:CREDITOR)
 					oOrdLnH:CREDTRNAM:= GetFullName(Str(self:oStOrdL:CREDITOR,-1)) 
 					oOrdLnH:CREDITOR:=self:oStOrdL:CREDITOR
@@ -393,8 +408,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 				oOrdLnH:ACCOUNTNBR:=self:oStOrdL:ACCNUMBER
 				oOrdLnH:ACCOUNTNAM:=self:oStOrdL:accountname
 				oOrdLnH:CATEGORY:=self:oStOrdL:accounttype
-				// save in mirror: // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid}}
-				AAdd(oOrdLnH:aMirror,{oOrdLnH:DEB,oOrdLnH:CRE,oOrdLnH:CATEGORY,oOrdLnH:GC,oOrdLnH:ACCOUNTID,oOrdLnH:RECNBR,oOrdLnH:ACCOUNTNBR,Str(oOrdLnH:CREDITOR,-1),oOrdLnH:BANKACCT,iif(Empty(self:oStOrdL:persid),"",Str(self:oStOrdL:persid,-1))})
+				// save in mirror: // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid},[11]INCEXPFD}
+				AAdd(oOrdLnH:aMirror,{oOrdLnH:DEB,oOrdLnH:CRE,oOrdLnH:CATEGORY,oOrdLnH:GC,oOrdLnH:ACCOUNTID,oOrdLnH:RECNBR,oOrdLnH:ACCOUNTNBR,Str(oOrdLnH:CREDITOR,-1),oOrdLnH:BANKACCT,iif(Empty(self:oStOrdL:persid),"",Str(self:oStOrdL:persid,-1)),oOrdLnH:INCEXPFD})
 				self:oStOrdL:Skip()				
 			enddo
 			self:Totalise()
@@ -410,7 +425,8 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditPeriodic
    self:lNew:=uExtra
 	if !self:lNew 
 		self:curStordid:=Str(oServer:stordrid,-1)
-		self:oStOrdr:=SQLSelect{"select * from standingorder where stordrid="+self:curStordid,oConn}
+		self:oStOrdr:=SqlSelect{"select s.stordrid,s.persid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,s.currency from standingorder s where s.stordrid="+self:curStordid,oConn} 
+		self:oStOrdr:Execute()
 	endif
 	return nil
 ACCESS STORDRID() CLASS EditPeriodic
@@ -498,12 +514,12 @@ CLASS PeriodicBrowser INHERIT DataWindowExtra
 	protect aFields:={} as array
 METHOD AccButtonFrom(lUnique ) CLASS PeriodicBrowser 
 	Default(@lUnique,FALSE)	
-	AccountSelect(self,AllTrim(self:oDCSearchRek:TEXTValue ),"Account from",lUnique)
+	AccountSelect(self,AllTrim(self:oDCSearchRek:TEXTValue ),"Account from",lUnique,"a.active=1")
 
 RETURN NIL
 METHOD AccButtonTo(lUnique ) CLASS PeriodicBrowser 
 	Default(@lUnique,FALSE)	
-	AccountSelect(self,AllTrim(self:oDCSearchRekTo:TEXTValue ),"Account to",lUnique)
+	AccountSelect(self,AllTrim(self:oDCSearchRekTo:TEXTValue ),"Account to",lUnique,"a.active=1")
 
 RETURN NIL
 METHOD CancelButton( ) CLASS PeriodicBrowser
@@ -613,7 +629,7 @@ self:oStOrd:goTop()
 do WHILE !self:oStOrd:EOF
 	oReport:PrintLine(@nRij,@nBlad,Str(self:oStOrd:STORDRID,6,0)+cTab+ Pad(Transform(self:oStOrd:ACCNUMBER,"")+Space(1)+Transform(self:oStOrd:accountname,""),21)+cTab+;
 	DToC(self:oStOrd:IDAT)+cTab+PadC(Transform(self:oStOrd:day,'999'),9)+cTab+PadC(Transform(self:oStOrd:period,'999'),6)+cTab+;
-	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+dtoc(self:oStOrd:edat)+cTab+dtoc(self:oStOrd:lstrecording)+cTab+self:oStOrd:DESCRIPTN,aHeading,0)
+	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+DToC(iif(Empty(self:oStOrd:edat),null_date,self:oStOrd:edat))+cTab+DToC(iif(Empty(self:oStOrd:lstrecording),null_date,self:oStOrd:lstrecording))+cTab+self:oStOrd:DESCRIPTN,aHeading,0)
 	self:oStOrd:skip()
 ENDDO
 oReport:prstart()
@@ -768,22 +784,21 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
 	local lSuccess as logic 
 	self:cWhere:=""
 	self:cOrder:="l.stordrid,l.seqnr" 
-	self:cFields:="s.stordrid,s.day,s.period,s.idat,s.edat,s.lstrecording,s.docid,"+;
-		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber" 
-		self:aFields:={"s.stordrid","s.day","s.period","s.idat","s.edat","s.lstrecording","s.docid",""+;
+// 	self:cFields:="s.stordrid,s.`day`,s.`period`,s.idat,s.edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
+// 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber" 
+	self:cFields:="s.stordrid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
+	 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber"
+	self:aFields:={"s.stordrid","s.day","s.period","s.idat","s.edat","s.lstrecording","s.docid",""+;
 		"l.accountid","l.deb","l.cre","l.descriptn","l.accountid","a.description","a.accnumber"}
 	self:cFrom:="standingorder s, standingorderline l left join account a on (a.accid=l.accountid)"
 	self:oStOrd:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder,oConn}
+	self:oStOrd:Execute()
 	
 
 	RETURN NIL
 Method Refresh() class PeriodicBrowser
-	self:oStOrd:sqlstring :="select s.stordrid,s.day,s.period,s.idat,s.edat,s.lstrecording,s.docid,"+;
-		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname "+;
-		"from standingorder s, standingorderline l left join account a on (a.accid=l.accountid) "+;
-		"where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+self:cOrder
-	self:oStOrd:sqlstring:="select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder
-	self:oStOrd:Execute() 
+	self:Server:sqlstring:="select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder
+	self:Server:Execute() 
 	self:oSFPeriodicBrowser_DETAIL:Browser:Refresh()
   	self:oDCFound:TextValue :=Str(self:oStOrd:RecCount,-1)
 
@@ -821,7 +836,7 @@ STATIC DEFINE PERIODICBROWSER_CANCELBUTTON := 104
 STATIC DEFINE PERIODICBROWSER_CANCELBUTTON5 := 102 
 STATIC DEFINE PERIODICBROWSER_DELETEBUTTON := 103 
 STATIC DEFINE PERIODICBROWSER_DELETEBUTTON5 := 101 
-CLASS PeriodicBrowser_DETAIL INHERIT DATAWINDOW 
+CLASS PeriodicBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBSTORDRID as DataColumn
 	PROTECT oDBACCOUNTNAME as DataColumn
@@ -842,7 +857,7 @@ CLASS PeriodicBrowser_DETAIL INHERIT DATAWINDOW
 	PROTECT oDCIDAT AS SINGLELINEEDIT
 	PROTECT oDCEdat AS SINGLELINEEDIT
 	PROTECT oDCDAY AS SINGLELINEEDIT
-	PROTECT oDCDESCRIPTN AS SINGLELINEEDIT
+	PROTECT oDCdescriptn AS SINGLELINEEDIT
 	PROTECT oDClstrecording AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -899,11 +914,11 @@ ASSIGN DEB(uValue) CLASS PeriodicBrowser_DETAIL
 SELF:FieldPut(#DEB, uValue)
 RETURN uValue
 
-ACCESS DESCRIPTN() CLASS PeriodicBrowser_DETAIL
-RETURN SELF:FieldGet(#DESCRIPTN)
+ACCESS descriptn() CLASS PeriodicBrowser_DETAIL
+RETURN SELF:FieldGet(#descriptn)
 
-ASSIGN DESCRIPTN(uValue) CLASS PeriodicBrowser_DETAIL
-SELF:FieldPut(#DESCRIPTN, uValue)
+ASSIGN descriptn(uValue) CLASS PeriodicBrowser_DETAIL
+SELF:FieldPut(#descriptn, uValue)
 RETURN uValue
 
 ACCESS docid() CLASS PeriodicBrowser_DETAIL
@@ -980,10 +995,10 @@ oDCDAY:FieldSpec := standingorder_day{}
 oDCDAY:HyperLabel := HyperLabel{#DAY,"Day#",NULL_STRING,NULL_STRING}
 oDCDAY:TooltipText := "Day in month transfer has to take place"
 
-oDCDESCRIPTN := SingleLineEdit{SELF,ResourceID{PERIODICBROWSER_DETAIL_DESCRIPTN,_GetInst()}}
-oDCDESCRIPTN:FieldSpec := StandingOrderLine_DESCRIPTN{}
-oDCDESCRIPTN:HyperLabel := HyperLabel{#DESCRIPTN,"Description",NULL_STRING,NULL_STRING}
-oDCDESCRIPTN:TooltipText := "Description to add to each periodic transaction"
+oDCdescriptn := SingleLineEdit{SELF,ResourceID{PERIODICBROWSER_DETAIL_DESCRIPTN,_GetInst()}}
+oDCdescriptn:FieldSpec := StandingOrderLine_DESCRIPTN{}
+oDCdescriptn:HyperLabel := HyperLabel{#descriptn,"Description",NULL_STRING,NULL_STRING}
+oDCdescriptn:TooltipText := "Description to add to each periodic transaction"
 
 oDClstrecording := SingleLineEdit{SELF,ResourceID{PERIODICBROWSER_DETAIL_LSTRECORDING,_GetInst()}}
 oDClstrecording:FieldSpec := standingorder_lstrecording{}
@@ -1004,7 +1019,7 @@ self:Browser := EditBrowser{self}
 
 oDBSTORDRID := DataColumn{PeriodicRec_STORDRID{}}
 oDBSTORDRID:Width := 12
-oDBSTORDRID:HyperLabel := HyperLabel{#STORDRID,"Order#",NULL_STRING,NULL_STRING} 
+oDBSTORDRID:HyperLabel := HyperLabel{#stordrid,"Order#",NULL_STRING,NULL_STRING} 
 oDBSTORDRID:Caption := "Order#"
 self:Browser:AddColumn(oDBSTORDRID)
 
@@ -1088,11 +1103,11 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser_DETAIL
 // 	oWindow:Server:SetRelation(oWindow:oAcc,"accid")		
 	oWindow:use(oWindow:oStOrd)
 	RETURN nil
-ACCESS STORDRID() CLASS PeriodicBrowser_DETAIL
-RETURN SELF:FieldGet(#STORDRID)
+ACCESS stordrid() CLASS PeriodicBrowser_DETAIL
+RETURN SELF:FieldGet(#stordrid)
 
-ASSIGN STORDRID(uValue) CLASS PeriodicBrowser_DETAIL
-SELF:FieldPut(#STORDRID, uValue)
+ASSIGN stordrid(uValue) CLASS PeriodicBrowser_DETAIL
+SELF:FieldPut(#stordrid, uValue)
 RETURN uValue
 
 STATIC DEFINE PERIODICBROWSER_DETAIL_ACCOUNTNAME := 105 
