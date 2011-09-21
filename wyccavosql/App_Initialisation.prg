@@ -485,9 +485,6 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 								lSkip:=true
 							endif
 						ENDIF
-						if CurTransnr=="1212179"
-							 CurTransnr:=CurTransnr
-						endif
 						cStatement:=cStatementBase+cStatement+")"
 					endif
 					if !lSkip
@@ -580,8 +577,8 @@ BEGIN SEQUENCE
 		Break
 	endif
 
-	oStmt:Commit()
-	oStmt:FreeStmt(SQL_DROP)
+// 	oStmt:Commit()
+// 	oStmt:FreeStmt(SQL_DROP)
 RECOVER USING oError
 	 
   	GetError(self, "Error creating Table " + table_name)
@@ -633,19 +630,20 @@ method init() class Initialize
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
-// 	local ptrHandle as ptr
+	// 	local ptrHandle as ptr
 	local cLine as string
 	local aWord:={} as array
 	local i,j as int
 	local aIniKey:={'database','password','server','username'} as array
-	local dim akeyval[4] as string 
+	local dim akeyval[4] as string
+	local lConnected as logic 
 
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 	SetDefault(CurPath)
 	SetPath(CurPath) 
 
-	oConn:=SQLConnection{}
+	oConn:=SQLConnection{} 
 
 	// read and interprete wos.ini file
 	cWosIni:=MyFileSpec{CurPath+"\Wos.ini"}
@@ -689,35 +687,46 @@ method init() class Initialize
 	else
 		cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2]
 	endif 
-	SQLConnectErrorMsg(FALSE)
-	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
-		// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
-		if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
-			ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
-			if oMainWindow==null_object
-				oMainWindow := StandardWycWindow{self}
+	SQLConnectErrorMsg(FALSE) 
+	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
+	do while !lConnected
+		if IsClass(#ADOCONNECTION)
+			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW)
+		else
+			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
+		endif
+		if !lConnected
+			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
+			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
+				ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
+				if oMainWindow==null_object
+					oMainWindow := StandardWycWindow{self}
+				endif
+				FileStart(WorkDir()+iif(Empty(GetEnv('ProgramFiles(x86)')),"ODBCInstall.html","ODBCInstall64.html"),oMainWindow)
+				if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
+					loop
+				endif
+				break
 			endif
-			FileStart(WorkDir()+iif(Empty(GetEnv('ProgramFiles(x86)')),"ODBCInstall.html","ODBCInstall64.html"),oMainWindow)
-			if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
-				loop
+			// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
+			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0
+				ErrorBox{,"You have first to install MYSQL"+iif(Lower(cServer)=='localhost','',' or connect to MYSQL server')}:Show()
+				break
 			endif
-			break
+			
+			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
+			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
+				LogEvent(,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
+				ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
+				break
+			endif
+			ShowError(oConn:ERRINFO)
+			Break
 		endif
-		// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
-		if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0
-			ErrorBox{,"You have first to install MYSQL"+iif(Lower(cServer)=='localhost','',' or connect to MYSQL server')}:Show()
-			break
-		endif
-		
-		// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
-		if AtC("Access denied for user",oConn:ErrInfo:errormessage)>0 
-			LogEvent(,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
-			ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
-			break
-		endif
-		ShowError(oConn:ERRINFO)
-		Break
 	enddo
+	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
+	// 	oStmt:Execute()   // set interface with client to local charset 
+
 	oSel:=SQLSelect{"show databases",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)
@@ -730,10 +739,11 @@ method init() class Initialize
 	enddo
 	oSel:FreeStmt(SQL_CLOSE) 
 	// database quotation mark for names:
-	sIdentChar := oConn:Info( SQL_IDENTIFIER_QUOTE_CHAR)
-	if sIdentChar = " "
-		sIdentChar := null_string
-	endif
+	// 	sIdentChar := oConn:Info( SQL_IDENTIFIER_QUOTE_CHAR)
+	// 	if sIdentChar = " "
+	// 		sIdentChar := null_string
+	// 	endif
+	sIdentChar:='`'
 	if (i:=AScan(aDB,{|x|Lower(x)==Lower(dbname)}))==0
 		self:lNewDb:=true
 		self:FirstOfDay:=true 
@@ -754,12 +764,12 @@ method init() class Initialize
 		Break
 	endif
 	if !self:lNewDb
-		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= curdate()",oConn}
+		oSel:=SQLSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
 		if oSel:RecCount>0
 			self:FirstOfDay:=FALSE
 		else	
 			self:FirstOfDay:=true
-			if !Empty(oSel:status)
+			if !Empty(oSel:Status)
 				self:lNewDb:=true    // apparently partly new database which need to be converted
 			endif
 		endif
@@ -788,11 +798,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	local oStmnt as SQLStatement
 	local mindate as date
 	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
-	
+	AdoDateTimeAsDate(true)  
+
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	if !self:lNewDb
-		oSel:=SQLSelect{"select lstlogin from employee where lstlogin >= curdate()",oConn}
+		oSel:=SQLSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
 		if oSel:RecCount>0
 			self:FirstOfDay:=FALSE
 		else	
@@ -807,18 +818,17 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	if self:FirstOfDay 
 		self:InitializeDB()
 	endif
-  	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
-
 	RddSetDefault("DBFCDX") 
 	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
 		HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
 	elseIF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
-		HelpDir:="C:\Windows\Temp"
+		HelpDir:='C:\Windows\Temp'
 	ELSEIF Len(aDir:=Directory("C:\TEMP",FA_DIRECTORY))>0
 		HelpDir:="C:\TEMP"
 	ELSE
 		HelpDir:="C:"
 	ENDIF
+
 	// copy helpfile to c because it cannot read from a server:
 	oMyFileSpec1:=FileSpec{cWorkdir+"\WOSHlp.chm"}
 	IF oMyFileSpec1:Find()
@@ -845,7 +855,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			oMyFileSpec1:Copy(oMyFileSpec2)
 		ENDIF
 	ENDIF
-	oSys := SQLSelect{"select * from sysparms",oConn}
+	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
+	oSys:Execute()
 	if oSys:RecCount>0
 		CurVersion:=oSys:Version
 		AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
@@ -878,7 +889,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	mmj := CMonth(Today())
 	mdw := CDoW(Today())
 	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
-	
+
 	// Initialize sysparms:
 	IF oSys:RecCount=0
 		if SQLSelect{"select united_ara,aed from currencylist",oConn}:RecCount<1
@@ -888,7 +899,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		aLocal:=self:GetLocaleInfo() 
 		(CurrencySpec{,,,aLocal[5]}):Show()
 		mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
-		oTrans := SQLSelect{"select min(dat) as mindate from transaction",oConn}
+		oTrans := SQLSelect{"select cast(min(dat) as date) as mindate from transaction",oConn}
 		IF oTrans:RecCount>0
 			if !Empty(oTrans:MinDate)
 				IF (Year(oTrans:mindate)*12+Month(oTrans:mindate)-1) < mindate
@@ -934,12 +945,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				IF oDBFileSpec1:Size>4096  // not empty? 
 					oSel:=SQLSelect{"show table status like 'ppcodes'",oConn}
 					if oSel:RecCount=1
-						if Val(oSel:FIELDGET(#rows)) > 0
+						if ConI(oSel:rows) > 0
 							if !Empty(oSel:Update_Time)
-								if SToD(StrTran(oSel:Update_Time,"-","")) < oDBFileSpec1:DateChanged
+								if iif(IsDate(oSel:Update_Time),oSel:Update_Time,SToD(StrTran(oSel:Update_Time,"-",""))) < oDBFileSpec1:DateChanged
 									lCopy:=true
 								endif
-							elseif SToD(StrTran(oSel:Create_time,"-","")) < oDBFileSpec1:DateChanged
+							elseif iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
 								lCopy:=true
 							endif					
 						else
@@ -959,12 +970,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				IF oDBFileSpec1:Size>4096  // not empty? 
 					oSel:=SQLSelect{"show table status like 'currencylist'",oConn}
 					if oSel:RecCount=1
-						if Val(oSel:FIELDGET(#rows)) > 0
+						if ConI(oSel:rows) > 0
 							if !Empty(oSel:Update_Time)
-								if SToD(StrTran(oSel:Update_Time,"-","")) < oDBFileSpec1:DateChanged
+								if iif(IsDate(oSel:Update_Time),oSel:Update_Time,SToD(StrTran(oSel:Update_Time,"-",""))) < oDBFileSpec1:DateChanged
 									lCopy:=true
 								endif
-							elseif SToD(StrTran(oSel:Create_time,"-","")) < oDBFileSpec1:DateChanged
+							elseif  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
 								lCopy:=true
 							endif					
 						else
@@ -1003,6 +1014,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				endif
 			endif
 		endif
+
 		if self:lNewDb 
 			// Initialize Mailingcodes:
 			oStmnt:=SQLStatement{"insert into perscod (pers_code,abbrvtn,description) values (?,?,?)",oConn}
@@ -1031,8 +1043,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		AEval(Directory(HelpDir+"\HP*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
 		AEval(Directory(HelpDir+"\OR*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
 		AEval(Directory(HelpDir+"\IN*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
-		IF .not.Empty(oSys:HB) 
-			oTrans := SQLSelect{"select max(dat) as datmax from transaction where accid="+Str(oSys:HB,-1)+" and bfm='H'",oConn}
+		IF .not.Empty(oSys:HB)
+			oTrans := SqlSelect{"select cast(max(dat) as date) as datmax from transaction where accid="+Str(oSys:HB,-1)+" and bfm='H'",oConn}
 			IF oTrans:RecCount>0 .and. !Empty(oTrans:DATmax)
 				NwHb:= Year(oTrans:DATmax)*100+Month(oTrans:DATmax)
 				IF NwHb > oSys:LstReportMonth 
@@ -1046,18 +1058,18 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				endif
 			endif
 		endif
-	endif
-	IF Empty(oSys:PSWRDLEN) .or. oSys:PSWRDLEN<8 
+	endif        
+	IF Empty(oSys:pswrdlen) .or. oSys:pswrdlen<8 
 		cStatement+=",pswalnum=1,pswrdlen=8"
 	ENDIF
-	IF Empty(oSys:PSWDURA) .or.oSys:PSWDURA>365
+	IF Empty(oSys:pswdura) .or.oSys:pswdura>365
 		cStatement+=",pswdura=365"
 	ENDIF
 	IF Empty(oSys:assmntint)
 		cStatement+=",assmntint=1"
 	ENDIF
 	IF Empty(oSys:ADMINTYPE)
-		cStatement+=",ADMINTYPE='WO'"
+		cStatement+=",admintype='WO'"
 		ADMIN:="WO"
 	endif
 	* Bepaal maand afsluiting HB:
@@ -1093,18 +1105,19 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 
 	InitGlobals() 
-	oSel:=SQLSelect{"select accid from account where giftalwd=1 limit 2",oConn} 
+	oSel:=SqlSelect{"select accid from account where giftalwd=1 limit 2",oConn} 
 	if oSel:RecCount=2
 		MultiDest:=true
 	else
 		MultiDest:=FALSE
 	endif	
+  	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
 
 	// 	Set up registry settings
 	InitRegistry()
 	// Set up globals
 	WinIniFS := WinIniFileSpec{}
-	* Set default orientation to portrait:
+	// Set default orientation to portrait:
 	WycIniFS:WriteInt( "Runtime", "PrintOrientation",DMORIENT_PORTRAIT)
 
 	oMainWindow:Pointer := Pointer{POINTERARROW}
@@ -1116,46 +1129,49 @@ method InitializeDB() as void Pascal  class Initialize
 	local aCurColumn:={}, aCurIndex:={} as array
 	local oSel as SQLSelect 
 	local i,j,nTargetPos,nSourceStart,nSourceEnd,nTrCount,nLenTable as int, cRow, cTable,cTableCol as string
-	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array 
+	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array
+// 	local cCollation:='ascii_general_ci' as string
+	local cCollation:='utf8_unicode_ci' as string
+	 
 	local aTable:={;
-		{"account","MyIsam","utf8_unicode_ci"},;
-		{"accountbalanceyear","InnoDB","utf8_unicode_ci"},;
-		{"article","MyIsam","utf8_unicode_ci"},;
+		{"account","MyIsam",cCollation},;
+		{"accountbalanceyear","InnoDB",cCollation},;
+		{"article","MyIsam",cCollation},;
 		{"authfunc","MyIsam","latin1_swedish_ci"},;
-		{"balanceitem","MyIsam","utf8_unicode_ci"},;
-		{"balanceyear","InnoDB","utf8_unicode_ci"},;
-		{"bankaccount","MyIsam","utf8_unicode_ci"},;
-		{"bankorder","InnoDB","utf8_unicode_ci"},;
-		{"budget","MyIsam","utf8_unicode_ci"},;
-		{"currencylist","MyIsam","utf8_unicode_ci"},;
-		{"currencyrate","MyIsam","utf8_unicode_ci"},;
-		{"department","MyIsam","utf8_unicode_ci"},;
-		{"distributioninstruction","InnoDB","utf8_unicode_ci"},;
-		{"dueamount","InnoDB","utf8_unicode_ci"},;
-		{"emplacc","MyIsam","utf8_unicode_ci"},; 
+		{"balanceitem","MyIsam",cCollation},;
+		{"balanceyear","InnoDB",cCollation},;
+		{"bankaccount","MyIsam",cCollation},;
+		{"bankorder","InnoDB",cCollation},;
+		{"budget","MyIsam",cCollation},;
+		{"currencylist","MyIsam",cCollation},;
+		{"currencyrate","MyIsam",cCollation},;
+		{"department","MyIsam",cCollation},;
+		{"distributioninstruction","InnoDB",cCollation},;
+		{"dueamount","InnoDB",cCollation},;
+		{"emplacc","MyIsam",cCollation},; 
 		{"employee","MyIsam","latin1_swedish_ci"},; 
-		{"importlock","InnoDB","utf8_unicode_ci"},;
-		{"importtrans","InnoDB","utf8_unicode_ci"},;
-		{"ipcaccounts","MyIsam","utf8_unicode_ci"},;  
-		{"language","MyIsam","utf8_unicode_ci"},;
-		{"log","MyIsam","utf8_unicode_ci"},;	
-		{"mbalance","InnoDB","utf8_unicode_ci"},;
-		{"member","MyIsam","utf8_unicode_ci"},;
-		{"memberassacc","MyIsam","utf8_unicode_ci"},;
-		{"standingorder","InnoDB","utf8_unicode_ci"},;
-		{"standingorderline","InnoDB","utf8_unicode_ci"},;
-		{"perscod","MyIsam","utf8_unicode_ci"},;
-		{"person","MyIsam","utf8_unicode_ci"},;
-		{"person_properties","MyIsam","utf8_unicode_ci"},;
-		{"personbank","MyIsam","utf8_unicode_ci"},;
-		{"persontype","MyIsam","utf8_unicode_ci"},;
-		{"ppcodes","MyIsam","utf8_unicode_ci"},;
-		{"subscription","InnoDB","utf8_unicode_ci"},;
-		{"sysparms","InnoDB","utf8_unicode_ci"},;
-		{"telebankpatterns","MyIsam","utf8_unicode_ci"},;
-		{"teletrans","InnoDB","utf8_unicode_ci"},;
-		{"titles","MyIsam","utf8_unicode_ci"},;
-		{"transaction","InnoDB","utf8_unicode_ci"}	} as array       // longer is too large for the compiler
+		{"importlock","InnoDB",cCollation},;
+		{"importtrans","InnoDB",cCollation},;
+		{"ipcaccounts","MyIsam",cCollation},;  
+		{"language","MyIsam",cCollation},;
+		{"log","MyIsam",cCollation},;	
+		{"mbalance","InnoDB",cCollation},;
+		{"member","MyIsam",cCollation},;
+		{"memberassacc","MyIsam",cCollation},;
+		{"standingorder","InnoDB",cCollation},;
+		{"standingorderline","InnoDB",cCollation},;
+		{"perscod","MyIsam",cCollation},;
+		{"person","MyIsam",cCollation},;
+		{"person_properties","MyIsam",cCollation},;
+		{"personbank","MyIsam",cCollation},;
+		{"persontype","MyIsam",cCollation},;
+		{"ppcodes","MyIsam",cCollation},;
+		{"subscription","InnoDB",cCollation},;
+		{"sysparms","InnoDB",cCollation},;
+		{"telebankpatterns","MyIsam",cCollation},;
+		{"teletrans","InnoDB",cCollation},;
+		{"titles","MyIsam",cCollation},;
+		{"transaction","InnoDB",cCollation}	} as array       // longer is too large for the compiler
 
 	// required tables structure:
 
@@ -1746,7 +1762,7 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
-			AAdd(aCurIndex,{oSel:table_name,oSel:NON_UNIQUE,oSel:INDEX_NAME,oSel:SEQ_IN_INDEX,oSel:COLUMN_NAME})
+			AAdd(aCurIndex,{oSel:table_name,iif(isNumeric(oSel:NON_UNIQUE),Str(oSel:NON_UNIQUE,1,0),oSel:NON_UNIQUE),oSel:INDEX_NAME,iif(isNumeric(oSel:SEQ_IN_INDEX),Str(oSel:SEQ_IN_INDEX,1,0),oSel:SEQ_IN_INDEX),oSel:COLUMN_NAME})
 			oSel:Skip()
 		enddo
 	endif
