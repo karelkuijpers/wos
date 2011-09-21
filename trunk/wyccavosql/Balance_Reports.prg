@@ -2230,7 +2230,9 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 				endif
 				IF oRecip1 != null_object                         
 					IF !Empty(self:oEMLFrm:Template)
-						oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif( !Empty(aPersid[1]),Str(aPersid[1],-1),Str(aPersid[2],-1))+"'",oConn} 
+						oSelpers:oDB:=SQLSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
+						"attention,cast(datelastgift as date) as datelastgift from person "+;
+						"where persid='"+iif( !Empty(aPersid[1]),Str(aPersid[1],-1),Str(aPersid[2],-1))+"'",oConn} 
 						mailcontent:=oSelpers:FillText(self:oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
 					ELSE
 						mailcontent:=""
@@ -3248,7 +3250,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 								ELSE
 									m71_giftrst:=m71_giftrst+oTrans:cre-oTrans:deb
 								ENDIF
-							ELSEIF oTrans:FROMRPP==1
+							ELSEIF ConI(oTrans:FROMRPP)==1
 								//	Processing of transactions	from other PO's:
 								cOPP:=AllTrim(oTrans:OPP)
 								cTypeOPP:=oTrans:gc
@@ -3506,7 +3508,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			ENDIF
 			IF oRecip1 != null_object
 				IF !Empty(oEMLFrm:Template)
-					oSelpers:oDB:=SQLSelectPerson{"select * from person where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
+					oSelpers:oDB:=SQLSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
+					"attention,cast(datelastgift as date) as datelastgift from person "+;
+					"where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
 					oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
 					mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 				ELSE
@@ -4164,7 +4168,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	RETURN
 method Init() class GiftsReport 
 	self:oLan:=Language{}
-	self:DecFrac:=SQLSelect{"select decmgift from sysparms",oConn}:FIELDGET(1)
+	self:DecFrac:=ConI(SQLSelect{"select decmgift from sysparms",oConn}:FIELDGET(1))
 
 	return self
 method InitializeTexts(ReportYear as int,ReportMonth as int) as void pascal class GiftsReport  
@@ -5829,16 +5833,16 @@ self:SetTexts()
 METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterBalance as int) as logic pascal CLASS YearClosing
 	* Recursive processing of a department with its subdeparments
 	*
-	LOCAL subDepPtr AS INT
+	LOCAL subDepPtr as int
 	LOCAL min_balance, PL_totdeb, PL_totcre as FLOAT
 	local cStatement as string
 	local oStmnt as SQLStatement
 
 	subDepPtr:=0
-	DO WHILE TRUE
+	DO WHILE true
 		subDepPtr:=AScan(self:d_parentdep,self:d_dep[p_depptr],subDepPtr+1)
 		IF Empty(subDepPtr)
-			EXIT
+			exit
 		ELSE
 			if self:SubDepartment(subDepPtr,@cTransnr,@nSeqNbr,AfterBalance)
 				* consolidate values of subdepartment into itself:
@@ -5886,7 +5890,7 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows>0
 					if	Empty(cTransnr)
-						cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+						cTransnr:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 					endif
 					* adapt last year	balance of net	asset	account: 
 					oStmnt:=SQLStatement{"insert into accountbalanceyear set "+;
