@@ -115,18 +115,18 @@ RETURN uValue
 METHOD OKButton( ) CLASS EditMailCd
 	LOCAL oMcd, oMcdCheck as SQLSelect 
 	local oStmnt as SQLStatement
-	oMcd:=SELF:server
-	IF !SELF:lNew
+	oMcd:=self:Server
+	IF !self:lnew
 		IF Empty(self:mCod)
 		* empty line
-			SELF:EndWindow()
+			self:EndWindow()
 			RETURN
 		ENDIF
 	ENDIF
 		*Check obliged fields:
 		IF Empty(self:mOms)
 			(ErrorBox{,self:oLan:WGet("Description obliged") }):Show()
-            RETURN NIL
+            RETURN nil
 		ENDIF
 		IF Empty(self:mAbbrvtn)
 			(ErrorBox{,self:oLan:WGet("Abbreviation obliged") }):Show()
@@ -134,35 +134,29 @@ METHOD OKButton( ) CLASS EditMailCd
 		ENDIF
 		
 		* check if mailcd allready exists:
-	    IF (lNew.or.AllTrim(oMcd:Description) # AllTrim(self:mOms).or.AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn))
-			IF lNew .or. AllTrim(oMcd:Description) # AllTrim(self:mOms)
+	    IF (lnew.or.AllTrim(oMcd:Description) # AllTrim(self:mOms).or.AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn))
+			IF lnew .or. AllTrim(oMcd:Description) # AllTrim(self:mOms)
 				if SQLSelect{"select description from perscod where description='"+AllTrim(self:mOms)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode description '+ AllTrim(self:mOms) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
 			ENDIF
-			IF lNew .or. AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn).and.!Empty(self:mAbbrvtn)
+			IF lnew .or. AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn).and.!Empty(self:mAbbrvtn)
 				if SQLSelect{"select description from perscod where abbrvtn='"+AllTrim(self:mAbbrvtn)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode abbreviation '+ AllTrim(self:mAbbrvtn) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
 			ENDIF
-		ENDIF
-		IF self:lNew
-// 			oStmnt:=SQLStatement{"insert into perscod set pers_code='"+self:GetNextKey()+"',description='"+AllTrim(self:mOms)+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'",oConn}
-// 			oStmnt:Execute()
-// 			if oStmnt:NumSuccessfulRows>0
-// 				oMcd:Execute() 
-// 			endif
-			oMcd:Append()
-			oMcd:pers_code:=self:GetNextKey() 
-		ENDIF
-      oMcd:Description      := self:mOms
-      oMcd:abbrvtn  := Upper(self:mAbbrvtn) 
-      oMcd:Commit()
-		FillPersCode()
+	    ENDIF
+	    oStmnt:=SQLStatement{iif(self:lnew,"insert into","update")+" perscod set description='"+self:mOms+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'"+;
+	    iif(self:lnew,",pers_code='"+self:GetNextKey()+"'"," where pers_code='"+self:mCod+"'"),oConn}
+	    oStmnt:Execute()
+	    if Empty(oStmnt:status) .and.oStmnt:NumSuccessfulRows>0 
+			self:oCaller:refresh()
+			FillPersCode()
+	    endif   
 		self:EndWindow()
-RETURN NIL
+RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd
 	//Put your PostInit additions here
 	LOCAL oMcd:=self:server as SQLSelect
@@ -188,6 +182,21 @@ STATIC DEFINE EDITMAILCD_MABBRVTN := 102
 STATIC DEFINE EDITMAILCD_MOMS := 101 
 STATIC DEFINE EDITMAILCD_OKBUTTON := 103 
 STATIC DEFINE EDITMAILCD_SC_OMS := 100 
+RESOURCE EditPersProp DIALOGEX  13, 12, 333, 170
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Property name:", EDITPERSPROP_FIXEDTEXT1, "Static", WS_CHILD, 16, 11, 53, 13
+	CONTROL	"", EDITPERSPROP_MPROPNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 11, 102, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Property type:", EDITPERSPROP_FIXEDTEXT2, "Static", WS_CHILD, 16, 28, 53, 13
+	CONTROL	"", EDITPERSPROP_MTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 83, 25, 102, 61
+	CONTROL	"Drop Down Values:", EDITPERSPROP_FIXEDTEXT3, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 45, 63, 12
+	CONTROL	"", EDITPERSPROP_MVALUES, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|ES_RIGHT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 83, 44, 241, 111, WS_EX_CLIENTEDGE
+	CONTROL	"(seperated by comma)", EDITPERSPROP_FIXEDTEXT4, "Static", WS_CHILD|NOT WS_VISIBLE, 15, 54, 53, 21
+	CONTROL	"Cancel", EDITPERSPROP_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 27, 54, 12
+	CONTROL	"OK", EDITPERSPROP_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 6, 54, 13
+END
+
 CLASS EditPersProp INHERIT DataWindowExtra 
 
 	PROTECT oDBMPROPNAME as DataColumn
@@ -205,21 +214,6 @@ CLASS EditPersProp INHERIT DataWindowExtra
   EXPORT oCaller AS OBJECT
   PROTECT mID as int 
   export CurDropVal as array
-
-RESOURCE EditPersProp DIALOGEX  13, 12, 333, 170
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Property name:", EDITPERSPROP_FIXEDTEXT1, "Static", WS_CHILD, 16, 11, 53, 13
-	CONTROL	"", EDITPERSPROP_MPROPNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 11, 102, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Property type:", EDITPERSPROP_FIXEDTEXT2, "Static", WS_CHILD, 16, 28, 53, 13
-	CONTROL	"", EDITPERSPROP_MTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 83, 25, 102, 61
-	CONTROL	"Drop Down Values:", EDITPERSPROP_FIXEDTEXT3, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 45, 63, 12
-	CONTROL	"", EDITPERSPROP_MVALUES, "Edit", ES_WANTRETURN|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|ES_RIGHT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 83, 44, 241, 111, WS_EX_CLIENTEDGE
-	CONTROL	"(seperated by comma)", EDITPERSPROP_FIXEDTEXT4, "Static", WS_CHILD|NOT WS_VISIBLE, 15, 54, 53, 21
-	CONTROL	"Cancel", EDITPERSPROP_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 27, 54, 12
-	CONTROL	"OK", EDITPERSPROP_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 6, 54, 13
-END
 
 METHOD CancelButton( ) CLASS EditPersProp
 	SELF:EndWindow()
@@ -333,39 +327,39 @@ METHOD OKButton( ) CLASS EditPersProp
 	local aNewDropValues:={} as array
 	local i as int
 	local cRemoved,cRemoveCond,cTotal as string 
-	oProp:=SELF:server
-	IF !SELF:lnew
+	oProp:=self:server
+	IF !self:lnew
 		IF Empty(self:mId)
 			* empty line
-			SELF:EndWindow()
+			self:EndWindow()
 			RETURN
 		ENDIF
 	ENDIF
 	*Check obliged fields:
-	IF Empty(SELF:MPROPNAME)
-		(Errorbox{,"Name obliged" }):Show()
-		RETURN NIL
+	IF Empty(self:MPROPNAME)
+		(ErrorBox{,"Name obliged" }):Show()
+		RETURN nil
 	ENDIF
 	IF self:mType==DROPDOWN .and. Empty(self:mValues)
 		(ErrorBox{,self:oLan:WGet("Enter at least one value") }):Show()
-		RETURN NIL
+		RETURN nil
 	ENDIF
 	* check if Property allready exists:
 	IF self:lnew .or. AllTrim(oProp:FIELDGET(#NAME)) # AllTrim(self:MPROPNAME)
 		if SQLSelect{"select name from person_properties where name='"+AddSlashes(AllTrim(self:MPROPNAME))+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0
-			(ErrorBox{,'Property Name '+ alltrim(self:mPropName) +' already exists' }):Show()
+			(ErrorBox{,'Property Name '+ AllTrim(self:mPropName) +' already exists' }):Show()
 			RETURN nil
 		ENDIF
 	ENDIF 
 	// check if dropdown value changed/removed:
-	if !self:lNew .and. self:mType==DROPDOWN
+	if !self:lnew .and. self:mType==DROPDOWN
 		aNewDropValues:=Split(self:mValues,",")
 		for i:=1 to Len(self:CurDropVal)
 			CurValue:=CurDropVal[i]
 			if AScan(aNewDropValues,CurValue)=0 
 				oProp:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
 				if oProp:RecCount>0
-					cTotal:=oProp:total
+					cTotal:=ConS(oProp:total)
 				else
 					cTotal:="0"
 				endif
@@ -381,7 +375,7 @@ METHOD OKButton( ) CLASS EditPersProp
 		endif
 	endif
 	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(self:mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
-	iif(self:lNew,""," where id="+Str(self:mId,-1)) 
+	iif(self:lnew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
@@ -399,7 +393,7 @@ METHOD OKButton( ) CLASS EditPersProp
 		self:oCaller:gotop()
 	endif
 	self:EndWindow()
-	RETURN NIL
+	RETURN nil
 	
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp
 	//Put your PostInit additions here
@@ -440,16 +434,6 @@ STATIC DEFINE EDITPERSPROP_MPROPNAME := 101
 STATIC DEFINE EDITPERSPROP_MTYPE := 103 
 STATIC DEFINE EDITPERSPROP_MVALUES := 105 
 STATIC DEFINE EDITPERSPROP_OKBUTTON := 108 
-RESOURCE EditPersTitle DIALOGEX  6, 6, 294, 56
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITPERSTITLE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITPERSTITLE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITPERSTITLE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITPERSTITLE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-END
-
 CLASS EditPersTitle INHERIT DataWindowMine
 
 	PROTECT oDCSC_OMS AS FIXEDTEXT
@@ -463,6 +447,16 @@ CLASS EditPersTitle INHERIT DataWindowMine
 EXPORT oCaller AS OBJECT
 PROTECT mId AS INT
 PROTECT lNew AS LOGIC
+RESOURCE EditPersTitle DIALOGEX  6, 6, 294, 56
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITPERSTITLE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITPERSTITLE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITPERSTITLE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITPERSTITLE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+END
+
 METHOD CancelButton( ) CLASS EditPersTitle
 		SELF:EndWindow()
 RETURN
@@ -506,35 +500,38 @@ return mDescrptn := uValue
 
 METHOD OKButton( ) CLASS EditPersTitle
 	LOCAL oTit as SQLSelect
-	oTit:=SELF:server
-	IF !SELF:lnew
+	local oStmnt as SQLStatement
+	oTit:=self:Server
+	IF !self:lnew
 		IF Empty(mId)
 		* empty line
-			SELF:EndWindow()
+			self:EndWindow()
 			RETURN
 		ENDIF
 	ENDIF
 		*Check obliged fields:
-		IF Empty(SELF:mDescrptn)
-			(Errorbox{,"Description obliged" }):Show()
-            RETURN NIL
+		IF Empty(self:mDescrptn)
+			(ErrorBox{,"Description obliged" }):Show()
+            RETURN nil
 		ENDIF
 		
 		* check if Title allready exists:
-		IF self:lNew .or. AllTrim(oTit:DESCRPTN) # AllTrim(mDescrptn)
+		IF self:lnew .or. AllTrim(oTit:DESCRPTN) # AllTrim(mDescrptn)
 			if SQLSelect{"select id from titles where descrptn='"+AllTrim(mDescrptn)+"' and id<>"+Str(self:mId,-1),oConn}:RecCount>0 
 				(ErrorBox{,'Title description '+ AllTrim(mDescrptn) +' already exists' }):Show()
 				RETURN nil
 			ENDIF
-		ENDIF
-		IF SELF:lNew
-			oTit:Append()
-		ENDIF
-       oTit:DESCRPTN := self:mDescrptn
-		SELF:Commit()
-		FillPersTitle()
+		ENDIF 
+		oStmnt:=SQLStatement{iif(self:lnew,"insert into","update")+" titles set descrptn='"+self:mDescrptn+"'"+;
+	    iif(self:lnew,""," where id='"+Str(self:mId,-1)+"'"),oConn}
+	    oStmnt:Execute()
+	    if Empty(oStmnt:status) .and.oStmnt:NumSuccessfulRows>0 
+			self:oCaller:refresh()
+			FillPersTitle()
+	    endif   
+
 		self:EndWindow()
-RETURN NIL
+RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersTitle
 	//Put your PostInit additions here
 	LOCAL oTit as SQLSelect
@@ -558,6 +555,18 @@ STATIC DEFINE EDITPERSTITLE_CANCELBUTTON := 103
 STATIC DEFINE EDITPERSTITLE_MDESCRPTN := 101 
 STATIC DEFINE EDITPERSTITLE_OKBUTTON := 102 
 STATIC DEFINE EDITPERSTITLE_SC_OMS := 100 
+RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
+END
+
 class EditPersType inherit DataWindowExtra 
 
 	protect oDCSC_OMS as FIXEDTEXT
@@ -572,18 +581,6 @@ class EditPersType inherit DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 EXPORT oCaller AS OBJECT
 PROTECT mId AS INT
-
-RESOURCE EditPersType DIALOGEX  8, 7, 291, 63
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITPERSTYPE_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITPERSTYPE_MDESCRPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Abbrevation", EDITPERSTYPE_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 36, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITPERSTYPE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITPERSTYPE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-	CONTROL	"Abbreviation:", EDITPERSTYPE_FIXEDTEXT1, "Static", WS_CHILD, 13, 38, 47, 13
-END
 
 METHOD CancelButton( ) CLASS EditPersType
 	SELF:EndWindow()
@@ -640,44 +637,44 @@ assign mDescrptn(uValue) class EditPersType
 self:FieldPut(#mDescrptn, uValue)
 return mDescrptn := uValue
 
-METHOD OKButton(lNew ) CLASS EditPersType
+METHOD OKButton(lnew ) CLASS EditPersType
 	LOCAL oPtp as SQLSelect
+	local oStmnt as SQLStatement
 	local  Abr:=AllTrim(self:mAbbrvtn),Desc:=AllTrim(self:mDescrptn) as string 
-	oPtp:=SELF:server
-	IF !SELF:lnew
+	oPtp:=self:Server
+	IF !self:lnew
 		IF Empty(mId)
 		* empty line
-			SELF:EndWindow()
+			self:EndWindow()
 			RETURN
 		ENDIF
 	ENDIF
 		*Check obliged fields:
-		IF Empty(SELF:mDescrptn)
+		IF Empty(self:mDescrptn)
 			(ErrorBox{,self:oLan:WGet("Description obliged") }):Show()
-            RETURN NIL
+            RETURN nil
 		ENDIF
-		IF Empty(SELF:mAbbrvtn)
+		IF Empty(self:mAbbrvtn)
 			(ErrorBox{,self:oLan:WGet("Abbreviation obliged") }):Show()
-            RETURN NIL
+            RETURN nil
 		ENDIF
 		
 		* check if person type allready exists:
-	    IF (self:lNew.or.AllTrim(oPtp:DESCRPTN)#AllTrim(mDescrptn).or.AllTrim(oPtp:abbrvtn)#AllTrim(mAbbrvtn)) 
+	    IF (self:lnew.or.AllTrim(oPtp:DESCRPTN)#AllTrim(mDescrptn).or.AllTrim(oPtp:abbrvtn)#AllTrim(mAbbrvtn)) 
 			if SQLSelect{"select id from persontype where (abbrvtn='"+AllTrim(mAbbrvtn)+"' or descrptn='"+AllTrim(mDescrptn)+"') and id<>"+Str(self:mId,-1),oConn}:RecCount>0  
 				(ErrorBox{,self:oLan:WGet('Person type description or abbrevation already exists') }):Show()
 				RETURN nil
 			endif
-				 	    	
 		ENDIF
-		IF SELF:lNew
-			oPtp:Append()
-		ENDIF
-        oPtp:DESCRPTN := self:mDescrptn
-        oPtp:abbrvtn  := Upper(self:mAbbrvtn)
-		SELF:Commit()
-		FillPersType()
+		oStmnt:=SQLStatement{iif(self:lnew,"insert into","update")+" persontype set descrptn='"+self:mDescrptn+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'"+;
+	    iif(self:lnew,""," where id='"+Str(self:mId,-1)+"'"),oConn}
+	    oStmnt:Execute()
+	    if Empty(oStmnt:status) .and.oStmnt:NumSuccessfulRows>0 
+			self:oCaller:refresh()
+			FillPersType()
+	    endif   
 		self:EndWindow()
-RETURN NIL
+RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersType
 	//Put your PostInit additions here
 	LOCAL oPtp as SQLSelect 
@@ -802,40 +799,40 @@ STATIC DEFINE PERSTYPEREG_NEWBUTTON := 102
 STATIC DEFINE PERSTYPEREG_SUB_PERSTYPEREG := 100 
 function PropTypeDesc(type as int) as string
 return prop_types[ascan(prop_types,{|x|x[2]==type}),1]
-RESOURCE Sub_MailCdReg DIALOGEX  14, 13, 226, 187
+CLASS Sub_MailCdReg INHERIT DATAWINDOW 
+
+	PROTECT oDBDESCRIPTION as DataColumn
+	PROTECT oDBABBRVTN as DataColumn
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE Sub_MailCdReg DIALOGEX  16, 14, 226, 187
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
-class Sub_MailCdReg inherit DataWindowMine 
-
-	PROTECT oDBOMS as DataColumn
-	PROTECT oDBABBRVTN as DataColumn
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-method Init(oWindow,iCtlID,oServer,uExtra) class Sub_MailCdReg 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Sub_MailCdReg 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"Sub_MailCdReg",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"Sub_MailCdReg",_GetInst()},iCtlID)
 
-self:Caption := "DataWindow Caption"
-self:HyperLabel := HyperLabel{#Sub_MailCdReg,"DataWindow Caption",NULL_STRING,NULL_STRING}
-self:OwnerAlignment := OA_HEIGHT
+SELF:Caption := "DataWindow Caption"
+SELF:HyperLabel := HyperLabel{#Sub_MailCdReg,"DataWindow Caption",NULL_STRING,NULL_STRING}
+SELF:OwnerAlignment := OA_HEIGHT
 
 if !IsNil(oServer)
-	self:Use(oServer)
-else
-	self:Use(self:Owner:Server)
-endif
+	SELF:Use(oServer)
+ELSE
+	SELF:Use(SELF:Owner:Server)
+ENDIF
 self:Browser := EditBrowser{self}
 
-oDBOMS := DataColumn{Perscod_OMS{}}
-oDBOMS:Width := 38
-oDBOMS:HyperLabel := HyperLabel{#description,"Mail code description","Mail code description",null_string} 
-oDBOMS:Caption := "Mail code description"
-self:Browser:AddColumn(oDBOMS)
+oDBDESCRIPTION := DataColumn{Perscod_OMS{}}
+oDBDESCRIPTION:Width := 38
+oDBDESCRIPTION:HyperLabel := HyperLabel{#description,"Mail code description","Mail code description",NULL_STRING} 
+oDBDESCRIPTION:Caption := "Mail code description"
+self:Browser:AddColumn(oDBDESCRIPTION)
 
 oDBABBRVTN := DataColumn{Perscod_Abbrvtn{}}
 oDBABBRVTN:Width := 17
@@ -844,7 +841,7 @@ oDBABBRVTN:Caption := "Abbreviation"
 self:Browser:AddColumn(oDBABBRVTN)
 
 
-self:ViewAs(#BrowseView)
+SELF:ViewAs(#BrowseView)
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -860,19 +857,20 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS Sub_MailCdReg
 	oWindow:use(oWindow:oPerscd)
 	RETURN NIL
 STATIC DEFINE SUB_MAILCDREG_ABBRVTN := 101 
+STATIC DEFINE SUB_MAILCDREG_DESCRIPTION := 100 
 STATIC DEFINE SUB_MAILCDREG_OMS := 100 
-RESOURCE Sub_PersPropReg DIALOGEX  12, 11, 226, 186
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS Sub_PersPropReg INHERIT DataWindowMine 
 
 	PROTECT oDBNAME as DataColumn
 	PROTECT oDBTYPEDESCR as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE Sub_PersPropReg DIALOGEX  12, 11, 226, 186
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Sub_PersPropReg 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1096,9 +1094,9 @@ END
 METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 	LOCAL mCod,mOms as STRING 
 	local oStmnt as SQLStatement
-	LOCAL oMcd:=self:server, oSel as SQLSelect
+	LOCAL oMcd:=self:Server, oSel as SQLSelect
 	IF oMcd:EOF.or.oMcd:BOF .or. oMcd:RecCount<1
-		(Errorbox{,self:oLan:WGet("Select a mailing code first")}):Show()
+		(ErrorBox{,self:oLan:WGet("Select a mailing code first")}):Show()
 		RETURN
 	ENDIF
 	mOms:=AllTrim(oMcd:Description)
@@ -1108,10 +1106,9 @@ METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 	endif  
    oSel:=SQLSelect{"select count(*) as total from person where  instr(mailingcodes,'"+oMcd:Pers_Code+"')>0",oConn}
 	IF (TextBox{ self, self:oLan:WGet("Delete mailing code"),;
-		self:oLan:WGet("Delete mailing code")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+oSel:total+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
+		self:oLan:WGet("Delete mailing code")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+AllTrim(Transform(oSel:total,""))+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
 		mCod:=oMcd:Pers_Code
 		oSFSub_MailCdReg:DELETE()
-		oMcd:Commit()
 		FillPersCode()
 		oSFSub_MailCdReg:Browser:REFresh()
 		self:StatusMessage(self:oLan:WGet("Removing")+space(1)+mOms+space(1)+self:oLan:WGet("from all persons, moment please"))
@@ -1119,11 +1116,11 @@ METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 		oStmnt:=SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'"+mCod+" ',''),'"+mCod+"','') where instr(mailingcodes,'"+mCod+"')>0",oConn}
 		oStmnt:execute()
 		self:Pointer := Pointer{POINTERARROW} 
-		TextBox{,self:oLan:wget("Removal mailing code"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:wget("persons updated")}:Show()
+		TextBox{,self:oLan:WGet("Removal mailing code"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:WGet("persons updated")}:Show()
 	ENDIF		
 
 
-	RETURN NIL
+	RETURN nil
 METHOD EditButton(lNew ) CLASS TABMAIL_PAGE
 	LOCAL oEditMailCdWindow AS EditMailCd
 	Default(@lNew,FALSE)
@@ -1217,9 +1214,13 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABMAIL_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABMAIL_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra
-	oPerscd:=SQLSelect{"select * from perscod order by description",oConn}
-	RETURN NIL
+	self:oPerscd:=SqlSelect{"select pers_code,description,abbrvtn from perscod order by description",oConn}
+	RETURN nil
 
+METHOD refresh() CLASS TABMAIL_PAGE
+	self:Server:Execute()
+	self:oSFSub_MailCdReg:Browser:refresh()
+RETURN nil
 STATIC DEFINE TABMAIL_PAGE_DELETEBUTTON := 103 
 STATIC DEFINE TABMAIL_PAGE_EDITBUTTON := 101 
 STATIC DEFINE TABMAIL_PAGE_FIXEDTEXT1 := 104 
@@ -1249,11 +1250,11 @@ CLASS TabProp_Page INHERIT DataWindowExtra
    export oProp as SQLSelect 
 METHOD AddButton( ) CLASS TabProp_Page 
 METHOD DeleteButton( ) CLASS TABPROP_PAGE
-	LOCAL  mOms AS STRING
+	LOCAL  mOms as STRING
 	LOCAL mCod,mId as STRING
 	LOCAL oProp,oSel,oPers as SQLSelect
-	LOCAL oXML AS XMLDocument
-	LOCAL lTagFound AS LOGIC
+	LOCAL oXML as XMLDocument
+	LOCAL lTagFound as LOGIC
 	local oStmnt as SQLStatement 
 	local nUpd as int
 	oProp:=self:Server
@@ -1267,7 +1268,7 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 	oSel:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+mId+">')>0",oConn}
 	
 	IF (TextBox{ self, self:oLan:WGet("Delete Property"),;
-			self:oLan:WGet("Delete Property")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+oSel:total+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
+			self:oLan:WGet("Delete Property")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+ConS(oSel:total)+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
 		SQLStatement{"delete from person_properties where id="+mId,oConn}:execute()
 // 		self:DELETE()
 // 		oProp:Commit() 
@@ -1282,14 +1283,14 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 			oStmnt:execute() 
 			nUpd:= oStmnt:NumSuccessfulRows
 		endif
-		SELF:Pointer := Pointer{POINTERARROW}
+		self:Pointer := Pointer{POINTERARROW}
 		FillPersProp()
 		TextBox{,self:oLan:WGet("Removal property"),Str(nUpd,-1)+" "+self:oLan:WGet("persons updated")}:Show()
 
 	ENDIF		
 
 
-	RETURN NIL
+	RETURN nil
 	
 METHOD EditButton(lNew ) CLASS TabProp_Page
 	LOCAL oEditPersPropWindow AS EditPersProp
@@ -1371,17 +1372,6 @@ STATIC DEFINE TABPROP_PAGE_EDITBUTTON := 101
 STATIC DEFINE TABPROP_PAGE_FIXEDTEXT1 := 104 
 STATIC DEFINE TABPROP_PAGE_NEWBUTTON := 102 
 STATIC DEFINE TABPROP_PAGE_SUB_PERSPROPREG := 100 
-CLASS TABTITLE_PAGE INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oSFSub_PersTitleReg AS Sub_PersTitleReg
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-      PROTECT oCaller as OBJECT 
-      export oTit as SQLSelect
 RESOURCE TABTITLE_PAGE DIALOGEX  14, 13, 373, 222
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1393,9 +1383,20 @@ BEGIN
 	CONTROL	"Special title of person like  Rev., Prof., etc.", TABTITLE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 350, 13
 END
 
+CLASS TABTITLE_PAGE INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oSFSub_PersTitleReg AS Sub_PersTitleReg
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+      PROTECT oCaller as OBJECT 
+      export oTit as SQLSelect
 METHOD DeleteButton( ) CLASS TABTITLE_PAGE
-	LOCAL  mOms AS STRING
-	LOCAL mCod AS STRING
+	LOCAL  mOms as STRING
+	LOCAL mCod as STRING
 	LOCAL oTit, oSel as SQLSelect
 	local oStmnt as SQLStatement
 	oTit:=self:Server
@@ -1405,11 +1406,10 @@ METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 	ENDIF
 	mOms:=AllTrim(oTit:DESCRPTN)
 	oSel:=SQLSelect{"select count(*) as total from person where  title="+Str(self:oTit:id,-1),oConn}
-	IF (TextBox{ self, self:oLan:WGet("Delete title"),;
-			self:oLan:WGet("Delete title")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+oSel:total+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
+	IF (TextBox{ self, self:oLan:WGet("Delete title"),;                                           
+			self:oLan:WGet("Delete title")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+ConS(oSel:total)+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
 		mCod:=Str(oTit:id,-1)
-		SELF:oSFSub_PersTitleReg:Delete()
-		oTit:Commit()
+		self:oSFSub_PersTitleReg:DELETE()
 		oSFSub_PersTitleReg:Browser:REFresh()
 		self:StatusMessage(self:oLan:WGet("Removing")+space(1)+mOms+space(1)+self:oLan:WGet("from all persons, moment please"))
 		self:Pointer := Pointer{POINTERHOURGLASS} 
@@ -1423,7 +1423,7 @@ METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 	ENDIF		
 
 
-	RETURN NIL
+	RETURN nil
 METHOD EditButton(lNew ) CLASS TABTITLE_PAGE
 	LOCAL oEditPersTitleWindow AS EditPersTitle
 	Default(@lNew,FALSE)
@@ -1490,8 +1490,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTITLE_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTITLE_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra
-	self:oTit:=SQLSelect{"select * from titles order by descrptn",oConn}
-	RETURN NIL
+	self:oTit:=SQLSelect{"select id,descrptn from titles order by descrptn",oConn}
+	RETURN nil
+METHOD refresh() CLASS TABTITLE_PAGE
+	self:Server:Execute()
+	self:oSFSub_PersTitleReg:Browser:refresh()
+RETURN nil
 STATIC DEFINE TABTITLE_PAGE_DELETEBUTTON := 103 
 STATIC DEFINE TABTITLE_PAGE_EDITBUTTON := 101 
 STATIC DEFINE TABTITLE_PAGE_FIXEDTEXT1 := 104 
@@ -1521,10 +1525,10 @@ END
 
   METHOD DeleteButton( ) CLASS TABTYPE_PAGE
 	LOCAL oPers as SQLSelect
-	LOCAL  mOms AS STRING
-	LOCAL mCod AS INT
+	LOCAL  mOms as STRING
+	LOCAL mCod as int
 	LOCAL oPtp as SQLSelect
-	oPtp:=SELF:Server
+	oPtp:=self:Server
 	IF oPtp:EOF.or.oPtp:BOF
 		(ErrorBox{,self:oLan:WGet("Select a person type first")}):Show()
 		RETURN
@@ -1537,20 +1541,19 @@ END
 	endif
 	oPers:=SQLSelect{"select count(*) as total from person where type="+Str(mCod,-1),oConn}
 	if Val(oPers:total)>0
-		Errorbox{,self:oLan:WGet("this type is still used in")+space(1)+oPers:total+space(1)+self:olan:WGet("persons")+";"+self:olan:WGet("thus can't be removed")}:show() 
+		Errorbox{,self:oLan:WGet("this type is still used in")+space(1)+ConS(oPers:total)+space(1)+self:olan:WGet("persons")+";"+self:olan:WGet("thus can't be removed")}:show() 
 		return nil
 	endif		
 	IF (TextBox{ self, self:oLan:WGet("Delete person type"),;
 		self:oLan:WGet("Delete person type")+Space(1)+mOms,BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
-		SELF:oSFSub_PersTypeReg:Delete()
-		oPtp:Commit()
+		self:oSFSub_PersTypeReg:DELETE()
 		FillPersType()
 		oSFSub_PersTypeReg:Browser:REFresh()
-		SELF:Pointer := Pointer{POINTERARROW}
+		self:Pointer := Pointer{POINTERARROW}
 	ENDIF		
 
 
-	RETURN NIL
+	RETURN nil
 METHOD EditButton(lNew ) CLASS TABTYPE_PAGE
 	LOCAL oEditPersTypeWindow AS EditPersType
 	Default(@lNew,FALSE)
@@ -1617,8 +1620,13 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTYPE_PAGE
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TABTYPE_PAGE
 	//Put your PreInit additions here
 	self:oCaller := uExtra 
-	self:oType:=SQLSelect{"select * from persontype order by descrptn",oConn}
-	RETURN NIL
+	self:oType:=SqlSelect{"select id,descrptn,abbrvtn from persontype order by descrptn",oConn}
+	RETURN nil
+
+METHOD refresh() CLASS TABTYPE_PAGE
+	self:Server:Execute()
+	self:oSFSub_PersTypeReg:Browser:refresh()
+RETURN nil
 
 STATIC DEFINE TABTYPE_PAGE_DELETEBUTTON := 103 
 STATIC DEFINE TABTYPE_PAGE_EDITBUTTON := 101 
