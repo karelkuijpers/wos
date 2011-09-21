@@ -747,7 +747,7 @@ METHOD OKButton( ) CLASS EditDepartment
 	ENDIF
 	cError:=ValidateTransition(@cMainId,self:mParentDep,self:mDepId)
 	IF !Empty(cError)
- 		(Errorbox{,cError}):Show()
+ 		(ErrorBox{,cError}):Show()
  		RETURN
 	ENDIF
 	if !lNew .and. !Empty(self:oDep:mpersid) 
@@ -812,7 +812,7 @@ METHOD OKButton( ) CLASS EditDepartment
 				oCaller:RefreshTree()
 			ENDIF
 		else
-			self:mDepId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+			self:mDepId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
 			AAdd(oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
