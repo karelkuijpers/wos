@@ -184,11 +184,11 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	LOCAL aMenu:={},aMenuAct as ARRAY
 	LOCAL i,j, nFunc as int 
 	local aFunc:={} as array
-	LOCAL lSystemAdmin:=FALSE AS LOGIC
+	LOCAL lSystemAdmin:=FALSE as LOGIC
 	LOCAL oLan as Language
 	// 	Default(@myType,NULL_STRING)
 	IF myType=="A"
-		lSystemAdmin:=TRUE
+		lSystemAdmin:=true
 	ELSEIF !Empty(EmployeeId)
 		oAuthF := SQLSelect{"select "+Crypt_Emp(false,"funcname")+" as mfuncname from authfunc where empid="+Str(EmployeeId,-1),oConn}
 		oAuthF:GoTop()
@@ -213,7 +213,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			IF Admin=="WO".or.Admin=="GI"
 				AAdd(aMenu,{1,5, oLan:MGet("&Donations")+"...","Donations","",0,13,"PFM"})
 			ENDIF
-// 			AAdd(aMenu,{1,6, oLan:MGet("Arti&cle")+"...","ArticleBrowser","",0,47,"PFM"})
+			// 			AAdd(aMenu,{1,6, oLan:MGet("Arti&cle")+"...","ArticleBrowser","",0,47,"PFM"})
 		endif
 	ENDIF
 	AAdd(aMenu,{1,7,,,,,})           // separator
@@ -266,17 +266,17 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if !Admin="WA"
 		AAdd(aMenu,{0,4, oLan:MGet("&Mail/Invoice"),,,,,})
 		IF !Admin=="HO"
-// 			AAdd(aMenu,{4,1, oLan:MGet("&Invoicing")+"...","Invoicing","Producing bills",0,26,"PF"})
-			AAdd(aMenu,{4,2, oLan:MGet("&Reminders mailing"),"Reminders","",0,63,"PF"})
+			// 			AAdd(aMenu,{4,1, oLan:MGet("&Invoicing")+"...","Invoicing","Producing bills",0,26,"PF"})
+// 			AAdd(aMenu,{4,2, oLan:MGet("&Reminders mailing"),"Reminders","",0,63,"PF"})
 			AAdd(aMenu,{4,3, oLan:MGet("&Due Amount Inquiry/Delete")+"...","DueAmountBrowser","",0,39,"PF"})
 			AAdd(aMenu,{4,4,,,,,})           // separator
 			//AAdd(aMenu,{4,5, oLan:MGet("&Prolongate Donations/Subscriptions"),"Prolongation","",0,48,"PFM"})
 			IF !Admin=="GE"
-				AAdd(aMenu,{4,6, oLan:MGet("Sending Payment Requests &Donation"),"DonationsMail","",0,18,"PF"})
+				AAdd(aMenu,{4,6, oLan:MGet("Sending Payment Requests &Donation"),"DonationsMail","",0,18,"F"})
 			ENDIF
-			AAdd(aMenu,{4,7, oLan:MGet("Sending Payment Requests &Subscription"),"SubScriptionsMail","",0,58,"PF"})
+			AAdd(aMenu,{4,7, oLan:MGet("Sending Payment Requests &Subscription"),"SubScriptionsMail","",0,58,"F"})
 			IF CountryCode="31"
-				AAdd(aMenu,{4,8, oLan:MGet("Sending Bank Orders"),"SelBankOrder","",0,88,"PF"})
+				AAdd(aMenu,{4,8, oLan:MGet("Sending Bank Orders"),"SelBankOrder","",0,88,"F"})
 			endif
 			AAdd(aMenu,{4,9,,,,,})           // separator
 		endif
@@ -288,13 +288,13 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			IF !Admin=="HO"
 				AAdd(aMenu,{4,11, oLan:MGet("First &non-designated Givers Letters mailing"),"FirstNonEarmarked","",0,33,"PF"})
 			ENDIF
-// 			AAdd(aMenu,{4,12, oLan:MGet("Regular Gi&vers mailing"),"StandardGiversMail","",0,11,"F"})
+			// 			AAdd(aMenu,{4,12, oLan:MGet("Regular Gi&vers mailing"),"StandardGiversMail","",0,11,"F"})
 			AAdd(aMenu,{4,13,,,,,})           // separator
 		ENDIF
 		AAdd(aMenu,{4,14, oLan:MGet("Mail Selection via &Person parameters"),"MailViaCode","",0,66,"PFM"})
-// 		IF Admin=="WO".or.Admin=="GI"
-// 			AAdd(aMenu,{4,15, oLan:MGet("Mail to &General Selection of Persons"),"Selpers","",0,55,"FM"})
-// 		ENDIF
+		// 		IF Admin=="WO".or.Admin=="GI"
+		// 			AAdd(aMenu,{4,15, oLan:MGet("Mail to &General Selection of Persons"),"Selpers","",0,55,"FM"})
+		// 		ENDIF
 		AAdd(aMenu,{4,16,,,,,})           // separator
 		AAdd(aMenu,{4,17, oLan:MGet("&Add/Remove Mailing Codes of Selection of Persons"),"ChangeMailCode","",0,79,"P"})
 		IF Admin=="WO".or.Admin=="GI".or.Admin=="HO"
@@ -312,7 +312,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if SuperUser
 		AAdd(aMenu,{6,7, oLan:MGet("&Check consistency financial data"),"CheckFinancialData","",0,44,"F"})
 	endif
-	AAdd(aMenu,{6,8, oLan:MGet("&Show log"),"LogReport","",0,46,"A"})
+	AAdd(aMenu,{6,8, oLan:MGet("&Show log"),"LogReport","",0,46,"AF"})
 	AAdd(aMenu,{6,8,,,,,})           // separator
 	AAdd(aMenu,{6,9, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
 	IF lSystemAdmin
@@ -330,7 +330,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 		AAdd(aMenu,{12,6, oLan:MGet("&Department Registration")+"...","DepartmentExplorer","",0,76,"A"})
 	ENDIF
 	AAdd(aMenu,{6,13,,,,,})           // separator
-	AAdd(aMenu,{6,14, oLan:MGet("&Currency rates")+"...","CurrRateEditor","",0,43,"A"})
+	AAdd(aMenu,{6,14, oLan:MGet("&Currency rates")+"...","CurrRateEditor","",0,43,"AF"})
 	AAdd(aMenu,{6,15, oLan:MGet("&Language Translation tables"),,,,,})
 	AAdd(aMenu,{6,14, oLan:MGet("&Language Translation tables"),,,,,})
 	AAdd(aMenu,{14,1, oLan:MGet("&Menus")+"...","LanguageMenu","",0,51,"A"})
@@ -340,7 +340,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	// add extra invisible items for extra permissions:
 	AAdd(aMenu,{-1,101,"Account Edit","AccountEdit","",0,101,"F"})
 	AAdd(aMenu,{-1,102,"Person Edit","PersonEdit","",0,102,"PFM"})
-	AAdd(aMenu,{-1,103,"Foreign currency account reevaluation","Reevaluation","",0,103,"F"})
+	AAdd(aMenu,{-1,103,"Foreign currency account reevaluation","Reevaluation","",0,103,"A"})
 	AAdd(aMenu,{-1,104,"Transaction Edit","TransactionEdit","",0,104,"F"}) 
 	AAdd(aMenu,{-1,104,"Member Edit","MemberEdit","",0,106,"F"}) 
 	if Posting
@@ -395,26 +395,24 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			NEXT
 		ENDIF
 		oAuthF:Close()
-		oAuthF:=NULL_OBJECT
+		oAuthF:=null_object
 	ENDIF 
 	* Remove empty submenu's and separators:
-	IF !ADMIN=="WO".or.!Empty(EmployeeId)
-		i:=SubMenu(aMenu,99)
-		IF Empty(i)
-			RETURN {} //empty array
-		ENDIF
-		* remove dummy overall menu:
-		ADel(aMenu,1)
-		ASize(aMenu,Len(aMenu)-1)
-		
-		* Remove deleted items:
-		FOR i:= Len(aMenu) DOWNTO 1
-			IF aMenu[i,MPARENTID]==9999
-				ADel(aMenu,i)
-				ASize(aMenu,Len(aMenu)-1)
-			ENDIF
-		NEXT
+	i:=SubMenu(aMenu,99)
+	IF Empty(i)
+		RETURN {} //empty array
 	ENDIF
+	* remove dummy overall menu:
+	ADel(aMenu,1)
+	ASize(aMenu,Len(aMenu)-1)
+	
+	* Remove deleted items:
+	FOR i:= Len(aMenu) DOWNTO 1
+		IF aMenu[i,MPARENTID]==9999
+			ADel(aMenu,i)
+			ASize(aMenu,Len(aMenu)-1)
+		ENDIF
+	NEXT
 
 	RETURN aMenu
 FUNCTION InitSystemMenu() as array
