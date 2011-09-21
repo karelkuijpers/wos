@@ -433,8 +433,8 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			self:m56_persid:=Str(self:oTelTr:persid,-1)
 		endif
 		IF LookingForGifts
-			oParent:GiftsAutomatic := iif(self:oTelTr:GIFTSALL=1,true,false)
-			oParent:DueAutomatic := iif(self:oTelTr:OPENALL=1,true,false)
+			oParent:GiftsAutomatic := iif(ConI(self:oTelTr:GIFTSALL)=1,true,false)
+			oParent:DueAutomatic := iif(ConI(self:oTelTr:OPENALL)=1,true,false)
 		ENDIF
 		RETURN true
 	ENDDO
@@ -529,7 +529,7 @@ METHOD Import() CLASS TeleMut
 	* Determine filenames of MT940 files:
 	aFileMT:=Directory(CurPath+"\*.STA")
 	AEval(Directory("*.SWI"),{|x|AAdd(aFileMT,x)}) 
-	AEval(Directory("??????????_ME940file20*.txt"),{|x|AAdd(aFileMT,x)})          // e.g.: 3001715206_ME940file20110117
+	AEval(Directory("*_ME940file20*.txt"),{|x|AAdd(aFileMT,x)})          // e.g.: 3001715206_ME940file20110117
 	aFilePB:=Directory(CurPath+"\*-20??.CSV")
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
@@ -2653,7 +2653,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	self:oLan:=Language{}
 	oBank := SQLSelect{"select banknumber from bankaccount where banknumber<>''",oConn}
 	IF oBank:reccount<1
-		RETURN SELF
+		RETURN self
 	ENDIF
 	DO WHILE .not.oBank:EOF
 		AAdd(self:bankacc,oBank:banknumber)
@@ -2661,10 +2661,10 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	ENDDO
 	ASort(self:bankacc,,,{|x,y| x<=y} ) 
 	self:cBankAcc:=Implode(self:bankacc,"','")
-	oBank:SQLString:= "select banknumber,usedforgifts from bankaccount where banknumber<>'' and telebankng=1"
-	oBank:GoToP()
+	oBank:SQLString:= "select banknumber,usedforgifts from bankaccount where banknumber<>'' and telebankng=1" 
+	oBank:Execute()
 	DO WHILE .not.oBank:EOF
-		AAdd(self:m57_BankAcc,{oBank:banknumber,iif(oBank:usedforgifts=1,true, false),null_date})
+		AAdd(self:m57_BankAcc,{oBank:banknumber,iif(ConI(oBank:usedforgifts)=1,true, false),null_date})
 		oBank:skip()
 	ENDDO
 	ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
@@ -2683,18 +2683,18 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 	// determine ACCNUMBER of sKruis:
 	IF !Gift .and.!Empty(SKruis)
 		* Seek accountnumber of skruis: 
-		oAcc:=SQLSelect{"select accnumber from account where accid="+SKruis,oConn }
+		oAcc:=SQLSelect{"select accnumber from account where accid="+SKruis+" limit 1",oConn }
 		if oAcc:reccount>0
 			self:cAccnumberCross:=oAcc:ACCNUMBER
 		endif
 	endif
 
 	IF Gift
-		SELF:InitTeleGift()
+		self:InitTeleGift()
 	ELSE
-		SELF:InitteleNonGift()
+		self:InitteleNonGift()
 	ENDIF
-	RETURN SELF
+	RETURN self
 METHOD InitTeleGift() CLASS TeleMut
 	//oBank:SetFilter("!Empty(telebankng)")
 	
@@ -2703,7 +2703,7 @@ METHOD InitTeleNonGift() CLASS TeleMut
 	local oTelPat as SQLSelect
 // 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and addsub<>'' and description<>''",oConn}
 	oTelPat:=SQLSelect{"select * from telebankpatterns where accid>0",oConn} 
-	oTelPat:Execute()
+	oTelPat:execute()
 	DO WHILE !oTelPat:EOF
 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
 			oTelPat:kind,;
@@ -2711,7 +2711,7 @@ METHOD InitTeleNonGift() CLASS TeleMut
 			oTelPat:AddSub,;
 			split(oTelPat:description,space(1)),;
 			Str(oTelPat:accid,-1),;
-			iif(oTelPat:ind_autmut==1,true,false)})
+			iif(ConI(oTelPat:ind_autmut)==1,true,false)})
 		oTelPat:skip()
 	ENDDO
 	RETURN nil
