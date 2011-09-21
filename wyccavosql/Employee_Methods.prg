@@ -145,7 +145,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	IF Empty(cUser)
 		return true
 	endif
-   cEmpStmnt:="select empid,"+Crypt_Emp(false,"persid")+" as persid,"+Crypt_Emp(false,"type") +" as mtype,"+Crypt_Emp(false,"depid")+" as mdepid from employee where "
+   cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"persid")+" as char) as persid,cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid from employee where "
 	if Empty(MYEMPID)
 		cEmpStmnt+= Crypt_Emp(false,"loginname")+'="'+cUser+'" and datediff(Now(),lstupdpw)<10000'
 	else
@@ -171,7 +171,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		if logonOk
 			LOGON_EMP_ID:=cUser
 			MYEMPID := Str(oEmp:EmpId,-1)
-			UserType:=oEmp:mTYPE
+			UserType:=Transform(oEmp:mTYPE,"")
 			aMenu:=InitMenu(oEmp:EmpId,UserType) 
 			// record login date and set user online: 
 			InitSystemMenu()
@@ -199,10 +199,10 @@ Function HashPassword(EMPID as int,uValue as string) as string
 	return sha2(Scramblepassword(EMPID,uValue)) 
 Function IsFirstUse( ) as logic 
 	// determine if this is the first use of the system
-	IF SQLSelect{"select count(*) as total from employee",oConn}:total='0' .and.;
-		SQLSelect{"select count(*) as total from person",oConn}:total='0' .and.;
-		SQLSelect{"select count(*) as total from account",oConn}:total='0' .and.;		
-		SQLSelect{"select count(*) as total from transaction",oConn}:total='0' 
+	IF ConI(SQLSelect{"select count(*) as total from employee",oConn}:total)=0 .and.;
+		ConI(SQLSelect{"select count(*) as total from person",oConn}:total)=0 .and.;
+		ConI(SQLSelect{"select count(*) as total from account",oConn}:total)=0 .and.;		
+		ConI(SQLSelect{"select count(*) as total from transaction",oConn}:total)=0 
 		* first user:
 		return true
 	endif
@@ -221,8 +221,11 @@ else
 endif 
 
  
-function TYPEDescr(cType as string) as string 
+function TYPEDescr(cType) as string 
 local i as int
+if Empty(cType)
+	cType:='1'
+endif
 i:=AScan(USRTYpes,{|x|x[2]=cType})
 if i>0
 	return USRTypes[i,1]
