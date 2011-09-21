@@ -109,9 +109,15 @@ super:Init(HyperLabel{"ACCOUNTID","Accountid","","standingorderline_ACCOUNTID"},
 RETURN SELF
 CLASS standingorderline_BANKACCT INHERIT FIELDSPEC
 METHOD Init() CLASS standingorderline_BANKACCT
-super:Init(HyperLabel{"BANKACCT","Bankacct","","standingorderline_BANKACCT"},"C",25,0)
+    LOCAL   cPict                   AS STRING
 
-RETURN SELF
+    SUPER:Init( HyperLabel{#BANKACCT, "Bankacct", "", "standingorderline_BANKACCT" },  "C", 25, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
 CLASS standingorderline_CRE INHERIT FIELDSPEC
 METHOD Init() CLASS standingorderline_CRE
 super:Init(HyperLabel{"CRE","Cre","","standingorderline_CRE"},"N",19,2)
@@ -167,7 +173,7 @@ CLASS StOrdLineHelp INHERIT DBSERVEREXTRA
 	INSTANCE lSharedMode  := NIL	 AS USUAL
 	INSTANCE nOrder 	  := 0	 AS INT
 	//USER CODE STARTS HERE (do NOT remove this line)  
-	export aMirror:={} as array  // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid}}
+	export aMirror:={} as array  // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD}}
 ACCESS  ACCOUNTID  CLASS StOrdLineHelp
 
     RETURN SELF:FieldGet(#ACCOUNTID)
@@ -245,7 +251,7 @@ ACCESS FieldDesc CLASS StOrdLineHelp
 	LOCAL aRet		AS ARRAY
 	LOCAL nFields	AS DWORD
 
-	nFields := 14
+	nFields := 15
 
 	IF nFields > 0
 		aRet := ArrayCreate(nFields)
@@ -277,8 +283,9 @@ ACCESS FieldDesc CLASS StOrdLineHelp
 		aRet[10] := { #RECNBR, "RECNBR",  StOrdLineHelp_RECNBR{}}
 		aRet[11] := { #REFERENCE, "REFERENCE",  Transaction_REFERENCE{}}
 		aRet[12] := { #CREDITOR, "CREDITOR",  account_CLN{}}
-		aRet[13] := { #BANKACCT, "BANKACCT",  BANK{}}
+		aRet[13] := { #BANKACCT, "BANKACCT",  standingorderline_BANKACCT{}}
 		aRet[14] := { #CREDTRNAM, "CREDTRNAM",  StOrdLineHelp_CREDTRNAM{}}
+		aRet[15] := { #INCEXPFD, "INCEXPFD",  TempTrans_INCEXPFD{}}
 
 	ELSE
 		aRet := {}
@@ -292,6 +299,13 @@ ACCESS  GC  CLASS StOrdLineHelp
 ASSIGN  GC(uValue)  CLASS StOrdLineHelp
 
     RETURN SELF:FieldPut(#GC, uValue)
+
+ACCESS  INCEXPFD  CLASS StOrdLineHelp
+
+    RETURN SELF:FieldGet(#INCEXPFD)
+ASSIGN  INCEXPFD(uValue)  CLASS StOrdLineHelp
+
+    RETURN SELF:FieldPut(#INCEXPFD, uValue)
 
 ACCESS IndexList CLASS StOrdLineHelp
 	//
@@ -500,7 +514,7 @@ CLASS StOrdLineHelp_ACCOUNTNAM INHERIT ACCOUNT_OMS
 METHOD Init() CLASS StOrdLineHelp_ACCOUNTNAM
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#description, "Description", "Name of the account", "Rek_OMS" },  "C", 40, 0 )
+    SUPER:Init( HyperLabel{#Oms, "Description", "Name of the account", "Rek_OMS" },  "C", 40, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
