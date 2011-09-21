@@ -221,7 +221,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 	//Put your PreInit additions here 
 	self:cFrom:="bankaccount b, account a"
-	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,b.telebankng,b.usedforgifts"
+	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,cast(b.telebankng as signed) as telebankng,cast(b.usedforgifts as signed) as usedforgifts"
 	self:cOrder:="a.description"
 	self:cWhere:="a.accid=b.accid"
 	oBank:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
@@ -867,7 +867,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
     ELSE
 		self:mRek := Str(self:oBank:accid,-1)
 		self:mAccount := AllTrim(self:oBank:Description)
-		SELF:cAccountName := mAccount
+		self:cAccountName := mAccount
 		if !Empty(self:oBank:payahead)			
 			self:mRekP:=Str(self:oBank:payahead,-1)
 		 	self:mAccountPaymnt := self:oBank:AccountPaymnt
@@ -900,15 +900,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
 	 		 self:oDCSingleDest:Checked:=false
 	 	endif	
     ENDIF
-	SELF:SetTele()
-	RETURN NIL	
+	self:SetTele()
+	RETURN nil	
 
 method PreInit(oWindow,iCtlID,oServer,uExtra) class EditBank
 	//Put your PreInit additions here 
 	IF !uExtra[1]
 		self:lNew :=FALSE
 		self:mBankId:=Str(oServer:BANKID,-1)
-		self:oBank:=SQLSelect{"select b.*,a.description,a.accnumber,sd.description as accountsingle,pa.description as accountpaymnt from account a, bankaccount b"+;
+		self:oBank:=SQLSelect{"select b.bankid,b.banknumber,b.accid,cast(b.telebankng as signed) as telebankng,"+;
+		"cast(b.usedforgifts as signed) as usedforgifts,teledatdir,cast(giftsall as signed) as giftsall,cast(openall as signed) as openall,singledst,"+;
+		"fgmlcodes,syscodover,payahead,"+;
+		"a.description,a.accnumber,sd.description as accountsingle,pa.description as accountpaymnt from account a, bankaccount b"+;
 		" left join account sd on (sd.accid=b.singledst) left join account pa on (pa.accid=b.payahead) where a.accid=b.accid and b.bankid='"+self:mBankId+"'",oConn} 
 	ELSE
 		self:lNew:=true
@@ -1248,7 +1251,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		return false
 	endif	
 	
-	oBord:=SQLSelect{"select o.id,o.banknbrcre,o.amount,o.datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
+	oBord:=SQLSelect{"select o.id,o.banknbrcre,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
 		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
 		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
@@ -1386,7 +1389,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 					lError:=true
 					exit
 				endif
-				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+				cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 				// record debit on from account:
 				oStmnt:=SQLStatement{"insert into transaction set "+;
 				"transid='"+cTransnr+"'"+;
