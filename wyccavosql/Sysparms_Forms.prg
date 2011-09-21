@@ -336,9 +336,9 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class LogReport
 	return NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class LogReport
 	//Put your PreInit additions here 
-	self:cFields:= sIdentChar+"source"+sIdentChar+","+sIdentChar+"logtime"+sIdentChar+","+sIdentChar+"message"+sIdentChar+","+sIdentChar+"userid"+sIdentChar
+	self:cFields:= sIdentChar+"source"+sIdentChar+",cast("+sIdentChar+"logtime"+sIdentChar+" as date) as logtime,"+sIdentChar+"message"+sIdentChar+","+sIdentChar+"userid"+sIdentChar
 	self:cOrder:="order by logtime desc,logid desc"
-	return NIL
+	return nil
 
 ACCESS SearchUni() CLASS LogReport
 RETURN SELF:FieldGet(#SearchUni)
@@ -886,9 +886,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 	//Put your PostInit additions here
 	LOCAL oAcc,oSel as SQLSelect
 	self:SetTexts()
-	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:cash,-1),oConn}
 IF !Empty(self:Server:cash)
-	oAcc:Execute( self:Server:cash)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:cash,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrCASH :=  Str( oAcc:accid,-1)
 		self:oDCmCASH:TEXTValue := AllTrim(oAcc:Description)
@@ -897,7 +897,7 @@ IF !Empty(self:Server:cash)
 	ENDIF		
 ENDIF
 IF !Empty(self:Server:capital)
-	oAcc:Execute( self:Server:capital)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:capital,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrCAPITAL :=  Str(oAcc:accid,-1)
 		self:oDCmCAPITAL:TEXTValue := AllTrim(oAcc:Description)
@@ -906,7 +906,7 @@ IF !Empty(self:Server:capital)
 	ENDIF		
 ENDIF
 IF !Empty(self:Server:crossaccnt)
-	oAcc:Execute( self:Server:crossaccnt)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:crossaccnt,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrCROSS :=  Str(oAcc:accid,-1)
 		self:oDCmKRUISPSTN:TEXTValue := AllTrim(oAcc:Description)
@@ -950,7 +950,7 @@ endif
 RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TAB_PARM1
 	//Put your PreInit additions here
-oWindow:Use(oWindow:oSys)
+	oWindow:Use(oWindow:oSys)
 	return nil
 
 ACCESS SYSNAME() CLASS TAB_PARM1
@@ -1655,9 +1655,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 	self:SetTexts()
-	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
 	IF !Empty(self:Server:AM)
-		oAcc:Execute( self:Server:AM)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:AM,-1),oConn}
 		IF oAcc:RecCount>0
 			self:NbrAM :=  Str(oAcc:accid,-1)
 			self:oDCmAM:TEXTValue := oAcc:Description
@@ -1665,7 +1664,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cSoortAM:=oAcc:TYPE
 		ENDIF		
 		IF !Empty(self:Server:AssProjA)
-			oAcc:Execute( self:Server:AssProjA)
+			oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:AssProjA,-1),oConn}
 			IF oAcc:RecCount>0
 				self:NbrAMProj :=  Str(oAcc:accid,-1)
 				self:oDCmAMProj:TEXTValue := oAcc:Description
@@ -1674,7 +1673,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			ENDIF		
 		ENDIF
 		IF !Empty(self:Server:AssFldAc)
-			oAcc:Execute( self:Server:AssFldAc)
+			oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:AssFldAc,-1),oConn}
 			IF oAcc:RecCount>0
 				self:NbrAssFldAc :=  Str(oAcc:accid,-1)
 				self:oDCmAssFldAc:TEXTValue := oAcc:Description
@@ -1684,7 +1683,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		ENDIF
 	endif
 	IF	!Empty(self:Server:HB)
-		oAcc:Execute( self:Server:HB)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:HB,-1),oConn}
 		IF	oAcc:RecCount>0
 			self:NbrHB :=	Str(oAcc:accid,-1)
 			self:oDCmHB:TEXTValue := oAcc:Description
@@ -1693,7 +1692,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		ENDIF		
 	ENDIF	
 	IF !Empty(self:Server:GIFTEXPAC)
-		oAcc:Execute( self:Server:GIFTEXPAC)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:GIFTEXPAC,-1),oConn}
 		IF oAcc:RecCount>0
 			self:NbrExp :=  Str(oAcc:accid,-1)
 			self:oDCmGIFTEXPAC:TEXTValue := AllTrim(oAcc:Description)
@@ -1702,7 +1701,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		ENDIF		
 	ENDIF
 	IF !Empty(self:Server:GIFTINCAC)
-		oAcc:Execute( self:Server:GIFTINCAC)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:GIFTINCAC,-1),oConn}
 		IF oAcc:RecCount>0
 			self:NbrInc :=  Str(oAcc:accid,-1)
 			self:oDCmGIFTINCAC:TEXTValue := oAcc:Description
@@ -1713,7 +1712,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	self:ShowAssAcc()
 
 	IF !Empty(self:Server:HOMEEXPAC)
-		oAcc:Execute( self:Server:HOMEEXPAC)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:HOMEEXPAC,-1),oConn}
 		IF oAcc:RecCount>0
 			self:NBREXPHOME :=  Str(oAcc:accid,-1)
 			self:oDCmHOMEEXPAC:TEXTValue := oAcc:Description
@@ -1722,7 +1721,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		ENDIF		
 	ENDIF
 	IF !Empty(self:Server:HOMEINCAC)
-		oAcc:Execute( self:Server:HOMEINCAC)
+		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:HOMEINCAC,-1),oConn}
 		IF oAcc:RecCount>0
 			self:NbrIncHome :=  Str(oAcc:accid,-1)
 			self:oDCmHOMEINCAC:TEXTValue := oAcc:Description
@@ -2108,9 +2107,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
-oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
 IF !Empty(self:Server:Postage)
-	oAcc:Execute( self:Server:Postage)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:Postage,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrPostage :=  Str(oAcc:accid,-1)
 		self:oDCmPostage:TEXTValue := AllTrim(oAcc:Description)
@@ -2119,7 +2117,7 @@ IF !Empty(self:Server:Postage)
 	ENDIF		
 ENDIF
 IF !Empty(self:Server:DEBTORS)
-	oAcc:Execute( self:Server:DEBTORS)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:DEBTORS,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrDEBTORS :=  Str(oAcc:accid,-1)
 		self:oDCmDEBTORS:TEXTValue := AllTrim(oAcc:Description)
@@ -2128,7 +2126,7 @@ IF !Empty(self:Server:DEBTORS)
 	ENDIF		
 ENDIF
 IF !Empty(self:Server:CREDITORS)
-	oAcc:Execute( self:Server:CREDITORS)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:CREDITORS,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrCreditors :=  Str(oAcc:accid,-1)
 		self:oDCmCREDITORS:TEXTValue := AllTrim(oAcc:Description)
@@ -2299,9 +2297,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
-oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid=?",oConn}
 IF !Empty(self:Server:DONORS)
-	oAcc:Execute( self:Server:DONORS)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:DONORS,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrDONORS :=  Str(oAcc:accid,-1)
 		self:oDCmDONORS:TEXTValue := AllTrim(oAcc:Description)
@@ -2310,7 +2307,7 @@ IF !Empty(self:Server:DONORS)
 	ENDIF		
 ENDIF
 IF !Empty(self:Server:PROJECTS)
-	oAcc:Execute( self:Server:PROJECTS)
+	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:Server:PROJECTS,-1),oConn}
 	IF oAcc:RecCount>0
 		self:NbrPROJECTS :=  Str(oAcc:accid,-1)
 		self:oDCmPROJECTS:TEXTValue := AllTrim(oAcc:Description)
@@ -2606,7 +2603,7 @@ self:SetTexts()
 		mFGCod2  := if(Empty(SubStr(self:Server:FGMLCODES,4,2)),nil,SubStr(self:Server:FGMLCODES,4,2))
 		mFGCod3  := if(Empty(SubStr(self:Server:FGMLCODES,7,2)),nil,SubStr(self:Server:FGMLCODES,7,2))
 	ENDIF
-	self:SALUTADDR:=iif(self:Server:NOSALUT=1,false,true)
+	self:SALUTADDR:=iif(ConI(self:Server:NOSALUT)=1,false,true)
 	self:mOwnCntry :=self:Server:OwnCntry
 	RETURN nil
 METHOD PreInit(oParent) CLASS Tab_Parm5
@@ -3181,51 +3178,51 @@ RETURN nil
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms 
 
-self:PreInit(oWindow,iCtlID,oServer,uExtra)
+	self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-SUPER:Init(oWindow,ResourceID{"TabSysParms",_GetInst()},iCtlID)
+	SUPER:Init(oWindow,ResourceID{"TabSysParms",_GetInst()},iCtlID)
 
-oDCTabParm := TabControl{self,ResourceID{TABSYSPARMS_TABPARM,_GetInst()}}
-oDCTabParm:HyperLabel := HyperLabel{#TabParm,null_string,null_string,null_string}
+	oDCTabParm := TabControl{self,ResourceID{TABSYSPARMS_TABPARM,_GetInst()}}
+	oDCTabParm:HyperLabel := HyperLabel{#TabParm,null_string,null_string,null_string}
 
-oCCOKButton := PushButton{self,ResourceID{TABSYSPARMS_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
+	oCCOKButton := PushButton{self,ResourceID{TABSYSPARMS_OKBUTTON,_GetInst()}}
+	oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
 
-oCCCancelButton := PushButton{self,ResourceID{TABSYSPARMS_CANCELBUTTON,_GetInst()}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
+	oCCCancelButton := PushButton{self,ResourceID{TABSYSPARMS_CANCELBUTTON,_GetInst()}}
+	oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
 
-self:Caption := "System Parameter"
-self:HyperLabel := HyperLabel{#TabSysParms,"System Parameter",null_string,null_string}
-self:EnableStatusBar(False)
-self:PreventAutoLayout := true
-self:AllowServerClose := true
+	self:Caption := "System Parameter"
+	self:HyperLabel := HyperLabel{#TabSysParms,"System Parameter",null_string,null_string}
+	self:EnableStatusBar(False)
+	self:PreventAutoLayout := true
+	self:AllowServerClose := true
 
-if !IsNil(oServer)
-	self:Use(oServer)
-ENDIF
-oTPTAB_PARM1 := TAB_PARM1{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM1,"General ",oTPTAB_PARM1,0)
-oTPTAB_PARM2 := Tab_Parm2{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM2,"PMC",oTPTAB_PARM2,0)
-oTPTAB_PARM3 := Tab_Parm3{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM3,"Invoices",oTPTAB_PARM3,0)
-oTPTAB_PARM4 := Tab_Parm4{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM4,"Gifts",oTPTAB_PARM4,0)
-oTPTAB_PARM5 := Tab_Parm5{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM5," Mailing",oTPTAB_PARM5,0)
-oTPTAB_PARM6 := TAB_PARM6{self, 0}
-oDCTabParm:AppendTab(#TAB_PARM6,"Reports",oTPTAB_PARM6,0)
-oTPTABPARM_PAGE7 := TABPARM_PAGE7{self, 0}
-oDCTabParm:AppendTab(#TABPARM_PAGE7,"Security",oTPTABPARM_PAGE7,0)
-oTPTABPARM_PAGE8 := TabParm_Page8{self, 0}
-oDCTabParm:AppendTab(#TABPARM_PAGE8,"Language",oTPTABPARM_PAGE8,0)
-oTPTABPARM_PAGE9 := TabParm_Page9{self, 0}
-oDCTabParm:AppendTab(#TABPARM_PAGE9,"Area",oTPTABPARM_PAGE9,0)
-oDCTabParm:SelectTab(#TAB_PARM1)
+	if !IsNil(oServer)
+		self:Use(oServer)
+	ENDIF
+	oTPTAB_PARM1 := TAB_PARM1{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM1,"General ",oTPTAB_PARM1,0)
+	oTPTAB_PARM2 := Tab_Parm2{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM2,"PMC",oTPTAB_PARM2,0)
+	oTPTAB_PARM3 := Tab_Parm3{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM3,"Invoices",oTPTAB_PARM3,0)
+	oTPTAB_PARM4 := Tab_Parm4{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM4,"Gifts",oTPTAB_PARM4,0)
+	oTPTAB_PARM5 := Tab_Parm5{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM5," Mailing",oTPTAB_PARM5,0)
+	oTPTAB_PARM6 := TAB_PARM6{self, 0}
+	oDCTabParm:AppendTab(#TAB_PARM6,"Reports",oTPTAB_PARM6,0)
+	oTPTABPARM_PAGE7 := TABPARM_PAGE7{self, 0}
+	oDCTabParm:AppendTab(#TABPARM_PAGE7,"Security",oTPTABPARM_PAGE7,0)
+	oTPTABPARM_PAGE8 := TabParm_Page8{self, 0}
+	oDCTabParm:AppendTab(#TABPARM_PAGE8,"Language",oTPTABPARM_PAGE8,0)
+	oTPTABPARM_PAGE9 := TabParm_Page9{self, 0}
+	oDCTabParm:AppendTab(#TABPARM_PAGE9,"Area",oTPTABPARM_PAGE9,0)
+	oDCTabParm:SelectTab(#TAB_PARM1)
 
-self:PostInit(oWindow,iCtlID,oServer,uExtra)
+	self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
-return self
+	return self
 
 METHOD OKButton( ) CLASS TabSysParms
 	LOCAL oSys:=self:oSys as SQLSelect
@@ -3454,7 +3451,14 @@ self:SetTexts()
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
 	//Put your PreInit additions here 
-	self:oSys:=SQLSelect{"select * from sysparms",oConn}
+	self:oSys:=SQLSelect{"select yearclosed,lstreportmonth,cast(mindate as date) as mindate,projects,debtors,donors,cash,capital,crossaccnt,hb,am,"+;
+		"assmntfield,assmntoffc,entity,stocknbr,postage,purchase,countryown,currency,currname,firstname,crlanguage,defaultcod,topmargin,leftmargin,rightmargn,"+;
+		"bottommarg,cityletter,ownmailacc,smtpserver,iesmailacc,exchrate,closemonth,admintype,pswrdlen,pswalnum,pswdura,decmgift,expmailacc,pmislstsnd,"+;
+		"assmntint,destgrps,nosalut,withldoffl,withldoffm,withldoffh,assproja,owncntry,giftincac,giftexpac,cntrnrcoll,banknbrcol,idorg,idcontact,"+;
+		"cast(datlstafl as date) as datlstafl,surnmfirst,strzipcity,sysname,homeincac,homeexpac,fgmlcodes,creditors,countrycod,banknbrcre,"+;
+		"cast(lstreeval as date) as lstreeval,citynmupc,pmcmancln,version,lstnmupc,titinadr,docpath,checkemp,mailclient,posting,toppacct,lstcurrt,"+;
+		"pmcupld,cast(accpacls as date) as accpacls,assfldac from sysparms",oConn}
+	self:oSys:Execute()
 	RETURN nil
 METHOD RegAccount(oRek,ItemName) CLASS TabSysParms
 	IF Empty(oRek).or. oRek:reccount<1
