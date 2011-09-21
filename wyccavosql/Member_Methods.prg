@@ -60,16 +60,16 @@ SELF:Destroy()
 
 METHOD FilePrint CLASS MemberBrowser
 	LOCAL kopregels:={},aYearStartEnd as ARRAY
-	LOCAL DestDesc AS STRING
+	LOCAL DestDesc as STRING
 	LOCAL nRow as int
 	LOCAL nPage as int
-	LOCAL oReport AS PrintDialog
+	LOCAL oReport as PrintDialog
 	//LOCAL nCurRec:= oDB:RecNo
 	LOCAL aDest as STRING
 	LOCAL oSel as SQLSelect
-	LOCAL cTab:=CHR(9) AS STRING
-	LOCAL YrSt,MnSt AS INT
-	LOCAL Gran AS LOGIC
+	LOCAL cTab:=CHR(9) as STRING
+	LOCAL YrSt,MnSt as int
+	LOCAL Gran as LOGIC
 	local cFrom as string
 	local cFields as string
 	local fBud as float
@@ -84,11 +84,13 @@ METHOD FilePrint CLASS MemberBrowser
 	aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
 	YrSt:=aYearStartEnd[1]
 	MnSt:=aYearStartEnd[2]
-	cFields:= "p.persid,a.description,a.accnumber,m.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,group_concat(distinct ass.accnumber separator ',') as assacc"+;
-	",group_concat(IF(d.desttyp<2,concat(cast(d.destamt as char),if(d.desttyp=1,'%',''),' to ',d.destpp,' ',d.destacc),concat('Remaining to ',d.destpp,' ',d.destacc)) separator ',') as distr"
+	cFields:= "p.persid,a.accnumber,m.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,d.deptmntnbr,"+;
+	SQLFullName(0,"p")+" as membername,"+;
+	"group_concat(distinct ass.accnumber separator ',') as assacc"+;
+	",group_concat(IF(di.desttyp<2,concat(cast(di.destamt as char),if(di.desttyp=1,'%',''),' to ',di.destpp,' ',di.destacc),concat('Remaining to ',di.destpp,' ',di.destacc)) separator ',') as distr"
 	 
-	cFrom:="account as a, person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
-	" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) "  
+	cFrom:="person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
+	" left join distributioninstruction di on (di.mbrid=m.mbrid and di.disabled=0) left join department d on (m.depid=d.depid) left join account a on (a.accid=m.accid) "  
    cStatement:= "select y.*,sum(bu.amount) as budget from ("+;
 	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid ) as y"+;
 	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.accid "+;
@@ -101,7 +103,7 @@ METHOD FilePrint CLASS MemberBrowser
 
 	//oLan:RGet("Members",,"@!"),' ',;
 	AAdd(kopregels, ;
-		oLan:RGet("Account",11,"!")+cTab+oLan:RGet("name",25,"!")+cTab+;
+		oLan:RGet("Number",11,"!")+cTab+oLan:RGet("name",25,"!")+cTab+;
 		IF(Admin=="WO",oLan:RGet("State",6,"!","C")+cTab+oLan:RGet("home rate",10,"!","C")+cTab+;
 		oLan:RGet("HomePP",6,"!")+cTab+oLan:RGet("HomeAccount",11,"!")+cTab+oLan:RGet("HouseCd",7,"!")+cTab,"")+;
 		PadL(AllTrim(oLan:RGet("Budget",6,"!","R"))+Str(YrSt,4,0),11)+cTab+;
@@ -116,7 +118,7 @@ METHOD FilePrint CLASS MemberBrowser
 	nRow := 0
 	nPage := 0
 	DO WHILE .not. oSel:EOF
-		oReport:PrintLine(@nRow,@nPage,Pad(oSel:ACCNUMBER,11)+cTab+Pad(oSel:description,25)+cTab+;
+		oReport:PrintLine(@nRow,@nPage,Pad(iif(Empty(oSel:deptmntnbr),oSel:ACCNUMBER,oSel:deptmntnbr),11)+cTab+Pad(oSel:membername,25)+cTab+;
 			IF(Admin=="WO".or.Admin="HO",;
 			PadC(iif(oSel:co=="M",oSel:Grade,"Entity"),6)+cTab+PadC(iif(Empty(oSel:OFFCRATE),"",oSel:OFFCRATE),10)+cTab+;
 			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+;
