@@ -18,8 +18,8 @@ METHOD append() CLASS EditPeriodic
 		ENDIF
 // 	ENDIF
 	&& add empty row to mirror: 
-	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid}}
-	AAdd(oStOrdLH:Amirror,{oStOrdLH:deb,oStOrdLH:cre,' ',' ',0,oStOrdLH:Recno,"","","",""})    
+	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid}[11]INCEXPFD}
+	AAdd(oStOrdLH:Amirror,{oStOrdLH:Deb,oStOrdLH:Cre,' ',' ',0,oStOrdLH:Recno,"","","","",""})    
 	oStOrdLH:DESCRIPTN:=cDesc
 	RETURN FALSE
 Method CreditorProc(cPersValue) class EditPeriodic
@@ -64,19 +64,21 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 		oStOrdLH:ACCOUNTNbr:=""
 	ELSE
 		oAccount:=omAcc
-		// aMirror: {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid, [11]category}}
+		// aMirror: {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid, [11]INCEXPFD}
 		oStOrdLH:ACCOUNTID :=  oAccount:accid
 		oStOrdLH:ACCOUNTNAM := oAccount:Description
 		oStOrdLH:ACCOUNTNbr:=oAccount:ACCNUMBER
-		oStOrdLH:category:=oAccount:accounttype 
-		if !Empty(oAccount:persid) 
+		oStOrdLH:category:=Upper(oAccount:accounttype)
+		oStOrdLH:INCEXPFD:=oAccount:incexpfd 
+
+		if !Empty(oAccount:persid) .and.(oStOrdLH:category=="M" .or.oStOrdLH:category='K') 
 			oStOrdLH:aMirror[ThisRec,10]:=oAccount:persid				
 			if (oStOrdLH:cre-oStOrdLH:Deb)<0 .or.Empty(self:mCLNFrom).and.(oStOrdLH:cre-oStOrdLH:Deb)=0
 				self:mCLNFrom:=Str(oAccount:persid,-1)
 			endif
 		endif
 
-		if !oAccount:accounttype=="M"
+		if !(oAccount:accounttype=="M" .or.oStOrdLH:category='K')
 			oStOrdLH:GC:=" "
 		endif
 	ENDIF
@@ -85,6 +87,7 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 	oStOrdLH:aMirror[ThisRec,4]:=oStOrdLH:GC
 	oStOrdLH:aMirror[ThisRec,5]:=oStOrdLH:ACCOUNTID
 	oStOrdLH:aMirror[ThisRec,7]:=oStOrdLH:ACCOUNTNbr
+	oStOrdLH:aMirror[ThisRec,11]:=AllTrim(oStOrdLH:category)
 
 	IF !Empty(oStOrdLH:ACCOUNTID)
 		self:oSFStOrderLines:DebCreProc()
@@ -389,10 +392,21 @@ method ValidateHelpLine(lNoMessage:=false as logic,ErrorLine ref int) as logic c
 						lValid := FALSE
 						cError := self:oLan:WGet('Donor no member, thus MG not allowed')
 					ENDIF
-				ENDIF
-			ELSEIF !Empty(oStOrdLH:aMirror[i,4]).and.!oStOrdLH:aMirror[i,4]=="OT" //GC
-				lValid := FALSE
-				cError := self:oLan:WGet("Assessment code exclusively for member")
+				ENDIF 
+			ELSE
+				if oStOrdLH:Amirror[i,3] = "K"   // member department account, not income
+					if oStOrdLH:Amirror[i,11]='E' .and. !oStOrdLH:Amirror[i,4] == 'CH'
+						lValid := FALSE
+						cError := self:oLan:WGet("Only assessment code CH allowed for expense account")
+						exit
+					elseif oStOrdLH:Amirror[i,11]='F' .and. !oStOrdLH:Amirror[i,4] == 'PF'
+						lValid := FALSE
+						cError := self:oLan:WGet("Only assessment code PF allowed for fund account")
+					endif
+				elseIF !Empty(oStOrdLH:Amirror[i,4]).and.!oStOrdLH:Amirror[i,4]=="OT" //GC
+					lValid := FALSE
+					cError := self:oLan:WGet("Assessment code exclusively for member")
+				endif
 			ENDIF
 		ENDIF
 	ENDDO	
@@ -596,7 +610,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif
 		ENDIF
 		if !lError
-			MultiFrom:=iif(oStOrdL:MULTCURR=1,true,false)
+			MultiFrom:=iif(ConI(oStOrdL:MULTCURR)=1,true,false)
 			CurrFrom:=oStOrdL:CurrFrom
 			* make new transaction: 
 			deb:=oStOrdL:deb 
@@ -618,7 +632,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif	
 			// save in aTrans: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank},...}
 			AAdd(aTrans,{Str(oStOrdL:ACCOUNTID,-1),datum,oStOrdL:DESCRIPTN,oStOrdL:docid,deb,cre,DEBFORGN,CREFORGN,TransCurr,oStOrdL:GC,;
-				iif(oStOrdL:GIFTALWD==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank,oStOrdL:REFERENCE} )
+				iif(ConI(oStOrdL:GIFTALWD)==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank,oStOrdL:REFERENCE} )
 		endif
 		oStOrdL:skip()
 	enddo
@@ -641,12 +655,12 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+"','"+AllTrim(aTrans[i,13])+iif(i==1,"","','"+cTrans)+"')",oConn}
 				oTrans:execute()
 				if oTrans:NumSuccessfulRows<1 
-					LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:Status:description,"LogErrors")
+					LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
 					lError:=true
 					exit
 				endif
 				if Empty(cTrans)
-					cTrans:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+					cTrans:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 				endif
 				if !ChgBalance(aTrans[i,1], datum, aTrans[i,5], aTrans[i,6], aTrans[i,7], aTrans[i,8],aTrans[i,9])
 					lError:=true
@@ -671,7 +685,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			&&skip to next month
 			oStmnt:=SQLStatement{"update standingorder set lstrecording='"+SQLdate(datum)+"' where stordrid="+Str(CurStOrdrid,-1),oConn}
 			oStmnt:execute()
-			if Empty(oStmnt:Status)
+			if Empty(oStmnt:status)
 				SQLStatement{"commit",oConn}:execute()
 			else
 				lError:=true
@@ -696,7 +710,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	if self:oCurr==null_object
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
-	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,s.idat,s.edat,s.lstrecording,s.persid,"+;
+	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
 	"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,l.reference,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
 	" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) where l.stordrid=s.stordrid and "+;
@@ -743,7 +757,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 				exit
 			endif
 		enddo
-		IF !First
+		IF !first
 			nAdv:=Max(1,oStOrdL:Recno-nCurRec)
 			self:oPro:AdvancePro(nAdv)
 		ENDIF
@@ -779,21 +793,21 @@ METHOD DebCreProc() CLASS StOrderLines
 		mAccId:=Str(oStOrdLH:ACCOUNTID,-1)
 		IF oStOrdLH:deb > oStOrdLH:cre
 			oStOrdLH:gc := 'CH' 
-			oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
+			oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 
 			* Change AG's present to MG's:
 			recnr := oStOrdLH:Recno 
 			oStOrdLH:GoTop()
 			Do while !oStOrdLH:EOF
 				IF !oStOrdLH:Recno==recnr
-					IF (oStOrdLH:gc=='AG'.or.Empty(oStOrdLH:GC)).and. oStOrdLH:CATEGORY =='M' .and. !alltrim(oStOrdLH:ACCOUNTID)==mAccId
+					IF (oStOrdLH:gc=='AG'.or.Empty(oStOrdLH:gc)).and. (oStOrdLH:CATEGORY =='M' .or.oStOrdLH:CATEGORY == 'K') .and. !AllTrim(oStOrdLH:ACCOUNTID)==mAccId
 						oStOrdLH:gc := 'MG'
 						oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
 					ENDIF
 				ENDIF
 				oStOrdLH:Skip()
 			enddo
-			oStOrdLH:Goto(recnr)
+			oStOrdLH:Goto(CurRec)
 		ELSEIF oStOrdLH:deb = oStOrdLH:cre
 			oStOrdLH:gc := '  '
 		ELSE
@@ -802,22 +816,29 @@ METHOD DebCreProc() CLASS StOrderLines
 				IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:aMirror,{|x|x[4]=="CH".and.x[2]<x[1]})>0
 					oStOrdLH:gc := 'MG'
 				ENDIF
-				oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
+				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 			endif
 		ENDIF
-	ELSE
-		IF oStOrdLH:gc == 'CH'
-			* Reset MG present:
-			recnr := oStOrdLH:Recno
-			oStOrdLH:GoTop()
-			DO WHILE oStOrdLH:locate(,{|| oStOrdLH:gc =='MG'})
-				oStOrdLH:gc := 'AG'
-				oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
-			ENDDO
-			oStOrdLH:Goto(recnr)
+	else
+		if oStOrdLH:category == 'K'   //member department
+			if oStOrdLH:INCEXPFD='F'
+				oStOrdLH:gc := 'PF'
+			ELSEIF oStOrdLH:INCEXPFD='E'
+				oStOrdLH:gc := 'CH'
+			ENDIF
+		else
+			if oStOrdLH:gc == 'CH'
+				recnr := 0
+				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'},recnr+1))>0
+					oStOrdLH:Goto(recnr)
+					oStOrdLH:gc := 'AG'
+					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+				ENDDO
+				oStOrdLH:Goto(CurRec)
+			ENDIF
+			oStOrdLH:gc := '  ' 
 		ENDIF
-		oStOrdLH:gc := '  ' 
-		oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
+		oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 	ENDIF
 	self:Owner:ShowAssGift()
 	self:AddCredtr()
