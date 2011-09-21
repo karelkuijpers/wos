@@ -1177,7 +1177,7 @@ oDCmHAS := CheckBox{SELF,ResourceID{EDITMEMBER_MHAS,_GetInst()}}
 oDCmHAS:HyperLabel := HyperLabel{#mHAS,"Home assigned?",NULL_STRING,NULL_STRING}
 
 oDCAccDepSelect := combobox{SELF,ResourceID{EDITMEMBER_ACCDEPSELECT,_GetInst()}}
-oDCAccDepSelect:FillUsing({{"account:     ","account"}})
+oDCAccDepSelect:FillUsing({{"account:     ","account"},{"department:","department"}})
 oDCAccDepSelect:HyperLabel := HyperLabel{#AccDepSelect,NULL_STRING,NULL_STRING,NULL_STRING}
 
 oDCSC_AccDep := FixedText{SELF,ResourceID{EDITMEMBER_SC_ACCDEP,_GetInst()}}
@@ -1333,7 +1333,7 @@ METHOD OffRates() CLASS EditMember
 	endif
 RETURN aRate
 METHOD OkButton CLASS EditMember
-	LOCAL nMWPos AS INT
+	LOCAL nMWPos as int
 	LOCAL cFilter, cStatement,cIncAcc,cExpAcc,cNetAcc,cIncAccPrv,cExpAccPrv,cNetAccPrv as STRING
 	local cIncAccNbr,cExpAccNbr,cNetAccNbr,cIncAccPrvNbr,cExpAccPrvNbr,cNetAccPrvNbr,cAccPrvNbr as string
 	LOCAL lResetBFM:=false as LOGIC
@@ -1361,8 +1361,8 @@ METHOD OkButton CLASS EditMember
 			mCOPrv:=oMbr:CO
 		endif
 		cAss:=""
-		FOR x := 1 UPTO SELF:oDCListViewAssAcc:ItemCount
-			oLVI := SELF:oDCListViewAssAcc:GetNextItem( LV_GNIBYITEM,,,,,x-1 )
+		FOR x := 1 upto self:oDCListViewAssAcc:ItemCount
+			oLVI := self:oDCListViewAssAcc:GetNextItem( LV_GNIBYITEM,,,,,x-1 )
 			// 			cAss+=iif(Empty(cAss),"",",")+Str(oLVI:GetValue(#Number),-1) 
 			AAdd(aAss,oLVI:GetValue(#Number))
 		NEXT x
@@ -1415,9 +1415,9 @@ METHOD OkButton CLASS EditMember
 // 					cExpAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select expenseacc from department where depid="+self:mDepId+")",oConn}:accid,"")
 // 					cNetAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select netasset from department where depid="+self:mDepId+")",oConn}:accid,"")
 				else
-					cIncAcc:=self:mRek 
-					cExpAcc:=self:mRek
-					cNetAcc:=self:mRek
+					cIncAcc:=self:mREK 
+					cExpAcc:=self:mREK
+					cNetAcc:=self:mREK
 				endif
 				* Disconnect old account from member:
 				oStmnt:SQLString:="update account set giftalwd=0"+iif(mAccidPrv==cNetAcc,"",",description=concat('Disconnected:',description)")+" where accid="+mAccidPrv
@@ -1445,7 +1445,7 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc in ('AG','MG')"
 				oStmnt:Execute() 
 				// change importtrans not yet processed: ???  (normally all immediately after import processed) 
-				if SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total>'0'
+				if ConI(SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
 					cAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+mAccidPrv,oConn}:accnumber,"") 
 					cIncAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cIncAcc,oConn}:accnumber,"") 
 					cExpAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cExpAcc,oConn}:accnumber,"") 
@@ -1466,7 +1466,7 @@ METHOD OkButton CLASS EditMember
 			elseIF !Empty(mDepPrv) .and.(!Empty(self:mREK) .or.!Empty(self:mDepId) .and.!mDepPrv == self:mDepId)
 				* From department to account or Department replaced:
 				* Disconnect old department from member:
-				SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepPrv,oConn}:execute() 
+				SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepPrv,oConn}:Execute() 
 				// set all its accounts on no gifts
 				SQLStatement{"update account set giftalwd=0 where department="+mDepPrv,oConn}:Execute()
 				oDep:=SQLSelect{"select incomeacc,expenseacc,netasset from department where depid="+mDepPrv,oConn}
@@ -1483,8 +1483,8 @@ METHOD OkButton CLASS EditMember
 // 					cNetAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select netasset from department where depid="+self:mDepId+")",oConn}:accid,"")					
 				else
 					cIncAcc:=self:mREK 
-					cExpAcc:=self:mRek
-					cNetAcc:=self:mRek 
+					cExpAcc:=self:mREK
+					cNetAcc:=self:mREK 
 				endif
 				// change subscriptions to new income account 
 				oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv
@@ -1509,7 +1509,7 @@ METHOD OkButton CLASS EditMember
 				// correct month balances data
 				CheckConsistency(oMainWindow,true,false)
 				// change importtrans not yet processed: (normally all immediately after import processed) 
-				if SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total>'0'
+				if ConI(SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
 					cIncAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cIncAccPrv,oConn}:accnumber,"") 
 					cExpAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cExpAccPrv,oConn}:accnumber,"") 
 					cNetAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cNetAccPrv,oConn}:accnumber,"") 
@@ -1529,7 +1529,7 @@ METHOD OkButton CLASS EditMember
 			endif 
 		ENDIF
 		IF lNewMember
-			self:mMbrId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+			self:mMbrId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			* Connect person to member: 
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 			oStmnt:SQLString:="update person set type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
@@ -1614,7 +1614,7 @@ METHOD OkButton CLASS EditMember
 		
 	ENDIF
 	
-	RETURN NIL
+	RETURN nil
 METHOD PersonButton(lUnique )  CLASS EditMember
 	LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
 	local oPersCnt:=PersonContainer{} as PersonContainer
@@ -1639,9 +1639,9 @@ METHOD PersonButtonContact(lUnique) CLASS EditMember
 	return
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	//Put your PostInit additions here
-	LOCAL it AS INT
-	LOCAL oColREk, oColName AS ListViewColumn
-	LOCAL oColPP,oColAcc,oColDesc,oColTyp,oColAmt,oColEnabled AS ListViewColumn
+	LOCAL it as int
+	LOCAL oColREk, oColName as ListViewColumn
+	LOCAL oColPP,oColAcc,oColDesc,oColTyp,oColAmt,oColEnabled as ListViewColumn
 	LOCAL aAss:={},oneAss as ARRAY, i as int
 	LOCAL oAccAss as SQLSelect
 	LOCAL oItem	as ListViewItem
@@ -1649,11 +1649,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	local oLast as SQLSelect 
 	self:SetTexts()
 	// initialize listview with ass.accounst:
-	oColRek:=ListViewColumn{11,"Account#"}
-	oColRek:NameSym:=#Number
+	oColREk:=ListViewColumn{11,"Account#"}
+	oColREk:NameSym:=#Number
 	oColName:=ListViewColumn{32,"Name"}
 	oColName:NameSym:=#Name
-	SELF:oDCListViewAssAcc:AddColumn(oColREk)
+	self:oDCListViewAssAcc:AddColumn(oColREk)
 	self:oDCListViewAssAcc:AddColumn(oColName) 
 
 
@@ -1670,27 +1670,27 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	oColTyp:NameSym:=#DestTyp
 	oColAmt:=ListViewColumn{8,"Amount",LVCFMT_RIGHT}
 	oColAmt:NameSym:=#DestAmt
-	SELF:oDCDistrListView:AddColumn(oColEnabled)
-	SELF:oDCDistrListView:AddColumn(oColPP)
-	SELF:oDCDistrListView:AddColumn(oColAcc)
-	SELF:oDCDistrListView:AddColumn(oColDesc)
-	SELF:oDCDistrListView:AddColumn(oColTyp)
-	SELF:oDCDistrListView:AddColumn(oColAmt)
-	oDCDistrListView:GridLines := TRUE
-	oDCDistrListView:FullRowSelect := TRUE
-	if SuperUser .or. SEntity=='NED'
-		self:oDCAccDepSelect:AddItem("department:",2,'department')
-	endif
+	self:oDCDistrListView:AddColumn(oColEnabled)
+	self:oDCDistrListView:AddColumn(oColPP)
+	self:oDCDistrListView:AddColumn(oColAcc)
+	self:oDCDistrListView:AddColumn(oColDesc)
+	self:oDCDistrListView:AddColumn(oColTyp)
+	self:oDCDistrListView:AddColumn(oColAmt)
+	oDCDistrListView:GridLines := true
+	oDCDistrListView:FullRowSelect := true
+// 	if SuperUser .or. SEntity=='NED'
+// 		self:oDCAccDepSelect:AddItem("department:",2,'department')
+// 	endif
 	self:oDCAccDepSelect:Value:='account'
 
 	IF lNewMember
 		// 		SELF:oDCmAccount:SetFocus()
-		SELF:oDCmPPCode:Value:=SEntity
+		self:oDCmPPCode:Value:=SEntity
 		self:mAccDept:=""
-		SELF:mPerson:=""
-		SELF:mPersonContact=""
-		SELF:mCLN=""
-		SELF:mCLNContact=""
+		self:mPerson:=""
+		self:mPersonContact=""
+		self:mCLN=""
+		self:mCLNContact=""
 		self:mHomeAcc:=""
 		self:mCod:=""
 		self:mAOW:=0
@@ -1700,7 +1700,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		self:oDCwithldoffrate:Hide()
 		self:oDCwithldofftxt:Hide()
 	ELSE 
-		self:oMbr:=SQLSelect{"select m.*,a.description,p.mailingcodes,"+SQLFullName(0,"p")+" as membername, "+; 
+		self:oMbr:=SQLSelect{"select m.householdid,m.mbrid,m.aow,m.zkv,m.homeacc,m.has,m.contact,m.rptdest,m.homepp,m.co,m.grade,m.offcrate,"+;
+		"m.accid,m.depid,m.persid,a.description,p.mailingcodes,"+SQLFullName(0,"p")+" as membername, "+; 
 		"d.depid,d.deptmntnbr,d.descriptn as depname, ";
 			+SQLFullName(0,"c")+" as contactname,b.category as type, group_concat(cast(am.accid as char),']',am.accnumber,']',am.description separator '|') as assoctd "+;
 			" from person p,member m "+;
@@ -1710,8 +1711,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		"left join memberassacc ass on (m.mbrid=ass.mbrid) left join account am on (am.accid=ass.accid) " +;
 			" where p.persid=m.persid and m.mbrid="+self:mMbrId,oConn} 
 		self:cCurDep:=AllTrim(Transform(self:oMbr:depid,""))
-		self:mDepId:=self:cCurDep
-		self:cCurType:=Transform(self:oMbr:type,"")
+		self:mDepid:=self:cCurDep
+		self:cCurType:=Transform(self:oMbr:Type,"")
 
 		self:mHBN := self:oMbr:householdid
 		self:mAOW := self:oMbr:AOW
@@ -1719,10 +1720,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		self:mHomeAcc:= self:oMbr:HOMEACC
 		self:mCLN := Str(self:oMbr:persid,-1)
 		self:mREK := AllTrim(Transform(self:oMbr:accid,""))
-		self:mMbrId:=Str(self:oMbr:mbrid,-1)
+		self:mMbrId:=Str(self:oMbr:MbrId,-1)
 		self:mRekOrg:=self:mREK 
 		self:mCLN := Str(self:oMbr:persid,-1)
-		self:mHAS := iif(self:oMbr:HAS=1,true,false)
+		self:mHAS := iif(ConI(self:oMbr:HAS)=1,true,false)
 		self:mPerson := self:oMbr:membername
 		self:cMemberName := mPerson
 		self:cAccountName:=AllTrim(Transform(self:oMbr:Description,""))
@@ -1743,11 +1744,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			self:cContactName := mPersonContact
 		endif
 		self:StatemntsDest:=Str(self:oMbr:RPTDEST,-1)
-		SELF:oDCmPPCode:Value:=SELF:oMbr:HomePP
+		self:oDCmPPCode:Value:=self:oMbr:HomePP
 		IF !Empty(self:oMbr:assoctd)
 			aAss:={} 
 			aAss:=Split(self:oMbr:assoctd,"|")
-			FOR i:=1 TO Len(aAss)
+			FOR i:=1 to Len(aAss)
 				IF !Empty(aAss[i]) 
 					//	add item	to	listview:
 					oneAss:=Split(aAss[i],']')
@@ -1764,7 +1765,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		ENDIF
 		self:withldoffrate:=oMbr:OFFCRATE
 		// fill array with distribution instruction:
-		oDis:=SQLSelect{"select * from distributioninstruction where mbrid ="+self:mMbrId+" order by seqnbr" ,oConn} 
+		oDis:=SQLSelect{"select mbrid,seqnbr,destacc,destpp,desttyp,destamt,cast(lstdate as date) as lstdate,descrptn,currency,disabled,amntsnd,dfir,dfia,checksave,singleusE from distributioninstruction where mbrid ="+self:mMbrId+" order by seqnbr" ,oConn} 
 		if oDis:RecCount>0
 			DO WHILE !oDis:EoF 
 				AAdd(self:aDistr,{+;
@@ -1776,16 +1777,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 					oDis:DESTAMT,+;
 					oDis:LSTDATE,+;
 					oDis:DESCRPTN,+;
-					oDis:CURRENCY,+;
-					oDis:DISABLED,+;
+					ConI(oDis:CURRENCY),+;
+					ConI(oDis:DISABLED),+;
 					oDis:AMNTSND,+;
 					oDis:DFIR,+;
 					oDis:DFIA,+;
 					oDis:CHECKSAVE,+; 
-				oDis:SINGLEUSE})	
+				ConI(oDis:SINGLEUSE)})	
 				oDis:Skip()
 			ENDDO
-			self:aDistrOrg:=AClone(self:aDistr)
+			self:aDistrOrg:=AClone(self:aDistr)	
 		endif
 		oLast:=SQLSelect{"select max(seqnbr) as maxseq from distributioninstruction where mbrid="+self:mMbrId,oConn}
 		IF Empty(oLast:maxseq)
@@ -1796,7 +1797,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 
 		// fill distribution instructions:
 		self:FillDistribution()
-		IF SELF:oMbr:CO=='M'
+		IF self:oMbr:CO=='M'
 			self:mGRADE := self:oMbr:Grade
 			IF mPPCode=SEntity
 				self:oDCmHAS:show()
@@ -1810,47 +1811,47 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			self:oDCwithldoffrate:Hide()
 			self:oDCwithldofftxt:Hide()
 		ELSE
-			SELF:oDCmHBN:Hide()
+			self:oDCmHBN:Hide()
 			self:oDCmHAS:Hide()
 			self:oDCHousecodetxt:Hide()
-			IF SELF:oMbr:HomePP!=sentity
-				SELF:oDCHomeAccTxt:show()
-				SELF:oDCmHomeAcc:Show()
+			IF self:oMbr:HomePP!=sentity
+				self:oDCHomeAccTxt:show()
+				self:oDCmHomeAcc:Show()
 				self:ShowDistribution(FALSE)
 			ELSE
-				SELF:ShowDistribution(TRUE)
+				self:ShowDistribution(true)
 			ENDIF
 			self:oDCwithldoffrate:show()
 			self:oDCwithldofftxt:show()			
-			IF SELF:oMbr:CO='S'
+			IF self:oMbr:CO='S'
 				self:mGRADE:='Entity'
 			ELSE
 				self:mGRADE:='Entity 19999'
 			ENDIF
 		ENDIF
 		self:mGradeOrg:=self:mGRADE
-		SELF:oDCmGrade:SetFocus()
+		self:oDCmGrade:SetFocus()
 	ENDIF
-	SELF:ShowStmntDest()
+	self:ShowStmntDest()
 	IF Admin#"WO"
 		// Hide PMC details:
-		SELF:oDCGroupBox1:Hide()
-		SELF:oDCSC_GRADE:Hide()
-		SELF:oDCmGrade:Hide()
+		self:oDCGroupBox1:Hide()
+		self:oDCSC_GRADE:Hide()
+		self:oDCmGrade:Hide()
 		self:oDCmHBN:Hide()
 		self:oDCmHAS:Hide()
-		SELF:oDCHousecodetxt:Hide()
-		SELF:oDCSC_FinancePO:Hide()
-		SELF:oDCmPPCode:Hide()
-		SELF:oDCmHomeAcc:Hide()
-		SELF:oDCHomeAccTxt:Hide()
-		SELF:oDCDistrListView:Hide()
+		self:oDCHousecodetxt:Hide()
+		self:oDCSC_FinancePO:Hide()
+		self:oDCmPPCode:Hide()
+		self:oDCmHomeAcc:Hide()
+		self:oDCHomeAccTxt:Hide()
+		self:oDCDistrListView:Hide()
 		self:oDCwithldofftxt:Hide()
 		self:oDCwithldoffrate:Hide()
-		SELF:oCCNewButton:Hide()
-		SELF:oCCEditButton:Hide()
-		SELF:oCCDeleteButton:Hide()
-		SELF:oDCGroupBox3:Hide()
+		self:oCCNewButton:Hide()
+		self:oCCEditButton:Hide()
+		self:oCCDeleteButton:Hide()
+		self:oDCGroupBox3:Hide()
 	ENDIF 
 	if AScan(aMenu,{|x|x[4]=="MemberEdit"})=0
 		self:oCCNewButton:Hide()
@@ -1860,7 +1861,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		self:oCCAddButton:Hide()
 		self:oCCRemoveButton:Hide()		
 	endif
-	RETURN NIL
+	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class EditMember
 	//Put your PreInit additions here
    IF !Empty(uExtra)
@@ -2340,18 +2341,18 @@ METHOD CloseButton( ) CLASS MemberBrowser
 	SELF:EndWindow()
 	RETURN NIL
 METHOD DeleteButton CLASS MemberBrowser
-	LOCAL oTextBox AS TextBox
+	LOCAL oTextBox as TextBox
 	LOCAL mMbrId,mAccid,mDepid,mNetasset,mExpAcc,mIncAcc,cMemName as STRING
 	local oStmnt as SQLStatement
 	local oMBAL as Balances
 	local fBal as float
 	local oDep as SQLSelect
-	IF SELF:Server:EOF.or.SELF:Server:BOF
-		(Errorbox{,"Select a member first"}):Show()
+	IF self:Server:EOF.or.self:Server:BOF
+		(ErrorBox{,"Select a member first"}):Show()
 		RETURN
 	ENDIF 
 	cMemName:=AllTrim(oSFMemberBrowser_DETAIL:Server:membername)
-	oTextBox := TextBox{ SELF, "Delete Record",;
+	oTextBox := TextBox{ self, "Delete Record",;
 		"Delete Member " +cMemName  + "?" }
 	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
@@ -2370,7 +2371,7 @@ METHOD DeleteButton CLASS MemberBrowser
 				endif
 			endif
 		else
-			oDep:=SQLSelect{"select * from department where depid="+mDepid,oConn}
+			oDep:=SQLSelect{"select netasset,incomeacc,expenseacc from department where depid="+mDepid,oConn}
 			if oDep:RecCount>0
 				mNetasset:=Transform(oDep:netasset,"")
 				mIncAcc:=Str(oDep:incomeacc,-1)
@@ -2396,7 +2397,7 @@ METHOD DeleteButton CLASS MemberBrowser
 		endif			                                   
 		* Disconnect corresponding person:
 		SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
-			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(oSFMemberBrowser_Detail:Server:persid,-1)+"'",oConn}:execute()
+			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(oSFMemberBrowser_DETAIL:Server:persid,-1)+"'",oConn}:execute()
 		// delete corresponding Distribution Instructions:
 		oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid='"+mMbrId+"'",oConn}
 		oStmnt:execute()
@@ -2416,7 +2417,7 @@ METHOD DeleteButton CLASS MemberBrowser
 		oSFMemberBrowser_DETAIL:GoTop()
 	ENDIF
 
-	RETURN NIL
+	RETURN nil
 METHOD EditButton(lNew) CLASS MemberBrowser
 
 	Default(@lNew,FALSE)
