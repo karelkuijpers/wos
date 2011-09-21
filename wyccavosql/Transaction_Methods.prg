@@ -90,7 +90,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 	self:cSubTotal:=oLan:RGet('Subtotal',,"!")
 
 	cStatement:=UnionTrans("select a.accnumber,a.accid,a.description as accname,a.currency as acccurrency,b.category as acctype,"+;
-	"t.persid,t.description,t.docid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.gc,t.fromrpp,t.opp,t.TransId "+;
+	"t.persid,t.description,t.docid,cast(t.dat as date) as dat,t.deb,t.cre,t.debforgn,t.creforgn,t.gc,t.fromrpp,t.opp,t.TransId "+;
 	"from balanceitem b, account a "+;
 	"left join transaction t on (a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"') where a.balitemid=b.balitemid and "+;
 	iif(nToAcc==nFromAcc,"a.accnumber='"+nFromAcc+"'","a.accnumber<='"+nToAcc+"' and a.accnumber>='"+nFromAcc+"'"))+;
@@ -259,10 +259,10 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 			m58_creF:=Round(m58_creF+self:oTrans:CREFORGN,DecAantal)
 			* member and personal gift:
 			// 				IF !Empty(Val(oAcc:persid)).and. !Empty(self:oTrans:persid) .and. self:oTrans:deb<>self:oTrans:cre .and.!self:oTrans:FROMRPP .and. !self:oTrans:GC="CH"
-			IF !Empty(self:oTrans:persid) .and. self:oTrans:Deb<>self:oTrans:cre .and.self:oTrans:FROMRPP=0 .and. !self:oTrans:GC="CH"
+			IF !Empty(self:oTrans:persid) .and. self:oTrans:deb<>self:oTrans:cre .and.ConI(self:oTrans:FROMRPP)=0 .and. !self:oTrans:GC="CH"
 				m57_giftbed:=Round(m57_giftbed+self:oTrans:cre-self:oTrans:deb,DecAantal)
 				m57_giftbedF:=Round(m57_giftbedF+self:oTrans:CREFORGN-self:oTrans:DEBFORGN,DecAantal)
-			ELSEIF self:oTrans:FROMRPP==1
+			ELSEIF ConI(self:oTrans:FROMRPP)==1
 				//	Processing of transactions	from other PO's:
 				cOPP:=AllTrim(self:oTrans:OPP)
 				cTypeOPP:=self:oTrans:GC
@@ -411,21 +411,21 @@ function AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cr
 	IF Empty(SINC) .and.Empty(SINCHOME)
 		RETURN true
 	ENDIF
-	IF (!Empty(cPersId).or. FromRpp) .and.gc=="AG" 
+	IF (!Empty(cPersId).or. FROMRPP) .and.gc=="AG" 
 		IF cType=="PA"  //liability?
 			// add to gifts income:
 			if !Empty(SINCHOME) .or.!Empty(SINC)
 				oMbr:=SQLSelect{"select has,grade,offcrate from member where accid="+accid,oConn}
 				if oMbr:RecCount>0 
-					lHas:= if(oMbr:HAS>0,true,false) 
+					lHas:= if(ConI(oMbr:HAS)>0,true,false) 
 				else
 					Return true
 				endif
 				if Empty(SINC).and.!lHas
 					RETURN true
 				endif
-				nCre:=Round(Cre-Deb,DecAantal)
-				nCreF:=Round(CREFORGN-DEBFORGN,DecAantal)
+				nCre:=Round(cre-deb,DecAantal)
+				nCreF:=Round(creforgn-DEBFORGN,DecAantal)
 				me_stat:=AllTrim(oMbr:Grade)
 				mOms:=DESCRIPTN
 				if nCre <>0
@@ -1112,7 +1112,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	LOCAL oHm:=self:Server as TempTrans
 	LOCAL oAccount as SQLSelect
 	LOCAL crek,cNum,cPersId,cType as STRING
-	LOCAL ThisRec AS INT
+	LOCAL ThisRec as int
 	LOCAL CurGC as STRING
 	local MultiCur:=false as logic
 	local fDebSav,fCreSav as float 
@@ -1133,16 +1133,14 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		crek := Str(oAccount:AccID,-1)
 		oHm:AccDesc := oAccount:Description
 		oHm:ACCNUMBER:=oAccount:ACCNUMBER
-		oHm:KIND:=Upper(oAccount:accounttype)
 		oHm:incexpfd:=oAccount:incexpfd
-// 		if !oHm:KIND=="M" .and.!oHm:KIND='K'
-// 			oHm:gc:=" "
+		oHm:KIND:=Upper(oAccount:accounttype)
 		if oHm:KIND=="M" .or.oHm:KIND='K'
 			cPersId:=Str(oAccount:persid,-1)
 		endif
 		oHm:CURRENCY:= oAccount:CURRENCY 
 		cNum:=Str(oAccount:balitemid,-1)
-		MultiCur:=iif(oAccount:MULTCURR=1,true,false)
+		MultiCur:=iif(ConI(oAccount:MULTCURR)=1,true,false)
 		cType:=oAccount:type
 	ENDIF
 	oHm:AccID :=  crek
@@ -1355,17 +1353,17 @@ else
 endif
 METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	* Update of an existing transaction with the modified data in TempTrans:
-	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost AS STRING, NewMut AS Filespec
+	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost as STRING, NewMut as Filespec
 	LOCAL oOrig, oNew as TempTrans
 	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int, lSucc as LOGIC
-	LOCAL pFilter AS _CODEBLOCK
+	LOCAL pFilter as _CODEBLOCK
 	LOCAL pnt as int 
 	Local lNewPers,lGiver  as logic 
 	local oTransH:=self:oOwner:oMyTrans as SQLSelect
 	local oStmnt as SQLStatement
 	local cError as string
 
-	oNew:=SELF:server
+	oNew:=self:server
 	NewIndex:=oNew:FileSpec:Drive+oNew:FileSpec:Path+oNew:FileSpec:FileName
 	lSucc:=oNew:CreateIndex(FileSpec{NewIndex},"StrZero(SEQNR,6)+ACCID",{||StrZero(oNew:SEQNR,6)+oNew:AccID})
 	IF !lSucc 
@@ -1384,7 +1382,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		RETURN cError
 	ENDIF
 
-	nSavRec:=oInqBrowse:Owner:Server:Recno
+	nSavRec:=oInqBrowse:Owner:server:Recno
 	
 	oOrig:lInqUpd:=true
 	oTransH:GoTop()
@@ -1400,11 +1398,11 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		oOrig:Deb := oTransH:Deb
 		oOrig:cre :=  oTransH:cre
 		if Empty( oTransH:Currency)
-			oOrig:CURRENCY:=sCurr
+			oOrig:Currency:=sCurr
 		else 
 			oOrig:CURRENCY:= oTransH:CURRENCY
 		endif
-		if oOrig:CURRENCY==sCurr
+		if oOrig:Currency==sCurr
 			oOrig:debforgn := oTransH:Deb
 			oOrig:CREFORGN :=  oTransH:cre
 		else
@@ -1413,8 +1411,8 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		endif
 		oOrig:GC := oTransH:GC
 		oOrig:BFM:= oTransH:BFM
-		oOrig:FROMRPP:=iif(oTransH:FROMRPP==1,true,false)
-		oOrig:lFromRPP:=iif(oTransH:FROMRPP==1,true,false)
+		oOrig:FROMRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
+		oOrig:lFromRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
 		oOrig:OPP:=oTransH:OPP
 		oOrig:PPDEST := oTransH:PPDEST
 		oOrig:REFERENCE:=oTransH:REFERENCE
@@ -1426,20 +1424,20 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		IF !Empty(oTransH:persid)
 			OrigPerson := Str(oTransH:persid,-1)
 		ENDIF
-		oOrig:POSTSTATUS:=oTransH:POSTSTATUS
+		oOrig:POSTSTATUS:=ConI(oTransH:POSTSTATUS)
 		* After getting locks check again if all conditions are satisfied (could e.g be changed in the meanwhile by
 		* allotting non-earmarked gift):
 		IF (pnt:=AScan(oNew:aMIRROR,{|x|x[7]==oOrig:SEQNR}))==0 .or.; // deleted?
-			!AllTrim(oNew:aMirror[pnt,1])==AllTrim(oOrig:AccID).or.; //account changed?
+			!AllTrim(oNew:aMIRROR[pnt,1])==AllTrim(oOrig:AccID).or.; //account changed?
 			!(oNew:aMIRROR[pnt,2]-oNew:aMIRROR[pnt,3])==(oOrig:DEB-oOrig:CRE) .or.; //amount changed?
 			!AllTrim(oNew:aMIRROR[pnt,4])==AllTrim(oOrig:GC) .or.; //ass.code changed? 
 			!oNew:Currency == oOrig:Currency  // currency changed? 
 			cError:= oOrig:CheckUpdates()
 			IF !Empty(cError)
 				oOrig:Close()
-				oOrig:=NULL_OBJECT
-				FErase (Origmut+".dbf")
-				FErase (Origmut+".fpt")
+				oOrig:=null_object
+				FErase (OrigMut+".dbf")
+				FErase (OrigMut+".fpt")
 				// 				oTransH:Unlock()
 				oNew:ClearIndex(NewIndex)
 				NewIndex:= NewIndex+oNew:INdexExt
@@ -1451,7 +1449,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	ENDDO
 
 	lSucc:=oOrig:CreateIndex(FileSpec{OrigMut},"StrZero(SEQNR,6)+ACCID")
-	oOrig:SetOrder(FileSpec{origmut})
+	oOrig:SetOrder(FileSpec{OrigMut})
 	oOrig:GoTop()
 	IF !lSucc 
 		cError:= 'Not able to make indexfile for updates'
@@ -1464,18 +1462,18 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		CASE oOrig:SEQNR== oNew:SEQNR .and. !oNew:Deb==oNew:cre
 			* Transaction line updates??:
 			IF mCLNGiver#OrigPerson
-				aktiePost:="W"
+				AktiePost:="W"
 			ELSE
-				aktiePost:=""
+				AktiePost:=""
 			ENDIF
 			* When accid changed reverse old account record and add record for new account:
 			IF oOrig:AccID # oNew:AccID
-				aktiePost:="W"
+				AktiePost:="W"
 			ENDIF
 			* When amounts changed update balances:
 			IF oOrig:DEB # oNew:DEB .or.oOrig:CRE # oNew:CRE
-				IF Empty(aktiePost)
-					aktiePost:="WB"     &&aleen bedrag gewijzigd
+				IF Empty(AktiePost)
+					AktiePost:="WB"     &&aleen bedrag gewijzigd
 				ENDIF
 			ENDIF
 			* When date, accid or amounts have been updated change rerecord to new:
@@ -1499,11 +1497,11 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 			ELSE
 				* Update fields of the transaction line:
 				IF	OrigBst # mBst .or.;
-						oOrig:gc # oNew:gc.or.;
+						oOrig:GC # oNew:GC.or.;
 						oOrig:DESCRIPTN # oNew:DESCRIPTN.or.;
 						oOrig:REFERENCE # oNew:REFERENCE.or.;
 						oOrig:KIND # oNew:KIND.or.;
-						oOrig:CURRENCY # oNew:CURRENCY.or.;
+						oOrig:Currency # oNew:CURRENCY.or.;
 						mCLNGiver # OrigPerson .or. ;
 						oOrig:PPDEST # oNew:PPDEST .or.;
 						(Posting .and.oOrig:POSTSTATUS # self:mPostStatus)
@@ -1522,8 +1520,8 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 					return cError
 				endif
 			ENDIF
-			oNew:skip()
-			oOrig:skip()
+			oNew:Skip()
+			oOrig:Skip()
 		CASE oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre
 			* Remove dummy transaction line:
 			* Delete line corresponding with origmut:
@@ -1532,7 +1530,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 			if !Empty(oStmnt:Status)
 				return oStmnt:ErrInfo:errormessage
 			endif
-			lDeleted:=TRUE
+			lDeleted:=true
 			* Update balance:
 			if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
 				return "balance not changed"
@@ -1611,7 +1609,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	Newmut:=FileSpec{NewIndex}
 	NewMut:Extension:=oNew:INdexExt
 	oNew:Close()
-	oNew:=NULL_OBJECT
+	oNew:=null_object
 	NewMut:Delete()
 	NewMut:Extension:="dbf"
 	NewMut:Delete()
@@ -1623,7 +1621,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	OrigIndex:=OrigIndex+oOrig:INdexExt
 	oOrig:close()
 	//oNew:close()
-	oOrig:=NULL_OBJECT
+	oOrig:=null_object
 	FErase(OrigIndex)
 	FErase (Origmut+".dbf")
 	FErase (Origmut+".fpt")
@@ -1715,16 +1713,16 @@ ENDIF
 oHm:GoTo(nCurRec)
 RETURN lValid
 METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
-	LOCAL nErrRec AS INT
+	LOCAL nErrRec as int
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
-	LOCAL oBox AS WarningBox
+	LOCAL oBox as WarningBox
 	LOCAL oHm as TempTrans
 	LOCAL lError,lOK as LOGIC
-	LOCAL curRec AS INT
+	LOCAL curRec as int
 	LOCAL i,j,nSeqnbr as int
-	LOCAL CurValue AS ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
+	LOCAL CurValue as ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
 	LOCAL ThisRec,nMir as int
-	LOCAL cError AS STRING, ErrorLine:=1 AS INT
+	LOCAL cError as STRING, ErrorLine:=1 as int
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
 	local oStmnt as SQLStatement 
@@ -1732,30 +1730,30 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	local cAccs as string   // accounts used in transaction 
 	local cDueAccs as string	// accounts for locking dueamounts 
 	local aMyBank:=self:abankacc as array
-	oHm := self:Server
-	IF !SELF:fTotal==0
+	oHm := self:server
+	IF !self:fTotal==0
 		(ErrorBox{self,self:oLan:WGet("Sum of transactions not equal zero")}):show()
-		lError := TRUE
-	ELSEIF Len(oHm:AMirror)< 2.and.!lInqUpd
+		lError := true
+	ELSEIF Len(oHm:aMirror)< 2.and.!lInqUpd
 		(ErrorBox{self,self:oLan:WGet("Transactions not complete")}):show()
-		lError := TRUE
+		lError := true
 	ELSEIF 	!self:ValidateTempTrans(FALSE,@ErrorLine)
-		lError := TRUE
+		lError := true
 		*		RETURN NIL 
 	elseif self:lwaitingForExchrate
 		(ErrorBox{self,self:oLan:WGet("wait for exchange rate")}):show()
 		lError := true
 	ELSE
 		*		Check only one membergiver:
-		IF ADMIN=="WO" .and. !oHm:lFromRPP .and. (AScan(oHm:AMirror,{|x| x[4]=="AG".or.x[4]=="MG"})>0)
-			i:= AScan(oHm:AMirror,{|x| x[4]=="CH".and.x[3]<x[2]})
+		IF ADMIN=="WO" .and. !oHm:lFromRPP .and. (AScan(oHm:aMirror,{|x| x[4]=="AG".or.x[4]=="MG"})>0)
+			i:= AScan(oHm:aMirror,{|x| x[4]=="CH".and.x[3]<x[2]})
 			IF i > 0
-				curRec:=oHm:AMirror[i,6]  // RECNO
+				curRec:=oHm:aMirror[i,6]  // RECNO
 				* Check if giver is a member:
-				mbrRek:=oHm:AMirror[i,1]
-				mCLNGiverMbr := oHm:AMirror[i,17]
+				mbrRek:=oHm:aMirror[i,1]
+				mCLNGiverMbr := oHm:aMirror[i,17]
 				//	check	if	direct gift	report:
-				if	AScan(oHm:AMirror,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
+				if	AScan(oHm:aMirror,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
 					IF	Empty(mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
 						(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
 						RETURN FALSE
@@ -1782,7 +1780,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 								lError := true
 							ENDIF
 						ENDIF
-						i:= AScan(oHm:AMirror,{|x| x[4]=="CH".and.x[3]<x[2].and.!x[6]==curRec},i+1)
+						i:= AScan(oHm:aMirror,{|x| x[4]=="CH".and.x[3]<x[2].and.!x[6]==curRec},i+1)
 					ENDDO
 				endif
 				IF lError
@@ -1794,15 +1792,15 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 
 		IF !oHm:lFromRPP
 			m54_pers_sta:='N'  && Not allowed
-			m54_pers_sta:= checkpayer( oHm:AMirror )
+			m54_pers_sta:= checkpayer( oHm:aMirror )
 			IF Empty(self:mCLNGiver)
-				IF SELF:lImport .and.!Empty(AllTrim(SELF:cGiverName)).and.(m54_pers_sta='V' .or.m54_pers_sta=='W')
+				IF self:lImport .and.!Empty(AllTrim(self:cGiverName)).and.(m54_pers_sta='V' .or.m54_pers_sta=='W')
 					// busy with searching person
 					RETURN FALSE
 				ENDIF
 				IF m54_pers_sta='V'
 					(ErrorBox{self,self:oLan:WGet('Giver must be a person')}):show()
-					lError := TRUE
+					lError := true
 					RETURN FALSE
 				elseIF m54_pers_sta='C'
 					(ErrorBox{self,self:oLan:WGet('Creditor must be a person')}):show()
@@ -1813,31 +1811,31 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						self:oLan:WGet("Don't you need to specify a giver/payer")+"?"}
 					oBox:Type := BUTTONYESNO
 					IF (oBox:Show() = BOXREPLYYES)
-						SELF:oDCmperson:SetFocus()
+						self:oDCmperson:SetFocus()
 						RETURN FALSE
 					ENDIF
 				ENDIF
 			ELSE
 				IF m54_pers_sta='N'
 					(ErrorBox{self,self:oLan:WGet('No person allowed in this case')}):show()
-					SELF:oDCmperson:SetFocus()
+					self:oDCmperson:SetFocus()
 					RETURN FALSE
 				ELSEIF m54_pers_sta=='O'
 					oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
 					oBox:Type := BUTTONYESNO
 					IF (oBox:Show() = BOXREPLYNO)
-						SELF:oDCmperson:SetFocus()
+						self:oDCmperson:SetFocus()
 						RETURN FALSE
 					ENDIF
 				ENDIF
 			ENDIF
 		ENDIF
 		//	determine accounts to be locked for change balance
-		cAccs:=Implode(oHm:AMirror,",",,,1)+iif(lInqUpd,','+ self:cOrgAccs,'')
+		cAccs:=Implode(oHm:aMirror,",",,,1)+iif(lInqUpd,','+ self:cOrgAccs,'')
 		if !lInqUpd 
 			//	add income records:
 			if	(!Empty(SINCHOME) .or.!Empty(SINC)) .and.(!Empty(self:mCLNGiver).or. oHm:lFromRPP)
-				if	AScan(oHm:AMirror,{|x|x[4]='AG' .and.x[18]=liability})>0
+				if	AScan(oHm:aMirror,{|x|x[4]='AG' .and.x[18]=liability})>0
 					IF	!Empty(SINC)
 						cAccs+=','+SEXP+','+ SINC
 					endif	 			
@@ -1848,9 +1846,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			endif
 			// add rabat accounts:
 			if oHm:lFromRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
-				for nMir:=1 to Len(oHm:AMirror)
-					IF	(j:=AScan(oHm:AMirror,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
-						oHm:RecNo=j	
+				for nMir:=1 to Len(oHm:aMirror)
+					IF	(j:=AScan(oHm:aMirror,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
+						oHm:Recno=j	
 						IF	oHm:OPP== sEntity
 							if	At(cAccs,','+SEXP+',')=0
 								cAccs+=','+SEXP
@@ -1865,10 +1863,10 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		endif
 		// determine accounts for locks for dueamounts:
 		IF	!Empty(self:mCLNGiver) .and. !lInqUpd
-			for nMir:=1 to Len(oHm:AMirror) 
+			for nMir:=1 to Len(oHm:aMirror) 
 				// search for: KIND= 'D'	.or. KIND=	'A' .or.	KIND	= 'F'	.or.(Deb >	Cre .and.gc<>'CH' )     // storno also
-				IF	(j:=AScan(oHm:AMirror,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
-					cDueAccs+=iif(Empty(cDueAccs),'',',')+oHm:AMirror[nMir,1]	
+				IF	(j:=AScan(oHm:aMirror,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
+					cDueAccs+=iif(Empty(cDueAccs),'',',')+oHm:aMirror[nMir,1]	
 					nMir:=j
 				endif
 			next
@@ -1905,7 +1903,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				oMyTele:=SQLSelect{"select processed,lock_id,lock_time from teletrans where teletrid="+Str(self:oTmt:CurTelId,-1)+;
 					" and processed='' and lock_id="+MYEMPID+" for update",oConn}
 				oMyTele:Execute()
-				if oMyTele:RecCount<1
+				if oMyTele:Reccount<1
 					self:Pointer := Pointer{POINTERARROW}
 					ErrorBox{self,self:oLan:WGet("This telebank transaction has already been processed by someone else, thus skipped")}:show()
 					SQLStatement{"rollback",oConn}:Execute()
@@ -1954,7 +1952,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					oStmnt:Execute()
 					if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
 						if Empty(cTransnr)
-							cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+							cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 						endif
 						*	Update monthbalance value of corresponding account:
 						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre 
@@ -1982,6 +1980,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 													",deb="+Str(oHm:Cre	- oHm:Deb,-1)+;
 													",userid='"+LOGON_EMP_ID +"'"+;
 													",debforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+													",currency='"+sCURR+"'"+;
 													",seqnr="+Str(nSeqnbr,-1)+;
 													",poststatus=2" 
 												oStmnt:=SQLStatement{cStatement,oConn}
@@ -1999,6 +1998,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 															",cre="+Str(oHm:Cre	- oHm:Deb,-1)+;
 															",userid='"+LOGON_EMP_ID +"'"+;
 															",creforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+															",currency='"+sCURR+"'"+;
 															",seqnr="+Str(nSeqnbr,-1)+;
 															",poststatus=2" 
 														oStmnt:=SQLStatement{cStatement,oConn}
@@ -2071,7 +2071,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					*  update data of giver:
 					i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
 					IF i>0 
-						oPers:=SQLSelect{"select mailingcodes,datelastgift from person where persid="+self:mCLNGiver,oConn}
+						oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
 						cCodNew:=oPers:mailingcodes
 						DO WHILE i>0
 							PersonGiftdata(oHm:AMirror[i,5],@cCodNew,oPers:datelastgift,oHm:AMirror[i,4],null_string,false)
@@ -2990,7 +2990,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			*   		SELF:mCLNGiver := SubStr(oTmt:m56_description,2,5)   // juiste formaat door fout verkeerd om
 			IF !Empty(oTmt:m56_persid)
 				self:mCLNGiver := oTmt:m56_persid
-			ELSEif isnum(Pad(SubStr(oTmt:m56_description,1,16),16,"A"))
+			ELSEif isnum(Pad(SubStr(oTmt:m56_description,1,16),16,"A")) .and.!Trim(oTmt:m56_kind)="AC"
 				self:mCLNGiver := SubStr(oTmt:m56_description,12,5)
 				if !isnum(self:mCLNGiver) .or.Val( mCLNGiver)=0
 					self:mCLNGiver:=""
@@ -3096,8 +3096,8 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			IF !Acceptgiro
 				self:InitGifts()
 			ENDIF
-			* In case of automatic collection (CLIEOP03-file) no name known:
-			IF AutoCollect
+			* In case of automatic collection (CLIEOP03-file) or acceptgiro no name known:
+			IF AutoCollect .or. Acceptgiro
 				cOrigName:=AllTrim(oTmt:m56_contra_bankaccnt)
 				self:oDCmPerson:TEXTValue := cOrigName
 			ELSE
@@ -3226,7 +3226,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				ENDDO 
 			endif
 			********** place due amounts into tempgift ***********
-			oDue:=SQLSelect{"select dueid,s.personid as persid,round(amountinvoice - amountrecvd,2) as cre,s.accid,invoicedate,d.seqnr,b.category as acctype "+;
+			oDue:=SQLSelect{"select dueid,s.personid as persid,round(amountinvoice - amountrecvd,2) as cre,s.accid,cast(invoicedate as date) as invoicedate,d.seqnr,b.category as acctype "+;
 				"from dueamount d,account a, balanceitem b,subscription s "+;
 				"where amountinvoice>amountrecvd and d.subscribid=s.subscribid and a.accid=s.accid and a.active=1 and  b.balitemid=a.balitemid and s.personid="+self:mCLNGiver,oConn}
 			oDue:Execute()
@@ -3311,7 +3311,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 		self:GiftsAutomatic := FALSE			
 		self:DueAutomatic := FALSE			
 		self:DebitAccount :=  cAcc
-		SELF:DebAccNbr := oAccount:ACCNUMBER
+		self:DebAccNbr := oAccount:ACCNUMBER
 		self:DebAccId:=cAcc
 		self:DefType:=oAcc:Type
 		self:DebCln := Transform(oAccount:persid,"")
@@ -3321,18 +3321,18 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			self:mDebAmnt:=Round(mDebAmntF*oCurr:GetROE(DebCurrency,self:mDat),DecAantal) 
 			self:AssignTo()
 		endif			
-		SELF:ShowDebBal()
+		self:ShowDebBal()
 		*    	SELF:lMemberGiver := FALSE
 		IF !Empty(self:DebCln)
 			oPers:=PersonContainer{}
 			oPers:persid:=self:DebCln
-			SELF:RegPerson(oPers)
-			SELF:lMemberGiver := TRUE
+			self:RegPerson(oPers)
+			self:lMemberGiver := true
 		ELSE
 			oBank:=SQLSelect{"select giftsall,openall from bankaccount where accid="+cAcc,oConn}
 			IF oBank:Reccount>0
-				self:GiftsAutomatic:=iif(oBank:GIFTSALL=1,true,false)
-				self:DueAutomatic:=iif(oBank:OPENALL=1,true,false)
+				self:GiftsAutomatic:=iif(ConI(oBank:GIFTSALL)=1,true,false)
+				self:DueAutomatic:=iif(ConI(oBank:OPENALL)=1,true,false)
 			ENDIF
 		ENDIF
 	ELSEIF ItemName == "Destination"
@@ -3342,7 +3342,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			oHm:AccDesc := oAccount:Description
 			oHm:AccNumber := oAccount:AccNumber
 			oHm:CURRENCY:= oAccount:CURRENCY
-			MultiCur:=iif(oAccount:MULTCURR=1,true,false)
+			MultiCur:=iif(ConI(oAccount:MULTCURR)=1,true,false)
 			oHm:Multiple:=MultiCur
 			oHm:GetCategory()
 			* Default applied amount:
@@ -3393,7 +3393,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 
 	ENDIF
 	
-	RETURN TRUE
+	RETURN true
 METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	* cItemname: use for extra text for gift
 	
@@ -3620,14 +3620,14 @@ METHOD ValidateTempGift(lNoMessage:=false as logic) as logic CLASS PaymentJourna
 	RETURN lValid
 METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	* Validate transaction and store it
-	LOCAL cTransnr, m54_pers_sta:="N" AS STRING
-	LOCAL oBox AS WarningBox
+	LOCAL cTransnr, m54_pers_sta:="N" as STRING
+	LOCAL oBox as WarningBox
 	LOCAL oHm:= self:server as TempGift
 	LOCAL oDet:=self:oSFPaymentDetails as PaymentDetails
 	LOCAL lError, recordfound as LOGIC
 	local cError as string
 	LOCAL curPntr:=1, i,nSeqnbr as int
-	LOCAL fCreTot AS FLOAT
+	LOCAL fCreTot as FLOAT
 	LOCAL oXMLDocAcc,oXMLDocPrs as XMLDocument 
 	local ChildName, cValue, cExtra,cCod as string 
 	local cAccs as string   // accounts used in transaction 
@@ -3642,47 +3642,47 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	AEval(oHm:Amirror,{|x| fCreTot += x[3]})
 	fCreTot:=Round(fCreTot,DecAantal)
 	IF !self:fTotal == 0
-		(errorbox{SELF:owner,"Sum of transactions not equal zero"}):show()
-		lError := TRUE
+		(errorbox{self:owner,"Sum of transactions not equal zero"}):show()
+		lError := true
 	ELSEIF oHm:reccount < 1 .or. fCreTot = 0
-		(errorbox{SELF:owner,"Transactions not complete"}):show()
-		lError := TRUE
+		(errorbox{self:owner,"Transactions not complete"}):show()
+		lError := true
 	ELSE
 		IF Empty(self:DebAccId)
-			(errorbox{SELF:owner,"Debit Account is obliged!"}):show()
-			SELF:oDCDebitAccount:SetFocus()
+			(errorbox{self:owner,"Debit Account is obliged!"}):show()
+			self:oDCDebitAccount:SetFocus()
 			RETURN FALSE
 		ELSEIF 	!self:ValidateTempGift()
 			curPntr := oHm:Recno
-			lError := TRUE
-		ELSEIF ValidateControls( SELF, SELF:AControls )
+			lError := true
+		ELSEIF ValidateControls( self, self:AControls )
 			* Check giver:
 			IF !Recognised
 				m54_pers_sta:=oHm:m54w_rek_pers()
 				IF Empty(self:mCLNGiver)
 					IF m54_pers_sta='V'
-						(errorbox{SELF:owner,'Specify a person as payer'}):show()
-						SELF:oDCmPerson:SetFocus()
+						(errorbox{self:owner,'Specify a person as payer'}):show()
+						self:oDCmPerson:SetFocus()
 						RETURN FALSE
 					ELSEIF m54_pers_sta=='W'
-						oBox := Warningbox{SELF:owner, "Input of Payments/Gifts", ;
+						oBox := Warningbox{self:owner, "Input of Payments/Gifts", ;
 							"Don't you need to specify a giver/payer?"}
 						oBox:Type := BUTTONYESNO
 						IF (oBox:Show() = BOXREPLYYES)
-							SELF:oDCmperson:SetFocus()
+							self:oDCmperson:SetFocus()
 							RETURN FALSE
 						ENDIF
 					ENDIF
 				ELSE
 					IF m54_pers_sta='N'
-						(errorbox{SELF:owner,'No person allowed in this case'}):show()
-						SELF:oDCmperson:SetFocus()
+						(errorbox{self:owner,'No person allowed in this case'}):show()
+						self:oDCmperson:SetFocus()
 						RETURN FALSE
 					ELSEIF m54_pers_sta=='O'
-						oBox := Warningbox{SELF:owner, "Input of oDCmPerson",'Payer really a person?'}
+						oBox := Warningbox{self:owner, "Input of oDCmPerson",'Payer really a person?'}
 						oBox:Type := BUTTONYESNO
 						IF (oBox:Show() = BOXREPLYNO)
-							SELF:oDCmperson:SetFocus()
+							self:oDCmperson:SetFocus()
 							RETURN FALSE
 						ENDIF
 					ENDIF
@@ -3692,7 +3692,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* add transaction:
 			oHm:ClearFilter()
 			oHm:SetFilter({||!Empty(oHm:Cre)},"!Empty(Cre)") //skip non-assigned rows
-			SELF:Owner:StatusMessage( "Recording transaction "+cTransnr)
+			self:Owner:StatusMessage( "Recording transaction "+cTransnr)
 			oHm:gotop()
 			//	determine accounts to be locked for change balance
 			cAccs:=Implode(oHm:Amirror,",",,,1)
@@ -3753,7 +3753,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",gc='CH'",iif(self:lEarmarking,",bfm='T'","")),oConn} // member giver from member account
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows>0
-				cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+				cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 				if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
 					DO	WHILE	! oHm:EOF 
 						nSeqnbr++ 
@@ -3834,7 +3834,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			endif
 			self:ShowDebBal()
 			IF !Empty(self:mCLNGiver)
-				oPers:=SQLSelect{"select mailingcodes,propextr,creationdate,datelastgift from person where persid="+self:mCLNGiver,oConn}
+				oPers:=SQLSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
 				if oPers:reccount>0
 					cCod:=oPers:mailingcodes
 					cExtra:=oPers:PROPEXTR 
@@ -4445,8 +4445,8 @@ METHOD ShowSelection() CLASS TransInquiry
 	// test nbr lines to be retrieved:
 	oSel:=SQLSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
 	oSel:Execute()
-	if Val(oSel:qty)> 3000
-		if TextBox{self,self:oLan:WGet("transaction inquiry"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+oSel:qty+Space(1)+self:oLan:WGet("transaction lines"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+	if ConI(oSel:qty)> 3000
+		if TextBox{self,self:oLan:WGet("transaction inquiry"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+ConS(ConI(oSel:qty))+Space(1)+self:oLan:WGet("transaction lines"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
 			return false
 		endif
 	endif
@@ -4466,7 +4466,7 @@ METHOD ShowSelection() CLASS TransInquiry
 	endif
 	if	lTransferShown
 		// check if there is no locked transaction:
-		if SQLSelect{"select t.transid from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" and t.lock_id=1 and t.lock_time < subdate(now(),interval 60 minute),0,1)",oConn}:Reccount>0
+		if SQLSelect{"select t.transid from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" and t.lock_id=1 and t.lock_time < subdate(now(),interval 60 minute)",oConn}:Reccount>0
 			self:oCCTransferButton:Hide() 
 			lTransferShown:=false
 		endif
