@@ -334,8 +334,7 @@ Function GetBudget(BudYear as int,BudMonth as int, AccId as string) as float
 	LOCAL YearLast, MonthLast as int
 	LOCAL AmntFound:=0.00 as FLOAT 
 	local oBud,oBudLst as SQLSelect
-	oBud:=SQLSelect{"select amount from budget where accid="+AccId+" and year=? and month=?" ,oConn}
-	oBud:Execute({Str(BudYear,4),StrZero(BudMonth,2)})
+	oBud:=SQLSelect{"select amount from budget where `accid`="+AccId+" and `year`="+Str(BudYear,4)+" and `month`="+StrZero(BudMonth,2),oConn}
 	if oBud:RecCount=1
 		RETURN oBud:AMOUNT
 	ENDIF
@@ -347,8 +346,9 @@ Function GetBudget(BudYear as int,BudMonth as int, AccId as string) as float
 		if MonthLast=0
 			MonthLast=12
 		endif
-		YearLast:=Floor((YearLast-MonthLast)/12) 
-		oBud:Execute(Str(YearLast,4),StrZero(MonthLast,2))	
+		YearLast:=Floor((YearLast-MonthLast)/12)
+		oBud:SQLString:="select amount from budget where `accid`="+AccId+" and `year`="+Str(YearLast,4)+" and `month`="+StrZero(MonthLast,2)
+		oBud:Execute()
 		if oBud:RecCount=1
 			RETURN oBud:AMOUNT
 		ENDIF
