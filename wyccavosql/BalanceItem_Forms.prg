@@ -618,20 +618,20 @@ METHOD DELETE() CLASS CustomExplorer
 		IF ( oTextbox:Show() == BOXREPLYYES ) 
 
 			* Check presence of childitems:
-			oSel:=SQLSelect{"select	* from "+self:cSubitemserver+" where "+ Lower(Symbol2String(self:sColumnmain))+"='"+nNum+"'",oConn}
-			if	oSel:RecCount>0
+			oSel:=SQLSelect{"select	count(*) as ChildCount from "+self:cSubitemserver+" where "+ Lower(Symbol2String(self:sColumnmain))+"='"+nNum+"'",oConn}
+			if	oSel:RecCount>0 .and. ConI(oSel:childcount)>0
 				(ErrorBox{,self:oLan:WGet('Remove child items first')}):Show()
 				RETURN
 			ELSE
 				* check presence of accounts:
-				IF	SQLSelect{"select	accid from	account where "+iif(CheckInstanceOf(self,#DEPARTMENTEXPLORER),"department","balitemid")+"='"+nNum+"'",oConn}:RecCount>0
+				IF	SqlSelect{"select	accid from	account where "+iif(lBalance,"balitemid","department")+"='"+nNum+"'",oConn}:RecCount>0
 //							oAccount:Seek(#NUM,nNum)
 					(ErrorBox{,self:oLan:WGet('Remove/replace child accounts first')}):Show()
 					RETURN
 				ENDIF
 			endif
-			// check if depratment belongs to member:
-			if CheckInstanceOf(self,#DEPARTMENTEXPLORER)
+			// check if department belongs to member:
+			if !lBalance
 				oMem:=SQLSelect{"select m.mbrid,"+SQLFullName(0,"p")+" as membername from member m,person as p where m.depid IS NOT NULL and m.depid="+nNum,oConn}
 				if oMem:RecCount>0
 					(ErrorBox{,self:oLan:WGet('This department belongs to member'+":"+oMem:membername)}):Show()
@@ -1514,8 +1514,8 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	ENDIF
 	IF lNew.or.!AllTrim(self:mNum)==AllTrim(OrgNum)
 		*Check if balitemid allready exist:
-		if SQLSelect{"select balitemid from balanceitem where number='"+self:mNUM+"'",oConn}:RecCount>0
-			(ErrorBox{,"Item number "+ self:mNUM+ " allready exist!"}):Show()
+		if SQLSelect{"select balitemid from balanceitem where number='"+self:mNum+"'",oConn}:RecCount>0
+			(ErrorBox{,"Item number "+ self:mNum+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
@@ -1538,9 +1538,9 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	oStmnt:Execute() 
 	if oStmnt:NumSuccessfulRows>0
 		IF self:lNew
-			self:mBalId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1) 
+			self:mBalId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 			AAdd(self:oCaller:aItem,{Val(self:mBalId),Val(self:cMainId),AllTrim(self:mKOPTEKST),AllTrim(self:mNum),self:mSoort}) 
-			oCaller:Treeview:AddTreeItem(Val(self:cMainId),Val(self:mBalId),AllTrim(self:mNum)+":"+self:mKopTekst, false)
+			oCaller:Treeview:AddTreeItem(Val(self:cMainId),Val(self:mBalId),AllTrim(self:mNum)+":"+self:mKOPTEKST, false)
 			oCaller:Refresh()
 		else
 			// update aitem:
@@ -1549,7 +1549,7 @@ METHOD OKButton( ) CLASS EditBalanceItem
 			if nPos>0
 				self:oCaller:aItem[nPos]:={Val(self:mBalId),Val(self:cMainId),AllTrim(self:mKOPTEKST),AllTrim(self:mNum),self:mSoort}
 			endif
-			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNUM 
+			IF !OrgKoptekst==self:mKOPTEKST.or.!self:OrgHFDRBRNUM==self:mHFDRBRNUM.or.!self:OrgNum=self:mNum 
 				oCaller:RefreshTree()
 			ENDIF
 		endif
