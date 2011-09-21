@@ -254,7 +254,7 @@ Local cCLN as string
 			myDim:Height+=160
 			myPoint:Y-=160 
 			oControl:=japComboBox{oOwner, iID, oPoint, myDim,BOXDROPDOWNLIST}		
-			oControl:FillUsing(SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookUptable(300,#UNITED_ARA,#AED))
+			oControl:FillUsing(SqlSelect{"select united_ara,aed from currencylist",oConn}:getLookUptable(300,#UNITED_ARA,#AED))
 			oControl:LinkDf(oHm,oHm:FieldPos(#Currency))
 		   oControl:Value := RTrim(self:VALUE)
 	   else
@@ -272,7 +272,7 @@ Local cCLN as string
 		myDim:Height+=160
 		myPoint:Y-=160	
 		oControl:=japComboBox{oOwner,	iID, oPoint, myDim,BOXDROPDOWNLIST,CBS_SORT}		
-		oControl:FillUsing(SQLSelect{"select UNITED_ARA,AED from CurrencyList",oConn}:getLookUptable(300,#UNITED_ARA,#AED))
+		oControl:FillUsing(SqlSelect{"select united_ara,aed from currencylist",oConn}:getLookUptable(300,#UNITED_ARA,#AED))
 		oControl:LinkDf(oHm,oHm:FieldPos( self:symDataField))
 		oControl:Value	:=	AllTrim(self:VALUE)
 	elseif self:symDataField==#BANKACCT
