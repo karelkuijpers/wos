@@ -1201,14 +1201,13 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	RETURN nil
 METHOD RegPerson(oCLN) CLASS General_Journal
 	IF !Empty(oCLN)
+		self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
 		self:cGiverName := GetFullName(self:mCLNGiver)
 		if Empty(self:cGiverName)       // person does not exist
 			self:lMemberGiver := true
 			self:oDCmperson:Value:=""
 			self:cOrigName:=""
 		else
-			self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
-			
 			self:oDCmPerson:TEXTValue := self:cGiverName 
 			self:cOrigName:=self:cGiverName
 			IF SQLSelect{"select mbrid from member where persid="+self:mCLNGiver,oConn}:Reccount>0
@@ -3858,7 +3857,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				if oPers:reccount>0
 					cCod:=oPers:mailingcodes
 					cExtra:=oPers:PROPEXTR 
-					BDAT:=oPers:creationdate 
+					BDAT:=iif(Empty(oPers:creationdate),null_date,oPers:creationdate) 
 					dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
 				else
 					cCod:=''
