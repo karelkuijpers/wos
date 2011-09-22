@@ -1837,46 +1837,46 @@ ASSIGN WhoFrom(cValue) CLASS ListBoxExtra
 Access MyImageIndex() class ListViewItem
 RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
-*	Logging of info to file <Logname>.txt
-LOCAL ToFileFS as FileSpec
-LOCAL cFileName, selftext as STRING
-LOCAL ptrHandle 
-local oStmnt as SQLStatement
-*	Logging of info to table log 
-oStmnt:=SQLStatement{"insert into log set "+sIdentChar+"collection"+sIdentChar+"='"+Lower(Logname)+"',logtime=now(),"+sIdentChar+"source"+sIdentChar+"='"+;
-iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',"+sIdentChar+"message"+sIdentChar+"='"+AddSlashes(strText)+"',"+sIdentChar+"userid"+sIdentChar+"='" +LOGON_EMP_ID+"'",oConn}
-oStmnt:execute()
-If !Empty(oStmnt:status) 
-	// write to file
-	ToFileFS:=FileSpec{Logname}
-	ToFileFS:Extension:="TXT"
-	ToFileFS:Path:=CurPath
-	cFileName:=ToFileFS:FullPath
-	IF	ToFileFS:Find()
-		ptrHandle := FOpen(ToFileFS:FullPath,FO_READWRITE+FO_DENYNONE)
-	ELSE
-		ptrHandle := FCreate(ToFileFS:FullPath)
-	ENDIF	
-	IF	ptrHandle==nil	.or.ptrHandle = F_ERROR
-		RETURN FALSE
-	ENDIF
-	* position file at end:
-	FSeek(ptrHandle, 0, FS_END)
-	selftext:=DToS(Today())+" "+Time()+" -	"+strText
-	IF	IsObject(oWindow)
-		selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
-	ENDIF
-	FWriteLine(ptrHandle,selftext)
-	FClose(ptrHandle) 
-endif
-if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
-	ErrorBox{oWindow,"MySQL server has gone away:"+CRLF+strText}:Show()
-	if !Empty(oStmnt:status) 
-		break
+	*	Logging of info to file <Logname>.txt
+	LOCAL ToFileFS as FileSpec
+	LOCAL cFileName, selftext as STRING
+	LOCAL ptrHandle 
+	local oStmnt as SQLStatement
+	*	Logging of info to table log
+		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+		oStmnt:execute()
+	If !Empty(oStmnt:status) 
+		// write to file
+		ToFileFS:=FileSpec{Logname}
+		ToFileFS:Extension:="TXT"
+		ToFileFS:Path:=CurPath
+		cFileName:=ToFileFS:FullPath
+		IF	ToFileFS:Find()
+			ptrHandle := FOpen(ToFileFS:FullPath,FO_READWRITE+FO_DENYNONE)
+		ELSE
+			ptrHandle := FCreate(ToFileFS:FullPath)
+		ENDIF	
+		IF	ptrHandle==nil	.or.ptrHandle = F_ERROR
+			RETURN FALSE
+		ENDIF
+		* position file at end:
+		FSeek(ptrHandle, 0, FS_END)
+		selftext:=DToS(Today())+" "+Time()+" -	"+strText
+		IF	IsObject(oWindow)
+			selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
+		ENDIF
+		FWriteLine(ptrHandle,selftext)
+		FClose(ptrHandle) 
 	endif
-endif
+	if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
+		ErrorBox{oWindow,"MySQL server has gone away:"+CRLF+strText}:Show()
+		if !Empty(oStmnt:status) 
+			break
+		endif
+	endif
 
-RETURN true
+	RETURN true
 FUNCTION LTrimZero(cString as STRING) as STRING
 * Left trim leading zeroes in string
 LOCAL i as int
