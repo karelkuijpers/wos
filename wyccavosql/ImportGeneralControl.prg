@@ -189,7 +189,7 @@ Method ComposeSelect() class ImportMapping
 	// compose statement for retrieval of existing person for synchronising with imported person
 	LOCAL i, j, titPtr, typPtr as int  
 	Local ID as string,IDs as Symbol
-	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where p."+sIdentchar+"?"+sIdentchar as string, lExtra,lBank,lCod as logic
+	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where p.?" as string, lExtra,lBank,lCod as logic
 	FOR i:=1 to Len(self:aMapping)
 		ID:=Symbol2String(self:aMapping[i,1])
 		IDs:=String2Symbol(SubStr(ID,2))
@@ -215,10 +215,10 @@ Method ComposeSelect() class ImportMapping
 		cGroup:=" group by p.persid"
 	endif
 	if AtC('persid',CFields)=0   // always retrieve identifier persid
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'persid'+sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'p.`persid`'
 	endif
 	if AtC('datelastgift',CFields)=0   // always retrieve identifier datelastgift
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'datelastgift' +sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'cast(p.`datelastgift` as date) as datelastgift'
 	endif
 	if AtC('firstname',CFields)=0   // always retrieve identifier firstname for congruence score
 		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'firstname'+sIdentchar
@@ -227,12 +227,12 @@ Method ComposeSelect() class ImportMapping
 		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'initials' +sIdentchar
 	endif
 	if AtC('creationdate',CFields)=0   // always retrieve identifier creationdate
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'creationdate' +sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'cast(p.`creationdate` as date) as creationdate' +sIdentchar
 	endif
 	if AtC('alterdate',CFields)=0   // always retrieve identifier alterdate
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'alterdate'+sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'cast(p.`alterdate` as date) as alterdate'
 	endif
-	self:cSelectStatement:="select "+CFields+cFrom+cWhere+cGroup 
+	self:cSelectStatement:="select "+Lower(CFields)+cFrom+cWhere+cGroup 
 	return
 
 ACCESS ConfirmBox() CLASS ImportMapping
@@ -988,7 +988,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 // 					mOPM:=AllTrim(IVarGetSelf(self:oEdit,IDs))
 // 					mOPM:=mOPM+iif(Empty(mOPM),""," "+CRLF)+cTargetStr
 // 					IVarPutSelf(self:oEdit,#mRemarks,mOPM)
-					mOPM:=if(Empty(self:oEdit:FIELDGET(#mRemarks)),'',AllTrim(self:oEdit:FIELDGET(#mRemarks))
+					mOPM:=iif(Empty(self:oEdit:FIELDGET(#mRemarks)),'',AllTrim(self:oEdit:FIELDGET(#mRemarks)))
 					mOPM:=mOPM+iif(Empty(mOPM),""," "+CRLF)+cTargetStr
 					self:oEdit:FIELDPUT(#mRemarks,mOPM)
 				elseif IDs=#mbalitemid
@@ -1493,9 +1493,9 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	// select existing person 
 	
 	if !Empty(oPersCnt:PERSID)
-		oPersExist:=SQLSelect{StrTran(self:cSelectStatement,'?',"persid="+oPersCnt:PERSID),oConn}
+		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn}
 	else
-		oPersExist:=SQLSelect{StrTran(self:cSelectStatement,'?',"externid="+oPersCnt:m51_exid),oConn}
+		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.externid="+oPersCnt:m51_exid),oConn}
 	endif 
 	if oPersExist:RecCount<1
 		return false
