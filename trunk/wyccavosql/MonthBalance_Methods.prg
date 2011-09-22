@@ -515,57 +515,49 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 	*					Should be used between Start transaction and commit and  
 	*              record to be changed should be locked for update beforehand                                        
 	*  Auteur    : K. Kuijpers
-	*  Datum     : 19-08-1991
+	*  Date      : 21-09-2011
 	******************************************************************************
 	*
-	local cSearchStr as string 
+	local cValues as string 
 	local oStmnt as SQLStatement
-	local oMBal,oAcc as SQLSelect 
+	local oMBal,oAcc as SQLSelect
+	local lError as logic 
 	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
-		// try update existing:  
-		oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebAmnt,-1)+",2),cre=round(cre+"+Str(pCreAmnt,-1)+",2) where accid="+pAccount+;
-			" and year="+Str(Year(pRecordDate),-1)+;
-			" and month="+Str(Month(pRecordDate),-1)+" and currency='"+sCurr+"'",oConn}
+		// insert new one/update existing 
+		if !Currency==sCurr
+			if Empty(currency) .or. len(currency)<>3 
+				Currency:=sCurr
+			else
+				SEval(Currency,{|c|lError:=iif(c<65 .or. c>90,true,lError)})
+				if lError
+					Currency:=sCurr
+				endif
+			endif
+		endif
+		if !(pDebAmnt==0.00.and.pCreAmnt==0.00)
+			cValues:="("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")"
+		endif 
+		if !Currency==sCurr
+			if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
+				if !(pDebFORGN==0.00.and.pCreFORGN=0.00)
+					cValues+=iif(Empty(cValues),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")"
+				endif
+			endif
+		endif   
+		oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+cValues+;
+		" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn};
+// 			pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")",oConn} 
+// 			
+// 			if !Currency==sCurr
+// 				if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
+// 				if  !(Empty(pDebFORGN).and.Empty(pCreFORGN))   
+// 			iif(!Currency==sCurr .and. !(Empty(pDebFORGN).and.Empty(pCreFORGN)) .and.!(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt),;
+// 			",("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")","")+;
+// 			" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)"			
 		oStmnt:Execute()
 		if !Empty(oStmnt:status)
 			LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 			return false
-		endif
-		if oStmnt:NumSuccessfulRows<1
-			// insert new one
-			oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
-				sCurr+"',deb="+Str(pDebAmnt,-1)+",cre="+Str(pCreAmnt,-1),oConn}
-			oStmnt:Execute()
-			if !Empty(oStmnt:status)
-				LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-				return false
-			endif
-		endif
-	ENDIF
-	IF !Empty(Currency) .and.!Currency==sCurr .and. (!Empty(pDebFORGN).or.!Empty(pCreFORGN)) .and.(!pDebFORGN==pDebAmnt.or. !pCreFORGN==pCreAmnt)
-		oAcc:=SQLSelect{"select currency,multcurr from account where accid="+pAccount,oConn}
-		if oAcc:RecCount>0
-			if !(Empty(oAcc:Currency).or.oAcc:Currency==sCurr.or.oAcc:MULTCURR=1)
-				// try update existing:  
-				oStmnt:=SQLStatement{"update mbalance set deb=round(deb+"+Str(pDebFORGN,-1)+",2),cre=round(cre+"+Str(pCreFORGN,-1)+",2) where accid="+pAccount+;
-					" and year="+Str(Year(pRecordDate),-1)+;
-					" and Month="+Str(Month(pRecordDate),-1)+" and currency='"+oAcc:Currency+"'",oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:status)
-					LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-					return false
-				endif
-				if oStmnt:NumSuccessfulRows<1
-					// insert new one
-					oStmnt:=SQLStatement{"insert into mbalance set accid="+pAccount+",year="+Str(Year(pRecordDate),-1)+",month="+Str(Month(pRecordDate),-1)+",currency='"+;
-						oAcc:Currency+"',deb="+Str(pDebFORGN,-1)+",cre="+Str(pCreFORGN,-1),oConn}
-					oStmnt:Execute()
-					if !Empty(oStmnt:status)
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-						return false
-					endif	 
-				endif
-			ENDIF
 		endif
 	endif
 	RETURN true
@@ -644,7 +636,7 @@ function GetBalYears(NbrFutureYears:=0 as int) as array
 	local aYearStartEnd:={} as array
 
 	
-	oBalY:=SQLSelect{"select * from balanceyear order by yearstart desc,monthstart desc",oConn}
+	oBalY:=SQLSelect{"select yearstart,monthstart,yearlength from balanceyear order by yearstart desc,monthstart desc",oConn}
 	oBalY:Execute()	                       
 	
 	DO WHILE !oBalY:EoF
