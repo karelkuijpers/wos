@@ -275,9 +275,12 @@ Function GetFullName(PersNbr:="" as string ,Purpose:=0 as int) as string
 //		3: like 1 but always with firstname 
 LOCAL frstnm,naam1, Title,prefix as STRING
 local oPers as SQLSelect
+if Empty(PersNbr)
+	return ""
+endif
 oPers:=SQLSelect{"select lastname,prefix,title,firstname,initials,gender from person where persid="+PersNbr,oConn}
 
-IF !IsNil(PersNbr) .and.!oPers:RecCount==1
+IF !oPers:RecCount==1
 	RETURN ""
 ENDIF
 IF sSalutation .and.(Purpose==1.or.Purpose==3) 
@@ -1019,13 +1022,19 @@ METHOD SetState() CLASS NewPersonWindow
 	LOCAL i:=1,j, pos as int
 	LOCAL oPersBank as SQLSelect
 	// 	LOCAL oMbr AS Members
-	LOCAL oXMLDoc AS XMLDocument
+	LOCAL oXMLDoc as XMLDocument
 	LOCAL cDescr:="Bank# " as STRING
 	local aBank:={} as array 
 	local oContr as Control
-	self:oPerson:=SQLSelect{"select p.*,m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
+	
+	self:oPerson:=SQLSelect{ "select lastname,prefix,title,initials,firstname,nameext,attention,address,postalcode,city,"+;
+	"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
+	"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
+	"externid,gender,opc,propextr,"+;
+	"m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
+	
 	self:oDCmLastname:Value := self:oPerson:lastname
 	self:ODCmPrefix:Value  := self:oPerson:prefix
 	self:oDCmTitle:Value  := self:oPerson:Title
@@ -1041,7 +1050,7 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmTELhome:Value  := self:oPerson:telhome
 	self:oDCmFAX:Value  := self:oPerson:FAX
 	self:oDCmMobile:Value:= self:oPerson:Mobile
-	self:oDCmPersId:Value  := self:oPerson:persid
+	self:oDCmPersid:Value  := self:oPerson:persid
 	self:mCodInt   := AllTrim(string(_cast,self:oPerson:mailingcodes))
 	self:oDCmbankNumber:Value := ""
 	self:oDCmEmail:Value := self:oPerson:Email
@@ -1052,7 +1061,8 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmDateLastGift:Value := self:oPerson:datelastgift
 	self:oDCmExternid:Value:= ZeroTrim(self:oPerson:EXTERNID)
 	self:ODCmBirthDate:Value:=self:oPerson:birthdate
-	self:oDCmGender:Value:=self:oPerson:GENDER 
+	self:oDCmGender:Value:=self:oPerson:GENDER
+	 
 	// Fill extra properties: 
 	oXMLDoc:=XMLDocument{self:oPerson:PROPEXTR}
 	FOR i:=1 to Len(self:aPropEx) 
@@ -1109,7 +1119,7 @@ METHOD SetState() CLASS NewPersonWindow
 	self:curNa2:=self:oDCmInitials:TextValue
 	self:curHisn:=self:ODCmPrefix:TextValue
 
-	SELF:StateExtra()
+	self:StateExtra() 
 	
 	RETURN nil
 METHOD StateExtra()CLASS NewPersonWindow
@@ -1202,15 +1212,14 @@ LOCAL  oPers:=oPerson as SQLSelect
 	oPers:alterdate:=Today()
 	RETURN
 METHOD ValidatePerson() CLASS NewPersonWindow
- 	LOCAL lValid := TRUE, lUnique AS LOGIC
+ 	LOCAL lValid := true, lUnique as LOGIC
 	LOCAL cError, cSelBank as STRING
-	LOCAL i, nAnswer AS INT
+	LOCAL i, nAnswer as int
 	LOCAL oPers, oSel as SQLSelect
 	LOCAL Housnbr as STRING
 	
-//RETURN TRUE  // voor testen ============
 	if !lNew
-		oPers:=SQLSelect{"select * from person where persid='"+self:mPersid+"'",oConn}
+		oPers:=SqlSelect{"select lastname,postalcode,firstname,address,externid from person where persid='"+self:mPersid+"'",oConn}
 	endif
 	IF lValid .and. Empty(self:mLastName)
 		lValid:=FALSE
@@ -1222,14 +1231,14 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("FI") + "' "+self:oLan:WGet("not applicable before first gift")
         ENDIF
 	ENDIF
-	self:mLastName:=AllTrim(self:oDCmLastName:VALUE)
+	self:mLastName:=AllTrim(self:oDCmLastname:VALUE)
 	self:mPostalcode:=StandardZip(AllTrim(self:oDCmPOStalcode:VALUE))
 	self:mFirstname:=AllTrim(self:oDCmFirstname:VALUE)
 	self:mAddress:=AllTrim(self:oDCmAddress:VALUE)
 	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = AllTrim(oPers:lastname) .or. oPers:postalcode # self:mPostalcode.or.oPers:firstname # self:mFirstname.or.oPers:address # self:mAddress.or. ZeroTrim(oPers:EXTERNID) # self:mExternid)
 		* Check duplicate NAC:
-		oSel:=SQLSelect{"select persid from person where lastname='"+self:mLastName+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
-		+self:mAddress+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
+		oSel:=SqlSelect{"select persid from person where lastname='"+addslashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
+		+AddSlashes(self:mAddress)+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
 		oSel:GoTop()
 		IF oSel:RecCount>0
 			Housnbr:=GetStreetHousnbr(self:mAddress)[2]
@@ -1255,17 +1264,17 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	ENDIF
 	IF 	lValid
 		// check type of person:
-		IF SELF:oDCmType:CurrentItemNo==0
+		IF self:oDCmType:CurrentItemNo==0
 			cError :=self:oLan:WGet("Select a type for this person")
-			SELF:oDCmType:SetFocus()
+			self:oDCmType:SetFocus()
 			lValid:=FALSE
 		ENDIF
 	ENDIF
 	IF 	lValid
 		// check gender of person:
-		IF SELF:oDCmGender:CurrentItemNo==0
+		IF self:oDCmGender:CurrentItemNo==0
 			cError :=self:oLan:WGet("Select a gender for this person")
-			SELF:oDCmGender:SetFocus()
+			self:oDCmGender:SetFocus()
 			lValid:=FALSE
 		ENDIF
 	ENDIF
@@ -1356,15 +1365,15 @@ SELF:Destroy()
 	RETURN SUPER:Close(oEvent)
 METHOD DeleteButton CLASS PersonBrowser
 
-	LOCAL oTextBox AS TextBox
+	LOCAL oTextBox as TextBox
 	LOCAL myCLN as STRING
 	local oSel as SQLSelect
 	local oSQL as SQLStatement
-	IF SELF:Server:EOF.or.SELF:Server:BOF
-		(Errorbox{,"Select a person first"}):Show()
+	IF self:Server:EOF.or.self:Server:BOF
+		(ErrorBox{,"Select a person first"}):Show()
 		RETURN
 	ENDIF
-	oTextBox := TextBox{ SELF, "Delete Record",;
+	oTextBox := TextBox{ self, "Delete Record",;
 		"Delete Person " + FullName( ;
 		oPers:lastname, ;
 		oPers:firstname ) + "?" }
@@ -1388,13 +1397,13 @@ METHOD DeleteButton CLASS PersonBrowser
 		oSel:SQLString:="select transid from transaction where persid='"+myCLN+"'"
 		oSel:Execute() 
 		if oSel:RecCount>0
-			InfoBox { SELF, "Delete Record","Fin.records in not yet balanced years present! Wait untill year balancing"}:Show()
+			InfoBox { self, "Delete Record","Fin.records in not yet balanced years present! Wait untill year balancing"}:Show()
 			RETURN
 		ENDIF
-		oSel:SQLString:="select persid from subscription where persid='"+myCLN+"'"
+		oSel:SQLString:="select personid from subscription where personid='"+myCLN+"'"
 		oSel:Execute()
 		if oSel:RecCount>0
-			InfoBox { SELF, "Delete Record",;
+			InfoBox { self, "Delete Record",;
 				"Subscript/donation/periodic gift present! Delete them first"}:Show()
 			RETURN
 		ENDIF
@@ -1412,10 +1421,10 @@ METHOD DeleteButton CLASS PersonBrowser
 			(ErrorBox{self,'Delete person Error:'+oSQL:Status:Description}):Show()
 		endif
 
-		oSQL:Commit() 
 	endif
 	// refresh owner: 
-	self:oPers:Execute()
+	self:oPers:Execute() 
+	self:oSFPersonSubForm:Browser:refresh()
 	self:gotop() 
 
 	// 		oSFPersonSubForm:Browser:REFresh()
@@ -2318,15 +2327,15 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	AAdd(aExpF,{#FAX,"p.fax", ExportPerson_FAX{} })
 	AAdd(aExpF,{#MOBILE,"p.mobile", ExportPerson_Mobile{} })
 	AAdd(aExpF,{#EMAIL,"p.email", ExportPerson_EMAIL{} })
-	AAdd(aExpF,{#CREATIONDATE,"p.creationdate", ExportPerson_BDAT{} })
-	AAdd(aExpF,{#ALTERDATE,"p.alterdate", ExportPerson_MUTD{} })
-	AAdd(aExpF,{#DATELASTGIFT,"p.datelastgift", ExportPerson_DLG{} })
+	AAdd(aExpF,{#CREATIONDATE,"cast(p.creationdate as date) as creationdate", ExportPerson_BDAT{} })
+	AAdd(aExpF,{#ALTERDATE,"cast(p.alterdate as date) as alterdate", ExportPerson_MUTD{} })
+	AAdd(aExpF,{#DATELASTGIFT,"cast(p.datelastgift as date) as datelastgift", ExportPerson_DLG{} })
 	AAdd(aExpF,{#REMARKS,"p.remarks", ExportPerson_OPM{} })
 	AAdd(aExpF,{#MAILCODE,"p.mailingcodes", ExportPerson_MAILCODE{} })
 	AAdd(aExpF,{#MAILABBR,"p.mailingcodes", ExportPerson_MAILABBR{} })
 	AAdd(aExpF,{#TYPE,"p.type", ExportPerson_TYPE{} })
 	AAdd(aExpF,{#GENDER,"p.gender", ExportPerson_GENDER{} })
-	AAdd(aExpF,{#BIRTHDATE,"p.birthdate", ExportPerson_BIRTHDAT{} })
+	AAdd(aExpF,{#BIRTHDATE,"cast(p.birthdate as date) as birthdate", ExportPerson_BIRTHDAT{} })
 	AAdd(aExpF,{#persid,"p.persid", ExportPerson_CLN{} })
 	AAdd(aExpF,{#EXTERNID, "p.externid", Person_EXTERNID{} })
 	AAdd(aExpF,{#BANKNUMBER,"",Bank{} })
@@ -2334,7 +2343,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 		AAdd(aExpF,{#GIFTSGROUP,"", Gifts_group{} })
 		AAdd(aExpF, {#TOTAMNT,"", Total_Amount{} }) 
 		AAdd(aExpF, {#AmountGift,"", AmountGift{} }) 
-		AAdd(aExpF, {#Dat,"t.dat", DateGift{} }) 
+		AAdd(aExpF, {#Dat,"cast(t.dat as date) as dat", DateGift{} }) 
 		AAdd(aExpF, {#Reference,"t.reference", REFERENCE{} }) 
 		AAdd(aExpF, {#DOCID,"t.docid", DOCID{} }) 
 		AAdd(aExpF, {#Description,"a.description", Destination{} }) 
@@ -3241,9 +3250,9 @@ METHOD Show() CLASS SelPers
 	// LOCAL nRow AS INT
 	// LOCAL nPage AS INT
 	LOCAL i as int, ind as int
-	LOCAL lSucc AS LOGIC
+	LOCAL lSucc as LOGIC
 	LOCAL CurCln  as STRING, CurTotal:=0 as FLOAT
-	LOCAL aPerson:={} AS ARRAY // array with personnbrs, TotalAamount
+	LOCAL aPerson:={} as ARRAY // array with personnbrs, TotalAamount
 	LOCAL aTitle := {'Compact Person report','Extended Person report','Labels',;
 		'Letters','Giro accepts','Export persons','Add/Remove Mailing Codes'}
 	LOCAL RekIdEnd as STRING
@@ -3270,7 +3279,7 @@ METHOD Show() CLASS SelPers
 		(SelPersPrimary{self:oWindow,self}):Show()
 	ENDIF 
 
-	IF SELF:selx_ok
+	IF self:selx_Ok
 		IF selx_keus1 == 2
 			(SelPersOpen{,{self,cType}}):Show()
 			self:cFrom+=",dueamount as d,subscription as t"
@@ -3289,7 +3298,7 @@ METHOD Show() CLASS SelPers
 			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
 		ENDIF
 	ELSE
-		SELF:EndWindow()
+		self:EndWindow()
 		RETURN
 	ENDIF
 	IF self:selx_Ok
@@ -3300,7 +3309,7 @@ METHOD Show() CLASS SelPers
 		RETURN
 	ENDIF
 	IF !self:selx_Ok
-		SELF:EndWindow()
+		self:EndWindow()
 		RETURN
 	ENDIF
 	IF IsNil(self:cWhereOther)
@@ -3324,12 +3333,12 @@ METHOD Show() CLASS SelPers
 	endif
 
 	self:oDB:=SQLSelect{"",oConn}
-	SELF:oWindow:Pointer := Pointer{POINTERARROW}
+	self:oWindow:Pointer := Pointer{POINTERARROW}
 
 	self:oWindow:=GetParentWindow(self)
 
 	self:oWindow:Pointer := Pointer{POINTERHOURGLASS}
-	SELF:oWindow:StatusMessage("Producing reports, please wait...")
+	self:oWindow:STATUSMESSAGE("Producing reports, please wait...")
 
 	* Print the required report: 
 
@@ -3338,11 +3347,11 @@ METHOD Show() CLASS SelPers
 
 	IF lSucc
 		* remove eventually EG/EO-codes:
-		IF SELF:lEG .or. SELF:lEO  // EG or EO selected?
+		IF self:lEG .or. self:lEO  // EG or EO selected?
 			* Ask for removing codes:
 			IF (TextBox{self:oWindow, "Printing of persons", "Has code for "+;
-					IF(SELF:lEG,"First gift received","") +;
-					IF(SELF:lEO,IF(SELF:lEG," and ","")+"First non-earm gift","")+" to be removed?",;
+					IF(self:lEG,"First gift received","") +;
+					IF(self:lEO,if(self:lEG," and ","")+"First non-earm gift","")+" to be removed?",;
 					BUTTONYESNO}):Show() == BOXREPLYYES
 				* remove the codes:
 				if self:lEG .and. self:lEO
@@ -3356,7 +3365,6 @@ METHOD Show() CLASS SelPers
 						"update person set mailingcodes=replace(replace(mailingcodes,'EO','FI'),'FI FI','FI'), where instr(mailingcodes,'EO')>0",oConn}
 				endif
 				oStmnt:Execute()
-				oStmnt:Commit()
 			ENDIF
 		ENDIF
 	ENDIF
@@ -3390,10 +3398,10 @@ METHOD InitExtraProperties() CLASS SelPersMailCd
 	// Initialize extra properties
 	LOCAL count as int
 	LOCAL left:=true as LOGIC, first:=true as LOGIC
-	if Len(pers_propextra)<1 
-		self:oDCExtraPropGroup:Hide()
-	else	
-
+// 	if Len(pers_propextra)<1 
+// 		self:oDCExtraPropGroup:Hide()
+// 	else	
+	if Len(pers_propextra)>0 
 		FOR count:=1 to Len(pers_propextra) step 1
 			self:SetPropExtra(count,Left)
 			left:=!left
@@ -3706,9 +3714,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	endif
 	
 
-	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,du.invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
+	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,cast(du.invoicedate as date) as invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
 	SQLAccType()+" as type,"+;
-		"p.datelastgift,"+SQLFullName(0,'p')+" as personname "+;
+		"cast(p.datelastgift as date) as datelastgift,"+SQLFullName(0,'p')+" as personname "+;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
@@ -3862,8 +3870,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			oPro:AdvancePro()
 			if !Empty(oStmnt:status)
 				lError:=true
-			else 
-				oPers:=SQLSelect{"select mailingcodes,datelastgift	from person	where	"+sIdentChar+"persid"+sIdentChar+"=?",oConn} 
+			else
+				oPers:=SqlSelect{,oConn}
 				for i:=1 to Len(aTrans) 
 					oPro:AdvancePro()
 					// make transaction:
@@ -3892,7 +3900,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						lError:=true
 						exit
 					endif
-					cTransnr:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)
+					cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 					if !ChgBalance(m56_Payahead,process_date,fAmnt,0,fAmnt,0,sCURR)
 						lError:=true
 						exit
@@ -3942,7 +3950,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						IF	!Empty(cType) 
 							*	Update person info of giver: 
 							if	cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D'
-								oPers:Execute(cPersId)
+								oPers:SQLString:="select mailingcodes,cast(datelastgift as date) as datelastgift	from person	where`persid`="+cPersId
+								oPers:Execute()
 								if	oPers:RecCount>0
 									cCod:=oPers:mailingcodes
 									PersonGiftdata(cType,@cCod,oPers:datelastgift,iif(cType=='M','AG',""),,,cAccMlCd)
@@ -3970,21 +3979,21 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	RETURN true
 METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	// make KID file for automatic collection for Norwegian Banks
-	LOCAL cFilter AS STRING
+	LOCAL cFilter as STRING
 	LOCAL oDue as SQLSelect, oPers as SQLSelect, oSub as SQLSelect
 	LOCAL ptrHandle
-	LOCAL cFilename AS STRING
+	LOCAL cFilename as STRING
 	Local ToFileFS as Filespec
 	LOCAL nSeq, nLine as int, fSum:=0 as FLOAT
-	LOCAL DueDateFirst, DueDateLast AS DATE
-	LOCAL Success AS LOGIC
+	LOCAL DueDateFirst, DueDateLast as date
+	LOCAL Success as LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage as int
 	//LOCAL oLan AS Language
-	LOCAL cSession AS STRING
+	LOCAL cSession as STRING
 
 	cSession:=Str(Year(Today()),4,0)+StrZero((Today()-SToD(Str(Year(Today()),4,0)+"0101"))+1,3)
 
-	oDue:=SQLSelect{"select s.invoiceid,d.amountinvoice,d.invoicedate,p.persid,p.lastname "+;
+	oDue:=SqlSelect{"select s.invoiceid,d.amountinvoice,cast(d.invoicedate as date) as invoicedate,p.persid,p.lastname "+;
 		" from person p, dueamount d,subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' "+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
@@ -4113,7 +4122,7 @@ f_row:=SubStr(f_row,1,Len(f_row)-2)+;   // eliminate ) for trim and concat
 "if("+mAlias+'city<>"" and city<>"X" and city<>"??",concat('+mAlias+'city," "),""),country'+;
 "))"  // add  )) for trim and concat
 RETURN AllTrim(f_row)
-Function SQLFullName(Purpose:=0 as int,alias:="" as string) as string 
+Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string 
 // composition of SQL code for getting full name of a person
 // Purpose: optional indicator that the name is used for:
 // 	0: addresslist: with surname "," firstname prefix (without salutation) 
@@ -4122,7 +4131,7 @@ Function SQLFullName(Purpose:=0 as int,alias:="" as string) as string
 //		3: like 1 but always with firstname 
 LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
 local i as int
-mAlias:=iif(Empty(ALIAS),"",alias+".")
+mAlias:=iif(Empty(aliasp),"",aliasp+".")
 
 IF sSalutation .and.(Purpose==1.or.Purpose==3) 
 	title:="case "
@@ -4144,24 +4153,21 @@ ENDIF
 prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
 fullname := mAlias+"lastname"
 IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
-// 	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2,'",",','')+mAlias+'initials," "),"")),'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",","")',"")
-	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "'),'')+','+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
+	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
 ELSE
-// 	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'initials," "),'+iif(Purpose==0,"if("+mAlias+'prefix<>"",",",""))',"")
 	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0.or.Purpose=2,'", ",','')+mAlias+'initials," ")'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",",""))',"")
 ENDIF
 do CASE
 CASE Purpose==0
 	//addresslist:
-// 	fullname:='concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+')'
 	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
 CASE Purpose==1.or.Purpose==3
 	// address conform address specifications:
 	IF sSurnameFirst
-   	fullname := 'concat('+fullname+'," ",'+title+'," ",'+frstnm+',' + prefix +')'
+   	fullname := 'concat('+fullname+'," ",'+iif(!Empty(Title),title+'," ",',"")+frstnm+',' + prefix +')'
 	else
 // 		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
-		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
+		fullname:='concat('+iif(!Empty(title),title+'," ",',"")+frstnm+','+prefix+','+fullname+')'
 	ENDIF	
 CASE Purpose==2
 	// identification:
