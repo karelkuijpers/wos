@@ -757,7 +757,7 @@ method init() class Initialize
 	else
 		dbname:=aDB[i]
 	endif
-	oStmt:=SQLStatement{'Use '+sIdentChar+dbname+sIdentChar,oConn}
+	oStmt:=SQLStatement{'Use `'+dbname+"`",oConn}
 	oStmt:Execute() 
 	if !Empty(oStmt:Status)
 		ErrorBox{,"Could not connect to database "+dbname+"; error:"+oStmt:ERRINFO:errormessage}:Show()
