@@ -274,7 +274,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 				if Empty(oImpB:Currency).and.!Empty(oImpB:AccCurrency) 
 					self:oHM:currency:=oImpB:AccCurrency
 				endif 
-				MultiCur:=iif(oImpB:MULTCURR=1,true,false)
+				MultiCur:=iif(ConI(oImpB:MULTCURR)=1,true,false)
 			ELSE
 				lOK:=FALSE
 			ENDIF
@@ -286,8 +286,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:debforgn := iif(self:oHM:currency==sCurr,oImpB:debitamnt,oImpB:debforgn)
 		self:oHM:creforgn := iif(self:oHM:currency==sCurr,oImpB:creditamnt,oImpB:creforgn)
 		self:oHM:BFM:= " "
-		self:oHM:FROMRPP:=iif(oImpB:FROMRPP=1,true,false)
-		self:oHM:lFromRPP:=iif(oImpB:FROMRPP=1,true,false)
+		self:oHM:FROMRPP:=iif(ConI(oImpB:FROMRPP)=1,true,false)
+		self:oHM:lFromRPP:=iif(ConI(oImpB:FROMRPP)=1,true,false)
 		self:oHM:OPP:=oImpB:Origin
 		self:oHM:PPDEST:= oImpB:PPDEST 
 		self:oHM:REFERENCE:=oImpB:REFERENCE 
@@ -317,6 +317,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:oHM:Commit()
 *	self:oHM:ResetNotification()
 	oParent:FillBatch(OrigBst,CurDate,cGiverName,cOms, cExId, nPostStatus)
+	oParent:AddCur()
 	self:oHM:ResetNotification()
 	self:oHM:GoTop()
 	self:oHM:Skip()
@@ -750,7 +751,7 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 			SamAcc:=osel:ACCNUMBER
 			osel:Execute(SHB)
 			IF osel:RecCount<1
-				(errorbox{self:OWNER,self:oLan:WGet('Account for sending to PMC not found')}):Show()
+				(ErrorBox{self:OWNER,self:oLan:WGet('Account for sending to PMC not found')}):show()
 				CZR->DBCLOSEAREA()
 				DbSetRestoreWorkarea (false)
 				return false
@@ -758,11 +759,11 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 			PMCAcc:=osel:ACCNUMBER
 
 			// Search latest transdate in Imptr: 
-			oImpTr:=SQLSelect{"select transdate from importtrans where origin='WD' order by transdate desc limit 1",oConn}
+			oImpTr:=SQLSelect{"select cast(transdate as date) as transdate from importtrans where origin='WD' order by transdate desc limit 1",oConn}
 			if oImpTr:RecCount>0
 				LastDate:=oImpTr:transdate
 			endif				
-			Lastdate-=31
+			LastDate-=31
 			CZR->DbSetFilter({||CZR->DATUM > LastDate})
 			CZR->DbGotop()
 			CZR->DbEval({|| ImpCZR(aMbrAcc,SamAcc,PMCAcc,@nCnt,@nTot)})
@@ -868,15 +869,14 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	ENDIF
 	
 	recordfound:= PMISDocument:GetElement("Record")
-	osel:=SQLSelect{"select accnumber,currency from account where accid=?",oConn}
-	osel:Execute(sam) 
+	osel:=SQLSelect{"select accnumber,currency from account where accid="+sam,oConn}
 	IF osel:RecCount<1
 		(errorbox{self:OWNER,self:oLan:WGet('Account for assemments not found')}):Show()
 		FClose(ptrHandle)
 		return false
 	ENDIF
 	samnbr:=osel:ACCNUMBER
-	osel:Execute(SHB)
+	osel:=SQLSelect{"select accnumber,currency from account where accid="+SHB,oConn}
 	IF osel:RecCount<1
 		(errorbox{self:OWNER,self:oLan:WGet('Account for sending to PMC not found')}):Show()
 		FClose(ptrHandle)
