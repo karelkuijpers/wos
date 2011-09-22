@@ -1074,7 +1074,7 @@ METHOD OkButton CLASS NewPersonWindow
 					if IsDate(oContr:VALUE)
 						contvalue:=DToS(oContr:VALUE)
 					else 
-						contvalue:=oContr:Value
+						contvalue:=oContr:VALUE
 					endif
 				endif
 			ENDIF
@@ -1128,7 +1128,7 @@ METHOD OkButton CLASS NewPersonWindow
 			(ErrorBox{self,'Add/update person Error:'+oPers:Status:Description}):Show()
 		endif
 		if self:lNew
-			self:mPersId:=SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGet(1)
+			self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 		elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
 			// in case of member update name of corresponding account:
 			oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+self:mPersId+")",oConn}
@@ -1543,8 +1543,8 @@ END
 
 METHOD EditButton(lNew) CLASS PersonBrowser
 	Default(@lNew,FALSE)
-	IF !lNew.and.(SELF:Server:EOF.or.SELF:Server:BOF)
-		(Errorbox{,"Select a person first"}):Show()
+	IF !lNew.and.(self:Server:EOF.or.self:Server:BOF)
+		(ErrorBox{,"Select a person first"}):Show()
 		RETURN
 	ENDIF
 	if Empty(self:oPersCnt)
@@ -1561,19 +1561,19 @@ METHOD EditButton(lNew) CLASS PersonBrowser
 			self:oPersCnt:m56_banknumber:=self:SearchBank
 		endif
 	else
-		self:oPersCnt:persid:=Str(self:Server:persid,-1)
+		self:oPersCnt:persid:=AllTrim(Transform(self:oPers:persid,""))
 	endif
-	oEditPersonWindow := NewPersonWindow{ self:Owner,,self:Server,{lNew,false,self,self:oPersCnt }}
+	oEditPersonWindow := NewPersonWindow{ self:Owner,,self:oPers,{lNew,false,self,self:oPersCnt }}
 	oEditPersonWindow:Show()
 	if Empty(self:oCaller)
 		// reset person container
 		self:oPersCnt:=null_object
 	endif		
-	RETURN NIL
+	RETURN nil
 METHOD FindButton( ) CLASS PersonBrowser 
 	LOCAL cMyFrom as STRING
 	local aKeyw:={} as array
-	local i,j as int
+	local i,j,nCount as int
 	local lStart as logic
 	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","attention","email","remarks","telbusiness","telhome","mobile"} as array 
 	self:cWhere:=""
@@ -1613,11 +1613,19 @@ METHOD FindButton( ) CLASS PersonBrowser
 	if !Empty(self:cFilter)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"("+self:cFilter+")"
 	endif
+	nCount:=ConI(SQLSelect{"select count(*) as ncount from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere),oConn}:nCount)
+	if nCount> 1000
+		if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
+		self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+		return nil
+		endif
+	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder
 	self:oPers:Execute()
 
-	self:FOUND :=Str(self:oPers:Reccount,-1) 
+	self:FOUND :=Str(nCount,-1) 
 	if self:oPers:Reccount>0
+		self:oSFPersonSubForm:Browser:refresh()
 		self:oCCOKButton:Enable()
 	else
 		self:oSFPersonSubForm:Browser:refresh()
@@ -1752,16 +1760,16 @@ METHOD OKButton CLASS PersonBrowser
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PostInit additions here
 self:SetTexts()
-	IF !SELF:oCaller==NULL_OBJECT
+	IF !self:oCaller==null_object
 		oCCOKButton:Show()
 	ENDIF
 	IF AScan(aMenu,{|x| x[4]=="PersonEdit"})=0
-    	SELF:oCCNewButton:Hide()
-    	SELF:oCCDeleteButton:Hide()
+    	self:oCCNewButton:Hide()
+    	self:oCCDeleteButton:Hide()
     	self:oCCUnionButton:Hide()
     ENDIF
 //    self:FOUND:=Str(self:oPers:Reccount,-1)
-   self:FOUND:=Transform(SQLSelect{"select count(*) as totcount from person",oConn}:totcount,"")
+   self:FOUND:=Str(ConI(SQLSelect{"select count(*) as totcount from person",oConn}:totcount),-1)
    if self:oPers:Reccount>0
    	self:oCCOKButton:Enable()
    else
@@ -1776,17 +1784,17 @@ self:SetTexts()
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PreInit additions here
 // 	SELF:oExtServer:=oServer && save external server 
-	self:cFields:= "p.persid,lastname,initials,firstname,prefix,datelastgift,address,postalcode,city,country"
+	self:cFields:= "p.persid,lastname,initials,firstname,prefix,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	self:cFrom:="person as p"
 	self:cOrder:="lastname" 
 	self:oCaller := uExtra 
 	if !Empty(oServer)
 		self:oPers:=oServer
 	else
-		self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn}
+		self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" order by "+self:cOrder+" limit 100",oConn }
 	endif
  	self:oPersCnt:=PersonContainer{}
-	RETURN NIL
+	RETURN nil
 METHOD PrintButton( ) CLASS PersonBrowser
 	SELF:FilePrint()
 	RETURN
