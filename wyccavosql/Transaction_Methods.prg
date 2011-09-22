@@ -863,33 +863,33 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	* Filling of windowfields with existing transaction for inquiry/update
 	LOCAL oHm as TempTrans
 	local oPersCnt as PersonContainer 
-// 	Default(@nOrigPost,0)
-*	LOCAL oPers AS Person
+	// 	Default(@nOrigPost,0)
+	*	LOCAL oPers AS Person
 	oHm := SELF:Server
 	//oTransH:=oBrowse:Owner:Server
 	self:oOwner:=oCaller
 	self:mBST := mOrigBst
 	self:mDat:=mOrigDat
 	self:CurDate:=mOrigDat
-	OrigDat := mOrigDat
-	OrigBst := AllTrim(self:mBST)
+	self:OrigDat := mOrigDat
+	self:OrigBst := AllTrim(self:mBST)
 	SELF:oDCUserdIdTxt:TextValue:=cOrigUser
-	lInqUpd := TRUE
+	self:lInqUpd := true
 	oHm:lInqUpd := TRUE
 	oHm:oDat := OrigDat
-	oInqBrowse:= oBrowse
+	self:oInqBrowse:= oBrowse
 	self:oDCmTRANSAKTNR:TextValue:=cTransnr
 	self:oDCSC_TRANSAKTNR1:TEXTValue:=""
 	self:mPostStatus:=nOrigPost
-   oHm:lFilling:=true
-	OrigPerson := mOrigPers
-*	IF oHm:Locate({|| oHm:BFM=="H".or.oHm:bfm=="T"}) .or.!Empty(dat_controle(OrigDat,TRUE))
+	oHm:lFilling:=true
+	self:OrigPerson := mOrigPers
+	*	IF oHm:Locate({|| oHm:BFM=="H".or.oHm:bfm=="T"}) .or.!Empty(dat_controle(OrigDat,TRUE))
 	IF !Empty(mOrigDat).and.!Empty(dat_controle(mOrigDat,TRUE))
 		SELF:oSFGeneralJournal1:BlockColumns()
 		SELF:oCCOKButton:Hide()
-        oHm:lOnlyRead:=TRUE
-       	SELF:oDCmDat:DateRange:=DATERange{mOrigDat,Today()+31}
-    ENDIF
+		oHm:lOnlyRead:=TRUE
+		SELF:oDCmDat:DateRange:=DATERange{mOrigDat,Today()+31}
+	ENDIF
 	self:mDAT := mOrigdat
 	if oHm:lFromRPP
 		self:oDCmDat:Disable()
@@ -898,14 +898,14 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	oHm:GoTop()
 	oHm:lFromRPP:=oHm:FROMRPP
 	self:Totalise(false,false)
-   oHm:ResetNotification()
-// 	SELF:oSFGeneralJournal1:browser:refresh()
+	oHm:ResetNotification()
+	// 	SELF:oSFGeneralJournal1:browser:refresh()
 	* Restore filter of TempTrans:account:
-	IF !Empty(OrigPerson)
+	IF !Empty(self:OrigPerson)
 		oPersCnt:=PersonContainer{}
-		oPersCnt:persid:=OrigPerson
+		oPersCnt:persid:=self:OrigPerson
 		self:RegPerson(oPersCnt)
-*		oPers:Close()
+		*		oPers:Close()
 	ENDIF
 	if lLocked
 		self:oCCOKButton:Hide()
@@ -928,13 +928,13 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	endif		
 
 	self:oCCTeleBankButton:Hide()
-   oCCImportButton:Hide()
-   oHm:lFilling:=false 
-   if oHm:RecCount>5
-   	self:Find()
-   endif
+	oCCImportButton:Hide()
+	oHm:lFilling:=false 
+	if oHm:RecCount>5
+		self:Find()
+	endif
 
-RETURN
+	RETURN
 METHOD FillTeleBanking() as void pascal CLASS General_Journal
 	* Filling of windowfields := giroteltransaction-values
 	LOCAL m53_komma, m53_oms1, m53_oms2 AS STRING
@@ -1201,17 +1201,24 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	RETURN nil
 METHOD RegPerson(oCLN) CLASS General_Journal
 	IF !Empty(oCLN)
-		self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
 		self:cGiverName := GetFullName(self:mCLNGiver)
-		self:oDCmPerson:TEXTValue := self:cGiverName 
-		self:cOrigName:=self:cGiverName
-		IF SQLSelect{"select mbrid from member where persid="+self:mCLNGiver,oConn}:Reccount>0
+		if Empty(self:cGiverName)       // person does not exist
 			self:lMemberGiver := true
-		ELSE
-			SELF:lMemberGiver := FALSE
-		ENDIF
-		if !self:server:lFilling
-			self:lStop:=false
+			self:oDCmperson:Value:=""
+			self:cOrigName:=""
+		else
+			self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
+			
+			self:oDCmPerson:TEXTValue := self:cGiverName 
+			self:cOrigName:=self:cGiverName
+			IF SQLSelect{"select mbrid from member where persid="+self:mCLNGiver,oConn}:Reccount>0
+				self:lMemberGiver := true
+			ELSE
+				SELF:lMemberGiver := FALSE
+			ENDIF
+			if !self:server:lFilling
+				self:lStop:=false
+			endif
 		endif
 	ELSE
 		self:oDCmPerson:Value := self:cOrigName	
@@ -2035,7 +2042,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:Cre)
 							if !Empty(cError)
 								lError:=true
-// 								exit
+								// 								exit
 							endif
 						ENDIF
 					endif
@@ -2072,16 +2079,20 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
 					IF i>0 
 						oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
-						cCodNew:=oPers:mailingcodes
-						DO WHILE i>0
-							PersonGiftdata(oHm:AMirror[i,5],@cCodNew,oPers:datelastgift,oHm:AMirror[i,4],null_string,false)
-							i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
-						ENDDO
-						if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
-							&& fill date last gift:
-							oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
-							oStmnt:Execute()
-						endif 
+						if oPers:Reccount>0
+							cCodNew:=oPers:mailingcodes
+							DO WHILE i>0
+								PersonGiftdata(oHm:AMirror[i,5],@cCodNew,oPers:datelastgift,oHm:AMirror[i,4],null_string,false)
+								i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
+							ENDDO
+							if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
+								&& fill date last gift:
+								oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
+								oStmnt:Execute()
+							endif
+						else
+							
+						endif
 					ENDIF
 				ENDIF
 				self:mTRANSAKTNR := cTransnr
@@ -2947,6 +2958,15 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:EndWindow()
 			RETURN FALSE
 		ELSE
+			myAcc:=SqlSelect{"select a.description,ad.accnumber "+;
+					"from	account a,bankaccount b left join account ad on (ad.accid=b.singledst and ad.active=1)  "+;
+					"where a.accid=b.accid and a.accid="+AllTrim(oTmt:m56_sgir),oConn}
+			if	myAcc:reccount>0
+				oTmt:m56_description+= " from	"+myAcc:description
+				if Empty(oTmt:m56_budgetcd) .and.oTmt:m56_kind="ACC".and.!empty(myAcc:accnumber)
+					oTmt:m56_budgetcd:=myAcc:ACCNUMBER  
+				endif
+			endif
 			oTmt:m56_sgir:=oTmt:m56_payahead
 		ENDIF
 		IF oTmt:m56_kind="COL" .or.oTmt:m56_kind="KID"
@@ -3075,7 +3095,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		Recognised:=FALSE
 		
 		IF !Empty(oTmt:m56_contra_bankaccnt) 
-			oPers:=SQLSelectPerson{"Select p.* from person p, personbank pb where p.persid=pb.persid and banknumber='"+oTmt:m56_contra_bankaccnt+"'",oConn}
+			oPers:=SQLSelectPerson{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and banknumber='"+oTmt:m56_contra_bankaccnt+"'",oConn}
 			if oPers:RecCount>0
 				Recognised:=true
 				// 					m51_assrec:=self:oPers:Recno
@@ -3839,7 +3859,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					cCod:=oPers:mailingcodes
 					cExtra:=oPers:PROPEXTR 
 					BDAT:=oPers:creationdate 
-					dlg:=oPers:datelastgift
+					dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
 				else
 					cCod:=''
 					cExtra:=''
