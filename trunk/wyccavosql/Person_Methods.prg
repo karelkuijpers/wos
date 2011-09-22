@@ -1967,7 +1967,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
 	local oSel as SQLSelect 
 	LOCAL iEnd := At(",",cValue) as int
-	local cFields:= "p.persid,lastname,initials,firstname,prefix,datelastgift,address,postalcode,city,country"
+	local cFields:= "p.persid,lastname,initials,firstname,prefix,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
 	// 	IF lUnique 
 	if !Empty(oPersCnt)
@@ -3093,7 +3093,7 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	
 	self:splaats:=SQLSelect{"select cityletter from sysparms",oConn}:cityletter
 	cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,"+;
-	"p.datelastgift"   	
+	"cast(p.datelastgift as date) as datelastgift"   	
 	IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
 		cFields+=",t.cre-t.deb as amountgift"
 		cGrFields:="gr.*,sum(gr.amountgift) as totamnt"
