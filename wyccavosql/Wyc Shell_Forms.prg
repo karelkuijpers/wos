@@ -238,9 +238,13 @@ METHOD RemoveChild( oChild ) CLASS StandardWycWindow
 METHOD SetCaption() CLASS StandardWycWindow 
 	local sysname as string
 	local oSys as SQLSelect
-	oSys:=SQLSelect{"select sysname from sysparms",oConn}
-	if oSys:RecCount>0
-		sysname:=oSys:sysname
+	if IsObject(oConn) 
+		if oConn:Connected
+			oSys:=SqlSelect{"select sysname from sysparms",oConn}
+			if oSys:RecCount>0
+				sysname:=oSys:sysname
+			endif
+		endif
 	endif
 	IF !Empty(sysname)
 		SELF:Caption:=AllTrim(sysname)
