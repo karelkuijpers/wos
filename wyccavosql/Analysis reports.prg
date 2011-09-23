@@ -887,13 +887,13 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		endif    
 		if colCount>16385
 			if (TextBox{self,"Warning","The spreadsheet will contain " + Str(colCount,-1) + " columns. Excel can only handle 16385 columns. (Older versions of Excel can only handle 256 columns.)",;
-				BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
-					return nil
+					BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
+				return nil
 			endif
 		elseif colCount>256                              
 			if (TextBox{self,"Warning","The spreadsheet will contain " + Str(colCount,-1) + " columns. Older versions of Excel can only handle 256 columns.",;
-				BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
-					return nil
+					BUTTONOKAYCANCEL+BOXICONEXCLAMATION}):Show()=BOXREPLYCANCEL
+				return nil
 			endif
 		endif
 	endif
@@ -946,14 +946,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	// Make followingtrans contain all the relevant transactions
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
-		+ UnionTrans("SELECT transid,seqnr,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
+			+ UnionTrans("SELECT transid,seqnr,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
 		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-		+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
-		+ " t.dat<='" + SQLdate(EndDate-1) + "' AND";
-		+ " t.CRE>t.DEB"))
+			+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
+			+ " t.dat<='" + SQLdate(EndDate-1) + "' AND";
+			+ " t.CRE>t.DEB"))
 		return nil
 	endif                     
-		
+	
 	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
 	
 	
@@ -965,11 +965,11 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	self:STATUSMESSAGE(gMes+" ("+ElapTime(time1,Time())+")")
 
 	oTrans:=SQLSelect{"SELECT persid FROM perslist",oConn} 
-	        
+	
 	IF oTrans:RECCOUNT=0
 		(WarningBox{self,"Warning","No givers match the specified selection"}):Show()
 		oTrans:Close()
-   	return nil
+		return nil
 	ENDIF
 
 	do WHILE !oTrans:EoF
@@ -978,7 +978,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	ENDDO
 	ASort(aPers)
 	oTrans:Close()
-		
+	
 
 	IF self:Frequency
 		self:STATUSMESSAGE(fMes+" ("+ElapTime(time1,Time())+")")
@@ -1040,14 +1040,14 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		// freqtrans will contain all transactions in the frequency periods.
 		// We use a crude persid check here. A more exact one will follow below.
 		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
-			+ UnionTrans("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
+				+ UnionTrans("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.persid in (" + Implode(aPersFr,',') + ") " ;
-			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB "))        // Begin at a very old date 
-// 			+ UnionTrans2("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
-// 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
-// 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-// 			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB ",ConDate(1950,1,1),FrequencyEnd))        // Begin at a very old date 
+				+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
+				+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB "))        // Begin at a very old date 
+			// 			+ UnionTrans2("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
+			// 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
+			// 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
+			// 			+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB ",ConDate(1950,1,1),FrequencyEnd))        // Begin at a very old date 
 			return nil
 		endif
 		self:STATUSMESSAGE(fMes+" ("+ElapTime(time1,Time())+")")
@@ -1068,23 +1068,25 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 		IF oTransFreq:RECCOUNT>0
 			DO WHILE !oTransFreq:EoF
-				k:=AScanBin(aPers,oTransFreq:persid) 
-				DO CASE                
-				CASE oTransFreq:freq1=1 // Earlier than two years previously
-					IF aPersFreq[k]<2
-						aPersFreq[k]:=2  // Given earlier than two years previously
-					ENDIF						
-				CASE oTransFreq:freq1=2 // Two years previously
-					IF aPersFreq[k]<3
-						aPersFreq[k]:=3 // Given two years previously
-					ENDIF
-				CASE oTransFreq:freq1=3 // Last year
-					IF ConI(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
-						aPersFreq[k]:=5 // Given >=2 times last year
-					ELSE
-						aPersFreq[k]:=4 // Given once last year
-					ENDIF
-				ENDCASE
+				k:=AScanBin(aPers,oTransFreq:persid)
+				if k>0 
+					DO CASE                
+					CASE oTransFreq:freq1=1 // Earlier than two years previously
+						IF aPersFreq[k]<2
+							aPersFreq[k]:=2  // Given earlier than two years previously
+						ENDIF						
+					CASE oTransFreq:freq1=2 // Two years previously
+						IF aPersFreq[k]<3
+							aPersFreq[k]:=3 // Given two years previously
+						ENDIF
+					CASE oTransFreq:freq1=3 // Last year
+						IF ConI(oTransFreq:xcount)>=2    // Note: xcount is a Bigint, therefore Val() is required
+							aPersFreq[k]:=5 // Given >=2 times last year
+						ELSE
+							aPersFreq[k]:=4 // Given once last year
+						ENDIF
+					ENDCASE 
+				endif
 				oTransFreq:Skip()
 			ENDDO
 		ENDIF
@@ -1099,23 +1101,25 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			IF oTransFreq:RECCOUNT>0
 				self:STATUSMESSAGE(fMes+" ("+ElapTime(time1,Time())+")")
 				DO WHILE !oTransFreq:EoF
-					k:=AScanBin(aPers,oTransFreq:persid) 
-					DO CASE
-					CASE oTransFreq:freq2=1 // Earlier than two years previously
-						IF aPersPrvFreq[k]<2
-							aPersPrvFreq[k]:=2  // Given earlier than two years previously
-						ENDIF						
-					CASE oTransFreq:freq2=2 // Two years previously
-						IF aPersPrvFreq[k]<3
-							aPersPrvFreq[k]:=3 // Given two years previously
-						ENDIF
-					CASE oTransFreq:freq2=3 // Last year
-						IF ConI(oTransFreq:xcount)>=2
-							aPersPrvFreq[k]:=5 // Given >=2 times last year
-						ELSE
-							aPersPrvFreq[k]:=4 // Given once last year
-						ENDIF
-					ENDCASE
+					k:=AScanBin(aPers,oTransFreq:persid)
+					if k>0 
+						DO CASE
+						CASE oTransFreq:freq2=1 // Earlier than two years previously
+							IF aPersPrvFreq[k]<2
+								aPersPrvFreq[k]:=2  // Given earlier than two years previously
+							ENDIF						
+						CASE oTransFreq:freq2=2 // Two years previously
+							IF aPersPrvFreq[k]<3
+								aPersPrvFreq[k]:=3 // Given two years previously
+							ENDIF
+						CASE oTransFreq:freq2=3 // Last year
+							IF ConI(oTransFreq:xcount)>=2
+								aPersPrvFreq[k]:=5 // Given >=2 times last year
+							ELSE
+								aPersPrvFreq[k]:=4 // Given once last year
+							ENDIF
+						ENDCASE 
+					endif
 					oTransFreq:Skip()
 				ENDDO
 			ENDIF
@@ -1196,11 +1200,11 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")  0% done")
 	
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE persclass (" ;
-		+ "persid int(11) NOT NULL," ; 
+			+ "persid int(11) NOT NULL," ; 
 		+ "classindex int(11) NOT NULL," ;
-		+ "prevclassindex int(11) NOT NULL," ;
-		+ "PRIMARY KEY (persid)" ;
-		+ ") ENGINE=MyISAM")
+			+ "prevclassindex int(11) NOT NULL," ;
+			+ "PRIMARY KEY (persid)" ;
+			+ ") ENGINE=MyISAM")
 		return nil
 	endif
 	self:STATUSMESSAGE(pMes+" ("+ElapTime(time1,Time())+")  2% done")
@@ -1296,7 +1300,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				cSearchOrg:=cSearch
 				cSearch:=StrTran(cSearch,"%FR%",AllTrim(Str(nClassPtr2)))
 			ENDIF
-			persValuePtr:=AScan(aClassTuples,cSearch)
+			persValuePtr:=Max(1,AScan(aClassTuples,cSearch))
 			IF lDiff
 				IF !Empty(nClassPtr1)
 					cSearch:=StrTran(cSearchOrg,"%FR%",AllTrim(Str(nClassPtr1)))
@@ -1312,12 +1316,12 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				sqlStr2+=insSep + "(" ;
 					+Str(oPers:persid,-1)+"," ;
 					+Str(persValuePtr,-1)+"," ;
- 					+"0)"
+					+"0)"
 			ENDIF
 			insSep:=","  
 			
 			insCount++
-			IF insCount>=200
+			IF insCount>=500
 				if self:SqlDoAndTest("INSERT INTO persclass (persid, classindex, prevclassindex) VALUES " + sqlStr2)
 					return nil
 				endif
@@ -1329,7 +1333,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		oPers:Skip()
 	ENDDO
 	oPers:Close()
-   IF insCount>=1
+	IF insCount>=1
 		if self:SqlDoAndTest("INSERT INTO persclass (persid, classindex, prevclassindex) VALUES " + sqlStr2)
 			return nil
 		endif
@@ -1340,11 +1344,11 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	// Create consolidated table
 
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans2 as (" ;
-		+ "SELECT f.transid,f.seqnr,";
-		+ iif(perAccount,"f.accid","0");
-		+ " accid,f.subperiod,f.persid,sum(f.amount) amount,if (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
-		+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
-		+ "GROUP by f.persid,f.subperiod)")
+			+ "SELECT f.transid,f.seqnr,";
+			+ iif(perAccount,"f.accid","0");
+			+ " accid,f.subperiod,f.persid,sum(f.amount) amount,if (f.subperiod<=" + Str(PrevPeriodCount,-1) + ",p.prevclassindex,p.classindex) classindex ";
+			+ "FROM followingtrans f,persclass p WHERE f.persid=p.persid " ;
+			+ "GROUP by f.persid,f.subperiod)")
 		return nil
 	endif
 
@@ -1361,34 +1365,34 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		ENDDO
 	ENDIF
 	oTrans:Close()
-   
-   
-   // Use of the aMatrix arrays is as follows:
+	
+	
+	// Use of the aMatrix arrays is as follows:
 	//     For account a, period p, and class c,
-   //         aMatrix1[a+1,p+1,c+1]   is the total amount given
-   //         aMatrix2[a+1,p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
+	//         aMatrix1[a+1,p+1,c+1]   is the total amount given
+	//         aMatrix2[a+1,p+1,c+1]   is the fraction aMatrix1[p+1,c+1]/aMatrix1[all periods,c+1] (expressed in percent)
 	//         aMatrix3[a+1,p+1,c+1]   is the number of givers
-   //         aMatrix4[a+1,p+1,c+1]   is the fraction aMatrix3[p+1,c+1]/aMatrix3[all periods,c+1] (expressed in percent)
+	//         aMatrix4[a+1,p+1,c+1]   is the fraction aMatrix3[p+1,c+1]/aMatrix3[all periods,c+1] (expressed in percent)
 	//         aMatrix5[a+1,p+1,c+1]   is the average amount per giver
 	//         aMatrix6[a+1,p+1,c+1]   is the mean amount per giver
 	//         aMatrix7[a+1,p+1,c+2,m] is the number of givers in amount range m
-   //         aMatrix7[a+1,p+1,2,m]   is the upper limit for amount range m
+	//         aMatrix7[a+1,p+1,2,m]   is the upper limit for amount range m
 	//     For all arrays, setting the first index to 1 gives the total for all accounts
 	//
-   // Special indices for aMatrix1 to aMatrix6:
-   //     aMatrixN[1,1,1]     is nil  
-   //     aMatrixN[1,1,c+1]   is the class name for class c
-   //     aMatrixN[1,p+1,1]   is the date range for period p
-   //     aMatrixN[a+1,p+1,1] is nil
+	// Special indices for aMatrix1 to aMatrix6:
+	//     aMatrixN[1,1,1]     is nil  
+	//     aMatrixN[1,1,c+1]   is the class name for class c
+	//     aMatrixN[1,p+1,1]   is the date range for period p
+	//     aMatrixN[a+1,p+1,1] is nil
 	//
-   // Special indices for aMatrix7:
-   //     aMatrix7[1,1,1]     is nil  
-   //     aMatrix7[1,1,2]     is nil  
-   //     aMatrix7[1,1,c+2]   is the class name for class c
-   //     aMatrix7[1,p+1,1]   is the date range for period p
-   //     aMatrix7[a+1,p+1,1] is nil
-   //     aMatrix7[a+1,p+1,2] is nil
-   
+	// Special indices for aMatrix7:
+	//     aMatrix7[1,1,1]     is nil  
+	//     aMatrix7[1,1,2]     is nil  
+	//     aMatrix7[1,1,c+2]   is the class name for class c
+	//     aMatrix7[1,p+1,1]   is the date range for period p
+	//     aMatrix7[a+1,p+1,1] is nil
+	//     aMatrix7[a+1,p+1,2] is nil
+	
 	maxAccIx:=iif(perAccount,1+Len(aAcc),1)
 
 	aMatrix1:=ArrayNew(maxAccIx)	
@@ -1483,6 +1487,9 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 	IF oTrans:RECCOUNT>0
 		DO WHILE !oTrans:EoF
+			if oTrans:subperiod <2 .and.   oTrans:classindex<1
+				perAccount:=perAccount
+			endif
 			aMatrix1[1, oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
 			aMatrix3[1, oTrans:subperiod+1, oTrans:classindex+1] := ConI(oTrans:xcount)   
 			oTrans:Skip()
@@ -1494,13 +1501,13 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		// Get total and count per account by subperiod and classindex
 		oTrans:=SQLSelect{"SELECT accid,subperiod,classindex,sum(amount) sumamount,count(*) xcount " ;
 			+ "FROM followingtrans2 GROUP BY accid,subperiod,classindex",oConn}
-     
+		
 		// Note: oTrans:xcount is a Bigint therefore we need to use Val() on it 
 
 		IF oTrans:RECCOUNT>0
 			DO WHILE !oTrans:EoF
 				accIx:=AScan(aAcc,oTrans:accid) 
-	
+				
 				aMatrix1[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := oTrans:sumamount
 				aMatrix3[accIx+1, oTrans:subperiod+1, oTrans:classindex+1] := ConI(oTrans:xcount)   
 				oTrans:Skip()
@@ -1531,13 +1538,13 @@ METHOD PrintReport() CLASS DonorFollowingReport
 			oTrans:Skip()
 		ENDDO
 	ENDIF
-  	oTrans:Close()
+	oTrans:Close()
 
 	self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
 
 	IF perAccount
 		// Get total and count per account by subperiod and classindex
-        	  oTrans:=SQLSelect{"SELECT accid,subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
+		oTrans:=SQLSelect{"SELECT accid,subperiod,max(amount) maxamount,sum(amount) sumamount,count(*) xcount " ;
 			+ "FROM followingtrans2 GROUP BY accid,subperiod",oConn}
 
 		IF oTrans:RECCOUNT>0
@@ -1559,7 +1566,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				oTrans:Skip()
 			ENDDO
 		ENDIF
-	  	oTrans:Close()
+		oTrans:Close()
 
 		self:STATUSMESSAGE(rMes+" ("+ElapTime(time1,Time())+")")
 	ENDIF
@@ -1583,7 +1590,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 
 						IF StatBox6
 							// Median calculation:
-						
+							
 							IF accIx=1
 								// Looking at all accounts
 								sqlStr:="SELECT amount FROM " ;
@@ -1597,7 +1604,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 							ENDIF
 
 							oTrans:=SQLSelect{sqlStr, oConn}       
-// 						SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+							// 						SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
 
 							median:=oTrans:amount
 
@@ -1623,7 +1630,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 					sqlStr2+="WHEN amount<=" + Str(aMatrix7[accIx,periodNo+1,2,j],-1) + " THEN " + Str(j) + " "
 				next
 				sqlStr2+="ELSE " + Str(NumberRanges,-1) + " END"
-			
+				
 				IF accIx=1
 					// Looking at all accounts
 					sqlStr:="SELECT " + sqlStr2 + " xrange, classindex, count(*) xcount FROM followingtrans2 " ;
@@ -1634,8 +1641,8 @@ METHOD PrintReport() CLASS DonorFollowingReport
 						+ "WHERE accid=" + Str(aAcc[accIx-1],-1) + " AND subperiod=" + Str(periodNo,-1) + " GROUP BY classindex,xrange"
 				ENDIF			
 				oTrans:=SQLSelect{sqlStr,oConn}				
-// 			SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
-			
+				// 			SQLStatement{'INSERT INTO log (txt) VALUES("' + sqlStr + '")',oConn}:Execute() 
+				
 				if oTrans:RECCOUNT<>0 
 					DO WHILE !oTrans:EoF
 						IF ConI(oTrans:xcount)<>0
