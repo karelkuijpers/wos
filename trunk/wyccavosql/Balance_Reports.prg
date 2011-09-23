@@ -5806,6 +5806,7 @@ METHOD OKButton( ) CLASS YearClosing
 	self:Pointer := Pointer{POINTERARROW}
 	if empty(oStmnt:status)
 		TextBox{self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+space(1)+self:YearBalance+space(1)+self:oLan:WGet("successfully closed")}:Show()
+		LogEvent(self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+Space(1)+self:YearBalance+Space(1)+self:oLan:WGet("successfully closed"))
 		LstYearClosed	:=self:BalanceEndDate+1
 	else
 		TextBox{self,self:oLan:WGet("year balancing and closing"),self:oLan:WGet("Year")+space(1)+self:YearBalance+space(1)+self:oLan:WGet("not closed")}:Show()
