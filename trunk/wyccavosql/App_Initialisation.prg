@@ -643,8 +643,6 @@ method init() class Initialize
 	SetDefault(CurPath)
 	SetPath(CurPath) 
 
-	oConn:=SQLConnection{} 
-
 	// read and interprete wos.ini file
 	cWosIni:=MyFileSpec{CurPath+"\Wos.ini"}
 	if cWosIni:Find()
@@ -690,6 +688,7 @@ method init() class Initialize
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
 	do while !lConnected
+		oConn:=SQLConnection{} 
 		if IsClass(#ADOCONNECTION)
 			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW)
 		else
