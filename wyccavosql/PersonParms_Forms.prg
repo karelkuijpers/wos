@@ -799,7 +799,7 @@ STATIC DEFINE PERSTYPEREG_NEWBUTTON := 102
 STATIC DEFINE PERSTYPEREG_SUB_PERSTYPEREG := 100 
 function PropTypeDesc(type as int) as string
 return prop_types[ascan(prop_types,{|x|x[2]==type}),1]
-CLASS Sub_MailCdReg INHERIT DATAWINDOW 
+CLASS Sub_MailCdReg INHERIT DataWindowMine 
 
 	PROTECT oDBDESCRIPTION as DataColumn
 	PROTECT oDBABBRVTN as DataColumn
