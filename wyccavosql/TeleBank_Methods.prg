@@ -314,7 +314,9 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	DO WHILE true
 		SQLStatement{"start transaction",oConn}:execute() 
 		// select next row not yet locked by somebody else:
-		self:oTelTr:= SQLSelect{"select t.*,b.accid,b.payahead,b.giftsall,b.openall from teletrans t, bankaccount b where processed='' and "+;
+		self:oTelTr:= SqlSelect{"select t.teletrid,t.seqnr,t.amount,t.bankaccntnbr,cast(t.bookingdate as date) as bookingdate,t.kind,t.contra_bankaccnt,"+; 
+			"t.addsub,t.code_mut_r,t.budgetcd,t.description,t.persid,t.contra_name,"+;
+			"b.accid,b.payahead,cast(b.giftsall as unsigned) as giftsall,cast(b.openall as unsigned) as openall from teletrans t, bankaccount b where processed='' and "+;
 			"t.bankaccntnbr<>'' and t.bankaccntnbr=b.banknumber and b.telebankng=1 and "+;
 			+"(t.lock_id=0 or t.lock_id="+MYEMPID+" or t.lock_time < subdate(now(),interval 20 minute))"+;
 			iif(Empty(self:CurTelId),''," and teletrid>"+Str(self:CurTelId,-1))+;
@@ -440,48 +442,58 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	ENDDO
 	RETURN FALSE
 method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref string,lv_persid ref string, lv_bankid ref string,lv_kind ref string) as void pascal class TeleMut
-// analyse if description of transaction contains a payment pattern (betalingkenmerk) 
-local cText as string 
-local oDue as SQLSelect
+	// analyse if description of transaction contains a payment pattern (betalingkenmerk) 
+	local cText as string 
+	local oDue as SQLSelect 
+	local dateCol as date
 	if	Empty(lv_budget) 
 		if Upper(SubStr(lv_oms,1,10))=='ACCEPTGIRO'
 			lv_kind='AC'
 			return
 		endif
 		cText	:=	SubStr(lv_Oms,1,16)
-// 		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
+		// 		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
 		IF	isnum(AllTrim(cText)) .and. IsMod11(cText) 
 			//	betalingskenmerk
 			lv_kind:="AC"
 		elseif Upper(SubStr(lv_Oms,1,13))=="BETALINGSKENM" .or. Upper(SubStr(lv_Oms,1,12))=="BET. KENMERK"
-			lv_budget:=AllTrim(SubStr(lv_Oms,At3(Space(1),lv_Oms,12)+1,16))
-			if	Len(lv_budget)=16	.and.	isnum(lv_budget) .and. IsMod11(lv_budget)
-				cText:=lv_budget
-				if	lv_addsub='A'
-					lv_persid:=ZeroTrim(SubStr(cText,1,5))	  // terugboeking
-					lv_kind:="COL"
-					//	 Look	for Due amount:
-					oDue:=SQLSelect{"select	s.personid as persid,a.accnumber	from dueamount	d,	account a, subscription	s where "+;
-					"s.subscribid=d.subscribid	and s.personid="+lv_persid+" and	d.invoicedate='"+;
-					SQLdate(SToD(SubStr(cText,6,8)))+"' and seqnr="+ZeroTrim(SubStr(cText,14))+" and d.accid=a.accid",oConn}	  
-					if	oDue:Reccount>0	//	without check digit
-						lv_persid:=Str(oDue:persid,-1)
-						lv_budget:=oDue:ACCNUMBER
-					else
-						lv_budget:=""
-						lv_persid:=""
+			lv_budget:=AllTrim(SubStr(lv_Oms,At3(Space(1),lv_Oms,12)+1,16)) 
+			if	Len(lv_budget)>=15	.and.	isnum(lv_budget)  
+				if IsMod11(lv_budget)
+					cText:=SubStr(lv_budget,2)
+					if	lv_addsub='A'
+						lv_persid:=ZeroTrim(SubStr(cText,1,5))	  // terugboeking 
+						lv_kind:="COL"
+						dateCol:= SToD(SubStr(cText,6,8))
+						if !Empty(lv_persid) .and.!dateCol==null_date .and. dateCol<Today() .and. dateCol> Today()-300 
+							//	 Look	for Due amount:
+							oDue:=SQLSelect{'select s.personid as persid,a.accnumber from dueamount d, account a, subscription s where '+;
+								's.subscribid=d.subscribid and s.personid="'+lv_persid+'" and d.invoicedate="'+;
+								SQLdate(dateCol)+'" and seqnr='+ZeroTrim(SubStr(cText,14))+' and s.accid=a.accid',oConn}	  
+							if	oDue:Reccount>0	//	without check digit
+								lv_persid:=Str(oDue:persid,-1)
+								lv_budget:=oDue:ACCNUMBER
+							else
+								lv_budget:=""
+								lv_persid:=""
+							endif
+						else
+							lv_budget:=""
+							lv_persid:=""
+						endif
+					elseif Empty(lv_kind) 
+						lv_kind:="AC"
 					endif
-				elseif Empty(lv_kind)
-					lv_kind:="AC"
 				endif
 			endif
 		elseif IsDigit(lv_Oms)
 			cText	:=	StrTran(SubStr(lv_Oms,1,19),' ','')
-// 			IF	isnum(cText) .and. Len(cText)=16	.and.	IsMod11(cText)							
+			// 			IF	isnum(cText) .and. Len(cText)=16	.and.	IsMod11(cText)							
 			IF	isnum(cText) .and.	IsMod11(cText)							
 				//	betalingskenmerk
 				lv_kind:="AC"
 			endif
+			
 			
 		endif
 		if	lv_kind=="AC"
@@ -1684,7 +1696,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 							lv_NameContra:=aWord[Len(aWord),1] 
 						endif 
 					endif
-// 					Analyze first line: 
+					// 					Analyze first line: 
 					cType86:=''
 					nNumPos:=AtC('-nummer',lv_Oms)
 					if AtC('BETREFT ACCEPTGIRO',lv_Oms)>0  .or. AtC('VX-NUMMER',lv_Oms)>0.or. AtC('CREDITEURENBETALING',lv_Oms)>0
@@ -1742,7 +1754,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						// address:
 						nSepPos:=nlenLine1 // at end of first line with address
 					endif
-					if AtC('NAAM/NUMMER STEMMEN NIET OVEREEN',lv_description)>0
+					if AtC('NAAM/NUMMER STEMMEN NIET OVEREEN',lv_description)>0 
 						nSepPos:=0 
 						//	look for	bankorder:
 						oBord:=SQLSelect{"select a.accnumber from	bankorder o, account	a where banknbrcre="+lv_BankAcntContra+;
@@ -2702,7 +2714,7 @@ METHOD InitTeleNonGift() CLASS TeleMut
 	LOCAL lSuc as LOGIC
 	local oTelPat as SQLSelect
 // 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and addsub<>'' and description<>''",oConn}
-	oTelPat:=SQLSelect{"select * from telebankpatterns where accid>0",oConn} 
+	oTelPat:=SqlSelect{"select contra_bankaccnt,kind,contra_name,addsub,description,accid,cast(ind_autmut as signed) as ind_autmut from telebankpatterns where accid>0",oConn} 
 	oTelPat:execute()
 	DO WHILE !oTelPat:EOF
 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
