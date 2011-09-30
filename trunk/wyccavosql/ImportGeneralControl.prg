@@ -717,7 +717,9 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	PERSID:=""
 
 	if self:TargetDB == "Person"
-		self:oEdit:lExists:=False
+		self:oEdit:lExists:=False 
+		PERSID:=''
+		ExId=''
 		// Check if person already exist with given external or internal id: 
 		exidptr:=AScan(self:aMapping,{|x|x[1]==#mExternid})
 		PersidPtr:=AScan(self:aMapping,{|x|x[1]==#mPersId}) 
@@ -763,11 +765,11 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 					oPersCnt:m51_exid:=ExId
 					oPersCnt:PERSID:=str(oSel:persid,-1) 
 				else
-					self:lExists:=true
+					self:lExists:=false
 				endif
 			endif
 		endif  
-		IF !self:lExists
+		IF !self:lExists .and.empty(ExId) .and.empty(PERSID)
 			// check if there are already persons with given name and address: 
 			cCorCln:=self:SearchCorrespondingPersons(aWord,ExId) 
 			if !cCorCln=='0' .and.!Empty(cCorCln)
@@ -1153,7 +1155,7 @@ do while action==0
    	endif
    	CollectForced()
    endif
-	IF self:ImportCount%500=499
+	IF self:ImportCount%300=299
 		if Used()
 			Commit
 		endif
@@ -1495,7 +1497,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	if !Empty(oPersCnt:PERSID)
 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn}
 	else
-		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.externid="+oPersCnt:m51_exid),oConn}
+		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.externid='"+oPersCnt:m51_exid)+"'",oConn}
 	endif 
 	if oPersExist:RecCount<1
 		return false
@@ -1646,8 +1648,8 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	IF "FI" $ cCod .and. Empty(oPersExist:datelastgift)
 		cStatement+=",datelastgift=subdate(curdate(),4000)"				
 	ENDIF
-	myBDAT:=oPersExist:creationdate
-	myMUTD:=oPersExist:alterdate
+	myBDAT:=iif(Empty(oPersExist:creationdate),null_date,oPersExist:creationdate)
+	myMUTD:=iif(Empty(oPersExist:alterdate),null_date,oPersExist:alterdate)
 	IF Empty(myBDAT) .and. !Empty(myMUTD)
 		cStatement+=",creationdate='1980-01-01'"				
 	ELSEIF !Empty(myBDAT) .and. Empty(myMUTD)
