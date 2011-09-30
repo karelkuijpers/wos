@@ -84,7 +84,7 @@ METHOD FilePrint CLASS MemberBrowser
 	aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
 	YrSt:=aYearStartEnd[1]
 	MnSt:=aYearStartEnd[2]
-	cFields:= "p.persid,a.accnumber,m.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,d.deptmntnbr,"+;
+	cFields:= "p.persid,a.accnumber,m.mbrid,a.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,d.deptmntnbr,"+;
 	SQLFullName(0,"p")+" as membername,"+;
 	"group_concat(distinct ass.accnumber separator ',') as assacc"+;
 	",group_concat(IF(di.desttyp<2,concat(cast(di.destamt as char),if(di.desttyp=1,'%',''),' to ',di.destpp,' ',di.destacc),concat('Remaining to ',di.destpp,' ',di.destacc)) separator ',') as distr"
@@ -92,10 +92,11 @@ METHOD FilePrint CLASS MemberBrowser
 	cFrom:="person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
 	" left join distributioninstruction di on (di.mbrid=m.mbrid and di.disabled=0) left join department d on (m.depid=d.depid) left join account a on (a.accid=m.accid) "  
    cStatement:= "select y.*,sum(bu.amount) as budget from ("+;
-	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.accid ) as y"+;
-	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.accid "+;
+	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.mbrid ) as y"+;
+	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.mbrid "+;
 	" order by "+self:cOrder 
-	oSel:=SQLSelect{cStatement,oConn} 
+	oSel:=SqlSelect{cStatement,oConn}
+	LogEvent(self,oSel:sqlstring,"logSQL") 
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
 		kopregels :={oLan:RGet('Members',,"@!"),' '}
