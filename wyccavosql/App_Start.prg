@@ -45,8 +45,9 @@ method Start() class App
 		oUpg:=CheckUPGRADE{} 
 		cWorkdir:=WorkDir()
 		oInit:=Initialize{} 
-
-		lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+	   if !oInit:lNewDB
+			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+	   endif
 		if lStop
 			if oConn:Connected
 				oConn:Disconnect()
@@ -123,7 +124,6 @@ method Start() class App
 			ENDIF
 			* Process standing orders:
 // 			IF FirstOfDay
-				oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
 				oStJournal:=null_object
