@@ -183,7 +183,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 				oSQL:Execute()
 				oSQL:GoTop()
 				do while !oSQL:EoF
-					cAccAlwd+=iif(Empty(cAccAlwd),"",",")+oSQL:ACCID 
+					cAccAlwd+=iif(Empty(cAccAlwd),"",",")+Str(oSQL:ACCID,-1) 
 					oSQL:Skip()
 				enddo						
 			endif
