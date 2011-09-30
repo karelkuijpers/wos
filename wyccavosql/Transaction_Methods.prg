@@ -2060,6 +2060,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			elseif self:lImport
 				self:oImpB:CloseBatch()  // includes commit
 			ENDIF
+			self:oDCGiroText:TextValue:="   "
 			lSave:=FALSE
 			oHm:ResetNotification()	
 		ENDIF
@@ -3997,6 +3998,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:oDCmPerson:Value:=""
 			self:oDCmDebAmntF:TEXTValue:=""
 			self:mDebAmntF:=""
+			self:oDCcGirotelText:TextValue:=" "
 			self:oDCmPerson:SetFocus()
 			oDet:Browser:Refresh()
 		endif
@@ -4303,7 +4305,7 @@ METHOD RegAccount(omAcc,ItemName) CLASS TransInquiry
 	ENDIF
 	IF ItemName == "Account to transfer to"
 		self:cTransferAcc :=  Str(omAcc:AccID,-1)
-		self:cTransferAccName := AllTrim(omAcc:Description)
+		self:cTransferAccName := omAcc:accnumber+' '+ AllTrim(omAcc:Description)
 // 		self:cBal:=omAcc:balitemid
 		self:cDep:=Str(omAcc:Department,-1)
 		self:cSoort:=omAcc:Type
@@ -4469,7 +4471,8 @@ METHOD ShowSelection() CLASS TransInquiry
 			return false
 		endif
 	endif
-	self:oTrans:SQLString:=self:cSelectStmnt 
+// 	self:oTrans:=SqlSelect{self:cSelectStmnt,oConn} 
+	self:oTrans:SQLString:= self:cSelectStmnt 
 // 	fSecStart:=Seconds() 
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	self:oTrans:Execute()
