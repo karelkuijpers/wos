@@ -256,7 +256,7 @@ METHOD OKButton( ) CLASS PMISsend
 	local oAcc as SQLSelect
 	
 	self:closingDate := oDCAfsldag:Value 
-	if self:closingDate>self:oSys:PMISLSTSND
+	if !Empty(self:oSys:PMISLSTSND) .and. self:closingDate>self:oSys:PMISLSTSND
 		self:AssPeriod:="("+DToC(self:oSys:PMISLSTSND)+" - "+DToC(self:closingDate)+")"
 	else
 		self:AssPeriod:="( - "+DToC(self:closingDate)+")"
@@ -332,7 +332,7 @@ self:mxrate := oSys:EXCHRATE
 self:oDCAfsldag:DateRange:=DateRange{mindate,Today()}
 
 self:closingDate := Today()
-self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last send on: '+DToC(self:oSys:PMISLSTSND)
+self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last send on: '+DToC(iif(Empty(self:oSys:PMISLSTSND),null_date,self:oSys:PMISLSTSND))
 
 RETURN nil
 METHOD PrintReport() CLASS PMISsend
@@ -362,7 +362,7 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL uRet as USUAL
 	LOCAL oWindow as OBJECT
 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
-	LOCAL noIES as LOGIC
+// 	LOCAL noIES as LOGIC
 	LOCAL DestAmnt as FLOAT
 	LOCAL oAfl as UpdateHouseHoldID
 	LOCAL datelstafl as date
@@ -434,11 +434,18 @@ METHOD PrintReport() CLASS PMISsend
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	else
-		if SQLSelect{"select persid from person where persid="+Str(self:oSys:PMCMANCLN,-1),oConn}:Reccount<1
+		oPers:=SqlSelect{"select persid,email,"+SQLFullName()+" as fullname from person where persid="+Str(self:oSys:PMCMANCLN,-1),oConn}
+		if oPers:Reccount<1
 			(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
 			self:ENDWindow()
 			self:Pointer := Pointer{POINTERARROW}
-			return		
+			return
+		elseif Empty(oPers:email)
+			(ErrorBox{oWindow,self:oLan:WGet("Enter first email address for PMC manager")+" "+oPers:fullname+' '+self:oLan:WGet("who should approve the PMC file")}):Show()
+			self:ENDWindow()
+			self:Pointer := Pointer{POINTERARROW}
+			return
+			
 		endif
 	endif  
 	self:Pointer := Pointer{POINTERHOURGLASS}
@@ -735,7 +742,7 @@ METHOD PrintReport() CLASS PMISsend
 				AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},if(me_co="M",mbroffice,mbrofficeProj),,,me_currency})
 			ENDIF
 			// Transfer balance conform distribution instructions:
-			if self:closingDate> self:oSys:PMISLSTSND .and. ;
+			if (Empty(self:oSys:PMISLSTSND) .or.self:closingDate> self:oSys:PMISLSTSND) .and. ;
 				((me_homePP!=SEntity .and.self:closingDate=Today()) .or. ((me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0))
  
 				// determine limit for sending money:
@@ -920,7 +927,7 @@ METHOD PrintReport() CLASS PMISsend
 		'                                    Transactions to be send',' ',;
 		'ORGANIZATION:  '+sLand+Space(33)+'EXCHANGE RATE U.S. $1 = '+Str(fExChRate,-1,8),;
 		'PARTNERCODE :  '+SEntity,;
-		'currency    :  '+sCurr+'  '+Pad(sCurrName,27)+Space(81)+'PERIOD ' +iif(self:closingDate>self:oSys:pmislstsnd,DToC(self:oSys:pmislstsnd),"")+ ' TO ' + DToC(self:closingDate),;
+		'currency    :  '+sCurr+'  '+Pad(sCurrName,27)+Space(81)+'PERIOD ' +iif(!empty(self:oSys:pmislstsnd).and. self:closingDate>self:oSys:pmislstsnd,DToC(self:oSys:pmislstsnd),"")+ ' TO ' + DToC(self:closingDate),;
 		' ',;
 		Pad('MEMBER',20,' ')+PadL('AMOUNT',12,' ')+' DESCRIPTION',separatorline}
 	FOR a_tel=1 to batchcount
@@ -1053,7 +1060,7 @@ METHOD PrintReport() CLASS PMISsend
 		self:ResetLocks(MYEMPID)
 		return
 	else
-		IF self:oSys:PMISLSTSND<Today()-400
+		IF Empty(self:oSys:PMISLSTSND) .or.self:oSys:PMISLSTSND<ToDay()-400
 			// still IES:
 			IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
 					self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
@@ -1439,10 +1446,10 @@ METHOD PrintReport() CLASS PMISsend
 			ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
 			return
 		ENDIF
-		*save period:
-		IF self:oSys:PMISLSTSND<Today()-1000
-			noIES:=true
-		ENDIF
+// 		*save period:
+// 		IF empty(self:oSys:pmislstsnd) .or.self:oSys:PMISLSTSND<Today()-1000
+// 			noIES:=true
+// 		ENDIF
 
 		if PMCUpload
 			LogEvent(self,self:oLan:WGet("Uploaded file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")) 
@@ -1499,11 +1506,11 @@ METHOD PrintReport() CLASS PMISsend
 	ENDIF
 	SetDecimalSep(DecSep)
 
-	IF noIES
-		// first time send to PMC, then new menu without IES
-		oMainWindow:RefreshMenu()
-		oMainWindow:SetCaption()
-	ENDIF
+// 	IF noIES
+// 		// first time send to PMC, then new menu without IES
+// 		oMainWindow:RefreshMenu()
+// 		oMainWindow:SetCaption()
+// 	ENDIF
 	self:ENDWindow()
 	if !PMCUpload .and.!lStop
 		oMapi:Close()
