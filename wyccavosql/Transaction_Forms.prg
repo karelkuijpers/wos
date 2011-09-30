@@ -94,8 +94,8 @@ RESOURCE General_Journal DIALOGEX  62, 55, 466, 315
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Bst:", GENERAL_JOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 52, 1, 41, 13
-	CONTROL	"vrijdag 22 april 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
+	CONTROL	"", GENERAL_JOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 52, 1, 41, 13
+	CONTROL	"maandag 26 september 2011", GENERAL_JOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 140, 1, 132, 13
 	CONTROL	"", GENERAL_JOURNAL_MPOSTSTATUS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 276, 1, 72, 50
 	CONTROL	"", GENERAL_JOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 312, 18, 132, 12, WS_EX_CLIENTEDGE
 	CONTROL	"OK&&Remember", GENERAL_JOURNAL_SAVEBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 284, 53, 12
@@ -401,7 +401,7 @@ SUPER:Init(oWindow,ResourceID{"General_Journal",_GetInst()},iCtlID)
 aBrushes[1] := Brush{Color{COLORWHITE}}
 
 oDCmBST := SingleLineEdit{SELF,ResourceID{GENERAL_JOURNAL_MBST,_GetInst()}}
-oDCmBST:HyperLabel := HyperLabel{#mBST,"Bst:",NULL_STRING,"Transaction_BST"}
+oDCmBST:HyperLabel := HyperLabel{#mBST,NULL_STRING,NULL_STRING,"Transaction_BST"}
 
 oDCmDat := DateStandard{SELF,ResourceID{GENERAL_JOURNAL_MDAT,_GetInst()}}
 oDCmDat:HyperLabel := HyperLabel{#mDat,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -536,7 +536,7 @@ self:Browser := DataBrowser{self}
 oDBMBST := DataColumn{6}
 oDBMBST:Width := 6
 oDBMBST:HyperLabel := oDCMBST:HyperLabel 
-oDBMBST:Caption := "Bst:"
+oDBMBST:Caption := ""
 self:Browser:AddColumn(oDBMBST)
 
 oDBMPERSON := DataColumn{9}
@@ -3527,7 +3527,7 @@ METHOD OKButton( ) CLASS TransactionMonth
 		if self:nFromAccount==self:nToAccount
 			self:SkipInactive:=false
 		endif
-		oReport := PrintDialog{oParent,self:oLan:RGet("Account statements per month"),,97,,"xls"}
+		oReport := PrintDialog{oParent,self:oLan:RGet("Account statements per month"),,100,,"xls"}
 		// 			oReport := PrintDialog{oParent,self:oLan:WGet("Account statements per month"),,97}
 		oReport:show()
 		IF oReport:lPrintOk
@@ -4133,7 +4133,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 			self:lsttrnr:=oSel:maxtr
 		endif
 	endif
-	self:cFields:="t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,t.userid,"+;
+	self:cFields:="t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,t.userid,t.debforgn,t.creforgn,"+;
 	"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,"+;
 	"a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
