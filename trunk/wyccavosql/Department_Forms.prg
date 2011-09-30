@@ -344,6 +344,8 @@ BEGIN
 	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 188, 86, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 200, 188, 16, 12
 	CONTROL	"member department", EDITDEPARTMENT_MEMBERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 140, 11, 91, 12
+	CONTROL	"", EDITDEPARTMENT_IPCPROJECT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 268, 81, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 212, 81, 53, 12
 END
 
 CLASS EditDepartment INHERIT DataWindowExtra 
@@ -378,6 +380,8 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oDCmPerson2 AS SINGLELINEEDIT
 	PROTECT oCCPersonButton2 AS PUSHBUTTON
 	PROTECT oDCMemberText AS FIXEDTEXT
+	PROTECT oDCIPCProject AS SINGLELINEEDIT
+	PROTECT oDCIPCText AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartmntNbr 
@@ -629,6 +633,13 @@ oCCPersonButton2:TooltipText := "Browse in Persons"
 oDCMemberText := FixedText{SELF,ResourceID{EDITDEPARTMENT_MEMBERTEXT,_GetInst()}}
 oDCMemberText:HyperLabel := HyperLabel{#MemberText,"member department",NULL_STRING,NULL_STRING}
 
+oDCIPCProject := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_IPCPROJECT,_GetInst()}}
+oDCIPCProject:Picture := "99999"
+oDCIPCProject:HyperLabel := HyperLabel{#IPCProject,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCIPCText := FixedText{SELF,ResourceID{EDITDEPARTMENT_IPCTEXT,_GetInst()}}
+oDCIPCText:HyperLabel := HyperLabel{#IPCText,"IPC Project#:",NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Edit of Department"
 SELF:HyperLabel := HyperLabel{#EditDepartment,"Edit of Department",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
@@ -641,6 +652,13 @@ ENDIF
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
+
+ACCESS IPCProject() CLASS EditDepartment
+RETURN SELF:FieldGet(#IPCProject)
+
+ASSIGN IPCProject(uValue) CLASS EditDepartment
+SELF:FieldPut(#IPCProject, uValue)
+RETURN uValue
 
 ACCESS mAccount1() CLASS EditDepartment
 RETURN SELF:FieldGet(#mAccount1)
@@ -801,7 +819,8 @@ METHOD OKButton( ) CLASS EditDepartment
 	"assacc2 ='"+ self:mAcc2+"',"+;
 	"assacc3 ='"+ self:mAcc3+"',"+;
 	"persid ='"+ self:mCLN1+"',"+;
-	"persid2 ='"+ self:mCLN2+"'"+;
+	"persid2 ='"+ self:mCLN2+"',"+; 
+	"ipcproject='"+self:IPCPROJECT+"'"+;
 	iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
@@ -850,7 +869,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		self:NbrIncome :=""
 		self:cIncName :="" 
 		self:NbrExpense :=""
-		self:cExpname :="" 
+		self:cExpname :=""
+		self:IPCPROJECT:="" 
 		IF cMainId=="0"
 			mParentDep:=0
 			OrgParent :="0"
@@ -915,6 +935,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		endif
 		mDepartmntNbr:=self:oDep:deptmntnbr
 		OrgDepNbr:=AllTrim(mDepartmntNbr)
+		self:IPCPROJECT:=ConS(ConI(oDep:IPCPROJECT))
 		if !Empty(self:oDep:ParentDep)
 			cMainId:=Str(self:oDep:ParentDep,-1)
 			mParentDep:=oDep:deptmntnbrparent
@@ -1077,6 +1098,8 @@ STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT3 := 104
 STATIC DEFINE EDITDEPARTMENT_GROUPBOX1 := 122 
 STATIC DEFINE EDITDEPARTMENT_GROUPBOX2 := 115 
 STATIC DEFINE EDITDEPARTMENT_INCBUTTON := 112 
+STATIC DEFINE EDITDEPARTMENT_IPCPROJECT := 130 
+STATIC DEFINE EDITDEPARTMENT_IPCTEXT := 131 
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 116 
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 118 
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 120 
