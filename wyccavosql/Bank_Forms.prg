@@ -1034,14 +1034,14 @@ METHOD ValidateBank() CLASS EditBank
 		endif
 	endif
 	if lValid.and.(lNew .or.oBank:accid # Val(self:mRek))
-		if SQLSelect{"select banknumber from bankaccount where accid='"+self:mRek+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SqlSelect{"select banknumber from bankaccount where accid='"+self:mRek+"'"+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			If TextBox{,"Edit Bank account", 'Account "'+AllTrim(cAccountName)+'" allready assigned to Bank Account '+oBank:banknumber,BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:Show()= BOXREPLYCANCEL
 				return false
 			ENDIF
 		endif
 	endif
 	if lValid.and.!Empty(mRekS).and.(self:lNew.or.oBank:SINGLEDST # Val(mRekS))  // single destination account changed?
-		if SQLSelect{"select banknumber from bankaccount where singledst='"+self:mRekS+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SQLSelect{"select banknumber from bankaccount where singledst='"+self:mRekS+"'"+iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			If TextBox{,"Edit Bank account", 'Account "'+AllTrim(cAccountNameS)+'" allready assigned as destination to Bank Account '+oBank:banknumber,BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:Show()= BOXREPLYCANCEL
 				return false
 			ENDIF
