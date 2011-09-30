@@ -1235,25 +1235,25 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	self:mPostalcode:=StandardZip(AllTrim(self:oDCmPOStalcode:VALUE))
 	self:mFirstname:=AllTrim(self:oDCmFirstname:VALUE)
 	self:mAddress:=AllTrim(self:oDCmAddress:VALUE)
-	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = AllTrim(oPers:lastname) .or. oPers:postalcode # self:mPostalcode.or.oPers:firstname # self:mFirstname.or.oPers:address # self:mAddress.or. ZeroTrim(oPers:EXTERNID) # self:mExternid)
+	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = ConS(oPers:lastname) .or. ConS(oPers:postalcode) # self:mPostalcode.or.ConS(oPers:firstname) # self:mFirstname.or.ConS(oPers:address) # self:mAddress.or. ZeroTrim(ConS(oPers:EXTERNID)) # self:mExternid)
 		* Check duplicate NAC:
 		oSel:=SqlSelect{"select persid from person where lastname='"+addslashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
 		+AddSlashes(self:mAddress)+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
 		oSel:GoTop()
 		IF oSel:RecCount>0
 			Housnbr:=GetStreetHousnbr(self:mAddress)[2]
-			nAnswer:=(TextBox{self, self:oLan:WGet("Edit Person"), self:oLan:WGet("Person")+" "+AllTrim(self:mLastName)+;
+			nAnswer:=(TextBox{self, self:oLan:WGet("Edit Person"), self:oLan:WGet("Person")+" "+ConS(self:mLastName)+;
 			IF(Empty(self:mPostalcode),""," - "+self:oLan:WGet("zip")+":"+self:mPostalcode) + ;
 			IF(Empty(Housnbr),""," - "+self:oLan:WGet("house#")+":"+Housnbr) +; 
-			iif(Empty(AllTrim(self:mExternid)),"",' or with external id:'+AllTrim(self:mExternid))+;
+			iif(Empty(self:mExternid),"",' or with external id:'+ConS(self:mExternid))+;
 			" "+self:oLan:WGet("already exist")+"! "+self:oLan:WGet("Save anyway")+"?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()
 			IF nAnswer==BOXREPLYNO
 				lValid := FALSE
 			ENDIF
 		ENDIF
-		IF lValid .and.!Empty(AllTrim(self:mExternid))
+		IF lValid .and.!Empty(ConS(self:mExternid))
 			// check if no duplicate external id:
-			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(self:mExternid)+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
+			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(ConS(self:mExternid))+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
 			oSel:Execute()
 			IF oSel:RecCount>0
 				cError :=self:oLan:WGet("Person")+" "+GetFullName(Str(oSel:persid,-1),2)+" "+self:oLan:WGet("has already external id")+" "+self:mExternid+"!"
@@ -1303,19 +1303,19 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			ENDIF
 		ENDIF
 	ENDIF
-	IF lValid                  
-		IF 'MW' $ self:mCodInt
-		   IF self:lNew .or.Empty(self:oPerson:accid)  
-  				lValid := FALSE
-				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("only allowed in case of member")
-			ENDIF
-		ELSE
-			IF !self:lNew .and.!Empty(self:oPerson:accid) 
- 				lValid := FALSE
-				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("obliged in case of member")
-			ENDIF
-		ENDIF
-	ENDIF
+// 	IF lValid                  
+// 		IF 'MW' $ self:mCodInt
+// 		   IF self:lNew .or.Empty(self:oPerson:accid)  
+//   				lValid := FALSE
+// 				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("only allowed in case of member")
+// 			ENDIF
+// 		ELSE
+// 			IF !self:lNew .and.!Empty(self:oPerson:accid) 
+//  				lValid := FALSE
+// 				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("obliged in case of member")
+// 			ENDIF
+// 		ENDIF
+// 	ENDIF
 	IF lValid
 		IF !IsNil(mCodInt)
 			IF !Empty(self:mCodInt).and.AllTrim(self:mCodInt)#'MW'
@@ -4231,7 +4231,7 @@ local i,j as int
 		cMarkupText:="CONCAT('"+StrTran(StrTran(StrTran(StrTran(StrTran(cMarkupText,"%AMOUNTGIFT","',gr.AmountGift,'"),"%DATEGIFT","',date_format(gr.dat,'"+LocalDateFormat+"'),'"),"%DESTINATION","',gr.description,'"),"%REFERENCEGIFT","',gr.reference,'"),"%DOCUMENTID","',gr.docid,'")+"')"
 		cMarkupText:=StrTran(StrTran(cMarkupText,"'',",""),",''","")
 // 		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as "+myFields[j,2]:HyperLabel:Name 
-		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as giftsgroup" 
+		cGrFields+=",cast(GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as char) as giftsgroup" 
 		cGroup:=" group by gr.persid"
 	endif
 	IF (j:=AScan(myFields,{|x|x[1]== #TOTAMNT}))>0 .or. fMinAmnt>0 .or. fMaxAmnt>0 .or. fMinIndVidAmnt>0
