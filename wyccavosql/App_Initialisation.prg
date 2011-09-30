@@ -165,7 +165,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 class Initialize
 // initialise system
 protect sIdentChar as string 
-protect lNewDb:=false as logic
+export lNewDb:=false as logic
 protect aCurTable:={} as array
 export FirstOfDay as logic  
 declare method create_table, ConvertDBFSQL, ConVertOneTable, InitializeDB,RenameField,Initialize,SyncColumns,Matchunequalgaps
@@ -288,9 +288,9 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 		if oDbsvr:Used
 			sSQLname:=String2Symbol(sqlname)
 			aDBStruct:=oDbsvr:DbStruct
-			oSel:=SQLSelect{"select * from "+sIdentChar+sqlname+sIdentChar,oConn} 
-			oSel:GoTop()
-			if IsNil(oSel:Status) .and. oSel:RecCount==0 .and. oSel:FCount>0 .and. !EOF()
+			oSel:=SqlSelect{"select count(*) as qty from "+sIdentChar+sqlname+sIdentChar,oConn} 
+			oSel:Execute()
+			if IsNil(oSel:Status) .and. oSel:qty ==0.and. !EOF()
 				if !Empty(keyname) 
 					IF !(FileSpec{keyname+'.cdx'}):Find()
 						if keyname=="curcode"
@@ -349,15 +349,15 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 					// Special treatement of Employee table: 
 					if dbasename=="employee"
 						mEmpid:= oDbsvr:FIELDGET(#EMPID)
-						mCLN:=Crypt(oDbsvr:FIELDGET(#CLN),mEmpid+"er45pofDOIoiijodsoi*)mxcd eDFP456^)_fghj=") 
+						mCLN:=Crypt(oDbsvr:FIELDGET(#CLN),mEmpid+'er45pofDOIoiijodsoi*)mxcd eDFP456^)_fghj=') 
 						mCLNORG:=ZeroTrim(mCLN)
 						// add first insert to save encrypted persid in database, to be used in other encryptions
 						cStatement:="insert into "+sIdentChar+sqlname +sIdentChar+" (empid,persid) values("+mEmpid+","+; 
 						Crypt_Emp(true,"persid",mCLNORG,Val(mEmpid))+") "
-						oStmt:SQLString := cStatement 
+						oStmt:= SQLStatement{cStatement,oConn} 
 						oStmt:Execute()
 						if IsNil(oStmt:Status)
-							oStmt:Commit()							
+							SQLStatement{"commit",oConn}:Execute() 
 							cStatement:="update "+sIdentChar+sqlname +sIdentChar+" set " 
 
 							mCLN:=oDbsvr:FIELDGET(#CLN)
@@ -471,6 +471,12 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 									lSkip:=true
 									exit
 								endif
+							elseif dbasename="mbalance"
+								if Empty(oDbsvr:FIELDGET(#REK)) .or.(Empty(oDbsvr:FIELDGET(#CRE)) .and. Empty(oDbsvr:FIELDGET(#DEB)))
+									// skip this Empty line
+									lSkip:=true
+									exit
+								endif
 							endif
 							cDBValue:=StrTran(StrTran(cDBValue,"\","\\"),'"','\"')
 							cStatement+=iif(Empty(cStatement),"",",")+ iif(Empty(cDBValue).and.aNull[i]=true,"NULL",'"'+cDBValue+'"'+iif(dbasename=="member".and.fieldname==#REK,',"'+cDBValue+'"',"")) // mbrid = accid
@@ -488,13 +494,14 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 						cStatement:=cStatementBase+cStatement+")"
 					endif
 					if !lSkip
-						oStmt:SQLString := cStatement 
+						oStmt:= SQLStatement{cStatement,oConn} 
 						oStmt:Execute()
 						IF !IsNil( oStmt:Status )
 							LogEvent(,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","LogErrors")
 							// 					ShowError( oStmt:ERRINFO )
-							oStmt:FreeStmt(SQL_CLOSE)
+// 							oStmt:FreeStmt(SQL_CLOSE)
 						endif
+						oStmt:FreeStmt(SQL_DROP)
 					endif
 					oPro:AdvancePro()
 					oDbsvr:Skip()
