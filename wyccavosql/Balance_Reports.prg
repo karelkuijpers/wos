@@ -3046,7 +3046,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	local lTransFound as logic // is account active? 
 	local oMBal as Balances 
 	local PMCLastSend as date
-	local oAcc,oTrans,oAccAss as SQLSelect
+	local oAcc,oTrans,oAccAss,oSys as SQLSelect
 	local oPers as SQLSelectPerson
 	LOCAL oPro as ProgressPer
 	local CurLanguage as string
@@ -3082,7 +3082,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	ENDIF		
 	oMBal:=Balances{}
 	oPPcd := SQLSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
-	PMCLastSend:=SQLSelect{"select pmislstsnd from sysparms",oConn}:FIELDGET(1)
+	
+	oSys:=SqlSelect{"select cast(pmislstsnd as date) as pmislstsnd from sysparms",oConn}
+	PMCLastSend:=iif(Empty(oSys:pmislstsnd),null_date,oSys:pmislstsnd)
 	aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
 
 	startdate:=SToD(Str(ReportYear,4)+'0101') 
@@ -3962,6 +3964,9 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 		endif
 	next
 	// select all person data:
+	if Empty(cPersids)
+		cPersids:=',0'
+	endif
 	oPers:=SQLSelectPerson{"select email,country,address,city,postalcode,gender,title,prefix,lastname,firstname,initials,attention,nameext,persid from person where persid in ("+SubStr(cPersids,2)+") order by lastname,city,address",oConn}
 	oPers:Execute()
 	do while !oPers:EOF 
