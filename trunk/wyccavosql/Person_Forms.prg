@@ -1181,7 +1181,7 @@ METHOD OkButton CLASS NewPersonWindow
 METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	*	aExtra: {New,AddressChanged,oCaller} or just: New
 	//Put your PostInit additions here
-	LOCAL pos as int
+	LOCAL pos,i,j as int
 	LOCAL myDim as Dimension
 	LOCAL myOrg as Point 
 	local aNAW:={} as array
@@ -1190,6 +1190,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 	LOCAL aCpl:={"DHR EN MW","DHR E/O MW","FAM","HR/MW","HR / MW","MW/HR"} as ARRAY 
 	local title,cTit as string 
 	local titPtr as int 
+	local oContr as Control
+	local aChilds:={} as array
 	self:SetTexts()
 	self:oPersCnt:=PersonContainer{}
 	self:aBankAcc:={}
@@ -1317,16 +1319,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		self:oDCmOPC:TextValue:=LOGON_EMP_ID
 		self:oDCmalterdate:Value:=Today()
 		// remove mbr and ent from listbox:
-		pos:=SELF:oDCmType:FindItem("Member",TRUE)
-		IF pos>0
-			self:oDCmType:CurrentItemNo:=pos
-			self:oDCmType:DeleteItem()
-		ENDIF
-		pos:=SELF:oDCmType:FindItem("Wycliffe Entity",TRUE)
-		IF pos>0
-			self:oDCmType:CurrentItemNo:=pos
-			self:oDCmType:DeleteItem()
-		ENDIF
+// 		pos:=self:oDCmType:FindItem("Member",true)
+// 		IF pos>0
+// 			self:oDCmType:CurrentItemNo:=pos
+// 			self:oDCmType:DeleteItem()
+// 		ENDIF
+// 		pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
+// 		IF pos>0
+// 			self:oDCmType:CurrentItemNo:=pos
+// 			self:oDCmType:DeleteItem()
+// 		ENDIF
 		IF !Empty(self:oPersCnt:m51_type)
 			self:oDCmType:TextValue := self:oPersCnt:m51_type
 		ENDIF
@@ -1342,7 +1344,39 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 			self:oDCmExternid:TextValue:=self:oPersCnt:m51_exid 
 			self:SetState()
 		endif
-	ENDIF
+	ENDIF 
+	IF self:lNew .or. Empty(self:oPerson:mbrid)      // no member
+		// remove mbr and ent from listbox:
+		pos:=self:oDCmType:FindItem("Member",true)
+		IF pos>0
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
+		ENDIF
+		pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
+		IF pos>0
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
+		ENDIF 
+		// remove mailing code MW from listboxes for mailing codes: 
+		aChilds:=self:GetAllChildren() 
+		i:=1
+		j:=1
+		do while j>0 
+			j:=AScan(aChilds,{|x|x:NameSym==String2Symbol("mCod"+Str(i,-1))},j+1)
+			if j>0  
+				oContr:=aChilds[j]
+				pos:=oContr:FindItem("Member",true)
+				IF pos>0
+					oContr:CurrentItemNo:=pos
+					oContr:DeleteItem()
+				ENDIF
+				i++
+			endif
+		enddo		
+	else
+		self:oDCmType:Disable()
+	ENDIF	
+
 	IF AScan(aMenu,{|x| x[4]=="PersonEdit"})=0
 		SELF:oCCOKButton:Hide()
 	ENDIF
