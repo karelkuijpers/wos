@@ -1019,9 +1019,8 @@ METHOD SetPropExtra( count, Left) CLASS NewPersonWindow
 	ENDIF
 	RETURN nil
 METHOD SetState() CLASS NewPersonWindow
-	LOCAL i:=1,j, pos as int
+	LOCAL i:=1,j, pos,posC as int
 	LOCAL oPersBank as SQLSelect
-	// 	LOCAL oMbr AS Members
 	LOCAL oXMLDoc as XMLDocument
 	LOCAL cDescr:="Bank# " as STRING
 	local aBank:={} as array 
@@ -1031,7 +1030,7 @@ METHOD SetState() CLASS NewPersonWindow
 	"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
 	"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
 	"externid,gender,opc,propextr,"+;
-	"m.accid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
+	"m.mbrid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
 	
@@ -1075,21 +1074,6 @@ METHOD SetState() CLASS NewPersonWindow
 			endif
 		ENDIF
 	NEXT
-	IF Empty(self:oPerson:accid)      // no member
-		// remove mbr and ent from listbox:
-		pos:=self:oDCmType:FindItem("Member",true)
-		IF pos>0
-			self:oDCmType:CurrentItemNo:=pos
-			self:oDCmType:DeleteItem()
-		ENDIF
-		pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
-		IF pos>0
-			self:oDCmType:CurrentItemNo:=pos
-			self:oDCmType:DeleteItem()
-		ENDIF
-	else
-		self:oDCmType:Disable()
-	ENDIF	
 	self:oDCmType:Value:=self:oPerson:TYPE
 	IF self:lAddressChanged
 		IF !Empty(self:oPersCnt:m51_pos)
@@ -1134,11 +1118,11 @@ METHOD StateExtra()CLASS NewPersonWindow
 		if i<=Len(aCod)
 			mCodH  :=aCod[i]
 		endif
-		IF Empty(mCodh).or.AScan(pers_codes,{|x|x[2]==mCodH})=0
+		if Empty(mCodH).or.AScan(pers_codes,{|x|x[2]==mCodH})=0
 			mCodH:=nil
-		ENDIF
+		endif
 		++j
-		IVarPutSelf(SELF,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodh)
+		IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH)
 	NEXT
 
 	IF SELF:lImport
@@ -1218,9 +1202,9 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	LOCAL oPers, oSel as SQLSelect
 	LOCAL Housnbr as STRING
 	
-	if !lNew
-		oPers:=SqlSelect{"select lastname,postalcode,firstname,address,externid from person where persid='"+self:mPersid+"'",oConn}
-	endif
+// 	if !lNew
+// 		oPers:=SqlSelect{"select lastname,postalcode,firstname,address,externid,m.mbrid from person p left join member m on (m.persid=p.persid) where p.persid='"+self:mPersid+"'",oConn}
+// 	endif
 	IF lValid .and. Empty(self:mLastName)
 		lValid:=FALSE
 		cError:= self:oLan:WGet("Lastname is mandatory")+"!"
@@ -1235,7 +1219,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	self:mPostalcode:=StandardZip(AllTrim(self:oDCmPOStalcode:VALUE))
 	self:mFirstname:=AllTrim(self:oDCmFirstname:VALUE)
 	self:mAddress:=AllTrim(self:oDCmAddress:VALUE)
-	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = ConS(oPers:lastname) .or. ConS(oPers:postalcode) # self:mPostalcode.or.ConS(oPers:firstname) # self:mFirstname.or.ConS(oPers:address) # self:mAddress.or. ZeroTrim(ConS(oPers:EXTERNID)) # self:mExternid)
+	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = ConS(self:oPerson:lastname) .or. ConS(self:oPerson:postalcode) # self:mPostalcode.or.ConS(self:oPerson:firstname) # self:mFirstname.or.ConS(self:oPerson:address) # self:mAddress.or. ZeroTrim(ConS(self:oPerson:EXTERNID)) # self:mExternid)
 		* Check duplicate NAC:
 		oSel:=SqlSelect{"select persid from person where lastname='"+addslashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
 		+AddSlashes(self:mAddress)+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
@@ -1303,19 +1287,19 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			ENDIF
 		ENDIF
 	ENDIF
-// 	IF lValid                  
-// 		IF 'MW' $ self:mCodInt
-// 		   IF self:lNew .or.Empty(self:oPerson:accid)  
-//   				lValid := FALSE
-// 				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("only allowed in case of member")
-// 			ENDIF
-// 		ELSE
-// 			IF !self:lNew .and.!Empty(self:oPerson:accid) 
-//  				lValid := FALSE
-// 				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("obliged in case of member")
-// 			ENDIF
-// 		ENDIF
-// 	ENDIF
+	IF lValid                  
+		IF 'MW' $ self:mCodInt
+		   IF self:lNew .or.Empty(self:oPerson:mbrid)  
+  				lValid := FALSE
+				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("only allowed in case of member")
+			ENDIF
+		ELSE
+			IF !self:lNew .and.!Empty(self:oPerson:mbrid) 
+ 				lValid := FALSE
+				cError := self:oLan:WGet("Mailing code")+" '" +GetMailDesc("MW") + "' "+self:oLan:WGet("obliged in case of member")
+			ENDIF
+		ENDIF
+	ENDIF
 	IF lValid
 		IF !IsNil(mCodInt)
 			IF !Empty(self:mCodInt).and.AllTrim(self:mCodInt)#'MW'
