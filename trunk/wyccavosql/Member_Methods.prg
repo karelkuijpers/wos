@@ -89,8 +89,10 @@ METHOD FilePrint CLASS MemberBrowser
 	"group_concat(distinct ass.accnumber separator ',') as assacc"+;
 	",group_concat(IF(di.desttyp<2,concat(cast(di.destamt as char),if(di.desttyp=1,'%',''),' to ',di.destpp,' ',di.destacc),concat('Remaining to ',di.destpp,' ',di.destacc)) separator ',') as distr"
 	 
-	cFrom:="person as p,balanceitem as b, member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
-	" left join distributioninstruction di on (di.mbrid=m.mbrid and di.disabled=0) left join department d on (m.depid=d.depid) left join account a on (a.accid=m.accid) "  
+	cFrom:="member as m left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
+	" left join distributioninstruction di on (di.mbrid=m.mbrid and di.disabled=0) left join department d on (m.depid=d.depid) "+;
+	"left join account a on (a.accid=m.accid) "+;
+	",person as p " 
    cStatement:= "select y.*,sum(bu.amount) as budget from ("+;
 	"select "+cFields+" from "+cFrom+" where "+self:cWhere+" group by m.mbrid ) as y"+;
 	" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.mbrid "+;
