@@ -2016,19 +2016,19 @@ oDBLASTNAME:Caption := "Lastname"
 self:Browser:AddColumn(oDBLASTNAME)
 
 oDBINITIALS := JapDataColumn{Person_NA2{}}
-oDBINITIALS:Width := 7
+oDBINITIALS:Width := 6
 oDBINITIALS:HyperLabel := HyperLabel{#initials,"Initials",NULL_STRING,NULL_STRING} 
 oDBINITIALS:Caption := "Initials"
 self:Browser:AddColumn(oDBINITIALS)
 
 oDBFIRSTNAME := JapDataColumn{Person_VRN{}}
-oDBFIRSTNAME:Width := 11
+oDBFIRSTNAME:Width := 10
 oDBFIRSTNAME:HyperLabel := HyperLabel{#firstname,"Firstname",NULL_STRING,NULL_STRING} 
 oDBFIRSTNAME:Caption := "Firstname"
 self:Browser:AddColumn(oDBFIRSTNAME)
 
 oDBPREFIX := JapDataColumn{Person_HISN{}}
-oDBPREFIX:Width := 6
+oDBPREFIX:Width := 10
 oDBPREFIX:HyperLabel := HyperLabel{#prefix,"Prefix",NULL_STRING,"Person_HISN"} 
 oDBPREFIX:Caption := "Prefix"
 self:Browser:AddColumn(oDBPREFIX)
@@ -2045,8 +2045,8 @@ oDBPOSTALCODE:HyperLabel := HyperLabel{#postalcode,"Zip code",NULL_STRING,"Perso
 oDBPOSTALCODE:Caption := "Zip code"
 self:Browser:AddColumn(oDBPOSTALCODE)
 
-oDBDATELASTGIFT := JapDataColumn{13}
-oDBDATELASTGIFT:Width := 13
+oDBDATELASTGIFT := JapDataColumn{11}
+oDBDATELASTGIFT:Width := 11
 oDBDATELASTGIFT:HyperLabel := HyperLabel{#datelastgift,"Last Gift","date last gift",NULL_STRING} 
 oDBDATELASTGIFT:Caption := "Last Gift"
 oDBdatelastgift:BlockOwner := SELF:SERVER
