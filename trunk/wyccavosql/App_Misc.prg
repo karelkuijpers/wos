@@ -2623,8 +2623,7 @@ Method SetTexts() class Window
 	aChilds:=self:GetAllChildren() 
 	for i:=1 to Len(aChilds)
 		cName:=ClassName(aChilds[i]) 
-		if cName==#FIXEDTEXT .or. cName==#PUSHBUTTON .or. cName==#GROUPBOX  .or. cName=#RADIOBUTTON .or. cName=#RADIOBUTTONGROUP.or. cName=#CHECKBOX  ;
-			.or. cName==#JAPDATACOLUMN .or. cName==#DATACOLUMN
+		if cName==#FIXEDTEXT .or. cName==#PUSHBUTTON .or. cName==#GROUPBOX  .or. cName=#RADIOBUTTON .or. cName=#RADIOBUTTONGROUP.or. cName=#CHECKBOX 
 			oContr:=aChilds[i] 
 			cCaption:=oContr:Caption
 			if Len(cCaption)>1
