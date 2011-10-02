@@ -2614,7 +2614,7 @@ Method Reset() class Window
 	next
 	return
 Method SetTexts() class Window 
-	Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string
+	Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string,oColumn as DataColumn
 	local oWLan as Language
 	if self:oLan==null_object
 		self:oLan:=Language{}
@@ -2622,8 +2622,9 @@ Method SetTexts() class Window
 	oWLan:=self:oLan
 	aChilds:=self:GetAllChildren() 
 	for i:=1 to Len(aChilds)
-		cName:=ClassName(aChilds[i])
-		if cName==#FIXEDTEXT .or. cName==#PUSHBUTTON .or. cName==#GROUPBOX  .or. cName=#RADIOBUTTON .or. cName=#RADIOBUTTONGROUP.or. cName=#CHECKBOX
+		cName:=ClassName(aChilds[i]) 
+		if cName==#FIXEDTEXT .or. cName==#PUSHBUTTON .or. cName==#GROUPBOX  .or. cName=#RADIOBUTTON .or. cName=#RADIOBUTTONGROUP.or. cName=#CHECKBOX  ;
+			.or. cName==#JAPDATACOLUMN .or. cName==#DATACOLUMN
 			oContr:=aChilds[i] 
 			cCaption:=oContr:Caption
 			if Len(cCaption)>1
@@ -2635,6 +2636,19 @@ Method SetTexts() class Window
 			endif 
 		endif
 	next
+	if IsAccess(self,#browser) .and.!Empty(self:browser)
+		for i:=1 to self:browser:ColumnCount
+			oColumn:=self:browser:GetColumn(i)
+			cCaption:=oColumn:Caption
+			if Len(cCaption)>1
+				if Right(cCaption,1)==":"
+					oColumn:Caption:=oWLan:WGet(SubStr(cCaption,1,Len(cCaption)-1))+":"
+				else
+					oColumn:Caption:=oWLan:WGet(cCaption)
+				endif								
+			endif 			
+		next
+	endif
 	self:Caption:=oWLan:WGet(self:Caption)
 	return
 CLASS WorkDayDate inherit DateStandard
