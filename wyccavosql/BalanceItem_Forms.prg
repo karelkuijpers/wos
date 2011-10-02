@@ -495,9 +495,9 @@ METHOD BuildListViewColumns() CLASS CustomExplorer
 
 	// for each field in the balance item server, create a
 	// list view column and add it to the list view
-	oListView:AddColumn(ListViewColumn{11,"Identifier"})
-	oListView:AddColumn(ListViewColumn{29,"Description"})
-	oListView:AddColumn(ListViewColumn{14,"Type"})
+	oListView:AddColumn(ListViewColumn{11,self:oLan:WGet("Identifier")})
+	oListView:AddColumn(ListViewColumn{29,self:oLan:WGet("Description")})
+	oListView:AddColumn(ListViewColumn{14,self:oLan:WGet("Type")})
 
 
 	RETURN nil
@@ -849,7 +849,7 @@ self:SetTexts()
 	// initialize data
 	SELF:InitData()
 	IF!Empty(cSearch)
-		oTreeOptions:SearchButton(FALSE)
+		self:oTreeOptions:SearchButton(FALSE)
 	ENDIF
 
 	RETURN SELF
@@ -1701,8 +1701,8 @@ METHOD EditChange(oControlEvent) CLASS ExplorerOptions
 	SUPER:EditChange(oControlEvent)
 	//Put your changes here
 	IF oControl:NameSym==#SearchTree
-		IF !oCCSearchButton:Caption=="Search"
-			oCCSearchButton:Caption:="Search"
+		IF !oCCSearchButton:caption==self:oLan:WGet("Search")
+			oCCSearchButton:caption:=self:oLan:WGet("Search")
 		ENDIF
 	ENDIF
 	RETURN NIL
@@ -1751,10 +1751,10 @@ LOCAL lFirst AS LOGIC
 IF IsNil(Shown)
 	Shown:=TRUE
 ENDIF
-lFirst:=(SELF:oCCSearchButton:caption=="Search")
+lFirst:=(self:oCCSearchButton:caption==self:oLan:WGet("Search"))
 IF SELF:Owner:Search(lFirst,Upper(AllTrim(SELF:oDCSearchTree:TextValue)))
 	IF lFirst
-		SELF:oCCSearchButton:Caption:="Search Next"
+		self:oCCSearchButton:caption:=self:oLan:WGet("Search Next")
 		SELF:oCCSearchButton:Show()
 	ENDIF
 ELSEIF Shown
