@@ -3866,12 +3866,14 @@ METHOD ExportButton( ) CLASS TransInquiry
 			ENDIF
 			* detail records: 
 			// Get transactnbrs: 
-			oTrans2:=SQLSelect{"select distinct transid from transaction t where "+self:cWhereSpec+" order by TransId",oConn}
-			do while !oTrans2:EoF
-				cTrans+=","+Str(oTrans2:TransId,-1)
-				oTrans2:Skip()
-			enddo
-			cSelectSt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and TransId in ("+SubStr(cTrans,2)+") order by TransId,seqnr" 
+			oTrans2:=SqlSelect{"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by transId",oConn} 
+			if oTrans2:RecCount>0
+				do while !oTrans2:EoF
+					cTrans+=","+Str(oTrans2:TransId,-1)
+					oTrans2:Skip()
+				enddo 
+			endif
+			cSelectSt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in ("+SubStr(cTrans,2)+") order by transid,seqnr" 
 			oTrans2:=SQLSelect{cSelectSt,oConn}
 			if oTrans2:RecCount>0
 				do WHILE !oTrans2:EoF
@@ -3880,7 +3882,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 						AllTrim(oTrans2:accountname)+'"'+cDelim+'"'+AllTrim(oTrans2:Description)+'"'+cDelim;
 						+'"'+Str(oTrans2:deb,-1)+'"'+cDelim+'"'+Str(oTrans2:cre,-1)+'"'+cDelim+;
 						+'"'+Str(oTrans2:DEBFORGN,-1)+'"'+cDelim+'"'+Str(oTrans2:CREFORGN,-1)+'"'+cDelim+'"'+oTrans2:CURRENCY+'"'+cDelim+;
-						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+oTrans2:REFERENCE+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+Str(oTrans2:PostStatus,-1)+'"')
+						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+oTrans2:REFERENCE+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+oTrans2:postingstatus+'"')
 					oTrans2:Skip()
 				ENDDO
 			endif
@@ -3893,7 +3895,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 				endif
 			next
 			IF lMail 
-				oSys:=SQLSelect{"select OWNMAILACC,EXPMAILACC,CountryOwn from sysparms", oConn}
+				oSys:=SqlSelect{"select ownmailacc,expmailacc,countryown from sysparms", oConn}
 				if oSys:RecCount>0 
 					cExportMail:=AllTrim(oSys:EXPMAILACC)
 					cExportMail:=StrTran(cExportMail,";"+AllTrim(oSys:OWNMAILACC))
@@ -4134,10 +4136,10 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 		endif
 	endif
 	self:cFields:="t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,t.userid,t.debforgn,t.creforgn,"+;
-	"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,"+;
+	"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,t.currency,t.ppdest,"+;
 	"a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
-	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and department in ("+cDepmntIncl+")") 
+	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and a.department in ("+cDepmntIncl+")") 
 	if !Empty( cAccAlwd)
 		if USERTYPE=="D"
 			self:cWhereBase+=" and t.userid='"+LOGON_EMP_ID+"'"
