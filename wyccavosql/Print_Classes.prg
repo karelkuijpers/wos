@@ -1,4 +1,4 @@
-RESOURCE _PrintDialog DIALOGEX  16, 30, 346, 134
+RESOURCE _PrintDialog DIALOGEX  16, 31, 346, 133
 STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Report"
 FONT	8, "MS Shell Dlg"
@@ -20,7 +20,7 @@ BEGIN
 	CONTROL	"Can&cel", _PRINTDIALOG_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 35, 54, 14
 	CONTROL	"Set&up", _PRINTDIALOG_SETUPBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 55, 54, 13
 	CONTROL	"__", _PRINTDIALOG_FIXEDTEXT1, "Static", WS_CHILD, 110, 103, 10, 12
-	CONTROL	"Choose Font", _PRINTDIALOG_FONTDIALOGBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 77, 54, 12
+	CONTROL	"Choose Font", _PRINTDIALOG_FONTDIALOGBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 77, 54, 12
 END
 
 CLASS _PrintDialog INHERIT DialogWinDowExtra 
@@ -171,6 +171,7 @@ SELF:HyperLabel := HyperLabel{#_PrintDialog,"Report",NULL_STRING,NULL_STRING}
 self:PostInit(oParent,uExtra)
 
 return self
+
 METHOD OkButton( ) CLASS _PrintDialog 
 METHOD PostInit() CLASS _PrintDialog
 	//Put your PostInit additions here
@@ -2701,15 +2702,16 @@ CLASS PrintDialog INHERIT _PrintDialog
 	PROTECT row:=0 AS INT
 	EXPORT Extension as STRING 
 	Protect ptrHandle
-	Protect LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
+	Protect LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
 	Protect LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
 		"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
 	Protect LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
 		"{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
 	Protect LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
+	protect LanguageTHD:="{\rtf1\ansi\deff0{\fonttbl{\f0\fnil\fprq2\fcharset0 Courier New;}{\f1\fmodern\fprq1\fcharset222 Courier New;}}"
 	Protect cRTFHeader as STRING
-	Protect RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;}\viewkind4\uc1\pard\viewkind1\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
-	Protect lRTF,lXls as logic
+	Protect RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;\red175\green238\blue238;}\widowctrl\viewkind1\viewzk1\uc1\pard\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
+	Export lRTF,lXls as logic
 
 	
 	declare method prstart,ReInitPrint
@@ -2805,8 +2807,9 @@ METHOD OkButton(cDest) CLASS PrintDialog
 
 	LOCAL nMax, nMin,nRet AS INT
 	Local cDefFolder as string 
-	local lError as logic
-
+	local lError as logic 
+	
+   self:lRTF:=false
 	IF IsNil(cDest)
 		self:Destination := self:oDCDestination:Value
 	ELSE
@@ -2852,6 +2855,8 @@ METHOD OkButton(cDest) CLASS PrintDialog
 				self:cRTFHeader:=self:LanguageJap+self:RTFFormat
 			ELSEIF sEntity=="CZR" .or. sEntity=="POL" .or. sEntity=="SKD"
 				self:cRTFHeader:=self:LanguageCZ+self:RTFFormat
+			ELSEIF sEntity=="THD"
+				self:cRTFHeader:=self:LanguageTHD+self:RTFFormat
 			ELSE
 				self:cRTFHeader:=self:LanguageDefault+self:RTFFormat
 			ENDIF
@@ -2924,7 +2929,7 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 		return
 	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0
 		// print prepared line
-		FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+iif(self:lRTF,"\par",''))
+		FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[1])=0,"\par",''))
 		self:oPrintJob:aFIFO:={} // reset fifo
 	endif
 	IF self:_Beginreport
@@ -2986,7 +2991,8 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 						endif
 					ELSE
 						if self:Destination=="File"
-							FWriteLine(self:ptrHandle, SubStr(HeadingLines[i],1,Widthpage)+iif(self:lRTF,"\par",''))
+// 							FWriteLine(self:ptrHandle, SubStr(HeadingLines[i],1,Widthpage)+iif(self:lRTF,"\par",''))
+							FWriteLine(self:ptrHandle, HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
 						else
 							AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))
 						endif	
@@ -2998,11 +3004,11 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 	ENDIF
 	self:_Beginreport:=FALSE
 	IF !IsNil(LineContent)
-		IF self:lXls
+// 		IF self:lXls
 			AAdd(self:oPrintJob:aFIFO,LineContent)
-		ELSE	
-			AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
-		ENDIF
+// 		ELSE	
+// 			AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
+// 		ENDIF
 		++LineNbr
 	ENDIF
 	self:row:=LineNbr
