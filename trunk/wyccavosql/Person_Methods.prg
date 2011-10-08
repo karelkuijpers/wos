@@ -1033,7 +1033,12 @@ METHOD SetState() CLASS NewPersonWindow
 	"m.mbrid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
-	
+	self:oPerson:Execute()
+	if Empty(self:oPerson:mbrid)
+		self:RemoveMemberParms()
+	else
+		self:oDCmType:Disable()
+	endif
 	self:oDCmLastname:Value := self:oPerson:lastname
 	self:ODCmPrefix:Value  := self:oPerson:prefix
 	self:oDCmTitle:Value  := self:oPerson:Title
@@ -1061,6 +1066,7 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmExternid:Value:= ZeroTrim(self:oPerson:EXTERNID)
 	self:ODCmBirthDate:Value:=self:oPerson:birthdate
 	self:oDCmGender:Value:=self:oPerson:GENDER
+	self:oDCmType:Value:=self:oPerson:TYPE
 	 
 	// Fill extra properties: 
 	oXMLDoc:=XMLDocument{self:oPerson:PROPEXTR}
@@ -1074,7 +1080,6 @@ METHOD SetState() CLASS NewPersonWindow
 			endif
 		ENDIF
 	NEXT
-	self:oDCmType:Value:=self:oPerson:TYPE
 	IF self:lAddressChanged
 		IF !Empty(self:oPersCnt:m51_pos)
 			self:oDCmPOStalcode:TextValue := StandardZip(self:oPersCnt:m51_pos)
@@ -1113,7 +1118,7 @@ METHOD StateExtra()CLASS NewPersonWindow
 	LOCAL cDescr:="Bank# " AS STRING
 
 	aCod:=Split(self:mCodInt," ")
-	FOR i:=1 to 9 
+	FOR i:=1 to 10 
 		mCodH:=""
 		if i<=Len(aCod)
 			mCodH  :=aCod[i]
@@ -2357,7 +2362,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
 //	LogEvent(self,oSel:SQlString,"LogErrors")
-// 	fSecStart:=Seconds()
+// 	fSecStart:=Seconds() 
+	LogEvent(self,oSel:SQlString,"logsql")
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
@@ -4201,7 +4207,7 @@ local i,j as int
 		endif
 		IF AtC("%DATEGIFT",cMarkupText)>0
 			lgrDat:=true
-			cFields+=",t.dat"
+			cFields+=",cast(t.dat as date) as dat"
 		endif
 		IF AtC("%REFERENCEGIFT",cMarkupText)>0
 			cFields+=",t.reference"
