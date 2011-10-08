@@ -3864,16 +3864,9 @@ METHOD ExportButton( ) CLASS TransInquiry
 				* position file at end:
 				FSeek(ptrHandle, 0, FS_END)
 			ENDIF
-			* detail records: 
-			// Get transactnbrs: 
-			oTrans2:=SqlSelect{"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by transId",oConn} 
-			if oTrans2:RecCount>0
-				do while !oTrans2:EoF
-					cTrans+=","+Str(oTrans2:TransId,-1)
-					oTrans2:Skip()
-				enddo 
-			endif
-			cSelectSt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in ("+SubStr(cTrans,2)+") order by transid,seqnr" 
+			* detail records with complete transactions: 
+			cSelectSt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in ("+;
+			"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by transId) order by transid,seqnr" 
 			oTrans2:=SQLSelect{cSelectSt,oConn}
 			if oTrans2:RecCount>0
 				do WHILE !oTrans2:EoF
