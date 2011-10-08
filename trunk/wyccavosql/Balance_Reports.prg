@@ -1972,7 +1972,7 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 				ENDIF
 			ENDIF
 
-		   self:oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,137,DMORIENT_LANDSCAPE,iif(filename = "SEPARATEFILE",'doc','txt')}
+		   self:oReport := PrintDialog{,self:oLan:WGet("Dept statements")+" "+Str(self:YEAREND,4,0)+"-"+StrZero(self:MONTHEND,2),,145,DMORIENT_LANDSCAPE,iif(filename = "SEPARATEFILE",'doc','txt')}
 			IF filename = "SEPARATEFILE"
 				self:oReport:OkButton("File",true)
 			ELSE
@@ -2159,7 +2159,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		ENDIF
 		// Print gift reports for each gift allowed account:
 		self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
-		self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName)
+		self:GiftsPrint(aAccGift,@nRow,@nPage,addHeading,mDepNumber,cDepName,me_hbn)
 		if	nCurFifo==Len(self:oReport:oPrintJob:aFIFO) .and.nPage=0 .and.nRow=0
 			// nothing printed:
 			self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
@@ -2348,7 +2348,7 @@ RETURN
 METHOD GetBalYears() CLASS DeptReport
 	// get array with balance years
 	RETURN (GetBalYears())
-METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as string,DepNumber as string,Depname as string) as void pascal CLASS DeptReport
+METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as string,DepNumber as string,Depname as string,me_hbn as string) as void pascal CLASS DeptReport
 	// printing of the gifts of one department
 	* aAcc: array with ids of the gift accounts of the department
 	* Giftreport for departemnt in year
@@ -2479,7 +2479,7 @@ METHOD GiftsPrint(aAcc as array,nRow ref int,nPage ref int,addHeading:='' as str
 			self:oGiftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
 		next
 	next
-	self:oGiftRpt:GiftsOverview(self:YEAREND,self:MONTHEND,self:Footnotes, aGiversdata,self:oReport,DepNumber+' '+DepName,@nRow,@nPage,addHeading)
+	self:oGiftRpt:GiftsOverview(self:YEAREND,self:MONTHEND,self:Footnotes, aGiversdata,self:oReport,DepNumber+' '+DepName,me_hbn,@nRow,@nPage,addHeading)
 
 
 	self:Pointer := Pointer{POINTERARROW}
@@ -3061,7 +3061,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		RedOff:="\cf0 "
 	ENDIF
 
-	IF .not.self:oReport:lPrintOk
+	IF !self:oReport:lPrintOk
 		RETURN 
 	ENDIF
 	lPrintFile:=(self:oReport:Destination=="File")
@@ -3186,13 +3186,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				nRow := 0
 			ENDIF
 			myLang:=Alg_taal
-			IF Empty(oAcc:persid)
-				me_hbn := Space(8)
-			ELSE
-				me_hbn:=oAcc:householdid
-				IF oAcc:HOMEPP!=sEntity
-					Alg_taal:="E"
-				ENDIF
+			me_hbn:=oAcc:householdid
+			IF !Empty(oAcc:HOMEPP) .and.oAcc:HOMEPP!=sEntity
+				Alg_taal:="E"
 			ENDIF
 			if !Alg_taal==CurLanguage
 				aTrType:={{"AG",oLan:RGet("Assessed Gifts (-10%)",,"!")},{"CH",oLan:RGet("Charges",,"!")},{"MG",oLan:RGet("Member Gifts",,"!")},{"PF",oLan:RGet("Personal Funds",,"!")}}
@@ -3445,7 +3441,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					oGftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
 				next
 			next
-			oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,@nRow,@nPage)
+			oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,me_hbn,@nRow,@nPage)
 			IF lPrintFile.and.!Empty(self:SendingMethod)
 				// separate files:
 				cFileName:=self:oReport:prstart() // save separate file
@@ -3744,7 +3740,7 @@ METHOD OKButton( ) CLASS GiftReport
 				self:ToAccount := self:FromAccount
 				self:FromAccount := nAcc
 			ENDIF
-			self:oReport := PrintDialog{oParent,self:oLan:RGet("Giftreport")+Str(self:PeilJaar,4)+StrZero(self:PeilMnd,2),,137,DMORIENT_LANDSCAPE,"doc"}
+			self:oReport := PrintDialog{oParent,self:oLan:RGet("Giftreport")+Str(self:PeilJaar,4)+StrZero(self:PeilMnd,2),,145,DMORIENT_LANDSCAPE,"doc"}
 			IF	SendingMethod="SeperateFile"
 				self:oReport:OKButton("File",true)
 			ELSE
@@ -3927,10 +3923,10 @@ CLASS GiftsReport
 	export dim aAssmntAmount[4,12] as float
 
 	declare method GiftsOverview,InitializeTexts
-METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, aGiversdata as array,oReport as PrintDialog ,description as string,nRow ref int,nPage ref int,addHeading:='' as string) as void pascal CLASS GiftsReport
+METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, aGiversdata as array,oReport as PrintDialog ,description as string,me_hbn as string,nRow ref int,nPage ref int,addHeading:='' as string) as void pascal CLASS GiftsReport
 	*	Markup of overview of givers and gifts from the beginning of a year for one destination 
 	*  aGiversdata: contains all gifts with id of giver
-	LOCAL g_na1,mndtxt,cPeriodTxt,hlptxt,me_hbn as STRING
+	LOCAL g_na1,mndtxt,cPeriodTxt,hlptxt as STRING
 	LOCAL CurOrder as STRING
 	LOCAL oPers as SQLSelectPerson
 	LOCAL i,j,mndnum,gvr,gvrcur,AddrPnt,nMonth, nReturn,asmntRow,RowCnt,AddressRow,RowSav,nDecFrac:=self:DecFrac,nDecFrac1,iMonth,PersidSav  as int 
@@ -3944,16 +3940,87 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	LOCAL aMbrAddresses:={} as ARRAY // contains of all givers the addresslines {Recno,aAsdress),...}
 	local dim aGiversGC[12] as string                  
 	LOCAL dim NoteRef[12] as string
+	local LineContent as string
 	LOCAL aMsg, aRow as ARRAY
 	LOCAL aHeading as ARRAY
-	LOCAL separator = Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
-		'-------|-------|-------|-------|-------|-------|-------|'
+	LOCAL separator := Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
+		'-------|-------|-------|-------|-------|-------|-------|'  as string
+	local HeadingRTF:="\trowd\trautofit1\trgaph60"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx3950"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx4750"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx5620"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx6455"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx7290"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx8125"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx8960"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx9795"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx10630"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx11465"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx12300"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx13135"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+"\cellx13950\f0"
+	local RowRTFline:="\trowd\trautofit1\aspalpha\aspnum\trpaddr40\trpaddfr3\trgaph60"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs\clNoWrap"+; 
+"\cellx3950"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx4750"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx5620"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx6455"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx7290"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx8125"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx8960"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx9795"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx10630"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx11465"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx12300"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx13135"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+"\cellx13950"  as string
+	local RowRTF:="\trowd\trautofit1\aspalpha\aspnum\trpaddr40\trpaddfr3\trgaph60"+;
+"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clNoWrap"+;
+"\cellx3950\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx4750\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx5620\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx6455\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx7290\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx8125\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx8960\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx9795\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx10630\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx11465\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx12300\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx13135\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+"\cellx13950"  as string 
 	LOCAL RowCnt,NoteNumber,GClen,CurPersid as int
 	local cPersids as string 
 
-	nRow:=0  && enforce page skip
+	nRow:=0  && enforce page skip 
+	self:CurLanguage:=''
 	nDecFrac1:=Max(0,nDecFrac - 1)
-	self:InitializeTexts(ReportYear,ReportMonth)
+	self:InitializeTexts(ReportYear,ReportMonth,oReport)
 	* Sort on person id: 
 
 	ASort(aGiversdata,,,{|x,y| x[PRSID]<y[PRSID].or.x[PRSID]==y[PRSID].and.x[MND]<=y[MND]})
@@ -3971,12 +4038,14 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	oPers:Execute()
 	do while !oPers:EOF 
 		CurPersid:=oPers:persid
-		aAddress	:=	MarkUpAddress(oPers,,36)
+		aAddress	:=	MarkUpAddress(oPers,,iif(sEntity='THD',72,40))
 		* remove trailing blank address lines:
 		ADel(aAddress,7)
+		ASize(aAddress,6)
 		FOR i	= 1 to 6
 			IF	Empty(aAddress[1])
 				ADel(aAddress,1)
+				aAddress[6]:=null_string
 			ELSE
 				exit
 			ENDIF
@@ -4027,26 +4096,37 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	endif
 	AAdd(aHeading,StrTran(StrTran(self:cHeading1,' %description%',Description),'%hbn%',me_hbn))
 	AAdd(aHeading,' ')
-	AAdd(aHeading,self:cHeading2)
-	AAdd(aHeading,separator)
-
+	AAdd(aHeading,iif(oReport:lRTF,HeadingRTF,'')+self:cHeading2 )
+	IF !oReport:lRTF
+		AAdd(aHeading,separator)
+	endif
 	IF !(Admin="WO".or.Admin="HO")
 		AsmntRowCnt:=1
 	ENDIF
 	FOR asmntRow= 1 to AsmntRowCnt
-		AssTot:=0
+// 		AssTot:=0
+// 		for i:=1 to 12
+// 			AssTot:=AssTot + aAssmntAmount[asmntRow,i]
+// 		next
+// 		IF AssTot#0
+		LineContent:=iif(oReport:lRTF,iif(asmntRow=AsmntRowCnt,StrTran(RowRTFline,"\clbrdrb\brdrw10\brdrs","\clbrdrb\brdrw20\brdrth"),RowRTF)+"\intbl\ql "+AllTrim(aAsmntDescr[asmntRow])+"\cell",Pad(aAsmntDescr[asmntRow],40))
 		for i:=1 to 12
-			AssTot:=AssTot + aAssmntAmount[asmntRow,i]
+			LineContent+=iif(oReport:lRTF,"\intbl"+iif(i=1,"\qr ",' ')+Str(aAssmntAmount[asmntRow,i],-1,nDecFrac1)+"\cell",Str(aAssmntAmount[asmntRow,i],8,nDecFrac1))
 		next
-		IF AssTot#0
-			hlptxt:=''
-			FOR i=1 to 12
-				hlptxt:=hlptxt+Str(Round(aAssmntAmount[asmntRow,i],nDecFrac1),8,nDecFrac1)
-			NEXT
-			oReport:PrintLine(@nRow,@nPage,Pad(aAsmntDescr[asmntRow],40)+hlptxt,aHeading,20)
-		ENDIF
+		LineContent+=+iif(oReport:lRTF,"\row\pard",'')
+		oReport:PrintLine(@nRow,@nPage,LineContent,aHeading,20)
+
+// 			hlptxt:=''
+// 			FOR i=1 to 12
+// 				hlptxt:=hlptxt+Str(Round(aAssmntAmount[asmntRow,i],nDecFrac1),8,nDecFrac1)
+// 			NEXT
+// 			oReport:PrintLine(@nRow,@nPage,;
+// 			Pad(aAsmntDescr[asmntRow],40)+hlptxt,aHeading,20)
+// 		ENDIF
 	NEXT
-	oReport:PrintLine(@nRow,@nPage,separator,aHeading,20-AsmntRowCnt)
+	IF !oReport:lRTF
+		oReport:PrintLine(@nRow,@nPage,separator,aHeading,20-AsmntRowCnt)
+	endif
 
 	FOR gvr=1 to Len(aGiversdata)
 		++RowCnt
@@ -4065,18 +4145,18 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 			AddressRow:=3
 		else
 			AddrPnt++ 
-			AAdd(aRow,Pad(Space(4)+ if(Empty(aMbrAddresses[AddrPnt,2,1]),"",aMbrAddresses[AddrPnt,2,1]),40))
-			AAdd(aRow,Pad(Str(RowCnt,3) + ' ' + if(Empty(aMbrAddresses[AddrPnt,2,2]),"",aMbrAddresses[AddrPnt,2,2]),40))
-			AAdd(aRow,Pad(Space(4) + if(Empty(aMbrAddresses[AddrPnt,2,3]),"",aMbrAddresses[AddrPnt,2,3]),40))
+			AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,1]),Pad(aMbrAddresses[AddrPnt,2,1],40)))
+			AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,2]),Pad(aMbrAddresses[AddrPnt,2,2],40)))
+			AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,3]),Pad(aMbrAddresses[AddrPnt,2,3],40)))
 			AddressRow:=3
 			IF !Empty(aMbrAddresses[AddrPnt,2,4])
-				AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,4],40))
+				AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,4]), Pad(aMbrAddresses[AddrPnt,2,4],40)))
 				++AddressRow
 				IF !Empty(aMbrAddresses[AddrPnt,2,5])
-					AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,5],40))
+					AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,5]), Pad(aMbrAddresses[AddrPnt,2,5],40)))
 					++AddressRow
 					IF !Empty(aMbrAddresses[AddrPnt,2,6])
-						AAdd(aRow,Pad(Space(4) + aMbrAddresses[AddrPnt,2,6],40))
+						AAdd(aRow,iif(oReport:lRTF, AllTrim(aMbrAddresses[AddrPnt,2,6]), Pad(aMbrAddresses[AddrPnt,2,6],40)))
 						++AddressRow
 					ENDIF
 				ENDIF
@@ -4116,32 +4196,57 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 				ENDIF
 			ENDIF
 		NEXT
-		oReport:PrintLine(@nRow,@nPage,;
-			aRow[1] + aGiversGC[1]+aGiversGC[2]+aGiversGC[3]+aGiversGC[4]+aGiversGC[5]+;
-			aGiversGC[6]+aGiversGC[7]+aGiversGC[8]+aGiversGC[9]+aGiversGC[10]+;
-			aGiversGC[11]+aGiversGC[12],aHeading,AddressRow)
-		FOR mndnum=1 to 12
-			IF GiftAmnt[mndnum]#0
-				aRow[2]:=aRow[2]+Str(Round(GiftAmnt[mndnum],nDecFrac),8,nDecFrac)
-			ELSE
-				aRow[2]:=aRow[2]+Space(8)
-			ENDIF
-		NEXT
-		oReport:PrintLine(@nRow,@nPage,aRow[2],aHeading)
-		oReport:PrintLine(@nRow,@nPage,aRow[3] + NoteRef[1]+NoteRef[2]+NoteRef[3];
-			+NoteRef[4]+NoteRef[5]+NoteRef[6]+NoteRef[7]+;
-			NoteRef[8]+NoteRef[9]+NoteRef[10]+;
-			NoteRef[11]+NoteRef[12],aHeading)
+		LineContent:=iif(oReport:lRTF,RowRTF+"\intbl\ql "+AllTrim(aRow[1])+"\cell",aRow[1])
+		for i:=1 to 12
+			LineContent+=iif(oReport:lRTF,"\intbl"+iif(i=1,"\qr ",' ')+AllTrim(aGiversGC[i])+"\cell",aGiversGC[i])
+		next
+		LineContent+=+iif(oReport:lRTF,"\row\pard",'')
+		oReport:PrintLine(@nRow,@nPage,LineContent,aHeading,AddressRow)
+// 		oReport:PrintLine(@nRow,@nPage,;
+// 			aRow[1] + aGiversGC[1]+aGiversGC[2]+aGiversGC[3]+aGiversGC[4]+aGiversGC[5]+;
+// 			aGiversGC[6]+aGiversGC[7]+aGiversGC[8]+aGiversGC[9]+aGiversGC[10]+;
+// 			aGiversGC[11]+aGiversGC[12],aHeading,AddressRow)
+// 		FOR mndnum=1 to 12
+// 			IF GiftAmnt[mndnum]#0
+// 				aRow[2]:=aRow[2]+Str(Round(GiftAmnt[mndnum],nDecFrac),8,nDecFrac)
+// 			ELSE
+// 				aRow[2]:=aRow[2]+Space(8)
+// 			ENDIF
+// 		NEXT 
+// 		oReport:PrintLine(@nRow,@nPage,aRow[2],aHeading)
+		LineContent:=iif(oReport:lRTF,RowRTF+"\intbl\ql "+AllTrim(aRow[2])+"\cell",aRow[2])
+		for i:=1 to 12
+			LineContent+=iif(oReport:lRTF,"\intbl"+iif(i=1,"\qr ",' ')+iif(GiftAmnt[i]=0.00,'',Str(GiftAmnt[i],-1,nDecFrac))+"\cell",iif(GiftAmnt[i]=0.00,Space(8),Str(GiftAmnt[i],8,nDecFrac)))
+		next
+		LineContent+=+iif(oReport:lRTF,"\row\pard",'')
+		oReport:PrintLine(@nRow,@nPage,LineContent,aHeading)
+		LineContent:=iif(oReport:lRTF,iif(AddressRow<=3,RowRTFline,RowRTF)+"\intbl\ql "+AllTrim(aRow[3]) +"\cell",aRow[3])
+		for i:=1 to 12
+			LineContent+=iif(oReport:lRTF,"\intbl"+iif(i=1,"\qr ",' ')+AllTrim(NoteRef[i])+"\cell",NoteRef[i])
+		next
+		LineContent+=+iif(oReport:lRTF,"\row\pard",'')
+		oReport:PrintLine(@nRow,@nPage,LineContent,aHeading)
+// 		oReport:PrintLine(@nRow,@nPage,aRow[3] + NoteRef[1]+NoteRef[2]+NoteRef[3];
+// 			+NoteRef[4]+NoteRef[5]+NoteRef[6]+NoteRef[7]+;
+// 			NoteRef[8]+NoteRef[9]+NoteRef[10]+;
+// 			NoteRef[11]+NoteRef[12],aHeading)
 			
 		if AddressRow>3 
 			FOR i=4 to AddressRow
-				oReport:PrintLine(@nRow,@nPage,aRow[i],aHeading)
+				LineContent:=iif(oReport:lRTF,iif(i=AddressRow,RowRTFline,RowRTF)+"\intbl\ql "+AllTrim(aRow[i]) +"\cell\intbl\cell\intbl\cell\intbl\cell"+;
+				"\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\row\pard",aRow[i])
+				oReport:PrintLine(@nRow,@nPage,LineContent,aHeading)
 			NEXT
 		endif
-		oReport:PrintLine(@nRow,@nPage,separator,aHeading)
+		if !oReport:lRTF
+			oReport:PrintLine(@nRow,@nPage,separator,aHeading)
+		endif
 	NEXT
 
-	ASize(aHeading,2)
+	ASize(aHeading,2) 
+	oReport:PrintLine(@nRow,@nPage,' ',aHeading)
+	oReport:PrintLine(@nRow,@nPage,Str(oPers:RecCount,-1)+Space(1) +self:oLan:RGet("givers"),aHeading)
+	
 	*	Footnotes for special messages:
 	IF NoteNumber > 0
 		RowSav:=nRow
@@ -4176,7 +4281,7 @@ method Init() class GiftsReport
 	self:DecFrac:=ConI(SQLSelect{"select decmgift from sysparms",oConn}:FIELDGET(1))
 
 	return self
-method InitializeTexts(ReportYear as int,ReportMonth as int) as void pascal class GiftsReport  
+method InitializeTexts(ReportYear as int,ReportMonth as int,oReport as PrintDialog ) as void pascal class GiftsReport  
 	local mtxt,cPeriodTxt as string
 	local i as int
 	if !self:CurLanguage== Alg_taal
@@ -4188,13 +4293,20 @@ method InitializeTexts(ReportYear as int,ReportMonth as int) as void pascal clas
 		self:NonEarDesc:=self:oLan:RGet("Allotted non-designated gift",,"@!")
 		mtxt:=''
 		FOR i=1 to 12
-			mtxt:=mtxt+' '+PadL(self:oLan:RGet(MonthEn[i],,"!"),7)
+			mtxt:=mtxt+iif(oReport:lRTF,"\intbl"+iif(i=1,"\qc","")+" "+self:oLan:RGet(MonthEn[i],,"!")+"\cell",' '+PadL(self:oLan:RGet(MonthEn[i],,"!"),7))
 		NEXT
+		mtxt+=iif(oReport:lRTF,"\row\pard\f1","")
+
 		cPeriodTxt:=Str(ReportYear,4)+' '+iif(ReportMonth=1,'',self:oLan:RGet('up incl'))+' '+self:oLan:RGet(MonthEn[ReportMonth],,"!")
 		self:cHeading1:=self:oLan:RGet('Year',,"!")+' '+cPeriodTxt+Space(15)+self:oLan:RGet('GIFTREPORT',,"@!")+': %description%'+;
 			'   '+self:Country+' HOUSECD: %hbn%'
-		self:cHeading2:=Pad(self:oLan:RGet('name',,"!")+' '+self:oLan:RGet('and')+' '+self:oLan:RGet('address')+' '+;
+		IF oReport:lRTF
+			self:cHeading2:="\intbl\ql "+self:oLan:RGet('name',,"!")+' '+self:oLan:RGet('and')+' '+self:oLan:RGet('address')+' '+;
+			self:oLan:RGet('giver')+"\cell"+mtxt 
+		else
+			self:cHeading2:=Pad(self:oLan:RGet('name',,"!")+' '+self:oLan:RGet('and')+' '+self:oLan:RGet('address')+' '+;
 			self:oLan:RGet('giver'),40)+mtxt
+		endif
 		self:cHeading3:=self:oLan:RGet('footnotes',,"@!")
 		self:cHeading4:=self:oLan:RGet('Explanation',,"!")+' '+self:oLan:RGet('of')+' '+self:oLan:RGet('codes')
 		self:cHeading5:=self:oLan:RGet("non-designated",,"!")+' '+self:oLan:RGet('gift')
