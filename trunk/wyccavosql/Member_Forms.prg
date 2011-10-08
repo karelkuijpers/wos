@@ -1649,26 +1649,26 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	local oLast as SQLSelect 
 	self:SetTexts()
 	// initialize listview with ass.accounst:
-	oColREk:=ListViewColumn{11,"Account#"}
+	oColREk:=ListViewColumn{11,self:oLan:WGet("Account")+'#'}
 	oColREk:NameSym:=#Number
-	oColName:=ListViewColumn{32,"Name"}
+	oColName:=ListViewColumn{32,self:oLan:WGet("Name")}
 	oColName:NameSym:=#Name
 	self:oDCListViewAssAcc:AddColumn(oColREk)
 	self:oDCListViewAssAcc:AddColumn(oColName) 
 
 
 	// initialize listview with distribution instructions:
-	oColEnabled:=ListViewColumn{5,"Active"}
+	oColEnabled:=ListViewColumn{5,self:oLan:WGet("Active")}
 	oColEnabled:NameSym:=#DestEnabled
-	oColPP:=ListViewColumn{6,"Dest PO"}
+	oColPP:=ListViewColumn{6,self:oLan:WGet("Dest PO")}
 	oColPP:NameSym:=#DestPP
-	oColAcc:=ListViewColumn{9,"Destn Acct"}
+	oColAcc:=ListViewColumn{9,self:oLan:WGet("Destn Acct")}
 	oColAcc:NameSym:=#DestAcc
-	oColDesc:=ListViewColumn{21,"Description"}
+	oColDesc:=ListViewColumn{21,self:oLan:WGet("Description")}
 	oColDesc:NameSym:=#Descrptn
-	oColTyp:=ListViewColumn{7,"Type"}
+	oColTyp:=ListViewColumn{7,self:oLan:WGet("Type")}
 	oColTyp:NameSym:=#DestTyp
-	oColAmt:=ListViewColumn{8,"Amount",LVCFMT_RIGHT}
+	oColAmt:=ListViewColumn{8,self:oLan:WGet("Amount"),LVCFMT_RIGHT}
 	oColAmt:NameSym:=#DestAmt
 	self:oDCDistrListView:AddColumn(oColEnabled)
 	self:oDCDistrListView:AddColumn(oColPP)
