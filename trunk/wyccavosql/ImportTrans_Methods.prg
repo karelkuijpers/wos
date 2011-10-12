@@ -131,15 +131,15 @@ LOCAL nImportDate AS STRING, dBatchDate AS DATE
 LOCAL aPMIS, aTxt AS ARRAY
 SetPath(CurPath)
 SetDefault(CurPath)
-aImportFiles:=Directory(CurPath+"\*.csv")
+self:aImportFiles:=Directory(CurPath+"\*.csv")
 aTxt:=Directory(CurPath+"\*.txt")
 IF Len(aTxt)>0
-	nlen:=Len(aImportFiles)
-	ASize(aImportFiles,nlen+Len(aTxt))
-	ACopy(aTxt,aImportFiles,,,nlen+1)
+	nlen:=Len(self:aImportFiles)
+	ASize(self:aImportFiles,nlen+Len(aTxt))
+	ACopy(aTxt,self:aImportFiles,,,nlen+1)
 ENDIF
-FOR nf:=1 TO Len(aImportFiles)
-	cFileName:=Upper(aImportFiles[nf,F_NAME]) 
+FOR nf:=1 to Len(self:aImportFiles)
+	cFileName:=Upper(self:aImportFiles[nf,F_NAME]) 
 	IF Len(cFileName)>=13 .and.!Upper(SubStr(cFileName,1,13))="EXPORTPERSONS" .and.!Upper(SubStr(cFileName,1,14))="EXPORT PERSONS"
 		nImportDate:=SubStr(cFileName,Len(cFileName)-11,8)
 		IF IsDigit(nImportDate)
@@ -158,8 +158,8 @@ FOR nf:=1 TO Len(aImportFiles)
 		ENDIF
 	ENDIF
 		
-	ADel(aImportFiles,nf)
-	ASize(aImportFiles,Len(aImportFiles)-1)
+	ADel(self:aImportFiles,nf)
+	ASize(self:aImportFiles,Len(self:aImportFiles)-1)
 	nf--
 NEXT
 // Import also import files from Czech WinDuo:
@@ -168,9 +168,9 @@ if Len(aTxt)<1
 	aTxt:=Directory(CurPath+"\deník*.dbf")
 endif	
 IF Len(aTxt)>0
-	nlen:=Len(aImportFiles)
-	ASize(aImportFiles,nlen+Len(aTxt))
-	ACopy(aTxt,aImportFiles,,,nlen+1)
+	nlen:=Len(self:aImportFiles)
+	ASize(self:aImportFiles,nlen+Len(aTxt))
+	ACopy(aTxt,self:aImportFiles,,,nlen+1)
 ENDIF
 
 // Import also xml-files from PMIS
@@ -193,11 +193,11 @@ FOR nf:=1 TO Len(aPMIS)
 	nf--
 NEXT
 IF Len(aPMIS)>0
-	nlen:=Len(aImportFiles)
-	ASize(aImportFiles,nlen+Len(aPMIS))
-	ACopy(aPMIS,aImportFiles,,,nlen+1)
+	nlen:=Len(self:aImportFiles)
+	ASize(self:aImportFiles,nlen+Len(aPMIS))
+	ACopy(aPMIS,self:aImportFiles,,,nlen+1)
 ENDIF
-IF Len(SELF:aImportFiles)>0
+IF Len(self:aImportFiles)>0
 	RETURN TRUE
 ELSE
 	RETURN FALSE
@@ -618,7 +618,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		ptrHandle:Close()
 		RETURN FALSE
 	ENDIF
-	if !GetDelimiter(cBuffer,@aStruct,@cDelim,8,19)
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,8,17)
 		ptrHandle:Close()
 		RETURN FALSE 
 	endif
@@ -671,11 +671,11 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				iif(ptDesc<= Len(AFields),",descriptn='"+AddSlashes(AFields[ptDesc])+"'","") +;
 				iif(ptDeb<= Len(AFields),",debitamnt="+AFields[ptDeb],"")+;
 				iif(ptCre<= Len(AFields),",creditamnt="+AFields[ptCre],"")+; 
-			",debforgn="+iif(ptDebF>0 .and.ptDebF<= Len(AFields),+AFields[ptDebF],AFields[ptDeb])+;
-				",creforgn="+iif( ptCreF>0 .and. ptCreF<= Len(AFields),AFields[ptCre],AFields[ptCre])+;
+			",debforgn="+iif(ptDebF>0 .and.ptDebF<= Len(AFields),AFields[ptDebF],AFields[ptDeb])+;
+				",creforgn="+iif( ptCreF>0 .and. ptCreF<= Len(AFields),AFields[ptCreF],AFields[ptCre])+;
 				",currency='"+iif(ptCur>0 .and.ptCur<= Len(AFields),AFields[ptCur],sCURR)+"'"+;
 				iif(ptAss<= Len(AFields),",assmntcd='"+AFields[ptAss]+"'","")+;
-				iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AFields[ptAccName]+"'","")+;
+				iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AddSlashes(AFields[ptAccName])+"'","")+;
 				iif(ptPers>0 .and. ptPers<=Len(AFields),iif(AllTrim(AFields[ptPers])==",","",",giver='"+AllTrim(AFields[ptPers])+"'"),"")+;
 				iif(ptPPD>0 .and. ptPPD<=Len(AFields),",ppdest='"+AFields[ptPPD]+"'","")+;
 				iif(ptRef>0 .and. ptRef<=Len(AFields),",reference='"+AddSlashes(AFields[ptRef])+"'","")+;
@@ -685,7 +685,8 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 			oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 			oStmnt:Execute()
 			IF oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error: "+oStmnt:SQLString,"LogErrors")
+				ptrHandle:Close()
+				LogEvent(self,"error: "+oStmnt:SQLString,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -1032,11 +1033,12 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				",creditamnt="+Str(amount,-1)+",debitamnt=0.00"+iif(lUSD,",creforgn="+Str( USDAmount,-1),''))+;
 				iif(lUSD,",currency='USD'","")+;
 				",descriptn='"+AddSlashes(cDescription)+"'"+;
-				","+iif((transtype="PC" .or. transtype="AT") .and.!Empty(accnbrdest),"POSTSTATUS=2","POSTSTATUS=1")
+				","+iif((transtype="PC" .or. transtype="AT") .and.!Empty(accnbrdest),"poststatus=2","poststatus=1")
 			oStmnt:=SQLStatement{cStatement,oConn}
-			oStmnt:Execute()
+			oStmnt:Execute()                                                            
 			if oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error:"+cStatement,"LogErrors")
+				FClose(ptrHandle)
+				LogEvent(self,"error:"+cStatement,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -1077,7 +1079,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
 			IF oStmnt:NumSuccessfulRows<1
-				LogEvent(,"error:"+cStatement,"LogErrors")
+				FClose(ptrHandle)
+				LogEvent(self,"error:"+cStatement,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				oParent:Pointer := Pointer{POINTERARROW}
 				return false
