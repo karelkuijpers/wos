@@ -1553,9 +1553,6 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 		IF !IsNil(r_balpryrtot[Bal_Ptr]).and.!Empty(r_balpryrtot[Bal_Ptr])
 			AAdd(aTotprv,{m_soort,level,r_balpryrtot[Bal_Ptr]})
 		ENDIF
-		if level==0
-		  level:=0
-		endif
 		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			clbalvj:=0
