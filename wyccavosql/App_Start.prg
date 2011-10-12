@@ -25,7 +25,8 @@ method Start() class App
 	local oStJournal as StandingOrderJournal
 	local startfile,cWorkdir as STRING
 	local oUpg as CheckUPGRADE
-	local lStop as logic 
+	local lStop as logic
+	local nErr as int 
 	
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
@@ -52,8 +53,8 @@ method Start() class App
 			if oConn:Connected
 				oConn:Disconnect()
 			endif					
-			if	self:Run(startfile)<33
-				(ErrorBox{,"Could not start installation program "+startfile+"("+DosErrString(DosError())}):Show()
+			if	(nErr:=self:Run(startfile))<33
+				(ErrorBox{,"Could not start installation program "+startfile+" (error:"+Str(nErr,-1)+"; "+DosErrString(DosError())+")"}):Show()
 				lStop:=False
 			endif
 		endif
