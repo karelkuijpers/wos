@@ -13,64 +13,68 @@ RETURN nRet
 class CheckUPGRADE  
 	declare method LoadUpgrade
 Method LoadInstallUpg(myFTP,cWorkdir) class CheckUPGRADE
-LOCAL oFTP:=myFTP  as cFtp
-Local aInsRem as Array 
-Local oFs as MyFileSpec, LocalDate as date, RemoteDate as date
-// remove old version if still present:
-oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-if oFs:Find()
-	//oFs:DELETE()
-	FErase(oFs:FullPath)
-	oFs:Find()
-endif
+	LOCAL oFTP:=myFTP  as cFtp
+	Local aInsRem as Array 
+	Local oFs as FileSpec, LocalDate as date, RemoteDate as date
+	// remove old version if still present:
+	oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+	if oFs:Find()
+		//oFs:DELETE()
+		FErase(oFs:FullPath)
+		oFs:Find()
+	endif
 
-oFs:=MyFileSpec{cWorkdir+"InstallSQLUpg.EXE"}
-LocalDate:=oFs:DateChanged
+	oFs:=FileSpec{cWorkdir+"InstallSQLUpg.EXE"}
+	LocalDate:=oFs:DateChanged
 
-aInsRem:=oFTP:Directory("InstallSQLUpg.EXE")
-if Len(aInsRem)>0
-	RemoteDate:=aInsRem[1,F_DATE]
-	if LocalDate < RemoteDate
-		// apparently new version: 
-		if oFs:Find()
-			oFs:Rename("InstallSQLUpgOld.EXE")
-		endif
-		IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
-			__RaiseFTPError(oFTP) 
-			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+	aInsRem:=oFTP:Directory("InstallSQLUpg.EXE")
+	if Len(aInsRem)>0
+		RemoteDate:=aInsRem[1,F_DATE]
+		if LocalDate < RemoteDate
+			// apparently new version: 
 			if oFs:Find()
-				// rename back
-				if !oFs:Rename("InstallSQLUpg.EXE")
-				    return false
+				oFs:Rename("InstallSQLUpgOld.EXE")
+			endif
+			IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
+				__RaiseFTPError(oFTP) 
+				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+				if oFs:Find()
+					// rename back
+					if !oFs:Rename("InstallSQLUpg.EXE")
+						return false
+					endif
+				else
+					return False
 				endif
 			else
-				return False
-			endif
-		ENDIF
-		if oFs:Find()
-			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-			if oFs:Find()
-				FErase(oFs:FullPath)
 				oFs:Find()
-			endif
-		else
-			oFs:=MyFileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+				CollectForced()  // to force some wait
+				oFs:Find()
+			ENDIF
 			if oFs:Find()
-				// rename back
-				if oFs:Rename("InstallSQLUpg.EXE")
-				    return true
+				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+				if oFs:Find()
+					FErase(oFs:FullPath)
+					oFs:Find()
 				endif
-			endif
+			else
+				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
+				if oFs:Find()
+					// rename back
+					if oFs:Rename("InstallSQLUpg.EXE")
+						return true
+					endif
+				endif
+				return false
+			endif 
+		endif
+	else
+		IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
+			__RaiseFTPError(oFTP) 
 			return false
-		endif 
+		endif 	
 	endif
-else
-	IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
-		__RaiseFTPError(oFTP) 
-		return false
-	endif 	
-endif
-return true
+	return true
 
 
 method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as logic) as logic class CheckUPGRADE
@@ -80,14 +84,14 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 	local i,j as int
 	local newversion, cVersion, cWarning as string , anewvers, aCurvers, altstvers:={0,0,0,0} as array,LtstVers:=0,CurVers,DBVers as float,ptrHandle  
 	local oSys as SQLSelect
-
+	Local oFs as FileSpec
 	oFTP := CFtp{"WycOffSy FTP Agent"}
 	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
 	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
 	oSys := SQLSelect{"select version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-	endif
+	endif 
 	if FirstOfDay .or. DBVers>CurVers
 		IF oFTP:ConnectRemote("ftp.parousiazoetermeer.net","anonymous@parousiazoetermeer.net","any")
 			aDir:=oFTP:Directory("SQLUPGRADE*.exe")      
@@ -108,7 +112,7 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 			AEval(altstvers,{|x|LtstVers:=1000*LtstVers+x})	
 
 			if LtstVers>CurVers .and.;
-				(FirstOfDay .or. (DBVers==LtstVers.or.SQLSelect{"select online from employee where online=1",oConn}:RecCount<2))
+					(FirstOfDay .or. (DBVers==LtstVers.or.SQLSelect{"select online from employee where online=1",oConn}:RecCount<2))
 				newversion:=""
 				AEval(altstvers,{|x|newversion+=iif(Empty(newversion),"",".")+Str(x,-1)})
 				if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
@@ -122,35 +126,41 @@ method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as l
 					if !self:LoadInstallUpg(oFTP,cWorkdir)
 						(ErrorBox{,"Could not load" +cWorkdir+"InstallSQLUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
 						ret:=false
-					else	
-						if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
-							// load initial upgrade with all files first:
-							if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
-								// make InstallUpg.Bat:
-								ptrHandle:=FCreate(cWorkdir+"InstallSQLUpg.bat") 
-								if ptrHandle = F_ERROR
-									(ErrorBox{,"Could not start" +cWorkdir+"InstallSQLUpg.bat"+": "+DosErrString(FError())}):Show()
-									ret:=false
-								else
-									FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
-									FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
-									FWriteLine(ptrHandle,'CD "'+CurPath+'"')
-									FWriteLine(ptrHandle,'"'+cWorkdir+'"WosSQL.exe"')
-									FWriteLine(ptrHandle,"Exit")
-									FClose(ptrHandle)
-									startfile:=cWorkdir+"InstallSQLUpg.bat"
-								endif
-							else 
-								__RaiseFTPError(oFTP)
-							ENDIF
-						else
-							// load only upgrade
-// 							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-							IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
-								startfile:=cWorkdir+"InstallSQLUpg.EXE"
-							ELSE
-								__RaiseFTPError(oFTP)
-							ENDIF 
+					else
+						oFs:=FileSpec{cWorkdir+"InstallSQLUpg.EXE"}
+						if !oFs:Find()
+							(ErrorBox{,"Could not load" +cWorkdir+"InstallSQLUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
+							ret:=false
+						else					
+							if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
+								// load initial upgrade with all files first:
+								if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
+									// make InstallUpg.Bat:
+									ptrHandle:=FCreate(cWorkdir+"InstallSQLUpg.bat") 
+									if ptrHandle = F_ERROR
+										(ErrorBox{,"Could not start" +cWorkdir+"InstallSQLUpg.bat"+": "+DosErrString(FError())}):Show()
+										ret:=false
+									else
+										FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
+										FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
+										FWriteLine(ptrHandle,'CD "'+CurPath+'"')
+										FWriteLine(ptrHandle,'"'+cWorkdir+'"WosSQL.exe"')
+										FWriteLine(ptrHandle,"Exit")
+										FClose(ptrHandle)
+										startfile:=cWorkdir+"InstallSQLUpg.bat"
+									endif
+								else 
+									__RaiseFTPError(oFTP)
+								ENDIF
+							else
+								// load only upgrade
+								// 							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
+								IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
+									startfile:=cWorkdir+"InstallSQLUpg.EXE"
+								ELSE
+									__RaiseFTPError(oFTP)
+								ENDIF 
+							endif 
 						endif
 					ENDIF	
 				endif
@@ -733,24 +743,15 @@ method init() class Initialize
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset 
 
-	oSel:=SQLSelect{"show databases",oConn}
+	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
 	endif 
-	do while !oSel:EoF
-		AAdd(aDB,oSel:FIELDGET(1))
-		oSel:Skip()
-	enddo
-	oSel:FreeStmt(SQL_CLOSE) 
-	// database quotation mark for names:
-	// 	sIdentChar := oConn:Info( SQL_IDENTIFIER_QUOTE_CHAR)
-	// 	if sIdentChar = " "
-	// 		sIdentChar := null_string
-	// 	endif
 	sIdentChar:='`'
-	if (i:=AScan(aDB,{|x|Lower(x)==Lower(dbname)}))==0
+	if oSel:RecCount<1
+   	// database does not yet exist:
 		self:lNewDb:=true
 		self:FirstOfDay:=true 
 		//create database: 
@@ -761,7 +762,7 @@ method init() class Initialize
 			break
 		endif 
 	else
-		dbname:=aDB[i]
+		dbname:=oSel:FIELDGET(1)
 	endif
 	oStmt:=SQLStatement{'Use `'+dbname+"`",oConn}
 	oStmt:Execute() 
@@ -770,14 +771,20 @@ method init() class Initialize
 		Break
 	endif
 	if !self:lNewDb
-		oSel:=SQLSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
-		if oSel:RecCount>0
-			self:FirstOfDay:=FALSE
-		else	
-			self:FirstOfDay:=true
-			if !Empty(oSel:Status)
-				self:lNewDb:=true    // apparently partly new database which need to be converted
+		// check if empty database:
+		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
+			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
+			if oSel:RecCount>0
+				self:FirstOfDay:=FALSE
+			else	
+				self:FirstOfDay:=true
+				if !Empty(oSel:Status)
+					self:lNewDb:=true    // apparently partly new database which need to be converted
+				endif
 			endif
+		else
+			self:FirstOfDay:=true
+			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
 	ENDIF
 
@@ -809,14 +816,18 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	if !self:lNewDb
-		oSel:=SQLSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
-		if oSel:RecCount>0
-			self:FirstOfDay:=FALSE
-		else	
-			self:FirstOfDay:=true
-			if !Empty(oSel:status)
-				self:lNewDb:=true    // apparently partly new database which need to be converted
+		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
+			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
+			if Empty(oSel:status).and. oSel:RecCount>0
+				self:FirstOfDay:=FALSE
+			else	
+				self:FirstOfDay:=true
+				if !Empty(oSel:status)
+					self:lNewDb:=true    // apparently partly new database which need to be converted
+				endif
 			endif
+		else
+			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
 	ENDIF
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
