@@ -27,7 +27,7 @@ method Start() class App
 	local oUpg as CheckUPGRADE
 	local lStop as logic
 	local nErr as int 
-	
+	local cFatalError as string	
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
@@ -117,7 +117,7 @@ method Start() class App
 			// Run program
 			IF FirstOfDay
 				// Check consistency data
-				CheckConsistency(oMainWindow,true,false) 
+				CheckConsistency(oMainWindow,true,false,@cFatalError) 
 				// Process prolongations of subscriptions (donations): 
 				do while ProlongateAll(oMainWindow)
 				enddo		
