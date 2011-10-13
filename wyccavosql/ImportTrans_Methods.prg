@@ -241,7 +241,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
 	"where i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+"' order by imptrid",oConn}
 	if oImpB:reccount<1
-	   LogEvent(,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
+	   LogEvent(self,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
 	   lOK:=false
 	  	return false
 	endif
@@ -551,7 +551,7 @@ DO WHILE Len(AFields)>1
 		oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 		oStmnt:execute() 
 		if oStmnt:NumSuccessfulRows<1
-			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
+			LogEvent(self,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
 		lError:=true
 				exit
@@ -568,7 +568,7 @@ DO WHILE Len(AFields)>1
 		oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 		oStmnt:execute() 
 		if oStmnt:NumSuccessfulRows<1
-			LogEvent(,"error:"+oStmnt:SQLString,"LogErrors")
+			LogEvent(self,"error:"+oStmnt:SQLString,"LogErrors")
 			ErrorBox{,self:oLan:WGet('Transaction could not be stored')+"("+AFields[ptTrans]+"):"+oStmnt:status:Description}:show()
 			lError:=true
 			exit
