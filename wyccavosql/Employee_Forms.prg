@@ -590,7 +590,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		oEmp:=SQLSelect{cEmpStmnt,oConn} 
 		oEmp:Execute()
 		if !IsNil(oEmp:Status)
-			LogEvent(,"Fout:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
+			LogEvent(self,"Error:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
 			return		
 		endif
 		self:mLogon_name := oEmp:LOGINNAME
