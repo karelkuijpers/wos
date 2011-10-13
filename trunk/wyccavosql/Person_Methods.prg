@@ -243,10 +243,10 @@ if !Empty(output)
 			woonplaats:=Upper(SubStr(woonplaats,1,1))+Lower(SubStr(woonplaats,2))				
 		endif
 	else
-// 		LogEvent(,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
+// 		logevent(self,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
 	endif	
 else
-// 	LogEvent(,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
+// 	logevent(self,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
 endif
 oHttp:CloseRemote()
 oHttp:Axit() 
@@ -1406,7 +1406,7 @@ METHOD DeleteButton CLASS PersonBrowser
 			oSQL:=SQLStatement{"delete from personbank where persid="+myCLN,oConn}
 			oSQL:Execute() 
 		else
-			LogEvent(,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogErrors")
+			LogEvent(self,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogErrors")
 			(ErrorBox{self,'Delete person Error:'+oSQL:Status:Description}):Show()
 		endif
 
@@ -3886,7 +3886,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(self,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
 						lError:=true
 						exit
 					endif
@@ -3909,7 +3909,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 						",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'"+iif(cType=='M',",GC='AG'",""),oConn}
 					oStmnt:Execute()
 					if oStmnt:NumSuccessfulRows<1
-						LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
+						LogEvent(self,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogSQL")
 						lError:=true
 						exit
 					endif
