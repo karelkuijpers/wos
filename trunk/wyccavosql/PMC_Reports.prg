@@ -383,6 +383,7 @@ METHOD PrintReport() CLASS PMISsend
 	local cTransLock as string
 	local cDistr as string
 	local time1,time0 as float
+	local cFatalError as string
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -430,19 +431,19 @@ METHOD PrintReport() CLASS PMISsend
 
 	if Empty(self:oSys:PMCMANCLN) 
 		(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
-		self:ENDWindow()
+// 		self:ENDWindow()
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	else
 		oPers:=SqlSelect{"select persid,email,"+SQLFullName()+" as fullname from person where persid="+Str(self:oSys:PMCMANCLN,-1),oConn}
 		if oPers:Reccount<1
 			(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
-			self:ENDWindow()
+// 			self:ENDWindow()
 			self:Pointer := Pointer{POINTERARROW}
 			return
 		elseif Empty(oPers:email)
 			(ErrorBox{oWindow,self:oLan:WGet("Enter first email address for PMC manager")+" "+oPers:fullname+' '+self:oLan:WGet("who should approve the PMC file")}):Show()
-			self:ENDWindow()
+// 			self:ENDWindow()
 			self:Pointer := Pointer{POINTERARROW}
 			return
 			
@@ -452,9 +453,11 @@ METHOD PrintReport() CLASS PMISsend
 
 	self:oSys:EXCHRATE := fExChRate
 	// Check consistency data
-	if !CheckConsistency(self,true,false)
-		ErrorBox{self,self:oLan:WGet("not all transaction are balanced")}:Show()
-		return false
+	if !CheckConsistency(self,true,false,@cFatalError)
+		ErrorBox{self,cFatalError}:Show()
+// 		self:ENDWindow()
+		self:Pointer := Pointer{POINTERARROW}
+		return 
 	endif
 	oMBal:=Balances{}
 	separatorline:= '--------------------|-----------|'+Replicate('-',126)+'|'
@@ -1452,7 +1455,7 @@ METHOD PrintReport() CLASS PMISsend
 // 		ENDIF
 
 		if PMCUpload
-			LogEvent(self,self:oLan:WGet("Uploaded file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")) 
+			LogEvent(self,self:oLan:WGet("Uploaded file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+ Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR )
 		endif
 		// sending by email:
 		cPMISMail:=AllTrim(self:oSys:IESMAILACC)
@@ -1497,8 +1500,8 @@ METHOD PrintReport() CLASS PMISsend
 					iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet('mail to PMC mail address')+" "+;
 					AllTrim(self:oSys:IESMAILACC)+")")}):Show()
 					if !PMCUpload	
-						LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
-						iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
+						LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+ Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCurr +;
+						" ("+iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
 						AllTrim(self:oSys:IESMAILACC)+")"))
 					ENDIF
 			ENDIF
@@ -1511,7 +1514,7 @@ METHOD PrintReport() CLASS PMISsend
 // 		oMainWindow:RefreshMenu()
 // 		oMainWindow:SetCaption()
 // 	ENDIF
-	self:ENDWindow()
+// 	self:ENDWindow()
 	if !PMCUpload .and.!lStop
 		oMapi:Close()
 	endif
