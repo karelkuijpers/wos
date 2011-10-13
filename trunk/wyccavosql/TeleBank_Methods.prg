@@ -837,7 +837,7 @@ DO WHILE Len(aFields)>3
 		++self:lv_aant_toe
 		++nImp
 	else
-		LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
+		LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 	endif
 	cBuffer:=ptrHandle:FReadLine(ptrHandle)
 	aFields:=Split(cBuffer,cDelim)
@@ -942,7 +942,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 							++self:lv_aant_toe
 							++nImp
 						else
-							LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
+							LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 						endif
 					ENDIF
 				ENDIF
@@ -1172,7 +1172,7 @@ DO WHILE .not.oHlM:EoF
 				++self:lv_aant_toe
 				++nImp
 			else
-				LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
+				LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:Status:Description,"LogErrors")
 			endif
   		endif
 	ENDIF
@@ -1828,7 +1828,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 							++self:lv_aant_toe 
 							++nImp
 						else
-							LogEvent(,oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+oStmnt:SQLString,"LogErrors")
+							LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+oStmnt:SQLString,"LogErrors")
 						endif
 					ENDIF
 				ENDIF
