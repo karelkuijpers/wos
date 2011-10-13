@@ -279,7 +279,7 @@ METHOD FindButton( ) CLASS AccountBrowser
 	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
 	self:oAcc:Execute() 
 	if !Empty(oAcc:status)
-		LogEvent(,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
+		LogEvent(self,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
 	endif
 	
 	self:GoTop()
@@ -783,7 +783,7 @@ BEGIN
 	CONTROL	"", EDITACCOUNT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 228, 55, 97, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITACCOUNT_DEPBUTTON, "Button", WS_CHILD, 324, 55, 15, 12
 	CONTROL	"Subscriptionprice:", EDITACCOUNT_MSUBSCRIPTIONPRICE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 256, 73, 68, 13
-	CONTROL	"17-8-2011", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
+	CONTROL	"12-10-2011", EDITACCOUNT_BALANCEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 36, 99, 70, 14
 	CONTROL	"Multi Currency", EDITACCOUNT_MMULTCURR, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 136, 60, 11
 	CONTROL	"", EDITACCOUNT_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 136, 104, 72
 	CONTROL	"Reevaluate", EDITACCOUNT_MREEVALUATE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 224, 136, 56, 11
@@ -1030,6 +1030,7 @@ oDCSC_ABP:HyperLabel := HyperLabel{#SC_ABP,"Subscription price:",NULL_STRING,NUL
 oDCmAccNumber := SingleLineEdit{SELF,ResourceID{EDITACCOUNT_MACCNUMBER,_GetInst()}}
 oDCmAccNumber:HyperLabel := HyperLabel{#mAccNumber,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmAccNumber:Picture := "XXXXXXXXXXXX"
+oDCmAccNumber:FieldSpec := account_ACCNUMBER{}
 
 oDCmGIFTALWD := CheckBox{SELF,ResourceID{EDITACCOUNT_MGIFTALWD,_GetInst()}}
 oDCmGIFTALWD:HyperLabel := HyperLabel{#mGIFTALWD,"Gifts Receivable","Indication if gifts are allowed for this account","Rek_GIFTALWD"}
@@ -1037,6 +1038,7 @@ oDCmGIFTALWD:FieldSpec := account_GIFTALWD{}
 
 oDCmDescription := SingleLineEdit{SELF,ResourceID{EDITACCOUNT_MDESCRIPTION,_GetInst()}}
 oDCmDescription:HyperLabel := HyperLabel{#mDescription,NULL_STRING,"Description","Rek_OMS"}
+oDCmDescription:FieldSpec := account_OMS{}
 
 oDCmBalitemid := SingleLineEdit{SELF,ResourceID{EDITACCOUNT_MBALITEMID,_GetInst()}}
 oDCmBalitemid:HyperLabel := HyperLabel{#mBalitemid,NULL_STRING,"What is it: Assoiciated balance item",NULL_STRING}
