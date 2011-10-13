@@ -24,7 +24,7 @@ CLASS AccountStatements
 	protect cTab:=' ' as string
 	protect cAccCurrency, CurAcc,cFrom,cSubTotal as string
 	protect aPPCode:={},	aTrType:={} as array
-	protect m71_chdeb,m71_chcre as float  
+	protect m71_chdeb,m71_chcre,m71_chdebF,m71_chcreF as float  
 
 	declare method MonthPrint,slot_mnd
 METHOD Init(DescrpWidth, MinimalInfo) CLASS AccountStatements
@@ -107,7 +107,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 			IF !Empty(self:CurAcc)
 				// process previous account:
 				IF .not.Empty(mnd_cur)
-					self:slot_mnd(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,m58_rek,me_type,jr_cur,oReport,aOPP)
+					self:slot_mnd(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,mnd_debF,mnd_creF,m58_rek,me_type,jr_cur,self:oReport,aOPP)
 					aOPP:={}
 				endif
 				skipaant:=4
@@ -119,17 +119,17 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 					BalDeb:=self:oBal:Per_DebF
 					BalCre:=self:oBal:Per_CreF	
 				endif
-     			oReport:beginreport:=self:beginreport
+     			self:oReport:beginreport:=self:beginreport
 
 				// 			self:oBal:GetBalance(oAcc:accid,oAcc:balitemid)
 				IF Val(Str(self:oBal:Per_Deb))<>0.and.Val(Str(self:oBal:Per_Cre))<>0
 					skipaant++
 				endif
 				IF !self:lMinimalInfo
-					oReport:PrintLine(@nRow,@nPage,;
+					self:oReport:PrintLine(@nRow,@nPage,;
 						Space(20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+'------------'+self:cTab+'------------'+iif(lForgnC,Space(8)+self:cTab+self:cTab+'------------'+self:cTab+'------------',""),Heading,skipaant)
 					IF Val(Str(m58_deb))<>0 .or.Val(Str(m58_cre))<>0 .and.nMonthStart<nMonthEnd 
-						oReport:PrintLine(@nRow,@nPage,;
+						self:oReport:PrintLine(@nRow,@nPage,;
 							Pad(oLan:RGet('Balance',,"!")+Space(1)+oLan:RGet('transactions')+Space(1)+oLan:RGet(MonthEn[nFromMonth],,"!")+Space(1)+Str(nFromYear,4)+Space(1)+oLan:RGet("to")+Space(1)+;
 							oLan:RGet(MonthEn[nToMonth],,"!")+Space(1)+Str(nToYear,4),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+;
 							iif(lForgnC,if(m58_debF-m58_creF<0,Space(12)+self:cTab+Str(m58_creF-m58_debF,12,DecAantal),Str(m58_debF-m58_creF,12,DecAantal)+self:cTab+Space(12))+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
@@ -137,7 +137,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 							Str(m58_deb-m58_cre,12,DecAantal)),Heading,0)
 					endif
 
-					oReport:PrintLine(@nRow,@nPage,BoldOn+;
+					self:oReport:PrintLine(@nRow,@nPage,BoldOn+;
 						Pad(self:CurAcc+Space(1)+oLan:RGet('Account balance',,,"!")+Space(1)+DToC(EndOfMonth(Today()+31)),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+;
 						iif(lForgnC,if(BalDeb-BalCre<=0,Space(12)+self:cTab+Str(BalCre-BalDeb,12,DecAantal),;
 						RedCharOn+Str(BalDeb-BalCre,12,DecAantal)+RedCharOff+Space(13))+self:cTab+BoldOff+PadC(self:cAccCurrency,8)+self:cTab,"") +;
@@ -160,17 +160,17 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 			self:cAccCurrency:=self:oTrans:AccCurrency
 			self:CurAcc:=self:oTrans:ACCNUMBER
 			IF IsAccess(self,#Owner)
-				self:Owner:STATUSMESSAGE("Printing account statement of :"+self:CurAcc+": regel:"+Str(Len(oReport:oPrintJob:aFIFO)))
+				self:Owner:STATUSMESSAGE("Printing account statement of :"+self:CurAcc+": regel:"+Str(Len(self:oReport:oPrintJob:aFIFO)))
 			ENDIF
 			lForgnC:=(!self:cAccCurrency==sCURR)
-			if oReport:MaxWidth<57+self:DescrWidth+35 .and. lForgnC
-				oReport:MaxWidth:=57+self:DescrWidth+35
-				oReport:oPrintJob:Initialize(oReport:MaxWidth)
-			elseif oReport:MaxWidth>=57+self:DescrWidth+35 .and. !lForgnC
-				oReport:MaxWidth:=57+self:DescrWidth
-				oReport:oPrintJob:Initialize(oReport:MaxWidth)
+			if self:oReport:MaxWidth<57+self:DescrWidth+38 .and. lForgnC
+				self:oReport:MaxWidth:=57+self:DescrWidth+38
+				self:oReport:oPrintJob:Initialize(self:oReport:MaxWidth)
+			elseif self:oReport:MaxWidth>=57+self:DescrWidth+35 .and. !lForgnC
+				self:oReport:MaxWidth:=57+self:DescrWidth
+				self:oReport:oPrintJob:Initialize(self:oReport:MaxWidth)
 			endif
-			oReport:beginreport:=self:beginreport
+			self:oReport:beginreport:=self:beginreport
 			me_AccNbr := Pad(self:CurAcc,12)
 			m58_rek:=Str(self:oTrans:AccID,-1)
 			me_oms:=self:oTrans:accname
@@ -196,14 +196,14 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				AAdd(Heading,YellowOn+me_AccNbr+'   '+me_oms+YellowOff)
 				AAdd(Heading,Space(1))
 			else
-				AAdd(Heading,Replicate('-',oReport:MaxWidth))
+				AAdd(Heading,Replicate('-',self:oReport:MaxWidth))
 			endif
 			jr_cur:=0
 			mnd_cur:=0
 			nCurMonth:=0
 			store 0 to m58_deb,m58_cre,m57_giftbed,mnd_deb,mnd_cre
 			store 0 to m58_debF,m58_creF,m57_giftbedF,mnd_debF,mnd_creF
-			nBeginmember:=Len(oReport:oPrintJob:aFIFO)
+			nBeginmember:=Len(self:oReport:oPrintJob:aFIFO)
 			lTransFound:=false
 		endif
 		if !Empty(oTrans:dat)
@@ -211,7 +211,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 			nThisMonth:=Integer(Year(self:oTrans:dat)*12)+Month(self:oTrans:dat)-1
 			IF nThisMonth<>nCurMonth
 				IF.not.Empty(mnd_cur)
-					self:slot_mnd(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,m58_rek,me_type,jr_cur,oReport,aOPP)
+					self:slot_mnd(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,mnd_debF,mnd_creF,m58_rek,me_type,jr_cur,self:oReport,aOPP)
 					aOPP:={}
 				ENDIF
 				mnd_deb:=0
@@ -220,15 +220,19 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				mnd_creF:=0
 				m57_giftbed:=0
 				m57_giftbedF:=0
-				oReport:PrintLine(@nRow,@nPage,Space(1)+oLan:RGet(MonthEn[Month(self:oTrans:dat)],,"@!")+' '+;
+				self:m71_chdeb:=0.00
+				self:m71_chcre:=0.00
+				self:m71_chdebF:=0.00
+				self:m71_chcreF:=0.00
+				self:oReport:PrintLine(@nRow,@nPage,Space(1)+oLan:RGet(MonthEn[Month(self:oTrans:dat)],,"@!")+' '+;
 					Str(Year(self:oTrans:dat),4),Heading,9)
-				IF Empty(mnd_cur)  && eerste maand:
+				IF Empty(mnd_cur)  && first month?:
 					jr_cur:=Year(self:oTrans:dat)
 					mnd_cur:=Month(self:oTrans:dat)
 					aOPP:={}
 					self:oBal:GetBalance(m58_rek,jr_cur*100+mnd_cur,jr_cur*100+mnd_cur,self:cAccCurrency)
 					if lForgnC
-						oReport:PrintLine(@nRow,@nPage,;
+						self:oReport:PrintLine(@nRow,@nPage,;
 							Pad(oLan:RGet('Beginning account balance',,"!")+Space(1)+oLan:RGet(MonthEn[mnd_cur],,"!")+Space(1)+Str(jr_cur,4),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+; 
 						IF(self:oBal:Begin_DebF-self:oBal:Begin_CreF<0,Space(12)+self:cTab+;
 							Str(self:oBal:Begin_CreF-self:oBal:Begin_DebF,12,DecAantal),;
@@ -236,11 +240,11 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 						nRow--
 					endif
 					// 							oBal:GetBalance(m58_rek,me_num,jr_cur*100+mnd_cur,jr_cur*100+mnd_cur) 
-					oReport:PrintLine(@nRow,@nPage,;
+					self:oReport:PrintLine(@nRow,@nPage,;
 						iif(lForgnC,"",Pad(oLan:RGet('Beginning account balance',,"!")+Space(1)+oLan:RGet(MonthEn[mnd_cur],,"!")+Space(1)+Str(jr_cur,4),20+self:DescrWidth)+self:cTab+self:cTab+self:cTab)+; 
 					iif(self:oBal:Begin_Deb-self:oBal:Begin_Cre<0,Space(12)+self:cTab+;
 						Str(self:oBal:Begin_Cre-self:oBal:Begin_Deb,12,DecAantal),;
-						Str(self:oBal:Begin_Deb-self:oBal:Begin_Cre,12,DecAantal)),Heading,0)
+						Str(self:oBal:Begin_Deb-self:oBal:Begin_Cre,12,DecAantal)),Heading,0)						
 				ENDIF
 				if self:oBal:Begin_Deb # self:oBal:Begin_Cre
 					lTransFound:=true   // beginning balance: regard as active
@@ -273,18 +277,22 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				endif
 				IF	(nOPP:=AScan(aOPP,{|x|x[1]==cOPP	.and.	x[2]==cTypeOPP}))=0
 					//						AAdd(aOPP,{cOPP,cTypeOPP,self:oTrans:DEB,self:oTrans:CRE,{self:oTrans:docid+space(1)+DToC(self:oTrans:dat)+space(1)+Pad(self:oTrans:description,80)+;
-					AAdd(aOPP,{cOPP,cTypeOPP,self:oTrans:deb,self:oTrans:cre,{Pad(self:oTrans:docid,10)+self:cTab+DToC(self:oTrans:dat)+self:cTab+MemoLine(self:oTrans:Description,self:DescrWidth,1)+self:cTab+;
+					AAdd(aOPP,{cOPP,cTypeOPP,self:oTrans:deb,self:oTrans:cre,self:oTrans:DEBFORGN,self:oTrans:CREFORGN,{Pad(self:oTrans:docid,10)+self:cTab+DToC(self:oTrans:dat)+self:cTab+MemoLine(self:oTrans:Description,self:DescrWidth,1)+self:cTab+;
+						iif(self:lForgnC,Str(self:oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(self:oTrans:CREFORGN,12,DecAantal)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 						Str(self:oTrans:deb,12,DecAantal)+self:cTab+Str(self:oTrans:cre,12,DecAantal)+self:cTab+PadL(self:oTrans:TransId,11)}})
 					nOPP:=Len(aOPP)
 				ELSE
 					aOPP[nOPP,3]+=self:oTrans:deb
 					aOPP[nOPP,4]+=self:oTrans:cre
-					AAdd(aOPP[nOPP,5],Pad(self:oTrans:docid,10)+self:cTab+DToC(self:oTrans:dat)+self:cTab+MemoLine(self:oTrans:Description,self:DescrWidth,1)+self:cTab+;
+					aOPP[nOPP,5]+=self:oTrans:DEBFORGN
+					aOPP[nOPP,6]+=self:oTrans:CREFORGN
+					AAdd(aOPP[nOPP,7],Pad(self:oTrans:docid,10)+self:cTab+DToC(self:oTrans:dat)+self:cTab+MemoLine(self:oTrans:Description,self:DescrWidth,1)+self:cTab+;
+						iif(self:lForgnC,Str(self:oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(self:oTrans:CREFORGN,12,DecAantal)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 						Str(self:oTrans:deb,12,DecAantal)+self:cTab+Str(self:oTrans:cre,12,DecAantal)+self:cTab+PadL(self:oTrans:TransId,11))
 				ENDIF
 				nMem:=2
 				DO	WHILE	!Empty(cDesc:=MemoLine(Description,74,nMem))
-					AAdd(aOPP[nOPP,5],Space(22)+cDesc)
+					AAdd(aOPP[nOPP,7],Space(22)+cDesc)
 					nMem++
 				ENDDO
 			ELSE
@@ -295,7 +303,9 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				endif
 				self:m71_chdeb:=Round(self:m71_chdeb+oTrans:deb,DecAantal)
 				self:m71_chcre:=Round(self:m71_chcre+oTrans:cre,DecAantal)
-				oReport:PrintLine(@nRow,@nPage,;
+				self:m71_chdebF:=Round(self:m71_chdebF+oTrans:DEBFORGN,DecAantal)
+				self:m71_chcreF:=Round(self:m71_chcreF+oTrans:CREFORGN,DecAantal)
+				self:oReport:PrintLine(@nRow,@nPage,;
 					PadR(self:oTrans:docid,10)+self:cTab+DToC(self:oTrans:dat)+self:cTab+iif(lXls,Description,MemoLine(description,self:DescrWidth,1))+self:cTab+;
 					iif(lForgnC,Str(self:oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(self:oTrans:CREFORGN,12,DecAantal)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 					Str(self:oTrans:deb,12,decaantal)+self:cTab+Str(self:oTrans:cre,12,decaantal)+;
@@ -303,7 +313,7 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 				if !lXls
 					nMem:=2
 					do	WHILE	!Empty(cDesc:=MemoLine(Description,self:DescrWidth,nMem))
-						oReport:PrintLine(@nRow,@nPage,Space(20)+self:cTab+self:cTab+cDesc,Heading,0)
+						self:oReport:PrintLine(@nRow,@nPage,Space(20)+self:cTab+self:cTab+cDesc,Heading,0)
 						nMem++
 					ENDDO
 				endif
@@ -313,23 +323,24 @@ METHOD MonthPrint(nFromAcc as string,nToAcc as,nFromYear as int,nFromMonth as in
 	ENDDO
 
 	RETURN true
-METHOD slot_mnd(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
+METHOD slot_mnd(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,mnd_debF as float,mnd_creF as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
 LOCAL skipaant:=5,i,j as int
 local BalDeb:=0.00, BalCre:=0.00 as float
 local cOPP,cTypeOPP as string 
 IF Integer(m57_giftbed*100)/100#0
 	oReport:PrintLine(@nRow,@nPage,iif(self:cTab==CHR(9),self:cTab+self:cTab,Space(22))+;
 	Pad(oLan:RGet("Total gifts/own funds",,"!"),self:DescrWidth)+self:cTab+;
-	iif(lForgnC,Str(m57_giftbedF,12,DecAantal)+Space(13)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
+	iif(lForgnC,Str(self:m57_giftbedF,12,DecAantal)+Space(13)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 	+Space(12)+self:cTab+Str(m57_giftbed,12,DecAantal),aHeading) 
 	self:m71_chcre:=Round(self:m71_chcre+m57_giftbed,DecAantal)
 ENDIF
 *	Print	closing lines account statement:
-IF	Len(aOPP)>0	.and.( self:m71_chdeb # 0.00	.or. self:m71_chcre # 0.00)
+IF	Len(aOPP)>0	.and.( self:m71_chdeb # 0.00	.or. self:m71_chcre # 0.00 .or. self:m71_chdebF # 0.00	.or. self:m71_chcreF # 0.00)
 	oReport:PrintLine(@nRow,@nPage,;
 	Space(20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+'------------'+self:cTab+'------------'+iif(lForgnC,Space(8)+self:cTab+self:cTab+'------------'+self:cTab+'------------',""),aHeading,2)
 	self:oReport:PrintLine(@nRow,@nPage,;
 		iif(self:cTab==CHR(9),self:cTab+self:cTab,Space(22))+Pad(cSubTotal,self:DescrWidth)+self:cTab+;
+		iif(lForgnC,Str(self:m71_chdebF,12,DecAantal)+self:cTab+Str(self:m71_chcreF,12,DecAantal)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 		Str(self:m71_chdeb,12,DecAantal)+self:cTab+Str(self:m71_chcre,12,DecAantal),aHeading)
 ENDIF
 * Printing of amounts from	OPP's:
@@ -347,13 +358,14 @@ FOR i:=1	to	Len(aOPP)
 	ENDIF
 	self:oReport:PrintLine(@nRow,@nPage,;
 		iif(self:cTab==CHR(9),self:cTab+self:cTab,Space(22))+Pad(self:cFrom+Space(1)+cOPP+":	"+cTypeOPP,self:DescrWidth),aHeading)
-	FOR j:=1	to	Len(aOPP[i,5])
-		self:oReport:PrintLine(@nRow,@nPage,aOPP[i,5][j],aHeading)									
+	FOR j:=1	to	Len(aOPP[i,7])
+		self:oReport:PrintLine(@nRow,@nPage,aOPP[i,7][j],aHeading)									
 	NEXT
 	oReport:PrintLine(@nRow,@nPage,;
 	Space(20+self:DescrWidth)+self:cTab+self:cTab+self:cTab+'------------'+self:cTab+'------------'+iif(lForgnC,Space(8)+self:cTab+self:cTab+'------------'+self:cTab+'------------',""),aHeading,6)
 	self:oReport:PrintLine(@nRow,@nPage,;
 		iif(self:cTab==CHR(9),self:cTab+self:cTab,Space(22))+Pad(self:cSubTotal+Space(1)+self:cFrom+Space(1)+cOPP+": "+cTypeOPP,self:DescrWidth)+self:cTab+;
+		iif(self:lForgnC,Str(aOPP[i,5],12,DecAantal)+self:cTab+Str(aOPP[i,6],12,DecAantal)+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 		Str(aOPP[i,3],12,decaantal)+self:cTab+Str(aOPP[i,4],12,decaantal),aHeading)				
 NEXT
 self:oBal:GetBalance(m58_rek,,jr_cur*100+mnd_cur,self:cAccCurrency)
@@ -447,7 +459,7 @@ function AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cr
 									lError:=true
 								endif
 							else
-								LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+								LogEvent(,"error:"+oStmnt:status:Description+CRLF+"addtoincome stmnt:"+oStmnt:SQLString,"LogErrors")
 								lError:=true
 							endif
 						else
@@ -455,7 +467,7 @@ function AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cr
 						endif
 					else
 						lError:=true
-						LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+						LogEvent(,"error:"+oStmnt:status:Description+CRLF+" addtoincome stmnt:"+oStmnt:SQLString,"LogErrors")
 					endif
 				ENDIF
 			ENDIF
@@ -1232,11 +1244,12 @@ METHOD ReSet() CLASS General_Journal
 	SELF:Server:Zap()
 	SELF:Server:aMirror:={}
 	SELF:Server:lFromRPP:=FALSE
-	fTotal:=0 
+	self:fTotal:=0 
 	self:lStop:=true
-	oDCDebitCreditText:Caption := Str(fTotal)
+	self:oDCDebitCreditText:Caption := Str(fTotal)
 	self:lMemberGiver:=FALSE 
 	self:lwaitingForExchrate:=false
+	self:oDCGiroText:TextValue:= ""
 	RETURN
 				
 METHOD ShowBankBalance() as void pascal CLASS General_Journal
@@ -1340,8 +1353,8 @@ cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "
 ",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
 ",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
 ",persid='"+iif(lGiver,AllTrim(self:mCLNGiver),"0")+"'"+;
-",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
-",seqnr="+Str(iif(empty(oMutNew:SEQNR),self:nLstSEqNr,oMutNew:Recno),-1)+;
+iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
+",seqnr="+Str(self:nLstSEqNr,-1),'')+;
 ",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
 ",reference='"+AddSlashes(AllTrim(oMutNew:REFERENCE))+"'"+; 
 ",lock_id=0"+;
@@ -2049,8 +2062,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				if lError
 					SQLStatement{"rollback",oConn}:Execute()
 					self:Pointer := Pointer{POINTERARROW}
-					LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-					ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
+					LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+					ErrorBox{self,"transaction could not be stored:"+cError}:show()
 					return false
 				endif
 			next
@@ -2067,8 +2080,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		if lError
 			SQLStatement{"rollback",oConn}:Execute()
 			self:Pointer := Pointer{POINTERARROW}
-			LogEvent(,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-			ErrorBox{self,"transaction could not be stored:"+oStmnt:ErrInfo:errormessage}:show()
+			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+			ErrorBox{self,"transaction could not be stored:"+cError}:show()
 			return false
 		else
 			oStmnt:=SQLStatement{"commit",oConn}
@@ -3807,7 +3820,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 							endif
 						else
 							lError:=true
-							LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+							LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 							exit
 						endif
 						oHm:skip()
@@ -3817,7 +3830,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						oStmnt:Execute()
 						if !Empty(oStmnt:status)
 							lError:=true
-							LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+							LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 						endif
 					endif
 				else
@@ -3836,7 +3849,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 							oStmnt:Execute() 
 							if	!empty(oStmnt:Status)
 								lError:=true
-								LogEvent(,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+								LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 								exit
 							endif
 						ENDIF
@@ -4412,7 +4425,7 @@ METHOD ShowSelection() CLASS TransInquiry
 		IF !Empty(Val(self:StartAmount))
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.deb>='+self:StartAmount
 		ELSE
-			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'!Empty(deb)'
+			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.deb<>0.00'
 		ENDIF
 		IF !Empty(Val(self:ToAmount)) 
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.deb<='+self:ToAmount
@@ -4423,7 +4436,7 @@ METHOD ShowSelection() CLASS TransInquiry
 		IF !Empty(Val(self:StartAmount))
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre>='+self:StartAmount
 		ELSE
-			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre<>0'
+			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre<>0.00'
 		ENDIF
 		IF !Empty(Val(self:ToAmount)) 
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'t.cre<='+self:ToAmount
