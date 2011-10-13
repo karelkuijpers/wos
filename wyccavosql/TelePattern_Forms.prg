@@ -494,7 +494,7 @@ METHOD FindButton( ) CLASS TelePatternBrowser
    self:oTelPat:Execute() 
 
 	if !Empty(self:oTelPat:status) 
-	 	LogEvent(,"findbutton telepattern:"+self:oTelPat:status:description+"( statmnt:"+self:oTelPat:SQLString,"LogErrors")
+	 	LogEvent(self,"findbutton telepattern:"+self:oTelPat:status:description+"( statmnt:"+self:oTelPat:SQLString,"LogErrors")
 	endif
    self:oTelPat:GoTop()
    self:GoTop()
