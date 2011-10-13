@@ -1344,7 +1344,7 @@ METHOD OkButton CLASS EditMember
 	local i,j as int
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg as array 
 	local oDep as SQLSelect
-	
+	local cFatalError as string	
 
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
@@ -1461,7 +1461,7 @@ METHOD OkButton CLASS EditMember
 					oStmnt:Execute() 
 				endif
 				// correct month balances data
-				CheckConsistency(oMainWindow,true,false)
+				CheckConsistency(oMainWindow,true,false,@cFatalError)
 								
 			elseIF !Empty(mDepPrv) .and.(!Empty(self:mREK) .or.!Empty(self:mDepId) .and.!mDepPrv == self:mDepId)
 				* From department to account or Department replaced:
@@ -1507,7 +1507,7 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cNetAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cNetAccPrv +" and bfm='' and gc='PF'"
 				oStmnt:Execute() 
 				// correct month balances data
-				CheckConsistency(oMainWindow,true,false)
+				CheckConsistency(oMainWindow,true,false,@cFatalError)
 				// change importtrans not yet processed: (normally all immediately after import processed) 
 				if ConI(SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
 					cIncAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cIncAccPrv,oConn}:accnumber,"") 
