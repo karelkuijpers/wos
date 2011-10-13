@@ -655,7 +655,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+"','"+AllTrim(aTrans[i,13])+iif(i==1,"","','"+cTrans)+"')",oConn}
 				oTrans:execute()
 				if oTrans:NumSuccessfulRows<1 
-					LogEvent(,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
+					LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
 					lError:=true
 					exit
 				endif
@@ -692,7 +692,7 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			endif
 		endif
 		if lError
-			LogEvent(,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum),"LogErrors")
+			LogEvent(self,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum),"LogErrors")
 			ErrorBox{,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum)}:Show()
 			SQLStatement{"rollback",oConn}:execute()
 		endif
