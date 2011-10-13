@@ -2083,7 +2083,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 
 	do WHILE !oAcc:Eof
 		nDep:=oAcc:DepId
-		cDepName:=CleanFileName(AllTrim(StrTran(oAcc:DESCRIPTN,"."," "))) 
+		cDepName:=CleanFileName(oAcc:DESCRIPTN) 
 		mDepNumber:=oAcc:DEPTMNTNBR
 		nCurFifo:=Len(self:oReport:oPrintJob:aFIFO)
 		me_hbn:=AllTrim(Transform(oAcc:householdid,""))
@@ -3179,7 +3179,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			lTransFound:=false
 			IF lPrintFile.and.!Empty(self:SendingMethod) 
 				// rename filename to add member name:                   
-				self:oReport:ToFileFS:FileName:= cFileNameBasic+Space(1)+CleanFileName(AllTrim(StrTran(oAcc:description,"."," ")))
+				self:oReport:ToFileFS:FileName:= cFileNameBasic+Space(1)+CleanFileName(oAcc:Description)
 				nRow := 0
 			ENDIF
 			myLang:=Alg_taal
@@ -5520,7 +5520,8 @@ METHOD OKButton( ) CLASS YearClosing
 	local nSeqNbr as int // sequence number of generated transaction lines 
 	local fTotal as float  // to check if year is correct in balance 
 	local cMess as string
-	local dLstReeval as date
+	local dLstReeval as date 
+	local cFatalError as string
 
 	IF Today() <= self:BalanceEndDate
 		(ErrorBox{self:OWNER,self:oLan:WGet('End of year not yet reached')}):Show()
@@ -5628,7 +5629,11 @@ METHOD OKButton( ) CLASS YearClosing
 		RETURN true
 	ENDIF
    	// Check consistency data
-	CheckConsistency(oMainwindow,true,false) 
+	if !CheckConsistency(oMainwindow,true,false,@cFatalError)
+		ErrorBox{self,cFatalError}:Show()
+		self:EndWindow()
+		RETURN true
+	ENDIF
 
 	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
 	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
