@@ -332,7 +332,7 @@ METHOD OKButton( ) CLASS EditPeriodic
 		endif
 		if lError
 			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(,self:oLan:WGet("standingorder could not be saved")+":ID-"+self:curStordid,"LogErrors")
+			LogEvent(self,self:oLan:WGet("standingorder could not be saved")+":ID-"+self:curStordid,"LogErrors")
 			ErrorBox{self,self:oLan:WGet("standingorder could not be saved")}:Show()
 		else
 			SQLStatement{"commit",oConn}:Execute()
