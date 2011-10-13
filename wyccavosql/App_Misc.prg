@@ -36,6 +36,7 @@ Default(@cMessage,"Report to file")
 IF !IsLogic(appendPossible)
 	appendPossible:=FALSE
 ENDIF
+cFileName:=CleanFileName(cFileName)  // make correct file name
 DO WHILE true
 	// Send up file dialog
 	oFileDialog := SaveAsDialog{ oWindow, cFileName  }
@@ -52,7 +53,7 @@ DO WHILE true
 	ENDIF
 	IF !Empty( oFileDialog:FileName )
 		// Set the instance var...for later use...if Ok
-		ToFileFS:=FileSpec{AllTrim(oFileDialog:FileName)}
+		ToFileFS:=FileSpec{CleanFileName(oFileDialog:FileName)}
 		cFileName:=ToFileFS:FullPath
 		oFileDialog:Destroy()
 		oFileDialog:=null_object
@@ -123,7 +124,7 @@ else
 endif
 RETURN(Round(m_som,DecAantal))
 DEFINE CHECKBX:=1
-function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=false as logic) as logic 
+function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=false as logic,cFatalError:='' ref string) as logic 
 	local nFromYear,i as dword
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
@@ -205,6 +206,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	if !oSel:totdebcre==0.00
 		cError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
+		cFatalError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
 	endif
 	oSel:=SqlSelect{"select sum(cre-deb) as totdebcre from mbalance where currency='"+sCurr+"' and (year*12+month)>="+Str(nFromYear,-1),oConn}
 	oSel:Execute()
@@ -215,8 +217,10 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		cError+="Not all transactions are balanced for "+sCurr+":"+CRLF
+		cFatalError+="Not all transactions are balanced for "+sCurr+":"+CRLF
 		do while !oSel:EoF
 			cError+=Space(4)+"Transaction:"+Str(oSel:transid,-1)+" date:"+DToC(oSel:dat)+CRLF 
+			cFatalError+=Space(4)+"Transaction:"+Str(oSel:transid,-1)+" date:"+DToC(oSel:dat)+CRLF 
 			lFatal:=true
 			oSel:Skip()
 		enddo
@@ -276,10 +280,10 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	endif
 	return false
 Function CleanFileName(cFileName as string) as string
-// removes illegal characters from cFileName to return an for Windows acceptable file name:
+// removes illegal characters from cFileName to return a for Windows acceptable file name:
 LOCAL oFileSpec as Filespec
 oFileSpec:=FileSpec{cFileName}
-oFileSpec:FileName:=StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(oFileSpec:FileName,'"',''),'/',' '),'\',' '),'?',' '),':',''),'*',''),'<',''),'>','')
+oFileSpec:FileName:=AllTrim(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(oFileSpec:FileName,'"',''),'/',' '),'\',' '),'?',' '),':',''),'*',''),'<',''),'>',''),'.',' '))
 if (!empty(oFileSpec:Extension) .and.oFileSpec:Extension $ cFileName) .or. (!empty(oFileSpec:Path) .and.oFileSpec:Path $ cFileName)
 	return oFileSpec:FullPath
 else
