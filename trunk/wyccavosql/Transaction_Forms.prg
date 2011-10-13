@@ -175,7 +175,7 @@ IF !self:lStop.and.!self:lTeleBank.and.AScanExact(self:Server:Amirror,{|x| !x[3]
 				self:mCLNGiver := ""
 				self:cGiverName := ""
 				self:mPerson := ""
-				self:mBst:= " "
+				self:mBst:= " " 
 				IF self:oImpB:GetNextBatch()
 					IF !self:oImpB:lOK .or.!self:ValStore()
 						RETURN NIL
@@ -284,9 +284,9 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS General_Journal
 Method EndGiro() Class General_Journal
 	self:oDCmBST:Enable()
 	self:oDCmDat:Enable()
-	lTeleBank:=FALSE
+	self:lTeleBank:=FALSE
 	self:oTmt:Close()
-	oDCGiroText:TextValue:= ""
+	self:oDCGiroText:TextValue:= ""
 	self:mDat:=Today()
 	self:mBst:=" "
 	self:oDCmPerson:TextValue :=" "
@@ -638,9 +638,8 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 			ELSE
 				self:oDCmBST:Enable()
 				self:oDCmDat:Enable()
-				lImport:=FALSE
+				self:lImport:=FALSE
 				oImpB:Close()
-				oDCGiroText:TextValue:= ""
 				self:ReSet()
 				self:append()
 				exit
@@ -652,10 +651,10 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 			ENDIF
 			oHm:=self:Server
 			self:append()
-			mCLNGiver := ""
-			cGiverName := ""
-			mPerson := ""
-			mBst:= " " 
+			self:mCLNGiver := ""
+			self:cGiverName := ""
+			self:mPerson := ""
+			self:mBst:= " " 
 			self:AddCur()
 			IF !Empty(CurBankSave)
 				// show first line with current bank account:
@@ -3859,7 +3858,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 				* Write heading TO file:
 				FWriteLine(ptrHandle,'"TRANSDATE"'+cDelim+'"DOCID"'+cDelim+'"TRANSACTNR"'+cDelim+'"ACCOUNTNR"'+cDelim+'"ACCNAME"'+cDelim+'"DESCRIPTN"'+cDelim;
 					+'"DEBITAMNT"'+cDelim+'"CREDITAMNT"'+cDelim+'"DEBITFNAMNT"'+cDelim+'"CREDITFNAMNT"'+cDelim+'"CURRENCY"'+cDelim;
-					+'"ASSMNTCD"'+cDelim+'"GIVER"'+cDelim+'"PPDEST"'+cDelim+'"REFERENCE"'+cDelim+'"SEQNR"'+cDelim+'"POST"')
+					+'"ASSMNTCD"'+cDelim+'"GIVER"'+cDelim+'"PPDEST"'+cDelim+'"REFERENCE"'+cDelim+'"SEQNR"'+cDelim+'"POSTSTATUS"')
 			ELSE
 				* position file at end:
 				FSeek(ptrHandle, 0, FS_END)
@@ -3875,7 +3874,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 						AllTrim(oTrans2:accountname)+'"'+cDelim+'"'+AllTrim(oTrans2:Description)+'"'+cDelim;
 						+'"'+Str(oTrans2:deb,-1)+'"'+cDelim+'"'+Str(oTrans2:cre,-1)+'"'+cDelim+;
 						+'"'+Str(oTrans2:DEBFORGN,-1)+'"'+cDelim+'"'+Str(oTrans2:CREFORGN,-1)+'"'+cDelim+'"'+oTrans2:CURRENCY+'"'+cDelim+;
-						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+oTrans2:REFERENCE+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+oTrans2:postingstatus+'"')
+						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+oTrans2:REFERENCE+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+Str(ConI(oTrans2:poststatus),-1)+'"')
 					oTrans2:Skip()
 				ENDDO
 			endif
