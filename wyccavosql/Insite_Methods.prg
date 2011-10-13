@@ -192,7 +192,7 @@ Method Login() as logic class Insite
 					endif
 				endif
 			else
-				LogEvent(,cPage)
+				LogEvent(self,cPage)
 			endif
 		endif
 		self:cPw:=""
