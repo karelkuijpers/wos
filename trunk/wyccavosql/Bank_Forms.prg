@@ -147,7 +147,7 @@ METHOD FindButton( ) CLASS BankBrowser
 	self:oBank:SQLString :="select "+self:cFields+" from "+self:cFrom+" where "+cWhere+" order by "+self:cOrder 
    self:oBank:Execute() 
 	if !Empty(self:oBank:status) 
-	 	LogEvent(,"findbutton Bank:"+self:oAcc:status:description+"( statmnt:"+self:oBank:SQLString,"LogErrors")
+	 	LogEvent(self,"findbutton Bank:"+self:oAcc:Status:description+"( statmnt:"+self:oBank:SQLString,"LogErrors")
 	endif
    self:oBank:GoTop()
    self:GoTop()
@@ -1300,7 +1300,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 			endif
 		endif
 		rekeningnrsTot:=Round(rekeningnrsTot+fBANKNBRCRE+Val(cBank),0)
-// 		LogEvent(,CHR(9)+Str(fBANKNBRCRE,-1)+CHR(9)+cBank+CHR(9)+Str(rekeningnrsTot,-1),"logcalcNew")
 		// Transactie record:
 		FWriteLine(ptrHandle,"0100A0005"+StrZero(oBord:AMOUNT*100,12,0)+ PadL(BANKNBRCRE,10,"0")+PadL(cBank,10,"0") +Space(9))
 		// Betalingsknemerk record:
@@ -1385,7 +1384,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 				oStmnt:execute()
 				if oStmnt:NumSuccessfulRows<1
-					LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+					LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 					lError:=true
 					exit
 				endif
@@ -1403,7 +1402,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 				oStmnt:execute()
 				if oStmnt:NumSuccessfulRows<1
-					LogEvent(,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+					LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 					lError:=true
 					exit
 				endif
@@ -1437,7 +1436,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		self:oCCOKButton:Enable()
 		self:Pointer := Pointer{POINTERARROW}
 		(InfoBox{self,"Producing CLIEOP03 file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders"}):Show() 
-		LogEvent(, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders; total:"+Str(Round(fSum,2),12,2),"Log")
+		LogEvent(self, "CLIEOP03 file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders; total:"+Str(Round(fSum,2),12,2),"Log")
 	endif
 	RETURN true
 METHOD OKButton( ) CLASS SelBankOrder 
