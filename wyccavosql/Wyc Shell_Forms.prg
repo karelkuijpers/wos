@@ -32,8 +32,9 @@ METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
 Method CheckFinancialData() CLASS StandardWycWindow
-	* Check correspondence between transactions and monthvalues in MonthBalance
-	CheckConsistency(self,false,true) 
+	* Check correspondence between transactions and monthvalues in MonthBalance 
+	local cFatalError as string
+	CheckConsistency(self,false,true,@cFatalError) 
 return
 method CheckNewVersion() class StandardWycWindow
 local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
@@ -197,13 +198,10 @@ ACCESS Printer CLASS StandardWycWindow
 	
 	return oPrinter
 METHOD QueryClose( oEvent ) CLASS StandardWycWindow
-    LOCAL oTB AS TextBox
 	LOCAL cRoot := "WYC\Runtime" AS STRING
 	SUPER:QueryClose( oEvent)
 
-	oTB := TextBox{SELF, "Quit", "Do you really want to quit?"}
-	oTB:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-	IF (oTB:Show() = BOXREPLYYES)
+	if TextBox{, "Quit", "Do you really want to quit?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()== BOXREPLYYES
 	* Save runtime PARAMETERS:
 	
     	SetRTRegString( cRoot, "AlgTaal", Alg_Taal )
@@ -240,9 +238,11 @@ METHOD SetCaption() CLASS StandardWycWindow
 	local oSys as SQLSelect
 	if IsObject(oConn) 
 		if oConn:Connected
-			oSys:=SqlSelect{"select sysname from sysparms",oConn}
-			if oSys:RecCount>0
-				sysname:=oSys:sysname
+			if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
+				oSys:=SqlSelect{"select sysname from sysparms",oConn}
+				if oSys:RecCount>0
+					sysname:=oSys:sysname
+				endif
 			endif
 		endif
 	endif
