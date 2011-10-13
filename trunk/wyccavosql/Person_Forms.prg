@@ -1124,7 +1124,7 @@ METHOD OkButton CLASS NewPersonWindow
 		oPers:=SQLStatement{cStmnt,oConn}
 		oPers:Execute() 
 		if !IsNil(oPers:Status)
-			LogEvent(,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogErrors")
+			LogEvent(self,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogErrors")
 			(ErrorBox{self,'Add/update person Error:'+oPers:Status:Description}):Show()
 		endif
 		if self:lNew
