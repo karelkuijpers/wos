@@ -507,7 +507,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 						oStmt:= SQLStatement{cStatement,oConn} 
 						oStmt:Execute()
 						IF !IsNil( oStmt:Status )
-							LogEvent(,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","LogErrors")
+							LogEvent(self,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","LogErrors")
 							// 					ShowError( oStmt:ERRINFO )
 // 							oStmt:FreeStmt(SQL_CLOSE)
 						endif
@@ -732,7 +732,7 @@ method init() class Initialize
 			
 			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
-				LogEvent(,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
+				LogEvent(self,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
 				ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
 				break
 			endif
@@ -2289,12 +2289,12 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		oStmnt:Execute() 
 		if !Empty(oStmnt:Status)
 			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+			LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 			ErrorBox{,"Could not reformat table "+cTableName}:show()
 			break 
 		else
 			SQLStatement{"commit",oConn}:Execute()
-			LogEvent(,"Table "+cTableName+" reformated with:"+oStmnt:SQLString)
+			LogEvent(self,"Table "+cTableName+" reformated with:"+oStmnt:SQLString)
 		endif
 		oMainWindow:STATUSMESSAGE(Space(80))
 		
