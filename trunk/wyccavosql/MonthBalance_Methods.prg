@@ -135,11 +135,11 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
    self:cAccSelection:=" a.accid='"+pAccount+"'"
    cStatement:= self:SQLGetBalance(PeriodStartYear*100+ PeriodStartMonth, PeriodEndYear*100+PeriodEndMonth-;
 	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true)) 
-// 	LogEvent(,cStatement,"logsql")
+// 	logevent(self,cStatement,"logsql")
 	oAccBal:=SQLSelect{cStatement,oConn}
 	oAccBal:Execute()
 	if !Empty(oAccBal:Status).or.oAccBal:RecCount<1
-		LogEvent(,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"LogErrors")
+		logevent(self,"Error in Getbalance:"+oAccBal:errinfo:errormessage+CRLF+"account:"+pAccount+"cStatement:"+cStatement,"LogErrors")
 		return
 	endif
 	
@@ -543,21 +543,15 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 					cValues+=iif(Empty(cValues),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")"
 				endif
 			endif
-		endif   
-		oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+cValues+;
-		" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn};
-// 			pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")",oConn} 
-// 			
-// 			if !Currency==sCurr
-// 				if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
-// 				if  !(Empty(pDebFORGN).and.Empty(pCreFORGN))   
-// 			iif(!Currency==sCurr .and. !(Empty(pDebFORGN).and.Empty(pCreFORGN)) .and.!(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt),;
-// 			",("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")","")+;
-// 			" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)"			
-		oStmnt:Execute()
-		if !Empty(oStmnt:status)
-			LogEvent(,"error:"+oStmnt:status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-			return false
+		endif
+		if !Empty(cValues)
+			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+cValues+;
+				" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				LogEvent(,"ChgBalance error:"+oStmnt:Status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				return false
+			endif
 		endif
 	endif
 	RETURN true
