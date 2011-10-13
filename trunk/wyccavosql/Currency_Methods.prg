@@ -611,7 +611,8 @@ Method ReEvaluate() Class Reevaluation
 	Local cCur as string, nCurPntr as int 
 	local lError as logic
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
-
+	local cFatalError as string
+	
 	oSys:=SQLSelect{"select cast(lstreeval as date) as lstreeval from sysparms where DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
 	if oSys:RecCount<1
 		self:Close()
@@ -635,7 +636,7 @@ Method ReEvaluate() Class Reevaluation
 		oCall:STATUSMESSAGE(cSm)
 	ENDIF
 	// Check first consistency data
-	CheckConsistency(oMainWindow,true,false)
+	CheckConsistency(oMainWindow,true,false,@cFatalError)
 
 	oMBal:=Balances{}
 	do while !oAccnt:EoF 
