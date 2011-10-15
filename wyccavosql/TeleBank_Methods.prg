@@ -2658,7 +2658,7 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 METHOD INIT(Gift,oOwner) CLASS TeleMut
 	* Gift: true: next gift
 	*       false: next nongift
-	local oSelBank as SelBankAcc
+	local oSelBank as SelBankAcc 
 	local oBank,oAcc as SQLSelect
 	// 	local m57_bank:=self:m57_BankAcc as array
 	local cReq as string 
@@ -2778,14 +2778,30 @@ METHOD SkipMut()  CLASS TeleMut
 return
 METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) as logic CLASS TeleMut
 	// check if found banknumber is part of telebanking accounts within the system
-	// 	Default(@NbrDays,120)
-	IF (self:CurTelePtr:=AScan(m57_BankAcc,{|x| x[1]==AllTrim(BankNbr)}))=0
-		IF AScan(self:NonTeleAcc,AllTrim(banknbr))=0
-			LogEvent(self,"Bank account "+banknbr+" not as telebanking account in system data")
-			(Errorbox{,"Bank account "+banknbr+" not as telebanking account in system data"}):Show()
-			AAdd(SELF:NonTeleAcc,AllTrim(banknbr))
+	// 	Default(@NbrDays,120) 
+	local oStMnt as SQLStatement
+	local oBank as SQLSelect
+	IF (self:CurTelePtr:=AScan(m57_BankAcc,{|x| x[1]==AllTrim(banknbr)}))=0
+		IF AScan(self:NonTeleAcc,AllTrim(banknbr))=0 
+			oStMnt:=SQLStatement{"update bankaccount set telebankng=1 where banknumber='"+AllTrim(banknbr)+"'",oConn}
+			oStMnt:Execute()
+			if oStMnt:NumSuccessfulRows<1  
+				LogEvent(self,"Bank account "+banknbr+" not as telebanking account in system data")
+				(ErrorBox{,"Bank account "+banknbr+" not as telebanking account in system data"}):Show()
+				AAdd(self:NonTeleAcc,AllTrim(banknbr)) 
+				RETURN true
+			else
+				// add to tele bank accounts:                                            
+				oBank:= SqlSelect{"select banknumber,usedforgifts from bankaccount where banknumber='"+AllTrim(banknbr)+"'",oConn}
+				if oBank:Reccount>0 
+					AAdd(self:m57_BankAcc,{oBank:banknumber,iif(ConI(oBank:usedforgifts)=1,true, false),null_date})
+					ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
+					LogEvent(self,"Bank account "+banknbr+" changed to telebanking account in system data")
+				endif
+			endif
+		else
+			RETURN true
 		ENDIF		
-		RETURN true
 	ENDIF
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
 	IF transdate +NbrDays < m57_BankAcc[self:CurTelePtr,3]
