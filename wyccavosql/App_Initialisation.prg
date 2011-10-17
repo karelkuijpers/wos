@@ -1225,6 +1225,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","ipcaccount","int(7)","NO","0",""},;
 		{"account","reimb","tinyint(1)","NO","0",""},;
 		{"account","active","tinyint(1)","NO","1",""},;
+		{"account","qtymailing","int(10) unsigned","NO","0",""},;
 		{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
