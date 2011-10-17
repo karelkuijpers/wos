@@ -77,6 +77,24 @@ METHOD Init() CLASS account_PROPXTRA
 super:Init(HyperLabel{"PROPXTRA","Propxtra","","account_PROPXTRA"},"M",10,0)
 
 RETURN SELF
+CLASS Account_qtymailing INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS Account_qtymailing
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#Account_qtymailing, "", "Nbt of persons receiving the mailing corresponding with this account", "" },  "N", 10, 0 )
+    cPict       := "9999999999"
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS account_REEVALUATE INHERIT FIELDSPEC
 METHOD Init() CLASS account_REEVALUATE
 super:Init(HyperLabel{"REEVALUATE","Reevaluate","","account_REEVALUATE"},"N",3,0)
