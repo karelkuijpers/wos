@@ -1871,7 +1871,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS InquirySelection
 	ENDIF
 	IF !Empty(self:oOwner:PersIdSelected)
 		self:mCLNGiver:=self:oOwner:PersIdSelected
-		self:RegPerson(SQLSelect{"select * from person where persid="+self:mCLNGiver,oConn})
+		self:cGiverName := GetFullName(self:mCLNGiver)
+		self:oDCmPerson:TextValue := self:cGiverName
 	ENDIF
 	IF !Empty(self:oOwner:StartTransNbr)
 		self:FromTransnr:=self:oOwner:StartTransNbr
