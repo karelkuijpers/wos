@@ -105,24 +105,27 @@ IF appendPossible
 	appendPossible:=lAppend
 ENDIF
 RETURN ToFileFS
-FUNCTION asum(fu_anaam, fu_start, fu_end, fu_col )
-*      sommeren van een array 
+FUNCTION asum(fu_array as array, fu_start:=1 as int, fu_end:=0 as int, fu_col:=0 as int ) as real8
+*      Summing of an array array 
 *
 * fu_start: optional start element
-* fu_end  : optional end element
+* fu_end  : optional end element, default length of fu_array
 * fu_col  : optional column number to sum in case of two dimensional array
 *
-LOCAL m_count as int ,m_som as REAL8
-Default(@fu_start,1)
-Default(@fu_end,ALen(fu_anaam)) 
-Default(@fu_col,0) 
+LOCAL m_count as int ,m_sum as REAL8
+// Default(@fu_start,1)
+// Default(@fu_end,ALen(fu_array)) 
+// Default(@fu_col,0)
+if Empty(fu_end)
+	fu_end:=ALen(fu_array)
+endif
 m_count:=fu_end-fu_start+1
 if Empty(fu_col)
-	AEval(fu_anaam,{|x|m_som:=Round(m_som+x,DecAantal)},fu_start,m_count)
+	AEval(fu_array,{|x|m_sum:=Round(m_sum+x,DecAantal)},fu_start,m_count)
 else
-	AEval(fu_anaam,{|x|m_som:=Round(m_som+x[fu_col],DecAantal)},fu_start,m_count)
+	AEval(fu_array,{|x|m_sum:=Round(m_sum+x[fu_col],DecAantal)},fu_start,m_count)
 endif
-RETURN(Round(m_som,DecAantal))
+RETURN(Round(m_sum,DecAantal))
 DEFINE CHECKBX:=1
 function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=false as logic,cFatalError:='' ref string) as logic 
 	local nFromYear,i as dword
