@@ -2347,8 +2347,8 @@ METHOD RegDepartment(MyNum,ItemName) CLASS InquirySelection
 	ENDIF
 		
 RETURN 
-METHOD RegPerson(oCLN) CLASS InquirySelection
-	IF Empty(oCLN).or. oCLN==null_object .or. oCLN:Reccount<1
+METHOD RegPerson(oCLN) CLASS InquirySelection                    
+	IF Empty(oCLN) .or. !Empty(oCLn:Status) .or. oCLN:Reccount<1
 		SELF:mCLNGiver :=  Space(5)
 		SELF:cGiverName := ""
 		SELF:oDCmPerson:TEXTValue := ""
