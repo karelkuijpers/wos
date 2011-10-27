@@ -2968,8 +2968,8 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 		ELSEIF LineNbr>0
 			// add two space lines:
 			if self:Destination == "File"
-				FWriteLine(self:ptrHandle, '')
-				FWriteLine(self:ptrHandle, '')
+				FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
+				FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
 			else
 				AAdd(self:oPrintJob:aFIFO," ")
 				AAdd(self:oPrintJob:aFIFO," ")
