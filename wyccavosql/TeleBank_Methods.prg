@@ -1,16 +1,3 @@
-RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 36, 204, 251, WS_EX_CLIENTEDGE
-	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 3, 53, 13
-	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 18, 53, 12
-	CONTROL	"", SELBANKACC_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 64, 18, 47, 12
-	CONTROL	"Found:", SELBANKACC_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 32, 18, 27, 12
-	CONTROL	"Find", SELBANKACC_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 72, 3, 40, 13
-	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
-END
-
 CLASS SelBankAcc INHERIT DataDialogMine 
 
 	PROTECT oDCListBoxBank AS LISTBOX
@@ -24,6 +11,19 @@ CLASS SelBankAcc INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export oCaller as TeleMut 
   declare method FillBank
+RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 36, 204, 251, WS_EX_CLIENTEDGE
+	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 3, 53, 13
+	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 18, 53, 12
+	CONTROL	"", SELBANKACC_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 64, 18, 47, 12
+	CONTROL	"Found:", SELBANKACC_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 32, 18, 27, 12
+	CONTROL	"Find", SELBANKACC_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 72, 3, 40, 13
+	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
+END
+
 METHOD CancelButton( ) CLASS SelBankAcc 
    self:EndWindow(1)
 RETURN NIL
@@ -514,7 +514,7 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 METHOD Import() CLASS TeleMut
 	* Import of telebanking data into table teletrans
 	LOCAL oFs, oFC, oFrabo as MyFileSpec
-	LOCAL aFileMT, aFilePB, aFileSA, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileVWI, aFileRabo,aFileTL,aFileKB as ARRAY
+	LOCAL aFileMT, aFilePB, aFileSA, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileVWI, aFileRabo,aFileTL,aFileKB,aFileRO as ARRAY
 	local cFileName as STRING, nf,i as int
 	LOCAL oBF as MyFileSpec
 	LOCAL oPF as FileSpec
@@ -544,6 +544,7 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory("*_ME940file20*.txt"),{|x|AAdd(aFileMT,x)})          // e.g.: 3001715206_ME940file20110117
 	aFilePB:=Directory(CurPath+"\*-20??.CSV")
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
+	aFileRO:=Directory(CurPath+"\RO??BTRL????????N?????XX-??.??.????-??.??.????.csv")
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
 	aFileINN:=Directory(CurPath+"\ocrinnbet.txt")
@@ -556,7 +557,8 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory(CurPath+"\mut*.ASC"),{|x|AAdd(aFileRabo,x)})
 	AEval(Directory(CurPath+"\*-20??.ASC"),{|x|AAdd(aFilePB,x)})
 	AEval(Directory(CurPath+"\*-20??.TXT"),{|x|AAdd(aFilePB,x)})
-	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileKB).or.!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG).or.!Empty(aFileVWI).or.!Empty(aFileTL)
+	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileKB).or.;
+			!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG).or.!Empty(aFileVWI).or.!Empty(aFileTL).or.!Empty(aFileRO)
 		lDelete:=true 
 		self:oParent:Pointer := Pointer{POINTERHOURGLASS}
 
@@ -641,6 +643,13 @@ METHOD Import() CLASS TeleMut
 			cFileName:=aFileKB[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
 			self:ImportKB(oBF)
+			AAdd(aFiles,oBF)
+		NEXT
+		// Transilvania Bank Romania:
+		FOR nf:=1 to Len(aFileRO)
+			cFileName:=aFileRO[nf,F_NAME]
+			oBF := MyFileSpec{cFileName}
+			self:ImportRO(oBF)
 			AAdd(aFiles,oBF)
 		NEXT
 
@@ -1466,100 +1475,100 @@ METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 
 	i:=AtC("KTO",oFs:FileName)+3
-    lv_bankAcntOwn:=SubStr(oFs:FileName,i) 
-    i:= At("_",lv_bankAcntOwn)-1
-    lv_bankAcntOwn:=ZeroTrim(SubStr(lv_bankAcntOwn,1,iif(i>0,i,Len(lv_bankAcntOwn))))
-cSep:=SetDecimalSep(Asc(","))
-ptrHandle:=MyFile{oFs}
-pbType:=Upper(oFs:Extension)
-IF FError() >0
-	(ErrorBox{,self:oLan:Wget("Could not open file")+": "+oFs:FullPath+"; "+self:oLan:Wget("Error")+":"+DosErrString(FError())}):show()
-	ptrHandle:Close()
-	RETURN FALSE
-ENDIF
-cBuffer:=ptrHandle:FReadLine()
-IF Empty(cBuffer)
-	(ErrorBox{,self:oLan:Wget("Could not read file")+": "+oFs:FullPath+"; "+self:oLan:Wget("Error")+":"+DosErrString(FError())}):show()
-	ptrHandle:Close()
-	RETURN FALSE
-ENDIF 
-// skip first comment lines:
-do while Left(cBuffer,1)=='#'
+	lv_bankAcntOwn:=SubStr(oFs:FileName,i) 
+	i:= At("_",lv_bankAcntOwn)-1
+	lv_bankAcntOwn:=ZeroTrim(SubStr(lv_bankAcntOwn,1,iif(i>0,i,Len(lv_bankAcntOwn))))
+	cSep:=SetDecimalSep(Asc(","))
+	ptrHandle:=MyFile{oFs}
+	pbType:=Upper(oFs:Extension)
+	IF FError() >0
+		(ErrorBox{,self:oLan:Wget("Could not open file")+": "+oFs:FullPath+"; "+self:oLan:Wget("Error")+":"+DosErrString(FError())}):show()
+		ptrHandle:Close()
+		RETURN FALSE
+	ENDIF
 	cBuffer:=ptrHandle:FReadLine()
-enddo	
-if !GetDelimiter(cBuffer,@aStruct,@cDelim,5,6)
-	(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from KB Bank")+": "+oFs:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
-	ptrHandle:Close()
-	RETURN FALSE
-ENDIF
-ptDate:=AScan(aStruct,{|x| "BUCHUNGSTAG" $ x})
-ptDesc:=AScan(aStruct,{|x| "TEXT" $ x})
-ptPay:=AScan(aStruct,{|x| "BETRAG" $ x})
-ptCur:=AScan(aStruct,{|x| "WÄHRUNG" $ x})
-IF ptDate==0 .or. ptDesc==0 .or. ptPay==0 .or. ptCur==0 
-	(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from KB Bank")+": "+oFs:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
-	RETURN FALSE
-ENDIF
+	IF Empty(cBuffer)
+		(ErrorBox{,self:oLan:Wget("Could not read file")+": "+oFs:FullPath+"; "+self:oLan:Wget("Error")+":"+DosErrString(FError())}):show()
+		ptrHandle:Close()
+		RETURN FALSE
+	ENDIF 
+	// skip first comment lines:
+	do while Left(cBuffer,1)=='#'
+		cBuffer:=ptrHandle:FReadLine()
+	enddo	
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,5,6)
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from KB Bank")+": "+oFs:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		ptrHandle:Close()
+		RETURN FALSE
+	ENDIF
+	ptDate:=AScan(aStruct,{|x| "BUCHUNGSTAG" $ x})
+	ptDesc:=AScan(aStruct,{|x| "TEXT" $ x})
+	ptPay:=AScan(aStruct,{|x| "BETRAG" $ x})
+	ptCur:=AScan(aStruct,{|x| "WÄHRUNG" $ x})
+	IF ptDate==0 .or. ptDesc==0 .or. ptPay==0 .or. ptCur==0 
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from KB Bank")+": "+oFs:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		RETURN FALSE
+	ENDIF
 
-cBuffer:=ptrHandle:FReadLine()   // skip first line
-// skip balance line:
-aFields:=Split(cBuffer,cDelim)
-if Empty(AFields[ptDate])
-	cBuffer:=ptrHandle:FReadLine()
+	cBuffer:=ptrHandle:FReadLine()   // skip first line
+	// skip balance line:
 	aFields:=Split(cBuffer,cDelim)
-endif
-
-DO WHILE Len(AFields)>4
-	hl_boekdat:=AFields[ptDate]
-	ld_bookingdate:=SToD(SubStr(hl_boekdat,7,4)+SubStr(hl_boekdat,4,2)+SubStr(hl_boekdat,1,2))
-	IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
-		cBuffer:=ptrHandle:FReadLine(ptrHandle)
+	if Empty(AFields[ptDate])
+		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
-		loop
-	ENDIF
-    lv_description:=AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"',''))
-    lv_Amount:=AbsFloat(Val(AFields[ptPay]))
-    IF Val(AFields[ptPay])>0
-	    lv_addsub:="B"
-	ELSE
-		lv_addsub:="A"
-	ENDIF
-    IF Empty(lv_Amount)  && geen lege mutaties laden
-		cBuffer:=ptrHandle:FReadLine(ptrHandle)
-		aFields:=Split(cBuffer,cDelim)
-    	loop
-    ENDIF
-	lv_Amount:=Round(lv_Amount,DecAantal) 
-	lv_description:=AddSlashes(lv_description)
-    * controleer op reeds geladen zijn van mutatie:
-   nTot++
-	IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KDB","","","")
-		cBuffer:=ptrHandle:FReadLine(ptrHandle)
-		aFields:=Split(cBuffer,cDelim)
-        loop
-	ENDIF
-	oStmnt:=SQLStatement{"insert into teletrans set	"+;
-	"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
-	",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
-	",kind='KDB'"+;
-	",amount='"+Str(lv_Amount,-1)+"'"+;
-	",addsub='"+lv_addsub	+"'"+;
-	",code_mut_r='M'"+;
-	",description='"+lv_description	+"'",oConn}
-	oStmnt:Execute()
-	if	oStmnt:NumSuccessfulRows>0
-		++lv_aant_toe
-		nCnt++
 	endif
-	cBuffer:=ptrHandle:FReadLine()
-	aFields:=Split(cBuffer,cDelim)
-ENDDO
-ptrHandle:Close()
-ptrHandle:=null_object
-SetDecimalSep(cSep)  // restore decimal separator 
-AAdd(self:aMessages,"Imported KB file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 
-return true
+	DO WHILE Len(AFields)>4
+		hl_boekdat:=AFields[ptDate]
+		ld_bookingdate:=SToD(SubStr(hl_boekdat,7,4)+SubStr(hl_boekdat,4,2)+SubStr(hl_boekdat,1,2))
+		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_description:=AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"',''))
+		lv_Amount:=AbsFloat(Val(AFields[ptPay]))
+		IF Val(AFields[ptPay])>0
+			lv_addsub:="B"
+		ELSE
+			lv_addsub:="A"
+		ENDIF
+		IF Empty(lv_Amount)  && geen lege mutaties laden
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_Amount:=Round(lv_Amount,DecAantal) 
+		lv_description:=AddSlashes(lv_description)
+		* controleer op reeds geladen zijn van mutatie:
+		nTot++
+		IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KDB","","","")
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		oStmnt:=SQLStatement{"insert into teletrans set	"+;
+			"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
+			",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
+			",kind='KDB'"+;
+			",amount='"+Str(lv_Amount,-1)+"'"+;
+			",addsub='"+lv_addsub	+"'"+;
+			",code_mut_r='M'"+;
+			",description='"+lv_description	+"'",oConn}
+		oStmnt:Execute()
+		if	oStmnt:NumSuccessfulRows>0
+			++lv_aant_toe
+			nCnt++
+		endif
+		cBuffer:=ptrHandle:FReadLine()
+		aFields:=Split(cBuffer,cDelim)
+	ENDDO
+	ptrHandle:Close()
+	ptrHandle:=null_object
+	SetDecimalSep(cSep)  // restore decimal separator 
+	AAdd(self:aMessages,"Imported KB file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
+
+	return true
 METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	*	Import of one MT940 telebnk transaction file
 	LOCAL oHlM as HlpMT940
@@ -2093,6 +2102,108 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	ptrHandle:=NULL_OBJECT
 	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions")
 	SetDecimalSep(cSep)  // restore decimal separator
+	RETURN true
+METHOD ImportRO(oFb) CLASS TeleMut
+	* Import of Romenian Banca Transilvania into Mutgiro.dbf
+	LOCAL oHlS as HulpSA
+	LOCAL m57_laatste := {} as ARRAY
+	LOCAL i, TelPtr as int
+	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
+	LOCAL lv_geladen as LOGIC,  hlpbank as USUAL
+	LOCAL lv_description, lv_bankAcntOwn,lv_addsub as STRING
+	LOCAL cSep as int
+	LOCAL lSuccess:=true as LOGIC
+	LOCAL cDelim:=';' as STRING
+	LOCAL ptrHandle as MyFile
+	LOCAL cBuffer as STRING, nRead as int
+	LOCAL aStruct:={} as ARRAY // array with fieldnames
+	LOCAL aFields:={} as ARRAY // array with fieldvalues
+	LOCAL ptDate, ptPay, ptDesc, ptCur,  nVnr,nCnt,nTot as int
+	LOCAL pbType as STRING
+	LOCAL lv_Amount, Hl_balan as FLOAT
+	LOCAL ld_bookingdate as date
+	local oStmnt as SQLStatement
+
+	lv_bankAcntOwn:=SubStr(oFb:FileName,1,24)
+	ptrHandle:=MyFile{oFb}
+	pbType:=Upper(oFb:Extension) 
+	if Empty(ptrHandle)
+		return false
+	endif
+	// skip first non transaction lines:
+	do while !Left(cBuffer,15)=='Data tranzactie'
+		cBuffer:=ptrHandle:FReadLine()
+	enddo	
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,4,4)
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		ptrHandle:Close()
+		RETURN FALSE
+	ENDIF
+	ptDate:=AScan(aStruct,{|x| "DATA TRANZACTIE" $ x})
+	ptDesc:=AScan(aStruct,{|x| "DESCRIERE" $ x})
+	ptPay:=AScan(aStruct,{|x| "SUMA" $ x})
+	IF ptDate==0 .or. ptDesc==0 .or. ptPay==0  
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		RETURN FALSE
+	ENDIF
+	cSep:=SetDecimalSep(Asc("."))
+
+	cBuffer:=ptrHandle:FReadLine()   // skip first line
+	// skip balance line:
+	aFields:=Split(cBuffer,cDelim)
+	if Empty(AFields[ptDate])
+		cBuffer:=ptrHandle:FReadLine()
+		aFields:=Split(cBuffer,cDelim)
+	endif
+
+	DO WHILE Len(AFields)>3
+		ld_bookingdate:=SToD(StrTran(AFields[ptDate],'-',''))
+		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_description:=AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"',''))
+		lv_Amount:=Val(StrTran(StrTran(AFields[ptPay],'"',''),',',''))
+		IF Empty(lv_Amount)  && geen lege mutaties laden
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		IF lv_Amount>=0
+			lv_addsub:="B"
+		ELSE
+			lv_addsub:="A" 
+			lv_Amount:=-lv_Amount
+		ENDIF
+		lv_Amount:=Round(lv_Amount,DecAantal)
+		* controleer op reeds geladen zijn van mutatie:
+		nTot++
+		IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"","","","")
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		oStmnt:=SQLStatement{"insert into teletrans set	"+;
+			"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
+			",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate)),;  // no dates in the future)+"'"+;
+			",amount='"+Str(lv_Amount,-1)+"'"+;
+			",addsub='"+lv_addsub	+"'"+;
+			",code_mut_r='M'"+;
+			",description='"+lv_description	+"'",oConn}
+		oStmnt:execute()
+		if	oStmnt:NumSuccessfulRows>0
+			++lv_aant_toe
+			nCnt++
+		endif
+		cBuffer:=ptrHandle:FReadLine()
+		aFields:=Split(cBuffer,cDelim)
+	ENDDO
+	ptrHandle:Close()
+	ptrHandle:=null_object
+	oTelTr:Commit()
+	SetDecimalSep(cSep)  // restore decimal separator
+	AAdd(self:aMessages,"Imported Transilvania file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 	RETURN true
 METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	* Import of SA Standard\Bank data into teletrans.dbf
