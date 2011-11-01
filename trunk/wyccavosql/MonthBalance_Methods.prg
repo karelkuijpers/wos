@@ -646,7 +646,8 @@ function GetBalYears(NbrFutureYears:=0 as int) as array
 	*	Add non closed years:
 
 	
-	aYearStartEnd:=GetBalYear(Year(MinDate),ClosingMonth)
+// 	aYearStartEnd:=GetBalYear(Year(MinDate),ClosingMonth)
+	aYearStartEnd:=GetBalYear(Year(MinDate),Month(MinDate))
 	AAdd(aMyYear,{Str(aYearStartEnd[1],4,0)+":"+StrZero(aYearStartEnd[2],2,0)+" - "+;
 	Str(aYearStartEnd[3],4,0)+":"+StrZero(aYearStartEnd[4],2,0),Str(aYearStartEnd[1],4,0)+StrZero(aYearStartEnd[2],2,0)})
 	MONTHEND:=aYearStartEnd[4]
