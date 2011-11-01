@@ -36,7 +36,7 @@ Default(@cMessage,"Report to file")
 IF !IsLogic(appendPossible)
 	appendPossible:=FALSE
 ENDIF
-cFileName:=CleanFileName(cFileName)  // make correct file name
+cFileName:=CleanFileName(StrTran(cFileName,'.',' '))  // make correct file name
 DO WHILE true
 	// Send up file dialog
 	oFileDialog := SaveAsDialog{ oWindow, cFileName  }
@@ -286,7 +286,7 @@ Function CleanFileName(cFileName as string) as string
 // removes illegal characters from cFileName to return a for Windows acceptable file name:
 LOCAL oFileSpec as Filespec
 oFileSpec:=FileSpec{cFileName}
-oFileSpec:FileName:=AllTrim(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(oFileSpec:FileName,'"',''),'/',' '),'\',' '),'?',' '),':',''),'*',''),'<',''),'>',''),'.',' '))
+oFileSpec:FileName:=AllTrim(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(StrTran(oFileSpec:FileName,'"',''),'/',' '),'\',' '),'?',' '),':',''),'*',''),'<',''),'>',''))
 if (!empty(oFileSpec:Extension) .and.oFileSpec:Extension $ cFileName) .or. (!empty(oFileSpec:Path) .and.oFileSpec:Path $ cFileName)
 	return oFileSpec:FullPath
 else
@@ -1877,7 +1877,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		FClose(ptrHandle) 
 	endif
 	if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
-		ErrorBox{oWindow,"MySQL server has gone away:"+CRLF+strText}:Show()
+		ErrorBox{,"MySQL server has gone away:"+CRLF+strText}:Show()
 		if !Empty(oStmnt:status) 
 			break
 		endif
@@ -1905,7 +1905,7 @@ LOCAL MyFileName,MyPath as STRING, nReturn as int
 LOCAL oTextBox as TextBox, oFileDialog as SaveAsDialog 
 local fileerror as string 
 
-cFileName:=CleanFileName(cFileName)
+// cFileName:=CleanFileName(cFileName)
 oFileSpec:=FileSpec{cFileName}
 cFileName:= oFileSpec:FullPath
 DO WHILE true
