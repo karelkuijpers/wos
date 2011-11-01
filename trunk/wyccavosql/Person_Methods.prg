@@ -2696,8 +2696,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%CITYNAME"})]:=self:oDB:city
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%COUNTRY"})]:=self:oDB:country
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%ATTENTION"})]:=self:oDB:attention
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(self:oDB:datelastgift))
-	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATELSTGIFT"})]:=AllTrim(DToC(self:oDB:datelastgift))
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(iif(Empty(self:oDB:datelastgift),null_date,self:oDB:datelastgift)))
+	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATELSTGIFT"})]:=AllTrim(DToC(iif(Empty(self:oDB:datelastgift),null_date,self:oDB:datelastgift)))
 	// 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%BANKACCOUNT"})]:=iif(empty(self:oDB:banknumbers),'',split(self:oDB:banknumbers,',')[1]
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%REPORTMONTH"})]:=self:ReportMonth
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%PAGESKIP"})]:=PAGE_END
@@ -3636,7 +3636,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	Local aDir as array
 	local oPro as ProgressPer 
 	local oSel,oMBal as SQLSelect
-	local oStmnt as SQLStatement
+	local oStmnt as SQLStatement 
+	local dlg as date
 
 	if Empty(BANKNBRDEB)
 		(ErrorBox{,self:oLan:WGet("Bank account invoices/ direct debit not specified in system data")}):Show()
@@ -3943,10 +3944,11 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 								oPers:SQLString:="select mailingcodes,cast(datelastgift as date) as datelastgift	from person	where`persid`="+cPersId
 								oPers:Execute()
 								if	oPers:RecCount>0
-									cCod:=oPers:mailingcodes
-									PersonGiftdata(cType,@cCod,oPers:datelastgift,iif(cType=='M','AG',""),,,cAccMlCd)
+									cCod:=oPers:mailingcodes 
+									dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
+									PersonGiftdata(cType,@cCod,dlg,iif(cType=='M','AG',""),,,cAccMlCd)
 									&&	Update date	last gift:
-									IF	oPers:datelastgift <	process_date .or.	!AllTrim(cCod)==oPers:mailingcodes 
+									IF	dlg <	process_date .or.	!AllTrim(cCod)==oPers:mailingcodes 
 										SQLStatement{"update	person set datelastgift='"+SQLdate(process_date)+"',mailingcodes='"+cCod+"' where persid="+cPersId,oConn}:Execute()
 									ENDIF
 								endif
