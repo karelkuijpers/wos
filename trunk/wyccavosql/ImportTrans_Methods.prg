@@ -429,7 +429,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local aDat as array, impDat as date, cAcc,cAccNumber,cAssmnt, cdat as string , lUnique as logic 
 	local oStmnt as SQLStatement
 	local oSel,oImpTr,oAcc as SQLSelect
-	local cStatement as string 
+	local cStatement,cImpStamnt as string 
 	local lError as logic 
 //    Default(@Testformat,False)
    
@@ -481,8 +481,8 @@ ASort(aPt)
 maxPt=aPt[Len(aPt)] 
 cBuffer:=ptrHandle:FReadLine()
 aFields:=Split(cBuffer,cDelim)
-linenr=1 
-oImpTr:=SQLSelect{"select imptrid from importtrans where origin='"+cOrigin+"' and 'transactnr'=?",oConn} 
+linenr=1
+cImpStamnt:="select imptrid from importtrans where `origin`='"+cOrigin+"' and `transactnr`=?" 
 oParent:Pointer := Pointer{POINTERHOURGLASS} 
 
 DO WHILE Len(AFields)>1
@@ -491,8 +491,9 @@ DO WHILE Len(AFields)>1
 	IF !AFields[ptTrans]==CurTransNbr // new transaction?
 		CurTransNbr:=AFields[ptTrans]
 		* Check if batchtransaction not yet loaded: 
-		oImpTr:execute(AllTrim(AFields[ptTrans ]))
-		if oImpTr:RecCount>0
+// 		oImpTr:execute(AllTrim(AFields[ptTrans ]))  
+		if SqlSelect{StrTran(cImpStamnt,'?',AllTrim(AFields[ptTrans ])),oConn}:RecCount>0 
+// 		if oImpTr:RecCount>0
 			lv_loaded:=true
 		ELSE
 			lv_loaded:=false 
