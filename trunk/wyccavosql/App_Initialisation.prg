@@ -1151,6 +1151,7 @@ method InitializeDB() as void Pascal  class Initialize
 	local cCollation:='utf8_unicode_ci' as string
 	 
 	local aTable:={;
+		{"log","MyIsam",cCollation},;	
 		{"account","MyIsam",cCollation},;
 		{"accountbalanceyear","InnoDB",cCollation},;
 		{"article","MyIsam",cCollation},;
@@ -1171,7 +1172,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","InnoDB",cCollation},;
 		{"ipcaccounts","MyIsam",cCollation},;  
 		{"language","MyIsam",cCollation},;
-		{"log","MyIsam",cCollation},;	
 		{"mbalance","InnoDB",cCollation},;
 		{"member","MyIsam",cCollation},;
 		{"memberassacc","MyIsam",cCollation},;
@@ -1409,7 +1409,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","persid","int(11)","NO","NULL","auto_increment"},;
 		{"person","title","smallint(6)","NO","0",""},;
 		{"person","lastname","char(28)","NO","",""},;
-		{"person","address","char(40)","NO","",""},;
+		{"person","address","varchar(240)","NO","",""},;
 		{"person","attention","char(28)","NO","",""},;
 		{"person","initials","char(10)","NO","",""},;
 		{"person","nameext","char(28)","NO","",""},;
