@@ -21,10 +21,22 @@ Define IDM_Person_USERID := "parous…ew@™=w"
 Define IDM_PERSONBANK_NAME := "PersonBank"
 Define IDM_PersonBank_USERID := "parous…ºw@™Ðw"
 CLASS Person_AD1 INHERIT FIELDSPEC
-METHOD Init() CLASS Person_AD1
-super:Init(HyperLabel{"address","address","","person_AD1"},"C",40,0)
 
-RETURN SELF
+
+METHOD Init() CLASS Person_AD1
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#AD1, "Ad1", "", "person_AD1" },  "M", 10, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS Person_BDAT INHERIT FIELDSPEC
 METHOD Init() CLASS Person_BDAT
 super:Init(HyperLabel{"BDAT","Bdat","","person_BDAT"},"D",10,0)
