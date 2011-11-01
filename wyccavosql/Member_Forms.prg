@@ -1434,7 +1434,11 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and addsub='B'"
 				oStmnt:Execute()
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and addsub='A'"
-				oStmnt:Execute() 
+				oStmnt:Execute()
+				// change bankaccount single destination:
+				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv 
+				oStmnt:Execute()
+				 
 				// change transactions not yet sent to PMC:
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
 				oStmnt:Execute() 
@@ -1498,6 +1502,9 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv +" and addsub='B'"
 				oStmnt:Execute()
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='A'"
+				oStmnt:Execute()
+				// change bankaccount single destination:
+				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+cIncAccPrv 
 				oStmnt:Execute()
 				// change transactions not yet sent to PMC:
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and bfm='' and gc='CH'"
@@ -2016,8 +2023,8 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 		endif
 		// Check if name allready exists of the account: 
 		if lValid .and. self:AccDepSelect=='account'
-			if self:lNewMember .or. !AllTrim(self:cMemberName)== self:oMbr:membername
-				if SQLSelect{"select description from account where accid<>"+self:mREK +iif(self:lNewMember,""," and accid<>"+self:mRekOrg+" and ")+"description='"+AllTrim(cMemberName)+"'",oConn}:RecCount>0
+			if self:lNewMember .or. !AllTrim(self:cMemberName)== AllTrim(self:oMbr:membername)
+				if SqlSelect{"select description from account where accid<>"+self:mRek +iif(self:lNewMember.or.!Empty(self:cCurDep),""," and accid<>'"+self:mRekOrg+"'")+" and description='"+AllTrim(cMemberName)+"'",oConn}:RecCount>0
 					cError:=self:oLan:WGet('Account description')+' "'+AllTrim(cMemberName)+'" '+self:oLan:WGet('allready exist')
 					lValid:=FALSE
 					self:oDCmAccDept:SetFocus()
