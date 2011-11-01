@@ -3505,7 +3505,9 @@ return self
 METHOD OKButton( ) CLASS TransactionMonth
 	LOCAL nAcc as STRING
 	LOCAL nRow, nPage as int
-	LOCAL oReport as PrintDialog
+	LOCAL oReport as PrintDialog 
+	local oAcc,oTrans as SQLSelect 
+	local startdate, enddate as date
 
 	// 	IF ValidateControls( SELF, SELF:AControls )
 	self:FromYear:=oDCFromYear:Value
@@ -3531,7 +3533,7 @@ METHOD OKButton( ) CLASS TransactionMonth
 		// 			oReport := PrintDialog{oParent,self:oLan:WGet("Account statements per month"),,97}
 		oReport:show()
 		IF oReport:lPrintOk
-		   SetDecimalSep(Asc(DecSeparator))
+			SetDecimalSep(Asc(DecSeparator))
 			IF oAccStm==null_object
 				oAccStm:=AccountStatements{,self:SkipInactive}
 			ENDIF
@@ -3539,10 +3541,24 @@ METHOD OKButton( ) CLASS TransactionMonth
 			self:oAccStm:oReport:=oReport 
 			self:oAccStm:SkipInactive:=self:SkipInactive
 			self:oAccStm:lMinimalInfo:=self:oDCSimpleStmnt:Checked
-			self:oAccStm:MonthPrint(self:nFromAccount,self:nToAccount,self:FromYear,self:FromMonth,self:ToYear,self:ToMonth,@nRow,@nPage,,self:oLan)				
+			startdate:=SToD(Str(self:FromYear,4,0)+StrZero(self:FromMonth,2,0)+'01') 
+			enddate:=SToD(Str(self:ToYear,4,0)+StrZero(self:ToMonth,2,0)+StrZero(MonthEnd(self:ToMonth,self:ToYear),2,0)) 
+			oAcc:=SqlSelect{"select a.accid,a.description,a.accnumber,a.currency,b.category "+;
+				" from balanceitem b,account a where a.balitemid=b.balitemid and a.accnumber between '"+self:nFromAccount+"' and '"+self:nToAccount+"'"+;
+				" order by a.accnumber",oConn}
+			oAcc:Execute()
+			oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description,a.accnumber '+;
+				" from transaction t,account a where a.accid=t.accid and t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
+				" and a.accnumber between '"+self:nFromAccount+"' and '"+self:nToAccount+"'")+" order by accnumber,dat",oConn}
+			oTrans:Execute()
+			
+			do while !oAcc:EoF 
+				self:oAccStm:MonthPrint(oAcc,oTrans,self:FromYear,self:FromMonth,self:ToYear,self:ToMonth,@nRow,@nPage,,self:oLan)
+				oAcc:Skip()
+			enddo				
 			oReport:prstart()
 			oReport:prstop() 
-		   SetDecimalSep(Asc('.'))
+			SetDecimalSep(Asc('.'))
 
 		ENDIF
 		IF Empty(self:ToAccount)
