@@ -199,15 +199,16 @@ Method ComposeSelect() class ImportMapping
 			lBank:=true
 		elseIF IDs=#Cod
 			lCod:=true
-		else
-			CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+SubStr(ID,2)+sIdentchar
+		elseif Lower(SubStr(ID,2))<>'persid' 
+// 			CFields+=iif(Empty(CFields),'',',')+'p.'+SubStr(ID,2)
+			CFields+=iif(Empty(CFields),'',',')+SubStr(ID,2)
 		endif
 	next
 	if lExtra
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'propextr'+sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'propextr'
 	endif
 	if lCod.or.!Empty(DefaultCod)
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'mailingcodes'+sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'mailingcodes'
 	endif
 	if lBank
 		CFields+=iif(Empty(CFields),'',',')+"group_concat(b.banknumber separator ',') as bankaccounts"
@@ -215,22 +216,22 @@ Method ComposeSelect() class ImportMapping
 		cGroup:=" group by p.persid"
 	endif
 	if AtC('persid',CFields)=0   // always retrieve identifier persid
-		CFields+=iif(Empty(CFields),'',',')+'p.`persid`'
+		CFields+=iif(Empty(CFields),'',',')+'p.persid'
 	endif
 	if AtC('datelastgift',CFields)=0   // always retrieve identifier datelastgift
-		CFields+=iif(Empty(CFields),'',',')+'cast(p.`datelastgift` as date) as datelastgift'
+		CFields+=iif(Empty(CFields),'',',')+'cast(datelastgift as date) as datelastgift'
 	endif
 	if AtC('firstname',CFields)=0   // always retrieve identifier firstname for congruence score
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'firstname'+sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'firstname'
 	endif
 	if AtC('initials',CFields)=0   // always retrieve identifier initials for  congruence score
-		CFields+=iif(Empty(CFields),'',',')+'p.'+sIdentchar+'initials' +sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'initials'
 	endif
 	if AtC('creationdate',CFields)=0   // always retrieve identifier creationdate
-		CFields+=iif(Empty(CFields),'',',')+'cast(p.`creationdate` as date) as creationdate' +sIdentchar
+		CFields+=iif(Empty(CFields),'',',')+'cast(creationdate as date) as creationdate' +sIdentchar
 	endif
 	if AtC('alterdate',CFields)=0   // always retrieve identifier alterdate
-		CFields+=iif(Empty(CFields),'',',')+'cast(p.`alterdate` as date) as alterdate'
+		CFields+=iif(Empty(CFields),'',',')+'cast(alterdate as date) as alterdate'
 	endif
 	self:cSelectStatement:="select "+Lower(CFields)+cFrom+cWhere+cGroup 
 	return
@@ -690,7 +691,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	LOCAL i, j, titPtr,exidptr, typPtr, PersidPtr,AccNumberPtr,AccIDPtr as int
 	LOCAL uSrcValue, ExId, PERSID,ACCID,ACCNUMBER as USUAL
 	LOCAL cTargetStr,ID, cCodes, cCorCln,cMlCod, mOPM as STRING, IDs as symbol
-	LOCAL aWord:={}, aCod,aBank as ARRAY
+	LOCAL aWord:={}, aCod:={},aBank:={} as ARRAY
 	LOCAL myBDAT, myMUTD as date 
 	local lStop:=false as logic
 	// local aCorCln as array
@@ -1166,11 +1167,15 @@ do while action==0
 		self:OKButton()
 		RETURN
 	ENDIF
+//    AdoServerCallErrorHandler(false)
+// 	AdoServerCallClientError(false) 
 	IF self:lImportFile
 		cBuffer:=FReadLine(self:ptrHandle,4096)
 		IF FEof(ptrHandle).and.Empty(cBuffer)
 			FClose(ptrHandle)
 			self:oEdit:Hide() 
+// 		   AdoServerCallErrorHandler(true)
+// 			AdoServerCallClientError(true) 
 			oMainWindow:Pointer := Pointer{POINTERARROW}
 			IF self:ErrCount>0
 				(ErrorBox{,Str(self:ErrCount,-1)+" errors found in importfile. See "+CurPath+"Log.txt FOR details"}):Show()
@@ -1193,7 +1198,9 @@ do while action==0
 				(ErrorBox{,Str(self:ErrCount,-1)+" errors found in importfile. See "+CurPath+"Log.txt FOR details"}):show()
 			else
 				(TextBox{,"Import of file","All records imported:"+Str(self:ExistCount,-1)+" updated, "+Str(self:InsertCount,-1)+" added"}):Show()
-			ENDIF
+			ENDIF 
+// 		   AdoServerCallErrorHandler(true)
+// 			AdoServerCallClientError(true) 
 			self:EndWindow() 
 			self:Close()
 			RETURN 
@@ -1211,6 +1218,8 @@ do while action==0
 		exit 
 	elseif action==3  // stop import
 		self:oEdit:Close()
+// 	   AdoServerCallErrorHandler(true)
+// 		AdoServerCallClientError(true) 
 		self:EndWindow()
 		self:Close()
 		oMainWindow:Pointer := Pointer{POINTERARROW}
@@ -1298,7 +1307,9 @@ ELSEIF TargetDB=="Account"
 	oEdit:=EditAccount{SELF:Owner,,,TRUE}
 ENDIF
 oEdit:oImport:=SELF
-oEdit:Caption+=" Import"
+oEdit:Caption+=" Import" 
+// AdoServerCallErrorHandler(false)
+// AdoServerCallClientError(false)
 oEdit:Import(aMapping,oDCConfirmBox:Checked)
 return
 METHOD PostInit(oParent,uExtra) CLASS ImportMapping
@@ -1493,16 +1504,22 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	// type: 0:textbox,1:checkbox;3:drop down list
 
 	// select existing person 
-	
+//    AdoServerCallErrorHandler(false)
+// 	AdoServerCallClientError(false) 
 	if !Empty(oPersCnt:PERSID)
 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn}
 	else
 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.externid='"+oPersCnt:m51_exid)+"'",oConn}
 	endif 
-	if oPersExist:RecCount<1
+	oPersExist:Execute()
+	if !Empty(oPersExist:Status) .or. oPersExist:RecCount<1
 		return false
 	endif
-	cPersid:=Str(oPersExist:PERSID,-1)
+	if Empty(oPersCnt:PERSID)
+		cPersid:=Str(oPersExist:PERSID,-1)
+	else
+		cPersid:=oPersCnt:PERSID
+	endif
 	// Contains mapping extra property?
 	if self:lExtra
 		oXMLDoc:=XMLDocument{oPersExist:PROPEXTR}
@@ -1638,6 +1655,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 			endif
 		ENDIF
 	NEXT
+
 	if	self:lExtra
 		cStatement+=",propextr='"+oXMLDoc:GetBuffer()+"'"				
 	endif
