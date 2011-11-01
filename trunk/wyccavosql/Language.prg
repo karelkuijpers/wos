@@ -72,7 +72,7 @@ ENDIF
 cText:=AllTrim(cSentenceEnglish)
 IF !Alg_taal="E" 
 
-	if (iPos:=AScan(aLanM,{|x|x[1]==cText}))>0
+	if (iPos:=AScan(aLanM,{|x|Lower(x[1])==Lower(cText)}))>0
 		IF !Empty(aLanM[iPos,2])
 			cText:=aLanM[iPos,2]
 		ENDIF
@@ -99,7 +99,7 @@ IF Empty(cSentenceEnglish)
 ENDIF
 cText:=AllTrim(cSentenceEnglish)
 IF !Alg_taal="E" 
-	if (iPos:=AScan(aLanR,{|x|x[1]==cText}))>0
+	if (iPos:=AScan(aLanR,{|x|Lower(x[1])==Lower(cText)}))>0
 		IF !Empty(aLanR[iPos,2])
 			cText:=aLanR[iPos,2]
 		ENDIF
@@ -134,7 +134,7 @@ IF Empty(cSentenceEnglish)
 ENDIF
 cText:=AllTrim(cSentenceEnglish)
 IF !Alg_taal="E" 
-	if (iPos:=AScan(aLanW,{|x|x[1]==cText}))>0
+	if (iPos:=AScan(aLanW,{|x|Lower(x[1])==Lower(cText)}))>0
 		IF !Empty(aLanW[iPos,2])
 			cText:=aLanW[iPos,2]
 		ENDIF
