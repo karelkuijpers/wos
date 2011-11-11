@@ -1316,17 +1316,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		self:oDCmcreationdate:Value := Today()
 		self:oDCmOPC:TextValue:=LOGON_EMP_ID
 		self:oDCmalterdate:Value:=Today()
-		// remove mbr and ent from listbox:
-		// 		pos:=self:oDCmType:FindItem("Member",true)
-		// 		IF pos>0
-		// 			self:oDCmType:CurrentItemNo:=pos
-		// 			self:oDCmType:DeleteItem()
-		// 		ENDIF
-		// 		pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
-		// 		IF pos>0
-		// 			self:oDCmType:CurrentItemNo:=pos
-		// 			self:oDCmType:DeleteItem()
-		// 		ENDIF
 		IF !Empty(self:oPersCnt:m51_type)
 			self:oDCmType:TextValue := self:oPersCnt:m51_type
 		ENDIF
@@ -1360,36 +1349,47 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 
 	RETURN NIL
 method RemoveMemberParms() class NewPersonWindow 
-	local pos,i,j as int
+	local pos,i,j,mpos as int
 	local oContr as Control
 	local aChilds:={} as array
 	// remove mbr and ent from listbox:
-	pos:=self:oDCmType:FindItem("Member",true)
-	IF pos>0
-		self:oDCmType:CurrentItemNo:=pos
-		self:oDCmType:DeleteItem()
-	ENDIF
-	pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
-	IF pos>0
-		self:oDCmType:CurrentItemNo:=pos
-		self:oDCmType:DeleteItem()
-	ENDIF 
+	mpos:=AScan(pers_types_abrv,{|x|x[1]=='MBR'})
+	if mpos>0
+		pos:=self:oDCmType:FindItem(pers_types[mpos,1],true)    //  "Member"
+		
+		IF pos>0
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
+		ENDIF 
+	endif
+	i:=AScan(pers_types_abrv,{|x|x[1]=='ENT'})
+	if i>0
+		pos:=self:oDCmType:FindItem("Wycliffe Entity",true)
+		IF pos>0
+			self:oDCmType:CurrentItemNo:=pos
+			self:oDCmType:DeleteItem()
+		ENDIF
+	endif
 	// remove mailing code MW from listboxes for mailing codes: 
 	aChilds:=self:GetAllChildren() 
 	i:=1
 	j:=1
-	do while j>0 
-		j:=AScan(aChilds,{|x|x:NameSym==String2Symbol("mCod"+Str(i,-1))},j+1)
-		if j>0  
-			oContr:=aChilds[j]
-			pos:=oContr:FindItem("Member",true)
-			IF pos>0
-				oContr:CurrentItemNo:=pos
-				oContr:DeleteItem()
-			ENDIF
-			i++
-		endif
-	enddo
+	mpos:=AScan(pers_codes,{|x|x[2]=='MW'})
+	if mpos>0
+		do while j>0 
+			j:=AScan(aChilds,{|x|x:NameSym==String2Symbol("mCod"+Str(i,-1))},j+1)
+			if j>0  
+				oContr:=aChilds[j]
+				pos:=oContr:FindItem(pers_codes[mpos,1],true)     //   "Member"
+				IF pos>0
+					oContr:CurrentItemNo:=pos
+					oContr:DeleteItem()
+					oContr:Value:='  '
+				ENDIF
+				i++
+			endif
+		enddo
+	endif
 	return
 
 Method UpdBankAcc(cBankAcc) Class NewPersonWindow
