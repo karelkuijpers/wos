@@ -327,9 +327,6 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 				oPro:SetRange(1,RECCOUNT())
 				oPro:SetUnit(1)
 				oPro:Show()
-				if dbasename=="member"
-					oMemAssAcc:=SQLStatement{"insert into memberassacc (Mbrid,accid) values(?,?)",oConn}
-				endif
 				// start transaction: 
 				SQLStatement{"start transaction",oConn}:Execute()
 				oStmt := SQLStatement{ cStatement, oConn }			 
@@ -419,7 +416,8 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 									FOR k:=1 to Len(cDBValue)-1 step 6
 										cMemAssAcc:=AllTrim( SubStr(cDBValue,k,6))
 										if !Empty(cMemAssAcc)
-											oMemAssAcc:Execute(cRek,cMemAssAcc)
+						 					oMemAssAcc:=SQLStatement{"insert into memberassacc (Mbrid,accid) values("+cRek+","+cMemAssAcc+")",oConn}
+											oMemAssAcc:Execute()
 										endif
 									NEXT
 								endif
@@ -610,22 +608,23 @@ method GetLocaleInfo() as array class Initialize
 LOCAL oReg as CLASS_HKCU
 LOCAL oRegLM as CLASS_HKLM
 local COUNTRYCOD, CountryName, CurrencyCode,cCurrSym,PPCode, PPNAME  as string 
-Local EuroCountries:={"Andorra","Austria","Belgium","Cyprus","Finland","France","Germany","Greece","Ireland","Italy","Kosovo","Luxembourg","Malta","Monaco","Montenegro","Netherlands","Portugal","San Marino","Slovakia","Slovenia"} as array
+// Local EuroCountries:={"Andorra","Austria","Belgium","Cyprus","Finland","France","Germany","Greece","Ireland","Italy","Kosovo","Luxembourg","Malta","Monaco","Montenegro","Netherlands","Portugal","San Marino","Slovakia","Slovenia"} as array
 Local oCurr as SQLSelect
 Local oPP as SQLSelect
 	oReg:=Class_HKCU{}
 	COUNTRYCOD:=oReg:GetString("Control Panel\International","iCountry")   // telephone area
 	CountryName:=oReg:GetString("Control Panel\International","sCountry") 
-	cCurrSym:=oReg:GetString("Control Panel\International","sCurrency")
-	if AScan(EuroCountries,CountryName) > 0
+	cCurrSym:=oReg:GetString("Control Panel\International","sCurrency") 
+	if cCurrSym=='€'
+// 	if AScan(EuroCountries,CountryName) > 0
 		CurrencyCode:="EUR"
 	else
-		oCurr:=SQLSelect{"select aed from CurrencyList where UNITED_ARA like '%"+CountryName+"%'",oConn}
+		oCurr:=SqlSelect{"select aed from currencylist where united_ara like '%"+CountryName+"%'",oConn}
 		if oCurr:RecCount>0
 			CurrencyCode:=oCurr:AED
 		endif 
 	endif
-	oPP:=SQLSelect{"select ppcode,ppname from PPCodes where ppname like '%"+CountryName+"%'",oConn}
+	oPP:=SQLSelect{"select ppcode,ppname from ppcodes where ppname like '%"+CountryName+"%'",oConn}
 	if oPP:RecCount>0
 		PPCode:=oPP:PPCode
 		PPNAME:=oPP:PPNAME
@@ -732,7 +731,6 @@ method init() class Initialize
 			
 			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
-				LogEvent(self,"Access denied for user "+cUIDPW+" for database "+dbname+" on server "+cServer,"LogErrors")
 				ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
 				break
 			endif
@@ -935,7 +933,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			",bottommarg='10'"+;
 			",Closemonth='12'"+;
 			",decmgift='0'"+;
-			",assmntoffc='5.0'"+;
 			",withldoffl='5.0'"+;
 			",withldoffm='5.0'"+;
 			",withldoffh='5.0'"+;
@@ -943,13 +940,14 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			iif(!Empty(aLocal),;
 			",entity='"+aLocal[3]+"'"+;
 			",countrycod='"+aLocal[1]+"'"+;
-			",countryown'"+aLocal[2]+"'"+;
+			",countryown='"+aLocal[2]+"'"+;
 			",currname='"+aLocal[6]+"'","")+;
 			",currency='"+sCURR+"'"+;
 			",mindate='"+SQLdate(MinDate)+"'"+; // the previous year 
 		",yearclosed='"+Str(Year(MinDate)-1,4,0)+"'" // december last year
 		oStmnt:=SQLStatement{cStatement,oConn}
-		oStmnt:Execute()
+		oStmnt:Execute() 
+		oSys:Execute()  // refersh oSys
 	ENDIF
 	cStatement:=""
 	IF FirstOfDay
@@ -1034,23 +1032,15 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 		if self:lNewDb 
 			// Initialize Mailingcodes:
-			oStmnt:=SQLStatement{"insert into perscod (pers_code,abbrvtn,description) values (?,?,?)",oConn}
-			oStmnt:Execute("  ","  ","  ")
-			oStmnt:Execute("FI","FI","Financial Giver")
-			oStmnt:Execute("EG","FG","First gift received")
-			oStmnt:Execute("MW","MB","Member")
+			oStmnt:=SQLStatement{"insert into perscod (pers_code,abbrvtn,description) values ('  ','  ','  '),('FI','FI','Financial Giver'),"+;
+			"('EG','FG','First gift received'),('MW','MB','Member')",oConn} 
+			oStmnt:Execute()
 			// Initialize Person types: 
-			oStmnt:=SQLStatement{"insert into persontype (id,abbrvtn,descrptn) values (?,?,?)",oConn}  // hard to one for default VALUE
-			oStmnt:Execute(1,'IND','Individual')
-			oStmnt:=SQLStatement{"insert into persontype (abbrvtn,descrptn) values (?,?)",oConn}  
-			oStmnt:Execute("MBR","Member")
-			oStmnt:Execute("ENT","Wycliffe Entity")
-			oStmnt:Execute("GOV","Governement")
-			oStmnt:Execute("COM","Companies")
-			oStmnt:Execute("DIR","Direct Income")
-			oStmnt:Execute("CHU","Sending Church")
-			oStmnt:Execute("OTH","Other Organization")
-			oStmnt:Execute("CRE","Creditor")
+			oStmnt:=SQLStatement{"insert into persontype (id,abbrvtn,descrptn) values (1,'IND','Individual')",oConn}  // hard to one for default VALUE
+			oStmnt:Execute()
+			oStmnt:=SQLStatement{"insert into persontype (abbrvtn,descrptn) values ('MBR','Member'),('ENT','Wycliffe Entity').('GOV','Governement')"+;
+			"('COM','Companies'),('DIR','Direct Income'),('CHU','Sending Church'),('OTH','Other Organization'),('CRE','Creditor')",oConn}
+			oStmnt:Execute()
 			// Initialize titles:
 			oStmnt:=SQLStatement{"insert into titles (id,descrptn) values (1,'')",oConn}  // hard to one for default VALUE
 		endif
