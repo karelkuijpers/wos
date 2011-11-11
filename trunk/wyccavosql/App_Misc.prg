@@ -207,13 +207,15 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	
 	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
 	oSel:Execute()
-	if !oSel:totdebcre==0.00
+// 	if !oSel:totdebcre==0.00
+	if !Empty(oSel:totdebcre)
 		cError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
 		cFatalError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
 	endif
 	oSel:=SqlSelect{"select sum(cre-deb) as totdebcre from mbalance where currency='"+sCurr+"' and (year*12+month)>="+Str(nFromYear,-1),oConn}
 	oSel:Execute()
-	if !oSel:totdebcre==0.00
+// 	if !oSel:totdebcre==0.00
+	if !Empty(oSel:totdebcre)
 		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
 	endif
 	oSel:=SQLSelect{"select transid,dat from transaction group by transid having sum(cre-deb)<>0 order by transid",oConn}
@@ -345,8 +347,13 @@ function ConL(uValue as usual) as logic
 // convert usual from tiniint to logic
 return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
 function ConS(uValue as usual) as string
-// convert usual from count total to string
-return AllTrim(Transform(uValue,""))
+// convert usual from count total to string 
+local cRet as string
+cRet:= AllTrim(Transform(uValue,""))
+if SubStr(cRet,-3)=='.00'
+	cRet:=substr(cRet,1,len(cRet)-3)    // make integer
+endif
+return cRet
 
 Function Correspondence(Str1 as string, Str2 as string) as int
 // determine percentage correspondence of Str2 to Str1 
@@ -1849,9 +1856,13 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	LOCAL cFileName, selftext as STRING
 	LOCAL ptrHandle 
 	local oStmnt as SQLStatement
-	*	Logging of info to table log
-		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
-			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+	*	Logging of info to table log 
+	if AtC("Access denied for user",strText)>0
+		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
+		return true
+	endif
+	oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
+	iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
 		oStmnt:execute()
 	If !Empty(oStmnt:status) 
 		// write to file
@@ -2247,12 +2258,13 @@ function PersonUnion(id1 as string, id2 as string)
 	SQLStatement{"start transaction",oConn}:Execute()
 	oStmt:=SQLStatement{'',oConn}
 	// Unify persons self:
-	oPers1:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-	"remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	oPers1:=SqlSelect{"select p.gender,firstname,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
+	"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
 	"address,city,postalcode,country,attention,propextr"+;
+	",m.mbrid,m.accid,m.depid"+;
 	" from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
 	oPers2:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-	"remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
 	"address,city,postalcode,country,attention,propextr"+;
 	" from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
 
@@ -2354,20 +2366,20 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",email='"+ AddSlashes(oPers2:EMAIL)+"'"
 		endif
 		if Empty( oPers1:birthdate)
-			cStatement+=",birthdate='"+ SQLdate(oPers2:birthdate)+"'"
+			cStatement+=",birthdate='"+ SQLdate(iif(Empty(oPers2:birthdate),null_date,oPers2:birthdate))+"'"
 		endif
 		if !Empty(oPers2:remarks)
 			cStatement+=",remarks=concat(remarks,' ','"+AddSlashes(oPers2:remarks)+"')"
 		endif
 		cStatement+=",mailingcodes='"+MakeCod(Split(oPers1:mailingcodes+" "+oPers2:mailingcodes))+"'"
 		if Empty(oPers1:creationdate) .or.(!Empty(oPers2:creationdate) .and.oPers1:creationdate>oPers2:creationdate)
-			cStatement+=",creationdate='"+SQLdate(oPers2:creationdate)+"'"
+			cStatement+=",creationdate='"+SQLdate(iif(Empty(oPers2:creationdate),null_date,oPers2:creationdate))+"'"
 		endif
-		if Empty(oPers1:alterdate) .or.oPers1:alterdate< oPers2:alterdate
-			cStatement+=",alterdate='"+SQLdate(oPers2:alterdate)  +"'"
+		if !Empty(oPers2:alterdate) .and.(Empty(oPers1:alterdate) .or.oPers1:alterdate< oPers2:alterdate)
+			cStatement+=",alterdate='"+SQLdate(iif(Empty(oPers2:alterdate),null_date,oPers2:alterdate))+"'"
 		endif
-		if Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift
-			cStatement+=",datelastgift='"+SQLdate(oPers2:datelastgift)  +"'"
+		if !Empty(oPers2:datelastgift) .and. (Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift)
+			cStatement+=",datelastgift='"+SQLdate(iif(Empty(oPers2:datelastgift),null_date,oPers2:datelastgift))+"'"
 		endif
 		if Empty(oPers1:address) .and. Empty(oPers1:city)
 			cStatement+=",address='"+AddSlashes(oPers2:address) +"'"
@@ -2395,7 +2407,7 @@ function PersonUnion(id1 as string, id2 as string)
 			ENDDO
 			cStatement+=",propextr='"+ AddSlashes(oXMLDocPrs1:GetBuffer()) +"'"
 		endif
-		if !Empty(oPers2:accid)
+		if !Empty(oPers2:mbrid)
 			// connect member to Id1:
 			cStatement+=",type="+Str(oPers2:type,-1)
 		endif
@@ -2405,10 +2417,14 @@ function PersonUnion(id1 as string, id2 as string)
 			cError:=oStmt:ErrInfo:ErrorMessage 
 		endif
 		if Empty(cError)
-			if !Empty(oPers2:accid) 
+			if !Empty(oPers2:mbrid) 
 				oStmt:=SQLStatement{"update member set persid="+id1+" where persid="+id2,oConn}:Execute()
-				if oStmt:NumSuccessfulRows>0 
-					oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute() 
+				if oStmt:NumSuccessfulRows>0
+					if !Empty(oPers2:accid) 
+						oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute()
+					elseif !Empty(oPers2:depid)
+						oStmt:=SQLStatement{"update department set description='"+GetFullName(id1)+" where depid="+Str(oPers2:depid,-1),oConn}:Execute()
+					endif	
 				endif
 			endif 
 			
@@ -2532,29 +2548,31 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string) as array
 	* Split string cTarget into array, seperated by cSep
 	LOCAL nIncr as int
 	LOCAL aToken:={} as ARRAY
-	LOCAL cSearch as STRING
+	LOCAL cSearch,cQuote as STRING
 	LOCAL nStart, nPos, nEnd as int
 	if !Empty(cTarget)
 		nEnd:=Len(cTarget)
-		IF SubStr(cTarget,1,1)=='"' .and. SubStr(cTarget,nEnd,1)=='"'
-			* apparently CSV-file:
-			cSearch:='"'+cSep+'"'
-			nStart:=1
-			nEnd--
-		ELSE
-			nStart:=0
-			cSearch:=cSep
-		ENDIF
-		nIncr:=Len(cSearch)-1
-		DO WHILE true
-			nPos:=At3(cSearch, cTarget,nStart)
-			IF nPos==0
-				exit
+		nStart:=0
+		cSearch:=cSep
+		DO WHILE nStart<nEnd
+			IF SubStr(cTarget,nStart+1,1)=='"'
+				cQuote:='"'
+				cSearch:=cQuote+cSep
+				nStart++
+			else
+				cSearch:=cSep
+			endif
+			nIncr:=Len(cSearch)-1
+			IF (nPos:=At3(cSearch, cTarget,nStart))==0
+				if Empty(cQuote)
+					nPos:=nEnd +1
+				elseif (nPos:=At3(cQuote, cTarget,nStart))=0 
+					nPos:=nEnd +1
+				endif
 			ENDIF
 			AAdd(aToken,Compress(StrTran(SubStr(cTarget,nStart+1,nPos-nStart-1),CHR(160),Space(1))))      // replace non-breaking space by space
 			nStart:=nPos+nIncr
 		ENDDO
-		AAdd(aToken,SubStr(cTarget,nStart+1,nEnd-nStart)) 
 	endif
 	RETURN aToken
 function SQLdate(dat as date) as string
