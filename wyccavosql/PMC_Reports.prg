@@ -383,7 +383,8 @@ METHOD PrintReport() CLASS PMISsend
 	local cTransLock as string
 	local cDistr as string
 	local time1,time0 as float
-	local cFatalError as string
+	local cFatalError as string 
+	local Country as string
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -423,7 +424,9 @@ METHOD PrintReport() CLASS PMISsend
 	fExChRate:=oCurr:GetROE("USD",Today(),true) 
 	if oCurr:lStopped
 		Return
-	endif
+	endif 
+	Country:=SqlSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
+
 	PMCUpload:= iif(ConI(self:oSys:PMCUPLD)=1,true,false)
 	// fExChRate:=self:mxrate 
 
@@ -945,7 +948,7 @@ METHOD PrintReport() CLASS PMISsend
 			me_desc:=aMemberTrans[a_tel,9]
 		ENDIF
 		IF aMemberTrans[a_tel,4]=AG
-			me_desc:="Assessment Int+Field"
+			me_desc:="Assessment Int+Field of gifts from "+Country+' '+self:AssPeriod
 		ELSE
 			IF aMemberTrans[a_tel,4]=MT
 				me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer OF "+AllTrim(aMemberTrans[a_tel,6])+" TO home:"+aMemberTrans[a_tel,7][2]+iif(Empty(aMemberTrans[a_tel,7][1]),"",", "+aMemberTrans[a_tel,7][1] )
@@ -1150,7 +1153,7 @@ METHOD PrintReport() CLASS PMISsend
 				me_saldo:=aMemberTrans[a_tel,5]
 				* Record transactions for decreasing balance of member:
 				IF aMemberTrans[a_tel,4]=AG
-					me_desc:="Assessment Intern+Field"+self:AssPeriod
+					me_desc:=self:oLan:RGet("Assessment Intern+Field of gifts from")+Space(1)+Country+' '+self:AssPeriod
 				ELSE
 					me_desc:=aMemberTrans[a_tel,9]
 					IF aMemberTrans[a_tel,4]=MT
@@ -1234,9 +1237,9 @@ METHOD PrintReport() CLASS PMISsend
 				// Also transaction for Office assessment:
 				IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
 					IF aMemberTrans[a_tel,7][6]="M"
-						me_desc:="Assessment office"+self:AssPeriod
+						me_desc:=self:oLan:RGet("Assessment office of gifts from")+Space(1)+Country +' '+self:AssPeriod
 					ELSE
-						me_desc:="Assessment office projects"+self:AssPeriod
+						me_desc:=self:oLan:RGet("Assessment office projects of gifts from")+Space(1)+Country+' '+self:AssPeriod
 					ENDIF
 					nSeqnr++
 					me_saldo:=aMemberTrans[a_tel,8]
