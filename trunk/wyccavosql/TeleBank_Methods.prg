@@ -547,7 +547,7 @@ METHOD Import() CLASS TeleMut
 	aFileRO:=Directory(CurPath+"\RO??BTRL????????N?????XX-??.??.????-??.??.????.csv")
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
-	aFileINN:=Directory(CurPath+"\ocrinnbet.txt")
+	aFileINN:=Directory(CurPath+"\ocrinnbet.txt*")
 	aFileBBS:=Directory(CurPath+"\TRANSLISTE.CSV")
 	// 	aFileVWI:=Directory(CurPath+"\*????????verwinfo??.txt")
 	aFileVWI:=Directory(CurPath+"\*verwinfo*.txt")
@@ -913,29 +913,31 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_AmountStr:=SubStr(oHlM:MTLINE,33,17)
 				lv_Amount:=Round(Val(lv_AmountStr)/100.00,2)
 				// Determine from KIDnr personid and accountnbr:
-				lv_InvoiceID:=SubStr(oHlM:MTLINE,64,11)
+				lv_InvoiceID:=SubStr(oHlM:MTLINE,62,13)
 				lv_description:=lv_InvoiceID
-				lv_Budgetcd:=SubStr(lv_InvoiceID,6,5)
+				lv_Budgetcd:=ZeroTrim(SubStr(lv_InvoiceID,7,6))
 				IF Empty(lv_Budgetcd)
 					lv_Budgetcd:=AccSDON  // default Donations account
 				ELSEIF SQLSelect{"select accid from account where accid="+lv_Budgetcd,oConn}:reccount<1
 					lv_Budgetcd:=AccSDON  // default Donations account
 				ENDIF
 				lv_reference:=SubStr(oHLM:MTLINE,5,2)
-				lv_persid:=SubStr(lv_InvoiceID,2,5)
+				lv_persid:=ZeroTrim(SubStr(lv_InvoiceID,1,6))
 			  	lv_description:=AddSlashes(AllTrim(lv_description))
 				nTrans++
 				* save transaction:
 				IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
-					IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KID","","",lv_Budgetcd) .and.!Empty(lv_Amount) 
+					IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"KID",ZeroTrim(lv_InvoiceID),"",lv_Budgetcd) .and.!Empty(lv_Amount) 
 						oSel:=SQLSelect{"select personid from subscription where invoiceid='"+lv_InvoiceID+"'",oConn}
 						if oSel:reccount>0
 							cPersId:=Str(oSel:personid,-1)
+						elseif SqlSelect{"select persid from person where persid="+lv_persid,oConn}:reccount>0
+							cPersId:=lv_persid
 						else
 							cPersId:=""
 						endif
 						oStmnt:=SQLStatement{"insert into teletrans set "+;
-							"contra_bankaccnt='"+lv_InvoiceID+"'"+;
+							"contra_bankaccnt='"+ZeroTrim(lv_InvoiceID)+"'"+;
 							",bankaccntnbr='"+lv_bankAcntOwn+"'"+;
 							",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
 							",kind='KID'"+;
