@@ -377,7 +377,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 			ErrorBox{ self, self:oLan:WGet("Passwords do not match")+"!" }:Show()
 			RETURN
 		ENDIF
-		if !CheckPassword( self:oDCmPASSWORD:VALUE,Val(self:mEmpID))
+		if !CheckPassword( self:oDCmPASSWORD:VALUE,iif(lNew,0,Val(self:mEmpID)))
 			return false
 		endif
 	endif
@@ -579,7 +579,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 			self:mType:="A"
 			oDCmTYPE:Disable()
 		ENDIF
-		self:SelectSubset()
+		self:SelectSubset() 
+		self:mEmpID:=''
 	ELSE
 		cEmpStmnt:='select e.empid,cast('+Crypt_Emp(false,"e.persid");
 		+' as char) as mcln,'+SQLFullName()+' as memplname,';
@@ -1603,7 +1604,6 @@ METHOD OkButton( ) CLASS FirstUser
 		return false
 	endif
 	MYEMPID:='1000'
-	oStmnt:Commit()
 	cUpdate:="update employee set loginName="+Crypt_Emp(true,"loginname",Lower(AllTrim(self:mLOGON_NAME))) ;
 		+", lstupdpw=NOW(), password='"+HashPassword(1000,self:oDCmPassword:TextValue)+"', type="+Crypt_Emp(true,"type","A")+", depid="+Crypt_Emp(true,"depid","")
 	oStmnt:SQLString:=cUpdate
@@ -1612,17 +1612,22 @@ METHOD OkButton( ) CLASS FirstUser
 	MYEMPID := "1000"
 	UserType:="A"
 	* Add balance items:  Income and expense, Balance: Assets&Liabilities, 
-	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values (?,?,?,?,?)",oConn}
-	oStmnt:Execute('400','Income and Expense','Surplus/Deficit',Income,'0')
-	mNum:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-	oStmnt:Execute('4000','Income','Income',Income,mNum)
-	oStmnt:Execute('6000','Expenses','Expenses',Expense,mNum)
-	oStmnt:Execute('100','Balance','Increment Netassets',asset,'0')
-	mNum:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-	oStmnt:Execute('1000','Assets','Assets',asset,mNum)
-	mNumAsset:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-	oStmnt:Execute('2000','Liabilities and Funds','Liabilities and Funds',liability,mNum)
-	mNumLiability:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values "+;
+	"('400','Income and Expense','Surplus/Deficit','"+Income+"','0')",oConn}
+	oStmnt:Execute()
+	mNum:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values ('4000','Income','Income','"+Income+"',"+mNum+")"+;
+	",('6000','Expenses','Expenses','"+Expense+"',"+mNum+")",oConn}	
+	oStmnt:Execute()	
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values ('100','Balance','Increment Netassets','"+asset+"','0')",oConn}
+	oStmnt:Execute()	
+	mNum:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values ('1000','Assets','Assets','"+asset+"',"+mNum+")",oConn}
+	oStmnt:Execute()	
+	mNumAsset:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+	oStmnt:=SQLStatement{"insert into balanceitem (number,heading,footer,category,balitemidparent) values ('2000','Liabilities and Funds','Liabilities and Funds','"+liability+"',"+mNum+")",oConn}
+	oStmnt:Execute()	
+	mNumLiability:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 	IF self:mAdminType=="HO"
 		* Registrate member:
 		* add Person:
@@ -1637,14 +1642,14 @@ METHOD OkButton( ) CLASS FirstUser
 			",opc='"+AllTrim(self:mLOGON_NAME) +"'"+;
 			",alterdate='"+SQLdate(Today()) +"'",oConn}
 		oStmnt:Execute()
-		mCLN:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+		mCLN:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 		oStmnt:=SQLStatement{"insert into account set "+;
 			"description='"+GetFullName(mCLN) +"'"+;
 			",balitemid ='"+ mNumLiability+"'"+;
 			",accnumber='77001'"+;
 			",giftalwd='1'",oConn}
 		oStmnt:Execute()
-		mRek:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))			
+		mRek:=ConS(ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)))			
 		// 		SQLStatement{"update person set accid='"+mRek+"' where persid="+mCln,oConn}:Execute() 
 		* Add Member:
 		oStmnt:=SQLStatement{"insert into member set "+;
@@ -1670,7 +1675,7 @@ METHOD OkButton( ) CLASS FirstUser
 		mRek:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 
 		* Add Bankaccount:
-		oStmnt:=SQLStatement{"insert into BankAccount set "+;
+		oStmnt:=SQLStatement{"insert into bankaccount set "+;
 			"banknumber='"+self:mBANKNUMMER+"'"+;				
 			",accid='"+mRek+"'"+;
 			",usedforgifts=1"+;
@@ -1681,8 +1686,7 @@ METHOD OkButton( ) CLASS FirstUser
 	* Add Account for Netasset:
 	oStmnt:=SQLStatement{"insert into account set "+;
 		"description='Netassets'"+;
-		",persid='"+mCLN+"'"+;
-		",Currency='"+sCurr+"'"+;
+		",currency='"+sCurr+"'"+;
 		",balitemid ='"+ mNumLiability+"'"+;
 		",accnumber='15000'",oConn}
 	oStmnt:Execute()
