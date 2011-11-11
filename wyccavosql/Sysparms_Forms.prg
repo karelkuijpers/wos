@@ -258,18 +258,19 @@ METHOD FindButton( ) CLASS LogReport
 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
 		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
-			cWhereExtra+=" and ("
+			self:cWhereExtra+=" and ("
 			for j:=1 to Len(AFields)
-				cWhereExtra+=iif(j=1,""," or ")+AFields[j]+" like '%"+aKeyw[i,1]+"%'"
+				self:cWhereExtra+=iif(j=1,""," or ")+AFields[j]+" like '%"+aKeyw[i,1]+"%'"
 			next
-			cWhereExtra+=") "
+			self:cWhereExtra+=") "
 		next
 	endif
 	self:GetLog()
 	self:GoTop()
 	self:oSFSub_LogReport:Browser:refresh()
 	RETURN nil
-Method GetLog()  class LogReport 
+Method GetLog()  class LogReport
+ 
 	self:oLog:SQLString:="select "+self:cFields+" from log "+;
 		"where "+sIdentChar+"collection"+sIdentChar+"='"+self:CollectionBox+"' and "+sIdentChar+"logtime"+sIdentChar+" between '"+SQLdate(self:oDCDateTimeFrom:SelectedDate)+;
 		"' and '"+SQLdate(self:oDCDateTimeTo:SelectedDate+1)+"' "+self:cWhereExtra+self:cOrder
