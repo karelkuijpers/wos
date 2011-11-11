@@ -41,7 +41,7 @@ Default(@InvoiceID,null_string)
 	oReport:PrintLine(@nRow,@nPage,cCodeline)
 		
 	RETURN
-function ADDMLCodes(NewCodes as string, cCod ref string) as void pascal
+function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
 // add new mailing NewCodes to current string of mailing codes cCod
 LOCAL aPCod,aNCod as ARRAY, iStart as int
 if Empty(NewCodes)
@@ -54,7 +54,7 @@ endif
 	ASize(aPCod,iStart+Len(aNCod))
 	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
 	cCod:=MakeCod(aPCod)
-	return
+	return cCod
 	
 CLASS AmountGift INHERIT FIELDSPEC
 
@@ -1515,7 +1515,8 @@ IF !Empty(oCLN)
 	IF ( oTextBox:Show() == BOXREPLYYES ) 
 		CurRec:=oCLN:RECNO 
 		if PersonUnion(Id1,Id2)
-			self:GoTop() 
+			self:oPers:Execute()
+			self:FOUND :=Str(self:oPers:reccount,-1) 
 			self:oSFPersonSubForm:Browser:refresh()
 			self:Server:RECNO:=CurRec
 		endif 		
@@ -2144,6 +2145,7 @@ CLASS Selpers INHERIT DataWindowExtra
 	PROTECT oAcc as SQLSelect
 	PROTECT oTrans as SQLSelect
 	PROTECT oTransH as SQLSelect
+	protect cTransH as string
 	PROTECT oPers as SQLSelect
 	PROTECT oPersBank as SQLSelect
 	PROTECT m_fieldnames,m_values,m_AdressLines as ARRAY 
@@ -2702,17 +2704,10 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%REPORTMONTH"})]:=self:ReportMonth
 	self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%PAGESKIP"})]:=PAGE_END
 
-	/*IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
-	IF GiftsRequired
-	oTransH:BeginCondition:=asscln
-	oTransH:EndCondition:='persid=="'+asscln+'"'
-	ENDIF
-	ENDIF   */
-
 	j:=AScan(self:m_fieldnames,{|x| x[1]=="%NAMEADDRESS"})
 	IF j>0
 		self:m_values[j]:=""
-		FOR i=1 to Len(self:m_AdressLines)
+		FOR i:=1 to Len(self:m_AdressLines)
 			IF Empty(self:m_AdressLines[i])
 				loop
 			ELSE
@@ -2726,7 +2721,8 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 	ENDIF
 	IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
 		IF GiftsRequired
-			self:oTransH:Execute(oDB:persid)
+			self:oTransH:=sqlselect{strtran(self:cTransH,'?',str(self:oDB:persid,-1)),oConn}
+			self:oTransH:Execute()
 		endif
 	endif
 	IF RepeatingPossible
@@ -2744,7 +2740,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			repeatTxt:=SubStr(Content,h1+1,h2-h1-1)
 			IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
 				IF GiftsRequired
-					DO WHILE !oTransH:EOF
+					DO WHILE !oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=DToC(oTransH:dat)
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=Str(oTransH:amountgift,-1)
 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=oTransH:DOCID
@@ -2837,7 +2833,7 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			* selx_accid: gewenste bestemming
 			IF GiftsRequired
 				oTransH:GoTop()
-				DO WHILE  !oTransH:EOF
+				DO WHILE !oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
 					IF oTransH:Eval(pKond,,,1) && &oSelPers:cWhereOther
 						IF Empty(self:cWhereOtherA).or.AScan(self:cWhereOtherA,oTransH:accid)>0
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(oTransH:dat))
@@ -3111,10 +3107,10 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(self:oDB:RECCOUNT)+ ' persons found')}):Show()
 	if !self:oDB:RECCOUNT=0 
 		IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
-			self:oTransH:=SQLSelect{UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination,"+;
+			self:cTransH:=UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination,"+;
 			"pd.firstname as firstnamedestination,pd.lastname as lastnamedestination "+;
 			"from transaction t, person p, account a left join member m on (m.accid=a.accid) left join person pd on(pd.persid=m.persid) "+;
-			"where a.accid=t.accid and "+self:cWhereOther+" and "+sIdentChar+"t.persid"+sIdentChar+"=? order by p."+self:SortOrder),oConn}
+			"where a.accid=t.accid and "+self:cWhereOther+" and t.persid=? order by p."+self:SortOrder)
 		endif
 		DO WHILE !lReady
 			(oLtrFrm := LetterFormat{oParent,,,lAcceptNorway}):Show()
@@ -4164,9 +4160,9 @@ CASE Purpose==1.or.Purpose==3
 CASE Purpose==2
 	// identification:
 // 	fullname:='trim(concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+'))'
-	fullname:='trim(concat('+fullname+','+frstnm+','+prefix+'))'
+	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
 endcase
-return fullname
+return 'trim('+fullname +')'
 function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSortOrder:="" as string, cMarkupText:="" as string,fMinAmnt:=0 as float,fMaxAmnt:=0 as float,fMinIndVidAmnt:=0 as float) as string 
 // Generation of SQLString to select persons with all their fields 
 // 
