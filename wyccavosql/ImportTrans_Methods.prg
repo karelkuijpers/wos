@@ -521,12 +521,12 @@ DO WHILE Len(AFields)>1
 			if IsDigit(cAcc)
 				cAcc:= LTrimZero(cAcc)
 			endif
-			oAcc:=SQLSelect{"select accnumber,accid from account where "+sIdentChar+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
+			oAcc:=SQLSelect{"select accnumber,accid,department from account where "+sIdentChar+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
 			if oAcc:RecCount=1
 				cAccNumber:=oAcc:ACCNUMBER
 			elseif oAcc:RecCount>0  
 				cAcc:=AllTrim(AFields[ptAccName])
-				oAcc:=SQLSelect{"select accnumber,accid from account where "+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
+				oAcc:=SQLSelect{"select accnumber,accid,department from account where "+iif(IsDigit(cAcc),"accnumber","description")+sIdentChar+" like '"+cAcc+"%'",oConn}
 				if oAcc:RecCount=1
 					cAccNumber:=oAcc:ACCNUMBER 
 				endif
@@ -535,7 +535,7 @@ DO WHILE Len(AFields)>1
 			endif
 			cAssmnt:=""
 			if !Empty(oAcc:accid) 
-				if SQLSelect{"select mbrid from member where accid="+Str(oAcc:accid,-1),oConn}:RecCount>0
+				if SqlSelect{"select mbrid from member where accid="+Str(oAcc:accid,-1)+" or depid="+str(oAcc:department,-1),oConn}:RecCount>0
 					cAssmnt:="AG"
 				endif
 			endif
