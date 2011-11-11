@@ -122,12 +122,11 @@ method Start() class App
 				do while ProlongateAll(oMainWindow)
 				enddo		
 				oMainWindow:Pointer := Pointer{POINTERARROW}
-			ENDIF
 			* Process standing orders:
-// 			IF FirstOfDay
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
-				oStJournal:=null_object
+				oStJournal:=null_object 
+			endif
 			// Idem for reevaluation: 
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0
 				Reevaluation{oMainWindow}:ReEvaluate()				
