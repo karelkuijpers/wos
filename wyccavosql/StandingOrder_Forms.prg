@@ -299,17 +299,10 @@ METHOD OKButton( ) CLASS EditPeriodic
 			if lNew 
 				self:curStordid:= Str(ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)),-1) 
 				cStatement:="insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values "
-// 				oStmnt:=SQLStatement{"insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values (?,?,?,?,?,?,?,?,?,?)",oConn}
 				do	while	!oStOrdLH:EoF
 					if oStOrdLH:DEB <> oStOrdLH:CRE       // no empty lines
 						cStatement+=cSep+"("+self:curStordid+","+Str(oStOrdLH:ACCOUNTID,-1)+","+Str(nSeq++,3,0)+","+Str(oStOrdLH:DEB,-1)+","+Str(oStOrdLH:CRE,-1)+","+;
 						"'"+AllTrim(oStOrdLH:DESCRIPTN)+"','"+AllTrim(oStOrdLH:GC)+"','"+AllTrim(oStOrdLH:REFERENCE)+"',"+Str(oStOrdLH:CREDITOR,-1)+",'"+AllTrim(oStOrdLH:BANKACCT)+"')" 
-// 						oStmnt:Execute(self:curStordid,Str(oStOrdLH:ACCOUNTID,-1),Str(nSeq++,3,0),Str(oStOrdLH:DEB,-1),Str(oStOrdLH:CRE,-1),;
-// 						AllTrim(oStOrdLH:DESCRIPTN),AllTrim(oStOrdLH:GC),AllTrim(oStOrdLH:REFERENCE),Str(oStOrdLH:CREDITOR,-1),oStOrdLH:BANKACCT)
-// 						if oStmnt:NumSuccessfulRows<1
-// 							lError:=true
-// 							exit
-// 						endif 
 						cSep:=','
 					endif				
 					oStOrdLH:Skip()
