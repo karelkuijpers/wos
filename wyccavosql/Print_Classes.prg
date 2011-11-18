@@ -3058,20 +3058,22 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 		RETURN oPrintShow
 	ELSE
 		*		write to file
-		IF Len(self:oPrintJob:aFIFO)>0
-			// print last line: 
-			IF self:lRTF
-				FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+"\par")
-			else
-				FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1])
+		if !Empty(self:ptrHandle)
+			IF Len(self:oPrintJob:aFIFO)>0
+				// print last line: 
+				IF self:lRTF
+					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+"\par")
+				else
+					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1])
+				endif
+				self:oPrintJob:aFIFO:={} // reset fifo
 			endif
-			self:oPrintJob:aFIFO:={} // reset fifo
+			if self:lRTF
+				FWriteLine(self:ptrHandle,"\par }")
+			endif
+			FClose(self:ptrHandle) 
+			self:ptrHandle:=null_ptr
 		endif
-		if self:lRTF
-			FWriteLine(self:ptrHandle,"\par }")
-		endif
-		FClose(self:ptrHandle) 
-		self:ptrHandle:=null_ptr
 	ENDIF
 	self:oPrintJob:lLblFinish:=true
 	self:Pointer := Pointer{POINTERARROW}
