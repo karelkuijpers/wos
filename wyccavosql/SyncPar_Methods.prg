@@ -132,12 +132,12 @@ STATIC DEFINE SELECTCORRPERSON_FIXEDTEXT2 := 104
 STATIC DEFINE SELECTCORRPERSON_GIVERSBOX := 105 
 STATIC DEFINE SELECTCORRPERSON_OKBUTTON := 101 
 STATIC DEFINE SELECTCORRPERSON_SKIPBUTTON := 102 
-RESOURCE Synchronize DIALOGEX  4, 3, 568, 96
+RESOURCE Synchronize DIALOGEX  4, 3, 357, 126
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"", SYNCHRONIZE_INTRODUCTION, "Static", WS_CHILD, 4, 3, 555, 66
-	CONTROL	"Synchronize", SYNCHRONIZE_SYNC, "Button", WS_TABSTOP|WS_CHILD, 472, 74, 54, 12
+	CONTROL	"", SYNCHRONIZE_INTRODUCTION, "Static", WS_CHILD, 0, 7, 348, 100
+	CONTROL	"Synchronize", SYNCHRONIZE_SYNC, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 296, 110, 53, 13
 END
 
 CLASS Synchronize INHERIT DataWindowMine 
@@ -177,11 +177,11 @@ self:SetTexts()
 	self:oDCIntroduction:TextValue:="1.Bij elke gever of bezoeker bijbehorende adresgegevens zoeken in de persoonsadministratie"+CRLF+; 
 "	a.	Indien er meerdere gevonden worden moet de gebruiker aanwijzen wie het betreft."+CRLF+; 
 "	b.	Indien persoon partner heeft, deze via persoonsid opzoeken."+CRLF+;
-"	c.	In de database wordt tevens persoonsid (bij echtpaar van man) als externalid vastgelegd zodat volgende keer synchronisatie automatisch kan."+CRLF+; 
-"	d.	Indien niemand is gevonden, dan wordt persoon op de lijst van niet gevonden personen gezet om eventueel te verwijderen."+CRLF+; 
-"	e.	Indien adresgegeven al ingevuld was en dit wijkt af van de persoonsadministratie, dan worden deze ook op lijst van afwijkende adresgegevens gerapporteerd."+CRLF+;
-"2.	Vervolgens worden alle andere adressen uit de persoonsadministratie die niet toegewezen zijn aan persoon binnen WOS toegevoegd en krijgen mailingcode Bezoeker."+CRLF+;
-"3.	tenslote wordt iIedereen verwijderd die geen gever is maar wel mailing code bezoeker heeft en leeg externid"
+"	c.	In de database wordt tevens persoonsid (bij echtpaar van man) als externalid vastgelegd "+CRLF+"	  	zodat volgende keer synchronisatie automatisch kan."+CRLF+; 
+"	d.	Indien niemand is gevonden, dan wordt persoon op de lijst van niet gevonden personen "+CRLF+"	  	gezet om eventueel te verwijderen."+CRLF+; 
+"	e.	Indien adresgegeven al ingevuld was en dit wijkt af van de persoonsadministratie, "+CRLF+"	  	dan worden deze ook op lijst van afwijkende adresgegevens gerapporteerd."+CRLF+;
+"2.	Vervolgens worden alle andere adressen uit de persoonsadministratie die niet toegewezen "+CRLF+"  	zijn aan persoon binnen WOS toegevoegd en krijgen mailingcode Bezoeker."+CRLF+;
+"3.	tenslote wordt iIedereen verwijderd die geen gever is maar wel code bezoeker heeft en leeg externid"
   
 	return NIL
 method Sync() class Synchronize
@@ -215,13 +215,13 @@ method Sync() class Synchronize
 	endif
 	parsl := GetParAESKEY()
 	RemoveDat:=SToD(Str(Year(Today())-1,4,0)+"0101")
-	RemoveDat:=Min(MinDate,RemoveDat)
+// 	RemoveDat:=Min(MinDate,RemoveDat)  //no realy removal
 	cFileNonEx := CurPath + "\Gevers niet in persoonsadministratie"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.xls'
 	ptrNonEx := MakeFile(self,cFileNonEx,"Creating report file")
 	IF ptrNonEx = F_ERROR .or. Empty(ptrNonEx)
 		RETURN false
 	ENDIF
-	FWriteLine(ptrNonEx,"Persoon"+CHR(9)+"Datum laatset gift")
+	FWriteLine(ptrNonEx,"Persoon"+CHR(9)+"Datum laatste gift")
 	cFileAddrCh:= CurPath + "\Adres anders in giften- dan in persoonsadministratie"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.xls'
 	ptrAdrCh := MakeFile(self,cFileAddrCh,"Creating report file")
 	IF ptrAdrCh = F_ERROR .or. Empty(ptrAdrCh)
@@ -274,6 +274,7 @@ method Sync() class Synchronize
 			cNameSearch:=SubStr(GetTokens(oPers:lastname)[1,1],1,10)
 
 			oParPers:=SqlSelect{'select tp.id,tp.achternaam,tp.voornamen,tp.roepnaam,tp.tussenvoegsel,a.straatnaam,a.huisnummer,a.postcode,a.woonplaats'+;
+				',date_format(tp.geboortedatum,"%e-%m-%Y") as geboortedatum'+;
 				',concat(tpartner.roepnaam," ",tpartner.tussenvoegsel," ",tpartner.achternaam) as partnernaam'+;
 				' from parousia_typo3.adres a,parousia_typo3.persoon tp'+;
 				' left join parousia_typo3.persoon as tpartner on (tp.id_partner=tpartner.id and tpartner.verwijderd="nee")'+;
@@ -292,7 +293,8 @@ method Sync() class Synchronize
 				aCorPers:={} 
 				GivPtr:=0
 				do	while	!oParPers:Eof
-					cWebPerson:=oParPers:achternaam+', '+GetInitials(oParPers:voornamen)+', '+oParPers:roepnaam+') '+oParPers:tussenvoegsel+'; '+oParPers:straatnaam+;
+					cWebPerson:=oParPers:achternaam+', '+GetInitials(oParPers:voornamen)+', '+oParPers:roepnaam+' - '+oParPers:geboortedatum+') '+;
+					oParPers:tussenvoegsel+'; '+oParPers:straatnaam+;
 						' '+oParPers:huisnummer+' '+oParPers:postcode+' '+oParPers:woonplaats+iif(Empty(oParPers:partnernaam),'',' (partner:'+oParPers:partnernaam+")")	
 					AAdd(aCorPers,{ cWebPerson,oParPers:id})
 					cIntl:=StrTran(oPers:initials," ","") 
@@ -384,7 +386,7 @@ method Sync() class Synchronize
 					oStmnt:Execute()
 					// address:
 					if !(Empty(oPers:address) .or.Empty(oPers:postalcode) .or.(oPersTypo3:datum_adreswijziging>CToD(oPers:datelastgift) .and.(Today()-CToD(oPers:datelastgift))< 365))
-						if	!oPers:address == oPersTypo3:straatnaam+" "+oPersTypo3:huisnummer .or.!oPers:postalcode == oPersTypo3:postcode  
+						if	!AllTrim(Lower(oPers:address)) == AllTrim(Lower(oPersTypo3:straatnaam)+Space(1)+Lower(oPersTypo3:huisnummer)) .or.!AllTrim(Lower(oPers:postalcode)) == AllTrim(Lower(oPersTypo3:postcode))  
 							//	if	different report:	
 							cWebPerson:=oPersTypo3:achternaam+', '+GetInitials(oPersTypo3:voornamen)+" ("+oPersTypo3:roepnaam+') '+oPersTypo3:tussenvoegsel+'; '+oPersTypo3:straatnaam+;
 								' '+oPersTypo3:huisnummer+' '+oPersTypo3:postcode+' '+oPersTypo3:woonplaats+iif(Empty(oPersTypo3:id_partner),"",' (partner: '+Transform(oPersTypo3:partnernaam,"")+")") 
@@ -396,9 +398,9 @@ method Sync() class Synchronize
 			else
 				// person does not belong to church anymore
 				if CToD(oPers:datelastgift) < RemoveDat
-					// delete person:
-					SQLStatement{"delete from person where persid="+Str(oPers:persid,-1),oConn}:Execute()
-					FWriteLine(ptrNonEx,oPers:FullNAc+CHR(9)+oPers:datelastgift+" (verwijderd)")
+					// delete person: 
+					SQLStatement{"update person mailingcodes=replace(replace(mailingcodes,'"+MlcdBezoeker+" ',''),'"+MlcdBezoeker+"','') where persid="+Str(oPers:persid,-1),oConn}:Execute()
+					FWriteLine(ptrNonEx,oPers:FullNAc+CHR(9)+oPers:datelastgift+" (bezoekerscode verwijderd)")
 				else
 					FWriteLine(ptrNonEx,oPers:FullNAc+CHR(9)+oPers:datelastgift)
 				endif
@@ -408,7 +410,7 @@ method Sync() class Synchronize
 	FClose(ptrNonEx)
 	FClose(ptrAdrCh) 
 	/*
-	4.	At last add all remaining persons from typo3 to WOS persons and give them code Visitor 
+	4.	At last add all remaining persons from typo3 to WOS persons not yet matched and whsoe address not yet in the WOS database and give them code Visitor 
 	*/
 	self:STATUSMESSAGE("Adding all other addresses from person administration, please wait...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
@@ -420,10 +422,11 @@ method Sync() class Synchronize
 		',p.voornamen,p.titel,straatnaam,huisnummer,postcode,woonplaats,land,tpartner.roepnaam as roepnaampartner '+;
 		'from parousia_typo3.adres a, parousia_typo3.persoon p left join parousia_typo3.persoon tpartner on (tpartner.id=p.id_partner and tpartner.verwijderd="nee")'+;
 		' where AES_DECRYPT(p.id_adres,"'+parsl+'" )=a.id '+;
-		' and not exists (select 1 from '+dbname+'.person pw where  binary pw.externid = binary p.id or binary pw.externid = binary p.id_partner)'+;
+		' and not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary p.id or binary pw.externid=binary p.id_partner'+;
+		' or (pw.postalcode=a.postcode and pw.address=concat(a.straatnaam," ",a.huisnummer)))'+;
 		' and p.persoon_op_adreslijst="persoon op adreslijst"'+;
-		' and (p.geboortedatum="0000-00-00" or datediff(now(),p.geboortedatum)> (15*365))'+;
-		' and	p.verwijderd="nee" and a.verwijderd="nee" order by postcode,huisnummer,p.burgerlijke_staat,p.geslacht',oConn}
+		' and (p.geboortedatum>"0000-00-00" and datediff(now(),p.geboortedatum)> (18*365))'+;
+		' and p.verwijderd="nee" and a.verwijderd="nee" order by postcode,huisnummer,p.burgerlijke_staat,p.geslacht',oConn}
 	oParPers:Execute()
 	nAdd:=0	  
 	do while !oParPers:Eof
@@ -461,9 +464,7 @@ method Sync() class Synchronize
 		enddo
 	enddo
 	self:Pointer := Pointer{POINTERARROW}
-	if nAdd>0
-		(TextBox{self,"Synchronisation Parousia",Str(nAdd,-1)+' '+self:oLan:wget('persons added')}):show()
-	endif	
+	(TextBox{self,"Synchronisation Parousia",Str(nAdd,-1)+' '+self:oLan:wget('persons added')}):show()
 
 	/*
 	5.	Remove everyone with mailingcode bezoeker who is not a giver and has an empty externid
