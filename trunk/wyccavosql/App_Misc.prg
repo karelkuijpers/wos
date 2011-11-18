@@ -2554,7 +2554,7 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string) as array
 		nEnd:=Len(cTarget)
 		nStart:=0
 		cSearch:=cSep
-		DO WHILE nStart<nEnd
+		DO WHILE nStart<=nEnd
 			IF SubStr(cTarget,nStart+1,1)=='"'
 				cQuote:='"'
 				cSearch:=cQuote+cSep
