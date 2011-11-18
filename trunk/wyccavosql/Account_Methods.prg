@@ -556,7 +556,7 @@ METHOD ValidateAccount() CLASS EditAccount
 		cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
 		lValid:=FALSE
 	ENDIF
-	oSel:=SqlSelect{"select accid from account where description='"+substr(AllTrim(self:mDescription),1,40)+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	oSel:=SqlSelect{"select accid from account where description='"+AddSlashes(AllTrim(SubStr(self:mDescription,1,40)))+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
 	if oSel:Reccount>0
 		cError:=self:oLan:WGet('Account description')+'	"'+SubStr(AllTrim(self:mDescription),1,40)+'" '+self:oLan:WGet('allready exist')
 		lValid:=FALSE
