@@ -347,7 +347,7 @@ METHOD PrintReport() CLASS PMISsend
 	local oReport as PrintDialog
 	LOCAL i, a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
 	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
-	LOCAL AmntAssessable,AmntMG,AmntCharges,AmntTrans,remainingAmnt,me_amount,availableAmnt,me_asshome,me_assint, amntlimited,AmntCorrection as FLOAT
+	LOCAL AmntAssessable,AmntMG,AmntCharges,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_assint, amntlimited,AmntCorrection as FLOAT
 	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
 	LOCAL me_has as LOGIC
 	LOCAL me_accid,me_mbrid, me_gc,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
@@ -537,8 +537,8 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif
 	time0:=time1
-// 	LogEvent(self,"sel mbr:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	oTrans:=SqlSelect{"select t.transid,t.seqnr,t.accid,t.persid,t.cre,t.deb,t.description,t.reference,gc,cast(t.poststatus as signed) as poststatus,"+;
+	LogEvent(self,"sel mbr:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+	oTrans:=SqlSelect{"select t.transid,t.seqnr,t.accid,t.persid,t.cre,t.deb,t.description,t.reference,gc,fromrpp,cast(t.poststatus as signed) as poststatus,"+;
 	"t.fromrpp,cast(t.dat as date) as dat,m.mbrid "+;
 	"from transaction t, account a left join member m on (m.accid=a.accid or m.depid=a.department) "+;
 	" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) and a.accid=t.accid order by mbrid,transid,seqnr",oConn}
@@ -563,7 +563,8 @@ METHOD PrintReport() CLASS PMISsend
 		me_accnbr:=iif(Empty(oMbr:accid),oMbr:accnumberexp,oMbr:ACCNUMBER)
 		me_currency:=iif(Empty(oMbr:accid),oMbr:currencyexp,oMbr:Currency)
 		me_type:=iif(Empty(oMbr:accid),EXPENSE,oMbr:TYPE)  
-		me_pers:=StrTran(StrTran(oMbr:description,","," "),"-"," ")
+		me_pers:=StrTran(StrTran(oMbr:description,","," "),"-"," ") 
+		
 		if Empty(oMbr:homeppname)
 			cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal Primary Finance entity")+":"+oMbr:HOMEPP
 			exit
@@ -628,7 +629,7 @@ METHOD PrintReport() CLASS PMISsend
 				//               1       2       3        4         5      6       7           8        9        10          11
 				AAdd(destinstr,{AllTrim(aDistr[i,3]),cDestAcc,Val(aDistr[i,1]),Val(aDistr[i,2]),SQLDate2Date(aDistr[i,5]),aDistr[i,6],aDistr[i,7],iif(aDistr[i,8]='1',true,false),Val(aDistr[i,9]),cDestPersonId, iif(aDistr[i,10]='1',true,false)})
 			Next
-			ASort(destinstr,,,{|x,y| x[3]<=y[3]})   // sort in processing priority
+			ASort(destinstr,,,{|x,y| x[3]<=y[3].or.y[3]>0.and.x[3]=3})   // sort in processing priority  (remaining RPP immeditialy aftre fixed
 		endif
 		if !Empty(cError)
 			exit
@@ -661,7 +662,7 @@ METHOD PrintReport() CLASS PMISsend
 		mbroffice:= 0
 		mbrofficeProj:=0
 		// 		oTrans:=SQLSelect{"select * from transaction where bfm='' and accid="+me_accid+" and dat<='"+SQLdate(self:closingDate)+"' for update",oConn} 
-		// 		oTrans:Execute()
+		// 		oTrans:Execute() 
 		DO WHILE .not.oTrans:EOF .and. (Empty(oTrans:mbrid) .or.oTrans:mbrid <= CurrentMbrID)
 			if oTrans:mbrid == CurrentMbrID
 				me_gc:=oTrans:gc  
@@ -674,6 +675,9 @@ METHOD PrintReport() CLASS PMISsend
 						cErrMsg+=AllTrim(oMbr:Description)+CRLF
 						exit
 					endif
+				endif 
+				if !Empty(me_gc) .and. oTrans:FROMRPP=='1'
+					AmntFromRpp:=Round(AmntFromRpp+oTrans:cre-oTrans:deb,DecAantal)
 				endif
 				do CASE
 					* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
@@ -864,7 +868,12 @@ METHOD PrintReport() CLASS PMISsend
 								ENDIF
 
 								IF destinstr[iDest,9] < DestAmnt
-									amntlimited:=Min(remainingAmnt, Round(DestAmnt-destinstr[iDest,9],DecAantal))
+									if destinstr[iDest,3]=3  // remaining from RPP
+										amntlimited:=Min(AmntFromRpp,remainingAmnt)
+									else
+										amntlimited:=remainingAmnt
+									endif
+									amntlimited:=Min(amntlimited, Round(DestAmnt-destinstr[iDest,9],DecAantal))
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],round(destinstr[iDest,9]+amntlimited,decaantal),destinstr[iDest,11]})
 									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
 									IF me_homePP!=SEntity
@@ -872,14 +881,19 @@ METHOD PrintReport() CLASS PMISsend
 										AmntCharges:=Round(-amntlimited+AmntCharges,DecAantal)
 									endif
 								ENDIF
-							ELSE  // no limit							
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,remainingAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
-								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-remainingAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
-									AmntCharges:=Round(-remainingAmnt+AmntCharges,DecAantal)
+							ELSE  // no limit
+								if destinstr[iDest,3]=3  // remaining from RPP
+									amntlimited:=Min(AmntFromRpp,remainingAmnt)
+								else
+									amntlimited:=remainingAmnt
 								endif
-								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],remainingAmnt,destinstr[iDest,11]})
-								remainingAmnt:=0
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
+								IF me_homePP!=SEntity
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
+									AmntCharges:=Round(-amntlimited+AmntCharges,DecAantal)
+								endif
+								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],amntlimited,destinstr[iDest,11]})
+								remainingAmnt:=Round(remainingAmnt-amntlimited,DecAantal)
 							ENDIF
 						ENDIF
 					NEXT
