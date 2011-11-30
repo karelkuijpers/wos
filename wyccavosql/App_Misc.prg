@@ -1384,7 +1384,7 @@ function InitGlobals()
 		OwnCountryNames:=Split(AllTrim(oSys:OWNCNTRY),",")
 		sFirstNmInAdr := ConL(oSys:FirstName)
 		sSurnameFirst := ConL(oSys:SURNMFIRST)
-		sSalutation := ConL(oSys:NOSALUT)
+		sSalutation := !ConL(oSys:NOSALUT)
 		TITELINADR := ConL(oSys:TITINADR)
 		sSTRZIPCITY := ConI(oSys:STRZIPCITY)
 		ClosingMonth:=oSys:CLOSEMONTH
