@@ -2464,9 +2464,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			IF	!Empty(cDueAccs)
 				oDue:=SQLSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
 			endif
-			// add to gifts income:
+			// add to gifts income: 
 			For i:=1 to Len(oHm:AMirror)
-				oHm:RecNo:=oHm:AMirror[i,6]  // recno
+				oHm:GoTo(i)
 				if !oHm:Cre==oHm:Deb // skip dummy lines
 					nSeqNbr++ 
 					cStatement:="insert into transaction set "+;
