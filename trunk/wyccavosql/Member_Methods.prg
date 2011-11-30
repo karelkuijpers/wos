@@ -1,3 +1,62 @@
+METHOD RegBalance(myNum,myItemName) CLASS ConvertMembers
+local oBal as SQLSelect
+	Default(@myNum,null_string) 
+	if myItemName=="Balance Item Expense"
+		IF	!myNum==self:mBalExp
+			self:mBalExp:=myNum
+			IF	Empty(self:mBalExp)
+				self:cCurExpBal:="0:Balance Items"
+				self:expensecat:=''
+			ELSE
+				oBal:=SqlSelect{"select	number,heading,category	from balanceitem where balitemid='"+self:mBalExp+"'",oConn}	
+				IF	oBal:reccount>0
+					self:cCurExpBal:=AllTrim(oBal:NUMBER)+":"+oBal:Heading
+					self:expensecat:=oBal:category 
+				ENDIF
+			ENDIF
+			self:ExpenseBal:=self:cCurExpBal
+			self:oDCExpenseBal:TextValue:=self:cCurExpBal
+		ENDIF
+	elseif myItemName=="Balance Item Income"
+		IF	!myNum==self:mBalInc
+			self:mBalInc:=myNum
+			IF	Empty(self:mBalInc)
+				self:cCurIncBal:="0:Balance Items"
+				self:incomecat:=''
+			ELSE
+				oBal:=SqlSelect{"select	number,heading,category	from balanceitem where balitemid='"+self:mBalInc+"'",oConn}	
+				IF	oBal:reccount>0
+					self:cCurIncBal:=AllTrim(oBal:NUMBER)+":"+oBal:Heading
+					self:incomecat:=oBal:category 
+				ENDIF
+			ENDIF
+			self:IncomeBal:=self:cCurIncBal
+			self:oDcIncomeBal:TextValue:=self:cCurIncBal 
+		ENDIF
+	endif
+RETURN
+		
+METHOD RegDepartment(myNum,myItemName) CLASS ConvertMembers
+	local oDep as SQLSelect
+	Default(@myItemName,null_string)
+	Default(@myNum,null_string) 
+	
+	IF !myNum==self:mParentDep
+		self:mParentDep:=myNum
+		IF Empty(self:mParentDep)
+			self:cCurDep:="0:"+sEntity+" "+sLand
+			self:ParentDep:=self:cCurDep
+			self:oDCParentDep:TextValue:=self:cCurDep
+		ELSE
+			oDep:=SqlSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
+			IF oDep:reccount>0
+				self:cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
+				self:ParentDep:=self:cCurDep
+				self:oDCParentDep:TextValue:=self:cCurDep
+			ENDIF
+		ENDIF
+	ENDIF
+RETURN
 METHOD RegAccount(oAcc,ItemName) CLASS EditMember
 LOCAL oItem AS ListViewItem
 
