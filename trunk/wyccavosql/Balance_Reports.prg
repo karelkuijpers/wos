@@ -291,7 +291,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	rd_budper:={},;  // idem
 	rd_budytd:={} as array // idem
 	// LOCAL BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff as STRING
-	IF self:SendToMail
+// 	IF self:SendToMail
+if self:oReport:lRTF 
 		BoldOn:="{\b "
 		BoldOff:="}" 
 		RedCharOn:="\cf1 "
@@ -1192,7 +1193,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	FOR i:=1 to Len(self:HeadingCache)
 		Hlevel:=self:HeadingCache[i,1]
 		Bal_Ptr:=self:HeadingCache[i,2]
-		oReport:PrintLine(@iLine,@iPage,iif(self:lXls,Replicate(self:TAB,Hlevel),Space(Hlevel*2))+pr_heading[Bal_Ptr],self:mainheading,0)
+		self:oReport:PrintLine(@iLine,@iPage,iif(self:lXls,Replicate(self:TAB,Hlevel),Space(Hlevel*2))+pr_heading[bal_ptr],self:mainheading,0)
 	NEXT 
 
 	levelrest:=self:MaxLevel-pr_level 
@@ -1221,7 +1222,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 		endif
 	ELSEIF pr_cat=='SD'
 		regel:=regel+Str(mbalprvyrYtD,9,DecAantal)+self:TAB+Str(mvjsaltot,11,DecAantal)+self:TAB+;
-			Str(-pr_inc,13,decaantal)+self:TAB+Str(pr_exp,11,decaantal)+self:TAB+Str(mvrgsal,11,decaantal)+self:TAB+Str(msal,11,decaantal)
+			Str(-pr_inc,13,DecAantal)+self:TAB+Str(pr_exp,11,DecAantal)+self:TAB+Str(mvrgsal,11,DecAantal)+self:TAB+iif(msal<0,self:BoldOn+self:RedOn,'')+Str(msal,11,DecAantal)+iif(msal<0,self:Boldoff+self:RedOff,'')
 	ELSE
 		regel:=regel+Space(9)
 	ENDIF
@@ -1328,7 +1329,14 @@ iif(heading_category=EXPENSE.or.heading_category=INCOME.or.heading_category='DEP
 	self:TAB+self:cBudget)+;
 	self:TAB+self:cAmount+self:TAB+self:cBudget+;
 	self:TAB+PadL(self:cAmount,11)+self:TAB+self:cBudget,''),;
-Replicate(CHR(95),TotalWidth),' '}
+Replicate(CHR(95),TotalWidth),' '} 
+if !self:WhoDetails .and.!self:WhoDetails  
+	// no need for heading, only summary line
+// 	ADel(Heading,4)
+	ADel(Heading,3)
+	ADel(Heading,2)
+	Asize(Heading,len(Heading)-2)
+endif	
 // if !Empty(self:addheading)
 // 	asize(Heading,len(Heading)+1)
 // 	AIns(Heading,1)
@@ -1599,7 +1607,7 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 					IF SELF:showopeningclosingfund
 						oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,2)
 						oReport:PrintLine(@iLine,@iPage,self:cOpeningBal+Str(clbalvj,11,DecAantal),self:mainheading,0)
-						oReport:PrintLine(@iLine,@iPage,BoldOn+iif(clbal<0,RedOn,GreenOn)+Pad(iif(clbal<0,self:cNegative,self:cPositive)+Space(1)+self:cClosingBal,BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,self:mainheading,0)
+						oReport:PrintLine(@iLine,@iPage,self:BoldOn+iif(clbal<0,RedOn,GreenOn)+Pad(iif(clbal<0,self:cNegative,self:cPositive)+Space(1)+self:cClosingBal,BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,self:mainheading,0)
 					ENDIF
 				ENDIF
 				IF !SELF:showopeningclosingfund
@@ -1890,7 +1898,10 @@ PROTECT mDepartment AS STRING
 	export Country as STRING 
 	export lDebCreMerge:=true as logic 
 	export mailsubject as string   // subject of emailmessage 
-	export lNoBalance as logic   // skip balancesheet
+	export lNoBalance as logic   // skip balancesheet 
+	export WhatDetails:=true as logic 
+	export showopeningclosingfund:=true as logic
+
 
 	declare method RegDepartment,DepartmentStmntPrint
 	
@@ -2070,10 +2081,10 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		self:oBalReport:lCondense:=true
 		self:oBalReport:ind_accstmnt:=FALSE
 		self:oBalReport:ind_explanation:=FALSE
-		self:oBalReport:WhatDetails:=true
+		self:oBalReport:WhatDetails:=self:WhatDetails
 		self:oBalReport:WhoDetails:=FALSE
 		self:oBalReport:WhatFrom:=0
-		self:oBalReport:showopeningclosingfund:=true	
+		self:oBalReport:showopeningclosingfund:=self:showopeningclosingfund	
 	ENDIF 
 	IF	self:SendingMethod="SeperateFile"
 		self:oBalReport:SendToMail:=true
@@ -2082,7 +2093,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 	ENDIF
 	self:oBalReport:MonthEnd:=self:MonthEnd
 	self:oBalReport:MONTHSTART:=self:MONTHSTART
-	self:oBalReport:SimpleDepStmnt:=	self:oDCSimpleDepStmnt:Checked
+	self:oBalReport:SimpleDepStmnt:=	self:SimpleDepStmnt
 	self:oBalReport:oReport:=self:oReport
 	self:oBalReport:BeginReport:=self:BeginReport
 	myLang:=Alg_taal
@@ -2137,10 +2148,10 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 
 		IF self:oTransMonth==null_object
 			self:oTransMonth:=AccountStatements{90}
-			self:oTransMonth:oReport:=self:oReport
-			self:oTransMonth:SendingMethod:=self:SendingMethod
 			self:oTransMonth:lDebCreMerge:=self:lDebCreMerge 
 		ENDIF
+		self:oTransMonth:oReport:=self:oReport
+		self:oTransMonth:SendingMethod:=self:SendingMethod
 		self:oTransMonth:BeginReport:=self:BeginReport
 
 
@@ -3062,13 +3073,20 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	self:oTransMonth:BeginReport:=self:BeginReport
 	
 	do WHILE !oAcc:EOF
+		memberName:=AllTrim(oAcc:Description)
+		self:STATUSMESSAGE(self:oLan:WGet('Printing the report of')+Space(1)+memberName) 
+		if !Empty(oPro)
+			oPro:AdvancePro()
+		endif
 		if !Empty(oAcc:depid)
 			// member department:
 			if Empty(oDepStmnt)
 				oDepStmnt:=DeptReport{} 
 				oDepStmnt:SimpleDepStmnt:= false
 				oDepStmnt:lDebCreMerge:=true
-				oDepStmnt:lNoBalance:=true
+// 				oDepStmnt:lNoBalance:=true 
+				oDepStmnt:WhatDetails:=false
+				oDepStmnt:showopeningclosingfund:=false
 				oDepStmnt:oEMLFrm:= oEMLFrm
 				oDepStmnt:BeginReport:=self:BeginReport 
 				oDepStmnt:oGiftRpt:=self:oGftRpt 
@@ -3121,8 +3139,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			*	Print statement report
 			cHeading1:=Str(ReportYear,4)+Space(1)+iif(Empty(me_hbn),'',self:oLan:RGet('HOUSECD')+':'+me_hbn+Space(1))+self:oLan:RGet("Currency")+':'+sCurr+Space(1)+self:Country
 
-			memberName:=AllTrim(oAcc:Description)
-			self:STATUSMESSAGE(self:oLan:WGet('Printing the report of')+Space(1)+memberName) 
 			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount)
 			nRow:=0  && force page skip  
 			IF lSkip
@@ -3190,9 +3206,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		endif
 		oAcc:Skip()
 		Alg_taal:=myLang
-		if !Empty(oPro)
-			oPro:AdvancePro()
-		endif
 
 	ENDDO 
 	SetDecimalSep(Asc('.'))      //back to .
