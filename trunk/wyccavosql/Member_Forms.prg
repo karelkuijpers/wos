@@ -1,5 +1,664 @@
 static define AMNTSND:=11
 static define CHECKSAVE:=14
+RESOURCE ConvertMembers DIALOGEX  4, 3, 344, 190
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"v", CONVERTMEMBERS_PARENTDEPBUTTON, "Button", WS_CHILD, 260, 25, 15, 13
+	CONTROL	"", CONVERTMEMBERS_PARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 124, 25, 136, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Parent department:", CONVERTMEMBERS_FIXEDTEXT1, "Static", WS_CHILD, 12, 25, 83, 13
+	CONTROL	"v", CONVERTMEMBERS_BALINCBUTTON, "Button", WS_CHILD, 260, 48, 16, 12
+	CONTROL	"", CONVERTMEMBERS_INCOMEBAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 124, 48, 136, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Balance item of income account:", CONVERTMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 12, 48, 112, 12
+	CONTROL	"v", CONVERTMEMBERS_BALEXPBUTTON, "Button", WS_CHILD, 260, 66, 16, 12
+	CONTROL	"", CONVERTMEMBERS_EXPENSEBAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 124, 66, 136, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Balance item of expense account:", CONVERTMEMBERS_FIXEDTEXT3, "Static", WS_CHILD, 12, 66, 112, 12
+	CONTROL	"Netasset account:", CONVERTMEMBERS_FIXEDTEXT4, "Static", WS_CHILD, 12, 110, 72, 13
+	CONTROL	"", CONVERTMEMBERS_NETASSET, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 110, 47, 13, WS_EX_CLIENTEDGE
+	CONTROL	"-<department #>", CONVERTMEMBERS_FIXEDTEXT5, "Static", WS_CHILD, 143, 110, 63, 13
+	CONTROL	"Specify for all departments to be created:", CONVERTMEMBERS_FIXEDTEXT6, "Static", WS_CHILD, 8, 3, 263, 18
+	CONTROL	"", CONVERTMEMBERS_INCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 129, 47, 12, WS_EX_CLIENTEDGE
+	CONTROL	"-<department #>", CONVERTMEMBERS_FIXEDTEXT7, "Static", WS_CHILD, 143, 129, 63, 12
+	CONTROL	"Income account:", CONVERTMEMBERS_FIXEDTEXT8, "Static", WS_CHILD, 12, 129, 72, 12
+	CONTROL	"", CONVERTMEMBERS_EXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 96, 147, 47, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Expense account:", CONVERTMEMBERS_FIXEDTEXT9, "Static", WS_CHILD, 12, 147, 72, 13
+	CONTROL	"-<department #>", CONVERTMEMBERS_FIXEDTEXT10, "Static", WS_CHILD, 143, 147, 63, 13
+	CONTROL	"OK", CONVERTMEMBERS_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 169, 53, 13
+	CONTROL	"Cancel", CONVERTMEMBERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 224, 169, 53, 13
+	CONTROL	"Department accounts", CONVERTMEMBERS_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 88, 332, 78
+	CONTROL	"Numbers", CONVERTMEMBERS_FIXEDTEXT11, "Static", WS_CHILD, 96, 96, 54, 12
+	CONTROL	"Names", CONVERTMEMBERS_FIXEDTEXT12, "Static", WS_CHILD, 220, 96, 53, 12
+	CONTROL	"<member name> ", CONVERTMEMBERS_FIXEDTEXT13, "Static", WS_CHILD, 220, 110, 53, 13
+	CONTROL	"<member name> ", CONVERTMEMBERS_FIXEDTEXT14, "Static", WS_CHILD, 220, 129, 53, 12
+	CONTROL	"<member name> ", CONVERTMEMBERS_FIXEDTEXT15, "Static", WS_CHILD, 220, 147, 53, 13
+	CONTROL	"", CONVERTMEMBERS_NETASSETNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 276, 110, 54, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", CONVERTMEMBERS_INCOMEACCNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 276, 129, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", CONVERTMEMBERS_EXPENSEACCNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 276, 147, 53, 13, WS_EX_CLIENTEDGE
+END
+
+CLASS ConvertMembers INHERIT DataWindowExtra 
+
+	PROTECT oCCParentDepButton AS PUSHBUTTON
+	PROTECT oDCParentDep AS SINGLELINEEDIT
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oCCBalIncButton AS PUSHBUTTON
+	PROTECT oDCIncomeBal AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oCCBalExpButton AS PUSHBUTTON
+	PROTECT oDCExpenseBal AS SINGLELINEEDIT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oDCNetAsset AS SINGLELINEEDIT
+	PROTECT oDCFixedText5 AS FIXEDTEXT
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCIncomeAcc AS SINGLELINEEDIT
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCExpenseAcc AS SINGLELINEEDIT
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCFixedText11 AS FIXEDTEXT
+	PROTECT oDCFixedText12 AS FIXEDTEXT
+	PROTECT oDCFixedText13 AS FIXEDTEXT
+	PROTECT oDCFixedText14 AS FIXEDTEXT
+	PROTECT oDCFixedText15 AS FIXEDTEXT
+	PROTECT oDCNetAssetName AS SINGLELINEEDIT
+	PROTECT oDCIncomeAccName AS SINGLELINEEDIT
+	PROTECT oDCExpenseAccName AS SINGLELINEEDIT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)    
+  protect mParentDep,cCurDep,mBalInc,cCurIncBal,mBalExp,cCurExpBal as string 
+  protect incomecat, expensecat as string
+protect oCaller as memberbrowser
+protect cWhere as String
+METHOD BalExpButton(cBalValue ) CLASS ConvertMembers 
+	(BalanceItemExplorer{self:Owner,"Balance Item Expense",self:mBalExp,self,cBalValue}):show()
+RETURN NIL
+METHOD BalIncButton(cBalValue ) CLASS ConvertMembers 
+	(BalanceItemExplorer{self:owner,"Balance Item Income",self:mBalInc,self,cBalValue}):show()
+RETURN NIL
+METHOD CancelButton( ) CLASS ConvertMembers 
+	self:endwindow()
+RETURN NIL
+method EditFocusChange(oEditFocusChangeEvent) class ConvertMembers
+	local oControl as Control
+	local lGotFocus as logic
+	local cCurValue as string 
+	local nPntr as int
+	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
+	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	super:EditFocusChange(oEditFocusChangeEvent)
+	//Put your changes here 
+	IF !lGotFocus
+
+		IF oControl:NameSym==#IncomeBal.and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurIncBal
+			cCurValue:=AllTrim(oControl:VALUE)
+			self:cCurBal:=cCurValue
+			nPntr:=At(":",cCurValue)
+			IF nPntr>1
+				cCurValue:=SubStr(cCurValue,1,nPntr-1)
+			ENDIF
+			IF FindBal(@cCurValue)
+				self:RegBalance(cCurValue,"Balance item Income")
+			ELSE
+				self:BalIncButton(cCurValue,"Balance item Income")
+			ENDIF
+		ELSEIF oControl:NameSym==#ExpenseBal.and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurExpBal
+			cCurValue:=AllTrim(oControl:VALUE)
+			self:cCurBal:=cCurValue
+			nPntr:=At(":",cCurValue)
+			IF nPntr>1
+				cCurValue:=SubStr(cCurValue,1,nPntr-1)
+			ENDIF
+			IF FindBal(@cCurValue)
+				self:RegBalance(cCurValue,"Balance item Expense")
+			ELSE
+				self:BalExpButton(cCurValue,"Balance item Expense")
+			ENDIF
+		ELSEIF oControl:NameSym==#ParentDep .and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurDep
+			cCurValue:=AllTrim(oControl:VALUE)
+			self:cCurDep:=cCurValue
+			nPntr:=At(":",cCurValue)
+			IF nPntr>1
+				cCurValue:=SubStr(cCurValue,1,nPntr-1)
+			ENDIF
+			IF FindDep(@cCurValue)
+				self:RegDepartment(cCurValue,"")
+			ELSE
+				self:ParentDepButton(cCurValue)
+			ENDIF
+		endif 
+	endif
+	return NIL
+
+ACCESS ExpenseAcc() CLASS ConvertMembers
+RETURN SELF:FieldGet(#ExpenseAcc)
+
+ASSIGN ExpenseAcc(uValue) CLASS ConvertMembers
+SELF:FieldPut(#ExpenseAcc, uValue)
+RETURN uValue
+
+ACCESS ExpenseAccName() CLASS ConvertMembers
+RETURN SELF:FieldGet(#ExpenseAccName)
+
+ASSIGN ExpenseAccName(uValue) CLASS ConvertMembers
+SELF:FieldPut(#ExpenseAccName, uValue)
+RETURN uValue
+
+ACCESS ExpenseBal() CLASS ConvertMembers
+RETURN SELF:FieldGet(#ExpenseBal)
+
+ASSIGN ExpenseBal(uValue) CLASS ConvertMembers
+SELF:FieldPut(#ExpenseBal, uValue)
+RETURN uValue
+
+ACCESS IncomeAcc() CLASS ConvertMembers
+RETURN SELF:FieldGet(#IncomeAcc)
+
+ASSIGN IncomeAcc(uValue) CLASS ConvertMembers
+SELF:FieldPut(#IncomeAcc, uValue)
+RETURN uValue
+
+ACCESS IncomeAccName() CLASS ConvertMembers
+RETURN SELF:FieldGet(#IncomeAccName)
+
+ASSIGN IncomeAccName(uValue) CLASS ConvertMembers
+SELF:FieldPut(#IncomeAccName, uValue)
+RETURN uValue
+
+ACCESS IncomeBal() CLASS ConvertMembers
+RETURN SELF:FieldGet(#IncomeBal)
+
+ASSIGN IncomeBal(uValue) CLASS ConvertMembers
+SELF:FieldPut(#IncomeBal, uValue)
+RETURN uValue
+
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS ConvertMembers 
+LOCAL DIM aFonts[2] AS OBJECT
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"ConvertMembers",_GetInst()},iCtlID)
+
+aFonts[1] := Font{,10,"Microsoft Sans Serif"}
+aFonts[2] := Font{,8,"Microsoft Sans Serif"}
+aFonts[2]:Bold := TRUE
+
+oCCParentDepButton := PushButton{SELF,ResourceID{CONVERTMEMBERS_PARENTDEPBUTTON,_GetInst()}}
+oCCParentDepButton:HyperLabel := HyperLabel{#ParentDepButton,"v","Browse in departments",NULL_STRING}
+oCCParentDepButton:TooltipText := "Browse in departments"
+
+oDCParentDep := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_PARENTDEP,_GetInst()}}
+oDCParentDep:HyperLabel := HyperLabel{#ParentDep,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCParentDep:TooltipText := "Enter number or name of required Top of department structure"
+
+oDCFixedText1 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Parent department:",NULL_STRING,NULL_STRING}
+
+oCCBalIncButton := PushButton{SELF,ResourceID{CONVERTMEMBERS_BALINCBUTTON,_GetInst()}}
+oCCBalIncButton:HyperLabel := HyperLabel{#BalIncButton,"v","Balance item of Income acount",NULL_STRING}
+oCCBalIncButton:TooltipText := "Browse in balance items"
+
+oDCIncomeBal := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_INCOMEBAL,_GetInst()}}
+oDCIncomeBal:HyperLabel := HyperLabel{#IncomeBal,NULL_STRING,"Balance item of Income account",NULL_STRING}
+oDCIncomeBal:UseHLforToolTip := True
+
+oDCFixedText2 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Balance item of income account:",NULL_STRING,NULL_STRING}
+
+oCCBalExpButton := PushButton{SELF,ResourceID{CONVERTMEMBERS_BALEXPBUTTON,_GetInst()}}
+oCCBalExpButton:HyperLabel := HyperLabel{#BalExpButton,"v","Balance item of Income acount",NULL_STRING}
+oCCBalExpButton:TooltipText := "Browse in balance items"
+
+oDCExpenseBal := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_EXPENSEBAL,_GetInst()}}
+oDCExpenseBal:HyperLabel := HyperLabel{#ExpenseBal,NULL_STRING,"Balance item of expense account",NULL_STRING}
+oDCExpenseBal:UseHLforToolTip := True
+
+oDCFixedText3 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Balance item of expense account:",NULL_STRING,NULL_STRING}
+
+oDCFixedText4 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Netasset account:",NULL_STRING,NULL_STRING}
+
+oDCNetAsset := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_NETASSET,_GetInst()}}
+oDCNetAsset:HyperLabel := HyperLabel{#NetAsset,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText5 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"-<department #>",NULL_STRING,NULL_STRING}
+
+oDCFixedText6 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Specify for all departments to be created:",NULL_STRING,NULL_STRING}
+oDCFixedText6:Font(aFonts[1], FALSE)
+
+oDCIncomeAcc := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_INCOMEACC,_GetInst()}}
+oDCIncomeAcc:HyperLabel := HyperLabel{#IncomeAcc,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText7 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"-<department #>",NULL_STRING,NULL_STRING}
+
+oDCFixedText8 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT8,_GetInst()}}
+oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"Income account:",NULL_STRING,NULL_STRING}
+
+oDCExpenseAcc := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_EXPENSEACC,_GetInst()}}
+oDCExpenseAcc:HyperLabel := HyperLabel{#ExpenseAcc,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText9 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT9,_GetInst()}}
+oDCFixedText9:HyperLabel := HyperLabel{#FixedText9,"Expense account:",NULL_STRING,NULL_STRING}
+
+oDCFixedText10 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT10,_GetInst()}}
+oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"-<department #>",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{SELF,ResourceID{CONVERTMEMBERS_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{CONVERTMEMBERS_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCGroupBox1 := GroupBox{SELF,ResourceID{CONVERTMEMBERS_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Department accounts",NULL_STRING,NULL_STRING}
+
+oDCFixedText11 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT11,_GetInst()}}
+oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"Numbers",NULL_STRING,NULL_STRING}
+oDCFixedText11:Font(aFonts[2], FALSE)
+
+oDCFixedText12 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT12,_GetInst()}}
+oDCFixedText12:HyperLabel := HyperLabel{#FixedText12,"Names",NULL_STRING,NULL_STRING}
+oDCFixedText12:Font(aFonts[2], FALSE)
+
+oDCFixedText13 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT13,_GetInst()}}
+oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"<member name> ",NULL_STRING,NULL_STRING}
+
+oDCFixedText14 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT14,_GetInst()}}
+oDCFixedText14:HyperLabel := HyperLabel{#FixedText14,"<member name> ",NULL_STRING,NULL_STRING}
+
+oDCFixedText15 := FixedText{SELF,ResourceID{CONVERTMEMBERS_FIXEDTEXT15,_GetInst()}}
+oDCFixedText15:HyperLabel := HyperLabel{#FixedText15,"<member name> ",NULL_STRING,NULL_STRING}
+
+oDCNetAssetName := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_NETASSETNAME,_GetInst()}}
+oDCNetAssetName:HyperLabel := HyperLabel{#NetAssetName,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCIncomeAccName := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_INCOMEACCNAME,_GetInst()}}
+oDCIncomeAccName:HyperLabel := HyperLabel{#IncomeAccName,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCExpenseAccName := SingleLineEdit{SELF,ResourceID{CONVERTMEMBERS_EXPENSEACCNAME,_GetInst()}}
+oDCExpenseAccName:HyperLabel := HyperLabel{#ExpenseAccName,NULL_STRING,NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Convert members to department members"
+SELF:HyperLabel := HyperLabel{#ConvertMembers,"Convert members to department members",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS NetAsset() CLASS ConvertMembers
+RETURN SELF:FieldGet(#NetAsset)
+
+ASSIGN NetAsset(uValue) CLASS ConvertMembers
+SELF:FieldPut(#NetAsset, uValue)
+RETURN uValue
+
+ACCESS NetAssetName() CLASS ConvertMembers
+RETURN SELF:FieldGet(#NetAssetName)
+
+ASSIGN NetAssetName(uValue) CLASS ConvertMembers
+SELF:FieldPut(#NetAssetName, uValue)
+RETURN uValue
+
+METHOD OKButton( ) CLASS ConvertMembers 
+	// convert selected members
+	local oSel,oAss as SQLSelect
+	local oStmnt as SQLStatement 
+	local cSelect,cSQLStatement,mDepId,maccidInc,mAccidExp,mAccidPrv,cAccPrvNbr,cIncAccNbr,cExpAccNbr,cNetAccNbr as string
+	local cFatalError as string
+	local nCount as int
+	local oWindow as Window 
+	local mAlgTaal:=Alg_Taal as string
+	
+	// check validity:
+	if !self:incomecat==income
+		ErrorBox{self,"Category of income balance item should be income"}:show() 
+		return
+	endif
+	if !self:expensecat==expense
+		ErrorBox{self,"Category of expense balance item should be expense"}:show() 
+		return
+	endif
+	if Empty(self:NetAsset)
+		ErrorBox{self,"Specify netasset account number"}:show() 
+		return
+	endif
+	if Empty(self:NetAssetName)
+		ErrorBox{self,"Specify netasset account name"}:show() 
+		return
+	endif
+	if Empty( self:IncomeAcc)
+		ErrorBox{self,"Specify income account number"}:show() 
+		return
+	endif
+	if Empty( self:IncomeAccName)
+		ErrorBox{self,"Specify income account name"}:show() 
+		return
+	endif
+	if Empty(self:ExpenseAcc)
+		ErrorBox{self,"Specify expense account number"}:show() 
+		return
+	endif
+	if Empty(self:ExpenseAccName)
+		ErrorBox{self,"Specify expense account name"}:show() 
+		return
+	endif 
+	self:NetAssetName:=Transform(self:NetAssetName,"!xxxxxxxxxxxxxxxxxxxxx")
+	self:IncomeAccName:=Transform(self:IncomeAccName,"!xxxxxxxxxxxxxxxxxxxxx")
+	self:ExpenseAccName:=Transform(self:ExpenseAccName,"!xxxxxxxxxxxxxxxxxxxxx")
+	// 	dConvdate:=Mindate
+	// 	if Today() - dConvdate > 400
+	// 		dConvdate:=SToD(Str(Year(Today()),2,0)+StrZero(Month(dConvdate),2,0)+'01')
+	// 	endif
+	oWindow:=GetParentWindow(self) 
+	oWindow:Pointer := Pointer{POINTERHOURGLASS} 
+
+	cSelect:="select a.accid,a.accnumber,a.description,a.clc,a.propxtra,m.mbrid,m.homepp from "+self:oCaller:cFrom+" where "+self:oCaller:cWhere+" and m.co='M' and m.accid IS NOT NULL and b.category='"+liability+"'"
+	oSel:=SqlSelect{cSelect,oConn}
+	oSel:Execute()
+	do while !oSel:EoF
+		// convert each account to member department 
+		mAccidPrv:=Str(oSel:accid,-1)
+		cAccPrvNbr:= oSel:accnumber
+		self:STATUSMESSAGE(self:oLan:WGet('converting')+' '+oSel:accnumber+' '+oSel:Description+' ('+Str(nCount+1,-1)+')')
+		if oSel:homePP==sEntity
+			alg_taal:=mAlgTaal
+		else
+			alg_taal:='E'  // for foreign members foreign texts
+		endif
+		// create department: 
+		oStmnt:=SQLStatement{"insert into department set "+; 
+		"deptmntnbr='"+AddSlashes(cAccPrvNbr)+"',"+;
+			"descriptn='"+AddSlashes(oSel:Description)+"',"+;
+			"parentdep='"+self:mParentDep+"'",oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not create member department "+cAccPrvNbr}:show()
+			return
+		endif
+		mDepId:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+		
+		// create income account 
+		cIncAccNbr:=AddSlashes(LTrimZero(self:IncomeAcc)+'-'+cAccPrvNbr)
+		oStmnt:=SQLStatement{"insert into account set "+;
+			"accnumber='"+cIncAccNbr+"'"+;
+			", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:IncomeAccName+"'"+;
+			", balitemid='"+self:mBalInc+"'"+;
+			", department='"+mDepId+"'"+;
+			", giftalwd=1"+;
+			", clc='"+Transform(oSel:clc,"")+"',propxtra='"+Transform(oSel:propxtra,"")+"'"+;
+			", currency='"+sCURR+"'",oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not create income account for "+cAccPrvNbr}:show()
+			return
+		endif 
+		maccidInc:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+		
+		// create expense account
+		cExpAccNbr:=AddSlashes(LTrimZero(self:ExpenseAcc)+'-'+cAccPrvNbr)
+		oStmnt:=SQLStatement{"insert into account set "+;
+			"accnumber='"+cExpAccNbr+"'"+;
+			", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:ExpenseAccName+"'"+;
+			", balitemid='"+self:mBalExp+"'"+;
+			", department='"+mDepId+"'"+;
+			", currency='"+sCURR+"'",oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not create expense account for "+cAccPrvNbr}:show()
+			return
+		endif
+		mAccidExp:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+
+		// move member liablility account to new departement and change it
+		cNetAccNbr:=AddSlashes(LTrimZero(self:NetAsset)+'-'+cAccPrvNbr)
+		oStmnt:=SQLStatement{"update account set department="+mDepId+;
+			",description=concat(Description,' "+self:NetAssetName+"'),giftalwd=0,accnumber='"+cNetAccNbr+"'"+;
+			" where accid="+mAccidPrv,oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not change liability account "+cAccPrvNbr}:show()
+			return
+		endif
+		
+		// fill netasset, incomeacc and expenseacc of department
+		cSQLStatement:="update department set netasset="+Str(oSel:accid,-1)+",incomeacc="+maccidInc+",expenseacc="+mAccidExp+" where depid="+mDepId
+		oStmnt:=SQLStatement{cSQLStatement,oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not change department "+cAccPrvNbr}:show()
+			return
+		endif
+		
+		// change Member 
+		oStmnt:=SQLStatement{ "update member set accid=NULL, depid="+mDepId+" where mbrid="+Str(oSel:mbrid,-1),oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows<1
+			alg_taal:=mAlgTaal
+			ErrorBox{self,"Could not change member "+cAccPrvNbr}:show()
+			return
+		endif
+		// change subscriptions to new income account 
+		oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv
+		oStmnt:Execute()
+		//	change standing orders to new	expense or income	account:
+		oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and cre>deb"
+		oStmnt:Execute()
+		oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and deb>cre"
+		oStmnt:Execute()
+		//	change telepatterns
+		oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and addsub='B'"
+		oStmnt:Execute()
+		oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and addsub='A'"
+		oStmnt:Execute()
+		//	change bankaccount single destination:
+		oStmnt:SQLString:="update bankaccount set	"+sIdentChar+"singledst"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv	
+		oStmnt:Execute()
+		
+		//	change transactions not	yet sent	to	PMC: 
+		if	(!Empty(SINCHOME)	.or.!Empty(SINC))
+			//	remove recordings	to	gift income/expense:
+			oStmnt:SQLString:='delete from transaction where (accid='+SINC+iif(SINC==SINCHOME,'','	or	accid='+SINCHOME)+' or accid='+SEXP+;
+				iif(SEXP==SEXPHOME,'','	or	accid='+SEXPHOME)+')	and '+;
+				'`transid` in (select `transid` from (select	transid from transaction b	where	b.accid='+mAccidPrv+' and bfm="" and	b.gc<>"") as x)'
+			//	and `transid` in (select `transid` from( select	`transid` from	transaction	b where b.accid=100412 and	b.bfm=""	and b.gc<>"") as x)
+			oStmnt:Execute()
+		endif	  
+		oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
+		oStmnt:Execute() 
+		oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+maccidInc+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc in ('AG','MG')"
+		oStmnt:Execute() 
+		// change importtrans not yet processed: ???  (normally all immediately after import processed) 
+		if ConI(SqlSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
+			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccNbr+;
+				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
+			oStmnt:Execute()
+			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccNbr+;
+				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='PF'"
+			oStmnt:Execute()
+			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccNbr+;
+				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='CH'"
+			oStmnt:Execute() 
+		endif
+		// move associated accounts not belonging to project department to this department and remove them
+		oAss:=SqlSelect{"select ma.accid from memberassacc ma,account a where ma.accid=a.accid and a.accid=ma.accid and a.department=0 and ma.mbrid="+Str(oSel:mbrid,-1),oConn}
+		if oAss:RecCount>0 
+			cSelect:=Implode(oAss:GetLookupTable(40,#accid,#accid),",",,,1)
+			oStmnt:=SQLStatement{"update account a set department="+mDepId+" where accid in ("+cSelect+")",oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows>0
+				// remove associated accounts from member:
+				SQLStatement{"delete from memberassacc where accid in ("+cSelect+")",oConn}:Execute()
+			endif
+		endif
+		nCount++
+		oSel:Skip()
+	enddo
+	alg_taal:=mAlgTaal
+	self:STATUSMESSAGE(self:oLan:WGet('Updating balances')+'...')
+	// correct month balances data
+	CheckConsistency(oMainWindow,true,false,@cFatalError)	
+	oWindow:Pointer := Pointer{POINTERARROW}
+	TextBox{self,"Converting members to departments",Str(nCount,-1)+" members converted"}:show() 
+	self:oCaller:FindButton()
+	self:EndWindow()
+	self:Close()
+	RETURN nil
+ACCESS ParentDep() CLASS ConvertMembers
+RETURN SELF:FieldGet(#ParentDep)
+
+ASSIGN ParentDep(uValue) CLASS ConvertMembers
+SELF:FieldPut(#ParentDep, uValue)
+RETURN uValue
+
+METHOD ParentDepButton(cCurValue ) CLASS ConvertMembers 
+	(DepartmentExplorer{self:Owner,"Department parent",self:mParentDep,self,cCurValue}):show()
+RETURN NIL
+method PostInit(oWindow,iCtlID,oServer,uExtra) class ConvertMembers
+	//Put your PostInit additions here
+	local oSel as SQLSelect
+	local cMemberWhere,cStmnt as string
+	local mAlgTaal:=Alg_Taal as string
+	local nW as int 
+	local aWord:={} as array
+	self:SetTexts() 
+	self:oCaller:=uExtra 
+	self:cWhere:=self:oCaller:cWhere+" and co='M' and m.accid IS NOT NULL"
+	// search for existing member department: 
+	if self:oCaller:HomeBox
+		if !self:oCaller:NonHomeBox
+			cMemberWhere:=" and homepp='"+sEntity+"'"
+		endif
+	elseif self:oCaller:NonHomeBox
+		Alg_Taal:='E'
+		cMemberWhere:=" and homepp<>'"+sEntity+"'"
+	endif
+
+		
+	cStmnt:="select pd.deptmntnbr,pd.descriptn,pd.depid,an.accnumber as netnumber,an.description as netname"+;
+	",ai.accnumber as incnumber,ai.balitemid as incbal,ai.description as incomename"+;
+	",ae.accnumber as expnumber,ae.description as expensename,ae.balitemid as expbal,bi.number as incbalnum,bi.heading as incheading,bi.category as incomecat,"+;
+	"be.number as expbalnum,be.heading as expheading,be.category as expensecat "+;
+	"from department d left join department pd on (pd.depid=d.parentdep) left join account an on (an.accid=d.netasset) "+;
+	" left join account ai on (ai.accid=d.incomeacc) left join balanceitem bi on(bi.balitemid=ai.balitemid) "+;
+	"left join account ae on (ae.accid=d.expenseacc) left join balanceitem be on(be.balitemid=ae.balitemid) "+;
+	"where exists (select 1 from member where depid=d.depid and co='M' and depid IS NOT NULL"
+	oSel:=SqlSelect{cStmnt+cMemberWhere+") limit 1",oConn} 
+	if oSel:RecCount<1
+		oSel:=SqlSelect{cStmnt+") limit 1",oConn}
+	endif 
+	if oSel:RecCount>0
+		self:cCurDep:=AllTrim(oSel:DEPTMNTNBR)+":"+oSel:DESCRIPTN
+		self:ParentDep:=self:cCurDep
+  		self:mParentDep:=Str(oSel:depid,-1)
+		self:mBalExp:=iif(Empty(oSel:expbal),'',Str(oSel:expbal,-1))
+		IF	Empty(self:mBalExp)
+			self:cCurExpBal:="0:Balance Items"
+		ELSE
+			self:cCurExpBal:=AllTrim(oSel:expbalnum)+":"+oSel:expheading
+		ENDIF
+		self:ExpenseBal:=self:cCurExpBal
+		self:mBalInc:=iif(Empty(oSel:Incbal),'',Str(oSel:Incbal,-1))
+		IF	Empty(self:mBalInc)
+			self:cCurIncBal:="0:Balance Items"
+		ELSE
+			self:cCurIncBal:=AllTrim(oSel:Incbalnum)+":"+oSel:Incheading
+		ENDIF
+		self:IncomeBal:=self:cCurIncBal
+		self:IncomeAcc:=Split(oSel:incnumber,'-')[1]
+		self:ExpenseAcc:=Split(oSel:expnumber,'-')[1]
+		self:NetAsset:=Split(oSel:netnumber,'-')[1] 
+		self:incomecat:=oSel:incomecat 
+		self:expensecat:=oSel:expensecat
+		aWord:=Split(oSel:NetName)
+		nW:=Len(aWord)
+		if nW>1 
+			self:NetAssetName:=aWord[nW]
+		else
+			self:NetAssetName:=self:oLan:WGet('Fund')
+		endif	
+		aWord:=Split(oSel:IncomeName)
+		nW:=Len(aWord)
+		if nW>1 
+			self:IncomeAccName:=aWord[nW]
+		else
+			self:IncomeAccName:=self:oLan:WGet('Income')
+		endif	
+		aWord:=Split(oSel:ExpenseName)
+		nW:=Len(aWord)
+		if nW>1 
+			self:ExpenseAccName:=aWord[nW]
+		else
+			self:ExpenseAccName:=self:oLan:WGet('Expense')
+		endif	
+	else
+		self:cCurDep:="0:"+sEntity+" "+sLand
+		self:ParentDep:=self:cCurDep
+		self:mParentDep:=''
+		self:cCurExpBal:="0:Balance Items"
+		self:ExpenseBal:=self:cCurExpBal 
+		self:mBalExp:=''
+		self:mBalInc:=''
+		self:cCurIncBal:="0:Balance Items"
+		self:IncomeBal:=self:cCurIncBal
+		self:IncomeAcc:='80000'
+		self:ExpenseAcc:='40000'
+		self:NetAsset:='17000' 
+		self:NetAssetName:=self:oLan:WGet('Fund')
+		self:IncomeAccName :=self:oLan:WGet('Income')
+		self:ExpenseAccName :=self:oLan:WGet('Expense')
+	endif
+   Alg_Taal:=mAlgTaal
+	  
+	
+	return NIL
+
+STATIC DEFINE CONVERTMEMBERS_BALEXPBUTTON := 106 
+STATIC DEFINE CONVERTMEMBERS_BALINCBUTTON := 103 
+STATIC DEFINE CONVERTMEMBERS_CANCELBUTTON := 120 
+STATIC DEFINE CONVERTMEMBERS_EXPENSEACC := 116 
+STATIC DEFINE CONVERTMEMBERS_EXPENSEACCNAME := 129 
+STATIC DEFINE CONVERTMEMBERS_EXPENSEBAL := 107 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT1 := 102 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT10 := 118 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT11 := 122 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT12 := 123 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT13 := 124 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT14 := 125 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT15 := 126 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT2 := 105 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT3 := 108 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT4 := 109 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT5 := 111 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT6 := 112 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT7 := 114 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT8 := 115 
+STATIC DEFINE CONVERTMEMBERS_FIXEDTEXT9 := 117 
+STATIC DEFINE CONVERTMEMBERS_GROUPBOX1 := 121 
+STATIC DEFINE CONVERTMEMBERS_INCOMEACC := 113 
+STATIC DEFINE CONVERTMEMBERS_INCOMEACCNAME := 128 
+STATIC DEFINE CONVERTMEMBERS_INCOMEBAL := 104 
+STATIC DEFINE CONVERTMEMBERS_NETASSET := 110 
+STATIC DEFINE CONVERTMEMBERS_NETASSETNAME := 127 
+STATIC DEFINE CONVERTMEMBERS_OKBUTTON := 119 
+STATIC DEFINE CONVERTMEMBERS_PARENTDEP := 101 
+STATIC DEFINE CONVERTMEMBERS_PARENTDEPBUTTON := 100 
 static define CURRENCY:=9
 static define DESCRPTN:=8
 static define DESTACC:=3
@@ -9,32 +668,6 @@ static define DESTTYP:=5
 static define DFIA:=13
 static define DFIR:= 12
 static define DISABLED:=10
-RESOURCE EditDistribution DIALOGEX  20, 18, 334, 178
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Fixed Text", EDITDISTRIBUTION_MEMBERTEXT, "Static", WS_CHILD, 68, 10, 144, 12
-	CONTROL	"Member:", EDITDISTRIBUTION_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 54, 13
-	CONTROL	"%", EDITDISTRIBUTION_PERC, "Static", WS_CHILD, 210, 89, 31, 12
-	CONTROL	"", EDITDISTRIBUTION_MDESTAMT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 160, 88, 48, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 62, 253, 13, WS_EX_CLIENTEDGE
-	CONTROL	"PP Codes", EDITDISTRIBUTION_MDESTPP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 35, 123, 142
-	CONTROL	"type of amount to be distributed of gifts", EDITDISTRIBUTION_MDESTTYP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 88, 62, 72
-	CONTROL	"Type of amount", EDITDISTRIBUTION_FIXEDTEXT10, "Static", WS_CHILD, 8, 88, 56, 12
-	CONTROL	"amount", EDITDISTRIBUTION_AMOUNTTXT, "Static", WS_CHILD, 133, 89, 27, 13
-	CONTROL	"Receiving PP", EDITDISTRIBUTION_FIXEDTEXT8, "Static", WS_CHILD, 8, 35, 56, 13
-	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD, 8, 62, 59, 13
-	CONTROL	"Description", EDITDISTRIBUTION_FIXEDTEXT9, "Static", WS_CHILD, 10, 126, 53, 12
-	CONTROL	"", EDITDISTRIBUTION_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 125, 253, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITDISTRIBUTION_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 148, 54, 12
-	CONTROL	"Cancel", EDITDISTRIBUTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 210, 148, 54, 12
-	CONTROL	"Currency of amount", EDITDISTRIBUTION_CURRENCYGROUP, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 246, 80, 74, 39
-	CONTROL	"own currency", EDITDISTRIBUTION_CURRENCYBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 252, 89, 68, 11
-	CONTROL	"US Dollar", EDITDISTRIBUTION_CURRENCYBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 253, 104, 61, 11
-	CONTROL	"Active", EDITDISTRIBUTION_CHECKBOXACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 213, 10, 34, 11
-	CONTROL	"Single use", EDITDISTRIBUTION_CHECBOXSINGELUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 212, 25, 80, 12
-END
-
 CLASS EditDistribution INHERIT DataWindowExtra 
 
 	PROTECT oDCMemberText AS FIXEDTEXT
@@ -66,9 +699,6 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	instance mDescription 
 	instance CurrencyGroup 
 	instance CheckBoxActive 
-	instance mDFIR 
-	instance mDFIA 
-	instance mCHECKSAVE 
   PROTECT lNew as LOGIC
   PROTECT nCurRec AS INT
   PROTECT mMbrId,mSeq as STRING
@@ -79,6 +709,32 @@ CLASS EditDistribution INHERIT DataWindowExtra
   protect nPos as int // position of aDis within aDistr of caller
 
 declare method ValidateDistribution  
+RESOURCE EditDistribution DIALOGEX  20, 18, 334, 178
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Fixed Text", EDITDISTRIBUTION_MEMBERTEXT, "Static", WS_CHILD, 68, 10, 144, 12
+	CONTROL	"Member:", EDITDISTRIBUTION_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 54, 13
+	CONTROL	"%", EDITDISTRIBUTION_PERC, "Static", WS_CHILD, 216, 88, 30, 12
+	CONTROL	"", EDITDISTRIBUTION_MDESTAMT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 168, 88, 48, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 62, 254, 13, WS_EX_CLIENTEDGE
+	CONTROL	"PP Codes", EDITDISTRIBUTION_MDESTPP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 35, 123, 142
+	CONTROL	"type of amount to be distributed of gifts", EDITDISTRIBUTION_MDESTTYP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 88, 68, 72
+	CONTROL	"Type of amount", EDITDISTRIBUTION_FIXEDTEXT10, "Static", WS_CHILD, 8, 88, 56, 12
+	CONTROL	"amount", EDITDISTRIBUTION_AMOUNTTXT, "Static", WS_CHILD, 140, 88, 27, 12
+	CONTROL	"Receiving PP", EDITDISTRIBUTION_FIXEDTEXT8, "Static", WS_CHILD, 8, 35, 56, 13
+	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD, 8, 62, 59, 13
+	CONTROL	"Description", EDITDISTRIBUTION_FIXEDTEXT9, "Static", WS_CHILD, 10, 126, 53, 12
+	CONTROL	"", EDITDISTRIBUTION_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 125, 254, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITDISTRIBUTION_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 148, 54, 12
+	CONTROL	"Cancel", EDITDISTRIBUTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 210, 148, 54, 12
+	CONTROL	"Currency of amount", EDITDISTRIBUTION_CURRENCYGROUP, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 248, 81, 74, 39
+	CONTROL	"own currency", EDITDISTRIBUTION_CURRENCYBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 252, 89, 68, 11
+	CONTROL	"US Dollar", EDITDISTRIBUTION_CURRENCYBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 253, 104, 61, 11
+	CONTROL	"Active", EDITDISTRIBUTION_CHECKBOXACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 213, 10, 34, 11
+	CONTROL	"Single use", EDITDISTRIBUTION_CHECBOXSINGELUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 212, 25, 80, 12
+END
+
 METHOD CancelButton( ) CLASS EditDistribution
 SELF:EndWindow()
 	
@@ -112,8 +768,15 @@ ASSIGN CurrencyGroup(uValue) CLASS EditDistribution
 SELF:FieldPut(#CurrencyGroup, uValue)
 RETURN uValue
 
+method FillDestTypes() class EditDistribution
+	if self:mDestPP='ACH' 
+		Return {{DistributionTypes[1],0},{DistributionTypes[2],1},{DistributionTypes[3],2},{DistributionTypes[4],3}}
+	else
+		Return {{DistributionTypes[1],0},{DistributionTypes[2],1},{DistributionTypes[3],2}}
+	endif
+	
 method FillPPCodes() class EditDistribution
-return SQLSelect{"select ppname,ppcode from ppcodes",oConn}:GetlookUpTable()
+return SqlSelect{"select ppname,ppcode from ppcodes",oConn}:GetlookUpTable() 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditDistribution 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -144,7 +807,7 @@ oDCmDestPP:UseHLforToolTip := True
 oDCmDestPP:FillUsing(Self:FillPPCodes( ))
 
 oDCmDestTyp := combobox{SELF,ResourceID{EDITDISTRIBUTION_MDESTTYP,_GetInst()}}
-oDCmDestTyp:FillUsing(DistributionTypes)
+oDCmDestTyp:FillUsing(Self:FillDestTypes( ))
 oDCmDestTyp:HyperLabel := HyperLabel{#mDestTyp,"type of amount to be distributed of gifts","type of amount to be distributed of gifts",NULL_STRING}
 oDCmDestTyp:UseHLforToolTip := True
 
@@ -208,67 +871,49 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListBoxSelect(oControlEvent) CLASS EditDistribution
-	LOCAL oControl AS Control, uValue AS USUAL
+	LOCAL oControl as Control, uValue as USUAL 
+	local nCur as int
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	IF oControlEvent:NameSym==#mDestTyp
 		uValue:=oControlEvent:Control:Value
-		IF uValue="proportional"
+		IF uValue=1  // "proportional"
 			SELF:oDCperc:TextValue:="%"
 			SELF:oDCAmountTxt:Hide()
 			SELF:oDCmDestAmt:HyperLabel:Description:="percentage of balance of member account"
 		ELSE
 			SELF:oDCAmountTxt:Show()
 			SELF:oDCperc:TextValue:="a month"
-			IF uValue="remaining"
+			IF uValue>=2  // "remaining"
 				SELF:oDCAmountTxt:TextValue:="up to"
-   			self:oDCmDestAmt:HyperLabel:Description:="maximum amount a month; 0 means no limit"
+				self:oDCmDestAmt:HyperLabel:Description:="maximum amount a month; 0 means no limit"
 			ELSE
 				SELF:oDCAmountTxt:TextValue:="amount"
 				SELF:oDCmDestAmt:HyperLabel:Description:="fixed amount per month"
 			ENDIF
 		ENDIF
 
-      IF uValue="fixed" .or. uValue="remaining"
-			SELF:oDCCurrencyGroup:Show()
-			SELF:oCCCurrencyButton1:Show()
-			SELF:oCCCurrencyButton2:Show()
-		ELSE
-			SELF:oDCCurrencyGroup:Hide()
-			SELF:oCCCurrencyButton1:Hide()
-			SELF:oCCCurrencyButton2:Hide()
+		IF uValue=1  // proportional
+			self:oDCCurrencyGroup:Hide()
+			self:oCCCurrencyButton1:Hide()
+			self:oCCCurrencyButton2:Hide()
+		ELSE     // fixed or remaining
+			self:oDCCurrencyGroup:Show()
+			self:oCCCurrencyButton1:Show()
+			self:oCCCurrencyButton2:Show()
 		ENDIF
 	ELSEIF oControlEvent:NameSym==#mDestPP
-// 		IF SELF:oDCmDestPP:Value="ACH"
-// 			IF Empty(mDFIR)
-// 				SELF:mDFIR:="322273379"
-// 			ENDIF
-// 			SELF:oDCmDestAcc:Hide()
-// 			SELF:odcAccountFix:Hide()
-// 			SELF:oDCACHFix1:show()
-// 			SELF:oDCACHFix2:show()
-// 			SELF:oDCmDFIA:Show()
-// 			SELF:oDCmDFIR:Show()
-// 			SELF:oDCmCHECKSAVE:Show()
-// 			SELF:oCCCheckButton:Show()
-// 			SELF:oCCSaveButton:show()
-// 		ELSE
-			SELF:oDCmDestAcc:Show()
-			self:odcAccountFix:Show()
-// 			SELF:oDCACHFix1:Hide()
-// 			SELF:oDCACHFix2:Hide()
-// 			SELF:oDCmDFIA:Hide()
-// 			SELF:oDCmDFIR:Hide()
-// 			SELF:oDCmCHECKSAVE:Hide()
-// 			SELF:oCCCheckButton:Hide()
-// 			self:oCCSaveButton:Hide()
-			if self:oDCmDestPP:Value="AAA"
-				self:odcAccountFix:TextValue:="Bank Number:"
-			else
-				self:odcAccountFix:TextValue:="Account:"				
-			endif
-// 		ENDIF					
+		nCur:=self:oDCmDestTyp:Value
+		self:oDCmDestTyp:FillUsing(self:FillDestTypes()) 
+		self:mDestTyp:=nCur
+		SELF:oDCmDestAcc:Show()
+		self:odcAccountFix:Show()
+		if self:oDCmDestPP:Value="AAA"
+			self:odcAccountFix:TextValue:="Bank Number:"
+		else
+			self:odcAccountFix:TextValue:="Account:"				
+		endif
 	ENDIF
 	RETURN NIL
 
@@ -343,17 +988,7 @@ IF SELF:ValidateDistribution()
 	endif
 	aDis[DESCRPTN]:=AllTrim(self:mDescription)
 	aDis[DESTPP]:= AllTrim(self:mDestPP)
-// 	if mDestPP="ACH"
-// 		aDis[DESTACC]:=""
-// 		aDis[DFIR]:= self:mDFIR
-// 		aDis[DFIA]:= self:mDFIA
-// 		aDis[CHECKSAVE]:= self:mCHECKSAVE
-// 	else
-		aDis[DESTACC]:= iif(Empty(self:mDestPP),"",AllTrim(self:mDestAcc))
-// 		aDis[DFIR]:=""
-// 		aDis[DFIA]:=""
-// 		aDis[CHECKSAVE]:=""
-// 	endif
+	aDis[DESTACC]:= iif(Empty(self:mDestPP),"",AllTrim(self:mDestAcc))
 	aDis[DESTAMT]:=iif(Empty(self:mDestPP),0.00,self:mDestAmt)
 	aDis[DESTTYP]:= iif(Empty(self:mDestPP),0,oDCmDestTyp:CurrentItemNo-1)
 	aDis[CURRENCY]:=iif(self:CurrencyGroup=="dollar",1,0)
@@ -379,6 +1014,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDistribution
 	LOCAL it AS INT
 self:SetTexts()
 	SELF:oDCMemberText:TextValue:=oCaller:cMemberName
+	if !self:OwnPPCode==SEntity
+		oPP:= SqlSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
+		oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
+	endif
 	IF !lNew
 		self:mDescription := self:aDis[DESCRPTN]
 		self:CheckBoxActive:=iif(self:aDis[DISABLED]=1,false,true)
@@ -389,12 +1028,13 @@ self:SetTexts()
 		self:mDestAcc := self:aDis[DESTACC]
 		self:mDestAmt:=self:aDis[DESTAMT]
 		self:mDestPP := self:aDis[DESTPP] 
-		
+		self:oDCmDestTyp:FillUsing(self:FillDestTypes())
 		it:= self:aDis[DESTTYP]
-		self:mDestTyp := DistributionTypes[self:aDis[DESTTYP]+1]
+// 		self:mDestTyp := DistributionTypes[self:aDis[DESTTYP]+1]
+		self:mDestTyp := self:aDis[DESTTYP]
 		IF it!=1
 			self:oDCperc:TextValue:="a month"
-			IF it==2
+			IF it>=2   // remaining
 				self:oDCAmountTxt:TextValue:="up to"
 				self:oDCmDestAmt:HyperLabel:Description:="maximum amount a month; 0 means no limit"
 			ELSE
@@ -411,98 +1051,36 @@ self:SetTexts()
 		ELSE
 			self:CurrencyGroup:="own"
 		ENDIF
-// 		SELF:mDescription := oDis:DESCRPTN
-// 		CheckBoxActive:=iif(oDis:DISABLED=1,false,true)
-// 		IF oDis:DISABLED =1
-// 			oDCCheckBoxActive:TextColor:=Color{COLORRED}
-// 		ENDIF 
-// 		self:ChecBoxSingelUse:=iif(oDis:SINGLEUSE=1,true,false)
-// 		SELF:mDestAcc := oDis:DESTACC
-// 		SELF:mDFIA:= oDis:DFIA
-// 		SELF:mDFIR:= oDis:DFIR
-// 		SELF:mCHECKSAVE:=oDis:CHECKSAVE
-// 		SELF:mDestAmt:=oDis:DESTAMT
-// 		mDestPP := oDis:DESTPP
-// 		
-// 		it:= oDis:DESTTYP
-// 		mDestTyp := DistributionTypes[oDis:DESTTYP+1]
-// 		IF it!=1
-// 			SELF:oDCperc:TextValue:="a month"
-// 			IF it==2
-// 				SELF:oDCAmountTxt:TextValue:="up to"
-// 				SELF:oDCmDestAmt:HyperLabel:Description:="maximum amount a month; 0 means no limit"
-// 			ELSE
-// 				SELF:oDCAmountTxt:TextValue:="amount"
-// 				SELF:oDCmDestAmt:HyperLabel:Description:="fixed amount per month"
-// 			ENDIF
-// 		ELSE
-// 			SELF:oDCperc:TextValue:="%"
-// 			SELF:oDCAmountTxt:Hide()
-// 			SELF:oDCmDestAmt:HyperLabel:Description:="percentage of balance of member account"
-// 		ENDIF
-// 		IF oDis:CURRENCY=1
-// 			CurrencyGroup:="dollar"
-// 		ELSE
-// 			CurrencyGroup:="own"
-// 		ENDIF
 	ELSE
-// 		mRek:=oCaller:mREK
     	SELF:mDestAcc:=""
-    	SELF:mDestPP:=""
+		if !self:OwnPPCode==SEntity
+			self:mDestPP:=SEntity
+		else
+	    	self:mDestPP:=""
+		endif
     	SELF:mDestAmt:=0
 		self:CheckBoxActive:=true
-    	self:mDestTyp := DistributionTypes[1]
+    	self:mDestTyp := 0
 		SELF:oDCperc:TextValue:="a month"
 		it:=0
 		self:CurrencyGroup:="own"
-		SELF:mCHECKSAVE:="C"
-		SELF:mDFIR:="322273379"
 	ENDIF
-	if !self:OwnPPCode==SEntity
-		oPP:= SQLSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
-		oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
-		if lNew
-			self:mDestPP:=SEntity
-		else
-			self:mDestPP:=oDis:DESTPP
-		endif
-	endif
-		
-// 	IF SELF:mDestPP="ACH"
-// 		SELF:oDCmDestAcc:Hide()
-// 		SELF:odcAccountFix:Hide()
-// 		SELF:oDCACHFix1:show()
-// 		SELF:oDCACHFix2:show()
-// 		SELF:oDCmDFIA:Show()
-// 		SELF:oDCmDFIR:Show()
-// 		SELF:oDCmCHECKSAVE:Show()
-// 		SELF:oCCCheckButton:Show()
-// 		SELF:oCCSaveButton:show()
-// 	ELSE
 		SELF:oDCmDestAcc:Show()
 		SELF:odcAccountFix:Show()
-// 		SELF:oDCACHFix1:Hide()
-// 		SELF:oDCACHFix2:Hide()
-// 		SELF:oDCmDFIA:Hide()
-// 		SELF:oDCmDFIR:Hide()
-// 		SELF:oDCmCHECKSAVE:Hide()
-// 		SELF:oCCCheckButton:Hide()
-// 		self:oCCSaveButton:Hide()
 		if self:oDCmDestPP:Value="AAA"
 			self:odcAccountFix:TextValue:="Bank Number:"
 		else
 			self:odcAccountFix:TextValue:="Account:"				
 		endif			
-// 	ENDIF			
 	SELF:oCCCurrencyButton1:Caption:=sCURR
-	IF it=0 .or. it=2
-		SELF:oDCCurrencyGroup:Show()
-		SELF:oCCCurrencyButton1:Show()
-		SELF:oCCCurrencyButton2:Show()
+	IF it=1 // proportional
+		self:oDCCurrencyGroup:Hide()
+		self:oCCCurrencyButton1:Hide()
+		self:oCCCurrencyButton2:Hide()
 	ELSE
-		SELF:oDCCurrencyGroup:Hide()
-		SELF:oCCCurrencyButton1:Hide()
-		SELF:oCCCurrencyButton2:Hide()
+		self:oDCCurrencyGroup:Show()
+		SELF:oCCCurrencyButton1:Show()
+		self:oCCCurrencyButton2:Show()
 	ENDIF
 	RETURN NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class EditDistribution
@@ -538,27 +1116,19 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 	LOCAL CurRec, nSeq:=Val(self:mSeq),nDPos as int
 	Local oPersBank as SQLSelect
 	local aDistrm:=self:oCaller:aDistr as array
-	 
+	
 	IF Empty(self:mDestPP)
 		lValid := FALSE
 		cError :=  "Destination PP is obliged!"
 		self:oDCmDestPP:SetFocus()
 	ENDIF
-	IF lValid .and. self:mDestTyp # DistributionTypes[3] .and. self:mDestAmt<=0
+	// 	IF lValid .and. self:mDestTyp # DistributionTypes[3] .and. self:mDestAmt<=0
+	IF lValid .and. self:mDestTyp <2 .and. self:mDestAmt<=0
 		lValid := FALSE
 		cError :=  "Amount should be larger than zero!"
 		self:oDCmDestAmt:SetFocus()
 	ENDIF
 	IF lValid .and. self:mDestPP="ACH"
-// 		IF Len(AllTrim(self:mDFIR))<9
-// 			lValid := FALSE
-// 			cError :=  "Routing number should have a length of 9 digits!"
-// 			self:oDCmDFIR:SetFocus()
-// 		ELSEIF Empty(AllTrim(self:mDFIA))
-// 			lValid := FALSE
-// 			cError :=  "Account number should be filled!"
-// 			self:oDCmDFIA:SetFocus()
-// 		ENDIF
 		IF !Empty(self:mDestAcc)
 			cAcc:=AllTrim(self:mDestAcc)
 			IF !(cAcc=='1' .or. cAcc=='2')
@@ -575,7 +1145,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 			self:oDCmDestAcc:SetFocus() 
 		else
 			// check if bank number can be found in person data:
-		  	oPersBank:=SQLSelect{"select banknumber from personbank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
+			oPersBank:=SQLSelect{"select banknumber from personbank where banknumber='"+AllTrim(self:mDestAcc)+"'",oConn}
 			if oPersBank:RecCount=0
 				cError:="Bankaccount "+AllTrim(mDestAcc)+" not found in Person data!"
 				lValid:=False
@@ -607,18 +1177,27 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 		endif 
 	endif 
 
-	IF lValid .and. self:mDestTyp # DistributionTypes[1] .and. CheckBoxActive
-		IF mDestTyp=DistributionTypes[2]
+	// 	IF lValid .and. self:mDestTyp # DistributionTypes[1] .and. CheckBoxActive
+	IF lValid .and. self:mDestTyp >0 .and. CheckBoxActive
+		// 		IF mDestTyp=DistributionTypes[2]
+		IF mDestTyp=1
 			propsum:=self:mDestAmt
 		endif		
 		do WHILE (nDPos:=AScan(aDistrm,{|x|x[disabled]==0 .and. !x[seqnbr]==nSeq},NDPos+1))>0
-			IF self:mDestTyp=DistributionTypes[3] .and. aDistrm[nDPos,DESTTYP]==2
+			// 			IF self:mDestTyp=DistributionTypes[3] .and. aDistrm[nDPos,DESTTYP]==2
+			IF self:mDestTyp=2 .and. aDistrm[nDPos,DESTTYP]==2
 				lValid := FALSE
 				cError :=  "Only one destination of type remaining allowed!"
 				self:oDCmDestTyp:SetFocus()
 				exit
 			endif
-			IF self:mDestTyp=DistributionTypes[2] .and. aDistrm[nDPos,DESTTYP]==1
+			IF self:mDestTyp=3 .and. aDistrm[nDPos,DESTTYP]==3
+				lValid := FALSE
+				cError :=  "Only one destination of type remaining from RPP allowed!"
+				self:oDCmDestTyp:SetFocus()
+				exit
+			endif
+			IF self:mDestTyp=1 .and. aDistrm[nDPos,DESTTYP]==1
 				propsum+=aDistrm[nDPos,DESTAMT]
 			endif
 		ENDDO
@@ -628,12 +1207,12 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 			self:oDCmDestAmt:SetFocus()
 		endif			
 	endif
- 	IF ! lValid
- 		(ErrorBox{,cError}):Show()
+	IF ! lValid
+		(ErrorBox{,cError}):Show()
 	endif
 
 	RETURN lValid
-		
+	
 
 	
 STATIC DEFINE EDITDISTRIBUTION_ACCOUNTFIX := 110 
@@ -849,7 +1428,7 @@ METHOD AccButton(lUnique ) CLASS EditMember
 				aInclRek:={Str(oDep:incomeacc,-1),Str(oDep:expenseacc,-1),Str(oDep:netasset,-1),SDON}
 			endif
 		else
-			{self:mREK,self:mRekOrg,SDON}
+			aInclRek:={self:mREK,self:mRekOrg,SDON}
 		endif
 		cfilter:=MakeFilter(aInclRek,{income,liability,asset},"N",,,aExclRek)
 		AccountSelect(self,cAccDepName,"Member Account",lUnique,cfilter,self:Owner)
@@ -1007,26 +1586,26 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditMember
 	ENDIF
 	RETURN NIL
 METHOD FillDistribution() as void pascal CLASS EditMember
-// LOCAL oDist as SQLSelect
-LOCAL oItem as ListViewItem
-local i as int
-// oDist:=SQLSelect{"select * from DistributionInstruction where mbrid="+self:mMbrId,oConn}
-self:oDCDistrListView:DeleteAll() 
-// DO WHILE oDist:RecCount>0 .and. !oDist:EoF
-for i:=1 to Len(self:aDistr) 
-	// add item to listview:
-	oItem:=ListViewItem{}
-	oItem:SetText(iif(self:aDistr[i,DISABLED]=1," ","X"),#DestEnabled)
-	oItem:SetValue(iif(self:aDistr[i,DISABLED]=1,false,true),#DestEnabled)
-	oItem:SetText(self:aDistr[i,DESTPP],#DestPP)
-	oItem:SetValue(self:aDistr[i,SEQNBR],#DestPP)
-	oItem:SetText(AllTrim(self:aDistr[i,DESTACC]),#DestAcc)
-	oItem:SetText(AllTrim(self:aDistr[i,DESCRPTN]),#Descrptn)
-	oItem:SetText(DistributionTypes[self:aDistr[i,DESTTYP]+1],#DestTyp)
-	oItem:SetText(Str(self:aDistr[i,DESTAMT],-1,DecAantal),#DestAmt)
-	self:oDCDistrListView:AddItem(oItem)
+	// LOCAL oDist as SQLSelect
+	LOCAL oItem as ListViewItem
+	local i as int
+	// oDist:=SQLSelect{"select * from DistributionInstruction where mbrid="+self:mMbrId,oConn}
+	self:oDCDistrListView:DeleteAll() 
+	// DO WHILE oDist:RecCount>0 .and. !oDist:EoF
+	for i:=1 to Len(self:aDistr) 
+		// add item to listview:
+		oItem:=ListViewItem{}
+		oItem:SetText(iif(self:aDistr[i,DISABLED]=1," ","X"),#DestEnabled)
+		oItem:SetValue(iif(self:aDistr[i,DISABLED]=1,false,true),#DestEnabled)
+		oItem:SetText(self:aDistr[i,DESTPP],#DestPP)
+		oItem:SetValue(self:aDistr[i,SEQNBR],#DestPP)
+		oItem:SetText(AllTrim(self:aDistr[i,DESTACC]),#DestAcc)
+		oItem:SetText(AllTrim(self:aDistr[i,DESCRPTN]),#Descrptn)
+		oItem:SetText(DistributionTypes[self:aDistr[i,DESTTYP]+1],#DestTyp)
+		oItem:SetText(Str(self:aDistr[i,DESTAMT],-1,DecAantal),#DestAmt)
+		self:oDCDistrListView:AddItem(oItem)
 
-next
+	next
 
 method FillPP() class EditMember
 return FillPP()
@@ -1344,7 +1923,7 @@ METHOD OkButton CLASS EditMember
 	local i,j as int
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg as array 
 	local oDep as SQLSelect
-	local cFatalError as string	
+	local cFatalError as string
 
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
@@ -1411,9 +1990,6 @@ METHOD OkButton CLASS EditMember
 					cIncAcc:=Str(oDep:incomeacc,-1) 
 					cExpAcc:=Str(oDep:expenseacc,-1) 
 					cNetAcc:=Str(oDep:netasset,-1) 
-// 					cIncAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select incomeacc from department where depid="+self:mDepId+")",oConn}:accid,"")
-// 					cExpAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select expenseacc from department where depid="+self:mDepId+")",oConn}:accid,"")
-// 					cNetAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select netasset from department where depid="+self:mDepId+")",oConn}:accid,"")
 				else
 					cIncAcc:=self:mREK 
 					cExpAcc:=self:mREK
@@ -1439,7 +2015,15 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv 
 				oStmnt:Execute()
 				 
-				// change transactions not yet sent to PMC:
+				// change transactions not yet sent to PMC: 
+				if	(!Empty(SINCHOME) .or.!Empty(SINC))
+					// remove recordings to gift income/expense:
+					oStmnt:SQLString:='delete from transaction where (accid='+SINC+iif(SINC==SINCHOME,'',' or accid='+SINCHOME)+' or accid='+SEXP+;
+					iif(SEXP==SEXPHOME,'',' or accid='+SEXPHOME)+') and '+;
+					'`transid` in (select `transid` from (select transid from transaction b where b.accid='+mAccidPrv+' and b.bfm="" and b.gc<>"") as x)'
+					// and `transid` in (select `transid` from( select `transid` from transaction b where b.accid=100412 and b.bfm="" and b.gc<>"") as x)
+					oStmnt:Execute()
+				endif   
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
 				oStmnt:Execute() 
 				if cNetAcc<>mAccidPrv 
@@ -1671,11 +2255,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	oColPP:NameSym:=#DestPP
 	oColAcc:=ListViewColumn{9,self:oLan:WGet("Destn Acct")}
 	oColAcc:NameSym:=#DestAcc
-	oColDesc:=ListViewColumn{21,self:oLan:WGet("Description")}
+	oColDesc:=ListViewColumn{19,self:oLan:WGet("Description")}
 	oColDesc:NameSym:=#Descrptn
-	oColTyp:=ListViewColumn{7,self:oLan:WGet("Type")}
+	oColTyp:=ListViewColumn{10,self:oLan:WGet("Type")}
 	oColTyp:NameSym:=#DestTyp
-	oColAmt:=ListViewColumn{8,self:oLan:WGet("Amount"),LVCFMT_RIGHT}
+	oColAmt:=ListViewColumn{7,self:oLan:WGet("Amount"),LVCFMT_RIGHT}
 	oColAmt:NameSym:=#DestAmt
 	self:oDCDistrListView:AddColumn(oColEnabled)
 	self:oDCDistrListView:AddColumn(oColPP)
@@ -2318,35 +2902,69 @@ CLASS MemberBrowser INHERIT DataWindowExtra
 	PROTECT oDCFixedText4 AS FIXEDTEXT
 	PROTECT oDCFound AS FIXEDTEXT
 	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oDCProjectsBox AS CHECKBOX
+	PROTECT oDCNonHomeBox AS CHECKBOX
+	PROTECT oDCHomeBox AS CHECKBOX
+	PROTECT oCCConvertButton AS PUSHBUTTON
 	PROTECT oSFMemberBrowser_DETAIL AS MemberBrowser_DETAIL
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
   export oMem as SQLSelect 
   export cFrom,cOrder,cFields,cWhere as string
-RESOURCE MemberBrowser DIALOGEX  21, 19, 431, 315
+RESOURCE MemberBrowser DIALOGEX  21, 19, 431, 341
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"", MEMBERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 22, 116, 12
-	CONTROL	"&Number:", MEMBERBROWSER_SC_REK, "Static", WS_CHILD, 16, 40, 30, 12
-	CONTROL	"N&ame", MEMBERBROWSER_SC_OMS, "Static", WS_CHILD, 16, 56, 24, 12
-	CONTROL	"", MEMBERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 40, 116, 12
-	CONTROL	"", MEMBERBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 56, 116, 12
-	CONTROL	"Find", MEMBERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 22, 53, 12
-	CONTROL	"", MEMBERBROWSER_MEMBERBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 8, 92, 350, 210
-	CONTROL	"&Edit", MEMBERBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 99, 53, 13
-	CONTROL	"&New", MEMBERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 150, 53, 13
-	CONTROL	"&Delete", MEMBERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 201, 53, 12
-	CONTROL	"Members", MEMBERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 81, 420, 225
-	CONTROL	"Search member with:", MEMBERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 8, 208, 65
-	CONTROL	"Universal like google:", MEMBERBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 72, 12
-	CONTROL	"", MEMBERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 259, 48, 47, 12
-	CONTROL	"Found:", MEMBERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 48, 27, 12
+	CONTROL	"", MEMBERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 18, 116, 12
+	CONTROL	"&Number:", MEMBERBROWSER_SC_REK, "Static", WS_CHILD, 16, 33, 30, 12
+	CONTROL	"N&ame", MEMBERBROWSER_SC_OMS, "Static", WS_CHILD, 16, 49, 24, 12
+	CONTROL	"", MEMBERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 116, 12
+	CONTROL	"", MEMBERBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 116, 12
+	CONTROL	"Find", MEMBERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 18, 53, 12
+	CONTROL	"", MEMBERBROWSER_MEMBERBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 8, 118, 350, 210
+	CONTROL	"&Edit", MEMBERBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 53, 12
+	CONTROL	"&New", MEMBERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 176, 53, 12
+	CONTROL	"&Delete", MEMBERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 227, 53, 12
+	CONTROL	"Members", MEMBERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 107, 420, 225
+	CONTROL	"Search member with:", MEMBERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 8, 208, 91
+	CONTROL	"Universal like google:", MEMBERBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 18, 72, 12
+	CONTROL	"", MEMBERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 259, 44, 47, 12
+	CONTROL	"Found:", MEMBERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 44, 27, 13
+	CONTROL	"Projects", MEMBERBROWSER_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 84, 80, 12
+	CONTROL	"Members not of", MEMBERBROWSER_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 73, 200, 11
+	CONTROL	"Members of", MEMBERBROWSER_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 62, 200, 11
+	CONTROL	"Convert", MEMBERBROWSER_CONVERTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 18, 53, 12
 END
+
+method ButtonClick(oControlEvent) class MemberBrowser
+	local oControl as Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	super:ButtonClick(oControlEvent)
+	//Put your changes here 
+	IF oControl:NameSym=#HomeBox .or. oControl:NameSym=#NonHomeBox .or. oControl:NameSym=#ProjectsBox
+		self:FindButton()
+	endif		
+	return NIL
 
 METHOD CloseButton( ) CLASS MemberBrowser
 	SELF:EndWindow()
 	RETURN NIL
+METHOD ConvertButton( ) CLASS MemberBrowser 
+// convert shown members to a member department 
+local oSelH, oSelnH as SQLselect
+local nHome,nNonHome as int       
+local oConv as ConvertMembers
+oSelH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and (homepp='"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
+nHome:=ConI(oSelH:nConv)
+oSelnH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and (homepp<>'"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
+nNonHome:=ConI(oSelnH:nConv) 
+if TextBox{self,oLan:WGet("Members"),oLan:WGet("Do you really want to convert")+space(1)+str(nHome,-1)+space(1)+sEntity+space(1)+ oLan:WGet("members")+space(1)+;
+	self:oLan:WGet("and")+Space(1)+Str(nNonHome,-1)+Space(1)+self:oLan:WGet("non")+'-'+sEntity+Space(1) + oLan:WGet("members")+'?',BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:show()==BOXREPLYOKAY
+	oConv:=ConvertMembers{self:Owner,,,self}
+	oConv:show()
+endif 
+ 
+RETURN NIL
 METHOD DeleteButton CLASS MemberBrowser
 	LOCAL oTextBox as TextBox
 	LOCAL mMbrId,mAccid,mDepid,mNetasset,mExpAcc,mIncAcc,cMemName as STRING
@@ -2445,8 +3063,11 @@ METHOD FindButton( ) CLASS MemberBrowser
 	local aKeyw:={} as array
 	local aFields:={"a.accnumber","a.description","d.deptmntnbr","d.descriptn","m.grade","m.householdid","m.homepp"} as array
 	local i,j as int 
+	local cWhereType as string
+	local oSel as SQLSelect
 	self:cWhere:="m.persid=p.persid"
-	self:cOrder:="membername"
+	self:cOrder:="membername"  
+	
 	if !Empty(self:SearchUni)
 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
 		aKeyw:=GetTokens(self:SearchUni)
@@ -2468,17 +3089,54 @@ METHOD FindButton( ) CLASS MemberBrowser
 	if !Empty(self:searchRek)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"( a.accnumber like '"+AllTrim(self:searchRek)+"%' or d.deptmntnbr like '"+AllTrim(self:searchRek)+"%')"
 		self:cOrder:="accnumber,deptmntnbr"
+	endif 
+	if !(self:HomeBox .and. self:NonHomeBox .and. self:ProjectsBox)
+		cWhereType:=""
+		if self:ProjectsBox
+			cWhereType:="co='S'"
+		endif
+		if self:HomeBox
+			if self:NonHomeBox
+				cWhereType+=iif(Empty(cWhereType),""," or ")+"co='M'"
+			else
+				cWhereType+=iif(Empty(cWhereType),""," or ")+"(homepp='"+sEntity+"' and co='M')"
+			endif
+		elseif self:NonHomeBox
+			cWhereType+=iif(Empty(cWhereType),""," or ")+"(homepp<>'"+sEntity+"' and co='M')"
+		endif
+		if !Empty(cWhereType)
+			self:cWhere+=iif(Empty(self:cWhere),""," and ")+"("+cWhereType+")"
+		else
+	  		self:cWhere+=' and m.mbrid IS NULL'  // nothing found
+		endif
 	endif
+  	if Empty(self:cWhere)
+  		self:cWhere:='m.mbrid IS NULL'  // nothing found
+  	endif
+		
 	self:oMem:SQLString :="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
    self:oMem:Execute() 
    self:GoTop()
    self:oSFMemberBrowser_DETAIL:Browser:refresh()
   	self:FOUND :=Str(self:oMem:Reccount,-1)
-
+	oSel:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and m.co='M' and m.accid IS NOT NULL and b.category='"+liability+"'",oConn}
+	oSel:Execute()
+	if ConI(oSel:nConv)>0
+		self:oCCConvertButton:show()
+	else
+		self:oCCConvertButton:Hide()		
+	endif
 RETURN NIL
 ASSIGN FOUND(uValue) CLASS MemberBrowser
 self:FIELDPUT(#Found, uValue)
 RETURN uValue
+ACCESS HomeBox() CLASS MemberBrowser
+RETURN SELF:FieldGet(#HomeBox)
+
+ASSIGN HomeBox(uValue) CLASS MemberBrowser
+SELF:FieldPut(#HomeBox, uValue)
+RETURN uValue
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS MemberBrowser 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -2534,6 +3192,19 @@ oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCFoundtext := FixedText{SELF,ResourceID{MEMBERBROWSER_FOUNDTEXT,_GetInst()}}
 oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
 
+oDCProjectsBox := CheckBox{SELF,ResourceID{MEMBERBROWSER_PROJECTSBOX,_GetInst()}}
+oDCProjectsBox:HyperLabel := HyperLabel{#ProjectsBox,"Projects",NULL_STRING,NULL_STRING}
+
+oDCNonHomeBox := CheckBox{SELF,ResourceID{MEMBERBROWSER_NONHOMEBOX,_GetInst()}}
+oDCNonHomeBox:HyperLabel := HyperLabel{#NonHomeBox,"Members not of",NULL_STRING,NULL_STRING}
+
+oDCHomeBox := CheckBox{SELF,ResourceID{MEMBERBROWSER_HOMEBOX,_GetInst()}}
+oDCHomeBox:HyperLabel := HyperLabel{#HomeBox,"Members of",NULL_STRING,NULL_STRING}
+
+oCCConvertButton := PushButton{SELF,ResourceID{MEMBERBROWSER_CONVERTBUTTON,_GetInst()}}
+oCCConvertButton:HyperLabel := HyperLabel{#ConvertButton,"Convert",NULL_STRING,NULL_STRING}
+oCCConvertButton:TooltipText := "Convert shown members to  member departments"
+
 SELF:Caption := "Member & PPs Browser"
 SELF:HyperLabel := HyperLabel{#MemberBrowser,"Member "+_chr(38)+" PPs Browser",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
@@ -2551,8 +3222,16 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
+ACCESS NonHomeBox() CLASS MemberBrowser
+RETURN SELF:FieldGet(#NonHomeBox)
+
+ASSIGN NonHomeBox(uValue) CLASS MemberBrowser
+SELF:FieldPut(#NonHomeBox, uValue)
+RETURN uValue
+
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS MemberBrowser
-	//Put your PostInit additions here
+	//Put your PostInit additions here 
+	local oSel as SQLSelect
 self:SetTexts()
 *	SELF:SetupMenu()
 	if AScan(aMenu,{|x|x[4]=="MemberEdit"})=0
@@ -2561,6 +3240,18 @@ self:SetTexts()
 	endif
 	self:GoTop() 
   	self:FOUND :=Str(self:oMem:Reccount,-1)
+	oSel:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and m.co='M' and m.accid IS NOT NULL and b.category='"+liability+"'",oConn}
+	oSel:Execute()
+	if ConI(oSel:nConv)>0
+		self:oCCConvertButton:show()
+	else
+		self:oCCConvertButton:Hide()		
+	endif
+	self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
+	self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
+	self:HomeBox:=true
+	self:NonHomeBox:=true
+	self:ProjectsBox:=true
 
 	self:oDCSearchOMS:SetFocus()
 
@@ -2574,6 +3265,13 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class MemberBrowser
 	self:oMem:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn} 
 
 	return NIL
+
+ACCESS ProjectsBox() CLASS MemberBrowser
+RETURN SELF:FieldGet(#ProjectsBox)
+
+ASSIGN ProjectsBox(uValue) CLASS MemberBrowser
+SELF:FieldPut(#ProjectsBox, uValue)
+RETURN uValue
 
 ACCESS SearchOMS() CLASS MemberBrowser
 RETURN SELF:FieldGet(#SearchOMS)
@@ -2596,7 +3294,14 @@ ASSIGN SearchUni(uValue) CLASS MemberBrowser
 SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
 
+STATIC DEFINE MEMBERBROWSER_CONVERTBUTTON := 118 
 STATIC DEFINE MEMBERBROWSER_DELETEBUTTON := 109 
+RESOURCE MemberBrowser_DETAIL DIALOGEX  14, 14, 350, 183
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS MemberBrowser_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBMEMBERNAME as DataColumn
@@ -2608,12 +3313,6 @@ CLASS MemberBrowser_DETAIL INHERIT DataWindowExtra
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
 protect aPP:={} as array
-
-RESOURCE MemberBrowser_DETAIL DIALOGEX  14, 14, 350, 183
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
 
 ACCESS AccNumber() CLASS MemberBrowser_DETAIL
 RETURN SELF:FieldGet(#AccNumber)
@@ -2755,8 +3454,11 @@ STATIC DEFINE MEMBERBROWSER_FOUND := 113
 STATIC DEFINE MEMBERBROWSER_FOUNDTEXT := 114 
 STATIC DEFINE MEMBERBROWSER_GROUPBOX1 := 110 
 STATIC DEFINE MEMBERBROWSER_GROUPBOX2 := 111 
+STATIC DEFINE MEMBERBROWSER_HOMEBOX := 117 
 STATIC DEFINE MEMBERBROWSER_MEMBERBROWSER_DETAIL := 106 
 STATIC DEFINE MEMBERBROWSER_NEWBUTTON := 108 
+STATIC DEFINE MEMBERBROWSER_NONHOMEBOX := 116 
+STATIC DEFINE MEMBERBROWSER_PROJECTSBOX := 115 
 STATIC DEFINE MEMBERBROWSER_SC_OMS := 102 
 STATIC DEFINE MEMBERBROWSER_SC_REK := 101 
 STATIC DEFINE MEMBERBROWSER_SEARCHOMS := 104 
