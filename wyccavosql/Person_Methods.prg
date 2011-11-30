@@ -3032,7 +3032,6 @@ local oPers as SQLSelect
 cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country"  	
 	
 oPers:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ cFrom+cWherep+" order by "+self:SortOrder),oConn} 
-
 oPers:Execute()
 (InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oPers:RECCOUNT)+ ' persons found')}):Show()
 if oPers:RECCOUNT=0
