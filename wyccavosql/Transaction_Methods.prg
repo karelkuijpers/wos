@@ -3131,7 +3131,10 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	local aWord:={} as array 
 	oHm := self:server
 	aApplied := {}
-	m51_abest := Len(oHm:aMirror)
+	m51_abest := Len(oHm:aMirror) 
+	if m51_abest=0
+		return
+	endif
 	IF (self:m51_agift + self:m51_apost) = 0 .and. m51_abest = 0
 		IF !Empty(self:defbest) .or. self:mDebAmntF > 0
 			self:append()
