@@ -271,10 +271,10 @@ METHOD FindButton( ) CLASS AccountBrowser
 		endif
 	endif
 	if !self:CheckBoxInactive
-		self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.active=1"
+		self:cWhere+=iif(Empty(self:cWhere),"",' and ')+"a.active=1"
 	else
 		// remove from accfiler
-		cAccFilter:=StrTran(StrTran(cAccFilter,"and a.active=1",""),"a.active=1","")
+		cAccFilter:=StrTran(StrTran(StrTran(cAccFilter,"and a.active=1",""),'a.active=1 and ',""),'a.active=1',"")
 	endif   	
 	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
 	self:oAcc:Execute() 
