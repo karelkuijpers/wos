@@ -2112,7 +2112,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	LOCAL i, TelPtr as int
 	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
 	LOCAL lv_geladen as LOGIC,  hlpbank as USUAL
-	LOCAL lv_description, lv_bankAcntOwn,lv_addsub as STRING
+	LOCAL lv_description,lv_descriptionPrv, lv_bankAcntOwn,lv_addsub as STRING
 	LOCAL cSep as int
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL cDelim:=';' as STRING
@@ -2120,7 +2120,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	LOCAL cBuffer as STRING, nRead as int
 	LOCAL aStruct:={} as ARRAY // array with fieldnames
 	LOCAL aFields:={} as ARRAY // array with fieldvalues
-	LOCAL ptDate, ptPay, ptDesc, ptCur,  nVnr,nCnt,nTot as int
+	LOCAL ptDate, ptDeb,ptCre, ptDesc, ptCur,  nVnr,nCnt,nTot as int
 	LOCAL pbType as STRING
 	LOCAL lv_Amount, Hl_balan as FLOAT
 	LOCAL ld_bookingdate as date
@@ -2136,15 +2136,16 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	do while !Left(cBuffer,15)=='Data tranzactie'
 		cBuffer:=ptrHandle:FReadLine()
 	enddo	
-	if !GetDelimiter(cBuffer,@aStruct,@cDelim,4,4)
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,5,6)
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		ptrHandle:Close()
 		RETURN FALSE
 	ENDIF
 	ptDate:=AScan(aStruct,{|x| "DATA TRANZACTIE" $ x})
 	ptDesc:=AScan(aStruct,{|x| "DESCRIERE" $ x})
-	ptPay:=AScan(aStruct,{|x| "SUMA" $ x})
-	IF ptDate==0 .or. ptDesc==0 .or. ptPay==0  
+	ptDeb:=AScan(aStruct,{|x| "DEBIT" $ x})
+	ptCre:=AScan(aStruct,{|x| "CREDIT" $ x})
+	IF ptDate==0 .or. ptDesc==0 .or. ptDeb==0.or. ptCre==0   
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		RETURN FALSE
 	ENDIF
@@ -2165,9 +2166,18 @@ METHOD ImportRO(oFb) CLASS TeleMut
 			aFields:=Split(cBuffer,cDelim)
 			loop
 		ENDIF
-		lv_description:=AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"',''))
-		lv_Amount:=Val(StrTran(StrTran(AFields[ptPay],'"',''),',',''))
-		IF Empty(lv_Amount)  && geen lege mutaties laden
+		lv_description:=iif(Empty(lv_descriptionPrv),'',lv_descriptionPrv+' ')+AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"','')) 
+		lv_descriptionPrv:=''
+		if Upper(lv_description)=="SOLD CONTABIL"
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)   // skip balance lines
+			aFields:=Split(cBuffer,cDelim) 
+			loop
+		ENDIF
+		lv_Amount:=Round(Val(StrTran(StrTran(AFields[ptCre],'"',''),',',''))+Val(StrTran(StrTran(AFields[ptDeb],'"',''),',','')),DecAantal)
+		IF Empty(lv_Amount)  && skip empty transactions
+			IF SubStr(lv_description,1,4)=='Ref:' 
+				lv_descriptionPrv:=lv_description
+			endif
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
 			aFields:=Split(cBuffer,cDelim)
 			loop
@@ -2179,8 +2189,8 @@ METHOD ImportRO(oFb) CLASS TeleMut
 			lv_Amount:=-lv_Amount
 		ENDIF
 		lv_Amount:=Round(lv_Amount,DecAantal)
-		* controleer op reeds geladen zijn van mutatie:
 		nTot++
+		* check if transaction has allready been imported:
 		IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,"","","","")
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
 			aFields:=Split(cBuffer,cDelim)
