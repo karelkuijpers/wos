@@ -20,13 +20,66 @@ class Balances
 	EXPORT vjr_creF  as FLOAT  //calculated credit balance previous year
 	EXPORT cRubrSoort as STRING // Classification of corresponding balance item
 	
-	protect cAccSelection as string  
+	protect cAccSelection as string
+	protect cMbalStmt as string   // string with values to update month balance within ChgBalance
+	export cError as string  // error te be returned  
 	
-	declare method GetBalance,SQLGetBalance
+	declare method GetBalance,SQLGetBalance,ChgBalance,ChgBalanceExecute
 	
 	assign AccSelection(uValue) class Balances
 	self:cAccSelection:=uValue
 	return self:cAccSelection
+Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string)  as logic class Balances
+	******************************************************************************
+	*              Adding values per account and currency to string cMbalStmt to update Mbalance later with ChgBalanceExecute()
+	*					Should be used between Start transaction and commit and  
+	*              record to be changed should be locked for update beforehand                                        
+	*  Auteur    : K. Kuijpers
+	*  Date      : 02-12-2011
+	******************************************************************************
+	*
+	local lError as logic
+	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
+		// insert new one/update existing 
+		if !Currency==sCurr
+			if Empty(currency) .or. len(currency)<>3 
+				Currency:=sCurr
+			else
+				SEval(Currency,{|c|lError:=iif(c<65 .or. c>90,true,lError)})
+				if lError
+					Currency:=sCurr
+				endif
+			endif
+		endif
+		if !(pDebAmnt==0.00.and.pCreAmnt==0.00)
+			self:cMbalStmt+=iif(Empty(self:cMbalStmt),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")"
+		endif 
+		if !Currency==sCurr
+			if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
+				if !(pDebFORGN==0.00.and.pCreFORGN=0.00)
+					self:cMbalStmt+=iif(Empty(self:cMbalStmt),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")"
+				endif
+			endif
+		endif
+	endif
+	RETURN true 
+	method ChgBalanceExecute(pDummy:=nil as logic) as logic class Balances
+	// Apply string cMbalStmt to MBalance
+	local lSuccess:=true as logic
+	local oStmnt as SQLStatement 
+	self:cError:=''
+		if !Empty(self:cMbalStmt)
+			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+self:cMbalStmt+;
+				" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:status) 
+				self:cError:="ChgBalance error:"+oStmnt:status:description
+				LogEvent(,cError+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors") 
+				lSuccess:=false
+			endif
+		endif
+	self:cMbalStmt:=''	
+	return lSuccess 
 METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=nil as usual, pCurrency:='' as string) as void pascal CLASS Balances
 	******************************************************************************
 	*  Name      : GetBalance
