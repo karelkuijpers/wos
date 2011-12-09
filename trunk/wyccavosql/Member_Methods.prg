@@ -57,6 +57,15 @@ METHOD RegDepartment(myNum,myItemName) CLASS ConvertMembers
 		ENDIF
 	ENDIF
 RETURN
+METHOD RegAccount(oAcc,ItemName) CLASS EditDistribution
+
+	IF Empty(oAcc) .or.oAcc:reccount<1
+	else
+		self:cAccountName := oAcc:ACCNUMBER
+		self:mDestAcc := self:cAccountName
+	ENDIF
+RETURN true
+
 METHOD RegAccount(oAcc,ItemName) CLASS EditMember
 LOCAL oItem AS ListViewItem
 
