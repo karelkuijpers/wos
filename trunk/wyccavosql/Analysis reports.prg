@@ -2659,7 +2659,7 @@ METHOD PrintReport() CLASS DonorProject
 	oTrans:=null_object
 
 	// markup report from matrix:
-	oFileSpec:=AskFileName(self,"DonorProject"+Str(nFromYear,4,0)+StrZero(nFromMonth,2)+"_"+Str(nToYear,4,0)+StrZero(nToMonth,2)+'.xls',,{"*.xls;"},{"spreadsheet"})
+	oFileSpec:=AskFileName(self,"DonorProject"+Str(nFromYear,4,0)+StrZero(nFromMonth,2)+"_"+Str(nToYear,4,0)+StrZero(nToMonth,2),,{"*.xls;"},{"spreadsheet"})
 	IF oFileSpec==null_object
 		RETURN FALSE
 	ENDIF
