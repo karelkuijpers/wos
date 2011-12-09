@@ -1267,10 +1267,12 @@ function HtmlDecode(cText as string) as string
 		cText:=StrTran(cText,aKey[i],aRepl[i])
 	next
 	Return cText  
-FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int)
+FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='),(')
 	// Implode array to string seperated by cSep 
-	// Optionaly you can indicate a column to implode in case of a multidimenional array
-	LOCAL i, l:=Len(aText) as int, cRet:="", cQuote as STRING
+	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
+	// Optionally in case of a 2-dimenional array and empty nCol you can specify separator between rows 
+	LOCAL i, l:=Len(aText) as int, cRet:="", cQuote as STRING 
+	local lMulti as logic
 	if Len(cSep)>2
 		// test if surrounded by quotes:
 		cQuote:= Left(cSep,1)
@@ -1287,11 +1289,20 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 		nCount:=Min(nCount,l-nStart+1)
 		IF nCount>0 
 			FOR i:=1 to nCount
-				cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(iif(Empty(nCol),aText[nStart+i-1],aText[nStart+i-1][nCol]),""))
+				if IsArray(aText[nStart+i-1])
+					if Empty(nCol)
+						lMulti:=true
+						cRet+=iif(i==1,right(cSepRow,1),cSepRow)+implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
+					else
+						cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(aText[nStart+i-1][nCol],""))
+					endif
+				else
+					cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(aText[nStart+i-1],""))
+				endif
 			NEXT
 		ENDIF 
 	endif
-	RETURN cQuote+cRet+cQuote
+	RETURN iif(lMulti,cRet,cQuote+cRet+cQuote)
 function InitGlobals() 
 	LOCAL oLan as Language
 	// 	Local oPP as PPCodes
