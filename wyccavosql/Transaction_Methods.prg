@@ -3132,9 +3132,6 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	oHm := self:server
 	aApplied := {}
 	m51_abest := Len(oHm:aMirror) 
-	if m51_abest=0
-		return
-	endif
 	IF (self:m51_agift + self:m51_apost) = 0 .and. m51_abest = 0
 		IF !Empty(self:defbest) .or. self:mDebAmntF > 0
 			self:append()
@@ -3177,6 +3174,9 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 		ENDIF
 		RETURN  // Nothing to assign
 	ENDIF
+//   	if m51_abest=0
+// 		return
+// 	endif
 
 	nCurRec := oHm:Recno
 
@@ -3401,12 +3401,10 @@ local nCurRec:=oHm:RecNo as int
 	IF Empty(oHm:aMirror)  && nothing to delete?
 		RETURN FALSE
 	ENDIF
-		IF oHm:aMirror[nCurRec,5]="G".or.oHm:aMirror[nCurRec,5]="M"
+		IF oHm:aMirror[nCurRec,5]="G".or.oHm:aMirror[nCurRec,5]="M" .or.Empty(oHm:aMirror[nCurRec,5])
 			--SELF:m51_agift
 		ELSE
-			IF !Empty(oHm:aMirror[nCurRec,5])
-				--SELF:m51_apost
-			ENDIF
+			--self:m51_apost
 		ENDIF			
 		ADel(oHm:aMirror,nCurRec)  && remove row from mirror
 		ASize(oHm:amirror,Len(oHm:aMirror)-1)
