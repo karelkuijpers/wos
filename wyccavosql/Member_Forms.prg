@@ -668,6 +668,33 @@ static define DESTTYP:=5
 static define DFIA:=13
 static define DFIR:= 12
 static define DISABLED:=10
+RESOURCE EditDistribution DIALOGEX  20, 18, 334, 178
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Fixed Text", EDITDISTRIBUTION_MEMBERTEXT, "Static", WS_CHILD, 68, 10, 144, 12
+	CONTROL	"Member:", EDITDISTRIBUTION_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 54, 13
+	CONTROL	"%", EDITDISTRIBUTION_PERC, "Static", WS_CHILD, 216, 88, 30, 12
+	CONTROL	"", EDITDISTRIBUTION_MDESTAMT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 168, 88, 48, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 62, 238, 13, WS_EX_CLIENTEDGE
+	CONTROL	"PP Codes", EDITDISTRIBUTION_MDESTPP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 35, 123, 142
+	CONTROL	"type of amount to be distributed of gifts", EDITDISTRIBUTION_MDESTTYP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 88, 68, 72
+	CONTROL	"Type of amount", EDITDISTRIBUTION_FIXEDTEXT10, "Static", WS_CHILD, 8, 88, 56, 12
+	CONTROL	"amount", EDITDISTRIBUTION_AMOUNTTXT, "Static", WS_CHILD, 140, 88, 27, 12
+	CONTROL	"Receiving PP", EDITDISTRIBUTION_FIXEDTEXT8, "Static", WS_CHILD, 8, 35, 56, 13
+	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD, 8, 62, 59, 13
+	CONTROL	"Description", EDITDISTRIBUTION_FIXEDTEXT9, "Static", WS_CHILD, 10, 126, 53, 12
+	CONTROL	"", EDITDISTRIBUTION_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 125, 254, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITDISTRIBUTION_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 148, 54, 12
+	CONTROL	"Cancel", EDITDISTRIBUTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 210, 148, 54, 12
+	CONTROL	"Currency of amount", EDITDISTRIBUTION_CURRENCYGROUP, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 248, 81, 74, 39
+	CONTROL	"own currency", EDITDISTRIBUTION_CURRENCYBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 252, 89, 68, 11
+	CONTROL	"US Dollar", EDITDISTRIBUTION_CURRENCYBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 253, 104, 61, 11
+	CONTROL	"Active", EDITDISTRIBUTION_CHECKBOXACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 213, 10, 34, 11
+	CONTROL	"Single use", EDITDISTRIBUTION_CHECBOXSINGELUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 212, 25, 80, 12
+	CONTROL	"v", EDITDISTRIBUTION_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 305, 62, 15, 13
+END
+
 CLASS EditDistribution INHERIT DataWindowExtra 
 
 	PROTECT oDCMemberText AS FIXEDTEXT
@@ -690,8 +717,9 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	PROTECT oCCCurrencyButton2 AS RADIOBUTTON
 	PROTECT oDCCheckBoxActive AS CHECKBOX
 	PROTECT oDCChecBoxSingelUse AS CHECKBOX
+	PROTECT oCCAccButton AS PUSHBUTTON
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDestAmt 
 	instance mDestAcc 
 	instance mDestPP 
@@ -699,42 +727,46 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	instance mDescription 
 	instance CurrencyGroup 
 	instance CheckBoxActive 
-  PROTECT lNew as LOGIC
-  PROTECT nCurRec AS INT
-  PROTECT mMbrId,mSeq as STRING
-  PROTECT oCaller as Window 
-  protect OwnPPCode as string 
-  protect oDis as SQLSelect
-  protect aDis:={} as array // contains content of distribution instruction 
-  protect nPos as int // position of aDis within aDistr of caller
+	PROTECT lNew as LOGIC
+	PROTECT nCurRec AS INT
+	PROTECT mMbrId,mSeq as STRING
+	PROTECT oCaller as Window 
+	protect OwnPPCode as string 
+	protect oDis as SQLSelect
+	protect aDis:={} as array // contains content of distribution instruction 
+	protect nPos as int // position of aDis within aDistr of caller 
+	protect cAccountName as string
 
-declare method ValidateDistribution  
-RESOURCE EditDistribution DIALOGEX  20, 18, 334, 178
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Fixed Text", EDITDISTRIBUTION_MEMBERTEXT, "Static", WS_CHILD, 68, 10, 144, 12
-	CONTROL	"Member:", EDITDISTRIBUTION_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 54, 13
-	CONTROL	"%", EDITDISTRIBUTION_PERC, "Static", WS_CHILD, 216, 88, 30, 12
-	CONTROL	"", EDITDISTRIBUTION_MDESTAMT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 168, 88, 48, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITDISTRIBUTION_MDESTACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 62, 254, 13, WS_EX_CLIENTEDGE
-	CONTROL	"PP Codes", EDITDISTRIBUTION_MDESTPP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 35, 123, 142
-	CONTROL	"type of amount to be distributed of gifts", EDITDISTRIBUTION_MDESTTYP, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 68, 88, 68, 72
-	CONTROL	"Type of amount", EDITDISTRIBUTION_FIXEDTEXT10, "Static", WS_CHILD, 8, 88, 56, 12
-	CONTROL	"amount", EDITDISTRIBUTION_AMOUNTTXT, "Static", WS_CHILD, 140, 88, 27, 12
-	CONTROL	"Receiving PP", EDITDISTRIBUTION_FIXEDTEXT8, "Static", WS_CHILD, 8, 35, 56, 13
-	CONTROL	"Account", EDITDISTRIBUTION_ACCOUNTFIX, "Static", WS_CHILD, 8, 62, 59, 13
-	CONTROL	"Description", EDITDISTRIBUTION_FIXEDTEXT9, "Static", WS_CHILD, 10, 126, 53, 12
-	CONTROL	"", EDITDISTRIBUTION_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 125, 254, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITDISTRIBUTION_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 148, 54, 12
-	CONTROL	"Cancel", EDITDISTRIBUTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 210, 148, 54, 12
-	CONTROL	"Currency of amount", EDITDISTRIBUTION_CURRENCYGROUP, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 248, 81, 74, 39
-	CONTROL	"own currency", EDITDISTRIBUTION_CURRENCYBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 252, 89, 68, 11
-	CONTROL	"US Dollar", EDITDISTRIBUTION_CURRENCYBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 253, 104, 61, 11
-	CONTROL	"Active", EDITDISTRIBUTION_CHECKBOXACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 213, 10, 34, 11
-	CONTROL	"Single use", EDITDISTRIBUTION_CHECBOXSINGELUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 212, 25, 80, 12
-END
+	declare method ValidateDistribution  
+METHOD AccButton(lUnique ) CLASS EditDistribution 
+	LOCAL cfilter as string
+	LOCAL aExclRek:={},aInclRek:={} as ARRAY 
+	local oSel as SQLSelect	
+	Default(@lUnique,false) 
+	if self:oCaller:AccDepSelect='account'
+		if !Empty(self:oCaller:mREK)
+			aExclRek:={self:oCaller:mREK}
+		endif
+	else
+		if !Empty(self:oCaller:cCurDep)
+			oSel:=SqlSelect{"select netasset,incomeacc,expenseacc from department where d.depid="+self:oCaller:cCurDep,oConn}
+			if oSel:RecCount>0
+				if !Empty(oSel:netasset)
+					aadd(aExclRek,str(oSel:netasset,-1))
+				endif
+				if !Empty(oSel:incomeacc)
+					aadd(aExclRek,str(oSel:incomeacc,-1))
+				endif
+				if !Empty(oSel:expenseacc)
+					aadd(aExclRek,str(oSel:expenseacc,-1))
+				endif 
+			endif
+		endif
+	endif
+	cfilter:=MakeFilter(,,"N",,,aExclRek)
+	AccountSelect(self,AllTrim(self:oDCmDestAcc:TEXTValue ),"Account Destination",lUnique,cfilter,,,)
 
+RETURN NIL
 METHOD CancelButton( ) CLASS EditDistribution
 SELF:EndWindow()
 	
@@ -767,6 +799,21 @@ RETURN SELF:FieldGet(#CurrencyGroup)
 ASSIGN CurrencyGroup(uValue) CLASS EditDistribution
 SELF:FieldPut(#CurrencyGroup, uValue)
 RETURN uValue
+
+method EditFocusChange(oEditFocusChangeEvent) class EditDistribution
+	local oControl as Control
+	local lGotFocus as logic
+	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
+	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
+	super:EditFocusChange(oEditFocusChangeEvent)
+	//Put your changes here
+	IF !lGotFocus .and. self:mDestPP=SEntity
+		IF oControl:Name == "MDESTACC".and. !AllTrim(oControl:VALUE)==AllTrim(self:cAccountName)
+			self:cAccountName:=AllTrim(oControl:VALUE)
+			self:AccButton(true)
+		endif		
+	endif
+	return nil
 
 method FillDestTypes() class EditDistribution
 	if self:mDestPP='ACH' 
@@ -851,6 +898,10 @@ oDCChecBoxSingelUse := CheckBox{SELF,ResourceID{EDITDISTRIBUTION_CHECBOXSINGELUS
 oDCChecBoxSingelUse:HyperLabel := HyperLabel{#ChecBoxSingelUse,"Single use",NULL_STRING,NULL_STRING}
 oDCChecBoxSingelUse:TooltipText := "Deactivate after distribution"
 
+oCCAccButton := PushButton{SELF,ResourceID{EDITDISTRIBUTION_ACCBUTTON,_GetInst()}}
+oCCAccButton:HyperLabel := HyperLabel{#AccButton,"v","Browse in accounts",NULL_STRING}
+oCCAccButton:TooltipText := "Browse in accounts/departments"
+
 oDCCurrencyGroup := RadioButtonGroup{SELF,ResourceID{EDITDISTRIBUTION_CURRENCYGROUP,_GetInst()}}
 oDCCurrencyGroup:FillUsing({ ;
 								{oCCCurrencyButton1,"own"}, ;
@@ -912,7 +963,12 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditDistribution
 		if self:oDCmDestPP:Value="AAA"
 			self:odcAccountFix:TextValue:="Bank Number:"
 		else
-			self:odcAccountFix:TextValue:="Account:"				
+			self:odcAccountFix:TextValue:="Account:"
+		endif
+		if self:oDCmDestPP:Value=sEntity
+			self:oCCAccButton:Show()
+		else
+			self:oCCAccButton:Hide()
 		endif
 	ENDIF
 	RETURN NIL
@@ -1027,7 +1083,14 @@ self:SetTexts()
 		self:ChecBoxSingelUse:=iif(self:aDis[SINGLEUSE]=1,true,false)
 		self:mDestAcc := self:aDis[DESTACC]
 		self:mDestAmt:=self:aDis[DESTAMT]
-		self:mDestPP := self:aDis[DESTPP] 
+		self:mDestPP := self:aDis[DESTPP]
+		if self:oDCmDestPP:Value=SEntity
+			self:oCCAccButton:Show()
+			self:mDestAcc:=Transform(SqlSelect{"select accnumber from account where accnumber='"+Transform(self:mDestAcc,"")+"'",oConn}:FIELDGET(1),"")
+		else
+			self:oCCAccButton:Hide()
+		endif
+ 
 		self:oDCmDestTyp:FillUsing(self:FillDestTypes())
 		it:= self:aDis[DESTTYP]
 // 		self:mDestTyp := DistributionTypes[self:aDis[DESTTYP]+1]
@@ -1215,6 +1278,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 	
 
 	
+STATIC DEFINE EDITDISTRIBUTION_ACCBUTTON := 120 
 STATIC DEFINE EDITDISTRIBUTION_ACCOUNTFIX := 110 
 STATIC DEFINE EDITDISTRIBUTION_ACHFIX1 := 119 
 STATIC DEFINE EDITDISTRIBUTION_ACHFIX2 := 121 
@@ -1275,53 +1339,6 @@ STATIC DEFINE EDITDISTRIBUTIONOUD_MDESTTYP := 106
 STATIC DEFINE EDITDISTRIBUTIONOUD_MEMBERTEXT := 101 
 STATIC DEFINE EDITDISTRIBUTIONOUD_OKBUTTON := 113 
 STATIC DEFINE EDITDISTRIBUTIONOUD_PERC := 102 
-RESOURCE EditMember DIALOGEX  34, 32, 420, 345
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", EDITMEMBER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 14, 94, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITMEMBER_PERSONBUTTON, "Button", WS_CHILD, 106, 14, 13, 12
-	CONTROL	"", EDITMEMBER_MACCDEPT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 131, 14, 93, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITMEMBER_ACCBUTTON, "Button", WS_CHILD, 223, 14, 15, 12
-	CONTROL	"Is person:", EDITMEMBER_SC_CLN, "Static", SS_CENTERIMAGE|WS_CHILD, 12, 0, 38, 12
-	CONTROL	"OK", EDITMEMBER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 353, 8, 53, 12
-	CONTROL	"Cancel", EDITMEMBER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 291, 8, 53, 12
-	CONTROL	"Delete", EDITMEMBER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 162, 42, 12
-	CONTROL	"Edit", EDITMEMBER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 42, 12
-	CONTROL	"New", EDITMEMBER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 88, 42, 12
-	CONTROL	"Distribution instructions for received gifts", EDITMEMBER_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 15, 78, 397, 101
-	CONTROL	"Type:", EDITMEMBER_SC_GRADE, "Static", WS_CHILD, 20, 49, 23, 13
-	CONTROL	"", EDITMEMBER_MHBN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 326, 49, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Household id", EDITMEMBER_HOUSECODETXT, "Static", WS_CHILD, 248, 48, 52, 12
-	CONTROL	"Primary Finance PO", EDITMEMBER_SC_FINANCEPO, "Static", WS_CHILD, 20, 65, 70, 13
-	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 66, 123, 208
-	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 48, 123, 72
-	CONTROL	"Pension amount:", EDITMEMBER_SC_AOW, "Static", WS_CHILD, 11, 281, 61, 12
-	CONTROL	"Health Insurance saving amount:", EDITMEMBER_SC_ZKV, "Static", WS_CHILD, 159, 281, 106, 13
-	CONTROL	"Pension amount:", EDITMEMBER_MAOW, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 281, 72, 13
-	CONTROL	"Health Insurance saving amount:", EDITMEMBER_MZKV, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 272, 281, 72, 13
-	CONTROL	"", EDITMEMBER_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 298, 94, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITMEMBER_PERSONBUTTONCONTACT, "Button", WS_CHILD, 168, 298, 14, 12
-	CONTROL	"Partner Monetary Clearing house", EDITMEMBER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 36, 400, 149
-	CONTROL	"", EDITMEMBER_MHOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 116, 82, 166, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Account at Primary Fin PO:", EDITMEMBER_HOMEACCTXT, "Static", WS_CHILD|NOT WS_VISIBLE, 20, 81, 87, 12
-	CONTROL	"Associated accounts (saving, etc):", EDITMEMBER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 187, 400, 86
-	CONTROL	"", EDITMEMBER_LISTVIEWASSACC, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_SORTASCENDING|LVS_EDITLABELS|WS_GROUP|WS_CHILD|WS_BORDER, 18, 199, 339, 69
-	CONTROL	"Add", EDITMEMBER_ADDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 214, 42, 12
-	CONTROL	"Remove", EDITMEMBER_REMOVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 243, 42, 13
-	CONTROL	"", EDITMEMBER_DISTRLISTVIEW, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 18, 88, 339, 88
-	CONTROL	"Office assessment rate:", EDITMEMBER_WITHLDOFFTXT, "Static", WS_CHILD, 248, 66, 76, 12
-	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 326, 65, 74, 58
-	CONTROL	"Contact Person", EDITMEMBER_FIXEDTEXT9, "Static", WS_CHILD, 11, 300, 53, 12
-	CONTROL	"Memberstatements should be send to:", EDITMEMBER_STATEMNTSDEST, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 200, 297, 133, 43
-	CONTROL	"Member", EDITMEMBER_DESTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 306, 80, 11
-	CONTROL	"Contact Person", EDITMEMBER_DESTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 316, 80, 12
-	CONTROL	"Member && Contact Person", EDITMEMBER_DESTBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 328, 117, 11
-	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 326, 65, 68, 11
-	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
-	CONTROL	"Owns ", EDITMEMBER_SC_ACCDEP, "Static", SS_CENTERIMAGE|WS_CHILD, 132, 0, 27, 12
-END
-
 CLASS EditMember INHERIT DataWindowExtra 
 
 	PROTECT oDCmPerson AS SINGLELINEEDIT
@@ -1401,6 +1418,53 @@ CLASS EditMember INHERIT DataWindowExtra
 	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
 	export maxseq as int // next available sequence number within distribution instructions of this member
 	declare method FillDistribution, ValidateMember
+RESOURCE EditMember DIALOGEX  34, 32, 420, 345
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", EDITMEMBER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 14, 94, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITMEMBER_PERSONBUTTON, "Button", WS_CHILD, 106, 14, 13, 12
+	CONTROL	"", EDITMEMBER_MACCDEPT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 131, 14, 93, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITMEMBER_ACCBUTTON, "Button", WS_CHILD, 223, 14, 15, 12
+	CONTROL	"Is person:", EDITMEMBER_SC_CLN, "Static", SS_CENTERIMAGE|WS_CHILD, 12, 0, 38, 12
+	CONTROL	"OK", EDITMEMBER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 353, 8, 53, 12
+	CONTROL	"Cancel", EDITMEMBER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 291, 8, 53, 12
+	CONTROL	"Delete", EDITMEMBER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 162, 42, 12
+	CONTROL	"Edit", EDITMEMBER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 42, 12
+	CONTROL	"New", EDITMEMBER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 88, 42, 12
+	CONTROL	"Distribution instructions for received gifts", EDITMEMBER_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 15, 78, 397, 101
+	CONTROL	"Type:", EDITMEMBER_SC_GRADE, "Static", WS_CHILD, 20, 49, 23, 13
+	CONTROL	"", EDITMEMBER_MHBN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 326, 49, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Household id", EDITMEMBER_HOUSECODETXT, "Static", WS_CHILD, 248, 48, 52, 12
+	CONTROL	"Primary Finance PO", EDITMEMBER_SC_FINANCEPO, "Static", WS_CHILD, 20, 65, 70, 13
+	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 66, 123, 208
+	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 48, 123, 72
+	CONTROL	"Pension amount:", EDITMEMBER_SC_AOW, "Static", WS_CHILD, 11, 281, 61, 12
+	CONTROL	"Health Insurance saving amount:", EDITMEMBER_SC_ZKV, "Static", WS_CHILD, 159, 281, 106, 13
+	CONTROL	"Pension amount:", EDITMEMBER_MAOW, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 281, 72, 13
+	CONTROL	"Health Insurance saving amount:", EDITMEMBER_MZKV, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 272, 281, 72, 13
+	CONTROL	"", EDITMEMBER_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 298, 94, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITMEMBER_PERSONBUTTONCONTACT, "Button", WS_CHILD, 168, 298, 14, 12
+	CONTROL	"Partner Monetary Clearing house", EDITMEMBER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 36, 400, 149
+	CONTROL	"", EDITMEMBER_MHOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 116, 82, 166, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Account at Primary Fin PO:", EDITMEMBER_HOMEACCTXT, "Static", WS_CHILD|NOT WS_VISIBLE, 20, 81, 87, 12
+	CONTROL	"Associated accounts (saving, etc):", EDITMEMBER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 187, 400, 86
+	CONTROL	"", EDITMEMBER_LISTVIEWASSACC, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_SORTASCENDING|LVS_EDITLABELS|WS_GROUP|WS_CHILD|WS_BORDER, 18, 199, 339, 69
+	CONTROL	"Add", EDITMEMBER_ADDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 214, 42, 12
+	CONTROL	"Remove", EDITMEMBER_REMOVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 243, 42, 13
+	CONTROL	"", EDITMEMBER_DISTRLISTVIEW, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 18, 88, 339, 88
+	CONTROL	"Office assessment rate:", EDITMEMBER_WITHLDOFFTXT, "Static", WS_CHILD, 248, 66, 76, 12
+	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 326, 65, 74, 58
+	CONTROL	"Contact Person", EDITMEMBER_FIXEDTEXT9, "Static", WS_CHILD, 11, 300, 53, 12
+	CONTROL	"Memberstatements should be send to:", EDITMEMBER_STATEMNTSDEST, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 200, 297, 133, 43
+	CONTROL	"Member", EDITMEMBER_DESTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 306, 80, 11
+	CONTROL	"Contact Person", EDITMEMBER_DESTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 316, 80, 12
+	CONTROL	"Member && Contact Person", EDITMEMBER_DESTBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 328, 117, 11
+	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 326, 65, 68, 11
+	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
+	CONTROL	"Owns ", EDITMEMBER_SC_ACCDEP, "Static", SS_CENTERIMAGE|WS_CHILD, 132, 0, 27, 12
+END
+
 METHOD AccButton(lUnique ) CLASS EditMember
 	LOCAL cAccDepName as STRING
 	LOCAL cfilter as string
@@ -1473,7 +1537,12 @@ METHOD CancelButton() CLASS EditMember
 	
 	RETURN NIL
 METHOD Close( oE ) CLASS EditMember
-	IF !oPerson == NULL_OBJECT
+	if !Comparr(self:aDistrOrg,self:aDistr)
+		if TextBox{self,self:olan:wget("Editing member"),self:olan:wget("Do you really want to discard changes"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+			self:OkButton()
+		endif
+	endif
+	IF !oPerson == null_object
 		IF oPerson:Used
 			oPerson:Close()
 		ENDIF
@@ -2188,7 +2257,8 @@ METHOD OkButton CLASS EditMember
 				iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
-		next
+		next 
+		self:aDistrOrg:=self:aDistr    // for close
 		* Reset BFM for not-reporting backwards to IES/PMC:  ( at this moment dReportDate always empty) 
 		// 		IF lResetBFM.and. dReportDate>LstYearClosed
 		// 			* Reset all transactions: 
@@ -3031,11 +3101,18 @@ METHOD DeleteButton CLASS MemberBrowser
 		if !Empty(mAccid)
 			* disconnect corresponding account 
 			SQLStatement{"update account set description=concat('disconnected:',description),giftalwd=0 where accid="+mAccid,oConn}:execute()
+			// delete corresponding subscription? 
+			oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mAccid+" and (category='G' or category='D')",oConn}
+			oStmnt:execute()
+
 		else
 			* disconnect corresponding department 
 			SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepid,oConn}:execute() 
 			// set all its accounts on no gifts
 			SQLStatement{"update account set giftalwd=0 where department="+mDepid,oConn}:execute()      	
+			// delete corresponding subscription?
+			oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mIncAcc+" and (category='G' or category='D')",oConn}
+			oStmnt:execute()
 		endif
 		LogEvent(self,"member "+cMemName+" deleted")
 		self:oMem:execute()
@@ -3296,12 +3373,6 @@ RETURN uValue
 
 STATIC DEFINE MEMBERBROWSER_CONVERTBUTTON := 118 
 STATIC DEFINE MEMBERBROWSER_DELETEBUTTON := 109 
-RESOURCE MemberBrowser_DETAIL DIALOGEX  14, 14, 350, 183
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS MemberBrowser_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBMEMBERNAME as DataColumn
@@ -3313,6 +3384,12 @@ CLASS MemberBrowser_DETAIL INHERIT DataWindowExtra
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
 protect aPP:={} as array
+
+RESOURCE MemberBrowser_DETAIL DIALOGEX  14, 14, 350, 183
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
 
 ACCESS AccNumber() CLASS MemberBrowser_DETAIL
 RETURN SELF:FieldGet(#AccNumber)
