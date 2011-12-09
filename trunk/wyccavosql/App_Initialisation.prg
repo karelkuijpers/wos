@@ -1332,6 +1332,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"emplacc","accid","int(11)","NO","NULL",""},;
 		{"emplacc","type","tinyint(1)","NO","0",""},;
 		{"importlock","importfile","char(40)","NO","NULL",""},;
+		{"importlock","lock_id","int(11)","NO","0",""},;
+		{"importlock","lock_time","timestamp","NO","0000-00-00",""},;
 		{"importtrans","imptrid","int(11)","NO","NULL","auto_increment"},;
 		{"importtrans","transdate","date","NO","0000-00-00",""},;
 		{"importtrans","docid","varchar(31)","NO","",""},;
@@ -1443,7 +1445,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","period","int(2)","NO","0",""},;
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
-		{"standingorder","docid","char(10)","NO","",""},; 
+		{"standingorder","docid","char(10)","NO","",""}; 
+		} as array
+	// additional required tables structure:
+	// Table name, Field,Type,Null,Default,Extra 
+	local aColumn2:={;
 	{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
@@ -1453,11 +1459,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorderline","gc","char(2)","NO","",""},;
 		{"standingorderline","reference","varchar(127)","NO","",""},;
 		{"standingorderline","bankacct","char(25)","NO","",""},;
-		{"standingorderline","creditor","int(11)","NO","0",""};
-		} as array
-	// additional required tables structure:
-	// Table name, Field,Type,Null,Default,Extra 
-	local aColumn2:={;
+		{"standingorderline","creditor","int(11)","NO","0",""},;
 		{"subscription","SUBSCRIBID","int(11)","NO","NULL","auto_increment"},;
 		{"subscription","personid","int(11)","YES","NULL",""},;
 		{"subscription","accid","int(11)","YES","NULL",""},;
@@ -1861,10 +1863,10 @@ method InitializeDB() as void Pascal  class Initialize
 	next                                               
 
 	// ensure ImportLock has required record:
-	if SQLSelect{"select * from importlock where `importfile`='telelock'",oConn}:RecCount<1
+	if SqlSelect{"select importfile from importlock where `importfile`='telelock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='telelock'",oConn}:Execute()
 	endif
-	if SQLSelect{"select * from importlock where importfile='batchlock'",oConn}:RecCount<1
+	if SqlSelect{"select importfile from importlock where importfile='batchlock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
 	// fill tables from old database: 
