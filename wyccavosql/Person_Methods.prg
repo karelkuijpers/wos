@@ -2365,7 +2365,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
 //	LogEvent(self,oSel:SQlString,"LogErrors")
 // 	fSecStart:=Seconds() 
-	LogEvent(self,oSel:SQlString,"logsql")
+// 	LogEvent(self,oSel:SQlString,"logsql")
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
@@ -2375,7 +2375,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	endif
 
 	lAppend:=true
-	ToFileFS:=AskFileName(oParent,cTitel+" "+DToS(Today())+"."+self:ExportFormat,"Export to file","*"+self:ExportFormat,iif(self:ExportFormat=="TXT","tab separated spreadsheet","comma separated file"),@lAppend)
+// 	ToFileFS:=AskFileName(oParent,cTitel+" "+DToS(Today())+"."+self:ExportFormat,"Export to file","*"+self:ExportFormat,iif(self:ExportFormat=="TXT","tab separated spreadsheet","comma separated file"),@lAppend)
+	ToFileFS:=AskFileName(oParent,cTitel+" "+DToS(Today()),"Export to file","*."+self:ExportFormat,iif(self:ExportFormat=="TXT","tab separated spreadsheet","comma separated file"),@lAppend)
 	IF Empty(ToFileFS)
 		return false
 	endif
