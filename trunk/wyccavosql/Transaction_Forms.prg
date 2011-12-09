@@ -3861,7 +3861,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 	
 	* Datafile construction:
 	DecSep:=CHR(SetDecimalSep())
-	cFileName := AllTrim(sentity)+DToS(Today())+'.CSV'
+	cFileName := AllTrim(sentity)+DToS(Today())
 	ToFileFS:=AskFileName(self,cFilename,"Export transactions to file","*.CSV","Comma separated file",@lAppend) 
 	if !Empty(ToFileFS)
 		cFilename:=ToFileFS:FullPath 
