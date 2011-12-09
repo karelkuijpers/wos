@@ -2837,6 +2837,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	ENDIF
 
 	SELF:lPrintOk := TRUE
+	self:lRTF:=false
 
 	IF self:Destination == "File" 
 		self:ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
@@ -3188,9 +3189,10 @@ METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,Extension) CL
 			nResolution:= oPrintingDev:GetResolution()
 		ENDIF
 	ENDIF
-	SELF:Font := Font{FONTMODERN,12,"Courier New"}
-//	SELF:Font := Font{,12,"Courier New"}
-	SELF:Font:PitchFixed := TRUE
+	self:Font := Font{FONTMODERN,12,"Courier New"}
+// 	self:Font := Font{,12,"Courier New"}
+// 	self:Font := Font{,12,"Cordia New"}
+	self:Font:PitchFixed := true
 	oSize := SELF:SizeText("X")
 	IF Empty(nResolution)
 		nResolution := oSize:Width*10
