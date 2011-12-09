@@ -477,7 +477,7 @@ if self:oReport:lRTF
 	oMbal:AccSelection:=iif(Empty(self:WhatFrom),"","a.balitemid in ("+Implode(r_balid,",")+")")+;
 		iif(Empty(self:WhoFrom),"",iif(Empty(self:WhatFrom),""," and ")+"a.department in ("+Implode(d_dep,",")+")")
 	cStatement:=oMbal:SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MONTHEND,;
-		true,false,true,self:ind_explanation)
+		true,false,true,true)
 	oAcc:=SQLSelect{cStatement,oConn}
 
 	* Add balances of accounts to the balance item values: 
@@ -3054,10 +3054,11 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:SetUnit(1)
 		oPro:Show()
 	endif
-	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
-		'from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
+	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description'+;
+	+iif(Empty(self:SendingMethod),",a.accnumber",'')+;
+		' from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
 		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
-		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(Empty(self:SendingMethod),"a.accnumber","t.accid")+",dat,t.transid,t.seqnr",oConn}
+		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(Empty(self:SendingMethod),"accnumber","accid")+",dat,transid,seqnr",oConn} 
 	oTrans:Execute() 
 	// 	if oTrans:RecCount<1
 	// 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
@@ -3172,14 +3173,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			endif
 
 			// Print gifts matrix:
-			// 			for i:=1 to 4
-			// 				for j:=1 to 12
-			// 					oGftRpt:aAssmntAmount[i,j]:=aAssmntAmount[i,j]
-			// 				next
-			// 			next
-			// 			if nRow>0 .and. nRow<30
 			nRow:=0  // force page skip
-			// 			endif
 			oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,aAssmntAmount,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,me_hbn,@nRow,@nPage)
 			IF lPrintFile.and.!Empty(self:SendingMethod)
 				// separate files:
@@ -5236,7 +5230,7 @@ METHOD OKButton( ) CLASS YearClosing
 	ENDIF
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	if !Empty(SPROJ)
-		* Are there sill non-earmarekd gifts?
+		* Are there still non-earmarekd gifts?
 		if SQLSelect{"select transid from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:BalanceEndDate)+"' and accid='"+SPROJ+"'",oConn}:reccount>0
 			(ErrorBox{self:OWNER,self:oLan:WGet('Allot first non-designated gifts in year')+':'+YearBalance}):Show()
 			self:EndWindow()
@@ -5254,8 +5248,9 @@ METHOD OKButton( ) CLASS YearClosing
 	oMainwindow:STATUSMESSAGE("Checking data...")
 	if ADMIN=='WO' 
 		oTrans:=SQLSelect{"select t.transid,t.dat,t.description from transaction t "+;
-		"where t.accid in (select m.accid from member m where m.householdid<>'' and grade<>'staf' and t.bfm='') "+;
-		"and t.dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn}
+		"where t.bfm='' and t.gc<>'' and t.dat<='"+SQLdate(self:BalanceEndDate)+"' and "+; 
+		"exists (select 1 from member m left join department d on (m.depid=d.depid) where m.householdid<>'' and grade<>'staf' and (m.accid=t.accid or t.accid in (d.incomeacc,d.expenseacc,d.netasset)))  ";
+		,oConn}
 		if oTrans:reccount>0
 			do while !oTrans:EOF
 				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+': '+oTrans:Description
