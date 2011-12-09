@@ -3362,7 +3362,9 @@ METHOD AccFil() CLASS SelPersPayments
 	SELF:selx_rekend:= LTrimZero(SELF:oDCSubSet:GetItem(SubLen,LENACCNBR))
 	self:oDCselx_rekend:TEXTValue := self:selx_rekend
 	self:cAccountEndName := self:selx_rekend
-	SELF:oDCTextTill:caption := AllTrim(SubStr(SELF:oDCSubSet:GetItem(SubLen),LENACCNBR+1))
+	self:oDCTextTill:Caption := AllTrim(SubStr(self:oDCSubSet:GetItem(SubLen),LENACCNBR+1)) 
+	self:oDCSubSet:AccNbrStart:=self:selx_rek
+	self:oDCSubSet:AccNbrEnd:=self:selx_rekend
 RETURN
 METHOD ButtonClick(oControlEvent) CLASS SelPersPayments
 	LOCAL oControl AS Control
@@ -3610,20 +3612,20 @@ METHOD PostInit(oParent,iCtlID,oServer,uExtra) CLASS SelPersPayments
 	//Put your PostInit additions here
 	LOCAL StartDate AS DATE
 	self:SetTexts()
-	oDCselx_begin:Value := SToD(Str(Year(Today()),4)+"0101")
-	oDCselx_end:Value := Today()
+	self:oDCselx_begin:Value := SToD(Str(Year(Today()),4)+"0101")
+	self:oDCselx_end:Value := Today()
 	if Len(GlBalYears)<1
 		FillBalYears()
 	endif
 
 	StartDate:=GlBalYears[Len(GlBalYears),1]
-	oDCselx_begin:DateRange:=DATERange{StartDate,Today()+31}
-	oDCselx_end:DateRange:=DATERange{StartDate,Today()+31}
-	oCaller:=uExtra
-	MyParent:=oParent	
-  	oCaller:selx_OK := FALSE
+	self:oDCselx_begin:DateRange:=DateRange{StartDate,Today()+31}
+	self:oDCselx_end:DateRange:=DateRange{StartDate,Today()+31}
+	self:oCaller:=uExtra
+	self:MyParent:=oParent	
+  	self:oCaller:selx_OK := FALSE
 
-	oDCMinTotal:Value:=0
+	self:oDCMinTotal:Value:=0
 	self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
 	self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
 	SELF:ProjectsBox:=TRUE
