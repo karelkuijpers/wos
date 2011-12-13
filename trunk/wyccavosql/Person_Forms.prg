@@ -1609,7 +1609,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 	local aKeyw:={} as array
 	local i,j,nCount as int
 	local lStart as logic
-	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","attention","email","remarks","telbusiness","telhome","mobile"} as array 
+	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","attention","email","remarks","telbusiness","telhome","mobile","externid"} as array 
 	self:cWhere:=""
 	cMyFrom:="person as p"
 	if !Empty(self:SearchCLN)
