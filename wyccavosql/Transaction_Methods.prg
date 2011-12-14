@@ -1814,27 +1814,23 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 	LOCAL fTot:=0.00 as real8 
 	LOCAL lDel AS LOGIC
 	LOCAL nCurRec,i as int 
-	local aCre:={} as array	
 	
 	oHm := SELF:server
 	nCurRec := oHm:RECNO
 
-	AEval(oHm:aMirror,{|x| AAdd(aCre,Round(x[2]-x[3],DecAantal))})
-	fTot:=asum(aCre) 
+	AEval(oHm:aMirror,{|x| fTot:=Round(fTot+x[2]-x[3],DecAantal)})
 
 	self:fTotal:=fTot
 	self:oDCDebitCreditText:Caption := Str(fTotal,-1,DecAantal)
+ 	self:oDCFoundtext:TextValue:=Str(oHm:RecCount,-1)
 	
 	// Append eventually a new record:
-// 	Default(@ldelete,FALSE)
 	IF !fTotal == 0 // totaal ongelijk nul?
 		IF !ldelete.and.AScan(oHm:aMirror,{|x| x[2]==0.and.x[3]==0})=0   // Geen lege transact en geen delete?
 		// Append new record:
 			self:Append()
 			self:Commit()
-// 			self:oSFGeneralJournal1:Browser:refresh()
 			self:oSFGeneralJournal1:GoTo(nCurRec)
-			//SELF:oSFGeneralJournal1:Browser:bNeglectSkip:=TRUE
 			RETURN TRUE
 		ENDIF
 	ELSE
@@ -1848,7 +1844,6 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 			ENDIF
 		ENDIF
 	ENDIF
- 	self:oDCFoundtext:TextValue:=Str(oHm:RecCount,-1)
 
 RETURN TRUE
 METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as string CLASS General_Journal
@@ -2465,30 +2460,33 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				oDue:=SQLSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
 			endif
 			// add to gifts income: 
+			//             1    2   3  4    5       6         7         8          9       10     11      12      13       14      15        16        17    18      19
+			// mirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
 			For i:=1 to Len(oHm:AMirror)
 				oHm:GoTo(i)
-				if !oHm:Cre==oHm:Deb // skip dummy lines
+				if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
+// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
 					nSeqNbr++ 
 					cStatement:="insert into transaction set "+;
 						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
-						iif(oHm:gc='PF'.or.oHm:gc = 'AG' .or. oHm:gc = 'MG';
-						.or. (oHm:KIND= 'G').or. oHm:KIND= 'D';
-						.or. oHm:KIND= 'A' .or. oHm:KIND = 'F'.or. oHm:KIND="C","persid='"+self:mCLNGiver+"',","")+;
+						iif(oHm:aMirror[i,4]='PF'.or.oHm:aMirror[i,4] = 'AG' .or.oHm:aMirror[i,4] = 'MG';
+						.or. (oHm:aMirror[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
+						.or. oHm:aMirror[i,5]= 'A' .or. oHm:aMirror[i,5] = 'F'.or. oHm:aMirror[i,5]="C","persid='"+self:mCLNGiver+"',","")+;
 						"dat='"+SQLdate(self:mDAT)+"'"+;
 						",docid='"+Transform(self:mBST,"")+"'"+;
-						",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN))+"'"+; 
+						",description='"+AddSlashes(AllTrim(oHm:aMirror[i,16]))+"'"+; 
 					",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-						",accid='"+AllTrim(oHm:AccID)+"'"+;
-						",deb="+Str(oHm:Deb,-1)+;
-						",cre="+Str(oHm:Cre,-1)+;
-						",gc='"+oHm:gc+"'"+;
+						",accid='"+AllTrim(oHm:aMirror[i,1])+"'"+;
+						",deb="+Str(oHm:aMirror[i,2],-1)+;
+						",cre="+Str(oHm:aMirror[i,3],-1)+;
+						",gc='"+oHm:aMirror[i,4]+"'"+;
 						",userid='"+LOGON_EMP_ID +"'"+;
 						",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
 						",opp='"+oHm:OPP+"'"+;
-						",ppdest='"+AllTrim(oHm:PPDEST)+"'"+; 
-					",currency='"+AllTrim(oHm:Currency) +"'"+;
-						",debforgn="+Str(oHm:DEBFORGN,-1)+;
-						",creforgn="+Str(oHm:CREFORGN,-1)+;
+						",ppdest='"+AllTrim(oHm:aMirror[i,15])+"'"+; 
+					",currency='"+AllTrim(oHm:aMirror[i,11]) +"'"+;
+						",debforgn="+Str(oHm:aMirror[i,13],-1)+;
+						",creforgn="+Str(oHm:aMirror[i,14],-1)+;
 						",seqnr="+Str(nSeqnbr,-1)+;
 						iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
 					",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
@@ -2500,20 +2498,30 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 							cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 						endif
 						*	Update monthbalance value of corresponding account:
-						if ChgBalance(oHm:AccID,self:mDAT,oHm:Deb,oHm:Cre,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency) //accid,deb,cre 
-							if oHm:gc='AG' .and. (oHm:FROMRPP .or. AScan(oHm:AMirror,{|x|!x[6]==oHm:AMirror[i,6].and.x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})>0)
-								// assessable gift not from income or expense account:
-								lError:=!AddToIncome(oHm:gc,oHm:FROMRPP,oHm:AccID,oHm:Cre,oHm:Deb,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:AMirror[i,18], self:mCLNGiver,;
-									self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+						if ChgBalance(oHm:aMirror[i,1],self:mDAT,oHm:aMirror[i,2],oHm:aMirror[i,3],oHm:aMirror[i,13],oHm:aMirror[i,14],oHm:aMirror[i,11]) //accid,deb,cre
+							if oHm:aMirror[i,4]='AG'
+								j:=AScan(oHm:aMirror,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})
+								do while j>0 .and.j=i
+									if j=Len(oHm:aMirror)
+										j:=0
+										exit
+									endif
+									j:=AScan(oHm:aMirror,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)},j+1)
+								enddo 
+								if oHm:FROMRPP .or. j>0 
+									// assessable gift not from income or expense account:
+									lError:=!AddToIncome(oHm:aMirror[i,4],oHm:FROMRPP,oHm:aMirror[i,1],oHm:aMirror[i,3],oHm:aMirror[i,2],oHm:aMirror[i,13],oHm:aMirror[i,14],oHm:aMirror[i,11],oHm:aMirror[i,16],oHm:aMirror[i,18], self:mCLNGiver,;
+										self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+								endif
 							endif
 							if !lError
 								if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
 									// correct rabat assessment if needed: 
-									if Empty(oHm:gc) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
+									if Empty(oHm:aMirror[i,4]) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
 										oAccFld:=SQLSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
 											AllTrim(oHm:REFERENCE)+"'",oConn}
 										if oAccFld:category==liability
-											if ChgBalance(SEXP, self:mDAT,Round(oHm:Cre - oHm:Deb,DecAantal),0,Round(oHm:Cre - oHm:Deb,DecAantal),0,sCURR)
+											if ChgBalance(SEXP, self:mDAT,Round(oHm:aMirror[i,3] - oHm:aMirror[i,2],DecAantal),0,Round(oHm:aMirror[i,3] - oHm:aMirror[i,2],DecAantal),0,sCURR)
 												nSeqnbr++ 
 												cStatement:="insert into transaction set "+;
 													"transid="+cTransnr+;
@@ -2522,16 +2530,16 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 													",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense for assessment field&int')))+"'"+; 
 												",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 													",accid='"+SEXP+"'"+;
-													",deb="+Str(oHm:Cre	- oHm:Deb,-1)+;
+													",deb="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 													",userid='"+LOGON_EMP_ID +"'"+;
-													",debforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+													",debforgn="+Str(oHm:oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 													",currency='"+sCURR+"'"+;
 													",seqnr="+Str(nSeqnbr,-1)+;
 													",poststatus=2" 
 												oStmnt:=SQLStatement{cStatement,oConn}
 												oStmnt:Execute()
 												if oStmnt:NumSuccessfulRows>0
-													if ChgBalance(samFld,self:mDAT,0,Round(oHm:Cre	- oHm:Deb,DecAantal), 0	,Round(oHm:Cre	- oHm:Deb,DecAantal),sCURR)
+													if ChgBalance(samFld,self:mDAT,0,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal), 0	,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal),sCURR)
 														nSeqnbr++ 
 														cStatement:="insert into transaction set "+;
 															"transid="+cTransnr+;
@@ -2540,9 +2548,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 															",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense	for assessment	field&int')))+"'"+; 
 														",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 															",accid='"+samFld+"'"+;
-															",cre="+Str(oHm:Cre	- oHm:Deb,-1)+;
+															",cre="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 															",userid='"+LOGON_EMP_ID +"'"+;
-															",creforgn="+Str(oHm:Cre	- oHm:Deb,-1)+;
+															",creforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 															",currency='"+sCURR+"'"+;
 															",seqnr="+Str(nSeqnbr,-1)+;
 															",poststatus=2" 
@@ -2576,8 +2584,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				if !lError
 					//	Update balances of subscriptions/due amounts/ donations:
 					IF	!Empty(self:mCLNGiver)
-						IF	(oHm:KIND= 'D'	.or. oHm:KIND=	'A' .or.	oHm:KIND	= 'F'	.or.(oHm:Deb >	oHm:Cre .and.oHm:gc<>'CH' ))			 // storno also
-							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:AccID),oHm:Deb,oHm:Cre)
+						IF	(oHm:aMirror[i,5]= 'D'	.or. oHm:aMirror[i,5]=	'A' .or.	oHm:aMirror[i,5]	= 'F'	.or.(oHm:aMirror[i,2] >	oHm:aMirror[i,3] .and.oHm:aMirror[i,4]<>'CH' ))			 // storno also
+							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:aMirror[i,1]),oHm:aMirror[i,2],oHm:aMirror[i,3])
 							if !Empty(cError)
 								lError:=true
 								// 								exit
