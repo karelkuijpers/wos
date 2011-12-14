@@ -335,16 +335,16 @@ METHOD Import() CLASS ImportBatch
 	// force only one person is importing: 
 	// Check if nobody else is busy with importing batch: 
 	oLock:=SqlSelect{'select 1 from importlock where importfile="batchlock" and '+;
-		" lock_id>0 and lock_time > subdate(now(),interval 10 minute)",oConn}
+		" lock_id>0 and lock_time > subdate(now(),interval 5 minute)",oConn}
 	if oLock:Reccount>0 
-		ErrorBox{self,self:oLan:WGet("somebody else busy with importing batch transactions")}:Show()
+		ErrorBox{,self:oLan:WGet("somebody else busy with importing batch transactions")}:Show()
 		return
 	endif 
 	SQLStatement{"start transaction",oConn}:Execute()
 	oLock:=SqlSelect{"select importfile from importlock where importfile='batchlock' for update",oConn}
 	oLock:Execute() 
 	if !Empty(oLock:Status)
-		ErrorBox{self,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
+		ErrorBox{,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
 		SQLStatement{"rollback",oConn}:Execute() 
 		return
 	endif
@@ -352,7 +352,7 @@ METHOD Import() CLASS ImportBatch
 	oStmnt:=SQLStatement{"update importlock set lock_id="+MYEMPID+",lock_time=now() where importfile='batchlock'",oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:Status)
-		ErrorBox{self,self:oLan:WGet("could not lock required transactions")}:Show()
+		ErrorBox{,self:oLan:WGet("could not lock required transactions")}:Show()
 		SQLStatement{"rollback",oConn}:Execute() 
 		return
 	endif
@@ -466,7 +466,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	LOCAL aStruct:={} as ARRAY // array with fieldnames
 	LOCAL aFields:={} as ARRAY // array with fieldvalues
 	LOCAL ptDate, ptDoc, ptTrans, ptDesc, ptCre, ptAccName, ptPers as int
-	LOCAL aPt:={} as ARRAY, maxPt , nCnt:=0,nProc:=0,nAcc,nPers,i,nTransId as int
+	LOCAL aPt:={} as ARRAY, maxPt , nCnt:=0,nProc:=0,nAcc,nPers,i,nTransId,nLastGift as int
 	LOCAL cBank,cBankName,cBankaccId as string 
 	local aDat as array, impDat as date, cAcc,cAccNumber,cAccName,cAssmnt,cAccId,cdat as string , lUnique as logic
 	local oStmnt as SQLStatement
@@ -475,6 +475,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local lError as logic 
 	local aValues:={} as array   // array with values to be inserted into importrans 
 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
+	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
 	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid},{..},..} 
 	local aPers:={}  // array with giver data: {{externid,persid},{..}...}
 	local oMBal as Balances 
@@ -629,6 +630,13 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 							if nAcc>0 
 								AAdd(aValuesTrans,{aAccDest[nAcc,4],aValues[i,6],aValues[i,6],aValues[i,7],aValues[i,7],sCURR,aValues[i,4],;
 									aValues[i,1],aValues[i,10],LOGON_EMP_ID,'2','2',aValues[i,2],aValues[i,3],Str(aPers[nPers,2],-1),0}) 
+								if (nLastGift:=AScan(aValuesPers,{|x|x[1]=aPers[nPers,2]}))>0
+									if aValuesPers[nLastGift,2]<aValues[i,1]
+										aValuesPers[nLastGift,2]:=aValues[i,1]
+									endif
+								else
+									AAdd(aValuesPers,{aPers[nPers,2],aValues[i,1]})
+								endif
 								aValues[i,13]:=1  // set importrans to processed
 								// first from bank account:
 								i++
@@ -703,6 +711,13 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 			endif
 			SQLStatement{"commit",oConn}:Execute()
 			SQLStatement{"unlock tables",oConn}:Execute()
+			// update persons:
+			if !Empty(aValuesPers)
+				ASort(aValuesPers,1,,{|x,y|x[1]<=y[1]},)
+				oStmnt:=SQLStatement{"insert into person (persid,datelastgift) values "+Implode(aValuesPers,"','")+" on duplicate key update mailingcodes="+;
+					"if(datelastgift='0000-00-00',concat(mailingcodes,' ','FI'),mailingcodes),datelastgift=if(datelastgift<values(datelastgift),values(datelastgift),datelastgift)",oConn} 
+				oStmnt:Execute()
+			endif
 			self:lv_imported:=self:lv_imported+nCnt
 			self:lv_processed+=nProc 
 		else
