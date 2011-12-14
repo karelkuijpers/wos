@@ -2369,7 +2369,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
-	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(AtC('gr.',oSel:SQlString)>0,' persons',' gifts')+' found')}):Show()
+	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(self:selx_keus1=4.or.self:selx_keus1=5,' gifts',' persons')+' found')}):Show()
 	IF oSel:RECCOUNT=0
 		return false
 	endif
