@@ -3758,13 +3758,17 @@ METHOD EditButton( ) CLASS TransInquiry
 	self:oMyTrans:=SQLSelect{UnionTrans2("select t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,"+;
 	"cast(t.poststatus as signed) as poststatus,t.accid,t.currency,t.debforgn,t.creforgn,t.bfm,t.ppdest,t.fromrpp,t.persid,t.opp,"+;
 	"if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
-		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd from balanceitem b,account a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (m.depid=d.depid), transaction t left join person p on (p.persid=t.persid) "+;
+		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd from "+;
+		"transaction t use index (primary) left join person p on (p.persid=t.persid),"+;
+		"account a left join department d on (d.incomeacc=a.accid or d.expenseacc=a.accid or d.netasset=a.accid) left join member m on (m.accid=a.accid or m.depid=d.depid),"+;
+      "balanceitem b"+;
 		" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" order by seqnr",Origdat,Origdat),oConn}
-
-	if self:oMyTrans:reccount<1
-		LogEvent(self,self:oMyTrans:sqlstring,"LogErrors")
+   self:oMyTrans:Execute()
+	if !Empty(self:oMyTrans:status)
+		LogEvent(self,"error:"+self:oMyTrans:errinfo:errormessage,"LogErrors")
 	endif 
-	self:oHm:aMirror:={}
+	self:oHm:aMirror:={} 
+	LogEvent(self,self:oMyTrans:sqlstring,"logsql")
 	DO WHILE self:oMyTrans:reccount>0 .and.!self:oMyTrans:EOF 
 		if self:oMyTrans:locked=1
 			lLocked:=true
