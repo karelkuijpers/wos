@@ -556,6 +556,8 @@ LOCAL oSQL as SQLSelect
 // Fill 3 arrays: home members, non home members, projects
 
 // select projects:
+// oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+// iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m left join department d ON (m.depid=d.depid) where m.accid=a.accid or a.accid=d.incomeacc or a.accid=d.expenseacc or a.accid=d.netasset) ",oConn}
 oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
 iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
 oSQL:Execute()
