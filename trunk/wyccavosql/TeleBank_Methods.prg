@@ -562,7 +562,7 @@ METHOD Import() CLASS TeleMut
 		lDelete:=true 
 		self:oParent:Pointer := Pointer{POINTERHOURGLASS}
 
-		* Establish last recording date per bak account: 
+		* Establish last recording date per bank account: 
 		oSel:=SQLSelect{"select bankaccntnbr,max(bookingdate) as maxdat from teletrans where bankaccntnbr in ("+self:cReqTeleBnk+") and bookingdate<=NOW() group by bankaccntnbr",oConn}
 		oSel:execute()
 		Do while !oSel:EOF 
@@ -2903,8 +2903,8 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 	// check if found banknumber is part of telebanking accounts within the system
 	// 	Default(@NbrDays,120) 
 	local oStMnt as SQLStatement
-	local oBank as SQLSelect
-	IF (self:CurTelePtr:=AScan(m57_BankAcc,{|x| x[1]==AllTrim(banknbr)}))=0
+	local oBank,oSel as SQLSelect
+	IF (self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| x[1]==AllTrim(banknbr)}))=0
 		IF AScan(self:NonTeleAcc,AllTrim(banknbr))=0 
 			oStMnt:=SQLStatement{"update bankaccount set telebankng=1 where banknumber='"+AllTrim(banknbr)+"'",oConn}
 			oStMnt:Execute()
@@ -2915,11 +2915,12 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 				RETURN true
 			else
 				// add to tele bank accounts:                                            
-				oBank:= SqlSelect{"select banknumber,usedforgifts from bankaccount where banknumber='"+AllTrim(banknbr)+"'",oConn}
-				if oBank:Reccount>0 
-					AAdd(self:m57_BankAcc,{oBank:banknumber,iif(ConI(oBank:usedforgifts)=1,true, false),null_date})
+				oBank:= SqlSelect{"select b.banknumber,usedforgifts,max(bookingdate) as maxdat from bankaccount b left join teletrans t on(t.bankaccntnbr=b.banknumber and bookingdate<=NOW()) where banknumber='"+AllTrim(banknbr)+"' group by banknumber",oConn}
+				if oBank:Reccount>0
+					AAdd(self:m57_BankAcc,{oBank:banknumber,iif(ConI(oBank:usedforgifts)=1,true, false),iif(!Empty(oBank:maxdat),oBank:maxdat,null_date)})
 					ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
-					LogEvent(self,"Bank account "+banknbr+" changed to telebanking account in system data")
+					LogEvent(self,"Bank account "+banknbr+" changed to telebanking account in system data") 
+					self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| x[1]==AllTrim(banknbr)})
 				endif
 			endif
 		else
@@ -2927,7 +2928,7 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 		ENDIF		
 	ENDIF
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
-	IF transdate +NbrDays < m57_BankAcc[self:CurTelePtr,3]
+	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
 		RETURN TRUE
 	ENDIF
 	RETURN FALSE
