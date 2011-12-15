@@ -2059,7 +2059,7 @@ local time0,time1 as DWORD
 			return false
 		endif
 		time1:=time0 
-		LogEvent(self,"time batch update:"+Str((time0:=Seconds())-time1,-1)+' sec',"logsql")
+// 		LogEvent(self,"time batch update:"+Str((time0:=Seconds())-time1,-1)+' sec',"logsql")
 	endif
 	if !Empty(self:avaluesbank)
 		oStmnt:=SQLStatement{'insert ignore into personbank (persid,banknumber) values '+Implode(self:avaluesbank,"','"),oConn}
