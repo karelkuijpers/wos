@@ -1869,15 +1869,23 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	LOCAL cFileName, selftext as STRING
 	LOCAL ptrHandle 
 	local oStmnt as SQLStatement
+	local lDBError as logic
 	*	Logging of info to table log 
 	if AtC("Access denied for user",strText)>0
 		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
 		return true
 	endif
-	oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
-	iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
+		lDBError:=true
+	else
+		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
+		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
 		oStmnt:execute()
-	If !Empty(oStmnt:status) 
+		If !Empty(oStmnt:status)
+			lDBError:=true
+		endif
+	endif
+	if lDBError
 		// write to file
 		ToFileFS:=FileSpec{Logname}
 		ToFileFS:Extension:="TXT"
@@ -1900,11 +1908,11 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		FWriteLine(ptrHandle,selftext)
 		FClose(ptrHandle) 
 	endif
-	if !Empty(oStmnt:status).or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
+	if lDBError.or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
 		ErrorBox{,"MySQL server has gone away:"+CRLF+strText}:Show()
-		if !Empty(oStmnt:status) 
+// 		if !Empty(oStmnt:status) 
 			break
-		endif
+// 		endif
 	endif
 
 	RETURN true
