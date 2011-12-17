@@ -827,10 +827,13 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		else
 			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
+		if !self:lNewDb .and.SqlSelect{"show tables like 'sysparms'",oConn}:RecCount<1
+			self:lNewDb:=true
+		endif
 	ENDIF
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
 
-	if self:FirstOfDay 
+	if self:FirstOfDay.or.self:lNewDb 
 		self:InitializeDB()
 	endif
 	RddSetDefault("DBFCDX") 
