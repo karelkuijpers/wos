@@ -209,7 +209,7 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 	local oSEl as SQLSelect 
 	local cStatement as string
 	// check if transaction has allready been imported
-	IF transdate <= m57_BankAcc[CurTelePtr,3] 
+// 	IF transdate <= m57_BankAcc[CurTelePtr,3] 
 		cStatement:="select teletrid from teletrans where "+;
 		"bankaccntnbr='" +m57_BankAcc[CurTelePtr,1]+"'"+;
 		" and bookingdate='"+SQLdate(transdate)+"' and "+;
@@ -224,7 +224,7 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 		if oSEl:Reccount>0
         	RETURN true
 		ENDIF
-   ENDIF
+//    ENDIF
  	RETURN FALSE
 METHOD CheckPattern(dummy:=nil as logic) as logic  CLASS TeleMut
 LOCAL i AS INT
@@ -522,11 +522,35 @@ METHOD Import() CLASS TeleMut
 	local nOld:=4 as int   // after Nold months imported transactions are removed
 	LOCAL lDelete,lSuccess as LOGIC
 	LOCAL lv_eind as date
-	Local oLock,oSel as SQLSelect
+	Local oLock,oSel as SQLSelect 
+	local oStmnt as SQLStatement
 	local aFiles:={} as array  // files to be deleted 
 	// force only one person is importing:
+	oLock:=SqlSelect{'select 1 from importlock where importfile="telelock" and '+;
+		" lock_id<>"+MYEMPID+" and lock_time > subdate(now(),interval 10 minute)",oConn}
+	if oLock:Reccount>0 
+		ErrorBox{,self:oLan:WGet("somebody else busy with importing telebank transactions")}:Show()
+		return
+	endif 
 	SQLStatement{"start transaction",oConn}:execute()
-	oLock:=SQLSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
+	oLock:=SqlSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
+	oLock:execute() 
+	if !Empty(oLock:Status)
+		ErrorBox{,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
+		SQLStatement{"rollback",oConn}:execute() 
+		return
+	endif
+	// set software lock:
+	oStmnt:=SQLStatement{"update importlock set lock_id="+MYEMPID+",lock_time=now() where importfile='telelock'",oConn}
+	oStmnt:execute()
+	if !Empty(oStmnt:Status)
+		ErrorBox{,self:oLan:WGet("could not lock required transactions")}:Show()
+		SQLStatement{"rollback",oConn}:execute() 
+		return
+	endif
+	SQLStatement{"commit",oConn}:execute()  // save locks 
+
+// 	oLock:=SQLSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
 
 	oFs := MyFileSpec{"mutgiro.txt"}
 	oFs:Path:=CurPath
@@ -578,94 +602,154 @@ METHOD Import() CLASS TeleMut
 		enddo
 		
 		IF oFs:Find()
-			self:ImportGiro(oFs)
-			AAdd(aFiles,oFs)
+			if self:ImportGiro(oFs)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oFs)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		ENDIF
 
 		IF oFC:Find()
-			self:ImportCliop(oFC)
-			AAdd(aFiles,oFC)
+			if self:ImportCliop(oFC)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oFC)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		ENDIF
 
 		// Import Bulk Rekening Info:	
 		FOR nf:=1 to Len(aFileRabo)
 			cFileName:=aFileRabo[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportBRI(oBF)
-			AAdd(aFiles,oBF)
+			if self:ImportBRI(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		FOR nf:=1 to Len(aFileVWI)
 			// VERWINFO of Equens
 			cFileName:=aFileVWI[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportVerwInfo(oBF)
-			AAdd(aFiles,oBF)
+			if self:ImportVerwInfo(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		
 		FOR nf:=1 to Len(aFileINN)
 			cFileName:=aFileINN[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
+			SQLStatement{"start transaction",oConn}:execute()
 			if self:ImportBBSInnbetal(oBF)
+				SQLStatement{"commit",oConn}:execute()	
 				AAdd(aFiles,oBF)
-			endif
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// Norwegian BBS Bank:
 		FOR nf:=1 to Len(aFileBBS)
 			cFileName:=aFileBBS[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportBBS(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportBBS(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// Import Sweden TOTAL IN data:	
 		FOR nf:=1 to Len(aFileTL)
 			cFileName:=aFileTL[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportTL1(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportTL1(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 
 
 		FOR nf:=1 to Len(aFileMT)
 			cFileName:=aFileMT[nf,F_NAME]
-			oBF := MyFileSpec{cFileName}
-			self:ImportMT940(oBF)
-			AAdd(aFiles,oBF)
+			oBF := MyFileSpec{cFileName} 
+			SQLStatement{"start transaction",oConn}:execute()
+			if self:ImportMT940(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// South Africa Standard Bank:
 		FOR nf:=1 to Len(aFileSA)
 			cFileName:=aFileSA[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportSA(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportSA(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// KB Bank Germany:
 		FOR nf:=1 to Len(aFileKB)
 			cFileName:=aFileKB[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportKB(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportKB(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// Transilvania Bank Romania:
 		FOR nf:=1 to Len(aFileRO)
 			cFileName:=aFileRO[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportRO(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportRO(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 
 		// Ukraine Bank:
 		FOR nf:=1 to Len(aFileUA)
 			cFileName:=aFileUA[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportUA(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportUA(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 		// Swedisch PG AutoGiro:
 		FOR nf:=1 to Len(aFilePG)
 			cFileName:=aFilePG[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
-			self:ImportPGAutoGiro(oBF)
-			AAdd(aFiles,oBF)
+			SQLStatement{"start transaction",oConn}:execute()
+			if	self:ImportPGAutoGiro(oBF)
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oBF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 
 		FOR nf:=1 to Len(aFilePB)
@@ -689,12 +773,19 @@ METHOD Import() CLASS TeleMut
 			ENDIF
 			
 			oPF := FileSpec{cFileName}
+			SQLStatement{"start transaction",oConn}:execute()
+
 			IF Upper(oPF:Extension)==".ASC"
-				self:ImportGiro(oPF)
+				lSuccess:=self:ImportGiro(oPF)
 			ELSE
-				self:ImportPostbank(oPF)
+				lSuccess:=self:ImportPostbank(oPF)
 			ENDIF
-			AAdd(aFiles,oPF)
+			if	lSuccess
+				SQLStatement{"commit",oConn}:execute()	
+				AAdd(aFiles,oPF)
+			else
+				SQLStatement{"rollback",oConn}:execute()	
+			endif				
 		NEXT
 
 
@@ -726,7 +817,24 @@ METHOD Import() CLASS TeleMut
 			ENDIF
 		next
 	ENDIF
-	SQLStatement{"commit",oConn}:Execute()  // release lock
+	// unlock software lock:
+	SQLStatement{"start transaction",oConn}:execute()
+	oLock:=SqlSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
+	oLock:execute() 
+	if !Empty(oLock:Status)
+		ErrorBox{self,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
+		SQLStatement{"rollback",oConn}:execute() 
+		return
+	endif
+	oStmnt:=SQLStatement{"update importlock set lock_id='',lock_time='0000-00-00' where importfile='telelock'",oConn}
+	oStmnt:execute()
+	if !Empty(oStmnt:Status)
+		ErrorBox{self,self:oLan:WGet("could not unlock required transactions")}:Show()
+		SQLStatement{"rollback",oConn}:execute()
+	else 
+		SQLStatement{"commit",oConn}:execute()  // save locks 
+	endif
+
 	if Len(self:aMessages)>0
 		(InfoBox{,"Import of telebanking transactions",Str(lv_aant_toe,4)+" transactions imported"}):Show()
 		for i:=1 to Len(self:aMessages)
@@ -1818,10 +1926,10 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				* save transaction:
 				nTrans++
 				IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
-					if !Empty(lv_persid)
-						lv_persid:=iif(SQLSelect{"select persid from person where persid='"+lv_persid+"'",oConn}:Reccount>0,lv_persid,'')
-					endif
 					IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_kind,lv_BankAcntContra,lv_NameContra,lv_budget) .and.!Empty(lv_Amount)
+						if !Empty(lv_persid)
+							lv_persid:=iif(SqlSelect{"select persid from person where persid='"+lv_persid+"'",oConn}:Reccount>0,lv_persid,'')
+						endif
 						oStmnt:=SQLStatement{"insert into teletrans set "+;
 							"contra_bankaccnt='"+lv_BankAcntContra+"'"+;
 							",contra_name='"+lv_NameContra+"'"+;
