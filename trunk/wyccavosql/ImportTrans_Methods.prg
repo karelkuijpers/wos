@@ -904,8 +904,8 @@ method ImportBatchCZR(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportB
 			PMCAcc:=osel:ACCNUMBER
 
 			// Search latest transdate in Imptr: 
-			oImpTr:=SQLSelect{"select cast(transdate as date) as transdate from importtrans where origin='WD' order by transdate desc limit 1",oConn}
-			if oImpTr:RecCount>0
+			oImpTr:=SqlSelect{"select max(transdate) as transdate from importtrans where origin='WD'",oConn}
+			if Empty(oImpTr:status) .and. oImpTr:RecCount>0
 				LastDate:=oImpTr:transdate
 			endif				
 			LastDate-=31
