@@ -136,20 +136,20 @@ METHOD OKButton( ) CLASS EditMailCd
 		* check if mailcd allready exists:
 	    IF (lnew.or.AllTrim(oMcd:Description) # AllTrim(self:mOms).or.AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn))
 			IF lnew .or. AllTrim(oMcd:Description) # AllTrim(self:mOms)
-				if SQLSelect{"select description from perscod where description='"+AllTrim(self:mOms)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
+				if SQLSelect{"select description from perscod where description='"+AddSlashes(AllTrim(self:mOms))+"' and pers_code<>'"+addslashes(self:mCod)+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode description '+ AllTrim(self:mOms) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
 			ENDIF
 			IF lnew .or. AllTrim(oMcd:abbrvtn) # AllTrim(self:mAbbrvtn).and.!Empty(self:mAbbrvtn)
-				if SQLSelect{"select description from perscod where abbrvtn='"+AllTrim(self:mAbbrvtn)+"' and pers_code<>'"+self:mCod+"'",oConn}:RecCount>0
+				if SqlSelect{"select description from perscod where abbrvtn='"+AllTrim(self:mAbbrvtn)+"' and pers_code<>'"+addslashes(self:mCod)+"'",oConn}:RecCount>0
 					(ErrorBox{,'Mailcode abbreviation '+ AllTrim(self:mAbbrvtn) +' already exists' }):Show()
 					RETURN nil
 				ENDIF
 			ENDIF
 	    ENDIF
-	    oStmnt:=SQLStatement{iif(self:lnew,"insert into","update")+" perscod set description='"+self:mOms+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'"+;
-	    iif(self:lnew,",pers_code='"+self:GetNextKey()+"'"," where pers_code='"+self:mCod+"'"),oConn}
+	    oStmnt:=SQLStatement{iif(self:lnew,"insert into","update")+" perscod set description='"+AddSlashes(self:mOms)+"',abbrvtn='"+Upper(self:mAbbrvtn)+"'"+;
+	    iif(self:lnew,",pers_code='"+addslashes(self:GetNextKey())+"'"," where pers_code='"+addslashes(self:mCod)+"'"),oConn}
 	    oStmnt:Execute()
 	    if Empty(oStmnt:status) .and.oStmnt:NumSuccessfulRows>0 
 			self:oCaller:refresh()
@@ -732,7 +732,7 @@ FOR i:=nLen DOWNTO 1
 NEXT
 RETURN cKey
 
-RESOURCE PersonParms DIALOGEX  10, 9, 388, 269
+RESOURCE PersonParms DIALOGEX  12, 11, 387, 269
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -740,46 +740,47 @@ BEGIN
 	CONTROL	"Person Parameters", PERSONPARMS_PERSON_PARAMETERS, "Static", SS_CENTER|WS_CHILD, 8, 4, 321, 13
 END
 
-class PersonParms inherit DataWindowExtra 
+CLASS PersonParms INHERIT DataWindowExtra 
 
-	protect oDCTabMail as TABCONTROL
+	PROTECT oDCTabMail AS TABCONTROL
 	protect oTPTABMAIL_PAGE as TABMAIL_PAGE
 	protect oTPTABTITLE_PAGE as TABTITLE_PAGE
 	protect oTPTABTYPE_PAGE as TABTYPE_PAGE
 	protect oTPTABPROP_PAGE as TABPROP_PAGE
-	protect oDCPerson_Parameters as FIXEDTEXT
+	PROTECT oDCPerson_Parameters AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-method Init(oWindow,iCtlID,oServer,uExtra) class PersonParms 
-local dim aFonts[1] AS OBJECT
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS PersonParms 
+LOCAL DIM aFonts[1] AS OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"PersonParms",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"PersonParms",_GetInst()},iCtlID)
 
 aFonts[1] := Font{,12,"Microsoft Sans Serif"}
 aFonts[1]:Bold := TRUE
 
-oDCTabMail := TabControl{self,ResourceID{PERSONPARMS_TABMAIL,_GetInst()}}
+oDCTabMail := TabControl{SELF,ResourceID{PERSONPARMS_TABMAIL,_GetInst()}}
 oDCTabMail:HyperLabel := HyperLabel{#TabMail,"Mailcodes","Mail Codes",NULL_STRING}
+oDCTabMail:OwnerAlignment := OA_HEIGHT
 
-oDCPerson_Parameters := FixedText{self,ResourceID{PERSONPARMS_PERSON_PARAMETERS,_GetInst()}}
+oDCPerson_Parameters := FixedText{SELF,ResourceID{PERSONPARMS_PERSON_PARAMETERS,_GetInst()}}
 oDCPerson_Parameters:HyperLabel := HyperLabel{#Person_Parameters,"Person Parameters",NULL_STRING,NULL_STRING}
 oDCPerson_Parameters:Font(aFonts[1], FALSE)
 
-self:Caption := "Person parameters"
-self:HyperLabel := HyperLabel{#PersonParms,"Person parameters",NULL_STRING,NULL_STRING}
+SELF:Caption := "Person parameters"
+SELF:HyperLabel := HyperLabel{#PersonParms,"Person parameters",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
-	self:Use(oServer)
-endif
-oTPTABMAIL_PAGE := TABMAIL_PAGE{self, 0}
+	SELF:Use(oServer)
+ENDIF
+oTPTABMAIL_PAGE := TABMAIL_PAGE{SELF, 0}
 oDCTabMail:AppendTab(#TABMAIL_PAGE,"Mail Codes",oTPTABMAIL_PAGE,0)
-oTPTABTITLE_PAGE := TABTITLE_PAGE{self, 0}
-oDCTabMail:AppendTab(#TABTITLE_PAGE,"titles",oTPTABTITLE_PAGE,0)
-oTPTABTYPE_PAGE := TABTYPE_PAGE{self, 0}
+oTPTABTITLE_PAGE := TABTITLE_PAGE{SELF, 0}
+oDCTabMail:AppendTab(#TABTITLE_PAGE,"Titles",oTPTABTITLE_PAGE,0)
+oTPTABTYPE_PAGE := TABTYPE_PAGE{SELF, 0}
 oDCTabMail:AppendTab(#TABTYPE_PAGE,"Types",oTPTABTYPE_PAGE,0)
-oTPTABPROP_PAGE := TABPROP_PAGE{self, 0}
+oTPTABPROP_PAGE := TABPROP_PAGE{SELF, 0}
 oDCTabMail:AppendTab(#TABPROP_PAGE,"Extra properties",oTPTABPROP_PAGE,0)
 oDCTabMail:SelectTab(#TABMAIL_PAGE)
 
@@ -819,7 +820,7 @@ SUPER:Init(oWindow,ResourceID{"Sub_MailCdReg",_GetInst()},iCtlID)
 
 SELF:Caption := "DataWindow Caption"
 SELF:HyperLabel := HyperLabel{#Sub_MailCdReg,"DataWindow Caption",NULL_STRING,NULL_STRING}
-SELF:OwnerAlignment := OA_HEIGHT
+SELF:OwnerAlignment := OA_PWIDTH_HEIGHT
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
@@ -879,7 +880,7 @@ SUPER:Init(oWindow,ResourceID{"Sub_PersPropReg",_GetInst()},iCtlID)
 
 SELF:Caption := "DataWindow Caption"
 SELF:HyperLabel := HyperLabel{#Sub_PersPropReg,"DataWindow Caption",NULL_STRING,NULL_STRING}
-SELF:OwnerAlignment := OA_HEIGHT
+SELF:OwnerAlignment := OA_PWIDTH_HEIGHT
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
@@ -1189,7 +1190,7 @@ oDCFixedText1:Font(aFonts[1], FALSE)
 SELF:Caption := "DataWindow Caption"
 SELF:HyperLabel := HyperLabel{#TABMAIL_PAGE,"DataWindow Caption",NULL_STRING,NULL_STRING}
 SELF:AllowServerClose := True
-SELF:OwnerAlignment := OA_FULL_SIZE
+SELF:OwnerAlignment := OA_PWIDTH_HEIGHT
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
