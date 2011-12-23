@@ -554,7 +554,7 @@ do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
 	cCreate+=iif(Empty(cCreate),"CREATE TABLE "+sIdentChar+instance_name+sIdentChar+ " ( ",","+CRLF)+" "+sIdentChar+aColumn[i,2]+sIdentChar+" "+;
 	aColumn[i,3]+;
 	iif(aColumn[i,4]=="NO"," NOT NULL","")+;
-	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL")," DEFAULT '"+aColumn[i,5]+"'")+;
+	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL"),iif(AtC("text",aColumn[i,3])>0,""," DEFAULT '"+aColumn[i,5]+"'"))+;
 	+" "+aColumn[i,6] 
 enddo
 cIndex:=" "
@@ -1398,7 +1398,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","depid","int(11)","YES","NULL",""},;
 	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
-		{"perscod","pers_code","char(2)","NO","",""},;
+		{"perscod","pers_code","char(2)","NO","","COLLATE ascii_bin"},;
 		{"perscod","description","char(20)","YES","NULL",""},;
 		{"perscod","abbrvtn","char(3)","NO","NULL",""},;
 		{"person","persid","int(11)","NO","NULL","auto_increment"},;
