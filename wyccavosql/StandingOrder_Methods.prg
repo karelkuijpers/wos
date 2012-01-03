@@ -445,7 +445,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 		lValid := FALSE
 		cError :=  "Enter a Enddate after the startdate"
 		SELF:oDCmIdat:SetFocus()
-	ELSEIF !lNew.and..not.Empty(oPer:LstRecording).and.self:odcmIdat:SelectedDate<oPer:idat
+	ELSEIF !lNew.and..not.Empty(oPer:LstRecording).and.(self:odcmIdat:SelectedDate<oPer:lstrecording .or.self:odcmIdat:SelectedDate< MinDate)
 		lValid := FALSE
 		cError :=  "Standing Order already recorded, do not shift back Startdate"
 		SELF:oDCmIdat:SetFocus()
