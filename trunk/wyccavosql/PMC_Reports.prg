@@ -477,7 +477,7 @@ METHOD PrintReport() CLASS PMISsend
 	// 	(time1:=Seconds())
 	oTrans:=SQLSelect{'select transid from transaction t '+;
 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
-		" t.lock_id>0 and t.lock_time > subdate(now(),interval 120 minute)",oConn}
+		" t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
 	// 		" and t.accid in (select m.accid from member m) and "+;
 	if oTrans:Reccount>0
 		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
