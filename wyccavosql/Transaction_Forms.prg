@@ -2959,7 +2959,7 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 	IF !self:lEarmarking
 		self:nEarmarkTrans:=0 
 		self:nEarmarkSeqnr:=0
-		oAcc:=SQLSelect{"select a.accnumber,a.description,b.category as debcat from account a, balanceiten b where b.balitemid=a.balitemid and accid="+SPROJ,oConn}
+		oAcc:=SQLSelect{"select a.accnumber,a.description,b.category as debcat from account a, balanceitem b where b.balitemid=a.balitemid and accid="+SPROJ,oConn}
 		if oAcc:RecCount>0
 			self:DebAccId:=sproj
 			self:DebAccNbr:=oAcc:ACCNUMBER
@@ -2969,7 +2969,7 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 		ENDIF
 	endif
 	* Search for next non-earmarked gift (BFM=O):
-	oTransEM:=SQLSelect{"select t.* from transaction t where accid="+sproj+" and bfm='O' and cre>deb"+;
+	oTransEM:=SQLSelect{"select transid,seqnr,deb,cre,debforgn,creforgn,currency,cast(dat as date) as dat,persid,docid from transaction where accid="+sproj+" and bfm='O' and cre>deb"+;
 	iif(Empty(self:nEarmarkTrans),""," and transid*1000+seqnr>"+Str(self:nEarmarkTrans*1000+self:nEarmarkSeqnr,-1))+;
 	+" order by transid,seqnr limit 1",oConn}
 	IF oTransEM:RecCount<1
@@ -3768,7 +3768,6 @@ METHOD EditButton( ) CLASS TransInquiry
 		LogEvent(self,"error:"+self:oMyTrans:errinfo:errormessage,"LogErrors")
 	endif 
 	self:oHm:aMirror:={} 
-	LogEvent(self,self:oMyTrans:sqlstring,"logsql")
 	DO WHILE self:oMyTrans:reccount>0 .and.!self:oMyTrans:EOF 
 		if self:oMyTrans:locked=1
 			lLocked:=true
