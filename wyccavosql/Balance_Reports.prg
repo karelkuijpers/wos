@@ -5568,7 +5568,7 @@ METHOD OKButton( ) CLASS YearClosing
 	// create archive table: 
 	self:STATUSMESSAGE(self:oLan:WGet("Creating archive file, moment please"))
 	cName:= 'tr'+Str(self:YearStart,4)+StrZero(self:MonthStart,2)
-	oStmnt:=SQLStatement{"create table "+cName+" (primary key (transid,seqnr)) engine=MyIsam select * from transaction where dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn} 
+	oStmnt:=SQLStatement{"create table "+cName+" (primary key (transid,seqnr)) engine=InnoDb collate utf8_unicode_ci select * from transaction where dat<='"+SQLdate(self:BalanceEndDate)+"'",oConn} 
 	oStmnt:Execute()                        
 	if Empty(oStmnt:Status)
 		// create other indexes:
