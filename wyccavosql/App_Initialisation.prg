@@ -753,7 +753,7 @@ method init() class Initialize
 		self:lNewDb:=true
 		self:FirstOfDay:=true 
 		//create database: 
-		oStmt:=SQLStatement{'Create Database '+sIdentChar+dbname+sIdentChar,oConn}
+		oStmt:=SQLStatement{'Create Database '+sIdentChar+dbname+sIdentChar+' default character set utf8 collate utf8_unicode_ci',oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:Status)
 			ErrorBox{,"Could not create database "+dbname+"; error:"+oStmt:ERRINFO:errormessage}:Show()
@@ -785,7 +785,6 @@ method init() class Initialize
 			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
 	ENDIF
-
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
@@ -1141,7 +1140,10 @@ method InitializeDB() as void Pascal  class Initialize
 	local i,j,nTargetPos,nSourceStart,nSourceEnd,nTrCount,nLenTable as int, cRow, cTable,cTableCol as string
 	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array
 // 	local cCollation:='ascii_general_ci' as string
-	local cCollation:='utf8_unicode_ci' as string
+	local cCollation:='utf8_unicode_ci' as string 
+	LOCAL nTbl as int
+	local cTableCollation as string
+
 	 
 	local aTable:={;
 		{"log","MyIsam",cCollation},;	
@@ -1398,7 +1400,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","depid","int(11)","YES","NULL",""},;
 	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
-		{"perscod","pers_code","char(2)","NO","","COLLATE ascii_bin"},;
+		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
 		{"perscod","description","char(20)","YES","NULL",""},;
 		{"perscod","abbrvtn","char(3)","NO","NULL",""},;
 		{"person","persid","int(11)","NO","NULL","auto_increment"},;
@@ -1749,12 +1751,12 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
-			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),oSel:table_collation})
+			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),Lower(oSel:table_collation)})
 			oSel:Skip()
 		enddo
 	endif
 	//read current columns:
-	oSel:=SQLSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA FROM information_schema.COLUMNS "+;
+	oSel:=SqlSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA, COLLATION_NAME FROM information_schema.COLUMNS "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
@@ -1762,8 +1764,14 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
+			nTbl:=AScan(aCurTable,{|x|x[1]=Lower(oSel:table_name)})
+			if nTbl>0
+				cTableCollation:=aCurTable[nTbl,3]
+			else
+				cTableCollation:=cCollation
+			endif
 			AAdd(aCurColumn,{oSel:table_name,oSel:COLUMN_NAME,oSel:COLUMN_TYPE,oSel:IS_NULLABLE,iif(IsNil(oSel:COLUMN_DEFAULT),"NULL",;
-				oSel:COLUMN_DEFAULT),oSel:extra})
+				oSel:COLUMN_DEFAULT),iif(Empty(oSel:extra),iif(!Empty(oSel:collation_name).and.!Lower(oSel:collation_name)==cTableCollation,'collate '+Lower(oSel:collation_name),''),oSel:extra)})
 			oSel:Skip()
 		enddo
 	endif
@@ -1779,19 +1787,18 @@ method InitializeDB() as void Pascal  class Initialize
 			oSel:Skip()
 		enddo
 	endif
-	// add archive files to aTable:
-	nSourceStart:=AScan(aCurTable,{|x|Lower(x[1])='tr'.and.len(Lower(x[1]))=8.and. isnum(substr(Lower(x[1]),3))})
-	if nSourceStart>0
-		nSourceEnd:=AScan(aCurTable,{|x|!(Lower(x[1])='tr'.and.Len(Lower(x[1]))=8.and. isnum(SubStr(Lower(x[1]),3)))},nSourceStart)
-		if nSourceEnd=0
-			nSourceEnd:=Len(aCurTable)+1
+	// add archive files to aTable: 
+	nTbl:=AScan(aTable,{|x|x[1]=='transaction'})
+	nSourceStart:=1
+	do while nSourceStart>0
+		nSourceStart:=AScan(aCurTable,{|x|Lower(x[1])='tr'.and.Len(Lower(x[1]))=8.and. isnum(SubStr(Lower(x[1]),3))},nSourceStart)
+		if nSourceStart>0
+			AAdd(aTable,{aCurTable[nSourceStart,1],aTable[nTbl,2],aTable[nTbl,3]})
+			nSourceStart++
+		else
+			exit
 		endif
-		nTrCount:=nSourceEnd-nSourceStart
-		nLenTable:=Len(aTable) 
-		
-		ASize(aTable,nLenTable+nTrCount)
-		ACopy(aCurTable,aTable,nSourceStart,nTrCount,nLenTable+1)
-	endif
+	enddo
 
 	// compare  current with required structure:
 	for i:=1 to Len(aTable)
