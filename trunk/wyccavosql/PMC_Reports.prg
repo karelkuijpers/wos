@@ -1,8 +1,19 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
 STATIC DEFINE AREAREPORT_AFSLDAG := 104 
 STATIC DEFINE AREAREPORT_AFSLDAGTEXT := 103 
 STATIC DEFINE AREAREPORT_BALANCETEXT := 102 
 STATIC DEFINE AREAREPORT_CANCELBUTTON := 101 
 STATIC DEFINE AREAREPORT_OKBUTTON := 100 
+CLASS AskSend INHERIT DataDialogMine 
+
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export Result as shortint
 RESOURCE AskSend DIALOGEX  4, 3, 265, 83
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -13,15 +24,6 @@ BEGIN
 	CONTROL	"(this is IRREVOCABLE)", ASKSEND_FIXEDTEXT2, "Static", WS_CHILD, 4, 25, 236, 13
 END
 
-CLASS AskSend INHERIT DataDialogMine 
-
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export Result as shortint
 METHOD CancelButton( ) CLASS AskSend 
      Result:=0
      self:EndWindow()
@@ -477,7 +479,7 @@ METHOD PrintReport() CLASS PMISsend
 	// 	(time1:=Seconds())
 	oTrans:=SQLSelect{'select transid from transaction t '+;
 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
-		" t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
+		" t.lock_id<>0 and t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
 	// 		" and t.accid in (select m.accid from member m) and "+;
 	if oTrans:Reccount>0
 		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
@@ -1482,7 +1484,7 @@ Method ResetLocks(cEmpId as string) class PMISsend
 // 	oTrans:Execute() 
 // 	if Empty(oTrans:Status)
 // 		oStmnt:=SQLStatement{"update transaction set lock_id=0 where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
-		oStmnt:=SQLStatement{"update transaction set lock_id=0 where lock_id="+MYEMPID,oConn}
+		oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
 		oStmnt:Execute()
 		SQLStatement{"commit",oConn}:Execute()
 // 	endif 
