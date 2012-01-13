@@ -202,7 +202,7 @@ local aC:={;            // dbasename, keyname, sqlname
 {"authfunc","authemp",""},;
 {"bankacc","banknbr","bankaccount"},;
 {"bankorder","bankid",""},;
-{"distrins","distrid","distributionInstruction"},;
+{"distrins","distrid","distributioninstruction"},;
 {"subscrpt","pol","subscription"},;
 {"dueamnt","openpost","dueamount"},;
 {"language","language",""},;
@@ -210,12 +210,12 @@ local aC:={;            // dbasename, keyname, sqlname
 {"member","mbrrek",""},;
 {"mutgiro","mutgiro","teletrans"},;
 {"periorec","periodic","standingorder"},;
-{"persprop","persprop","person_Properties"},;
+{"persprop","persprop","person_properties"},;
 {"perstitl","titleid","titles"},;
 {"perstype","","persontype"},;
 {"ppcodes","ppcode",""},;
 {"storderl","STORDRID","standingorderline"},;
-{"teleptrn","teleacc","teleBankPatterns"},;
+{"teleptrn","teleacc","telebankpatterns"},;
 {"ipcaccounts","",""};
 } as array
 local i,TblCnt:=Len(aC) as int
