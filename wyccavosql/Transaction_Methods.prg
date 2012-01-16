@@ -1762,78 +1762,84 @@ METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as log
 	LOCAL mRek AS STRING
 	LOCAL i:=0, nCurRec as int
 	oHm := SELF:Server
-// 	Default(@lNoMessage,FALSE)
-oHm:SuspendNotification() 
-nCurRec:=oHm:Recno
-DO WHILE lValid .and. i < Len(oHm:aMirror)
-	++i
-	IF oHm:aMirror[i,2] == oHm:aMirror[i,3] //deb=cre: skip empty line
-		LOOP
-	ENDIF
-	IF Empty(oHm:aMirror[i,1]) //accid,deb,cre
-		lValid := FALSE
-		cError := self:oLan:WGet("Account obliged")+"!"
-	ELSEIF Empty(oHm:AMirror[i,16]) //description
-		lValid := FALSE
-		cError := self:oLan:WGet("Description obliged")+"!"
-	ELSEIF (ADMIN=="WO".or. ADMIN="HO") .and.!oHm:lFromRPP
-		IF oHm:aMirror[i,5] = "M"
-			IF Empty(AScan({'AG','CH','OT','PF','MG'},oHm:aMirror[i,4])) //GC
-				lValid := FALSE
-				cError := self:oLan:WGet("Assessment codes are")+": AG CH PF MG"
-			ELSEIF oHm:aMirror[i,4] = 'MG' //GC
-				mRek := AllTrim(oHm:aMirror[i,1]) //accid
-				IF !SELF:lMemberGiver .and. AScan(oHm:AMirror,{|x| x[4]=="CH".and.!x[1]==mRek}) = 0
+	// 	Default(@lNoMessage,FALSE)
+	oHm:SuspendNotification() 
+	nCurRec:=oHm:Recno
+	DO WHILE lValid .and. i < Len(oHm:aMirror)
+		++i
+		IF oHm:aMirror[i,2] == oHm:aMirror[i,3] //deb=cre: skip empty line
+			LOOP
+		ENDIF
+		IF Empty(oHm:aMirror[i,1]) //accid,deb,cre
+			lValid := FALSE
+			cError := self:oLan:WGet("Account obliged")+"!"
+		ELSEIF Empty(oHm:AMirror[i,16]) //description
+			lValid := FALSE
+			cError := self:oLan:WGet("Description obliged")+"!"
+		ELSEIF (ADMIN=="WO".or. ADMIN="HO") .and.!oHm:lFromRPP
+			IF oHm:aMirror[i,5] = "M"
+				IF Empty(AScan({'AG','CH','OT','PF','MG'},oHm:aMirror[i,4])) //GC
 					lValid := FALSE
-					cError := self:oLan:WGet('Donor no member, thus MG not allowed')
+					cError := self:oLan:WGet("Assessment codes are")+": AG CH PF MG"
+				ELSEIF oHm:aMirror[i,4] = 'MG' //GC
+					mRek := AllTrim(oHm:aMirror[i,1]) //accid
+					IF !SELF:lMemberGiver .and. AScan(oHm:AMirror,{|x| x[4]=="CH".and.!x[1]==mRek}) = 0
+						lValid := FALSE
+						cError := self:oLan:WGet('Donor no member, thus MG not allowed')
+					ENDIF
+				elseif oHm:aMirror[i,19]='I' 
+					oHm:goto(i)
+					if Empty( oHm:BFM )
+						if !self:lMemberGiver .and.   oHm:aMirror[i,4] = 'CH'
+							cError:=self:oLan:WGet('CH not allowed for income account')
+							lValid := FALSE
+						elseif oHm:aMirror[i,4] = 'PF' 
+							cError:=self:oLan:WGet('PF not allowed for income account')
+							lValid := FALSE
+						endif
+					endif
 				ENDIF
-			elseif oHm:aMirror[i,19]='I'
-				if !self:lMemberGiver .and.   oHm:aMirror[i,4] = 'CH'
-					cError:=self:oLan:WGet('CH not allowed for income account')
+			ELSE
+				if oHm:aMirror[i,5] = "K"   // member department account, not income
+					oHm:goto(i)
+					if Empty( oHm:BFM )
+						if oHm:aMirror[i,19]='E' .and. !oHm:aMirror[i,4] == 'CH'
+							lValid := FALSE
+							cError := self:oLan:WGet("Only assessment code CH allowed for expense account")
+							exit
+						elseif oHm:aMirror[i,19]='F' .and. !oHm:aMirror[i,4] == 'PF'
+							lValid := FALSE
+							cError := self:oLan:WGet("Only assessment code PF allowed for fund account")
+						endif
+					endif
+				elseIF !Empty(oHm:aMirror[i,4]).and.!oHm:aMirror[i,4]=="OT" //GC
 					lValid := FALSE
-				elseif oHm:aMirror[i,4] = 'PF' 
-					cError:=self:oLan:WGet('PF not allowed for income account')
-					lValid := FALSE
+					cError := self:oLan:WGet("Assessment code exclusively for member")
 				endif
-		   ENDIF
-		ELSE
-			if oHm:aMirror[i,5] = "K"   // member department account, not income
-				if oHm:aMirror[i,19]='E' .and. !oHm:aMirror[i,4] == 'CH'
-					lValid := FALSE
-					cError := self:oLan:WGet("Only assessment code CH allowed for expense account")
-					exit
-				elseif oHm:aMirror[i,19]='F' .and. !oHm:aMirror[i,4] == 'PF'
-					lValid := FALSE
-					cError := self:oLan:WGet("Only assessment code PF allowed for fund account")
+			ENDIF 
+		elseif oHm:aMirror[i,1]==sToPP .and.!Empty(sToPP)
+			oHm:GoTo(i)
+			if Empty(oHm:AMirror[i,15])
+				if Empty(oHm:REFERENCE)
+					lValid:=false
+					cError := self:oLan:WGet('Fill reference in case of "Sending to other entity"')
 				endif
-			elseIF !Empty(oHm:aMirror[i,4]).and.!oHm:aMirror[i,4]=="OT" //GC
-				lValid := FALSE
-				cError := self:oLan:WGet("Assessment code exclusively for member")
+			else
+				if Empty(oHm:DESCRIPTN) .and. Empty(oHm:REFERENCE)
+					lValid:=false
+					cError := self:oLan:WGet('Fill reference and/or description in case of "Sending to other entity"')
+				endif
 			endif
-		ENDIF 
-	elseif oHm:aMirror[i,1]==sToPP .and.!Empty(sToPP)
-		oHm:GoTo(i)
-		if Empty(oHm:AMirror[i,15])
-			if Empty(oHm:REFERENCE)
-				lValid:=false
-				cError := self:oLan:WGet('Fill reference in case of "Sending to other entity"')
-			endif
-		else
-			if Empty(oHm:DESCRIPTN) .and. Empty(oHm:REFERENCE)
-				lValid:=false
-				cError := self:oLan:WGet('Fill reference and/or description in case of "Sending to other entity"')
-			endif
-		endif
+		ENDIF
+	ENDDO 
+	oHm:ResetNotification()
+	IF !lValid.and.!lNomessage
+		(ErrorBox{,cError}):Show()
+		oHm:recno:=oHm:aMirror[i,6]
+		ErrorLine:=i
 	ENDIF
-ENDDO 
-oHm:ResetNotification()
-IF !lValid.and.!lNomessage
-	(ErrorBox{,cError}):Show()
-	oHm:recno:=oHm:aMirror[i,6]
-	ErrorLine:=i
-ENDIF
-oHm:GoTo(nCurRec)
-RETURN lValid
+	oHm:GoTo(nCurRec)
+	RETURN lValid
 METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL nErrRec as int
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
@@ -2051,7 +2057,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			For i:=1 to Len(oHm:AMirror)
 				oHm:GoTo(i)
 				if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
-// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
+					// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
 					nSeqNbr++ 
 					cStatement:="insert into transaction set "+;
 						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
@@ -4259,49 +4265,49 @@ METHOD CheckTeleAccount()   CLASS TempTrans
    ENDIF
 RETURN FALSE
 METHOD CheckUpdates(oTransH:=nil as SQLSelect) as string CLASS TempTrans
-   * Check if it is allowed to update or delete a transaction (accid,DEB,CRE,GC)
+	* Check if it is allowed to update or delete a transaction (accid,DEB,CRE,GC)
 	// otransH could be original transactions in case of update
-   LOCAL ThisRec,mRecno:=self:RECNO as int,amMirror:=self:aMIRROR as array,mSeqnr as int
-   local cError as string
+	LOCAL ThisRec,mRecno:=self:RECNO as int,amMirror:=self:aMIRROR as array,mSeqnr as int
+	local cError as string
 	IF !self:lInqUpd  && no update?
 		RETURN ""
 	ENDIF
-   IF self:EOF.or.Empty(self:SEQNR)  && apparently new transaction
-      RETURN ""
-   ENDIF
+	IF self:EOF.or.Empty(self:SEQNR)  && apparently new transaction
+		RETURN ""
+	ENDIF
 	IF self:BFM=="H"
 		cError:= "Transaction already sent to PMC"
 		(ErrorBox{,cError}):show()
-   	RETURN cError
+		RETURN cError
 	ENDIF
-// 	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
+	// 	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
 	ThisRec:=mRecno
-   if !Empty(aMirror) .and. ThisRec>0
-   	if !Empty(aMirror[ThisRec,7]) .and. !empty(oTransH) //seqnr
-   		mSeqnr:=aMIRROR[ThisRec,7]
-   		oTransH:GoTop()
-   		do while !oTransH:SEQNR==mSeqnr
-   			oTransH:Skip()
-   		enddo
-   		if !oTransH:EOF
-   			if empty(oTransH:debforgn) .and.empty(oTransH:creforgn) .and.(!empty(oTransH:deb) .or. !empty(oTransH:cre)) 
-   				cError:= 'Modification of reevaluation record not allowed'
-	   		 	(ErrorBox{,cError}):show()
-   	 			RETURN cError
+	if !Empty(aMirror) .and. ThisRec>0
+		if !Empty(aMirror[ThisRec,7]) .and. !empty(oTransH) //seqnr
+			mSeqnr:=aMIRROR[ThisRec,7]
+			oTransH:GoTop()
+			do while !oTransH:SEQNR==mSeqnr
+				oTransH:Skip()
+			enddo
+			if !oTransH:EOF
+				if empty(oTransH:debforgn) .and.empty(oTransH:creforgn) .and.(!empty(oTransH:deb) .or. !empty(oTransH:cre)) 
+					cError:= 'Modification of reevaluation record not allowed'
+					(ErrorBox{,cError}):show()
+					RETURN cError
 				endif
-   		endif
-   	else
+			endif
+		else
 			if Empty(aMIRROR[ThisRec,13]).and.Empty(aMIRROR[ThisRec,14]).and.(!Empty(aMIRROR[ThisRec,2]).or.!Empty(aMIRROR[ThisRec,3]))
 				cError:= 'Modification of reevaluation record not allowed'
-   		 	(ErrorBox{,cError}):show()
-    			RETURN cError
+				(ErrorBox{,cError}):show()
+				RETURN cError
 			endif
 		endif
-   endif
+	endif
 	IF self:BFM=="C" 
 		cError:= "Transaction already sent to AccPac/RIA"
 		(ErrorBox{,cError}):show()
-   	RETURN cError
+		RETURN cError
 	ENDIF
 	IF self:BFM=="T" 
 		cError:= "Gift without destination already allotted"
@@ -4310,11 +4316,11 @@ METHOD CheckUpdates(oTransH:=nil as SQLSelect) as string CLASS TempTrans
 	ENDIF
 	IF self:CheckTeleAccount() 
 		cError:= 'Modification of telebanking account not allowed'
-   	 (ErrorBox{,cError}):show()
-    	RETURN cError
+		(ErrorBox{,cError}):show()
+		RETURN cError
 	ENDIF 
-				
-RETURN ""
+	
+	RETURN ""
 METHOD m54w_rek_pers() CLASS TempTrans
 *Controleren of persoon is toegestaan
 LOCAL m54_pers_sta:=' ' AS STRING
