@@ -443,12 +443,12 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 		SELF:oDCmIdat:SetFocus()		
    	ELSEIF !Empty(SELF:odcmEdat:SelectedDate).and.SELF:odcmIdat:SelectedDate>SELF:odcmEdat:SelectedDate
 		lValid := FALSE
-		cError :=  "Enter a Enddate after the startdate"
+		cError :=  "Enter a Enddate after the startdate"                        
 		SELF:oDCmIdat:SetFocus()
-	ELSEIF !lNew.and..not.Empty(oPer:LstRecording).and.(self:odcmIdat:SelectedDate<oPer:lstrecording .or.self:odcmIdat:SelectedDate< MinDate)
-		lValid := FALSE
-		cError :=  "Standing Order already recorded, do not shift back Startdate"
-		SELF:oDCmIdat:SetFocus()
+// 	ELSEIF !lNew.and..not.Empty(oPer:LstRecording).and.(self:odcmIdat:SelectedDate<oPer:LstRecording .or.self:odcmIdat:SelectedDate< MinDate)
+// 		lValid := FALSE
+// 		cError :=  "Standing Order already recorded, do not shift back Startdate"
+// 		SELF:oDCmIdat:SetFocus()
 	ELSEIF !lNew.and.!Empty(oPer:LstRecording).and.!Empty(self:odcmEdat:SelectedDate).and.;
 		self:odcmEdat:SelectedDate<oPer:LstRecording
 		lValid := FALSE
