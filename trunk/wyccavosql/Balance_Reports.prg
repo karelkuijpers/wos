@@ -3055,7 +3055,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:Show()
 	endif
 	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description'+;
-	+iif(Empty(self:SendingMethod),",a.accnumber",'')+;
+		+iif(Empty(self:SendingMethod),",a.accnumber",'')+;
 		' from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
 		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
 		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(Empty(self:SendingMethod),"accnumber","accid")+",dat,transid,seqnr",oConn} 
@@ -3067,10 +3067,10 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	SetDecimalSep(Asc(DecSeparator))
 	IF self:oTransMonth==null_object
 		self:oTransMonth:=AccountStatements{90}
-		self:oTransMonth:oReport:=self:oReport
-		self:oTransMonth:SendingMethod:=self:SendingMethod
-		self:oTransMonth:lDebCreMerge:=true
 	ENDIF
+	self:oTransMonth:oReport:=self:oReport
+	self:oTransMonth:SendingMethod:=self:SendingMethod
+	self:oTransMonth:lDebCreMerge:=true
 	self:oTransMonth:BeginReport:=self:BeginReport
 	
 	do WHILE !oAcc:EOF
@@ -3085,7 +3085,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				oDepStmnt:=DeptReport{} 
 				oDepStmnt:SimpleDepStmnt:= false
 				oDepStmnt:lDebCreMerge:=true
-// 				oDepStmnt:lNoBalance:=true 
+				// 				oDepStmnt:lNoBalance:=true 
 				oDepStmnt:WhatDetails:=false
 				oDepStmnt:showopeningclosingfund:=false
 				oDepStmnt:oEMLFrm:= oEMLFrm
