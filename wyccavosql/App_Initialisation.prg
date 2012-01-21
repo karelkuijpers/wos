@@ -11,167 +11,77 @@ IF nRet > 0
 ENDIF
 RETURN nRet
 class CheckUPGRADE  
-	declare method LoadUpgrade
-Method LoadInstallUpg(myFTP,cWorkdir) class CheckUPGRADE
-	LOCAL oFTP:=myFTP  as cFtp
-	Local aInsRem as Array 
-	Local oFs as FileSpec, LocalDate as date, RemoteDate as date
-	// remove old version if still present:
-	oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-	if oFs:Find()
-		//oFs:DELETE()
-		FErase(oFs:FullPath)
-		oFs:Find()
-	endif
-
-	oFs:=FileSpec{cWorkdir+"InstallSQLUpg.EXE"}
-	LocalDate:=oFs:DateChanged
-
-	aInsRem:=oFTP:Directory("InstallSQLUpg.EXE")
-	if Len(aInsRem)>0
-		RemoteDate:=aInsRem[1,F_DATE]
-		if LocalDate < RemoteDate
-			// apparently new version: 
-			if oFs:Find()
-				oFs:Rename("InstallSQLUpgOld.EXE")
-			endif
-			IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
-				__RaiseFTPError(oFTP) 
-				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-				if oFs:Find()
-					// rename back
-					if !oFs:Rename("InstallSQLUpg.EXE")
-						return false
-					endif
-				else
-					return False
-				endif
-			else
-				oFs:Find()
-				CollectForced()  // to force some wait
-				oFs:Find()
-			ENDIF
-			if oFs:Find()
-				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-				if oFs:Find()
-					FErase(oFs:FullPath)
-					oFs:Find()
-				endif
-			else
-				oFs:=FileSpec{cWorkdir+"InstallSQLUpgOld.EXE"}
-				if oFs:Find()
-					// rename back
-					if oFs:Rename("InstallSQLUpg.EXE")
-						return true
-					endif
-				endif
-				return false
-			endif 
-		endif
-	else
-		IF !oFTP:GetFile("InstallSQLUpg.EXE",cWorkdir+"InstallSQLUpg.EXE")
-			__RaiseFTPError(oFTP) 
-			return false
-		endif 	
-	endif
-	return true
-
-
-method LoadUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as logic) as logic class CheckUPGRADE
+	declare method LoadInstallerUpgrade
+Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as logic) as logic class CheckUPGRADE
+	// check if there is a new wosupgradeinstaller.exe
 	LOCAL oFTP  as cFtp
-	Local ret:=false as logic 
-	local aDir as array 
-	local i,j as int
-	local newversion, cVersion, cWarning as string , anewvers, aCurvers, altstvers:={0,0,0,0} as array,LtstVers:=0,CurVers,DBVers as float,ptrHandle  
-	local oSys as SQLSelect
-	Local oFs as FileSpec
+	Local aInsRem as Array 
+	Local oFs as FileSpec, LocalDate as date, RemoteDate as date 
+	local aCurvers as array
+	local DBVers,CurVers as float 
+	local oSys as SqlSelect
+	local i as int 
+	local cDirname as string 
+	local lSuc as logic
+
 	oFTP := CFtp{"WycOffSy FTP Agent"}
 	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
 	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
-	oSys := SQLSelect{"select version from sysparms",oConn}
+	oSys := SqlSelect{"select version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
 	endif 
 	if FirstOfDay .or. DBVers>CurVers
-		IF oFTP:ConnectRemote("ftp.parousiazoetermeer.net","anonymous@parousiazoetermeer.net","any")
-			aDir:=oFTP:Directory("SQLUPGRADE*.exe")      
-			// search latest available version 
-			for i:=1 upto ALen(ADir) 
-				newversion :=SubStr(AllTrim(ADir[i,F_NAME]),11)
-				newversion:=SubStr(newversion,1,Len(newversion)-4)
-				anewvers:=AEvalA(Split(newversion,"."),{|x|Val(x)})
-				if Len(anewvers)=4
-					for j:=1 to 4
-						if anewvers[j]>altstvers[j]
-							altstvers:=anewvers
-							exit
-						endif
-					next
-				endif
-			next 
-			AEval(altstvers,{|x|LtstVers:=1000*LtstVers+x})	
+		IF oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+			// remove old version if still present:
+			oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
+			if oFs:Find()
+				FErase(oFs:FullPath)
+				oFs:Find()
+			endif
+			// check newer tables, etc: 
+			aInsRem:=oFTP:Directory("variable/*.*")
+			for i:=1 to Len(aInsRem)
+				oFs:=FileSpec{cWorkdir+aInsRem[i,F_NAME]}
+				if !oFs:Find() .or. oFs:DateChanged <aInsRem[i,F_DATE]   // newer?
+					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false)
+				endif					 
+			next
+			oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
+			if oFs:Find()
+				LocalDate:=oFs:DateChanged
+			endif
 
-			if LtstVers>CurVers .and.;
-					(FirstOfDay .or. (DBVers==LtstVers.or.SQLSelect{"select online from employee where online=1",oConn}:RecCount<2))
-				newversion:=""
-				AEval(altstvers,{|x|newversion+=iif(Empty(newversion),"",".")+Str(x,-1)})
-				if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
-					cVersion:="version "+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0. (current "+Version+") "
-					cWarning:=" (this can take several minutes)" 
-				else
-					cVersion:="upgrade "
-				endif 
-				if (TextBox{,"New "+cVersion+"of Wycliffe Office System available!","Do you want to install it?"+cWarning,BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
-					// load first latest version of install program:
-					if !self:LoadInstallUpg(oFTP,cWorkdir)
-						(ErrorBox{,"Could not load" +cWorkdir+"InstallSQLUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
-						ret:=false
-					else
-						oFs:=FileSpec{cWorkdir+"InstallSQLUpg.EXE"}
-						if !oFs:Find()
-							(ErrorBox{,"Could not load" +cWorkdir+"InstallSQLUpg.EXE; goto www.parousiazoetermeer.net/wos.html "}):Show()
-							ret:=false
-						else					
-							if altstvers[1]>aCurvers[1].or.altstvers[2]>aCurvers[2]
-								// load initial upgrade with all files first:
-								if ret:=oFTP:GetFile("SQLUPGRADE"+Str(altstvers[1],-1)+"."+Str(altstvers[2],-1)+".0.0.exe",cWorkdir+"UPGRADE.exe")
-									// make InstallUpg.Bat:
-									ptrHandle:=FCreate(cWorkdir+"InstallSQLUpg.bat") 
-									if ptrHandle = F_ERROR
-										(ErrorBox{,"Could not start" +cWorkdir+"InstallSQLUpg.bat"+": "+DosErrString(FError())}):Show()
-										ret:=false
-									else
-										FWriteLine(ptrHandle,'CD "'+cWorkdir+'"')
-										FWriteLine(ptrHandle,'Start /WAIT UPGRADE.exe -y')
-										FWriteLine(ptrHandle,'CD "'+CurPath+'"')
-										FWriteLine(ptrHandle,'"'+cWorkdir+'"WosSQL.exe"')
-										FWriteLine(ptrHandle,"Exit")
-										FClose(ptrHandle)
-										startfile:=cWorkdir+"InstallSQLUpg.bat"
-									endif
-								else 
-									__RaiseFTPError(oFTP)
-								ENDIF
-							else
-								// load only upgrade
-								// 							oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-								IF ret:=oFTP:GetFile("SQLUPGRADE"+newversion+".exe",cWorkdir+"UPGRADE.exe")
-									startfile:=cWorkdir+"InstallSQLUpg.EXE"
-								ELSE
-									__RaiseFTPError(oFTP)
-								ENDIF 
+			aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
+			if Len(aInsRem)>0
+				RemoteDate:=aInsRem[1,F_DATE]
+				if LocalDate < RemoteDate
+					// apparently new version:
+					if (TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
+						// load first latest version of install program:
+						
+						IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false)
+							__RaiseFTPError(oFTP) 
+						else
+							oFs:Find()
+							CollectForced()  // to force some wait
+							if oFs:Find()
+								startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
 							endif 
-						endif
-					ENDIF	
+							oFTP:CloseRemote()
+							return true 
+						ENDIF
+					endif
 				endif
-			ELSE
-				// 		__RaiseFTPError(oFTP)
-			ENDIF
-			oFTP:CloseRemote()
+			endif
+			oFTP:CloseRemote() 
+		else
+			__RaiseFTPError(oFTP)
 		endif
 	endif
+	return false
 
-	RETURN ret
+
 class Initialize
 // initialise system
 protect sIdentChar as string 
@@ -712,7 +622,8 @@ method init() class Initialize
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
-			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
+// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
+			if AtC("Microsoft",oConn:ERRINFO:errormessage)>0 .and. AtC("ODBC",oConn:ERRINFO:errormessage)>0
 				ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
 				if oMainWindow==null_object
 					oMainWindow := StandardWycWindow{self}
@@ -836,15 +747,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		self:InitializeDB()
 	endif
 	RddSetDefault("DBFCDX") 
-	if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
-		HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
-	elseIF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
-		HelpDir:='C:\Windows\Temp'
-	ELSEIF Len(aDir:=Directory("C:\TEMP",FA_DIRECTORY))>0
-		HelpDir:="C:\TEMP"
-	ELSE
-		HelpDir:="C:"
-	ENDIF
 
 	// copy helpfile to c because it cannot read from a server:
 	oMyFileSpec1:=FileSpec{cWorkdir+"\WOSHlp.chm"}
