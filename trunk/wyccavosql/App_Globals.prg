@@ -22,7 +22,7 @@ GLOBAL DecAantal:= 2 as SHORT
 global DecSeparator as string
 
 GLOBAL Departments as LOGIC
-GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining'}
+GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining','remaining RPP'}
 global emailclient as string 
  
 GLOBAL EXCEL as STRING
@@ -112,7 +112,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.60" as string
+global Version:="3.0.0.90" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
