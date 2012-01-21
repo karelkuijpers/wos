@@ -93,7 +93,9 @@ local oBal as SQLSelect
 		ENDIF
 	ENDIF
 	self:oDCFromBal:TextValue:=self:cCurBal 
-	self:FindButton()	
+	IF !Empty(myNum) .and. !myNum='0'
+		self:FindButton()
+	endif	
 RETURN
  
 METHOD RegDepartment(myNum,ItemName) CLASS AccountBrowser
@@ -115,7 +117,9 @@ METHOD RegDepartment(myNum,ItemName) CLASS AccountBrowser
 		self:WhoFrom:= depnr
 		self:oDCFromDep:TextValue := deptxt
 	ENDIF
-	self:FindButton()	
+	if !depnr=="0"
+		self:FindButton()
+	endif	
 RETURN
 FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,lUnique:=false as logic,cAccFilter:="" as string ,;
 		oWindow:=null_object as Window,lNoDepartmentRestriction:=false as logic,oAccCnt:=null_object as AccountContainer) as logic
@@ -322,14 +326,14 @@ METHOD Commit() CLASS EditAccount
 	ENDIF
 	RETURN true
 	
-METHOD FillBudget(Amount,pntr,aContr,BudMonth,BudYear) CLASS EditAccount
+METHOD FillBudget(Amount as float,pntr as int,aContr as array,BudMonth as int,BudYear as int) as void Pascal CLASS EditAccount
 	// Fill mBud<pntr> with Amount and show it
 	* aContr: array with control objects of the window
 	LOCAL cNum as STRING
 	LOCAL ic as int
 	LOCAL x as Control
 	LOCAL y as FixedText
-	Default(@BudMonth,pntr)
+// 	Default(@BudMonth,pntr)
 	cNum:=Str(pntr,-1)
 	IF Empty(aContr)
 		aContr:= self:GetAllChildren()
@@ -349,38 +353,85 @@ METHOD FillBudget(Amount,pntr,aContr,BudMonth,BudYear) CLASS EditAccount
 		y:Show()
 		y:TextValue:=SubStr(maand[(BudMonth+11)%12+1],1,3)+":"
 	ENDIF
-RETURN
+	RETURN
 METHOD FillBudgets() CLASS EditAccount
 	// Fill all budgets for given balance year from database on window:
 	LOCAL BudYear,BudMonth as int
-  	LOCAL i as int
- 	LOCAL BudAmnt,CurAmnt:=0.00 as FLOAT
-	LOCAL MonthEqual:=true as LOGIC
+	LOCAL i,nPntr,nYM as int
+	LOCAL BudAmnt,CurAmnt:=0.00 as FLOAT
+	LOCAL MonthEqual:=true, lAdd,lEmpty as LOGIC
 	LOCAL aContr:={} as ARRAY
 
-		// Lees budget uit database:
-		BudYear:=Val(SubStr(self:oDCBalYears:Value,1,4))
-		BudMonth:=Val(SubStr(self:oDCBalYears:Value,5,2))
+	// Lees budget uit database:
+	BudYear:=Val(SubStr(self:oDCBalYears:Value,1,4))
+	BudMonth:=Val(SubStr(self:oDCBalYears:Value,5,2))
+	IF BudYear*12+BudMonth>=Year(MinDate)*12+Month(MinDate)
+		self:lBudgetClosed:=false
+	else
+		self:lBudgetClosed:=true
+	endif
+	// search start year in aBudget 
+	if Len(self:aBudget)>0
+		nPntr:=AScan(self:aBudget,{|x|x[1]=BudYear.and.x[2]=BudMonth})
+		if nPntr=0
+			if !self:lBudgetClosed
+				lAdd:=true
+			endif
+			// search latest before year: 
+			nYM:=BudYear*12+BudMonth
+			lEmpty:=true
+			for nPntr:=Len(self:aBudget)-11 downto 1 step 12
+				if self:aBudget[nPntr,1]*12+self:aBudget[nPntr,2]<=nYM 
+					lEmpty:=false
+					exit
+				endif
+			next
+		endif
+		if !lEmpty .and. nPntr>0
+			CurAmnt:= self:aBudget[nPntr,3]
+			FOR i:=1 to 12
+				BudAmnt:=self:aBudget[nPntr,3]		
+				self:FillBudget(self:aBudget[nPntr,3],i,aContr,BudMonth,BudYear) 
+				if lAdd
+					AAdd(self:aBudget,{BudYear,BudMonth,BudAmnt})
+				endif
+				IF i==1
+					CurAmnt:=BudAmnt
+				ELSEIF CurAmnt!=BudAmnt
+					if i<12 .or. Abs(CurAmnt-BudAmnt)>0.11
+						MonthEqual:=FALSE
+					endif
+				ENDIF
+				BudMonth++
+				if BudMonth>12
+					BudMonth:=1
+					BudYear++
+				endif
+				nPntr++
+			NEXT
+		endif
+	else 
+		lEmpty:=true
+	endif
+	if lEmpty
+		// fill empty values:
 		FOR i:=1 to 12
-			BudAmnt:=GetBudget(BudYear,BudMonth,self:mAccId)		
-			self:FillBudget(BudAmnt,i,aContr,BudMonth,BudYear)
-			IF i==1
-				CurAmnt:=BudAmnt
-			ELSEIF CurAmnt!=BudAmnt
-				MonthEqual:=FALSE
-			ENDIF
+			self:FillBudget(0.00,i,aContr,BudMonth,BudYear) 
+			AAdd(self:aBudget,{BudYear,BudMonth,0.00})
 			BudMonth++
-			IF BudMonth>12
+			if BudMonth>12
 				BudMonth:=1
 				BudYear++
-			ENDIF
-		NEXT
-		IF MonthEqual
-			self:FillBudgetYear(aContr)
-			self:BudgetGranularity:="Year"
-		ELSE
-			self:BudgetGranularity:="Month"
-		ENDIF		
+			endif 
+		next
+		MonthEqual:=true
+	endif
+	if MonthEqual
+		self:FillBudgetYear(aContr)
+		self:BudgetGranularity:="Year"
+	ELSE
+		self:BudgetGranularity:="Month"
+	endif		
 	
 METHOD FillBudgetYear(aContr) CLASS EditAccount
 	// fill yearbudget and hide month budgets
@@ -392,22 +443,22 @@ METHOD FillBudgetYear(aContr) CLASS EditAccount
 	IF Empty(aContr)
 		aContr:= self:GetAllChildren()
 	ENDIF
-	// Jaarbedrag bepalen:
- 	FOR i:=1 to 12
+	// calculate amount per year:
+	FOR i:=1 to 12
 		cNum:=Str(i,-1)
- 		IF (ic:=AScan(aContr,{|x|x:Name=="MBUD"+cNum}))>0
-	 		x:=(aContr[ic])
+		if (ic:=AScan(aContr,{|x|x:Name=="MBUD"+cNum}))>0
+			x:=(aContr[ic])
 			x:Hide()
-	 		YearAmnt+=x:Value
-	 	ENDIF
- 		IF (ic:=AScan(aContr,{|x|x:Name=="TEXTBUD"+cNum}))>0
-	 		y:=(aContr[ic])
+			YearAmnt:=Round(YearAmnt+x:Value,DecAantal)
+		endif
+		if (ic:=AScan(aContr,{|x|x:Name=="TEXTBUD"+cNum}))>0
+			y:=(aContr[ic])
 			y:Hide()
-	 	ENDIF
+		endif
 	NEXT
- 	self:mBud1:=Round(YearAmnt,DecAantal)
- 	self:oDCmBUD1:Show()
-RETURN	
+	self:mBud1:=YearAmnt
+	self:oDCmBUD1:Show()
+	RETURN	
 Method FillProprst() class EditAccount
 local amProp as array
 amProp:={} 
