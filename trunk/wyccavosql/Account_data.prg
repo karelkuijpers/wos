@@ -345,61 +345,6 @@ function dummy()
 // ASSIGN YEAR(uValue) CLASS Budget
 //  RETURN self:FieldPut(2, uValue)
 return
-Function GetBudget(BudYear as int,BudMonth as int, AccId as string) as float 
-	// get budget of account with AccId for given year and month
-	* BudYear: integer with required budget year
-	* BudMonth: integer with required monthnumber within BudYear
-	LOCAL YearLast, MonthLast as int
-	LOCAL AmntFound:=0.00 as FLOAT 
-	local oBud,oBudLst as SQLSelect
-	oBud:=SQLSelect{"select amount from budget where `accid`="+AccId+" and `year`="+Str(BudYear,4)+" and `month`="+StrZero(BudMonth,2),oConn}
-	if oBud:RecCount=1
-		RETURN oBud:AMOUNT
-	ENDIF
-	// Not found, then search last available budget: 
-	oBudLst:=SQLSelect{"select accid,max(year*12+month) as yearlast from budget where accid="+AccId+" group by accid",oConn}
-	if oBudLst:RecCount=1				
-		YearLast:=oBudLst:YearLast
-		MonthLast:=Mod(YearLast,12)
-		if MonthLast=0
-			MonthLast=12
-		endif
-		YearLast:=Floor((YearLast-MonthLast)/12)
-		oBud:SQLString:="select amount from budget where `accid`="+AccId+" and `year`="+Str(YearLast,4)+" and `month`="+StrZero(MonthLast,2)
-		oBud:Execute()
-		if oBud:RecCount=1
-			RETURN oBud:AMOUNT
-		ENDIF
-	ENDIF
-	
-	RETURN 0.00
-function GetPerBudget(BudYear as int,BudMonth as int,PerLength as int,YearGranularity ref logic,AccId as string) as float 
-	// Get budget over a period of PerLength months starting in month BudMonth of year BudYear
-	* BudYear: integer with required budget year
-	* BudMonth: integer with required starting monthnumber within BudYear
-	* PerLength: integer with length in months of the period
-	* YearGranularity: returned by reference: true: all budget amounts equal, thus budget per year
-	LOCAL PerBudget:=0.00 as FLOAT
-	LOCAL i as int
-	LOCAL CurYear, CurMonth as int
-	LOCAL CurAmount:=0.00, CurBudget as FLOAT
-	CurYear:=BudYear
-	CurMonth:=BudMonth
-	YearGranularity:=true
-	FOR i=1 to PerLength
-		PerBudget+=(CurBudget:=GetBudget(CurYear,CurMonth,AccId))
-		IF i==1
-			CurAmount:=CurBudget
-		ELSEIF CurAmount!=CurBudget
-			YearGranularity:=FALSE
-		ENDIF
-		CurMonth++
-		IF CurMonth>12
-			CurYear++
-			CurMonth:=1
-		ENDIF
-	NEXT
-	RETURN PerBudget
 Define IDM_ACCOUNT_NAME := "Account"
 Define IDM_Account_ORDERBY := [ACCNUMBER]
 Define IDM_Account_PSWD := "7o4JDp07iyHx"
