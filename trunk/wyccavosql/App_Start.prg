@@ -26,7 +26,7 @@ method Start() class App
 	local startfile,cWorkdir as STRING
 	local oUpg as CheckUPGRADE
 	local lStop as logic
-	local nErr as int 
+	local nErr as Dword 
 	local cFatalError as string	
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
@@ -42,20 +42,36 @@ method Start() class App
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 		SetDefault(CurPath)
 		SetPath(CurPath)
-		myApp:=self 
+		myApp:=self
+		if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
+			HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
+		elseIF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
+			HelpDir:='C:\Windows\Temp'
+		ELSEIF Len(aDir:=Directory("C:\TEMP",FA_DIRECTORY))>0
+			HelpDir:="C:\TEMP"
+		ELSE
+			HelpDir:="C:"
+		ENDIF
+ 
 		oUpg:=CheckUPGRADE{} 
 		cWorkdir:=WorkDir()
 		oInit:=Initialize{} 
-	   if !oInit:lNewDB
-			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
-	   endif
-		if lStop
-			if oConn:Connected
-				oConn:Disconnect()
-			endif					
-			if	(nErr:=self:Run(startfile))<33
-				(ErrorBox{,"Could not start installation program "+startfile+" (error:"+Str(nErr,-1)+"; "+DosErrString(DosError())+")"}):Show()
-				lStop:=False
+		if !oInit:lNewDB 
+			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+		endif 
+// 		LogEvent(self,"stop:"+iif(lStop,'T','F')+"; startfile:"+startfile,"logsql")
+		if lStop .and.!Empty(startfile)
+			if Empty(startfile)
+				lStop:=false
+			else
+				if oConn:Connected
+					oConn:Disconnect()
+				endif					
+				if	(nErr:=self:Run(startfile))<33
+					(ErrorBox{,"Could not start installation program "+startfile+" (error:"+Str(nErr,-1)+"; "+DosErrString(nErr)+")"}):Show()
+					lStop:=False
+				endif
 			endif
 		endif
 		if !lStop
@@ -122,7 +138,7 @@ method Start() class App
 				do while ProlongateAll(oMainWindow)
 				enddo		
 				oMainWindow:Pointer := Pointer{POINTERARROW}
-			* Process standing orders:
+				* Process standing orders:
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
 				oStJournal:=null_object 
