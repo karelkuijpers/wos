@@ -240,25 +240,27 @@ METHOD FindButton( ) CLASS AccountBrowser
 	local cBalIncl,cDepIncl as string
 	local cAccFilter:=self:cAccFilter as string
 	self:cOrder:="accnumber"
-	self:cWhere:="a.balitemid=b.balitemid" 
+	self:cWhere:=self:oAccCnt:cWhere
+// 	self:cWhere:="a.balitemid=b.balitemid" 
 	// 	self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)"
 	// 	self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active,b.category as type,m.co"
 	
+
 	if !Empty(self:SearchUni) 
 		aKeyw:=GetTokens(AllTrim(self:SearchUni))
 		for i:=1 to Len(aKeyw)
-			cWhere+=" and (accnumber like '%"+AddSlashes(aKeyw[i,1])+"%' or description like '%"+AddSlashes(aKeyw[i,1])+"%')"
+			cWhere+=iif(Empty(self:cWhere),""," and ")+" (accnumber like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
 		next
 	endif
 	if !Empty(self:searchOms)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" description like '"+AddSlashes(AllTrim(self:searchOms))+"%'"
+		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" a.description like '"+AddSlashes(AllTrim(self:searchOms))+"%'"
 		self:cOrder:="description"
 	endif
 	if !Empty(self:searchRek)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" accnumber like '"+AddSlashes(AllTrim(self:searchRek))+"%'"
+		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" a.accnumber like '"+AddSlashes(AllTrim(self:searchRek))+"%'"
 	endif
 	cDepIncl:=""
-	if !Empty(self:WhoFrom)
+	if !Empty(self:WhoFrom) .and. !AllTrim(self:WhoFrom)=='0'
 		cDepIncl:=SetDepFilter(Val(self:WhoFrom))
 		if !Empty(cDepIncl)
 			self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.department in ("+cDepIncl+")" 
@@ -276,10 +278,11 @@ METHOD FindButton( ) CLASS AccountBrowser
 		// remove from accfiler
 		cAccFilter:=StrTran(StrTran(StrTran(cAccFilter,"and a.active=1",""),'a.active=1 and ',""),'a.active=1',"")
 	endif   	
-	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder
+	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(self:cWhere).and.Empty(cAccFilter),''," where "+self:cWhere+iif(Empty(cAccFilter),"",iif(Empty(self:cWhere),' ',' and ')+cAccFilter))+" order by "+cOrder
+	
 	self:oAcc:Execute() 
-	if !Empty(oAcc:status)
-		LogEvent(self,"findbutton Acc:"+self:oAcc:status:Description+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
+	if !Empty(oAcc:status) 
+		LogEvent(self,"findbutton Acc:"+self:oAcc:errinfo:errormessage+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
 	endif
 	
 	self:GoTop()
@@ -486,13 +489,16 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		self:cAccFilter:=self:oAccCnt:cAccFilter
 	else
 		self:cOrder:="accnumber" 
-		self:cFields:="a.accid,a.accnumber,a.description,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,a.department,b.category as type"
-		self:cFrom:="balanceitem as b,account as a "
-		self:cWhere:="a.balitemid=b.balitemid"
+// 		self:cFields:="a.accid,a.accnumber,a.description,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,a.department,b.category as type"
+// 		self:cFrom:="balanceitem as b,account as a "
+// 		self:cWhere:="a.balitemid=b.balitemid"
+		self:cFields:="a.accid,a.accnumber,a.description, if(active=0,'NO','') as activedescr "
+		self:cFrom:="account as a "
+		self:cWhere:=""
 		self:cAccFilter:=iif(Empty(cDepmntIncl),"","a.department IN ("+cDepmntIncl+")")
 		self:oAccCnt:=AccountContainer{}
 	endif
-	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" and a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
+	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(empty(self:cWhere),''," and")+" a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
 //	LogEvent(self,"error:"+self:oAcc:errinfo:errormessage+"; statement:"+self:oAcc:SQLString,"logerrors")
 	RETURN nil
 METHOD Refresh() CLASS AccountBrowser 
@@ -722,33 +728,6 @@ CLASS EditAccount INHERIT DataWindowExtra
 	PROTECT oDCFixedText29 AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-//    		instance mAccNumber 
-// 	instance mGIFTALWD 
-// 	instance mDescription 
-// 	instance mNum 
-// 	instance mDepartment 
-// 	instance mSubscriptionprice
-// 	instance mReevaluate
-// 	instance mMultiCurr
-// 	instance mCurrency
-// 	instance mGLAccount  
-// 	instance mCod1, mCod2, mCod3 
-// 	instance BalYears 
-// 	instance mBalance 
-// 	instance mBUD1 
-// 	instance mBUD2 
-// 	instance mBUD3 
-// 	instance mBUD4 
-// 	instance mBUD5 
-// 	instance mBUD6 
-// 	instance mBUD7 
-// 	instance mBUD8 
-// 	instance mBUD9 
-// 	instance mBUD10 
-// 	instance mBUD11 
-// 	instance mBUD12 
-// 	instance BudgetGranularity
-// 	instance PropValueSingle,PropValueCombo 
   	EXPORT oAcc as SQLSelect
   	PROTECT nCurRec as int
   	PROTECT nCurNum,cCurGainLossAcc, nCurDep, cCurSingle as STRING
@@ -765,9 +744,11 @@ CLASS EditAccount INHERIT DataWindowExtra
 	protect CurBal as float 
 	Protect Enabled:=true as logic
 	export lExists as logic 
-	export oAccCnt as AccountContainer 
+	export oAccCnt as AccountContainer
+	protect aBudget:={} as array  // year,month,amount
+	protect lBudgetClosed as logic // shown budget of closed year? 
 	
-	declare method PropValueShow
+	declare method PropValueShow,FillBudget
 RESOURCE EditAccount DIALOGEX  4, 3, 409, 391
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -872,7 +853,7 @@ RETURN uValue
 
 METHOD ButtonClick(oControlEvent) CLASS EditAccount
 	LOCAL oControl as Control
-	LOCAL MonthAmnt:=0, YearAmnt:=0 as FLOAT
+	LOCAL MonthAmnt:=0, YearAmnt:=0, YearAmntOrg:=0 as FLOAT
 	LOCAL i,ic as int
 	LOCAL BudYear,BudMonth as int
 	LOCAL aContr as ARRAY
@@ -887,12 +868,19 @@ METHOD ButtonClick(oControlEvent) CLASS EditAccount
 		BudYear:=Val(SubStr(self:oDCBalYears:Value,1,4))
 		BudMonth:=Val(SubStr(self:oDCBalYears:Value,5,2))
 
-		 // Maandbedragen bepalen:
-	 	MonthAmnt:=Round(self:mBud1/12,DecAantal)
-	 	FOR i:=1 to 12
+		 // Calculate month amounts: 
+		YearAmntOrg:=self:mBud1
+	 	MonthAmnt:=Round(YearAmntOrg/12,DecAantal)
+	 	FOR i:=1 to 11
 		 	self:FillBudget(MonthAmnt,i,aContr,BudMonth,BudYear)
+		 	YearAmnt:=Round(YearAmnt+MonthAmnt,DecAantal)
 		 	BudMonth++
+		 	if BudMonth>12
+		 		BudMonth:=1
+		 		BudYear++
+		 	endif
 	 	NEXT
+	 	self:FillBudget(Round(YearAmntOrg-YearAmnt,DecAantal),i,aContr,BudMonth,BudYear)
 	ELSEIF oControl:Name=="RADIOBUTTONYEAR"
 	 	self:FillBudgetYear(aContr)
 	elseif oControl:Name=="MGIFTALWD"
@@ -944,10 +932,12 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
 	LOCAL cCurValue as USUAL
-	LOCAL nPntr, nSel as int
+	LOCAL nPntr, nSel,nBudPtr,i as int
 	local amProp:=self:aProp as array
 	Local mPropBox:=self:oDCPropBox as ListBox
 	Local cNewValue as string
+	LOCAL BudYear,BudMonth as int 
+	local YearAmntOrg,MonthAmnt,YearAmnt as float
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
@@ -991,6 +981,32 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 		ELSEIF oControl:NameSym==#mGainLossacc .and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurGainLossAcc
 			self:cCurGainLossAcc:=AllTrim(oControl:VALUE)
          self:GLAccButton()
+		ELSEIF SubStr(oControl:Name,1,4)=='MBUD' .and.!IsNil(oControl:VALUE)
+			if !self:lBudgetClosed
+				nPntr:=Val(SubStr(oControl:Name,5)) 
+				BudYear:=Val(SubStr(self:oDCBalYears:VALUE,1,4))
+				BudMonth:=Val(SubStr(self:oDCBalYears:VALUE,5,2))+nPntr-1
+				if BudMonth>12
+					BudMonth:=Mod(BudMonth,12)
+					BudYear++
+				endif
+				nBudPtr:=AScan(self:aBudget,{|x|x[1]==BudYear .and.x[2]=BudMonth})
+				if nBudPtr>0
+					if self:BudgetGranularity=="Month"
+						self:aBudget[nBudPtr,3]:=iif(IsString(oControl:VALUE),Val(oControl:VALUE),oControl:VALUE)
+					else
+						 // Calculate month amounts: 
+						YearAmntOrg:=self:mBud1
+					 	MonthAmnt:=Round(YearAmntOrg/12,DecAantal)
+					 	FOR i:=1 to 11
+							self:aBudget[nBudPtr,3]:=MonthAmnt
+						 	YearAmnt:=Round(YearAmnt+MonthAmnt,DecAantal)
+							nBudPtr++
+					 	next
+						self:aBudget[nBudPtr,3]:=Round(YearAmntOrg-YearAmnt,DecAantal)
+					endif 
+				endif
+			endif 
 		ENDIF
 	ENDIF
 	RETURN nil
@@ -1331,28 +1347,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditAccount
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
-	IF oControl:Name=="BALYEARS" .and. !self:lNew
-		// Lees budget uit database:
-		BudYear:=Val(SubStr(oControl:Value,1,4))
-		BudMonth:=Val(SubStr(oControl:Value,5,2))
-		FOR i:=1 to 12
-			BudAmnt:=GetBudget(BudYear,BudMonth,self:mAccId)		
-			self:FillBudget(BudAmnt,i,aContr,BudMonth,BudYear)
-			IF i==1
-				CurAmnt:=BudAmnt
-			ELSEIF CurAmnt!=BudAmnt
-				MonthEqual:=FALSE
-			ENDIF
-			BudMonth++
-			IF BudMonth>12
-				BudMonth:=1
-				BudYear++
-			ENDIF
-		NEXT
-		IF MonthEqual
-			self:FillBudgetYear(aContr)
-			self:BudgetGranularity:="Year"
-		ENDIF
+	IF oControl:Name=="BALYEARS" .and. !self:lNew 
+		self:FillBudgets()
 	elseif oControl:Name=="PROPBOX"
 		self:PropValueShow(oControl:Value,SubStr(oControl:TextValue,30))
 	elseif oControl:Name=="PROPVALUECOMBO"
@@ -1597,18 +1593,18 @@ METHOD OkButton CLASS EditAccount
 	LOCAL oListViewItem as ListViewItem
 	LOCAL cCurId as STRING
 	LOCAL AmntMonth as FLOAT
-	LOCAL BudYear,BudMonth as int
+	LOCAL BudYear,BudMonth,nYM as int
 	LOCAL BudChanged:=FALSE as LOGIC
 	LOCAL i, nPntr as int
 	local cExtra,cValue as string 
 	local amProp:=self:aProp as array
 	local oStmt,oBudUpd,oBudIns as SQLSTatement
-	local cStatement as string 
+	local cStatement,cValues as string 
 	
 
 	IF self:ValidateAccount()
 		if self:mGIFTALWD
-  			// fill extra properties defaults:
+			// fill extra properties defaults:
 			cExtra:=""
 			FOR i:=1 to Len(amProp) step 1
 				nPntr:=AScan(pers_propextra,{|x| x[2]==amProp[i,2] })
@@ -1620,75 +1616,57 @@ METHOD OkButton CLASS EditAccount
 			cExtra+=iif(Empty(cExtra),"","</velden>")
 		endif
 		cStatement:=iif(self:lNew,"Insert into","update")+" account Set "+;
-		"accnumber='"+LTrimZero(self:mAccNumber)+"'"+;
-		", description='"+ AddSlashes(AllTrim(self:mDescription))+"'"+;
-		", balitemid='"+self:mNumSave+"'"+;
-		", department='"+self:mDep+"'"+;
-      iif(ADMIN=="WA",", reimb="+self:mReimb,"")+;
-      ", subscriptionprice="+ Str(self:mSubscriptionprice,-1)+;
-      ", qtymailing="+ Str(self:mQtyMailing,-1)+;
-		", giftalwd="+iif(self:lMember.and.!self:lMemberDep,"1",iif(self:mGIFTALWD,"1","0"))+;
-		",active="+iif(self:mactive,"1","0")+;
-		", ipcaccount="+iif(IsNil(self:mIPCaccount) .or. Empty(self:oDCmIPCaccount:VALUE) .or. IsString(self:oDCmIPCaccount:VALUE),"0",Str(self:oDCmIPCaccount:VALUE,-1))+;
-		iif(self:mGIFTALWD,", clc='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',propxtra='"+Transform(cExtra,"@B")+"'",", clc='',propxtra=''")+;
-		", multcurr="+ iif(self:mMultCurr,"1","0")+; 
+			"accnumber='"+LTrimZero(self:mAccNumber)+"'"+;
+			", description='"+ AddSlashes(AllTrim(self:mDescription))+"'"+;
+			", balitemid='"+self:mNumSave+"'"+;
+			", department='"+self:mDep+"'"+;
+			iif(ADMIN=="WA",", reimb="+self:mReimb,"")+;
+			", subscriptionprice="+ Str(self:mSubscriptionprice,-1)+;
+			", qtymailing="+ Str(self:mQtyMailing,-1)+;
+			", giftalwd="+iif(self:lMember.and.!self:lMemberDep,"1",iif(self:mGIFTALWD,"1","0"))+;
+			",active="+iif(self:mactive,"1","0")+;
+			", ipcaccount="+iif(IsNil(self:mIPCaccount) .or. Empty(self:oDCmIPCaccount:VALUE) .or. IsString(self:oDCmIPCaccount:VALUE),"0",Str(self:oDCmIPCaccount:VALUE,-1))+;
+			iif(self:mGIFTALWD,", clc='"+	MakeCod({self:mCod1,self:mCod2,self:mCod3})+"',propxtra='"+Transform(cExtra,"@B")+"'",", clc='',propxtra=''")+;
+			", multcurr="+ iif(self:mMultCurr,"1","0")+; 
 		iif(!self:mMultCurr,;
 			iif(self:mCurrency # sCURR,", currency='"+self:mCurrency+"',reevaluate="+iif(self:mReevaluate,"1,gainlsacc="+self:mGainLsacc,"0,gainlsacc=0"),;
-				", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
+			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0")+;
-		iif(self:lNew,""," where accid="+self:mAccId)
+			iif(self:lNew,""," where accid="+self:mAccId)
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:status)
 			LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors")
-			(ErrorBox{self,"Fout:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
+			(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
 			return nil
 		endif
 
 		if self:lNew
 			self:mAccId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 		endif
-		// Save also Budget: 
-		BudYear:=Val(SubStr(self:oDCBalYears:VALUE,1,4))
-		BudMonth:=Val(SubStr(self:oDCBalYears:VALUE,5,2))
-		IF BudYear*12+BudMonth>=Year(MinDate)*12+Month(MinDate)
-			oBudUpd:=SQLStatement{"update budget set amount=? where accid="+self:mAccId+" and year=? and month=?",oConn}
-			oBudIns:=SQLStatement{"insert into budget (accid,amount,year,month) values("+self:mAccId+",?,?,?)",oConn}
- 			IF self:BudgetGranularity="Year"
- 				AmntMonth:=Round(self:mBud1/12,DecAantal) 
-				FOR i:=1 to 12
-					oBudUpd:Execute({Str(AmntMonth,-1),Str(BudYear,4),StrZero(BudMonth,2)})
-					if oBudUpd:NumSuccessfulRows<1
-						// not found, thus insert:
-						oBudIns:Execute({Str(AmntMonth,-1),Str(BudYear,4),StrZero(BudMonth,2)})
-					endif
-					BudMonth++
-					IF BudMonth>12
-						BudMonth:=1
-						BudYear++
-					ENDIF
-				NEXT
- 			ELSE
-				// Save every separate budget:
-				FOR i:=1 to 12
-					AmntMonth:=IVarGetSelf(self,String2Symbol("mBud"+Str(i,-1)))
-					oBudUpd:Execute({Str(AmntMonth,-1),Str(BudYear,4),StrZero(BudMonth,2)})
-					if oBudUpd:NumSuccessfulRows<1
-						// not found, thus insert:
-						oBudIns:Execute({Str(AmntMonth,-1),Str(BudYear,4),StrZero(BudMonth,2)})
-					endif
-					BudMonth++
-					IF BudMonth>12
-						BudMonth:=1
-						BudYear++
-					ENDIF
-				NEXT
-    		ENDIF
-		ENDIF
+		// Save also Budget:
+		nYM:=Year(MinDate)*12+Month(MinDate)
+		nPntr:=1
+		do while nPntr<Len(self:aBudget)  
+			nPntr:=AScan(self:aBudget,{|x|x[1]*12+x[2]>=nYM},nPntr)
+			if nPntr>0
+				for i:=1 to 12
+					cValues+=',('+self:mAccId+','+Str(self:aBudget[nPntr,1],-1)+','+Str(self:aBudget[nPntr,2],-1)+','+Str(self:aBudget[nPntr,3],-1)+')'
+					nPntr++
+				next
+			else
+				exit						
+			endif
+		enddo 
+		if !Empty(cValues)
+			oBudIns:=SQLStatement{"insert into budget (accid,year,month,amount) values "+SubStr(cValues,2)+;
+				" ON DUPLICATE KEY UPDATE amount=values(amount)",oConn}
+			oBudIns:Execute()
+		endif
 		IF IsObject(oCaller).and.!oCaller==null_object
 			IF IsMethod(oCaller,#RefreshTree)
 				IF lNew 
-// 					oAcc:seek(#ACCNUMBER,LTrimZero(self:mAccNumber))
+					// 					oAcc:seek(#ACCNUMBER,LTrimZero(self:mAccNumber))
 					IF Empty(self:nCurNum).and.!Empty(self:nCurDep)
 						cCurId:=self:mDep
 					ELSEIF Empty(self:nCurDep).and.!Empty(self:nCurNum)
@@ -1700,45 +1678,13 @@ METHOD OkButton CLASS EditAccount
 						self:oCaller:Treeview:expand(String2Symbol("Parent_" + cCurId))
 						IF cCurId==self:nCurNum.or.cCurId==self:nCurDep 
 							self:oCaller:Refresh()
-// 							oListViewItem := ListViewItem{}
-// 							oListViewItem:ImageIndex	:= 3
-// 							// for each field, set the value in the item 
-// 							oListViewItem:SetValue(self:mAccId, #Identifier)
-// 							oListViewItem:SetText(self:mAccNumber,	#Identifier)
-// 							oListViewItem:SetValue(self:mDescription, #Description)
-// 							oListViewItem:SetValue("Account", #Type)
-// 							oCaller:ListView:AddItem(oListViewItem)
 						ENDIF
 					ENDIF
 				ELSE
-*					IF !nCurNum==mNumSave
-	*					IF IsMethod(oCaller,#TransferItem)
-*							oCaller:TransferItem(oItemDrag , oItemDrop)
-*						endif
-// 						oCaller:Refresh()
-						oCaller:RefreshTree()
-*					ENDIF
+					oCaller:RefreshTree()
 				ENDIF
 			elseIF IsMethod(oCaller,#Refresh) 
 				self:oCaller:Refresh()
-// 			ELSEIF IsObject(self:oCaller:oAcc)
-// 				self:oCaller:oAcc:Execute()
-// 				if !Empty(self:oCaller:oAcc:status)
-// 					LogEvent(self,"wrong:"+self:oCaller:oAcc:SQLString,"LogErrors")
-// 				endif 
-// 				self:oCaller:oAcc:SuspendNotification() 
-// 				// reposition owner at current person:
-// 				self:oCaller:GoTop()
-// 				do while !self:oCaller:oAcc:EOF .and. !self:oCaller:oAcc:accid==Val(self:mAccId)
-// 					self:oCaller:oAcc:Skip()
-// 				enddo
-// 				self:nCurRec:=self:oCaller:oAcc:Recno
-// 				self:oCaller:oAcc:ResetNotification()
-// 				if !Empty(self:nCurRec)
-// 					self:oCaller:goto(self:nCurRec)
-// 				endif
-// 			  	self:oCaller:FOUND :=Str(self:oCaller:oAcc:Reccount,-1)
-// 				self:oCaller:EnableSelect()
 			endif
 		ENDIF
 		IF self:lImport
@@ -1746,7 +1692,7 @@ METHOD OkButton CLASS EditAccount
 			RETURN nil
 		ENDIF
 		self:EndWindow()
-	
+		
 	ENDIF
 	
 	RETURN nil
@@ -1759,14 +1705,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 	LOCAL oXMLDoc as XMLDocument
 	local osel as SQLSelect
 	local oBalncs as Balances 
+// 	local time1,time0 as float
 	self:SetTexts()
 	
-	// 	oDep:=Department{}
-	// 	IF !oDep:Used
-	// 		oDep:=null_object
-	// 		self:EndWindow()
-	// 		RETURN FALSE
-	// 	ENDIF
 	self:oDCBalYears:CurrentItemNo:=3
 	self:oDCBudgetGranularity:VALUE:="Year"
 	FOR i:=1 to oDCBalYears:ItemCount
@@ -1799,23 +1740,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 	IF self:lNew
 		self:oDCmAccNumber:SetFocus()
 		self:oDCBalanceDate:Disable()
-		// 		self:mGIFTALWD:=FALSE 
-		// 		mDep:=" "
 		self:mCurrency:=sCURR 
 		self:mCLN:="0"
-		// 		mNumSave:=self:oDCmNum:textValue
 		IF !Empty(self:oCaller)
 			IF IsAccess(self:oCaller,#SearchOms)
 				self:mDescription:=IVarGet(oCaller,#SearchOms)
 				self:mAccNumber:=IVarGet(oCaller,#SearchRek)
 				cCaller:=IVarGet(oCaller,#CallerName)
 				IF cCaller=="Member Account"
-					// 					IF !Empty(oAcc:MemberBal)
-					// 						mNumSave:=oAcc:MemberBal
-					// 					ENDIF
-					// 					IF !Empty(oAcc:MemberDep)
-					// 						mDep:=oAcc:MemberDep
-					// 					ENDIF
 					self:mGIFTALWD:=true
 					self:oDCmGIFTALWD:Disable()
 				ENDIF
@@ -1840,27 +1772,25 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		ENDIF
 		self:cCurDep:=self:mDepartment
 	ELSE
-		// 		oAcc:seek(#REK,self:mAccId)
-		// 		oAcc:GoTop() 
-		// 		oAcc:=SQLSelect{"select a.* from account left join (m.persid as mcln from member m ) where a.accid="+self:mAccId,oConn}
+// 		time1:=Seconds()
+
 		self:oAcc:=SQLSelect{;
 			"select a.accid,a.accnumber,a.description,a.balitemid,department,a.gainlsacc,subscriptionprice,a.currency,a.multcurr,reevaluate,"+; 
 			"reimb,a.active,a.clc,a.propxtra,a.giftalwd,a.qtymailing,ipcaccount,"+;
-			"b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln from balanceitem as b, account as a "+;
+			"b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln "+;
+			"from balanceitem as b, account as a "+;
 			"left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
 			"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
 		self:mAccId:= Str(self:oAcc:accid,-1)
-		*    	SELF:oDCmREK:Disable()
 		self:mDescription := self:oAcc:Description
 		self:mNumSave := Str(self:oAcc:balitemid,-1)
 		self:nCurNum:=mNumSave
 		self:mDep:=Str(self:oAcc:Department,-1) 
 		if !Empty(self:oAcc:GAINLSACC) 
 			oAccG:=SQLSelect{"select accid,description from account where accid="+Str(self:oAcc:GAINLSACC,-1),oConn}
-			// 			oAccG:seek(#REK,self:oAcc:GAINLSACC)
 			self:cCurGainLossAcc:=AllTrim(oAccG:Description)
 			self:oDCmGainLossacc:textValue:= oAccG:Description
 			self:mGainLsacc:=Str(oAccG:accid,-1)
@@ -1879,9 +1809,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		self:CurBal:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)
 		self:mBalance:=self:CurBal 
 		
-		// 		oMBal:GetBalance(self:mAccId,self:mNumSave)
-
-		// 		self:CurBal:=oMBal:per_cre-oMBal:per_deb 
 		if oBalncs:per_cre#0 .or.oBalncs:per_deb#0
 			self:oDCmCurrency:Disable()
 			self:Enabled:=false
@@ -1889,7 +1816,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:oDCmCurrency:Enable()
 			self:Enabled:=true
 		endif 
-		// 		self:mBalance:=self:CurBal
 
 		self:mMultCurr:=iif(ConI(self:oAcc:MULTCURR)=1,true,false)
 		if !self:mMultCurr .and. !self:mCurrency==sCURR
@@ -1926,11 +1852,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				ENDIF
 			NEXT
 			self:oDCPropBox:FillUsing(self:aProp)
-// 		else
-// 			self:oDCPropBox:FillUsing({})			
 		endif
 		self:oDCmGIFTALWD:Checked:=ConL(self:oAcc:GIFTALWD)
-// 		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid.or.self:oAcc:netasset=self:oAcc:accid)
 		self:mCLN:=Transform(self:oAcc:mCLN,"")
 		IF !Empty(self:oAcc:mCLN) .and. (Empty(self:oAcc:incomeacc) .or.(self:oAcc:incomeacc=self:oAcc:accid).or.self:oAcc:expenseacc=self:oAcc:accid)
 			* member:
@@ -1939,10 +1862,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:oDCmGIFTALWD:Enable()
 		ENDIF
 		// Read budget:
+// 		time0:=time1
+// 		LogEvent(self,"read account:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
+		osel:=SQLSelect{"select cast(year as unsigned) as year,cast(month as unsigned) as month,amount from budget where accid="+self:mAccId+" order by year,month",oConn}
+		osel:Execute()
+		self:aBudget:={}
+		do while !osel:EoF
+			AAdd(self:aBudget,{integer(osel:Year),integer(osel:Month),osel:amount})
+			osel:Skip()			
+		enddo
 		self:FillBudgets()
 		self:oDCBalanceDate:SelectedDate:=EndOfMonth(Today()+31)
 
-		// 		IF !IsNil(self:oAcc:persid) .and.!self:oAcc:persid==0  // Member account?
 		IF !Empty(self:oAcc:mCLN)
 			* No update of description allowed:
 			self:lMember:=true
@@ -1967,7 +1898,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		ENDIF
 		IF Empty(oAcc:DEPTMNTNBR)
 			self:mDepartment:="0:"+sEntity+" "+sLand
-			// 	ELSEIF oDep:seek(#DEPID,mDep)
 		else
 			self:mDepartment:=oAcc:DEPTMNTNBR+":"+oAcc:DESCRIPTN
 			self:ShowIPC(oAcc:IPCPROJECT)
@@ -1975,7 +1905,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				self:mIPCaccount:=self:oAcc:IPCACCOUNT
 			endif
 		ENDIF
-		self:cCurDep:=self:mDepartment
+		self:cCurDep:=self:mDepartment  
+// 		time0:=time1
+// 		LogEvent(self,"read budget:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+
 	ENDIF
 	if self:mactive
 		self:oDCmActive:TextColor:=Color{COLORBLACK}		
