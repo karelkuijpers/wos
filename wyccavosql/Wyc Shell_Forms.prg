@@ -40,8 +40,8 @@ method CheckNewVersion() class StandardWycWindow
 local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
 cWorkDir:=WorkDir()
 oUpg:=CheckUPGRADE{}
-lStop:=oUpg:LoadUpgrade(@startfile,cWorkDir)
-if lStop					
+lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkDir)
+if lStop .and.!Empty(startfile)					
 	if	myApp:Run(startfile)<33
 		(ErrorBox{,"Could not start installation program "+startfile}):Show()
 		lStop:=False
