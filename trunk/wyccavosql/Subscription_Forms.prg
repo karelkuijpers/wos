@@ -681,11 +681,12 @@ Function ProlongateAll(oCall as Window ) as logic
 	LOCAL mSeqnr as int
 	LOCAL DueDate:=Today()+31, MinDate:=Today()-93 as date
 	LOCAL oSub as SQLSelect
-	LOCAL oPro as ProgressPer 
+// 	LOCAL oPro as ProgressPer 
 	local oStmnt as SQLStatement 
-	local CurSubId as int, dDueDate as date
+	local CurSubId as int, dDueDate as date 
+	local cValuesDue,cValuesSub as string  // values to insert into the database
 
-	LOCAL first:=TRUE AS LOGIC
+// 	LOCAL first:=TRUE AS LOGIC
 
 	* last end date should be after next due date
 	* only donations and subscriptions 
@@ -696,7 +697,6 @@ Function ProlongateAll(oCall as Window ) as logic
 	if oSub:RecCount<1
 		return false
 	endif
-	oCall:Pointer := Pointer{POINTERHOURGLASS}
 	DO WHILE !oSub:EOF
 		IF Empty(oSub:term)
 			(ErrorBox{,"Empty term for:"+GetFullName(oSub:personid)}):Show()
@@ -714,44 +714,43 @@ Function ProlongateAll(oCall as Window ) as logic
 		ELSE
 			mSeqnr:=1
 		ENDIF
-		IF first
-			first:=FALSE
-			oCall:Statusmessage("Busy with prolongating donations/subscriptions:")
-			oPro:=ProgressPer{,oCall}
-			oPro:Caption:="Recording due amounts"
-			oPro:SetRange(1,oSub:LastRec)
-			oPro:SetUnit(1)
-			oPro:Show()
-		ENDIF
+		oCall:STATUSMESSAGE("Busy with prolongating donations/subscriptions:")
 
-		* Add new due amount: 
-		oStmnt:=SQLStatement{"insert into dueamount set subscribid="+mSubid+",invoicedate='"+SQLdate(oSub:DueDate)+"'"+; 
-		",seqnr="+ Str(mSeqnr,-1)+;
-			",amountinvoice ="+ Str(BED_TOEZ,-1)+;
-			",amountrecvd=0",oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows>0
-			* update date due with term within subscription:
-			oStmnt:=SQLStatement{"update subscription set duedate=adddate(duedate,INTERVAL term MONTH) where subscribid="+mSubid,oConn} 
-			oStmnt:Execute()
-		endif
-		IF !First
-			oPro:AdvancePro()
-		ENDIF
+		* Add new due amount:
+		cValuesDue+=',('+mSubid+','+SQLdate(oSub:DueDate)+','+Str(mSeqnr,-1)+','+Str(bed_toez,-1)+')' 
+		* update date due with term within subscription: 
+		cValuesSub+=',('+mSubid+')'
+// 		IF !First
+// 			oPro:AdvancePro()
+// 		ENDIF
 		oSub:skip()
 	ENDDO
+	if !Empty(cValuesDue)
+		SQLStatement{"start transaction",oConn}:Execute()
+		oStmnt:=SQLStatement{"insert into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn}
+		oStmnt:Execute()
+		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
+			* update date due with term within subscription:
+			oStmnt:=SQLStatement{"insert into subscription (subscribid) values "+SubStr(cValuesSub,2)+;
+			" on DUPLICATE KEY UPDATE duedate=adddate(duedate,INTERVAL term MONTH)",oConn} 
+			oStmnt:Execute() 
+			if !Empty(oStmnt:Status)
+				LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
+				SQLStatement{"rollback",oConn}:Execute()
+				return false				
+			endif
+		elseif !Empty(oStmnt:Status)
+			LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
+			SQLStatement{"rollback",oConn}:Execute()
+			return false				
+		endif
+	endif
+
 	* remove old due amounts:
 	oStmnt:=SQLStatement{"delete from dueamount where invoicedate<adddate(Now(),-240)",oConn}
 	oStmnt:Execute()
-	IF !oPro==null_object
-		oPro:EndDialog()
-		oPro:Destroy()
-	ENDIF
+	oCall:STATUSMESSAGE(Space(80))
 
-	oCall:Pointer := Pointer{POINTERARROW}
-
-	//(InfoBox{SELF,"Prolongation",;
-	//'Number of produced amounts due: '+Str(DueCount,5)}):Show()
 	RETURN true
 STATIC DEFINE PROLONGATION_ACCBUTTON := 102 
 STATIC DEFINE PROLONGATION_CANCELBUTTON := 106 
