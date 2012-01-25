@@ -18,20 +18,19 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 	Local aInsRem as Array 
 	Local oFs as FileSpec, LocalDate as date, RemoteDate as date 
 	local aCurvers as array
-	local DBVers,CurVers as float 
+	local DBVers,PrgVers as float 
 	local oSys as SqlSelect
 	local i as int 
 	local cDirname as string 
 	local lSuc as logic
 
 	oFTP := CFtp{"WycOffSy FTP Agent"}
-	aCurvers:=AEvalA(Split(Version,"."),{|x|Val(x)})
-	AEval(aCurvers,{|x|CurVers:=1000*CurVers+x}) 
 	oSys := SqlSelect{"select version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	endif 
-	if FirstOfDay .or. DBVers>CurVers
+	if FirstOfDay .or. DBVers>PrgVers
 		IF oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 			// remove old version if still present:
 			oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
