@@ -1092,17 +1092,17 @@ METHOD OkButton CLASS NewPersonWindow
 				cTit:=Str(self:oDCmTitle:GetItemValue(self:oDCmTitle:CurrentItemNo),-1)  
 			ENDIF
 		ENDIF
-		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(self:oDCmlastname:VALUE))+"',nameext='"+Upper(AddSlashes(self:oDCmNameExt:VALUE))+"'",;
-			"lastname='"+AddSlashes(self:oDCmlastname:TextValue)+"',nameext='"+AddSlashes(self:oDCmNameExt:TextValue))+"'"+;
-			",initials='"+AddSlashes(self:oDCmInitials:TextValue)+"'"+;
+		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
+			"lastname='"+AddSlashes(alltrim(self:oDCmlastname:TextValue))+"',nameext='"+AddSlashes(alltrim(self:oDCmNameExt:TextValue)))+"'"+;
+			",initials='"+AddSlashes(AllTrim(self:oDCmInitials:TextValue))+"'"+;
 			",title='"+AddSlashes(cTit)+"'"+;
-			",attention='"+AddSlashes(self:oDCmAttention:TextValue)+"'"+;
-			",prefix='"+AddSlashes(self:oDCmPrefix:TextValue)+"'"+;
-			",firstname='"+AddSlashes(self:oDCmFirstName:TextValue)+"'"+;
-			",address='"+AddSlashes(self:oDCmAddress:TextValue)+"'"+;
-			",country='"+AddSlashes(self:oDCmCountry:TextValue)+"'"+;
-			",postalcode='"+AddSlashes(self:mPostalcode)+"'"+;
-			",mailingcodes='"+AllTrim(self:mCod)+"'"+;
+			",attention='"+AddSlashes(AllTrim(self:oDCmAttention:TextValue))+"'"+;
+			",prefix='"+AddSlashes(AllTrim(self:oDCmPrefix:TextValue))+"'"+;
+			",firstname='"+AddSlashes(AllTrim(self:oDCmFirstName:TextValue))+"'"+;
+			",address='"+AddSlashes(AllTrim(self:oDCmAddress:TextValue))+"'"+;
+			",country='"+AddSlashes(AllTrim(self:oDCmCountry:TextValue))+"'"+;
+			",postalcode='"+AddSlashes(AllTrim(self:mPostalcode))+"'"+;
+			",mailingcodes='"+AddSlashes(AllTrim(self:mCod))+"'"+;
 			",externid='"+ZeroTrim(self:mExternid)+"'"+;
 			",telbusiness='"+AllTrim(self:mtelbusiness)+"'"+;
 			",telhome='"+AllTrim(self:mTelhome)+"'"+;
@@ -1123,8 +1123,8 @@ METHOD OkButton CLASS NewPersonWindow
 		oPers:=SQLStatement{cStmnt,oConn}
 		oPers:Execute() 
 		if !IsNil(oPers:Status)
-			LogEvent(self,'Add/update person Error:'+oPers:Status:Description+"; statement:"+oPers:SQLString,"LogErrors")
-			(ErrorBox{self,'Add/update person Error:'+oPers:Status:Description}):Show()
+			LogEvent(self,'Add/update person Error:'+oPers:ErrInfo:ErrorMessage+"; statement:"+oPers:SQLString,"LogErrors")
+			(ErrorBox{self,'Add/update person Error:'+oPers:ErrInfo:ErrorMessage}):Show()
 		endif
 		if self:lNew
 			self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
