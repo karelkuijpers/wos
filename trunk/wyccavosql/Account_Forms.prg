@@ -238,47 +238,48 @@ METHOD FindButton( ) CLASS AccountBrowser
 	local aKeyw:={} as array
 	local i as int                                           
 	local cBalIncl,cDepIncl as string
-	local cAccFilter:=self:cAccFilter as string
+	local cAccFilter:=self:cAccFilter as string 
+	local MyWhere as string
 	self:cOrder:="accnumber"
 	self:cWhere:=self:oAccCnt:cWhere
 // 	self:cWhere:="a.balitemid=b.balitemid" 
 	// 	self:cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid)"
 	// 	self:cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.active,b.category as type,m.co"
-	
+	MyWhere:=self:cWhere
 
 	if !Empty(self:SearchUni) 
 		aKeyw:=GetTokens(AllTrim(self:SearchUni))
 		for i:=1 to Len(aKeyw)
-			cWhere+=iif(Empty(self:cWhere),""," and ")+" (accnumber like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
+			MyWhere+=iif(Empty(MyWhere),""," and ")+" (accnumber like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
 		next
 	endif
 	if !Empty(self:searchOms)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" a.description like '"+AddSlashes(AllTrim(self:searchOms))+"%'"
+		MyWhere+=	iif(Empty(MyWhere),""," and ")+" a.description like '"+AddSlashes(AllTrim(self:searchOms))+"%'"
 		self:cOrder:="description"
 	endif
 	if !Empty(self:searchRek)
-		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+" a.accnumber like '"+AddSlashes(AllTrim(self:searchRek))+"%'"
+		MyWhere+=	iif(Empty(MyWhere),""," and ")+" a.accnumber like '"+AddSlashes(AllTrim(self:searchRek))+"%'"
 	endif
 	cDepIncl:=""
 	if !Empty(self:WhoFrom) .and. !AllTrim(self:WhoFrom)=='0'
 		cDepIncl:=SetDepFilter(Val(self:WhoFrom))
 		if !Empty(cDepIncl)
-			self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.department in ("+cDepIncl+")" 
+			MyWhere+=iif(Empty(MyWhere),""," and ")+" a.department in ("+cDepIncl+")" 
 		endif
 	endif
 	if !Empty(self:WhatFrom)
 		cBalIncl:=SetAccFilter(Val(self:WhatFrom))
 		if !Empty(cBalIncl)
-			self:cWhere+=iif(Empty(self:cWhere),""," and ")+" a.balitemid in ("+cBalIncl+")" 
+			MyWhere+=iif(Empty(MyWhere),""," and ")+" a.balitemid in ("+cBalIncl+")" 
 		endif
 	endif
 	if !self:CheckBoxInactive
-		self:cWhere+=iif(Empty(self:cWhere),"",' and ')+"a.active=1"
+		MyWhere+=iif(Empty(MyWhere),"",' and ')+"a.active=1"
 	else
 		// remove from accfiler
 		cAccFilter:=StrTran(StrTran(StrTran(cAccFilter,"and a.active=1",""),'a.active=1 and ',""),'a.active=1',"")
 	endif   	
-	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(self:cWhere).and.Empty(cAccFilter),''," where "+self:cWhere+iif(Empty(cAccFilter),"",iif(Empty(self:cWhere),' ',' and ')+cAccFilter))+" order by "+cOrder
+	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(MyWhere).and.Empty(cAccFilter),''," where "+MyWhere+iif(Empty(cAccFilter),"",iif(Empty(MyWhere),' ',' and ')+cAccFilter))+" order by "+cOrder
 	
 	self:oAcc:Execute() 
 	if !Empty(oAcc:status) 
