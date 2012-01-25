@@ -7,14 +7,14 @@ METHOD AccountSelect(Caller as object,BrwsValue:="" as string,ItemName as string
 		self:lUnique := true
 	ENDIF 
 	
-	IF !Empty(BrwsValue)
-		IF IsDigit(BrwsValue)
-			self:SearchREK := BrwsValue
-		ELSE
-			self:SearchUni := BrwsValue
-			self:oDCSearchUni:SetFocus()
-		ENDIF
-	ENDIF
+// 	IF !Empty(BrwsValue)
+// 		IF IsDigit(BrwsValue)
+// 			self:SearchREK := BrwsValue
+// 		ELSE
+// 			self:SearchUni := BrwsValue
+// 			self:oDCSearchUni:SetFocus()
+// 		ENDIF
+// 	ENDIF
 	self:CallerName := ItemName
 	self:Caption := "Select "+ItemName
 	self:Server:GoTop()
@@ -185,10 +185,14 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	endif
 	oAccCnt:cFields:=cFields
 	oAccCnt:cFrom:=cFrom
-	oAccCnt:cWhere:=cWhere+iif(Empty(BrwsValue),''," and (accnumber like '"+AddSlashes(BrwsValue)+"%' or description like '%"+AddSlashes(BrwsValue)+"%')") 
+// 	oAccCnt:cWhere:=cWhere+iif(Empty(BrwsValue),''," and (accnumber like '"+AddSlashes(BrwsValue)+"%' or description like '%"+AddSlashes(BrwsValue)+"%')") 
+	oAccCnt:cWhere:=cWhere
 	oAccCnt:cAccFilter:=cAccFilter
 	oAccCnt:cOrder:=cOrder
-	oAccBw := AccountBrowser{oWindow,,,{oCaller,oAccCnt}}
+	oAccBw := AccountBrowser{oWindow,,,{oCaller,oAccCnt}} 
+	if !Empty(BrwsValue)
+		oAccBw:SearchUni:=AllTrim(BrwsValue)
+	endif
 // 	if !Empty(BrwsValue)
 // 		oAccBw:cWhere+=" and (accnumber like '"+BrwsValue+"%' or description like '"+BrwsValue+"%')" 
 // 	endif
