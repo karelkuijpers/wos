@@ -1389,11 +1389,11 @@ METHOD DeleteButton CLASS PersonBrowser
 			InfoBox { self, "Delete Record","Fin.records in not yet balanced years present! Wait untill year balancing"}:Show()
 			RETURN
 		ENDIF
-		oSel:SQLString:="select personid from subscription where personid='"+myCLN+"'"
+		oSel:SQLString:="select personid from subscription where personid='"+myCLN+"' and category<>'G'"
 		oSel:Execute()
 		if oSel:RecCount>0
 			InfoBox { self, "Delete Record",;
-				"Subscript/donation/periodic gift present! Delete them first"}:Show()
+				"Subscript/donation present! Delete them first"}:Show()
 			RETURN
 		ENDIF
 		oSQL:=SQLStatement{"delete from person where persid="+myCLN,oConn}
@@ -1451,34 +1451,28 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 	ELSE
 		self:lUnique := true
 	ENDIF
-	IF !Empty(cValue) 
+	IF !Empty(cValue)
 		if !Empty(oPersCnt).and. !Empty(oPersCnt:m51_pos)
 			self:SearchSZP := oPersCnt:m51_pos
 		ENDIF
 		IF IsDigit(cValue)
 			cValue:=ZeroTrim(cValue)
-			IF Len(cValue)>6 .and.!IsAlpha(psz(_cast,SubStr(cValue,Len(cValue),1)))
+			IF Len(cValue)>6 .and.!IsAlpha(psz(_cast,SubStr(cValue,Len(cValue),1))) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber))
 				self:SearchBank := cValue
-			ELSE				
+			ELSEif Empty(self:SearchSZP) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber).or.!alltrim(oPersCnt:m56_banknumber)==alltrim(cValue))				
 				self:SearchSZP := cValue
+			else
+				self:SearchUni:= cValue
 			ENDIF
 		ELSE
-			self:SearchSLE := AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
+// 			self:SearchSLE := AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
+			self:SearchUni := AllTrim(StrTran(cValue,',',' '))
 		ENDIF
 		if !Empty(oPersCnt).and.!Empty(oPersCnt:persid)
 			self:SearchCLN:=oPersCnt:persid
 		endif
 	ENDIF
 	
-	// 	IF lUnique.and.(lFoundUnique.or.Empty(cValue))
-	// 		IF IsMethod(oExtCaller, #RegPerson)
-	// 			IF Empty(cValue)
-	// 				oExtCaller:RegPerson(,Itemname)
-	// 			ELSE
-	// 				oExtCaller:RegPerson(oPers,Itemname)
-	// 			ENDIF
-	// 		ENDIF	
-	// 	ELSE 
 
 	IF !Empty(oPersCnt).and.!Empty(oPersCnt:m51_lastname)
 		self:caption+=Compress(" "+oPersCnt:m51_lastname+","+oPersCnt:m51_title+;
@@ -1487,15 +1481,13 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 	else
 		self:caption+=Compress(" "+cValue)
 	ENDIF 
+	self:Show()
 	if self:oPers:RecCount>0
 		self:oCCOKButton:Enable()
 	else
-		self:oCCOKButton:Disable()
+		self:FindButton()
 	endif
 
-	self:Show() 
-	// 		self:GoTop()
-	// 	ENDIF
 	RETURN true
 
 method RegPerson(oCLN) class PersonBrowser 
@@ -1683,7 +1675,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 	*
 	LOCAL nLength, i,j as int
 	LOCAL aWord as ARRAY
-	LOCAL aFirstPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY
+	LOCAL aFirstPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET","DER"} as ARRAY
 	LOCAL aSecondPrefix:={"DEN","DER","HET","DE"} as ARRAY
 	LOCAL aSalutation:={"DHR","HR","MW","MEJ","HR/MW","FAM","MR","MRS","PROF","DR","IR","DS","ARTS","DRS"} as ARRAY
 	LOCAL aSalutationSep:={"EN","E/O",""} as ARRAY
