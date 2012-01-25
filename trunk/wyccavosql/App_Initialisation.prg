@@ -51,7 +51,6 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 			if oFs:Find()
 				LocalDate:=oFs:DateChanged
 			endif
-
 			aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
 			if Len(aInsRem)>0
 				RemoteDate:=aInsRem[1,F_DATE]
@@ -74,6 +73,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 					endif
 				endif
 			endif
+			oFs:=null_object
 			oFTP:CloseRemote() 
 		else
 			__RaiseFTPError(oFTP)
@@ -1347,9 +1347,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","stordrid","int(11)","NO","NULL","auto_increment"},;
 		{"standingorder","idat","date","NO","0000-00-00",""},;
 		{"standingorder","edat","date","NO","0000-00-00",""},;
-		{"standingorder","day","int(3)","NO","0",""},;
+		{"standingorder","day","int(3)","NO","1",""},;
 		{"standingorder","lstrecording","date","NO","0000-00-00",""},;
-		{"standingorder","period","int(2)","NO","0",""},;
+		{"standingorder","period","int(2)","NO","1",""},;
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""}; 
