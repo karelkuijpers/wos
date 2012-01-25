@@ -1215,7 +1215,7 @@ ELSEIF pMonth<=0
 	pYear:=pYear+Round((pMonth-12)/12,0)
 	pMonth:=pMonth%12
 ENDIF
-FOR i=0 to 3  && corrigeer voor kortere maand
+FOR i=0 to 3  && correct shorted month
     nwdat:=SToD(Str(pYear,4,0)+StrZero(pMonth,2,0)+StrZero(pDay-i,2,0))
     IF .not.Empty(nwdat)
        exit
@@ -2601,6 +2601,7 @@ function SQLdate(dat as date) as string
 local Rdat:=DToS(dat) as string
 return substr(Rdat,1,4)+"-"+substr(Rdat,5,2)+"-"+substr(Rdat,7,2)
 function SQLDate2Date(sqldat as string) as date
+// convert mysql date to VO-date
 return SToD(StrTran(sqldat,"-",""))
 Function SQLGetMyConnection()
 return oConn
