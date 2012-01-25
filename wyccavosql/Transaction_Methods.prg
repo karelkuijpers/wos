@@ -4132,8 +4132,9 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		oDet:Browser:Refresh()
 		RETURN FALSE
 	ELSE 
-		if !self:lTeleBank
 			self:mCLNGiver:=""
+		if !self:lTeleBank
+// 			self:mCLNGiver:=""
 			self:cGiverName:=""
 			self:oDCmPerson:Value:=""
 			self:oDCmDebAmntF:TEXTValue:=""
