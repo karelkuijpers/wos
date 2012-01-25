@@ -132,16 +132,19 @@ method Start() class App
 			oMainWindow:Menu:ToolBar:Hide()
 			// Run program
 			IF FirstOfDay
-				// Check consistency data
-				CheckConsistency(oMainWindow,true,false,@cFatalError) 
-				// Process prolongations of subscriptions (donations): 
-				do while ProlongateAll(oMainWindow)
-				enddo		
 				oMainWindow:Pointer := Pointer{POINTERARROW}
 				* Process standing orders:
 				oStJournal:=StandingOrderJournal{}
 				oStJournal:recordstorders()
 				oStJournal:=null_object 
+				// Process prolongations of subscriptions (donations): 
+				do while ProlongateAll(oMainWindow)
+				enddo		
+				// Check consistency data
+				oMainWindow:STATUSMESSAGE("Checking data")
+				CheckConsistency(oMainWindow,true,false,@cFatalError) 
+				oMainWindow:STATUSMESSAGE(Space(80))
+				oMainWindow:Pointer := Pointer{POINTERARROW}
 			endif
 			// Idem for reevaluation: 
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0
