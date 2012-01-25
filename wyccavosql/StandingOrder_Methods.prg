@@ -538,13 +538,16 @@ CLASS StandingOrderJournal
 	protect oCurr as Currency 
 	export mxrate as float
 	protect oLan as Language
-  	PROTECT oPro as ProgressPer 
-
+	PROTECT oPro as ProgressPer
+	protect aTrans:={} as array    //array with transactions to record: 
+	//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank,13:reference,14:StOrdrid,15:seqnr,16:userid,17:transid},...}
+	protect aBank:={} as ARRAY  //{index in aTrans,banknumber,stordrid },...
+	protect aStOrd:={} as array // {stordrid,date}
 	declare method journal,recordstorders 
 Method Init() class StandingOrderJournal
 	// self:oLan:=SQLSelect{"select * from language",oConn}
 	return self
-method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrderJournal
+method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  class StandingOrderJournal
 	*****************************************************************
 	* Recording of standing order as transaction
 	*
@@ -557,23 +560,19 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 	local deb,cre, DEBFORGN,CREFORGN as float
 	local CurStOrdrid as int
 	local oPersBank,oBal as SQLSelect 
-	local oTrans,oBord,oStmnt as SQLStatement
+	// 	local oTrans,oBord,oStmnt as SQLStatement
 	local i as int
-	local aTrans:={} as array  //array with transactions to record: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank,13:STORDRID},...}
 	*Check validity of standing order:
 	CurStOrdrid:=oStOrdL:stordrid
-	IF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
+	IF !Empty(dat_controle(datum,true))
+		lError:=true
+	elseIF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
 		lError:=true
 	endif
-	if CurStOrdrid=255
-		CurStOrdrid:=CurStOrdrid
-	endif 
 
 	do while !oStOrdL:EOF .and. oStOrdL:stordrid==CurStOrdrid
 		if !lError
-			IF !Empty(dat_controle(datum,true))
-				lError:=true
-			elseif Empty(oStOrdL:ACCNUMBER)
+			if Empty(oStOrdL:ACCNUMBER)
 				* Check account:
 				(WarningBox{,self:oLan:WGet("Periodic Records"),Str(oStOrdL:ACCOUNTID,-1)+": "+self:oLan:WGet("unknown account, skipped")+" in standing order: "+Str(CurStOrdrid,-1)}):Show()
 				lError:=true
@@ -588,24 +587,23 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 			if Str(oStOrdL:ACCOUNTID,-1)== sCRE .and. !Empty(oStOrdL:CREDITOR)
 				// payment to creditor
 				if CountryCode="31"
-					oPersBank:=SQLSelect{"select banknumber,persid from personbank where banknumber='"+oStOrdL:BANKACCT+"'",oConn}
-					if oPersBank:RECCOUNT>0
-						if oPersBank:persid=oStOrdL:CREDITOR
-							mBank:=oStOrdL:BANKACCT
-						else
+					if !Empty(oStOrdL:BANKACCT) .and. !Empty(!Empty(oStOrdL:BANKACCT)) .and. oStOrdL:BANKACCT==oStOrdL:banknumber
+						mBank:=oStOrdL:BANKACCT
+					else 
+						if Empty(oStOrdL:banknumber)
 							(WarningBox{,self:oLan:WGet("Periodic Records"),"Bank account "+oStOrdL:BANKACCT+" does not belang to person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)"}):Show()
 							lError:=true
+						else
+							oPersBank:=SQLSelect{"select banknumber,persid from personbank where persid='"+Str(oStOrdL:CREDITOR,-1)+"'",oConn}
+							if oPersBank:RECCOUNT>0
+								mBank:=oPersBank:banknumber 
+							endif
 						endif
-					else
-						oPersBank:=SQLSelect{"select banknumber,persid from personbank where persid='"+Str(oStOrdL:CREDITOR,-1)+"'",oConn}
-						if oPersBank:RECCOUNT>0
-							mBank:=oPersBank:banknumber 
+						if !lError .and.Empty(mBank)
+							(WarningBox{,self:oLan:WGet("Periodic Records"),"No bank account for person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)"}):Show()
+							lError:=true
 						endif
 					endif
-					if !lError .and.Empty(mBank)
-						(WarningBox{,self:oLan:WGet("Periodic Records"),"No bank account for person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)"}):Show()
-						lError:=true
-					endif					
 				endif
 			endif
 		ENDIF
@@ -630,94 +628,52 @@ method journal(datum as date, oStOrdL as SQLSelect) as logic  class StandingOrde
 				CREFORGN:=Round(cre/(self:oCurr:GetROE(CurrFrom,datum)),DecAantal)
 				TransCurr:=CurrFrom
 			endif	
-			// save in aTrans: {{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:mBank},...}
-			AAdd(aTrans,{Str(oStOrdL:ACCOUNTID,-1),datum,oStOrdL:DESCRIPTN,oStOrdL:docid,deb,cre,DEBFORGN,CREFORGN,TransCurr,oStOrdL:GC,;
-				iif(ConI(oStOrdL:GIFTALWD)==1.and. !Empty(oStOrdL:persid).and. cre > deb  .and. !Str(oStOrdL:ACCOUNTID,-1) == sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),mBank,oStOrdL:REFERENCE} )
+			// save in aTrans: 
+			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
+			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),deb,cre,DEBFORGN,CREFORGN,;
+				TransCurr,oStOrdL:GC,;
+				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
+				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,nTrans} ) 
+			if !Empty(mBank)
+				// save banknumber
+				AAdd(self:aBank,{Len(self:aTrans),mBank,Str(CurStOrdrid,-1)})
+			endif 
 		endif
 		oStOrdL:skip()
 	enddo
-	// perform recording if transactions (when everything is OK:
-	if !lError 
-		SQLStatement{"start transaction",oConn}:execute()
-		cTrans:= ""
-		// lock mbalance records:
-		oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Implode(aTrans,',',,,1)+")"+;
-			" and	year="+Str(Year(aTrans[1,2]),-1)+;
-			" and	month="+Str(Month(aTrans[1,2]),-1)+" order by mbalid for update",oConn}
-		if	!Empty(oBal:status)
-			lError:=true
-		else
-			for i:=1 to Len(aTrans) 
-				oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+iif(i==1,"",",transId")+;
-					") values ('"+aTrans[i,1]+"','"+SQLdate(aTrans[i,2])+"','"+AddSlashes(aTrans[i,3])+"','"+AddSlashes(aTrans[i,4])+;
-					"','"+Str(aTrans[i,5],-1)+"','"+Str(aTrans[i,6],-1)+;
-					"','"+Str(aTrans[i,7],-1)+"','"+Str(aTrans[i,8],-1)+;
-					"','"+aTrans[i,9]+"','"+aTrans[i,10]+"','"+Str(aTrans[i,11],-1)+"','"+LOGON_EMP_ID+"','"+Str(i,-1)+"','"+AllTrim(aTrans[i,13])+iif(i==1,"","','"+cTrans)+"')",oConn}
-				oTrans:execute()
-				if oTrans:NumSuccessfulRows<1 
-					LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
-					lError:=true
-					exit
-				endif
-				if Empty(cTrans)
-					cTrans:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-				endif
-				if !ChgBalance(aTrans[i,1], datum, aTrans[i,5], aTrans[i,6], aTrans[i,7], aTrans[i,8],aTrans[i,9])
-					lError:=true
-					exit
-				endif
-				if aTrans[i,1]==sCRE .and. !Empty(aTrans[i,12])
-					// payment to creditor
-					if CountryCode="31"  
-						// make bankorder:
-						oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values ('"+sCRE+"','"+;
-							Str(Round(aTrans[i,6]-aTrans[i,5],DecAantal),-1)+"','"+AddSlashes(aTrans[i,3])+"','"+aTrans[i,12]+"','"+SQLdate(aTrans[i,2])+"','"+Str(CurStOrdrid,-1)+"')",oConn}
-						oBord:execute()
-						if oBord:NumSuccessfulRows<1
-							lError:=true
-							exit
-						endif
-					endif
-				endif
-			next 
-		endif
-		if !lError
-			&&skip to next month
-			oStmnt:=SQLStatement{"update standingorder set lstrecording='"+SQLdate(datum)+"' where stordrid="+Str(CurStOrdrid,-1),oConn}
-			oStmnt:execute()
-			if Empty(oStmnt:status)
-				SQLStatement{"commit",oConn}:execute()
-			else
-				lError:=true
-			endif
-		endif
-		if lError
-			LogEvent(self,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum),"LogErrors")
-			ErrorBox{,self:oLan:WGet("standingorder could not be executed")+":ID-"+Str(CurStOrdrid,-1)+" date:"+DToC(datum)}:Show()
-			SQLStatement{"rollback",oConn}:execute()
-		endif
+	if !lError
+		nTrans++
 	endif
+
 
 
 	return !lError
 METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	* Daily execution of Standing Orders
-	LOCAL nwdat, checkdate,idat,edat as date, tel:=0 as int, first:=true as LOGIC
-	LOCAL iPeriod,nCurRec,nAdv,nDay as int 
+	LOCAL nwdat, checkdate,idat,edat,curdat as date, tel:=0 as int, first:=true,lError as LOGIC
+	LOCAL iPeriod,nCurRec,nAdv,nDay,i,j,CurStOrdrid as int
+	local nTrans as DWord 
 	local oStOrdL as SQLSelect
-	
+	// 	local CurStOrdrid:='',cTrans as string 
+	local oBal as balances 
+	local cValuesBankOrd,cValuesStOrd,cValuesTrans as string 
+	local oTrans,oBord,oStmnt as SQLStatement
+	self:aTrans:={}
 
 	if self:oCurr==null_object
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
-	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
-	"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,l.reference,"+; 
+	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
+		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
+		"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,b.banknumber,l.reference,l.seqnr,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
-	" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) where l.stordrid=s.stordrid and "+;
-	"(edat is null or edat>=CurDate()) and "+;
-	"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
-	"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
-	" order by s.stordrid,l.seqnr",oConn} 
+		" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) "+; 
+	"left join personbank b on (b.persid=l.creditor and b.banknumber=l.bankacct) "+;
+		"where l.stordrid=s.stordrid and "+;
+		"(edat is null or edat>=CurDate()) and "+;
+		"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
+		"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
+		" order by s.stordrid,l.seqnr",oConn} 
 	if oStOrdL:RECCOUNT <1 
 		return false
 	endif 
@@ -739,34 +695,97 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		ENDIF
 
 		*Checking validity standing order and executing it:
-		IF first
-			first:=FALSE
-			oMainWindow:STATUSMESSAGE("Busy with standing orders:")
-			self:oPro:=ProgressPer{,self}
-			self:oPro:Caption:="Recording standing orders"
-			self:oPro:SetRange(1,oStOrdL:RECCOUNT)
-			self:oPro:SetUnit(1)
-			self:oPro:Show()
-		ENDIF
-		nCurRec:=oStOrdL:Recno
-		do while self:journal(nwdat,oStOrdL)  
+		oMainWindow:STATUSMESSAGE("Busy with standing orders:")
+		nCurRec:=oStOrdL:Recno 
+		curdat:=null_date
+		CurStOrdrid:=oStOrdL:stordrid
+		do while self:journal(nwdat,oStOrdL,@nTrans)
+			curdat:=nwdat  
 			nwdat:=Getvaliddate(nDay,Month(nwdat)+iPeriod,Year(nwdat)) 
 			IF (Empty(edat).or.nwdat <=edat) .and.nwdat <=checkdate // more transactions to made?
 				oStOrdL:GoTo(nCurRec) // reset orderlines
 			else
+				AAdd(self:aStOrd,{Str(CurStOrdrid,-1),SQLdate(curdat) })
 				exit
 			endif
 		enddo
-		IF !first
-			nAdv:=Max(1,oStOrdL:Recno-nCurRec)
-			self:oPro:AdvancePro(nAdv)
-		ENDIF
-	ENDDO 
+	ENDDO
+	// perform recording if transactions (when everything is OK:
+	if !Empty(self:aTrans) 
+		oBal:=Balances{}
+		SQLStatement{"start transaction",oConn}:execute()
+		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+;
+			") values ('"+self:aTrans[1,1]+"','"+self:aTrans[1,2]+"','"+self:aTrans[1,3]+"','"+self:aTrans[1,4]+;
+			"','"+Str(self:aTrans[1,5],-1)+"','"+Str(self:aTrans[1,6],-1)+;
+			"','"+Str(self:aTrans[1,7],-1)+"','"+Str(self:aTrans[1,8],-1)+;
+			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"')",oConn}
+		oTrans:execute()
+		if oTrans:NumSuccessfulRows<1 
+			LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
+			lError:=true
+		else
+			nTrans:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+			for i:=1 to Len(self:aTrans)
+				// fill transid
+				aTrans[i,15]+=nTrans
+			next
+			cValuesTrans:=Implode(aTrans,'","',2)
+			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
+			//                                                         1   2      3        4     5   6     7       8        9      10   11
+			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference,transId) "+;
+				"values "+cValuesTrans,oConn}
+			oTrans:execute()
+			if !Empty(oTrans:status) 
+				LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
+				lError:=true
+			endif
+		endif
+		if !lError
+			for i:=1 to Len(self:aTrans)
+				oBal:ChgBalance(self:aTrans[i,1], SQLDate2Date(self:aTrans[i,2]), self:aTrans[i,5], self:aTrans[i,6], self:aTrans[i,7], self:aTrans[i,8],self:aTrans[i,9])
+			next 
+			if !oBal:ChgBalanceExecute()
+				lError:=true
+			endif
+		endif
+		if !lError
+			if !Empty(self:aBank) 
+				// payment to creditor
+				// make bankorder:
+				for i:=1	to	Len(self:aBank)
+					j:=self:aBank[i,1] 
+					cValuesBankOrd+=",('"+sCRE+"','"+;
+						Str(Round(self:aTrans[j,6]-self:aTrans[j,5],DecAantal),-1)+"','"+self:aTrans[j,3]+"','"+self:aBank[i,2]+"','"+self:aTrans[j,2]+"','"+self:aBank[i,3]+"')"
+				next
 
-	IF !self:oPro==null_object
-		self:oPro:EndDialog()
-		self:oPro:Destroy()
-	ENDIF
+				oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values "+SubStr(cValuesBankOrd,2),oConn}
+				oBord:execute()
+				if !Empty(oBord:status) .or. oBord:NumSuccessfulRows<1
+					lError:=true						
+				endif
+			endif
+			if !lError .and. !Empty(self:aStOrd)
+				cValuesStOrd+=Implode(self:aStOrd,'","')
+				&&skip to next month
+				oStmnt:=SQLStatement{"insert into standingorder (stordrid,lstrecording) values "+cValuesStOrd+;
+					" ON DUPLICATE KEY UPDATE lstrecording=values(lstrecording) ",oConn}
+				oStmnt:execute()
+				if!Empty(oStmnt:status)
+					lError:=true
+				endif
+			endif
+		endif
+
+		// 		endif
+		if !lError
+			SQLStatement{"commit",oConn}:execute()
+		else
+			SQLStatement{"rollback",oConn}:execute()
+			LogEvent(self,self:oLan:WGet("standingordesr could not be executed"),"LogErrors")
+			ErrorBox{,self:oLan:WGet("standingorder could not be executed")}:Show()
+		endif	
+	endif
+	oMainWindow:STATUSMESSAGE(Space(80))
 	RETURN true
 ACCESS AccNbrCol() CLASS StOrderLines
 RETURN self:oDBACCOUNTNBR:NameSym
