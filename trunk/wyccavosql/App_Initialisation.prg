@@ -48,12 +48,12 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 			next
 			oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
 			if oFs:Find()
-				LocalDate:=oFs:DateChanged
+				LocalDate:=oFs:DateChanged  
 			endif
 			aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
 			if Len(aInsRem)>0
 				RemoteDate:=aInsRem[1,F_DATE]
-				if LocalDate < RemoteDate
+				if LocalDate < RemoteDate .or.DBVers>PrgVers
 					// apparently new version:
 					if (TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
 						// load first latest version of install program:
@@ -686,9 +686,6 @@ method init() class Initialize
 				self:FirstOfDay:=FALSE
 			else	
 				self:FirstOfDay:=true
-				if !Empty(oSel:Status)
-					self:lNewDb:=true    // apparently partly new database which need to be converted
-				endif
 			endif
 		else
 			self:FirstOfDay:=true
@@ -1332,6 +1329,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","gender","smallint(6)","NO","0",""},;
 		{"person","propextr","mediumtext","NO","",""},;
 		{"person","externid","char(10)","NO","",""},; 
+		{"person","deleted","tinyint(1)","NO","0",""},; 
 	{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
 		{"person_properties","type","int(1)","NO","0",""},;
