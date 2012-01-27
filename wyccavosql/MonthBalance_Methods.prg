@@ -20,7 +20,7 @@ class Balances
 	EXPORT vjr_creF  as FLOAT  //calculated credit balance previous year
 	EXPORT cRubrSoort as STRING // Classification of corresponding balance item
 	
-	protect cAccSelection as string
+	export cAccSelection as string
 	protect cMbalStmt as string   // string with values to update month balance within ChgBalance
 	export cError as string  // error te be returned  
 	
@@ -182,9 +182,6 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
 	ENDIF
 	PeriodStart := Round(PeriodStartYear*12+ PeriodStartMonth,0)
 	PeriodEnd   := Round(PeriodEndYear*12+ PeriodEndMonth,0)
-   if pAccount="100762"
-   	pAccount:=pAccount
-   endif
    self:cAccSelection:=" a.accid='"+pAccount+"'"
    cStatement:= self:SQLGetBalance(PeriodStartYear*100+ PeriodStartMonth, PeriodEndYear*100+PeriodEndMonth-;
 	iif(IsDate(pPeriodEnd) .and.pPeriodEnd<EndOfMonth(pPeriodEnd),1,0),,iif(pCurrency==sCURR,false,true)) 
@@ -259,7 +256,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	* lForeignCurr	: if true _debf and _creF values are also returned from the SQLSelect
 	* lBudget		; if true return also fields with budget values prvper_bud, per_bud, yr_bud from the SQLSelect
 	* lDetails		: if true return also account values accnumber and description from the SQLSelect
-	* A extra selection to be used in the where clause to select accounts can be given bij: Balances:cAccSelection:=<selection criteria>, 
+	* A extra selection to be used in the where clause to select accounts can be given by: Balances:cAccSelection:=<selection criteria>, 
 	*	e.g. a.department in(..,..,...) and a.balitemid in (..,..,..)  
    *
 	*
