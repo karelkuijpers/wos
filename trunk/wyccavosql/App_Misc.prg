@@ -165,7 +165,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		endif
 		lTrMError:=true
 		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+oSel:accnumber+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
+			cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
 			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,oSel:debtot,oSel:cretot}) 
 			oSel:Skip()
 		enddo
