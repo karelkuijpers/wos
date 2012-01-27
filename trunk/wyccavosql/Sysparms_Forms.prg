@@ -1687,11 +1687,7 @@ METHOD PersonButtonContact(lUnique,WithCln ) CLASS Tab_Parm2
 	else
 		oPers:persid:=""
 	endif
-	IF self:lImport
-		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
-	else
-		PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
-	endif
+	PersonSelect(self:Owner,cValue,lUnique,,"PMC Manager",oPers)
 
 RETURN nil
 ACCESS pmcupld() CLASS Tab_Parm2
