@@ -1,19 +1,8 @@
-FUNCTION __DBG_EXP( ) AS USUAL PASCAL
-RETURN ( NIL )
 STATIC DEFINE AREAREPORT_AFSLDAG := 104 
 STATIC DEFINE AREAREPORT_AFSLDAGTEXT := 103 
 STATIC DEFINE AREAREPORT_BALANCETEXT := 102 
 STATIC DEFINE AREAREPORT_CANCELBUTTON := 101 
 STATIC DEFINE AREAREPORT_OKBUTTON := 100 
-CLASS AskSend INHERIT DataDialogMine 
-
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export Result as shortint
 RESOURCE AskSend DIALOGEX  4, 3, 265, 83
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -24,6 +13,15 @@ BEGIN
 	CONTROL	"(this is IRREVOCABLE)", ASKSEND_FIXEDTEXT2, "Static", WS_CHILD, 4, 25, 236, 13
 END
 
+CLASS AskSend INHERIT DataDialogMine 
+
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export Result as shortint
 METHOD CancelButton( ) CLASS AskSend 
      Result:=0
      self:EndWindow()
@@ -316,7 +314,8 @@ METHOD OKButton( ) CLASS PMISsend
 	SELF:EndWindow()
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PMISsend
-	//Put your PostInit additions here
+	//Put your PostInit additions here 
+	local aBalPrv:={}, aBalNow:={} as array
 self:SetTexts()                                   
 self:oSys := SQLSelect{"select assmntfield,assmntoffc,withldoffl,withldoffm,withldoffh,assmntint,"+;
 "exchrate,cast(pmislstsnd as date) as pmislstsnd,cast(datlstafl as date) as datlstafl,pmcupld,pmcmancln,iesmailacc,ownmailacc from sysparms",oConn}
@@ -332,8 +331,15 @@ self:sWithldOffH := self:oSys:withldoffH
 self:sPercAssInt := self:oSys:assmntint
 self:mxrate := oSys:EXCHRATE
 self:oDCAfsldag:DateRange:=DateRange{mindate,Today()}
+if !Empty(self:oSys:PMISLSTSND)
+	aBalPrv:=GetBalYear(Year(self:oSys:PMISLSTSND),Month(self:oSys:PMISLSTSND))
+	aBalNow:=GetBalYear(Year(Today()),Month(Today())) 
+	if !aBalPrv==aBalNow
+		self:oDCAfsldag:SelectedDate := SToD(Str(aBalPrv[3],4,0)+StrZero(aBalPrv[4],2,0)+StrZero(MonthEnd(aBalPrv[4],aBalPrv[3]),2,0))
+	endif
+endif
+self:closingDate := self:oDCAfsldag:SelectedDate
 
-self:closingDate := Today()
 self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last send on: '+DToC(iif(Empty(self:oSys:PMISLSTSND),null_date,self:oSys:PMISLSTSND))
 
 RETURN nil
@@ -363,7 +369,8 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL lSent as LOGIC
 	LOCAL uRet as USUAL
 	LOCAL oWindow as OBJECT
-	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
+// 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
+	LOCAL CurMonth:=Year(self:closingDate)*100+Month(self:closingDate) as int
 	// 	LOCAL noIES as LOGIC
 	LOCAL DestAmnt as FLOAT
 	LOCAL oAfl as UpdateHouseHoldID
@@ -378,7 +385,7 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL PrvYearNotClosed as LOGIC
 	local fExChRate as float
 	local lStop:=true,PMCUpload as logic
-	local oTrans,oMbr,oAccD,oPers,oPersB,oBal as SQLSelect	 
+	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal as SQLSelect	 
 	local oMBal as Balances
 	local oStmnt,oStmntDistr as SQLStatement
 	local aTransLock:={},aDisLock:={},aYearStartEnd as array 
@@ -388,7 +395,8 @@ METHOD PrintReport() CLASS PMISsend
 	local cFatalError as string 
 	local Country as string 
 	local cStmnt,cDate as string 
-	local cTransStmnt,cTransDTStmnt,cBankStmnt as string
+	local cTransStmnt,cTransDTStmnt,cBankStmnt as string 
+
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -558,7 +566,7 @@ METHOD PrintReport() CLASS PMISsend
 	nStep:=Max(Ceil(oMbr:Reccount/20.00),1)
 	self:STATUSMESSAGE(cStmsg)
 	DO WHILE .not.oMbr:EOF
-		CurrentMbrID:=oMbr:mbrid 
+		CurrentMbrID:=oMbr:mbrid
 		if oMbr:Recno%nStep=0
 			self:STATUSMESSAGE(cStmsg+' ('+Str((oMbr:Recno*5)/nStep,3,0)+'% )')
 		endif
@@ -756,30 +764,57 @@ METHOD PrintReport() CLASS PMISsend
 			// 1: assessment int+field:
 			IF mbrint # 0
 				AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},if(me_co="M",mbroffice,mbrofficeProj),,,me_currency})
-			ENDIF
+			ENDIF 
+
 			// Transfer balance conform distribution instructions:
-			if (Empty(self:oSys:PMISLSTSND) .or.self:closingDate> self:oSys:PMISLSTSND) .and. ;
-					((me_homePP!=SEntity .and.self:closingDate=Today()) .or. ((me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0))
+// 			if (Empty(self:oSys:PMISLSTSND) .or.self:closingDate> self:oSys:PMISLSTSND) .and. ;
+// 					((me_homePP!=SEntity .and.self:closingDate=Today()) .or. ((me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0))
+			if me_homePP!=SEntity  .or. (me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0
 				
 				// determine limit for sending money:
 				if !Empty(oMbr:accid)
 					// only one direct account:
-					oMBal:GetBalance(me_accid,,self:closingDate)      // maximum balance is balance at closing date
-					BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)  // take smallest balance
+					oMBal:cAccSelection:=" a.accid='"+me_accid+"'" 
+					oAccBal:=SqlSelect{oMBal:SQLGetBalance(, CurMonth),oConn}      // maximum balance is balance at closing date
+					oAccBal:Execute()
+					BalanceSend:=Round(oAccBal:per_cre-oAccBal:per_deb,2)
+					if PrvYearNotClosed .and. (oMbr:type=INCOME .or.oMBR:TYPE=EXPENSE)
+						BalanceSend:=Round(BalanceSend+oAccBal:prvyr_cre-oAccBal:prvyr_deb,2)   // add balance previous year because not in this account
+					endif						
+// 					oMBal:GetBalance(me_accid,,self:closingDate)      // maximum balance is balance at closing date
+// 					BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)  // take smallest balance
 				else
 					// department member:
-					oMBal:GetBalance(Str(oMbr:accidinc,-1),,self:closingDate)      // maximum balance is balance at closing date
-					BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)
+					oMBal:cAccSelection:=" a.accid='"+Str(oMbr:accidinc,-1)+"'" 
+					oAccBal:=SqlSelect{oMBal:SQLGetBalance(, CurMonth),oConn}      // maximum balance is balance at closing date
+					oAccBal:Execute()
+					BalanceSend:=Round(oAccBal:per_cre-oAccBal:per_deb,2)
 					if PrvYearNotClosed
-						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
+						BalanceSend:=Round(BalanceSend+oAccBal:prvyr_cre-oAccBal:prvyr_deb,2)   // add balance previous year because not yet in netasset
 					endif						
-					oMBal:GetBalance(Str(oMbr:accidexp,-1),,self:closingDate)      // maximum balance is balance at closing date
-					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2)
+					oMBal:cAccSelection:=" a.accid='"+Str(oMbr:accidexp,-1)+"'" 
+					oAccBal:=SqlSelect{oMBal:SQLGetBalance(, CurMonth),oConn}      // maximum balance is balance at closing date
+					oAccBal:Execute()
+					BalanceSend:=Round(BalanceSend+oAccBal:per_cre-oAccBal:per_deb,2)
 					if PrvYearNotClosed
-						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
+						BalanceSend:=Round(BalanceSend+oAccBal:prvyr_cre-oAccBal:prvyr_deb,2)   // add balance previous year because not yet in netasset
 					endif						
-					oMBal:GetBalance(Str(oMbr:accidnet,-1),,self:closingDate)      // maximum balance is balance at closing date
-					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2) 
+					oMBal:cAccSelection:=" a.accid='"+Str(oMbr:accidnet,-1)+"'" 
+					oAccBal:=SqlSelect{oMBal:SQLGetBalance(, CurMonth),oConn}      // maximum balance is balance at closing date
+					oAccBal:Execute()
+					BalanceSend:=Round(BalanceSend+oAccBal:per_cre-oAccBal:per_deb,2)
+// 					oMBal:GetBalance(Str(oMbr:accidinc,-1),,self:closingDate)      // maximum balance is balance at closing date
+// 					BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)
+// 					if PrvYearNotClosed
+// 						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
+// 					endif						
+// 					oMBal:GetBalance(Str(oMbr:accidexp,-1),,self:closingDate)      // maximum balance is balance at closing date
+// 					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2)
+// 					if PrvYearNotClosed
+// 						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
+// 					endif						
+// 					oMBal:GetBalance(Str(oMbr:accidnet,-1),,self:closingDate)      // maximum balance is balance at closing date
+// 					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2) 
 				endif
 				
 				remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
