@@ -357,7 +357,7 @@ METHOD OKButton( ) CLASS EditPersProp
 		for i:=1 to Len(self:CurDropVal)
 			CurValue:=CurDropVal[i]
 			if AScan(aNewDropValues,CurValue)=0 
-				oProp:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
+				oProp:=SQLSelect{"select count(*) as total from person where deleted=0 and instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
 				if oProp:RecCount>0
 					cTotal:=ConS(oProp:total)
 				else
@@ -1105,7 +1105,7 @@ METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 		Errorbox{,self:oLan:WGet("this code can't be removed")}:show()
 		return nil
 	endif  
-   oSel:=SQLSelect{"select count(*) as total from person where  instr(mailingcodes,'"+oMcd:Pers_Code+"')>0",oConn}
+   oSel:=SQLSelect{"select count(*) as total from person where deleted=0 and instr(mailingcodes,'"+oMcd:Pers_Code+"')>0",oConn}
 	IF (TextBox{ self, self:oLan:WGet("Delete mailing code"),;
 		self:oLan:WGet("Delete mailing code")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+AllTrim(Transform(oSel:total,""))+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
 		mCod:=oMcd:Pers_Code
@@ -1266,7 +1266,7 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 	mOms:=oProp:FIELDGET(#NAME)
 	mId:=Str(oProp:id,-1)
 	mCod:="V"+mId 
-	oSel:=SQLSelect{"select count(*) as total from person where instr(propextr,'<V"+mId+">')>0",oConn}
+	oSel:=SQLSelect{"select count(*) as total from person where deleted=0 and instr(propextr,'<V"+mId+">')>0",oConn}
 	
 	IF (TextBox{ self, self:oLan:WGet("Delete Property"),;
 			self:oLan:WGet("Delete Property")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+ConS(oSel:total)+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
@@ -1406,7 +1406,7 @@ METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 		RETURN
 	ENDIF
 	mOms:=AllTrim(oTit:DESCRPTN)
-	oSel:=SQLSelect{"select count(*) as total from person where  title="+Str(self:oTit:id,-1),oConn}
+	oSel:=SqlSelect{"select count(*) as total from person where deleted=0 and  title="+Str(self:oTit:id,-1),oConn}
 	IF (TextBox{ self, self:oLan:WGet("Delete title"),;                                           
 			self:oLan:WGet("Delete title")+Space(1)+mOms+", "+self:oLan:WGet("used in")+Space(1)+ConS(oSel:total)+Space(1)+self:oLan:WGet("persons")+"?",BUTTONYESNO + BOXICONQUESTIONMARK }):Show()== BOXREPLYYES
 		mCod:=Str(oTit:id,-1)
@@ -1540,7 +1540,7 @@ END
 		Errorbox{,self:oLan:WGet("this type can't be removed")}:show()
 		return nil
 	endif
-	oPers:=SQLSelect{"select count(*) as total from person where type="+Str(mCod,-1),oConn}
+	oPers:=SqlSelect{"select count(*) as total from person where deleted=0 and type="+Str(mCod,-1),oConn}
 	if Val(oPers:total)>0
 		Errorbox{,self:oLan:WGet("this type is still used in")+space(1)+ConS(oPers:total)+space(1)+self:olan:WGet("persons")+";"+self:olan:WGet("thus can't be removed")}:show() 
 		return nil
