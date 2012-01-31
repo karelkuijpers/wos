@@ -632,7 +632,7 @@ METHOD DELETE() CLASS CustomExplorer
 			endif
 			// check if department belongs to member:
 			if !lBalance
-				oMem:=SQLSelect{"select m.mbrid,"+SQLFullName(0,"p")+" as membername from member m,person as p where m.depid IS NOT NULL and m.depid="+nNum,oConn}
+				oMem:=SqlSelect{"select m.mbrid,"+SQLFullName(0,"p")+" as membername from member m,person as p where m.depid IS NOT NULL and m.depid="+nNum+" and p.persid=m.persid",oConn}
 				if oMem:RecCount>0
 					(ErrorBox{,self:oLan:WGet('This department belongs to member'+":"+oMem:membername)}):Show()
 					RETURN					
