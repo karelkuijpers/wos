@@ -617,7 +617,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 					endif
 				endif
 			next
-			oSel:=SqlSelect{"select externid,persid from person where externid in ("+Implode(aPers,',',,,1)+')',oConn}
+			oSel:=SqlSelect{"select externid,persid from person where deleted=0 and externid in ("+Implode(aPers,',',,,1)+')',oConn}
 			if oSel:RecCount>0
 				// persons found, so transactions can be processed automatically:
 				aPers:=oSel:GetLookupTable(50000,#externid,#persid)
