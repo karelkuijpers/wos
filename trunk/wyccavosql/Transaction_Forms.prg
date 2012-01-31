@@ -2718,17 +2718,19 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !IsNil(oControl:Value)
-		IF oControl:Name == "MPERSON".and.!AllTrim(oControl:Value)==AllTrim(cGiverName)
+		IF oControl:Name == "MPERSON".and.!AllTrim(oControl:VALUE)==AllTrim(self:cGiverName)
 			IF Empty(oControl:Value) && leeg gemaakt?
 				SELF:mCLNGiver :=  ""
 				SELF:cGiverName := ""
 				SELF:oDCmPerson:TEXTValue := ""
 			ELSE
-				self:cOrigName:=self:cGiverName
-           	cGiverName:=AllTrim(oControl:VALUE)
-				if !cGiverName==cOrigName
+				self:cOrigName:=AllTrim(self:cGiverName)
+           	self:cGiverName:=AllTrim(oControl:VALUE)
+				if !self:cGiverName==self:cOrigName
+					LogEvent(self,"ongelijk:"+self:cOrigName+'=' +self:cGiverName+'; persid:'+self:mCLNGiver," logsql")
 					self:PersonButton(true,,false,PersonContainer{}) 
 				else
+					LogEvent(self,"gelijk:"+self:cOrigName+'=' +self:cGiverName+'; persid:'+self:mCLNGiver," logsql")
 					self:PersonButton(true,,,PersonContainer{})
 				endif				 
 			ENDIF
