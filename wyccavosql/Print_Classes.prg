@@ -3264,7 +3264,13 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 
 	* Bepaal nieuwe dimensie, horend bij de PointSize:
 	oSize:Height := Round((iPointSize*oSize:Height/12)*1.07,0)
-	oSize:Width := Round(iPointSize*oSize:Width/12,0)
+	oSize:Width := Round(iPointSize*oSize:Width/12,0) 
+	if Empty(oSize:Height)
+		oSize:Height:=105
+	endif
+	if Empty(oSize:Width)
+		oSize:Width:=55
+	endif
 	* Stel font in op bepaalde Pointsize:
 	self:Font := null_object
 	self:Font := Font{FONTMODERN,iPointSize,"Courier New"}
