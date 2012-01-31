@@ -1231,7 +1231,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	self:mAddress:=AllTrim(self:oDCmAddress:VALUE)
 	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = ConS(self:oPerson:lastname) .or. ConS(self:oPerson:postalcode) # self:mPostalcode.or.ConS(self:oPerson:firstname) # self:mFirstname.or.ConS(self:oPerson:address) # self:mAddress.or. ZeroTrim(ConS(self:oPerson:EXTERNID)) # self:mExternid)
 		* Check duplicate NAC:
-		oSel:=SqlSelect{"select persid from person where lastname='"+addslashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
+		oSel:=SqlSelect{"select persid from person where deleted=0 and lastname='"+AddSlashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
 		+AddSlashes(self:mAddress)+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
 		oSel:GoTop()
 		IF oSel:RecCount>0
@@ -1247,7 +1247,7 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 		ENDIF
 		IF lValid .and.!Empty(ConS(self:mExternid))
 			// check if no duplicate external id:
-			oSel:SQLString:="select persid from person where externid='"+ZeroTrim(ConS(self:mExternid))+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
+			oSel:SQLString:="select persid from person where deleted=0 and externid='"+ZeroTrim(ConS(self:mExternid))+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
 			oSel:Execute()
 			IF oSel:RecCount>0
 				cError :=self:oLan:WGet("Person")+" "+GetFullName(Str(oSel:persid,-1),2)+" "+self:oLan:WGet("has already external id")+" "+self:mExternid+"!"
@@ -1980,7 +1980,7 @@ FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String)
 	if Empty(cValue)
 		return false
 	endif
-	oPers:=SQLSelect{"select persid from person where externid='"+cValue+"'",oConn}
+	oPers:=SQLSelect{"select persid from person where deleted=0 and externid='"+cValue+"'",oConn}
 	if oPers:RecCount>0 
 		IF IsMethod(oCaller, #RegPerson)
 			oCaller:RegPerson(oPers,cItemname)
