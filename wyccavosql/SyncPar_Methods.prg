@@ -332,7 +332,7 @@ method Sync() class Synchronize
 					// check if it has to be merged with a partner (in WOS all on one address as one person, in typo3 distinct persons)  
 					idPartner:=ConI(SqlSelect{"select id_partner from  parousia_typo3.persoon where id="+Str(CorID,-1),oConn}:id_partner)
 					if !Empty(idPartner)
-						oPersChg:=SqlSelect{'select persid,mailingcodes,'+SQLFullName()+' as fullname from person where externid="'+Str(idPartner,-1)+'"',oConn}
+						oPersChg:=SqlSelect{'select persid,mailingcodes,'+SQLFullName()+' as fullname from person where deleted=0 and externid="'+Str(idPartner,-1)+'"',oConn}
 						if oPersChg:RecCount>0 
 							if (TextBox{self,"Synchronize Persons",'Do you want to merge '+oPers:FullNAc+CRLF+"with its partner "+oPersChg:FullName+"?",BOXICONQUESTIONMARK + BUTTONYESNO}):show()==BOXREPLYYES
 								// Merge persons:
@@ -472,7 +472,7 @@ method Sync() class Synchronize
 	self:STATUSMESSAGE(self:oLan:wget("Deleting all addresses who are no giver and not in person administration, please wait")+"...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-	oStmnt:=SQLStatement{"delete from person where mailingcodes like '%"+MlcdBezoeker+"%' and externid='' and datelastgift='0000-00-00'",oConn}
+	oStmnt:=SQLStatement{"delete from person where deleted=0 and mailingcodes like '%"+MlcdBezoeker+"%' and externid='' and datelastgift='0000-00-00'",oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		(TextBox{self,"Synchronisation Parousia",Str(oStmnt:NumSuccessfulRows,-1)+' '+self:oLan:wget('persons removed')}):show()
