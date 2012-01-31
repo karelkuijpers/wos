@@ -194,7 +194,7 @@ Method ComposeSelect() class ImportMapping
 	// compose statement for retrieval of existing person for synchronising with imported person
 	LOCAL i, j, titPtr, typPtr as int  
 	Local ID as string,IDs as Symbol
-	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where p.?" as string, lExtra,lBank,lCod as logic 
+	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where deleted=0 and p.?" as string, lExtra,lBank,lCod as logic 
 	local Fieldname as string
 	FOR i:=1 to Len(self:aMapping)
 		ID:=Symbol2String(self:aMapping[i,1])
@@ -743,7 +743,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 		oPersCnt:=PersonContainer{}
 		if exidptr>0 .and.Empty(self:aPers)
 			// read table with persid and externid
-			oSel:=SqlSelect{"select persid,externid from person where externid<>''",oConn}
+			oSel:=SqlSelect{"select persid,externid from person where deleted=0 and externid<>''",oConn}
 			if oSel:RecCount>0
 				aPers:=oSel:GetLookupTable(100000,#persid,#externid)
 			endif
@@ -1427,7 +1427,7 @@ if !Empty(cImpPos) .and.Empty(ExId)
 	* search ZIP Code 
 // 	oPers:=SQLSelect{"select lastname,firstname,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where postalcode='"+ cImpPos+"' and "+;
 // 	"externid='' and country='"+AllTrim(cImpCnr)+"'",oConn}
-	oPers:=SQLSelect{"select lastname,firstname,initials,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where postalcode='"+ cImpPos+"' and "+;
+	oPers:=SQLSelect{"select lastname,firstname,initials,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where deleted=0 and postalcode='"+ cImpPos+"' and "+;
 	"country='"+AllTrim(cImpCnr)+"'",oConn}
 	oPers:Execute()
    do while !oPers:EOF   
@@ -1446,7 +1446,7 @@ if !Empty(cImpLastname)
 	lnm:=Len(cNameSearch)
 // 	oPers:=SQLSelect{"select lastname,firstname,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where lastname like '"+ cNameSearch+"%' and "+;
 // 	"externid=''"+iif(Empty(cImpCnr),''," and country='"+AllTrim(cImpCnr)+"' or (address='' and postalcode='' and country='')"),oConn}
-	oPers:=SQLSelect{"select lastname,firstname,initials,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where lastname like '"+ cNameSearch+"%'"+;
+	oPers:=SQLSelect{"select lastname,firstname,initials,postalcode,persid,address,"+SQLFullNAC(2) +" as fullnac from person where deleted=0 and lastname like '"+ cNameSearch+"%'"+;
 	iif(Empty(cImpCnr),''," and (country='"+AllTrim(cImpCnr)+"' or (address='' and postalcode='' and country=''))"),oConn}
 	oPers:Execute()
 	lnm:=lnm
