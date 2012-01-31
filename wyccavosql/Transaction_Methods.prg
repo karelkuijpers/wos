@@ -3086,36 +3086,38 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	local oPersCnt as PersonContainer
 	local myAcc as SQLSelect
 	local oPersBank,oSel as SQLSelect
-	local oPers as SQLSelectPerson 
+	local oPers as SQLSelect
+	local cBankDescription as string 
 
 	self:Reset()
-	AutoCollect:=FALSE 
-	Acceptgiro:=False 
+	self:AutoCollect:=FALSE 
+	self:Acceptgiro:=False 
 	* In case of automatic collection (CLIEOP03-file) and Acceptgiro via BGC look for pay ahead account:
-	IF (oTmt:m56_kind="COL" .or.oTmt:m56_kind="KID" .or.oTmt:m56_kind="ACC")  .and.oTmt:m56_addsub ="B"
-		IF Empty(oTmt:m56_payahead)
-			(ErrorBox{self:owner,"No account for Payments en route specified for banknbr "+AllTrim(oTmt:m56_bankaccntnbr)}):show()
+	IF (self:oTmt:m56_kind="COL" .or.self:oTmt:m56_kind="KID" .or.self:oTmt:m56_kind="ACC")  .and.self:oTmt:m56_addsub ="B"
+		IF Empty(self:oTmt:m56_payahead)
+			(ErrorBox{self:owner,"No account for Payments en route specified for banknbr "+AllTrim(self:oTmt:m56_bankaccntnbr)}):show()
 			self:EndWindow()
 			RETURN FALSE
 		ELSE
 			myAcc:=SqlSelect{"select a.description,ad.accnumber "+;
-					"from	account a,bankaccount b left join account ad on (ad.accid=b.singledst and ad.active=1)  "+;
-					"where a.accid=b.accid and a.accid="+AllTrim(oTmt:m56_sgir),oConn}
+				"from	account a,bankaccount b left join account ad on (ad.accid=b.singledst and ad.active=1)  "+;
+				"where a.accid=b.accid and a.accid="+AllTrim(self:oTmt:m56_sgir),oConn}
 			if	myAcc:reccount>0
-				oTmt:m56_description+= " from	"+myAcc:description
-				if Empty(oTmt:m56_budgetcd) .and.oTmt:m56_kind="ACC".and.!empty(myAcc:accnumber)
-					oTmt:m56_budgetcd:=myAcc:ACCNUMBER  
+				// 				self:oTmt:m56_description+= " from	"+myAcc:description
+				cBankDescription:= " from	"+myAcc:description
+				if Empty(self:oTmt:m56_budgetcd) .and.self:oTmt:m56_kind="ACC".and.!Empty(myAcc:accnumber)
+					self:oTmt:m56_budgetcd:=myAcc:accnumber  
 				endif
 			endif
-			oTmt:m56_sgir:=oTmt:m56_payahead
+			self:oTmt:m56_sgir:=self:oTmt:m56_payahead
 		ENDIF
-		IF oTmt:m56_kind="COL" .or.oTmt:m56_kind="KID"
-			AutoCollect:=true
+		IF self:oTmt:m56_kind="COL" .or.self:oTmt:m56_kind="KID"
+			self:AutoCollect:=true
 		else
-			Acceptgiro:=true
+			self:Acceptgiro:=true
 		endif
 	ENDIF
-	IF (myAcc:=SQLSelect{"select accid,currency,accnumber,description from account where accid="+AllTrim(oTmt:m56_sgir),oConn}):RecCount<1
+	IF (myAcc:=SQLSelect{"select accid,currency,accnumber,description from account where accid="+AllTrim(self:oTmt:m56_sgir),oConn}):RecCount<1
 		(errorbox{self:owner,DebAccNbr+":"+" unknown account"}):show()
 		self:EndWindow()
 		RETURN FALSE
@@ -3127,13 +3129,13 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	self:DebCurrency:=myAcc:CURRENCY
 	self:DebAccNbr:=myAcc:ACCNUMBER 
 	self:oDCDebitAccount:Value  := myAcc:Description
-	if !self:DebAccId== oTmt:m56_sgir 
-		self:DebAccId:=oTmt:m56_sgir
+	if !self:DebAccId== self:oTmt:m56_sgir 
+		self:DebAccId:=self:oTmt:m56_sgir
 		self:bankanalyze()
 	endif	
 	self:ShowDebbal()
-	self:mDAT := oTmt:m56_bookingdate
-	self:mBst := AllTrim(oTmt:m56_kind)+AllTrim(Str(oTmt:m56_seqnr,-1)) 
+	self:mDAT := self:oTmt:m56_bookingdate
+	self:mBst := AllTrim(self:oTmt:m56_kind)+AllTrim(Str(self:oTmt:m56_seqnr,-1)) 
 	self:oDCmBST:Value:=self:mBst
 	if !self:DebCurrency==sCurr
 		if self:oCurr==null_object
@@ -3142,29 +3144,32 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		CurRate:= self:oCurr:GetROE(self:DebCurrency,self:mDAT) 
 	endif
 	//Acceptgiro:=FALSE  ???
-	IF oTmt:m56_addsub ="B"
-		self:mDebAmntF:= oTmt:m56_amount
-		//	IF (Trim(oTmt:m56_kind)="AC" .or.(SubStr(oTmt:m56_description,17,2)="AC")).and. (!Empty(oTmt:m56_persid).or.isnum(Pad(SubStr(oTmt:m56_description,1,16),16,"A")))
-		IF (Trim(oTmt:m56_kind)="AC" .or.(SubStr(oTmt:m56_description,17,2)=="AC").and.isnum(SubStr(oTmt:m56_description,1,16)))
-			Acceptgiro:=true
-			*   		SELF:mCLNGiver := SubStr(oTmt:m56_description,2,5)   // juiste formaat door fout verkeerd om
-			IF !Empty(oTmt:m56_persid)
-				self:mCLNGiver := oTmt:m56_persid
-			ELSEif isnum(Pad(SubStr(oTmt:m56_description,1,16),16,"A")) .and.!Trim(oTmt:m56_kind)="AC"
-				self:mCLNGiver := SubStr(oTmt:m56_description,12,5)
+	IF self:oTmt:m56_addsub ="B"
+		self:mDebAmntF:= self:oTmt:m56_amount
+		//	IF (Trim(self:oTmt:m56_kind)="AC" .or.(SubStr(self:oTmt:m56_description,17,2)="AC")).and. (!Empty(self:oTmt:m56_persid).or.isnum(Pad(SubStr(self:oTmt:m56_description,1,16),16,"A")))
+		IF (Trim(self:oTmt:m56_kind)="AC" .or.(SubStr(self:oTmt:m56_description,17,2)=="AC").and.isnum(SubStr(self:oTmt:m56_description,1,16)))
+			self:Acceptgiro:=true
+			lNameCheck:=true 
+			*   		SELF:mCLNGiver := SubStr(self:oTmt:m56_description,2,5)   // juiste formaat door fout verkeerd om
+			IF !Empty(self:oTmt:m56_persid)
+				self:mCLNGiver := self:oTmt:m56_persid
+			ELSEif isnum(Pad(SubStr(self:oTmt:m56_description,1,16),16,"A")) .and.!Trim(self:oTmt:m56_kind)="AC"
+				self:mCLNGiver := SubStr(self:oTmt:m56_description,12,5)
 				if !isnum(self:mCLNGiver) .or.Val( mCLNGiver)=0
 					self:mCLNGiver:=""
 				endif
 			ENDIF
-		ELSEIF Trim(oTmt:m56_kind)="KID"  .and. !Empty(oTmt:m56_persid)
-			Acceptgiro:=true
-			self:mCLNGiver := oTmt:m56_persid    // import KID file (Norway)
-		ELSEIF Trim(oTmt:m56_kind)="PGA"
-			self:mCLNGiver := oTmt:m56_persid    // import PG Autogiro file (Swedisch)	
-			Acceptgiro:=true
+		ELSEIF Trim(self:oTmt:m56_kind)="KID"  .and. !Empty(self:oTmt:m56_persid)
+			self:Acceptgiro:=true
+			self:mCLNGiver := self:oTmt:m56_persid    // import KID file (Norway)
+		ELSEIF Trim(self:oTmt:m56_kind)="PGA"
+			self:mCLNGiver := self:oTmt:m56_persid    // import PG Autogiro file (Swedisch)	
+			self:Acceptgiro:=true
+		else
+			lNameCheck:=true 
 		ENDIF			
 	ELSE
-		self:mDebAmntF:=-oTmt:m56_amount
+		self:mDebAmntF:=-self:oTmt:m56_amount
 	ENDIF
 	self:oDCmDebAmntF:Value:= self:mDebAmntF
 	if self:DebCurrency==sCurr
@@ -3172,37 +3177,37 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	else
 		self:mDebAmnt:=Round(CurRate*self:mDebAmntF,DecAantal)
 	endif
-	lNameCheck:=true 
-	* Analyse name and address from Bank: 
+	// 	lNameCheck:=true
 	oPersCnt:=PersonContainer{}
-	oPersCnt:m51_lastname:=AllTrim(oTmt:m56_contra_name)
-	oPersCnt:m51_pos:=oTmt:m56_zip
-	oPersCnt:m51_ad1:=oTmt:m56_address
-	oPersCnt:m51_city:=oTmt:m56_town
-	oPersCnt:m51_country:=oTmt:m56_country
-	oPersCnt:m56_banknumber:= oTmt:m56_contra_bankaccnt
+	* Analyse name and address from Bank: 
+	oPersCnt:m51_lastname:=AllTrim(self:oTmt:m56_contra_name)
+	oPersCnt:m51_pos:=self:oTmt:m56_zip
+	oPersCnt:m51_ad1:=self:oTmt:m56_address
+	oPersCnt:m51_city:=self:oTmt:m56_town
+	oPersCnt:m51_country:=self:oTmt:m56_country
+	oPersCnt:m56_banknumber:= self:oTmt:m56_contra_bankaccnt
 	oPersCnt:m51_type:="individual"
 	oPersCnt:m51_gender:="unknown"
 	if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
-		oPersCnt:m51_ad1:=AllTrim(oTmt:m56_description) 
+		oPersCnt:m51_ad1:=AllTrim(self:oTmt:m56_description) 
 		oPersCnt:Naw_Analyse()
 	else
 		oPersCnt:Naw_Analyse(,,,!Empty(oPersCnt:m51_pos),!Empty(oPersCnt:m51_city),!Empty(oPersCnt:m51_ad1))
 	endif
 
-	//IF Empty(oTmt:m56_contra_bankaccnt).or.oTmt:m56_addsub =="A".or.(Acceptgiro.and.!Empty(Val(mCLNGiver))).or.;
-	//	(ADMIN="HO".and.(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL"))
-	IF oTmt:m56_addsub =="A".or.(self:Acceptgiro.and.!Empty(Val(self:mCLNGiver))).or.;
-			(oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL")
+	//IF Empty(self:oTmt:m56_contra_bankaccnt).or.self:oTmt:m56_addsub =="A".or.(Acceptgiro.and.!Empty(Val(mCLNGiver))).or.;
+	//	(ADMIN="HO".and.(self:oTmt:m56_kind="VZ".or.self:oTmt:m56_kind="DV".or.self:oTmt:m56_kind="FL"))
+	IF self:oTmt:m56_addsub =="A".or.(self:Acceptgiro.and.!Empty(Val(self:mCLNGiver))).or.;
+			(self:oTmt:m56_kind="VZ".or.self:oTmt:m56_kind="DV".or.self:oTmt:m56_kind="FL")
 		self:InitGifts()
 		//oHm:=SELF:Server
-		*	IF (oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL").and.oTmt:m56_addsub ="B"
-		IF (oTmt:m56_kind="VZ".or.oTmt:m56_kind="DV".or.oTmt:m56_kind="FL").or.ADMIN="HO"
+		*	IF (self:oTmt:m56_kind="VZ".or.self:oTmt:m56_kind="DV".or.self:oTmt:m56_kind="FL").and.self:oTmt:m56_addsub ="B"
+		IF (self:oTmt:m56_kind="VZ".or.self:oTmt:m56_kind="DV".or.self:oTmt:m56_kind="FL").or.ADMIN="HO"
 			IF oHm:Lastrec=0
 				self:append()
 				oHm:cre := self:oTmt:m56_amount
 			ENDIF	
-			oHm:DESCRIPTN:=oTmt:m56_contra_name
+			oHm:DESCRIPTN:=self:oTmt:m56_contra_name
 			oHm:GC:="CH"
 			IF ADMIN="HO".and.!Empty(defbest)
 				oHm:AccID := self:defbest
@@ -3215,10 +3220,10 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			oHm:aMirror[oHm:Recno]:=;
 				{oHm:ACCNUMBER,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}	
 			//ELSEIF Acceptgiro 
-		ELSEIF !empty(self:mCLNGiver)
+		ELSEIF !Empty(self:mCLNGiver) 
 			self:PersonButton(true,,true,oPersCnt)
 			// 				m51_assrec:=self:oPers:Recno
-			if Acceptgiro
+			if self:Acceptgiro
 				self:oDCmPerson:Disable()
 				self:oCCPersonButton:Disable()
 			endif
@@ -3232,12 +3237,14 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		self:oDCmPerson:Enable()
 	ENDIF
 	IF lNameCheck
-		Recognised:=FALSE
+		if Empty(self:mCLNGiver)
+			self:Recognised:=FALSE
+		endif
 		
-		IF !Empty(oTmt:m56_contra_bankaccnt) 
-			oPers:=SQLSelectPerson{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and banknumber='"+oTmt:m56_contra_bankaccnt+"'",oConn}
+		IF !Empty(self:oTmt:m56_contra_bankaccnt) 
+			oPers:=SqlSelect{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and deleted=0 and and banknumber='"+AllTrim(self:oTmt:m56_contra_bankaccnt)+"'",oConn}
 			if oPers:RecCount>0
-				Recognised:=true
+				self:Recognised:=true
 				// 					m51_assrec:=self:oPers:Recno
 				IF AllTrim(oPersCnt:m51_pos)#alltrim(oPers:postalcode) .and. Len(AllTrim(oPersCnt:m51_pos))>=7
 					* address changed: 
@@ -3249,23 +3256,24 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 					self:Regperson(oPers)
 				ENDIF
 				self:oDCmPerson:Disable()
-				self:oCCPersonButton:Disable()
+				self:oCCPersonButton:Disable() 
 			ENDIF
 		ENDIF
-		IF !Recognised
-			IF !Acceptgiro
+		IF !self:Recognised
+			AutoRec:=FALSE
+			IF !self:Acceptgiro
 				self:InitGifts()
 			ENDIF
 			* In case of automatic collection (CLIEOP03-file) or acceptgiro no name known:
-			IF AutoCollect .or. Acceptgiro
-				cOrigName:=AllTrim(oTmt:m56_contra_bankaccnt)
-				self:oDCmPerson:TEXTValue := cOrigName
+			IF self:AutoCollect .or. self:Acceptgiro
+				self:cOrigName:=AllTrim(self:oTmt:m56_contra_bankaccnt)
+				self:oDCmPerson:TEXTValue := self:cOrigName
 			ELSE
 				cOrigName:=AllTrim(oPersCnt:m51_lastname)
 				IF Empty(cOrigName)
-					cOrigName:=mCLNGiver
+					self:cOrigName:=mCLNGiver
 				ENDIF
-				mCLNGiver:=""
+				self:mCLNGiver:=""
 				self:oDCmPerson:TEXTValue :=cOrigName
 			ENDIF
 			self:oDCmPerson:Enable()
@@ -3277,7 +3285,10 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		// determine extra messsage in description of transaction:
 		// 		self:SpecialMessage() 
 	ENDIF
-	self:oDCcGirotelText:Caption:=AllTrim(oTmt:m56_contra_name)+iif(Empty(AllTrim(oTmt:m56_contra_bankaccnt)),'','('+AllTrim(oTmt:m56_contra_bankaccnt)+')')+' '+;
+	if !Empty(cBankDescription)
+		self:oTmt:m56_description+cBankDescription
+	endif
+	self:oDCcGirotelText:Caption:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(AllTrim(self:oTmt:m56_contra_bankaccnt)),'','('+AllTrim(self:oTmt:m56_contra_bankaccnt)+')')+' '+;
 		iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
 	Compress(self:oTmt:m56_description+" "+self:oTmt:m56_address+", "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
 	self:oDCmDat:Disable()
