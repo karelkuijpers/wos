@@ -1271,7 +1271,7 @@ METHOD PrintReport() CLASS PMISsend
 				IF aMemberTrans[a_tel,4]==DT
 					nSeqnrDT++
 					//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,transid,seqnr
-					cTransStmnt+=',('+aMemberTrans[a_tel,7][5]+',0,0,"'+Str(me_saldo,-1)+'","'+Str(me_saldoF,-1)+'","'+aMemberTrans[a_tel,11]+;
+					cTransStmnt+=iif(Empty(cTransStmnt),'',',')+'('+aMemberTrans[a_tel,7][5]+',0,0,"'+Str(me_saldo,-1)+'","'+Str(me_saldoF,-1)+'","'+aMemberTrans[a_tel,11]+;
 						'","'+AddSlashes(aMemberTrans[a_tel,9]+iif(Empty(aMemberTrans[a_tel,9]),"",'; ')+oLan:RGet("From")+Space(1)+AllTrim(aMemberTrans[a_tel,3]))+;
 						'","'+SQLdate(self:closingDate)+'","H","","'+LOGON_EMP_ID+'",2,'+cTransnrDT+','+Str(nSeqnrDT,-1)+')'
 					oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_saldo, 0, me_saldoF,aMemberTrans[a_tel,11]) 
