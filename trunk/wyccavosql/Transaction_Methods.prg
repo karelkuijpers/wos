@@ -3242,7 +3242,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		
 		IF !Empty(self:oTmt:m56_contra_bankaccnt) 
-			oPers:=SqlSelect{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and deleted=0 and and banknumber='"+AllTrim(self:oTmt:m56_contra_bankaccnt)+"'",oConn}
+			oPers:=SqlSelect{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and deleted=0 and banknumber='"+AllTrim(self:oTmt:m56_contra_bankaccnt)+"'",oConn}
 			if oPers:RecCount>0
 				self:Recognised:=true
 				// 					m51_assrec:=self:oPers:Recno
