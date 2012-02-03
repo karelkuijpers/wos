@@ -2145,6 +2145,26 @@ STATIC DEFINE PERSONSUBFORM_PREFIX := 106
 STATIC DEFINE SELPERSABON_CANCELBUTTON := 102 
 STATIC DEFINE SELPERSABON_OKBUTTON := 101 
 STATIC DEFINE SELPERSABON_SELX_REK := 100 
+CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
+
+	PROTECT oDCmCodAdd5 AS COMBOBOX
+	PROTECT oDCmCodAdd4 AS COMBOBOX
+	PROTECT oDCmCodAdd3 AS COMBOBOX
+	PROTECT oDCmCodAdd2 AS COMBOBOX
+	PROTECT oDCmCodAdd1 AS COMBOBOX
+	PROTECT oDCCodeBox AS GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmCodDel5 AS COMBOBOX
+	PROTECT oDCmCodDel4 AS COMBOBOX
+	PROTECT oDCmCodDel3 AS COMBOBOX
+	PROTECT oDCmCodDel2 AS COMBOBOX
+	PROTECT oDCmCodDel1 AS COMBOBOX
+	PROTECT oDCCodeBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS OBJECT
 RESOURCE SelPersChangeMailCodes DIALOGEX  8, 18, 404, 146
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Add/Remove Mailing Codes"
@@ -2167,26 +2187,6 @@ BEGIN
 	CONTROL	"Cancel", SELPERSCHANGEMAILCODES_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 277, 116, 53, 12
 END
 
-CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
-
-	PROTECT oDCmCodAdd5 AS COMBOBOX
-	PROTECT oDCmCodAdd4 AS COMBOBOX
-	PROTECT oDCmCodAdd3 AS COMBOBOX
-	PROTECT oDCmCodAdd2 AS COMBOBOX
-	PROTECT oDCmCodAdd1 AS COMBOBOX
-	PROTECT oDCCodeBox AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmCodDel5 AS COMBOBOX
-	PROTECT oDCmCodDel4 AS COMBOBOX
-	PROTECT oDCmCodDel3 AS COMBOBOX
-	PROTECT oDCmCodDel2 AS COMBOBOX
-	PROTECT oDCmCodDel1 AS COMBOBOX
-	PROTECT oDCCodeBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS OBJECT
 METHOD CancelButton( ) CLASS SelPersChangeMailCodes
 	oCaller:selx_OK := FALSE
 	self:EndDialog()
@@ -2476,6 +2476,7 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
 	PROTECT oDCGroupBox9 AS GROUPBOX
 	PROTECT oDCGroupBox10 AS GROUPBOX
 	PROTECT oDCGenders AS LISTBOXEXTRA
+	PROTECT oDCDeleted AS CHECKBOX
 	PROTECT oDCOutputAction AS RADIOBUTTONGROUP
 	PROTECT oCCAction1 AS RADIOBUTTON
 	PROTECT oCCAction2 AS RADIOBUTTON
@@ -2484,6 +2485,7 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
 	PROTECT oCCAction5 AS RADIOBUTTON
 	PROTECT oCCAction6 AS RADIOBUTTON
 	PROTECT oCCAction7 AS RADIOBUTTON
+	PROTECT oCCAction8 AS RADIOBUTTON
 	PROTECT oDCGroupBoxPersonal AS GROUPBOX
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -2492,7 +2494,7 @@ CLASS SelPersMailCd INHERIT DialogWinDowExtra
 	PROTECT aPropEx:={} as ARRAY 
 	
 	declare method ExtraPropCondition 
-RESOURCE SelPersMailCd DIALOGEX  36, 27, 471, 273
+RESOURCE SelPersMailCd DIALOGEX  39, 30, 465, 277
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
 CAPTION	"Selection of people by person parameters"
 FONT	8, "MS Shell Dlg"
@@ -2505,9 +2507,9 @@ BEGIN
 	CONTROL	"", SELPERSMAILCD_MUTD_END, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 287, 150, 65, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", SELPERSMAILCD_EERSTE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 41, 182, 65, 12
 	CONTROL	"", SELPERSMAILCD_LAATSTE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 41, 197, 65, 12
-	CONTROL	"Sort on:", SELPERSMAILCD_SORTORDER, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 398, 148, 61, 39
-	CONTROL	"Postal code", SELPERSMAILCD_SORTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 400, 158, 54, 11
-	CONTROL	"Name", SELPERSMAILCD_SORTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 402, 172, 56, 11
+	CONTROL	"Sort on:", SELPERSMAILCD_SORTORDER, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 392, 158, 64, 38
+	CONTROL	"Postal code", SELPERSMAILCD_SORTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 396, 169, 54, 11
+	CONTROL	"Name", SELPERSMAILCD_SORTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 396, 180, 56, 12
 	CONTROL	"up to:", SELPERSMAILCD_FIXEDTEXT1, "Static", WS_CHILD, 10, 197, 20, 12
 	CONTROL	"From:", SELPERSMAILCD_FIXEDTEXT2, "Static", WS_CHILD, 10, 182, 19, 12
 	CONTROL	"None of (exclusion)", SELPERSMAILCD_GROUPBOX6, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 248, 14, 110, 105
@@ -2520,8 +2522,8 @@ BEGIN
 	CONTROL	"Date Last Altered selection:", SELPERSMAILCD_GROUPBOX7, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 252, 127, 110, 40
 	CONTROL	"and:", SELPERSMAILCD_FIXEDTEXT5, "Static", WS_CHILD, 270, 150, 15, 10
 	CONTROL	"Between:", SELPERSMAILCD_FIXEDTEXT6, "Static", WS_CHILD, 256, 135, 32, 10
-	CONTROL	"OK", SELPERSMAILCD_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 402, 8, 54, 12
-	CONTROL	"Cancel", SELPERSMAILCD_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 404, 29, 54, 12
+	CONTROL	"OK", SELPERSMAILCD_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 404, 7, 53, 12
+	CONTROL	"Cancel", SELPERSMAILCD_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 404, 25, 53, 13
 	CONTROL	"Date Creation selection:", SELPERSMAILCD_GROUPBOX8, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 127, 126, 110, 40
 	CONTROL	"and:", SELPERSMAILCD_FIXEDTEXT7, "Static", WS_CHILD, 147, 150, 15, 10
 	CONTROL	"Between:", SELPERSMAILCD_FIXEDTEXT8, "Static", WS_CHILD, 133, 135, 31, 10
@@ -2533,15 +2535,17 @@ BEGIN
 	CONTROL	"Possible types of persons:", SELPERSMAILCD_GROUPBOX9, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 128, 173, 110, 56
 	CONTROL	"Possible genders of persons:", SELPERSMAILCD_GROUPBOX10, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 250, 172, 110, 56
 	CONTROL	"", SELPERSMAILCD_GENDERS, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_USETABSTOPS|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 254, 182, 100, 42, WS_EX_CLIENTEDGE
-	CONTROL	"Required Output/Action:", SELPERSMAILCD_OUTPUTACTION, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 364, 44, 94, 89
+	CONTROL	"Deleted", SELPERSMAILCD_DELETED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 228, 68, 12
+	CONTROL	"Required Output/Action:", SELPERSMAILCD_OUTPUTACTION, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 364, 44, 94, 100
 	CONTROL	"&Compact Person List", SELPERSMAILCD_ACTION1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 51, 80, 11
 	CONTROL	"&Extended Person List", SELPERSMAILCD_ACTION2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 62, 80, 11
 	CONTROL	"&Labels", SELPERSMAILCD_ACTION3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 73, 80, 11
 	CONTROL	"Le&tters", SELPERSMAILCD_ACTION4, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 84, 80, 12
-	CONTROL	"&Giro Accepts", SELPERSMAILCD_ACTION5, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 368, 118, 80, 11
+	CONTROL	"&Giro Accepts", SELPERSMAILCD_ACTION5, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 368, 129, 80, 11
 	CONTROL	"&Spreadsheet file (Excel)", SELPERSMAILCD_ACTION6, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 96, 86, 11
 	CONTROL	"Change &mailing codes", SELPERSMAILCD_ACTION7, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 107, 80, 11
-	CONTROL	"Personal:", SELPERSMAILCD_GROUPBOXPERSONAL, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 236, 460, 15, WS_EX_TRANSPARENT
+	CONTROL	"&Remove persons", SELPERSMAILCD_ACTION8, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 368, 118, 80, 11
+	CONTROL	"Personal:", SELPERSMAILCD_GROUPBOXPERSONAL, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 247, 460, 15, WS_EX_TRANSPARENT
 END
 
 METHOD CancelButton( ) CLASS SelPersMailCd
@@ -2688,6 +2692,9 @@ oDCGenders:HyperLabel := HyperLabel{#Genders,NULL_STRING,"Select one or more pos
 oDCGenders:UseHLforToolTip := True
 oDCGenders:FillUsing(pers_gender)
 
+oDCDeleted := CheckBox{SELF,ResourceID{SELPERSMAILCD_DELETED,_GetInst()}}
+oDCDeleted:HyperLabel := HyperLabel{#Deleted,"Deleted",NULL_STRING,NULL_STRING}
+
 oCCAction1 := RadioButton{SELF,ResourceID{SELPERSMAILCD_ACTION1,_GetInst()}}
 oCCAction1:HyperLabel := HyperLabel{#Action1,_chr(38)+"Compact Person List",NULL_STRING,NULL_STRING}
 
@@ -2709,6 +2716,9 @@ oCCAction6:HyperLabel := HyperLabel{#Action6,_chr(38)+"Spreadsheet file (Excel)"
 oCCAction7 := RadioButton{SELF,ResourceID{SELPERSMAILCD_ACTION7,_GetInst()}}
 oCCAction7:HyperLabel := HyperLabel{#Action7,"Change "+_chr(38)+"mailing codes",NULL_STRING,NULL_STRING}
 
+oCCAction8 := RadioButton{SELF,ResourceID{SELPERSMAILCD_ACTION8,_GetInst()}}
+oCCAction8:HyperLabel := HyperLabel{#Action8,_chr(38)+"Remove persons",NULL_STRING,NULL_STRING}
+
 oDCGroupBoxPersonal := GroupBox{SELF,ResourceID{SELPERSMAILCD_GROUPBOXPERSONAL,_GetInst()}}
 oDCGroupBoxPersonal:HyperLabel := HyperLabel{#GroupBoxPersonal,"Personal:",NULL_STRING,NULL_STRING}
 
@@ -2727,7 +2737,8 @@ oDCOutputAction:FillUsing({ ;
 							{oCCAction4,"4"}, ;
 							{oCCAction5,"5"}, ;
 							{oCCAction6,"6"}, ;
-							{oCCAction7,"7"} ;
+							{oCCAction7,"7"}, ;
+							{oCCAction8,"8"} ;
 							})
 oDCOutputAction:HyperLabel := HyperLabel{#OutputAction,"Required Output/Action:",NULL_STRING,NULL_STRING}
 
@@ -2801,84 +2812,86 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
 	IF !empty(oDCDLG_Start:Value)
-		self:oCaller:cWherep := self:oCaller:cWherep+;
-			IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
+		self:oCaller:cWherep +=	iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
+	ENDIF
+	IF !Empty(oDCDLG_End:VALUE)
+		self:oCaller:cWherep := iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
+		if empty(oDCDLG_Start:Value)
+			self:oCaller:cWherep +=' and p.datelastgift>"0000-00-00"'
 		ENDIF
-		IF !Empty(oDCDLG_End:VALUE)
-			self:oCaller:cWherep := self:oCaller:cWherep+;
-				IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
-				IF empty(oDCDLG_Start:Value)
-					self:oCaller:cWherep := self:oCaller:cWherep+' and p.datelastgift>"0000-00-00"'
-				ENDIF
-			ENDIF
-			// 	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE)
-			IF !Empty(self:oDCBdat_Start:VALUE)
-				self:oCaller:cWherep := self:oCaller:cWherep+;
-					iif(!Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate>="'+DToC(self:oDCBdat_Start:VALUE)+'"'
-			ENDIF
-			IF !Empty(oDCBdat_End:VALUE)
-				self:oCaller:cWherep := self:oCaller:cWherep+;
-					IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate<="'+DToC(self:oDCBdat_End:VALUE)+'"'
-					IF empty(oDCBdat_Start:Value)
-						self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
-					ENDIF
-				ENDIF
-				IF !empty(oDCMutd_Start:Value)
-					self:oCaller:cWherep := self:oCaller:cWherep+;
-						IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate>="'+DToC(oDCMutd_Start:VALUE)+'"'
-					ENDIF
-					IF !Empty(oDCMutd_End:VALUE)
-						self:oCaller:cWherep := self:oCaller:cWherep+;
-							IF(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate<="'+DToC(oDCMutd_End:VALUE)+'"'
-							IF empty(oDCMutd_Start:Value)
-								self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
-							ENDIF
-						ENDIF
-						SetDateFormat(cDat)
-						IF !Empty(oDCeerste:TEXTvalue).or.!Empty(oDClaatste:TEXTvalue)
-							self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
-								IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Zip code between '+;
-									+AllTrim(oDCeerste:TEXTvalue)+' & '+ AllTrim(oDClaatste:TEXTValue)
-							ENDIF
-							IF !oDCDLG_Start:TextValue==DToC(NULL_DATE).or.!oDCDLG_End:TextValue==DToC(NULL_DATE)
-								self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
-									IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Gift between '+;
-										+AllTrim(oDCDLG_Start:TEXTvalue)+' & '+ AllTrim(oDCDLG_End:TEXTValue)
-								ENDIF
-								IF !oDCMutd_Start:TextValue==DToC(NULL_DATE).or.!oDCMutd_End:TextValue==DToC(NULL_DATE)
-									self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
-										IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Altered between '+;
-											+AllTrim(oDCMutd_Start:TEXTvalue)+' and '+ AllTrim(oDCMutd_End:TEXTValue)
-									ENDIF
-									IF !oDCBdat_Start:TextValue==DToC(NULL_DATE).or.!oDCBdat_End:TextValue==DToC(NULL_DATE)
-										self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
-											IF(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Created between '+;
-												+AllTrim(oDCBdat_Start:TEXTvalue)+' and '+ AllTrim(oDCBdat_End:TEXTValue)
-										ENDIF
-										// 	IF oDCReport1:Checked .or.oDCReport2:Checked.or.oDCReport3:Checked;
-										// 	.or.oDCReport4:Checked.or.oDCReport5:Checked.or.oDCReport6:Checked.or.oDCReport7:Checked
-										// 		self:oCaller:RepCompact := oDCReport1:Checked
-										// 		self:oCaller:RepExt := oDCReport2:Checked
-										// 		self:oCaller:RepLabel := oDCReport3:Checked
-										// 		self:oCaller:RepLetter := oDCReport4:Checked
-										// 		self:oCaller:RepGiro := oDCReport5:Checked
-										// 		self:oCaller:RepExport := oDCReport6:Checked
-										// 		self:oCaller:RepMailcds := oDCReport7:Checked
-										if !Empty(self:oDCOutputAction:VALUE)
-											// 		self:self:oCaller:ReportAction:= Val(self:oDCOutputAction:TEXTvalue)
-											self:oCaller:ReportAction:= Val(self:oDCOutputAction:VALUE)
-										ELSE
-											(WarningBox{self,'Selecting Persons','Specify at least one report type!'}):Show() 
-											self:oCCAction1:SetFocus()
-											// 		oDCReport1:SetFocus()
-											RETURN NIL
-										ENDIF
-										self:oCaller:SortOrder := oDCSortOrder:Value 
-										self:oCaller:selx_OK := true
+	ENDIF
+	// 	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE)
+	IF !Empty(self:oDCBdat_Start:VALUE)
+		self:oCaller:cWherep +=iif(!Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate>="'+DToC(self:oDCBdat_Start:VALUE)+'"'
+	ENDIF
+	IF !Empty(oDCBdat_End:VALUE)
+		self:oCaller:cWherep +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate<="'+DToC(self:oDCBdat_End:VALUE)+'"'
+		if Empty(oDCBdat_Start:VALUE)
+			self:oCaller:cWherep +=' and p.creationdate>"0000-00-00"'
+		ENDIF
+	ENDIF
+	IF !empty(oDCMutd_Start:Value)
+		self:oCaller:cWherep +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate>="'+DToC(oDCMutd_Start:VALUE)+'"'
+	ENDIF
+	IF !Empty(oDCMutd_End:VALUE)
+		self:oCaller:cWherep+=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate<="'+DToC(oDCMutd_End:VALUE)+'"'
+		if Empty(oDCMutd_Start:VALUE)
+			self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
+		ENDIF
+	ENDIF
+	if self:oDCDeleted:Checked
+		self:oCaller:cWherep  +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+' p.`deleted`=1'
+	else
+		self:oCaller:cWherep  +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+' p.`deleted`=0'
+	endif		
 
-										SELF:EndDialog()
-										
-										RETURN nil
+	SetDateFormat(cDat)
+	IF !Empty(oDCeerste:TEXTvalue).or.!Empty(oDClaatste:TEXTvalue)
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+			iif(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Zip code between '+;
+			+AllTrim(oDCeerste:TEXTvalue)+' & '+ AllTrim(oDClaatste:TEXTValue)
+	ENDIF
+	IF !oDCDLG_Start:TextValue==DToC(NULL_DATE).or.!oDCDLG_End:TextValue==DToC(NULL_DATE)
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+			iif(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Gift between '+;
+			+AllTrim(oDCDLG_Start:TEXTvalue)+' & '+ AllTrim(oDCDLG_End:TEXTValue)
+	ENDIF
+	IF !oDCMutd_Start:TextValue==DToC(NULL_DATE).or.!oDCMutd_End:TextValue==DToC(NULL_DATE)
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+			iif(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Last Altered between '+;
+			+AllTrim(oDCMutd_Start:TEXTvalue)+' and '+ AllTrim(oDCMutd_End:TEXTValue)
+	ENDIF
+	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE).or.!oDCBdat_End:TextValue==DToC(NULL_DATE)
+		self:oCaller:selx_voorw := self:oCaller:selx_voorw + ;
+			iif(.not.Empty(self:oCaller:selx_voorw),' and ',"")+'Created between '+;
+			+AllTrim(oDCBdat_Start:TEXTvalue)+' and '+ AllTrim(oDCBdat_End:TEXTValue)
+	ENDIF
+		
+	
+	// 	IF oDCReport1:Checked .or.oDCReport2:Checked.or.oDCReport3:Checked;
+	// 	.or.oDCReport4:Checked.or.oDCReport5:Checked.or.oDCReport6:Checked.or.oDCReport7:Checked
+	// 		self:oCaller:RepCompact := oDCReport1:Checked
+	// 		self:oCaller:RepExt := oDCReport2:Checked
+	// 		self:oCaller:RepLabel := oDCReport3:Checked
+	// 		self:oCaller:RepLetter := oDCReport4:Checked
+	// 		self:oCaller:RepGiro := oDCReport5:Checked
+	// 		self:oCaller:RepExport := oDCReport6:Checked
+	// 		self:oCaller:RepMailcds := oDCReport7:Checked
+	if !Empty(self:oDCOutputAction:VALUE)
+		// 		self:self:oCaller:ReportAction:= Val(self:oDCOutputAction:TEXTvalue)
+		self:oCaller:ReportAction:= Val(self:oDCOutputAction:VALUE)
+	ELSE
+		(WarningBox{self,'Selecting Persons','Specify at least one report type!'}):Show() 
+		self:oCCAction1:SetFocus()
+		// 		oDCReport1:SetFocus()
+		RETURN NIL
+	ENDIF
+	self:oCaller:SortOrder := oDCSortOrder:Value 
+	self:oCaller:selx_OK := true
+
+	SELF:EndDialog()
+	
+	RETURN nil
 METHOD PostInit(oParent,uExtra) CLASS SelPersMailCd
 	//Put your PostInit additions here
 	LOCAL rjaar := Year(Today()) as int
@@ -2930,17 +2943,19 @@ self:SetTexts()
 
    self:InitExtraProperties()
 	RETURN nil
-STATIC DEFINE SELPERSMAILCD_ACTION1 := 137 
-STATIC DEFINE SELPERSMAILCD_ACTION2 := 138 
-STATIC DEFINE SELPERSMAILCD_ACTION3 := 139 
-STATIC DEFINE SELPERSMAILCD_ACTION4 := 140 
-STATIC DEFINE SELPERSMAILCD_ACTION5 := 141 
-STATIC DEFINE SELPERSMAILCD_ACTION6 := 142 
-STATIC DEFINE SELPERSMAILCD_ACTION7 := 143 
+STATIC DEFINE SELPERSMAILCD_ACTION1 := 138 
+STATIC DEFINE SELPERSMAILCD_ACTION2 := 139 
+STATIC DEFINE SELPERSMAILCD_ACTION3 := 140 
+STATIC DEFINE SELPERSMAILCD_ACTION4 := 141 
+STATIC DEFINE SELPERSMAILCD_ACTION5 := 142 
+STATIC DEFINE SELPERSMAILCD_ACTION6 := 143 
+STATIC DEFINE SELPERSMAILCD_ACTION7 := 144 
+STATIC DEFINE SELPERSMAILCD_ACTION8 := 145 
 STATIC DEFINE SELPERSMAILCD_ANDCOD := 128 
 STATIC DEFINE SELPERSMAILCD_BDAT_END := 103 
 STATIC DEFINE SELPERSMAILCD_BDAT_START := 102 
 STATIC DEFINE SELPERSMAILCD_CANCELBUTTON := 124 
+STATIC DEFINE SELPERSMAILCD_DELETED := 136 
 STATIC DEFINE SELPERSMAILCD_DLG_END := 101 
 STATIC DEFINE SELPERSMAILCD_DLG_START := 100 
 STATIC DEFINE SELPERSMAILCD_EERSTE := 106 
@@ -2963,43 +2978,18 @@ STATIC DEFINE SELPERSMAILCD_GROUPBOX6 := 113
 STATIC DEFINE SELPERSMAILCD_GROUPBOX7 := 120 
 STATIC DEFINE SELPERSMAILCD_GROUPBOX8 := 125 
 STATIC DEFINE SELPERSMAILCD_GROUPBOX9 := 133 
-STATIC DEFINE SELPERSMAILCD_GROUPBOXPERSONAL := 144 
+STATIC DEFINE SELPERSMAILCD_GROUPBOXPERSONAL := 146 
 STATIC DEFINE SELPERSMAILCD_LAATSTE := 107 
 STATIC DEFINE SELPERSMAILCD_MUTD_END := 105 
 STATIC DEFINE SELPERSMAILCD_MUTD_START := 104 
 STATIC DEFINE SELPERSMAILCD_NONCOD := 130 
 STATIC DEFINE SELPERSMAILCD_OKBUTTON := 123 
 STATIC DEFINE SELPERSMAILCD_ORCOD := 129 
-STATIC DEFINE SELPERSMAILCD_OUTPUTACTION := 136 
+STATIC DEFINE SELPERSMAILCD_OUTPUTACTION := 137 
 STATIC DEFINE SELPERSMAILCD_SORTBUTTON1 := 109 
 STATIC DEFINE SELPERSMAILCD_SORTBUTTON2 := 110 
 STATIC DEFINE SELPERSMAILCD_SORTORDER := 108 
 STATIC DEFINE SELPERSMAILCD_TYPES := 132 
-CLASS SelPersOpen INHERIT DialogWinDowExtra 
-
-	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
-	PROTECT oDCbegin_verv AS DATESTANDARD
-	PROTECT oDCeind_verv AS DATESTANDARD
-	PROTECT oCCSelOpenButton2 AS RADIOBUTTON
-	PROTECT oDCSelx_rek AS COMBOBOX
-	PROTECT oCCSelOpenButton1 AS RADIOBUTTON
-	PROTECT oCCSelOpenButton3 AS RADIOBUTTON
-	PROTECT oDCmPayMethod AS RADIOBUTTONGROUP
-	PROTECT oCCRadioButtonGiro AS RADIOBUTTON
-	PROTECT oCCRadioButtonCollection AS RADIOBUTTON
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCAccountText AS FIXEDTEXT
-	PROTECT oDCdatedirectdebit AS WORKDAYDATE
-	PROTECT oDCDateDirectText AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS SelPers
-  PROTECT cType as STRING 
-  declare method Abon_Con,MakeCliop03File
 RESOURCE SelPersOpen DIALOGEX  24, 38, 266, 187
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select Persons with Unpaid Items"
@@ -3025,6 +3015,31 @@ BEGIN
 	CONTROL	"Date direct debit:", SELPERSOPEN_DATEDIRECTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 80, 88, 56, 12
 END
 
+CLASS SelPersOpen INHERIT DialogWinDowExtra 
+
+	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
+	PROTECT oDCbegin_verv AS DATESTANDARD
+	PROTECT oDCeind_verv AS DATESTANDARD
+	PROTECT oCCSelOpenButton2 AS RADIOBUTTON
+	PROTECT oDCSelx_rek AS COMBOBOX
+	PROTECT oCCSelOpenButton1 AS RADIOBUTTON
+	PROTECT oCCSelOpenButton3 AS RADIOBUTTON
+	PROTECT oDCmPayMethod AS RADIOBUTTONGROUP
+	PROTECT oCCRadioButtonGiro AS RADIOBUTTON
+	PROTECT oCCRadioButtonCollection AS RADIOBUTTON
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCAccountText AS FIXEDTEXT
+	PROTECT oDCdatedirectdebit AS WORKDAYDATE
+	PROTECT oDCDateDirectText AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS SelPers
+  PROTECT cType as STRING 
+  declare method Abon_Con,MakeCliop03File
 METHOD ButtonClick(oControlEvent) CLASS SelPersOpen
 	LOCAL oControl AS Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -3835,3 +3850,156 @@ STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON2 := 102
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON3 := 103 
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON4 := 104 
 STATIC DEFINE SELPERSPRIMARY_SELX_KEUZE1 := 100 
+CLASS SelPersRemovePers INHERIT DialogWinDowExtra 
+
+	PROTECT oDCRemovepers AS LISTBOX
+	PROTECT oDCRemoveText AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+	protect oCaller as SelPers
+	protect cWhereExtra as string
+	protect cWherePers as string
+RESOURCE SelPersRemovePers DIALOGEX  5, 18, 356, 264
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Removal op persons"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", SELPERSREMOVEPERS_REMOVEPERS, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 4, 29, 340, 229, WS_EX_CLIENTEDGE
+	CONTROL	"Should following persons be removed:", SELPERSREMOVEPERS_REMOVETEXT, "Static", WS_CHILD, 8, 3, 188, 22
+	CONTROL	"OK", SELPERSREMOVEPERS_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 292, 1, 53, 13
+	CONTROL	"Cancel", SELPERSREMOVEPERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 292, 14, 53, 13
+END
+
+METHOD CancelButton( ) CLASS SelPersRemovePers 
+	self:EndDialog(0)
+
+RETURN NIL
+METHOD Init(oParent,uExtra) CLASS SelPersRemovePers 
+
+self:PreInit(oParent,uExtra)
+
+SUPER:Init(oParent,ResourceID{"SelPersRemovePers",_GetInst()},TRUE)
+
+oDCRemovepers := ListBox{SELF,ResourceID{SELPERSREMOVEPERS_REMOVEPERS,_GetInst()}}
+oDCRemovepers:HyperLabel := HyperLabel{#Removepers,NULL_STRING,"Persons to be deleted",NULL_STRING}
+oDCRemovepers:UseHLforToolTip := True
+oDCRemovepers:OwnerAlignment := OA_PWIDTH_PHEIGHT
+
+oDCRemoveText := FixedText{SELF,ResourceID{SELPERSREMOVEPERS_REMOVETEXT,_GetInst()}}
+oDCRemoveText:HyperLabel := HyperLabel{#RemoveText,"Should following persons be removed:",NULL_STRING,NULL_STRING}
+
+oCCOKButton := PushButton{SELF,ResourceID{SELPERSREMOVEPERS_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{SELPERSREMOVEPERS_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Removal op persons"
+SELF:HyperLabel := HyperLabel{#SelPersRemovePers,"Removal op persons",NULL_STRING,NULL_STRING}
+
+self:PostInit(oParent,uExtra)
+
+return self
+
+METHOD OKButton( ) CLASS SelPersRemovePers
+	local oSQL as SQLStatement
+	local nRem as int
+	local aOrd:={} as array
+	local cOrd as string
+	local oSel as SQLSelect
+	oSQL:=SQLStatement{"update person set deleted=1,opc='"+LOGON_EMP_ID+"',alterdate=curdate() where persid in ("+self:cWherePers+')',oConn}
+	oSQL:Execute()
+	if Empty(oSQL:Status)
+		nRem:=oSQL:NumSuccessfulRows
+		* Remove corresponding bankaccounts in PersonBank : 
+		oSQL:=SQLStatement{"delete from personbank where persid in ("+self:cWherePers+')',oConn}
+		oSQL:Execute()
+		oSQL:=SQLStatement{"delete from subscription where personid in ("+self:cWherePers+')',oConn}
+		oSQL:Execute()
+		oSel:=SqlSelect{"select stordrid from standingorderline where creditor in ("+self:cWherePers+")",oConn}
+		if oSel:RecCount>0
+			aOrd:=oSel:GetLookupTable(5000,#stordrid,#stordrid)
+			cOrd:=Implode(aOrd,',',,,1)
+			oSQL:=SQLStatement{"delete from standingorder where stordrid in ("+cOrd+")",oConn}
+			oSQL:Execute()
+			oSQL:=SQLStatement{"delete from standingorderline where stordrid in ("+cOrd+")",oConn}
+			oSQL:Execute()
+		endif
+		oSQL:=SQLStatement{"delete from standingorderline where stordrid in (select stordrid from standingorder where persid in ("+self:cWherePers+"))",oConn}
+		oSQL:Execute()
+		if oSQL:NumSuccessfulRows>0
+			oSQL:=SQLStatement{"delete from standingorder where persid in ("+self:cWherePers+')',oConn}
+			oSQL:Execute()
+		endif
+		// remove as contact person from departments:
+		oSQL:=SQLStatement{"update department set persid=0 where persid in ("+self:cWherePers+')',oConn}
+		oSQL:Execute() 
+		oSQL:=SQLStatement{"update department set persid2=0 where persid2 in ("+self:cWherePers+')',oConn}
+		oSQL:Execute() 
+		// remove as contact person from member:
+		oSQL:=SQLStatement{"update member set contact=0 where contact in ("+self:cWherePers+')',oConn}
+		oSQL:Execute() 
+		// remove as financial contact person from system parameters:
+		oSQL:=SQLStatement{"update sysparms set idcontact=0 where idcontact in ("+self:cWherePers+')',oConn}
+		oSQL:Execute() 
+		self:oCaller:selx_Ok:=true
+		logevent(self,str(nRem,-1)+space(1)+self:olan:wget("persons removed"))
+		TextBox{self,self:oLan:wget("Delete Persons"),Str(nRem,-1)+space(1)+self:oLan:wget("persons removed")}:Show()
+	else
+		LogEvent(self,'Delete persons Error:'+oSQL:Status:Description+"; statement:"+oSQL:sqlstring,"LogErrors")
+		(ErrorBox{self,self:oLan:wget('Delete person Error')+':'+oSQL:Status:Description}):Show()
+	endif
+	
+	self:EndDialog(1)
+	RETURN nil
+method PostInit(oParent,uExtra) class SelPersRemovePers
+	//Put your PostInit additions here
+	local apers:={} as array 
+	local oPers as SQLSelect
+	local nTot,nRem as int
+	self:cWhereExtra:=" and datediff(curdate(),p.datelastgift)>90 "+; 
+	" and p.persid not in (select cast("+Crypt_Emp(false,'persid')+" as unsigned) as persid from employee "+;
+		"where "+Crypt_Emp(false,'persid')+" IS NOT NULL)"+;
+		" and p.persid not in (select persid from member)"+;
+		" and p.persid not in (select contact from member)"+;
+		" and p.persid not in (select persid from department)"+;
+		" and p.persid not in (select persid2 from department)"+;
+		" and p.persid not in (select idorg from sysparms)"+; 
+	" and p.persid not in (select pmcmancln from sysparms)"+; 
+	" and p.persid not in (select idorg from sysparms)"+;  
+	" and p.persid not in (select persid from standingorder where datediff(edat,curdate())>0)"+;
+		" and p.persid not in (select l.creditor from standingorderline as l,standingorder as s where l.stordrid=s.stordrid and datediff(s.edat,curdate())>0)"+;
+		" and p.persid not in (select personid from subscription where category<>'G' and datediff(enddate,curdate())>0 and datediff(enddate,duedate)>0)"
+	self:SetTexts()
+	nTot:= ConI((SqlSelect{"select count(*) as nTot from "+self:oCaller:cFrom+oCaller:cWherep,oConn}):nTot)
+	if nTot>0
+		oPers:=SqlSelect{"select p.persid,"+SQLFullNAC(2) +" as fullnac from "+self:oCaller:cFrom+oCaller:cWherep+self:cWhereExtra+" order by "+self:oCaller:SortOrder,oConn}
+		oPers:Execute() 
+		LogEvent(self,oPers:sqlstring,"logsql")
+		apers:=oPers:GetLookupTable(2000,#FullNAC,#PERSID) 
+		nRem:=Len(apers) 
+		self:cWherePers:=Implode(apers,',',,,2)
+		self:oDCRemovepers:FillUsing(apers)
+		self:oDCRemoveText:textvalue:=iif(nRem>0,self:olan:wget("Should following")+Space(1)+Str(nRem,-1)+Space(1)+self:olan:wget("persons be removed")+'?','')+;
+			iif(nTot>nRem,iif(nRem>0,CRLF,'')+'('+self:olan:wget("remove remaining")+Space(1)+Str(nTot-nRem,-1)+Space(1)+self:olan:wget("manually")+')','')
+		if nRem=0
+			self:oCCOKButton:Disable()
+		endif
+	else 
+		self:oDCRemoveText:textvalue:=self:oLan:wget("nothing to remove")
+		self:oCCOKButton:Disable()
+	endif
+	self:oCaller:selx_Ok:=false
+	return nil
+
+method PreInit(oParent,uExtra) class SelPersRemovePers
+	//Put your PreInit additions here
+	self:oCaller:=oParent
+	return NIL
+
+STATIC DEFINE SELPERSREMOVEPERS_CANCELBUTTON := 103 
+STATIC DEFINE SELPERSREMOVEPERS_OKBUTTON := 102 
+STATIC DEFINE SELPERSREMOVEPERS_REMOVEPERS := 100 
+STATIC DEFINE SELPERSREMOVEPERS_REMOVETEXT := 101 
