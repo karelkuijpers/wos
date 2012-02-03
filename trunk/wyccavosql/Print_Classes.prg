@@ -438,7 +438,7 @@ METHOD OKButton( ) CLASS AskLetterName
 	IF At(".",cName)>0
 		cName:=SubStr(cName,1,At(".",cName)-1)
 	ENDIF
-	cName:=cName+"."+cExt
+	cName:=cName+"."+self:cExt
 	SELF:EndDialog()
 METHOD PostInit(oParent,uExtra) CLASS AskLetterName
 	//Put your PostInit additions here
