@@ -2102,7 +2102,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 	oDep:=SQLSelect{"select d.descriptn,d.deptmntnbr,d.depid,d.assacc1,d.assacc2,d.assacc3,d.persid,d.persid2,"+ ;
 		"group_concat(distinct a.accnumber,'#',a.description,'#',cast(a.giftalwd as char),'#',if(a.accid=d.netasset,'1','0'),'#',cast(a.accid as char) order by a.accnumber separator '%%') as depaccs "+;
 		",p1.lastname as lastname1,p1.email as email1,"+SQLFullName(0,"p1")+" as fullname1,p2.lastname as lastname2,p2.email as email2,"+SQLFullName(0,"p2")+" as fullname2 "+;
-		",m.mbrid,m.persid as mbrpersid,m.householdid,m.homepp,m.contact,group_concat(distinct cast(ma.accid as char) separator ',') as assacc "+ ; 
+		",m.mbrid,m.persid as mbrpersid,m.householdid,m.homepp,m.contact,m.rptdest,group_concat(distinct cast(ma.accid as char) separator ',') as assacc "+ ; 
 	",mc.lastname as lastnamemc,mc.email as emailmc,"+SQLFullName(0,"mc")+" as fullnamemc,mm.lastname as lastnamemm,mm.email as emailmm,"+SQLFullName(0,"mm")+" as fullnamemm "+;
 		"from account a,department d left join person p1 on(p1.persid=d.persid) left join person p2 on (p2.persid=d.persid2) "+;
 		"left join member m on (m.depid=d.depid) left join memberassacc ma on (ma.mbrid=m.mbrid) left join person mm on (mm.persid=m.persid) left join person mc on (mc.persid=m.contact) " +;
@@ -2263,17 +2263,21 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 				aEmail[2]:=oDep:email2
 				aPersid[2]:=oDep:persid2
 			else
-				// member department
-				aLastname[1]:=oDep:Lastnamemm
-				aFullname[1]:=oDep:fullnamemm
-				aEmail[1]:=oDep:emailmm
-				aPersid[1]:=oDep:mbrpersid
-				aLastname[2]:=oDep:Lastnamemc
-				aFullname[2]:=oDep:fullnamemc
-				aEmail[2]:=oDep:emailmc
-				aPersid[2]:=oDep:contact
+				// member department 
+				if oDep:rptdest<>1      // Destination 0: member, 1: contact, 2: member+contact
+					aLastname[1]:=oDep:Lastnamemm     // member
+					aFullname[1]:=oDep:fullnamemm
+					aEmail[1]:=oDep:emailmm
+					aPersid[1]:=oDep:mbrpersid
+				endif
+				if oDep:rptdest>0                 // contact
+					aLastname[2]:=oDep:Lastnamemc
+					aFullname[2]:=oDep:fullnamemc
+					aEmail[2]:=oDep:emailmc
+					aPersid[2]:=oDep:contact
+				endif
 			endif
-			if !Empty(aPersid[1]) .or.!Empty(aPersid[1]) 
+			if !Empty(aPersid[1]) .or.!Empty(aPersid[2]) 
 				oRecip1:=null_object
 				oRecip2:=null_object
 				if !Empty(aPersid[1]) 
