@@ -715,7 +715,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	local oStmnt as SQLStatement
 	local mindate as date
 	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
-	AdoDateTimeAsDate(true)  
+	AdoDateTimeAsDate(true)
+	SET OPTIMIZE ON
 
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
@@ -1631,6 +1632,18 @@ method InitializeDB() as void Pascal  class Initialize
 	// 		{"transaction","1","amountdeb","1","deb"},;
 	// 		{"transaction","1","amountcre","1","cre"},;
 	// 		{"transaction","1","description","1","description"},;
+ 
+//  		{"teletrans","0","telecontent","1","bankaccntnbr"},;
+// 		{"teletrans","0","telecontent","2","bookingdate"},;
+// 		{"teletrans","0","telecontent","3","addsub"},;
+// 		{"teletrans","0","telecontent","4","amount"},;
+// 		{"teletrans","0","telecontent","5","kind"},;
+// 		{"teletrans","0","telecontent","6","contra_bankaccnt"},;
+// 		{"teletrans","0","telecontent","7","contra_name"},;
+// 		{"teletrans","0","telecontent","8","budgetcd"},;
+// 		{"teletrans","0","telecontent","9","seqnr"},;
+// 		{"teletrans","0","telecontent","10","description (120)"},;
+
 
 	
 	// add to total collection of columns:
@@ -2001,7 +2014,8 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	local nPosCurbefore as int // position of corresponding current item before this required one
 	local nPosCurAfter  as int // position of corresponding current item after this required one
 	local cReqname,cIndex as string 
-	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1) as string
+	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1) as string 
+	local aColName:={} as array
 	local oStmnt as SQLStatement 
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
@@ -2101,7 +2115,8 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	aStatCur:=AReplicate('',nLenCur) 
 	for nPosReq:=1 to nLenReq   
 		// Table,Non_unique,Key_name,Seq_in_index,Column_name
-		cReqname:=Lower(aReqIndex[nPosReq,5])       // first position is table name, fith column name 
+		cReqname:=Lower(aReqIndex[nPosReq,5])       // first position is table name, fith column name
+		cReqname:=Split(cReqname,'(')[1]  // not key length 
 		if ascan(aReqColumn,{|x|lower(x[2])==cReqname})=0
 			ErrorBox{,"Index '"+aReqIndex[nPosReq,3]+"' of table '"+cTableName+"' contains unknown column name '"+cReqname+"'"}:show()
 			break
@@ -2136,11 +2151,13 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
 				if (nPosReq:=ascan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. atc(cIndex,cAddIndex)=0 
 					// add to indexes to be added:
+					aColName:=Split(aReqIndex[nPosReq,5],'(')
 					cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
-						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 					nPosReq++		
-					do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
-						cAddIndex+="," +sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+					do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex 
+						aColName:=Split(aReqIndex[nPosReq,5],'(')
+						cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar +iif(Len(aColName)>1,'('+aColName[2],'')
 						nPosReq++
 					enddo
 					cAddIndex+=")"+Sp
@@ -2167,11 +2184,13 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				// add to drop index
 				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)			
 			endif
+			aColName:=Split(aReqIndex[nPosReq,5],'(')
 			cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
-				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 			nPosReq++		
 			do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
-				cAddIndex+="," +sIdentChar+aReqIndex[nPosReq,5]+sIdentChar
+				aColName:=Split(aReqIndex[nPosReq,5],'(')
+				cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 				nPosReq++
 			enddo
 			cAddIndex+=")"+Sp 
