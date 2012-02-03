@@ -32,7 +32,7 @@ method Start() class App
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
 		Enable3dControls() 
-		SetMaxDynSize(67108864)   //64MB max dynamic memory
+		SetMaxDynSize(134217728)   //128MB max dynamic memory
 		SetWipeDynSpace(false)
 		SetKidStackSize(524288)
 		SetMaxRegisteredKids(60000)
