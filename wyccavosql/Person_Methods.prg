@@ -1363,6 +1363,8 @@ METHOD DeleteButton CLASS PersonBrowser
 	LOCAL myCLN as STRING
 	local oSel as SQLSelect
 	local oSQL as SQLStatement
+	local aOrd:={} as array
+	local cOrd as string
 	IF self:Server:EOF.or.self:Server:BOF
 		(ErrorBox{,"Select a person first"}):Show()
 		RETURN
@@ -1370,7 +1372,7 @@ METHOD DeleteButton CLASS PersonBrowser
 	oTextBox := TextBox{ self, self:oLan:WGet("Delete Person"),;
 		self:oLan:WGet("Delete Person")+Space(1) + FullName( ;
 		oPers:lastname, ;
-		oPers:firstname ) + "?" }
+		oPers:firstname )+iif(Empty(oPers:datelastgift),'',Space(1)+self:oLan:WGet('with last gift on')+Space(1)+DToC(oPers:datelastgift))+ "?" }
 	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
@@ -1381,17 +1383,31 @@ METHOD DeleteButton CLASS PersonBrowser
 			ErrorBox{self,self:oLan:WGet("This person is an employee! Remove person as employee first")}:Show()
 			RETURN
 		endif
-// 		oSel:SQLString:="select transid from transaction where persid='"+myCLN+"'"
-// 		oSel:Execute() 
-// 		if oSel:RecCount>0
-// 			InfoBox { self, self:oLan:WGet("Delete Person"),self:oLan:WGet("Fin.records in not yet balanced years present! Wait untill year balancing")}:Show()
-// 			RETURN
-// 		ENDIF
+		// 		oSel:SQLString:="select transid from transaction where persid='"+myCLN+"'"
+		// 		oSel:Execute() 
+		// 		if oSel:RecCount>0
+		// 			InfoBox { self, self:oLan:WGet("Delete Person"),self:oLan:WGet("Fin.records in not yet balanced years present! Wait untill year balancing")}:Show()
+		// 			RETURN
+		// 		ENDIF
 		oSel:SQLString:="select persid from member where persid='"+myCLN+"'"
 		oSel:Execute()
 		if oSel:RecCount>0 
 			InfoBox { self, self:oLan:WGet("Delete person"),;
 				self:oLan:WGet("This person is a member! First remove person as member")}:Show()
+			RETURN                      
+		ENDIF
+		oSel:SQLString:="select "+SQLFullName(0,"p")+" as membername from person as p, member as m where m.persid=p.persid and m.contact='"+myCLN+"'"
+		oSel:Execute()
+		if oSel:RecCount>0 
+			InfoBox { self, self:oLan:WGet("Delete person"),;
+				self:oLan:WGet("This person is contact person of member")+Space(1)+oSel:membername}:Show()
+			RETURN                      
+		ENDIF
+		oSel:SQLString:="select d.descriptn from department as d where d.persid="+myCLN+" or d.persid2="+myCLN
+		oSel:Execute()
+		if oSel:RecCount>0 
+			InfoBox { self, self:oLan:WGet("Delete person"),;
+				self:oLan:WGet("This person is contact person of department")+Space(1)+oSel:descriptn}:Show()
 			RETURN                      
 		ENDIF
 		oSel:SQLString:="select idorg from sysparms where idorg='"+myCLN+"'"
@@ -1408,29 +1424,28 @@ METHOD DeleteButton CLASS PersonBrowser
 				self:oLan:WGet("This person is PMC Manager in system parameters! First remove person as PMC Manager")}:Show()
 			RETURN                      
 		ENDIF
-		oSel:SQLString:="select stordrid from standingorder where persid='"+myCLN+"'"
+		oSel:SQLString:="select stordrid from standingorder where persid='"+myCLN+"' and datediff(edat,curdate())>0"
 		oSel:Execute()
 		if oSel:RecCount>0 
 			InfoBox { self, self:oLan:WGet("Delete Person"),;
 				self:oLan:WGet("This person is giver in standing order")+Space(1)+Str(oSel:stordrid,-1)+'! '+self:oLan:WGet("First remove person from standing order")}:Show()
 			RETURN                      
 		ENDIF
-		oSel:SQLString:="select stordrid from standingorderline where creditor='"+myCLN+"'"
+		oSel:SQLString:="select l.stordrid from standingorderline l, standingorder s where creditor='"+myCLN+"' and l.stordrid=s.stordrid and datediff(s.edat,curdate())>0"
 		oSel:Execute()
 		if oSel:RecCount>0 
 			InfoBox { self, self:oLan:WGet("Delete Person"),;
 				self:oLan:WGet("This person is creditor in standing order")+Space(1)+Str(oSel:stordrid,-1)+'! '+self:oLan:WGet("First remove person from standing order")}:Show()
 			RETURN                      
 		ENDIF
-		oSel:SQLString:="select personid from subscription where personid='"+myCLN+"' and category<>'G'"
+		oSel:SQLString:="select personid from subscription where personid='"+myCLN+"' and category<>'G' and datediff(enddate,curdate())>0 and datediff(enddate,duedate)>0"
 		oSel:Execute()
 		if oSel:RecCount>0
 			InfoBox { self, self:oLan:WGet("Delete Person"),;
 				self:oLan:WGet("Subscript/donation present! Delete them first")}:Show()
 			RETURN
 		ENDIF
-// 		oSQL:=SQLStatement{"delete from person where persid="+myCLN,oConn}
-		oSQL:=SQLStatement{"update person set deleted=1,opc='"+LOGON_EMP_ID+"',alterdate='"+SQLdate(Today())+"' where persid="+myCLN,oConn}
+		oSQL:=SQLStatement{"update person set deleted=1,opc='"+LOGON_EMP_ID+"',alterdate=curdate() where persid="+myCLN,oConn}
 		oSQL:Execute()
 		if Empty(oSQL:Status)
 			* Remove corresponding bankaccounts in PersonBank : 
@@ -1438,11 +1453,22 @@ METHOD DeleteButton CLASS PersonBrowser
 			oSQL:Execute()
 			oSQL:=SQLStatement{"delete from subscription where personid="+myCLN,oConn}
 			oSQL:Execute()
-			oSQL:=SQLStatement{"delete from teletrans where persid="+myCLN,oConn}
+			oSel:=SqlSelect{"select stordrid from standingorderline where creditor="+myCLN,oConn}
+			if oSel:RecCount>0
+				aOrd:=oSel:GetLookupTable(1000,#stordrid,#stordrid)
+				cOrd:=Implode(aOrd,',',,,1)
+				oSQL:=SQLStatement{"delete from standingorder where stordrid in ("+cOrd+")",oConn}
+				oSQL:Execute()
+				oSQL:=SQLStatement{"delete from standingorderline where stordrid in ("+cOrd+")",oConn}
+				oSQL:Execute()
+			endif
+			oSQL:=SQLStatement{"delete from standingorderline where stordrid in (select stordrid from standingorder where persid="+myCLN+")",oConn}
+			oSQL:Execute()
+			oSQL:=SQLStatement{"delete from standingorder where persid='"+myCLN+"'",oConn}
 			oSQL:Execute()
 			// remove as contact person from departments:
 			oSQL:=SQLStatement{"update department set persid=if(persid="+myCLN+",0,persid),persid2=if(persid2="+myCLN+",0,persid2) "+;
-			"where persid="+myCLN+" or persid2="+myCLN,oConn}
+				"where persid="+myCLN+" or persid2="+myCLN,oConn}
 			oSQL:Execute() 
 			// remove as contact person from member:
 			oSQL:=SQLStatement{"update member set contact=0 where contact="+myCLN,oConn}
@@ -2207,11 +2233,11 @@ CLASS Selpers INHERIT DataWindowExtra
 	export ReportMonth as string 
 	export GrpFormat as string
 	export oDB as SQLSelect 
-	protect cFrom:="person as p" as string // list with tables to read from
+	export cFrom:="person as p" as string // list with tables to read from
 	protect cFields as string  // fields to be retrieved from the database 
 	export cTel,cDay,cNight,cFax,cMobile,cAbrv,cMr,cMrs,cCouple as string  // texts for use in reports
 
-	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters
+	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters,RemovePersons
 METHOD AnalyseTxt(template as string,DueRequired ref logic,GiftsRequired ref logic,AddressRequired ref logic,RepeatingPossible ref logic,selectionType as int,selx_accid:=0 as int) as void pascal CLASS Selpers
 	* Analyse content of template
 	LOCAL h1,h2,i as int,repeatedtxt as STRING
@@ -2301,7 +2327,7 @@ endif
 // oSQL:=SQLSelect{"select p.persid from "+cFrom+cWherep+" LOCK IN SHARE MODE",oConn}
 // oSQL:Execute()
 
-oStmnt:=SQLStatement{"update "+cFrom+" set p.mailingcodes="+cStatmnt+cWherep,oConn}
+oStmnt:=SQLStatement{"update "+self:cFrom+" set p.mailingcodes="+cStatmnt+cWherep,oConn}
 fSecStart:=Seconds()
 oStmnt:Execute()  
 if !Empty(oStmnt:Status)
@@ -2411,7 +2437,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
-	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(self:selx_keus1=4.or.self:selx_keus1=5,' gifts',' persons')+' found')}):Show()
+	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(Empty(self:GrpFormat).and.(self:selx_keus1=4.or.self:selx_keus1=5),' gifts',' persons')+' found')}):Show()
 	IF oSel:RECCOUNT=0
 		return false
 	endif
@@ -2562,7 +2588,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 				ELSEIF self:myFields[j,1]==#TYPE
 					cLine:=cLine+TYPEDSCR(oSel:TYPE)
 				ELSEIF self:myFields[j,1]==#GIFTSGROUP
-					cLine+=UTF2String{oSel:giftsgroup}:OutBuf   // convert from utf8 to local characters
+// 					cLine+=UTF2String{oSel:giftsgroup}:OutBuf   // convert from utf8 to local characters
+					cLine+=oSel:giftsgroup
 				else
 					cLine:=cLine+ AllTrim(Transform(oSel:FIELDGET(aMapping[j]),""))
 				endif
@@ -3267,12 +3294,28 @@ METHOD PrintToOutput(oWindow,aTitle,TitleExtra) CLASS SelPers
 		lSucc:=self:EXPORTPersons(oWindow,i,aTitle[i]+TitleExtra)
 	CASE i=7
 		lSucc:=self:ChangeMailCodes("")
-
+	CASE i=8
+		lSucc:=self:RemovePersons("")
 	ENDCASE
 	// NEXT 
 	self:Pointer := Pointer{POINTERARROW}
 
 	return lSucc
+METHOD RemovePersons(dummy as string) as logic CLASS Selpers
+// add, change or remove mailingcodes of a selection of persons
+LOCAL i,j,iStart,fSecStart as int
+local oStmnt as SQLStatement 
+// local oSQL as SQLSelect
+local cStmnt as string
+if self:selx_MaxAmnt>0 .or. self:selx_MinAmnt>0 .or. self:selx_MinIndAmnt>0
+	ErrorBox{self:oWindow,"You can't combine total amount bounderies with removal of persons"}:Show()
+	return false
+endif
+SelPersRemovePers{self}:Show() 
+if !self:selx_Ok
+	return false
+endif 
+
 METHOD Show() CLASS SelPers
 	// LOCAL kopregels AS ARRAY
 	// LOCAL nRow AS INT
@@ -3353,7 +3396,7 @@ METHOD Show() CLASS SelPers
 			self:cWherep:=" where "+self:cWherep+iif(Empty(self:cWhereOther),""," and "+self:cWhereOther)
 		endif
 	endif
-	self:cWherep+=" and p.persid>0 and p.deleted=0"
+// 	self:cWherep+=" and p.persid>0"
 	IF !Empty(self:selx_AccStart) .and. !Empty(self:selx_AccStart) .and. !self:selx_AccStart==self:selx_Accend 
 		// range of account numbers:
 		self:cFrom+=",account as a"
