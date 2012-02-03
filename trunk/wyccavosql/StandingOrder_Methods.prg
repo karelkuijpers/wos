@@ -712,7 +712,9 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	ENDDO
 	// perform recording if transactions (when everything is OK:
 	if !Empty(self:aTrans) 
-		oBal:=Balances{}
+		oBal:=Balances{}     
+	//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
+
 		SQLStatement{"start transaction",oConn}:execute()
 		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+;
 			") values ('"+self:aTrans[1,1]+"','"+self:aTrans[1,2]+"','"+self:aTrans[1,3]+"','"+self:aTrans[1,4]+;
@@ -732,11 +734,11 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			cValuesTrans:=Implode(aTrans,'","',2)
 			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
 			//                                                         1   2      3        4     5   6     7       8        9      10   11
-			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference,transId) "+;
+			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,reference,seqnr,userid,transId) "+;
 				"values "+cValuesTrans,oConn}
 			oTrans:execute()
 			if !Empty(oTrans:status) 
-				LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
+				LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:errinfo:errormessage,"LogErrors")
 				lError:=true
 			endif
 		endif
