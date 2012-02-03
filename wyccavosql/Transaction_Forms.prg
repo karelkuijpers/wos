@@ -2727,10 +2727,8 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 				self:cOrigName:=AllTrim(self:cGiverName)
            	self:cGiverName:=AllTrim(oControl:VALUE)
 				if !self:cGiverName==self:cOrigName
-					LogEvent(self,"ongelijk:"+self:cOrigName+'=' +self:cGiverName+'; persid:'+self:mCLNGiver," logsql")
 					self:PersonButton(true,,false,PersonContainer{}) 
 				else
-					LogEvent(self,"gelijk:"+self:cOrigName+'=' +self:cGiverName+'; persid:'+self:mCLNGiver," logsql")
 					self:PersonButton(true,,,PersonContainer{})
 				endif				 
 			ENDIF
