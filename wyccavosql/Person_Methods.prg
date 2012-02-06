@@ -2431,9 +2431,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	endif
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
-//	LogEvent(self,oSel:SQlString,"LogErrors")
 // 	fSecStart:=Seconds() 
-// 	LogEvent(self,oSel:SQlString,"logsql")
+	LogEvent(self,oSel:SQlString,"logsql")
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 
