@@ -2815,7 +2815,7 @@ METHOD OKButton( ) CLASS SelPersMailCd
 		self:oCaller:cWherep +=	iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCDLG_End:VALUE)
-		self:oCaller:cWherep := iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
+		self:oCaller:cWherep += iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
 		if empty(oDCDLG_Start:Value)
 			self:oCaller:cWherep +=' and p.datelastgift>"0000-00-00"'
 		ENDIF
@@ -3959,7 +3959,7 @@ method PostInit(oParent,uExtra) class SelPersRemovePers
 	local apers:={} as array 
 	local oPers as SQLSelect
 	local nTot,nRem as int
-	self:cWhereExtra:=" and datediff(curdate(),p.datelastgift)>90 "+; 
+	self:cWhereExtra:=" and datediff(curdate(),p.datelastgift)>243 "+; 
 	" and p.persid not in (select cast("+Crypt_Emp(false,'persid')+" as unsigned) as persid from employee "+;
 		"where "+Crypt_Emp(false,'persid')+" IS NOT NULL)"+;
 		" and p.persid not in (select persid from member)"+;
