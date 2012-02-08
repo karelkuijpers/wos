@@ -77,7 +77,7 @@ CLASS ImportMapping INHERIT DataWindowExtra
 	PROTECT aTargetDB:={} as array //{itemname,type,extra},...
 	PROTECT SourceFSpec AS filespec
 	PROTECT lDbf, lTAB, lCSV,lImportFile,lIdentical,lExists:=false, lOverwrite:=true as LOGIC
-	PROTECT NbrCol,ImportCount,ErrCount,ExistCount,InsertCount as int
+	PROTECT NbrCol,ImportCount,ErrCount,ExistCount,InsertCount,PersidPtr as int
 	PROTECT ptrHandle
 	PROTECT aMapping:={} AS ARRAY // mapping info (Target Fieldnbr, {Source fieldsnbr1, Source field Nbr 2, ...}}
 	EXPORT lImportAutomatic:=true,lExtra as LOGIC // In case of General Import: no asking for confirmation per record
@@ -700,7 +700,7 @@ METHOD ListBoxSelect(oControlEvent) CLASS ImportMapping
 METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	* Map sourcefile items on Target DB-items of self:oEdit 
 	// returns: 0: continue with precessing record, 1: stop and show record, 2: cancel record
-	LOCAL i, j, titPtr,exidptr, typPtr, PersidPtr,AccNumberPtr,AccIDPtr,nPers as int
+	LOCAL i, j, titPtr,exidptr, typPtr, AccNumberPtr,AccIDPtr,nPers as int
 	LOCAL uSrcValue, ExId, PERSID,ACCID,ACCNUMBER as USUAL
 	LOCAL cTargetStr,ID, cCodes, cCorCln,cMlCod, mOPM as STRING, IDs as symbol
 	LOCAL aWord:={}, aCod:={},aBank:={} as ARRAY
@@ -735,7 +735,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 		ExId=''
 		// Check if person already exist with given external or internal id: 
 		exidptr:=AScan(self:aMapping,{|x|x[1]==#mExternid})
-		PersidPtr:=AScan(self:aMapping,{|x|x[1]==#mPersId})
+		self:PersidPtr:=AScan(self:aMapping,{|x|x[1]==#mPersId})
 		self:lMailingCode:=(AScan(self:aMapping,{|x|x[1]==#mCod})>0)  
 		self:lDlg:=(AScan(self:aMapping,{|x|x[1]==#mDlg})>0)  
 		self:lBdat:=(AScan(self:aMapping,{|x|x[1]==#mBdat})>0)  
@@ -748,11 +748,11 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				aPers:=oSel:GetLookupTable(100000,#persid,#externid)
 			endif
 		endif
-		IF PersidPtr > 0
+		IF self:PersidPtr > 0
 			IF self:lImportFile
-				PERSID:=aWord[aMapping[PersidPtr,2,1]]
+				PERSID:=aWord[aMapping[self:PersidPtr,2,1]]
 			else 
-				PERSID:=Source->FIELDGET(aMapping[PersidPtr,2,1]) 
+				PERSID:=Source->FIELDGET(aMapping[self:PersidPtr,2,1]) 
 			endif
 			if IsNumeric(PERSID)
 				PERSID:=Str(PERSID,-1)
@@ -766,7 +766,9 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 			if SQLSelect{"select persid from person where persid='"+PERSID+"'",oConn}:RecCount>0
 				// Person already in database, so update it:
 				self:lExists:=true 
-				oPersCnt:PERSID:=PERSID
+				oPersCnt:PERSID:=PERSID 
+			else
+				self:lExists:=false 				
 			endif
 		endif
 		if !self:lExists .and. exidptr>0
@@ -1203,7 +1205,7 @@ do while action==0
 		IF FEof(ptrHandle).and.Empty(cBuffer)
 			FClose(ptrHandle)
 			// do automatic updates: 
-		  	oMainWindow:STATUSMESSAGE("updating "+Str(self:ExistCount,-1)+" existing person, please wait...")
+		  	oMainWindow:STATUSMESSAGE("updating "+Str(self:ExistCount,-1)+" existing persons, please wait...")
 			self:UpdateBatch()
 		  	oMainWindow:STATUSMESSAGE(Space(100))
 			self:oEdit:Hide() 
@@ -1265,6 +1267,7 @@ do while action==0
 		RETURN 
 	ELSE
 		if self:lExists .and.self:TargetDB == "Person" .and.self:lImportAutomatic .and. self:lOverwrite
+			previoussuccess:=true
 			loop
 		endif
 		IF self:lImportAutomatic
@@ -1561,11 +1564,11 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	endif 
 	cPersid:=oPersCnt:PERSID
 
-	if lFillFields
+	if lFillFields .and. self:PersidPtr=0
 		// assemble fieldnames for insert statement after last record read in NextImport
 		AAdd(self:aFields,'persid')
+		AAdd(aValueRow,cPersid)   	
 	endif
-	AAdd(aValueRow,cPersid)   	
 	*	Fill target fields from source via mapping:
 	FOR i:=1 to Len(self:aMapping)
 		ID:=Symbol2String(aMapping[i,1])
@@ -1702,7 +1705,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					// 						aBankExist:={}
 					// 					endif 
 					for j:=1 to Len(aBank)
-						AAdd(avaluesbank,{cPersid,aBank[j]})
+						AAdd(self:avaluesbank,{cPersid,aBank[j]})
 						// 						if AScan(aBankExist,{|x|x==aBank[j]})=0
 						// 							SQLStatement{"insert into personbank set persid="+cPersid+",banknumber='"+aBank[j]+"'",oConn}:Execute()
 						// 						endif
