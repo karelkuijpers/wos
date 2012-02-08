@@ -3145,7 +3145,13 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			cHeading1:=Str(ReportYear,4)+Space(1)+iif(Empty(me_hbn),'',self:oLan:RGet('HOUSECD')+':'+me_hbn+Space(1))+self:oLan:RGet("Currency")+':'+sCurr+Space(1)+self:Country
 
 			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount)
-			nRow:=0  && force page skip  
+			nRow:=0  && force page skip 
+			IF self:SkipInactive .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
+				*  skip member without transactions
+				* remove added member lines:
+				lSkip:=true
+			ENDIF
+ 
 			IF lSkip
 				oAcc:Skip()
 				Alg_taal:=myLang
