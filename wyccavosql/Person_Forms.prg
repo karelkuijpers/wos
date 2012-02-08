@@ -2816,9 +2816,9 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	ENDIF
 	IF !Empty(oDCDLG_End:VALUE)
 		self:oCaller:cWherep += iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
-		if empty(oDCDLG_Start:Value)
-			self:oCaller:cWherep +=' and p.datelastgift>"0000-00-00"'
-		ENDIF
+// 		if empty(oDCDLG_Start:Value)
+// 			self:oCaller:cWherep +=' and p.datelastgift>"0000-00-00"'
+// 		ENDIF
 	ENDIF
 	// 	IF !oDCBdat_Start:TextValue==DToC(NULL_DATE)
 	IF !Empty(self:oDCBdat_Start:VALUE)
