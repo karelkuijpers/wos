@@ -86,7 +86,7 @@ CLASS ImportMapping INHERIT DataWindowExtra
 	protect aValues:={} as array   // array with new values to be applied to existing persons
 	protect aPers:={} as array  // array with {{persid,externid},{..},...}  
 	protect aFields:={} as array   // array with the fields of a person to be updated 
-	protect avaluesbank:={} as array  // array with bankaccounts to be stored {{persi,bankaccount},{..},...} 
+	protect avaluesbank:={} as array  // array with bankaccounts to be stored {{persi,bankaccount},{..},...}  
 	protect lMailingCode,lDlg,lBdat,lMdat as logic
 	// 	protect oPersExist as SQLSelect
 	
@@ -1550,7 +1550,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	//	In case of extra properties and mailingcodes the existing person has to be retrieved
 
 
-	if !Empty(oPersCnt:PERSID) .and. (self:lExtra .or. self:lMailingCode .or. !Empty(self:DefaultCod))
+	if !Empty(oPersCnt:PERSID) .and. (self:lExtra .or. self:lMailingCode )
 		// select existing person 
 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn}
 		oPersExist:Execute()
@@ -1613,63 +1613,41 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					if lFillFields
 						AAdd(self:aFields,'gender')
 					endif
-					// 					if lOverwrite .or. Empty(oPersExist:gender)
-					// 						cStatement+=',gender='+AllTrim(Transform(uSrcValue,"")) 				
-					// 					endif
 					AAdd(aValueRow,AllTrim(Transform(uSrcValue,"")))
 				ELSEIF IDs=#Cod
 					if lFillFields
 						AAdd(self:aFields,'mailingcodes')
 					endif
 					aCod:=MakeAbrvCod(cTargetStr)
-					// 					if !(oPersExist:TYPE=2 .or. oPersExist:TYPE=3)      // no member 
-					// 						if AScan(aCod,'MW')>0
-					// 							ADel(aCod,AScan(aCod,'MW'))
-					// 						endif
-					// 					endif 
-					// 					cCod:=oPersExist:mailingcodes+" "+ MakeCod(aCod) 
 					AAdd(aValueRow,MakeCod(Split(iif(Empty(aCod),'',MakeCod(aCod)+' ')+iif(Empty(DefaultCod),'',AllTrim(DefaultCod)))))
 				ELSEIF IDs=#Tit
 					if lFillFields
 						AAdd(self:aFields,'title')
 					endif
 					titPtr:=1
-					// 					if lOverwrite .or. Empty(oPersExist:Title)
 					if isnum(cTargetStr)
 						titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
 					else
 						cTargetStr:=Lower(cTargetStr)
 						titPtr:=AScan(pers_titles,{|x|x[1]==cTargetStr})
 					endif
-					// 					IF titPtr>0
-					// 						cStatement+=',title='+Str(pers_titles[titPtr,2],-1) 				
-					// 					endif
-					// 					ENDIF
 					AAdd(aValueRow,Str(pers_titles[titPtr,2],-1))
 				ELSEIF IDs=#type
 					if lFillFields
 						AAdd(self:aFields,'type')
 					endif
 					typPtr:=0
-					// 					if (lOverwrite .or. Empty(oPersExist:TYPE)).and.!(oPersExist:TYPE=2.or. oPersExist:TYPE=3)      // no member
 					if isnum(cTargetStr)
 						typPtr:=AScan(pers_types,{|x|x[2]==Val(cTargetStr)})
 					else
 						cTargetStr:=Lower(cTargetStr)
 						typPtr:=AScan(pers_types,{|x|x[1]==Lower(cTargetStr)})
 					endif
-					// 					IF typPtr>0 
-					// 						cStatement+=',type='+Str(pers_types[typPtr,2],-1) 				
-					// 					endif
 					AAdd(aValueRow,Str(iif(typPtr>0,pers_types[typPtr,2],0),-1))
 				ELSEIF IDs=#lastname
 					if lFillFields
 						AAdd(self:aFields,'lastname')
 					endif
-					// 					if lOverwrite .or.Empty(oPersExist:lastname)
-					// 						// 					cTargetStr:=self:SplitSurName(cTargetStr,lOverwrite,@cStatement)
-					// 						cStatement+=",lastname='"+iif(LSTNUPC,Upper(cTargetStr),cTargetStr)+"'" 				
-					// 					endif
 					AAdd(aValueRow,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
 				ELSEIF IDs=#city
 					if lFillFields
@@ -1678,69 +1656,46 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					if Empty(cTargetStr) .and. self:lMailingCode 
 						cTargetStr:='??'
 					endif
-					// 					if lOverwrite .or.Empty(oPersExist:city)
-					// 						cStatement+=",city='"+iif(CITYUPC,Upper(cTargetStr),cTargetStr)+"'"
-					// 						cCity:=cTargetStr				
-					// 					endif
 					AAdd(aValueRow,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
 				ELSEIF IDs=#REMARKS
 					if lFillFields
 						AAdd(self:aFields,'remarks')
 					endif
-					// 					if cTargetStr#alltrim(oPersExist:remarks)
-					// 						cStatement+=",remarks='"+iif(Empty(oPersExist:remarks),""," "+CRLF)+AllTrim(cTargetStr)+"'"				
-					// 					endif
 					AAdd(aValueRow,cTargetStr)
 				ELSEIF IDs=#EXTERNID
-					// 					cStatement+=",externid='"+ZeroTrim(cTargetStr)+"'"				
 					if lFillFields
 						AAdd(self:aFields,'externid')
 					endif
 					AAdd(aValueRow,ZeroTrim(cTargetStr))
 				ELSEIF IDs=#banknumber 
 					aBank:=Split(cTargetStr)
-					// 					if !Empty(oPersExist:bankaccounts)
-					// 						aBankExist:=Split(oPersExist:bankaccounts,',')
-					// 					else
-					// 						aBankExist:={}
-					// 					endif 
 					for j:=1 to Len(aBank)
 						AAdd(self:avaluesbank,{cPersid,aBank[j]})
-						// 						if AScan(aBankExist,{|x|x==aBank[j]})=0
-						// 							SQLStatement{"insert into personbank set persid="+cPersid+",banknumber='"+aBank[j]+"'",oConn}:Execute()
-						// 						endif
 					next
 				ELSE 
 					if lFillFields
 						AAdd(self:aFields,FieldName)
 					endif
-					// 					if lOverwrite .or.Empty(oPersExist:FIELDGET(IDs)) 
 					j:=AScan(self:aTargetDB,{|x|x[1]==FieldName})
 					if j>0
 						cFT:=self:aTargetDB[j,2]
 						DO CASE
 						case AtC('tinyint(1)',cFT)>0
-							// 							cStatement+=","+Fieldname+"='"+iif(cTargetStr="1".or.Upper(cTargetStr)='.T','1','0')+"'"				
 							AAdd(aValueRow,iif(cTargetStr="1".or.Upper(cTargetStr)='.T','1','0'))
 						case AtC('int',cFT)>0 .or.AtC('int',cFT)>0
-							// 								oPersExist:FIELDPUT(IDs,Val(cTargetStr))
 							AAdd(aValueRow,cTargetStr)
 						case AtC('date',cFT)>0
 							if Val(cTargetStr)>10000000
-								// 								cStatement+=","+Fieldname+"='"+SQLdate(SToD(cTargetStr))+"'"
 								AAdd(aValueRow,SQLdate(SToD(cTargetStr)))				
 							elseif IsDigit(psz(_cast,cTargetStr))
-								// 								cStatement+=","+Fieldname+"='"+SQLdate(CToD(cTargetStr))+"'"				
 								AAdd(aValueRow,SQLdate(CToD(cTargetStr)))
 							else				
 								AAdd(aValueRow,cTargetStr)
 							endif
 						OTHERWISE  // character
-							// 							cStatement+=","+Fieldname+"='"+cTargetStr+"'"				
 							AAdd(aValueRow,cTargetStr)
 						endcase
 					endif	
-					// 					endif 
 				ENDIF
 			endif
 		ENDIF
@@ -1750,66 +1705,15 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 		if lFillFields
 			AAdd(self:aFields,'propextr')
 		endif
-		// 		cStatement+=",propextr='"+oXMLDoc:GetBuffer()+"'"				
 		AAdd(aValueRow,oXMLDoc:GetBuffer())
 	endif
-	// 	if self:lMailingCode
-	// 		if !Empty(cCod) .or.!Empty(self:DefaultCod)
-	// 			cCod:=MakeCod(Split(oPersExist:mailingcodes+" "+iif(Empty(cCod),"",cCod+" ")+AllTrim(DefaultCod)))
-	// 			cStatement+=",mailingcodes='"+cCod+"'"				
-	// 		endif
-	// 	endif
-	if !self:lMailingCode .and.!Empty(self:DefaultCod)
-		if lFillFields
-			AAdd(self:AFields,'mailingcodes')
-		endif
-		AAdd(aValueRow,makecod(split(iif(empty(oPersExist:mailingcodes),'',oPersExist:mailingcodes+" ")+self:DefaultCod)))
-	endif
-	/*	if !self:lDlg
-	if lFillFields
-	AAdd(self:AFields,'datelastgift')
-	endif
-	AAdd(aValueRow,"0000-00-00")  //datelastgift
-	endif
-	if !self:lBdat
-	if lFillFields
-	AAdd(self:AFields,'creationdate')
-	endif
-	AAdd(aValueRow,"0000-00-00")  //creationdate
-	endif
-	if !self:lMdat
-	if lFillFields
-	AAdd(self:AFields,'alterdate')
-	endif
-	AAdd(aValueRow,"0000-00-00")  //alterdate
-	endif     */
-	/*	IF "FI" $ cCod .and. Empty(oPersExist:datelastgift)
-	cStatement+=",datelastgift=subdate(curdate(),4000)"
-	ELSE				
-	ENDIF
-	myBDAT:=iif(Empty(oPersExist:creationdate),null_date,oPersExist:creationdate)
-	myMUTD:=iif(Empty(oPersExist:alterdate),null_date,oPersExist:alterdate)
-	IF Empty(myBDAT) .and. !Empty(myMUTD)
-	cStatement+=",creationdate='1980-01-01'"				
-	ELSEIF !Empty(myBDAT) .and. Empty(myMUTD)
-	cStatement+=",alterdate=creationdate"				
-	ELSEIF Empty(myBDAT) .and. Empty(myMUTD)
-	cStatement+=",creationdate='1980-01-01'"				
-	cStatement+=",alterdate='1980-01-01'"				
-	ENDIF
-	
-	IF !Empty(cCod) .and. Empty(cCity)
-	cStatement+=",city='??'"				
-	ENDIF */
+// 	if !self:lMailingCode .and.!Empty(self:DefaultCod)
+// 		if lFillFields
+// 			AAdd(self:AFields,'mailingcodes')
+// 		endif
+// 		AAdd(aValueRow,makecod(split(iif(empty(oPersExist:mailingcodes),'',oPersExist:mailingcodes+" ")+self:DefaultCod)))
+// 	endif
 	AAdd(self:aValues,aValueRow)
-	// 	if self:lExtra .or. self:lMailingCode
-	// 		oStmnt:=SQLStatement{"update person set "+SubStr(cStatement,2)+" where persID="+cPersid,oConn}
-	// 		oStmnt:Execute()
-	// 		if !Empty(oStmnt:Status)
-	// 			LogEvent(self,"error:"+oStmnt:Status:description+" in statement:"+oStmnt:sqlString,"LogErrors")
-	// 			return false
-	// 		endif
-	// 	endif
 	return true
 ACCESS TargetDB() CLASS ImportMapping
 RETURN SELF:FieldGet(#TargetDB)
@@ -2018,8 +1922,10 @@ method UpdateBatch(dummy:=nil as logic) as logic class ImportMapping
 // perform batch update of persons
 local oStmnt as SQLStatement
 local cUpdateStatement as String
-local i as int 
+local i,j as int 
 local time0,time1 as DWORD
+local aCod:={} as array
+
 
 	if !Empty(self:AFields) .and.!Empty(self:aValues) 
 		time0:=Seconds()
@@ -2033,29 +1939,22 @@ local time0,time1 as DWORD
 				cUpdateStatement+=',type=if(type=2 or type=3 or values(type)="",type,values(type))'	
 			case self:AFields[i]=='remarks'
 				cUpdateStatement+=',remarks=if(values(remarks)<>"" and instr(remarks,values(remarks))=0,concat(remarks,char(10),values(remarks)),values(remarks))'
-// 			case self:AFields[i]=='datelastgift'
-// 				if AScanExact(self:aFields,'mailingcodes')>0
-// 					cUpdateStatement+=',datelastgift='+;
-// 					'if(Instr(values(mailingcodes),"FI")>0 and datelastgift="0000-00-00" and values(datelastgift)="0000-00-00",subdate(curdate(),4000),'+;
-// 					'if(values(datelastgift)="0000-00-00",values(datelastgift),datelastgift))'
-// 				else
-// 					cUpdateStatement+=',datelastgift=if(values(datelastgift)="0000-00-00",values(datelastgift),datelastgift)'					
-// 				endif
-// 			case self:AFields[i]=='creationdate'
-// 				cUpdateStatement+=',creationdate=if(creationdate="0000-00-00",if(values(creationdate)="0000-00-00",if(alterdate="0000-00-00",'+;
-// 				iif(AScanExact(self:aFields,'alterdate')>0,'if(values(alterdate)<>"0000-00-00",values(alterdate),"1980-01-01")','"1980-01-01"')+;
-// 				',alterdate),values(creationdate)),creationdate)'
-// 			case self:AFields[i]=='alterdate'
-// 				cUpdateStatement+=',alterdate=if(alterdate="0000-00-00",if(values(alterdate)="0000-00-00",if(creationdate="0000-00-00",'+;
-// 				iif(AScanExact(self:aFields,'creationdate')>0,'if(values(creationdate)<>"0000-00-00",values(creationdate),"1980-01-01")','"1980-01-01"')+;
-// 				',creationdate),values(alterdate)),alterdate)'
 			otherwise
 				cUpdateStatement+=','+self:AFields[i]+'=if(values('+self:AFields[i]+')<>"",values('+self:AFields[i]+'),'+self:AFields[i]+')'
 			endcase
-		NEXT 
-		// lokc table for faster processing
+		NEXT
+		if !self:lMailingCode .and.!Empty( self:DefaultCOD)
+			// add code for adding default codes
+			aCod:=Split(AllTrim(DefaultCOD)," ")
+			cUpdateStatement+=",mailingcodes=concat(concat(mailingcodes,' ')"
+			FOR j:=1 to Len(aCod)
+				cUpdateStatement+=",if(instr(mailingcodes,'"+aCod[j]+"')>0,'','"+aCod[j]+" ')"	
+			next
+			cUpdateStatement+=")"
+		endif
 		oStmnt:=SQLStatement{"INSERT INTO person ("+Implode(self:AFields,',')+") values "+Implode(self:aValues,"','")+;
 		" ON DUPLICATE KEY UPDATE "+SubStr(cUpdateStatement,2),oConn}
+			LogEvent(self,oStmnt:sqlstring,"LogSQL")
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			LogEvent(self,"error:"+oStmnt:Status:description+" in update persons statement","LogErrors")
