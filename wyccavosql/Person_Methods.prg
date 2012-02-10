@@ -2318,9 +2318,9 @@ if !Empty(self:DelMailCds)
 endif
 if !Empty(self:AddMailCds) 
 	// add mail codes
-	cStatmnt:="concat("+cStatmnt
+	cStatmnt:="concat("+iif(Empty(cStatmnt),"concat(mailingcodes,' ')",cStatmnt)
 	FOR j:=1 to Len(self:AddMailCds)
-		cStatmnt+=",'"+self:AddMailCds[j]+" '"	
+		cStatmnt+=",if(instr(mailingcodes,'"+self:AddMailCds[j]+"')>0,'','"+self:AddMailCds[j]+" ')"	
 	next
 	cStatmnt+=")"
 endif
@@ -2328,7 +2328,8 @@ endif
 // oSQL:Execute()
 
 oStmnt:=SQLStatement{"update "+self:cFrom+" set p.mailingcodes="+cStatmnt+cWherep,oConn}
-fSecStart:=Seconds()
+// fSecStart:=Seconds()
+LogEvent(self,oStmnt:SQLString,"logsql")
 oStmnt:Execute()  
 if !Empty(oStmnt:Status)
 	ErrorBox{self:oWindow,"Update failed:"+oStmnt:Status:Description}:Show()
