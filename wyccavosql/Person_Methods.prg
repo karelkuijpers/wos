@@ -3842,7 +3842,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				FErase(cFilename)
 				self:Pointer := Pointer{POINTERARROW}
 				return false
-			endif				
+			endif
+		else
+			cBank:=StrTran(cBank,'P','')
 		endif
 		cBank:=PadL(cBank,10,"0")
 		// Transaction record:
