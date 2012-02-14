@@ -2162,7 +2162,8 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		aDepAccD:={}
 		nRow:=0
 		aDepAcc:=Split(Hex2Str(oDep:depaccs),'%%') 
-		AEval(aDepAcc,{|x|AAdd(aDepAccD,Split(x,'#'))}) 
+		AEval(aDepAcc,{|x|AAdd(aDepAccD,Split(x,'#'))})
+		ASort(aDepAccD,,,{|x,y|x[5]<=y[5]}) 
 		cAccs:=''
 		for i:=1 to Len(aDepAccD)
 			// 			AAdd(aAcc,aDepAccD[i,1])  //ACCNUMBER 
@@ -2176,7 +2177,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		oAcc:=SqlSelect{"select accid,accnumber,description,a.currency,b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accid in ("+;
 			cAccs+") order by accnumber",oConn} 
 		oAcc:Execute()
-		oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
+		oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,a.accnumber,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
 			'from transaction t,account a where a.accid=t.accid and'+;
 			" t.dat>='"+SQLdate(startdategifts)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
 			" and t.accid in ("+cAccs+")")+" order by a.accnumber,t.dat,t.transid,t.seqnr",oConn}
@@ -2221,8 +2222,10 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		// Print gift reports for each gift allowed account:
 		self:STATUSMESSAGE("Printing Gift reports for "+cDepName+", please wait...")
 		nRow:=0  // force page skip
-		// 			endif 
-		self:oGftRpt:GiftsOverview(self:YEAREND,self:MonthEnd,Footnotes, aGiversdata,aAssmntAmount,self:oReport, oDep:DEPTMNTNBR+Space(1)+oDep:DESCRIPTN,me_hbn,@nRow,@nPage)
+		// 			endif
+		if Len(aAccGift)>0  
+			self:oGftRpt:GiftsOverview(self:YEAREND,self:MonthEnd,Footnotes, aGiversdata,aAssmntAmount,self:oReport, oDep:DEPTMNTNBR+Space(1)+oDep:DESCRIPTN,me_hbn,@nRow,@nPage)
+		endif
 		if	nCurFifo==Len(self:oReport:oPrintJob:aFIFO) .and.nPage=0 .and.nRow=0
 			// nothing printed:
 			self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
@@ -2348,6 +2351,7 @@ METHOD DepstmntPrint() CLASS DeptReport
 	endif 
 	self:mailsubject:=oLan:RGet('Department Statements')
 	self:DepartmentStmntPrint(aDep,@nRow,@nPage)
+	self:STATUSMESSAGE(Space(100))
 
 	SetDecimalSep(Asc('.'))
 	IF !lPrintFile.or.Empty(self:SendingMethod)
@@ -3144,7 +3148,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			*	Print statement report
 			cHeading1:=Str(ReportYear,4)+Space(1)+iif(Empty(me_hbn),'',self:oLan:RGet('HOUSECD')+':'+me_hbn+Space(1))+self:oLan:RGet("Currency")+':'+sCurr+Space(1)+self:Country
 
-			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount)
+			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount,iif(Empty(self:SendingMethod),"accnumber","accid"))
 			nRow:=0  && force page skip 
 			IF self:SkipInactive .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
 				*  skip member without transactions
@@ -3277,6 +3281,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		ENDIF
 	NEXT
 	RETURN
+
 ACCESS HomeBox() CLASS GiftReport
 RETURN SELF:FieldGet(#HomeBox)
 
