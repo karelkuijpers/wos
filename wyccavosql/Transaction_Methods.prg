@@ -158,7 +158,7 @@ METHOD Month_summary(aHeading as array,oMyBal as balances,m57_giftbed as float,n
 
 	RETURN
 METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMonth as int,nToYear as int,nToMonth as int,nRow ref int,nPage ref int,;
-		addheading:="" as string, oLan as Language,aGiversData:=nil as array,aAssmntAmount:=nil as array) as logic CLASS AccountStatements 
+		addheading:="" as string, oLan as Language,aGiversData:=nil as array,aAssmntAmount:=nil as array,cOrder:="accnumber"as string) as logic CLASS AccountStatements 
 	// printing of account statement of the current account in oAcc per Month
 	//
 	//	oAcc: selection of account with: accid, accnumber, description, category
@@ -203,10 +203,14 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 		return true
 	endif
 	// skip to transaction of required account:
-	do while !oTrans:EoF .and. oTrans:accid<oAcc:accid 
+	do while !oTrans:EoF .and.;
+		(cOrder="accnumber" .and. oTrans:ACCNUMBER<oAcc:ACCNUMBER .or.;
+		cOrder="accid".and. oTrans:accid<oAcc:accid) 
 		oTrans:Skip()
 	enddo
-	if oTrans:EoF .or. oTrans:accid>oAcc:accid 
+	if oTrans:EoF .or. ;
+		(cOrder="accnumber" .and. oTrans:ACCNUMBER>oAcc:ACCNUMBER .or.;
+		cOrder="accid".and. oTrans:accid>oAcc:accid) 
 		// no transactions for this account
 		return true
 	endif 
