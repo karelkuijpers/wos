@@ -1476,6 +1476,9 @@ METHOD DeleteButton CLASS PersonBrowser
 			// remove as financial contact person from system parameters:
 			oSQL:=SQLStatement{"update sysparms set idcontact=0 where idcontact="+myCLN,oConn}
 			oSQL:Execute() 
+			self:SearchCLN:=''
+			self:FindButton()
+			self:gotop() 
 		else
 			LogEvent(self,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogErrors")
 			(ErrorBox{self,self:oLan:WGet('Delete person Error')+':'+oSQL:Status:Description}):Show()
@@ -1483,9 +1486,8 @@ METHOD DeleteButton CLASS PersonBrowser
 
 	endif
 	// refresh owner: 
-	self:oPers:Execute() 
-	self:oSFPersonSubForm:Browser:refresh()
-	self:gotop() 
+// 	self:oPers:Execute() 
+// 	self:oSFPersonSubForm:Browser:refresh()
 
 	// 		oSFPersonSubForm:Browser:REFresh()
 	// 		oPeriod:Close()
@@ -2431,7 +2433,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 		cGiftsLine:=self:GrpFormat
 	endif
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
-	oSel:=SQLSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
+	oSel:=SqlSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
 // 	fSecStart:=Seconds() 
 // 	LogEvent(self,oSel:SQlString,"logsql")
 	oSel:Execute() 
@@ -4052,7 +4054,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 	endif
 	RETURN true
-METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
+METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as logic CLASS SelPersOpen
 	// make KID file for automatic collection for Norwegian Banks
 	LOCAL cFilter as STRING
 	LOCAL oDue as SQLSelect, oPers as SQLSelect, oSub as SQLSelect
@@ -4060,15 +4062,17 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	LOCAL cFilename as STRING
 	Local ToFileFS as Filespec
 	LOCAL nSeq, nLine as int, fSum:=0 as FLOAT
-	LOCAL DueDateFirst, DueDateLast as date
+	LOCAL DueDateFirst, DueDateLast,DueDate as date
 	LOCAL Success as LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage as int
 	//LOCAL oLan AS Language
 	LOCAL cSession as STRING
+	Local aDue:={} as array  // array with dueid's to be reconciled 
+	local oStmnt as sqlStatement
 
 	cSession:=Str(Year(Today()),4,0)+StrZero((Today()-SToD(Str(Year(Today()),4,0)+"0101"))+1,3)
 
-	oDue:=SqlSelect{"select s.invoiceid,d.amountinvoice,cast(d.invoicedate as date) as invoicedate,p.persid,p.lastname "+;
+	oDue:=SqlSelect{"select s.invoiceid,d.amountinvoice,d.dueid,cast(d.invoicedate as date) as invoicedate,p.persid,p.lastname "+;
 		" from person p, dueamount d,subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' "+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
@@ -4097,28 +4101,31 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	// write Header
 	FWriteLine(ptrHandle,"NY000010"+PadL(SQLSelect{"select cntrnrcoll from sysparms",oConn}:CNTRNRCOLL,8,"0")+PadL(cSession,7,"0")+PadR("0000808",57,"0"))
 	FWriteLine(ptrHandle,"NY210020000000000"+PadL(cSession,7,"0")+PadL(BANKNBRDEB,11,"0")+Replicate("0",45))
-	nLine:=2
-	DueDateFirst:=oDue:invoicedate
-	DueDateLast:=oDue:invoicedate
+	nLine:=2 
+	DueDate:=Max(oDue:invoicedate,process_date)
+	DueDateFirst:=DueDate
+	DueDateLast:=DueDate
 	SetDecimalSep(Asc(DecSeparator))
 	do WHILE !oDue:EoF
 //		IF oPers:Seek(oDue:persid)
-			nSeq++
-			FWriteLine(ptrHandle,"NY210230"+StrZero(nSeq,7,0)+StrZero(Day(oDue:invoicedate),2,0)+StrZero(Month(oDue:invoicedate),2,0)+SubStr(StrZero(Year(oDue:invoicedate),4,0),3,2)+;
+			nSeq++ 
+			DueDate:=Max(oDue:invoicedate,process_date)
+			FWriteLine(ptrHandle,"NY210230"+StrZero(nSeq,7,0)+StrZero(Day(DueDate),2,0)+StrZero(Month(DueDate),2,0)+SubStr(StrZero(Year(DueDate),4,0),3,2)+;
 				Space(11)+StrZero(oDue:AmountInvoice*100,17,0)+Space(12)+PadR(AllTrim(oDue:INVOICEID),19,"0"))
 			FWriteLine(ptrHandle,"NY210231"+StrZero(nSeq,7,0)+PadR(oDue:lastname,60)+"00000")
 			nLine+=2
 			fSum+=oDue:AmountInvoice
-			IF DueDateFirst>oDue:invoicedate
-				DueDateFirst:=oDue:invoicedate
+			IF DueDateFirst>DueDate
+				DueDateFirst:=DueDate
 			ENDIF
-			IF DueDateLast<oDue:invoicedate
-				DueDateLast:=oDue:invoicedate
+			IF DueDateLast<DueDate
+				DueDateLast:=DueDate
 			ENDIF
 			oReport:PrintLine(@nRow,@nPage,;
 				Pad(GetFullName(Str(oDue:persid,-1)),40)+" "+Str(oDue:AmountInvoice,12,2)+' '+Pad(oDue:INVOICEID,13),headinglines)
 
-		//ENDIF
+		//ENDIF 
+		AAdd(aDue,Str(oDue:dueid,-1))
 		oDue:skip()		
 	ENDDO
 	// Write closing lines:
@@ -4136,8 +4143,24 @@ METHOD MakeKIDFile(begin_due,end_due, process_date) CLASS SelPersOpen
 	oReport:prstart()
 	oReport:prstop()
 	SetDecimal(Asc('.'))
-	(InfoBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"}):Show()
-	LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
+	if (TextBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"+CRLF+"Is File OK to be send to the bank?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
+		// reconcile due amounts: 
+		SQLStatement{"start transaction",oConn}:Execute()
+		oStmnt:=sqlStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+implode(aDue,',')+")",oConn}
+		oStmnt:Execute()
+		if Empty(oStmnt:status)
+			sqlStatement{"commit",oConn}:execute() 
+			LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			// erase file
+			FErase(cFilename)
+			ErrorBox{self,"making kid file failed"}:Show()
+		endif
+	else
+		// erase file:
+		FErase(cFilename)
+	endif		
 	RETURN
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
@@ -4288,7 +4311,7 @@ local i,j as int
 	if !Empty(cMarkupText) .and. (j:=AScan(myFields,{|x|x[1]== #GIFTSGROUP}))>0
 		IF AtC("%DESTINATION",cMarkupText)>0
 			lDestination:=true
-			cFields+=",a.description"
+			cFields+=",IFNULL(d.descriptn,a.description) as description"
 		endif
 		IF AtC("%DATEGIFT",cMarkupText)>0
 			lgrDat:=true
@@ -4377,6 +4400,7 @@ local i,j as int
 			cFrom+=",account as a"
 		endif
 		cWherep+=" and t.accid=a.accid"
+		cFrom:=strtran(cFrom,'account as a','account as a left join department d on (a.department=d.depid and (a.accid=d.netasset or a.accid=d.incomeacc))')
 	endif
 
 	cSQLString:=UnionTrans("Select "+iif(lDistinct,"distinct ","")+cFields+" from "+ cFrom+cWherep)
