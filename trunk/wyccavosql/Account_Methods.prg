@@ -33,7 +33,8 @@ LOCAL cRootName:=AllTrim(SEntity)+" "+sLand as STRING
 LOCAL cTab:=CHR(9) as STRING
 LOCAL YrSt,MnSt as int
 LOCAL Gran as LOGIC
-local cFrom as string
+local cFrom as string 
+local cWhere as string
 local cFields as string
 
 aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
@@ -61,11 +62,16 @@ ENDIF
 nRow := 0
 nPage := 0 
 cFrom:="balanceitem b, (account a"+iif(departments," left join department d on (a.department=d.depid)","") +")"+;
-" left join budget bu on (bu.accid=a.accid and (bu.year*12+bu.Month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(YrSt*12+MnSt+12,-1) +")"
-cFields:="a.*,b.Heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootName+"') as depname","") +",sum(bu.amount) as budgt"
-oDB:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+self:cWhere+iif(Empty(self:cAccFilter),""," and "+self:cAccFilter)+" group by a.accid order by "+cOrder,oConn}
+" left join budget bu on (bu.accid=a.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(YrSt*12+MnSt+12,-1) +")"
+cFields:="a.*,b.heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootName+"') as depname","") +",sum(bu.amount) as budgt"  
+cWhere:=self:cWhere
+cWhere+=iif(Empty(cWhere),'',' and ')+"a.balitemid=b.balitemid"
+if !Empty(self:cAccFilter)
+	cWhere+=iif(Empty(cWhere),'',' and ')+self:cAccFilter
+endif
+oDB:=SqlSelect{"Select "+cFields+" from "+cFrom+iif(Empty(cWhere) ,''," where "+cWhere)+" group by a.accid order by "+cOrder,oConn}
 do WHILE .not. oDB:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20,0)+cTab+;
+	oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20)+cTab+;
 	iif(ConI(oDB:giftalwd)=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDB:Budgt),0,oDB:Budgt),11,0)+cTab;
 	+Str(oDB:subscriptionprice,9,DecAantal)+cTab+Pad(ConS(oDB:qtymailing),11," ")+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:Currency,8)+cTab+PadC( iif(ConI(oDB:MULTCURR)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:REEVALUATE)=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),kopregels)
 	oDB:skip()
