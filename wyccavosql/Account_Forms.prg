@@ -280,7 +280,8 @@ METHOD FindButton( ) CLASS AccountBrowser
 		cAccFilter:=StrTran(StrTran(StrTran(cAccFilter,"and a.active=1",""),'a.active=1 and ',""),'a.active=1',"")
 	endif   	
 	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(MyWhere).and.Empty(cAccFilter),''," where "+MyWhere+iif(Empty(cAccFilter),"",iif(Empty(MyWhere),' ',' and ')+cAccFilter))+" order by "+cOrder
-	
+	self:cWhere:=MyWhere
+
 	self:oAcc:Execute() 
 	if !Empty(oAcc:status) 
 		LogEvent(self,"findbutton Acc:"+self:oAcc:errinfo:errormessage+"( stamnt:"+self:oAcc:SQLString,"LogErrors")
