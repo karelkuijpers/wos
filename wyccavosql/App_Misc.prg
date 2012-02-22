@@ -1273,7 +1273,7 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 	// Implode array to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
 	// Optionally in case of a 2-dimenional array and empty nCol you can specify separator between rows 
-	LOCAL i, l:=Len(aText) as int, cRet:="", cQuote as STRING 
+	LOCAL i, l:=Len(aText) as int, cRet:="",cLine, cQuote as STRING 
 	local lMulti as logic
 	if Len(cSep)>2
 		// test if surrounded by quotes:
@@ -1296,7 +1296,10 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 						lMulti:=true
 						cRet+=iif(i==1,right(cSepRow,1),cSepRow)+implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
 					else
-						cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(aText[nStart+i-1][nCol],""))
+						cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
+						if !Empty(cLine)
+							cRet+=iif(Empty(cRet),"",cSep)+cLine
+					endif
 					endif
 				else
 					cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(aText[nStart+i-1],""))
@@ -1407,7 +1410,8 @@ function InitGlobals()
 			LstYearClosed:=Mindate
 		endif
 
-		CountryCode:=AllTrim(oSys:COUNTRYCOD)
+		CountryCode:=AllTrim(oSys:COUNTRYCOD) 
+
 		if !Empty(BANKNBRCRE) .and. SEntity="NED"
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
 			oSel:=SQLSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
