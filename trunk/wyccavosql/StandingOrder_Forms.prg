@@ -269,10 +269,12 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS EditPeriodic
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp 
-	Local nSeq:=1,nErr as int
+	Local nSeq:=1,nErr,nCH,nAG,nPF,nMG as int
 	local cStatement,cSep as string
 	local oStmnt as SQLStatement
 	local lError as logic
+	local aGCAcc:={} as array  // array with assessment codes and account id's of lines 
+	local cPersid as string
 	IF ValidateControls( self, self:AControls ) .and. self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
 		if Len(oStOrdLH:aMirror)=0 .or. AScan(oStOrdLH:aMirror,{|x|x[2]<>x[1]})=0
 			if !lNew
@@ -281,6 +283,35 @@ METHOD OKButton( ) CLASS EditPeriodic
 			self:EndWindow()
 			return
 		endif
+// 		if !Empty(self:mCLNFrom) .or. !Empty(self:mCLN)
+// 			oStOrdLH:GoTop() 
+// 			aGCAcc:=oStOrdLH:GetLookupTable(500,#GC,#ACCOUNTID)
+// 			nCh:=AScan(aGCAcc,{|x|x[1]=='CH'})
+// 			nAG:=AScan(aGCAcc,{|x|x[1]=='AG'})
+// 			nPF:=AScan(aGCAcc,{|x|x[1]=='PF'})
+// 			nMG:=AScan(aGCAcc,{|x|x[1]=='MG'}) 
+// 			if nAG>0 .or. nMG>0 .or. nPF>0
+// 				if nCh>0 
+// 					if !Empty(self:mCLN) .or. !Empty(self:mCLNFrom)
+// 						if nAG>0 .and. !aGCAcc[nCh,2]==aGCAcc[nAG,2] ;
+// 								.or.nMG>0 .and. !aGCAcc[nCh,2]==aGCAcc[nMG,2];
+// 								.or.nPF>0 .and. !aGCAcc[nCH,2]==aGCAcc[nPF,2]
+// 							cPersid:=self:mCLNFrom
+// 							if Empty(cPersid) 
+// 								cPersid:=self:mCLNFrom
+// 							endif
+// 						endif
+// 					endif
+// 				else
+					if !Empty(self:mCLNFrom)
+						cPersid:=self:mCLNFrom
+					else
+						cPersid:=self:mCLN
+					endif
+// 				endif
+// 			endif 
+// 		endif
+		
 		SQLStatement{"start transaction",oConn}:Execute()
 		cStatement:=iif(self:lNew,"insert into","update")+" standingorder set "+;
 			"idat='"+SQLdate(self:oDCmIDAT:SelectedDate)+"'"+;
@@ -289,20 +320,21 @@ METHOD OKButton( ) CLASS EditPeriodic
 			",docid='"+self:mdocid+"'"+;
 			",`period`="+Str(self:mperiod,-1)+;
 			",currency='"+self:mCurrency+"'"+;
-		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
+			",persid='"+cPersid+"'"+;
 			iif(lNew,""," where stordrid="+ self:curStordid)
+		// 		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0 .or.Empty(oStmnt:Status)
 			// save Standing Order Lines: 
-			oStOrdLH:GoTop()
+			oStOrdLH:GoTop() 
 			if lNew 
 				self:curStordid:= Str(ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)),-1) 
 				cStatement:="insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values "
 				do	while	!oStOrdLH:EoF
 					if oStOrdLH:DEB <> oStOrdLH:CRE       // no empty lines
 						cStatement+=cSep+"("+self:curStordid+","+Str(oStOrdLH:ACCOUNTID,-1)+","+Str(nSeq++,3,0)+","+Str(oStOrdLH:DEB,-1)+","+Str(oStOrdLH:CRE,-1)+","+;
-						"'"+AllTrim(oStOrdLH:DESCRIPTN)+"','"+AllTrim(oStOrdLH:GC)+"','"+AllTrim(oStOrdLH:REFERENCE)+"',"+Str(oStOrdLH:CREDITOR,-1)+",'"+AllTrim(oStOrdLH:BANKACCT)+"')" 
+							"'"+AllTrim(oStOrdLH:DESCRIPTN)+"','"+AllTrim(oStOrdLH:GC)+"','"+AllTrim(oStOrdLH:REFERENCE)+"',"+Str(oStOrdLH:CREDITOR,-1)+",'"+AllTrim(oStOrdLH:BANKACCT)+"')" 
 						cSep:=','
 					endif				
 					oStOrdLH:Skip()
