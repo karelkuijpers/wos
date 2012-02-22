@@ -869,7 +869,7 @@ METHOD FilePrint() CLASS General_Journal
 		multicurr:=true
 		nWidth+=30
 	endif
-	oReport := PrintDialog{self,"Financial Records",,nWidth,DMORIENT_LANDSCAPE,"xls"}
+	oReport := PrintDialog{self,"Financial Records",,nWidth,DMORIENT_PORTRAIT,"xls"}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
@@ -923,7 +923,7 @@ METHOD FilePrint() CLASS General_Journal
 			' '+PadC(oHm:gc,3),aHeader)
 		nMem:=2
 		DO WHILE !Empty(cDesc:=MemoLine(oHm:DESCRIPTN,40,nMem))
-			oReport:PrintLine(@nRow,@nPage,Space(53)+cDesc,aHeader)
+			oReport:PrintLine(@nRow,@nPage,Space(66)+cDesc,aHeader)
 			nMem++
 		ENDDO
 		oHm:Skip()
@@ -3334,7 +3334,9 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				IF !Empty(oHm:AccID)
 					++self:m51_agift
 					oHm:cre := self:oTmt:m56_amount
-					self:AutoRec:=true
+// 					if !AllTrim(self:oTmt:m56_kind)=="KID" 
+						self:AutoRec:=true
+// 					endif
 				ENDIF
 				if oHm:CURRENCY==sCurr
 					oHm:CREFORGN:=oHm:cre 
@@ -3411,8 +3413,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					oHm:cre := oDue:cre
 					IF .not.self:lTeleBank.and.!self:lEarmarking
 						self:mDebAmnt := self:mDebAmnt + oHm:cre
-						&& credit-bedragen worden
-						** opgeteld als default voor debet
+						&& sum credit amounts as default for debit
 					ENDIF
 					oHm:AccID := Str(oDue:AccID,-1)
 					//	       oHm:ID:=Mod11(mCLNGiver+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2,0))
@@ -3867,7 +3868,6 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* add transaction:
 			oHm:ClearFilter()
 			oHm:SetFilter({||!Empty(oHm:Cre)},"!Empty(Cre)") //skip non-assigned rows
-			self:Owner:StatusMessage( "Recording transaction "+cTransnr)
 			oHm:gotop()
 			//	determine accounts to be locked for change balance
 			cAccs:=Implode(oHm:Amirror,",",,,1)
@@ -3929,6 +3929,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			oStmnt:Execute()
 			if oStmnt:NumSuccessfulRows>0
 				cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+				self:Owner:STATUSMESSAGE( "Recording transaction "+cTransnr)
 				if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
 					DO	WHILE	! oHm:EOF 
 						nSeqnbr++ 
@@ -4131,7 +4132,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:ReSet() 
 			oHm:=self:server
 			oHm:ResetNotification()	
-			self:mTRANSAKTNR := cTransnr
+			self:oDCmTRANSAKTNR:TextValue := AllTrim(cTransnr)
 			self:mDebAmntF := 0
 			self:mDebAmnt:=0
 			self:fTotal := 0
@@ -4676,7 +4677,7 @@ function UnionTrans(cStatement as string) as string
 	// if nWhere>0
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
-	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat,'),'t.dat >','t.dat,'),'t.dat =','t.dat,')    // remove spaces
+	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat<'),'t.dat >','t.dat<'),'t.dat =','t.dat=')    // remove spaces
 	nDat1:=At3("t.dat=",cStatement,5)
 	if nDat1>0
 		BegDat:=CToD(SubStr(cStatement,nDat1+7,10))
