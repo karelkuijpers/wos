@@ -2444,9 +2444,9 @@ BEGIN
 	CONTROL	"", PAYMENTJOURNAL_CURTEXT1, "Static", WS_CHILD, 124, 35, 18, 13
 	CONTROL	"", PAYMENTJOURNAL_CURTEXT2, "Static", WS_CHILD, 395, 36, 17, 12
 	CONTROL	"", PAYMENTJOURNAL_DEBBALANCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 55, 35, 62, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 344, 3, 56, 13
+	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 332, 3, 56, 13
 	CONTROL	"", PAYMENTJOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 2, 39, 12
-	CONTROL	"vrijdag 24 september 2010", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 120, 1, 124, 14
+	CONTROL	"woensdag 15 februari 2012", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 120, 1, 124, 14
 	CONTROL	"", PAYMENTJOURNAL_DEBITACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 56, 19, 105, 72
 	CONTROL	"", PAYMENTJOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 302, 19, 119, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", PAYMENTJOURNAL_PERSONBUTTON, "Button", WS_CHILD, 420, 19, 14, 13
@@ -2456,7 +2456,7 @@ BEGIN
 	CONTROL	"Cancel", PAYMENTJOURNAL_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 268, 53, 13
 	CONTROL	"Telebanking...", PAYMENTJOURNAL_TELEBANKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 254, 53, 13
 	CONTROL	"No Earmark...", PAYMENTJOURNAL_NONEARMARKED, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 380, 254, 53, 13
-	CONTROL	"Transaktnr:", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_BORDER, 400, 3, 33, 13
+	CONTROL	"Transaktnr:", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_CHILD|WS_BORDER, 392, 3, 41, 13
 	CONTROL	"", PAYMENTJOURNAL_DEBITCREDITTEXT, "Static", WS_CHILD|WS_BORDER, 89, 270, 73, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Debit account:", PAYMENTJOURNAL_FIXEDTEXT6, "Static", WS_CHILD, 5, 20, 49, 12
 	CONTROL	"Amount received:", PAYMENTJOURNAL_FIXEDTEXT7, "Static", WS_CHILD, 240, 35, 60, 13
@@ -3948,10 +3948,13 @@ METHOD ExportButton( ) CLASS TransInquiry
 	RETURN
 METHOD FindButton( ) CLASS TransInquiry 
 local nQty as int
-	self:cWhereSpec:="t.transid >= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat >='"+SQLdate(MinDate)+"'"
+local oSel as SQLSelect
+	self:cWhereSpec:="t.transid>= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat>='"+SQLdate(MinDate)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
-	self:cOrder:="transid desc"
-	nQty:=ConI(SQLSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}:qty)
+	self:cOrder:="transid desc" 
+	oSel:=SqlSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
+	oSel:Execute()
+	nQty:=ConI(oSel:qty)
 	if nQty> 3000
 		if TextBox{self,self:oLan:WGet("transaction inquiry"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+ConS(nQty)+Space(1)+self:oLan:WGet("transaction lines"),BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
 			return nil
