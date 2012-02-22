@@ -2214,7 +2214,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 				" and t.accid in ("+Implode(aASS,",")+") order by t.accid,t.dat"),oConn}
 			oTransAss:Execute() 
 			Do While !oAccAss:Eof
-				self:oTransMonth:MonthPrint(oAccAss,oTransAss,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan)
+				self:oTransMonth:MonthPrint(oAccAss,oTransAss,self:YEARSTART,self:MONTHSTART,self:YEAREND,self:MonthEnd,@nRow,@nPage,addHeading+Space(1)+oLan:RGet("Associated",,"@!"),self:oLan,,,"accid")
 				nRow:=0  && force page skip
 				oAccAss:Skip()
 			enddo
@@ -2231,8 +2231,10 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 			self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
 		endif
 		IF lPrintFile.and.!Empty(self:SendingMethod) 
-			// separate files:
-			cFileName:=self:oReport:prstart() // save separate file
+			IF self:SendingMethod=="SeperateFileMail"
+				// separate files:
+				cFileName:=self:oReport:prstart() // save separate file
+			endif
 			// Proces e-mail:
 			IF self:SendingMethod=="SeperateFileMail"
 				if !Empty(oDep:mbrid).or.!Empty(oDep:persid).or.!Empty(oDep:persid2)
@@ -2354,7 +2356,7 @@ METHOD DepstmntPrint() CLASS DeptReport
 	self:STATUSMESSAGE(Space(100))
 
 	SetDecimalSep(Asc('.'))
-	IF !lPrintFile.or.Empty(self:SendingMethod)
+	IF !lPrintFile.or.!SendingMethod="SeperateFile"
 		self:oReport:prstart()    
 	endif
 
@@ -3181,7 +3183,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				do while !oAccAss:EOF
 					nRow:=0	&&	force page skip
 					// 					oTransMonth:MonthPrint(oAccAss:ACCNUMBER,oAccAss:ACCNUMBER,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,,oLan)
-					oTransMonth:MonthPrint(oAccAss,oTransAss,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,oLan)
+					oTransMonth:MonthPrint(oAccAss,oTransAss,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,oLan,,,"accid")
 					oAccAss:Skip()
 				enddo
 			endif
