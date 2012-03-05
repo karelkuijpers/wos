@@ -394,7 +394,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 				IF	(nOPP:=AScan(aOPP,{|x|x[1]==cOPP	.and.	x[2]==cTypeOPP}))=0
 					//						AAdd(aOPP,{cOPP,cTypeOPP,oTrans:DEB,oTrans:CRE,{oTrans:docid+space(1)+DToC(oTrans:dat)+space(1)+Pad(oTrans:description,80)+;
 					AAdd(aOPP,{cOPP,cTypeOPP,oTrans:deb,oTrans:cre,oTrans:DEBFORGN,oTrans:CREFORGN,;
-						{{iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:CREFORGN-oTrans:DEBFORGN,-1,DecAantal)+'\cell\row\pard';
+						{{iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:cre-oTrans:deb,-1,DecAantal)+'\cell\row\pard';
 						,Pad(oTrans:docid,10)+self:cTab+DToC(oTrans:dat)+self:cTab+iif(lXls,oTrans:Description,MemoLine(oTrans:Description,self:DescrWidth,1))+self:cTab+;
 						iif(self:lForgnC,iif(self:lDebCreMerge,Str(oTrans:CREFORGN-oTrans:DEBFORGN,12,DecAantal),Str(oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(oTrans:CREFORGN,12,DecAantal))+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 						iif(self:lDebCreMerge,Str(oTrans:cre-oTrans:deb,12,DecAantal),Str(oTrans:deb,12,DecAantal)+self:cTab+Str(oTrans:cre,12,DecAantal)+self:cTab+PadL(oTrans:TransId,11))),nMem}}})
@@ -405,7 +405,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 					aOPP[nOPP,5]+=oTrans:DEBFORGN
 					aOPP[nOPP,6]+=oTrans:CREFORGN 
 					AAdd(aOPP[nOPP,7],;
-						{iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:CREFORGN-oTrans:DEBFORGN,-1,DecAantal)+'\cell\row\pard';
+						{iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:cre-oTrans:deb,-1,DecAantal)+'\cell\row\pard';
 						,Pad(oTrans:docid,10)+self:cTab+DToC(oTrans:dat)+self:cTab+iif(lXls,oTrans:Description,MemoLine(oTrans:Description,self:DescrWidth,1))+self:cTab+;
 						iif(self:lForgnC,iif(self:lDebCreMerge,Str(oTrans:CREFORGN-oTrans:DEBFORGN,12,DecAantal),Str(oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(oTrans:CREFORGN,12,DecAantal))+self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
 						iif(self:lDebCreMerge,Str(oTrans:cre-oTrans:deb,12,DecAantal),Str(oTrans:deb,12,DecAantal)+self:cTab+Str(oTrans:cre,12,DecAantal)+self:cTab+PadL(oTrans:TransId,11))),nMem})
@@ -429,7 +429,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 				self:m71_chcreF:=Round(self:m71_chcreF+oTrans:CREFORGN,DecAantal) 
 				nMem:=MLCount(Description,self:DescrWidth)
 				self:oReport:PrintLine(@nRow,@nPage,;
-					iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:CREFORGN-oTrans:DEBFORGN,-1,DecAantal)+'\cell\row\pard';
+					iif(lRtf,RowRTF+"\intbl "+oTrans:docid+self:cTab+DToC(oTrans:dat)+self:cTab+oTrans:Description+self:cTab+'\qr '+Str(oTrans:cre-oTrans:deb,-1,DecAantal)+'\cell\row\pard';
 					,PadR(oTrans:docid,10)+self:cTab+DToC(oTrans:dat)+self:cTab+iif(lXls,Description,MemoLine(Description,self:DescrWidth,1))+self:cTab+;
 					iif(lForgnC,iif(self:lDebCreMerge,Str(oTrans:CREFORGN-oTrans:DEBFORGN,12,DecAantal),Str(oTrans:DEBFORGN,12,DecAantal)+self:cTab+Str(oTrans:CREFORGN,12,DecAantal))+;
 					self:cTab+PadC(self:cAccCurrency,8)+self:cTab,"")+;
