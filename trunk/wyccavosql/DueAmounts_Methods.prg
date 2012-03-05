@@ -22,16 +22,20 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 	p_amount:=round(p_cre - p_deb,decaantal)
 	if p_amount>0
 		*  Look for due amounts:
-		oDue:=SQLSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+p_cln+" and s.accid="+p_rek+" and amountrecvd<amountinvoice order by invoicedate,seqnr for update",oConn}
-		IF oDue:RecCount>1
+		oDue:=SqlSelect{"select d.dueid,d.amountinvoice,d.amountrecvd from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+p_cln+" and s.accid="+p_rek+" and amountrecvd<amountinvoice order by d.invoicedate,d.seqnr for update",oConn}
+		if !Empty(oDue:Status)
+			LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
+			return oDue:ErrInfo:errormessage					
+		elseIF oDue:RecCount>1
 			do WHILE !oDue:EOF 
 				open_amount:=Round(oDue:AmountInvoice-oDue:AmountRecvd,2)
+				payed_amount:=iif(oDue:RECNO<oDue:RecCount,Min(p_amount,open_amount),p_amount) 
 				* When not completely assigned, rest in latest due amount:
-				oStmnt:=SQLStatement{"update dueamount set amountrecvd="+Str(Round(oDue:AmountRecvd+iif(oDue:RECNO<oDue:RecCount,Min(p_amount,open_amount),p_amount),DecAantal),-1)+;
-					" where subscribid="+Str(oDue:subscribid,-1),oConn}
+				oStmnt:=SQLStatement{"update dueamount set amountrecvd="+Str(Round(oDue:AmountRecvd+payed_amount,DecAantal),-1)+;
+					" where dueid="+Str(oDue:dueid,-1),oConn}
 				oStmnt:Execute()
 				if oStmnt:NumSuccessfulRows>0
-					p_amount:=Round(p_amount-Min(p_amount,open_amount),DecAantal)
+					p_amount:=Round(p_amount-payed_amount,DecAantal)
 				elseif !Empty(oStmnt:Status)
 					return oStmnt:ErrInfo:errormessage					
 				endif
@@ -43,8 +47,11 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 		ENDIF
 	ELSE
 		*  Look for last assigned due amount to reverse assignment of received amounts:
-		oDue:=SQLSelect{"select d.dueid,d.amountrecvd from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+p_cln+" and s.accid="+p_rek+" and amountrecvd>0 order by d.invoicedate desc,d.seqnr desc for update",oConn}
-		IF oDue:RecCount>0
+		oDue:=SqlSelect{"select d.dueid,d.amountrecvd from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+p_cln+" and s.accid="+p_rek+" and d.amountrecvd>0 order by d.invoicedate desc,d.seqnr desc for update",oConn}
+		if !Empty(oDue:Status)
+			LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
+			return oDue:ErrInfo:errormessage					
+		elseIF oDue:RecCount>1
 			p_amount:=-p_amount
 			do WHILE !oDue:EOF.and.p_amount>0
 				payed_amount:=oDue:AmountRecvd
