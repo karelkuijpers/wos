@@ -559,6 +559,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	local MultiFrom, lError as logic 
 	local deb,cre, DEBFORGN,CREFORGN as float
 	local CurStOrdrid as int
+	local edat:=oStOrdL:edat as date
 	local oPersBank,oBal as SQLSelect 
 	// 	local oTrans,oBord,oStmnt as SQLStatement
 	local i as int
@@ -566,7 +567,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	CurStOrdrid:=oStOrdL:stordrid
 	IF !Empty(dat_controle(datum,true))
 		lError:=true
-	elseIF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
+	elseIF !((Empty(edat).or.datum <=edat) .and.datum <=Today())
 		lError:=true
 	endif
 
