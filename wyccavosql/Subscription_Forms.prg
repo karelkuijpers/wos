@@ -681,12 +681,10 @@ Function ProlongateAll(oCall as Window ) as logic
 	LOCAL mSeqnr as int
 	LOCAL DueDate:=Today()+31, MinDate:=Today()-93 as date
 	LOCAL oSub as SQLSelect
-// 	LOCAL oPro as ProgressPer 
 	local oStmnt as SQLStatement 
 	local CurSubId as int, dDueDate as date 
 	local cValuesDue,cValuesSub as string  // values to insert into the database
 
-// 	LOCAL first:=TRUE AS LOGIC
 
 	* last end date should be after next due date
 	* only donations and subscriptions 
@@ -697,6 +695,7 @@ Function ProlongateAll(oCall as Window ) as logic
 	if oSub:RecCount<1
 		return false
 	endif
+	oCall:STATUSMESSAGE("Busy with prolongating donations/subscriptions:")
 	DO WHILE !oSub:EOF
 		IF Empty(oSub:term)
 			(ErrorBox{,"Empty term for:"+GetFullName(oSub:personid)}):Show()
@@ -714,15 +713,11 @@ Function ProlongateAll(oCall as Window ) as logic
 		ELSE
 			mSeqnr:=1
 		ENDIF
-		oCall:STATUSMESSAGE("Busy with prolongating donations/subscriptions:")
 
 		* Add new due amount:
-		cValuesDue+=',('+mSubid+','+SQLdate(oSub:DueDate)+','+Str(mSeqnr,-1)+','+Str(bed_toez,-1)+')' 
+		cValuesDue+=',('+mSubid+',"'+SQLdate(dDueDate)+'",'+Str(mSeqnr,-1)+','+Str(bed_toez,-1)+')' 
 		* update date due with term within subscription: 
 		cValuesSub+=',('+mSubid+')'
-// 		IF !First
-// 			oPro:AdvancePro()
-// 		ENDIF
 		oSub:skip()
 	ENDDO
 	if !Empty(cValuesDue)
@@ -744,11 +739,12 @@ Function ProlongateAll(oCall as Window ) as logic
 			SQLStatement{"rollback",oConn}:Execute()
 			return false				
 		endif
+		* remove old due amounts:
+		oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
+		oStmnt:Execute()
+		SQLStatement{"commit",oConn}:Execute()
 	endif
 
-	* remove old due amounts:
-	oStmnt:=SQLStatement{"delete from dueamount where invoicedate<adddate(Now(),-240)",oConn}
-	oStmnt:Execute()
 	oCall:STATUSMESSAGE(Space(80))
 
 	RETURN true
