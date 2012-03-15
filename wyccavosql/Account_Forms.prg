@@ -279,7 +279,7 @@ METHOD FindButton( ) CLASS AccountBrowser
 		// remove from accfiler
 		cAccFilter:=StrTran(StrTran(StrTran(cAccFilter,"and a.active=1",""),'a.active=1 and ',""),'a.active=1',"")
 	endif   	
-	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(MyWhere).and.Empty(cAccFilter),''," where "+MyWhere+iif(Empty(cAccFilter),"",iif(Empty(MyWhere),' ',' and ')+cAccFilter))+" order by "+cOrder
+	self:oAcc:SQLString :="Select "+self:cFields+" from "+self:cFrom+iif(Empty(MyWhere).and.Empty(cAccFilter),''," where "+MyWhere+iif(Empty(cAccFilter),"",iif(Empty(MyWhere),' ',' and ')+cAccFilter))+" order by "+cOrder+Collate
 	self:cWhere:=MyWhere
 
 	self:oAcc:Execute() 
@@ -500,7 +500,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		self:cAccFilter:=iif(Empty(cDepmntIncl),"","a.department IN ("+cDepmntIncl+")")
 		self:oAccCnt:=AccountContainer{}
 	endif
-	self:oAcc:=SQLSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(empty(self:cWhere),''," and")+" a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
+	self:oAcc:=SqlSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cWhere),''," and")+" a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
 //	LogEvent(self,"error:"+self:oAcc:errinfo:errormessage+"; statement:"+self:oAcc:SQLString,"logerrors")
 	RETURN nil
 METHOD Refresh() CLASS AccountBrowser 
