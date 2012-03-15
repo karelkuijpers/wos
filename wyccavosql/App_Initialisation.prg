@@ -447,11 +447,12 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 	return lConverted
 method create_table(table_name as string, instance_name as string,engine:="MyIsam" as string,collate:="utf8_unicode_ci" as string,aColumn as array,aIndex as array) class Initialize
 // create a table with itest indexes 
-local cCreate, cIndex as string
+local cCreate, cIndex,cReqname as string
 local i as int 
 local oStmt as SQLStatement
 LOCAL oError      as USUAL
-LOCAL cbError     as CODEBLOCK 
+LOCAL cbError     as CODEBLOCK
+local aColName:={} as array 
 if Empty(instance_name)
 	instance_name:=table_name
 endif
@@ -467,7 +468,10 @@ do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
 	+" "+aColumn[i,6] 
 enddo
 cIndex:=" "
-i:=0
+i:=0 
+if table_name=='teletrans'
+	table_name:=table_name
+endif
 do while (i:=AScan(aIndex,{|x|x[1]==table_name},i+1))>0 
 	if Val(aIndex[i,4])=1
 		if !Empty(cIndex)
@@ -481,9 +485,11 @@ do while (i:=AScan(aIndex,{|x|x[1]==table_name},i+1))>0
 				cIndex+="UNIQUE "
 			endif
 		endif
-		cIndex+="KEY "+iif(aIndex[i,3]=="PRIMARY","",sIdentChar+aIndex[i,3]+sIdentChar+" ")+"("+sIdentChar+aIndex[i,5]+sIdentChar
+		aColName:=Split(aIndex[i,5],'(')  // split in name and key length 
+		cIndex+="KEY "+iif(aIndex[i,3]=="PRIMARY","",sIdentChar+aIndex[i,3]+sIdentChar+" ")+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 	else
-		cIndex+=","+sIdentChar+aIndex[i,5]+sIdentChar
+		aColName:=Split(aIndex[i,5],'(')  // split in name and key length 
+		cIndex+=","+sIdentChar+AllTrim(aColName[1])+sIdentChar +iif(Len(aColName)>1,'('+aColName[2],'')
 	endif
 enddo
 if !Empty(cIndex)
@@ -1082,7 +1088,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","MyIsam",cCollation},;
 		{"teletrans","InnoDB",cCollation},;
 		{"titles","MyIsam",cCollation},;
-		{"transaction","InnoDB",cCollation}	} as array       // longer is too large for the compiler
+		{"transaction","InnoDB",cCollation},;
+		{"zgzip","InnoDB",cCollation} as array       // longer is too large for the compiler
 
 	// required tables structure:
 
@@ -1141,7 +1148,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"authfunc","empid","int(11)","NO","NULL",""},;
 		{"authfunc","funcname","char(32)","NO","",""},;
 		{"balanceitem","balitemid","int(11)","NO","NULL","auto_increment"},;
-		{"balanceitem","heading","char(25)","YES","NULL",""},;
+		{"balanceitem","heading","char(25)","NO","",""},;
 		{"balanceitem","footer","char(25)","NO","",""},;
 		{"balanceitem","balitemidparent","int(11)","NO","0",""},;
 		{"balanceitem","category","char(2)","NO","",""},;
@@ -1172,8 +1179,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankorder","idfrom","int(11)","NO","0",""},;
 		{"bankorder","stordrid","int(11)","NO","0",""},;
 		{"budget","accid","int(11)","NO","NULL",""},;
-		{"budget","year","char(4)","NO","",""},;
-		{"budget","month","char(2)","NO","",""},;
+		{"budget","year","smallint(4)","NO","0",""},;
+		{"budget","month","tinyint(2)","NO","0",""},;
 		{"budget","amount","decimal(18,2)","NO","0",""},;
 		{"currencylist","aed","char(3)","NO","",""},;
 		{"currencylist","united_ara","varchar(59)","NO","",""},;
@@ -1507,7 +1514,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
 		{"transaction","ppdest","char(3)","NO","",""},;
 		{"transaction","lock_id","int(11)","NO","0",""},;
-		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
+		{"transaction","lock_time","timestamp","NO","0000-00-00",""},;
+		{"zgzip","zipid","int(11)","NO","NULL","auto_increment"},;
+		{"zgzip","description","varchar(511)","NO","dummy",""};
 	} as array  
 	
 	// specify indexes per table:
@@ -1583,6 +1592,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"memberassacc","0","PRIMARY","1","mbrid"},;	
 	{"memberassacc","0","PRIMARY","2","accid"},;	
 	{"teletrans","0","PRIMARY","1","teletrID"},;
+ 		{"teletrans","0","telecontent","1","bankaccntnbr"},;
+		{"teletrans","0","telecontent","2","bookingdate"},;
+		{"teletrans","0","telecontent","3","addsub"},;
+		{"teletrans","0","telecontent","4","amount"},;
+		{"teletrans","0","telecontent","5","kind"},;
+		{"teletrans","0","telecontent","6","contra_bankaccnt"},;
+		{"teletrans","0","telecontent","7","contra_name"},;
+		{"teletrans","0","telecontent","8","budgetcd"},;
+		{"teletrans","0","telecontent","9","seqnr"},;
+		{"teletrans","0","telecontent","10","description (120)"},;
 		{"teletrans","1","bankaccntnbr","1","processed"},;
 		{"teletrans","1","bankaccntnbr","2","bankaccntnbr"},;
 		{"teletrans","1","bankaccntnbr","3","bookingdate"},;
@@ -1626,8 +1645,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","1","reference","1","reference"},;
 		{"transaction","1","transdate","1","dat"},;
 		{"transaction","1","transdate","2","transid"},;
-		{"transaction","1","person","1","persid"};
-		} as array 
+		{"transaction","1","person","1","persid"},;
+		{"zgzip","0","PRIMARY","1","zipid"};
+		} as array
 
 	// 		{"transaction","1","amountdeb","1","deb"},;
 	// 		{"transaction","1","amountcre","1","cre"},;
@@ -1688,14 +1708,14 @@ method InitializeDB() as void Pascal  class Initialize
 		enddo
 	endif
 	// read current indexes:
-	oSel:=SQLSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME from information_schema.statistics where TABLE_SCHEMA='"+dbname+"'",oConn}
+	oSel:=SqlSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART from information_schema.statistics where TABLE_SCHEMA='"+dbname+"'",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
 	endif 
 	if oSel:RecCount>0
 		do while !oSel:EoF
-			AAdd(aCurIndex,{oSel:table_name,iif(isNumeric(oSel:NON_UNIQUE),Str(oSel:NON_UNIQUE,1,0),oSel:NON_UNIQUE),oSel:INDEX_NAME,iif(isNumeric(oSel:SEQ_IN_INDEX),Str(oSel:SEQ_IN_INDEX,1,0),oSel:SEQ_IN_INDEX),oSel:COLUMN_NAME})
+			AAdd(aCurIndex,{oSel:table_name,iif(IsNumeric(oSel:NON_UNIQUE),Str(oSel:NON_UNIQUE,1,0),oSel:NON_UNIQUE),oSel:INDEX_NAME,iif(IsNumeric(oSel:SEQ_IN_INDEX),ConS(oSel:SEQ_IN_INDEX),oSel:SEQ_IN_INDEX),oSel:COLUMN_NAME+iif(IsNumeric(oSel:Sub_Part),' ('+ConS(oSel:Sub_Part)+')','')})
 			oSel:Skip()
 		enddo
 	endif
@@ -1715,6 +1735,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// compare  current with required structure:
 	for i:=1 to Len(aTable)
 		cTable:=Lower(aTable[i,1])
+		
 		if (j:=AScan(aCurTable,{|x|Lower(x[1])==cTable}))==0 
 			self:create_table(cTable,"",aTable[i,2],aTable[i,3],aColumn,aIndex)
 		else
@@ -1791,6 +1812,10 @@ method InitializeDB() as void Pascal  class Initialize
 	if SqlSelect{"select importfile from importlock where importfile='batchlock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
+	// ensure zgzip has required record:
+	if SqlSelect{"select zipid from zgzip",oConn}:RecCount<1
+		SQLStatement{"insert into zgzip set description='dummy last table to ensure that gzip file of mysqldumper is correctly saved'",oConn}:Execute()
+	endif
 	// fill tables from old database: 
 	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
@@ -2006,7 +2031,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	// aReqColumn: required columns
 	// aCurColumn: current columns
 	// cTableName: name of the table
-	local lSkip as logic
+	local lSkip,lError as logic
 	local nPosReq,nPosCur,i,j,nLenReq,nLenCur as int
 	local aStatReq,aStatCur as array      // to keep track of comparisons; 
 	//													aStatReq: {{status (c:changed spec/ r:renamed/=: equal), ordinal position in current table}, ...}
@@ -2016,11 +2041,14 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	local cReqname,cIndex as string 
 	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1) as string 
 	local aColName:={} as array
-	local oStmnt as SQLStatement 
+	local oStmnt as SQLStatement
+	local oSel as SQLSelect                 // for correcting teletrans
+	local CurDate as date, CurSeqnr,SubSeqnr as int  // for correcting teletrans
+	local avalues:={} as array  // array for correcting teletrans : {{teletrid,seqnr},...}
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
-	aStatCur:=AReplicate('',nLenCur) 
+	aStatCur:=AReplicate('',nLenCur)
 	// first search for columns with changed specifications:
 	for nPosReq:=1 to nLenReq   
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
@@ -2101,7 +2129,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		endif
 		// Table name, Field,Type,Null,Default,Extra 
 		cStatement+=sIdentChar+aReqColumn[nPosReq,2]+sIdentChar+' '+aReqColumn[nPosReq,3]+' '+iif(Upper(aReqColumn[nPosReq,4])=="NO","NOT NULL","NULL")+;
-			iif(upper(aReqColumn[nPosReq,5])=="NULL",iif(upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'")+;
+			iif(Upper(aReqColumn[nPosReq,5])=="NULL",iif(Upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'")+;
 			" "+aReqColumn[nPosReq,6]+;
 			iif(aStatReq[nPosReq,1]="a"," "+iif(nPosReq=1,"FIRST","AFTER "+aReqColumn[nPosReq-1,2]),"")
 	next
@@ -2149,7 +2177,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			cIndex:=aCurIndex[nPosCur,3]
 			if AtC(cIndex,cDropIndex)=0     // not yet dropped?
 				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
-				if (nPosReq:=ascan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. atc(cIndex,cAddIndex)=0 
+				if (nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cAddIndex)=0 
 					// add to indexes to be added:
 					aColName:=Split(aReqIndex[nPosReq,5],'(')
 					cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
@@ -2170,13 +2198,13 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			exit
 		endif
 	enddo 
-	
+
 	// add new or changed indexes:
 	nPosReq:=1
 	nPosReq:=AScan(aStatReq,{|x|Empty(x[1])},nPosReq)
 	cIndex:=""
 	do while nPosReq>0 .and. nPosReq<=nLenReq
-		cIndex:=aReqIndex[nPosReq,3]
+		cIndex:=aReqIndex[nPosReq,3] 
 		//	process all	lines	of	this index
 		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
 		if AtC(cIndex,cAddIndex)=0 
@@ -2202,40 +2230,54 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	endif
 	if !Empty(cAddIndex)
 		cStatement+=iif(Empty(cStatement),'',', ')+ cAddIndex
-	endif
+	endif 
 	if !Empty(cStatement) 
 		oMainWindow:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
-		SQLStatement{"start transaction",oConn}:Execute()
-		oStmnt:=SQLStatement{'alter table'+Sp+cTableName+' '+cStatement,oConn} 
-		oStmnt:Execute() 
-		if !Empty(oStmnt:Status)
-			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
-			ErrorBox{,"Could not reformat table "+cTableName}:show()
-			break 
-		else
-			SQLStatement{"commit",oConn}:Execute()
-			LogEvent(self,"Table "+cTableName+" reformated with:"+oStmnt:SQLString)
+		if cIndex=='telecontent'
+			// make each line in teletrans unique:
+			oSel:=SqlSelect{'select teletrid,cast(bookingdate as date) as bookingdate,seqnr from teletrans order by bankaccntnbr,seqnr,bookingdate,teletrid',oConn}
+			if oSel:RecCount>0
+				do while !oSel:EoF
+					if !oSel:bookingdate=CurDate .or.!oSel:seqnr=CurSeqnr
+						CurDate:=oSel:bookingdate
+						CurSeqnr:=oSel:seqnr
+						SubSeqnr:=0
+					endif
+					SubSeqnr++
+					if SubSeqnr>1
+						AAdd(avalues,{Str(oSel:teletrid,-1),Str(CurSeqnr,-1)+Str(SubSeqnr,-1)})
+					endif      
+					oSel:Skip()
+				enddo
+			endif
+		endif
+		SQLStatement{"start transaction",oConn}:execute() 
+		lError:=false
+		if cIndex=='telecontent' .and. Len(avalues)>0
+			// correct teletrans to make each line unique	
+			oStmnt:=SQLStatement{'insert into teletrans (teletrid,seqnr) values '+Implode(avalues,'","')+;
+				" ON DUPLICATE KEY UPDATE seqnr=values(seqnr) ",oConn}
+			oStmnt:execute()
+			if!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute()
+				LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+				lError:=true
+			endif
+		endif
+		if !lError
+			oStmnt:=SQLStatement{'alter table'+Sp+cTableName+'	'+cStatement,oConn} 
+			oStmnt:execute() 
+			if	!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute()
+				LogEvent(self,"Could	not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+			else
+				SQLStatement{"commit",oConn}:execute()
+				LogEvent(self,"Table	"+cTableName+"	reformated with:"+oStmnt:SQLString)
+			endif	
 		endif
 		oMainWindow:STATUSMESSAGE(Space(80))
 		
 	endif			
-	
-
 
 	return
 	
-method update_table(cTable,oConn) class SQLTable
-local cAlter, cAlterIndex,gettablecolumns,gettables, getindexes as string
-gettables:="show tables" 
-gettablecolumns:="describe account"
-cAlter:="ALTER TABLE `account`  ADD `GAINLSACC` INT(11) NOT NULL"
-cAlter:="ALTER TABLE `account`  ADD `niks` VARCHAR(55) NOT NULL AFTER `GIFTALWD`"  
-cAlter:="ALTER TABLE `account` CHANGE `GAINLSACC` `GAINLSACC` INT(10) NULL DEFAULT NULL"
-cAlter:="ALTER TABLE `account` CHANGE `GAINLSACC` `GAINLSAC` INT(11) NULL DEFAULT NULL" 
-cAlter:="ALTER TABLE `balanceitem` CHANGE `balitemid` `balitemid` INT(11) NOT NULL AUTO_INCREMENT"
-cAlter:="ALTER TABLE `account` DROP `GAINLSACC`" 
-getindexes:="show index from account"
-cAlterIndex:="ALTER TABLE  `wycliffe`.`account` DROP INDEX  `DEPARTMENT` , ADD UNIQUE  `DEPARTMENT` (  `DEPARTMENT` ,  `balitemid` )" 
-cAlterIndex:="ALTER TABLE `wycliffe`.`language` DROP PRIMARY KEY, ADD PRIMARY KEY (`SENTENCEEN`, `LOCATION`)"   
-
