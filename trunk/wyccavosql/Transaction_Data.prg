@@ -1085,17 +1085,23 @@ METHOD Init() CLASS transaction_OPP
 super:Init(HyperLabel{"OPP","Opp","","transaction_OPP"},"C",3,0)
 
 RETURN SELF
-CLASS Transaction_POSTSTATUS INHERIT FIELDSPEC
-METHOD Init() CLASS Transaction_POSTSTATUS
+CLASS transaction_POSTSTATUS INHERIT FIELDSPEC
+
+
+METHOD Init() CLASS transaction_POSTSTATUS
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#POSTSTATUS, "Poststatus", "", "transaction_POSTSTATUS" },  "N", 3, 0 )
+    SUPER:Init( HyperLabel{#POSTSTATUS, "Poststatus", "Status of posting for this transaction: 0: not posted, 1: ready for posting, 2: posted", "transaction_POSTSTATUS" },  "N", 1, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
     ENDIF
 
     RETURN SELF
+
+
+
+
 CLASS transaction_PPDEST INHERIT FIELDSPEC
 METHOD Init() CLASS transaction_PPDEST
 super:Init(HyperLabel{"PPDEST","Ppdest","","transaction_PPDEST"},"C",3,0)
