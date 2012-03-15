@@ -1674,7 +1674,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 		return nil
 		endif
 	endif
-	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder
+	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
 	self:oPers:Execute()
 
 	self:FOUND :=Str(nCount,-1) 
@@ -1846,7 +1846,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	if !Empty(oServer)
 		self:oPers:=oServer
 	else
-		self:oPers:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+" limit 100",oConn }
+		self:oPers:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate+" limit 100",oConn }
 	endif
  	self:oPersCnt:=PersonContainer{}
 	RETURN nil
