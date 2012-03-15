@@ -414,7 +414,7 @@ METHOD Import() CLASS ImportBatch
 	NEXT
 	IF lv_aant_toe>0
 		* Clear old batches: 
-		oStmnt:=SQLStatement{"delete from importtrans where processed=1 and transdate<'"+SQLdate(Today()-300)+"'",oConn}
+		oStmnt:=SQLStatement{"delete from importtrans where processed=1 and transdate<'"+SQLdate(Today()-440)+"'",oConn}
 		oStmnt:Execute()
 		// delete files:
 		for nf:=1 to Len(aFiles)
