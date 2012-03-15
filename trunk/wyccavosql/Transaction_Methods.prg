@@ -2761,7 +2761,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 							oHm:DESCRIPTN:=oTmt:m56_naam_tegnr
 						endif
 						IF self:DueAutomatic
-							self:AutoRec:=true
+							self:autorec:=true
 						ENDIF
 					ENDIF
 				endif
@@ -2778,11 +2778,11 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 		ENDIF
 		RETURN  // Nothing to assign
 	ENDIF
-//   	if m51_abest=0
-// 		return
-// 	endif
+	//   	if m51_abest=0
+	// 		return
+	// 	endif
 
-	nCurRec := oHm:Recno
+	nCurRec := oHm:RECNO
 
 	AEval(oHm:aMirror,{|x| m51_totorg += x[2]})
 	AEval(oHm:aMirror,{|x| m51_totcre += x[3]})
@@ -2805,7 +2805,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 			oHm:aMirror[oHm:RECNO,9]:=oHm:CREFORGN 
 			oHm:aMirror[oHm:RECNO,15]:=oHm:INCEXPFD
 			If self:GiftsAutomatic 
-				self:AutoRec:=true
+				self:autorec:=true
 			endif
 			RETURN
 		ENDIF
@@ -2973,7 +2973,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 									if oHm:CURRENCY==sCurr
 										oHm:CREFORGN:=oHm:cre 
 									else
-										oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetRoe(oHm:CURRENCY,self:mDAT),DecAantal)
+										oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 									endif
 									m51_totcre := self:mDebAmnt
 									self:SpecialMessage()
@@ -2985,7 +2985,8 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 									//		self:AutoRec:=true 
 									exit
 								endif
-							endif
+							endif 
+							self:SpecialMessage()
 							oHm:Skip()
 						ENDDO
 					endif
@@ -3638,36 +3639,16 @@ METHOD ReSet() CLASS PaymentJournal
 	RETURN
 Method SpecialMessage() class PaymentJournal
 	LOCAL oHm:=self:server as TempGift
-	local nMsgPos as int 
-	local Destname, cSpecMessage as string
-	local lSpecmessage as logic
-	local aNospecmess:={'donatie','steun','bijdrage','maand','mnd','kw','algeme','werk','onderh','onderst','wycliffe','betalingskenm','support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend'}  as array
-	local aSpecmess:={'pensioen','lijfrente','nalaten','extra','jubileum','collecte','opbr','cadeau','contant','zegen'} as array 
+	local cSpecMessage as string
+	local Destname as string
+	local lManually as logic 
 	// determine extra messsage in description of transaction: 
 	if !self:Acceptgiro .and.  !Empty(oHm:AccDesc) .and.!Empty(self:oTmt)
-		nMsgPos:=At('%%',self:oTmt:m56_description)
-		if nMsgPos>0 
-			Destname:=GetTokens(oHm:AccDesc)[1,1]
-			cSpecMessage:=AllTrim(StrTran(StrTran(Lower(SubStr(self:oTmt:m56_description,nMsgPos+2)),'giften'),'gift'))
-			if !Empty(cSpecMessage) 
-				lSpecmessage:=false 
-				AEval(aSpecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,true,lSpecmessage)})
-				if !lSpecmessage
-					lSpecmessage:=true
-					if AtC(Destname,SubStr(self:oTmt:m56_description,nMsgPos+2))>0      // skip with name of destination
-						lSpecmessage:=false 
-					endif
-					AEval(aNospecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})
-					if lSpecmessage
-						// check month name in message:
-						AEval(Maand,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})    // skip with month name
-					endif
-				endif
-				if lSpecmessage 
-					oHm:DESCRIPTN:=iif(Empty(oHm:DESCRIPTN),cSpecMessage,AllTrim(oHm:DESCRIPTN)+" "+cSpecMessage) 
-					self:autorec:=false  // stop in case of special message with automatic processing of telebanking records
-				endif
-			endif
+		Destname:=GetTokens(oHm:AccDesc)[1,1]
+		lManually:=SpecialMessage(self:oTmt:m56_description,Destname,@cSpecMessage)
+		oHm:DESCRIPTN:=iif(Empty(oHm:DESCRIPTN),cSpecMessage,AllTrim(oHm:DESCRIPTN)+" "+cSpecMessage)
+		if lManually 
+			self:autorec:=false  // stop in case of special message with automatic processing of telebanking records
 		endif
 	endif
 	return
