@@ -168,7 +168,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 		iif(ADMIN=="WA" .and. USERTYPE=="D".and.!Empty(cAccAlwd)," or a.accid in ("+cAccAlwd+")",'')+")"		
 	endif
 	IF lUnique
-		oAcc:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+myWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder,oConn}
+		oAcc:=SqlSelect{"Select "+cFields+" from "+cFrom+" where "+myWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
 		oAcc:Execute()
 		if oAcc:RecCount=1 
 			*	First try to find the account:
@@ -816,7 +816,7 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string) as string
 	oAcc:=SqlSelect{"select d.deptmntnbr,d.depid,d.descriptn,d.netasset,d.incomeacc,d.expenseacc from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
 	if oAcc:Reccount>0 .and. Str(oAcc:depid,-1)<>cDepartment
 		oLan:=Language{}
-		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(Transform(oAcc:netasset,"")==mAccId,;
-		oLan:WGet("netasset account"),iif(Transform(oAcc:incomeacc,"")==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
+		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(AllTrim(Transform(oAcc:netasset,""))==mAccId,;
+		oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
 	endif
 	return cError
