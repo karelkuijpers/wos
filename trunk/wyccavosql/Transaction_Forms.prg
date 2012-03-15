@@ -820,7 +820,7 @@ METHOD TeleBankButton( ) CLASS General_Journal
 		ENDIF
 	ELSE
 		self:lTeleBank := FALSE
-		(WarningBox{self,"Journaling Records","No Telebanking-data found"}):Show()
+		(WarningBox{self,"Journaling Records","No more Telebanking-data found"}):Show()
 	ENDIF
 	RETURN nil
 STATIC DEFINE GENERAL_JOURNAL_BANKBALANCE := 124 
@@ -3234,7 +3234,7 @@ METHOD TeleBankButton( ) CLASS PaymentJournal
 		ENDIF
 	ELSE
 		self:lTeleBank := FALSE
-		(WarningBox{self,"Recording Gifts","No Telebanking Gifts found"}):Show()
+		(WarningBox{self,"Recording Gifts","No more Telebanking Gifts found"}):Show()
 	ENDIF
 STATIC DEFINE PAYMENTJOURNAL_CANCELBUTTON := 117 
 STATIC DEFINE PAYMENTJOURNAL_CGIROTELTEXT := 124 
