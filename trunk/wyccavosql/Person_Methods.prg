@@ -1603,20 +1603,21 @@ METHOD SkipNext() CLASS PersonBrowser
 	RETURN TRUE
 METHOD SkipPrevious() CLASS PersonBrowser
 	RETURN SELF:oSFPersonSubForm:SkipPrevious()
-METHOD Adres_Analyse(aWord as array, nStartAnalyse:=1 as int,lZipCode:=false ref logic,lCity:=false ref logic,lAddress:=false ref logic,lFromName:=false as logic) as int CLASS PersonContainer
+METHOD Adres_Analyse(aWord as array, nStartAnalyse:=1 as int,lZipCode:=false ref logic,lCity:=false ref logic,lAddress:=false ref logic,lFromName:=false as logic,lZipFromWeb:=true as logic) as int CLASS PersonContainer
 *  Determines Zipcode, street and city from an array with NAW-words {{Token, Separator},...}
 *	Returns startposition of address in the array
 *	nStartAnalyse: startword to start analyses (default=1)
 *	lZipCode : True: zipcode is allreeady known
 *	lCity : True: city name allready known 
-*  lFromName: Find address in name field in stead of address field
+*  lFromName: Find address in name field in stead of address field 
+*  lZipFromWeb: get zip code from internet when not found
 *
 LOCAL i,j,wp,l,  nNumPosition:=0, nZipPosition, nCityPosition, nStart, nStartAddress as int
 LOCAL aStreetPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY 
 local lBelgium as logic 
 local aDrWord:={} as array
 
-* vaststellen of postkode gevonden:
+* search for zip code:
 wp:=Len(aWord)
 IF wp<2 && (first streetname, housenumber, first part zipcode)
 	RETURN wp+1
@@ -1653,7 +1654,7 @@ IF !lZipCode
 			ENDIF
 			if lBelgium .and. Len(aWord[i,1])=4
 			// probably Belgium zip code:
-				self:m51_pos:=aWord[i,1]
+				self:m51_pos:=StandardZip(aWord[i,1])
 				nZipPosition:=i
 				nStart:=nZipPosition-1
 				nCityPosition:=nZipPosition+1
@@ -1701,7 +1702,7 @@ IF !lAddress
 				nCityPosition:=nNumPosition+1
 			ENDIF
 			FOR j=nStartAddress to Max(nNumPosition,nZipPosition-1)
-				self:m51_ad1:=self:m51_ad1+Upper(SubStr(aWord[j,1],1,1))+Lower(SubStr(aWord[j,1],2))+aWord[j,2]
+				self:m51_ad1:=AllTrim(self:m51_ad1+Upper(SubStr(aWord[j,1],1,1))+Lower(SubStr(aWord[j,1],2))+aWord[j,2])
 				aWord[j]:={"",""} // empty word			
 				lAddress:=true
 			NEXT
@@ -1711,7 +1712,7 @@ IF !lAddress
 ENDIF
 IF !lCity
 	self:m51_city:=""
-	IF nCityPosition<=wp .and. nCityposition>0
+	IF nCityPosition<=wp .and. nCityPosition>0
 		FOR j:=nCityPosition to wp
 			IF Len(self:m51_city)+Len(aWord[j,1])>=18.or.aWord[j,1]=="FAM".or.aWord[j,1]=="GIFT".or.aWord[j,1]=="TGV";
 				.or.aWord[j,1]=="TNV".or.aWord[j,1]=="VOOR".or.IsDigit(aWord[j,1])
@@ -1733,8 +1734,8 @@ IF Empty(nStartAddress)
 	RETURN wp+1
 ENDIF
 // Find zip-code:
-If CountryCode="31" .and. !lZipCode .and. lCity .and. lAddress
-	aDrWord:=ExtractPostCode(self:m51_city,self:m51_AD1,self:m51_pos)
+If CountryCode="31" .and.lZipFromWeb .and. !lZipCode .and. lCity .and. lAddress
+	aDrWord:=ExtractPostCode(self:m51_city,self:m51_ad1,self:m51_pos)
 	self:m51_pos:=aDrWord[1]
 endif
 RETURN nStartAddress
@@ -2076,7 +2077,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		cWhere+= iif(Empty(cWhere),""," and ")+"p.deleted=0"
 	endif
 
-	oSel:=SQLSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder,oConn}
+	oSel:=SqlSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
 	IF lUnique .and. oSel:RecCount=1		
 		IF IsMethod(oCaller, #RegPerson)
 			oCaller:RegPerson(oSel,cItemname)
@@ -2140,7 +2141,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		endif
 
 		oPersBw:oPers:SQLString:="select "+oPersBw:cFields+" from "+cFrom+iif(Empty(cWhere).and.Empty(cFilter),""," where ")+cWhere+;
-			iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder 
+			iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate 
 		oPersBw:oPers:Execute()
 		oPersBw:Found:=Str(oPersBw:oPers:RecCount,-1)
 	endif 
@@ -3103,7 +3104,7 @@ local oReport as PrintDialog
 local oPers as SQLSelect
 cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country"  	
 	
-oPers:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ cFrom+cWherep+" order by "+self:SortOrder),oConn} 
+oPers:=SqlSelect{UnionTrans("Select distinct "+cFields+" from "+ cFrom+cWherep)+" order by "+self:SortOrder+Collate,oConn} 
 oPers:Execute()
 (InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oPers:RECCOUNT)+ ' persons found')}):Show()
 if oPers:RECCOUNT=0
@@ -3169,9 +3170,9 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			cHaving+=iif(Empty(cHaving)," having "," and ")+"maxamnt >= "+Str(self:selx_minindamnt,-1)
 		endif
       cSQLString:=UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)
-      self:oDB:=SQLSelect{"select "+cGrFields+" from ("+cSQLString+") as gr group by gr.persid "+cHaving+" order by "+self:SortOrder,oConn}
+      self:oDB:=SqlSelect{"select "+cGrFields+" from ("+cSQLString+") as gr group by gr.persid "+cHaving+" order by "+self:SortOrder+Collate,oConn}
 	else
-		self:oDB:=SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder,oConn} 
+		self:oDB:=SqlSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder+Collate,oConn} 
 	endif
 //    LogEvent(self,self:oDB:sqlString,"logsql")
 	self:oDB:Execute()
@@ -3181,7 +3182,7 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			self:cTransH:=UnionTrans("select t.cre-t.deb as amountgift,t.dat,t.docid,t.reference,t.persid,a.description as destination,"+;
 			"pd.firstname as firstnamedestination,pd.lastname as lastnamedestination "+;
 			"from transaction t, person p, account a left join member m on (m.accid=a.accid) left join person pd on(pd.persid=m.persid) "+;
-			"where a.accid=t.accid and "+self:cWhereOther+" and t.persid=? order by p."+self:SortOrder)
+			"where a.accid=t.accid and "+self:cWhereOther+" and t.persid=? order by p."+self:SortOrder+Collate)
 		endif
 		DO WHILE !lReady
 			(oLtrFrm := LetterFormat{oParent,,,lAcceptNorway}):Show()
@@ -3228,7 +3229,7 @@ local oReport as PrintDialog
 		cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,p.telbusiness,p.telhome,p.fax,p.mobile,p.remarks,p.mailingcodes"  	
 	endif
 	
-	oSel:= SQLSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep+" order by "+self:SortOrder),oConn} 
+	oSel:= SqlSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder+Collate,oConn} 
 	
 	oSel:Execute()
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ ' persons found')}):Show() 
@@ -4409,11 +4410,11 @@ local i,j as int
 			cSQLString+=" order by "+StrTran(cSortOrder,"persid","p.persid")
 		endif
 	else
-		cSQLString:="select "+cGrFields+" from ("+cSQLString+") as gr "+cGroup+cHaving+iif(lBankacc,''," order by "+cSortOrder)
+		cSQLString:="select "+cGrFields+" from ("+cSQLString+") as gr "+cGroup+cHaving+iif(lBankacc,''," order by "+cSortOrder+Collate)
 	endif
 	if AScan(myFields,{|x|x[1]== #BANKNUMBER})>0
 		// add group for getting array with bank accounts per person:
-		cSQLString:="select gr2.*,group_concat(pb.banknumber separator ',') as banknumbers from ("+cSQLString+") as gr2 left join personbank pb on (pb.persid=gr2.persid) group by gr2.persid order by "+cSortOrder
+		cSQLString:="select gr2.*,group_concat(pb.banknumber separator ',') as banknumbers from ("+cSQLString+") as gr2 left join personbank pb on (pb.persid=gr2.persid) group by gr2.persid order by "+cSortOrder+Collate
 	endif 
 	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
 	return cSQLString
