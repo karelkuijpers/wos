@@ -1410,7 +1410,12 @@ function InitGlobals()
 			LstYearClosed:=Mindate
 		endif
 
-		CountryCode:=AllTrim(oSys:COUNTRYCOD) 
+		CountryCode:=AllTrim(oSys:COUNTRYCOD)
+		if CountryCode='41'
+			Collate:=" COLLATE utf8_danish_ci"
+		else
+			Collate:=''
+		endif
 
 		if !Empty(BANKNBRCRE) .and. SEntity="NED"
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
