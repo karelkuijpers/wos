@@ -3056,7 +3056,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		" from balanceitem b,account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=d.depid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
-		" and a.accid in ("+Implode(aAcc,"','")+" ) group by a.accid order by "+iif(Empty(self:SendingMethod),"a.accnumber","a.accid"),oConn}
+		" and a.accid in ("+Implode(aAcc,"','")+" ) group by a.accid order by "+iif(self:SendingMethod="SeperateFile","a.accnumber","a.accid"),oConn}
 	if oAcc:RecCount>1 
 		oPro:=ProgressPer{,oMainWindow}
 		oPro:Caption:="Printing giftreports and member statements"
@@ -3065,10 +3065,10 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:Show()
 	endif
 	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description'+;
-		+iif(Empty(self:SendingMethod),",a.accnumber",'')+;
-		' from transaction t'+iif(Empty(self:SendingMethod),', account a where a.accid=t.accid and',' where')+;
+		+iif(self:SendingMethod="SeperateFile",",a.accnumber",'')+;
+		' from transaction t'+iif(self:SendingMethod="SeperateFile",', account a where a.accid=t.accid and',' where')+;
 		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
-		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(Empty(self:SendingMethod),"accnumber","accid")+",dat,transid,seqnr",oConn} 
+		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(self:SendingMethod="SeperateFile","accnumber","accid")+",dat,transid,seqnr",oConn} 
 	oTrans:Execute() 
 	// 	if oTrans:RecCount<1
 	// 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
@@ -3150,7 +3150,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			*	Print statement report
 			cHeading1:=Str(ReportYear,4)+Space(1)+iif(Empty(me_hbn),'',self:oLan:RGet('HOUSECD')+':'+me_hbn+Space(1))+self:oLan:RGet("Currency")+':'+sCurr+Space(1)+self:Country
 
-			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount,iif(Empty(self:SendingMethod),"accnumber","accid"))
+			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount,iif(self:SendingMethod="SeperateFile","accnumber","accid"))
 			nRow:=0  && force page skip 
 			IF self:SkipInactive .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
 				*  skip member without transactions
