@@ -3403,7 +3403,8 @@ METHOD Show() CLASS SelPers
 	IF !Empty(self:selx_AccStart) .and. !Empty(self:selx_AccStart) .and. !self:selx_AccStart==self:selx_Accend 
 		// range of account numbers:
 		self:cFrom+=",account as a"
-		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
+// 		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
+		self:cWherep+=" and t.accid=a.accid "	
 	endif
 
 	self:oDB:=SQLSelect{"",oConn}
@@ -4400,7 +4401,9 @@ local i,j as int
 		if AtC("account",cFrom) =0
 			cFrom+=",account as a"
 		endif
-		cWherep+=" and t.accid=a.accid"
+		if AtC("t.accid=",cWherep)=0
+			cWherep+=" and t.accid=a.accid"
+		endif
 		cFrom:=strtran(cFrom,'account as a','account as a left join department d on (a.department=d.depid and (a.accid=d.netasset or a.accid=d.incomeacc))')
 	endif
 
