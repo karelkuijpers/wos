@@ -2077,8 +2077,6 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 
 	IF oBalReport==null_object
 		oBalReport:=BalanceReport{}
-		self:oBalReport:BalYears:=self:BalYears
-		self:oBalReport:lCondense:=true
 		self:oBalReport:ind_accstmnt:=FALSE
 		self:oBalReport:ind_explanation:=FALSE
 		self:oBalReport:WhatDetails:=self:WhatDetails
@@ -2091,6 +2089,8 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 	else
 		self:oBalReport:SendToMail:=false	
 	ENDIF
+	self:oBalReport:BalYears:=self:BalYears
+	self:oBalReport:lCondense:=true
 	self:oBalReport:MonthEnd:=self:MonthEnd
 	self:oBalReport:MONTHSTART:=self:MONTHSTART
 	self:oBalReport:SimpleDepStmnt:=	self:SimpleDepStmnt
