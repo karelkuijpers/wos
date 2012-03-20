@@ -251,17 +251,17 @@ CLASS TeleMut
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
 		GetAddress
- 	method AddTeleTrans(bankaccntnbr as string,;
- 	bookingdate as date,; 
- 	seqnr as string,;
- 	contra_bankaccnt:="" as string,;
-  	kind:="" as string,;
- 	contra_name:="" as string,;
-  	budgetcd:="" as string,;
-	amount as float,;
- 	addsub:="" as string,;
- 	description:="" as string,;
-	persid as string ) as logic CLASS TeleMut 
+method AddTeleTrans(bankaccntnbr as string,;
+		bookingdate as date,; 
+	seqnr as string,;
+		contra_bankaccnt:="" as string,;
+		kind:="" as string,;
+		contra_name:="" as string,;
+		budgetcd:="" as string,;
+		amount as float,;
+		addsub:="" as string,;
+		description:="" as string,;
+		persid as string ) as logic CLASS TeleMut 
 	IF !self:TooOldTeleTrans(bankaccntnbr,bookingdate) .and.!Empty(amount) 
 		if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
 			self:nSubSeqnr++
@@ -274,7 +274,7 @@ CLASS TeleMut
 		AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),''),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
 	endif
 
- 	return true
+	return true
 METHOD CheckPattern(dummy:=nil as logic) as logic  CLASS TeleMut
 LOCAL i AS INT
 LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub,tD:=self:m56_description  as STRING
@@ -2947,52 +2947,53 @@ ENDDO
 RETURN FALSE
 METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 	* Give next telebanking transaction from teletrans
-LOCAL oAcc as SQLSelect
-DO WHILE self:GetNxtMut(false)
-	self:m56_recognised:=FALSE
-	self:m56_autmut:=FALSE
-	IF .not.Empty(SKruis).and..not.Empty(self:m56_contra_bankaccnt).and.Empty(self:m56_budgetcd)
-		if SQLSelect{"select accid from bankaccount where banknumber='"+AllTrim(self:m56_contra_bankaccnt)+"'",oConn}:reccount>0 
-			self:m56_budgetcd:=self:cAccnumberCross 
-			if Empty(self:m56_description)
-				self:m56_description:=self:oLan:rget("clearing")
-			endif
+	LOCAL oAcc as SQLSelect
+	DO WHILE self:GetNxtMut(false)
+		self:m56_recognised:=FALSE
+		self:m56_autmut:=FALSE
+		IF .not.Empty(SKruis).and..not.Empty(self:m56_contra_bankaccnt).and.Empty(self:m56_budgetcd)
+			if SQLSelect{"select accid from bankaccount where banknumber='"+AllTrim(self:m56_contra_bankaccnt)+"'",oConn}:reccount>0 
+				self:m56_budgetcd:=self:cAccnumberCross 
+				if Empty(self:m56_description)
+					self:m56_description:=self:oLan:rget("clearing")
+				endif
+			ENDIF
 		ENDIF
-	ENDIF
-	IF .not.Empty(self:m56_budgetcd).and..not.IsAlpha(self:m56_budgetcd)
-		self:m56_accnumber:=self:m56_budgetcd
-		self:m56_recognised:=true
-		if (self:m56_kind=="CLL" .or.self:m56_kind=="COL") .and. self:m56_addsub=="A"   // storno:
-			self:m56_autmut:=false
-			IF self:m56_kind=="CLL"
-				self:m56_sgir:=self:m56_Payahead
+		IF .not.Empty(self:m56_budgetcd).and..not.IsAlpha(self:m56_budgetcd)
+			self:m56_accnumber:=self:m56_budgetcd
+			self:m56_recognised:=true
+			if (self:m56_kind=="CLL" .or.self:m56_kind=="COL") .and. self:m56_addsub=="A"   // storno:
+				self:m56_autmut:=false
+				IF self:m56_kind=="CLL"
+					self:m56_sgir:=self:m56_Payahead
+				endif
+			else	
+				self:m56_autmut:=true
 			endif
-		else	
-			self:m56_autmut:=true
+		ELSEIF (self:m56_kind=="IC" .or.self:m56_kind=="OCR") .and.Empty(Val(self:m56_contra_bankaccnt)).and.self:m56_addsub =="B" .and.!Empty(self:m56_Payahead)
+			// in case of recording of automatic collections take payahead as contra account:
+			self:m56_accid:=self:m56_Payahead
+			self:m56_recognised:=true
+			self:m56_autmut:=true 
 		endif
-	ELSEIF (self:m56_kind=="IC" .or.self:m56_kind=="OCR") .and.Empty(Val(self:m56_contra_bankaccnt)).and.self:m56_addsub =="B" .and.!Empty(self:m56_Payahead)
-		// in case of recording of automatic collections take payahead as contra account:
-		self:m56_accid:=self:m56_Payahead
-		self:m56_recognised:=true
-		self:m56_autmut:=true 
-	endif
-	IF !self:m56_recognised
-		self:CheckPattern()
-	ENDIF
-	RETURN true
-ENDDO
+		IF !self:m56_recognised
+			self:CheckPattern()
+		ENDIF
+		RETURN true
+	ENDDO
 
-RETURN FALSE
+	RETURN FALSE
 method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) as logic class TeleMut
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oMBal as Balances
-	local cPersids,cBudgetcds,cBudgetcd,cBankContr,cBankAcc,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid as string 
-	local	lAddressChanged as logic
+	local cPersids,cBudgetcds,cBudgetcd,cBankContr,cBankAcc,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc as string 
+	local	lAddressChanged,lProcAuto as logic
 	local aPersids:={}, aPersidsDb:={} as array 
 	local aBudgetcd:={}, aAccnbrDb:={} as array
 	local aBankContra:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...} 
-	local i,j,k,l,nProc,nTransId,nTele,maxTeleId as int 
+	local i,j,k,l,nProc,nTransId,nTele,maxTeleId as int
+	local fDeb,fDebForgn,fCre,fCreForgn as float 
 	local aTrans:={} as array  // array with values to be inserted into table transaction:
 	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
 	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16   
@@ -3233,36 +3234,68 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		//      1            2        3          4           5      6           7      8      9        10        11       12
 		i:=0
 		do while i<Len(self:aValuesTrans)
-			i:=AScan(self:aValuesTrans,{|x|!Empty(x[7]).and.Val(x[11])=0 .and.!x[12]='X'},i+1)   // non-gifts with known destination 
+			i:=AScan(self:aValuesTrans,{|x|(!Empty(x[4]).or.!Empty(x[7])).and.(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
 			if i=0
 				exit
 			endif
+			
 			cBankAcc:=self:aValuesTrans[i,1] 
 			//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
 			//                 1            2           3          4         5          6      7      8          9          10        11
 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0							
-				if (self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC')  // payahead filled for collective recoding of acceptgiro's
+				lProcAuto:=false
+				if Empty(self:aValuesTrans[i,7])
+					// check if cross banking?
+					IF !Empty(SKruis).and.!Empty(self:aValuesTrans[i,4])
+						cBankAcc:=self:aValuesTrans[i,4] 
+						k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc}) 
+						if k>0
+							// cross banking:
+							cDestAcc:=SKruis
+							if Empty(self:aValuesTrans[i,10])  // empty description?
+								self:aValuesTrans[i,10]:='Clearing'
+							endif
+							lProcAuto:=true
+						endif
+					endif
+				elseif (self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC');  // payahead filled for collective recording of acceptgiro's
+					.or.self:aValuesTrans[i,9]=='A' //debit with known destination?
 					cBudgetcd:=self:aValuesTrans[i,7]
 					if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
-						self:aValuesTrans[i,12]:='X'   // record as processed 
-						// transaction can be processed automatically:
-						nProc++ 
-						
-						// add to transaction array:
-						//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-						//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
-						// first row: 
-						cBankAccOwn:=self:m57_bankacc[j,7]
-// 						if self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC'  // acceptgiro
-// 							cBankAccOwn:=self:m57_bankacc[j,8]
-// 						endif
-						AAdd(aTrans,{cBankAccOwn,self:aValuesTrans[i,8],self:aValuesTrans[i,8],0.00,0.00,sCurr,self:aValuesTrans[i,10],;
-							self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','1',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} ) 
-						// second row: 
-						AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,self:aValuesTrans[i,8],self:aValuesTrans[i,8],sCurr,self:aValuesTrans[i,10],;
-							self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} )
+						cDestAcc:=aAccnbrDb[l,2]
+						lProcAuto:=true
 					endif
+				endif
+				if lProcAuto
+					self:aValuesTrans[i,12]:='X'   // record as processed 
+					// transaction can be processed automatically:
+					nProc++ 
+					
+					// add to transaction array:
+					//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+					//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
+					// first row: 
+					cBankAccOwn:=self:m57_bankacc[j,7]
+					// 						if self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC'  // acceptgiro
+					// 							cBankAccOwn:=self:m57_bankacc[j,8]
+					// 						endif
+					if self:aValuesTrans[i,9]='B'
+						fDeb:=self:aValuesTrans[i,8]
+						fDebForgn:=self:aValuesTrans[i,8]
+						fCre:=0.00
+						fCreForgn:=0.00
+					else
+						fDeb:=0.00
+						fDebForgn:=0.00
+						fCre:=self:aValuesTrans[i,8]
+						fCreForgn:=self:aValuesTrans[i,8]
+					endif
+					AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,self:aValuesTrans[i,10],;
+						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','1',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} ) 
+					// second row: 
+					AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,self:aValuesTrans[i,10],;
+						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'',self:aValuesTrans[i,11],''} )
 				endif
 			endif
 		enddo
