@@ -1070,6 +1070,9 @@ local oAcc as SQLSelect
 local cWhere:="a.balitemid=b.balitemid"
 local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid)" 
 local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"
+	if Empty(self:server)
+		return     // owner closed
+	endif
 	IF self:Server:Lastrec > 0
 		SELF:Reset()
 	ENDIF
