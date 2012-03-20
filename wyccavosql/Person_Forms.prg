@@ -3594,8 +3594,10 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS SelPersPayments
 	LOCAL MyBegin, MyEnd, dat_exch  AS DATE
-	LOCAL rek_exch AS STRING
-	local aWhereOther as array
+	LOCAL rek_exch as STRING
+	local oSel as SQlselect
+	local aWhereOther as array 
+	
 	self:oCaller:selx_rek := self:mRekId
 	self:mRekSt:=self:selx_rek
 	self:mRekEnd:=self:selx_rekend 
@@ -3615,7 +3617,15 @@ METHOD OKButton( ) CLASS SelPersPayments
 		MyBegin := MyEnd
 		MyEnd:= dat_Exch
 	ENDIF
-	aWhereOther:=self:oDCSubSet:GetSelectedItems()
+	aWhereOther:=self:oDCSubSet:GetSelectedItems() 
+	// add net asset accounts in case of member departments (to include all gifts):
+	oSel:=SqlSelect{"select d.netasset from department d where d.incomeacc in ("+Implode(aWhereOther,"','")+")",oConn}
+	if oSel:RecCount>0
+		do while !oSel:EoF
+			AAdd(aWhereOther,ConI(oSel:netasset))
+			oSel:Skip()
+		enddo
+	endif
 	* Transaction:
 	self:oCaller:selx_MinAmnt:=Val(self:oDCMinTotal:TextValue)
 	self:oCaller:selx_MaxAmnt:=Val(self:oDCMaxTotal:TextValue)
@@ -3628,9 +3638,10 @@ METHOD OKButton( ) CLASS SelPersPayments
 	IF !Empty(MyEnd)
 		 self:oCaller:cWhereOther:=self:oCaller:cWhereOther +" and t.dat<='"+SQLdate(MyEnd)+"'"
 	ENDIF
-	IF !Empty(self:oCaller:selx_AccStart) .and.  self:oCaller:selx_AccStart==self:oCaller:selx_Accend
-		self:oCaller:cWhereOther+=" and t.accid='"+self:oCaller:selx_rek+"'"
-	elseif !Empty( aWhereOther)
+// 	IF !Empty(self:oCaller:selx_AccStart) .and.  self:oCaller:selx_AccStart==self:oCaller:selx_Accend
+// 		self:oCaller:cWhereOther+=" and t.accid='"+self:oCaller:selx_rek+"'"
+// 	elseif !Empty( aWhereOther)
+	if !Empty( aWhereOther)
 		self:oCaller:cWhereOther+=" and t.accid in ("+Implode(aWhereOther,"','")+")"
 	ENDIF
 
