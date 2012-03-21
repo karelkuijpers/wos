@@ -1327,8 +1327,8 @@ BEGIN
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
 	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
-	CONTROL	"donderdag 14 april 2011", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
-	CONTROL	"donderdag 14 april 2011", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
+	CONTROL	"woensdag 21 maart 2012", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
+	CONTROL	"woensdag 21 maart 2012", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
 	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
 	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
 	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
@@ -1621,7 +1621,7 @@ oDCReference:HyperLabel := HyperLabel{#Reference,NULL_STRING,NULL_STRING,NULL_ST
 
 oDCmPerson := SingleLineEdit{SELF,ResourceID{INQUIRYSELECTION_MPERSON,_GetInst()}}
 oDCmPerson:HyperLabel := HyperLabel{#mPerson,NULL_STRING,"Person from who originates the amount","HELP_CLN"}
-oDCmPerson:Picture := "XXXXXXXXXXXXXXXXXXXX"
+oDCmPerson:Picture := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
 oCCPersonButton := PushButton{SELF,ResourceID{INQUIRYSELECTION_PERSONBUTTON,_GetInst()}}
 oCCPersonButton:HyperLabel := HyperLabel{#PersonButton,"v","Browse in persons",NULL_STRING}
@@ -3543,7 +3543,7 @@ METHOD OKButton( ) CLASS TransactionMonth
 			self:oAccStm:lMinimalInfo:=self:oDCSimpleStmnt:Checked
 			startdate:=SToD(Str(self:FromYear,4,0)+StrZero(self:FromMonth,2,0)+'01') 
 			enddate:=SToD(Str(self:ToYear,4,0)+StrZero(self:ToMonth,2,0)+StrZero(MonthEnd(self:ToMonth,self:ToYear),2,0)) 
-			oAcc:=SqlSelect{"select a.accid,a.description,a.accnumber,a.currency,b.category "+;
+			oAcc:=SqlSelect{"select a.accid,a.description,a.accnumber,a.currency,b.category,a.giftalwd "+;
 				" from balanceitem b,account a where a.balitemid=b.balitemid and a.accnumber between '"+self:nFromAccount+"' and '"+self:nToAccount+"'"+;
 				" order by a.accnumber",oConn}
 			oAcc:Execute()
