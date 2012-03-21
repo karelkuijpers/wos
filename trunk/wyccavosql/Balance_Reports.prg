@@ -1963,7 +1963,7 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 	IF ValidateControls( SELF, SELF:AControls )
 		IF filename == "SEPARATEFILEMAIL"
 			IF !IsMAPIAvailable()
-				(errorbox{SELF:Owner,"Outlook not default mailing system or no interface to it"}):show()
+				(ErrorBox{self:Owner,"No email client available or no interface to it"}):show()
 				RETURN
 			ENDIF
 		ENDIF
@@ -2129,7 +2129,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		// 		addHeading:=self:oLan:RGet("Department")+Space(1)+cDepName+Space(1)+mDepNumber+Space(1)+iif(empty(me_hbn),'',' HOUSECD:'+me_hbn+space(1))+self:Country
 		addHeading:=Str(self:YEARSTART,4)+Space(1)+iif(self:MONTHSTART # self:MonthEnd,oLan:RGet(MonthEn[self:MONTHSTART],,"!")+Space(1)+oLan:RGet("up incl")+Space(1),"")+oLan:RGet(MonthEn[self:MonthEnd],,"!")+Space(2);
 			+self:oLan:RGet("Department")+Space(1)+cDepName+Space(1)+mDepNumber+Space(1)+iif(Empty(me_hbn),'',' HOUSECD:'+me_hbn+Space(1)+self:oLan:RGet("Currency")+':'+sCurr+Space(1))+self:Country
-		IF lPrintFile.and.!Empty(self:SendingMethod) 
+		IF SendingMethod="SeperateFile" 
 			// rename filename to add department name:                   
 			self:oReport:ToFileFS:FileName:= cFileNameBasic+Space(1)+cDepName
 			nRow := 0
@@ -2174,7 +2174,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		next
 		// 		ASort(aAcc,,,{|x,y|x<=y})
 		self:STATUSMESSAGE("Printing Accountstatements for "+cDepName+", please wait...")
-		oAcc:=SqlSelect{"select accid,accnumber,description,a.currency,b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accid in ("+;
+		oAcc:=SqlSelect{"select accid,accnumber,description,a.currency,a.giftalwd,b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accid in ("+;
 			cAccs+") order by accnumber",oConn} 
 		oAcc:Execute()
 		oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,a.accnumber,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
@@ -3050,7 +3050,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		return
 	endif
 
-	oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,a.currency,b.category,m.persid,m.householdid,m.homepp,m.contact,m.RPTDEST,m.depid,"+;
+	oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,a.currency,a.giftalwd,b.category,m.persid,m.householdid,m.homepp,m.contact,m.RPTDEST,m.depid,"+;
 		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.lastname as contactlstname,pc.email as contactemail"+;
 		",pm.lastname,pm.email "+;
 		" from balanceitem b,account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=d.depid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
@@ -3170,7 +3170,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				// 					ENDIF
 				// 					oTransMonth:oReport:=self:oReport
 				// 					oTransMonth:SendingMethod:=self:SendingMethod
-				oAccAss:=SqlSelect{"select accid,accnumber,a.description,a.currency,b.category from account a, balanceitem b "+;
+				oAccAss:=SqlSelect{"select accid,accnumber,a.description,a.giftalwd,a.currency,b.category from account a, balanceitem b "+;
 					"where b.balitemid=a.balitemid and accid in ("+oAcc:assacc+") order by accid",oConn}
 				oAccAss:Execute()
 				oTransAss:=	SqlSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
