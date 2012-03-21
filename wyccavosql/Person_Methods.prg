@@ -138,9 +138,10 @@ endif
 straat:=AllTrim(cAddress)
 postcode:=AllTrim(cPostcode)
 cCity:=AllTrim(cCity)
-if cCity=="WYK BY DUURSTEDE"
-	cCity:="WIJK BIJ DUURSTEDE"
-endif
+cCity:=StrTran(cCity,'Y','IJ')
+// if cCity=="WYK BY DUURSTEDE"
+// 	cCity:="WIJK BIJ DUURSTEDE"
+// endif
 woonplaats:=cCity 
 
 housenrOrg:=(GetStreetHousnbr(cAddress))[2]
@@ -1702,10 +1703,11 @@ IF !lAddress
 				nCityPosition:=nNumPosition+1
 			ENDIF
 			FOR j=nStartAddress to Max(nNumPosition,nZipPosition-1)
-				self:m51_ad1:=AllTrim(self:m51_ad1+Upper(SubStr(aWord[j,1],1,1))+Lower(SubStr(aWord[j,1],2))+aWord[j,2])
+				self:m51_ad1:=self:m51_ad1+Upper(SubStr(aWord[j,1],1,1))+Lower(SubStr(aWord[j,1],2))+aWord[j,2]
 				aWord[j]:={"",""} // empty word			
 				lAddress:=true
 			NEXT
+			self:m51_ad1:=Compress(self:m51_ad1)
 			exit
 		ENDIF
 	NEXT
@@ -2057,7 +2059,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		endif
 	endif
 	if !Empty(cValue) .and.!lParmUni 
-		cValue:=AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
+// 		cValue:=AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
 		If IsDigit(cVALUE)
 			if Len(cValue)>=7.and.isnum(cValue) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber))
 				cWhere+=iif(Empty(cWhere),""," and ")+"p.persid=b.persid and b.banknumber='"+cValue+"'"
@@ -2436,9 +2438,11 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	lPropXtr:=(AScan(self:myFields,{|x|x[2]="p.propextr"})>0)
 	oSel:=SqlSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
 // 	fSecStart:=Seconds() 
-// 	LogEvent(self,oSel:SQlString,"logsql")
+// 	LogEvent(self,oSel:SQlString,"logsql") 
+	self:Pointer := Pointer{POINTERHOURGLASS}
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
+	self:Pointer := Pointer{POINTERARROW}
 
 	(InfoBox{self:oWindow,'Selection of Persons',AllTrim(Str(oSel:RECCOUNT)+ iif(Empty(self:GrpFormat).and.(self:selx_keus1=4.or.self:selx_keus1=5),' gifts',' persons')+' found')}):Show()
 	IF oSel:RECCOUNT=0
