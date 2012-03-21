@@ -863,7 +863,7 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	LOCAL m57_laatste := {} as ARRAY
 	LOCAL i, TelPtr as int
 	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
-	LOCAL lv_description, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_NameContra,lv_budget,lv_persid as STRING
+	LOCAL lv_description, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_NameContra,lv_budget,lv_persid,lv_kind as STRING
 	LOCAL cSep as int
 	LOCAL cDelim:=CHR(9) as STRING
 	LOCAL ptrHandle as MyFile
@@ -925,7 +925,8 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 			lv_addsub:="B"
 		ELSE
 			lv_addsub:="A"
-		ENDIF
+		ENDIF 
+		lv_kind:='BBS'
 		IF Empty(lv_Amount)  && skip empty lines
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
 			aFields:=Split(cBuffer,cDelim)
@@ -934,7 +935,7 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 		lv_Amount:=Round(lv_Amount,DecAantal) 
 		lv_BankAcntContra:=""
 		IF Upper(lv_description)=="TOTALT KREDITERT OCR-GIRO" .or. Upper(lv_description)=="SUM OCR-GIRO"
-			lv_addsub:= "OCR"
+			lv_kind:= "OCR"
 		elseif Upper(SubStr(lv_description,1,4))=="FRA:"
 			nAccEnd:=At3(lv_description," ",6)
 			if nAccEnd>0
@@ -950,7 +951,7 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 		lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra)
 		nTrans++
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
-			'BBS',lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
 		lv_description:=""
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
@@ -3148,7 +3149,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					endif
 				enddo
 				// 				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
-				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
+				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
 				if	oSel:RecCount>0
 					aZip:=Split(oSel:grpersids,'#')
 					aevala(aZip,{|x|split(x,',')})
@@ -3172,6 +3173,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 						(Trim(self:aValuesTrans[i,5])="AC" .or.(SubStr(self:aValuesTrans[i,10],17,2)=="AC").and.isnum(SubStr(self:aValuesTrans[i,10],1,16))))
 
 						lv_persid:=self:aValuesTrans[i,11]
+// 						if AtC("Dassenbos 149",self:aValuesTrans[i,10])>0
+// 							self:aValuesTrans[i,10]:=self:aValuesTrans[i,10]
+// 						endif
 						if Val(lv_persid)>0
 							if !CountryCode=="31" .or.;
 									!SpecialMessage(self:aValuesTrans[i,10], self:m57_bankacc[j,6],@lv_specmessage)  // with special message manually processed
@@ -3182,11 +3186,22 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 									if k>0
 										self:GetAddress(self:aValuesTrans[i,10],false)
 										if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
-											IF !self:m56_zip==aZip[k,2] 
+											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
 												lAddressChanged:=true
 											ENDIF
-											// 										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])
-											// 											lAddressChanged:=true
+										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])
+											if !Empty(aZip[k,2])
+												self:GetAddress(self:aValuesTrans[i,10],true)   // now with getting zip code from internet:
+												if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
+													IF !self:m56_zip==aZip[k,2]  
+														lAddressChanged:=true
+													ENDIF
+												else
+													lAddressChanged:=true
+												endif
+											else
+												lAddressChanged:=true
+											endif
 										endif
 									endif
 								endif
@@ -3234,8 +3249,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		//      1            2        3          4           5      6           7      8      9        10        11       12
 		i:=0
 		do while i<Len(self:aValuesTrans)
-			i:=AScan(self:aValuesTrans,{|x|(!Empty(x[4]).or.!Empty(x[7])).and.(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
-			if i=0
+			i:=AScan(self:aValuesTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
+			if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 				exit
 			endif
 			
@@ -3245,7 +3260,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0							
 				lProcAuto:=false
-				if Empty(self:aValuesTrans[i,7])
+				if !Empty(self:aValuesTrans[i,4]) .and.Empty(self:aValuesTrans[i,7])   // contra_bankaccnt but no budgetcd
 					// check if cross banking?
 					IF !Empty(SKruis).and.!Empty(self:aValuesTrans[i,4])
 						cBankAcc:=self:aValuesTrans[i,4] 
@@ -3259,13 +3274,17 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 							lProcAuto:=true
 						endif
 					endif
-				elseif (self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC');  // payahead filled for collective recording of acceptgiro's
-					.or.self:aValuesTrans[i,9]=='A' //debit with known destination?
+				elseif (!Empty(self:aValuesTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]=='BGC');  // payahead filled for collective recording of acceptgiro's
+					.or.self:aValuesTrans[i,9]=='A') //debit with known destination?
 					cBudgetcd:=self:aValuesTrans[i,7]
 					if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
 						cDestAcc:=aAccnbrDb[l,2]
 						lProcAuto:=true
 					endif
+				ELSEIF (self:aValuesTrans[i,5]=="IC" .or.self:aValuesTrans[i,5]=="OCR") .and.Empty(self:aValuesTrans[i,4]).and.self:aValuesTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+					// in case of recording of automatic collections take payahead as contra account:
+					cDestAcc:=self:m57_bankacc[j,8]
+					lProcAuto:=true
 				endif
 				if lProcAuto
 					self:aValuesTrans[i,12]:='X'   // record as processed 
@@ -3277,14 +3296,15 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
 					// first row: 
 					cBankAccOwn:=self:m57_bankacc[j,7]
-					// 						if self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]='BGC'  // acceptgiro
-					// 							cBankAccOwn:=self:m57_bankacc[j,8]
-					// 						endif
+					lv_persid:=''
 					if self:aValuesTrans[i,9]='B'
 						fDeb:=self:aValuesTrans[i,8]
 						fDebForgn:=self:aValuesTrans[i,8]
 						fCre:=0.00
 						fCreForgn:=0.00
+						if self:aValuesTrans[i,11]>'0' 
+							lv_persid:=self:aValuesTrans[i,11] 
+						endif
 					else
 						fDeb:=0.00
 						fDebForgn:=0.00
@@ -3295,7 +3315,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','1',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} ) 
 					// second row: 
 					AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,self:aValuesTrans[i,10],;
-						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'',self:aValuesTrans[i,11],''} )
+						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'',lv_persid,''} )
 				endif
 			endif
 		enddo
@@ -3430,7 +3450,7 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) 
 					endif
 					//with: banknumber, usedforgifts, datlaatst, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover 
 					AAdd(self:m57_BankAcc,{oBank:banknumber,ConL(oBank:usedforgifts),iif(!Empty(oBank:maxdat),oBank:maxdat,null_date),ConL(obank:giftsall),;
-					oBank:singledst,cDestname,ConS(oBank:accid),ConS(oBank:payahead),ConS(oBank:ACCNUMBER),oBank:fgmlcodes,oBank:syscodeover})
+					oBank:singledst,cDestname,ConS(oBank:accid),ConS(oBank:payahead),ConS(oBank:ACCNUMBER),oBank:fgmlcodes,oBank:syscodover})
 					ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
 					LogEvent(self,"Bank account "+banknbr+" changed to telebanking account in system data") 
 					self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| x[1]==AllTrim(banknbr)})
