@@ -1177,7 +1177,7 @@ METHOD OkButton CLASS NewPersonWindow
 		self:EndWindow()
 		// refresh owner: 
 		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser)
-			self:oCaller:SearchCLN:=self:mPersId
+// 			self:oCaller:SearchCLN:=self:mPersId
 			self:oCaller:ReFind()
 			if self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
 				self:oCaller:SELECT()   // go direct to
