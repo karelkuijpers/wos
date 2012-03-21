@@ -181,7 +181,8 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	local lTransFound as logic // is account active?
 	LOCAL aOPP as ARRAY // {OPP,Trans_Type_Code,debit,credit,debforgn,creforgn,{{line,Linecount}}} 
 	LOCAL nOPP as int, cOPP, cTypeOPP as STRING
-	local nDisp:=self:DescrWidth*100 as int 
+	local nDisp:=self:DescrWidth*100 as int
+	local lGiftAlwd as logic 
 	// heading for rtf, i.e. with lDebCreMerge:
 	local HeadingRTF:="\trowd\clbrdrb\brdrw20\brdrth\cellx1060\clbrdrb\brdrw20\brdrth\cellx2100\"+;
 		"clbrdrb\brdrw20\brdrth\cellx"+Str(2100+nDisp,-1)+"\clbrdrb\brdrw20\brdrth\cellx"+Str(2100+nDisp+1050,-1)+"\f0"+;
@@ -250,7 +251,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	aTrType:={{"AG",oLan:RGet("Assessed Gifts",,"!")+' (-10%)'},{"CH",oLan:RGet("Charges",,"!")},{"MG",oLan:RGet("Member Gifts",,"!")},{"PF",oLan:RGet("Personal Funds",,"!")}}
 	self:cFrom:=oLan:RGet("from",,"!")
 	self:cSubTotal:=oLan:RGet('Subtotal',,"!")
-
+   lGiftAlwd:=ConL(oAcc:giftalwd)
 	nMonthEnd:=nToYear*12+nToMonth-1
 	nMonthStart:=nFromYear*12+nFromMonth-1
 	CurAccid:=oAcc:AccID
@@ -378,7 +379,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 			m58_creF:=Round(m58_creF+oTrans:CREFORGN,DecAantal)
 			* member and personal gift:
 			// 				IF !Empty(Val(oAcc:persid)).and. !Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.!oTrans:FROMRPP .and. !oTrans:GC="CH"
-			IF !Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.ConI(oTrans:FROMRPP)=0 .and. !oTrans:GC="CH"
+			IF lGiftAlwd.and.!Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.ConI(oTrans:FROMRPP)=0 .and. !oTrans:GC="CH"
 				m57_giftbed:=Round(m57_giftbed+oTrans:cre-oTrans:deb,DecAantal)
 				m57_giftbedF:=Round(m57_giftbedF+oTrans:CREFORGN-oTrans:DEBFORGN,DecAantal)
 			ELSEIF ConI(oTrans:FROMRPP)==1
@@ -3088,7 +3089,7 @@ RETURN NIL
 METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	* Filling of windowfields := giroteltransaction-values
 	LOCAL oHm:=self:server as TempGift
-	LOCAL lSuccess, lNameCheck as LOGIC
+	LOCAL lSuccess, lNameCheck,lAddressChanged as LOGIC
 	LOCAL oEditPersonWindow as NewPersonWindow
 	local CurRate as float
 	local oPersCnt as PersonContainer
@@ -3250,11 +3251,19 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		
 		IF !Empty(self:oTmt:m56_contra_bankaccnt) 
-			oPers:=SqlSelect{"Select p.persid,p.postalcode,p.externid from person p, personbank pb where p.persid=pb.persid and deleted=0 and banknumber='"+AllTrim(self:oTmt:m56_contra_bankaccnt)+"'",oConn}
+			oPers:=SqlSelect{"Select p.persid,p.postalcode,p.address,p.externid from person p, personbank pb where p.persid=pb.persid and deleted=0 and banknumber='"+AllTrim(self:oTmt:m56_contra_bankaccnt)+"'",oConn}
 			if oPers:RecCount>0
-				self:Recognised:=true
+				self:Recognised:=true 
+				lAddressChanged:=false
 				// 					m51_assrec:=self:oPers:Recno
-				IF AllTrim(oPersCnt:m51_pos)#alltrim(oPers:postalcode) .and. Len(AllTrim(oPersCnt:m51_pos))>=7
+				IF Len(oPersCnt:m51_pos)>=7 
+					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode)
+						lAddressChanged:=true
+					ENDIF
+				elseif Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)
+					lAddressChanged:=true
+				endif
+				if lAddressChanged					
 					* address changed: 
 					oPersCnt:persid:=Str(oPers:persid,-1)
 					oEditPersonWindow := NewPersonWindow{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
