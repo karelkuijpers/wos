@@ -2837,7 +2837,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	ENDIF
 
 	SELF:lPrintOk := TRUE
-	self:lRTF:=false
+// 	self:lRTF:=false
 
 	IF self:Destination == "File" 
 		self:ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
