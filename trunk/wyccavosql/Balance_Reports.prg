@@ -2207,7 +2207,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 			else
 				aASS:={oDep:ASSACC1,oDep:ASSACC2,oDep:ASSACC3}      // otherwise of the department
 			endif
-			oAccAss:=SqlSelect{"select accnumber,accid,description,currency,b.category from account a,balanceitem b where a.balitemid=b.balitemid and accid in ("+Implode(aASS,"','")+")",oConn}
+			oAccAss:=SqlSelect{"select accnumber,accid,description,currency,a.giftalwd,b.category from account a,balanceitem b where a.balitemid=b.balitemid and accid in ("+Implode(aASS,"','")+")",oConn}
 			oAccAss:Execute()
 			oTransAss:=	SqlSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
 				'from transaction t where t.dat>="'+SQLdate(startdate)+'" and t.dat<="'+SQLdate(enddate)+'"'+;
@@ -2230,11 +2230,9 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 			// nothing printed:
 			self:oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("No financial activity in given period"),{self:oLan:RGet("Department")+Space(1)+cDepName+":"+PeriodText},2)
 		endif
-		IF lPrintFile.and.!Empty(self:SendingMethod) 
-			IF self:SendingMethod=="SeperateFileMail"
-				// separate files:
-				cFileName:=self:oReport:prstart() // save separate file
-			endif
+		IF lPrintFile.and.self:SendingMethod="SeperateFile" 
+			// separate files:
+			cFileName:=self:oReport:prstart() // save separate file
 			// Proces e-mail:
 			IF self:SendingMethod=="SeperateFileMail"
 				if !Empty(oDep:mbrid).or.!Empty(oDep:persid).or.!Empty(oDep:persid2)
@@ -2519,7 +2517,7 @@ oDCSendingMethod:FillUsing({ ;
 oDCSendingMethod:HyperLabel := HyperLabel{#SendingMethod,"Required Action:",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Department Statements and Gift Reports"
-SELF:HyperLabel := HyperLabel{#DeptReport,"Department Statements and Gift Reports","Print report to printer/screen/file",NULL_STRING}
+SELF:HyperLabel := HyperLabel{#DeptReport,"Department Statements and Gift Reports",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
