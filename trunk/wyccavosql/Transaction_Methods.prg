@@ -292,8 +292,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	AAdd(Heading,iif(lRtf,HeadingRTF,;
 		oLan:RGet("Doc-id",10,"!")+self:cTab+oLan:RGet("Date",10,"!")+self:cTab+;
 		oLan:RGet("Description",self:DescrWidth,"!")+self:cTab+iif(self:lDebCreMerge,oLan:RGet("Amount",12,"!","R"),oLan:RGet("Debit",12,"!","R")+self:cTab+oLan:RGet("Credit",12,"!","R"))+;
-		self:cTab +;
-		iif(lForgnC,oLan:RGet("Currency",8,"!","C")+self:cTab+;
+		iif(lForgnC,self:cTab +oLan:RGet("Currency",8,"!","C")+self:cTab+;
 		iif(self:lDebCreMerge,oLan:RGet("Amount",12,"!","R"),oLan:RGet("Debit",9,"!","R"))+sCURR+;
 		iif(self:lDebCreMerge,'',self:cTab+oLan:RGet("Credit",9,"!","R")+sCURR ) ,"" ) +;
 		iif(self:lDebCreMerge,'',self:cTab+oLan:RGet("Transnbr",11,"!","R"))) )
@@ -895,6 +894,7 @@ METHOD FilePrint() CLASS General_Journal
 	oHm:Gotop()
 	nRow:=0
 	nPage:=0
+	SetDecimalSep(Asc(DecSeparator))
 	oReport:PrintLine(@nRow,@nPage,;
 		Pad(oLan:RGet("transaction number",,"!")+":",20)+Str(self:mTRANSAKTNR,-1)+if(lInqUpd,"","(prior)"),aHeader)
 	oReport:PrintLine(@nRow,@nPage,;
@@ -930,7 +930,8 @@ METHOD FilePrint() CLASS General_Journal
 		oHm:Skip()
 	ENDDO
 	oHm:RecNo:=nCurRec
-	oHm:ResetNotification()
+	oHm:ResetNotification() 
+	SetDecimalSep(Asc('.'))
 	oReport:prstart()
 	oReport:prstop()
 	RETURN nil
@@ -2031,6 +2032,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			cError:=self:UpdateTrans()
 			if !Empty(cError)
 				lError:=true
+				cError:=''
 			else
 				lError:=false
 			endif
@@ -2214,7 +2216,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		if lError
 			SQLStatement{"rollback",oConn}:Execute()
 			self:Pointer := Pointer{POINTERARROW}
-			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+			if !Empty(cError)
+				LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+			endif
 			ErrorBox{self,"transaction could not be stored:"+cError}:show()
 			return false
 		else
@@ -3035,6 +3039,7 @@ LOCAL nRow, i, nCurRec as int
 LOCAL nPage as int
 LOCAL koparr AS ARRAY
 LOCAL oReport as PrintDialog 
+LOCAL DecSep as DWORD
 
 oReport := PrintDialog{SELF,"Gift/Payment",,107}
 oReport:Show()
@@ -3048,6 +3053,7 @@ oHm:SuspendNotification()
 oHm:Gotop()
 nRow:=0
 nPage:=0
+	DecSep:=SetDecimalSep(Asc(DecSeparator))
 oReport:PrintLine(@nRow,@nPage,;
 Pad(oLan:RGet("transaction number",,"!")+":",20)+Transform(self:mTRANSAKTNR,"")+"(prior)",koparr)
 oReport:PrintLine(@nRow,@nPage," ",koparr)  //skip one line
@@ -3083,6 +3089,7 @@ DO WHILE !oHm:EOF
 ENDDO
 oHm:Recno:=nCurRec
 oHm:ResetNotification()
+SetDecimalSep(DecSep)
 oReport:prstart()
 oReport:prstop()
 RETURN NIL
@@ -4397,6 +4404,7 @@ METHOD FilePrint CLASS TransInquiry
 	local cTab:=CHR(9) as string
 	local cColumns as string 
 	local lXls:=true as logic
+	LOCAL DecSep as DWORD
 
 	oReport := PrintDialog{self,"Financial Records",,120,DMORIENT_LANDSCAPE,"xls"}
 	oReport:Show()
@@ -4420,6 +4428,7 @@ METHOD FilePrint CLASS TransInquiry
 	m54_cre:=0.00
 	oTrans:SuspendNotification()
 	oTrans:Gotop()
+	DecSep:=SetDecimalSep(Asc(DecSeparator))
 	DO WHILE !oTrans:EOF
 		oReport:PrintLine(@nRow,@nPage,;
 			DToC(oTrans:dat)+cTab+Pad(oTrans:docid,10)+cTab+Pad(Str(oTrans:TransId,-1),10)+cTab+Pad(oTrans:accnumber,12)+cTab+;
@@ -4441,6 +4450,7 @@ METHOD FilePrint CLASS TransInquiry
 			IF(m54_deb-m54_cre<0,Space(16)+Str(m54_cre-m54_deb,14,decaantal),;
 			Str(m54_deb-m54_cre,15,decaantal)),koparr)
 	endif
+	SetDecimalSep(DecSep)
 
 	oReport:prstart()
 	oReport:prstop()
