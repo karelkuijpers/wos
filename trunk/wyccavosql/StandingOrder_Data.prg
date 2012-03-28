@@ -166,14 +166,14 @@ self:SetRequired(.T.,)
 
 RETURN SELF
 CLASS StOrdLineHelp INHERIT DBSERVEREXTRA
-	INSTANCE cDBFPath	  := "" AS STRING
-	INSTANCE cName		  := "stOrLHlp.dbf" AS STRING
-	INSTANCE xDriver	  := "DBFCDX"		 AS USUAL
-	INSTANCE lReadOnlyMode:= .F.		 AS LOGIC
-	INSTANCE lSharedMode  := NIL	 AS USUAL
-	INSTANCE nOrder 	  := 0	 AS INT
+	INSTANCE cDBFPath	  := "" as STRING
+	INSTANCE cName		  := "stOrLHlp.dbf" as STRING
+	INSTANCE xDriver	  := "DBFNTX"		 as USUAL
+	INSTANCE lReadOnlyMode:= .F.		 as LOGIC
+	INSTANCE lSharedMode  := nil	 as USUAL
+	INSTANCE nOrder 	  := 0	 as int
 	//USER CODE STARTS HERE (do NOT remove this line)  
-	export aMirror:={} as array  // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD}}
+	export aMirror:={} as array  // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
 ACCESS  ACCOUNTID  CLASS StOrdLineHelp
 
     RETURN SELF:FieldGet(#ACCOUNTID)
@@ -237,6 +237,13 @@ ASSIGN  DEB(uValue)  CLASS StOrdLineHelp
 
     RETURN SELF:FieldPut(#DEB, uValue)
 
+ACCESS  DEPID  CLASS StOrdLineHelp
+
+    RETURN SELF:FieldGet(#DEPID)
+ASSIGN  DEPID(uValue)  CLASS StOrdLineHelp
+
+    RETURN SELF:FieldPut(#DEPID, uValue)
+
 ACCESS  DESCRIPTN  CLASS StOrdLineHelp
 
     RETURN SELF:FieldGet(#DESCRIPTN)
@@ -251,7 +258,7 @@ ACCESS FieldDesc CLASS StOrdLineHelp
 	LOCAL aRet		AS ARRAY
 	LOCAL nFields	AS DWORD
 
-	nFields := 15
+	nFields := 16
 
 	IF nFields > 0
 		aRet := ArrayCreate(nFields)
@@ -286,6 +293,7 @@ ACCESS FieldDesc CLASS StOrdLineHelp
 		aRet[13] := { #BANKACCT, "BANKACCT",  standingorderline_BANKACCT{}}
 		aRet[14] := { #CREDTRNAM, "CREDTRNAM",  StOrdLineHelp_CREDTRNAM{}}
 		aRet[15] := { #INCEXPFD, "INCEXPFD",  TempTrans_INCEXPFD{}}
+		aRet[16] := { #DEPID, "DEPID",  StOrdLineHelp_DEPID{}}
 
 	ELSE
 		aRet := {}
@@ -569,12 +577,24 @@ METHOD Init() CLASS StOrdLineHelp_DEB
     ENDIF
 
     RETURN SELF
+CLASS StOrdLineHelp_DEPID INHERIT department_DEPID
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS StOrdLineHelp_DEPID
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#DEPID, "Depid", "", "StOrdLineHelp_DEPID" },  "N", 11, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
 CLASS StOrdLineHelp_Descriptn INHERIT STANDINGORDERLINE_DESCRIPTN
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS StOrdLineHelp_Descriptn
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#Descriptn, "Descriptn", "", "" },  "C", 40, 0 )
+    SUPER:Init( HyperLabel{#Descriptn, "Descriptn", "", "" },  "C", 64, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
