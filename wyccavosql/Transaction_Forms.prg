@@ -3556,9 +3556,9 @@ METHOD OKButton( ) CLASS TransactionMonth
 				self:oAccStm:MonthPrint(oAcc,oTrans,self:FromYear,self:FromMonth,self:ToYear,self:ToMonth,@nRow,@nPage,,self:oLan)
 				oAcc:Skip()
 			enddo				
+			SetDecimalSep(Asc('.'))
 			oReport:prstart()
 			oReport:prstop() 
-			SetDecimalSep(Asc('.'))
 
 		ENDIF
 		IF Empty(self:ToAccount)
@@ -3830,7 +3830,6 @@ METHOD ExportButton( ) CLASS TransInquiry
 	LOCAL cExportMail as STRING
 	LOCAL lSent as LOGIC
 	LOCAL uRet as USUAL
-	LOCAL DecSep as STRING
 	LOCAL cTransnr as STRING
 	LOCAL oWarn as warningbox
 	LOCAL lAppend:=true  as LOGIC
@@ -3863,8 +3862,8 @@ METHOD ExportButton( ) CLASS TransInquiry
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	
 	* Datafile construction:
-	DecSep:=CHR(SetDecimalSep())
-	cFileName := AllTrim(sentity)+DToS(Today())
+	SetDecimalSep(Asc(DecSeparator))
+	cFileName := AllTrim(SEntity)+DToS(Today())
 	ToFileFS:=AskFileName(self,cFilename,"Export transactions to file","*.CSV","Comma separated file",@lAppend) 
 	if !Empty(ToFileFS)
 		cFilename:=ToFileFS:FullPath 
@@ -3944,6 +3943,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 		ENDIF
 	endif
 	self:Pointer := Pointer{POINTERARROW}
+	SetDecimalSep(Asc('.'))
 	
 	RETURN
 METHOD FindButton( ) CLASS TransInquiry 
