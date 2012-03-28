@@ -18,8 +18,8 @@ METHOD append() CLASS EditPeriodic
 		ENDIF
 // 	ENDIF
 	&& add empty row to mirror: 
-	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid}[11]INCEXPFD}
-	AAdd(oStOrdLH:Amirror,{oStOrdLH:Deb,oStOrdLH:Cre,' ',' ',0,oStOrdLH:Recno,"","","","",""})    
+	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
+	AAdd(oStOrdLH:Amirror,{oStOrdLH:Deb,oStOrdLH:Cre,' ',' ',0,oStOrdLH:Recno,"","","","","",0})    
 	oStOrdLH:DESCRIPTN:=cDesc
 	RETURN FALSE
 Method CreditorProc(cPersValue) class EditPeriodic
@@ -61,15 +61,17 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 		oStOrdLH:ACCOUNTID:=0
 		oStOrdLH:ACCOUNTNAM := ""
 		oStOrdLH:gc := ""
-		oStOrdLH:ACCOUNTNbr:=""
+		oStOrdLH:ACCOUNTNBR:="" 
+		oStOrdLH:DEPID:=0
 	ELSE
 		oAccount:=omAcc
 		// aMirror: {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid, [11]INCEXPFD}
-		oStOrdLH:ACCOUNTID :=  oAccount:accid
+		oStOrdLH:ACCOUNTID :=  ConI(oAccount:accid)
 		oStOrdLH:ACCOUNTNAM := oAccount:Description
 		oStOrdLH:ACCOUNTNbr:=oAccount:ACCNUMBER
 		oStOrdLH:category:=Upper(oAccount:accounttype)
-		oStOrdLH:INCEXPFD:=oAccount:incexpfd 
+		oStOrdLH:INCEXPFD:=oAccount:INCEXPFD
+		oStOrdLH:DEPID:=ConI(oAccount:department) 
 
 		if !Empty(oAccount:persid) .and.(oStOrdLH:category=="M" .or.oStOrdLH:category='K') 
 			oStOrdLH:aMirror[ThisRec,10]:=oAccount:persid				
@@ -87,7 +89,9 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 	oStOrdLH:aMirror[ThisRec,4]:=oStOrdLH:GC
 	oStOrdLH:aMirror[ThisRec,5]:=oStOrdLH:ACCOUNTID
 	oStOrdLH:aMirror[ThisRec,7]:=oStOrdLH:ACCOUNTNbr
-	oStOrdLH:aMirror[ThisRec,11]:=AllTrim(oStOrdLH:category)
+	oStOrdLH:aMirror[ThisRec,11]:=AllTrim(oStOrdLH:INCEXPFD)
+	oStOrdLH:Amirror[ThisRec,12]:=oStOrdLH:DEPID
+	
 
 	IF !Empty(oStOrdLH:ACCOUNTID)
 		self:oSFStOrderLines:DebCreProc()
@@ -799,19 +803,23 @@ METHOD DebCreProc() CLASS StOrderLines
 	LOCAL lFound as LOGIC
 	LOCAL i as int
 	LOCAL nCurRec, CurRec, ThisRec as int
-	LOCAL mAccId as string
+	LOCAL nAccId,nDepId as int
 
 	CurRec := oStOrdLH:Recno
-	//CurRec:=AScan(oStOrdLH:aMirror,{|x|x[6]==nCurRec})
+	//CurRec:=AScan(oStOrdLH:aMirror,{|x|x[6]==nCurRec}) 
+	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
 	oStOrdLH:Amirror[CurRec,1]:=oStOrdLH:deb
 	oStOrdLH:Amirror[CurRec,2]:=oStOrdLH:cre
+	oStOrdLH:Amirror[CurRec,3]:=oStOrdLH:CATEGORY
 	oStOrdLH:Amirror[CurRec,5]:=oStOrdLH:ACCOUNTID 
 	oStOrdLH:Amirror[CurRec,6]:=oStOrdLH:Recno 
-	oStOrdLH:Amirror[CurRec,7]:=oStOrdLH:ACCOUNTNBR 
+	oStOrdLH:Amirror[CurRec,7]:=oStOrdLH:ACCOUNTNBR
+	oStOrdLH:Amirror[CurRec,12]:=oStOrdLH:DEPID 
 	
 	self:Browser:SuspendUpdate()
 	IF oStOrdLH:CATEGORY == 'M'		
-		mAccId:=Str(oStOrdLH:ACCOUNTID,-1)
+		nAccId:=oStOrdLH:ACCOUNTID
+		nDepId:=oStOrdLH:DEPID
 		IF oStOrdLH:deb > oStOrdLH:cre
 			oStOrdLH:gc := 'CH' 
 			oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
@@ -821,7 +829,7 @@ METHOD DebCreProc() CLASS StOrderLines
 			oStOrdLH:GoTop()
 			Do while !oStOrdLH:EOF
 				IF !oStOrdLH:Recno==recnr
-					IF (oStOrdLH:gc=='AG'.or.Empty(oStOrdLH:gc)).and. (oStOrdLH:CATEGORY =='M' .or.oStOrdLH:CATEGORY == 'K') .and. !AllTrim(oStOrdLH:ACCOUNTID)==mAccId
+					IF (oStOrdLH:gc=='AG'.or.Empty(oStOrdLH:gc)).and. (oStOrdLH:CATEGORY =='M'.and. !oStOrdLH:ACCOUNTID==nAccId .or.oStOrdLH:CATEGORY == 'K'.and. !oStOrdLH:DEPID==nDepId) 
 						oStOrdLH:gc := 'MG'
 						oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
 					ENDIF
@@ -834,7 +842,7 @@ METHOD DebCreProc() CLASS StOrderLines
 		ELSE
 			IF !oStOrdLH:gc == 'PF' 
 				oStOrdLH:gc := 'AG'
-				IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:aMirror,{|x|x[4]=="CH".and.x[2]<x[1]})>0
+				IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.or.x[12]==nDepId)})>0
 					oStOrdLH:gc := 'MG'
 				ENDIF
 				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
@@ -842,10 +850,29 @@ METHOD DebCreProc() CLASS StOrderLines
 		ENDIF
 	else
 		if oStOrdLH:category == 'K'   //member department
+			nAccId:=oStOrdLH:ACCOUNTID
+			nDepId:=oStOrdLH:DEPID
 			if oStOrdLH:INCEXPFD='F'
 				oStOrdLH:gc := 'PF'
 			ELSEIF oStOrdLH:INCEXPFD='E'
 				oStOrdLH:gc := 'CH'
+				// change AG to MG if needed:
+				recnr := 0
+				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='AG'.and.!(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+					oStOrdLH:Goto(recnr)
+					oStOrdLH:gc := 'MG'
+					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+				ENDDO
+				// change MG to AG if needed:
+				recnr := 0
+				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'.and.(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+					oStOrdLH:Goto(recnr)
+					oStOrdLH:gc := 'AG'
+					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+				ENDDO
+				oStOrdLH:Goto(CurRec)
+			elseif  oStOrdLH:INCEXPFD='I'
+				oStOrdLH:gc := 'AG'
 			ENDIF
 		else
 			if oStOrdLH:gc == 'CH'
