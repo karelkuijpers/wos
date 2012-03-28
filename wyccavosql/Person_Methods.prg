@@ -3842,6 +3842,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 	do WHILE !oDue:EoF
 		cBank:=oDue:BANKACCNT
+		cBank:=StrTran(cBank,'P','')
 		if Len(cBank)>7
 			if !IsDutchBanknbr(cBank)
 				(ErrorBox{self,"Bankaccount "+cBank+" of person "+oDue:PersonName+"(Intern ID "+Str(oDue:personid,-1)+") is not correct!"}):Show()
@@ -3851,8 +3852,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				self:Pointer := Pointer{POINTERARROW}
 				return false
 			endif
-		else
-			cBank:=StrTran(cBank,'P','')
+// 		else
+// 			cBank:=StrTran(cBank,'P','')
 		endif
 		cBank:=PadL(cBank,10,"0")
 		// Transaction record:
