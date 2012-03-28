@@ -405,7 +405,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:mday := oPer:day
 		self:mdocid := oPer:docid 
 		self:DATLTSBOEK:=oPer:lstrecording
-		self:oStOrdL := SqlSelect{"Select l.*,a.accnumber,a.description as accountname,"+SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,m.co,m.persid as persid"+;
+		self:oStOrdL := SqlSelect{"Select l.*,a.accnumber,a.description as accountname,a.department as depid,"+SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,m.co,m.persid as persid"+;
 			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid or m.depid=a.department)"+;
 			" left join department d on (d.depid=a.department)"+;
 			" where l.stordrid="+self:curStordid+" order by seqnr",oConn}
@@ -432,9 +432,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 				oOrdLnH:ACCOUNTID:=self:oStOrdL:ACCOUNTID
 				oOrdLnH:ACCOUNTNBR:=self:oStOrdL:ACCNUMBER
 				oOrdLnH:ACCOUNTNAM:=self:oStOrdL:accountname
-				oOrdLnH:CATEGORY:=self:oStOrdL:accounttype
-				// save in mirror: // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid},[11]INCEXPFD}
-				AAdd(oOrdLnH:aMirror,{oOrdLnH:DEB,oOrdLnH:CRE,oOrdLnH:CATEGORY,oOrdLnH:GC,oOrdLnH:ACCOUNTID,oOrdLnH:RECNBR,oOrdLnH:ACCOUNTNBR,Str(oOrdLnH:CREDITOR,-1),oOrdLnH:BANKACCT,iif(Empty(self:oStOrdL:persid),"",Str(self:oStOrdL:persid,-1)),oOrdLnH:INCEXPFD})
+				oOrdLnH:CATEGORY:=self:oStOrdL:accounttype 
+				oOrdLnH:DEPID:=self:oStOrdL:depid
+				// save in mirror: // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
+				AAdd(oOrdLnH:aMirror,{oOrdLnH:DEB,oOrdLnH:CRE,oOrdLnH:CATEGORY,oOrdLnH:GC,oOrdLnH:ACCOUNTID,oOrdLnH:RECNBR,oOrdLnH:ACCOUNTNBR,;
+				Str(oOrdLnH:CREDITOR,-1),oOrdLnH:BANKACCT,iif(Empty(self:oStOrdL:persid),"",Str(self:oStOrdL:persid,-1)),oOrdLnH:INCEXPFD,oOrdLnH:DEPID})
 				self:oStOrdL:Skip()				
 			enddo
 			self:Totalise()
