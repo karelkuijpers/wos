@@ -250,7 +250,7 @@ CLASS TeleMut
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
-		GetAddress
+		GetAddress,AllreadyImported
 method AddTeleTrans(bankaccntnbr as string,;
 		bookingdate as date,; 
 	seqnr as string,;
@@ -275,6 +275,27 @@ method AddTeleTrans(bankaccntnbr as string,;
 	endif
 
 	return true
+METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as string,transdescription:="" as string,TransType:="" as string,ContrBankNbr:="" as string,ContraName:="" as string,BudgetCode:="" as string) as logic CLASS TeleMut
+	local oSel as SQLSelect 
+	local cStatement as string
+	// check if transaction has allready been imported
+// 	IF transdate <= m57_BankAcc[CurTelePtr,3] 
+		cStatement:="select teletrid from teletrans where "+;
+		"bankaccntnbr='" +m57_BankAcc[CurTelePtr,1]+"'"+;
+		" and bookingdate='"+SQLdate(transdate)+"' and "+;
+		"amount="+Str(transamount,-1)+" and "+;
+		"addsub='"+codedebcre+"' and "+;
+		"kind='"+AllTrim(SubStr(TransType,1,4))+"' and "+;
+		"contra_bankaccnt='"+ZeroTrim(ContrBankNbr)+"' and "+;
+		"contra_name='"+AllTrim(ContraName)+"' and "+;
+		"budgetcd='"+AllTrim(SubStr(BudgetCode,1,20))+"' and "+;
+		"description='"+AllTrim(transdescription)+"'"
+		oSel:=SqlSelect{cStatement,oConn}
+		if oSel:reccount>0
+        	RETURN true
+		ENDIF
+//    ENDIF
+ 	RETURN FALSE
 METHOD CheckPattern(dummy:=nil as logic) as logic  CLASS TeleMut
 LOCAL i AS INT
 LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub,tD:=self:m56_description  as STRING
@@ -634,7 +655,7 @@ METHOD Import() CLASS TeleMut
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
 	aFileINN:=Directory(CurPath+"\ocrinnbet.txt*")
-	aFileBBS:=Directory(CurPath+"\TRANSLISTE.CSV")
+	aFileBBS:=Directory(CurPath+"\transliste*.csv")
 	// 	aFileVWI:=Directory(CurPath+"\*????????verwinfo??.txt")
 	aFileVWI:=Directory(CurPath+"\*verwinfo*.txt")
 	aFilePG:=Directory(CurPath+"\PG_8502000149_BG4_20??-??-??*.txt")
@@ -890,9 +911,10 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
-	cDelim:=CHR(9)
-	aStruct:=Split(Upper(cBuffer),cDelim)
-	IF Len(aStruct)<4
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,4,5)
+// 	cDelim:=CHR(9)
+// 	aStruct:=Split(Upper(cBuffer),cDelim)
+// 	IF Len(aStruct)<4
 		(ErrorBox{,"Wrong fileformat of importfile from BBS Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
@@ -948,10 +970,12 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 		ENDIF
 		* check if allready loaded:
 		lv_description:=AddSlashes(AllTrim(lv_description))
-		lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra)
-		nTrans++
-		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
-			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+		lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra) 
+		IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_kind,"","","")
+			nTrans++
+			self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
+				lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid) 
+		endif
 		lv_description:=""
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
@@ -3337,7 +3361,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 			
 			oStmnt:=SQLStatement{"set autocommit=0",oConn}
 			oStmnt:execute()
-			oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write,`person` write',oConn} 
+			oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
 			oStmnt:execute()
 		else
 			SQLStatement{"start transaction",oConn}:execute()
@@ -3396,7 +3420,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					self:aValuesTrans:={}
 					return false 
 				endif
-				//	update person data of givers:
+				//	update person data of givers: 
+				if Len(avaluesPers)>0
 				oStmnt:=SQLStatement{"insert into person (persid,datelastgift)	values "+Implode(avaluesPers,'","')+;
 					" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift)	",oConn}
 				oStmnt:execute()
@@ -3404,10 +3429,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					SQLStatement{"rollback",oConn}:execute() 
 					SQLStatement{"unlock tables",oConn}:execute()
 					LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oMBal:cError}:show()
+					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
 					self:aValuesTrans:={}
 					return false 
-				endif	
+				endif
+				endif
 				self:lv_processed+=nProc
 			endif
 		endif		
