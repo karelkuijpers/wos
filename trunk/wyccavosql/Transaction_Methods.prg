@@ -1561,8 +1561,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		IF (pnt:=AScan(oNew:aMIRROR,{|x|x[7]==oOrig:SEQNR}))==0 .or.; // deleted?
 			!AllTrim(oNew:aMIRROR[pnt,1])==AllTrim(oOrig:AccID).or.; //account changed?
 			!(oNew:aMIRROR[pnt,2]-oNew:aMIRROR[pnt,3])==(oOrig:DEB-oOrig:CRE) .or.; //amount changed?
-			!AllTrim(oNew:aMIRROR[pnt,4])==AllTrim(oOrig:GC) .or.; //ass.code changed? 
-			!oNew:Currency == oOrig:Currency  // currency changed? 
+			!AllTrim(oNew:aMIRROR[pnt,4])==AllTrim(oOrig:GC)  //ass.code changed? 
 			cError:= oOrig:CheckUpdates()
 			IF !Empty(cError)
 				oOrig:Close()
