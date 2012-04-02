@@ -1296,13 +1296,22 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 						lMulti:=true
 						cRet+=iif(i==1,right(cSepRow,1),cSepRow)+implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
 					else
-						cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
+						if IsString(aText[nStart+i-1][nCol])
+							cLine:=aText[nStart+i-1][nCol]
+						else
+							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
+						endif
 						if !Empty(cLine)
 							cRet+=iif(Empty(cRet),"",cSep)+cLine
-					endif
+						endif
 					endif
 				else
-					cRet+=iif(Empty(cRet),"",cSep)+AllTrim(Transform(aText[nStart+i-1],""))
+					if IsString(aText[nStart+i-1])
+						cLine:=aText[nStart+i-1]
+					else
+						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
+					endif
+					cRet+=iif(Empty(cRet),"",cSep)+cLine
 				endif
 			NEXT
 		ENDIF 
