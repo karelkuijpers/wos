@@ -1,3 +1,62 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
+Class AddToIncExp
+	protect aMbr:={} as array  // array with liabiliy members {accid,has},..
+	declare method AddToIncome
+method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre as float,deb as float,debforgn as float,creforgn as float,;
+		Currency as string,DESCRIPTN as string,cPersId as string,mDAT as string,mDocId as string,nSeqnbr ref int,poststatus:='2' as string) ; 
+	as array class AddToIncExp
+	// Add current record to Gifts Income/Expense in case of assessable gift to liability member 
+	// mDat: sqlstring for date
+	//	Returns array with recordings to income/exp (can be empty) with:
+	// {
+	LOCAL mOms as STRING
+	LOCAL nCre,nCreF as FLOAT
+	Local lHas as logic
+	local i as int 
+	local aTrans:={} as array  // to be reurned array with values to be inserted into table transaction
+	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16   
+	IF Empty(SINC) .and.Empty(SINCHOME) .or.Empty(self:aMbr)
+		RETURN aTrans
+	ENDIF
+	IF (!Empty(cPersId).or. FROMRPP) .and.gc=="AG"
+		
+		// add to gifts income:
+			if (i:=AScan(self:aMbr,{|x|x[1]==accid}))>0 
+				lHas:=self:aMbr[i,2]
+				nCre:=Round(cre-deb,DecAantal)
+				nCreF:=Round(creforgn-DEBFORGN,DecAantal)
+				mOms:=DESCRIPTN
+				if nCre <>0
+					nSeqnbr++
+					AAdd(aTrans,{iif(lHas,SINCHOME,SINC),0.00,0.00,nCre,nCreF,Currency,mOms,mDAT,'',LOGON_EMP_ID,poststatus,;
+						Str(nSeqnbr,-1),mDocId,'','',''})
+					nSeqnbr++
+					AAdd(aTrans,{iif(lHas,SEXPHOME,SEXP),nCre,nCreF,0.00,0.00,Currency,mOms,mDAT,'',LOGON_EMP_ID,poststatus,;
+						Str(nSeqnbr,-1),mDocId,'','',''})
+				ENDIF
+			ENDIF
+	endif
+	RETURN aTrans
+method Init() class AddToIncExp
+	// initialize 
+	local oMbr as SQLSelect
+	local lHas as logic
+	if !Empty(SINCHOME) .or.!Empty(SINC)
+		oMbr:=SqlSelect{"select m.accid,has from member m, account a, balanceitem b where a.accid=m.accid and b.balitemid=a.balitemid "+;
+			"and b.category='"+LIABILITY+"'",oConn}
+		IF oMbr:RecCount>0
+			do while !oMbr:EoF
+				lHas:= if(ConI(oMbr:HAS)>0,true,false) 
+				IF !Empty(SINC).or.lHas
+					AAdd(self:aMbr,{ConS(oMbr:accid),lHas}) 
+				ENDIF
+				oMbr:Skip()
+			enddo
+		endif
+	endif
+
 CLASS SelBankAcc INHERIT DataDialogMine 
 
 	PROTECT oDCListBoxBank AS LISTBOX
@@ -175,7 +234,7 @@ function SpecialMessage(message_tele as string,Destname:='' as string,cSpecialme
 	local nMsgPos as int 
 	local cSpecMessage as string
 	local lSpecmessage,lManually as logic
-	local aNospecmess:={'donatie','steun','bijdr','maand','mnd','kw','algeme','werk','onderh','comit','komit','com.','onderst','wycliffe','betalingskenm','support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend','zegen'}  as array
+	local aNospecmess:={'donatie','steun','bijdr','maand','mnd','kw','algeme','werk','onderh','comit','komit','com.','onderst','wycliff','betalingskenm','support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend','zegen'}  as array
 	local aSpecmess:={'pensioen','lijfrente','nalaten','extra','jubil','collecte','kollekte','opbr','cadeau','kado','contant'} as array 
 	// determine extra messsage in description of transaction: 
 	nMsgPos:=At('%%',message_tele)
@@ -602,7 +661,7 @@ METHOD Import() CLASS TeleMut
 	LOCAL oBF as MyFileSpec
 	LOCAL oPF as FileSpec
 	LOCAL i as int
-	local nOld:=4 as int   // after Nold months imported transactions are removed
+	local nOld:=6 as int   // after Nold months imported transactions are removed
 	LOCAL lDelete,lSuccess as LOGIC
 	LOCAL lv_eind as date
 	Local oLock,oSel as SQLSelect 
@@ -827,7 +886,7 @@ METHOD Import() CLASS TeleMut
 
 		* Removing old transactions:
 		IF lv_aant_toe>0
-			* Calculate date too old (4 months old):
+			* Calculate date too old (6 months old):
 			nOld:=Min(nOld,12)
 			lv_mm := Month(Today())
 			lv_jj := Year(Today())
@@ -1971,7 +2030,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:=null_object
 	oHlp:DELETE()
 	nImp:=self:lv_aant_toe
-	nProc:= self:lv_processed 
+	nProc:= self:lv_processed
 	lSuccess:=self:SaveTeleTrans(true,true)
 	AAdd(self:aMessages,"Imported MT940 file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
@@ -3012,210 +3071,219 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oMBal as Balances
-	local cPersids,cBudgetcds,cBudgetcd,cBankContr,cBankAcc,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc as string 
+	local cPersids,cBudgetcds,cBudgetcd,cBankContr,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc as string 
 	local	lAddressChanged,lProcAuto as logic
 	local aPersids:={}, aPersidsDb:={} as array 
 	local aBudgetcd:={}, aAccnbrDb:={} as array
-	local aBankContra:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...} 
-	local i,j,k,l,nProc,nTransId,nTele,maxTeleId as int
+	local aBankContra:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
+	local avalueTrans:=self:aValuesTrans as array
+	local aAddr:={},aAddrDB:={} // address: {streetname,housenbr} 
+	local i,j,k,l,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local fDeb,fDebForgn,fCre,fCreForgn as float 
 	local aTrans:={} as array  // array with values to be inserted into table transaction:
 	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16   
+	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16
+	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person 
-	local aZip:={} as array // {persid,postalcode},...   array with postalcode per person 
+	local aZip:={} as array // {persid,postalcode},...   array with postalcode per person
+	local oAddInc as AddToIncExp 
 	// 	local time1,time0 as float
-	// 	(time1:=Seconds())
-	if Len(self:aValuesTrans)>0
-		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
-		//      1            2        3          4           5      6           7      8      9        10        11       12
-		if lCheckPerson
-			//
-			// check if persid's belongs to persons
-			//
-			cPersids:=Implode(self:aValuesTrans,',',,,11)
-			if !Empty(cPersids)
-				oSel:=SqlSelect{"select group_concat(gr.grpersid) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
-				if oSel:RecCount>0
-					aPersidsDb:=Split(oSel:grpersids,',')
-					AEval(aPersidsDb,{|x|AAdd(aZip,Split(x,','))})
-					aevala(aPersidsDb,{|x|split(x,',')[1]})
-				endif
-				aPersids:=Split(cPersids,',')
-				// compare both arrays 
-				for i:=1 to Len(aPersids)
-					if AScanExact(aPersidsDb,aPersids[i])=0
-						// remove persid from aValuesTrans: 
-						j:=AScanExact(self:aValuesTrans,{|x|x[11]=aPersids[i]})
-						if j>0
-							self:aValuesTrans[j,11]:='0'
-						endif
-					endif
-				next
+	// 	(time1:=Seconds()) 
+	if Len(avalueTrans)=0
+		return true
+	endif
+	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+	//      1            2        3          4           5      6           7      8      9        10        11       12
+	if lCheckPerson
+		//
+		// check if persid's belongs to persons
+		//
+		cPersids:=Implode(avalueTrans,',',,,11)
+		if !Empty(cPersids)
+			oSel:=SqlSelect{"select group_concat(gr.grpersid) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
+			if oSel:RecCount>0
+				aPersidsDb:=Split(oSel:grpersids,',')
+				AEval(aPersidsDb,{|x|AAdd(aZip,Split(x,','))})
+				aevala(aPersidsDb,{|x|split(x,',')[1]})
 			endif
-			//
-			// complete persid from contrabankaccount:
-			//
-			AEval(self:aValuesTrans,{|x|cBankContr+=iif(empty(x[4]).or.!empty(x[11]),'',','+x[4])})
-			if !Empty(cBankContr)
-				oSel:=SqlSelect{"select group_concat(gr.banknumber,',',gr.grpersid,',',gr.ismember separator '#') as grpersids from (select cast(p.persid as char) as grpersid,banknumber,if(m.mbrid IS NULL,'0','1') as ismember from personbank p left join member m on (m.persid=p.persid) where banknumber in ("+SubStr(cBankContr,2)+")) as gr group by 1=1",oConn}
-				if oSel:RecCount>0
-					aBankCont:=Split(oSel:grpersids,'#') 
-					if Len(aBankCont)>0
-						AEval(aBankCont,{|x|AAdd(aBankContra,Split(x,','))}) 
-						i:=0
-						do while i<Len(self:aValuesTrans)
-							i:=AScan(self:aValuesTrans,{|x|!Empty(x[4]).and.Empty(x[11])},i+1)
-							if i>0
-								cBankAcc:=self:aValuesTrans[i,4]
-								j:=AScan(aBankContra,{|x|x[1]==cBankAcc})
-								if j>0							
-									self:aValuesTrans[i,11]:=aBankContra[j,2]
-								endif
-							else
-								exit
-							endif
-						enddo
+			aPersids:=Split(cPersids,',')
+			// compare both arrays 
+			for i:=1 to Len(aPersids)
+				if AScanExact(aPersidsDb,aPersids[i])=0
+					// remove persid from aValuesTrans: 
+					j:=AScanExact(avalueTrans,{|x|x[11]=aPersids[i]})
+					if j>0
+						avalueTrans[j,11]:='0'
 					endif
-				endif
-			endif
-			
-		endif 
-		if lCheckAccount
-			//
-			// check if budgetcd is an accountnumber of an account:
-			//
-			for i:=1 to Len(self:aValuesTrans)
-				cBudgetcd:=self:aValuesTrans[i,7]
-				if !Empty(cBudgetcd) .and. AScanExact(aBudgetcd,cBudgetcd)=0
-					AAdd(aBudgetcd,cBudgetcd)
 				endif
 			next
-			if Len(aBudgetcd)>0
-				cBudgetcds:=Implode(aBudgetcd,'","')	
-				oSel:=SqlSelect{"select group_concat(gr.accnumber) as graccnumber from (select accnumber from account where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
-				if oSel:RecCount>0
-					aAccnbrDb:=Split(oSel:graccnumber,',')
-				endif
-				// compare both arrays 
-				for i:=1 to Len(aBudgetcd)
-					if AScanExact(aAccnbrDb,aBudgetcd[i])=0
-						// remove budgetcd from aValuesTrans:
-						j:=0
-						do while (j:=AScan(self:aValuesTrans,{|x|x[7]==aBudgetcd[i]},j+1))>0
-							self:aValuesTrans[j,7]:='0'
-							if j>=Len(self:aValuesTrans)
-								exit
-							endif
-						enddo
-					endif
-				next								
-			endif			
 		endif
 		//
-		// complete budgetcodes from gifts to single destinations:  
+		// complete persid from contrabankaccount:
 		//
-		i:=0
-		lv_description:=self:oLan:WGet('Gift') 
-		do while i<Len(self:aValuesTrans)
-			// aValuesTrans:
-			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
-			//      1            2        3          4           5      6           7      8      9        10        11       12
-			i:=AScan(self:aValuesTrans,{|x|Empty(x[7]) .and.x[9]='B'},i+1)
-			if i>0
-				cBankAcc:=self:aValuesTrans[i,1] 
-				//m57_bankacc: banknumber, usedforgifts, datlaatst, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
-				//                 1            2           3          4         5          6      7      8           9		  10           11
-				j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.x[9]>'0'})
-				if j>0							
-					self:aValuesTrans[i,7]:=self:m57_bankacc[j,9]
+		AEval(aValueTrans,{|x|cBankContr+=iif(empty(x[4]).or.!empty(x[11]),'',','+x[4])})
+		if !Empty(cBankContr)
+			oSel:=SqlSelect{"select group_concat(gr.banknumber,',',gr.grpersid,',',gr.ismember separator '#') as grpersids from (select cast(p.persid as char) as grpersid,banknumber,if(m.mbrid IS NULL,'0','1') as ismember from personbank p left join member m on (m.persid=p.persid) where banknumber in ("+SubStr(cBankContr,2)+")) as gr group by 1=1",oConn}
+			if oSel:RecCount>0 
+				aBankCont:=Split(oSel:grpersids,'#') 
+				if Len(aBankCont)>0
+					AEval(aBankCont,{|x|AAdd(aBankContra,Split(x,','))}) 
+					i:=0
+					do while i<Len(avalueTrans)
+						i:=AScan(avalueTrans,{|x|!Empty(x[4]).and.Empty(x[11])},i+1)
+						if i>0
+							cBankAcc:=avalueTrans[i,4]
+							j:=AScan(aBankContra,{|x|x[1]==cBankAcc})
+							if j>0							
+								avalueTrans[i,11]:=aBankContra[j,2]
+							endif
+						else
+							exit
+						endif
+					enddo
 				endif
-			else
-				exit
 			endif
-		enddo
+		endif
 		
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//      
-		// select bank transactions which can be processed automatically 
+	endif 
+	if lCheckAccount
 		//
-		///////////////////////////////////////////////////////////////////////////////////////////////////////// 
-		// get accid of budgetcd's
-		for i:=1 to Len(self:aValuesTrans)
-			cBudgetcd:=self:aValuesTrans[i,7]
+		// check if budgetcd is an accountnumber of an account:
+		//
+		for i:=1 to Len(avalueTrans)
+			cBudgetcd:=avalueTrans[i,7]
 			if !Empty(cBudgetcd) .and. AScanExact(aBudgetcd,cBudgetcd)=0
 				AAdd(aBudgetcd,cBudgetcd)
 			endif
 		next
 		if Len(aBudgetcd)>0
 			cBudgetcds:=Implode(aBudgetcd,'","')	
-			oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember separator '#') as graccnumber "+;
-				"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember "+;
-				"from account a left join department d on (d.depid=a.department) "+;
-				"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
-			" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
+			oSel:=SqlSelect{"select group_concat(gr.accnumber) as graccnumber from (select accnumber from account where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
 			if oSel:RecCount>0
-				aAccnbrDb:=Split(oSel:graccnumber,'#')
-				AeValA(aAccnbrDb,{|x|split(x,',')})
+				aAccnbrDb:=Split(oSel:graccnumber,',')
 			endif
-		endif
-		// Gifts:
-		if (k:=AScan(self:aValuesTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'}))>0  // gifts with known destination and giver?
-			if CountryCode="31"
-				//	get postal codes of persons into array aZip {persid,zipcoce},...  to determine if address has been changed
-				cPersids:=''
-				do	while	k>0
-					cPersids+=','+self:aValuesTrans[k,11]
-					if k<Len(self:aValuesTrans)
-						k:=AScan(self:aValuesTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},k+1)
-					else
-						exit
-					endif
-				enddo
-				// 				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
-				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
-				if	oSel:RecCount>0
-					aZip:=Split(oSel:grpersids,'#')
-					aevala(aZip,{|x|split(x,',')})
+			// compare both arrays 
+			for i:=1 to Len(aBudgetcd)
+				if AScanExact(aAccnbrDb,aBudgetcd[i])=0
+					// remove budgetcd from aValuesTrans:
+					j:=0
+					do while (j:=AScan(avalueTrans,{|x|x[7]==aBudgetcd[i]},j+1))>0
+						avalueTrans[j,7]:='0'
+						if j>=Len(avalueTrans)
+							exit
+						endif
+					enddo
 				endif
+			next								
+		endif			
+	endif
+	//
+	// complete budgetcodes from gifts to single destinations:  
+	//
+	i:=0
+	lv_description:=self:oLan:WGet('Gift') 
+	do while i<Len(avalueTrans)
+		// aValuesTrans:
+		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+		//      1            2        3          4           5      6           7      8      9        10        11       12
+		i:=AScan(avalueTrans,{|x|Empty(x[7]) .and.x[9]='B'},i+1)
+		if i>0
+			cBankAcc:=avalueTrans[i,1] 
+			//m57_bankacc: banknumber, usedforgifts, datlaatst, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
+			//                 1            2           3          4         5          6      7      8           9		  10           11
+			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.x[9]>'0'})
+			if j>0							
+				avalueTrans[i,7]:=self:m57_bankacc[j,9]
 			endif
-			i:=0
-			do while i<Len(self:aValuesTrans)
-				i:=AScan(self:aValuesTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},i+1)
-				if i=0
+		else
+			exit
+		endif
+	enddo
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//      
+	// select bank transactions which can be processed automatically 
+	//
+	///////////////////////////////////////////////////////////////////////////////////////////////////////// 
+	// get accid of budgetcd's
+	for i:=1 to Len(avalueTrans)
+		cBudgetcd:=avalueTrans[i,7]
+		if !Empty(cBudgetcd) .and. AScanExact(aBudgetcd,cBudgetcd)=0
+			AAdd(aBudgetcd,cBudgetcd)
+		endif
+	next
+	if Len(aBudgetcd)>0
+		cBudgetcds:=Implode(aBudgetcd,'","')	
+		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember separator '#') as graccnumber "+;
+			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember "+;
+			"from account a left join department d on (d.depid=a.department) "+;
+			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
+		" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
+		if oSel:RecCount>0
+			aAccnbrDb:=Split(oSel:graccnumber,'#')
+			AeValA(aAccnbrDb,{|x|split(x,',')})
+		endif
+	endif
+	// Gifts:
+	if (k:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'}))>0  // gifts with known destination and giver?
+		if CountryCode="31"
+			//	get postal codes of persons into array aZip {persid,zipcoce},...  to determine if address has been changed
+			cPersids:=''
+			do	while	k>0
+				cPersids+=','+avalueTrans[k,11]
+				if k<Len(avalueTrans)
+					k:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},k+1)
+				else
 					exit
 				endif
-				cBankAcc:=self:aValuesTrans[i,1] 
-				//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
-				//                 1            2           3          4         5          6      7      8          9          10        11
-				j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
-				if j>0							
-					// 					if self:m57_bankacc[j,4] .and.self:m57_bankacc[j,5]>'0'.or.; // single destination and giftsall, i.e. automatic processing of all gifts?
-					if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts?
-						self:m57_bankacc[j,2] .and. ;   // used for gifts
-						((self:m57_bankacc[j,8]>'0' .and.	(self:aValuesTrans[i,5]='ACC'.or.self:aValuesTrans[i,5]='KID'.or.self:aValuesTrans[i,5]='COL')).or.;  // payahead filled for acceptgiro
-						(Trim(self:aValuesTrans[i,5])="AC" .or.(SubStr(self:aValuesTrans[i,10],17,2)=="AC").and.isnum(SubStr(self:aValuesTrans[i,10],1,16))))
+			enddo
+			// 				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
+			oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
+			if	oSel:RecCount>0
+				aZip:=Split(oSel:grpersids,'#')
+				aevala(aZip,{|x|split(x,',')})
+			endif
+		endif
+		i:=0
+		do while i<Len(avalueTrans)
+			i:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},i+1)
+			if i=0
+				exit
+			endif
+			cBankAcc:=avalueTrans[i,1]
+			//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
+			//                 1            2           3          4         5          6      7      8          9          10        11
+			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
+			if j>0							
+				// 					if self:m57_bankacc[j,4] .and.self:m57_bankacc[j,5]>'0'.or.; // single destination and giftsall, i.e. automatic processing of all gifts?
+				if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts?
+					self:m57_bankacc[j,2] .and. ;   // used for gifts
+					((self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')).or.;  // payahead filled for acceptgiro
+					(Trim(aValueTrans[i,5])="AC" .or.(SubStr(aValueTrans[i,10],17,2)=="AC").and.isnum(SubStr(aValueTrans[i,10],1,16))))
 
-						lv_persid:=self:aValuesTrans[i,11]
-// 						if AtC("Dassenbos 149",self:aValuesTrans[i,10])>0
-// 							self:aValuesTrans[i,10]:=self:aValuesTrans[i,10]
-// 						endif
-						if Val(lv_persid)>0
-							if !CountryCode=="31" .or.;
-									!SpecialMessage(self:aValuesTrans[i,10], self:m57_bankacc[j,6],@lv_specmessage)  // with special message manually processed
-								lAddressChanged:=false
-								if CountryCode=="31"
-									// check no address change
-									k:=AScan(aZip,{|x|x[1]==lv_persid})
-									if k>0
-										self:GetAddress(self:aValuesTrans[i,10],false)
-										if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
-											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
-												lAddressChanged:=true
-											ENDIF
-										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])
-											if !Empty(aZip[k,2])
-												self:GetAddress(self:aValuesTrans[i,10],true)   // now with getting zip code from internet:
+					lv_persid:=avalueTrans[i,11]
+					// 						if AtC("Dassenbos 149",aValueTrans[i,10])>0
+					// 							aValueTrans[i,10]:=aValueTrans[i,10]
+					// 						endif
+					if Val(lv_persid)>0
+						if !CountryCode=="31" .or.;
+								!SpecialMessage(avalueTrans[i,10], self:m57_bankacc[j,6],@lv_specmessage)  // with special message manually processed
+							lAddressChanged:=false
+							if CountryCode=="31"
+								// check no address change
+								k:=AScan(aZip,{|x|x[1]==lv_persid})
+								if k>0
+									self:GetAddress(avalueTrans[i,10],false)
+									if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
+										IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
+											lAddressChanged:=true
+										ENDIF
+									elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])
+										aAddr:=GetStreetHousnbr(self:m56_address)
+										aAddrDB:=GetStreetHousnbr(aZip[k,3]) 
+										if !Val(aAddr[2])==Val(aAddrDB[2])      // unequal housenumbers-> moved
+											if !Empty(aZip[k,2]) 
+												self:GetAddress(avalueTrans[i,10],true)   // now with getting zip code from internet:
 												if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
 													IF !self:m56_zip==aZip[k,2]  
 														lAddressChanged:=true
@@ -3229,128 +3297,269 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 										endif
 									endif
 								endif
-								if !lAddressChanged 
-									cBudgetcd:=self:aValuesTrans[i,7]
-									if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
-										self:aValuesTrans[i,12]:='X'   // record as processed 
-										// transaction can be processed automatically:
-										nProc++ 
-										
-										// add to transaction array:
-										//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-										//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
-										// first row: 
-										cBankAccOwn:=self:m57_bankacc[j,7]
-										if self:m57_bankacc[j,8]>'0' .and.	(self:aValuesTrans[i,5]='ACC'.or.self:aValuesTrans[i,5]='KID'.or.self:aValuesTrans[i,5]='COL')  // acceptgiro
-											cBankAccOwn:=self:m57_bankacc[j,8]
-										endif
-										AAdd(aTrans,{cBankAccOwn,self:aValuesTrans[i,8],self:aValuesTrans[i,8],0.00,0.00,sCurr,lv_description+iif(self:aValuesTrans[i,5]="AC",'',' '+lv_specmessage),;
-											self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','1',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} ) 
-										// second row: 
-										if aAccnbrDb[l,3]='1'  //destination member?
-											lv_gc:='AG'
-											if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member?
-												lv_gc:='MG'
-											endif
-										else
-											lv_gc:=''
-										endif
-										AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,self:aValuesTrans[i,8],self:aValuesTrans[i,8],sCurr,lv_description+iif(self:aValuesTrans[i,5]="AC",'',' '+lv_specmessage),;
-											self:aValuesTrans[i,2],lv_gc,LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'',self:aValuesTrans[i,11],''} )
-										// person data:
-										AAdd(avaluesPers,{lv_persid,self:aValuesTrans[i,2]}) 
+							endif
+							if !lAddressChanged 
+								cBudgetcd:=avalueTrans[i,7]
+								if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+									avalueTrans[i,12]:='X'   // record as processed 
+									// transaction can be processed automatically:
+									nProc++ 
+									
+									// add to transaction array:
+									//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+									//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
+									// first row: 
+									cBankAccOwn:=self:m57_bankacc[j,7]
+									if self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')  // acceptgiro
+										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
+									AAdd(aTrans,{cBankAccOwn,aValueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
+										aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','',''} ) 
+									// second row: 
+									if aAccnbrDb[l,3]='1'  //destination member?
+										lv_gc:='AG'
+										if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member?
+											lv_gc:='MG'
+										endif
+									else
+										lv_gc:=''
+									endif
+									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
+										aValueTrans[i,2],lv_gc,LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',aValueTrans[i,11],''} )
+									// person data:
+									AAdd(avaluesPers,{lv_persid,avalueTrans[i,2]}) 
 								endif
 							endif
 						endif
 					endif
 				endif
-			enddo
-		endif
-		// non-gifts:
-		// aValuesTrans:
-		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
-		//      1            2        3          4           5      6           7      8      9        10        11       12
-		i:=0
-		do while i<Len(self:aValuesTrans)
-			i:=AScan(self:aValuesTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
-			if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
-				exit
-			endif
-			
-			cBankAcc:=self:aValuesTrans[i,1] 
-			//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
-			//                 1            2           3          4         5          6      7      8          9          10        11
-			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
-			if j>0							
-				lProcAuto:=false
-				if !Empty(self:aValuesTrans[i,4]) .and.Empty(self:aValuesTrans[i,7])   // contra_bankaccnt but no budgetcd
-					// check if cross banking?
-					IF !Empty(SKruis).and.!Empty(self:aValuesTrans[i,4])
-						cBankAcc:=self:aValuesTrans[i,4] 
-						k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc}) 
-						if k>0
-							// cross banking:
-							cDestAcc:=SKruis
-							if Empty(self:aValuesTrans[i,10])  // empty description?
-								self:aValuesTrans[i,10]:='Clearing'
-							endif
-							lProcAuto:=true
-						endif
-					endif
-				elseif (!Empty(self:aValuesTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	self:aValuesTrans[i,5]=='BGC');  // payahead filled for collective recording of acceptgiro's
-					.or.self:aValuesTrans[i,9]=='A') //debit with known destination?
-					cBudgetcd:=self:aValuesTrans[i,7]
-					if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
-						cDestAcc:=aAccnbrDb[l,2]
-						lProcAuto:=true
-					endif
-				ELSEIF (self:aValuesTrans[i,5]=="IC" .or.self:aValuesTrans[i,5]=="OCR") .and.Empty(self:aValuesTrans[i,4]).and.self:aValuesTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
-					// in case of recording of automatic collections take payahead as contra account:
-					cDestAcc:=self:m57_bankacc[j,8]
-					lProcAuto:=true
-				endif
-				if lProcAuto
-					self:aValuesTrans[i,12]:='X'   // record as processed 
-					// transaction can be processed automatically:
-					nProc++ 
-					
-					// add to transaction array:
-					//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-					//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
-					// first row: 
-					cBankAccOwn:=self:m57_bankacc[j,7]
-					lv_persid:=''
-					if self:aValuesTrans[i,9]='B'
-						fDeb:=self:aValuesTrans[i,8]
-						fDebForgn:=self:aValuesTrans[i,8]
-						fCre:=0.00
-						fCreForgn:=0.00
-						if self:aValuesTrans[i,11]>'0' 
-							lv_persid:=self:aValuesTrans[i,11] 
-						endif
-					else
-						fDeb:=0.00
-						fDebForgn:=0.00
-						fCre:=self:aValuesTrans[i,8]
-						fCreForgn:=self:aValuesTrans[i,8]
-					endif
-					AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,self:aValuesTrans[i,10],;
-						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','1',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'','',''} ) 
-					// second row: 
-					AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,self:aValuesTrans[i,10],;
-						self:aValuesTrans[i,2],'',LOGON_EMP_ID,'1','2',self:aValuesTrans[i,5]+self:aValuesTrans[i,3],'',lv_persid,''} )
-				endif
 			endif
 		enddo
+	endif 
+	// non-gifts:
+	// aValuesTrans:
+	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+	//      1            2        3          4           5      6           7      8      9        10        11       12
+	i:=0
+	do while i<Len(avalueTrans)
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
+		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
+			exit
+		endif
 		
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//
-		// Execute database statements
-		//
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////           
+		cBankAcc:=avalueTrans[i,1] 
+		//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
+		//                 1            2           3          4         5          6      7      8          9          10        11
+		j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
+		if j>0							
+			lProcAuto:=false
+			if !Empty(aValueTrans[i,4]) .and.Empty(aValueTrans[i,7])   // contra_bankaccnt but no budgetcd
+				// check if cross banking?
+				IF !Empty(SKruis).and.!Empty(avalueTrans[i,4])
+					cBankAcc:=avalueTrans[i,4] 
+					k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc}) 
+					if k>0
+						// cross banking:
+						cDestAcc:=SKruis
+						if Empty(aValueTrans[i,10])  // empty description?
+							avalueTrans[i,10]:='Clearing'
+						endif
+						lProcAuto:=true
+					endif
+				endif
+			elseif (!Empty(aValueTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	aValueTrans[i,5]=='BGC');  // payahead filled for collective recording of acceptgiro's
+				.or.avalueTrans[i,9]=='A') //debit with known destination?
+				cBudgetcd:=avalueTrans[i,7]
+				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+					cDestAcc:=aAccnbrDb[l,2]
+					lProcAuto:=true
+				endif
+			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="OCR") .and.Empty(aValueTrans[i,4]).and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+				// in case of recording of automatic collections take payahead as contra account:
+				cDestAcc:=self:m57_bankacc[j,8]
+				lProcAuto:=true
+			endif
+			if lProcAuto
+				avalueTrans[i,12]:='X'   // record as processed 
+				// transaction can be processed automatically:
+				nProc++ 
+				
+				// add to transaction array:
+				//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+				//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
+				// first row: 
+				cBankAccOwn:=self:m57_bankacc[j,7]
+				lv_persid:=''
+				if avalueTrans[i,9]='B'
+					fDeb:=avalueTrans[i,8]
+					fDebForgn:=avalueTrans[i,8]
+					fCre:=0.00
+					fCreForgn:=0.00
+					if avalueTrans[i,11]>'0' 
+						lv_persid:=avalueTrans[i,11] 
+					endif
+				else
+					fDeb:=0.00
+					fDebForgn:=0.00
+					fCre:=avalueTrans[i,8]
+					fCreForgn:=avalueTrans[i,8]
+				endif
+				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,10],;
+					aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','',''} ) 
+				// second row: 
+				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,10],;
+					aValueTrans[i,2],'',LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,''} )
+			endif
+		endif
+	enddo
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//
+	// Execute database statements
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////           
+	
+	if Len(aTrans)>0
+		if !Empty(SINCHOME) .or.!Empty(SINC)
+			// add transactions for ministry income/expense:
+			oAddInc:=AddToIncExp{}
+			for i:=2 to Len(aTrans) step 2
+				nSeqnbr:=2 
+				aTransIncExp:=oAddInc:AddToIncome(aTrans[i,9],false,aTrans[i,1],aTrans[i,4],aTrans[i,2],aTrans[i,3],aTrans[i,5],aTrans[i,6],;
+					aTrans[i,7],aTrans[i,15],aTrans[i,8],aTrans[i,13],@nSeqnbr,aTrans[i,11]) 
+				if Len(aTransIncExp)=2
+					asize(aTrans,len(aTrans)+2)
+					i++
+					AIns(aTrans,i)
+					aTrans[i]:=aTransIncExp[1]
+					i++
+					AIns(aTrans,i)
+					aTrans[i]:=aTransIncExp[2]
+				endif
+			next		
+		endif 
+		oMBal:=Balances{}
+		for i:=1 to Len(aTrans) 
+			//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+			oMBal:ChgBalance(aTrans[i,1],SQLDate2Date(aTrans[i,8]),aTrans[i,2],aTrans[i,4],aTrans[i,3],;
+				aTrans[i,5],aTrans[i,6])
+		next
 		
-		if Len(aTrans)>0 
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:execute()
+		oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
+		oStmnt:execute()
+	else
+		SQLStatement{"start transaction",oConn}:execute()
+	endif	
+	maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
+	oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
+		"(bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed) values "+;
+		Implode(avalueTrans,'","'),oConn}
+	oStmnt:execute()
+	if !Empty(oStmnt:Status)
+		SQLStatement{"rollback",oConn}:execute()
+		if Len(aTrans)>0
+			SQLStatement{"unlock tables",oConn}:execute()
+		endif
+		avalueTrans:={}
+		LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+		ErrorBox{,self:oLan:WGet('Telebank transactions could not be imported')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+		return false 
+	endif
+	nTele:=oStmnt:NumSuccessfulRows
+	if nTele>0 .and.Len(aTrans)>0  .and. nTele<Len(avalueTrans) 
+		// remove transactions to be stored from ingnored teletrans transactions:
+		// teletransactions ignored: which ones?
+		oSel:=SqlSelect{"select seqnr,amount,bankaccntnbr,cast(bookingdate as date) as bookingdate,kind,contra_bankaccnt,"+; 
+		"addsub,description,contra_name "+;
+			"from teletrans where processed='X' and teletrid>"+Str(maxTeleId,-1),oConn}
+		if oSel:RecCount>0
+			// compare with aValueTrans:
+			// aValuesTrans:
+			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+			//      1            2        3          4           5      6           7      8      9        10        11       12
+			do while !oSel:EoF
+				// search imported avaluetrans:
+				if (i:=AScan(avalueTrans,{|x|x[12]=='X'.and.x[1]==oSel:bankaccntnbr.and.x[2]==SQLdate(oSel:bookingdate).and.x[3]==ConS(oSel:seqnr).and.;
+						x[4]==oSel:contra_bankaccnt.and.x[5]==oSel:kind.and.x[6]==AddSlashes(oSel:contra_name).and.;
+						ConS(x[8])==ConS(oSel:amount).and.x[9]==oSel:addsub.and.x[10]==AddSlashes(oSel:Description)}))>0 
+					// mark aValuesTrans as imported:
+					avalueTrans[i,12]:='I'
+				endif 
+				oSel:Skip()
+			enddo
+			// remove corresponding aTrans of ignored teletrans:  
+			k:=0
+			do while (k:=AScan(avalueTrans,{|x|x[12]=='X'},k+1))>0
+				cBankAcc:=avalueTrans[k,1] 
+				//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
+				//                 1            2           3          4         5          6      7      8          9          10        11
+				j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
+				if j>0
+					lv_accid:=self:m57_bankacc[j,7]							
+					// search corresponding aTrans:
+					//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
+					//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid
+					i:=-1
+					do while true
+						i:=AScan(aTrans,{|x|avalueTrans[k,8]==iif(avalueTrans[k,9]='A',x[4],x[2]).and.avalueTrans[k,2]==x[8];
+							.and.x[12]=='1'.and.x[1]==lv_accid.and.x[13]==avalueTrans[k,5]+avalueTrans[k,3]},i+2)
+						if i>0
+							// check next line:
+							if aTrans[i+1,15]==avalueTrans[k,11] 
+								cDestAcc:=''
+								if Val(avalueTrans[k,11])=0 .or.avalueTrans[k,9]=='A'
+									// non gift 
+									if !Empty(aValueTrans[k,4]) .and.Empty(aValueTrans[k,7])   // contra_bankaccnt but no budgetcd
+										// check if cross banking?
+										IF !Empty(SKruis)
+											l:=AScan(self:m57_bankacc,{|x|x[1]==avalueTrans[k,4]}) 
+											if l>0
+												// cross banking:
+												cDestAcc:=SKruis
+											endif
+										endif
+									elseif (!Empty(aValueTrans[k,7]).and.(self:m57_bankacc[j,8]>'0'.and.aValueTrans[k,5]=='BGC');  // payahead filled for collective recording of acceptgiro's
+										.or.avalueTrans[k,9]=='A') //debit with known destination?
+										cBudgetcd:=avalueTrans[k,7]
+										if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+											cDestAcc:=aAccnbrDb[l,2]
+										endif
+									ELSEIF (aValueTrans[k,5]=="IC" .or.aValueTrans[k,5]=="OCR") .and.Empty(aValueTrans[k,4]).and.aValueTrans[k,9] =="B" ;
+											.and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+										// in case of recording of automatic collections take payahead as contra account:
+										cDestAcc:=self:m57_bankacc[j,8]
+									endif
+								else    // gift
+									cBudgetcd:=avalueTrans[k,7]
+									if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+										cDestAcc:=aAccnbrDb[l,2]
+									endif
+								endif
+								if cDestAcc==aTrans[i+1,1] 
+									nProc--
+									// remove both transaction lines:
+									ADel(aTrans,i)
+									ADel(aTrans,i)
+									ASize(aTrans,Len(aTrans)-2)
+									// next line income/expense?
+									if aTrans[i,12]=='3'
+										ADel(aTrans,i)
+										ADel(aTrans,i)							
+										ASize(aTrans,Len(aTrans)-2) 
+									endif
+									exit
+								endif
+							endif
+						else
+							exit
+						endif
+					enddo
+				endif
+			enddo
+			// setup again chgbalance:
 			oMBal:=Balances{}
 			for i:=1 to Len(aTrans) 
 				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
@@ -3358,93 +3567,76 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 				oMBal:ChgBalance(aTrans[i,1],SQLDate2Date(aTrans[i,8]),aTrans[i,2],aTrans[i,4],aTrans[i,3],;
 					aTrans[i,5],aTrans[i,6])
 			next
-			
-			oStmnt:=SQLStatement{"set autocommit=0",oConn}
-			oStmnt:execute()
-			oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
-			oStmnt:execute()
-		else
-			SQLStatement{"start transaction",oConn}:execute()
-		endif	
-		maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
-		oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
-			"(bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed) values "+;
-			Implode(self:aValuesTrans,'","'),oConn}
+		endif
+	endif
+	if nTele>0 .and.Len(aTrans)>0  // telebank transactions imported?
+		// 		if nTele<Len(avalueTrans)
+		// 			// duplicates ignored, nothing automatically:
+		// 			SQLStatement{"update teletrans set processed='' where teletrid>"+Str(maxTeleId,-1),oConn}:execute()
+		// 		else 
+		// insert autmaticallly processed transactions:
+		// insert first line:
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid) "+;
+			" values ("+Implode(aTrans[1],"','",1,15)+')',oConn}
 		oStmnt:execute()
-		if !Empty(oStmnt:Status)
-			SQLStatement{"rollback",oConn}:execute()
-			if Len(aTrans)>0
-				SQLStatement{"unlock tables",oConn}:execute()
+		nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+		aTrans[2,16]:=nTransId
+		for i:=3 to Len(aTrans) step 2
+			// next line income/expense?
+			if aTrans[i,12]=='3'
+				aTrans[i,16]:=nTransId
+				aTrans[i+1,16]:=nTransId
+				i+=2
+			endif		
+			nTransId++
+			if i<Len(aTrans)
+				aTrans[i,16]:=nTransId
+				aTrans[i+1,16]:=nTransId
 			endif
-			self:aValuesTrans:={}
+		next
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid) "+;
+			" values "+Implode(aTrans,"','",2),oConn}
+		oStmnt:execute()
+		if oStmnt:NumSuccessfulRows<1
+			SQLStatement{"rollback",oConn}:execute() 
+			SQLStatement{"unlock tables",oConn}:execute()
 			LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
-			ErrorBox{,self:oLan:WGet('Telebank transactions could not be imported')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+			ErrorBox{,self:oLan:WGet('Transactions could not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+			self:aValuesTrans:={}
 			return false 
 		endif
-		nTele:=oStmnt:NumSuccessfulRows
-
-		if Len(aTrans)>0  // telebank transactions imported?
-			if nTele<Len(self:aValuesTrans)
-				// duplicates ignored, nothing automatically:
-				SQLStatement{"update teletrans set processed='' where teletrid>"+Str(maxTeleId,-1),oConn}:execute()
-			else 
-				// insert autmaticallly processed transactions:
-				// insert first line:
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid) "+;
-					" values ("+Implode(aTrans[1],"','",1,15)+')',oConn}
-				oStmnt:execute()
-				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-				aTrans[2,16]:=nTransId
-				for i:=3 to Len(aTrans) step 2
-					nTransId++
-					aTrans[i,16]:=nTransId
-					aTrans[i+1,16]:=nTransId
-				next
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid) "+;
-					" values "+Implode(aTrans,"','",2),oConn}
-				oStmnt:execute()
-				if oStmnt:NumSuccessfulRows<1
-					SQLStatement{"rollback",oConn}:execute() 
-					SQLStatement{"unlock tables",oConn}:execute()
-					LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
-					ErrorBox{,self:oLan:WGet('Transactions could not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
-					self:aValuesTrans:={}
-					return false 
-				endif 
-				// adapt mbalance values:
-				if !oMBal:ChgBalanceExecute()
-					SQLStatement{"rollback",oConn}:execute() 
-					SQLStatement{"unlock tables",oConn}:execute()
-					LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-					ErrorBox{,self:oLan:WGet('Month balances could not be updated')+":"+oMBal:cError}:show()
-					self:aValuesTrans:={}
-					return false 
-				endif
-				//	update person data of givers: 
-				if Len(avaluesPers)>0
-				oStmnt:=SQLStatement{"insert into person (persid,datelastgift)	values "+Implode(avaluesPers,'","')+;
-					" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift)	",oConn}
-				oStmnt:execute()
-				if	!Empty(oStmnt:Status)
-					SQLStatement{"rollback",oConn}:execute() 
-					SQLStatement{"unlock tables",oConn}:execute()
-					LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
-					self:aValuesTrans:={}
-					return false 
-				endif
-				endif
-				self:lv_processed+=nProc
-			endif
-		endif		
-		SQLStatement{"commit",oConn}:execute()	
-		if Len(aTrans)>0
+		// adapt mbalance values:
+		if !oMBal:ChgBalanceExecute()
+			SQLStatement{"rollback",oConn}:execute() 
 			SQLStatement{"unlock tables",oConn}:execute()
+			LogEvent(self,"error:"+oMBal:cError,"LogErrors")
+			ErrorBox{,self:oLan:WGet('Month balances could not be updated')+":"+oMBal:cError}:show()
+			self:aValuesTrans:={}
+			return false 
 		endif
-		self:lv_aant_toe+=nTele
+		//	update person data of givers: 
+		if Len(avaluesPers)>0
+			oStmnt:=SQLStatement{"insert into person (persid,datelastgift)	values "+Implode(avaluesPers,'","')+;
+				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift)	",oConn}
+			oStmnt:execute()
+			if	!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute() 
+				SQLStatement{"unlock tables",oConn}:execute()
+				LogEvent(self,"error:"+oMBal:cError,"LogErrors")
+				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+				self:aValuesTrans:={}
+				return false 
+			endif
+		endif
+		self:lv_processed+=nProc
+		// 		endif
+	endif		
+	self:lv_aant_toe+=nTele
+	SQLStatement{"commit",oConn}:execute()	
+	if Len(aTrans)>0
+		SQLStatement{"unlock tables",oConn}:execute()
 	endif
 	self:aValuesTrans:={}
-	
 	return true
 METHOD SkipMut()  CLASS TeleMut
 	* Skip of telebanking transaction aftre showing it
