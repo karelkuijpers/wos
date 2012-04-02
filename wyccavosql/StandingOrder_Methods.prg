@@ -52,7 +52,7 @@ RETURN true
 METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp
 	LOCAL oAccount as sqlselect
-	LOCAL ThisRec:=oStOrdLH:RecNo as int
+	LOCAL ThisRec:=oStOrdLH:RecNo,recnr as int
 	LOCAL CurGC as STRING
 	if oStOrdLH==null_object
 		return nil
@@ -81,16 +81,26 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 		endif
 
 		if !(oAccount:accounttype=="M" .or.oStOrdLH:category='K')
-			oStOrdLH:GC:=" "
-		endif
-	ENDIF
+			if oStOrdLH:gc=="CH"
+				// replace MG if needed: 
+				recnr := 0
+				do WHILE (recnr:=AScan(oStOrdLH:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+					oStOrdLH:Goto(recnr)
+					oStOrdLH:gc := 'AG'
+					oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+				ENDDO
+				oStOrdLH:Goto(ThisRec)
+			endif
+			oStOrdLH:gc:=" "
+		ENDIF
+	endif
 	// save in Mirror:
-	oStOrdLH:aMirror[ThisRec,3]:=oStOrdLH:CATEGORY
-	oStOrdLH:aMirror[ThisRec,4]:=oStOrdLH:GC
+	oStOrdLH:aMirror[ThisRec,3]:=oStOrdLH:category
+	oStOrdLH:aMirror[ThisRec,4]:=oStOrdLH:gc
 	oStOrdLH:aMirror[ThisRec,5]:=oStOrdLH:ACCOUNTID
-	oStOrdLH:aMirror[ThisRec,7]:=oStOrdLH:ACCOUNTNbr
+	oStOrdLH:aMirror[ThisRec,7]:=oStOrdLH:ACCOUNTNBR
 	oStOrdLH:aMirror[ThisRec,11]:=AllTrim(oStOrdLH:INCEXPFD)
-	oStOrdLH:Amirror[ThisRec,12]:=oStOrdLH:DEPID
+	oStOrdLH:aMirror[ThisRec,12]:=oStOrdLH:DEPID
 	
 
 	IF !Empty(oStOrdLH:ACCOUNTID)
@@ -818,76 +828,63 @@ METHOD DebCreProc() CLASS StOrderLines
 	
 	self:Browser:SuspendUpdate()
 	IF oStOrdLH:CATEGORY == 'M'		
-		nAccId:=oStOrdLH:ACCOUNTID
-		nDepId:=oStOrdLH:DEPID
 		IF oStOrdLH:deb > oStOrdLH:cre
 			oStOrdLH:gc := 'CH' 
-			oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
-
-			* Change AG's present to MG's:
-			recnr := oStOrdLH:Recno 
-			oStOrdLH:GoTop()
-			Do while !oStOrdLH:EOF
-				IF !oStOrdLH:Recno==recnr
-					IF (oStOrdLH:gc=='AG'.or.Empty(oStOrdLH:gc)).and. (oStOrdLH:CATEGORY =='M'.and. !oStOrdLH:ACCOUNTID==nAccId .or.oStOrdLH:CATEGORY == 'K'.and. !oStOrdLH:DEPID==nDepId) 
-						oStOrdLH:gc := 'MG'
-						oStOrdLH:Amirror[oStOrdLH:Recno,4]:=oStOrdLH:gc  && save in mirror
-					ENDIF
-				ENDIF
-				oStOrdLH:Skip()
-			enddo
-			oStOrdLH:Goto(CurRec)
 		ELSEIF oStOrdLH:deb = oStOrdLH:cre
 			oStOrdLH:gc := '  '
 		ELSE
 			IF !oStOrdLH:gc == 'PF' 
 				oStOrdLH:gc := 'AG'
-				IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.or.x[12]==nDepId)})>0
-					oStOrdLH:gc := 'MG'
-				ENDIF
-				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 			endif
 		ENDIF
-	else
-		if oStOrdLH:category == 'K'   //member department
-			nAccId:=oStOrdLH:ACCOUNTID
-			nDepId:=oStOrdLH:DEPID
-			if oStOrdLH:INCEXPFD='F'
-				oStOrdLH:gc := 'PF'
-			ELSEIF oStOrdLH:INCEXPFD='E'
-				oStOrdLH:gc := 'CH'
-				// change AG to MG if needed:
-				recnr := 0
-				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='AG'.and.!(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
-					oStOrdLH:Goto(recnr)
-					oStOrdLH:gc := 'MG'
-					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
-				ENDDO
-				// change MG to AG if needed:
-				recnr := 0
-				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'.and.(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
-					oStOrdLH:Goto(recnr)
-					oStOrdLH:gc := 'AG'
-					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
-				ENDDO
-				oStOrdLH:Goto(CurRec)
-			elseif  oStOrdLH:INCEXPFD='I'
-				oStOrdLH:gc := 'AG'
-			ENDIF
-		else
-			if oStOrdLH:gc == 'CH'
-				recnr := 0
-				do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'},recnr+1))>0
-					oStOrdLH:Goto(recnr)
-					oStOrdLH:gc := 'AG'
-					oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
-				ENDDO
-				oStOrdLH:Goto(CurRec)
-			ENDIF
-			oStOrdLH:gc := '  ' 
+	elseif oStOrdLH:CATEGORY == 'K'   //member department
+		if oStOrdLH:INCEXPFD='F'
+			oStOrdLH:gc := 'PF'
+		ELSEIF oStOrdLH:INCEXPFD='E'
+			oStOrdLH:gc := 'CH'
+		elseif  oStOrdLH:INCEXPFD='I'
+			oStOrdLH:gc := 'AG'
 		ENDIF
-		oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
+	else
+		if oStOrdLH:gc == 'CH' .and.!self:Owner:lMemberGiver
+			recnr := 0
+			do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'},recnr+1))>0
+				oStOrdLH:Goto(recnr)
+				oStOrdLH:gc := 'AG'
+				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+			ENDDO
+			oStOrdLH:Goto(CurRec)
+		ENDIF
+		oStOrdLH:gc := '  ' 
 	ENDIF
+	oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
+	IF oStOrdLH:CATEGORY == 'M' .or.oStOrdLH:CATEGORY == 'K'   //member (department)
+		nAccId:=oStOrdLH:ACCOUNTID
+		nDepId:=oStOrdLH:DEPID
+		if	oStOrdLH:gc == 'CH'
+			//	change AG to MG if needed:
+			recnr	:=	0
+			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='AG'.and.!(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+				oStOrdLH:Goto(recnr)
+				oStOrdLH:gc	:=	'MG'
+				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
+			ENDDO
+			//	change MG to AG if needed:
+			recnr	:=	0
+			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='MG'.and.(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+				oStOrdLH:Goto(recnr)
+				oStOrdLH:gc	:=	'AG'
+				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
+			ENDDO
+			oStOrdLH:Goto(CurRec)
+		elseif	oStOrdLH:gc == 'AG' 
+			// change to MG if needed
+			IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.or.x[12]==nDepId)})>0
+				oStOrdLH:gc := 'MG'
+				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
+			ENDIF
+		endif
+	endif		
 	self:Owner:ShowAssGift()
 	self:AddCredtr()
 	self:Owner:Totalise()
