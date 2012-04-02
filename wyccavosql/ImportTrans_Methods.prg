@@ -750,7 +750,6 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	local cStatement as string
 	local oStmnt as SQLStatement
 	
-	cSep:=CHR(SetDecimalSep())
 	ptrHandle:=MyFile{oFr}
 	IF FError() >0
 		(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:"+DosErrString(FError())}):show()
@@ -792,8 +791,19 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	ENDIF 
 	cBuffer:=ptrHandle:FReadLine()
 	aFields:=Split(cBuffer,cDelim)
-	linenr=1
-	DO WHILE Len(aFields)>1
+	linenr=1 
+	cSep:=DecSeparator    // default decimal separator of Windows 
+	// check if different separator used:
+	if ptDeb<= Len(AFields)
+		if At(AFields[ptDeb],cSep)=0
+  			if At(AFields[ptCre],',')>0
+  				cSep:=','
+  			elseif At(AFields[ptCre],'.')>0
+  				cSep:='.'
+  			endif
+		endif
+	endif
+	DO WHILE Len(AFields)>1
 		linenr++  
 
 		IF !aFields[ptTrans]==CurTransNbr // new transaction?
@@ -839,7 +849,8 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		ENDIF
 		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
-	ENDDO
+	ENDDO 
+
 	AAdd(self:amessages,"Imported batch file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(linenr,-1)+" transactions")
 
 	RETURN true
@@ -932,7 +943,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	LOCAL transdate, oppdate,rppdate,cmsdate as date
 	LOCAL oAfl AS UpdateHouseHoldID
 	LOCAL datelstafl AS DATE
-	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt as int
+	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt,nSeqnbr as int
 	local nTransId as Dword 
 	lOCAL cPmisCurrency as string, lUSD as logic 
 	local oCurr as CURRENCY 
@@ -949,7 +960,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
 	local aAccMbr:={} as array   // array with accounts of members: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset},{...}... } 
 	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid},{..},..}
-	IF Empty(SEntity)
+	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
+	local oAddInc as AddToIncExp 
+	if Empty(SEntity)
 		(ErrorBox{self:OWNER,self:oLan:WGet('First specify PMC Participant Code in System parameter, tab PMC')}):show()
 		RETURN false
 	ENDIF
@@ -1044,7 +1057,12 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
 	cMsg:=self:oLan:WGet('Importing RPP transactions')+'...'
 	self:oParent:STATUSMESSAGE(cMsg)
-	// 	(time1:=Seconds())
+	// 	(time1:=Seconds()) 
+	if !Empty(SINCHOME) .or.!Empty(SINC)
+		// add transactions for ministry income/expense:
+		oAddInc:=AddToIncExp{}
+	endif
+
 	DO WHILE recordfound
 		childfound:=PMISDocument:GetFirstChild()
 		docid:=""
@@ -1240,9 +1258,29 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		nPtr++ 
 		if !Empty(acciddest)
 			// transaction can be processed automatically: 
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp 
+			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
+			//             1         2      3         4          5       6        7       8         9         10        11     12        13       14        15         16        17
+			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp
+			//                1     2      3     4     5       6          7       8   9   10     11         12   13      14       15      16
+			nProc++
 			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
 				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],0,1})
+			// add to income expense if needed: 
+			if !Empty(SINCHOME) .or.!Empty(SINC)
+				// add transactions for ministry income/expense:
+				nSeqnbr:=2 
+				aTransIncExp:=oAddInc:AddToIncome(aValues[nPtr,5],true,acciddest,aValues[nPtr,9],aValues[nPtr,10],aValues[nPtr,12],aValues[nPtr,11],;
+				aValues[nPtr,13],aValues[nPtr,14],'',aValues[nPtr,1],aValues[nPtr,2],@nSeqnbr,aValues[nPtr,15])
+				if Len(aTransIncExp)=2
+				// aTransIncExp:
+				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+					aTransIncExp[1,16]:=1    // replace by fromrpp
+					aTransIncExp[2,16]:=1
+					AAdd(aValuesTrans,aTransIncExp[1])
+					AAdd(aValuesTrans,aTransIncExp[2]) 
+				endif
+			endif
 		endif 
 		recordfound:=PMISDocument:GetNextSibbling()
 	ENDDO
@@ -1288,9 +1326,17 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 				aValuesTrans[2,15]:=nTransId
 				for i:=3 to Len(aValuesTrans) step 2
+					// next line income/expense?
+					if aValuesTrans[i,12]=='3'
+						aValuesTrans[i,15]:=nTransId
+						aValuesTrans[i+1,15]:=nTransId
+						i+=2
+					endif		
 					nTransId++
-					aValuesTrans[i,15]:=nTransId
-					aValuesTrans[i+1,15]:=nTransId
+					if i<Len(aValuesTrans)
+						aValuesTrans[i,15]:=nTransId
+						aValuesTrans[i+1,15]:=nTransId
+					endif
 				next
 				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp) "+;
 					" values "+Implode(aValuesTrans,"','",2),oConn}
@@ -1302,7 +1348,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 					ErrorBox{,self:oLan:WGet('Transactions could not be inserted')+":"+oStmnt:status:Description}:show()
 					return false 
 				endif 
-				nProc:=(oStmnt:NumSuccessfulRows+1)/2
+// 				nProc:=(oStmnt:NumSuccessfulRows+1)/2
 
 				// adapt mbalance values:
 				if !oMBal:ChgBalanceExecute()
