@@ -466,17 +466,20 @@ method GetAddress(Description as string,lZipFromWeb:=true as logic) as void pasc
 		endif	
 	else
 		self:m56_description:= Upper(Compress(Description))
-		if (nAddrEnd:=At('%%',Description))>0  
+// 		if (nAddrEnd:=At('%%',Description))>0  
+		if (nAddrEnd:=At('%%',Description))=0
+			nAddrEnd:=Len(Description)+1
+		endif  
 			// separate address line probably
 			if oPers==null_object
 				oPers:=PersonContainer{}
 			endif
-			aWord:=GetTokens(SubStr(Description,1,nAddrEnd-1)) 
+			aWord:=GetTokens(SubStr(Description,1,nAddrEnd-1),{" ",",",".","&","/"}) 
 			oPers:Adres_Analyse(aWord,,@lZipCode,@lCity,@lAddress,false,lZipFromWeb)
 			self:m56_address:=oPers:m51_ad1
 			self:m56_zip:=StandardZip(oPers:m51_pos) 
 			self:m56_town:=oPers:m51_city
-		endif
+// 		endif
 	endif
 	return 
 METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
@@ -3132,10 +3135,12 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					do while i<Len(avalueTrans)
 						i:=AScan(avalueTrans,{|x|!Empty(x[4]).and.Empty(x[11])},i+1)
 						if i>0
-							cBankAcc:=avalueTrans[i,4]
-							j:=AScan(aBankContra,{|x|x[1]==cBankAcc})
-							if j>0							
-								avalueTrans[i,11]:=aBankContra[j,2]
+							cBankAcc:=avalueTrans[i,4] 
+							j:=AScan(aBankContra,{|x|x[1]==cBankAcc})   
+							if j>0
+								if AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})=0  // contra bank account is a own bank account?
+									avalueTrans[i,11]:=aBankContra[j,2]    // fill persid only when no cross bank account
+								endif
 							endif
 						else
 							exit
@@ -3280,20 +3285,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 										ENDIF
 									elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])
 										aAddr:=GetStreetHousnbr(self:m56_address)
-										aAddrDB:=GetStreetHousnbr(aZip[k,3]) 
+										aAddrDB:=GetStreetHousnbr(aZip[k,3])
 										if !Val(aAddr[2])==Val(aAddrDB[2])      // unequal housenumbers-> moved
-											if !Empty(aZip[k,2]) 
-												self:GetAddress(avalueTrans[i,10],true)   // now with getting zip code from internet:
-												if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7
-													IF !self:m56_zip==aZip[k,2]  
-														lAddressChanged:=true
-													ENDIF
-												else
-													lAddressChanged:=true
-												endif
-											else
-												lAddressChanged:=true
-											endif
+											lAddressChanged:=true
 										endif
 									endif
 								endif
