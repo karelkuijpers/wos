@@ -785,7 +785,7 @@ METHOD append() CLASS General_Journal
 	oHm:OPP:=cOPP
 	oHm:DESCRIPTN:=cOms
 	&& add empty row to mirror:
-	AAdd(oHm:aMirror,{'           ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD})
+	AAdd(oHm:aMirror,{'           ',oHm:deb,oHm:cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0})
 RETURN true
 METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
 * Update of corresponding due amounts:
@@ -1241,7 +1241,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	LOCAL oHm:=self:Server as TempTrans
 	LOCAL oAccount as SQLSelect
 	LOCAL crek,cNum,cPersId,cType as STRING
-	LOCAL ThisRec as int
+	LOCAL ThisRec:=oHm:RECNO,recnr as int
 	LOCAL CurGC as STRING
 	local MultiCur:=false as logic
 	local fDebSav,fCreSav as float 
@@ -1257,35 +1257,52 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	IF Empty(omAcc).or.omAcc==null_object .or.omAcc:Reccount<1
 		crek:=Space(11)
 		oHm:AccID:=crek
+		oHm:AccDesc := ''
+		oHm:ACCNUMBER:=''
+		oHm:INCEXPFD:=''
+		oHm:KIND:=''
+		oHm:gc:=''
 	ELSE
 		oAccount:=omAcc
-		crek := Str(oAccount:AccID,-1)
+		crek := ConS(oAccount:AccID)
+		oHm:AccID :=  crek
 		oHm:AccDesc := oAccount:Description
 		oHm:ACCNUMBER:=oAccount:ACCNUMBER
 		oHm:incexpfd:=oAccount:incexpfd
 		oHm:KIND:=Upper(oAccount:accounttype)
-		if oHm:KIND=="M" .or.oHm:KIND='K'
-			cPersId:=Str(oAccount:persid,-1)
+		oHm:DEPID:=ConI(oAccount:department)
+		if !Empty(oAccount:persid) .and.(oHm:KIND=="M" .or.oHm:KIND='K')
+			cPersId:=ConS(oAccount:persid)
+			if (oHm:cre-oHm:deb)<0 .or.Empty(self:mCLNGiver).and.(oHm:cre-oHm:deb)=0
+				self:mCLNGiver:=cPersId
+			endif
 		endif
 		oHm:CURRENCY:= oAccount:CURRENCY 
 		cNum:=Str(oAccount:balitemid,-1)
 		MultiCur:=iif(ConI(oAccount:MULTCURR)=1,true,false)
-		cType:=oAccount:type
-	ENDIF
-	oHm:AccID :=  crek
-	IF Empty(cRek)
-		oHm:KIND := " "
-		oHm:AccDesc := ""
-		oHm:gc := ""
-		oHm:AccNumber:=cRek
+		cType:=oAccount:type 
+		if !(oAccount:accounttype=="M" .or.oAccount:accounttype=='K')
+			if CurGC=="CH"
+				// replace MG if needed: 
+				recnr := 0
+				do WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+					oHm:Goto(recnr)
+					oHm:gc := 'AG'
+					oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
+				ENDDO
+				oHm:Goto(ThisRec)
+			endif
+			oHm:gc:=" "
+		ENDIF
+
 	ENDIF
 	IF oHm:FROMRPP .and. !Empty(CurGC)
 		// in case of import from RPP keep old GC code
 		oHm:GC:=CurGC
 	ENDIF
 	* save in mirror-array
-	// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
-	ThisRec:=oHm:RECNO
+// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 	oHm:aMirror[ThisRec,1]:=AllTrim(cRek)
 	oHm:aMirror[ThisRec,4]:=oHm:Gc
 	oHm:aMirror[ThisRec,5]:=oHm:KIND
@@ -1298,6 +1315,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	oHm:aMirror[ThisRec,17]:= cPersId
 	oHm:aMirror[ThisRec,18]:= cType
 	oHm:aMirror[ThisRec,19]:= oHm:incexpfd
+	oHm:aMirror[ThisRec,20]:= oHm:DepID
 	self:oSFGeneralJournal1:AddCurr()
 	IF !oHm:lFilling.and.!Empty(cRek)
 		//		oHm:SuspendNotification() 
@@ -1894,7 +1912,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				mCLNGiverMbr := oHm:aMirror[i,17]
 				//	check	if	direct gift	report:
 				if	AScan(oHm:aMirror,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
-					IF	Empty(mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
+					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
 						(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
 						RETURN FALSE
 					else
@@ -2296,14 +2314,13 @@ METHOD BlockColumns() CLASS GeneralJournal1
 	RETURN NIL
 METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	LOCAL recnr AS INT
-	LOCAL oHm as TempTrans
+	LOCAL oHm:= self:Server as TempTrans
 	LOCAL lFound AS LOGIC
 	LOCAL i AS INT
-	LOCAL nCurRec, CurRec, ThisRec AS INT
-	LOCAL mRek as STRING
+	LOCAL ThisRec:=oHm:RECNO as int
+	LOCAL nDepId as int, cAccId,cPersId as string
 	Local ROE:=1 as float
 	local oTransH as SQLSelect
-	oHm := self:Server
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
 			self:Owner:lwaitingForExchrate:=true 
@@ -2327,8 +2344,6 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	if !Empty(self:oOwner:oOwner)
 		oTransH:=self:oOwner:oOwner:oMyTrans
 	endif
-	// 	ThisRec:= AScan(oHm:aMirror,{|x|x[6]==oHm:RECNO})
-	ThisRec:=oHm:RECNO
 	if !Empty(oHm:CheckUpdates(oTransH))
 		* recover old values
 		oHm:deb:=oHm:aMirror[ThisRec,2]
@@ -2349,74 +2364,72 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
 	oHm:aMirror[ThisRec,19]:=oHm:INCEXPFD
 	IF oHm:KIND == 'M'		
-		mRek:=AllTrim(oHm:AccID)
 		IF oHm:Deb > oHm:Cre  .and. !self:oParent:mBST="COL"     // inverse direct debit
 			oHm:gc := 'CH'
-			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
-			* Convert present AG's into MG's:
-			self:SetMG()
 		ELSEIF oHm:deb = oHm:cre
 			oHm:gc := '  '
-			oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
 		ELSE
-			IF !oHm:gc == 'PF' .and. !(oHm:FROMRPP .and. !Empty(oHm:GC))
+			IF (!oHm:gc == 'PF'.or.oHm:INCEXPFD='I') .and. !(oHm:FROMRPP .and. !Empty(oHm:gc))
 				oHm:gc := 'AG'
-				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
-				IF self:owner:lMemberGiver .or.AScan(oHm:aMirror,{|x|x[4]=='CH'})>0
-					oHm:gc := 'MG'
-					oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
-					// 					self:SetMG()
-				ENDIF
 			ENDIF
 		ENDIF
-	ELSE
-		if oHm:KIND=='K'  //member department
+	ELSEif oHm:KIND=='K'  //member department
 			if oHm:INCEXPFD='F'
 				oHm:gc := 'PF'
 			ELSEIF oHm:INCEXPFD='E'
 				oHm:gc := 'CH'
-				self:SetMG()
+			elseif oHm:INCEXPFD='I'
+				oHm:gc:='AG'
 			ENDIF
-		else
-			IF oHm:GC == 'CH'
-				* Reset present MG:
-				recnr := 0
-				DO WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
-					oHm:Goto(recnr)
-					oHm:GC := 'AG'
-					oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
-				ENDDO
-				oHm:Goto(ThisRec)
+	else
+		IF oHm:gc == 'CH' .and.!self:Owner:lMemberGiver
+			* Reset present MG:
+			recnr := 0
+			DO WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+				oHm:Goto(recnr)
+				oHm:gc := 'AG'
+				self:Owner:mCLNGiver:=''  //??
+				oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
+			ENDDO
+			oHm:Goto(ThisRec)
+		ENDIF
+		oHm:gc := '  '
+	endif
+	oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
+	IF oHm:KIND == 'M' .or.oHm:KIND == 'K'   //member (department)
+		cAccId:=oHm:AccID
+		nDepId:=oHm:DEPID
+// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
+		if	oHm:gc == 'CH'
+			//	change AG to MG if needed:
+			recnr	:=	0
+			do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='AG'.and.!(x[1]==cAccId.or.x[20]==nDepId)},recnr+1))>0
+				oHm:Goto(recnr)
+				oHm:gc	:=	'MG'
+				oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror
+			ENDDO
+			//	change MG to AG if needed:
+			recnr	:=	0
+			do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='MG'.and.(x[1]==cAccId.or.x[20]==nDepId)},recnr+1))>0
+				oHm:Goto(recnr)
+				oHm:gc	:=	'AG'
+				oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror
+			ENDDO
+			oHm:Goto(ThisRec)
+		elseif	oHm:gc == 'AG' 
+			// change to MG if needed 
+			cPersId:=self:Owner:mCLNGiver
+			IF self:Owner:lMemberGiver.and.!(self:Owner:mCLNGiver==oHm:aMirror[ThisRec,17]) .or.AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.or.x[20]==nDepId.or.x[17]==cPersId)})>0
+				oHm:gc := 'MG'
+				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
 			ENDIF
-			oHm:gc := '  '
 		endif
-		oHm:aMirror[ThisRec,4]:=oHm:GC  && save in mirror
-	ENDIF
-	// 	oHm:SuspendNotification()
+	endif		
 	self:Owner:Totalise(false,false)
-	// 	oHm:ResetNotification() 
 
-	//  	self:Browser:Refresh()
 	self:Owner:Goto(ThisRec)
 	RETURN
-Method SetMG() as void pascal class GeneralJournal1
-	// set assessment code to MG in case of member gift
-	LOCAL oHm:=self:Server as TempTrans
-	LOCAL recnr,i as int
-	local mAccid as string
-	* Convert present AG's into MG's:
-	recnr := oHm:RECNO 
-	mAccid:=oHm:aMirror[recnr,1]
-	FOR i=1 to Len(oHm:aMirror)
-		IF !oHm:aMirror[i,6]==recnr
-			IF (oHm:aMirror[i,4]=='AG'.or.Empty(oHm:aMirror[i,4])).and.oHm:aMirror[i,5]=='M' .and. !oHm:aMirror[i,1]==mAccId
-				oHm:Goto(oHm:aMirror[i,6])
-				oHm:gc := 'MG'
-				oHm:aMirror[i,4]:=oHm:gc  && save in mirror
-			ENDIF
-		ENDIF
-	NEXT
-	return
 METHOD RegAccount(oRek,ItemName) CLASS InquirySelection
 	LOCAL oAccount as SQLSelect
 	LOCAL crek AS STRING
@@ -3206,6 +3219,10 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
 		oPersCnt:m51_ad1:=AllTrim(self:oTmt:m56_description) 
 		oPersCnt:Naw_Analyse()
+		if Empty(oPersCnt:m51_lastname)
+			oPersCnt:m51_lastname:=AllTrim(self:oTmt:m56_description)
+			oPersCnt:NameAnalyse(!Empty(oPersCnt:m51_ad1),!Empty(oPersCnt:m51_initials),!Empty(oPersCnt:m51_gender),!Empty(oPersCnt:m51_prefix),!Empty(oPersCnt:m51_pos),!Empty(oPersCnt:m51_city))
+		endif
 	else
 		oPersCnt:Naw_Analyse(,,,!Empty(oPersCnt:m51_pos),!Empty(oPersCnt:m51_city),!Empty(oPersCnt:m51_ad1))
 	endif
@@ -3266,7 +3283,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode)
 						lAddressChanged:=true
 					ENDIF
-				elseif Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)
+				elseif (!CountryCode=="31" .or. !Empty(oPersCnt:m51_country)) .and. Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)
 					lAddressChanged:=true
 				endif
 				if lAddressChanged					
