@@ -80,7 +80,7 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 			endif
 		endif
 
-		if !(oAccount:accounttype=="M" .or.oStOrdLH:category='K')
+		if !(oAccount:accounttype=="M" .or.oAccount:accounttype=='K')
 			if oStOrdLH:gc=="CH"
 				// replace MG if needed: 
 				recnr := 0
