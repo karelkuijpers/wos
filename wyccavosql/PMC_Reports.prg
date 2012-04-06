@@ -480,7 +480,6 @@ METHOD PrintReport() CLASS PMISsend
 	nPage:=0
 	store 0 to a_tel
 	+nRowCnt :=0 
-	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
 	self:STATUSMESSAGE(self:oLan:WGet('locking member transactions for update')+'...')
 
 	// Check if nobody else is busy with sending to PMC: 
