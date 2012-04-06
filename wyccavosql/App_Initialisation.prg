@@ -1025,7 +1025,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	else
 		MultiDest:=FALSE
 	endif	
-  	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
+  	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 
 	// 	Set up registry settings
 	InitRegistry()
