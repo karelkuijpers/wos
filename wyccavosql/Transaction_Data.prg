@@ -615,8 +615,8 @@ CLASS TempTrans INHERIT DBSERVEREXTRA
 	EXPORT lInqUpd,lFilling,lExisting,lOnlyRead,lFromRPP as LOGIC
 	EXPORT aTeleAcc as ARRAY
 	EXPORT oDat as date
-	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
-//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19
+	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
    
    declare method CheckUpdates
 
@@ -683,6 +683,13 @@ ASSIGN  DEBFORGN(uValue)  CLASS TempTrans
 
     RETURN SELF:FieldPut(#DEBFORGN, uValue)
 
+ACCESS  DEPID  CLASS TempTrans
+
+    RETURN SELF:FieldGet(#DEPID)
+ASSIGN  DEPID(uValue)  CLASS TempTrans
+
+    RETURN SELF:FieldPut(#DEPID, uValue)
+
 ACCESS  DESCRIPTN  CLASS TempTrans
 
     RETURN SELF:FieldGet(#DESCRIPTN)
@@ -697,7 +704,7 @@ ACCESS FieldDesc CLASS TempTrans
 	LOCAL aRet		AS ARRAY
 	LOCAL nFields	AS DWORD
 
-	nFields := 20
+	nFields := 21
 
 	IF nFields > 0
 		aRet := ArrayCreate(nFields)
@@ -737,6 +744,7 @@ ACCESS FieldDesc CLASS TempTrans
 		aRet[18] := { #POSTSTATUS, "POSTSTATUS",  Transaction_POSTSTATUS{}}
 		aRet[19] := { #PPDEST, "PPDEST",  PPCodes_PPCode{}}
 		aRet[20] := { #INCEXPFD, "INCEXPFD",  TempTrans_INCEXPFD{}}
+		aRet[21] := { #DEPID, "DEPID",  TempTrans_DEPID{}}
 
 	ELSE
 		aRet := {}
@@ -971,6 +979,18 @@ ASSIGN  SEQNR(uValue)  CLASS TempTrans
 
     RETURN SELF:FieldPut(#SEQNR, uValue)
 
+CLASS TempTrans_DEPID INHERIT DEPARTMENT_DEPID
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS TempTrans_DEPID
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#DEPID, "Depid", "", "" },  "N", 11, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
 CLASS TempTrans_INCEXPFD INHERIT FIELDSPEC
 	//USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init() CLASS TempTrans_INCEXPFD
@@ -1042,9 +1062,9 @@ METHOD Init() CLASS transaction_DAT
 super:Init(HyperLabel{"DAT","Dat","","transaction_DAT"},"D",10,0)
 
 RETURN SELF
-CLASS transaction_DEB INHERIT FIELDSPEC
+CLASS Transaction_DEB INHERIT FIELDSPEC
 	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS transaction_DEB
+METHOD Init() CLASS Transaction_DEB
     LOCAL   cPict                   AS STRING
 
     SUPER:Init( HyperLabel{#DEB, "Deb", "", "transaction_DEB" },  "N", 19, 2 )
@@ -1085,10 +1105,8 @@ METHOD Init() CLASS transaction_OPP
 super:Init(HyperLabel{"OPP","Opp","","transaction_OPP"},"C",3,0)
 
 RETURN SELF
-CLASS transaction_POSTSTATUS INHERIT FIELDSPEC
-
-
-METHOD Init() CLASS transaction_POSTSTATUS
+CLASS Transaction_POSTSTATUS INHERIT FIELDSPEC
+METHOD Init() CLASS Transaction_POSTSTATUS
     LOCAL   cPict                   AS STRING
 
     SUPER:Init( HyperLabel{#POSTSTATUS, "Poststatus", "Status of posting for this transaction: 0: not posted, 1: ready for posting, 2: posted", "transaction_POSTSTATUS" },  "N", 1, 0 )
@@ -1098,10 +1116,6 @@ METHOD Init() CLASS transaction_POSTSTATUS
     ENDIF
 
     RETURN SELF
-
-
-
-
 CLASS transaction_PPDEST INHERIT FIELDSPEC
 METHOD Init() CLASS transaction_PPDEST
 super:Init(HyperLabel{"PPDEST","Ppdest","","transaction_PPDEST"},"C",3,0)
