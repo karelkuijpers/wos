@@ -61,7 +61,7 @@ CLASS General_Journal INHERIT DataWindowExtra
 	instance BankBalance 
   	PROTECT oTmt as TeleMut
   	PROTECT fTotal as FLOAT
-  	PROTECT mCLNGiver as STRING
+  	Export mCLNGiver as STRING
   	Protect cGiverName, cOrigName as STRING
   	PROTECT lInqUpd as LOGIC
   	EXPORT lTeleBank as LOGIC
@@ -905,7 +905,7 @@ CLASS GeneralJournal1 INHERIT DataWindowExtra
 	export mXRate as float 
 	export oOwner as General_Journal
 	
-	declare method DebCreProc,SetMG
+	declare method DebCreProc
 RESOURCE GeneralJournal1 DIALOGEX  78, 72, 620, 280
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -3758,7 +3758,7 @@ METHOD EditButton( ) CLASS TransInquiry
 	self:oMyTrans:=SQLSelect{UnionTrans2("select t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,"+;
 	"cast(t.poststatus as signed) as poststatus,t.accid,t.currency,t.debforgn,t.creforgn,t.bfm,t.ppdest,t.fromrpp,t.persid,t.opp,"+;
 	"if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
-		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd from "+;
+		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,a.department from "+;
 		"transaction t use index (primary) left join person p on (p.persid=t.persid),"+;
 		"account a left join department d on (d.incomeacc=a.accid or d.expenseacc=a.accid or d.netasset=a.accid) left join member m on (m.accid=a.accid or m.depid=d.depid),"+;
       "balanceitem b"+;
@@ -3801,15 +3801,18 @@ METHOD EditButton( ) CLASS TransInquiry
 		self:oHm:REFERENCE:=self:oMyTrans:REFERENCE
 		self:oHm:SEQNR := self:oMyTrans:SEQNR
 		self:oHm:KIND := Upper(self:oMyTrans:accounttype)
+		self:oHm:DEPID:=ConI(self:oMyTrans:department)
 		IF !Empty(self:oMyTrans:persid)
 			OrigPerson := Str(self:oMyTrans:persid,-1)
 		ENDIF 
 		self:oHm:PostStatus:=ConI(self:oMyTrans:PostStatus)
 
 		* Add to mirror:
-		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd}
-		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19
-		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD})
+		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd,depid}
+		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19      20
+		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),;
+		Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,;
+		iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
