@@ -2001,7 +2001,7 @@ IF Empty(self:m51_lastname+" "+self:m51_AD1)
 	RETURN
 ENDIF
 *	First try te find address within m51_ad1:
-aWord:=GetTokens(m51_AD1)
+aWord:=GetTokens(m51_AD1,{" ",",",".","&","/"})
 nLength:=self:Adres_Analyse(aWord,,@lZipCode,@lCity,@lAddress,false)-1
 self:NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity)
 RETURN
@@ -3862,7 +3862,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		// Payment pattern record:
 		FWriteLine(ptrHandle,"0150A"+PadR(Mod11(StrZero(oDue:personid,5,0)+DToS(oDue:invoicedate)+Str(oDue:seqnr,-1)),16)+Space(29))	              
 		// determine description from Subscription:
-		IF Empty(oDue:term) .or.oDue:term>1000
+		IF Empty(oDue:term) .or.oDue:term>12
 			cDescr:="eenmalige gift"
 		elseif oDue:term==1
 			cDescr:="maandelijkse gift "+Lower(maand[Month(oDue:invoicedate)])+" "+Str(Year(oDue:invoicedate),-1)
@@ -4424,7 +4424,6 @@ local i,j as int
 		// add group for getting array with bank accounts per person:
 		cSQLString:="select gr2.*,group_concat(pb.banknumber separator ',') as banknumbers from ("+cSQLString+") as gr2 left join personbank pb on (pb.persid=gr2.persid) group by gr2.persid order by "+cSortOrder+Collate
 	endif 
-	SQLStatement{"SET group_concat_max_len = 16834",oConn}:Execute()
 	return cSQLString
 	
 class SQLSelectPerson inherit SQLSelect
