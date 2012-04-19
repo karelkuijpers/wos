@@ -27,7 +27,7 @@ method Start() class App
 	local oUpg as CheckUPGRADE
 	local lStop as logic
 	local nErr as Dword 
-	local cFatalError as string	
+	local cFatalError as string
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
@@ -52,15 +52,14 @@ method Start() class App
 		ELSE
 			HelpDir:="C:"
 		ENDIF
- 
+		
 		oUpg:=CheckUPGRADE{} 
-		cWorkdir:=WorkDir()
+		cWorkdir:=WorkDir() 
 		oInit:=Initialize{} 
 		if !oInit:lNewDB 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 		endif 
-// 		LogEvent(self,"stop:"+iif(lStop,'T','F')+"; startfile:"+startfile,"logsql")
 		if lStop .and.!Empty(startfile)
 			if Empty(startfile)
 				lStop:=false
