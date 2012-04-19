@@ -86,6 +86,8 @@ CLASS General_Journal INHERIT DataWindowExtra
 //   	export ticks1,ticks2 as DWORD
 	export lwaitingForExchrate as logic
 	protect aBankAcc:={} as array
+	protect aPayahead:={} as array 
+	export oAddInEx as AddToIncExp
   	
 	declare method FindNext, FindPrevious
   	declare method Totalise,ValidateTempTrans,FillTeleBanking, FillRecord, ShowBankBalance, ValStore, ;
@@ -262,7 +264,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS General_Journal
 	//Put your changes here
 	IF !lGotFocus.and.!IsNil(oControl:Value)
 		IF oControl:Name == "MPERSON".and.!AllTrim(oControl:Value)==AllTrim(cGiverName)
-			IF Empty(oControl:Value) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				self:lStop:=false
 				self:mCLNGiver :=  ""
 				SELF:cGiverName := ""
@@ -712,7 +714,7 @@ METHOD PostInit() CLASS General_Journal
 	IF !TeleBanking
 		oCCTeleBankButton:Hide()
 	ENDIF		
-	oBank := SQLSelect{"select accid from bankaccount where telebankng>0",oConn} 
+	oBank := SqlSelect{"select accid from bankaccount where telebankng>0",oConn} 
 	if oBank:RecCount>0
 		do WHILE !oBank:EOF
 			self:cAccFilter+=iif(Empty(self:cAccFilter),"",' and ')+'accid<>"'+Str(oBank:AccID,-1)+'"' 
@@ -722,10 +724,13 @@ METHOD PostInit() CLASS General_Journal
 	endif
 	self:Server:aTeleAcc:=aTeleAcc
 	// save all bankaccounts  
-	oBank := SQLSelect{"select accid from bankaccount",oConn} 
+	oBank := SqlSelect{"select accid,payahead from bankaccount",oConn} 
 	if oBank:RecCount>0
 		do WHILE !oBank:EOF
-			AAdd(self:aBankAcc,Str(oBank:AccID,-1))
+			AAdd(self:aBankAcc,ConS(oBank:AccID))
+			if !empty(oBank:payahead) .and. ascanexact(self:aPayahead,ConS(oBank:payahead))=0
+				AAdd(self:aPayahead,ConS(oBank:payahead))
+			endif
 			oBank:Skip()
 		ENDDO 
 	endif
@@ -733,6 +738,7 @@ METHOD PostInit() CLASS General_Journal
 	IF USERTYPE=="D"
 		self:oCCTeleBankButton:Hide()
 	endif
+	oAddInEx:=AddToIncExp{}   // initialize add to income expense
 
 	IF ADMIN=="HO" .or.self:Server:lExisting .or.USERTYPE=="D"
 		oCCImportButton:Hide()
@@ -2525,7 +2531,8 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 	PROTECT AutoCollect, Acceptgiro as LOGIC 
 	protect oCurr as Currency
 	protect lStop as LOGIC
-	export oHlpMut as TempGift
+	export oHlpMut as TempGift 
+	export oAddInEx as AddToIncExp
 	declare method FillTeleBanking, InitGifts,AccntProc,AssignTo,Totalise, ValStore,ValidateTempGift
 method AddCur(0 class PaymentJournal
 self:oSFPaymentDetails:AddCurr()
@@ -2541,7 +2548,7 @@ method bankanalyze() class PaymentJournal
 	self:DefOvrd:=False
 	self:DefCur:=sCurr
 	self:DefMulti:=false 
-	oSel:=SQLSelect{"select giftsall,openall,singledst,fgmlcodes,syscodover,i.category as acctype,a.description,a.accnumber,a.currency,a.multcurr,m.persid "+;
+	oSel:=SqlSelect{"select giftsall,openall,singledst,fgmlcodes,syscodover,i.category as acctype,a.description,a.accnumber,a.currency,a.multcurr,m.persid "+;
 		"from bankaccount b left join account a on (a.accid=b.singledst and a.active=1) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid or m.depid=a.department) "+;
 		"where b.accid="+self:DebAccId,oConn}
 	if oSel:reccount>0  
@@ -3098,7 +3105,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	self:oDCDebitAccount:SetFocus()
 	self:oDCDebitAccount:CurrentItemNo := self:oDCDebitAccount:FindItem(cBankPreSet,FALSE)
 	self:mDebAmntF:=0
-	self:mDebAmnt:=0
+	self:mDebAmnt:=0 
+	oAddInEx:=AddToIncExp{}   // initialize add to income expense
 	IF MultiDest
 		self:bankanalyze()
 	else
