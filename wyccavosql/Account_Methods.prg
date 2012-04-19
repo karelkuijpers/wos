@@ -146,7 +146,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	local cWhere:="a.balitemid=b.balitemid", myWhere as string
 	local cOrder:="accnumber" as string
 // 	local cFrom:="account as a,balanceitem as b" as string
-	local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) " as string 
+	local cFrom:="account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid),balanceitem as b " as string 
 
 // 	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,b.category as type" as string
 // 	local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
@@ -168,7 +168,8 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 		iif(ADMIN=="WA" .and. USERTYPE=="D".and.!Empty(cAccAlwd)," or a.accid in ("+cAccAlwd+")",'')+")"		
 	endif
 	IF lUnique
-		oAcc:=SqlSelect{"Select "+cFields+" from "+cFrom+" where "+myWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
+// 		oAcc:=SqlSelect{"Select "+cFields+" from "+cFrom+" where "+myWhere+iif(Empty(cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
+		oAcc:=SqlSelect{"Select "+cFields+" from "+cFrom+" where "+myWhere+iif(Empty(cAccFilter),""," and "+cAccFilter),oConn}
 		oAcc:Execute()
 		if oAcc:RecCount=1 
 			*	First try to find the account:
@@ -752,7 +753,7 @@ function SQLAccType() as string
 					"if(a.giftalwd=1 and m.depid IS NULL,"+;
 						"if(m.co IS NOT NULL and m.co<>'','M','G')"+;        // member, else project
 					","+; // else
-						"if(a.accid='"+SDON+"','D'"+;  // debitors, 
+						"if(a.accid='"+SDON+"','D'"+;  // donation, 
 						","+;		//else 
 							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M','K'),'')"+;  // income account: member, else member department
 						")"+;
