@@ -3,13 +3,17 @@ function CalcCheckDigit(myConn as SQLConnection) as string
 local maxRec as int
 local oSQL as SQLSelect
 local fSumID,fSumCLN,fId:=0.00,fCLN:=0.00 as float
-local aKey:={} as array
-oSQL:=SQLSelect{"select empid, persid from employee",myConn} 
+local aKey:={} as array 
+local cEmp,cCLN as string
+// oSQL:=SqlSelect{"select empid, persid from employee",myConn}    
+oSQL:=SqlSelect{"select empid, cast("+Crypt_Emp(false,"persid")+" as char) as persid from employee",myConn}    
 maxRec:=oSQL:RecCount
-oSQL:GoTop() 
+oSQL:GoTop()
 do while !oSQL:eof
-	fId := oSQL:EMPID
-	fCLN:=Val(Crypt_CLN(oSQL:EMPID,oSQL:persid))
+	fId := ConI(oSQL:EmpId) 
+	cEmp:=ConS(oSQL:EmpId)
+// 	cCLN:=Crypt_CLN(cEmp,oSQL:persid)
+	fCLN:=iif(Empty(oSQL:persid),0,Val(oSQL:persid))
 	fSumID+=fId
 	fSumCLN+=fCLN
 	oSQL:skip()
@@ -131,7 +135,7 @@ local cCheckEmp as string
 Local mChecpEmp as string
 cCheckEmp:=CalcCheckDigit(oConn) 
 mChecpEmp:= (SQLSelect{"select checkemp from sysparms",oConn}):CHECKEMP 
-
+LogEventFile(,"cCheckEmp:"+cCheckEmp+"; mChecpEmp:"+mChecpEmp) 
 if !cCheckEmp== mChecpEmp
 	return false
 endif 
@@ -158,13 +162,14 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	endif	
 	if oEmp:RecCount=1
 		if !EvalCheckDigit()
-			ErrorBox{ , "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
+// 			ErrorBox{ , "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
 			logonOk:=false
 		else
 			oSQL:=SQLSelect{"select persid from person where persid="+oEmp:persid,oConn} 
 			oSQL:Execute()
 			If oSQL:RecCount=0
-				ErrorBox{ , "Employee database corrupted. Restore it first from backup!" }:Show()
+				LogEvent(,"Employee database corrupted. Restore it first from backup!" ,"logerrors")
+// 				ErrorBox{ , "Employee database corrupted. Restore it first from backup!" }:Show()
 				logonOk:=false
 			endif
 		endif
