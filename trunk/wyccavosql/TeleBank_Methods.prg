@@ -2,11 +2,11 @@ FUNCTION __DBG_EXP( ) AS USUAL PASCAL
 RETURN ( NIL )
 Class AddToIncExp
 	protect aMbr:={} as array  // array with liabiliy members {accid,has},..
-	declare method AddToIncome
+	declare method AddToIncome,AddToIncomeExp
 method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre as float,deb as float,debforgn as float,creforgn as float,;
-		Currency as string,DESCRIPTN as string,cPersId as string,mDAT as string,mDocId as string,nSeqnbr ref int,poststatus:='2' as string) ; 
+		Currency as string,DESCRIPTN as string,cPersId as string,mDAT as string,mDocId as string,nSeqnbr ref int,poststatus:='2' as string,cTransnr:='' as string) ; 
 	as array class AddToIncExp
-	// Add current record to Gifts Income/Expense in case of assessable gift to liability member 
+	// Add current record to Ministry Income/Expense in case of assessable gift to liability member 
 	// mDat: sqlstring for date
 	//	Returns array with recordings to income/exp (can be empty) with:
 	// {
@@ -14,9 +14,9 @@ method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre 
 	LOCAL nCre,nCreF as FLOAT
 	Local lHas as logic
 	local i as int 
-	local aTrans:={} as array  // to be reurned array with values to be inserted into table transaction
-	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16   
+	local aTrans:={} as array  // to be returned array with values to be inserted into table transaction
+	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16     17
 	IF Empty(SINC) .and.Empty(SINCHOME) .or.Empty(self:aMbr)
 		RETURN aTrans
 	ENDIF
@@ -31,14 +31,55 @@ method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre 
 				if nCre <>0
 					nSeqnbr++
 					AAdd(aTrans,{iif(lHas,SINCHOME,SINC),0.00,0.00,nCre,nCreF,Currency,mOms,mDAT,'',LOGON_EMP_ID,poststatus,;
-						Str(nSeqnbr,-1),mDocId,'','',''})
+						Str(nSeqnbr,-1),mDocId,'','',iif(FROMRPP,'1','0'),cTransnr})
 					nSeqnbr++
 					AAdd(aTrans,{iif(lHas,SEXPHOME,SEXP),nCre,nCreF,0.00,0.00,Currency,mOms,mDAT,'',LOGON_EMP_ID,poststatus,;
-						Str(nSeqnbr,-1),mDocId,'','',''})
+						Str(nSeqnbr,-1),mDocId,'','',iif(FROMRPP,'1','0'),cTransnr})
 				ENDIF
 			ENDIF
 	endif
 	RETURN aTrans
+	Method AddToIncomeExp(gc:="" as string,FROMRPP:=false as logic,accid as string,cre as float,deb as float,debforgn as float,creforgn as float,;
+		Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as date,mDocId as string,cTransnr as string,nSeqnbr ref int,poststatus:=2 as int) as logic  class AddToIncExp
+	// Add current record to Gifts Income/Expense in case of assessable gift to liability member
+	LOCAL mOms as STRING
+	LOCAL nCre,nCreF as FLOAT
+	Local lHas as logic
+	LOCAL OfficeRate as FLOAT, me_rate,me_stat as STRING 
+	local oMbr as SQLSelect
+	local cStatement as string
+	local oStmnt as SQLStatement 
+	local lError as logic 
+	local aTransIncExp:={} as array // array with transactions to income/expense
+	//aTransIncExp: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16      17
+	if !cType=liability
+		return true
+	endif  
+	aTransIncExp:=self:AddToIncome(gc,FROMRPP,AllTrim(accid),cre,deb,debforgn,creforgn,Currency,DESCRIPTN,cPersId,SQLdate(mDAT),mDocId,@nSeqnbr,Str(poststatus,-1),cTransnr) 
+	if Len(aTransIncExp)=2
+		
+		// add to gifts income:
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid) "+;
+			" values "+Implode(aTransIncExp,"','"),oConn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows>0 
+			if ChgBalance(aTransIncExp[1,1],mDAT,aTransIncExp[1,2],aTransIncExp[1,4],aTransIncExp[1,3],aTransIncExp[1,5],aTransIncExp[1,6])
+				if !ChgBalance(aTransIncExp[2,1],mDAT,aTransIncExp[2,2],aTransIncExp[2,4],aTransIncExp[2,3],aTransIncExp[2,5],aTransIncExp[2,6])
+					lError:=true
+				endif
+			else
+				lError:=true
+			endif
+		else
+			lError:=true
+		endif
+	endif
+	RETURN !lError
+	
+
+	
+
 method Init() class AddToIncExp
 	// initialize 
 	local oMbr as SQLSelect
@@ -200,7 +241,9 @@ METHOD OKButton( ) CLASS SelBankAcc
 			i--
 		endif
 	next
-	self:oCaller:lOK:= true
+	if IsObject(self:oCaller) .and.!self:oCaller==null_object
+		self:oCaller:lOK:= true 
+	endif
 	self:EndWindow(true)
 	RETURN nil
 method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankAcc
@@ -556,7 +599,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		self:m56_kind:=AllTrim(self:oTelTr:kind)
 		self:m56_seqnr:=self:oTelTr:seqnr
 		self:m56_contra_bankaccnt:=ZeroTrim(self:oTelTr:contra_bankaccnt) 
-		self:m56_contra_name:=""
+		self:m56_contra_name:=self:oTelTr:contra_name
 		// 		IF At(">",self:m56_contra_name)=Len(self:m56_contra_name).and.!Empty(self:m56_contra_name)
 		// 			self:m56_contra_name:=SubStr(self:m56_contra_name,1,Len(self:m56_contra_name)-1)
 		// 		ENDIF	
@@ -3084,8 +3127,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 	local i,j,k,l,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local fDeb,fDebForgn,fCre,fCreForgn as float 
 	local aTrans:={} as array  // array with values to be inserted into table transaction:
-	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16
+	//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+	//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16     17
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person 
 	local aZip:={} as array // {persid,postalcode},...   array with postalcode per person
@@ -3300,15 +3343,15 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 									nProc++ 
 									
 									// add to transaction array:
-									//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-									//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
+									//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+									//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      17
 									// first row: 
 									cBankAccOwn:=self:m57_bankacc[j,7]
 									if self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')  // acceptgiro
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
 									AAdd(aTrans,{cBankAccOwn,aValueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
-										aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','',''} ) 
+										aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0',''} ) 
 									// second row: 
 									if aAccnbrDb[l,3]='1'  //destination member?
 										lv_gc:='AG'
@@ -3319,7 +3362,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 										lv_gc:=''
 									endif
 									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
-										aValueTrans[i,2],lv_gc,LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',aValueTrans[i,11],''} )
+										avalueTrans[i,2],lv_gc,LOGON_EMP_ID,'1','2',avalueTrans[i,5]+avalueTrans[i,3],'',avalueTrans[i,11],'0',''} )
 									// person data:
 									AAdd(avaluesPers,{lv_persid,avalueTrans[i,2]}) 
 								endif
@@ -3379,8 +3422,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 				nProc++ 
 				
 				// add to transaction array:
-				//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-				//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16      
+				//aTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+				//          1    2     3      4      5      6            7      8   9  10      11         12    13     14       15     16       17
 				// first row: 
 				cBankAccOwn:=self:m57_bankacc[j,7]
 				lv_persid:=''
@@ -3399,10 +3442,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					fCreForgn:=avalueTrans[i,8]
 				endif
 				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,10],;
-					aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','',''} ) 
+					aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0',''} ) 
 				// second row: 
 				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,10],;
-					aValueTrans[i,2],'',LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,''} )
+					aValueTrans[i,2],'',LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,'0',''} )
 			endif
 		endif
 	enddo
@@ -3570,25 +3613,25 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		// 		else 
 		// insert autmaticallly processed transactions:
 		// insert first line:
-		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid) "+;
-			" values ("+Implode(aTrans[1],"','",1,15)+')',oConn}
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
+			" values ("+Implode(aTrans[1],"','",1,16)+')',oConn}
 		oStmnt:execute()
 		nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-		aTrans[2,16]:=nTransId
+		aTrans[2,17]:=nTransId
 		for i:=3 to Len(aTrans) step 2
 			// next line income/expense?
 			if aTrans[i,12]=='3'
-				aTrans[i,16]:=nTransId
-				aTrans[i+1,16]:=nTransId
+				aTrans[i,17]:=nTransId
+				aTrans[i+1,17]:=nTransId
 				i+=2
 			endif		
 			nTransId++
 			if i<Len(aTrans)
-				aTrans[i,16]:=nTransId
-				aTrans[i+1,16]:=nTransId
+				aTrans[i,17]:=nTransId
+				aTrans[i+1,17]:=nTransId
 			endif
 		next
-		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid) "+;
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid) "+;
 			" values "+Implode(aTrans,"','",2),oConn}
 		oStmnt:execute()
 		if oStmnt:NumSuccessfulRows<1
