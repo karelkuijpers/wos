@@ -567,7 +567,8 @@ method init() class Initialize
 	local i,j as int
 	local aIniKey:={'database','password','server','username'} as array
 	local dim akeyval[4] as string
-	local lConnected as logic 
+	local lConnected as logic
+	local time0,time1 as float 
 
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
@@ -726,6 +727,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
+	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	if !self:lNewDb
 		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
@@ -745,7 +747,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		endif
 	ENDIF
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
-
 	if self:FirstOfDay.or.self:lNewDb 
 		self:InitializeDB()
 	endif
@@ -778,6 +779,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		ENDIF
 	ENDIF
 	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
+
 	oSys:Execute()
 	if oSys:RecCount>0
 		CurVersion:=oSys:Version
@@ -790,13 +792,13 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			break 
 		elseif DBVers < PrgVers 			
 			SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-// 			if !FirstOfDay
-// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
-// 					myApp:Quit() 
-// 					break
-// 				endif
-// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-// 			endif
+			// 			if !FirstOfDay
+			// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
+			// 					myApp:Quit() 
+			// 					break
+			// 				endif
+			// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+			// 			endif
 		endif
 	endif
 	SetDigit(18)
@@ -812,54 +814,11 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	mdw := CDoW(Today())
 	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
 
-	// Initialize sysparms:
-	IF oSys:RecCount=0
-		if SQLSelect{"select united_ara,aed from currencylist",oConn}:RecCount<1
-			ErrorBox{,"No currencies available, wrong installation"}:Show()
-			break
-		endif 
-		aLocal:=self:GetLocaleInfo() 
-		(CurrencySpec{,,,aLocal[5]}):Show()
-		mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
-		oTrans := SQLSelect{"select cast(min(dat) as date) as mindate from transaction",oConn}
-		IF oTrans:RecCount>0
-			if !Empty(oTrans:MinDate)
-				IF (Year(oTrans:mindate)*12+Month(oTrans:mindate)-1) < mindate
-					mindate := SToD(Str(Year(oTrans:MinDate),4,0)+"0101") && This date not yet closed
-				ENDIF
-			ENDIF		
-		ENDIF
-		cStatement:="insert into sysparms set "+;
-			"assmntint='1'"+;
-			",assmntfield='4'"+;
-			",assmntoffc='5.0'"+;
-			",crlanguage='E'"+;
-			",topmargin='10'"+;
-			",leftmargin='10'"+;
-			",rightmargn='10'"+;
-			",bottommarg='10'"+;
-			",Closemonth='12'"+;
-			",decmgift='0'"+;
-			",withldoffl='5.0'"+;
-			",withldoffm='5.0'"+;
-			",withldoffh='5.0'"+;
-			",version='"+Version+"'"+;
-			iif(!Empty(aLocal),;
-			",entity='"+aLocal[3]+"'"+;
-			",countrycod='"+aLocal[1]+"'"+;
-			",countryown='"+aLocal[2]+"'"+;
-			",currname='"+aLocal[6]+"'","")+;
-			",currency='"+sCURR+"'"+;
-			",mindate='"+SQLdate(MinDate)+"'"+; // the previous year 
-		",yearclosed='"+Str(Year(MinDate)-1,4,0)+"'" // december last year
-		oStmnt:=SQLStatement{cStatement,oConn}
-		oStmnt:Execute() 
-		oSys:Execute()  // refersh oSys
-	ENDIF
+
 	cStatement:=""
 	IF FirstOfDay
 		// import PPCodes.dbf from folder with .exe to folder with database:
-		IF !cWorkdir == CurPath
+// 		IF !cWorkdir == CurPath
 
 			oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
 			lCopy:=false
@@ -935,18 +894,61 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 					self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})
 				endif
 			endif
-		endif
-
+// 		endif
+		// Initialize sysparms:
+		IF oSys:RecCount=0
+			if SqlSelect{"select united_ara,aed from currencylist",oConn}:RecCount<1
+				ErrorBox{,"No currencies available, wrong installation"}:Show()
+				break
+			endif 
+			aLocal:=self:GetLocaleInfo() 
+			(CurrencySpec{,,,aLocal[5]}):Show()
+			mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
+			oTrans := SQLSelect{"select cast(min(dat) as date) as mindate from transaction",oConn}
+			IF oTrans:RecCount>0
+				if !Empty(oTrans:MinDate)
+					IF (Year(oTrans:mindate)*12+Month(oTrans:mindate)-1) < mindate
+						mindate := SToD(Str(Year(oTrans:MinDate),4,0)+"0101") && This date not yet closed
+					ENDIF
+				ENDIF		
+			ENDIF
+			cStatement:="insert into sysparms set "+;
+				"assmntint='1'"+;
+				",assmntfield='4'"+;
+				",assmntoffc='5.0'"+;
+				",crlanguage='E'"+;
+				",topmargin='10'"+;
+				",leftmargin='10'"+;
+				",rightmargn='10'"+;
+				",bottommarg='10'"+;
+				",Closemonth='12'"+;
+				",decmgift='0'"+;
+				",withldoffl='5.0'"+;
+				",withldoffm='5.0'"+;
+				",withldoffh='5.0'"+;
+				",version='"+Version+"'"+;
+				iif(!Empty(aLocal),;
+				",entity='"+aLocal[3]+"'"+;
+				",countrycod='"+aLocal[1]+"'"+;
+				",countryown='"+aLocal[2]+"'"+;
+				",currname='"+aLocal[6]+"'","")+;
+				",currency='"+sCURR+"'"+;
+				",mindate='"+SQLdate(MinDate)+"'"+; // the previous year 
+			",yearclosed='"+Str(Year(MinDate)-1,4,0)+"'" // december last year
+			oStmnt:=SQLStatement{cStatement,oConn}
+			oStmnt:Execute() 
+			oSys:Execute()  // refersh oSys
+		ENDIF
 		if self:lNewDb 
 			// Initialize Mailingcodes:
 			oStmnt:=SQLStatement{"insert into perscod (pers_code,abbrvtn,description) values ('  ','  ','  '),('FI','FI','Financial Giver'),"+;
-			"('EG','FG','First gift received'),('MW','MB','Member')",oConn} 
+				"('EG','FG','First gift received'),('MW','MB','Member')",oConn} 
 			oStmnt:Execute()
 			// Initialize Person types: 
 			oStmnt:=SQLStatement{"insert into persontype (id,abbrvtn,descrptn) values (1,'IND','Individual')",oConn}  // hard to one for default VALUE
 			oStmnt:Execute()
 			oStmnt:=SQLStatement{"insert into persontype (abbrvtn,descrptn) values ('MBR','Member'),('ENT','Wycliffe Entity').('GOV','Governement')"+;
-			"('COM','Companies'),('DIR','Direct Income'),('CHU','Sending Church'),('OTH','Other Organization'),('CRE','Creditor')",oConn}
+				"('COM','Companies'),('DIR','Direct Income'),('CHU','Sending Church'),('OTH','Other Organization'),('CRE','Creditor')",oConn}
 			oStmnt:Execute()
 			// Initialize titles:
 			oStmnt:=SQLStatement{"insert into titles (id,descrptn) values (1,'')",oConn}  // hard to one for default VALUE
@@ -972,7 +974,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				endif
 			endif
 		endif
-	endif        
+	endif
+
 	IF Empty(oSys:pswrdlen) .or. oSys:pswrdlen<8 
 		cStatement+=",pswalnum=1,pswrdlen=8"
 	ENDIF
@@ -1025,7 +1028,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	else
 		MultiDest:=FALSE
 	endif	
-  	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 
 	// 	Set up registry settings
 	InitRegistry()
@@ -1649,6 +1651,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"zgzip","0","PRIMARY","1","zipid"};
 		} as array
 
+
 	// 		{"transaction","1","amountdeb","1","deb"},;
 	// 		{"transaction","1","amountcre","1","cre"},;
 	// 		{"transaction","1","description","1","description"},;
@@ -1663,6 +1666,7 @@ method InitializeDB() as void Pascal  class Initialize
 // 		{"teletrans","0","telecontent","8","budgetcd"},;
 // 		{"teletrans","0","telecontent","9","seqnr"},;
 // 		{"teletrans","0","telecontent","10","description (120)"},;
+  	local aMyCurTable:=self:aCurTable as array
 
 
 	
@@ -1671,53 +1675,60 @@ method InitializeDB() as void Pascal  class Initialize
 	ASize(aColumn,Len(aColumn)+Len(aColumn2))
 	ACopy(aColumn2,aColumn,,,nTargetPos)
 
-
 	// check database 
 	// read current database structure:
 	dbname:=AddSlashes(dbname) 
-	oSel:=SQLSelect{"SELECT TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
-		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME",oConn}
+	oSel:=SqlSelect{"SELECT group_concat(lower(TABLE_NAME),',', upper(ENGINE),',', lower(TABLE_COLLATION) SEPARATOR '##') as tablegroup FROM (select TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' order by table_name) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
 	endif 
-	if oSel:RecCount>0
-		do while !oSel:EoF
-			AAdd(self:aCurTable,{Lower(oSel:table_name),Upper(oSel:engine),Lower(oSel:table_collation)})
-			oSel:Skip()
-		enddo
-	endif
+	if oSel:RecCount>0	
+		AEval(Split(oSel:tablegroup,'##'),{|x|AAdd(aMyCurTable,Split(x,','))}) 
+	endif 
+	
 	//read current columns:
-	oSel:=SqlSelect{"SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, ExTRA, COLLATION_NAME FROM information_schema.COLUMNS "+;
-		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION",oConn}
+	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,';', COLUMN_NAME,';', COLUMN_TYPE,';', IS_NULLABLE,';', COLUMN_DEFAULT,';', ExTRA,';', lower(COLLATION_NAME) separator '##') as columngroup "+;
+	"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,'NULL',cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
+	" if(COLLATION_NAME IS NULL,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS "+;
+		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
 	endif 
-	if oSel:RecCount>0
-		do while !oSel:EoF
-			nTbl:=AScan(aCurTable,{|x|x[1]=Lower(oSel:table_name)})
-			if nTbl>0
-				cTableCollation:=aCurTable[nTbl,3]
-			else
-				cTableCollation:=cCollation
-			endif
-			AAdd(aCurColumn,{oSel:table_name,oSel:COLUMN_NAME,oSel:COLUMN_TYPE,oSel:IS_NULLABLE,iif(IsNil(oSel:COLUMN_DEFAULT),"NULL",;
-				oSel:COLUMN_DEFAULT),iif(Empty(oSel:extra),iif(!Empty(oSel:collation_name).and.!Lower(oSel:collation_name)==cTableCollation,'collate '+Lower(oSel:collation_name),''),oSel:extra)})
-			oSel:Skip()
-		enddo
+	if oSel:RecCount>0 
+		AEval(Split(oSel:columngroup,'##'),{|x|AAdd(aCurColumn,Split(x,';'))})
+		// adapt aCurColumn: 
+		//                   1          2          3            4            5           6
+		// aCurColumn: {table_name,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,extra,collation_name},...  
+		j:=1
+		for i:=1 to Len(aCurTable)
+			cTableCollation:=aCurTable[i,3] 
+			cTable:=aCurTable[i,1]
+			j:=AScan(aCurColumn,{|x|x[1]==cTable})
+			do while j>0 .and. j<Len(aCurColumn) .and.aCurColumn[j,1]==cTable
+				if Empty(aCurColumn[j,6])
+					if !Empty(aCurColumn[j,7]).and. !aCurColumn[j,7]==cTableCollation
+						aCurColumn[j,6]:='collate '+aCurColumn[j,7]
+					endif
+				endif
+				ASize(aCurColumn[j],6)  // remove collation column
+				j++
+			enddo							
+		next
 	endif
 	// read current indexes:
-	oSel:=SqlSelect{"select TABLE_NAME,NON_UNIQUE,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART from information_schema.statistics where TABLE_SCHEMA='"+dbname+"'",oConn}
+	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,',',NON_UNIQUE,',',INDEX_NAME,',',SEQ_IN_INDEX,',',COLUMN_NAME separator '##' ) as indexgroup "+;
+	"from (select TABLE_NAME,cast(NON_UNIQUE as char) as NON_UNIQUE,INDEX_NAME,cast(SEQ_IN_INDEX as char) as SEQ_IN_INDEX,concat(COLUMN_NAME,if(SUB_PART is null,'',concat(' (',cast(SUB_PART as char),')'))) as COLUMN_NAME "+;
+	"from information_schema.statistics where TABLE_SCHEMA='"+dbname+"') as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
-	endif 
+	endif
+	 
 	if oSel:RecCount>0
-		do while !oSel:EoF
-			AAdd(aCurIndex,{oSel:table_name,iif(IsNumeric(oSel:NON_UNIQUE),Str(oSel:NON_UNIQUE,1,0),oSel:NON_UNIQUE),oSel:INDEX_NAME,iif(IsNumeric(oSel:SEQ_IN_INDEX),ConS(oSel:SEQ_IN_INDEX),oSel:SEQ_IN_INDEX),oSel:COLUMN_NAME+iif(IsNumeric(oSel:Sub_Part),' ('+ConS(oSel:Sub_Part)+')','')})
-			oSel:Skip()
-		enddo
+		AEval(Split(oSel:indexgroup,'##'),{|x|AAdd(aCurIndex,Split(x,','))})
 	endif
 	// add archive files to aTable: 
 	nTbl:=AScan(aTable,{|x|x[1]=='transaction'})
@@ -1732,7 +1743,7 @@ method InitializeDB() as void Pascal  class Initialize
 		endif
 	enddo
 
-	// compare  current with required structure:
+	// compare  current with required structure: 
 	for i:=1 to Len(aTable)
 		cTable:=Lower(aTable[i,1])
 		
@@ -1801,6 +1812,7 @@ method InitializeDB() as void Pascal  class Initialize
 				ASize(aCurrentIndex,nSourceEnd+1-nSourceStart)
 				ACopy(aCurIndex,aCurrentIndex,nSourceStart,nSourceEnd+1-nSourceStart)
 			endif
+
 			self:SyncColumns(aRequiredCol,aCurrentCol,cTable,aRequiredIndex,aCurrentIndex)
 		endif 	
 	next                                               
@@ -2049,7 +2061,8 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
 	aStatCur:=AReplicate('',nLenCur)
-	// first search for columns with changed specifications:
+	// first search for columns with changed specifications: 
+
 	for nPosReq:=1 to nLenReq   
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
 		nPosCur:=AScan(aCurColumn,{|x|Lower(x[2])==cReqname})
@@ -2207,6 +2220,9 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		cIndex:=aReqIndex[nPosReq,3] 
 		//	process all	lines	of	this index
 		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
+		if nPosReq=0
+			exit
+		endif
 		if AtC(cIndex,cAddIndex)=0 
 			if AScan(aCurIndex,{|x|x[3]==cIndex})>0 .and. AtC(cIndex,cDropIndex)=0
 				// add to drop index
@@ -2223,14 +2239,15 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			enddo
 			cAddIndex+=")"+Sp 
 		endif
-		nPosReq:=AScan(aStatReq,{|x|Empty(x[1])},nPosReq)
+		nPosReq:=AScan(aStatReq,{|x|Empty(x[1])},nPosReq+1)
 	enddo
 	if !Empty(cDropIndex)
 		cStatement+=iif(Empty(cStatement),'',', ')+ cDropIndex
 	endif
 	if !Empty(cAddIndex)
 		cStatement+=iif(Empty(cStatement),'',', ')+ cAddIndex
-	endif 
+	endif
+ 
 	if !Empty(cStatement) 
 		oMainWindow:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
 		if cIndex=='telecontent'
@@ -2251,7 +2268,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				enddo
 			endif
 		endif
-		SQLStatement{"start transaction",oConn}:execute() 
+		SQLStatement{"start transaction",oConn}:Execute() 
 		lError:=false
 		if cIndex=='telecontent' .and. Len(avalues)>0
 			// correct teletrans to make each line unique	
