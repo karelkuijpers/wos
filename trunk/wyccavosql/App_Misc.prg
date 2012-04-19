@@ -354,7 +354,6 @@ if SubStr(cRet,-3)=='.00'
 	cRet:=substr(cRet,1,len(cRet)-3)    // make integer
 endif
 return cRet
-
 Function Correspondence(Str1 as string, Str2 as string) as int
 // determine percentage correspondence of Str2 to Str1 
 Local i, Len1, Len2, MinL, Score, Divdr as int
@@ -1269,12 +1268,18 @@ function HtmlDecode(cText as string) as string
 		cText:=StrTran(cText,aKey[i],aRepl[i])
 	next
 	Return cText  
-FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='),(')
+FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='),(')
 	// Implode array to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
 	// Optionally in case of a 2-dimenional array and empty nCol you can specify separator between rows 
-	LOCAL i, l:=Len(aText) as int, cRet:="",cLine, cQuote as STRING 
-	local lMulti as logic
+	LOCAL i, l:=Len(aText) as int 
+	local cQuote as STRING    // string quote text around separators (CSV)
+	lOCAL cRet  as STRING     // string to be returned
+	local cLine  as STRING    // one line of concatinated text 
+	// to reduce exponential increase of processing time for large strings:
+	local cPartLv1  as STRING // first level of intermediate 1000 bytes of concatinated text to reduce manipulation of large strings 
+	local cPartLv2  as STRING // second level of intermediate 10000 bytes of concatinated text to reduce manipulation of large strings
+	local lMulti as logic 
 	if Len(cSep)>2
 		// test if surrounded by quotes:
 		cQuote:= Left(cSep,1)
@@ -1294,7 +1299,7 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 				if IsArray(aText[nStart+i-1])
 					if Empty(nCol)
 						lMulti:=true
-						cRet+=iif(i==1,right(cSepRow,1),cSepRow)+implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
+						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
 					else
 						if IsString(aText[nStart+i-1][nCol])
 							cLine:=aText[nStart+i-1][nCol]
@@ -1302,7 +1307,7 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
 						endif
 						if !Empty(cLine)
-							cRet+=iif(Empty(cRet),"",cSep)+cLine
+							cPartLv1+=iif(Empty(cPartLv1),"",cSep)+cLine
 						endif
 					endif
 				else
@@ -1311,9 +1316,19 @@ FUNCTION Implode(aText:={} as array,cSep:=" " as string,nStart:=1 as int,nCount:
 					else
 						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
 					endif
-					cRet+=iif(Empty(cRet),"",cSep)+cLine
+					cPartLv1+=iif(Empty(cPartLv1),"",cSep)+cLine
+				endif
+				if Len(cPartLv1)>1000
+					cPartLv2+=cPartLv1
+					cPartLv1:=''
+					if Len(cPartLv2)>10000
+						cRet+=cPartLv2
+						cPartLv2:=''
+					endif
 				endif
 			NEXT
+			cPartLv2+=cPartLv1
+			cRet+=cPartLv2
 		ENDIF 
 	endif
 	RETURN iif(lMulti,cRet,cQuote+cRet+cQuote)
