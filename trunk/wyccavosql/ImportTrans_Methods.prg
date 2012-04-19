@@ -237,7 +237,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	else
 		SQLStatement{"commit",oConn}:execute()
 	endif
-	oImpB:=SQLSelect{"select a.description as accountname,a.accid,a.currency as acccurrency,a.multcurr,a.accnumber,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,i.*"+;
+	oImpB:=SQLSelect{"select a.description as accountname,a.accid,a.currency as acccurrency,a.multcurr,a.accnumber,a.department,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,i.*"+;
 	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
 	"where i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+"' order by imptrid",oConn}
 	if oImpB:reccount<1
@@ -263,7 +263,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:accid:=Space(11)
      	self:oHM:kind := " "
       self:oHM:Gc := ""
-		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency)
+		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency) 
+		self:oHM:DepID:=ConI(oImpB:department)
 		MultiCur:=false
 		IF !Empty(oImpB:accountnr)
 			self:oHM:AccNumber := LTrimZero(oImpB:accountnr)
@@ -304,8 +305,11 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			// Search person with external id:
 			cExId:=oImpB:EXTERNID
 		endif
-		* Add TO mirror:
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE,''})
+		* Add TO mirror: 
+// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
+		
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE,'',oHM:DepID})
 		cOms:=oImpB:descriptn 
 		self:curimpid:=oImpB:imptrid 
 		oImpB:Skip()
@@ -1223,9 +1227,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			// transaction can be processed automatically:
 			//               1       2       3        4          5       6       7       8        9         10        11      12        13       14         15         16       17
 			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp 
+			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
 			AAdd(aValuesTrans,{shb,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'1',aValues[nPtr,2],aValues[nPtr,16],0,1})
+				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'1',aValues[nPtr,2],aValues[nPtr,16],'','1',''})
 		endif
 		// second transaction row 
 
@@ -1260,11 +1264,11 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			// transaction can be processed automatically: 
 			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
 			//             1         2      3         4          5       6        7       8         9         10        11     12        13       14        15         16        17
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp
-			//                1     2      3     4     5       6          7       8   9   10     11         12   13      14       15      16
+			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid
+			//                1     2      3     4     5       6          7       8   9   10     11         12   13      14       15      16     17
 			nProc++
 			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],0,1})
+				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],'','1',''})
 			// add to income expense if needed: 
 			if !Empty(SINCHOME) .or.!Empty(SINC)
 				// add transactions for ministry income/expense:
@@ -1273,10 +1277,10 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				aValues[nPtr,13],aValues[nPtr,14],'',aValues[nPtr,1],aValues[nPtr,2],@nSeqnbr,aValues[nPtr,15])
 				if Len(aTransIncExp)=2
 				// aTransIncExp:
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
-					aTransIncExp[1,16]:=1    // replace by fromrpp
-					aTransIncExp[2,16]:=1
+				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16       17
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+// 					aTransIncExp[1,16]:=1    // replace by fromrpp
+// 					aTransIncExp[2,16]:=1
 					AAdd(aValuesTrans,aTransIncExp[1])
 					AAdd(aValuesTrans,aTransIncExp[2]) 
 				endif
@@ -1320,25 +1324,25 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			endif
 			if !Empty(aValuesTrans) 
 				// insert first line:
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,fromrpp) "+;
-					" values ("+Implode(aValuesTrans[1],"','",1,14)+',1)',oConn}
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
+					" values ("+Implode(aValuesTrans[1],"','",1,16)+')',oConn}
 				oStmnt:Execute()
 				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-				aValuesTrans[2,15]:=nTransId
+				aValuesTrans[2,17]:=nTransId
 				for i:=3 to Len(aValuesTrans) step 2
 					// next line income/expense?
 					if aValuesTrans[i,12]=='3'
-						aValuesTrans[i,15]:=nTransId
-						aValuesTrans[i+1,15]:=nTransId
+						aValuesTrans[i,17]:=nTransId
+						aValuesTrans[i+1,17]:=nTransId
 						i+=2
 					endif		
 					nTransId++
 					if i<Len(aValuesTrans)
-						aValuesTrans[i,15]:=nTransId
-						aValuesTrans[i+1,15]:=nTransId
+						aValuesTrans[i,17]:=nTransId
+						aValuesTrans[i+1,17]:=nTransId
 					endif
 				next
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid,fromrpp) "+;
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid) "+;
 					" values "+Implode(aValuesTrans,"','",2),oConn}
 				oStmnt:Execute()
 				if oStmnt:NumSuccessfulRows<1
