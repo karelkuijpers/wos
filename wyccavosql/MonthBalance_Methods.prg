@@ -21,8 +21,9 @@ class Balances
 	EXPORT cRubrSoort as STRING // Classification of corresponding balance item
 	
 	export cAccSelection as string
-	protect cMbalStmt as string   // string with values to update month balance within ChgBalance
 	export cError as string  // error te be returned  
+	protect aMbalValues:={} as array // {accid,year,month,currency,deb,cre} 
+
 	
 	declare method GetBalance,SQLGetBalance,ChgBalance,ChgBalanceExecute
 	
@@ -38,9 +39,14 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 	*  Date      : 02-12-2011
 	******************************************************************************
 	*
-	local lError as logic
+	local lError as logic 
+	local cDate,cMonth,cYear as string 
+	local i as int
 	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
-		// insert new one/update existing 
+		// insert new one/update existing
+		cDate:=DToS(pRecordDate)
+		cYear:=SubStr(cDate,1,4)
+		cMonth:=ZeroTrim(SubStr(cDate,5,2))
 		if !Currency==sCurr
 			if Empty(currency) .or. len(currency)<>3 
 				Currency:=sCurr
@@ -52,12 +58,28 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 			endif
 		endif
 		if !(pDebAmnt==0.00.and.pCreAmnt==0.00)
-			self:cMbalStmt+=iif(Empty(self:cMbalStmt),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")"
+ 	 		// add to balance values:
+			// {accid,year,month,currency,deb,cre} 
+			i:=AScan(self:aMbalValues,{|x|x[1]==pAccount.and.x[4]==sCurr.and.x[2]==cYear.and.x[3]==CMonth})
+			if i>0
+				self:aMbalValues[i,5]:=Round(self:aMbalValues[i,5]+pDebAmnt,DecAantal)
+				self:aMbalValues[i,6]:=Round(self:aMbalValues[i,6]+pCreAmnt,DecAantal)
+			else
+				AAdd(self:aMbalValues,{pAccount,cYear,cMonth,sCurr,pDebAmnt,pCreAmnt})		
+			endif
 		endif 
 		if !Currency==sCurr
 			if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
 				if !(pDebFORGN==0.00.and.pCreFORGN=0.00)
-					self:cMbalStmt+=iif(Empty(self:cMbalStmt),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")"
+					//	add to balance	values:
+					//	{accid,year,month,currency,deb,cre}	
+					i:=AScan(self:aMbalValues,{|x|x[1]==pAccount.and.x[4]==Currency.and.x[2]==cYear.and.x[3]==CMonth})
+					if	i>0
+						self:aMbalValues[i,5]:=Round(self:aMbalValues[i,5]+pDebFORGN,DecAantal)
+						self:aMbalValues[i,6]:=Round(self:aMbalValues[i,6]+pCreFORGN,DecAantal)
+					else
+						AAdd(self:aMbalValues,{pAccount,cYear,cMonth,Currency,pDebFORGN,pCreFORGN})		
+					endif
 				endif
 			endif
 		endif
@@ -68,8 +90,8 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 	local lSuccess:=true as logic
 	local oStmnt as SQLStatement 
 	self:cError:=''
-		if !Empty(self:cMbalStmt)
-			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+self:cMbalStmt+;
+		if !Empty(self:aMbalValues)
+			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+Implode(self:aMbalValues,"','")+;
 				" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:status) 
@@ -78,7 +100,7 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 				lSuccess:=false
 			endif
 		endif
-	self:cMbalStmt:=''	
+	self:aMbalValues:={}	
 	return lSuccess 
 METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=nil as usual, pCurrency:='' as string) as void pascal CLASS Balances
 	******************************************************************************
