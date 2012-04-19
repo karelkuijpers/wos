@@ -222,14 +222,14 @@ METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aB
 RETURN nCurrentRec
 
 METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
-* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
-* if lDBUpfate true: Update corresponding database items
-*
+	* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
+	* if lDBUpfate true: Update corresponding database items
+	*
 
 	LOCAL nNum as USUAL
 	LOCAL nMain,cType as STRING 
 	LOCAL cError as STRING
-   local oBal as SQLStatement
+	local oBal as SQLStatement
 	Default(@lDBUpdate,FALSE)
 
 	* determine new main identifier:
@@ -240,31 +240,31 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 		* Dragged item identifier:
 		nNum:=self:GetIdFromSymbol(aItemDrag[1] )
 
-// 		IF self:IsAccountSymbol(sItemDrag) 
+		// 		IF self:IsAccountSymbol(sItemDrag) 
 		if aItemDrag[2] :ImageIndex==3       // account?
 			* update account:
-				* check transfer allowed:
-				cError:=ValidateAccTransfer(nMain,nNum)
-				IF Empty(cError) 
-					SQLStatement{"update account set balitemid='"+nMain+"' where accid='"+nNum+"'",oConn}:Execute()
-				ELSE
-					(ErrorBox{,cError}):Show()
-					RETURN cError
-				ENDIF
-// 			ENDIF
+			* check transfer allowed:
+			cError:=ValidateAccTransfer(nMain,nNum)
+			IF Empty(cError) 
+				SQLStatement{"update account set balitemid='"+nMain+"' where accid='"+nNum+"'",oConn}:Execute()
+			ELSE
+				(ErrorBox{,cError}):Show()
+				RETURN cError
+			ENDIF
+			// 			ENDIF
 		ELSE
 			* update balance item:
-				cError:=ValidateBalanceTransition(@nMain,,nNum,@cType)
-				IF !Empty(cError)
-					(ErrorBox{,cError}):Show()
-					RETURN cError
-				ENDIF
-// 				ELSE
-// 					(ErrorBox{,cError+"; Classification of destination does not correspond with Balance Item:"+;
-// 					AllTrim(IVarGet(oSubItemServer,#Number))+"  "+AllTrim(IVarGet(oSubItemServer,#Heading))}):Show()
-// 					RETURN cError
-// 				ENDIF 
-// 		update balance item:
+			cError:=self:ValidateBalanceTransition(nMain,,nNum,@cType)
+			IF !Empty(cError)
+				(ErrorBox{,cError}):Show()
+				RETURN cError
+			ENDIF
+			// 				ELSE
+			// 					(ErrorBox{,cError+"; Classification of destination does not correspond with Balance Item:"+;
+			// 					AllTrim(IVarGet(oSubItemServer,#Number))+"  "+AllTrim(IVarGet(oSubItemServer,#Heading))}):Show()
+			// 					RETURN cError
+			// 				ENDIF 
+			// 		update balance item:
 			oBal:=SQLStatement{"update balanceitem set balitemidparent='"+nMain+"' where balitemid='"+nNum+"'",oConn}
 			oBal:Execute()
 		ENDIF
@@ -273,7 +273,7 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 	SUPER:TransferItem(aItemDrag,oItemDrop)
 
 
-RETURN
+	RETURN
 CLASS BalanceListView INHERIT ListView
 
 METHOD SortByDescription(oListViewItem1, oListViewItem2) CLASS BalanceListView
@@ -447,11 +447,10 @@ METHOD GetChildItem( symItem as symbol ) as Treeviewitem CLASS BalanceTreeView
     sItem.hItem := SELF:__GetHandleFromSymbol( symItem )
     symFoundItem := SELF:__GetSymbolFromHandle(TreeView_GetChild(SELF:Handle(), sItem.hItem ) )
     RETURN SELF:GetItemAttributes(symFoundItem)
-
 CLASS CustomExplorer INHERIT ExplorerWindow
-// 	PROTECT oMainItemServer	as SQLTable
-// 	PROTECT oSubItemServer	as SQLTable
-// 	PROTECT oAccount		AS Account
+	// 	PROTECT oMainItemServer	as SQLTable
+	// 	PROTECT oSubItemServer	as SQLTable
+	// 	PROTECT oAccount		AS Account
 	PROTECT uCurrentMain:='' as USUAL
 	HIDDEN aDragList AS ARRAY   // array with treeview items to drag
 	PROTECT oTVItemDrop AS TreeViewItem
@@ -459,8 +458,8 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	EXPORT lTreeDragging AS LOGIC
 	EXPORT lListDragging AS LOGIC
 	EXPORT cRootName as STRING, cRootValue as int
-   Protect cMainItemServer,cSubitemserver as string 
-   
+	Protect cMainItemServer,cSubitemserver as string 
+	
 	PROTECT hImageList AS PTR
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCaller AS OBJECT
@@ -477,9 +476,9 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	export SelectedItem as String 
 	protect sColumnmain, sColumnSub as Symbol
 	Protect oLan as Language
-export aAccnts:={} as array
-export aItem:={} as array 
-declare method BuildTreeViewItems,GetChild,GetTreeFromListItem
+	export aAccnts:={} as array
+	export aItem:={} as array 
+	declare method BuildTreeViewItems,GetChild,GetTreeFromListItem,IsChildOf,ValidateBalanceTransition, GetIdFromSymbol
 METHOD Append ()  CLASS CustomExplorer
 	SELF:EditButton(TRUE)
 	RETURN
@@ -763,7 +762,7 @@ METHOD GetChild(aChild as array, ParentSym as symbol) as void pascal CLASS Custo
 		oTVChild := SELF:TreeView:GetNextSiblingItem( oTVChild:NameSym )
 	ENDDO
 	RETURN 
-METHOD GetIdFromSymbol(NameSym) CLASS CustomExplorer
+METHOD GetIdFromSymbol(NameSym as symbol) as string CLASS CustomExplorer
 	LOCAL nId AS STRING
 	LOCAL wlen AS INT
 
@@ -877,6 +876,27 @@ METHOD IsAccountSymbol(NameSym) CLASS CustomExplorer
 RETURN SubStr(nId,1,wLen-1)=="ACCOUNT"
 
 
+
+METHOD IsChildOf(Childid as int,ParentId as int) as logic  CLASS CustomExplorer 
+	// check if item with ItemId=ParentId is PARENT of item with ItemId=ChildId
+	LOCAL nChildRec,nParentId			as int
+	// self:aItem: {itemid,parentid,description,number,category},.. 
+	//                 1       2          3       4       5        
+	if Childid=0 .or. ParentId=0
+		return false
+	endif 
+	nChildRec:=AScan(self:aItem,{|X|X[1]==Childid})
+	do while nChildRec>0 .and.(!self:aItem[nChildRec,2]==ParentId .and.self:aItem[nChildRec,2]>0)
+		nParentId:=self:aItem[nChildRec,2]
+		// find its Parent
+		nChildRec:=AScan(self:aItem,{|X|X[2]==nParentId},nChildRec+1 )
+	enddo
+	if nChildRec>0 .and. self:aItem[nChildRec,2]==ParentId
+// 		LogEvent(self,"nChildRec:"+Str(nChildRec,-1)+";its parent:"+Str(self:aItem[nChildRec,2],-10)+"; Childid:"+Str(Childid,-1)+"; parent searched for:"+Str(ParentId,-1),"logsql") 
+		return true
+	endif
+// 		LogEvent(self,"nChildRec:"+Str(nChildRec,-1)+"; Childid:"+Str(Childid,-1)+"; parent searched for:"+Str(ParentId,-1),"logsql") 
+return false
 
 METHOD ListViewColumnClick(oListViewClickEvent) CLASS CustomExplorer
 	LOCAL symColumnName AS SYMBOL
@@ -1129,9 +1149,9 @@ METHOD TreeViewDragEnd( X , Y ) CLASS CustomExplorer
 
 	IF oTVItemDrop != NULL_OBJECT .and.!Empty(SELF:aDragList)
 		* Determine current selected TreeViewItem for ListView:
-		FOR i:=1 TO Len(aDragList)
-			IF aDragList[i,1] != self:oTVItemDrop:NameSym
-				self:TransferItem(aDragList[i], self:oTVItemDrop, true )
+		FOR i:=1 to Len(self:aDragList)
+			IF self:aDragList[i,1] != self:oTVItemDrop:NameSym
+				self:TransferItem(self:aDragList[i], self:oTVItemDrop, true )
 			ENDIF
 		NEXT
 		oTreeView:SelectItem( oTVItemDrop , #DropHighlight, FALSE )
@@ -1158,7 +1178,8 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 	LOCAL oListView AS BalanceListView
 	LOCAL r IS _WINRect
 	LOCAL lCanDrop AS LOGIC
-	LOCAL Xorig, Yorig AS INT
+	LOCAL Xorig, Yorig as int
+	local nDropItemId,nDragItemId,i as int
 // 	LOCAL aMyDrags AS ARRAY
 
 	oTreeView:=SELF:TreeView
@@ -1199,13 +1220,25 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 
 *	ImageList_DragLeave( hTV )
 	ImageList_DragLeave(SELF:Handle() )
-// 	aMyDrags:=aDragList
 	IF oTVItem != NULL_OBJECT
 		* Drag within TreeView pane:
-*		IF lCanDrop.and.!oTVItem:ImageIndex==3.and.AScan(aMyDrags,{|x| x:NameSym==oTVItem:NameSym})==0 //no account .and. not equal to drag item
 		IF lCanDrop.and.!oTVItem:ImageIndex==3 //no account
-			oTreeView:SelectItem( oTVItem:NameSym , #DropHighlight )
-			SELF:oTVItemDrop := oTVItem
+			// check if item to drop on is no child of drag item:
+			nDropItemId:=Val(self:GetIdFromSymbol(oTVItem:NameSym))   
+			for i:=1 to Len(self:aDragList)
+				nDragItemId:=Val(self:GetIdFromSymbol(self:aDragList[i,1])) 
+				if nDragItemId==nDropItemId .or. self:IsChildOf(nDropItemId,nDragItemId)
+					lCanDrop:=false
+					exit
+				endif
+			next
+			if lCanDrop			
+				oTreeView:SelectItem( oTVItem:NameSym , #DropHighlight )
+				self:oTVItemDrop := oTVItem
+			else
+				oTreeView:SelectItem( self:oTVItemDrop , #DropHighlight, FALSE )
+				self:oTVItemDrop := null_object
+			endif
 		ELSE
 			IF !SELF:oTVItemDrop==NULL_OBJECT
 				oTreeView:SelectItem( SELF:oTVItemDrop , #DropHighlight, FALSE )
@@ -1226,17 +1259,26 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 		IF oLVItem != NULL_OBJECT.and.lCanDrop.and.!oLVItem:ImageIndex==3 //no account
 			* determine corresponding treeview item:
 			oTVItem:=oTreeView:GetItemAttributes(String2Symbol("Parent_" + Str(oLVItem:GetValue(#Identifier),-1)))
-			* Check if found Treeview item not equal to a drag item:
-*			IF AScan(aMyDrags,{|x| x:NameSym==oTVItem:NameSym})==0
-				* drop # drag:
-				oLVItem:DropTarget:=TRUE
+			* Check if found Treeview item not a child of a drag item:
+			nDropItemId:=Val(self:GetIdFromSymbol(oTVItem:NameSym))   
+			for i:=1 to Len(self:aDragList)
+				nDragItemId:=Val(self:GetIdFromSymbol(self:aDragList[i,1]))
+				if nDragItemId==nDropItemId .or.self:IsChildOf(nDropItemId,nDragItemId)
+					lCanDrop:=false
+					exit
+				endif
+			next
+			if lCanDrop			
+			
+				oLVItem:DROPTARGET:=true
 				oListView:SetItemAttributes(oLVItem)
-				SELF:oLVItemDrop:= oLVItem
-				SELF:oTVItemDrop := oTVItem
+				self:oLVItemDrop:= oLVItem
+				self:oTVItemDrop := oTVItem
 				oTreeView:SelectItem( oTVItem:NameSym , #DropHighlight )
-*			ELSE
-*				SetCursor( LoadCursor( NULL , IDC_NO ) )
-*			ENDIF
+			else
+				SetCursor( LoadCursor( null , IDC_NO ) )
+				self:oTVItemDrop := null_object
+			endif
 		ELSE
 			IF lCanDrop  // within Listview-pane?
 			* Determine parent of Listview:
@@ -1300,6 +1342,68 @@ METHOD TreeViewSelectionChanged(oTreeViewSelectionEvent) CLASS CustomExplorer
 	ENDIF
 
 	RETURN NIL
+Method ValidateBalanceTransition(cNewParentId:="0" as string,cNewParentNbr:="0" as string,CurBalId:="0" as string,cNewType:="" ref string) as string  class CustomExplorer
+	* Check if transition of current balance item to new parent is allowed
+	*
+	* If not allowed: returns errormessage text
+	* Input::
+	*	cNewParentNbr: number of required new parent of current BalanceItem , or
+	*	cNewParentId : identifier (balitemid)of required new parent of current BalanceItem
+	*	cNewType: Current classification of the balance item itself
+	*
+	* Output: cNewClassification of the parent
+	*
+	LOCAL cError as STRING
+	LOCAL CurType,CurParentId as string
+	local oBalCur,oBalPar as SQLSelect
+	IF cNewParentNbr=="0" .and. cNewParentId="0"
+		RETURN ""
+	ENDIF
+	
+	oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+"balitemid='"+cNewParentId+"'",oConn}
+	IF oBalPar:reccount>0 .and. Str(oBalPar:balitemid,-1)== CurBalId
+		cError:="Parent must be unqual to self"
+		RETURN cError
+	ENDIF
+	IF Empty(cNewType)
+		cNewType:=oBalPar:category
+	ENDIF
+	CurParentId:=Str(oBalPar:balitemid,-1)
+	if CurBalId=="0" .or.Empty(CurBalId)
+		IF Empty(cNewType)
+			CurType:=oBalPar:category
+		ENDIF
+	else
+		oBalCur:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where balitemid="+CurBalId,oConn} 
+		IF oBalCur:reccount>0 .and. oBalPar:number==oBalCur:number
+			cError:="Parent must be unqual to self"
+			RETURN cError
+		endif
+		CurType:=oBalCur:category
+	endif
+	// check if new parent not a child of itself: 
+	// self;aItem: {itemid,parentid,description,number,category},.. 
+	//                 1       2          3       4       5        
+	if self:IsChildOf(val(cNewParentId),val(CurBalId))
+		cError:="Parent must not be a own child"
+	else
+
+		*Check correspondence IN classification TO parent:
+		IF oBalPar:category $ expense+income
+			IF !cNewType $ expense+income
+				cError:="Fill as Classification Income or Expense"
+			ENDIF
+		ELSE
+			IF !cNewType $ liability+asset
+				cError:="Fill as Classification Liabilities or Assets"
+			ENDIF
+		endif
+	endif
+	if Empty(cError) .and.cNewType # CurType
+		// check correspondence with child types 
+		cError:=ValidateBalanceChilds(cNewType,CurType,CurBalId)
+	endif
+	RETURN cError
 method ViewIcon() class CustomExplorer
 	return self:ListView:ViewAs(#IconView)
 
@@ -1311,6 +1415,27 @@ method ViewReport() class CustomExplorer
 
 method ViewSmallIcon() class CustomExplorer
 	return self:ListView:ViewAs(#SmallIconView)
+
+RESOURCE EditBalanceItem DIALOGEX  26, 24, 358, 200
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
+	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
+	CONTROL	"Footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
+	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
+	CONTROL	"", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
+	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
+	CONTROL	"Income", EDITBALANCEITEM_RADIOBUTTONBA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 101, 80, 11
+	CONTROL	"Assets", EDITBALANCEITEM_RADIOBUTTONAK, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 132, 80, 12
+	CONTROL	"Liablities and funds", EDITBALANCEITEM_RADIOBUTTONPA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 147, 80, 11
+	CONTROL	"OK", EDITBALANCEITEM_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 256, 176, 53, 12
+	CONTROL	"Cancel", EDITBALANCEITEM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 176, 53, 12
+END
 
 CLASS EditBalanceItem INHERIT DataWindowExtra 
 
@@ -1343,27 +1468,6 @@ CLASS EditBalanceItem INHERIT DataWindowExtra
 
 
 	
-RESOURCE EditBalanceItem DIALOGEX  26, 24, 358, 200
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Balancegroup#:", EDITBALANCEITEM_SC_NUM, "Static", WS_CHILD, 13, 14, 53, 13
-	CONTROL	"Header:", EDITBALANCEITEM_SC_KOPTEKST, "Static", WS_CHILD, 13, 29, 27, 12
-	CONTROL	"Footer:", EDITBALANCEITEM_SC_VOETTEKST, "Static", WS_CHILD, 13, 44, 24, 12
-	CONTROL	"Parent Group#:", EDITBALANCEITEM_SC_HFDRBRNUM, "Static", WS_CHILD, 13, 73, 59, 13
-	CONTROL	"", EDITBALANCEITEM_MNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 14, 50, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Header:", EDITBALANCEITEM_MKOPTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 29, 271, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Footer:", EDITBALANCEITEM_MVOETTEKST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 44, 272, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITBALANCEITEM_MHFDRBRNUM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 73, 50, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Classification", EDITBALANCEITEM_MSOORT, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 76, 94, 90, 71
-	CONTROL	"Expenses", EDITBALANCEITEM_RADIOBUTTONKO, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 117, 80, 11
-	CONTROL	"Income", EDITBALANCEITEM_RADIOBUTTONBA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 101, 80, 11
-	CONTROL	"Assets", EDITBALANCEITEM_RADIOBUTTONAK, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 132, 80, 12
-	CONTROL	"Liablities and funds", EDITBALANCEITEM_RADIOBUTTONPA, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 84, 147, 80, 11
-	CONTROL	"OK", EDITBALANCEITEM_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 256, 176, 53, 12
-	CONTROL	"Cancel", EDITBALANCEITEM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 176, 53, 12
-END
-
 METHOD CancelButton( ) CLASS EditBalanceItem
 	SELF:ENDWindow()
 RETURN NIL
@@ -1507,6 +1611,7 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	local oStmnt as SQLStatement
 	local mType:=self:mSoort,mParent:=self:cMainId as string 
 	local nPos,nBalid as int
+	local oSel as SQLSelect
 
 	IF Empty(self:mNum)
 		(ErrorBox{,"Please fill number of item"}):Show()
@@ -1519,20 +1624,27 @@ METHOD OKButton( ) CLASS EditBalanceItem
 			RETURN
 		ENDIF
 	ENDIF
-	cError:=ValidateBalanceTransition(@mParent,self:mHFDRBRNUM,self:mBalId,@mType)
+	if !AllTrim(self:OrgHFDRBRNUM)==AllTrim(self:mHFDRBRNUM)
+		// find new parent:
+		oSel:=SqlSelect{"select balitemid from balanceitem where number='"+AllTrim(self:mHFDRBRNUM)+"'",oConn} 
+		if oSel:RecCount>0
+			mParent:=ConS(oSel:balitemid)
+		endif
+	endif
+	cError:=self:oCaller:ValidateBalanceTransition(mParent,self:mHFDRBRNUM,self:mBalId,@mType)
 	IF !Empty(cError)
 		(ErrorBox{,cError}):Show()
 		RETURN
 	ENDIF
-   self:mSoort:=mType
-   self:cMainId:=mParent
+	self:mSoort:=mType
+	self:cMainId:=mParent
 
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+"balanceitem set "+;
 		"number='"+addslashes(AllTrim(self:mNUM))+"'"+;
 		",heading='"+AddSlashes(AllTrim(self:mKOPTEKST))+"'"+;
 		",footer='"+AddSlashes(AllTrim(self:mVOETTEKST))+"'"+;
 		",category='"+self:mSoort+"'"+;
-	",balitemidparent='"+self:cMainId+"'"+;
+		",balitemidparent='"+self:cMainId+"'"+;
 		iif(self:lNew,""," where balitemid='"+self:mBalId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute() 
@@ -1616,6 +1728,12 @@ STATIC DEFINE EDITBALANCEITEM_SC_HFDRBRNUM := 103
 STATIC DEFINE EDITBALANCEITEM_SC_KOPTEKST := 101 
 STATIC DEFINE EDITBALANCEITEM_SC_NUM := 100 
 STATIC DEFINE EDITBALANCEITEM_SC_VOETTEKST := 102 
+CLASS ExplorerClick INHERIT DIALOGWINDOW 
+
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE ExplorerClick DIALOGEX  9, 8, 263, 28
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP
 FONT	8, "MS Shell Dlg"
@@ -1624,12 +1742,6 @@ BEGIN
 	CONTROL	"Select item and click Select", EXPLORERCLICK_FIXEDTEXT1, "Static", WS_CHILD, 42, 8, 102, 13
 END
 
-CLASS ExplorerClick INHERIT DIALOGWINDOW 
-
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oParent,uExtra) CLASS ExplorerClick 
 
 self:PreInit(oParent,uExtra)
@@ -1822,60 +1934,4 @@ IF Empty(cError)
 		ENDIF
 	ENDIF
 ENDIF
-RETURN cError
-Function ValidateBalanceTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as string,CurBalId:="0" as string,cNewType:="" ref string) as string 
-* Check if transition of current balance item to new parent is allowed
-*
-* If not allowed: returns errormessage text
-* Input::
-*	cNewParentNbr: number of required new parent of current BalanceItem , or
-*	cNewParentId : identifier (balitemid)of required new parent of current BalanceItem
-*	cNewType: Current classification of the balance item itself
-*
-* Output: cNewClassification of the parent
-*
-LOCAL cError as STRING
-LOCAL CurType,CurParentId as string
-local oBalCur,oBalPar as SQLSelect
-IF cNewParentNbr=="0" .and. cNewParentId="0"
-	RETURN ""
-ENDIF
-oBalPar:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where "+"balitemid='"+cNewParentId+"'",oConn}
-IF oBalPar:reccount>0 .and. Str(oBalPar:balitemid,-1)== CurBalId
-	cError:="Parent must be unqual to self"
-	RETURN cError
-ENDIF
-IF Empty(cNewType)
-	cNewType:=oBalPar:category
-ENDIF
-CurParentId:=Str(oBalPar:balitemid,-1)
-if CurBalId=="0" .or.Empty(CurBalId)
-	IF Empty(cNewType)
-		CurType:=oBalPar:category
-	ENDIF
-else
-	oBalCur:=SQLSelect{"select balitemid,number,balitemidparent,category from balanceitem where balitemid="+CurBalId,oConn} 
-	IF oBalCur:reccount>0 .and. oBalPar:number==oBalCur:number
-		cError:="Parent must be unqual to self"
-		RETURN cError
-	endif
-	CurType:=oBalCur:category
-endif
- *Check correspondence IN classification TO parent:
-IF oBalPar:category $ expense+income
-	IF !cNewType $ expense+income
-	 	cError:="Fill as Classification Income or Expense"
-	 ENDIF
-ELSE
-	IF !cNewType $ liability+asset
- 		cError:="Fill as Classification Liabilities or Assets"
- 	ENDIF
-endif
-if Empty(cError) .and.cNewType # CurType
-	// check correspondence with child types 
-	cError:=ValidateBalanceChilds(cNewType,CurType,CurBalId)
-endif
-if Empty(cError)
-	cNewParentId:=CurParentId
-endif
 RETURN cError
