@@ -1,5 +1,5 @@
 CLASS DepartmentExplorer INHERIT CustomExplorer 
-declare method BuildListViewItems,PrintSubItem
+	declare method BuildListViewItems,PrintSubItem,ValidateTransition
 METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentExplorer
 	LOCAL oListView			AS BalanceListView
 	LOCAL oListViewItem		AS ListViewItem
@@ -206,7 +206,7 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 	* if lDBUpfate true: Update corresponding database items
 	*
 
-	LOCAL nNum AS USUAL
+	LOCAL nNum as string
 	LOCAL nMain as STRING
 	LOCAL cError AS STRING
 
@@ -231,19 +231,57 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 				RETURN cError
 			ENDIF
 		ELSE
-			* update department:
-			cError:=ValidateTransition(@nMain,,nNum)
-			IF! Empty(cError)
-				(ErrorBox{,cError}):Show()
-				RETURN cError
-			ENDIF
-			SQLStatement{"update department set parentdep='"+nMain+"' where depid='"+nNum+"'",oConn}:Execute()
+			* update department: 
+			if !self:IsChildOf(Val(nMain),Val(nNum))
+				cError:=self:ValidateTransition(@nMain,,nNum)
+				IF! Empty(cError)
+					(ErrorBox{,cError}):Show()
+					RETURN cError
+				ENDIF
+				SQLStatement{"update department set parentdep='"+nMain+"' where depid='"+nNum+"'",oConn}:Execute()
+			endif
 		ENDIF
 	ENDIF
 
 	SUPER:TransferItem(aItemDrag,oItemDrop)
 
 	RETURN
+Method ValidateTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as string,curdepid:="" as string) as string  class DepartmentExplorer
+	* Check if transition of currentdepartment to new parent is allowed
+	*
+	* If not allowed: returns errormessage text
+	* Input::
+	*	cNewParentNbr: number of required new parent of current department , or
+	*	cNewParentId : identifier of required new parent of current department
+	*
+	*
+	LOCAL cError as STRING
+	local oDepPar,oDepCur as SQLSelect
+	IF cNewParentNbr=="0" .and. (cNewParentId=="0" .or.Empty(cNewParentId))
+		RETURN ""
+	ENDIF
+	oDepPar:=SQLSelect{"select depid,deptmntnbr,parentdep from department where "+iif(cNewParentId=="0".or.Empty(cNewParentId),"deptmntnbr='"+cNewParentNbr,"depid='"+cNewParentId)+"'",oConn}
+	if oDepPar:Reccount=0
+		RETURN "parent department does not exist"	
+	endif 
+
+	IF Str(oDepPar:DEPID,-1)==curdepid
+		cError:="Parent must be unqual to self"
+		RETURN cError
+	ENDIF
+	if self:IsChildOf(ConI(oDepPar:DEPID),Val(curdepid))
+		cError:="Parent must not be own child"
+		return cError
+	endif
+	if !curdepid=="0" .and.!Empty(curdepid)
+		oDepCur:=SQLSelect{"select depid,deptmntnbr,parentdep from department where depid='"+curdepid+"'",oConn}
+		IF oDepPar:deptmntnbr==oDepCur:deptmntnbr
+			cError:="Parent must be unqual to self"
+			RETURN cError
+		endif
+	endif
+	cNewParentId:=Str(oDepPar:DEPID,-1)
+	RETURN cError
 CLASS DepartmentTreeView inherit BalanceTreeView 
 declare method AddSubItem
 METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int) as int CLASS DepartmentTreeView
@@ -310,44 +348,6 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	
 RETURN nCurrentRec
  
-RESOURCE EditDepartment DIALOGEX  24, 22, 324, 212
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Department#:", EDITDEPARTMENT_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 53, 12
-	CONTROL	"", EDITDEPARTMENT_MDEPARTMNTNBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 11, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Name:", EDITDEPARTMENT_FIXEDTEXT2, "Static", WS_CHILD, 8, 33, 53, 12
-	CONTROL	"", EDITDEPARTMENT_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 33, 174, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Parent department#:", EDITDEPARTMENT_FIXEDTEXT3, "Static", WS_CHILD, 8, 56, 67, 12
-	CONTROL	"", EDITDEPARTMENT_MPARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 56, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 262, 7, 54, 12
-	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 262, 21, 54, 12
-	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 81, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 180, 81, 15, 12
-	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 63, 12
-	CONTROL	"", EDITDEPARTMENT_MINCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 96, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_INCBUTTON, "Button", WS_CHILD, 179, 96, 17, 12
-	CONTROL	"", EDITDEPARTMENT_MEXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 110, 104, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 180, 110, 16, 13
-	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 314, 32
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 16, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 200, 158, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 304, 158, 15, 13
-	CONTROL	"Contact persons:", EDITDEPARTMENT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 181, 314, 25
-	CONTROL	"Account Income:", EDITDEPARTMENT_SC_INC, "Static", WS_CHILD, 8, 96, 63, 12
-	CONTROL	"Account Expense:", EDITDEPARTMENT_SC_EXP, "Static", WS_CHILD, 8, 110, 63, 13
-	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 189, 86, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 96, 188, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 188, 86, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 200, 188, 16, 12
-	CONTROL	"member department", EDITDEPARTMENT_MEMBERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 140, 11, 91, 12
-	CONTROL	"", EDITDEPARTMENT_IPCPROJECT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 268, 81, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 212, 81, 53, 12
-END
-
 CLASS EditDepartment INHERIT DataWindowExtra 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -412,6 +412,44 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	protect oDep as SQLSelect
                                  
 declare method RekButton                                 
+RESOURCE EditDepartment DIALOGEX  24, 22, 324, 212
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Department#:", EDITDEPARTMENT_FIXEDTEXT1, "Static", WS_CHILD, 8, 11, 53, 12
+	CONTROL	"", EDITDEPARTMENT_MDEPARTMNTNBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 11, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Name:", EDITDEPARTMENT_FIXEDTEXT2, "Static", WS_CHILD, 8, 33, 53, 12
+	CONTROL	"", EDITDEPARTMENT_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 33, 174, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Parent department#:", EDITDEPARTMENT_FIXEDTEXT3, "Static", WS_CHILD, 8, 56, 67, 12
+	CONTROL	"", EDITDEPARTMENT_MPARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 56, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 262, 7, 54, 12
+	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 262, 21, 54, 12
+	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 81, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 180, 81, 15, 12
+	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 63, 12
+	CONTROL	"", EDITDEPARTMENT_MINCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 96, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_INCBUTTON, "Button", WS_CHILD, 179, 96, 17, 12
+	CONTROL	"", EDITDEPARTMENT_MEXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 110, 104, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 180, 110, 16, 13
+	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 314, 32
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 16, 13
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 200, 158, 15, 13
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 158, 86, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 304, 158, 15, 13
+	CONTROL	"Contact persons:", EDITDEPARTMENT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 181, 314, 25
+	CONTROL	"Account Income:", EDITDEPARTMENT_SC_INC, "Static", WS_CHILD, 8, 96, 63, 12
+	CONTROL	"Account Expense:", EDITDEPARTMENT_SC_EXP, "Static", WS_CHILD, 8, 110, 63, 13
+	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 189, 86, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 96, 188, 15, 13
+	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 188, 86, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 200, 188, 16, 12
+	CONTROL	"member department", EDITDEPARTMENT_MEMBERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 140, 11, 91, 12
+	CONTROL	"", EDITDEPARTMENT_IPCPROJECT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 268, 81, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 212, 81, 53, 12
+END
+
 METHOD CancelButton( ) CLASS EditDepartment
 	SELF:EndWindow()
 
@@ -763,10 +801,10 @@ METHOD OKButton( ) CLASS EditDepartment
 			RETURN
 		ENDIF
 	ENDIF
-	cError:=ValidateTransition(@cMainId,self:mParentDep,self:mDepId)
+	cError:=self:oCaller:ValidateTransition(@cMainId,self:mParentDep,self:mDepId)
 	IF !Empty(cError)
- 		(ErrorBox{,cError}):Show()
- 		RETURN
+		(ErrorBox{,cError}):Show()
+		RETURN
 	ENDIF
 	if !lNew .and. !Empty(self:oDep:mpersid) 
 		// member department
@@ -789,39 +827,39 @@ METHOD OKButton( ) CLASS EditDepartment
 			RETURN
 		ENDIF		
 	endif
-// 	IF SELF:lNew
-// 		IF !Empty(SELF:NbrCAPITAL)
-// 			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
-// 			RETURN
-// 		ENDIF		
-// 	ENDIF
-// 	IF self:lNew
-// 		IF !Empty(self:NbrIncome)
-// 			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
-// 			RETURN
-// 		ENDIF		
-// 	ENDIF
-// 	IF self:lNew
-// 		IF !Empty(self:NbrExpense)
-// 			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
-// 			RETURN
-// 		ENDIF		
-// 	ENDIF
+	// 	IF SELF:lNew
+	// 		IF !Empty(SELF:NbrCAPITAL)
+	// 			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
+	// 			RETURN
+	// 		ENDIF		
+	// 	ENDIF
+	// 	IF self:lNew
+	// 		IF !Empty(self:NbrIncome)
+	// 			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
+	// 			RETURN
+	// 		ENDIF		
+	// 	ENDIF
+	// 	IF self:lNew
+	// 		IF !Empty(self:NbrExpense)
+	// 			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
+	// 			RETURN
+	// 		ENDIF		
+	// 	ENDIF
 	
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
-	"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
-	"parentdep='"+cMainId+"',"+;
-	"netasset='"+self:NbrCAPITAL+"',"+;
-	"incomeacc='"+self:NbrIncome+"',"+;
-	"expenseacc='"+self:NbrExpense+"',"+;
-	"assacc1 ='"+ self:mAcc1+"',"+;
-	"assacc2 ='"+ self:mAcc2+"',"+;
-	"assacc3 ='"+ self:mAcc3+"',"+;
-	"persid ='"+ self:mCLN1+"',"+;
-	"persid2 ='"+ self:mCLN2+"',"+; 
+		"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
+		"parentdep='"+cMainId+"',"+;
+		"netasset='"+self:NbrCAPITAL+"',"+;
+		"incomeacc='"+self:NbrIncome+"',"+;
+		"expenseacc='"+self:NbrExpense+"',"+;
+		"assacc1 ='"+ self:mAcc1+"',"+;
+		"assacc2 ='"+ self:mAcc2+"',"+;
+		"assacc3 ='"+ self:mAcc3+"',"+;
+		"persid ='"+ self:mCLN1+"',"+;
+		"persid2 ='"+ self:mCLN2+"',"+; 
 	"ipcproject='"+self:IPCPROJECT+"'"+;
-	iif(self:lNew,""," where depid='"+self:mDepId+"'")
+		iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
@@ -839,7 +877,7 @@ METHOD OKButton( ) CLASS EditDepartment
 	endif
 	self:EndWindow()
 
-RETURN
+	RETURN
 METHOD PersonButton1(lUnique ) CLASS EditDepartment
 	LOCAL cValue := AllTrim(oDCmPerson1:TEXTValue ) AS STRING
 	Default(@lUnique,FALSE)
@@ -1145,34 +1183,3 @@ IF oDep:Reccount=1
 	lUnique:=true
 ENDIF
 RETURN lUnique
-Function ValidateTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as string,curdepid:="" as string) as string
-* Check if transition of currentdepartment to new parent is allowed
-*
-* If not allowed: returns errormessage text
-* Input::
-*	cNewParentNbr: number of required new parent of current department , or
-*	cNewParentId : identifier of required new parent of current department
-*
-*
-LOCAL cError as STRING
-local oDepPar,oDepCur as SQLSelect
-IF cNewParentNbr=="0" .and. (cNewParentId=="0" .or.Empty(cNewParentId))
-	RETURN ""
-ENDIF
-oDepPar:=SQLSelect{"select depid,deptmntnbr,parentdep from department where "+iif(cNewParentId=="0".or.Empty(cNewParentId),"deptmntnbr='"+cNewParentNbr,"depid='"+cNewParentId)+"'",oConn}
-if oDepPar:Reccount=0
-	RETURN "parent department does not exist"	
-endif
-IF Str(oDepPar:DEPID,-1)==curdepid
-	cError:="Parent must be unqual to self"
-	RETURN cError
-ENDIF
-if !curdepid=="0" .and.!Empty(curdepid)
-	oDepCur:=SQLSelect{"select depid,deptmntnbr,parentdep from department where depid='"+curdepid+"'",oConn}
-	IF oDepPar:deptmntnbr==oDepCur:deptmntnbr
-		cError:="Parent must be unqual to self"
-		RETURN cError
-	endif
-endif
-cNewParentId:=Str(oDepPar:DEPID,-1)
-RETURN cError
