@@ -1665,7 +1665,7 @@ METHOD OkButton CLASS EditAccount
 				" ON DUPLICATE KEY UPDATE amount=values(amount)",oConn}
 			oBudIns:Execute()
 		endif
-		IF IsObject(oCaller).and.!oCaller==null_object
+		IF IsObject(oCaller).and.!oCaller==null_object .and.IsObject(self:oCaller:TreeView) .and.!self:oCaller:Treeview==null_object
 			IF IsMethod(oCaller,#RefreshTree)
 				IF lNew 
 					// 					oAcc:seek(#ACCNUMBER,LTrimZero(self:mAccNumber))
@@ -1707,7 +1707,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 	LOCAL oXMLDoc as XMLDocument
 	local osel as SQLSelect
 	local oBalncs as Balances 
-// 	local time1,time0 as float
+	// 	local time1,time0 as float
 	self:SetTexts()
 	
 	self:oDCBalYears:CurrentItemNo:=3
@@ -1761,29 +1761,33 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		endif
 		if !Empty(self:mNumSave)
 			// read balance item:
-			osel:=SQLSelect{"select number,heading from balanceitem where balitemid="+mNumSave,oConn}
-			self:mBalitemid:=AllTrim(osel:NUMBER)+":"+osel:heading
-			self:cCurBal:=self:mBalitemid
+			osel:=SqlSelect{"select number,heading from balanceitem where balitemid="+mNumSave,oConn} 
+			if osel:RecCount>0
+				self:mBalitemid:=AllTrim(osel:NUMBER)+":"+osel:heading
+				self:cCurBal:=self:mBalitemid
+			endif
 		ENDIF
 		IF Empty(self:mDep)
 			self:mDepartment:="0:"+sEntity+" "+sLand
 		else
-			osel:=SQLSelect{"select deptmntnbr,descriptn,ipcproject from department where depid="+self:mDep,oConn}
-			self:mDepartment:=osel:DEPTMNTNBR+":"+osel:DESCRIPTN
-			self:ShowIPC(osel:IPCPROJECT)
+			osel:=SQLSelect{"select deptmntnbr,descriptn,ipcproject from department where depid="+self:mDep,oConn} 
+			if osel:RecCount>0
+				self:mDepartment:=osel:DEPTMNTNBR+":"+osel:DESCRIPTN
+				self:ShowIPC(osel:IPCPROJECT)
+			endif
 		ENDIF
 		self:cCurDep:=self:mDepartment
 	ELSE
-// 		time1:=Seconds()
+		// 		time1:=Seconds()
 
 		self:oAcc:=SQLSelect{;
 			"select a.accid,a.accnumber,a.description,a.balitemid,department,a.gainlsacc,subscriptionprice,a.currency,a.multcurr,reevaluate,"+; 
-			"reimb,a.active,a.clc,a.propxtra,a.giftalwd,a.qtymailing,ipcaccount,"+;
+		"reimb,a.active,a.clc,a.propxtra,a.giftalwd,a.qtymailing,ipcaccount,"+;
 			"b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln "+;
 			"from balanceitem as b, account as a "+;
 			"left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
-			"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
+		"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
 		self:mAccId:= Str(self:oAcc:accid,-1)
@@ -1864,8 +1868,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:oDCmGIFTALWD:Enable()
 		ENDIF
 		// Read budget:
-// 		time0:=time1
-// 		LogEvent(self,"read account:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
+		// 		time0:=time1
+		// 		LogEvent(self,"read account:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
 		osel:=SQLSelect{"select cast(year as unsigned) as year,cast(month as unsigned) as month,amount from budget where accid="+self:mAccId+" order by year,month",oConn}
 		osel:Execute()
 		self:aBudget:={}
@@ -1908,8 +1912,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			endif
 		ENDIF
 		self:cCurDep:=self:mDepartment  
-// 		time0:=time1
-// 		LogEvent(self,"read budget:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+		// 		time0:=time1
+		// 		LogEvent(self,"read budget:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
 
 	ENDIF
 	if self:mactive
