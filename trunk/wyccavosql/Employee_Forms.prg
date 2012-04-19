@@ -409,7 +409,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	if !lNew .and. Lower(self:cLoginNameOrg)==Lower(LOGON_EMP_ID)
 		LOGON_EMP_ID:=cLName   // adapt current login id
 	endif
-	cUpdate:="update employee set persid="+Crypt_Emp(true,"persid",self:mCLN,nEmpId)
+	cUpdate:="update employee set persid="+Crypt_Emp(true,"persid",self:mCln)    
 	oStmnt:=SQLStatement{cUpdate+" where empid='"+AllTrim(self:mEmpID)+"'",oConn}
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status)
@@ -439,7 +439,7 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	oStmnt:=SQLStatement{cUpdate+" where empid="+self:mEmpID,oConn}
 	oStmnt:Execute()
 	if !IsNil(oStmnt:Status) 
-		LogEvent(self,'Update employee Error:'+oStmnt:Status:Description+"; statement:"+oStmnt:SQLString,"LogErrors")
+		LogEvent(self,'Update employee Error:'+oStmnt:Status:Description+CRLF+"empid:"+self:mEmpID+" ; statement:"+oStmnt:SQLString,"LogErrors")
 		(ErrorBox{self,'Update employee Error:'+oStmnt:Status:Description}):Show() 
 		return false 
 	endif
@@ -586,7 +586,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		+' as char) as mcln,'+SQLFullName()+' as memplname,';
 		+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as datetime),";
 		+"cast("+Crypt_Emp(false,"e.type") +" as char) as type, e.password,cast("+Crypt_Emp(false,"e.depid")+" as char) as depid";
-		+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+ " and empid="+self:mEmpId + " order by lastname"
+		+' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,"e.persid")+ ") where empid="+self:mEmpID + " order by lastname"
 
 		oEmp:=SQLSelect{cEmpStmnt,oConn} 
 		oEmp:Execute()
@@ -600,10 +600,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		PasswordOrg   := oEmp:PASSWORD
 		// 		self:oDCmTYPE:Value		:= oEmp:mType
 		self:mType:=Transform(oEmp:TYPE,"")
-		self:mCln := oEmp:mCln
+		self:mCln := Transform(oEmp:mCln,"")
 		self:mCLNOrg:=self:mCln 
 		mDEPID:=oEmp:DEPID
-		self:mPerson := oEmp:mEMPLNAME
+		self:mPerson := Transform(oEmp:mEMPLNAME,"")
 		self:cMemberName := mPerson
 		IF AllTrim(self:mLOGON_NAME)==LOGON_EMP_ID .and. self:mTYPE=="A"  // of user him self?
 			self:mType:="A"
@@ -951,7 +951,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	local cEmpStmnt as string
 	cEmpStmnt:='select e.empid,'+SQLFullName(2)+' as fullname,';
 	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as datetime) as lstlogin,cast("+Crypt_Emp(false,"e.type") +" as char) as type"+;
-	' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid") + " order by lastname"
+	' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,'e.persid')+") where 1 order by lastname"
 	self:oSelEmp:=SQLSelect{cEmpStmnt,oConn}
 	self:oSelEmp:Execute()
 	RETURN nil 
@@ -1897,12 +1897,13 @@ METHOD OkButton() CLASS LogonDialog
 	endif
 
 	IF ( self:logonOk .or. ( wLogonCount >= 3 ) )
-		if wLogonCount==3
+// 		if wLogonCount==3
 			// check if database false
-			if !EvalCheckDigit()
-				ErrorBox{ self, "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
+			if !EvalCheckDigit() 
+				LogEvent(self,"Somebody has manipulated the Employee database. Restore it first from backup!","logerrors")
+// 				ErrorBox{ self, "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
 			endif
-		endif
+// 		endif
 		self:EndDialog()
 	ELSE
 		ErrorBox{ self, "Invalid login attempt!" }:Show()
