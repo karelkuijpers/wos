@@ -135,7 +135,6 @@ local cCheckEmp as string
 Local mChecpEmp as string
 cCheckEmp:=CalcCheckDigit(oConn) 
 mChecpEmp:= (SQLSelect{"select checkemp from sysparms",oConn}):CHECKEMP 
-LogEventFile(,"cCheckEmp:"+cCheckEmp+"; mChecpEmp:"+mChecpEmp) 
 if !cCheckEmp== mChecpEmp
 	return false
 endif 
