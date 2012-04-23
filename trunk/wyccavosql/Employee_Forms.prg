@@ -1897,13 +1897,14 @@ METHOD OkButton() CLASS LogonDialog
 	endif
 
 	IF ( self:logonOk .or. ( wLogonCount >= 3 ) )
-// 		if wLogonCount==3
-			// check if database false
-			if !EvalCheckDigit() 
-				LogEvent(self,"Somebody has manipulated the Employee database. Restore it first from backup!","logerrors")
-// 				ErrorBox{ self, "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
-			endif
-// 		endif
+		// check if database false
+		if !EvalCheckDigit() 
+			LogEvent(self,"Somebody has manipulated the Employee database. Restore it first from backup!","logerrors")
+			ErrorBox{ self, "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
+			IF !SuperUser
+				self:logonOk:=false 
+   		endif
+		endif
 		self:EndDialog()
 	ELSE
 		ErrorBox{ self, "Invalid login attempt!" }:Show()
