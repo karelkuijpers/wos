@@ -161,14 +161,15 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	endif	
 	if oEmp:RecCount=1
 		if !EvalCheckDigit()
-// 			ErrorBox{ , "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
+			LogEvent(,"Somebody has manipulated the Employee database. Restore it first from backup!" ,"logerrors")
+			ErrorBox{ , "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
 			logonOk:=false
 		else
 			oSQL:=SQLSelect{"select persid from person where persid="+oEmp:persid,oConn} 
 			oSQL:Execute()
 			If oSQL:RecCount=0
 				LogEvent(,"Employee database corrupted. Restore it first from backup!" ,"logerrors")
-// 				ErrorBox{ , "Employee database corrupted. Restore it first from backup!" }:Show()
+				ErrorBox{ , "Employee database corrupted. Restore it first from backup!" }:Show()
 				logonOk:=false
 			endif
 		endif
