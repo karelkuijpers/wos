@@ -3750,8 +3750,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	local cTransDate:=SQLdate(process_date) as string 
 	Local oAddInEx as AddToIncExp
 	local aTransValues:={} as array  // array with values to be inserted into table transaction:
-	//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
-	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16     17
+	//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
+	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person
 	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre} 
@@ -3912,8 +3912,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		AAdd(aTrans,{oDue:accid,oDue:personid,oDue:AmountInvoice,cDescr,oDue:Type,oDue:CLC,oDue:acctype,Str(oDue:dueid,-1)})
 		//                 1         2              3               4      5         6         7                 8 
 		// aad to aTransValues
-		//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
-		//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16     17
+		//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
+		//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
 		// first row:
 		cType:=Transform(oDue:Type,"")
 		fAmnt:=float(_cast,oDue:AmountInvoice)
@@ -3921,9 +3921,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		cPersId:= ConS(oDue:personid)
 		cAccMlCd:=Transform(oDue:CLC,"")	
 		cAccID:=ConS(oDue:accid)
-		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','','0',''})
+		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','','0','',''})
 		// second row:
-		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',cPersId,'0',''})
+		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',cPersId,'0','',''})
 		// add person data:
 		IF	!Empty(cType) .and. (cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D') 
 			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
@@ -4029,22 +4029,22 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				" values	("+Implode(aTransValues[1],"','",1,16)+')',oConn}
 			oStmnt:Execute()
 			nTransId:=ConI(SqlSelect{"select	LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-			aTransValues[2,17]:=nTransId
+			aTransValues[2,18]:=nTransId
 			for i:=3	to	Len(aTransValues)	step 2
 				//	next line income/expense?
 				if	aTransValues[i,12]=='3'
-					aTransValues[i,17]:=nTransId
-					aTransValues[i+1,17]:=nTransId
+					aTransValues[i,18]:=nTransId
+					aTransValues[i+1,18]:=nTransId
 					i+=2
 				endif		
 				nTransId++
 				if	i<Len(aTransValues)
-					aTransValues[i,17]:=nTransId
-					aTransValues[i+1,17]:=nTransId
+					aTransValues[i,18]:=nTransId
+					aTransValues[i+1,18]:=nTransId
 				endif
 			next 
 			for i:=2 to Len(aTransValues) step 2000
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid)	"+;
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid)	"+;
 					" values	"+Implode(aTransValues,"','",i,2000),oConn}
 				oStmnt:Execute()
 				if	oStmnt:NumSuccessfulRows<1
