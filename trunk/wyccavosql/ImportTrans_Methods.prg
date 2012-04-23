@@ -1212,6 +1212,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				endif
 			ENDIF
 		ENDIF
+		//     1       2       3         4           5       6       7       8        9         10        11      12      13         14        15          16       17
 		// transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
 		AAdd(aValues,{SQLdate(transdate),docid,docid,shbnbr,'','',origin,'1',;
 			iif(USDAmount<0,0.00,amount),;  //creditamnt
@@ -1226,10 +1227,11 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		if !Empty(acciddest) 
 			// transaction can be processed automatically:
 			//               1       2       3        4          5       6       7       8        9         10        11      12        13       14         15         16       17
-			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed 
+			//                1     2     3     4     5         6        7        10 11    12     13        14    15     16       17      18    19    20
+			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			AAdd(aValuesTrans,{shb,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'1',aValues[nPtr,2],aValues[nPtr,16],'','1',''})
+				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'1',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
 		endif
 		// second transaction row 
 
@@ -1262,13 +1264,13 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		nPtr++ 
 		if !Empty(acciddest)
 			// transaction can be processed automatically: 
-			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
 			//             1         2      3         4          5       6        7       8         9         10        11     12        13       14        15         16        17
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid
-			//                1     2      3     4     5       6          7       8   9   10     11         12   13      14       15      16     17
+			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
+			//                1     2     3     4     5         6        7        8   9    10     11        12    13     14       15      16    17    18
+			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			nProc++
 			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],'','1',''})
+				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
 			// add to income expense if needed: 
 			if !Empty(SINCHOME) .or.!Empty(SINC)
 				// add transactions for ministry income/expense:
@@ -1277,8 +1279,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				aValues[nPtr,13],aValues[nPtr,14],'',aValues[nPtr,1],aValues[nPtr,2],@nSeqnbr,aValues[nPtr,15])
 				if Len(aTransIncExp)=2
 				// aTransIncExp:
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16       17
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid 
+				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 // 					aTransIncExp[1,16]:=1    // replace by fromrpp
 // 					aTransIncExp[2,16]:=1
 					AAdd(aValuesTrans,aTransIncExp[1])
@@ -1300,8 +1302,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			// prepare adapting mbalance values:
 			oMBal:=Balances{}
 			for i:=1 to Len(aValuesTrans) 
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,transid 
+				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 				oMBal:ChgBalance(aValuesTrans[i,1],SQLDate2Date(aValuesTrans[i,8]),aValuesTrans[i,2],aValuesTrans[i,4],aValuesTrans[i,3],;
 					aValuesTrans[i,5],aValuesTrans[i,6])
 			next
@@ -1328,21 +1330,21 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 					" values ("+Implode(aValuesTrans[1],"','",1,16)+')',oConn}
 				oStmnt:Execute()
 				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-				aValuesTrans[2,17]:=nTransId
+				aValuesTrans[2,18]:=nTransId
 				for i:=3 to Len(aValuesTrans) step 2
 					// next line income/expense?
 					if aValuesTrans[i,12]=='3'
-						aValuesTrans[i,17]:=nTransId
-						aValuesTrans[i+1,17]:=nTransId
+						aValuesTrans[i,18]:=nTransId
+						aValuesTrans[i+1,18]:=nTransId
 						i+=2
 					endif		
 					nTransId++
 					if i<Len(aValuesTrans)
-						aValuesTrans[i,17]:=nTransId
-						aValuesTrans[i+1,17]:=nTransId
+						aValuesTrans[i,18]:=nTransId
+						aValuesTrans[i+1,18]:=nTransId
 					endif
 				next
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid) "+;
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid) "+;
 					" values "+Implode(aValuesTrans,"','",2),oConn}
 				oStmnt:Execute()
 				if oStmnt:NumSuccessfulRows<1
