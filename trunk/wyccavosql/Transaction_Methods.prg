@@ -39,7 +39,8 @@ METHOD Init(DescrpWidth, MinimalInfo) CLASS AccountStatements
 	self:aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
 
 	RETURN SELF
-METHOD Month_summary(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,mnd_debF as float,mnd_creF as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
+METHOD Month_summary(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,;
+mnd_debF as float,mnd_creF as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
 	LOCAL skipaant:=5,i,j as int
 	local BalDeb:=0.00, BalCre:=0.00 as float
 	local cOPP,cTypeOPP,cDescription as string
