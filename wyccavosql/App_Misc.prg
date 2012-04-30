@@ -2192,18 +2192,18 @@ METHOD FReadLine() CLASS MyFile
 			if FEof(self:ptrHandle) .and. Empty(cLine)
 				self:Eof:=true
 			endif
-// 			RETURN null_string
 		ENDIF
 		self:nStart:=0
-		nPos:=At3(cDelim, self:cBuffer,self:nStart)
-		IF nPos==0
-// 			RETURN null_string 
-		ENDIF
+		self:cBuffer:=cLine+self:cBuffer
+		nPos:=At3(cDelim, self:cBuffer,self:nStart)  
+		if nPos=0
+			nPos:=Len(self:cBuffer)+1                 // end of file
+		endif
 	ENDIF
 	nSt:=self:nStart+1
 	nLen:=nPos-self:nStart-1
 	self:nStart:=nPos+nIncr
-	RETURN cLine+SubStr(self:cBuffer,nSt,nLen)
+	RETURN SubStr(self:cBuffer,nSt,nLen)
 METHOD Init(oFr) CLASS MyFile
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
@@ -2425,7 +2425,7 @@ function PersonUnion(id1 as string, id2 as string)
 		if !Empty(oPers2:remarks)
 			cStatement+=",remarks=concat(remarks,' ','"+AddSlashes(oPers2:remarks)+"')"
 		endif
-		cStatement+=",mailingcodes='"+MakeCod(Split(oPers1:mailingcodes+" "+oPers2:mailingcodes))+"'"
+		cStatement+=",mailingcodes='"+AddSlashes(MakeCod(Split(oPers1:mailingcodes+" "+oPers2:mailingcodes)))+"'"
 		if Empty(oPers1:creationdate) .or.(!Empty(oPers2:creationdate) .and.oPers1:creationdate>oPers2:creationdate)
 			cStatement+=",creationdate='"+SQLdate(iif(Empty(oPers2:creationdate),null_date,oPers2:creationdate))+"'"
 		endif
@@ -2468,7 +2468,8 @@ function PersonUnion(id1 as string, id2 as string)
 		oStmt:=SQLStatement{"update person set "+SubStr(cStatement,2)+" where persid='"+id1+"'",oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:status)
-			cError:=oStmt:ErrInfo:ErrorMessage 
+			cError:=oStmt:ErrInfo:ErrorMessage
+			LogEvent(,"could not merge persons:"+oStmt:ErrInfo:ErrorMessage+CRLF+oStmt:SQLString,"logerrors") 
 		endif
 		if Empty(cError)
 			if !Empty(oPers2:mbrid) 
