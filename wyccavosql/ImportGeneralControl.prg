@@ -1567,8 +1567,10 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 	if lFillFields .and. self:PersidPtr=0
 		// assemble fieldnames for insert statement after last record read in NextImport
 		AAdd(self:aFields,'persid')
+	endif 
+	if self:PersidPtr=0
 		AAdd(aValueRow,cPersid)   	
-	endif
+	endif		
 	*	Fill target fields from source via mapping:
 	FOR i:=1 to Len(self:aMapping)
 		ID:=Symbol2String(aMapping[i,1])
@@ -1620,7 +1622,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					endif
 					aCod:=MakeAbrvCod(cTargetStr)
 					AAdd(aValueRow,MakeCod(Split(iif(Empty(aCod),'',MakeCod(aCod)+' ')+iif(Empty(DefaultCod),'',AllTrim(DefaultCod)))))
-				ELSEIF IDs=#Tit
+				ELSEIF IDs=#Titel
 					if lFillFields
 						AAdd(self:aFields,'title')
 					endif
@@ -1954,10 +1956,9 @@ local aCod:={} as array
 		endif
 		oStmnt:=SQLStatement{"INSERT INTO person ("+Implode(self:AFields,',')+") values "+Implode(self:aValues,"','")+;
 		" ON DUPLICATE KEY UPDATE "+SubStr(cUpdateStatement,2),oConn}
-			LogEvent(self,oStmnt:sqlstring,"LogSQL")
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
-			LogEvent(self,"error:"+oStmnt:Status:description+" in update persons statement","LogErrors")
+			LogEvent(self,"error:"+oStmnt:Status:description+" in update persons statement"+CRLF+"Stmnt:"+oStmnt:sqlstring,"LogErrors")
 			return false
 		endif
 		time1:=time0 
