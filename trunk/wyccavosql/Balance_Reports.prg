@@ -1407,7 +1407,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 	ENDIF
 	RETURN
 METHOD prtotaal(tot_soort,iLine,iPage) CLASS BalanceReport
-* Afdrukken van sommatielijnen
+* Printing of totals:
    oReport:PrintLine(@iLine,@iPage,iif(self:lXls.and.self:Numbers,self:TAB,"")+ Space(iif(self:lXls,24,BalColWidth))+iif(self:lXls,Replicate(self:TAB,self:MaxLevel),"")+self:TAB+;
    iif(tot_soort==EXPENSE.or. tot_soort==INCOME.or. tot_soort=='SD',iif(self:SimpleDepStmnt,"",'---------'),Space(9))+;
    iif(self:SimpleDepStmnt,"",self:TAB+'-----------  '+self:TAB+'-----------')+;
