@@ -522,74 +522,6 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 		nPage:=0 //reset page for next account
 	endif
 	RETURN true
-function AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre as float,deb as float,debforgn as float,creforgn as float,;
-		Currency as string,DESCRIPTN as string,cType as string,cPersId as string,mDAT as date,mDocId as string,cTransnr as string,nSeqnbr ref int,poststatus:=2 as int) as logic
-	// Add current record to Gifts Income/Expense in case of assessable gift to liability member
-	LOCAL mOms as STRING
-	LOCAL nCre,nCreF as FLOAT
-	Local lHas as logic
-	LOCAL OfficeRate as FLOAT, me_rate,me_stat as STRING 
-	local oMbr as SQLSelect
-	local cStatement as string
-	local oStmnt as SQLStatement 
-	local lError as logic
-	IF Empty(SINC) .and.Empty(SINCHOME)
-		RETURN true
-	ENDIF
-	IF (!Empty(cPersId).or. FROMRPP) .and.gc=="AG" 
-		IF cType=="PA"  //liability?
-			// add to gifts income:
-			if !Empty(SINCHOME) .or.!Empty(SINC)
-				oMbr:=SQLSelect{"select has,grade,offcrate from member where accid="+accid,oConn}
-				if oMbr:RecCount>0 
-					lHas:= if(ConI(oMbr:HAS)>0,true,false) 
-				else
-					Return true
-				endif
-				if Empty(SINC).and.!lHas
-					RETURN true
-				endif
-				nCre:=Round(cre-deb,DecAantal)
-				nCreF:=Round(creforgn-DEBFORGN,DecAantal)
-				me_stat:=AllTrim(oMbr:Grade)
-				mOms:=DESCRIPTN
-				if nCre <>0
-					nSeqnbr++
-					cStatement:="insert into transaction set transid="+cTransnr+",accid="+iif(lHas,SINCHOME,SINC)+",dat='"+SQLdate(mDAT)+;
-						"',docid='"+mDocId+"',description='"+mOms+"',poststatus="+Str(poststatus,-1)+;
-						",cre="+Str(nCre,-1)+",creforgn="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",userid='"+LOGON_EMP_ID+"',currency='"+Currency+"'"
-					oStmnt:=SQLStatement{cStatement,oConn}
-					oStmnt:Execute()
-					if oStmnt:NumSuccessfulRows>0 
-						if ChgBalance(iif(lHas,SINCHOME,SINC),mDAT,0.00,nCre,0.00,nCreF,sCURR)
-							nSeqnbr++
-							oStmnt:SQLString:="insert into transaction set transid="+cTransnr+",accid="+iif(lHas,SEXPHOME,SEXP)+",dat='"+SQLdate(mDAT)+;
-								"',docid='"+mDocId+"',description='"+mOms+"',poststatus="+Str(poststatus,-1)+;
-								",deb="+Str(nCre,-1)+",debforgn="+Str(nCreF,-1)+",seqnr="+Str(nSeqnbr,-1)+",userid='"+LOGON_EMP_ID+"',currency='"+Currency+"'" 
-							oStmnt:Execute()
-							if oStmnt:NumSuccessfulRows>0
-								if !ChgBalance(iif(lHas,SEXPHOME,SEXP),mDAT,nCre,0.00,nCreF,0.00,sCURR)
-									lError:=true
-								endif
-							else
-								LogEvent(,"error:"+oStmnt:status:Description+CRLF+"addtoincome stmnt:"+oStmnt:SQLString,"LogErrors")
-								lError:=true
-							endif
-						else
-							lError:=true
-						endif
-					else
-						lError:=true
-						LogEvent(,"error:"+oStmnt:status:Description+CRLF+" addtoincome stmnt:"+oStmnt:SQLString,"LogErrors")
-					endif
-				ENDIF
-			ENDIF
-		ENDIF
-	endif
-	RETURN !lError
-	
-
-	
 FUNCTION AmntFit(nStart as int,nEnd as int,fSum as float,nLevel as int,aWork as array,Original ref array,aApplied ref array,mDebAmnt ref float,iTeller ref int) as string
 ***********************************************************************************
 *Check fit of combination of nLevel from nEnd applied subscription amounts equal  *
@@ -897,7 +829,7 @@ METHOD FilePrint() CLASS General_Journal
 	nPage:=0
 	SetDecimalSep(Asc(DecSeparator))
 	oReport:PrintLine(@nRow,@nPage,;
-		Pad(oLan:RGet("transaction number",,"!")+":",20)+Str(self:mTRANSAKTNR,-1)+if(lInqUpd,"","(prior)"),aHeader)
+		Pad(oLan:RGet("transaction number",,"!")+":",20)+AllTrim(transform(self:mTRANSAKTNR,""))+if(lInqUpd,"","(prior)"),aHeader)
 	oReport:PrintLine(@nRow,@nPage,;
 		Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),aHeader)
 	oReport:PrintLine(@nRow,@nPage,;
@@ -1076,7 +1008,8 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 	if Empty(self:server)
 		return     // owner closed
 	endif
-	IF self:Server:Lastrec > 0
+	self:mCLNGiver:=''
+	IF self:server:Lastrec > 0
 		SELF:Reset()
 	ENDIF
 	oHm := SELF:Server
@@ -1272,7 +1205,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		oHm:incexpfd:=oAccount:incexpfd
 		oHm:KIND:=Upper(oAccount:accounttype)
 		oHm:DEPID:=ConI(oAccount:department)
-		if !Empty(oAccount:persid) .and.(oHm:KIND=="M" .or.oHm:KIND='K')
+		if !Empty(oAccount:persid) .and.(oHm:KIND=="M" .or.(oHm:KIND='K' .and.!Empty(oHm:incexpfd)))
 			cPersId:=ConS(oAccount:persid)
 			if (oHm:cre-oHm:deb)<0 .or.Empty(self:mCLNGiver).and.(oHm:cre-oHm:deb)=0
 				self:mCLNGiver:=cPersId
@@ -1679,7 +1612,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		CASE oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre
 			* Remove dummy transaction line:
 			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where transid="+self:mTRANSAKTNR+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
+			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
 				return oStmnt:ErrInfo:errormessage
@@ -1700,7 +1633,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 				(oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre)
 			* Line removed:
 			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where transid="+Str(self:mTRANSAKTNR,-1)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
+			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
 				return oStmnt:ErrInfo:errormessage
@@ -1755,7 +1688,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		
 		oNew:Skip()
 	enddo
-	if mCLNGiver # OrigPerson .and. !lNewPers
+	if !mCLNGiver==OrigPerson .and. !lNewPers
 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
 	endif
 
@@ -2047,6 +1980,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			self:Pointer := Pointer{POINTERARROW}
 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
 			SQLStatement{"rollback",oConn}:Execute()
+			self:mCLNGiver:=''
 			return true
 		endif	  
 
@@ -2073,11 +2007,13 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					self:Pointer := Pointer{POINTERARROW}
 					ErrorBox{self,self:oLan:WGet("This telebank transaction has already been processed by someone else, thus skipped")}:show()
 					SQLStatement{"rollback",oConn}:Execute()
+					self:mCLNGiver:=''
 					return true
 				endif
 			elseif self:lImport
 				// lock importrans records
 				if !self:oImpB:LockBatch()
+					self:mCLNGiver:=''
 					return true
 				endif				
 			endif
@@ -2227,6 +2163,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					self:Pointer := Pointer{POINTERARROW}
 					LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 					ErrorBox{self,"transaction could not be stored:"+cError}:show()
+					self:mCLNGiver:=''
 					return false
 				endif
 			next
@@ -2247,6 +2184,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 			endif
 			ErrorBox{self,"transaction could not be stored:"+cError}:show()
+			self:mCLNGiver:=''
 			return false
 		else
 			oStmnt:=SQLStatement{"commit",oConn}
@@ -2273,7 +2211,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						endif
 					ENDIF
 				ENDIF
-				self:mTRANSAKTNR := cTransnr
+				self:oDCmTRANSAKTNR:TextValue := cTransnr
 			endif
 		ENDIF
 	ENDIF
@@ -2287,6 +2225,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		self:lStop:=true
 		self:EndWindow()
 	ENDIF
+	self:mCLNGiver:=''
 	
 	
 	RETURN true		
@@ -3317,7 +3256,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				self:InitGifts()
 			ENDIF
 			* In case of automatic collection (CLIEOP03-file) or acceptgiro no name known:
-			IF self:AutoCollect .or. self:Acceptgiro
+			IF self:AutoCollect .or. self:Acceptgiro  .and.Empty(oPersCnt:m51_lastname)
 				self:cOrigName:=AllTrim(self:oTmt:m56_contra_bankaccnt)
 				self:oDCmPerson:TEXTValue := self:cOrigName
 			ELSE
@@ -3850,7 +3789,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* Check giver:
 			IF !Recognised
 				m54_pers_sta:=oHm:m54w_rek_pers()
-				IF Empty(self:mCLNGiver)
+				IF Val(self:mCLNGiver)=0
 					IF m54_pers_sta='V'
 						(errorbox{self:owner,'Specify a person as payer'}):show()
 						self:oDCmPerson:SetFocus()
@@ -4019,6 +3958,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			if lError
 				SQLStatement{"rollback",oConn}:Execute()
 				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:Errormessage)}:show()
+				self:mCLNGiver:=''
 // 				Break
 				return false
 			else
@@ -4159,6 +4099,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			lError := true
 		ENDIF
 	ENDIF
+	self:mCLNGiver:=''
 	IF lError
 		oHm:Recno := curPntr
 		oDet:Browser:Refresh()
@@ -4178,6 +4119,9 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	ENDIF
 	
 	RETURN true
+	
+
+	
 FUNCTION PersonGiftdata(cType as string,cCod ref string,dlg:=null_date as date,cAssmnt as string,DefMlcd:="" as string, DefOvrd:=false as logic,AccMlCod:="" as string) as void pascal
 * Update mailing codes cCod of a person because of receiving a gift or donation
 * cType: Type of received amount
