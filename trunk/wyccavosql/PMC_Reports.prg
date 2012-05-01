@@ -163,17 +163,6 @@ STATIC DEFINE IESREPORT_AFSLDAGTEXT := 104
 STATIC DEFINE IESREPORT_BALANCETEXT := 103 
 STATIC DEFINE IESREPORT_CANCELBUTTON := 102 
 STATIC DEFINE IESREPORT_OKBUTTON := 101 
-RESOURCE PMISsend DIALOGEX  13, 12, 319, 143
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", PMISSEND_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 250, 16, 53, 12
-	CONTROL	"Cancel", PMISSEND_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 250, 33, 53, 12
-	CONTROL	"Fixed Text", PMISSEND_BALANCETEXT, "Static", WS_CHILD, 12, 19, 221, 29
-	CONTROL	"Up to day:", PMISSEND_AFSLDAGTEXT, "Static", WS_CHILD, 23, 67, 39, 13
-	CONTROL	"donderdag 14 oktober 2010", PMISSEND_AFSLDAG, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 65, 118, 14
-END
-
 CLASS PMISsend INHERIT DataWindowExtra 
 
 	PROTECT oCCOKButton AS PUSHBUTTON
@@ -199,7 +188,18 @@ CLASS PMISsend INHERIT DataWindowExtra
 	protect mxrate as float
 	PROTECT rmaand as STRING 
 	
-	declare method ResetLocks
+	declare method ResetLocks,RefreshLocks
+RESOURCE PMISsend DIALOGEX  13, 12, 319, 143
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", PMISSEND_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 250, 16, 53, 12
+	CONTROL	"Cancel", PMISSEND_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 250, 33, 53, 12
+	CONTROL	"Fixed Text", PMISSEND_BALANCETEXT, "Static", WS_CHILD, 12, 19, 221, 29
+	CONTROL	"Up to day:", PMISSEND_AFSLDAGTEXT, "Static", WS_CHILD, 23, 67, 39, 13
+	CONTROL	"donderdag 14 oktober 2010", PMISSEND_AFSLDAG, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 65, 118, 14
+END
+
 METHOD CancelButton( ) CLASS PMISsend
  	SELF:EndWindow()
 	RETURN TRUE
@@ -389,7 +389,7 @@ METHOD PrintReport() CLASS PMISsend
 	local oMBal as Balances
 	local oStmnt,oStmntDistr as SQLStatement
 	local aTransLock:={},aDisLock:={},aYearStartEnd as array 
-	local cTransLock as string
+	local nTransLock as Dword,nTransSample as int
 	local cDistr as string
 	local time1,time0 as float
 	local cFatalError as string 
@@ -483,7 +483,8 @@ METHOD PrintReport() CLASS PMISsend
 	self:STATUSMESSAGE(self:oLan:WGet('locking member transactions for update')+'...')
 
 	// Check if nobody else is busy with sending to PMC: 
-	// 	(time1:=Seconds())
+	// 	(time1:=Seconds())   
+
 	oTrans:=SQLSelect{'select transid from transaction t '+;
 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
 		" t.lock_id<>0 and t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
@@ -493,41 +494,57 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif 
 	time0:=time1
-	// 	LogEvent(self,"check busy:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
-	// select the transaction data
-	// 	oTrans:=SQLSelect{'select transid,seqnr,accid,persid,cre,deb,description,reference,gc,poststatus,fromrpp,dat from transaction t '+;
-	// 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"'"+;
-	// 		" and t.accid in (select m.accid from member m) order by t.accid,t.transid  for update",oConn}
-	oTrans:=SQLSelect{'select transid,seqnr from transaction t '+;
-		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>''  order by t.transid,t.seqnr  for update",oConn}
-	oTrans:Execute() 
-	if !Empty(oTrans:Status)
-		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oTrans:Status:description+')'}:Show()
-		SQLStatement{"rollback",oConn}:Execute() 
-		return
-	endif
-	time0:=time1
-	// 	LogEvent(self,"sel trans for update:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	
-	// set software lock:
-	AEval(oTrans:GetLookupTable(80000,#transid,#seqnr),{|x|AAdd(aTransLock,Str(x[1],-1)+';'+Str(x[2],-1))}) 
-	cTransLock:=Implode(aTransLock,"','")
-	time0:=time1
-	// 	LogEvent(self,"get lookup table:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-
-	oStmnt:=SQLStatement{"update transaction set lock_id="+MYEMPID+",lock_time=now() where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+	// 	LogEvent(self,"check busy:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")  
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
+	oStmnt:=SQLStatement{'lock tables `transaction` write',oConn} 
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'update transaction set lock_id="'+MYEMPID+'",lock_time=now() where '+;
+		" bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''",oConn}
+	oStmnt:Execute() 
 	if !Empty(oStmnt:Status)
-		ErrorBox{self,self:oLan:WGet("could not lock required transactions")}:Show()
+		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oStmnt:Status:description+')'}:Show()
 		SQLStatement{"rollback",oConn}:Execute() 
+		SQLStatement{"unlock tables",oConn}:Execute()
 		return
 	endif
-	time0:=time1
-	// 	LogEvent(self,"set locks:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	SQLStatement{"commit",oConn}:Execute()  // save locks 
+	nTransLock:=oStmnt:NumSuccessfulRows
+ 	SQLStatement{"commit",oConn}:Execute()	
+	SQLStatement{"unlock tables",oConn}:Execute()
+
+// 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
+// 	oTrans:=SQLSelect{'select transid,seqnr from transaction t '+;
+// 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>''  order by t.transid,t.seqnr  for update",oConn}
+// 	oTrans:Execute() 
+// 	if !Empty(oTrans:Status)
+// 		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oTrans:Status:description+')'}:Show()
+// 		SQLStatement{"rollback",oConn}:Execute() 
+// 		return
+// 	endif 
+// 	
+// 	time0:=time1
+// 	// 	LogEvent(self,"sel trans for update:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+// 	
+// 	// set software lock:
+// 	AEval(oTrans:GetLookupTable(80000,#transid,#seqnr),{|x|AAdd(aTransLock,Str(x[1],-1)+';'+Str(x[2],-1))}) 
+// 	cTransLock:=Implode(aTransLock,"','")
+// 	time0:=time1
+// 	// 	LogEvent(self,"get lookup table:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+
+// 	oStmnt:=SQLStatement{"update transaction set lock_id="+MYEMPID+",lock_time=now() where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+// 	oStmnt:Execute()
+// 	if !Empty(oStmnt:Status)
+// 		ErrorBox{self,self:oLan:WGet("could not lock required transactions")}:Show()
+// 		SQLStatement{"rollback",oConn}:Execute() 
+// 		return
+// 	endif
+// 	time0:=time1
+// 	// 	LogEvent(self,"set locks:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+// 	SQLStatement{"commit",oConn}:Execute()  // save locks 
 	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
 	// select the member data
+// 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
+
 	oMbr:=SqlSelect{"select m.mbrid,m.accid,m.homepp,m.homeacc,m.householdid,m.co,m.has,m.grade,m.offcrate,"+;
 		"ad.accid,ad.accnumber,"+SQLFullName(0,"p")+" as description,ad.currency,b.category as type,"+;
 		"ai.accid as accidinc,ai.accnumber as accnumberinc,ai.description as descriptioninc,ai.currency as currencyinc,"+;
@@ -556,7 +573,8 @@ METHOD PrintReport() CLASS PMISsend
 	oTrans:Execute()
 	time0:=time1
 	// 	LogEvent(self,"sel trans:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	oTrans:GoTop()
+	oTrans:GoTop() 
+	nTransSample:=ConI(oTrans:transid)  // save sample transid for checking purposes later
 	// determine if previous year is closed for balances:
 	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
 	PrvYearNotClosed:=((aYearStartEnd[1]*12+aYearStartEnd[2])>(Year(LstYearClosed)*12+Month(LstYearClosed)))
@@ -674,10 +692,10 @@ METHOD PrintReport() CLASS PMISsend
 		mbrofficeProj:=0 
 		AmntFromRPP:=0.00
 		// 		oTrans:=SQLSelect{"select * from transaction where bfm='' and accid="+me_accid+" and dat<='"+SQLdate(self:closingDate)+"' for update",oConn} 
-		// 		oTrans:Execute() 
+		// 		oTrans:Execute()
 		DO WHILE .not.oTrans:EOF .and. (Empty(oTrans:mbrid) .or.oTrans:mbrid <= CurrentMbrID)
 			if oTrans:mbrid == CurrentMbrID
-				me_gc:=oTrans:gc  
+				me_gc:=oTrans:gc					  
 				me_asshome:=0
 				me_assint:=0
 				if Posting
@@ -1061,7 +1079,13 @@ METHOD PrintReport() CLASS PMISsend
 			lStop:=false
 		endif
 	endif 
-	if !lStop
+	if !lStop .and. !self:RefreshLocks(nTransSample,nTransLock)
+		TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+		lStop:=true
+	endif
+
+	if !lStop 
+		// refresh locks
 		* Produce first Datafile: 
 		self:STATUSMESSAGE(self:oLan:WGet('Producing PMC file')+'...')
 		DecSep:=SetDecimalSep(Asc("."))
@@ -1110,8 +1134,13 @@ METHOD PrintReport() CLASS PMISsend
 				oAskUp:=AskUpld{self,,,cFilename}
 				oAskUp:Show() 
 				if oAskUp:Result==1
-					lStop:=false
-				else
+					if !self:RefreshLocks(nTransSample,nTransLock)
+						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+					else
+						lStop:=false
+					endif
+				endif
+				if lStop
 					// remove datafile:
 					if !FileSpec{cFilename}:DELETE()
 						FErase(cFilename)
@@ -1162,6 +1191,8 @@ METHOD PrintReport() CLASS PMISsend
 				endif
 			endif
 		next
+		// check transactions are still locked:
+		
 // 		(time1:=Seconds())
 		SQLStatement{"start transaction",oConn}:Execute()
 		IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
@@ -1175,14 +1206,22 @@ METHOD PrintReport() CLASS PMISsend
 			cError:=self:oLan:WGet("balance records locked by someone else, thus	skipped")
 			LogEvent(self,cError+':'+oBal:ErrInfo:errormessage+CRLF+"Statement:"+oBal:SQLString,"LogErrors")
 		endif	  
-		if Empty(cError) .and.!Empty(cTransLock)
-			*	Change status of transactions to "Send to PMC": bfm='H':
-			oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+// 		if Empty(cError) .and.!Empty(cTransLock)
+		if Empty(cError) 
+			*	Change status of transactions to "Send to PMC": bfm='H':  
+			oStmnt:=SQLStatement{"update transaction set	bfm='H' where bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>'' and "+;
+			" lock_id="+MYEMPID+" and lock_time > subdate(now(),interval 120 minute)",oConn}
+
+// 			oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
 			oStmnt:Execute()
 			if	oStmnt:NumSuccessfulRows <1
 				cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
 				LogEvent(self,cError+CRLF+"Statement:"+oStmnt:SQLString,"LogErrors")
 			ENDIF
+			if !oStmnt:NumSuccessfulRows=nTransLock 
+				cError:=self:oLan:WGet("someone else has manipulated transactions to be sent to PMC")
+				LogEvent(self,cError,"LogErrors")
+			endif
 		endif
 		if Empty(cError) .and. Len(aDisLock)>0
 			*	Record month within fixed/limited remaining amount distribution instructions:
@@ -1506,6 +1545,29 @@ METHOD PrintReport() CLASS PMISsend
 
 	self:Pointer := Pointer{POINTERARROW}
 	RETURN
+method RefreshLocks(TransIdsample as int,nTransLock as Dword) as logic class PMISsend 
+// refresh locks of PMC-transactions so they are long enough locked to complete PMC processing
+// TransIdsample: transid of a locked record to check remaining lock time
+// nTransLock: number of locked transactions to check if they ar all still available
+//
+// returns false if something wrong with locks
+//
+local oSel as SQLSelect 
+local oStmnt as SQLStatement
+oSel:=SqlSelect{"select TIMESTAMPDIFF(MINUTE,`lock_time`,CURRENT_TIMESTAMP()) as timeshift from transaction where transid="+Str(TransIdsample,-1)+" and lock_id="+MYEMPID,oConn}
+if oSel:Reccount<1
+	return false
+endif
+if ConI(oSel:timeshift)>=110
+	// refresh locks otherwise only 10 minutess left of 2 hour lock:
+	 oStmnt:=SQLStatement{"update transaction set lock_time=CURRENT_TIMESTAMP() where lock_id="+MYEMPID,oConn}
+	 oStmnt:Execute()
+	 if !oStmnt:NumSuccessfulRows=nTransLock
+	 	return false
+	 endif
+endif
+return true
+ 
 Method ResetLocks(cEmpId as string) class PMISsend
 	// reset software lock:
 	local oTrans as SQLSelect
