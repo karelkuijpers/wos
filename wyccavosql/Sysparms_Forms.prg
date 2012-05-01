@@ -230,10 +230,11 @@ method DateTimeSelectionChanged(oDateTimeSelectionEvent) class LogReport
 	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
 	//Put your changes here
 
-	if oControl:NameSym=#DateTimeFrom .or. oControl:NameSym=#DateTimeTo	
-		self:GetLog()
-		self:GoTop()
-		self:oSFSub_LogReport:Browser:refresh()
+	if oControl:NameSym=#DateTimeFrom .or. oControl:NameSym=#DateTimeTo
+		self:FindButton()	
+// 		self:GetLog()
+// 		self:GoTop()
+// 		self:oSFSub_LogReport:Browser:refresh()
 	endif
 	return nil
 
@@ -247,6 +248,51 @@ method DateTimeSelectionChanged(oDateTimeSelectionEvent) class LogReport
 
 
 method FilePrint class LogReport
+LOCAL oDB as SQLselect
+LOCAL Heading:={} as ARRAY
+LOCAL nRow as int
+LOCAL nPage as int
+LOCAL oReport as PrintDialog
+LOCAL cRootName:=AllTrim(SEntity)+" "+sLand as STRING
+LOCAL cTab:=CHR(9) as STRING
+LOCAL Gran as LOGIC
+local cFrom as string 
+local cWhere as string
+local cFields as string
+
+
+oReport := PrintDialog{self,oLan:RGet("Log Report"),,148,DMORIENT_LANDSCAPE,"xls"}
+
+oReport:Show()
+IF .not.oReport:lPrintOk
+	RETURN FALSE
+ENDIF
+IF Lower(oReport:Extension) #"xls"
+	cTab:=Space(1)
+	Heading :={oLan:RGet('Log Report',,"@!"),' '}
+ENDIF
+
+AAdd(Heading, ;
+oLan:RGet("Logid",5,"!")+cTab+oLan:RGet("Source",10,"!")+cTab+oLan:RGet("Log Time",20,"!")+cTab+;
+oLan:RGet("User",10,"!")+cTab+oLan:RGet("Message",,"!"))
+IF oReport:Destination#"File"
+	AAdd(Heading,' ')
+ENDIF
+nRow := 0
+nPage := 0
+AdoDateTimeAsDate ( false )
+self:oLog:SuspendNotification()
+self:oLog:Execute()
+ 
+do WHILE .not. self:oLog:EOF
+	oReport:PrintLine(@nRow,@nPage,Pad(ConS(self:oLog:logid),5)+cTab+Pad(self:oLog:source,10)+cTab+Pad(self:oLog:logtime:AsString(),20)+cTab+;
+	Pad(self:oLog:userid,10)+cTab+self:oLog:message,Heading)
+	self:oLog:skip()
+ENDDO
+AdoDateTimeAsDate ( true )
+oReport:prstart()
+oReport:prstop()
+self:oLog:ResetNotification()             
 	return
 	
 METHOD FindButton( ) CLASS LogReport 
