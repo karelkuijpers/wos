@@ -1274,12 +1274,13 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 	// Optionally in case of a 2-dimenional array and empty nCol you can specify separator between rows 
 	LOCAL i, l:=Len(aText) as int 
 	local cQuote as STRING    // string quote text around separators (CSV)
-	lOCAL cRet  as STRING     // string to be returned
 	local cLine  as STRING    // one line of concatinated text 
 	// to reduce exponential increase of processing time for large strings:
 	local cPartLv1  as STRING // first level of intermediate 1000 bytes of concatinated text to reduce manipulation of large strings 
 	local cPartLv2  as STRING // second level of intermediate 10000 bytes of concatinated text to reduce manipulation of large strings
-	local lMulti as logic 
+	local cPartLv3  as STRING // third level of intermediate 100000 bytes of concatinated text to reduce manipulation of large strings
+	local cPartLv4  as STRING // fourth level of all concatinated text to return to caller
+	local lMulti,lStart:=true as logic 
 	if Len(cSep)>2
 		// test if surrounded by quotes:
 		cQuote:= Left(cSep,1)
@@ -1307,7 +1308,12 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
 						endif
 						if !Empty(cLine)
-							cPartLv1+=iif(Empty(cPartLv1),"",cSep)+cLine
+							if lStart
+								lStart:=false
+							else
+								cLine:=cSep+cLine
+							endif
+							cPartLv1+=cLine
 						endif
 					endif
 				else
@@ -1316,22 +1322,27 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 					else
 						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
 					endif
-					cPartLv1+=iif(Empty(cPartLv1),"",cSep)+cLine
+					cPartLv1+=iif(i=1,"",cSep)+cLine
 				endif
 				if Len(cPartLv1)>1000
 					cPartLv2+=cPartLv1
 					cPartLv1:=''
 					if Len(cPartLv2)>10000
-						cRet+=cPartLv2
+						cPartLv3+=cPartLv2
 						cPartLv2:=''
+						if Len(cPartLv3)>100000
+							cPartLv4+=cPartLv3
+							cPartLv3:=''
+						endif
 					endif
 				endif
 			NEXT
 			cPartLv2+=cPartLv1
-			cRet+=cPartLv2
+			cPartLv3+=cPartLv2
+			cPartLv4+=cPartLv3
 		ENDIF 
 	endif
-	RETURN iif(lMulti,cRet,cQuote+cRet+cQuote)
+	RETURN iif(lMulti,cPartLv4,cQuote+cPartLv4+cQuote)
 function InitGlobals() 
 	LOCAL oLan as Language
 	// 	Local oPP as PPCodes
