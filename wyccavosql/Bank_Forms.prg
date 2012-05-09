@@ -519,7 +519,7 @@ END
 METHOD AccButton(lUnique ) CLASS EditBank
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter(,{"AK"},"N",0)
+	cfilter:=MakeFilter(,{asset},"N",0)
 // 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"General Ledger Account of Bank Account",lUnique,afilter[2],afilter[1],oAccount,,false)
 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"General Ledger Account of Bank Account",lUnique,cfilter)
 	RETURN nil
