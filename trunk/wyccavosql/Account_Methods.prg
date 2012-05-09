@@ -654,7 +654,7 @@ SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
 LOCAL cFilter, cType, cAcc, cIncl as STRING, i,j as int
 // LOCAL bFilter as _CODEBLOCK
 LOCAL aType:={"AK","PA","BA","KO"} as ARRAY
-LOCAL aTypeAcc:={{SDEB,SKAS,SKRUIS,SHB},{SHB,SKAP,SPROJ},{SAM,SAMProj,SDON,SINC,SPROJ},{SEXP,SPOSTZ}} as ARRAY 
+LOCAL aTypeAcc:={{SDEB,SKAS,SKruis},{SHB,SKAP,SPROJ},{SAM,SAMProj,SDON,SINC,SPROJ},{SEXP,SPOSTZ}} as ARRAY 
 // if Empty(aTypeAllwd)
 // 	aTypeAllwd:={"AK","PA","BA","KO"}
 // endif
