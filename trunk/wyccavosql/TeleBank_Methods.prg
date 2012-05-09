@@ -60,7 +60,7 @@ method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre 
 	if Len(aTransIncExp)=2
 		
 		// add to gifts income:
-		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,transid) "+;
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid) "+;
 			" values "+Implode(aTransIncExp,"','"),oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0 
@@ -373,6 +373,9 @@ method AddTeleTrans(bankaccntnbr as string,;
 			self:CurSeq:=seqnr
 			self:CurBank:=bankaccntnbr
 		endif
+	// aValuesTrans:
+	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+	//      1            2        3          4           5      6           7      8      9        10        11       12
 		AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),''),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
 	endif
 
@@ -707,7 +710,7 @@ METHOD Import() CLASS TeleMut
 	LOCAL oBF as MyFileSpec
 	LOCAL oPF as FileSpec
 	LOCAL i as int
-	local nOld:=6 as int   // after Nold months imported transactions are removed
+	local nOld:=12 as int   // after Nold months imported transactions are removed
 	LOCAL lDelete,lSuccess as LOGIC
 	LOCAL lv_eind as date
 	Local oLock,oSel as SQLSelect 
@@ -2970,9 +2973,12 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 		endif
 		lv_description:=AddSlashes(AllTrim(lv_description))
 		lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))
+// 		IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_kind,lv_BankAcntContra,lv_BankAcntContra,lv_budget)
+
 		nTot++ 
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
 			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+// 		endif
 		lv_description:=""
 	ENDDO
 
@@ -3132,7 +3138,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person 
 	local aZip:={} as array // {persid,postalcode},...   array with postalcode per person
-	local oAddInc as AddToIncExp 
+	local oAddInc as AddToIncExp
+	local cStatement as string 
 	// 	local time1,time0 as float
 	// 	(time1:=Seconds()) 
 	if Len(avalueTrans)=0
@@ -3144,6 +3151,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		//
 		// check if persid's belongs to persons
 		//
+	// aValuesTrans:
+	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+	//      1            2        3          4           5      6           7      8      9        10        11       12
 		cPersids:=Implode(avalueTrans,',',,,11)
 		if !Empty(cPersids)
 			oSel:=SqlSelect{"select group_concat(gr.grpersid) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
@@ -3167,7 +3177,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		//
 		// complete persid from contrabankaccount:
 		//
-		AEval(aValueTrans,{|x|cBankContr+=iif(empty(x[4]).or.!empty(x[11]),'',','+x[4])})
+		AEval(avalueTrans,{|x|cBankContr+=iif(Empty(x[4]).or.!Val(x[11])=0,'',','+x[4])})
 		if !Empty(cBankContr)
 			oSel:=SqlSelect{"select group_concat(gr.banknumber,',',gr.grpersid,',',gr.ismember separator '#') as grpersids from (select cast(p.persid as char) as grpersid,banknumber,if(m.mbrid IS NULL,'0','1') as ismember from personbank p left join member m on (m.persid=p.persid) where banknumber in ("+SubStr(cBankContr,2)+")) as gr group by 1=1",oConn}
 			if oSel:RecCount>0 
@@ -3176,7 +3186,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					AEval(aBankCont,{|x|AAdd(aBankContra,Split(x,','))}) 
 					i:=0
 					do while i<Len(avalueTrans)
-						i:=AScan(avalueTrans,{|x|!Empty(x[4]).and.Empty(x[11])},i+1)
+						i:=AScan(avalueTrans,{|x|!Empty(x[4]).and.Val(x[11])=0},i+1)
 						if i>0
 							cBankAcc:=avalueTrans[i,4] 
 							j:=AScan(aBankContra,{|x|x[1]==cBankAcc})   
@@ -3303,7 +3313,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 			//                 1            2           3          4         5          6      7      8          9          10        11
 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0							
-				// 					if self:m57_bankacc[j,4] .and.self:m57_bankacc[j,5]>'0'.or.; // single destination and giftsall, i.e. automatic processing of all gifts?
 				if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts?
 					self:m57_bankacc[j,2] .and. ;   // used for gifts
 					((self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')).or.;  // payahead filled for acceptgiro
@@ -3378,8 +3387,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
 	//      1            2        3          4           5      6           7      8      9        10        11       12
 	i:=0
-	do while i<Len(avalueTrans)
-		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts with known destination 
+	do while i<Len(avalueTrans) 
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts or person unknown  
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
@@ -3394,8 +3403,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 				// check if cross banking?
 				IF !Empty(SKruis).and.!Empty(avalueTrans[i,4])
 					cBankAcc:=avalueTrans[i,4] 
-					k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc}) 
-					if k>0
+// 					k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc}) 
+					k:=AScanExact(self:bankacc,cBankAcc)   // is a bank account?
+					if k>0 
 						// cross banking:
 						cDestAcc:=SKruis
 						if Empty(aValueTrans[i,10])  // empty description?
@@ -3404,7 +3414,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 						lProcAuto:=true
 					endif
 				endif
-			elseif (!Empty(aValueTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	aValueTrans[i,5]=='BGC');  // payahead filled for collective recording of acceptgiro's
+			elseif !Empty(aValueTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	aValueTrans[i,5]=='BGC';  // payahead filled for collective recording of acceptgiro's
 				.or.avalueTrans[i,9]=='A') //debit with known destination?
 				cBudgetcd:=avalueTrans[i,7]
 				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
@@ -3414,6 +3424,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="OCR") .and.Empty(aValueTrans[i,4]).and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
 				// in case of recording of automatic collections take payahead as contra account:
 				cDestAcc:=self:m57_bankacc[j,8]
+				lProcAuto:=true 
+			elseif !Empty(SKruis) .and. AtC('SUMMER INSTITUTE',avalueTrans[i,6])>0 // or transfer to RIA?
+				// cross banking:
+				cDestAcc:=SKruis
 				lProcAuto:=true
 			endif
 			if lProcAuto
@@ -3441,10 +3455,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					fCre:=avalueTrans[i,8]
 					fCreForgn:=avalueTrans[i,8]
 				endif
-				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,10],;
+				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;                  // contra name as description
 					aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
 				// second row: 
-				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,10],;
+				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;
 					aValueTrans[i,2],'',LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,'0','',''} )
 			endif
 		endif
@@ -3679,7 +3693,7 @@ METHOD SkipMut()  CLASS TeleMut
 	* Skip of telebanking transaction aftre showing it
 	SQLStatement{"update teletrans set lock_id=0 where teletrid="+Str(self:CurTelId,-1),oConn}:execute()
 return
-METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=120 as int) as logic CLASS TeleMut
+METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) as logic CLASS TeleMut
 	// check if found banknumber is part of telebanking accounts within the system
 	// 	Default(@NbrDays,120) 
 	local oStMnt as SQLStatement
