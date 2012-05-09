@@ -341,7 +341,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	*		else:								year/month of Mindate							
 	**************
 	*
-	LOCAL CurrStartYear, CurrStartMonth as int // variables for stepping through years and months
+	LOCAL CurrStartYear, CurrStartMonth,CurrEndYear, CurrEndMonth as int // variables for stepping through years and months
 	LOCAL PrvYearStartYr,PrvYearStartMn as int // starting year and month of previous year for assets and libalities 
 	LOCAL PrevPeriodStart as int// start of previous period as number of months since year zero
 	LOCAL PeriodStartYear, PeriodStartMonth   // start of requested period in years and months
@@ -351,6 +351,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	LOCAL LastClose as int // moment of last closing of balance year in number of months since year zero
 	LOCAL CurrMonth as int // Current month during processing in number of months since year zero
 	local YearBeginEnd:={} as array //{year start, monthstart, year end, month end}
+	LOCAL YearEnd as int // End of year as number of months since year zero
 	local PrvYearBeginEnd:={} as array //{previous year start, monthstart, year end, month end}
 	local cprvyrCondition as string  // condition to select mbalance row into sum of Previous Year 
 	local cprvyrYtDCondition as string  // condition to select mbalance row into sum of Previous YtD Year 
@@ -404,10 +405,13 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	YearBeginEnd:=GetBalYear(PeriodStartYear,PeriodStartMonth)
 	CurrStartYear := YearBeginEnd[1]
 	CurrStartMonth:= YearBeginEnd[2]
+	CurrEndYear := YearBeginEnd[3]
+	CurrEndMonth:= YearBeginEnd[4]
 	PrvYearBeginEnd:=GetBalYear(CurrStartYear-1,CurrStartMonth)
 	PrevPeriodStart:=Integer(CurrStartYear*12)+CurrStartMonth  // i.e. beginning of corresponding balance year
 	PrvYearNotClosed:=(PrevPeriodStart>LastClose)
-	YearBeforePrvNotClosed:=((PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2])>LastClose)
+	YearBeforePrvNotClosed:=((PrvYearBeginEnd[1]*12+PrvYearBeginEnd[2])>LastClose) 
+	YearEnd:=Integer(CurrEndYear*12)+CurrEndMonth   // end of current year
 
 	IF PrvYearNotClosed
 		*	start at first non closed year to cumulate from last svjd/c for assets/liability:
@@ -478,7 +482,8 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 
 	if lBudget
 		// condition for selecting budget:
-		cBudgetCondition:="(bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodEnd,-1)						
+// 		cBudgetCondition:="(bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodEnd,-1)						
+		cBudgetCondition:="(bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(YearEnd,-1)						
 		// condition for selecting budget into sum previous period: 
 		if PrevPeriodStart=PeriodStart   
 			// no previous period
@@ -488,7 +493,8 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 		endif
 		cPerConditionBud:="if((bu.year*12+bu.month) between "+Str(PeriodStart,-1)+" and "+Str(PeriodEnd,-1)
 		// condition for selecting budget into sum balance year: 
-		cYrConditionBud:="if((bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodEnd,-1)							
+// 		cYrConditionBud:="if((bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(PeriodEnd,-1)							
+		cYrConditionBud:="if((bu.year*12+bu.month) between "+Str(PrevPeriodStart,-1)+" and "+Str(YearEnd,-1)							
 	endif
 
 	// condition for selecting accountbalanceyear ay: 
