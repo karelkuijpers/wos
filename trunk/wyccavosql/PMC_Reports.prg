@@ -433,7 +433,7 @@ METHOD PrintReport() CLASS PMISsend
 		RETURN FALSE
 	ENDIF
 	oCurr:=Currency{"Sending to PMC"}
-	fExChRate:=oCurr:GetROE("USD",Today(),true) 
+	fExChRate:=oCurr:GetROE("USD",Today(),true,true,1.65) 
 	if oCurr:lStopped
 		Return
 	endif 
@@ -573,7 +573,6 @@ METHOD PrintReport() CLASS PMISsend
 	oTrans:Execute()
 	time0:=time1
 	// 	LogEvent(self,"sel trans:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	oTrans:GoTop() 
 	nTransSample:=ConI(oTrans:transid)  // save sample transid for checking purposes later
 	// determine if previous year is closed for balances:
 	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
@@ -1546,28 +1545,32 @@ METHOD PrintReport() CLASS PMISsend
 	self:Pointer := Pointer{POINTERARROW}
 	RETURN
 method RefreshLocks(TransIdsample as int,nTransLock as Dword) as logic class PMISsend 
-// refresh locks of PMC-transactions so they are long enough locked to complete PMC processing
-// TransIdsample: transid of a locked record to check remaining lock time
-// nTransLock: number of locked transactions to check if they ar all still available
-//
-// returns false if something wrong with locks
-//
-local oSel as SQLSelect 
-local oStmnt as SQLStatement
-oSel:=SqlSelect{"select TIMESTAMPDIFF(MINUTE,`lock_time`,CURRENT_TIMESTAMP()) as timeshift from transaction where transid="+Str(TransIdsample,-1)+" and lock_id="+MYEMPID,oConn}
-if oSel:Reccount<1
-	return false
-endif
-if ConI(oSel:timeshift)>=110
-	// refresh locks otherwise only 10 minutess left of 2 hour lock:
-	 oStmnt:=SQLStatement{"update transaction set lock_time=CURRENT_TIMESTAMP() where lock_id="+MYEMPID,oConn}
-	 oStmnt:Execute()
-	 if !oStmnt:NumSuccessfulRows=nTransLock
-	 	return false
-	 endif
-endif
-return true
- 
+	// refresh locks of PMC-transactions so they are long enough locked to complete PMC processing
+	// TransIdsample: transid of a locked record to check remaining lock time
+	// nTransLock: number of locked transactions to check if they ar all still available
+	//
+	// returns false if something wrong with locks
+	//
+	local oSel as SQLSelect 
+	local oStmnt as SQLStatement
+	if nTransLock>0
+		oSel:=SqlSelect{"select TIMESTAMPDIFF(MINUTE,`lock_time`,CURRENT_TIMESTAMP()) as timeshift from transaction where transid="+Str(TransIdsample,-1)+" and lock_id="+MYEMPID,oConn}
+		if oSel:Reccount<1 
+			LogEvent(self,"lock not more available:"+oSel:SQLString+CRLF+oSel:ErrInfo:errormessage,"logerrors")
+			return false
+		endif
+		if ConI(oSel:timeshift)>=110
+			// refresh locks otherwise only 10 minutess left of 2 hour lock:
+			oStmnt:=SQLStatement{"update transaction set lock_time=CURRENT_TIMESTAMP() where lock_id="+MYEMPID,oConn}
+			oStmnt:Execute()
+			if !oStmnt:NumSuccessfulRows=nTransLock
+				LogEvent(self,"can't refresh locks:"+oStmnt:SQLString+CRLF+"Qty:"+Str(oStmnt:NumSuccessfulRows,-1)+'; error:'+oStmnt:ErrInfo:errormessage,"logerrors")
+				return false
+			endif
+		endif
+	endif
+	return true
+	
 Method ResetLocks(cEmpId as string) class PMISsend
 	// reset software lock:
 	local oTrans as SQLSelect
