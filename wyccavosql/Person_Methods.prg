@@ -1544,7 +1544,7 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 			ENDIF
 		ELSE
 			// 			self:SearchSLE := AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
-			self:SearchUni := AllTrim(StrTran(cValue,',',' '))
+			self:SearchUni := AllTrim(StrTran(cValue,',',' ')) +iif(empty(oPersCnt) .or. empty(oPersCnt:m51_city),'',' '+oPersCnt:m51_city)
 		ENDIF
 		if !Empty(oPersCnt).and.!Empty(oPersCnt:persid)
 			self:SearchCLN:=oPersCnt:persid
@@ -1772,8 +1772,8 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 	LOCAL aWord as ARRAY
 	LOCAL aFirstPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET","DER"} as ARRAY
 	LOCAL aSecondPrefix:={"DEN","DER","HET","DE"} as ARRAY
-	LOCAL aSalutation:={"DHR","HR","MW","MEJ","HR/MW","FAM","MR","MRS","PROF","DR","IR","DS","ARTS","DRS"} as ARRAY
-	LOCAL aSalutationSep:={"EN","E/O",""} as ARRAY
+	LOCAL aSalutation:={"DHR","HR","MW","MEJ","HR/MW","FAM","MR","MRS","PROF","DR","IR","DS","ARTS","DRS","HEER"} as ARRAY
+	LOCAL aSalutationSep:={"EN","EO",""} as ARRAY
 	LOCAL nInitialsPos, nSalutationPos, nPrefixPos, nStart, nCityPosition as int
 	Default(@lAddress,FALSE)
 	Default(@lInitials,FALSE)
@@ -1822,7 +1822,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 			ENDIF
 		ENDIF
 		FOR i:=1 to nLength
-			IF AScanExact(aSalutation,aWord[i,1])>0
+			IF AScanExact(aSalutation,Upper(aWord[i,1]))>0
 				self:m51_title:=self:m51_title+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+aWord[i,2]
 				IF !lSalutation
 					nSalutationPos:=i
@@ -1866,7 +1866,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 		self:m51_prefix:=""
 		nLength:=Len(aWord)
 		for i:=1 to nLength
-			IF AScanExact(aFirstPrefix,aWord[i,1])>0 
+			IF AScanExact(aFirstPrefix,Upper(aWord[i,1]))>0 
 				IF IsAlpha(aWord[i,1]).and.!aWord[i,2]="-".and.!aWord[i,2]="/".and.; //not followed by -/
 					!(i>1.and.(aWord[i-1,2]="-".or.aWord[i-1,2]="/")) //no "-/" preceding
 					
@@ -1874,7 +1874,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 					nPrefixPos:=i
 					aWord[i]:={"",""}	//	empty	word
 					IF	i<nLength
-						IF	AScanExact(aSecondPrefix,aWord[i+1,1])>0
+						IF	AScanExact(aSecondPrefix,Upper(aWord[i+1,1]))>0
 							self:m51_prefix:=self:m51_prefix+" "+Lower(aWord[i+1,1])
 							aWord[i+1]:={"",""} // empty word
 						ENDIF
@@ -1883,7 +1883,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 				endif
 			ELSE
 				* search	for o/h,	etc:
-				IF	i<nLength .and.AScanExact(aFirstPrefix,aWord[i,1]+aWord[i,2]+aWord[i+1,1])>0
+				IF	i<nLength .and.AScanExact(aFirstPrefix,Upper(aWord[i,1]+aWord[i,2]+aWord[i+1,1]))>0
 					self:m51_prefix:=Lower(aWord[i,1]+aWord[i,2]+aWord[i+1,1])
 					nPrefixPos:=i
 					aWord[i]:={"",""} // empty word
@@ -1953,7 +1953,7 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 				* last word is cityname:
 				IF !Upper(aWord[nLength-1,1])=="EN" .and.; // not couple with "EN" between names:
 					!Len(aWord[nLength,1])>18.and.!aWord[nLength-1,2]=="-".and.!aWord[nLength-1,2]=="/"; // no double name with - /
-					.and.AScanExact(aFirstPrefix,aWord[nLength-1,1])=0 // no prefix preceding city name
+					.and.AScanExact(aFirstPrefix,Upper(aWord[nLength-1,1]))=0 // no prefix preceding city name
 					self:m51_city:=aWord[nLength,1]
 					aWord[nLength]:={"",""}
 					IF Len(aWord[nLength-1,1])==1
@@ -1971,20 +1971,20 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 	FOR i:=if(Empty(nStart),1,nStart) to nLength
 		if !Empty(aWord[i,1])
 			IF Len(self:m51_lastname)+Len(aWord[i,1])<=28
-				IF !aWord[i,1]=="EN" .and.!aWord[i,1]=="EO".and.!aWord[i,1]=="CJ".and.!aWord[i,1]=="VOOR";
-						.and.!aWord[i,1]=="GIFT".and.!aWord[i,1]=="TGV".and.!IsDigit(aWord[i,1])
+				IF !upper(aWord[i,1])=="EN" .and.!upper(aWord[i,1])=="EO".and.!upper(aWord[i,1])=="CJ".and.!(Upper(aWord[i,1])=='E'.and.aWord[i,2]=='/');
+					.and.!Upper(aWord[i,1])=="VOOR".and.!Upper(aWord[i,1])=="GIFT".and.!Upper(aWord[i,1])=="TGV".and.!IsDigit(Upper(aWord[i,1]))
 					self:m51_lastname:=self:m51_lastname+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+if(aWord[i,2]==","," ",aWord[i,2])
 				ELSE
-					if aWord[i,1]=="EN" .or.!aWord[i,1]=="EO".or.!aWord[i,1]=="CJ"
+					if Upper(aWord[i,1])=="EN" .or.Upper(aWord[i,1])=="EO".or.Upper(aWord[i,1])=="CJ" .or.(Upper(aWord[i,1])=='E'.and.aWord[i,2]=='/')
 						self:m51_gender:="couple"
 					endif 
 					IF i==nStart
 						loop
 					ELSE
 						* Next word probably part of streetname in case of "EN OF". "EO" or "CJ":
-						IF lAddress .and. i+2==nLength .and.aWord[i+1,1]=="OF"
+						if lAddress .and. i+2==nLength .and.Upper(aWord[i+1,1])=="OF"
 							self:m51_AD1:=Upper(SubStr(aWord[i+2,1],1,1))+Lower(SubStr(aWord[i+2,1],2))+" "+self:m51_AD1
-						ELSEIF lAddress.and.i+1==nLength .and.(aWord[i,1]=="EO".or.aWord[i,1]=="CJ")
+						ELSEIF lAddress.and.i+1==nLength .and.(Upper(aWord[i,1])=="EO".or.Upper(aWord[i,1])=="CJ")
 							self:m51_AD1:=Upper(SubStr(aWord[i+1,1],1,1))+Lower(SubStr(aWord[i+1,1],2))+" "+self:m51_AD1
 						ENDIF
 						exit
