@@ -59,9 +59,10 @@ export mxrate as float
 protect cCurCaption:="Get exchange rate" as string 
 export lStopped as logic 
 declare method GetROE
-Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic) as float class Currency
+Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0 as float) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
+	// nUp: optionally percentage to increase rate read from internet (decrease if negative); if <>0 get always rate from internet
 	// returns rate of exchange: 1 unit CurCode = ROE base currency
 	//
 	LOCAL oHttp			as cHttp
@@ -69,7 +70,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	LOCAL cPostData	as STRING
 	Local iSt,iEnd as int
 	local table as string
-	LOCAL oXMLDoc as XMLDocument, lRow as logic, cAED as string
+	LOCAL oXMLDoc as XMLDocument, lRow,lFound as logic, cAED as string
 	LOCAL oExch as GetExchRate 
 	local cStatement,RateId as string
 	local oStmnt as SQLStatement 
@@ -79,6 +80,9 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	// check if ROE allready in currency rates:
 	if Empty(CodeROE) .or. CodeROE==self:cBaseCur
 		return 1
+	endif
+	if !nUp==0.00
+		lnew:=true
 	endif
 	oROE:=SQLSelect{"select roe,rateid,cast(daterate as date) as daterate from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
 	if oROE:RecCount>0
@@ -113,49 +117,58 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	if lnew
 		// try to read from internet 
 		oHttp 	:= CHttp{"Wyccavo"}
-		cPostData	:= "basecur="+self:cBaseCur+"&historical=true&month="+Str(Month(DateROE),-1)+"&day="+Str(Day(DateROE),-1)+"&year="+Str(Year(DateROE),-1)+"&sort_by=code&image=Submit" 
+		cPostData	:= "from="+self:cBaseCur+"&date="+SQLdate(DateROE) 
 
 		cPage 	:= oHttp:GetDocumentByGetOrPost( "www.xe.com",;
-			"/ict/",;
+			"/currencytables/",;
 			cPostData,;
 			/*cHeader*/,;
 			"POST",;
 			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
 			/*INTERNET_FLAG_SECURE*/)
-
-		iSt:=At3(cBaseCur+' per Unit<hr /></td></tr>',cPage,1200)+28 
-		iEnd:=At3("</table>",cPage,iSt)+8 
-		table:="<table>"+SubStr(cPage,iSt,iEnd-iSt) 
-		iEnd:=2
-		do while true
-			iSt:=At3('<!--',table,iEnd)
-			if iSt==0
-				exit
-			endif 
-			iEnd:=At3('-->',table,iSt+5)+3
-			if iEnd>0
-				table:=Stuff(table,iSt,iEnd-iSt,'')
-			endif
-			iEnd:=iSt+1
-		enddo 
-		table:=StrTran(table,CHR(10) +CHR(10),CHR(10))
-		table:=Compress(table)
-		oXMLDoc:=XMLDocument{table}
-		lRow:=oXMLDoc:GetElement("tr")
-		do while lRow
-			if oXMLDoc:GetFirstChild()
-				cAED:= AllTrim(oXMLDoc:ChildContent)
-				if cAED == CodeROE
-					oXMLDoc:GetNextChild()  // name
-					oXMLDoc:GetNextChild()  // inverse rate
-					if oXMLDoc:GetNextChild()  // rate
-						self:mxrate:=Val( AllTrim(oXMLDoc:ChildContent)) 
+		iSt:=At3('xetrade/?utm_source',cPage,10050)
+		if iSt>0
+			cPage:=SubStr(cPage,iSt) 
+			iSt:=At3('<tbody>',cPage,28)+7 			
+			iEnd:=At3("</table>",cPage,iSt)+8
+			if iEnd>8 
+				table:="<table>"+SubStr(cPage,iSt,iEnd-iSt) 
+				iEnd:=2
+				do while true
+					iSt:=At3('<!--',table,2)
+					if iSt==0
+						exit
+					endif 
+					iEnd:=At3('-->',table,iSt+5)+3
+					if iEnd>3
+						table:=Stuff(table,iSt,iEnd-iSt,'') 
 					endif
-					exit
-				endif
+// 					iEnd:=iSt+1
+				enddo 
+				table:=StrTran(table,CHR(10) +CHR(10),CHR(10))
+				table:=Compress(table) 
+				oXMLDoc:=XMLDocument{table}
+				lRow:=oXMLDoc:GetElement("tr")
+				do while lRow
+					if oXMLDoc:GetFirstChild()
+						cAED:= AllTrim(oXMLDoc:ChildContent)
+						if AtC('>'+CodeROE+'<',cAED)>0 
+							oXMLDoc:GetNextChild()  // name
+							oXMLDoc:GetNextChild()  // inverse rate
+							if oXMLDoc:GetNextChild()  // rate
+								self:mxrate:=Val( AllTrim(oXMLDoc:ChildContent))*((100.00+nUp)/100.00) 
+								lFound:=true
+							endif
+							exit
+						endif
+					endif
+					lRow:=oXMLDoc:GetNextSibbling()
+				enddo 
 			endif
-			lRow:=oXMLDoc:GetNextSibbling()
-		enddo
+		endif
+		if !lFound
+			LogEvent(self,"exchange rate can't be fetched from www.xe.com","logerrors")
+		endif
 	endif
 	if !lAsk
 		return self:mxrate
