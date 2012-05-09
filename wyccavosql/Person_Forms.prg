@@ -1289,18 +1289,20 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		ENDIF
 		if !Empty(self:oPersCnt:m51_title)
 			title:=Upper(AllTrim(self:oPersCnt:m51_title) )
-			if AScanExact(aCpl,title)>0
-				self:oPersCnt:m51_gender:="couple"
-			elseif (pos:=AScan(aMasc,{|x| title=x}))>0
-				self:oPersCnt:m51_gender:="male"
-				self:oPersCnt:m51_title:=Lower(AllTrim(StrTran(title,aMasc[pos],"")))
-			elseif (pos:=AScan(aFem,{|x| title=x}))>0
-				self:oPersCnt:m51_gender:="female"
-				self:oPersCnt:m51_title:=Lower(AllTrim(StrTran(title,aFem[pos],"")))
-			elseif " EN " $ Upper(self:oPersCnt:m51_lastname)  .or." EO" $ Upper(self:oPersCnt:m51_lastname) .or." E/O" $ Upper(self:oPersCnt:m51_lastname)
-				self:oPersCnt:m51_gender:="couple"			 
-			elseif "-" $ Upper(self:oPersCnt:m51_lastname)			
-				self:oPersCnt:m51_gender:="female"
+			if Empty(self:oPersCnt:m51_gender) .or. AllTrim(self:oPersCnt:m51_gender)=="unknown"
+				if AScanExact(aCpl,title)>0
+					self:oPersCnt:m51_gender:="couple"
+				elseif (pos:=AScan(aMasc,{|x| title=x}))>0
+					self:oPersCnt:m51_gender:="male"
+					self:oPersCnt:m51_title:=Lower(AllTrim(StrTran(title,aMasc[pos],"")))
+				elseif (pos:=AScan(aFem,{|x| title=x}))>0
+					self:oPersCnt:m51_gender:="female"
+					self:oPersCnt:m51_title:=Lower(AllTrim(StrTran(title,aFem[pos],"")))
+				elseif " EN " $ Upper(self:oPersCnt:m51_lastname)  .or." EO" $ Upper(self:oPersCnt:m51_lastname) .or." E/O" $ Upper(self:oPersCnt:m51_lastname)
+					self:oPersCnt:m51_gender:="couple"			 
+				elseif "-" $ Upper(self:oPersCnt:m51_lastname)			
+					self:oPersCnt:m51_gender:="female"
+				endif
 			endif
 			if !Empty(self:oPersCnt:m51_title)
 				cTit:=self:oPersCnt:m51_title
