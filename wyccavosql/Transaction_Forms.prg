@@ -389,7 +389,7 @@ METHOD ImportButton( ) CLASS General_Journal
 		SELF:lImport := FALSE
 		self:oImpB:Close()
 		self:oImpB:=null_object
-		(WarningBox{SELF,"Journaling Records","No Import batches found"}):Show()
+		(WarningBox{self,"Journaling Records","No more Import batches found"}):Show()
 	ENDIF
 RETURN NIL
 	
@@ -3960,7 +3960,7 @@ local nQty as int
 local oSel as SQLSelect
 	self:cWhereSpec:="t.transid>= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat>='"+SQLdate(MinDate)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
-	self:cOrder:="transid desc" 
+	self:cOrder:="transid desc,seqnr" 
 	oSel:=SqlSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
 	oSel:Execute()
 	nQty:=ConI(oSel:qty)
@@ -4177,7 +4177,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 	else
 		cWhereSpec:=uExtra
 	endif
-	self:cOrder:="transid desc" 
+	self:cOrder:="transid desc,seqnr" 
 	self:cSelectStmnt:="select "+self:cFields+" from "+cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:oTrans:=SQLSelect{UnionTrans(self:cSelectStmnt)+" order by "+self:cOrder,oConn} 
 	return nil
