@@ -742,16 +742,6 @@ Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
 	ASize(aPCod,iStart+Len(aNCod))
 	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
 	return MakeCod(aPCod)	
-METHOD Close( oEvent ) CLASS NewPersonWindow
-/*	IF self:lImport
-		self:oImport:Close()
-	ENDIF  */
-
-SELF:Destroy()
-	// force garbage collection
-	*CollectForced()
-
-	RETURN SUPER:Close(oEvent)
 	method FillBankNbr(cBankNbr,cDescr,i) class NewPersonWindow 
 	if AScan(aBankAcc,{|x|x[2]==cBankNbr})==0  // not yest stored?
 		IF Empty(self:oDCmbankNumber:VALUE)
@@ -1337,31 +1327,6 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	ENDIF
 
 	RETURN lValid
-METHOD Close( oEvent ) CLASS PersonBrowser
-IF SELF:IsVisible() .and. !SELF:oCaller==NULL_OBJECT
-	// apparently not clicked on OK
-    IF IsMethod(SELF:oCaller, #RegPerson)
-   	IF !self:Server==null_object
-   		IF self:Server:RECCOUNT>0
-				self:Hide()
-				self:oCaller:RegPerson(,self:cItemName,true,self)
-			ENDIF
-		ENDIF
-	ENDIF
-ENDIF
-
-IF !SELF:oEditPersonWindow==NULL_OBJECT
-	SELF:oEditPersonWindow:Close()
-	SELF:oEditPersonWindow:Destroy()
-ENDIF
-
-SELF:osfpersonsubform:Close()
-SELF:oSFPersonSubForm:Destroy()
-SELF:Destroy()	
-	// force garbage collection
-	*CollectForced()
-
-	RETURN SUPER:Close(oEvent)
 METHOD DeleteButton CLASS PersonBrowser
 
 	LOCAL oTextBox as TextBox
