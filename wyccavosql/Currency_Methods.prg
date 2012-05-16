@@ -59,7 +59,7 @@ export mxrate as float
 protect cCurCaption:="Get exchange rate" as string 
 export lStopped as logic 
 declare method GetROE
-Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0 as float) as float class Currency
+Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
 	// nUp: optionally percentage to increase rate read from internet (decrease if negative); if <>0 get always rate from internet
@@ -81,7 +81,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	if Empty(CodeROE) .or. CodeROE==self:cBaseCur
 		return 1
 	endif
-	if !nUp==0.00
+	if Empty(nUp) .or.!nUp==0.00
 		lnew:=true
 	endif
 	oROE:=SQLSelect{"select roe,rateid,cast(daterate as date) as daterate from currencyrate where aed='"+CodeROE+"' and daterate='"+SQLdate(DateROE)+"' and aedunit='"+self:cBaseCur+"'",oConn} 
