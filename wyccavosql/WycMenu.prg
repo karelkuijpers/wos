@@ -239,9 +239,12 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			AAdd(aMenu,{2,6,   oLan:MGet("&Telebank Pattern")+"..." ,"TelePatternBrowser","",0,9,"F"})
 		ENDIF
 	ENDIF
-	AAdd(aMenu,{2,7,,,,,})           // separator
-	AAdd(aMenu,{2,8,    oLan:MGet("&Account statements per month")+"..." ,"TransactionMonth","",0,14,"FM"})
-	AAdd(aMenu,{2,9,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
+// 	if SuperUser
+		AAdd(aMenu,{2,7,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
+// 	endif
+	AAdd(aMenu,{2,8,,,,,})           // separator
+	AAdd(aMenu,{2,9,    oLan:MGet("&Account statements per month")+"..." ,"TransactionMonth","",0,14,"FM"})
+	AAdd(aMenu,{2,10,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
 	AAdd(aMenu,{0,3, oLan:MGet("&Balance"),,,,,})
 	IF Admin=="WO"
 		AAdd(aMenu,{3,2,   oLan:MGet("&Sending to PMC")+"...","PMISsend","",0,87,"F"}) 
@@ -323,7 +326,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	ENDIF
 	AAdd(aMenu,{6,11,,,,,})           // separator
 	AAdd(aMenu,{6,12, oLan:MGet("&System Data"),,,,,})
-	AAdd(aMenu,{12,1, oLan:MGet("&System parameters")+"...","TabSysparms","",0,62,"A"})
+	AAdd(aMenu,{12,1, oLan:MGet("&System parameters")+"...","TabSysparms","",0,62,"AM"})
 	IF !Admin="WA"
 		AAdd(aMenu,{12,2, oLan:MGet("&Person parameters")+"...","PersonParms",oLan:MGet("Registration of person parameters"),0,52,"PFM"})
 	endif
