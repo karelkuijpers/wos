@@ -364,7 +364,7 @@ METHOD OKButton( ) CLASS ConvertMembers
 	oWindow:=GetParentWindow(self) 
 	oWindow:Pointer := Pointer{POINTERHOURGLASS} 
 
-	cSelect:="select a.accid,a.accnumber,a.description,a.clc,a.propxtra,m.mbrid,m.homepp from "+self:oCaller:cFrom+" where "+self:oCaller:cWhere+" and m.co='M' and m.accid IS NOT NULL and b.category='"+liability+"'"
+	cSelect:="select a.accid,a.accnumber,a.description,a.clc,a.propxtra,m.mbrid,m.homepp from "+self:oCaller:cFrom+" where "+self:oCaller:cWhere+" and a.active=1 and m.co='M' and m.accid IS NOT NULL and b.category='"+liability+"'"
 	oSel:=SqlSelect{cSelect,oConn}
 	oSel:Execute()
 	do while !oSel:EoF
@@ -623,6 +623,8 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class ConvertMembers
 		self:NetAssetName:=self:oLan:WGet('Fund')
 		self:IncomeAccName :=self:oLan:WGet('Income')
 		self:ExpenseAccName :=self:oLan:WGet('Expense')
+		self:incomecat:=INCOME
+		self:expensecat:=EXPENSE
 	endif
    Alg_Taal:=mAlgTaal
 	  
@@ -3024,9 +3026,9 @@ METHOD ConvertButton( ) CLASS MemberBrowser
 local oSelH, oSelnH as SQLselect
 local nHome,nNonHome as int       
 local oConv as ConvertMembers
-oSelH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and (homepp='"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
+oSelH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and a.active=1 and (homepp='"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
 nHome:=ConI(oSelH:nConv)
-oSelnH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and (homepp<>'"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
+oSelnH:=SqlSelect{"select count(*) as nConv from "+self:cFrom+" where "+self:cWhere+" and a.active=1 and (homepp<>'"+sEntity+"' and co='M' and m.accid IS NOT NULL)  and b.category='"+liability+"'",oConn}
 nNonHome:=ConI(oSelnH:nConv) 
 if TextBox{self,oLan:WGet("Members"),oLan:WGet("Do you really want to convert")+space(1)+str(nHome,-1)+space(1)+sEntity+space(1)+ oLan:WGet("members")+space(1)+;
 	self:oLan:WGet("and")+Space(1)+Str(nNonHome,-1)+Space(1)+self:oLan:WGet("non")+'-'+sEntity+Space(1) + oLan:WGet("members")+'?',BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}:show()==BOXREPLYOKAY
