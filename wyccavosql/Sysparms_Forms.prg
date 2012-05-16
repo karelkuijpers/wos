@@ -1040,7 +1040,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 	self:HBLAND :=self:oSys:CountryOwn 
 	self:CURRNAME:=self:oSys:CURRNAME 
 	self:SYSNAME:=self:oSys:SYSNAME 
-	self:posting:=ConL(self:oSys:Posting) 
+	self:posting:=ConL(self:oSys:Posting)
+	if posting
+		// check no finanance manager (yet) :
+		if !UserType=='M' .and. !(UserType=='A' .and.;
+				SqlSelect{"select empid from employee where cast("+Crypt_Emp(false,"type") +" as char)='M'",oConn}:Reccount<1 )
+			self:oDCPosting:Disable()
+		endif
+	elseif !UserType=='A'
+		self:oDCPosting:Disable()
+	endif
 	
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class TAB_PARM1
@@ -3479,74 +3488,78 @@ METHOD OKButton( ) CLASS TabSysParms
 		ENDIF
 	endif 
 	SQLStatement{"start transaction",oConn}:Execute()
-	cStatement:="update sysparms set "+;	
-	"cash='"+self:oTPTAB_PARM1:NbrCASH+"'" +;
-		",crossaccnt='"+self:oTPTAB_PARM1:NbrCROSS+"'" +;
-		",capital='"+self:oTPTAB_PARM1:NbrCAPITAL+"'"+;
-		",idorg='"+self:oTPTAB_PARM1:mCLNOrg+"'"+;
-		",idcontact='"+self:oTPTAB_PARM1:mCLNContact+"'"+;
-		",closemonth='"+Transform(self:oTPTAB_PARM1:closemonth,"")+"'"+; 
-	",entity='"+iif( self:oTPTAB_PARM1:mAdminType="WO".and.!IsNil(self:oTPTAB_PARM2:Entity),self:oTPTAB_PARM2:Entity,self:oTPTAB_PARM1:Entity)+"'"+;
-		",currency='"+self:oTPTAB_PARM1:Currency+"'"+; 
-	",countryown='"+ConS(self:oTPTAB_PARM1:HBLAND)+"'"+; 
-	",currname='"+ConS(self:oTPTAB_PARM1:CURRNAME)+"'"+; 
-	",sysname='"+ConS(self:oTPTAB_PARM1:SYSNAME)+"'"+; 
-	",admintype='"+self:oTPTAB_PARM1:mAdminType+"'"+;
-		",posting="+iif(self:oTPTAB_PARM1:posting,'1','0')+; 
-	iif( self:oTPTAB_PARM2==null_object,'',;  
-	",pmcmancln='"+self:oTPTAB_PARM2:mCLNPMCMan+"'"+;
-		",hb='"+self:oTPTAB_PARM2:NbrHB+"'"+;
-		",am='"+self:oTPTAB_PARM2:NbrAM+"'"+;
-		",assproja='"+self:oTPTAB_PARM2:NbrAMProj+"'"+;
-		",giftincac='"+self:oTPTAB_PARM2:NbrInc+"'"+;  
+	if UserType='M'
+		cStatement:="update sysparms set posting="+iif(self:oTPTAB_PARM1:posting,'1','0')
+	else 
+		cStatement:="update sysparms set "+;	
+		"cash='"+self:oTPTAB_PARM1:NbrCASH+"'" +;
+			",crossaccnt='"+self:oTPTAB_PARM1:NbrCROSS+"'" +;
+			",capital='"+self:oTPTAB_PARM1:NbrCAPITAL+"'"+;
+			",idorg='"+self:oTPTAB_PARM1:mCLNOrg+"'"+;
+			",idcontact='"+self:oTPTAB_PARM1:mCLNContact+"'"+;
+			",closemonth='"+Transform(self:oTPTAB_PARM1:closemonth,"")+"'"+; 
+		",entity='"+iif( self:oTPTAB_PARM1:mAdminType="WO".and.!IsNil(self:oTPTAB_PARM2:Entity),self:oTPTAB_PARM2:Entity,self:oTPTAB_PARM1:Entity)+"'"+;
+			",currency='"+self:oTPTAB_PARM1:Currency+"'"+; 
+		",countryown='"+ConS(self:oTPTAB_PARM1:HBLAND)+"'"+; 
+		",currname='"+ConS(self:oTPTAB_PARM1:CURRNAME)+"'"+; 
+		",sysname='"+ConS(self:oTPTAB_PARM1:SYSNAME)+"'"+; 
+		",admintype='"+self:oTPTAB_PARM1:mAdminType+"'"+;
+			",posting="+iif(self:oTPTAB_PARM1:posting,'1','0')+;
+			iif( self:oTPTAB_PARM2==null_object,'',;  
+		",pmcmancln='"+self:oTPTAB_PARM2:mCLNPMCMan+"'"+;
+			",hb='"+self:oTPTAB_PARM2:NbrHB+"'"+;
+			",am='"+self:oTPTAB_PARM2:NbrAM+"'"+;
+			",assproja='"+self:oTPTAB_PARM2:NbrAMProj+"'"+;
+			",giftincac='"+self:oTPTAB_PARM2:NbrInc+"'"+;  
 		",giftexpac='"+self:oTPTAB_PARM2:NbrExp+"'"+;
-		iif(Empty(self:oTPTAB_PARM2:NbrInc),",homeincac='',homeexpac='',assfldac=''",+;
-		",homeincac='"+ConS(self:oTPTAB_PARM2:NbrIncHome)+"'"+;
-		",homeexpac='"+self:oTPTAB_PARM2:NBREXPHOME+"'" +;  
-	",assfldac='"+self:oTPTAB_PARM2:NbrAssFldAc+"'") +;  
-	",assmntfield='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntfield,""))+"'" +;
-		",withldoffl='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffl,""))+"'"	+;	
-	",iesmailacc='"+AllTrim(Transform(self:oTPTAB_PARM2:IESMAILACC,""))+"'" +; 
-	",assmntint="+AllTrim(Transform(self:oTPTAB_PARM2:assmntint,"")) +; 
-	",assmntoffc='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntOffc,""))+"'" +; 
-	",withldoffm='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffM,""))+"'"	+;	
-	",withldoffh='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffH,""))+"'" +;	
-	",pmcupld="+iif(self:oTPTAB_PARM2:pmcupld,'1','0'))+; 
-	iif(self:oTPTAB_PARM3==null_object,'',;
-		",postage='"+self:oTPTAB_PARM3:NbrPostage+"'"+;
-		",debtors='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
-		",creditors='"+self:oTPTAB_PARM3:NbrCreditors+"'"+;
-		",cntrnrcoll='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
-		",banknbrcol='"+self:oTPTAB_PARM3:BANKNBRCOL+"'" + ;
-		",banknbrcre='"+self:oTPTAB_PARM3:BANKNBRCRE+"'")+;
-		iif(self:oTPTAB_PARM4==null_object,'',;
-		",donors='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
-		",projects='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
-		iif(IsNil(self:oTPTAB_PARM4:mDecimalGiftreport),'',;
-		",decmgift="+Str(Min(self:oTPTAB_PARM4:mDecimalGiftreport,2),-1)))+;
-		",defaultcod='"+ MakeCod({self:oTPTAB_PARM5:mCOD1,self:oTPTAB_PARM5:mCOD2,self:oTPTAB_PARM5:mCOD3})+"'"+; 
-	",fgmlcodes='"+MakeCod({self:oTPTAB_PARM5:mFGCod1,self:oTPTAB_PARM5:mFGCod2,self:oTPTAB_PARM5:mFGCod3})+"'"+; 
-	",firstname="+iif(self:oTPTAB_PARM5:FIRSTNAME,'1','0')+; 
-	",nosalut="+iif(self:oTPTAB_PARM5:SALUTADDR,'0','1') +;
-		",cityletter='"+self:oTPTAB_PARM5:CITYLETTER+"'"+; 
-	",owncntry='"+AllTrim(self:oTPTAB_PARM5:mOwnCntry)+"'"+; 
-	",surnmfirst="+iif(self:oTPTAB_PARM5:SURNMFIRST,'1','0')+; 
-	",strzipcity="+Str(self:oTPTAB_PARM5:STRZIPCITY,-1)+;
-		",citynmupc="+iif(self:oTPTAB_PARM5:CITYNMUPC,'1','0')+;
-		",lstnmupc="+iif(self:oTPTAB_PARM5:LSTNMUPC,'1','0')+; 
-	",titinadr="+iif(self:oTPTAB_PARM5:TITINADR,'1','0')+; 
-	",mailclient='"+Str(self:oTPTAB_PARM5:MailClient,-1)+"'"+;
-		",topmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
-		",leftmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:leftMARGIN,""))+"'"+;           
-	",rightmargn='"+AllTrim(Transform(self:oTPTAB_PARM6:leftMARGIN,""))+"'"+;
-		",bottommarg='"+AllTrim(Transform(self:oTPTAB_PARM6:BOTTOMMARG,""))+"'"+;	
-	iif(self:oTPTABPARM_PAGE7==null_object,'',;
-		",pswrdlen="+Str(Min(self:oTPTABPARM_PAGE7:mPSWRDLEN,10),-1)+;
-		",pswdura="+iif(Empty(self:oTPTABPARM_PAGE7:mPSWDURA),"9999",AllTrim(Transform(self:oTPTABPARM_PAGE7:mPSWDURA,""))+;
-		",pswalnum="+iif(self:oTPTABPARM_PAGE7:mPSWALNUM,'1','0')) +;
-		",crlanguage='"+self:oTPTabParm_Page8:CRLANGUAGE+"'")+;
-		iif(self:oTPTABPARM_PAGE9==null_object,'',;      
-	",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'")
+			iif(Empty(self:oTPTAB_PARM2:NbrInc),",homeincac='',homeexpac='',assfldac=''",+;
+			",homeincac='"+ConS(self:oTPTAB_PARM2:NbrIncHome)+"'"+;
+			",homeexpac='"+self:oTPTAB_PARM2:NBREXPHOME+"'" +;  
+		",assfldac='"+self:oTPTAB_PARM2:NbrAssFldAc+"'") +;  
+		",assmntfield='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntfield,""))+"'" +;
+			",withldoffl='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffl,""))+"'"	+;	
+		",iesmailacc='"+AllTrim(Transform(self:oTPTAB_PARM2:IESMAILACC,""))+"'" +; 
+		",assmntint="+AllTrim(Transform(self:oTPTAB_PARM2:assmntint,"")) +; 
+		",assmntoffc='"+AllTrim(Transform(self:oTPTAB_PARM2:assmntOffc,""))+"'" +; 
+		",withldoffm='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffM,""))+"'"	+;	
+		",withldoffh='"+AllTrim(Transform(self:oTPTAB_PARM2:withldoffH,""))+"'" +;	
+		",pmcupld="+iif(self:oTPTAB_PARM2:pmcupld,'1','0'))+; 
+		iif(self:oTPTAB_PARM3==null_object,'',;
+			",postage='"+self:oTPTAB_PARM3:NbrPostage+"'"+;
+			",debtors='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
+			",creditors='"+self:oTPTAB_PARM3:NbrCreditors+"'"+;
+			",cntrnrcoll='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
+			",banknbrcol='"+self:oTPTAB_PARM3:BANKNBRCOL+"'" + ;
+			",banknbrcre='"+self:oTPTAB_PARM3:BANKNBRCRE+"'")+;
+			iif(self:oTPTAB_PARM4==null_object,'',;
+			",donors='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
+			",projects='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
+			iif(IsNil(self:oTPTAB_PARM4:mDecimalGiftreport),'',;
+			",decmgift="+Str(Min(self:oTPTAB_PARM4:mDecimalGiftreport,2),-1)))+;
+			",defaultcod='"+ MakeCod({self:oTPTAB_PARM5:mCOD1,self:oTPTAB_PARM5:mCOD2,self:oTPTAB_PARM5:mCOD3})+"'"+; 
+		",fgmlcodes='"+MakeCod({self:oTPTAB_PARM5:mFGCod1,self:oTPTAB_PARM5:mFGCod2,self:oTPTAB_PARM5:mFGCod3})+"'"+; 
+		",firstname="+iif(self:oTPTAB_PARM5:FIRSTNAME,'1','0')+; 
+		",nosalut="+iif(self:oTPTAB_PARM5:SALUTADDR,'0','1') +;
+			",cityletter='"+self:oTPTAB_PARM5:CITYLETTER+"'"+; 
+		",owncntry='"+AllTrim(self:oTPTAB_PARM5:mOwnCntry)+"'"+; 
+		",surnmfirst="+iif(self:oTPTAB_PARM5:SURNMFIRST,'1','0')+; 
+		",strzipcity="+Str(self:oTPTAB_PARM5:STRZIPCITY,-1)+;
+			",citynmupc="+iif(self:oTPTAB_PARM5:CITYNMUPC,'1','0')+;
+			",lstnmupc="+iif(self:oTPTAB_PARM5:LSTNMUPC,'1','0')+; 
+		",titinadr="+iif(self:oTPTAB_PARM5:TITINADR,'1','0')+; 
+		",mailclient='"+Str(self:oTPTAB_PARM5:MailClient,-1)+"'"+;
+			",topmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
+			",leftmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:leftMARGIN,""))+"'"+;           
+		",rightmargn='"+AllTrim(Transform(self:oTPTAB_PARM6:leftMARGIN,""))+"'"+;
+			",bottommarg='"+AllTrim(Transform(self:oTPTAB_PARM6:BOTTOMMARG,""))+"'"+;	
+		iif(self:oTPTABPARM_PAGE7==null_object,'',;
+			",pswrdlen="+Str(Min(self:oTPTABPARM_PAGE7:mPSWRDLEN,10),-1)+;
+			",pswdura="+iif(Empty(self:oTPTABPARM_PAGE7:mPSWDURA),"9999",AllTrim(Transform(self:oTPTABPARM_PAGE7:mPSWDURA,""))+;
+			",pswalnum="+iif(self:oTPTABPARM_PAGE7:mPSWALNUM,'1','0')) +;
+			",crlanguage='"+self:oTPTabParm_Page8:CRLANGUAGE+"'")+;
+			iif(self:oTPTABPARM_PAGE9==null_object,'',;      
+		",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'") 
+	endif
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	IF empty(oStmnt:status)
