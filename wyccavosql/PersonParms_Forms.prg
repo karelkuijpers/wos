@@ -1275,7 +1275,7 @@ METHOD DeleteButton( ) CLASS TABPROP_PAGE
 // 		oProp:Commit() 
 		self:oProp:execute()
 		oSFSub_PersPropReg:Browser:REFresh()
-		if val(oSel:Total)>0
+		if ConI(oSel:total)>0
 			self:STATUSMESSAGE("Removing "+mOms+" from all persons, moment please")
 			self:Pointer := Pointer{POINTERHOURGLASS} 
 			oStmnt:=SQLStatement{"update person set propextr=concat(substring(propextr,1,instr(propextr,'<V"+mId+">')-1)"+;
@@ -1414,7 +1414,7 @@ METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 		oSFSub_PersTitleReg:Browser:REFresh()
 		self:StatusMessage(self:oLan:WGet("Removing")+space(1)+mOms+space(1)+self:oLan:WGet("from all persons, moment please"))
 		self:Pointer := Pointer{POINTERHOURGLASS} 
-		if val(oSel:Total)>0
+		if ConI(oSel:total)>0
 			oStmnt:=SQLStatement{"update person set title=1 where title="+mCod,oConn}
 			oStmnt:execute()
 			self:Pointer := Pointer{POINTERARROW} 
@@ -1541,7 +1541,7 @@ END
 		return nil
 	endif
 	oPers:=SqlSelect{"select count(*) as total from person where deleted=0 and type="+Str(mCod,-1),oConn}
-	if Val(oPers:total)>0
+	if ConI(oPers:total)>0
 		Errorbox{,self:oLan:WGet("this type is still used in")+space(1)+ConS(oPers:total)+space(1)+self:olan:WGet("persons")+";"+self:olan:WGet("thus can't be removed")}:show() 
 		return nil
 	endif		
