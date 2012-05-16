@@ -599,7 +599,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		// 		PasswordOrg   := AllTrim(Crypt(oEmp:Password,oEmp:EmpId+"er45pofDOIoiijodsoi*)mxcd eDFP456^)_fghj=") )
 		PasswordOrg   := oEmp:PASSWORD
 		// 		self:oDCmTYPE:Value		:= oEmp:mType
-		self:mType:=Transform(oEmp:TYPE,"")
+		self:mType:=Transform(oEmp:TYPE,"") 
+		if self:mType='M' .and.!posting
+			self:mType:='F'
+		endif
 		self:mCln := Transform(oEmp:mCln,"")
 		self:mCLNOrg:=self:mCln 
 		mDEPID:=oEmp:DEPID
