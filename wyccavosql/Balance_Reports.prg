@@ -4116,13 +4116,45 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-METHOD OKButton( ) CLASS MonthClose 
-SQLStatement{"update sysparms set mindate='"+SQLdate(oDCMindate:SelectedDate)+"'",oConn}:Execute()
-Mindate:=self:oDCMindate:SelectedDate
-self:EndWindow()
-RETURN NIL
+METHOD OKButton( ) CLASS MonthClose
+	Local oSel as SQLSelect
+	// check if no open transactions in that period: 
+	if Posting
+		oSel:=SqlSelect{"select count(*) as tot from transaction where poststatus<2 and dat<'"+SQLdate(self:oDCMindate:SelectedDate)+"'",oConn}
+		if oSel:reccount>0 .and.ConI(oSel:tot)>0
+			ErrorBox{self,ConS(oSel:tot)+' '+self:oLan:WGet("transactions")+' '+self:oLan:WGet("before")+' '+DToC(self:oDCMindate:SelectedDate)+' '+ self:oLan:WGet("are still to be posted")}:Show()
+			self:EndWindow()
+			return false
+		endif
+	endif
+	if !Empty(SPROJ)
+		* Are there still non-earmarekd gifts?
+		oSel:=SqlSelect{"select count(*) as tot from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:oDCMindate:SelectedDate)+"' and accid='"+SPROJ+"'",oConn}
+		if oSel:reccount>0 .and. ConI(oSel:tot)>0
+			(ErrorBox{self:OWNER,self:oLan:WGet('Allot first non-designated gifts')+' '+self:oLan:WGet("before")+' '+DToC(self:oDCMindate:SelectedDate)}):Show()
+			self:EndWindow()
+			RETURN true
+		ENDIF
+	ENDIF
+	if ADMIN=='WO' 
+		oSel:=SqlSelect{"select count(*) as tot from transaction t "+;
+		"where t.bfm='' and t.gc<>'' and t.dat<='"+SQLdate(self:oDCMindate:SelectedDate)+"' and "+; 
+		"exists (select 1 from member m left join department d on (m.depid=d.depid) where m.householdid<>'' and grade<>'staf' and (m.accid=t.accid or t.accid in (d.incomeacc,d.expenseacc,d.netasset)))  ";
+		,oConn}
+		if oSel:reccount>0 .and. ConI(oSel:tot)>0
+			ErrorBox{self:OWNER,self:oLan:WGet("Send first to PMC all transaction before")+' '+DToC(self:oDCMindate:SelectedDate)}:Show()
+			self:EndWindow()
+			return true
+		endif
+	endif
+	
+	SQLStatement{"update sysparms set mindate='"+SQLdate(self:oDCMindate:SelectedDate)+"'",oConn}:Execute()
+	Mindate:=self:oDCMindate:SelectedDate
+	self:EndWindow()
+	RETURN NIL
 method PostInit(oWindow,iCtlID,oServer,uExtra) class MonthClose
 	//Put your PostInit additions here 
+	self:SetTexts()
 	self:oDCMindate:DateRange:=DateRange{LstyearClosed,Today()+31}       // it is possible to change date backwards to begin of current year
 	
    self:oDCMindate:SelectedDate:=Mindate
@@ -5252,6 +5284,14 @@ METHOD OKButton( ) CLASS YearClosing
 			RETURN true
 		ENDIF
 	endif
+	if Posting
+		oSel:=SqlSelect{"select count(*) as tot from transaction where poststatus<2 and dat<'"+SQLdate(self:BalanceEndDate)+"'",oConn}
+		if oSel:reccount>0 .and.ConI(oSel:tot)>0
+			ErrorBox{self,ConS(oSel:tot)+' '+self:oLan:WGet("transactions")+' '+self:oLan:WGet("before")+' '+DToC(self:BalanceEndDate)+' '+ self:oLan:WGet("are still to be posted")}:Show()
+			self:EndWindow()
+			return false
+		endif
+	endif
 	IF Empty(sCURR) 
 		(ErrorBox{self:OWNER,self:oLan:WGet('First specify the currency in System parameters')}):Show()
 		self:EndWindow()
@@ -5268,7 +5308,7 @@ METHOD OKButton( ) CLASS YearClosing
 		,oConn}
 		if oTrans:reccount>0
 			do while !oTrans:EOF
-				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+': '+oTrans:Description
+				self:cError+=CRLF+'Trnsnr '+Str(oTrans:TransId,-1)+' with date '+DToC(oTrans:dat)+': '+oTrans:Description +CRLF
 				oTrans:skip()
 			enddo
 			ErrorBox{self:OWNER,self:oLan:WGet("The following transactions have to be send to PMC first")+":"+self:cError}:Show()
@@ -5351,12 +5391,12 @@ METHOD OKButton( ) CLASS YearClosing
 		RETURN true
 	ENDIF
 
-	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
-	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
-	IF (oWarn:Show() = BOXREPLYNO)
-		self:EndWindow()
-		RETURN true
-	ENDIF
+// 	oWarn := WarningBox{self:OWNER,self:oLan:WGet("Year Balancing"),self:oLan:WGet('Have you backed up your data')+'?'}
+// 	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
+// 	IF (oWarn:Show() = BOXREPLYNO)
+// 		self:EndWindow()
+// 		RETURN true
+// 	ENDIF
 	oWarn := WarningBox{self:OWNER,"Year Balancing",;
 		'Closing of the year is irrevocable, are you sure?'}
 	oWarn:Type := BOXICONQUESTIONMARK + BUTTONYESNO
