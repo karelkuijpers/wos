@@ -1427,7 +1427,7 @@ iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+;
 ",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
 ",reference='"+AddSlashes(AllTrim(oMutNew:REFERENCE))+"'"+; 
 ",lock_id=0"+;
-iif(Posting,",poststatus="+ self:mPostStatus,"")+;
+iif(Posting,",poststatus="+ ConS(self:mPostStatus),"")+;
 iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
 iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
 iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(oMutNew:SEQNR,-1)
@@ -4644,7 +4644,7 @@ function UnionTrans(cStatement as string) as string
 	// if nWhere>0
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
-	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat<'),'t.dat >','t.dat<'),'t.dat =','t.dat=')    // remove spaces
+	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat<'),'t.dat >','t.dat>'),'t.dat =','t.dat=')    // remove spaces
 	nDat1:=At3("t.dat=",cStatement,5)
 	if nDat1>0
 		BegDat:=CToD(SubStr(cStatement,nDat1+7,10))
