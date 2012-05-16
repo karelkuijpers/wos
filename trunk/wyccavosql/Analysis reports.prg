@@ -2542,10 +2542,10 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	LOCAL ChildName as STRING
 	LOCAL Pntr:=0 as int
 	LOCAL i,j as int
-	LOCAL cAcc as int
+	LOCAL nAcc as int
 
-	AAdd(aDestGrp,{"Members of "+sLand,{}})
-	AAdd(aDestGrp,{"Members not of "+sLand,{}})
+	AAdd(self:aDestGrp,{"Members of "+sLand,{}})
+	AAdd(self:aDestGrp,{"Members not of "+sLand,{}})
 
 	// initialize array with gift accounts (non member)
 	oAcc:=SQLSelect{"select account.accid,CO,description,accnumber,homepp FROM account";
@@ -2564,17 +2564,17 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 			AAdd(self:aGiftAcc,{"("+AllTrim(oAcc:accnumber)+")"+AllTrim(oAcc:Description),oAcc:accid})	
 		ELSEIF oAcc:HOMEPP==sEntity .and. oAcc:CO=='M'
 			// own members (non entity): group 1
-			AAdd(aDestGrp[1,2],oAcc:accid)
+			AAdd(self:aDestGrp[1,2],oAcc:accid)
 			AAdd(aGiftAccHomeMbr,"("+AllTrim(oAcc:accnumber)+")"+AllTrim(oAcc:Description))
 		ELSE
 			// foreign members: group 2
-			AAdd(aDestGrp[2,2],oAcc:accid)
+			AAdd(self:aDestGrp[2,2],oAcc:accid)
 			AAdd(aGiftAccForeignMbr,"("+AllTrim(oAcc:accnumber)+")"+AllTrim(oAcc:Description))
 		ENDIF
 		oAcc:Skip()
 	ENDDO
 
-	// Initialize aDestGrp:                      
+	// Initialize self:aDestGrp:                      
 	oSys:=SQLSelect{"select destgrps from sysparms",oConn}
 	IF oSys:RecCount>0
 		// Compose aDstGrp from XML document in oSys:DestGrps
@@ -2582,41 +2582,43 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 		oXMLDoc:=XMLDocument{oSys:DESTGRPS}
 		recordfound:=oXMLDoc:GetElement("group")
 		Pntr:=0
+		LogEvent(self,oXMLDoc:getbuffer(),"logsql")
 		do WHILE recordfound
 			Pntr++
-			AAdd(aDestGrp,{,{}})
+			AAdd(self:aDestGrp,{,{}})
 			childfound:=oXMLDoc:GetFirstChild()
 			do WHILE childfound
 				ChildName:=oXMLDoc:ChildName
 				do CASE
 				CASE ChildName=="name"
-					aDestGrp[Pntr+2,1]:=oXMLDoc:ChildContent
+					self:aDestGrp[Pntr+2,1]:=oXMLDoc:ChildContent
 				CASE ChildName=="account"
-					cAcc:=Val(oXMLDoc:ChildContent)
-					IF AScan(self:aGiftAcc,{|x| x[2]==cAcc})>0
+					nAcc:=Val(oXMLDoc:ChildContent)
+					IF AScan(self:aGiftAcc,{|x| x[2]==nAcc})>0
 						// only existing gift accounts:
-						AAdd(aDestGrp[Pntr+2,2],cAcc)
+						AAdd(self:aDestGrp[Pntr+2,2],nAcc)
 					ENDIF
 				ENDCASE
+
 				childfound:=oXMLDoc:GetNextChild()			
 			ENDDO
 			IF Pntr>1 .and. ChildName=="name"
 				// apparently no accounts:
 				Pntr--
-				ASize(aDestGrp,Pntr+2)
+				ASize(self:aDestGrp,Pntr+2)
 			ENDIF
 			recordfound:=oXMLDoc:GetNextSibbling()
 		ENDDO
 	ENDIF
-	IF Len(aDestGrp)=2
-		AAdd(aDestGrp,{"Office "+sLand,{}})
-		AAdd(aDestGrp,{"Other projects",{}})	
+	IF Len(self:aDestGrp)=2
+		AAdd(self:aDestGrp,{"Office "+sLand,{}})
+// 		AAdd(self:aDestGrp,{"Other projects",{}})	
 	ENDIF
 	// add new accounts to last group:
 	FOR i:=1 to Len(self:aGiftAcc)
-		cAcc:=self:aGiftAcc[i,2]
-		IF AScan(self:aDestGrp,{|x|AScan(x[2],cAcc)>0})=0
-			AAdd(aDestGrp[Len(self:aDestGrp),2],cAcc)
+		nAcc:=self:aGiftAcc[i,2]
+		IF AScan(self:aDestGrp,{|x|AScan(x[2],nAcc)>0})=0
+			AAdd(self:aDestGrp[Len(self:aDestGrp),2],nAcc)
 		ENDIF
 	NEXT
 	RETURN nil
