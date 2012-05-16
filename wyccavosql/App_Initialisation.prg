@@ -748,7 +748,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	ENDIF
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
 	if self:FirstOfDay.or.self:lNewDb 
-		self:InitializeDB()
+		self:InitializeDB() 
+		// reset employee online:
+		oStmnt:=SQLStatement{"update employee set online=0",oConn}
+		oStmnt:Execute()  
 	endif
 	RddSetDefault("DBFCDX") 
 
@@ -1038,7 +1041,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 	oMainWindow:Pointer := Pointer{POINTERARROW}
 
-
 	return 
 
 method InitializeDB() as void Pascal  class Initialize
@@ -1129,6 +1131,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","reimb","tinyint(1)","NO","0",""},;
 		{"account","active","tinyint(1)","NO","1",""},;
 		{"account","qtymailing","int(10) unsigned","NO","0",""},;
+		{"account","monitor","tinyint(1)","NO","0",""},;
 		{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
@@ -2298,3 +2301,146 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 
 	return
 	
+function unpersonalize() 
+// tool to unpersonalize a database with single account member
+	local aPersid,aPersidOrg,aAddr as array // array with persids of non-member persons
+	local oSel as SQLSelect
+	local oStmnt as SQLStatement
+	local i as int 
+	oMainWindow:Pointer :=Pointer{POINTERHOURGLASS}
+	// find all addresses of non-member persons in some strange order: 
+	SQLStatement{"set autocommit=0",oConn}:Execute()
+	SQLStatement{'lock tables `person` write,`member` read,`account` write',oConn}:Execute()
+	
+	oSel:=SqlSelect{"select persid,address from person where not exists (select persid from member where member.persid=person.persid) order by attention,lastname desc,title",oConn}
+	oSel:Execute()
+	aAddr:=oSel:GetLookupTable(5000,#persid,#address) 
+	// find all datelastgift from non-member persons in another strange order
+	oSel:=SqlSelect{"select persid,cast(datelastgift as date) as datelastgift from person where not exists (select persid from member where member.persid=person.persid) order by alterdate,address desc,initials",oConn}
+	oSel:Execute()
+	if oSel:reccount>0
+		aPersid:=oSel:GetLookupTable(5000,#persid,#datelastgift) 
+		AEvalA(aPersid,{|x|x:={x[1],iif(Empty(x[2]),null_date,x[2])}})
+		aPersidOrg:=AClone(aPersid) 
+		AEvalA(aPersidOrg,{|x|x:=x[1]-10000})
+		ASort(aPersidOrg)                                 
+		// reassign persids:
+		oStmnt:=SQLStatement{"update person set persid=persid-10000 where persid in ("+Implode(aPersid,',',,,1)+")",oConn}
+		oStmnt:Execute() 
+		if oStmnt:NumSuccessfulRows<>Len(aPersid)
+			ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+			SQLStatement{"Rollback",oConn}
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			SQLStatement{'unlock tables',oConn}:Execute()
+			return
+		endif
+		
+		for i:=1 to Len(aPersidOrg)
+			oStmnt:=SQLStatement{"update person set persid="+Str(aPersid[i,1],-1)+",datelastgift='"+SQLdate(aPersid[i,2])+;
+				"',address='"+AddSlashes(aAddr[i,2])+"' where persid="+Str(aPersidOrg[i],-1),oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+				SQLStatement{"Rollback",oConn}
+				SQLStatement{"set autocommit=1",oConn}:Execute()
+				SQLStatement{'unlock tables',oConn}:Execute()
+				return
+			endif
+			oMainWindow:STATUSMESSAGE("updating persons "+Str(i,-1))
+		next 
+	endif
+	
+	// find all addresses of own member persons in some strange order: 
+	aPersid:={}
+	aPersidOrg:={}
+	aAddr:={}  
+	oSel:=SqlSelect{"select persid,address from person where exists (select persid from member where member.persid=person.persid and homepp='"+sEntity+"' and co='M' ) order by attention,lastname desc,title",oConn}
+	oSel:Execute()
+	aAddr:=oSel:GetLookupTable(5000,#persid,#address) 
+	// find all datelastgift from SAF member persons in another strange order
+	oSel:=SqlSelect{"select persid,cast(datelastgift as date) as datelastgift from person where exists (select persid from member where member.persid=person.persid and homepp='"+sEntity+"' and co='M') order by alterdate,address desc,initials",oConn}
+	oSel:Execute()
+	if oSel:reccount>0
+		aPersid:=oSel:GetLookupTable(5000,#persid,#datelastgift)
+		AEvalA(aPersid,{|x|x:={x[1],iif(Empty(x[2]),null_date,x[2])}})
+		aPersidOrg:=AClone(aPersid) 
+		AEvalA(aPersidOrg,{|x|x:=x[1]-10000})
+		ASort(aPersidOrg)
+		// reassign persids:
+		SQLStatement{"update person set persid=persid-10000 where persid in ("+Implode(aPersid,',',,,1)+")",oConn}:Execute()
+		for i:=1 to Len(aPersidOrg)
+			oStmnt:=SQLStatement{"update person set persid="+Str(aPersid[i,1],-1)+",datelastgift='"+SQLdate(aPersid[i,2])+;
+				"',address='"+AddSlashes(aAddr[i,2])+"' where persid="+Str(aPersidOrg[i],-1),oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+				SQLStatement{"rollback",oConn}
+				SQLStatement{"set autocommit=1",oConn}:Execute()
+				SQLStatement{'unlock tables',oConn}:Execute()
+				return
+			endif
+			oMainWindow:STATUSMESSAGE("updating persons "+Str(i,-1))
+		next 
+	endif 
+	
+	// find all addresses of non-own-member persons in some strange order:   
+	aPersid:={}
+	aPersidOrg:={}
+	aAddr:={}  
+	oSel:=SqlSelect{"select persid,address from person where exists (select persid from member where member.persid=person.persid and homepp<>'"+sEntity+"' and co='M' ) order by attention,lastname desc,title",oConn}
+	oSel:Execute()
+	aAddr:=oSel:GetLookupTable(5000,#persid,#address) 
+	// find all datelastgift from non-SAF-member persons in another strange order
+	oSel:=SqlSelect{"select persid,cast(datelastgift as date) as datelastgift from person where exists (select persid from member where member.persid=person.persid and homepp<>'"+sEntity+"' and co='M') order by alterdate,address desc,initials",oConn}
+	oSel:Execute()
+	if oSel:reccount>0
+		aPersid:=oSel:GetLookupTable(5000,#persid,#datelastgift)
+		AEvalA(aPersid,{|x|x:={x[1],iif(Empty(x[2]),null_date,x[2])}})
+		aPersidOrg:=AClone(aPersid) 
+		AEvalA(aPersidOrg,{|x|x:=x[1]-10000})
+		ASort(aPersidOrg)
+		// reassign persids:
+		SQLStatement{"update person set persid=persid-10000 where persid in ("+Implode(aPersid,',',,,1)+")",oConn}:Execute()
+		for i:=1 to Len(aPersidOrg)
+			oStmnt:=SQLStatement{"update person set persid="+Str(aPersid[i,1],-1)+",datelastgift='"+SQLdate(aPersid[i,2])+;
+				"',address='"+AddSlashes(aAddr[i,2])+"' where persid="+Str(aPersidOrg[i],-1),oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+				SQLStatement{"rollback",oConn}
+				SQLStatement{"set autocommit=1",oConn}:Execute()
+				SQLStatement{'unlock tables',oConn}:Execute()
+				return
+			endif
+			oMainWindow:STATUSMESSAGE("updating persons "+Str(i,-1))
+		next 
+	endif 
+
+	// update account names members: firts make them unique
+	oStmnt:=SQLStatement{"update account set description= cast(accid as char) where accid in (select accid from member where member.accid=account.accid and member='M'"}
+	oStmnt:Execute() 
+	if oStmnt:NumSuccessfulRows<1
+		ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+		SQLStatement{"rollback",oConn}
+		SQLStatement{"set autocommit=1",oConn}:Execute()
+		SQLStatement{'unlock tables',oConn}:Execute()
+		return 
+	endif    
+	
+	// replace them by member names
+	oStmnt:=SQLStatement{"update ignore account set description= (select "+SQLFullName(0)+" as membername from person, member where person.persid=member.persid and member.accid=account.accid) where accid in (select accid from member where member.accid=account.accid and co='M' )"}
+	oStmnt:Execute() 
+	if oStmnt:NumSuccessfulRows<1
+		ErrorBox{,oStmnt:errinfo:errormessage+CRLF+oStmnt:sqlstring}:show()
+		SQLStatement{"rollback",oConn}
+		SQLStatement{"set autocommit=1",oConn}:Execute()
+		SQLStatement{'unlock tables',oConn}:Execute()
+		return
+	endif 
+	
+
+	SQLStatement{"commit",oConn}:Execute() 
+	SQLStatement{"set autocommit=1",oConn}:Execute()
+	SQLStatement{'unlock tables',oConn}:Execute()
+	oMainWindow:Pointer := Pointer{POINTERARROW}
+	return
