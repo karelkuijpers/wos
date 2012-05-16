@@ -71,7 +71,7 @@ METHOD EditButton(lNew ) CLASS BankBrowser
 RETURN NIL
 METHOD FilePrint CLASS BankBrowser
 LOCAL oSel as SQLSelect
-LOCAL kopregels as ARRAY
+LOCAL aHeading as ARRAY
 LOCAL nRow,n,k as int
 LOCAL nPage as int
 LOCAL oReport as PrintDialog
@@ -79,19 +79,23 @@ local cPayAhead, cSingledest, cCodOms,mCodH as string
 local cFields as string
 local cWhere as string
 local cFrom as string 
-local cTab:=Space(1) as string
+LOCAL cTab:=CHR(9) as STRING
 
-oReport := PrintDialog{self,oLan:RGet("BankAccounts"),,142,DMORIENT_LANDSCAPE }
+oReport := PrintDialog{self,oLan:RGet("BankAccounts"),,142,DMORIENT_LANDSCAPE,"xls"}
 
 oReport:Show()
 IF .not.oReport:lPrintOk
 	RETURN FALSE
 ENDIF
+IF Lower(oReport:Extension) #"xls"
+	cTab:=Space(1)
+ENDIF
+
 cFields:="b.*,a.description,a.accnumber,sd.description as accountsingle,pa.description as AccountPaymnt "
 cFrom:="Account a, bankaccount b"+;
 		" left join account sd on (sd.accid=b.singledst) left join account pa on (pa.accid=b.payahead)"
 oSel := SQLSelect{"select "+cFields+" from "+cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
-kopregels := {oLan:RGet('BankAccounts',,"@!"),' ',;
+aHeading := {oLan:RGet('BankAccounts',,"@!"),' ',;
 oLan:RGet("Number",20,"!")+cTab+oLan:RGet("Account",25,"!")+cTab+;
 oLan:RGet("Gifts/Payments",14,"!","C")+cTab+oLan:RGet("TeleBanking",11,"!","C")+cTab+;
 oLan:RGet("Account en route",20)+cTab+;
@@ -118,10 +122,10 @@ DO WHILE .not. oSel:EOF
 	ENDIF		
 
    oReport:PrintLine(@nRow,@nPage,Pad(oSel:banknumber,20)+cTab+Pad(oSel:Description,25)+cTab+;
-   PadC(iif(oSel:usedforgifts==1,"X",Space(1)),14)+cTab+PadC(iif(oSel:telebankng==0,Space(1),"X"),11)+cTab+;
+   PadC(iif(coni(oSel:usedforgifts)==1,"X",Space(1)),14)+cTab+PadC(iif(coni(oSel:telebankng)==0,Space(1),"X"),11)+cTab+;
    iif(Empty(oSel:AccountPaymnt),Space(20),Pad(oSel:AccountPaymnt,20))+cTab+;
    iif(empty(oSel:accountsingle),space(20),Pad(oSel:accountsingle,20))+cTab+Pad(cCodOms,12)+;
-   cTab+PadC(iif(Empty(oSel:SYSCODOVER),Space(1),"X"),13),kopregels)
+   cTab+PadC(iif(Empty(oSel:SYSCODOVER),Space(1),"X"),13),aHeading)
    oSel:skip()
 ENDDO
 oReport:prstart()
