@@ -4069,44 +4069,39 @@ SELF:FieldPut(#NbrTrans, uValue)
 RETURN uValue
 
 METHOD Post(status as int ) as void pascal CLASS TransInquiry
-// mark transactions with PostStatus status 
-local oTransH:=self:Server as SQLSelect, oTrans as SQLStatement 
-local cTransnr as string 
+	// mark transactions with PostStatus status 
+	local oTransH:=self:Server as SQLSelect, oTrans as SQLStatement 
+	local cTransnr as string 
+	local aTransid:={} as array
 
-self:STATUSMESSAGE(self:oLan:WGet(iif(status=2,"Posting","Ready")+" transactions, moment please"))
-self:Pointer := Pointer{POINTERHOURGLASS}
+	self:STATUSMESSAGE(self:oLan:WGet(iif(status=2,"Posting","Ready")+" transactions, moment please"))
+	self:Pointer := Pointer{POINTERHOURGLASS}
 
-oTrans:SuspendNotification()
-oTransH:SuspendNotification()
-oTransH:GoTop() 
-SQLStatement{"start transaction",oConn}:execute()
-do while !oTransH:EOF 
-	cTransnr:=Str(oTransH:TransId,-1)
-	oTrans:=SQLStatement{"update transaction set poststatus='"+Str(status,-1)+",userid='"+LOGON_EMP_ID+"' where transid="+ cTransnr,oConn}
+	oTransH:SuspendNotification()
+	oTransH:GoTop()
+	aTransid:=oTransH:GetLookupTable(100000,#transid,#transid) 
+	SQLStatement{"start transaction",oConn}:execute()
+	oTrans:=SQLStatement{"update transaction set poststatus="+Str(status,-1)+",userid='"+LOGON_EMP_ID+"' where transid in ("+ Implode(aTransid,',',,,1)+")",oConn}
 	oTrans:execute()
 	if !Empty(oTrans:status)
-		exit
+		SQLStatement{"rollback",oConn}:execute()
+		ErrorBox{,self,self:oLan:WGet("transactions could't be posted")+" ("+oTrans:ErrInfo:errormessage+")"}:Show()
+	else
+		SQLStatement{"commit",oConn}:execute()
 	endif
-	oTransH:Skip()
-Enddo 
-if !Empty(oTrans:status)
-	SQLStatement{"rollback",oConn}:execute()
-	ErrorBox{,self,self:oLan:WGet("transactions could't be posted")+" ("+oTrans:ErrInfo:errormessage+")"}:Show()
-else
-	SQLStatement{"commit",oConn}:execute()
-endif
-oTransH:GoTop()
-oTransH:ResetNotification()
-self:STATUSMESSAGE(Space(40))
-self:Pointer := Pointer{POINTERARROW}
-self:oSFTransInquiry_DETAIL:Browser:REFresh()
+	oTransH:GoTop()
+	oTransH:ResetNotification()
+	self:STATUSMESSAGE(Space(40))
+	self:Pointer := Pointer{POINTERARROW}
+	self:ShowSelection()
+// 	self:oSFTransInquiry_DETAIL:Browser:REFresh()
 
-RETURN
+	RETURN
 METHOD PostButton( ) CLASS TransInquiry
-if (TextBox{,"Post Batch","Are you sure you want to Post all selected transactions and freeze them?",BOXICONQUESTIONMARK + BUTTONYESNO}):Show()<> BOXREPLYYES
-	return
-endif
-self:Post(2)
+	if (TextBox{,"Post Batch","Are you sure you want to Post all selected transactions and freeze them?",BOXICONQUESTIONMARK + BUTTONYESNO}):Show()<> BOXREPLYYES
+		return
+	endif
+	self:Post(2)
 	RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TransInquiry
 	//Put your PostInit additions here
@@ -4160,8 +4155,8 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 		endif
 	endif
 	self:cFields:="t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,t.userid,t.debforgn,t.creforgn,"+;
-	"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,t.currency,t.ppdest,"+;
-	"a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
+		"cast(t.poststatus as signed) as poststatus,if(t.poststatus=2,'Posted',if(t.poststatus=1,'Ready','Not posted')) as postingstatus,t.currency,t.ppdest,"+;
+		"a.accnumber,a.description as accountname,"+SQLFullName(0,"p")+" as personname"
 	self:cFrom:="account a, transaction t left join person p on (p.persid=t.persid)"
 	self:cWhereBase:="a.accid=t.accid"+iif(Empty(cDepmntIncl),''," and a.department in ("+cDepmntIncl+")") 
 	if !Empty( cAccAlwd)
