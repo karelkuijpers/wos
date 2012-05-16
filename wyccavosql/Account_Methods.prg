@@ -553,7 +553,7 @@ METHOD ValidateAccount() CLASS EditAccount
 		cError := self:oLan:WGet("Account number is mandatory")+"!"
 	ENDIF
 	IF Val(self:mNumSave)=0
-		IF Empty(self:mNum)
+		IF Empty(self:mBalitemid)
 			cError := self:oLan:WGet("Number balancegroup is mandatory")+"!"
 			lValid := FALSE
 		ELSEif !self:lImport
@@ -582,7 +582,7 @@ METHOD ValidateAccount() CLASS EditAccount
 		if self:mReevaluate .and.Empty(self:mGainLsacc)
 			lValid := FALSE
 			cError := self:oLan:WGet("Account for Exchange rate gain/loss is mandatory")+"!"
-			self:oDCmGLAccount:SetFocus()
+			self:oDCmGainLossacc:SetFocus()
 		endif
 	ENDIF
 	/*	IF lValid .and. mabp = 0 .and. !Empty(mClc)
