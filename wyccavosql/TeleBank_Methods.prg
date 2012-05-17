@@ -348,7 +348,8 @@ CLASS TeleMut
 	protect CurDate as date, CurSeq, CurBank as string  // current values of bookingdate, sequencenumber and bankaccntnbr in import file
 	protect nSubSeqnr as int  // sub seqence nunber for same CurDate and CurSeq 
 	protect aValuesTrans:={} as array  // array with values to be stored into table teletrans:
-	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed},...} 
+	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed},...}  
+	protect avaluesBal:={} as array  // array with values to be stored in bankbalances: {{banknumber,SQLdate,value},...
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
@@ -634,7 +635,7 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 	// analyse if description of transaction contains a payment pattern (betalingkenmerk) 
 	local cText as string 
 	local oDue as SQLSelect 
-	local dateCol as date
+	local dateCol as date                    
 	if	Empty(lv_budget) 
 		if Upper(SubStr(lv_Oms,1,10))=='ACCEPTGIRO'
 			lv_kind='AC'
@@ -678,19 +679,17 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 				lv_budget:=""				
 			endif
 		elseif IsDigit(lv_Oms)
-			cText	:=	StrTran(SubStr(lv_Oms,1,19),' ','')
+			cText	:=	SubStr(AllTrim(StrTran(StrTran(SubStr(lv_Oms,1,19),' ',''),'+','')),1,16)
 			// 			IF	isnum(cText) .and. Len(cText)=16	.and.	IsMod11(cText)							
 			IF	isnum(cText) .and.	IsMod11(cText)							
 				//	betalingskenmerk
 				lv_kind:="AC"
-			endif
-			
-			
+			endif                                      
 		endif
 		if	lv_kind=="AC"
 			if	lv_addsub =	"B" .and.isnum(cText)
 				if Len(cText)>11
-					lv_persid:=ZeroTrim(SubStr(cText,-5))
+					lv_persid:=Str(Val(SubStr(cText,-5)),-1)
 				endif
 				lv_bankid:=SubStr(cText,2,6)
 				lv_budget:=SubStr(cText,2,Max(5,Len(cText)-6))
@@ -966,14 +965,14 @@ METHOD Import() CLASS TeleMut
 	oLock:=SqlSelect{"select importfile from importlock where importfile='telelock' for update",oConn}
 	oLock:execute() 
 	if !Empty(oLock:Status)
-		ErrorBox{self,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
+		ErrorBox{,self:oLan:WGet("could not select importlock")+Space(1)+' ('+oLock:Status:description+')'}:Show()
 		SQLStatement{"rollback",oConn}:execute() 
 		return
 	endif
 	oStmnt:=SQLStatement{"update importlock set lock_id='',lock_time='0000-00-00' where importfile='telelock'",oConn}
 	oStmnt:execute()
 	if !Empty(oStmnt:Status)
-		ErrorBox{self,self:oLan:WGet("could not unlock required transactions")}:Show()
+		ErrorBox{,self:oLan:WGet("could not unlock required transactions")}:Show()
 		SQLStatement{"rollback",oConn}:execute()
 	else 
 		SQLStatement{"commit",oConn}:execute()  // save locks 
@@ -1016,13 +1015,14 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	ENDIF
 	cBuffer:=ptrHandle:FReadLine(ptrHandle)
 	IF Empty(cBuffer)
+		ptrHandle:Close()
+		ptrHandle:=null_object 
 		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
 	if !GetDelimiter(cBuffer,@aStruct,@cDelim,4,5)
-// 	cDelim:=CHR(9)
-// 	aStruct:=Split(Upper(cBuffer),cDelim)
-// 	IF Len(aStruct)<4
+		ptrHandle:Close()
+		ptrHandle:=null_object 
 		(ErrorBox{,"Wrong fileformat of importfile from BBS Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
@@ -1090,10 +1090,10 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object 
-	nImp:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false)
-	AAdd(self:aMessages,"Imported BBS file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nImp:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(false,false,"BBS file:"+oFb:FileName,nTrans)
+// 	AAdd(self:aMessages,"Imported BBS file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -1117,16 +1117,6 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	local aSubscr:={} as array // array with persid's in donation subscriptions {persid,invoiceid},... 
 
 	
-	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
-	
-	*Look for NY090020: record with accountnumber
-	*	Look for next line until line =NY090020
-	*		if 61: amount
-	*		if 85: corresponding description with counteraccount
-	*			add record to teletrans
-	*
-	lSuccess:=oHlM:AppendSDF(oFm)
-	oHlM:Gotop()
 	IF Empty(SDON)
 		(WarningBox{,"Import of Innbetal transactions","Specify first within system parameters account for donations as default destination"}):Show()
 		RETURN FALSE
@@ -1137,6 +1127,17 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	ENDIF 
 	oSel:=SqlSelect{"select personid,invoiceid from subscription where category='D'",oConn} 
 	aSubscr:=oSel:GetLookupTable(1000)
+	oHlM :=HLPMT940{HelpDir+"\HBBI"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM:Zap()
+	
+	*Look for NY090020: record with accountnumber
+	*	Look for next line until line =NY090020
+	*		if 61: amount
+	*		if 85: corresponding description with counteraccount
+	*			add record to teletrans
+	*
+	lSuccess:=oHlM:AppendSDF(oFm)
+	oHlM:Gotop()
 	nImp:=0
 	nTrans:=0
 	DO WHILE .not.oHlM:EOF
@@ -1192,10 +1193,10 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE()
-	nImp:=self:lv_aant_toe 
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,true)
-	AAdd(self:aMessages,"Imported Innbetalinger fra BBS file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nImp:=self:lv_aant_toe 
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(false,true,"Innbetalinger fra BBS file:"+oFm:FileName,nTrans)
+// 	AAdd(self:aMessages,"Imported Innbetalinger fra BBS file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -1682,16 +1683,12 @@ if lSuccess
 	oHlG:Close()
 	oHlG:=null_object
 	oHlp:DELETE()
-	nImp:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(true,true)
-	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	lSuccess:=self:SaveTeleTrans(true,true,"ING file:"+oFs:FileName,nTrans)
 	if lSuccess
 		return true
 	else
 		return false                                              
 	endif
-// 	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions")
 
 ENDIF
 RETURN true
@@ -1821,7 +1818,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as USUAL, cText,lv_budget,lv_kind,lv_persid,lv_bankid as STRING 
 	local Cur_RekNrOwn, Cur_enRoute as string
 	local cType86 as string  //type of tag 86: B=bank,
-	LOCAL lv_Amount as FLOAT
+	LOCAL lv_Amount,lv_balance as FLOAT
 	LOCAL cSep as STRING
 	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL lSuccess:=true as LOGIC
@@ -1833,7 +1830,8 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 
 	
-	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM:Zap()
 	cSep:=CHR(SetDecimalSep()) 
 	lMTExtended:=(AtC('ME940',oFm:FileName)>0) 
 
@@ -1844,9 +1842,14 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	*			add record to teletrans
 	*
 	lSuccess:=oHlM:AppendSDF(oFm)
-	oHlM:Gotop()
+	oHlM:Gotop() 
+
 	if !SubStr(oHlM:MTLINE,1,5)==':940:'
-		ErrorBox{self,"file "+oFm:Fullpath+" is not a MT940 file"}:Show()
+		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a MT940 file"}:Show()
+		oHlp:=FileSpec{oHlM:Filespec:Fullpath}
+		oHlM:Close()
+		oHlM:=null_object
+		oHlp:DELETE()
 		Return false
 	endif
 	nTrans:=0
@@ -1883,7 +1886,8 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 					lv_referenceCur:=lv_reference
 					nBGCSeq:=0
 				endif
-			ENDIF
+			ENDIF 
+
 			IF !SubStr(oHlM:MTLINE,1,4)==":61:"
 				oHlM:Skip()
 				loop
@@ -2034,54 +2038,47 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						aBudg:=Split(SubStr(lv_description,nOffset+1),'*')
 						if	Len(aBudg)>0 .and. isnum(aBudg[1])
 							lv_budget:=aBudg[1]
-// 							if SQLSelect{"select accid from account where accnumber='"+lv_budget+"'",oConn}:Reccount<1   // no existing account?
-// 								lv_budget:=""
-// 							endif
 						endif
 					endif
 					if Empty(lv_budget) .and. (nOffset:=At('[',lv_description))>0
 						aBudg:=Split(SubStr(lv_description,nOffset+1),']') 
 						if	Len(aBudg)>0 .and. isnum(aBudg[1])
 							lv_budget:=aBudg[1]
-// 							if SQLSelect{"select accid from account where accnumber='"+lv_budget+"'",oConn}:Reccount<1   // no existing account?
-// 								lv_budget:=""
-// 							endif
 						endif					
 					endif
 					if Empty(lv_budget) .and. (nOffset:=At('(',lv_description))>0
 						aBudg:=Split(SubStr(lv_description,nOffset+1),')') 
 						if	Len(aBudg)>0 .and. isnum(aBudg[1])
 							lv_budget:=aBudg[1]
-// 							if SQLSelect{"select accid from account where accnumber='"+lv_budget+"'",oConn}:Reccount<1   // no existing account?
-// 								lv_budget:=""
-// 							endif
 						endif
 					endif
 				else
-// 					lv_budget:=iif(SQLSelect{"select accnumber from account where accnumber='"+lv_budget+"'",oConn}:Reccount>0,lv_budget,'')					
 				endif
 				lv_description:=AddSlashes(AllTrim(lv_description))
 				lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
 				* save transaction:
 				nTrans++
-// 				IF !self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 					self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(Val(lv_reference),-1),lv_BankAcntContra,;
 					lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
-// 				ENDIF
 				lv_Oms:=""
-			enddo     // end 61 /86 combinations
+			enddo     // end 61 /86 combinations 
+
+			IF SubStr(oHlM:MTLINE,1,5)==":62F:"
+				// balance new:
+				lv_balance:=Val(iif(SubStr(oHlM:MTLINE,6)='C','','-')+SubStr(oHlM:MTLINE,16,15))
+				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,7,6)) // valuta date
+				AAdd(self:avaluesBal,{lv_bankAcntOwn,ld_bookingdate,lv_balance})
+			endif
+			// 
 			exit
 		ENDDO       // end :25 transaction
 	ENDDO
-	// store read data into database:
 	oHlp:=FileSpec{oHlM:Filespec:Fullpath}
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE()
-	nImp:=self:lv_aant_toe
-	nProc:= self:lv_processed
-	lSuccess:=self:SaveTeleTrans(true,true)
-	AAdd(self:aMessages,"Imported MT940 file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	// store read data into database:
+	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName,nTrans)
 	if lSuccess
 		return true
 	else
@@ -2104,14 +2101,18 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 	// 	RETURN FALSE
 	// ENDIF
 	
-	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HPG"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM:Zap()
 	
 	lSuccess:=oHlM:AppendSDF(oFm)
 	oHlM:Gotop()
 	// First line contains own giro#:
 	IF SubStr(oHlM:MTLINE,1,2)#"01"
 		ErrorBox{,"File "+oFm:Fullpath+" is not a correct PG Autogiro file"}:Show()
+		oHlp:=FileSpec{oHlM:Filespec:Fullpath}
 		oHlM:Close()
+		oHlM:=null_object
+		oHlp:DELETE() 
 		oHlM:=null_object
 		RETURN false
 	ENDIF
@@ -2156,10 +2157,10 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE() 
-	nCnt:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(true,false)
-	AAdd(self:aMessages,"Imported PGAutoGiro file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nCnt:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(true,false,"PGAutoGiro file:"+oFm:FileName,nTot)
+// 	AAdd(self:aMessages,"Imported PGAutoGiro file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -2196,6 +2197,8 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	ENDIF
 	cBuffer:=ptrHandle:FReadLine(ptrHandle)
 	IF Empty(cBuffer)
+		ptrHandle:Close()
+		ptrHandle:=null_object 
 		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
@@ -2305,31 +2308,16 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 // 			aFields:=Split(cBuffer,cDelim)
 // 			LOOP
 // 		ENDIF 
-// 		oStmnt:=SQLStatement{"insert into teletrans set "+;
-// 			"contra_bankaccnt='"+lv_BankAcntContra+"'"+;
-// 			",contra_name='"+lv_NameContra+"'"+;
-// 			",bankaccntnbr='"+lv_bankAcntOwn+"'"+;
-// 			",bookingdate='"+SQLdate(ld_bookingdate)+"'"+;
-// 			",kind='"+lv_addsub +"'"+;
-// 			",amount='"+Str(lv_Amount,-1)+"'"+;
-// 			",addsub='"+lv_addsub +"'"+;
-// 			",code_mut_r='"+"M"+"'"+;
-// 			",description='"+lv_description +"'",oConn}
-// 		oStmnt:Execute()
-// 		if oStmnt:NumSuccessfulRows>0
-// 			++self:lv_aant_toe
-// 			++nImp
-// 		endif
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object 
 	SetDecimalSep(cSep)  // restore decimal separator
-	nImp:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false)
-	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nImp:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(false,false,"ING file:"+oFs:FileName,nTrans)
+// 	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -2429,10 +2417,10 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	ptrHandle:Close()
 	ptrHandle:=null_object
 	SetDecimalSep(cSep)  // restore decimal separator
-	nCnt:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false)
-	AAdd(self:aMessages,"Imported Transilvania file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nCnt:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(false,false,"silvanTrania file:"+oFb:FileName,nTot)
+// 	AAdd(self:aMessages,"Imported silvanTrania file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -2472,12 +2460,16 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	ENDIF
 	cBuffer:=ptrHandle:FReadLine(ptrHandle)
 	IF Empty(cBuffer)
+		ptrHandle:Close()
+		ptrHandle:=null_object
 		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
 	//cDelim:=','
 	aStruct:=Split(Upper(cBuffer),cDelim)
 	IF Len(aStruct)<5
+		ptrHandle:Close()
+		ptrHandle:=null_object
 		(ErrorBox{,"Wrong fileformat of importfile from Standard Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
@@ -2487,6 +2479,8 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	ptDep:=AScan(aStruct,{|x| "DEPOSITS" $ x})
 	ptBal:=AScan(aStruct,{|x| "BALANCE" $ x})
 	IF ptDate==0 .or. ptDesc==0 .or. ptPay==0 .or. ptDep==0 .or. ptBal==0
+		ptrHandle:Close()
+		ptrHandle:=null_object
 		(ErrorBox{,"Wrong fileformat of importfile from Standard Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
@@ -2528,37 +2522,19 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 		// 		aFields:=Split(cBuffer,cDelim)
 		//         loop
 		// 	ENDIF
-		// 	oStmnt:=SQLStatement{"insert into teletrans set	"+;
-		// 		"bankaccntnbr='"+lv_bankAcntOwn+"'"+;
-		// 		",bookingdate='"+SQLdate(Min(Today(),ld_bookingdate))+"'"+;  // no dates in the future)+"'"+;
-		// 		",kind='SAB'"+;
-		// 		",amount='"+Str(lv_amount,-1)+"'"+;
-		// 		",addsub='"+lv_addsub	+"'"+;
-		// 		",code_mut_r='M'"+;
-		// 		",seqnr='"+Str(Val(SubStr(lv_description,-4,4)),-1)+"'"+;
-		// 		",description='"+lv_description	+"'",oConn}
-		// 	oStmnt:Execute()
-		// 	if	oStmnt:NumSuccessfulRows>0
-		// 		++lv_aant_toe
-		// 		nCnt++
-		// 	endif
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object
 	SetDecimalSep(cSep)  // restore decimal separator
-	nCnt:=self:lv_aant_toe
-	nProc:=lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false)
-	AAdd(self:aMessages,"Imported SA file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	lSuccess:=self:SaveTeleTrans(false,false,"SA file:"+oFb:FileName,nTot)
 	if lSuccess
 		return true
 	else
 		return false                                              
 	endif
 	
-	// AAdd(self:aMessages,"Imported SA file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 
 	RETURN true
 METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
@@ -2586,7 +2562,8 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 
 	
-	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HTL1"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM:Zap()
 	cSep:=CHR(SetDecimalSep())
 	*Look for 2: record with transction record
 	*			add record to teletrans
@@ -2690,10 +2667,7 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE()
-	nCnt:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false)
-	AAdd(self:aMessages,"Imported TL/1 file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	lSuccess:=self:SaveTeleTrans(false,false,"TL/1 file:"+oFm:FileName,nTot)
 	if lSuccess
 		return true
 	else
@@ -2862,7 +2836,8 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oDue as SQLSelect, oAcc as SQLSelect
 	local oStmnt as SQLStatement
 	
-	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HVW"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM:Zap()
 	cSep:=CHR(SetDecimalSep())
 	*Look for 2: record with transction record
 	*			add record to teletrans
@@ -2874,7 +2849,10 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	batchsoort:=SubStr(oHlM:MTLINE,43,1)
 	if batchsoort=="B" .or. batchsoort=="D"
 		// only A= refused orders and C=acceptgiro
+		oHlp:=FileSpec{oHlM:FileSpec:FullPath}
 		oHlM:Close()
+		oHlM:=null_object
+		oHlp:DELETE()		
 		return false 
 	endif
 	oHlM:Skip()
@@ -2986,10 +2964,10 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	oHlM:Close()
 	oHlM:=null_object
 	oHlp:DELETE()
-	nTrans:=self:lv_aant_toe
-	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(true,true)
-	AAdd(self:aMessages,"Imported VerwInfo file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nTrans,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+// 	nTrans:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(true,true,"VerwInfo file "+oFm:FileName,nTot)
+// 	AAdd(self:aMessages,"Imported VerwInfo file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nTrans,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
 		return true
 	else
@@ -3119,7 +3097,13 @@ METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 	ENDDO
 
 	RETURN FALSE
-method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) as logic class TeleMut
+method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, cFilename:="" as string, nTot:=0 as int) as logic class TeleMut 
+// Process imported transactions in array self:aValueTrans to save them into table teletrans and record them where possible into transactions
+// lCheckPerson: check if persid within aValueTrans is an existing person
+// lCheckAccount: check if budgetcd belongs to an existing account as accnumber
+// cFilename: filename of importfile for messages (optionally) 
+// nTot: total transaction within cFilename for messages (optional)
+//  
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oMBal as Balances
@@ -3256,7 +3240,22 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		else
 			exit
 		endif
-	enddo
+	enddo 
+	// find accid for banknumbers in array with bank account balances aValuesBal
+	if !Empty(self:aValuesBal)
+		for i:=1 to Len(self:aValuesBal)
+			cBankAcc:=AllTrim(self:aValuesBal[i,1])
+			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
+			if j>0							
+				self:aValuesBal[i,1]:=self:m57_bankacc[j,7]
+				self:aValuesBal[i,2]:=SQLdate(self:aValuesBal[i,2])
+			else
+				ADel(self:aValuesBal,i)
+				ASize(self:aValuesBal,Len(self:aValuesBal)-1) 
+				i--
+			endif
+		next
+	endif
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
@@ -3360,7 +3359,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
 									AAdd(aTrans,{cBankAccOwn,aValueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
-										aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
+										aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
 									// second row: 
 									if aAccnbrDb[l,3]='1'  //destination member?
 										lv_gc:='AG'
@@ -3371,7 +3370,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 										lv_gc:=''
 									endif
 									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
-										avalueTrans[i,2],lv_gc,LOGON_EMP_ID,'1','2',avalueTrans[i,5]+avalueTrans[i,3],'',avalueTrans[i,11],'0','',''} )
+										avalueTrans[i,2],lv_gc,LOGON_EMP_ID,'2','2',avalueTrans[i,5]+avalueTrans[i,3],'',avalueTrans[i,11],'0','',''} )
 									// person data:
 									AAdd(avaluesPers,{lv_persid,avalueTrans[i,2]}) 
 								endif
@@ -3456,10 +3455,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 					fCreForgn:=avalueTrans[i,8]
 				endif
 				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;                  // contra name as description
-					aValueTrans[i,2],'',LOGON_EMP_ID,'1','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
+					aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
 				// second row: 
 				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;
-					aValueTrans[i,2],'',LOGON_EMP_ID,'1','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,'0','',''} )
+					aValueTrans[i,2],'',LOGON_EMP_ID,'2','2',aValueTrans[i,5]+aValueTrans[i,3],'',lv_persid,'0','',''} )
 			endif
 		endif
 	enddo
@@ -3499,7 +3498,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
+		oStmnt:=SQLStatement{'lock tables `transaction` write,`teletrans` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write','')+iif(Len(self:aValuesBal)>0,',`,`bankbalance` write',''),oConn} 
 		oStmnt:execute()
 	else
 		SQLStatement{"start transaction",oConn}:execute()
@@ -3665,6 +3664,20 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 			self:aValuesTrans:={}
 			return false 
 		endif
+		// insert bank balances:
+		if !Empty(self:aValuesBal)
+			oStmnt:=SQLStatement{"insert into bankbalance (accid,datebalance,balance) values "+Implode(self:aValuesBal,'","')+;
+			" ON DUPLICATE KEY UPDATE balance=values(balance)",oConn}
+			oStmnt:execute()
+			if	!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute() 
+				SQLStatement{"unlock tables",oConn}:execute()
+				LogEvent(self,"error:"+oMBal:cError,"LogErrors")
+				ErrorBox{,self:oLan:WGet("bank balances could not be updated")+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+				self:aValuesTrans:={}
+				return false 
+			endif
+		endif
 		//	update person data of givers: 
 		if Len(avaluesPers)>0
 			oStmnt:=SQLStatement{"insert into person (persid,datelastgift)	values "+Implode(avaluesPers,'","')+;
@@ -3682,6 +3695,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic) a
 		self:lv_processed+=nProc
 		// 		endif
 	endif		
+	if !Empty (cFilename) .and.!Empty(nTot)
+		AAdd(self:aMessages,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1),""))
+	endif
 	self:lv_aant_toe+=nTele
 	SQLStatement{"commit",oConn}:execute()	
 	if Len(aTrans)>0
