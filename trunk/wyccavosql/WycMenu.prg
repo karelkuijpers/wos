@@ -240,11 +240,16 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 		ENDIF
 	ENDIF
 // 	if SuperUser
-		AAdd(aMenu,{2,7,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
+	AAdd(aMenu,{2,7,,,,,})           // separator
+		AAdd(aMenu,{2,8,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
+	if TeleBanking 
+		AAdd(aMenu,{2,9,   oLan:MGet("&Monitor Bank Balance")+"...","CheckBankBalance","",0,15,"F"})
+	endif 
+		
 // 	endif
-	AAdd(aMenu,{2,8,,,,,})           // separator
-	AAdd(aMenu,{2,9,    oLan:MGet("&Account statements per month")+"..." ,"TransactionMonth","",0,14,"FM"})
-	AAdd(aMenu,{2,10,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
+	AAdd(aMenu,{2,10,,,,,})           // separator
+	AAdd(aMenu,{2,11,    oLan:MGet("&Account statements per month")+"..." ,"TransactionMonth","",0,14,"FM"})
+	AAdd(aMenu,{2,12,    oLan:MGet("Journal Records &Inquiry/Update")+"..." ,"TransInquiry","",0,75,"FM"})
 	AAdd(aMenu,{0,3, oLan:MGet("&Balance"),,,,,})
 	IF Admin=="WO"
 		AAdd(aMenu,{3,2,   oLan:MGet("&Sending to PMC")+"...","PMISsend","",0,87,"F"}) 
