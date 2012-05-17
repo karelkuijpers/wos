@@ -237,7 +237,7 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
 		Str(MonthEnd(PeriodEndMonth,PeriodEndYear),2))
 		* Before	ultimo of the month?
 		* Calculate	sum of transactions in last month: 
-		cTransSelect:=UnionTrans("select	Round(sum(t.deb),2) as monthdeb,Round(sum(t.cre),2) as monthcre,"+;
+		cTransSelect:=UnionTrans('select Round(sum(t.deb),2) as monthdeb,Round(sum(t.cre),2) as monthcre,'+;
 			"Round(sum(t.debforgn),2) as monthdebf,Round(sum(t.creforgn),2) as monthcref from transaction as t	"+;
 			"where t.DAT>='"+Str(PeriodEndYear,4)+"-"+StrZero(PeriodEndMonth,2)+"-01' and	t.DAT<='"+SQLdate(pPeriodEnd)+"'	and t.accid='"+pAccount+"'") 
 		oTrans:=SQLSelect{cTransSelect,oConn}
