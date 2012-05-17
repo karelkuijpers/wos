@@ -1107,7 +1107,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			//                1     2     3     4     5         6        7        10 11    12     13        14    15     16       17      18    19    20
 			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			AAdd(aValuesTrans,{shb,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'1',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
+				aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
 		endif
 		// second transaction row 
 
@@ -1146,7 +1146,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			nProc++
 			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,aValues[nPtr,15],'2',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
+				aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
 			// add to income expense if needed: 
 			if !Empty(SINCHOME) .or.!Empty(SINC)
 				// add transactions for ministry income/expense:
@@ -1158,7 +1158,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 // 					aTransIncExp[1,16]:=1    // replace by fromrpp
-// 					aTransIncExp[2,16]:=1
+// 					aTransIncExp[2,16]:=1 
+					aTransIncExp[1,11]:='2'  // poststatus -> posted
+					aTransIncExp[2,11]:='2'  // poststatus -> posted
 					AAdd(aValuesTrans,aTransIncExp[1])
 					AAdd(aValuesTrans,aTransIncExp[2]) 
 				endif
