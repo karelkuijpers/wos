@@ -3103,9 +3103,9 @@ METHOD OKButton( ) CLASS TotalsMembers
 
 	* Check values:
 	* Check input data:
-	IF !ValidateControls( self, self:AControls )
-		RETURN
-	END
+// 	IF !ValidateControls( self, self:AControls )
+// 		RETURN
+// 	END
 	// self:FromYear:=oDCFromYear:Value
 	// self:FromMonth:=oDCFromMonth:Value
 	// ToYear:=oDCToYear:Value
