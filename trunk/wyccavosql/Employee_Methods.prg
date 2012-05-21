@@ -148,7 +148,8 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 	IF Empty(cUser)
 		return true
 	endif
-   cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"persid")+" as char) as persid,cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid from employee where "
+   cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"persid")+" as char) as persid,cast(lstlogin as date) as lstlogin,"+;
+   "cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid from employee where "
 	if Empty(MYEMPID)
 		cEmpStmnt+= Crypt_Emp(false,"loginname")+'="'+cUser+'" and datediff(Now(),lstupdpw)<10000'
 	else
@@ -191,6 +192,11 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 					cAccAlwd+=iif(Empty(cAccAlwd),"",",")+Str(oSQL:ACCID,-1) 
 					oSQL:Skip()
 				enddo						
+			endif
+			if oEmp:Lstlogin < Today()
+				FirstLogin:=true
+			else
+				FirstLogin:=false
 			endif
 			oEmp:Close()
 			oStmt:=SQLStatement{"update employee set online='1',lstlogin='"+SQLdate(Today())+" "+Time24()+"' where empid='"+MYEMPID+"'",oConn}
