@@ -1356,35 +1356,33 @@ METHOD OKButton( ) CLASS LabelFormat
 	LOCAL lError AS LOGIC
 	LOCAL nPoint:= 254/10 AS FLOAT
 	LOCAL cRoot := "WYC\Runtime" AS STRING
-	IF ValidateControls( SELF:Owner, SELF:AControls )
-		IF IsNil(self:stckr_PointSize).or.Empty(self:stckr_PointSize).or.!IsNumeric(self:stckr_PointSize)
-			(ErrorBox{self,self:oLan:Wget("Pointsize is mandatory")+"!"}):show()
-			RETURN TRUE
+	IF IsNil(self:stckr_PointSize).or.Empty(self:stckr_PointSize).or.!IsNumeric(self:stckr_PointSize)
+		(ErrorBox{self,self:oLan:Wget("Pointsize is mandatory")+"!"}):show()
+		RETURN TRUE
+	ENDIF
+	
+	* Check if number of rows below minimum (4 of 3 +KIXcode-row):
+	IF CountryCode="31"
+		IF Integer((self:stckr_height - 7 ) / ( self:stckr_PointSize * nPoint / 72)) < 3
+			* fout
+			lError := TRUE
 		ENDIF
-		
-		* Check if number of rows below minimum (4 of 3 +KIXcode-row):
-		IF CountryCode="31"
-			IF Integer((self:stckr_height - 7 ) / ( self:stckr_PointSize * nPoint / 72)) < 3
-				* fout
-				lError := TRUE
-			ENDIF
-		ELSE
-			IF Integer(self:stckr_height  / ( self:stckr_PointSize * nPoint / 72)) < 4
-				* fout
-				lError := TRUE
-			ENDIF
+	ELSE
+		IF Integer(self:stckr_height  / ( self:stckr_PointSize * nPoint / 72)) < 4
+			* fout
+			lError := TRUE
 		ENDIF
-		IF lError
-			(errorbox{SELF,"Too less lines per label"}):show()
-		ELSE
+	ENDIF
+	IF lError
+		(errorbox{SELF,"Too less lines per label"}):show()
+	ELSE
 
-			SetRTRegInt( cRoot, "stckr_height", self:stckr_height )
-			SetRTRegInt( cRoot, "stckr_width", self:stckr_width)
-			SetRTRegInt( cRoot, "stckr_TopMargin", self:stckr_TopMargin )
-			SetRTRegInt( cRoot, "stckr_LeftMargin", self:stckr_LeftMargin )
-			SetRTRegInt( cRoot, "stckr_PointSize", self:stckr_PointSize )
-			SELF:EndWindow()
-		ENDIF
+		SetRTRegInt( cRoot, "stckr_height", self:stckr_height )
+		SetRTRegInt( cRoot, "stckr_width", self:stckr_width)
+		SetRTRegInt( cRoot, "stckr_TopMargin", self:stckr_TopMargin )
+		SetRTRegInt( cRoot, "stckr_LeftMargin", self:stckr_LeftMargin )
+		SetRTRegInt( cRoot, "stckr_PointSize", self:stckr_PointSize )
+		SELF:EndWindow()
 	ENDIF
 
 	RETURN TRUE
@@ -2083,48 +2081,46 @@ self:oDCTemplates:FillUsing(self:ListFiles( ))
 self:oDCTemplates:Value:=self:TemplateName
 RETURN
 METHOD OKButton( ) CLASS LetterFormat
-LOCAL m96_regels AS INT
-LOCAL cRoot := "WYC\Runtime" AS STRING
-	IF ValidateControls( SELF:Owner, SELF:AControls )
-		IF Empty(self:oDCTemplates:TextValue)
-   			(errorbox{SELF,"No letter selected"}):show()
-			RETURN
-		ENDIF
-
-		IF self:brfNAW .and.(self:brfCol < 1 .or. self:brfCol > self:brfWidth)
-			(errorbox{SELF,"Name/address start column must be within range of letter"}):show()
-			RETURN
-		ENDIF	
-		IF self:brfColt < 1 .or. self:brfColt > self:brfWidth-10
-			(errorbox{SELF,"Text start column must be within range of lettermargins"}):show()
-			RETURN
-		ENDIF	
-		IF self:brfDAT.and.(self:brfCola < 1 .or. self:brfCola > self:brfWidth-10)
-			(errorbox{SELF,"City and date start column must be within range of lettermargins"}):show()
-			RETURN
-		ENDIF	
-		IF self:brfDAT.and.self:brfNAW.and.self:brfCola==self:brfCol.and.self:brfregn==self:brfrega
-			(errorbox{SELF,"Name and City and date cannot be on the same position"}):show()
-			RETURN
-		ENDIF
-		self:brief:=null_string		
-		* save stettings in the registry:
-		SetRTRegInt( cRoot, "brfNAW", if(self:brfNAW,1,0) )
-		SetRTRegInt( cRoot, "brfDAT", if(self:brfDAT,1,0))
-		SetRTRegInt( cRoot, "brfWidth", self:brfWidth )
-		SetRTRegInt( cRoot, "brfCol", self:brfCol )
-		SetRTRegInt( cRoot, "brfregn", self:brfregn )
-		SetRTRegInt( cRoot, "brfrega", self:brfrega )
-		SetRTRegInt( cRoot, "brfCola", self:brfCola )
-		SetRTRegInt( cRoot, "brfColt", self:brfColt )
-		brief:=MemoRead(self:oDCTemplates:VALUE)
-		SetRTRegString( cRoot, "LetterName", self:oDCTemplates:TextValue)
-
-		SELF:EndWindow()
+	LOCAL m96_regels AS INT
+	LOCAL cRoot := "WYC\Runtime" AS STRING
+	IF Empty(self:oDCTemplates:TextValue)
+		(errorbox{SELF,"No letter selected"}):show()
+		RETURN
 	ENDIF
 
-RETURN TRUE
-		
+	IF self:brfNAW .and.(self:brfCol < 1 .or. self:brfCol > self:brfWidth)
+		(errorbox{SELF,"Name/address start column must be within range of letter"}):show()
+		RETURN
+	ENDIF	
+	IF self:brfColt < 1 .or. self:brfColt > self:brfWidth-10
+		(errorbox{SELF,"Text start column must be within range of lettermargins"}):show()
+		RETURN
+	ENDIF	
+	IF self:brfDAT.and.(self:brfCola < 1 .or. self:brfCola > self:brfWidth-10)
+		(errorbox{SELF,"City and date start column must be within range of lettermargins"}):show()
+		RETURN
+	ENDIF	
+	IF self:brfDAT.and.self:brfNAW.and.self:brfCola==self:brfCol.and.self:brfregn==self:brfrega
+		(errorbox{SELF,"Name and City and date cannot be on the same position"}):show()
+		RETURN
+	ENDIF
+	self:brief:=null_string		
+	* save stettings in the registry:
+	SetRTRegInt( cRoot, "brfNAW", if(self:brfNAW,1,0) )
+	SetRTRegInt( cRoot, "brfDAT", if(self:brfDAT,1,0))
+	SetRTRegInt( cRoot, "brfWidth", self:brfWidth )
+	SetRTRegInt( cRoot, "brfCol", self:brfCol )
+	SetRTRegInt( cRoot, "brfregn", self:brfregn )
+	SetRTRegInt( cRoot, "brfrega", self:brfrega )
+	SetRTRegInt( cRoot, "brfCola", self:brfCola )
+	SetRTRegInt( cRoot, "brfColt", self:brfColt )
+	brief:=MemoRead(self:oDCTemplates:VALUE)
+	SetRTRegString( cRoot, "LetterName", self:oDCTemplates:TextValue)
+
+	SELF:EndWindow()
+
+	RETURN TRUE
+	
 
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
