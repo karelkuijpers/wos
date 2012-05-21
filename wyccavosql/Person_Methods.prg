@@ -3326,38 +3326,38 @@ METHOD Show() CLASS SelPers
 	* bepaal gewenste selectie:
 	aNN := {}
 	IF cType=="REMINDERS".or.cType=="DONATIONS".or.cType=="SUBSCRIPTIONS"
-		selx_keus1 := 2
+		self:selx_keus1 := 2
 	ELSEIF cType=="STANDARD GIVERS"
-		selx_keus1 := 3
+		self:selx_keus1 := 3
 	ELSEIF cType=="MAILINGCODE"
-		selx_keus1 := 1
+		self:selx_keus1 := 1
 	ELSEIF cType=="THANKYOU"
-		selx_keus1 := 4
+		self:selx_keus1 := 4
 	ELSEIF cType=="FIRSTGIVERS"
-		selx_keus1 := 1
+		self:selx_keus1 := 1
 	ELSEIF cType=="FIRSTNONEAR"
-		selx_keus1 := 1
+		self:selx_keus1 := 1
 	ELSE
 		(SelPersPrimary{self:oWindow,self}):Show()
 	ENDIF 
 
 	IF self:selx_Ok
-		IF selx_keus1 == 2
+		IF self:selx_keus1 == 2
 			(SelPersOpen{,{self,cType}}):Show()
 			self:cFrom+=",dueamount as d,subscription as t"
-			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
-// 		ELSEIF selx_keus1 == 3
+			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid" 
+// 		ELSEIF self:selx_keus1 == 3
 // 			(SelPersGifts{oWindow,SELF}):Show()
 // 			self:cFrom+=",subscription as t"
-// 			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.personid" 
-		ELSEIF selx_keus1 == 4
+// 			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.personid" 
+		ELSEIF self:selx_keus1 == 4
 			//		(SelPersPayments{oWindow,SELF}):Show()
 			(SelPersPayments{,,,self}):Show()
-			IF selx_MinAmnt>0.or.selx_MaxAmnt>0 // selection of minimum total amount:
-				selx_keus1 := 5
+			IF self:selx_MinAmnt>0.or. self:selx_MaxAmnt>0 // selection of minimum total amount:
+				self:selx_keus1 := 5
 			ENDIF
 			self:cFrom+=",transaction as t"
-			cWhereOther+=iif(Empty(cWhereOther),""," and ")+"p.persid=t.persid" 
+			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid" 
 		ENDIF
 	ELSE
 		self:EndWindow()
