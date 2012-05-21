@@ -352,9 +352,6 @@ METHOD OkButton( ) CLASS EditEmployeeWindow
 	local aAuth:={} as array
 
 	
-	IF !ValidateControls( self, self:AControls )
-		RETURN
-	ENDIF
 	IF Empty(self:mCln)
 		ErrorBox{ self, self:oLan:WGet("Fill Employee Name") }:Show()
 		RETURN
