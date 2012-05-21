@@ -242,7 +242,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 // 	if SuperUser
 	AAdd(aMenu,{2,7,,,,,})           // separator
 		AAdd(aMenu,{2,8,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
-	if TeleBanking 
+	if TeleBanking .and.ConI(SQLSelect{"select cast(count(*) as unsigned) as tot from bankbalance",oConn}:tot)>0 
 		AAdd(aMenu,{2,9,   oLan:MGet("&Monitor Bank Balance")+"...","CheckBankBalance","",0,15,"F"})
 	endif 
 		
