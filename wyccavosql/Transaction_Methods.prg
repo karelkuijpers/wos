@@ -1,20 +1,13 @@
 CLASS AccountStatements
 	// Printing OF account statements per month
-// 	EXPORT nFromAccount  AS STRING
-// 	EXPORT cFromAccName AS STRING
-// 	EXPORT nToAccount  AS STRING
-// 	EXPORT cToAccName AS STRING
-// 	*	EXPORT nFromYear  AS INT
-// 	EXPORT cFromMonth AS INT
-// 	EXPORT nToYear  AS INT
-// 	EXPORT cToMonth AS INT
 	EXPORT oBal as Balances
 	EXPORT oTrans as SQLSelect
 
 	EXPORT oReport AS PrintDialog
 	PROTECT cFileTrans AS STRING
 	EXPORT BeginReport:=FALSE as LOGIC
-	export SkipInactive as logic
+	export SkipInactive as logic 
+	export GiftDetails as logic   // show gift also as transactions
 	EXPORT SendingMethod AS STRING
 	PROTECT DescrWidth:=40 as int 
 	protect m58_debF, m58_creF, mnd_debF, mnd_creF,m57_giftbedF as float 
@@ -379,7 +372,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 			m58_creF:=Round(m58_creF+oTrans:CREFORGN,DecAantal)
 			* member and personal gift:
 			// 				IF !Empty(Val(oAcc:persid)).and. !Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.!oTrans:FROMRPP .and. !oTrans:GC="CH"
-			IF lGiftAlwd.and.!Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.ConI(oTrans:FROMRPP)=0 .and. !oTrans:GC="CH"
+			IF lGiftAlwd.and.!GiftDetails.and.!Empty(oTrans:persid) .and. oTrans:deb<>oTrans:cre .and.ConI(oTrans:FROMRPP)=0 .and. !oTrans:GC="CH"
 				m57_giftbed:=Round(m57_giftbed+oTrans:cre-oTrans:deb,DecAantal)
 				m57_giftbedF:=Round(m57_giftbedF+oTrans:CREFORGN-oTrans:DEBFORGN,DecAantal)
 			ELSEIF ConI(oTrans:FROMRPP)==1
@@ -3785,7 +3778,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		ELSEIF 	!self:ValidateTempGift()
 			curPntr := oHm:Recno
 			lError := true
-		ELSEIF ValidateControls( self, self:AControls )
+// 		ELSEIF ValidateControls( self, self:AControls )
+		ELSE
 			* Check giver:
 			IF !Recognised
 				m54_pers_sta:=oHm:m54w_rek_pers()
@@ -4095,8 +4089,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:AutoRec := FALSE
 			self:m51_agift:= 0
 			self:m51_apost := 0
-		ELSE
-			lError := true
+// 		ELSE
+// 			lError := true
 		ENDIF
 	ENDIF
 	self:mCLNGiver:=''
@@ -4113,7 +4107,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:oDCmDebAmntF:TEXTValue:=""
 			self:mDebAmntF:=""
 			self:oDCcGirotelText:TextValue:=" "
-			self:oDCmPerson:SetFocus()
+// 			self:oDCmPerson:SetFocus()
+			self:oDCmDat:SetFocus()
 			oDet:Browser:Refresh()
 		endif
 	ENDIF
