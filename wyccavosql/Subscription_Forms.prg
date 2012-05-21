@@ -356,106 +356,106 @@ METHOD OKButton( ) CLASS EditSubscription
 	local cStatement as string
 	local oStmnt as SQLStatement 
 	local oldSep as int
-// 	IF !lNew
-// 		oSub:GoTo(nCurRec)
-// 		oSub:Skip(-1)
-// 		nPrevRec:=oSub:RecNo
-// 		oSub:GoTo(nCurRec)
-// 	ENDIF
-	IF ValidateControls( self, self:AControls )
-		*Check obliged fields:
-		IF Empty(mRek)
-			(ErrorBox{,self:oLan:WGet("You have to enter an Account") }):Show()
-			self:oDCmAccount:SetFocus()
-			RETURN nil
-		ELSEIF Empty(mCLN)
-			(ErrorBox{self,self:oLan:WGet("You should enter a Person") }):Show()
-			self:oDCmPerson:SetFocus()
-			RETURN nil
-		ELSEIF Empty(mamount)
-			(ErrorBox{self,self:oLan:WGet("You have to enter a periodic amount") }):Show()
-			self:oDCmPerson:SetFocus()
-			RETURN nil
-		ELSE
-			if mType#'G'
-				IF Empty(oDCmDueDate:SelectedDate)
-					(ErrorBox{self:Owner,self:oLan:WGet("Due date obliged in case of donor/subscription") }):Show()
-					self:oDCmDueDate:SetFocus()
-					RETURN nil
-				ENDIF
-				IF !Empty(self:oDCmbegindate:SelectedDate).and.self:oDCmbegindate:SelectedDate>self:oDCmDueDate:SelectedDate
-					(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date later than the startdate")}):Show()
-					self:oDCmDueDate:SetFocus()
-					RETURN nil
-				ENDIF
-				IF !Empty(self:oDCmbegindate:SelectedDate).and. self:oDCmbegindate:SelectedDate>self:oDCmEndDate:SelectedDate
-					(ErrorBox{self:Owner,"Enter a end date later than the startdate"}):Show()
-					self:oDCmEndDate:SetFocus()
-					RETURN nil
-				ENDIF
-				IF Empty(self:mterm)
-					(ErrorBox{,self:oLan:WGet("Term obliged in case of donor/subscription") }):Show()
-					self:oDCmterm:SetFocus()
-					RETURN nil
-				ENDIF
-				d:=Day(self:oDCmDueDate:SelectedDate)
-				if d>28
-					m:=Month(self:oDCmDueDate:SelectedDate) 
-					y:=Year(self:oDCmDueDate:SelectedDate)
-					for i:=self:mterm to 144 step self:mterm
-						me:=MonthEnd((m+i)%12,y+(m+i-1)/12) 
-						if d>me
-							(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date with a day before")+Space(1)+Str(me+1,-1)}):Show()
-							self:oDCmDueDate:SetFocus()
-							RETURN nil
-						endif
-					next
-				endif					
-			ENDIF
-			IF !Empty(mInvoiceID)
-				IF CountryCode=="47"
-					if !IsMod10(AllTrim(mInvoiceID))
-						(ErrorBox{,self:oLan:WGet("Invoice ID is not a modulus 10 number") }):Show()
-						self:oDCmInvoiceID:SetFocus()
-						RETURN nil
-					ENDIF
-				ENDIF
-			ELSEIF self:mPayMethod="C"
-				(ErrorBox{,self:oLan:WGet("Invoice ID is mandatory in case of Direct Debit") }):Show()
-				self:oDCmInvoiceID:SetFocus()
-				RETURN nil		
-			ENDIF
-			IF Empty(mBankAccnt)
-				IF CountryCode="31" .and. self:mPayMethod="C"
-					(ErrorBox{,self:oLan:WGet("Bank account is mandatory in case of Direct Debit") }):Show()
-					self:oDCmBankAccnt:SetFocus()
-					RETURN nil		
-				ENDIF 
-			else
-				IF CountryCode="31"
-					if Len(AllTrim(mBankAccnt))>7
-						if !IsDutchBanknbr(AllTrim(mBankAccnt))
-							(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
-							self:oDCmBankAccnt:SetFocus()
-							RETURN nil		
-						endif 
-					endif
-				endif
-			endif
-			
-		ENDIF
-
-		IF self:lNew
-			* check if subscription allready exists: 
-			if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
-				(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
+	// 	IF !lNew
+	// 		oSub:GoTo(nCurRec)
+	// 		oSub:Skip(-1)
+	// 		nPrevRec:=oSub:RecNo
+	// 		oSub:GoTo(nCurRec)
+	// 	ENDIF
+	// 	IF ValidateControls( self, self:AControls )
+	*Check obliged fields:
+	IF Empty(mRek)
+		(ErrorBox{,self:oLan:WGet("You have to enter an Account") }):Show()
+		self:oDCmAccount:SetFocus()
+		RETURN nil
+	ELSEIF Empty(mCLN)
+		(ErrorBox{self,self:oLan:WGet("You should enter a Person") }):Show()
+		self:oDCmPerson:SetFocus()
+		RETURN nil
+	ELSEIF Empty(mamount)
+		(ErrorBox{self,self:oLan:WGet("You have to enter a periodic amount") }):Show()
+		self:oDCmPerson:SetFocus()
+		RETURN nil
+	ELSE
+		if mType#'G'
+			IF Empty(oDCmDueDate:SelectedDate)
+				(ErrorBox{self:Owner,self:oLan:WGet("Due date obliged in case of donor/subscription") }):Show()
+				self:oDCmDueDate:SetFocus()
 				RETURN nil
 			ENDIF
+			IF !Empty(self:oDCmbegindate:SelectedDate).and.self:oDCmbegindate:SelectedDate>self:oDCmDueDate:SelectedDate
+				(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date later than the startdate")}):Show()
+				self:oDCmDueDate:SetFocus()
+				RETURN nil
+			ENDIF
+			IF !Empty(self:oDCmbegindate:SelectedDate).and. self:oDCmbegindate:SelectedDate>self:oDCmEndDate:SelectedDate
+				(ErrorBox{self:Owner,"Enter a end date later than the startdate"}):Show()
+				self:oDCmEndDate:SetFocus()
+				RETURN nil
+			ENDIF
+			IF Empty(self:mterm)
+				(ErrorBox{,self:oLan:WGet("Term obliged in case of donor/subscription") }):Show()
+				self:oDCmterm:SetFocus()
+				RETURN nil
+			ENDIF
+			d:=Day(self:oDCmDueDate:SelectedDate)
+			if d>28
+				m:=Month(self:oDCmDueDate:SelectedDate) 
+				y:=Year(self:oDCmDueDate:SelectedDate)
+				for i:=self:mterm to 144 step self:mterm
+					me:=MonthEnd((m+i)%12,y+(m+i-1)/12) 
+					if d>me
+						(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date with a day before")+Space(1)+Str(me+1,-1)}):Show()
+						self:oDCmDueDate:SetFocus()
+						RETURN nil
+					endif
+				next
+			endif					
 		ENDIF
-// 		mCurRek:=oSub:accid 
-// 		mCurCLN:=oSub:personid   
-		oldSep:=SetDecimalSep(Asc("."))
-		cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
+		IF !Empty(mInvoiceID)
+			IF CountryCode=="47"
+				if !IsMod10(AllTrim(mInvoiceID))
+					(ErrorBox{,self:oLan:WGet("Invoice ID is not a modulus 10 number") }):Show()
+					self:oDCmInvoiceID:SetFocus()
+					RETURN nil
+				ENDIF
+			ENDIF
+		ELSEIF self:mPayMethod="C"
+			(ErrorBox{,self:oLan:WGet("Invoice ID is mandatory in case of Direct Debit") }):Show()
+			self:oDCmInvoiceID:SetFocus()
+			RETURN nil		
+		ENDIF
+		IF Empty(mBankAccnt)
+			IF CountryCode="31" .and. self:mPayMethod="C"
+				(ErrorBox{,self:oLan:WGet("Bank account is mandatory in case of Direct Debit") }):Show()
+				self:oDCmBankAccnt:SetFocus()
+				RETURN nil		
+			ENDIF 
+		else
+			IF CountryCode="31"
+				if Len(AllTrim(mBankAccnt))>7
+					if !IsDutchBanknbr(AllTrim(mBankAccnt))
+						(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
+						self:oDCmBankAccnt:SetFocus()
+						RETURN nil		
+					endif 
+				endif
+			endif
+		endif
+		
+	ENDIF
+
+	IF self:lNew
+		* check if subscription allready exists: 
+		if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
+			(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
+			RETURN nil
+		ENDIF
+	ENDIF
+	// 		mCurRek:=oSub:accid 
+	// 		mCurCLN:=oSub:personid   
+	oldSep:=SetDecimalSep(Asc("."))
+	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
 		",begindate='"+ SQLdate(iif(Empty(self:oDCmbegindate:SelectedDate),Today(),self:oDCmbegindate:SelectedDate))+"'"+;
@@ -468,28 +468,28 @@ METHOD OKButton( ) CLASS EditSubscription
 		",INVOICEID='"+ iif(IsNil(self:mInvoiceID),"",self:mInvoiceID)+"'"+;
 		",REFERENCE='"+iif(IsNil(self:mReference),"",self:mReference)+"'"+;
 		",PAYMETHOD='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
-		",BANKACCNT='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
+	",BANKACCNT='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
-		SetDecimalSep(oldSep)
-		oStmnt:=SQLStatement{cStatement,oConn}
-		oStmnt:Execute()
-//		// change corresponding due amounts:
-// 		if !self:lNew .and.(!self:mCurRek== self:mRek .or. !self:mCurCLN==self:mCLN) 
-// 			SQLStatement{"update dueamount set accid="+self:mRek+",persid="+self:mCLN+" where accid="+self:mCurRek+" and persid="+self:mCurCLN+" and AmountInvoice>AmountRecvd",oConn}:Execute() 
-// 		endif
-		if Empty(oStmnt:status) .and. oStmnt:NumSuccessfulRows>0
-			self:oCaller:oSub:Execute()
-			if self:lNew
-				self:oCaller:goTop()
-			else
-				self:oCaller:goto(self:nCurRec)
-			endif
+	SetDecimalSep(oldSep)
+	oStmnt:=SQLStatement{cStatement,oConn}
+	oStmnt:Execute()
+	//		// change corresponding due amounts:
+	// 		if !self:lNew .and.(!self:mCurRek== self:mRek .or. !self:mCurCLN==self:mCLN) 
+	// 			SQLStatement{"update dueamount set accid="+self:mRek+",persid="+self:mCLN+" where accid="+self:mCurRek+" and persid="+self:mCurCLN+" and AmountInvoice>AmountRecvd",oConn}:Execute() 
+	// 		endif
+	if Empty(oStmnt:status) .and. oStmnt:NumSuccessfulRows>0
+		self:oCaller:oSub:Execute()
+		if self:lNew
+			self:oCaller:goTop()
+		else
+			self:oCaller:goto(self:nCurRec)
 		endif
-		self:EndWindow()
-		return nil
-	ELSE
-		RETURN
-	ENDIF
+	endif
+	self:EndWindow()
+	return nil
+	// 	ELSE
+	// 		RETURN
+	// 	ENDIF
 METHOD PersonButton(lUnique ) CLASS EditSubscription
 LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
 local oPers as PersonContainer
