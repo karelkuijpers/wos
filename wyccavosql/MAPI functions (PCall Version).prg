@@ -42,11 +42,14 @@ FUNCTION IsMAPIAvailable() as logic pascal
 	LOCAL phkResult,mailResult as ptr
 	LOCAL lVista as LOGIC
 	LOCAL lpData, cRequired, cCurrent as psz
-	LOCAL cbData as DWORD
+	LOCAL cbData as DWORD                                                                          
+
 	local MyClient:=requiredemailclient as int
 	local cError as string, lFatal as logic
+// 	nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
+// 		'SOFTWARE\Microsoft\Windows Messaging Subsystem' ,0,KEY_ALL_ACCESS, @phkResult )
 	nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
-		"SOFTWARE\Microsoft\Windows Messaging Subsystem" ,0,KEY_ALL_ACCESS, @phkResult )
+		String2Psz('SOFTWARE\Microsoft\Windows Messaging Subsystem') ,0,KEY_QUERY_VALUE, @phkResult )
 	IF nResult == ERROR_SUCCESS
 		lpData  := Space(256)
 		cbData  := 256			
@@ -59,7 +62,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 
 		IF ( nResult == ERROR_SUCCESS ) .and. ( lpData = "1" )
 			// Determine OS: Vista or higher:
-			nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail\Outlook Express" ,;
+			nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Outlook Express') ,;
 				0,KEY_ALL_ACCESS, @mailResult )
 			IF ( !nResult == ERROR_SUCCESS )
 				lVista:=true
@@ -67,51 +70,51 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			                                                                      
 			// Determine required client and available client	in cRequired 
 			if MyClient == 4   // Determine if Mapi2Xml present (tool to interface to webclients like Gmail):
-				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail\Mapi2Xml" ,;
+				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Mapi2Xml') ,;
 				0,KEY_ALL_ACCESS, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Mapi2Xml"
 				else
 					MyClient:=-1  // switch to current client					
-					LogEvent(,"1:"+Str(nResult,-1),"MailError")
+					LogEvent(,"Mapi2Xml-1:"+Str(nResult,-1),"MailError")
 				endif				
 			endif 
 			if MyClient == 3   // Determine if Windows Live Mail present:
-				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail\Windows Live Mail" ,;
+				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Windows Live Mail') ,;
 				0,KEY_ALL_ACCESS, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Windows Live Mail"
 				else
 					MyClient:=-1  // switch to current client					
-					LogEvent(,"2:"+Str(nResult,-1),"MailError")
+					LogEvent(," Live Mail-2:"+Str(nResult,-1),"MailError")
 				endif				
 			endif 
 			if MyClient == 2   // Determine if Thunderbird present:
 				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
-					"SOFTWARE\Clients\Mail\Mozilla Thunderbird" ,0,KEY_ALL_ACCESS, @phkResult )
+					String2Psz('SOFTWARE\Clients\Mail\Mozilla Thunderbird') ,0,KEY_ALL_ACCESS, @phkResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Mozilla Thunderbird"
 				else
 					MyClient:=-1  // switch to current client					
-					LogEvent(,"3:"+Str(nResult,-1),"MailError")
+					LogEvent(,"Thunderbird-3:"+Str(nResult,-1),"MailError")
 				endif				
 			endif 
 
 			if MyClient == 1 
 				// is Microsoft Outlook available?
-				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail\Microsoft Outlook" ,;
+				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Microsoft Outlook') ,;
 					0,KEY_ALL_ACCESS, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Microsoft Outlook" 
 // 					LogEvent(,"3:"+Str(nResult,-1),"MailError")
 				else
 					MyClient:=-1  // switch to current client
-					LogEvent(,"4:"+Str(nResult,-1),"MailError")
+					LogEvent(,"Outlook_4:"+Str(nResult,-1),"MailError")
 				endif
 			endif
 			If MyClient==0
 				if lVista
-					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail\Windows Live Mail" ,;
+					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Windows Live Mail') ,;
 					0,KEY_ALL_ACCESS, @mailResult )
 					IF ( nResult == ERROR_SUCCESS )
 						cRequired:="Windows Live Mail"
@@ -125,7 +128,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			// Read current email client:
 			If lVista 
 				// read HKCU 
-				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,"SOFTWARE\Clients\Mail",0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
 				IF nResult == ERROR_SUCCESS
 					lpData  := Space(256)
 					cbData  := 256			
@@ -137,15 +140,15 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"6:("+Str(nResult,-1)+") "+lpData,"MailError")
+						LogEvent(,"HKCU_6:("+Str(nResult,-1)+") "+lpData,"MailError")
 					endif
 				else
-					LogEvent(,"5:("+Str(nResult,-1)+") "+cRequired,"MailError")					
+					LogEvent(,"HKCU_5:("+Str(nResult,-1)+") "+cRequired,"MailError")					
 				endif
 			endif
 			if Empty(cCurrent)
 				// read HKLM:
-				nResult:=RegCreateKeyEx(HKEY_LOCAL_MACHINE,"SOFTWARE\Clients\Mail",0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+				nResult:=RegCreateKeyEx(HKEY_LOCAL_MACHINE,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
 				IF nResult == ERROR_SUCCESS
 					cCurrent  := Space(256)
 					cbData  := 256			
@@ -155,8 +158,11 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						null_ptr , ;
 						cCurrent , ;
 						@cbData )
+					IF !nResult == ERROR_SUCCESS
+						LogEvent(,"HKLM-7:("+Str(nResult,-1)+") "+lpData,"MailError")
+					endif
 				else
-					LogEvent(,"7:("+Str(nResult,-1)+") "+cCurrent,"MailError")
+					LogEvent(,"8:("+Str(nResult,-1)+") "+cCurrent,"MailError")
 				endif				
 			endif
          if MyClient<0
@@ -168,7 +174,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			if !cRequired==cCurrent		 
 				if lVista 	
 					// Write required client to HKCU
-					nResult := RegOpenKeyEx( HKEY_CURRENT_USER , "SOFTWARE\Clients\Mail" ,0,KEY_ALL_ACCESS, @phkResult )
+					nResult := RegOpenKeyEx( HKEY_CURRENT_USER , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_ALL_ACCESS, @phkResult )
 					IF nResult == ERROR_SUCCESS
 						// set key:
 						nResult:=RegSetValueEx(phkResult, ;
@@ -185,7 +191,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					endif
 				else
 					// write required client to HKLM 
-					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , "SOFTWARE\Clients\Mail" ,0,KEY_ALL_ACCESS, @phkResult )
+					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_ALL_ACCESS, @phkResult )
 					IF nResult == ERROR_SUCCESS
 						// set key:
 						nResult:=RegSetValueEx(phkResult, ;
@@ -209,6 +215,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			lFatal:=true
 		endif
 	else 
+		LogEvent(,"Windows Messaging Subsystem-12:"+Str(nResult,-1),"MailError") 							
 		cError:=  "You have no permission to read register for mail parameters: "+DosErrString(nResult)+";"+CRLF+"the default email client will be used."
 		// 		ErrorBox{,"You have no permission to read register for mail parameters: "+Str(nResult,-1)}:Show() 
 		
