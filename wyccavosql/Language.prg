@@ -348,6 +348,8 @@ BEGIN
 	CONTROL	"", LANGUAGEWINDOW_FINDTEXT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 3, 133, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Find:", LANGUAGEWINDOW_FIXEDTEXT1, "Static", WS_CHILD, 4, 4, 32, 12
 	CONTROL	"", LANGUAGEWINDOW_STATUSTEXT, "Static", WS_CHILD, 252, 3, 133, 13
+	CONTROL	"", LANGUAGEWINDOW_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 476, 3, 47, 13
+	CONTROL	"Found:", LANGUAGEWINDOW_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 440, 3, 27, 13
 END
 
 CLASS LanguageWindow INHERIT DataWindowExtra 
@@ -357,6 +359,8 @@ CLASS LanguageWindow INHERIT DataWindowExtra
 	PROTECT oDCFindText AS SINGLELINEEDIT
 	PROTECT oDCFixedText1 AS FIXEDTEXT
 	PROTECT oDCStatusText AS FIXEDTEXT
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
 	PROTECT oSFLanguageSubWindow AS LanguageSubWindow
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)   
@@ -520,6 +524,12 @@ oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Find:",NULL_STRING,NULL_STRI
 oDCStatusText := FixedText{SELF,ResourceID{LANGUAGEWINDOW_STATUSTEXT,_GetInst()}}
 oDCStatusText:HyperLabel := HyperLabel{#StatusText,NULL_STRING,NULL_STRING,NULL_STRING}
 
+oDCFound := FixedText{SELF,ResourceID{LANGUAGEWINDOW_FOUND,_GetInst()}}
+oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFoundtext := FixedText{SELF,ResourceID{LANGUAGEWINDOW_FOUNDTEXT,_GetInst()}}
+oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Translation table from English to my language:"
 SELF:HyperLabel := HyperLabel{#LanguageWindow,"Translation table from English to my language:","Translation for text in reports",NULL_STRING}
 SELF:Menu := WOBrowserMENU{}
@@ -556,11 +566,13 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LanguageWindow
 		self:Caption+=self:oLan:WGet("Reports")
 	elseif self:cLocation=="W"
 		self:Caption+=self:oLan:WGet("Windows")
-	endif
+	endif 
+  	self:oDCFound:TextValue :=Str(self:oLanguage:Reccount,-1) 
+
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class LanguageWindow
 
-	oLanguage := SQLSelect{"Select sentenceen, sentencemy, `length`, location from language where location = '" + self:cLocation + "'", oConn}
+	self:oLanguage := SqlSelect{"Select sentenceen, sentencemy, `length`, location from language where location = '" + self:cLocation + "'", oConn}
 	//Put your PreInit additions here
 	return NIL
 
@@ -569,6 +581,8 @@ STATIC DEFINE LANGUAGEWINDOW_FINDPREVIOUS := 101
 STATIC DEFINE LANGUAGEWINDOW_FINDTEXT := 103 
 STATIC DEFINE LANGUAGEWINDOW_FIXEDTEXT1 := 104 
 STATIC DEFINE LANGUAGEWINDOW_FIXEDTEXT2 := 105 
+STATIC DEFINE LANGUAGEWINDOW_FOUND := 106 
+STATIC DEFINE LANGUAGEWINDOW_FOUNDTEXT := 107 
 STATIC DEFINE LANGUAGEWINDOW_LANGUAGESUBWINDOW := 100 
 STATIC DEFINE LANGUAGEWINDOW_LENGTH := 104 
 STATIC DEFINE LANGUAGEWINDOW_OKBUTTON := 106 
