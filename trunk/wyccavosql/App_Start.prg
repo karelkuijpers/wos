@@ -149,6 +149,13 @@ method Start() class App
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0
 				Reevaluation{oMainWindow}:ReEvaluate()				
 			ENDIF 
+			// Idem for alert: 
+			IF AScan(aMenu,{|x| x[4]=="CheckSuspense"})>0
+				AlertSuspense{}:Alert()				
+			ENDIF 
+			IF FirstLogin.and.AScan(aMenu,{|x| x[4]=="CheckBankBalance"})>0
+				AlertBankbalance{}:Alert()				
+			ENDIF 
 			
 			self:Exec()
 			// RECOVER USING oError	 
