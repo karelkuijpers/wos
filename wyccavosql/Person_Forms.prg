@@ -3672,18 +3672,18 @@ METHOD OKButton( ) CLASS SelPersPayments
 	self:oCaller:selx_MaxAmnt:=Val(self:oDCMaxTotal:TextValue)
    self:oCaller:selx_MinIndAmnt:=Val(self:oDCMinAmount:TextValue) 
 
-	self:oCaller:cWhereOther:= 't.cre>t.deb'
+// 	self:oCaller:cWhereOther:= 't.cre>t.deb'   // gifts corrections should also be included
 	IF !Empty(MyBegin)
-		 self:oCaller:cWhereOther:=self:oCaller:cWhereOther +" and t.dat>='"+SQLdate(MyBegin)+"'"
+		 self:oCaller:cWhereOther:=self:oCaller:cWhereOther +iif(Empty(self:oCaller:cWhereOther),'',' and ')+"t.dat>='"+SQLdate(MyBegin)+"'"
 	ENDIF
 	IF !Empty(MyEnd)
-		 self:oCaller:cWhereOther:=self:oCaller:cWhereOther +" and t.dat<='"+SQLdate(MyEnd)+"'"
+		 self:oCaller:cWhereOther:=self:oCaller:cWhereOther +iif(Empty(self:oCaller:cWhereOther),'',' and ')+"t.dat<='"+SQLdate(MyEnd)+"'"
 	ENDIF
 // 	IF !Empty(self:oCaller:selx_AccStart) .and.  self:oCaller:selx_AccStart==self:oCaller:selx_Accend
 // 		self:oCaller:cWhereOther+=" and t.accid='"+self:oCaller:selx_rek+"'"
 // 	elseif !Empty( aWhereOther)
 	if !Empty( aWhereOther)
-		self:oCaller:cWhereOther+=" and t.accid in ("+Implode(aWhereOther,"','")+")"
+		self:oCaller:cWhereOther+=iif(Empty(self:oCaller:cWhereOther),'',' and ')+"t.accid in ("+Implode(aWhereOther,"','")+")"
 	ENDIF
 
 	self:oCaller:selx_dat := DToS(MyBegin)
