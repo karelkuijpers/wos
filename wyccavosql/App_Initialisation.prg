@@ -704,7 +704,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
 	LOCAL oSys as SQLSelect
 	LOCAL oTrans as SQLSelect
-	LOCAL oSysKey as OBJECT
 	LOCAL nLastPers := 1 as int
 	LOCAL nLastTrans as FLOAT
 	LOCAL uMaandafsl as USUAL
@@ -1055,10 +1054,10 @@ method InitializeDB() as void Pascal  class Initialize
 
 	 
 	local aTable:={;
-		{"log","MyIsam",cCollation},;	
+		{"log","InnoDB",cCollation},;	
 		{"account","InnoDB",cCollation},;
 		{"accountbalanceyear","InnoDB",cCollation},;
-		{"article","MyIsam",cCollation},;
+		{"article","InnoDB",cCollation},;
 		{"authfunc","InnoDB","latin1_swedish_ci"},;
 		{"balanceitem","InnoDB",cCollation},;
 		{"balanceyear","InnoDB",cCollation},;
