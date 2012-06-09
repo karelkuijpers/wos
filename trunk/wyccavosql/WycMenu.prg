@@ -234,16 +234,19 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	ELSE
 		AAdd(aMenu,{2,4,    oLan:MGet("&Journal general")+"..." ,"General_Journal","",0,74,"FM"})
 		//	AAdd(aMenu,{2,4,    oLan:MGet("&Journal generalJap..." ,"General_JournalJap","",0,74,"F"})
-		AAdd(aMenu,{2,5,   oLan:MGet("Standing &Orders")+"..." ,"PeriodicBrowser","",0,36,"F"})
 		IF TeleBanking
-			AAdd(aMenu,{2,6,   oLan:MGet("&Telebank Pattern")+"..." ,"TelePatternBrowser","",0,9,"F"})
+			AAdd(aMenu,{2,5,   oLan:MGet("&Telebank Pattern")+"..." ,"TelePatternBrowser","",0,9,"F"})
 		ENDIF
+		if ConI(SqlSelect{"select cast(count(*) as unsigned) as tot from importpattern",oConn}:tot)>0 
+			AAdd(aMenu,{2,6,   oLan:MGet("&Import Pattern")+"..." ,"ImportPatternBrowser","",0,17,"F"})
+		endif
+		AAdd(aMenu,{2,7,   oLan:MGet("Standing &Orders")+"..." ,"PeriodicBrowser","",0,36,"F"})
 	ENDIF
 // 	if SuperUser
-	AAdd(aMenu,{2,7,,,,,})           // separator
-		AAdd(aMenu,{2,8,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
+	AAdd(aMenu,{2,8,,,,,})           // separator
+		AAdd(aMenu,{2,9,   oLan:MGet("&Monitor Suspense")+"...","CheckSuspense","",0,16,"F"})
 	if TeleBanking .and.ConI(SQLSelect{"select cast(count(*) as unsigned) as tot from bankbalance",oConn}:tot)>0 
-		AAdd(aMenu,{2,9,   oLan:MGet("&Monitor Bank Balance")+"...","CheckBankBalance","",0,15,"F"})
+		AAdd(aMenu,{2,10,   oLan:MGet("&Monitor Bank Balance")+"...","CheckBankBalance","",0,15,"F"})
 	endif 
 		
 // 	endif
