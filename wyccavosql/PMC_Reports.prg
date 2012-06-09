@@ -512,38 +512,8 @@ METHOD PrintReport() CLASS PMISsend
  	SQLStatement{"commit",oConn}:Execute()	
 	SQLStatement{"unlock tables",oConn}:Execute()
 
-// 	SQLStatement{"start transaction",oConn}:Execute()    // te lock all transactions and distribution instructions read
-// 	oTrans:=SQLSelect{'select transid,seqnr from transaction t '+;
-// 		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>''  order by t.transid,t.seqnr  for update",oConn}
-// 	oTrans:Execute() 
-// 	if !Empty(oTrans:Status)
-// 		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oTrans:Status:description+')'}:Show()
-// 		SQLStatement{"rollback",oConn}:Execute() 
-// 		return
-// 	endif 
-// 	
-// 	time0:=time1
-// 	// 	LogEvent(self,"sel trans for update:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-// 	
-// 	// set software lock:
-// 	AEval(oTrans:GetLookupTable(80000,#transid,#seqnr),{|x|AAdd(aTransLock,Str(x[1],-1)+';'+Str(x[2],-1))}) 
-// 	cTransLock:=Implode(aTransLock,"','")
-// 	time0:=time1
-// 	// 	LogEvent(self,"get lookup table:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-
-// 	oStmnt:=SQLStatement{"update transaction set lock_id="+MYEMPID+",lock_time=now() where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
-// 	oStmnt:Execute()
-// 	if !Empty(oStmnt:Status)
-// 		ErrorBox{self,self:oLan:WGet("could not lock required transactions")}:Show()
-// 		SQLStatement{"rollback",oConn}:Execute() 
-// 		return
-// 	endif
-// 	time0:=time1
-// 	// 	LogEvent(self,"set locks:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-// 	SQLStatement{"commit",oConn}:Execute()  // save locks 
 	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
 	// select the member data
-// 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 
 	oMbr:=SqlSelect{"select m.mbrid,m.accid,m.homepp,m.homeacc,m.householdid,m.co,m.has,m.grade,m.offcrate,"+;
 		"ad.accid,ad.accnumber,"+SQLFullName(0,"p")+" as description,ad.currency,b.category as type,"+;
@@ -819,18 +789,6 @@ METHOD PrintReport() CLASS PMISsend
 					oAccBal:=SqlSelect{oMBal:SQLGetBalance(, CurMonth),oConn}      // maximum balance is balance at closing date
 					oAccBal:Execute()
 					BalanceSend:=Round(BalanceSend+oAccBal:per_cre-oAccBal:per_deb,2)
-// 					oMBal:GetBalance(Str(oMbr:accidinc,-1),,self:closingDate)      // maximum balance is balance at closing date
-// 					BalanceSend:=Round(oMBal:per_cre-oMBal:per_deb,2)
-// 					if PrvYearNotClosed
-// 						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
-// 					endif						
-// 					oMBal:GetBalance(Str(oMbr:accidexp,-1),,self:closingDate)      // maximum balance is balance at closing date
-// 					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2)
-// 					if PrvYearNotClosed
-// 						BalanceSend:=Round(BalanceSend+oMBal:vjr_cre-oMBal:vjr_deb,2)   // add balance previous year because not yet in netasset
-// 					endif						
-// 					oMBal:GetBalance(Str(oMbr:accidnet,-1),,self:closingDate)      // maximum balance is balance at closing date
-// 					BalanceSend:=Round(BalanceSend+oMBal:per_cre-oMBal:per_deb,2) 
 				endif
 				
 				remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
@@ -1536,7 +1494,7 @@ METHOD PrintReport() CLASS PMISsend
 			ENDIF
 		endif
 	ENDIF
-	SetDecimalSep(DecSep)
+	SetDecimalSep(Asc('.') )
 
 	if !PMCUpload .and.!lStop
 		oMapi:Close()
