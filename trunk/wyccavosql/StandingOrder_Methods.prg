@@ -864,14 +864,14 @@ METHOD DebCreProc() CLASS StOrderLines
 		if	oStOrdLH:gc == 'CH'
 			//	change AG to MG if needed:
 			recnr	:=	0
-			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='AG'.and.!(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='AG'.and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oStOrdLH:Goto(recnr)
 				oStOrdLH:gc	:=	'MG'
 				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
 			ENDDO
 			//	change MG to AG if needed:
 			recnr	:=	0
-			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='MG'.and.(x[5]==nAccId.or.x[12]==nDepId)},recnr+1))>0
+			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='MG'.and.(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oStOrdLH:Goto(recnr)
 				oStOrdLH:gc	:=	'AG'
 				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
@@ -879,7 +879,7 @@ METHOD DebCreProc() CLASS StOrderLines
 			oStOrdLH:Goto(CurRec)
 		elseif	oStOrdLH:gc == 'AG' 
 			// change to MG if needed
-			IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.or.x[12]==nDepId)})>0
+			IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)})>0
 				oStOrdLH:gc := 'MG'
 				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 			ENDIF
