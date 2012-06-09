@@ -355,7 +355,6 @@ METHOD OKButton( ) CLASS EditSubscription
 	local oDue as SQLSelect
 	local cStatement as string
 	local oStmnt as SQLStatement 
-	local oldSep as int
 	// 	IF !lNew
 	// 		oSub:GoTo(nCurRec)
 	// 		oSub:Skip(-1)
@@ -454,7 +453,6 @@ METHOD OKButton( ) CLASS EditSubscription
 	ENDIF
 	// 		mCurRek:=oSub:accid 
 	// 		mCurCLN:=oSub:personid   
-	oldSep:=SetDecimalSep(Asc("."))
 	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
@@ -470,7 +468,6 @@ METHOD OKButton( ) CLASS EditSubscription
 		",PAYMETHOD='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 	",BANKACCNT='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
-	SetDecimalSep(oldSep)
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	//		// change corresponding due amounts:
