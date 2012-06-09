@@ -5,7 +5,7 @@ CLASS Bank INHERIT FIELDSPEC
 METHOD Init() CLASS Bank
     LOCAL   cPict                   AS STRING
 
-    SUPER:Init( HyperLabel{#banknumber, "Bank accounts", "Number of bankaccount", "" },  "C", 25, 0 )
+    SUPER:Init( HyperLabel{#banknumber, "Bank accounts", "Number of bankaccount", "" },  "C", 64, 0 )
     cPict       := ""
     IF SLen(cPict) > 0
         SELF:Picture := cPict
