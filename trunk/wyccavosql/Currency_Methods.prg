@@ -59,7 +59,7 @@ export mxrate as float
 protect cCurCaption:="Get exchange rate" as string 
 export lStopped as logic 
 declare method GetROE
-Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
+Method GetROE(CodeROE as string, DateROE as date, lConfirm:=true as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
 	// nUp: optionally percentage to increase rate read from internet (decrease if negative); if <>0 get always rate from internet
@@ -306,7 +306,7 @@ BEGIN
 	CONTROL	"Currency:", CURRRATEEDITOR_FIXEDTEXT1, "Static", WS_CHILD, 4, 36, 40, 13
 	CONTROL	"Use this table in calculations as follows", CURRRATEEDITOR_LASTCURRATE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 260, 33
 	CONTROL	"Ask for daily rate", CURRRATEEDITOR_RADIOBUTTONDAILY, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 7, 80, 11
-	CONTROL	"Use most recent date before required date", CURRRATEEDITOR_RADIOBUTTONRECENT, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 18, 188, 11
+	CONTROL	"Use most recent rate on or before required date", CURRRATEEDITOR_RADIOBUTTONRECENT, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 18, 188, 11
 END
 
 METHOD append() CLASS CurrRateEditor
@@ -417,9 +417,11 @@ oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Currency:",NULL_STRING,NULL_
 
 oCCRadioButtonDaily := RadioButton{SELF,ResourceID{CURRRATEEDITOR_RADIOBUTTONDAILY,_GetInst()}}
 oCCRadioButtonDaily:HyperLabel := HyperLabel{#RadioButtonDaily,"Ask for daily rate",NULL_STRING,NULL_STRING}
+oCCRadioButtonDaily:TooltipText := "let the system show you mid-marker rate on specified date"
 
 oCCRadioButtonRecent := RadioButton{SELF,ResourceID{CURRRATEEDITOR_RADIOBUTTONRECENT,_GetInst()}}
-oCCRadioButtonRecent:HyperLabel := HyperLabel{#RadioButtonRecent,"Use most recent date before required date",NULL_STRING,NULL_STRING}
+oCCRadioButtonRecent:HyperLabel := HyperLabel{#RadioButtonRecent,"Use most recent rate on or before required date",NULL_STRING,NULL_STRING}
+oCCRadioButtonRecent:TooltipText := "let system show you most recent rate without fetching mid-market rate"
 
 oDCLastCurRate := RadioButtonGroup{SELF,ResourceID{CURRRATEEDITOR_LASTCURRATE,_GetInst()}}
 oDCLastCurRate:FillUsing({ ;
