@@ -193,7 +193,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 					oSQL:Skip()
 				enddo						
 			endif
-			if oEmp:Lstlogin < Today()
+			if Empty(oEmp:Lstlogin) .or. oEmp:Lstlogin < Today()
 				FirstLogin:=true
 			else
 				FirstLogin:=false
