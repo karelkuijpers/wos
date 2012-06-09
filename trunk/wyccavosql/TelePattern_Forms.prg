@@ -16,7 +16,7 @@ BEGIN
 	CONTROL	"Debit/Credit", EDITTELEBANKPATTERN_MADDSUB, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 67, 91, 57, 46
 	CONTROL	"Debit", EDITTELEBANKPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 101, 39, 11
 	CONTROL	"Credit", EDITTELEBANKPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 113, 41, 11
-	CONTROL	"Both", EDITTELEBANKPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 73, 124, 40, 12
+	CONTROL	"Both", EDITTELEBANKPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 72, 125, 40, 11
 	CONTROL	"Automatic processing of recognised records?", EDITTELEBANKPATTERN_MIND_AUTMUT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 94, 156, 11
 	CONTROL	"", EDITTELEBANKPATTERN_RECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Date changed:", EDITTELEBANKPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
@@ -144,12 +144,14 @@ oCCRadioButton2:HyperLabel := HyperLabel{#RadioButton2,"Credit",NULL_STRING,NULL
 
 oCCRadioButton3 := RadioButton{SELF,ResourceID{EDITTELEBANKPATTERN_RADIOBUTTON3,_GetInst()}}
 oCCRadioButton3:HyperLabel := HyperLabel{#RadioButton3,"Both",NULL_STRING,NULL_STRING}
+oCCRadioButton3:TooltipText := "Don't care"
 
 oDCmIND_AUTMUT := CheckBox{SELF,ResourceID{EDITTELEBANKPATTERN_MIND_AUTMUT,_GetInst()}}
 oDCmIND_AUTMUT:HyperLabel := HyperLabel{#mIND_AUTMUT,"Automatic processing of recognised records?",NULL_STRING,NULL_STRING}
 
 oDCRecdate := SingleLineEdit{SELF,ResourceID{EDITTELEBANKPATTERN_RECDATE,_GetInst()}}
 oDCRecdate:HyperLabel := HyperLabel{#Recdate,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCRecdate:FieldSpec := DateGift{}
 
 oDCFixedText5 := FixedText{SELF,ResourceID{EDITTELEBANKPATTERN_FIXEDTEXT5,_GetInst()}}
 oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Date changed:",NULL_STRING,NULL_STRING}
@@ -167,7 +169,7 @@ oDCmAddSub := RadioButtonGroup{SELF,ResourceID{EDITTELEBANKPATTERN_MADDSUB,_GetI
 oDCmAddSub:FillUsing({ ;
 						{oCCRadioButton1,"A"}, ;
 						{oCCRadioButton2,"B"}, ;
-						{oCCRadioButton3,"RadioButton3"} ;
+						{oCCRadioButton3,"D"} ;
 						})
 oDCmAddSub:HyperLabel := HyperLabel{#mAddSub,"Debit/Credit",NULL_STRING,"TeleBankPatterns_AddSub"}
 
