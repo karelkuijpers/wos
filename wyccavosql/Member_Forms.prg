@@ -319,7 +319,8 @@ METHOD OKButton( ) CLASS ConvertMembers
 	local cFatalError as string
 	local nCount as int
 	local oWindow as Window 
-	local mAlgTaal:=Alg_Taal as string
+	local mAlgTaal:=Alg_Taal as string 
+	local lError as logic
 	
 	// check validity:
 	if !self:incomecat==income
@@ -354,6 +355,11 @@ METHOD OKButton( ) CLASS ConvertMembers
 		ErrorBox{self,"Specify expense account name"}:show() 
 		return
 	endif 
+	if self:NetAsset==self:IncomeAcc .or.self:NetAsset==self:ExpenseAcc .or.self:IncomeAcc==self:ExpenseAcc 
+		ErrorBox{self,self:oLan:WGet("numbers income, expense and netasset should be different")}:show() 
+		return
+	endif 
+	
 	self:NetAssetName:=Transform(self:NetAssetName,"!xxxxxxxxxxxxxxxxxxxxx")
 	self:IncomeAccName:=Transform(self:IncomeAccName,"!xxxxxxxxxxxxxxxxxxxxx")
 	self:ExpenseAccName:=Transform(self:ExpenseAccName,"!xxxxxxxxxxxxxxxxxxxxx")
@@ -377,6 +383,8 @@ METHOD OKButton( ) CLASS ConvertMembers
 		else
 			alg_taal:='E'  // for foreign members foreign texts
 		endif
+		SQLStatement{"start transaction",oConn}:Execute() 
+		lError:=false
 		// create department: 
 		oStmnt:=SQLStatement{"insert into department set "+; 
 		"deptmntnbr='"+AddSlashes(cAccPrvNbr)+"',"+;
@@ -384,133 +392,225 @@ METHOD OKButton( ) CLASS ConvertMembers
 			"parentdep='"+self:mParentDep+"'",oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
 			ErrorBox{self,"Could not create member department "+cAccPrvNbr}:show()
-			return
+			lError:=true
 		endif
-		mDepId:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-		
-		// create income account 
-		cIncAccNbr:=AddSlashes(LTrimZero(self:IncomeAcc)+'-'+cAccPrvNbr)
-		oStmnt:=SQLStatement{"insert into account set "+;
-			"accnumber='"+cIncAccNbr+"'"+;
-			", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:IncomeAccName+"'"+;
-			", balitemid='"+self:mBalInc+"'"+;
-			", department='"+mDepId+"'"+;
-			", giftalwd=1"+;
-			", clc='"+Transform(oSel:clc,"")+"',propxtra='"+Transform(oSel:propxtra,"")+"'"+;
-			", currency='"+sCURR+"'",oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
-			ErrorBox{self,"Could not create income account for "+cAccPrvNbr}:show()
-			return
-		endif 
-		maccidInc:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-		
-		// create expense account
-		cExpAccNbr:=AddSlashes(LTrimZero(self:ExpenseAcc)+'-'+cAccPrvNbr)
-		oStmnt:=SQLStatement{"insert into account set "+;
-			"accnumber='"+cExpAccNbr+"'"+;
-			", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:ExpenseAccName+"'"+;
-			", balitemid='"+self:mBalExp+"'"+;
-			", department='"+mDepId+"'"+;
-			", currency='"+sCURR+"'",oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
-			ErrorBox{self,"Could not create expense account for "+cAccPrvNbr}:show()
-			return
-		endif
-		mAccidExp:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-
-		// move member liablility account to new departement and change it
-		cNetAccNbr:=AddSlashes(LTrimZero(self:NetAsset)+'-'+cAccPrvNbr)
-		oStmnt:=SQLStatement{"update account set department="+mDepId+;
-			",description=concat(Description,' "+self:NetAssetName+"'),giftalwd=0,accnumber='"+cNetAccNbr+"'"+;
-			" where accid="+mAccidPrv,oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
-			ErrorBox{self,"Could not change liability account "+cAccPrvNbr}:show()
-			return
-		endif
-		
-		// fill netasset, incomeacc and expenseacc of department
-		cSQLStatement:="update department set netasset="+Str(oSel:accid,-1)+",incomeacc="+maccidInc+",expenseacc="+mAccidExp+" where depid="+mDepId
-		oStmnt:=SQLStatement{cSQLStatement,oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
-			ErrorBox{self,"Could not change department "+cAccPrvNbr}:show()
-			return
-		endif
-		
-		// change Member 
-		oStmnt:=SQLStatement{ "update member set accid=NULL, depid="+mDepId+" where mbrid="+Str(oSel:mbrid,-1),oConn}
-		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows<1
-			alg_taal:=mAlgTaal
-			ErrorBox{self,"Could not change member "+cAccPrvNbr}:show()
-			return
-		endif
-		// change subscriptions to new income account 
-		oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv
-		oStmnt:Execute()
-		//	change standing orders to new	expense or income	account:
-		oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and cre>deb"
-		oStmnt:Execute()
-		oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and deb>cre"
-		oStmnt:Execute()
-		//	change telepatterns
-		oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and addsub='B'"
-		oStmnt:Execute()
-		oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and addsub='A'"
-		oStmnt:Execute()
-		//	change bankaccount single destination:
-		oStmnt:SQLString:="update bankaccount set	"+sIdentChar+"singledst"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv	
-		oStmnt:Execute()
-		
-		//	change transactions not	yet sent	to	PMC: 
-		if	(!Empty(SINCHOME)	.or.!Empty(SINC))
-			//	remove recordings	to	gift income/expense:
-			oStmnt:SQLString:='delete from transaction where (accid='+SINC+iif(SINC==SINCHOME,'','	or	accid='+SINCHOME)+' or accid='+SEXP+;
-				iif(SEXP==SEXPHOME,'','	or	accid='+SEXPHOME)+')	and '+;
-				'`transid` in (select `transid` from (select	transid from transaction b	where	b.accid='+mAccidPrv+' and bfm="" and	b.gc<>"") as x)'
-			//	and `transid` in (select `transid` from( select	`transid` from	transaction	b where b.accid=100412 and	b.bfm=""	and b.gc<>"") as x)
+		if !lError
+			mDepId:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			
+			// create income account 
+			cIncAccNbr:=AddSlashes(LTrimZero(self:IncomeAcc)+'-'+cAccPrvNbr)
+			oStmnt:=SQLStatement{"insert into account set "+;
+				"accnumber='"+cIncAccNbr+"'"+;
+				", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:IncomeAccName+"'"+;
+				", balitemid='"+self:mBalInc+"'"+;
+				", department='"+mDepId+"'"+;
+				", giftalwd=1"+;
+				", clc='"+Transform(oSel:clc,"")+"',propxtra='"+Transform(oSel:propxtra,"")+"'"+;
+				", currency='"+sCURR+"'",oConn}
 			oStmnt:Execute()
-		endif	  
-		oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
-		oStmnt:Execute() 
-		oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+maccidInc+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc in ('AG','MG')"
-		oStmnt:Execute() 
-		// change importtrans not yet processed: ???  (normally all immediately after import processed) 
-		if ConI(SqlSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
-			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccNbr+;
-				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
-			oStmnt:Execute()
-			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccNbr+;
-				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='PF'"
-			oStmnt:Execute()
-			oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccNbr+;
-				"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='CH'"
-			oStmnt:Execute() 
-		endif
-		// move associated accounts not belonging to project department to this department and remove them
-		oAss:=SqlSelect{"select ma.accid from memberassacc ma,account a where ma.accid=a.accid and a.accid=ma.accid and a.department=0 and ma.mbrid="+Str(oSel:mbrid,-1),oConn}
-		if oAss:RecCount>0 
-			cSelect:=Implode(oAss:GetLookupTable(40,#accid,#accid),",",,,1)
-			oStmnt:=SQLStatement{"update account a set department="+mDepId+" where accid in ("+cSelect+")",oConn}
-			oStmnt:Execute()
-			if oStmnt:NumSuccessfulRows>0
-				// remove associated accounts from member:
-				SQLStatement{"delete from memberassacc where accid in ("+cSelect+")",oConn}:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				LogEvent(self,"Could not create income account for "+cAccPrvNbr+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+;
+					+oStmnt:SQLString,"logerrors")
+				ErrorBox{self,"Could not create income account for "+cAccPrvNbr}:show()
+				lError:=true
 			endif
 		endif
-		nCount++
+		if !lError
+			maccidInc:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			
+			// create expense account
+			cExpAccNbr:=AddSlashes(LTrimZero(self:ExpenseAcc)+'-'+cAccPrvNbr)
+			oStmnt:=SQLStatement{"insert into account set "+;
+				"accnumber='"+cExpAccNbr+"'"+;
+				", description='"+ AddSlashes(AllTrim(oSel:Description))+Space(1)+self:ExpenseAccName+"'"+;
+				", balitemid='"+self:mBalExp+"'"+;
+				", department='"+mDepId+"'"+;
+				", currency='"+sCURR+"'",oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				LogEvent(self,"Could not create expense account for "+cAccPrvNbr+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+;
+					+oStmnt:SQLString,"logerrors")
+				ErrorBox{self,"Could not create expense account for "+cAccPrvNbr}:show()
+				lError:=true
+			endif
+		endif
+		if !lError
+			mAccidExp:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+
+			// move member liablility account to new departement and change it
+			cNetAccNbr:=AddSlashes(LTrimZero(self:NetAsset)+'-'+cAccPrvNbr)
+			oStmnt:=SQLStatement{"update account set department="+mDepId+;
+				",description=concat(Description,' "+self:NetAssetName+"'),giftalwd=0,accnumber='"+cNetAccNbr+"'"+;
+				" where accid="+mAccidPrv,oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				alg_taal:=mAlgTaal
+				ErrorBox{self,"Could not change liability account "+cAccPrvNbr}:show()
+				lError:=true
+			endif
+		endif
+		// fill netasset, incomeacc and expenseacc of department
+		if !lError
+			cSQLStatement:="update department set netasset="+Str(oSel:accid,-1)+",incomeacc="+maccidInc+",expenseacc="+mAccidExp+" where depid="+mDepId
+			oStmnt:=SQLStatement{cSQLStatement,oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				ErrorBox{self,"Could not change department "+cAccPrvNbr}:show()
+				lError:=true
+			endif
+		endif
+		// change Member 
+		if !lError
+			oStmnt:=SQLStatement{ "update member set accid=NULL, depid="+mDepId+" where mbrid="+Str(oSel:mbrid,-1),oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				ErrorBox{self,"Could not change member "+cAccPrvNbr}:show()
+				lError:=true
+			endif
+		endif
+		if !lError
+			// change subscriptions to new income account 
+			oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			//	change standing orders to new	expense or income	account:
+			oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and cre>deb"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			oStmnt:SQLString:="update standingorderline set	"+sIdentChar+"accountid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv	+"	and deb>cre"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			//	change telepatterns
+			oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +"	and addsub='B'"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and addsub='A'"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			//	change import patterns
+			oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +"	and debcre='C'"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv	+"	and debcre='D'"
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			//	change bankaccount single destination:
+			oStmnt:SQLString:="update bankaccount set	"+sIdentChar+"singledst"+sIdentChar+"="+maccidInc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv	
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			
+			//	change transactions not	yet sent	to	PMC: 
+			if	(!Empty(SINCHOME)	.or.!Empty(SINC))
+				//	remove recordings	to	gift income/expense:
+				oStmnt:SQLString:='delete from transaction where (accid='+SINC+iif(SINC==SINCHOME,'','	or	accid='+SINCHOME)+' or accid='+SEXP+;
+					iif(SEXP==SEXPHOME,'','	or	accid='+SEXPHOME)+')	and '+;
+					'`transid` in (select `transid` from (select	transid from transaction b	where	b.accid='+mAccidPrv+' and bfm="" and	b.gc<>"") as x)'
+				//	and `transid` in (select `transid` from( select	`transid` from	transaction	b where b.accid=100412 and	b.bfm=""	and b.gc<>"") as x)
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					lError:=true
+				endif
+			endif	  
+		endif
+		if !lError
+			oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+mAccidExp+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
+			oStmnt:Execute() 
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			oStmnt:SQLString:="update transaction set	"+sIdentChar+"accid"+sIdentChar+"="+maccidInc+"	where	"+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc in ('AG','MG')"
+			oStmnt:Execute() 
+			if !Empty(oStmnt:status)
+				lError:=true
+			endif
+		endif
+		if !lError
+			// change importtrans not yet processed: ???  (normally all immediately after import processed) 
+			if ConI(SqlSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
+				oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccNbr+;
+					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					lError:=true
+				endif
+				oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccNbr+;
+					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='PF'"
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					lError:=true
+				endif
+				oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccNbr+;
+					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='CH'"
+				oStmnt:Execute() 
+				if !Empty(oStmnt:status)
+					lError:=true
+				endif
+			endif
+		endif
+		if !lError
+			// move associated accounts not belonging to project department to this department and remove them
+			oAss:=SqlSelect{"select ma.accid from memberassacc ma,account a where ma.accid=a.accid and a.accid=ma.accid and a.department=0 and ma.mbrid="+Str(oSel:mbrid,-1),oConn}
+			if oAss:RecCount>0 
+				cSelect:=Implode(oAss:GetLookupTable(40,#accid,#accid),",",,,1)
+				oStmnt:=SQLStatement{"update account a set department="+mDepId+" where accid in ("+cSelect+")",oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					lError:=true
+				endif
+				if oStmnt:NumSuccessfulRows>0
+					// remove associated accounts from member:
+					oStmnt:=SQLStatement{"delete from memberassacc where accid in ("+cSelect+")",oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:status)
+						lError:=true
+					endif
+				endif
+			endif
+		endif
+		if lError
+			SQLStatement{"rollback",oConn}:Execute()
+		else
+			SQLStatement{"commit",oConn}:Execute()
+			nCount++
+		endif			
 		oSel:Skip()
 	enddo
-	alg_taal:=mAlgTaal
+	Alg_Taal:=mAlgTaal
 	self:STATUSMESSAGE(self:oLan:WGet('Updating balances')+'...')
 	// correct month balances data
 	CheckConsistency(oMainWindow,true,false,@cFatalError)	
@@ -1420,7 +1520,7 @@ CLASS EditMember INHERIT DataWindowExtra
 	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
 	export maxseq as int // next available sequence number within distribution instructions of this member
 	declare method FillDistribution, ValidateMember
-RESOURCE EditMember DIALOGEX  34, 32, 420, 345
+RESOURCE EditMember DIALOGEX  34, 32, 433, 345
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1434,35 +1534,35 @@ BEGIN
 	CONTROL	"Delete", EDITMEMBER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 162, 42, 12
 	CONTROL	"Edit", EDITMEMBER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 42, 12
 	CONTROL	"New", EDITMEMBER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 88, 42, 12
-	CONTROL	"Distribution instructions for received gifts", EDITMEMBER_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 15, 78, 397, 101
+	CONTROL	"Distribution instructions for received gifts", EDITMEMBER_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 15, 78, 401, 102
 	CONTROL	"Type:", EDITMEMBER_SC_GRADE, "Static", WS_CHILD, 20, 49, 23, 13
-	CONTROL	"", EDITMEMBER_MHBN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 326, 49, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Household id", EDITMEMBER_HOUSECODETXT, "Static", WS_CHILD, 248, 48, 52, 12
+	CONTROL	"", EDITMEMBER_MHBN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 350, 49, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Household id", EDITMEMBER_HOUSECODETXT, "Static", WS_CHILD, 276, 48, 52, 12
 	CONTROL	"Primary Finance PO", EDITMEMBER_SC_FINANCEPO, "Static", WS_CHILD, 20, 65, 70, 13
-	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 66, 123, 208
-	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 116, 48, 123, 72
+	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 66, 156, 208
+	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 48, 156, 72
 	CONTROL	"Pension amount:", EDITMEMBER_SC_AOW, "Static", WS_CHILD, 11, 281, 61, 12
 	CONTROL	"Health Insurance saving amount:", EDITMEMBER_SC_ZKV, "Static", WS_CHILD, 159, 281, 106, 13
 	CONTROL	"Pension amount:", EDITMEMBER_MAOW, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 281, 72, 13
 	CONTROL	"Health Insurance saving amount:", EDITMEMBER_MZKV, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 272, 281, 72, 13
 	CONTROL	"", EDITMEMBER_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 75, 298, 94, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITMEMBER_PERSONBUTTONCONTACT, "Button", WS_CHILD, 168, 298, 14, 12
-	CONTROL	"Partner Monetary Clearing house", EDITMEMBER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 36, 400, 149
-	CONTROL	"", EDITMEMBER_MHOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 116, 82, 166, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Partner Monetary Clearing house", EDITMEMBER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 36, 416, 149
+	CONTROL	"", EDITMEMBER_MHOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 81, 166, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Account at Primary Fin PO:", EDITMEMBER_HOMEACCTXT, "Static", WS_CHILD|NOT WS_VISIBLE, 20, 81, 87, 12
-	CONTROL	"Associated accounts (saving, etc):", EDITMEMBER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 187, 400, 86
+	CONTROL	"Associated accounts (saving, etc):", EDITMEMBER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 187, 404, 86
 	CONTROL	"", EDITMEMBER_LISTVIEWASSACC, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_SORTASCENDING|LVS_EDITLABELS|WS_GROUP|WS_CHILD|WS_BORDER, 18, 199, 339, 69
 	CONTROL	"Add", EDITMEMBER_ADDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 214, 42, 12
 	CONTROL	"Remove", EDITMEMBER_REMOVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 243, 42, 13
 	CONTROL	"", EDITMEMBER_DISTRLISTVIEW, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 18, 88, 339, 88
-	CONTROL	"Office assessment rate:", EDITMEMBER_WITHLDOFFTXT, "Static", WS_CHILD, 248, 66, 76, 12
-	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 326, 65, 74, 58
+	CONTROL	"Office assessment rate:", EDITMEMBER_WITHLDOFFTXT, "Static", WS_CHILD, 276, 66, 76, 12
+	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 352, 66, 72, 57
 	CONTROL	"Contact Person", EDITMEMBER_FIXEDTEXT9, "Static", WS_CHILD, 11, 300, 53, 12
 	CONTROL	"Memberstatements should be send to:", EDITMEMBER_STATEMNTSDEST, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 200, 297, 133, 43
 	CONTROL	"Member", EDITMEMBER_DESTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 306, 80, 11
 	CONTROL	"Contact Person", EDITMEMBER_DESTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 316, 80, 12
 	CONTROL	"Member && Contact Person", EDITMEMBER_DESTBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 328, 117, 11
-	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 326, 65, 68, 11
+	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 352, 66, 68, 12
 	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
 	CONTROL	"Owns ", EDITMEMBER_SC_ACCDEP, "Static", SS_CENTERIMAGE|WS_CHILD, 132, 0, 27, 12
 END
@@ -2078,9 +2178,14 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update standingorderline set "+sIdentChar+"accountid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv +" and deb>cre"
 				oStmnt:Execute()
 				// change telepatterns
-				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and addsub='B'"
+				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv  + " and addsub='B'"
 				oStmnt:Execute()
-				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and addsub='A'"
+				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv  + " and addsub='A'"
+				oStmnt:Execute()
+				// change importpatterns
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='C'" 
+				oStmnt:Execute()
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='D'" 
 				oStmnt:Execute()
 				// change bankaccount single destination:
 				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv 
@@ -2157,6 +2262,11 @@ METHOD OkButton CLASS EditMember
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv +" and addsub='B'"
 				oStmnt:Execute()
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='A'"
+				oStmnt:Execute()
+				// change importpatterns
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv  +" and addsub='C'"
+				oStmnt:Execute()
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='D'" 
 				oStmnt:Execute()
 				// change bankaccount single destination:
 				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+cIncAccPrv 
@@ -2951,7 +3061,7 @@ METHOD Init() CLASS Employee_Grade
 
 function FillPP() as array
 	local oPP as SQLSelect
-oPP:=SQLSelect{"select ppname,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
+oPP:=SqlSelect{"select concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))) as ppname ,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
 // oPP:SetFilter({||!oPP:PPCODE=="AAA".and. !oPP:PPCODE=="ACH" .and.!Empty(oPP:PPCODE)})
 // oPP:GoTop()
 return oPP:GetLookupTable(500,#PPNAME,#PPCODE)
