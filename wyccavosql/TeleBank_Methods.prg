@@ -98,19 +98,6 @@ method Init() class AddToIncExp
 		endif
 	endif
 
-CLASS SelBankAcc INHERIT DataDialogMine 
-
-	PROTECT oDCListBoxBank AS LISTBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCFound AS FIXEDTEXT
-	PROTECT oDCFoundtext AS FIXEDTEXT
-	PROTECT oCCFindButton AS PUSHBUTTON
-	PROTECT oDCSearchUni AS SINGLELINEEDIT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export oCaller as TeleMut 
-  declare method FillBank
 RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -124,6 +111,19 @@ BEGIN
 	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
 END
 
+CLASS SelBankAcc INHERIT DataDialogMine 
+
+	PROTECT oDCListBoxBank AS LISTBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export oCaller as TeleMut 
+  declare method FillBank
 METHOD CancelButton( ) CLASS SelBankAcc 
    self:EndWindow(1)
 RETURN NIL
@@ -353,7 +353,7 @@ CLASS TeleMut
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
-		GetAddress,AllreadyImported
+		GetAddress,AllreadyImported,ImportSA2
 method AddTeleTrans(bankaccntnbr as string,;
 		bookingdate as date,; 
 	seqnr as string,;
@@ -409,7 +409,7 @@ i := AScan(self:Teleptrn,{|x| (Empty(x[1]) .or. ;
 					tG	== x[1])	.and.;
 					tS	= x[2]	.and.;
 					tN	= x[3]	.and.;
-					tC 	== x[4]	.and.;
+					(tC == x[4] .or.x[4]=='D') .and.;
 					CompareKeyString(x[5],tD)})
 IF i>0
 	self:m56_accid:= self:Teleptrn[i,6]
@@ -704,7 +704,7 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 METHOD Import() CLASS TeleMut
 	* Import of telebanking data into table teletrans
 	LOCAL oFs, oFC, oFrabo as MyFileSpec
-	LOCAL aFileMT, aFilePB, aFileSA, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileVWI, aFileRabo,aFileTL,aFileKB,aFileRO as ARRAY
+	LOCAL aFileMT, aFilePB, aFileSA,aFileSA2, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileVWI, aFileRabo,aFileTL,aFileKB,aFileRO as ARRAY
 	local cFileName as STRING, nf,i as int
 	LOCAL oBF as MyFileSpec
 	LOCAL oPF as FileSpec
@@ -760,6 +760,7 @@ METHOD Import() CLASS TeleMut
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
 	aFileRO:=Directory(CurPath+"\RO??BTRL????????N?????XX-??.??.????-??.??.????.csv")
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
+	aFileSA2:=Directory(CurPath+"\multiple*.dat") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
 	aFileINN:=Directory(CurPath+"\ocrinnbet.txt*")
 	aFileBBS:=Directory(CurPath+"\transliste*.csv")
@@ -772,7 +773,7 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory(CurPath+"\*-20??.ASC"),{|x|AAdd(aFilePB,x)})
 	AEval(Directory(CurPath+"\*-20??.TXT"),{|x|AAdd(aFilePB,x)})
    self:aValuesTrans:={}
-	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileKB).or.;
+	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileSA2).or.!Empty(aFileKB).or.;
 			!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG).or.!Empty(aFileVWI).or.!Empty(aFileTL).or.!Empty(aFileRO)
 		lDelete:=true 
 		self:oParent:Pointer := Pointer{POINTERHOURGLASS}
@@ -858,6 +859,13 @@ METHOD Import() CLASS TeleMut
 			cFileName:=aFileSA[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
 			if	self:ImportSA(oBF)
+				AAdd(aFiles,oBF)
+			endif				
+		NEXT
+		FOR nf:=1 to Len(aFileSA2)
+			cFileName:=aFileSA2[nf,F_NAME]
+			oBF := MyFileSpec{cFileName}
+			if	self:ImportSA2(oBF)
 				AAdd(aFiles,oBF)
 			endif				
 		NEXT
@@ -1113,7 +1121,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oStmnt as SQLStatement
-	local nTrans,nImp,nSub,nProc as int 
+	local nTrans,nImp,nSub,nProc as int  // {{persid,invoiceid,accid,accnumber},...} 
 	local aSubscr:={} as array // array with persid's in donation subscriptions {persid,invoiceid},... 
 
 	
@@ -1125,8 +1133,13 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	if oSel:Reccount>0
 		AccSDON:=oSel:ACCNUMBER
 	ENDIF 
-	oSel:=SqlSelect{"select personid,invoiceid from subscription where category='D'",oConn} 
-	aSubscr:=oSel:GetLookupTable(1000)
+	oSel:=SqlSelect{"select s.personid,invoiceid,s.accid,a.accnumber  from subscription s left join account a on (a.accid=s.accid) where category='D'",oConn} 
+	if oSel:Reccount>0
+		do while !oSel:EOF
+			AAdd(aSubscr,{ConS(oSel:personid),oSel:invoiceid,Transform(oSel:ACCNUMBER,""),ConS(oSel:accid)})
+			oSel:Skip()
+		enddo
+	endif
 	oHlM :=HLPMT940{HelpDir+"\HBBI"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
 	oHlM:Zap()
 	
@@ -1161,18 +1174,15 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_Amount:=Round(Val(lv_AmountStr)/100.00,2)
 				// Determine from KIDnr personid and accountnbr:
 				lv_InvoiceID:=AllTrim(SubStr(oHlM:MTLINE,62,13))
-				lv_description:=lv_InvoiceID
+				lv_description:=lv_InvoiceID 
 				lv_Budgetcd:=ZeroTrim(SubStr(lv_InvoiceID,7,6))
-				IF Empty(lv_Budgetcd)
-					lv_Budgetcd:=AccSDON  // default Donations account
-				ENDIF
-				lv_reference:=SubStr(oHlM:MTLINE,5,2)
 				lv_persid:=ZeroTrim(SubStr(lv_InvoiceID,1,6))
-				lv_description:=AddSlashes(AllTrim(lv_description))
-				nTrans++
 				nSub:=AScan(aSubscr,{|x|x[2]==lv_InvoiceID})
 				if nSub>0
-					lv_persid:=Str(aSubscr[nSub,1],-1)
+					lv_persid:=aSubscr[nSub,1]
+					if !Empty(aSubscr[nSub,3])
+						lv_Budgetcd:=aSubscr[nSub,3]
+					endif
 				elseif (oSel:=SqlSelect{"select persid from personbank where banknumber='"+ZeroTrim(lv_InvoiceID)+"'",oConn}):Reccount>0
 					lv_persid:=Str(oSel:persid,-1)
 				elseif SqlSelect{"select persid from person where persid="+lv_persid,oConn}:Reccount>0
@@ -1180,6 +1190,13 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				else
 					lv_persid:="0"
 				endif
+				IF Empty(lv_Budgetcd)
+					// try to find corresponding donation:
+					lv_Budgetcd:=AccSDON  // default Donations account
+				ENDIF
+				lv_reference:=SubStr(oHlM:MTLINE,5,2)
+				lv_description:=AddSlashes(AllTrim(lv_description))
+				nTrans++
 				* save transaction:
 				self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(Val(SubStr(oHlM:MTLINE,9,7)),-1),ZeroTrim(lv_InvoiceID),;
 					'KID',lv_NameContra,lv_Budgetcd,lv_Amount,lv_addsub,lv_description,lv_persid)
@@ -1210,7 +1227,7 @@ METHOD ImportBRI(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_bankAcntOwn, lv_description, lv_addsub, lv_AmountStr, lv_reference, lv_NameContra, lv_budget,Cur_RekNrOwn, Cur_enRoute, lv_bankid as STRING
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as string, cText, recordcode, cAccount as STRING
 	LOCAL lv_Amount,lv_balance as FLOAT
-	LOCAL cSep, DescrPart, betkenm,lv_persid as STRING, nAcPos as int
+	LOCAL DescrPart, betkenm,lv_persid as STRING, nAcPos as int
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp as FileSpec
 	LOCAL ld_bookingdate as date 
@@ -1221,7 +1238,6 @@ METHOD ImportBRI(oFm as MyFileSpec) as logic CLASS TeleMut
 
 	
 	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
-	cSep:=CHR(SetDecimalSep())
 	*Look for 2: record with transction record
 	*			add record to teletrans
 	*
@@ -1233,9 +1249,6 @@ METHOD ImportBRI(oFm as MyFileSpec) as logic CLASS TeleMut
 	nImp:=0
 	nTrans:=0
 	DO WHILE .not.oHlM:EoF
-		if SubStr(oHlM:MTLINE,14,5)=="SPECS"
-			cSep:=cSep
-		endif
 		* Search 2 record:
 		IF !SubStr(oHlM:MTLINE,24,1)=="2" .or. (BRI .and.!SubStr(oHlM:MTLINE,14,5)=="BOEK.")  //skip saldo and specifications
 			if SubStr(oHlM:MTLINE,24,1)=="7"
@@ -1814,7 +1827,7 @@ METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object
-	SetDecimalSep(cSep)  // restore decimal separator 
+	SetDecimalSep(Asc('.'))  // restore decimal separator 
 	AAdd(self:aMessages,"Imported KB file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 
 	return true
@@ -1827,7 +1840,6 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	local Cur_RekNrOwn, Cur_enRoute as string
 	local cType86 as string  //type of tag 86: B=bank,
 	LOCAL lv_Amount,lv_balance as FLOAT
-	LOCAL cSep as STRING
 	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp as Filespec
@@ -1840,7 +1852,6 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	
 	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
 	oHlM:Zap()
-	cSep:=CHR(SetDecimalSep()) 
 	lMTExtended:=(AtC('ME940',oFm:FileName)>0) 
 
 	*Look for 25: record with accountname
@@ -1918,8 +1929,8 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 					lv_addsub:="B"
 				ENDIF
 				nEndAmnt:= At("N",SubStr(oHlM:MTLINE,nDC+11,16))
-				lv_AmountStr:=StrTran(SubStr(oHlM:MTLINE,nDC+11,nEndAmnt-1),",",cSep)
-				lv_AmountStr:=StrTran(lv_AmountStr,".",cSep)
+				lv_AmountStr:=StrTran(SubStr(oHlM:MTLINE,nDC+11,nEndAmnt-1),",",DecSeparator)
+				lv_AmountStr:=StrTran(lv_AmountStr,".",DecSeparator)
 				lv_Amount:=Round(Val(lv_AmountStr),2)
 				lv_NameContra:=""
 				lv_BankAcntContra:=""
@@ -2339,7 +2350,6 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
 	LOCAL lv_geladen as LOGIC,  hlpbank as USUAL
 	LOCAL lv_description,lv_descriptionPrv, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_persid,lv_kind,lv_NameContra,lv_budget as STRING
-	LOCAL cSep as int
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL cDelim:=';' as STRING
 	LOCAL ptrHandle as MyFile
@@ -2376,7 +2386,6 @@ METHOD ImportRO(oFb) CLASS TeleMut
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		RETURN FALSE
 	ENDIF
-	cSep:=SetDecimalSep(Asc("."))
 
 	cBuffer:=ptrHandle:FReadLine()   // skip first line
 	// skip balance line:
@@ -2428,7 +2437,6 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object
-	SetDecimalSep(cSep)  // restore decimal separator
 // 	nCnt:=self:lv_aant_toe
 // 	nProc:=self:lv_processed 
 	lSuccess:=self:SaveTeleTrans(false,false,"silvanTrania file:"+oFb:FileName,nTot)
@@ -2446,7 +2454,6 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
 	LOCAL lv_loaded as LOGIC,  hlpbank as USUAL
 	LOCAL lv_description, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_budget,lv_persid,lv_kind:='SAB',lv_NameContra as STRING
-	LOCAL cSep as int
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL cDelim:=CHR(9) as STRING
 	LOCAL ptrHandle as MyFile
@@ -2463,7 +2470,6 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 
 	lv_bankAcntOwn:=SubStr(oFs:FileName,11)
 	lv_bankAcntOwn:=ZeroTrim(SubStr(lv_bankAcntOwn,1,At("-",lv_bankAcntOwn)-1))
-	cSep:=SetDecimalSep(Asc("."))
 	ptrHandle:=MyFile{oFs}
 	pbType:=Upper(oFs:Extension)
 	IF FError() >0
@@ -2551,7 +2557,106 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 	endif 
 	ptrHandle:Close()
 	ptrHandle:=null_object
-	SetDecimalSep(cSep)  // restore decimal separator
+	SetDecimalSep(Asc('.'))  // restore decimal separator
+	lSuccess:=self:SaveTeleTrans(false,false,"SA file:"+oFb:FileName,nTot)
+	if lSuccess
+		return true
+	else
+		return false                                              
+	endif
+	
+
+	RETURN true
+METHOD ImportSA2(oFb as MyFileSpec) as logic CLASS TeleMut
+	* Import of SA Standard Bank multiple.dat data into teletrans.dbf
+	LOCAL oHlS as HulpSA
+	LOCAL m57_laatste := {} as ARRAY
+	LOCAL i, TelPtr as int
+	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()) as int
+	LOCAL lv_loaded as LOGIC,  hlpbank as USUAL
+	LOCAL lv_description, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_budget,lv_persid,lv_kind:='SB',lv_NameContra,lv_seqnr as STRING
+	LOCAL lSuccess:=true as LOGIC
+	LOCAL cDelim:=',' as STRING
+	LOCAL ptrHandle as MyFile
+	LOCAL oFs:=oFb as FileSpec
+	LOCAL cBuffer as STRING, nCnt,nTot as int
+	LOCAL aStruct:={} as ARRAY // array with fieldnames
+	LOCAL aFields:={} as ARRAY // array with fieldvalues
+	LOCAL ptDate:=2, ptAmount:=4, ptDesc:=5, ptName:=6, ptBal:=7,ptBranch:=3,ptSeqnr:=7, nVnr,nProc as int
+	LOCAL pbType as STRING
+	LOCAL lv_Amount, lv_balance as FLOAT
+	LOCAL ld_bookingdate as date 
+	local oStmnt as SQLStatement
+
+// 	lv_bankAcntOwn:=SubStr(oFs:FileName,11)
+// 	lv_bankAcntOwn:=ZeroTrim(SubStr(lv_bankAcntOwn,1,At("-",lv_bankAcntOwn)-1))
+	ptrHandle:=MyFile{oFs}
+	pbType:=Upper(oFs:Extension)
+	IF FError() >0
+		(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
+		RETURN FALSE
+	ENDIF
+	cBuffer:=ptrHandle:FReadLine(ptrHandle)
+	IF Empty(cBuffer)
+		ptrHandle:Close()
+		ptrHandle:=null_object
+		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
+		RETURN FALSE
+	ENDIF
+	//cDelim:=','
+	aFields:=Split(Upper(cBuffer),cDelim)
+	IF !Len(AFields)=8
+		ptrHandle:Close()
+		ptrHandle:=null_object
+		(ErrorBox{,"Wrong fileformat of importfile from Standard Bank: "+oFs:FullPath+"(See help)"}):show()
+		RETURN FALSE
+	ENDIF
+	cBuffer:=ptrHandle:FReadLine(ptrHandle)   // read next line
+	aFields:=Split(cBuffer,cDelim)
+   lv_bankAcntOwn:=ZeroTrim(AFields[ptDate])
+  	cBuffer:=ptrHandle:FReadLine(ptrHandle)  // skip line with open balance
+   // read next line:
+  	cBuffer:=ptrHandle:FReadLine(ptrHandle)
+	aFields:=Split(cBuffer,cDelim)
+   SetDecimalSep(Asc('.'))  // just to be sure
+	do WHILE Len(AFields)>7
+		ld_bookingdate:=SToD(ZeroTrim(AFields[ptDate]))
+		lv_Amount:=Val(AFields[ptAmount])
+		lv_kind:=AllTrim(AFields[ptBranch])
+			if Upper(lv_kind)=="CLOSE"
+				// save balance 
+				AAdd(self:avaluesBal,{lv_bankAcntOwn,ld_bookingdate,lv_Amount}) 
+				// skip to next line:
+				cBuffer:=ptrHandle:FReadLine(ptrHandle)
+				aFields:=Split(cBuffer,cDelim)
+				loop
+			endif
+		lv_description:=AddSlashes(AllTrim(StrTran(AllTrim(AFields[ptDesc]),'"','')))
+		lv_NameContra:=AddSlashes(AllTrim(StrTran(AllTrim(AFields[ptName]),'"',''))) 
+		IF lv_Amount<0
+			lv_Amount:=-lv_Amount
+			lv_addsub:="A"
+		ELSE
+			lv_addsub:="B"
+		ENDIF
+		IF Empty(lv_Amount)  && no empty lines
+			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_Amount:=Round(lv_Amount,DecAantal)
+		lv_seqnr:=ZeroTrim(AFields[ptSeqnr])
+		lv_BankAcntContra:=sha2(lv_kind+Str(lv_Amount,-1)+lv_description+lv_NameContra) 
+		nTot++
+		self:AddTeleTrans(lv_bankAcntOwn,Min(Today(),ld_bookingdate),lv_seqnr,lv_BankAcntContra,;     // no dates in the future)
+		lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+		lv_description:=""
+		cBuffer:=ptrHandle:FReadLine(ptrHandle)
+		aFields:=Split(cBuffer,cDelim)
+	ENDDO
+	ptrHandle:Close()
+	ptrHandle:=null_object
+	SetDecimalSep(Asc('.'))  // restore decimal separator
 	lSuccess:=self:SaveTeleTrans(false,false,"SA file:"+oFb:FileName,nTot)
 	if lSuccess
 		return true
@@ -2569,7 +2674,6 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_bankAcntOwn, lv_Oms, lv_addsub, lv_AmountStr, lv_reference,lv_NameContra, lv_address,lv_zip,lv_city, lv_country, lv_description,lv_budget,lv_persid as STRING
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as string, cText, recordcode as STRING
 	LOCAL lv_Amount as FLOAT
-	LOCAL cSep as STRING
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp as Filespec
 	LOCAL ld_bookingdate as date 
@@ -2588,7 +2692,6 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	
 	oHlM :=HLPMT940{HelpDir+"\HTL1"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
 	oHlM:Zap()
-	cSep:=CHR(SetDecimalSep())
 	*Look for 2: record with transction record
 	*			add record to teletrans
 	*
@@ -2853,7 +2956,6 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	Local betkenm as string
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra, lv_budget,lv_persid as string, cText, recordcode, batchsoort as STRING
 	LOCAL lv_Amount as FLOAT
-	LOCAL cSep as STRING
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL oHlp as FileSpec
 	LOCAL ld_bookingdate as date 
@@ -2862,7 +2964,6 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	
 	oHlM :=HLPMT940{HelpDir+"\HVW"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
 	oHlM:Zap()
-	cSep:=CHR(SetDecimalSep())
 	*Look for 2: record with transction record
 	*			add record to teletrans
 	*
@@ -2915,7 +3016,7 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 						"s.personid="+lv_persid+" and d.invoicedate='"+;
 						SQLdate(SToD(SubStr(betkenm,7,8)))+"' and seqnr="+ZeroTrim(SubStr(betkenm,15)),oConn} //persid + DTOS(invoicedate) + seqnr
 					if oDue:Reccount>0
-						lv_budget:= oAcc:ACCNUMBER
+						lv_budget:= oDue:ACCNUMBER
 					endif
 				else	 
 					lv_kind:="ACC"
@@ -2955,7 +3056,7 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_woonplaats:=AllTrim(SubStr(oHlM:MTLINE,4.35))
 			CASE recordcode=="600"
 				// signaalkode: 
-				lv_Oms+="Storno: "+AllTrim(SubStr(oHlM:MTLINE,8,32))+" " 			
+				lv_Oms:="Geweigerd: "+AllTrim(SubStr(oHlM:MTLINE,8,32))+" "+lv_Oms
 			END CASE			
 			oHlM:Skip()
 		ENDDO
@@ -3365,6 +3466,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 											lAddressChanged:=true
 										endif
 									endif
+									aValuesTrans[i,10]:=self:m56_description  // as determined by getaddress
 								endif
 							endif
 							if !lAddressChanged 
@@ -3382,7 +3484,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 									if self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')  // acceptgiro
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
-									AAdd(aTrans,{cBankAccOwn,aValueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
+									AAdd(aTrans,{cBankAccOwn,avalueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+' ('+aValuesTrans[i,10]+ '('+aValuesTrans[i,1]+')'+')',;
 										aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','','0','',''} ) 
 									// second row: 
 									if aAccnbrDb[l,3]='1'  //destination member?
@@ -3411,7 +3513,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	//      1            2        3          4           5      6           7      8      9        10        11       12
 	i:=0
 	do while i<Len(avalueTrans) 
-		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.x[9]='A') .and.!x[12]='X'},i+1)   // non-gifts or person unknown  
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]=='COL')) .and.!x[12]='X'},i+1)   // non-gifts or person unknown and no storno's  
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
