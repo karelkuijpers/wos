@@ -1,6 +1,6 @@
 global aAsmt as array
 GLOBAL aBalType:={} as ARRAY 
-GLOBAL ADMIN as STRING 
+GLOBAL ADMIN as STRING
 global aLanM:={} as array    // language table of menu items
 global aLanR:={} as array    // language table of report items
 global aLanW:={} as array    // language table of window items
@@ -15,6 +15,7 @@ global cDepmntIncl as string
 global cDepmntXtr as string 
 Global CITYUPC as logic
 GLOBAL ClosingMonth as int
+Global Collate as string // can be used for order by to conform local alphabet order 
 GLOBAL CountryCode as string
 GLOBAL CurPath as STRING
 global dbname as string
@@ -26,6 +27,7 @@ GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining','rem
 global emailclient as string 
  
 GLOBAL EXCEL as STRING
+global FirstLogin as logic  // first login user this day?
 global GlBalYears:={} as Array
 GLOBAL HelpDir:="C:" as STRING
 GLOBAL KeyWords as ARRAY
@@ -55,7 +57,7 @@ GLOBAL MonthEn := ;
 'September','October','November','December'} as ARRAY
 GLOBAL MultiDest as LOGIC
 GLOBAL myApp as App
-GLOBAL MYEMPID as STRING
+GLOBAL MYEMPID as STRING 
 GLOBAL NoErrorMsg as LOGIC
 global oConn as SQLConnection 
 
@@ -112,7 +114,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.90" as string
+global Version:="3.0.0.135" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
