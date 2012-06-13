@@ -194,23 +194,25 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	local SubTotalRTF:="\trowd\cellx1060\cellx"+Str(2100+nDisp,-1)+"\clbrdrt\brdrw10\brdrth\cellx"+Str(2100+nDisp+1050,-1) as string  // use: \intbl Begin saldo Januari 2011\cell\intbl\qr 1882,65\cell\intbl\qr \cell\row\pard
 
 	
-	if self:SkipInactive
-		IF oTrans:RecCount<1
-			return true
-		endif
-		// skip to transaction of required account:
-		do while !oTrans:EoF .and.;
-				(cOrder="accnumber" .and. oTrans:ACCNUMBER<oAcc:ACCNUMBER .or.;
-				cOrder="accid".and. oTrans:accid<oAcc:accid) 
-			oTrans:Skip()
-		enddo
-		if oTrans:EoF .or. ;
-				(cOrder="accnumber" .and. oTrans:ACCNUMBER>oAcc:ACCNUMBER .or.;
-				cOrder="accid".and. oTrans:accid>oAcc:accid) 
-			// no transactions for this account
-			return true
-		endif
-	endif
+// 	if self:SkipInactive
+// 		IF oTrans:RecCount<1
+// 			return true
+// 		endif
+// 	endif
+	// skip to transaction of required account:
+	do while !oTrans:EoF .and.;
+			(cOrder="accnumber" .and. oTrans:ACCNUMBER<oAcc:ACCNUMBER .or.;
+			cOrder="accid".and. oTrans:accid<oAcc:accid) 
+		oTrans:Skip()
+	enddo
+// 	if self:SkipInactive
+// 		if oTrans:EoF .or. ;
+// 				(cOrder="accnumber" .and. oTrans:ACCNUMBER>oAcc:ACCNUMBER .or.;
+// 				cOrder="accid".and. oTrans:accid>oAcc:accid) 
+// 			// no transactions for this account 
+// 			return true
+// 		endif
+// 	endif
 	IF self:SendingMethod="SeperateFile"
 		lRtf:=true
 		BoldOn:="{\b "
@@ -469,7 +471,6 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	IF Empty(mnd_cur)
 		mnd_cur:=Month(enddate)
 	endif 
-	LogEvent(self,"month:"+Str(mnd_cur,-1),"logsql")
 	self:Month_summary(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,mnd_debF,mnd_creF,m58_rek,me_type,jr_cur,self:oReport,aOPP)
 	aOPP:={}
 	skipaant:=4
