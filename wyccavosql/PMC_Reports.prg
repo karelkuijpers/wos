@@ -680,8 +680,8 @@ METHOD PrintReport() CLASS PMISsend
 					// 					LogEvent(self,oMbr:description+": trans "+Str(oTrans:transid,-1)+', fromrpp:'+ConS(oTrans:FROMRPP)+', cre-deb:'+Str(oTrans:cre-oTrans:deb,-1,2)+'(total:'+Str(AmntFromRpp,-1,2)+')',"logsql") 
 				endif
 				do CASE
-					* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-					*                1      2        3           4                 5                  6            7           ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+					* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency,transid]:
+					*                1      2        3           4                 5                  6            7           ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11       12
 				CASE me_gc='AG' .or. me_gc='OT'
 					// calculate assessments:
 					IF me_stat!="Staf" .and. ConI(oTrans:FROMRPP)==0
@@ -701,7 +701,7 @@ METHOD PrintReport() CLASS PMISsend
 							me_desc:=if(Empty(me_desc),"",me_desc+" ")+"from "+GetFullNAW(Str(oTrans:persid,-1),sLand,0)
 						ENDIF
 						me_desc+=iif(Empty(me_desc),"","; ")+oTrans:description
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,"CN",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency})				
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,"CN",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,oTrans:transid})				
 						AmntAssessable:=Round(me_amount+AmntAssessable,DecAantal)
 					ELSE
 						//    AmntAssessable:=Round(AmntAssessable+ oTrans:cre-oTrans:deb,DecAantal)
@@ -713,12 +713,12 @@ METHOD PrintReport() CLASS PMISsend
 							me_desc:=if(Empty(me_desc),"",me_desc+" ")+"from "+GetFullNAW(Str(oTrans:persid,-1),sLand,0)
 						ENDIF
 						me_desc+=iif(Empty(me_desc),"","; ")+oTrans:description
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(oTrans:cre-oTrans:deb,DecAantal),"MM",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency})
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(oTrans:cre-oTrans:deb,DecAantal),"MM",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,oTrans:transid})
 					ENDIF
 					AmntMG:=Round(oTrans:cre-oTrans:deb+AmntMG,DecAantal)
 				OTHER   // CH and PF
 					IF me_homePP!=SEntity
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(oTrans:cre-oTrans:deb,DecAantal),"PC",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,AllTrim(oTrans:Description),,me_currency})				
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(oTrans:cre-oTrans:deb,DecAantal),"PC",{iif(Empty(oTrans:REFERENCE).and.me_co="S",mHomeAcc,oTrans:REFERENCE),me_homePP,me_householdid,,,me_co},,AllTrim(oTrans:Description),,me_currency,oTrans:transid})				
 					ENDIF
 					AmntCharges:=Round(oTrans:cre-oTrans:deb+AmntCharges,DecAantal)
 				ENDCASE
@@ -749,7 +749,7 @@ METHOD PrintReport() CLASS PMISsend
 			* Save: accid,accnbr,accname, type transactie, bedrag, assmntcode, destination{destacc,destPP,household code,destnbr,destaccID},homeassamnt, description
 			// 1: assessment int+field:
 			IF mbrint # 0
-				AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},if(me_co="M",mbroffice,mbrofficeProj),,,me_currency})
+				AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},if(me_co="M",mbroffice,mbrofficeProj),,,me_currency,0})
 			ENDIF 
 
 			// Transfer balance conform distribution instructions:
@@ -834,7 +834,7 @@ METHOD PrintReport() CLASS PMISsend
 									DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
 								ENDIF
 								IF remainingAmnt>=DestAmnt
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],DestAmnt,destinstr[iDest,11]})
 									//update prelimenary distribution record:
 									// 									oStmnt:=SQLStatement{"update distributioninstruction set lstdate='"+SQLdate(self:closingDate)+;
@@ -846,7 +846,7 @@ METHOD PrintReport() CLASS PMISsend
 									// 										return
 									// 									endif  
 									IF me_homePP!=SEntity
-										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
+										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
 										AmntCharges:=Round(-DestAmnt+AmntCharges,DecAantal)
 									endif
 									remainingAmnt:=Round(remainingAmnt-DestAmnt,DecAantal)
@@ -858,10 +858,10 @@ METHOD PrintReport() CLASS PMISsend
 						ELSEIF destinstr[iDest,3]=1 // proportional amount
 							me_amount:=Min(Round((destinstr[iDest,4]*availableAmnt)/100,DecAantal),remainingAmnt)
 							IF me_amount>0
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
 								remainingAmnt:=Round(remainingAmnt-me_amount,DecAantal)
 								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
 									AmntCharges:=Round(-me_amount+AmntCharges,DecAantal)
 								endif
 								if destinstr[iDest,11]														//lock distribution record:
@@ -891,9 +891,9 @@ METHOD PrintReport() CLASS PMISsend
 									amntlimited:=Min(amntlimited, Round(DestAmnt-destinstr[iDest,9],DecAantal))
 									if amntlimited>0.00  
 										AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],round(destinstr[iDest,9]+amntlimited,decaantal),destinstr[iDest,11]})
-										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
+										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
 										IF me_homePP!=SEntity
-											AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
+											AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
 											AmntCharges:=Round(-amntlimited+AmntCharges,DecAantal)
 										endif
 									endif
@@ -905,9 +905,9 @@ METHOD PrintReport() CLASS PMISsend
 									amntlimited:=remainingAmnt
 								endif 
 								if amntlimited>0.00  
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
 									IF me_homePP!=SEntity
-										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency})				
+										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
 										AmntCharges:=Round(-amntlimited+AmntCharges,DecAantal)
 									endif
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],amntlimited,destinstr[iDest,11]})
@@ -921,7 +921,7 @@ METHOD PrintReport() CLASS PMISsend
 				IF me_homePP!=SEntity .and.self:closingDate=Today()
 					IF !AmntCorrection=0.00
 						// send if applicable remaining balance to PMIS
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency})
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
 					ENDIF
 				ENDIF
 			endif
@@ -947,7 +947,7 @@ METHOD PrintReport() CLASS PMISsend
 	ENDIF 
 	self:STATUSMESSAGE(self:oLan:WGet('Producing report')+'...')
 
-	ASort(aMemberTrans,,,{|x,y| x[3]<=y[3]})  // sort on name member
+	ASort(aMemberTrans,,,{|x,y| x[3]<y[3] .or.x[3]==y[3].and.x[12]<=y[12]})  // sort on name member
 	FOR i=1 to batchcount
 		IF aMemberTrans[i,4]==DT    // transactions to own PP not send to PMC
 			mo_direct:=Round(mo_direct+aMemberTrans[i,5],DecAantal)
