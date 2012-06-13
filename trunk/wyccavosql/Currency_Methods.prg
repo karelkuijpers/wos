@@ -59,7 +59,7 @@ export mxrate as float
 protect cCurCaption:="Get exchange rate" as string 
 export lStopped as logic 
 declare method GetROE
-Method GetROE(CodeROE as string, DateROE as date, lConfirm:=true as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
+Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
 	// nUp: optionally percentage to increase rate read from internet (decrease if negative); if <>0 get always rate from internet
