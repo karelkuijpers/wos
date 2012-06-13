@@ -312,7 +312,7 @@ METHOD OKButton( ) CLASS CheckBankBalance
 		RETURN FALSE
 	ENDIF 
 	cReportdate:=SQLdate( self:odcReportdate:SelectedDate)
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	oMainwindow:Pointer := Pointer{POINTERHOURGLASS}
 	if Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
 	ENDIF
@@ -335,7 +335,7 @@ METHOD OKButton( ) CLASS CheckBankBalance
 	SetDecimalSep(Asc('.'))
 	oReport:prstart()
 	oReport:prstop()
-	self:Pointer := Pointer{POINTERARROW}
+	oMainwindow:Pointer := Pointer{POINTERARROW}
 
 	RETURN nil
 method PostInit(oWindow,iCtlID,oServer,uExtra) class CheckBankBalance
@@ -468,7 +468,7 @@ METHOD OKButton( ) CLASS CheckSuspense
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	oMainwindow:Pointer := Pointer{POINTERHOURGLASS}
 	oAlert:=AlertSuspense{} 
 	aSuspense:=oAlert:CollectSuspense()
 	if Lower(oReport:Extension) #"xls"
@@ -608,8 +608,8 @@ METHOD OKButton( ) CLASS CheckSuspense
 	SetDecimalSep(Asc('.'))
 	oReport:prstart()
 	oReport:prstop()
-	self:Pointer := Pointer{POINTERARROW}
-	self:EndWindow()
+	oMainwindow:Pointer := Pointer{POINTERARROW}
+// 	self:EndWindow()
 
 	RETURN nil
 method PostInit(oWindow,iCtlID,oServer,uExtra) class CheckSuspense
