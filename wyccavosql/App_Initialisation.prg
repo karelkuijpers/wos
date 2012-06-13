@@ -75,7 +75,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 			oFs:=null_object
 			oFTP:CloseRemote() 
 		else
-			__RaiseFTPError(oFTP)
+// 			__RaiseFTPError(oFTP)
 		endif
 	endif
 	return false
@@ -568,6 +568,7 @@ method init() class Initialize
 	local aIniKey:={'database','password','server','username'} as array
 	local dim akeyval[4] as string
 	local lConnected as logic
+	Local CurVersion as string ,DBVers, PrgVers as float
 	local time0,time1 as float 
 
 	// make connection 
@@ -689,16 +690,38 @@ method init() class Initialize
 		// check if empty database:
 		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
-			if oSel:RecCount>0
+			if Empty(oSel:Status).and. oSel:RecCount>0
 				self:FirstOfDay:=FALSE
 			else	
 				self:FirstOfDay:=true
+				if !Empty(oSel:Status)
+					self:lNewDb:=true    // apparently partly new database which need to be converted
+				endif
 			endif
 		else
 			self:FirstOfDay:=true
 			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
+		if !lNewDb
+			// check if programversion is newer than db
+			if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
+				oSel:=SqlSelect{"select `version` from sysparms",oConn}
+				if oSel:RecCount>0
+					CurVersion:=oSel:Version
+					AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+					AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
+					If DBVers < PrgVers 			
+						self:FirstOfDay:=true   // IntializeDB will be executed
+					ENDIF
+				else
+					self:lNewDb:=true
+				ENDIF
+			else
+				self:lNewDb:=true
+			endif
+		endif
 	ENDIF
+// 	cLine:=SqlSelect{"select cast(sha1('dd kle 123 k mmmmmm wwwwww lllllll dddddd') as char) as hash",oConn }:hash
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
@@ -727,7 +750,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
-	if !self:lNewDb
+/*	if !self:lNewDb
 		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
 			if Empty(oSel:status).and. oSel:RecCount>0
@@ -744,12 +767,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		if !self:lNewDb .and.SqlSelect{"show tables like 'sysparms'",oConn}:RecCount<1
 			self:lNewDb:=true
 		endif
-	ENDIF
+	ENDIF */
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
 	if self:FirstOfDay.or.self:lNewDb 
 		self:InitializeDB() 
 		// reset employee online:
-		oStmnt:=SQLStatement{"update employee set online=0",oConn}
+		oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
 		oStmnt:Execute()  
 	endif
 	RddSetDefault("DBFCDX") 
@@ -1073,6 +1096,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"emplacc","InnoDB",cCollation},; 
 		{"employee","InnoDB","latin1_swedish_ci"},; 
 		{"importlock","InnoDB",cCollation},;
+		{"importpattern","InnoDB",cCollation},;
 		{"importtrans","InnoDB",cCollation},;
 		{"ipcaccounts","InnoDB",cCollation},;  
 		{"language","InnoDB",cCollation},;
@@ -1132,6 +1156,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","active","tinyint(1)","NO","1",""},;
 		{"account","qtymailing","int(10) unsigned","NO","0",""},;
 		{"account","monitor","tinyint(1)","NO","0",""},;
+		{"account","altertime","timestamp","NO","0000-00-00","ON UPDATE CURRENT_TIMESTAMP"},; 
 		{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
@@ -1163,7 +1188,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"balanceyear","yearlength","smallint(6)","NO","0",""},;
 		{"balanceyear","state","char(1)","NO","",""},;
 		{"bankaccount","bankid","int(11)","NO","NULL","auto_increment"},;
-		{"bankaccount","banknumber","char(25)","NO","NULL",""},;
+		{"bankaccount","banknumber","varchar(64)","NO","NULL",""},;
 		{"bankaccount","accid","int(11)","YES","NULL",""},;
 		{"bankaccount","usedforgifts","tinyint(1)","NO","0",""},;
 		{"bankaccount","telebankng","tinyint(1)","NO","0",""},;
@@ -1179,7 +1204,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankbalance","balance","decimal(15,2)","NO","0",""},;
 		{"bankorder","id","int(11)","NO","NULL","auto_increment"},;
 		{"bankorder","accntfrom","int(11)","YES","NULL",""},;
-		{"bankorder","banknbrcre","char(25)","NO","",""},;
+		{"bankorder","banknbrcre","varchar(64)","NO","",""},;
 		{"bankorder","amount","decimal(15,2)","NO","0",""},;
 		{"bankorder","datedue","date","NO","0000-00-00",""},;
 		{"bankorder","datepayed","date","NO","0000-00-00",""},;
@@ -1252,7 +1277,15 @@ method InitializeDB() as void Pascal  class Initialize
 		{"emplacc","type","tinyint(1)","NO","0",""},;
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
-		{"importlock","lock_time","timestamp","NO","0000-00-00",""},;
+		{"importlock","lock_time","timestamp","NO","0000-00-00",""},; 
+		{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
+		{"importpattern","descriptn","varchar(511)","NO","",""},;
+		{"importpattern","origin","char(11)","NO","",""},;
+		{"importpattern","assmntcd","char(2)","NO","",""},;
+		{"importpattern","debcre","char(1)","NO","",""},;
+		{"importpattern","accid","int(11)","NO","0",""},;
+		{"importpattern","recdate","date","NO","0000-00-00",""},;
+		{"importpattern","automatic","tinyint(1)","NO","0",""},;
 		{"importtrans","imptrid","int(11)","NO","NULL","auto_increment"},;
 		{"importtrans","transdate","date","NO","0000-00-00",""},;
 		{"importtrans","docid","varchar(31)","NO","",""},;
@@ -1346,17 +1379,21 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","propextr","mediumtext","NO","",""},;
 		{"person","externid","char(10)","NO","",""},; 
 		{"person","deleted","tinyint(1)","NO","0",""},; 
-	{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
+		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
 		{"person_properties","type","int(1)","NO","0",""},;
 		{"person_properties","values","mediumtext","NO","",""},;
 		{"personbank","persid","int(11)","NO","0",""},;
-		{"personbank","banknumber","char(25)","NO","",""},;
+		{"personbank","banknumber","varchar(64)","NO","",""},;
 		{"persontype","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"persontype","descrptn","char(30)","YES","NULL",""},;
 		{"persontype","abbrvtn","char(3)","YES","NULL",""},;
 		{"ppcodes","ppcode","char(3)","NO","",""},;
-		{"ppcodes","ppname","char(40)","NO","",""},;
+		{"ppcodes","ppname","char(40)","NO","",""};
+		} as array
+	// additional required tables structure:
+	// Table name, Field,Type,Null,Default,Extra 
+	local aColumn2:={;
 		{"standingorder","stordrid","int(11)","NO","NULL","auto_increment"},;
 		{"standingorder","idat","date","NO","0000-00-00",""},;
 		{"standingorder","edat","date","NO","0000-00-00",""},;
@@ -1365,12 +1402,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","period","int(2)","NO","1",""},;
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
-		{"standingorder","docid","char(10)","NO","",""}; 
-		} as array
-	// additional required tables structure:
-	// Table name, Field,Type,Null,Default,Extra 
-	local aColumn2:={;
-	{"standingorderline","stordrid","int(11)","NO","0",""},;
+		{"standingorder","docid","char(10)","NO","",""},; 
+		{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
 		{"standingorderline","deb","decimal(19,2)","NO","0",""},;
@@ -1378,7 +1411,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorderline","descriptn","varchar(511)","NO","",""},;
 		{"standingorderline","gc","char(2)","NO","",""},;
 		{"standingorderline","reference","varchar(127)","NO","",""},;
-		{"standingorderline","bankacct","char(25)","NO","",""},;
+		{"standingorderline","bankacct","varchar(64)","NO","",""},;
 		{"standingorderline","creditor","int(11)","NO","0",""},;
 		{"subscription","SUBSCRIBID","int(11)","NO","NULL","auto_increment"},;
 		{"subscription","personid","int(11)","YES","NULL",""},;
@@ -1393,7 +1426,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","gc","char(2)","NO","",""},;
 		{"subscription","paymethod","char(1)","NO","",""},;
 		{"subscription","invoiceid","char(20)","NO","",""},;
-		{"subscription","bankaccnt","char(25)","NO","",""},;
+		{"subscription","bankaccnt","varchar(64)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
 		{"sysparms","lstreportmonth","int(6)","NO","0",""},;
@@ -1446,7 +1479,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","giftincac","int(11)","NO","0",""},;
 		{"sysparms","giftexpac","int(11)","NO","0",""},;
 		{"sysparms","cntrnrcoll","char(10)","NO","",""},;
-		{"sysparms","banknbrcol","char(25)","NO","",""},;
+		{"sysparms","banknbrcol","varchar(64)","NO","",""},;
 		{"sysparms","idorg","int(11)","NO","0",""},;
 		{"sysparms","idcontact","int(11)","NO","0",""},;
 		{"sysparms","datlstafl","date","NO","0000-00-00",""},;
@@ -1458,7 +1491,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","fgmlcodes","char(30)","NO","",""},;
 		{"sysparms","creditors","int(11)","NO","0",""},;
 		{"sysparms","countrycod","char(3)","NO","",""},;
-		{"sysparms","banknbrcre","char(25)","NO","",""},;
+		{"sysparms","banknbrcre","varchar(64)","NO","",""},;
 		{"sysparms","lstreeval","date","NO","0000-00-00",""},;
 		{"sysparms","citynmupc","tinyint(1)","NO","0",""},;
 		{"sysparms","pmcmancln","int(11)","NO","0",""},;
@@ -1476,7 +1509,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"sysparms","assfldac","int(11)","NO","0",""},;
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
-		{"telebankpatterns","contra_bankaccnt","char(25)","NO","",""},;
+		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
 		{"telebankpatterns","addsub","char(1)","NO","",""},;
 		{"telebankpatterns","description","varchar(128)","NO","",""},;
@@ -1484,10 +1517,10 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","ind_autmut","tinyint(1)","NO","0",""},;
 		{"telebankpatterns","recdate","date","NO","0000-00-00",""},;
 		{"teletrans","teletrid","int(11)","NO","NULL","auto_increment"},;
-		{"teletrans","bankaccntnbr","char(25)","NO","",""},;
+		{"teletrans","bankaccntnbr","varchar(64)","NO","",""},;
 		{"teletrans","bookingdate","date","NO","0000-00-00",""},;
 		{"teletrans","seqnr","int(10)","NO","0",""},;
-		{"teletrans","contra_bankaccnt","char(25)","NO","",""},;
+		{"teletrans","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"teletrans","kind","char(4)","NO","",""},;
 		{"teletrans","contra_name","char(32)","NO","",""},;
 		{"teletrans","budgetcd","char(20)","NO","",""},;
@@ -1580,6 +1613,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"emplacc","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","2","accid"},; 
 	{"importlock","0","IMPORTLOCK","1","importfile"},;
+	{"importpattern","0","PRIMARY","1","imppattrnid"},;
 	{"importtrans","0","PRIMARY","1","imptrid"},;
 		{"importtrans","1","TRANSACTNR","1","origin"},;
 		{"importtrans","1","TRANSACTNR","2","transactnr"},;
