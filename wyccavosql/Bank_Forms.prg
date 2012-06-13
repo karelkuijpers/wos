@@ -1198,7 +1198,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
 	LOCAL cBank, cAccFrom as STRING
 	Local oWarn as TextBox
-	Local aTrans:={} as array // persid,Dtos(invoicedate)+seqnr,accid,AmountInvoice, banknumber, Description 
+	Local aTrans:={} as array // amount,Description,accountfrom 
 	Local aDir as array
 	local oPro as ProgressPer
 	local oStmnt as SQLStatement
@@ -1213,7 +1213,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 			self:oLan:WGet("not specified as telebanking in system data")}):Show()
 		RETURN FALSE
 	else
-		cAccFrom:=Str(oBank:accid,-1)
+// 		cAccFrom:=Str(oBank:accid,-1)
 		m56_Payahead:=Str(oBank:payahead,-1) 
 		if Empty(m56_Payahead)
 			(ErrorBox{self,self:oLan:WGet("For bank account number")+space(1)+BANKNBRCRE+space(1)+;
@@ -1238,7 +1238,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	ENDIF
 	fBANKNBRCRE:=Val(BANKNBRCRE)
 	// Check validity of recipient bankaccounts:
-	oBord:=SQLSelect{"select distinct o.banknbrcre,o.stordrid, a.accnumber,a.description from bankorder o"+;
+	oBord:=SqlSelect{"select distinct o.banknbrcre,o.stordrid, a.accnumber,a.description from bankorder o"+;
 		" left join account a on (a.accid=o.idfrom) "+;
 		" where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'"+;
 		" and banknbrcre not in (select b.banknumber from personbank b)",oConn}
@@ -1255,7 +1255,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		return false
 	endif	
 	
-	oBord:=SQLSelect{"select o.id,o.banknbrcre,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
+	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.accntfrom,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
 		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
 		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
@@ -1317,7 +1317,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		oReport:PrintLine(@nRow,@nPage,;
 			Pad(BANKNBRCRE,11)+Str(oBord:AMOUNT,12,2)+' '+Pad(cBank,12)+DToC(oBord:DATEDUE)+"  "+Pad(oBord:FullName,24)+" "+oBord:Description,headinglines)  
 		// add to aTrans: 
-		AAdd(aTrans,{oBord:AMOUNT,oBord:Description})
+		AAdd(aTrans,{oBord:AMOUNT,oBord:description,ConS(oBord:accntfrom)})
 		oBord:skip()		
 	ENDDO
 	// Write closing lines:
@@ -1399,7 +1399,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 				",dat='"+SQLdate(process_date)+"'"+;
 				",docid='BETOPD'"+;
 				",description ='"+cDescr +"'"+;
-				",accid ='"+cAccFrom+"'"+;
+				",accid ='"+aTrans[i,3]+"'"+;
 				",deb ='"+cAmnt+"'"+;
 				",debforgn ='"+cAmnt+"'"+;
 				",seqnr=2,poststatus=2"+;
@@ -1410,6 +1410,10 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 					lError:=true
 					exit
 				endif
+				if !ChgBalance(aTrans[i,3],process_date,fAmnt,0,fAmnt,0,sCURR)  //account payable deb
+					lError:=true
+					exit
+				ENDIF
 				nSeq:=2
 			next
 			if !lError
@@ -1418,10 +1422,6 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 					exit
 				endif
 				oPro:AdvancePro()				
-				if !ChgBalance(cAccFrom,process_date,fSum,0,fSum,0,sCURR)  //account payable deb
-					lError:=true
-					exit
-				ENDIF
 				oPro:AdvancePro()
 			endif
 		endif
