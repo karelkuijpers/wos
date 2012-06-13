@@ -2292,7 +2292,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 				if !Empty(aPersid[1]) 
 					* Resolve department responsible person name:   
 					cLastName:=StrTran(StrTran(aLastname[1],"\",""),"/","")
-					oRecip1 := self:oMapi:ResolveName( cLastName,aPersid[1],aFullname[1],aEmail[1])
+					oRecip1 := self:oMapi:ResolveName( cLastName,aPersid[1],aFullname[1],aEmail[1]) 
 				endif
 				if Empty(aPersid[1]).and.!Empty(aPersid[2]) 
 					* Resolve department responsible person name:   
@@ -3165,6 +3165,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				nRow := 0
 			ENDIF
 			self:oTransMonth:oReport:=self:oReport
+			self:oTransMonth:SkipInactive:=self:SkipInactive
 			myLang:=Alg_taal
 			me_hbn:=Transform(oAcc:householdid,"")
 			IF !Empty(oAcc:HOMEPP) .and.oAcc:HOMEPP!=sEntity
