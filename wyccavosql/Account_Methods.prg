@@ -316,7 +316,11 @@ Function DeleteAccount(cAccId:="" as string ) as logic
 			oStmnt:Execute()
 			// remove related telepattern too:
 			oStmnt:SQLString:="delete from telebankpatterns where accid="+cAccId
+			oStmnt:Execute()  
+			// remove related importpattern too:
+			oStmnt:SQLString:="delete from importpattern where accid="+cAccId
 			oStmnt:Execute()
+			
 			// remove related budget too: 
 			oStmnt:SQLString:="delete from budget where accid="+cAccId
 			oStmnt:Execute() 
@@ -755,7 +759,7 @@ function SQLAccType() as string
 					","+; // else
 						"if(a.accid='"+SDON+"','D'"+;  // donation, 
 						","+;		//else 
-							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M','K'),'')"+;  // income account: member, else member department
+							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M',if(d.expenseacc=a.accid or d.netasset=a.accid,'K','')),'')"+;  // income account: member, else member department
 						")"+;
 					")"+;
 				")"+;
