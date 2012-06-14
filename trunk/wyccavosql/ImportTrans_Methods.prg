@@ -1,3 +1,275 @@
+RESOURCE EditImportPattern DIALOGEX  4, 3, 318, 169
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", EDITIMPORTPATTERN_MORIGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 28, 80, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITIMPORTPATTERN_MASSMNTCD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 11, 69, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Assessment code:", EDITIMPORTPATTERN_SC_ASSMNTCD, "Static", WS_CHILD, 13, 12, 59, 13
+	CONTROL	"Origin:", EDITIMPORTPATTERN_SC_ORIGIN, "Static", WS_CHILD, 13, 30, 54, 13
+	CONTROL	"Description:", EDITIMPORTPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 12, 48, 45, 12
+	CONTROL	"", EDITIMPORTPATTERN_MDESCRIPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 48, 216, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Debit/Credit", EDITIMPORTPATTERN_MDEBCRE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 72, 88, 56, 46
+	CONTROL	"Debit", EDITIMPORTPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 98, 38, 11
+	CONTROL	"Credit", EDITIMPORTPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 110, 42, 11
+	CONTROL	"Both", EDITIMPORTPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 121, 40, 11
+	CONTROL	"Automatic processing of recognised records?", EDITIMPORTPATTERN_MAUTOMATIC, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 91, 156, 11
+	CONTROL	"", EDITIMPORTPATTERN_MRECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Date changed:", EDITIMPORTPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
+	CONTROL	"", EDITIMPORTPATTERN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 3, 301, 141
+	CONTROL	"OK", EDITIMPORTPATTERN_SAVEBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 258, 147, 54, 13
+	CONTROL	"Cancel", EDITIMPORTPATTERN_CANCELBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 200, 147, 53, 13
+	CONTROL	"v", EDITIMPORTPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 152, 66, 14, 12
+	CONTROL	"Account:", EDITIMPORTPATTERN_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 66, 82, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Account:", EDITIMPORTPATTERN_SC_REK, "Static", WS_CHILD, 12, 66, 30, 12
+END
+
+CLASS EditImportPattern INHERIT DataDialogMine 
+
+	PROTECT oDCmOrigin AS SINGLELINEEDIT
+	PROTECT oDCmAssmntcd AS SINGLELINEEDIT
+	PROTECT oDCSC_Assmntcd AS FIXEDTEXT
+	PROTECT oDCSC_Origin AS FIXEDTEXT
+	PROTECT oDCSC_description AS FIXEDTEXT
+	PROTECT oDCmDescriptn AS SINGLELINEEDIT
+	PROTECT oDCmDebCre AS RADIOBUTTONGROUP
+	PROTECT oCCRadioButton1 AS RADIOBUTTON
+	PROTECT oCCRadioButton2 AS RADIOBUTTON
+	PROTECT oCCRadioButton3 AS RADIOBUTTON
+	PROTECT oDCmAutomatic AS CHECKBOX
+	PROTECT oDCmRecdate AS SINGLELINEEDIT
+	PROTECT oDCFixedText5 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oCCSaveButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCAccButton AS PUSHBUTTON
+	PROTECT oDCmAccount AS SINGLELINEEDIT
+	PROTECT oDCSC_REK AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  protect oImpB as ImportBatch 
+  protect oBrowse as SQLSelect 
+  protect CurImpPatId as string 
+  protect lNew as logic
+  export maccid as string 
+  protect oOwner as object
+METHOD AccButton( ) CLASS EditImportPattern 
+
+RETURN NIL
+METHOD CancelButton( ) CLASS EditImportPattern 
+self:EndWindow()
+RETURN NIL
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditImportPattern 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"EditImportPattern",_GetInst()},iCtlID)
+
+oDCmOrigin := SingleLineEdit{SELF,ResourceID{EDITIMPORTPATTERN_MORIGIN,_GetInst()}}
+oDCmOrigin:HyperLabel := HyperLabel{#mOrigin,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCmOrigin:TooltipText := "Origin of imported transaction"
+
+oDCmAssmntcd := SingleLineEdit{SELF,ResourceID{EDITIMPORTPATTERN_MASSMNTCD,_GetInst()}}
+oDCmAssmntcd:FieldSpec := TeleBankPatterns_Kind{}
+oDCmAssmntcd:HyperLabel := HyperLabel{#mAssmntcd,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCmAssmntcd:TooltipText := "assessement code of imported transaction"
+
+oDCSC_Assmntcd := FixedText{SELF,ResourceID{EDITIMPORTPATTERN_SC_ASSMNTCD,_GetInst()}}
+oDCSC_Assmntcd:HyperLabel := HyperLabel{#SC_Assmntcd,"Assessment code:",NULL_STRING,NULL_STRING}
+
+oDCSC_Origin := FixedText{SELF,ResourceID{EDITIMPORTPATTERN_SC_ORIGIN,_GetInst()}}
+oDCSC_Origin:HyperLabel := HyperLabel{#SC_Origin,"Origin:",NULL_STRING,NULL_STRING}
+
+oDCSC_description := FixedText{SELF,ResourceID{EDITIMPORTPATTERN_SC_DESCRIPTION,_GetInst()}}
+oDCSC_description:HyperLabel := HyperLabel{#SC_description,"Description:",NULL_STRING,NULL_STRING}
+
+oDCmDescriptn := SingleLineEdit{SELF,ResourceID{EDITIMPORTPATTERN_MDESCRIPTN,_GetInst()}}
+oDCmDescriptn:HyperLabel := HyperLabel{#mDescriptn,NULL_STRING,NULL_STRING,"TeleBankPatterns_description"}
+oDCmDescriptn:TooltipText := "enter one or more keywords from imported transaction description"
+
+oCCRadioButton1 := RadioButton{SELF,ResourceID{EDITIMPORTPATTERN_RADIOBUTTON1,_GetInst()}}
+oCCRadioButton1:HyperLabel := HyperLabel{#RadioButton1,"Debit",NULL_STRING,NULL_STRING}
+
+oCCRadioButton2 := RadioButton{SELF,ResourceID{EDITIMPORTPATTERN_RADIOBUTTON2,_GetInst()}}
+oCCRadioButton2:HyperLabel := HyperLabel{#RadioButton2,"Credit",NULL_STRING,NULL_STRING}
+
+oCCRadioButton3 := RadioButton{SELF,ResourceID{EDITIMPORTPATTERN_RADIOBUTTON3,_GetInst()}}
+oCCRadioButton3:HyperLabel := HyperLabel{#RadioButton3,"Both",NULL_STRING,NULL_STRING}
+
+oDCmAutomatic := CheckBox{SELF,ResourceID{EDITIMPORTPATTERN_MAUTOMATIC,_GetInst()}}
+oDCmAutomatic:HyperLabel := HyperLabel{#mAutomatic,"Automatic processing of recognised records?",NULL_STRING,NULL_STRING}
+oDCmAutomatic:TooltipText := "Can recognised transaction be processed automatically?"
+
+oDCmRecdate := SingleLineEdit{SELF,ResourceID{EDITIMPORTPATTERN_MRECDATE,_GetInst()}}
+oDCmRecdate:HyperLabel := HyperLabel{#mRecdate,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText5 := FixedText{SELF,ResourceID{EDITIMPORTPATTERN_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Date changed:",NULL_STRING,NULL_STRING}
+
+oDCGroupBox1 := GroupBox{SELF,ResourceID{EDITIMPORTPATTERN_GROUPBOX1,_GetInst()}}
+oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCSaveButton := PushButton{SELF,ResourceID{EDITIMPORTPATTERN_SAVEBUTTON,_GetInst()}}
+oCCSaveButton:HyperLabel := HyperLabel{#SaveButton,"OK",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{EDITIMPORTPATTERN_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oCCAccButton := PushButton{SELF,ResourceID{EDITIMPORTPATTERN_ACCBUTTON,_GetInst()}}
+oCCAccButton:HyperLabel := HyperLabel{#AccButton,"v","Browse in accounts",NULL_STRING}
+oCCAccButton:TooltipText := "Browse in accounts"
+
+oDCmAccount := SingleLineEdit{SELF,ResourceID{EDITIMPORTPATTERN_MACCOUNT,_GetInst()}}
+oDCmAccount:HyperLabel := HyperLabel{#mAccount,"Account:","Number of  Account",NULL_STRING}
+oDCmAccount:TooltipText := "account of destination"
+
+oDCSC_REK := FixedText{SELF,ResourceID{EDITIMPORTPATTERN_SC_REK,_GetInst()}}
+oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account:",NULL_STRING,NULL_STRING}
+
+oDCmDebCre := RadioButtonGroup{SELF,ResourceID{EDITIMPORTPATTERN_MDEBCRE,_GetInst()}}
+oDCmDebCre:FillUsing({ ;
+						{oCCRadioButton1,"D"}, ;
+						{oCCRadioButton2,"C"}, ;
+						{oCCRadioButton3,"B"} ;
+						})
+oDCmDebCre:HyperLabel := HyperLabel{#mDebCre,"Debit/Credit",NULL_STRING,NULL_STRING}
+oDCmDebCre:TooltipText := "should it a debit or credit transaction or don't care"
+
+SELF:Caption := "DataDialog Caption"
+SELF:HyperLabel := HyperLabel{#EditImportPattern,"DataDialog Caption",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS mAccount() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mAccount)
+
+ASSIGN mAccount(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mAccount, uValue)
+RETURN uValue
+
+ACCESS mAssmntcd() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mAssmntcd)
+
+ASSIGN mAssmntcd(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mAssmntcd, uValue)
+RETURN uValue
+
+ACCESS mAutomatic() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mAutomatic)
+
+ASSIGN mAutomatic(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mAutomatic, uValue)
+RETURN uValue
+
+ACCESS mDebCre() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mDebCre)
+
+ASSIGN mDebCre(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mDebCre, uValue)
+RETURN uValue
+
+ACCESS mDescriptn() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mDescriptn)
+
+ASSIGN mDescriptn(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mDescriptn, uValue)
+RETURN uValue
+
+ACCESS mOrigin() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mOrigin)
+
+ASSIGN mOrigin(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mOrigin, uValue)
+RETURN uValue
+
+ACCESS mRecdate() CLASS EditImportPattern
+RETURN SELF:FieldGet(#mRecdate)
+
+ASSIGN mRecdate(uValue) CLASS EditImportPattern
+SELF:FieldPut(#mRecdate, uValue)
+RETURN uValue
+
+method PostInit(oWindow,iCtlID,oServer,uExtra) class EditImportPattern
+	//Put your PostInit additions here
+	self:SetTexts()
+	IF ClassName(uExtra)==#ImportBatch
+		self:lNew := true
+// 		self:oDCmOrigin:Disable()
+// 		self:oDCmAccount:Disable()
+		self:recdate:=Today()
+		self:oImpB:=uExtra
+	ELSE  // ImportPatternBrowser_DETAIL
+		self:lNew := FALSE
+		self:oBrowse:=self:Server
+		self:mDescriptn := self:Server:descriptn
+		self:mAssmntcd := self:Server:Assmntcd
+		self:mDebCre := self:Server:DebCre 
+		self:mOrigin := self:Server:origin
+		self:mAutomatic := ConL(self:Server:Automatic)
+		self:CurImpPatId:=ConS(self:Server:imppattrnid)
+		self:mrecdate:=dtoc(self:Server:Recdate) 
+		self:maccid := Transform(self:Server:accid,"") 
+		self:mAccount := self:Server:accountname
+	ENDIF
+	self:oOwner:=uExtra
+	RETURN nil
+
+ACCESS Recdate() CLASS EditImportPattern
+RETURN SELF:FieldGet(#Recdate)
+
+ASSIGN Recdate(uValue) CLASS EditImportPattern
+SELF:FieldPut(#Recdate, uValue)
+RETURN uValue
+
+METHOD SaveButton( ) CLASS EditImportPattern  
+	local oStmnt as SQLStatement
+	local nCurRec as int
+	if !lNew .and.!Empty(self:oOwner)
+		nCurRec:=self:oOwner:Server:recno
+	endif
+
+	oStmnt:=SQLStatement{iif( self:lNew,"insert into","update")+" importpattern set origin='"+AllTrim(self:mOrigin)+"',descriptn='"+ AllTrim(self:mDescriptn)+"',assmntcd='"+;
+		AllTrim(self:mAssmntcd)+"',automatic="+iif(self:mAutomatic,'1','0')+",debcre='"+self:mDebCre+"',accid="+self:maccid+iif(self:lNew,",recdate=curdate()","")+;
+		iif(self:lNew,""," where imppattrnid="+self:CurImpPatId),oConn}
+	oStmnt:execute()
+	if !Empty(oStmnt:Status) 
+		errorbox{self,self:olan:WGet("could not save import pattern")+': '+oStmnt:ErrInfo:errormessage}:show() 
+	else
+		if lNew
+			AAdd(self:oOwner:aImpPattern,{self:mOrigin,AllTrim(self:mAssmntcd),Split(AllTrim(self:mDescriptn),Space(1)),self:mDebCre,self:mAutomatic,self:maccid})
+		endif
+	endif 
+	self:EndWindow() 
+	if !lNew .and.!Empty(self:oOwner)
+		self:oOwner:Server:execute()
+		self:oOwner:goto(nCurRec)
+	endif
+
+	RETURN NIL
+STATIC DEFINE EDITIMPORTPATTERN_ACCBUTTON := 116 
+STATIC DEFINE EDITIMPORTPATTERN_CANCELBUTTON := 115 
+STATIC DEFINE EDITIMPORTPATTERN_FIXEDTEXT5 := 112 
+STATIC DEFINE EDITIMPORTPATTERN_GROUPBOX1 := 113 
+STATIC DEFINE EDITIMPORTPATTERN_MACCOUNT := 117 
+STATIC DEFINE EDITIMPORTPATTERN_MASSMNTCD := 101 
+STATIC DEFINE EDITIMPORTPATTERN_MAUTOMATIC := 110 
+STATIC DEFINE EDITIMPORTPATTERN_MDEBCRE := 106 
+STATIC DEFINE EDITIMPORTPATTERN_MDESCRIPTN := 105 
+STATIC DEFINE EDITIMPORTPATTERN_MORIGIN := 100 
+STATIC DEFINE EDITIMPORTPATTERN_MRECDATE := 111 
+STATIC DEFINE EDITIMPORTPATTERN_RADIOBUTTON1 := 107 
+STATIC DEFINE EDITIMPORTPATTERN_RADIOBUTTON2 := 108 
+STATIC DEFINE EDITIMPORTPATTERN_RADIOBUTTON3 := 109 
+STATIC DEFINE EDITIMPORTPATTERN_SAVEBUTTON := 114 
+STATIC DEFINE EDITIMPORTPATTERN_SC_ASSMNTCD := 102 
+STATIC DEFINE EDITIMPORTPATTERN_SC_DESCRIPTION := 104 
+STATIC DEFINE EDITIMPORTPATTERN_SC_ORIGIN := 103 
+STATIC DEFINE EDITIMPORTPATTERN_SC_REK := 118 
 CLASS ImportBatch
 PROTECT oImpB as SQLSelect
 PROTECT oParent AS General_Journal
@@ -10,11 +282,14 @@ export mxrate as float
 export oLan as Language
 protect curimpid as int 
 protect lv_imported,lv_processed as int
+protect m56_description,m56_assmntcd,m56_origin as string 
+export m56_recognised as logic
+export aImpPattern:={} as array  // array with import pattern: {{origin,Assmntcd,Descriptn,DebCre,Automatic},...}
 protect aMessages:={} as array  // messages about successfully imported files  
 protect aValues:={} as array   // array with values to be inserted into importrans
 	//avalues: transdate,docid,transactnr,descriptn,giver,debitamnt,creditamnt,accname,accountnr,assmntcd,externid,origin,processed
 
-declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport 
+declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport,CheckPattern 
 Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description as string,impDat as date,ExtId as string,Name as string,FromDesc as string,ToDescr as string,;
 		docid as string, cOrigin as string,cTransnr as string,aMbrAcc as Array,nCnt ref int,lCheckDuplicates:=false as logic) as void pascal class ImportBatch 
 	// 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date
@@ -69,17 +344,55 @@ Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description a
 		Name,'0.00',Str(Amount,-1),ToDescr,ToAcc,AsmtCode2,ExtId,cOrigin,0})
 	nCnt++
 	return
+METHOD CheckPattern(origin as string,assmntcd as string,debitamnt as float,creditamnt as float,Description as string) as array  CLASS ImportBatch  
+// check if imported transaction conform a pattern
+// returns array {accid,Automatic} when recognised otherwise empty array
+LOCAL i as int
+local debcre as string
+debcre:=iif(creditamnt-debitamnt>0.00,'C','D')
+// aImpPattern: array with import pattern: {{origin,Assmntcd,Descriptn,DebCre,Automatic,accid},...}
+i := AScan(self:aImpPattern,{|x| (Empty(x[1]) .or. ;
+					origin	== x[1])	.and.;
+					assmntcd	= x[2]	.and.;
+					(debcre	= x[4] .or. x[4]=='B')	.and.;
+					CompareKeyString(x[3],Description)})
+IF i>0
+	Return {self:aImpPattern[i,6],self:aImpPattern[i,5]}
+else
+	return {}
+endif
+             
 METHOD Close() CLASS ImportBatch
 * Closing of class-occurrence
-// SetAnsi(true)   ?????
+// SetAnsi(true)   ????? 
 SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
+
+
+
 RETURN true
-METHOD CloseBatch(dummy:=nil as logic) as void pascal CLASS ImportBatch
+METHOD CloseBatch(lSave:=false as logic,oCaller:=nil as object) as void pascal CLASS ImportBatch
 * Closing of batch as being processes
+local i as int
+local oEditImpb as EditImportPattern
 SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:cCurBatchNbr+;
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
+	IF lSave 
+		i:=Len(self:oHM:aMirror)
+		oEditImpb := EditImportPattern{ oCaller,,,self}
+// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+//             1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
+		oEditImpb:maccid := self:oHM:aMirror[i,1]
+		oEditImpb:mAccount:=self:oHM:aMirror[i,9] 
+		oEditImpb:mdescriptn := self:m56_description
+		oEditImpb:massmntcd := self:m56_assmntcd
+      oEditImpb:mDebCre := iif(self:oHM:aMirror[i,3]>=self:oHM:aMirror[i,2]'C','D') 
+      oEditImpb:mOrigin := self:m56_origin 
+      oEditImpb:mAutomatic := true
+
+		oEditImpb:Show()
+	ENDIF
 RETURN 
 ACCESS Count CLASS ImportBatch
 	RETURN SELF:oImpB:Count()
@@ -168,12 +481,13 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	* Give next import batch with transaction from ImportTrans
 	LOCAL OrigBst, CurBatchNbr, cGiverName as STRING
 	LOCAL CurDate as date, CurOrigin as STRING
-	LOCAL cOms, cExId as STRING
+	LOCAL cDescription, cExId as STRING
 	local MultiCur:=false as logic 
 	local nPostStatus as int 
-	local oImpB,oImpTr1,oImpTr2 as SQLSelect
-	local oLockSt as SQLStatement 
-
+	local oImpB,oImpTr1,oImpTr2,oSel as SQLSelect
+	local oLockSt as SQLStatement
+	local aPrn:={} as array  // {accid,automatic} 
+   self:m56_recognised:=false
 	SQLStatement{"start transaction",oConn}:execute() 
 	oImpTr1:=SQLSelect{"select transactnr,origin from importtrans "+;
 	"where processed=0 "+;
@@ -228,6 +542,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency) 
 		self:oHM:DepID:=ConI(oImpB:department)
 		MultiCur:=false
+		self:oHM:Gc:=oImpB:assmntcd
 		IF !Empty(oImpB:accountnr)
 			self:oHM:AccNumber := LTrimZero(oImpB:accountnr)
 			IF !Empty(oImpB:AccNumber)
@@ -242,7 +557,22 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 				lOK:=FALSE
 			ENDIF
 		ELSE
-			self:lOK:=FALSE
+			// try to find a import pattern:
+			aPrn:=self:CheckPattern(oImpB:Origin,oImpB:assmntcd,oImpB:debitamnt,oImpB:creditamnt,oImpB:descriptn) 
+			if Empty(aPrn)
+				self:lOK:=FALSE
+			else
+				oSel:=sqlselect{"select accnumber,description from account where accid="+aPrn[1],oConn}
+				if oSel:reccount>0
+					self:oHM:accid:=aPrn[1]
+					self:oHM:accdesc := oSel:Description
+					self:oHM:AccNumber := oSel:AccNumber 
+					lOK:=aPrn[2] 
+					m56_recognised:=true
+				else
+					lOK:=false
+				endif
+			endif
 		ENDIF
 		self:oHM:deb := oImpB:debitamnt
 		self:oHM:cre := oImpB:creditamnt
@@ -256,7 +586,6 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:REFERENCE:=oImpB:REFERENCE 
 		self:oHM:POSTSTATUS:=oImpB:POSTSTATUS
 
-		self:oHM:Gc:=oImpB:assmntcd
 		IF !Empty(oImpB:GIVER)
 			cGiverName:=AllTrim(oImpB:GIVER)
 			if cGiverName==","
@@ -272,7 +601,10 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 //            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 		
 		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE,'',oHM:DepID})
-		cOms:=oImpB:descriptn 
+		cDescription:=oImpB:descriptn
+		self:m56_description:=cDescription 
+		self:m56_assmntcd:=oImpB:assmntcd
+		self:m56_origin := oImpB:origin
 		self:curimpid:=oImpB:imptrid 
 		oImpB:Skip()
 	ENDDO
@@ -282,7 +614,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:dCurDate:=CurDate
 	self:oHM:Commit()
 *	self:oHM:ResetNotification()
-	oParent:FillBatch(OrigBst,CurDate,cGiverName,cOms, cExId, nPostStatus)
+	oParent:FillBatch(OrigBst,CurDate,cGiverName,cDescription, cExId, nPostStatus)
 	oParent:AddCur()
 	self:oHM:ResetNotification()
 	self:oHM:GoTop()
@@ -438,7 +770,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local aDat as array, impDat as date, cAcc,cAccNumber,cAccName,cAssmnt,cAccId,cdat as string , lUnique as logic
 	local oStmnt as SQLStatement
 	local oSel,oImpTr,oAcc as SQLSelect
-	local cStatement,cError as string 
+	local cStatement,cError,cAmount as string 
 	local lError,lSuccess as logic
 	local Amount as float 
 	local aValues:=self:aValues as array   // array with values to be inserted into importrans 
@@ -451,7 +783,6 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local oMBal as Balances 
 	//    Default(@Testformat,False)
 	
-	cSep:=CHR(SetDecimalSep())
 	ptrHandle:=MyFile{oFr}
 	IF FError() >0
 		(ErrorBox{,self:oLan:WGet("Could not open file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
@@ -483,7 +814,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 		ptrHandle:Close()
 		return true
 	ENDIF
-
+   SetDecimalSep(Asc('.'))  // to guarante it is correct
 	oSel:=SqlSelect{"select a.accnumber,a.description,a.accid from bankaccount b,account a where a.accid=b.accid",oConn}
 	if oSel:RecCount<1
 		(ErrorBox{,self:oLan:WGet("Specify first a bank account with its general ledger account")}):show() 
@@ -556,7 +887,11 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 				nAcc:=Len(aAccDest)
 			endif
 		ENDIF
-		Amount:=Val(StrTran(StrTran(AFields[ptCre],".",''),",","."))
+		cAmount:= StrTran(StrTran(AFields[ptCre],".",''),",",".")
+		Amount:=Val(cAmount)
+		if Amount>=1000.00
+			LogEvent(self,"amount:"+AFields[ptCre]+'-> '+cAmount+' -> '+Str(amount,-1),"logsql")  // signal large amounts
+		endif
 		self:AddImport(cBank,aAccDest[nAcc,2],Amount,self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],""),impDat,AFields[ptPers],;
 		AFields[ptDoc],cBankName,cAccName,'Import',cOrigin,AFields[ptTrans],aMbrAcc,@nCnt)
 		oMainWindow:STATUSMESSAGE("imported "+Str(nCnt,-1))		
@@ -1260,17 +1595,25 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+'; '+Str(nProc,-1)+' automatic processed')
 
 	RETURN true
-METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch
-SetPath(CurPath)
-SetDefault(CurPath)
-Default(@ReadOnly,FALSE)
-Default(@Share,FALSE)
-self:oLan:=Language{}
-oParent:=oOwner
-//self:Import()
-self:oHM:=oHulpMut
-
-RETURN SELF
+METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch 
+	local oSel as SQLSelect
+	SetPath(CurPath)
+	SetDefault(CurPath)
+	Default(@ReadOnly,FALSE)
+	Default(@Share,FALSE)
+	self:oLan:=Language{}
+	oParent:=oOwner
+	//self:Import()
+	self:oHM:=oHulpMut
+	oSel:=SqlSelect{"select origin,assmntcd,descriptn,debcre,automatic,accid from importpattern",oConn} 
+	if oSel:reccount>0
+		do while !oSel:EoF
+			AAdd(self:aImpPattern,{oSel:origin,oSel:assmntcd,Split(oSel:descriptn,Space(1)),oSel:debcre,ConL(oSel:Automatic),cons(oSel:accid)})	
+			oSel:Skip()
+		enddo
+	endif
+	RETURN SELF
+	
 METHOD LockBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 * Locking of current batch records
 local oMyImp as SQLSelect
@@ -1441,3 +1784,278 @@ SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatc
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
 RETURN 
+CLASS ImportPatternBrowser INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oSFImportPatternBrowser_DETAIL AS ImportPatternBrowser_DETAIL
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	export oImpPat as SqlSelect 
+  	export cWhereBase,cWhereSpec,cFields,cOrder,cFrom as string
+RESOURCE ImportPatternBrowser DIALOGEX  4, 3, 534, 279
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", IMPORTPATTERNBROWSER_IMPORTPATTERNBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 25, 473, 235
+	CONTROL	"Edit", IMPORTPATTERNBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 42, 40, 12
+	CONTROL	"Delete", IMPORTPATTERNBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 155, 40, 13
+	CONTROL	"", IMPORTPATTERNBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
+	CONTROL	"Found:", IMPORTPATTERNBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
+	CONTROL	"Find", IMPORTPATTERNBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
+	CONTROL	"", IMPORTPATTERNBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
+	CONTROL	"Search like google:", IMPORTPATTERNBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
+END
+
+METHOD DeleteButton( ) CLASS ImportPatternBrowser 
+local oStmnt as SQLStatement
+	IF self:Server:EOF.or.self:Server:reccount<1
+		(ErrorBox{,"Select a pattern first"}):Show()
+		RETURN nil
+	ENDIF
+	IF TextBox{ self, "Delete Import Pattern",;
+		"Delete import pattern "+Compress(AllTrim(self:Server:origin)+": "+self:Server:descriptn)+' '+self:Server:assmntcd,BUTTONYESNO + BOXICONQUESTIONMARK }:Show() == BOXREPLYYES 
+		oStmnt:=SQLStatement{"delete from importpattern where imppattrnid="+Str(self:Server:imppattrnid,-1),oConn}
+		oStmnt:execute()
+		if oStmnt:NumSuccessfulRows>0
+			self:Server:execute()
+			self:oSFImportPatternBrowser_DETAIL:Browser:REFresh()
+			self:oSFImportPatternBrowser_DETAIL:GoTop()
+		endif
+
+	ENDIF
+
+RETURN NIL
+METHOD EditButton( ) CLASS ImportPatternBrowser 
+	LOCAL oEdit as  EditImportPattern
+	IF self:Server:EOF.or.self:Server:reccount<1
+		(ErrorBox{,"Select a pattern first"}):Show()
+		RETURN nil
+	ENDIF
+	oEdit:= EditImportPattern{self:owner,,self:Server,self:oSFImportPatternBrowser_DETAIL}
+	oEdit:Show()
+
+RETURN NIL
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS ImportPatternBrowser 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"ImportPatternBrowser",_GetInst()},iCtlID)
+
+oCCEditButton := PushButton{SELF,ResourceID{IMPORTPATTERNBROWSER_EDITBUTTON,_GetInst()}}
+oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
+oCCEditButton:OwnerAlignment := OA_PX
+
+oCCDeleteButton := PushButton{SELF,ResourceID{IMPORTPATTERNBROWSER_DELETEBUTTON,_GetInst()}}
+oCCDeleteButton:HyperLabel := HyperLabel{#DeleteButton,"Delete",NULL_STRING,NULL_STRING}
+oCCDeleteButton:OwnerAlignment := OA_PX
+
+oDCFound := FixedText{SELF,ResourceID{IMPORTPATTERNBROWSER_FOUND,_GetInst()}}
+oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFoundtext := FixedText{SELF,ResourceID{IMPORTPATTERNBROWSER_FOUNDTEXT,_GetInst()}}
+oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
+
+oCCFindButton := PushButton{SELF,ResourceID{IMPORTPATTERNBROWSER_FINDBUTTON,_GetInst()}}
+oCCFindButton:HyperLabel := HyperLabel{#FindButton,"Find",NULL_STRING,NULL_STRING}
+
+oDCSearchUni := SingleLineEdit{SELF,ResourceID{IMPORTPATTERNBROWSER_SEARCHUNI,_GetInst()}}
+oDCSearchUni:HyperLabel := HyperLabel{#SearchUni,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCSearchUni:FocusSelect := FSEL_TRIM
+oDCSearchUni:TooltipText := "Enter one or more (part of) key values "
+oDCSearchUni:UseHLforToolTip := True
+
+oDCFixedText4 := FixedText{SELF,ResourceID{IMPORTPATTERNBROWSER_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Search like google:",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Import Pattern Browser"
+SELF:HyperLabel := HyperLabel{#ImportPatternBrowser,"Import Pattern Browser",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+oSFImportPatternBrowser_DETAIL := ImportPatternBrowser_DETAIL{SELF,IMPORTPATTERNBROWSER_IMPORTPATTERNBROWSER_DETAIL}
+oSFImportPatternBrowser_DETAIL:show()
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+method PostInit(oWindow,iCtlID,oServer,uExtra) class ImportPatternBrowser
+	//Put your PostInit additions here
+	self:SetTexts()
+  	self:oDCFound:TextValue :=Str(self:oImpPat:Reccount,-1)
+	return nil
+
+method PreInit(oWindow,iCtlID,oServer,uExtra) class ImportPatternBrowser
+	//Put your PreInit additions here
+	self:cFields:="t.imppattrnid,t.origin,t.assmntcd,t.debcre,t.descriptn,t.accid,t.automatic,cast(t.recdate as date) as recdate,"+;
+	"a.accnumber,a.description as accountname"
+	self:cFrom:="importpattern t left join account a on (a.accid=t.accid)"
+	self:cWhereBase:=""
+	self:cWhereSpec:=""
+	self:cOrder:="accnumber"
+
+	self:oImpPat:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+" where "+iif(Empty(self:cWhereSpec),"1",self:cWhereSpec)+" order by "+self:cOrder,oConn}
+	return nil
+
+ACCESS SearchUni() CLASS ImportPatternBrowser
+RETURN SELF:FieldGet(#SearchUni)
+
+ASSIGN SearchUni(uValue) CLASS ImportPatternBrowser
+SELF:FieldPut(#SearchUni, uValue)
+RETURN uValue
+
+STATIC DEFINE IMPORTPATTERNBROWSER_DELETEBUTTON := 102 
+RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
+CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine 
+
+	PROTECT oDBACCNUMBER as DataColumn
+	PROTECT oDBACCOUNTNAME as DataColumn
+	PROTECT oDBORIGIN as DataColumn
+	PROTECT oDBDESCRIPTN as DataColumn
+	PROTECT oDBDEBCRE as DataColumn
+	PROTECT oDBRECDATE as DataColumn
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oOwner as ImportPatternBrowser
+ACCESS Accnumber() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#Accnumber)
+
+ASSIGN Accnumber(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#Accnumber, uValue)
+RETURN uValue
+
+ACCESS accountname() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#accountname)
+
+ASSIGN accountname(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#accountname, uValue)
+RETURN uValue
+
+ACCESS debcre() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#debcre)
+
+ASSIGN debcre(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#debcre, uValue)
+RETURN uValue
+
+ACCESS descriptn() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#descriptn)
+
+ASSIGN descriptn(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#descriptn, uValue)
+RETURN uValue
+
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS ImportPatternBrowser_DETAIL 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"ImportPatternBrowser_DETAIL",_GetInst()},iCtlID)
+
+SELF:Caption := "DataWindow Caption"
+SELF:HyperLabel := HyperLabel{#ImportPatternBrowser_DETAIL,"DataWindow Caption",NULL_STRING,NULL_STRING}
+SELF:PreventAutoLayout := True
+SELF:OwnerAlignment := OA_PWIDTH_PHEIGHT
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ELSE
+	SELF:Use(SELF:Owner:Server)
+ENDIF
+self:Browser := EditBrowser{self}
+
+oDBACCNUMBER := DataColumn{account_ACCNUMBER{}}
+oDBACCNUMBER:Width := 13
+oDBACCNUMBER:HyperLabel := HyperLabel{#Accnumber,"Account","Number of account",NULL_STRING} 
+oDBACCNUMBER:Caption := "Account"
+self:Browser:AddColumn(oDBACCNUMBER)
+
+oDBACCOUNTNAME := DataColumn{17}
+oDBACCOUNTNAME:Width := 17
+oDBACCOUNTNAME:HyperLabel := HyperLabel{#accountname,"Account Name",NULL_STRING,NULL_STRING} 
+oDBACCOUNTNAME:Caption := "Account Name"
+self:Browser:AddColumn(oDBACCOUNTNAME)
+
+oDBORIGIN := DataColumn{10}
+oDBORIGIN:Width := 10
+oDBORIGIN:HyperLabel := HyperLabel{#origin,"Origin",NULL_STRING,NULL_STRING} 
+oDBORIGIN:Caption := "Origin"
+self:Browser:AddColumn(oDBORIGIN)
+
+oDBDESCRIPTN := DataColumn{ImportTrans_Descrptn{}}
+oDBDESCRIPTN:Width := 47
+oDBDESCRIPTN:HyperLabel := HyperLabel{#descriptn,"Description",NULL_STRING,NULL_STRING} 
+oDBDESCRIPTN:Caption := "Description"
+self:Browser:AddColumn(oDBDESCRIPTN)
+
+oDBDEBCRE := DataColumn{12}
+oDBDEBCRE:Width := 12
+oDBDEBCRE:HyperLabel := HyperLabel{#debcre,"Debit/Credit",NULL_STRING,NULL_STRING} 
+oDBDEBCRE:Caption := "Debit/Credit"
+self:Browser:AddColumn(oDBDEBCRE)
+
+oDBRECDATE := DataColumn{17}
+oDBRECDATE:Width := 17
+oDBRECDATE:HyperLabel := HyperLabel{#recdate,"Date Changed",NULL_STRING,NULL_STRING} 
+oDBRECDATE:Caption := "Date Changed"
+self:Browser:AddColumn(oDBRECDATE)
+
+
+SELF:ViewAs(#BrowseView)
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS origin() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#origin)
+
+ASSIGN origin(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#origin, uValue)
+RETURN uValue
+
+method PostInit(oWindow,iCtlID,oServer,uExtra) class ImportPatternBrowser_DETAIL
+	//Put your PostInit additions here
+	self:SetTexts()
+	self:Browser:SetStandardStyle(gbsReadOnly) 
+	self:GoTop()
+	return nil
+
+method PreInit(oWindow,iCtlID,oServer,uExtra) class ImportPatternBrowser_DETAIL
+	//Put your PreInit additions here
+	self:oOwner:=oWindow
+	oWindow:use(oWindow:oImpPat)
+	return nil
+
+ACCESS recdate() CLASS ImportPatternBrowser_DETAIL
+RETURN SELF:FieldGet(#recdate)
+
+ASSIGN recdate(uValue) CLASS ImportPatternBrowser_DETAIL
+SELF:FieldPut(#recdate, uValue)
+RETURN uValue
+
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_ACCNUMBER := 100 
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_ACCOUNTNAME := 101 
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_DEBCRE := 104 
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_DESCRIPTN := 103 
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_ORIGIN := 102 
+STATIC DEFINE IMPORTPATTERNBROWSER_DETAIL_RECDATE := 105 
+STATIC DEFINE IMPORTPATTERNBROWSER_EDITBUTTON := 101 
+STATIC DEFINE IMPORTPATTERNBROWSER_FINDBUTTON := 105 
+STATIC DEFINE IMPORTPATTERNBROWSER_FIXEDTEXT4 := 107 
+STATIC DEFINE IMPORTPATTERNBROWSER_FOUND := 103 
+STATIC DEFINE IMPORTPATTERNBROWSER_FOUNDTEXT := 104 
+STATIC DEFINE IMPORTPATTERNBROWSER_IMPORTPATTERNBROWSER_DETAIL := 100 
+STATIC DEFINE IMPORTPATTERNBROWSER_SEARCHUNI := 106 
