@@ -470,6 +470,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	// process summary:
 	IF Empty(mnd_cur)
 		mnd_cur:=Month(enddate)
+		jr_cur:=Year(enddate)
 	endif 
 	self:Month_summary(Heading,oBal,Round(m57_giftbed,DecAantal),@nRow,@nPage,oLan,mnd_cur,mnd_deb,mnd_cre,mnd_debF,mnd_creF,m58_rek,me_type,jr_cur,self:oReport,aOPP)
 	aOPP:={}
