@@ -64,7 +64,7 @@ CLASS MAPISession
 	PROTECT oMessage AS MAPIMsg
 	PROTECT oClick AS CLICKYES
 
-	DECLARE METHOD SendDocument, SendDocumentNew, Resolvename
+	DECLARE METHOD SendDocument, SendDocumentNew, Resolvename,ResolveNameOld
 method Axit() class MAPISession
 	MemFree( self:pszMessageID )
 	MemFree( self:pszSeed )
@@ -314,7 +314,7 @@ method Open( cUser , cPassword ) class MAPISession
 	ENDIF
 	RETURN NULL_OBJECT
 
-METHOD ResolveName( cLastName as string, persid as int, cFullName as string,cEmail as string) as MAPIRecip CLASS MAPISession
+METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEmail as string) as MAPIRecip CLASS MAPISession
 
 	LOCAL sRecip as MAPIRecipDesc
 	LOCAL nResult as DWORD
@@ -331,7 +331,7 @@ METHOD ResolveName( cLastName as string, persid as int, cFullName as string,cEma
 
 
 	IF nResult == SUCCESS_SUCCESS
-		oRecip := MAPIRecip{ sRecip }
+		oRecip := MAPIRecip{ sRecip } 
 		cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1))
 	ENDIF
 	IF !nResult == SUCCESS_SUCCESS .or.;
@@ -350,7 +350,7 @@ METHOD ResolveName( cLastName as string, persid as int, cFullName as string,cEma
 				// use current address
 				sRecip := MemAlloc( _sizeof( MapiMessage ) )
 				MemSet( sRecip , 0 , _sizeof( MapiMessage ) )
-				sRecip.lpszAddress:=String2Psz(CEmail)
+				sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
 				sRecip.lpszName:=String2Psz(cFullName)
 				oRecip:=MAPIRecip{sRecip} 
 				Return oRecip
@@ -387,6 +387,20 @@ METHOD ResolveName( cLastName as string, persid as int, cFullName as string,cEma
 		(ErrorBox{,"Could not get correct eMail address of:"+cFullName}):Show()
 	ENDIF
 	RETURN null_object
+
+METHOD ResolveNameOld( cLastName as string, persid as int, cFullName as string,cEmail as string) as MAPIRecip CLASS MAPISession
+
+	LOCAL sRecip as MAPIRecipDesc
+	LOCAL oRecip as MAPIRecip
+	// use current address
+	sRecip := MemAlloc( _sizeof( MapiMessage ) )
+	MemSet( sRecip , 0 , _sizeof( MapiMessage ) )
+	sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
+	sRecip.lpszName:=String2Psz(AllTrim(StrTran(StrTran(cFullName,',','-'),'.',' ')))
+	oRecip:=MAPIRecip{sRecip} 
+	MAPIFreeBuffer( sRecip )
+	Return oRecip	
+
 
 assign Seed( cValue ) class MAPISession
 	local pszValue as psz
