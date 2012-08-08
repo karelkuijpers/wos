@@ -134,6 +134,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	local cError as string
 	local lTrMError,lFatal as logic
 	local aMBal:={},aMBalF:={} as array   // array with corrections of Mbalance {{accid,year,month,deb,cre},...}
+	local time1,time0 as float
 	nFromYear:=Year(LstYearClosed)*12+Month(LstYearClosed)  
 	if lShow
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
@@ -141,12 +142,17 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 // 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
 
 	*	Select only monthbalances in years after last balance year for standard currency: 
+	time0:=Seconds()
 	oStmnt:=SQLStatement{"drop temporary table if exists transsum",oConn}
 	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,round(sum(deb),2) as debtot,round(sum(cre),2) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
+//       time1:=time0
+//       LogEvent(,"transsum:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
+//       time1:=time0
+//       LogEvent(,"transsum index:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
@@ -158,6 +164,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo 
 	endif
+//       time1:=time0
+//       LogEvent(,"transsum <->mbalance:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
@@ -170,6 +178,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
+//       time1:=time0
+//       LogEvent(,"transsum <->mbalance2:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	// Idem for foreign currencies:
 	*	Select only monthbalances in years after last balance year for foreign currency:
@@ -177,8 +187,12 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,round(sum(debforgn),2) as debtot,round(sum(creforgn),2) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
+//       time1:=time0
+//       LogEvent(,"transsumf:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
+//       time1:=time0
+//       LogEvent(,"transsumf index:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.year,m.month,m.year,cast(m.`currency` as char) as currency,t.debtot,t.cretot,a.accnumber from mbalance m left join transsumf t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency<>'"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
@@ -192,6 +206,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
+//       time1:=time0
+//       LogEvent(,"transsum <->mbalance3:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select a.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber,a.`currency` from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
@@ -204,9 +220,13 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
+//       time1:=time0
+//       LogEvent(,"transsum <->mbalance4:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
 	oSel:Execute()
+//       time1:=time0
+//       LogEvent(,"Transactions not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
 // 	if !oSel:totdebcre==0.00
 	if !Empty(oSel:totdebcre)
 		cError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
@@ -214,6 +234,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	endif
 	oSel:=SqlSelect{"select sum(cre-deb) as totdebcre from mbalance where currency='"+sCurr+"' and (year*12+month)>="+Str(nFromYear,-1),oConn}
 	oSel:Execute()
+//       time1:=time0
+//       LogEvent(,"Montbalances not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
 // 	if !oSel:totdebcre==0.00
 	if !Empty(oSel:totdebcre)
 		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
@@ -230,6 +252,8 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
+//       time1:=time0
+//       LogEvent(,"Check concistency:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	if lShow
 		oMainWindow:Pointer := Pointer{POINTERARROW} 
 	endif
@@ -961,7 +985,12 @@ FUNCTION FillPersGender() as void pascal
 local oLan as Language
 oLan:=Language{}
 pers_gender:=  {{oLan:WGet("female"),FEMALE},{oLan:WGet("male"),MASCULIN},{oLan:WGet("couple"),COUPLE},{oLan:WGet("non-person"),ORGANISATION},{oLan:WGet("unknown"),0}}
-pers_salut:={{oLan:RGet("Mrs",,"!"),FEMALE},{oLan:RGet("Mr",,"!"),MASCULIN},{oLan:RGet("Mr&Mrs"),COUPLE},{"",ORGANISATION},{"",0}}
+pers_salut:={;
+{oLan:RGet("Mrs",,"!"),FEMALE},;
+{oLan:RGet("Mr",,"!"),MASCULIN},;
+{oLan:RGet("Mr&Mrs"),COUPLE},;
+{"",ORGANISATION},;
+{oLan:RGet("Mr/Mrs"),5}}
 return
 FUNCTION FillPersProp ()
 	* Fill global Array pers_propextra with description + id of extra person properties
@@ -1303,7 +1332,7 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
 					else
 						if IsString(aText[nStart+i-1][nCol])
-							cLine:=aText[nStart+i-1][nCol]
+							cLine:=AllTrim(aText[nStart+i-1][nCol])
 						else
 							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
 						endif
@@ -1918,7 +1947,10 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	if AtC("Access denied for user",strText)>0
 		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
 		return true
-	endif
+	endif 
+// 	if oConn=null_object
+// 		lDBError:=true
+// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
 	else
@@ -2170,11 +2202,13 @@ LOCAL cMessage as STRING
 RETURN FALSE
 CLASS MyFile
 PROTECT cBuffer as STRING
-PROTECT cDelim as STRING
-PROTECT nStart:=0, nIncr:=0 as int
+// Protect cDelim as STRING
+// PROTECT nStart:=0, nIncr:=0 as int
+PROTECT nStart:=0 as int
 PROTECT ptrHandle
 protect Eof as logic 
 protect CP as int
+export MyFile as FileSpec
 METHOD Close CLASS MyFile
 	FClose(ptrHandle)
 	ptrHandle:=null_object
@@ -2190,7 +2224,12 @@ return self:Eof
 METHOD FReadLine() CLASS MyFile
 	LOCAL nSt,nLen,nPos:=0 as int
 	LOCAL cLine:="" as STRING
-	nPos:=At3(cDelim, self:cBuffer,self:nStart)
+// 	nPos:=At3(self:cDelim, self:cBuffer,self:nStart)
+	nPos:=At3(LF, self:cBuffer,self:nStart)
+// 	if SubStr(self:MyFile:filename,1,2)=='RO'
+// 		SEval(self:cDelim,{|x|cLine+=Str(x,-1)+'#'}) 
+// 		LogEvent(self,"line:"+Str(self:nStart,-1)+'- '+ Str(nPos,-1)+", delim:"+cLine+"; incr:"+Str(nIncr,-1)+"; from:"+AsHexString(SubStr(self:cBuffer,Max(1,self:nStart),25)),'logsql')
+// 	endif
 	IF nPos==0
 		* read next buffer:
 		cLine:=SubStr(self:cBuffer,self:nStart+1) 
@@ -2206,26 +2245,33 @@ METHOD FReadLine() CLASS MyFile
 		ENDIF
 		self:nStart:=0
 		self:cBuffer:=cLine+self:cBuffer
-		nPos:=At3(cDelim, self:cBuffer,self:nStart)  
+// 		nPos:=At3(self:cDelim, self:cBuffer,self:nStart)  
+		nPos:=At3(LF, self:cBuffer,self:nStart)  
 		if nPos=0
 			nPos:=Len(self:cBuffer)+1                 // end of file
 		endif
 	ENDIF
 	nSt:=self:nStart+1
 	nLen:=nPos-self:nStart-1
-	self:nStart:=nPos+nIncr
-	RETURN SubStr(self:cBuffer,nSt,nLen)
+// 	if SubStr(self:cBuffer,nSt+nLen-1,1)==CR
+	if nPos>1 .and. Asc(SubStr(self:cBuffer,nPos-1,1))==13
+		nLen--
+	endif
+// 	self:nStart:=nPos+nIncr
+	self:nStart:=nPos
+	RETURN SubStr(self:cBuffer,nSt,nLen) 
+	
 METHOD Init(oFr) CLASS MyFile
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
-
-	ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
-	IF ptrHandle = F_ERROR
+   self:MyFile:=oFr
+	self:ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
+	IF self:ptrHandle = F_ERROR
 		(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
 		self:Eof:=true
 		RETURN self
 	ENDIF
-	bufferPtr:= FReadStr(ptrHandle,4096)
+	bufferPtr:= FReadStr(self:ptrHandle,4096)
 	if SubStr(bufferPtr,1,3) == UTF8
 		self:CP:=1
 		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
@@ -2235,17 +2281,17 @@ METHOD Init(oFr) CLASS MyFile
 	else
 		self:cBuffer:=bufferPtr
 	endif
-	IF ptrHandle = F_ERROR.or.(cBuffer==null_string .and.FEof(ptrHandle))
+	IF self:ptrHandle = F_ERROR.or.(self:cBuffer==null_string .and.FEof(self:ptrHandle))
 		(ErrorBox{,"Could not read file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
 		self:Eof:=true
 		RETURN self
 	ENDIF
-	IF CHR(13)+CHR(10) $ cBuffer
-		cDelim:=CHR(13)+CHR(10)
-		nIncr:=1
-	ELSE
-		cDelim:=CHR(10)
-	ENDIF
+// 	IF At(CHR(13)+CHR(10),self:cBuffer)>0
+// 		self:cDelim:=CHR(13)+CHR(10)
+// 		nIncr:=1
+// 	ELSE
+// 		self:cDelim:=CHR(10)
+// 	ENDIF
 	RETURN self
 CLASS MyFileSpec INHERIT Filespec
 	PROTECT ptrHandle as ptr
@@ -2643,7 +2689,10 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string) as array
 	RETURN aToken
 function SQLdate(dat as date) as string
 // convert date to sql string format:
-local Rdat:=DToS(dat) as string
+local Rdat:=DToS(dat) as string 
+if Empty(dat)
+	return '0000-00-00'
+endif
 return substr(Rdat,1,4)+"-"+substr(Rdat,5,2)+"-"+substr(Rdat,7,2)
 function SQLDate2Date(sqldat as string) as date
 // convert mysql date to VO-date
