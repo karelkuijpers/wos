@@ -3843,7 +3843,8 @@ METHOD EditButton( ) CLASS TransInquiry
 		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19      20
 		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),;
 		Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,;
-		iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
+		iif(Empty(self:oMyTrans:persidmbr),iif(Empty(self:oMyTrans:persid),"",Str(self:oMyTrans:persid,-1)),Str(self:oMyTrans:persidmbr,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
+// 		iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 		self:oMyTrans:Skip()
 	ENDDO
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
