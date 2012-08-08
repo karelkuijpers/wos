@@ -973,7 +973,8 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 	//Put your PostInit additions here
 	LOCAL oAcc,oSel as SQLSelect
-	self:SetTexts()
+	self:SetTexts() 
+	self:NbrCASH := '0'
 	oAcc:=SqlSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:cash,-1),oConn}
 	IF !Empty(self:oSys:cash)
 		oAcc:=SqlSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:cash,-1),oConn}
@@ -984,6 +985,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 			self:cSoortCash:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrCAPITAL := '0'
 	IF !Empty(self:oSys:capital)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:capital,-1),oConn}
 		IF oAcc:RecCount>0
@@ -993,6 +995,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 			self:cSoortCAPITAL:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrCROSS :=  '0'
 	IF !Empty(self:oSys:crossaccnt)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:crossaccnt,-1),oConn}
 		IF oAcc:RecCount>0
@@ -1756,6 +1759,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 	self:SetTexts()
+	self:NbrAM :=  '0'
 	IF !Empty(self:oSys:AM)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:AM,-1),oConn}
 		IF oAcc:RecCount>0
@@ -1763,7 +1767,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:oDCmAM:TEXTValue := oAcc:Description
 			self:cAMName := AllTrim(oAcc:Description)
 			self:cSoortAM:=oAcc:TYPE
-		ENDIF		
+		ENDIF
+		self:NbrAMProj :=  '0'
 		IF !Empty(self:oSys:AssProjA)
 			oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:AssProjA,-1),oConn}
 			IF oAcc:RecCount>0
@@ -1773,6 +1778,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 				self:cSoortAMProj:=oAcc:TYPE
 			ENDIF		
 		ENDIF
+		self:NbrAssFldAc:='0'
 		IF !Empty(self:oSys:AssFldAc)
 			oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:AssFldAc,-1),oConn}
 			IF oAcc:RecCount>0
@@ -1783,6 +1789,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			ENDIF		
 		ENDIF
 	endif
+	self:NbrHB :='0'
 	IF	!Empty(self:oSys:HB)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:HB,-1),oConn}
 		IF	oAcc:RecCount>0
@@ -1791,7 +1798,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cHBName := oAcc:Description
 			self:cSoortHB:=oAcc:TYPE
 		ENDIF		
-	ENDIF	
+	ENDIF
+	self:NbrExp:='0'
 	IF !Empty(self:oSys:GIFTEXPAC)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:GIFTEXPAC,-1),oConn}
 		IF oAcc:RecCount>0
@@ -1801,6 +1809,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cSoortGIFTEXPAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrInc := '0'
 	IF !Empty(self:oSys:GIFTINCAC)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:GIFTINCAC,-1),oConn}
 		IF oAcc:RecCount>0
@@ -1811,7 +1820,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 		ENDIF		
 	ENDIF
 	self:ShowAssAcc()
-
+   self:NBREXPHOME := '0'
 	IF !Empty(self:oSys:HOMEEXPAC)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:HOMEEXPAC,-1),oConn}
 		IF oAcc:RecCount>0
@@ -1821,6 +1830,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 			self:cSoortHomeEXPAC:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrIncHome := '0'
 	IF !Empty(self:oSys:HOMEINCAC)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:HOMEINCAC,-1),oConn}
 		IF oAcc:RecCount>0
@@ -2224,6 +2234,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 	self:SetTexts()
+	self:NbrPostage := '0'
 	IF !Empty(self:oSys:Postage)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:Postage,-1),oConn}
 		IF oAcc:RecCount>0
@@ -2233,6 +2244,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 			self:cSoortPostage:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrDEBTORS := '0'
 	IF !Empty(self:oSys:DEBTORS)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:DEBTORS,-1),oConn}
 		IF oAcc:RecCount>0
@@ -2242,6 +2254,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 			self:cSoortDEBTORS:=oAcc:TYPE
 		ENDIF		
 	ENDIF
+	self:NbrCreditors := '0'
 	IF !Empty(self:oSys:CREDITORS)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:CREDITORS,-1),oConn}
 		IF oAcc:RecCount>0
@@ -2424,6 +2437,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
+self:NbrDONORS := '0'
 IF !Empty(self:oSys:DONORS)
 	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:DONORS,-1),oConn}
 	IF oAcc:RecCount>0
@@ -2433,6 +2447,7 @@ IF !Empty(self:oSys:DONORS)
 		self:cSoortDONORS:=oAcc:TYPE
 	ENDIF		
 ENDIF
+self:NbrPROJECTS := '0'
 IF !Empty(self:oSys:PROJECTS)
 	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:PROJECTS,-1),oConn}
 	IF oAcc:RecCount>0
@@ -3216,6 +3231,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class TabParm_Page9
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
+self:NbrToPP := '0'
 	IF !Empty(self:oSys:ToPPAcct)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid='"+self:oSys:ToPPAcct+"'",oConn}
 		IF oAcc:RecCount>0
@@ -3395,48 +3411,48 @@ METHOD OKButton( ) CLASS TabSysParms
 	local oBalY,oStmnt as SQLStatement
 	local cStatement as string	
 	* Check values:
-	IF !self:oTPTAB_PARM1:cSoortCASH=="AK".and.!Empty(self:oTPTAB_PARM1:NbrCASH)
+	IF !self:oTPTAB_PARM1:cSoortCASH=="AK".and.!Val(self:oTPTAB_PARM1:NbrCASH)=0
 		(ErrorBox{,"Account for Cash should be Assets"}):Show()
 		RETURN
 	ENDIF
-	IF !self:oTPTAB_PARM1:cSoortCAPITAL=="PA".and.!Empty(self:oTPTAB_PARM1:NbrCAPITAL)
+	IF !self:oTPTAB_PARM1:cSoortCAPITAL=="PA".and.!Val(self:oTPTAB_PARM1:NbrCAPITAL)=0
 		(ErrorBox{,"Account for Net Assets should be Liabilities&Funds"}):Show()
 		RETURN
 	ENDIF
-	IF !self:oTPTAB_PARM1:cSoortCROSS=="AK".and.!Empty(self:oTPTAB_PARM1:NbrCROSS)
+	IF !self:oTPTAB_PARM1:cSoortCROSS=="AK".and.!Val(self:oTPTAB_PARM1:NbrCROSS)=0
 		(ErrorBox{,"Account for Internal Bank Transfer should be Assets"}):Show()
 		RETURN
 	ENDIF
 	if !self:oTPTAB_PARM2==null_object
-		IF !self:oTPTAB_PARM2:cSoortAM=="BA".and.!Empty(self:oTPTAB_PARM2:NbrAM)
+		IF !self:oTPTAB_PARM2:cSoortAM=="BA".and.!Val(self:oTPTAB_PARM2:NbrAM)=0
 			(ErrorBox{,"Account for Assessments should be Income"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortAMProj=="BA".and.!Empty(self:oTPTAB_PARM2:NbrAMProj)
+		IF !self:oTPTAB_PARM2:cSoortAMProj=="BA".and.!Val(self:oTPTAB_PARM2:NbrAMProj)=0
 			(ErrorBox{,"Account for Assessments Projects should be Income"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortGIFTINCAC=="BA".and.!Empty(self:oTPTAB_PARM2:NbrInc)
+		IF !self:oTPTAB_PARM2:cSoortGIFTINCAC=="BA".and.!Val(self:oTPTAB_PARM2:NbrInc)=0
 			(ErrorBox{,"Account for Gifts Income should be Income"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortGIFTEXPAC=="KO".and.!Empty(self:oTPTAB_PARM2:NbrExp)
+		IF !self:oTPTAB_PARM2:cSoortGIFTEXPAC=="KO".and.!Val(self:oTPTAB_PARM2:NbrExp)=0
 			(ErrorBox{,"Account for Gifts Expense should be Expenses"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortHOMEINCAC=="BA".and.!Empty(self:oTPTAB_PARM2:NbrIncHome)
+		IF !self:oTPTAB_PARM2:cSoortHOMEINCAC=="BA".and.!Val(self:oTPTAB_PARM2:NbrIncHome)=0
 			(ErrorBox{,"Account for Gifts HOME Income should be Income"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM2:cSoortHOMEEXPAC=="KO".and.!Empty(self:oTPTAB_PARM2:NBREXPHOME)
+		IF !self:oTPTAB_PARM2:cSoortHOMEEXPAC=="KO".and.!Val(self:oTPTAB_PARM2:NBREXPHOME)=0
 			(ErrorBox{,"Account for Gifts Home Expense should be Expenses"}):Show()
 			RETURN
 		endif
-		IF !(self:oTPTAB_PARM2:cSoortHB=="PA".or.self:oTPTAB_PARM2:cSoortHB=="AK").and.!Empty(self:oTPTAB_PARM2:NbrHB)
+		IF !(self:oTPTAB_PARM2:cSoortHB=="PA".or.self:oTPTAB_PARM2:cSoortHB=="AK").and.!Val(self:oTPTAB_PARM2:NbrHB)=0
 			(ErrorBox{,"Account for PMC clearance should be Liabilities&Funds or Assets"}):Show()
 			RETURN
 		ENDIF
-		IF !Empty(self:oTPTAB_PARM2:NbrIncHome) .and. Empty(self:oTPTAB_PARM2:NbrExpHome) .or. Empty(self:oTPTAB_PARM2:NbrIncHome) .and. !Empty(self:oTPTAB_PARM2:NbrExpHome)
+		IF !Val(self:oTPTAB_PARM2:NbrIncHome)=0 .and. val(self:oTPTAB_PARM2:NbrExpHome)=0 .or. Val(self:oTPTAB_PARM2:NbrIncHome)=0 .and. !Val(self:oTPTAB_PARM2:NbrExpHome)=0
 			(ErrorBox{,"Gifts Home Income and Gifts Home Expenses should be both specified or both empty"}):Show()
 			RETURN
 		ENDIF
@@ -3444,21 +3460,21 @@ METHOD OKButton( ) CLASS TabSysParms
 			(ErrorBox{,"Select a PMC Participant code (tab PMC)"}):Show()
 			RETURN
 		ENDIF
-		IF !Empty(self:oTPTAB_PARM2:NbrInc) .and. Empty(self:oTPTAB_PARM2:NbrExp) .or. Empty(self:oTPTAB_PARM2:NbrInc) .and. !Empty(self:oTPTAB_PARM2:NbrExp)
+		IF !val(self:oTPTAB_PARM2:NbrInc)=0 .and. Val(self:oTPTAB_PARM2:NbrExp)=0 .or. val(self:oTPTAB_PARM2:NbrInc)=0 .and. !val(self:oTPTAB_PARM2:NbrExp)=0
 			(ErrorBox{,"Gifts Income and Gifts Expenses should be both specified or both empty"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
 	if !self:oTPTAB_PARM3==null_object
-		IF !self:oTPTAB_PARM3:cSoortPostage=="KO".and.!Empty(self:oTPTAB_PARM3:NbrPostage)
+		IF !self:oTPTAB_PARM3:cSoortPostage=="KO".and.!Val(self:oTPTAB_PARM3:NbrPostage)=0
 			(ErrorBox{,"Account for Postage should be Expenses"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM3:cSoortDEBTORS=="AK".and.!Empty(self:oTPTAB_PARM3:NbrDEBTORS)
+		IF !self:oTPTAB_PARM3:cSoortDEBTORS=="AK".and.!Val(self:oTPTAB_PARM3:NbrDEBTORS)=0
 			(ErrorBox{,"Account Receivable should be Assets"}):Show()
 			RETURN
 		ENDIF
-		IF !self:oTPTAB_PARM3:cSoortCREDITORS=="PA".and.!Empty(self:oTPTAB_PARM3:NbrCREDITORS)
+		IF !self:oTPTAB_PARM3:cSoortCREDITORS=="PA".and.!Val(self:oTPTAB_PARM3:NbrCREDITORS)=0
 			(ErrorBox{,"Account Payable should be Liability"}):Show()
 			RETURN
 		ENDIF
