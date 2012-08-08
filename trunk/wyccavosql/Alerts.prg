@@ -1,5 +1,5 @@
 class AlertBankbalance 
-declare method GetDiffernces,GetDifferncesNew
+declare method GetDiffernces
 Method Alert() Class AlertBankbalance 
 // alert when balance of a bank account is different from table bankbalance
 	local aDiff:={} as array  // array with differences {{banknumber,balance bank,balance account,difference,description,reportdate},...}
@@ -38,99 +38,77 @@ Method Alert() Class AlertBankbalance
 return
 Method GetDiffernces(Reportdate as date) as array class AlertBankbalance
 	local oSel as SQLSelect
-	local i as int 
+	local i,j,k,nSelStart as int 
 	local fDif,AccBal as float
 	local oMBal as Balances
-	local aTeleBal:={} as array // array with balances from telebanking: {{accid,accnumber,balance,description,datebalance},...} 
-	local aDBBal:={} as array // array with balances from database: {{accid,balance},...}  
+	local dCurDate as date 
+	local cStatement as string
+	local aTeleBal:={} as array // array with balances from telebanking: {{accid,accnumber,balance,description,datebalance,currency},...} 
+	local aDBBal:={} as array // array with balances from database: {{accid,balance},...}
+	local aDBBalValue:={} as array  // array with values from SQLGetBalanceDate  
 	local aDiff:={} as array  // array with differences {{banknumber,balance bank,balance account,difference,description,reportdate},...}
+	local time1,time0 as float
 
 	// get balances around report date: 
-	oSel:=SqlSelect{"select a.accid,a.banknumber,cast(b.datebalance as date) as datebalance,ac.description,balance from bankbalance b,bankaccount a, account ac where a.accid=b.accid and ac.accid=a.accid and datebalance in "+;   
-	"(select cast(Max(datebalance) as date) as datbal from bankbalance b2 where b2.accid=b.accid and datebalance<='"+SQLdate( Reportdate)+"' ) order by a.accid",oConn}  //and b2.accid=101026
-	do while !oSel:EOF
-		AAdd(aTeleBal,{oSel:accid,oSel:banknumber,oSel:balance,oSel:Description,oSel:datebalance})
-		oSel:skip()
-	enddo
-	oMBal:=Balances{}
-	// compare balances 
-	// Get account balances on required day:
-	for i:=1 to Len(aTeleBal) 
-		oMBal:GetBalance(Str(aTeleBal[i,1],-1),aTeleBal[i,5],aTeleBal[i,5])
-		AccBal:= Round(oMBal:per_cre- oMBal:per_deb,2)
-		fDif:= Round(-AccBal - aTeleBal[i,3],DecAantal)  // inverse of debit account balance
-		if !fDif==0.00
-			// return difference: 
-			AAdd(aDiff,{aTeleBal[i,2],aTeleBal[i,3],AccBal,fDif,aTeleBal[i,4],aTeleBal[i,5]})
-		endif			
-	next
-	return aDiff
-Method GetDifferncesNew(Reportdate as date) as array class AlertBankbalance
-	local oSel,oBal,oTrans as SQLSelect
-	local cReportdate,cStatement as string 
-	local ReportStart as int
-	local ReportMin as date 
-	LOCAL cTab:=CHR(9),cSep:=Space(2) as STRING 
-	local i,j,nTot as int 
-	local fDif,AccBal as float
-	local oMBal as Balances
-	local aTeleBal:={} as array // array with balances from telebanking: {{accid,accnumber,balance,description,datebalance},...} 
-	local aDBBal:={} as array // array with balances from database: {{accid,balance},...}  
-	local aDiff:={} as array  // array with differences {{banknumber,balance bank,balance account,difference,description,reportdate},...}
-
-	cReportdate:=SQLdate( Reportdate)
-	// get balances around report date: 
-	oSel:=SqlSelect{"select a.accid,a.banknumber,cast(b.datebalance as date) as datebalance,ac.description,balance from bankbalance b,bankaccount a, account ac where a.accid=b.accid and ac.accid=a.accid and datebalance in "+;   
-	"(select cast(Max(datebalance) as date) as datbal from bankbalance b2 where b2.accid=b.accid and datebalance<='"+cReportdate+"' ) order by a.accid",oConn}  //and b2.accid=101026
-	do while !oSel:EOF
-		AAdd(aTeleBal,{oSel:accid,oSel:banknumber,oSel:balance,oSel:Description,oSel:datebalance})
-		oSel:skip()
-	enddo
-	oMBal:=Balances{}
-	ReportMin:=Reportdate
-	AEval(aTeleBal,{|x|ReportMin:=Min(x[5],ReportMin)})
-
-	ReportStart:=Year(ReportMin)*100+Month(ReportMin) - 1
-	oMBal:AccSelection:="a.accid in ("+Implode(aTeleBal,',',,,1)+')'
-	cStatement:=oMBal:SQLGetBalance(ReportStart,ReportStart) 
-	oBal:=SqlSelect{cStatement,oConn}
-	if oBal:RecCount>0
-		do while !oBal:EOF
-			AAdd(aDBBal,{oBal:accid,Round(oBal:per_cre- oBal:per_deb,2)})
-			oBal:skip()
+// 	time0:=Seconds()
+	oSel:=SqlSelect{"select a.accid,a.banknumber,ac.currency,cast(b.datebalance as date) as datebalance,ac.description,balance from bankbalance b,bankaccount a, account ac where a.accid=b.accid and ac.accid=a.accid and datebalance in "+;   
+	"(select cast(Max(datebalance) as date) as datbal from bankbalance b2 where b2.accid=b.accid and datebalance<='"+SQLdate( Reportdate)+"' ) order by b.datebalance,a.accid",oConn}  //and b2.accid=101026
+	if oSel:RecCount>0
+//       time1:=time0
+//       LogEvent(self,"balances:"+Str((time0:=Seconds())-time1,-1),"logsql")
+		do while !oSel:EOF
+			AAdd(aTeleBal,{Str(oSel:accid,-1),oSel:banknumber,oSel:balance,oSel:Description,oSel:datebalance,oSel:Currency})
+			oSel:skip()
 		enddo
+		oMBal:=Balances{}
+		// compare balances 
+		// Get account balances on required day:
+		dCurDate:=aTeleBal[1,5]
+		nSelStart:=1
+		i:=0
+		do while true
+			i++  
+			if i>Len(aTeleBal) .or.!dCurDate==aTeleBal[i,5]
+				// end of current date:
+				oMBal:cAccSelection:="a.accid in ("+Implode(aTeleBal,",",nSelStart,i-nSelStart,1)+")"
+				oMBal:cTransSelection:="t.accid in ("+Implode(aTeleBal,",",nSelStart,i-nSelStart,1)+")"
+
+//       time1:=time0
+//       LogEvent(self,"before transbalances("+Str(i-nSelStart,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
+				cStatement:=oMBal:SQLGetBalanceDate(dCurDate,true)
+				oSel:=SqlSelect{cStatement,oConn}
+				oSel:Execute()
+//       time1:=time0
+//       LogEvent(self,"after transbalances("+Str(i-nSelStart,-1)+","+DToC(dCurDate)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
+				if oSel:RecCount>0 
+					aDBBalValue:=AEvalA(Split(oSel:Balances,'#'),{|x|x:=Split(x,',') })
+               for j:=nSelStart to i-1
+               	if (k:=AScan(aDBBalValue,{|x|x[1]==aTeleBal[j,1]}))>0
+							if aTeleBal[j,6]==sCurr
+								AccBal:= Round(Val(aDBBalValue[k,3])- Val(aDBBalValue[k,2]),2)
+							else
+								AccBal:= Round(Val(aDBBalValue[k,5])- Val(aDBBalValue[k,4]),2)
+							endif
+							fDif:= Round(-AccBal - aTeleBal[j,3],DecAantal)  // inverse of debit account balance
+               	else
+               		fDif:=Round(0.00 - aTeleBal[j,3],DecAantal)  // inverse of debit account balance
+               	endif
+						if !fDif==0.00
+						// return difference: 
+							AAdd(aDiff,{aTeleBal[j,2],aTeleBal[j,3],AccBal,fDif,aTeleBal[j,4],aTeleBal[j,5]}) 				
+						endif			
+               next
+				endif
+				if i>Len(aTeleBal)
+					exit
+				endif
+				nSelStart:=i
+				dCurDate:=aTeleBal[i,5]
+			endif
+		enddo
+//       time1:=time0
+//       LogEvent(self,"differences:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	endif
-		cStatement:=UnionTrans("select t.accid,Round(t.cre-t.deb,2) as accbal,cast(t.dat as date) as dat from transaction as t "+;
-			"where t.DAT>='"+SQLdate(SToD(SubStr(DToS(ReportMin),1,6)+'01')) + "' and t.DAT<='"+SQLdate(Reportdate)+"'	and t.accid in ("+Implode(aTeleBal,',',,,1)+') ') +" order by accid"
-		oTrans:=SqlSelect{cStatement,oConn}
-      if oTrans:RecCount>0
-      	do while !oTrans:EOF
-	      	i:=AScan(aDBBal,{|x|x[1]==oTrans:accid})
-	      	j:=AScan(aTeleBal,{|x|x[1]==oTrans:accid})
-	      	if i>0.and.j>0 .and. oTrans:dat<=aTeleBal[j,5]
-	      		aDBBal[i,2]:=Round(aDBBal[i,2]+oTrans:AccBal,DecAantal)
-	      	endif
-	      	oTrans:skip()
-      	enddo
-      endif
-*/
-	// compare balances 
-	// Get account balances on required day:
-	j:=1 
-	for i:=1 to Len(aTeleBal) 
-		if aTeleBal[i,1]==aDBBal[j,1]
-			fDif:= Round(-aDBBal[j,2] - aTeleBal[i,3],DecAantal)  // inverse of debit account balance
-		else
-			fDif:=aTeleBal[i,3]
-		endif
-		if !fDif==0.00
-			// return difference: 
-			AAdd(aDiff,{aTeleBal[i,2],aTeleBal[i,3],aDBBal[j,2],fDif,aTeleBal[i,4],aTeleBal[i,5]})
-		endif			
-		if aTeleBal[i,1]==aDBBal[j,1]
-			j++
-		endif
-	next
 	return aDiff
 class AlertSuspense  
 	declare method CollectSuspense,CollectSuspense
@@ -227,6 +205,15 @@ Method CollectSuspense(lAlert:=false as logic) as array class AlertSuspense
 	endif
 	ASort(aSuspense,,,{|x,y|x[2]<=y[2]})
 	return aSuspense
+CLASS CheckBankBalance INHERIT DataWindowMine 
+
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCReportdate AS DATESTANDARD
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE CheckBankBalance DIALOGEX  4, 3, 281, 67
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -238,15 +225,6 @@ BEGIN
 	CONTROL	"Date:", CHECKBANKBALANCE_FIXEDTEXT6, "Static", WS_CHILD, 16, 36, 40, 13
 END
 
-CLASS CheckBankBalance INHERIT DataWindowMine 
-
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCReportdate AS DATESTANDARD
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS CheckBankBalance 
 self:EndWindow()
 
@@ -359,18 +337,6 @@ STATIC DEFINE CHECKBANKBALANCE_FIXEDTEXT6 := 104
 STATIC DEFINE CHECKBANKBALANCE_FIXEDTEXT9 := 100 
 STATIC DEFINE CHECKBANKBALANCE_OKBUTTON := 102 
 STATIC DEFINE CHECKBANKBALANCE_REPORTDATE := 103 
-CLASS CheckSuspense INHERIT DataWindowExtra 
-
-	PROTECT oDCTodate AS DATESTANDARD
-	PROTECT oDCFixedText8 AS FIXEDTEXT
-	PROTECT oDCFromdate AS DATESTANDARD
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCGroupBox3 AS GROUPBOX
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE CheckSuspense DIALOGEX  4, 3, 288, 92
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -385,6 +351,18 @@ BEGIN
 	CONTROL	"Cancel", CHECKSUSPENSE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 216, 7, 53, 12
 END
 
+CLASS CheckSuspense INHERIT DataWindowExtra 
+
+	PROTECT oDCTodate AS DATESTANDARD
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCFromdate AS DATESTANDARD
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCGroupBox3 AS GROUPBOX
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS CheckSuspense 
 self:EndWindow()
 RETURN NIL
