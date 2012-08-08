@@ -671,7 +671,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	// 	local CurStOrdrid:='',cTrans as string 
 	local oBal as balances 
 	local cValuesBankOrd,cValuesStOrd,cValuesTrans as string 
-	local oTrans,oBord,oStmnt as SQLStatement
+	local oTrans,oBord,oStmnt as SQLStatement   
+	local cError as string
 	self:aTrans:={}
 
 	if self:oCurr==null_object
@@ -736,8 +737,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			"','"+Str(self:aTrans[1,7],-1)+"','"+Str(self:aTrans[1,8],-1)+;
 			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"')",oConn}
 		oTrans:execute()
-		if oTrans:NumSuccessfulRows<1 
-			LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description,"LogErrors")
+		if oTrans:NumSuccessfulRows<1
+			cError:= "stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description
 			lError:=true
 		else
 			nTrans:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
@@ -752,7 +753,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 				"values "+cValuesTrans,oConn}
 			oTrans:execute()
 			if !Empty(oTrans:status) 
-				LogEvent(self,"stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:errinfo:errormessage,"LogErrors")
+				cError:="stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:errinfo:errormessage
 				lError:=true
 			endif
 		endif
@@ -762,6 +763,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			next 
 			if !oBal:ChgBalanceExecute()
 				lError:=true
+				cError:=oBal:cError
 			endif
 		endif
 		if !lError
@@ -776,7 +778,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 
 				oBord:=SQLStatement{"insert into bankorder (accntfrom,amount,description,banknbrcre,datedue,stordrid) values "+SubStr(cValuesBankOrd,2),oConn}
 				oBord:execute()
-				if !Empty(oBord:status) .or. oBord:NumSuccessfulRows<1
+				if !Empty(oBord:status) .or. oBord:NumSuccessfulRows<1 
+					cError:="stmnt:"+oBord:SQLString+CRLF+"error:"+oBord:errinfo:errormessage				
 					lError:=true						
 				endif
 			endif
@@ -788,6 +791,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 				oStmnt:execute()
 				if!Empty(oStmnt:status)
 					lError:=true
+					cError:="stmnt:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:errinfo:errormessage				
 				endif
 			endif
 		endif
@@ -797,7 +801,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			SQLStatement{"commit",oConn}:execute()
 		else
 			SQLStatement{"rollback",oConn}:execute()
-			LogEvent(self,self:oLan:WGet("standingordesr could not be executed"),"LogErrors")
+			LogEvent(self,self:oLan:WGet("standingordesr could not be executed:"+cError),"LogErrors")
 			ErrorBox{,self:oLan:WGet("standingorder could not be executed")}:Show()
 		endif	
 	endif
