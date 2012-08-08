@@ -2582,7 +2582,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 		oXMLDoc:=XMLDocument{oSys:DESTGRPS}
 		recordfound:=oXMLDoc:GetElement("group")
 		Pntr:=0
-		LogEvent(self,oXMLDoc:getbuffer(),"logsql")
+// 		LogEvent(self,oXMLDoc:getbuffer(),"logsql")
 		do WHILE recordfound
 			Pntr++
 			AAdd(self:aDestGrp,{,{}})
