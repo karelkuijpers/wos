@@ -3183,7 +3183,10 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			IF self:SkipInactive .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
 				*  skip member without transactions
 				* remove added member lines:
-				lSkip:=true
+				lSkip:=true 
+				IF lPrintFile.and.!Empty(self:SendingMethod)
+					self:oReport:RemovePrFile() 
+				endif									
 			ENDIF
 			
 			IF lSkip
@@ -3251,9 +3254,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:EndDialog()
 		oPro:Destroy()
 	ENDIF
-	IF !lPrintFile.or.Empty(self:SendingMethod)
+// 	IF !lPrintFile.or.!self:SendingMethod="SeperateFile"   ????
 		self:oReport:prstart()    
-	endif
+// 	endif
 	IF self:SendingMethod=="SeperateFileMail"
 		oSelpers:=Selpers{self,,}
 		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
