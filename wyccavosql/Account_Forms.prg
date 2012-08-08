@@ -799,7 +799,7 @@ RETURN uValue
 METHOD ButtonClick(oControlEvent) CLASS EditAccount
 	LOCAL oControl as Control
 	LOCAL MonthAmnt:=0, YearAmnt:=0, YearAmntOrg:=0 as FLOAT
-	LOCAL i,ic as int
+	LOCAL i,ic,nPntr as int
 	LOCAL BudYear,BudMonth as int
 	LOCAL aContr as ARRAY
 	LOCAL x as Control
@@ -818,14 +818,21 @@ METHOD ButtonClick(oControlEvent) CLASS EditAccount
 	 	MonthAmnt:=Round(YearAmntOrg/12,DecAantal)
 	 	FOR i:=1 to 11
 		 	self:FillBudget(MonthAmnt,i,aContr,BudMonth,BudYear)
+		 	if AScan(self:aBudget,{|x|x[1]=BudYear.and.x[2]=BudMonth})=0
+				AAdd(self:aBudget,{BudYear,BudMonth,MonthAmnt})
+		 	endif
 		 	YearAmnt:=Round(YearAmnt+MonthAmnt,DecAantal)
 		 	BudMonth++
 		 	if BudMonth>12
 		 		BudMonth:=1
 		 		BudYear++
 		 	endif
-	 	NEXT
-	 	self:FillBudget(Round(YearAmntOrg-YearAmnt,DecAantal),i,aContr,BudMonth,BudYear)
+	 	NEXT 
+	 	MonthAmnt:=Round(YearAmntOrg-YearAmnt,DecAantal)
+	 	self:FillBudget(MonthAmnt,i,aContr,BudMonth,BudYear) 
+	 	if AScan(self:aBudget,{|x|x[1]=BudYear.and.x[2]=BudMonth})=0
+			AAdd(self:aBudget,{BudYear,BudMonth,MonthAmnt})
+	 	endif
 	ELSEIF oControl:Name=="RADIOBUTTONYEAR"
 	 	self:FillBudgetYear(aContr)
 	elseif oControl:Name=="MGIFTALWD"
@@ -853,20 +860,35 @@ METHOD CancelButton( ) CLASS EditAccount
 
 RETURN NIL
 METHOD DateTimeSelectionChanged(oDateTimeSelectionEvent) CLASS EditAccount
-	local oBalncs as Balances
+	local oBalncs as Balances 
+	local oSel as SQLSelect
+	local aBal:={} as array
 	SUPER:DateTimeSelectionChanged(oDateTimeSelectionEvent) 
 	//Put your changes here
 	IF !oDCBalanceDate:SelectedDate == dCurDate
 		
 		dCurDate := oDCBalanceDate:SelectedDate
 		oBalncs:=Balances{}
-		oBalncs:GetBalance(mAccId,,oDCBalanceDate:SelectedDate,self:mCurrency)
+// 		oBalncs:GetBalance(mAccId,,oDCBalanceDate:SelectedDate,self:mCurrency)
 
-		self:mBalance:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)
-// 		oMBal:GetBalance(mAccId,mNumSave,,oDCBalanceDate:SelectedDate,self:mCurrency) 
+// 		self:mBalance:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)
 		if self:mCurrency # sCURR
 	     	self:oDCmBalanceF:Value:=Round(oBalncs:per_creF-oBalncs:per_debF,DecAantal)
 		endif
+		oBalncs:cAccSelection:="a.accid="+mAccId
+		oBalncs:cTransSelection:="t.accid="+mAccId
+		oSel:=SqlSelect{oBalncs:SQLGetBalanceDate(oDCBalanceDate:SelectedDate,!self:mCurrency==sCURR),oConn}  
+// 		LogEvent(self,oSel:sqlstring,"logsql")
+		oSel:Execute() 
+		if oSel:RecCount>0 
+			aBal:=split(oSel:balances,',')
+// 			self:mBalance:=Round(oSel:per_cre-oSel:per_deb,DecAantal)
+			self:mBalance:=Round(val(aBal[3])-val(aBal[2]),DecAantal)
+			if self:mCurrency # sCURR
+// 		     	self:oDCmBalanceF:Value:=Round(oSel:per_creF-oSel:per_debF,DecAantal)
+		     	self:oDCmBalanceF:Value:=Round(Val(aBal[5])-Val(aBal[4]),DecAantal)
+			endif
+		endif		
 	ENDIF
 
 	RETURN nil
@@ -881,8 +903,10 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 	local amProp:=self:aProp as array
 	Local mPropBox:=self:oDCPropBox as ListBox
 	Local cNewValue as string
-	LOCAL BudYear,BudMonth as int 
-	local YearAmntOrg,MonthAmnt,YearAmnt as float
+	LOCAL BudYear,BudMonth,im,iy as int 
+	local YearAmntOrg,MonthAmnt,YearAmnt,BudgetValue as float 
+	LOCAL aContr:={} as ARRAY 
+
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
@@ -926,22 +950,37 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 		ELSEIF oControl:NameSym==#mGainLossacc .and.!IsNil(oControl:VALUE).and.!AllTrim(oControl:VALUE)==self:cCurGainLossAcc
 			self:cCurGainLossAcc:=AllTrim(oControl:VALUE)
          self:GLAccButton()
-		ELSEIF SubStr(oControl:Name,1,4)=='MBUD' .and.!IsNil(oControl:VALUE)
+		ELSEIF SubStr(oControl:Name,1,4)=='MBUD' .and.!IsNil(oControl:VALUE) 
+			BudgetValue:=iif(IsString(oControl:VALUE),Val(oControl:VALUE),oControl:VALUE) 
 			if !self:lBudgetClosed
 				nPntr:=Val(SubStr(oControl:Name,5)) 
 				BudYear:=Val(SubStr(self:oDCBalYears:VALUE,1,4))
 				BudMonth:=Val(SubStr(self:oDCBalYears:VALUE,5,2))+nPntr-1
-				if BudMonth>12
+				if BudMonth>12                                       
 					BudMonth:=Mod(BudMonth,12)
 					BudYear++
 				endif
-				nBudPtr:=AScan(self:aBudget,{|x|x[1]==BudYear .and.x[2]=BudMonth})
+				nBudPtr:=AScan(self:aBudget,{|x|x[1]==BudYear .and.x[2]=BudMonth}) 
+				if nBudPtr=0
+					// initialize budget
+					im:=BudMonth
+					iy:=BudYear
+					FOR i:=1 to 12
+						AAdd(self:aBudget,{iy,im,0.00})
+						im++
+						if im>12
+							im:=1
+							iy++
+						endif 
+					next
+					nBudPtr:=AScan(self:aBudget,{|x|x[1]==BudYear .and.x[2]=BudMonth}) 
+				endif
 				if nBudPtr>0
 					if self:BudgetGranularity=="Month"
-						self:aBudget[nBudPtr,3]:=iif(IsString(oControl:VALUE),Val(oControl:VALUE),oControl:VALUE)
+						self:aBudget[nBudPtr,3]:=BudgetValue
 					else
 						 // Calculate month amounts: 
-						YearAmntOrg:=self:mBud1
+						YearAmntOrg:=BudgetValue
 					 	MonthAmnt:=Round(YearAmntOrg/12,DecAantal)
 					 	FOR i:=1 to 11
 							self:aBudget[nBudPtr,3]:=MonthAmnt
@@ -949,7 +988,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditAccount
 							nBudPtr++
 					 	next
 						self:aBudget[nBudPtr,3]:=Round(YearAmntOrg-YearAmnt,DecAantal)
-					endif 
+					endif
 				endif
 			endif 
 		ENDIF
@@ -1588,7 +1627,7 @@ METHOD OkButton CLASS EditAccount
 			"accnumber='"+LTrimZero(self:mAccNumber)+"'"+;
 			", description='"+ AddSlashes(AllTrim(self:mDescription))+"'"+;
 			", balitemid='"+self:mNumSave+"'"+;
-			", department='"+self:mDep+"'"+;
+			", department='"+Str(Val(self:mDep),-1)+"'"+;
 			iif(ADMIN=="WA",", reimb="+self:mReimb,"")+;
 			", subscriptionprice="+ Str(self:mSubscriptionprice,-1)+;
 			", qtymailing="+ Str(self:mQtyMailing,-1)+;
@@ -1603,10 +1642,12 @@ METHOD OkButton CLASS EditAccount
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0")+;
 			iif(self:lNew,""," where accid="+self:mAccId)
+		SQLStatement{"start transaction",oConn}:Execute()
 		oStmt:=SQLStatement{cStatement,oConn}
 		oStmt:Execute()
 		if !Empty(oStmt:status)
-			LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors")
+			LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
+			SQLSTatement{"rollback",oConn}:execute()
 			(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
 			return nil
 		endif
@@ -1632,7 +1673,14 @@ METHOD OkButton CLASS EditAccount
 			oBudIns:=SQLStatement{"insert into budget (accid,year,month,amount) values "+SubStr(cValues,2)+;
 				" ON DUPLICATE KEY UPDATE amount=values(amount)",oConn}
 			oBudIns:Execute()
-		endif
+			if !Empty(oBudIns:status)
+				LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
+				SQLSTatement{"rollback",oConn}:execute()
+				(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
+				return nil 
+			endif
+		endif 
+		SQLSTatement{"commit",Oconn}:execute()
 // 		IF IsObject(oCaller).and.!oCaller==null_object .and.IsObject(self:oCaller:TreeView) .and.!self:oCaller:Treeview==null_object
 		IF IsObject(oCaller).and.!oCaller==null_object 
 			IF IsMethod(oCaller,#RefreshTree)
@@ -1753,10 +1801,15 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			"select a.accid,a.accnumber,a.description,a.balitemid,department,a.gainlsacc,subscriptionprice,a.currency,a.multcurr,reevaluate,"+; 
 		"reimb,a.active,a.monitor,a.clc,a.propxtra,a.giftalwd,a.qtymailing,ipcaccount,cast(altertime as date) as alterdate,"+;
 			"b.category as type,b.heading,b.number,d.deptmntnbr,d.descriptn,d.ipcproject,d.incomeacc,d.expenseacc,d.netasset, m.persid as mcln "+;
-			"from balanceitem as b, account as a "+;
+			"from account as a "+;
+			"left join balanceitem as b on (b.balitemid=a.balitemid) "+;
 			"left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
-		"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
+		"where a.accid="+self:mAccId,oConn}
+// 			"from balanceitem as b, account as a "+;
+// 			"left join department d on (d.depid=a.department) "+;
+// 			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
+// 		"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
 		self:mAccId:= Str(self:oAcc:accid,-1)
@@ -1774,7 +1827,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		endif
 		self:mSubscriptionprice := self:oAcc:subscriptionprice 
 		self:mQtyMailing:=self:oAcc:qtymailing
-		self:mSoort:=self:oAcc:TYPE
+		self:mSoort:=Transform(self:oAcc:TYPE,"")
 		self:mAlterTime:=self:oAcc:alterdate 
 		self:mCurrency:=self:oAcc:Currency 
 		if Empty(self:mCurrency)
@@ -1870,8 +1923,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			self:mBalitemid:=""
 			self:cCurBal:=""
 		else 
-			self:oDCmBalitemid:textValue:=AllTrim(self:oAcc:NUMBER)+":"+self:oAcc:heading
-			self:cCurBal:=self:mBalitemid
+			self:oDCmBalitemid:textValue:=AllTrim(transform(self:oAcc:NUMBER,""))+":"+transform(self:oAcc:heading,"")
+			self:cCurBal:=Transform(self:mBalitemid,"")
 		ENDIF
 		IF Empty(oAcc:DEPTMNTNBR)
 			self:mDepartment:="0:"+sEntity+" "+sLand
