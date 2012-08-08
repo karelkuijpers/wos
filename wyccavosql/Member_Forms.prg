@@ -2104,7 +2104,7 @@ METHOD OkButton CLASS EditMember
 		ENDIF
 		if !self:lNewMember
 // 			mAccidPrv:=Transform(oMbr:accid,"") 
-			mAccidPrv:=self:mRekOrg
+			mAccidPrv:=self:mRekOrg                                                         
 			mCLNPrv:=Str(oMbr:persid,-1)
 // 			mDepPrv:=Transform(oMbr:depid,"") 
 			mDepPrv:=self:cCurDep
@@ -2122,7 +2122,7 @@ METHOD OkButton CLASS EditMember
 			",aow="+Str(self:mAOW,-1)+;                                                                 
 		",zkv="+Str(self:mZKV,-1)+;
 			",has="+iif(self:mGrade='Entity','0',iif(self:mPPCode=Sentity,iif(self:mHAS,'1','0'),'0')) +;
-			",contact='"+self:mCLNContact+"'"+;
+			",contact='"+Str(val(self:mCLNContact),-1)+"'"+;
 			",rptdest='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest).or.Empty(self:mCLNContact),"0",self:StatemntsDest)+"'"+;
 			",grade='"+if(mGrade='Entity','',self:mGrade)+"'" +;
 			",co='"+iif(self:mGrade='Entity',if(self:mGrade=='Entity','S','6'),'M')+"'"+;
