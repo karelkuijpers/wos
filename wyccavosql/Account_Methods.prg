@@ -24,61 +24,65 @@ METHOD AccountSelect(Caller as object,BrwsValue:="" as string,ItemName as string
 	endif
 	RETURN true
 METHOD FilePrint CLASS AccountBrowser
-LOCAL oDB as SQLselect
-LOCAL kopregels:={},aYearStartEnd as ARRAY
-LOCAL nRow as int
-LOCAL nPage as int
-LOCAL oReport as PrintDialog
-LOCAL cRootName:=AllTrim(SEntity)+" "+sLand as STRING
-LOCAL cTab:=CHR(9) as STRING
-LOCAL YrSt,MnSt as int
-LOCAL Gran as LOGIC
-local cFrom as string 
-local cWhere as string
-local cFields as string
+	LOCAL oDB as SQLselect
+	LOCAL cHeading:={},aYearStartEnd as ARRAY
+	LOCAL nRow as int
+	LOCAL nPage as int
+	LOCAL oReport as PrintDialog
+	LOCAL cRootName:=AllTrim(SEntity)+" "+sLand as STRING
+	LOCAL cTab:=CHR(9) as STRING
+	LOCAL YrSt,MnSt as int
+	LOCAL Gran as LOGIC
+	local cFrom as string 
+	local cWhere as string
+	local cFields as string 
+	local SQLString as string
 
-aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
-YrSt:=aYearStartEnd[1]
-MnSt:=aYearStartEnd[2]
+	aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
+	YrSt:=aYearStartEnd[1]
+	MnSt:=aYearStartEnd[2]
 
-oReport := PrintDialog{self,oLan:RGet("Accounts"),,148,DMORIENT_LANDSCAPE,"xls"}
+	oReport := PrintDialog{self,oLan:RGet("Accounts"),,148,DMORIENT_LANDSCAPE,"xls"}
 
-oReport:Show()
-IF .not.oReport:lPrintOk
-	RETURN FALSE
-ENDIF
-IF Lower(oReport:Extension) #"xls"
-	cTab:=Space(1)
-	kopregels :={oLan:RGet('Accounts',,"@!"),' '}
-ENDIF
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	IF Lower(oReport:Extension) #"xls"
+		cTab:=Space(1)
+		cHeading :={oLan:RGet('Accounts',,"@!"),' '}
+	ENDIF
 
-AAdd(kopregels, ;
-oLan:RGet("Number",LENACCNBR,"!")+cTab+oLan:RGet("Name",25,"!")+cTab+oLan:RGet("Rep.item",20,"!")+cTab+;
-oLan:RGet("Gift",6,"!")+cTab+PadL(AllTrim(oLan:RGet("Budget",7,"!","R"))+Str(YrSt,4,0),11)+cTab+oLan:RGet("Subsc.pr",9,"!","R")+cTab+oLan:RGet("Qty.mailing",11,"!","R")+cTab+;
-oLan:RGet("Mailcd",6,"!")+cTab+oLan:RGet("Currency",8,"!")+cTab+oLan:RGet("Multi",5,"!")+cTab+oLan:RGet("Reevl",5,"!")+cTab+if(Departments,oLan:RGet("Department",20,"!"),""))
-IF oReport:Destination#"File"
-	AAdd(kopregels,' ')
-ENDIF
-nRow := 0
-nPage := 0 
-cFrom:="balanceitem b, (account a"+iif(departments," left join department d on (a.department=d.depid)","") +")"+;
-" left join budget bu on (bu.accid=a.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(YrSt*12+MnSt+12,-1) +")"
-cFields:="a.*,b.heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootName+"') as depname","") +",sum(bu.amount) as budgt"  
-cWhere:=self:cWhere
-cWhere+=iif(Empty(cWhere),'',' and ')+"a.balitemid=b.balitemid"
-if !Empty(self:cAccFilter)
-	cWhere+=iif(Empty(cWhere),'',' and ')+self:cAccFilter
-endif
-oDB:=SqlSelect{"Select "+cFields+" from "+cFrom+iif(Empty(cWhere) ,''," where "+cWhere)+" group by a.accid order by "+cOrder,oConn}
-do WHILE .not. oDB:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20)+cTab+;
-	iif(ConI(oDB:giftalwd)=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDB:Budgt),0,oDB:Budgt),11,0)+cTab;
-	+Str(oDB:subscriptionprice,9,DecAantal)+cTab+Pad(ConS(oDB:qtymailing),11," ")+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:Currency,8)+cTab+PadC( iif(ConI(oDB:MULTCURR)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:REEVALUATE)=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),kopregels)
-	oDB:skip()
-ENDDO
-oReport:prstart()
-oReport:prstop()
-RETURN self
+	AAdd(cHeading, ;
+		oLan:RGet("Number",LENACCNBR,"!")+cTab+oLan:RGet("Name",25,"!")+cTab+oLan:RGet("Rep.item",20,"!")+cTab+;
+		oLan:RGet("Gift",6,"!")+cTab+PadL(AllTrim(oLan:RGet("Budget",7,"!","R"))+Str(YrSt,4,0),11)+cTab+oLan:RGet("Subsc.pr",9,"!","R")+cTab+oLan:RGet("Qty.mailing",11,"!","R")+cTab+;
+		oLan:RGet("Mailcd",6,"!")+cTab+oLan:RGet("Currency",8,"!")+cTab+oLan:RGet("Multi",5,"!")+cTab+oLan:RGet("Reevl",5,"!")+cTab+if(Departments,oLan:RGet("Department",20,"!"),""))
+	IF oReport:Destination#"File"
+		AAdd(cHeading,' ')
+	ENDIF
+	nRow := 0
+	nPage := 0 
+	cFrom:="balanceitem b, (account a"+iif(departments," left join department d on (a.department=d.depid)","") +")"+;
+		" left join budget bu on (bu.accid=a.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(YrSt*12+MnSt+12,-1) +")"
+	cFields:="a.description,a.accnumber,a.giftalwd,a.subscriptionprice,a.qtymailing,a.currency,a.multcurr,a.reevaluate,a.clc,b.heading"+iif(Departments,",if(a.department,d.descriptn,'"+cRootName+"') as depname","") +",sum(bu.amount) as budgt"  
+	cWhere:=self:cWhere
+	cWhere+=iif(Empty(cWhere),'',' and ')+"a.balitemid=b.balitemid"
+	if !Empty(self:cAccFilter)
+		cWhere+=iif(Empty(cWhere),'',' and ')+self:cAccFilter
+	endif
+	SQLString:="Select "+cFields+" from "+cFrom+iif(Empty(cWhere) ,''," where "+cWhere)+" group by a.accid order by "+cOrder
+	oDB:=SqlSelect{SQLString,oConn}
+	if oDB:RecCount>0
+		do WHILE .not. oDB:EOF
+			oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20)+cTab+;
+				iif(ConI(oDB:giftalwd)=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDB:Budgt),0,oDB:Budgt),11,0)+cTab;
+				+Str(oDB:subscriptionprice,9,DecAantal)+cTab+Pad(ConS(oDB:qtymailing),11," ")+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:currency,8)+cTab+PadC( iif(ConI(oDB:multcurr)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:reevaluate)=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),cHeading)
+			oDB:skip()
+		ENDDO
+	endif
+	oReport:prstart()
+	oReport:prstop()
+	RETURN self
 
 METHOD NewButton CLASS AccountBrowser
 
