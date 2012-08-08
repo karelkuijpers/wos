@@ -1,28 +1,3 @@
-RESOURCE EditImportPattern DIALOGEX  4, 3, 318, 169
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", EDITIMPORTPATTERN_MORIGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 28, 80, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITIMPORTPATTERN_MASSMNTCD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 11, 69, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Assessment code:", EDITIMPORTPATTERN_SC_ASSMNTCD, "Static", WS_CHILD, 13, 12, 59, 13
-	CONTROL	"Origin:", EDITIMPORTPATTERN_SC_ORIGIN, "Static", WS_CHILD, 13, 30, 54, 13
-	CONTROL	"Description:", EDITIMPORTPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 12, 48, 45, 12
-	CONTROL	"", EDITIMPORTPATTERN_MDESCRIPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 48, 216, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Debit/Credit", EDITIMPORTPATTERN_MDEBCRE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 72, 88, 56, 46
-	CONTROL	"Debit", EDITIMPORTPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 98, 38, 11
-	CONTROL	"Credit", EDITIMPORTPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 110, 42, 11
-	CONTROL	"Both", EDITIMPORTPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 121, 40, 11
-	CONTROL	"Automatic processing of recognised records?", EDITIMPORTPATTERN_MAUTOMATIC, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 91, 156, 11
-	CONTROL	"", EDITIMPORTPATTERN_MRECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Date changed:", EDITIMPORTPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
-	CONTROL	"", EDITIMPORTPATTERN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 3, 301, 141
-	CONTROL	"OK", EDITIMPORTPATTERN_SAVEBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 258, 147, 54, 13
-	CONTROL	"Cancel", EDITIMPORTPATTERN_CANCELBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 200, 147, 53, 13
-	CONTROL	"v", EDITIMPORTPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 152, 66, 14, 12
-	CONTROL	"Account:", EDITIMPORTPATTERN_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 66, 82, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Account:", EDITIMPORTPATTERN_SC_REK, "Static", WS_CHILD, 12, 66, 30, 12
-END
-
 CLASS EditImportPattern INHERIT DataDialogMine 
 
 	PROTECT oDCmOrigin AS SINGLELINEEDIT
@@ -52,6 +27,31 @@ CLASS EditImportPattern INHERIT DataDialogMine
   protect lNew as logic
   export maccid as string 
   protect oOwner as object
+RESOURCE EditImportPattern DIALOGEX  4, 3, 318, 169
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", EDITIMPORTPATTERN_MORIGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 28, 80, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITIMPORTPATTERN_MASSMNTCD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 11, 69, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Assessment code:", EDITIMPORTPATTERN_SC_ASSMNTCD, "Static", WS_CHILD, 13, 12, 59, 13
+	CONTROL	"Origin:", EDITIMPORTPATTERN_SC_ORIGIN, "Static", WS_CHILD, 13, 30, 54, 13
+	CONTROL	"Description:", EDITIMPORTPATTERN_SC_DESCRIPTION, "Static", WS_CHILD, 12, 48, 45, 12
+	CONTROL	"", EDITIMPORTPATTERN_MDESCRIPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 48, 216, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Debit/Credit", EDITIMPORTPATTERN_MDEBCRE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 72, 88, 56, 46
+	CONTROL	"Debit", EDITIMPORTPATTERN_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 98, 38, 11
+	CONTROL	"Credit", EDITIMPORTPATTERN_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 110, 42, 11
+	CONTROL	"Both", EDITIMPORTPATTERN_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 78, 121, 40, 11
+	CONTROL	"Automatic processing of recognised records?", EDITIMPORTPATTERN_MAUTOMATIC, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 136, 91, 156, 11
+	CONTROL	"", EDITIMPORTPATTERN_MRECDATE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_DISABLED|WS_BORDER, 220, 12, 80, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Date changed:", EDITIMPORTPATTERN_FIXEDTEXT5, "Static", WS_CHILD, 170, 12, 50, 13
+	CONTROL	"", EDITIMPORTPATTERN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 3, 301, 141
+	CONTROL	"OK", EDITIMPORTPATTERN_SAVEBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 258, 147, 54, 13
+	CONTROL	"Cancel", EDITIMPORTPATTERN_CANCELBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 200, 147, 53, 13
+	CONTROL	"v", EDITIMPORTPATTERN_ACCBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 152, 66, 14, 12
+	CONTROL	"Account:", EDITIMPORTPATTERN_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 72, 66, 82, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Account:", EDITIMPORTPATTERN_SC_REK, "Static", WS_CHILD, 12, 66, 30, 12
+END
+
 METHOD AccButton( ) CLASS EditImportPattern 
 
 RETURN NIL
@@ -233,7 +233,7 @@ METHOD SaveButton( ) CLASS EditImportPattern
 		nCurRec:=self:oOwner:Server:recno
 	endif
 
-	oStmnt:=SQLStatement{iif( self:lNew,"insert into","update")+" importpattern set origin='"+AllTrim(self:mOrigin)+"',descriptn='"+ AllTrim(self:mDescriptn)+"',assmntcd='"+;
+	oStmnt:=SQLStatement{iif( self:lNew,"insert into","update")+" importpattern set origin='"+AllTrim(self:mOrigin)+"',descriptn='"+ AddSlashes(AllTrim(self:mDescriptn))+"',assmntcd='"+;
 		AllTrim(self:mAssmntcd)+"',automatic="+iif(self:mAutomatic,'1','0')+",debcre='"+self:mDebCre+"',accid="+self:maccid+iif(self:lNew,",recdate=curdate()","")+;
 		iif(self:lNew,""," where imppattrnid="+self:CurImpPatId),oConn}
 	oStmnt:execute()
@@ -289,7 +289,7 @@ protect aMessages:={} as array  // messages about successfully imported files
 protect aValues:={} as array   // array with values to be inserted into importrans
 	//avalues: transdate,docid,transactnr,descriptn,giver,debitamnt,creditamnt,accname,accountnr,assmntcd,externid,origin,processed
 
-declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport,CheckPattern 
+declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport,AddImportCzech,CheckPattern 
 Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description as string,impDat as date,ExtId as string,Name as string,FromDesc as string,ToDescr as string,;
 		docid as string, cOrigin as string,cTransnr as string,aMbrAcc as Array,nCnt ref int,lCheckDuplicates:=false as logic) as void pascal class ImportBatch 
 	// 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date
@@ -297,7 +297,7 @@ Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description a
 	local oImpTr as SQLSelect
 	local cImpDat as string
 	local oStmnt as SQLStatement
-	local nImptrid as int 
+	local nImptrid as int
 	AsmtCode1:=""
 	if AScanExact(aMbrAcc,ToAcc) >0
 		AsmtCode2:="AG"
@@ -313,7 +313,7 @@ Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description a
 		// Check if transaction already present:
 
 		// Search for two lines (debit and credit) equal to transaction to be imported:
-		oImpTr:=SqlSelect{"select imptrid from importtrans where origin='"+AllTrim(cOrigin)+"' and "+; 
+		oImpTr:=SqlSelect{"select imptrid from importtrans where fromrpp=0 and origin='"+AllTrim(cOrigin)+"' and "+; 
 		"externid='"+ExtId+"' and transdate='"+cImpDat+"' and descriptn='"+Description+"' and "+;
 			"(accountnr='"+FromAcc+"' and debitamnt="+Str(Amount,-1)+" or accountnr='"+ToAcc+"' and creditamnt="+Str(Amount,-1)+")"+;
 			" order by imptrid",oConn}
@@ -344,6 +344,70 @@ Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description a
 		Name,'0.00',Str(Amount,-1),ToDescr,ToAcc,AsmtCode2,ExtId,cOrigin,0})
 	nCnt++
 	return
+Method AddImportCzech(FromAcc as string,ToAcc as string,Amount as float,Description as string,impDat as date,ExtId as string,Name as string,FromDesc as string,ToDescr as string,;
+		docid as string, cOrigin as string,cTransnr as string,aMbrAcc as Array,nCnt ref int,lCheckDuplicates:=false as logic) as void pascal class ImportBatch 
+	// 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date
+	local AsmtCode1:="",AsmtCode2:="AG" as string
+	local oImpTr as SQLSelect
+	local cImpDat as string
+	local oStmnt as SQLStatement
+	local nImptrid,nPos as int
+	local cSearchDesc as string
+	AsmtCode1:=""
+	if AScanExact(aMbrAcc,ToAcc) >0
+		AsmtCode2:="AG"
+	endif
+	if AScanExact(aMbrAcc,FromAcc) >0
+		if FromAcc <> ToAcc 
+			AsmtCode1:="CH"
+			AsmtCode2:="MG"
+		endif
+	endif
+	cImpDat:=SQLdate(impDat) 
+	if lCheckDuplicates
+		// Check if transaction already present:
+
+		// Search for two lines (debit and credit) equal to transaction to be imported: 
+		if Val(ExtId)=0
+			nPos:=AtC('dar',Description)
+			if nPos>0
+				cSearchDesc:=" and descriptn like '%"+SubStr(Description,nPos+3)+"'"
+			else
+				cSearchDesc:=" and descriptn='"+Description+"'"
+			endif
+		endif
+		oImpTr:=SqlSelect{"select imptrid from importtrans where fromrpp=0 and origin='"+AllTrim(cOrigin)+"' and "+; 
+		"externid='"+ExtId+"' and transdate='"+cImpDat+"'"+cSearchDesc+" and "+;
+			"(accountnr='"+FromAcc+"' and debitamnt="+Str(Amount,-1)+" or accountnr='"+ToAcc+"' and creditamnt="+Str(Amount,-1)+")"+;
+			" order by imptrid",oConn}
+		if oImpTr:RecCount=2				
+			return  // skip if allready present
+		elseif oImpTr:RecCount>2 
+			// check if consecutive:
+			do while !oImpTr:EOF
+				if Empty(nImptrid)
+					nImptrid:=oImpTr:imptrid
+				else
+					if oImpTr:imptrid-nImptrid=1
+						return // apparently two consecutive lines found
+					endif
+					nImptrid:=oImpTr:imptrid  // restart searching
+				endif
+				oImpTr:Skip()			
+			enddo
+		endif
+	endif
+	// add to avalues:
+	// first transaction line
+	// transdate,docid,transactnr,descriptn,giver,debitamnt,creditamnt,accname,accountnr,assmntcd,externid,origin,processed
+	AAdd(self:aValues,{cImpDat,docid,cTransnr,Description,;
+		Name,Str(Amount,-1),'0.00',FromDesc,FromAcc,AsmtCode1,ExtId,cOrigin,0})
+	// second transaction line
+	AAdd(self:aValues,{cImpDat,docid,cTransnr,Description,;
+		Name,'0.00',Str(Amount,-1),ToDescr,ToAcc,AsmtCode2,ExtId,cOrigin,0})
+	nCnt++
+	return
+
 METHOD CheckPattern(origin as string,assmntcd as string,debitamnt as float,creditamnt as float,Description as string) as array  CLASS ImportBatch  
 // check if imported transaction conform a pattern
 // returns array {accid,Automatic} when recognised otherwise empty array
@@ -353,8 +417,8 @@ debcre:=iif(creditamnt-debitamnt>0.00,'C','D')
 // aImpPattern: array with import pattern: {{origin,Assmntcd,Descriptn,DebCre,Automatic,accid},...}
 i := AScan(self:aImpPattern,{|x| (Empty(x[1]) .or. ;
 					origin	== x[1])	.and.;
-					assmntcd	= x[2]	.and.;
-					(debcre	= x[4] .or. x[4]=='B')	.and.;
+					assmntcd	== x[2]	.and.;
+					(debcre	== x[4] .or. x[4]=='B')	.and.;
 					CompareKeyString(x[3],Description)})
 IF i>0
 	Return {self:aImpPattern[i,6],self:aImpPattern[i,5]}
@@ -400,88 +464,90 @@ ACCESS EoF CLASS ImportBatch
 return (SQLSelect{"select imptrid from importtrans where processed=0 "+;
 	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < addtime(now(),'00-20-00'))",oConn}:reccount<1)
 METHOD GetImportFiles()  CLASS ImportBatch
-LOCAL nf, nlen AS INT
-LOCAL cFileName AS STRING
-LOCAL nImportDate AS STRING, dBatchDate AS DATE
-LOCAL aPMIS, aTxt AS ARRAY
-SetPath(CurPath)
-SetDefault(CurPath)
-self:aImportFiles:=Directory(CurPath+"\*.csv")
-aTxt:=Directory(CurPath+"\*.txt")
-IF Len(aTxt)>0
-	nlen:=Len(self:aImportFiles)
-	ASize(self:aImportFiles,nlen+Len(aTxt))
-	ACopy(aTxt,self:aImportFiles,,,nlen+1)
-ENDIF
-FOR nf:=1 to Len(self:aImportFiles)
-	cFileName:=Upper(self:aImportFiles[nf,F_NAME]) 
-	IF Len(cFileName)>=13 .and.!Upper(SubStr(cFileName,1,13))="EXPORTPERSONS" .and.!Upper(SubStr(cFileName,1,14))="EXPORT PERSONS"
-		nImportDate:=SubStr(cFileName,Len(cFileName)-11,8)
-		IF IsDigit(nImportDate)
-			dBatchDate:=SToD(nImportDate)
-			IF !dBatchDate==NULL_DATE
-				IF !(dBatchDate<Today()-365 .or. dBatchdate>Today()+31)
-					if self:ImportBatch(FileSpec{cFileName},dBatchDate,PadR(cFileName,11),true)   // test if correct fileformat
-						loop
-					endif
+	LOCAL nf, nlen AS INT
+	LOCAL cFileName AS STRING
+	LOCAL nImportDate AS STRING, dBatchDate AS DATE
+	LOCAL aPMIS, aTxt AS ARRAY
+	SetPath(CurPath)
+	SetDefault(CurPath)
+	self:aImportFiles:=Directory(CurPath+"\*.csv")
+	aTxt:=Directory(CurPath+"\*.txt")
+	IF Len(aTxt)>0
+		nlen:=Len(self:aImportFiles)
+		ASize(self:aImportFiles,nlen+Len(aTxt))
+		ACopy(aTxt,self:aImportFiles,,,nlen+1)
+	ENDIF
+	FOR nf:=1 to Len(self:aImportFiles)
+		cFileName:=Upper(self:aImportFiles[nf,F_NAME]) 
+		IF Len(cFileName)>=13 .and.!Upper(SubStr(cFileName,1,13))="EXPORTPERSONS" .and.!Upper(SubStr(cFileName,1,14))="EXPORT PERSONS"
+			if SubStr(cFileName,1,16)="AUSTRIADONATIONS"
+				if self:ImportAustria(FileSpec{cFileName},dBatchDate,PadR(cFileName,11),true)   // test if correct fileformat
+					loop
+				endif		
+			else
+				nImportDate:=SubStr(cFileName,Len(cFileName)-11,8)
+				IF IsDigit(nImportDate)
+					dBatchDate:=SToD(nImportDate)
+					IF !dBatchDate==NULL_DATE
+						IF !(dBatchDate<Today()-365 .or. dBatchdate>Today()+31)
+							if self:ImportBatch(FileSpec{cFileName},dBatchDate,PadR(cFileName,11),true)   // test if correct fileformat
+								loop
+							endif
+						ENDIF
+					ENDIF
 				ENDIF
 			ENDIF
-		elseif cFileName="AUSTRIADONATIONS.TXT"
-			if self:ImportAustria(FileSpec{cFileName},dBatchDate,PadR(cFileName,11),true)   // test if correct fileformat
-				loop
-			endif		
-		ENDIF
-	ENDIF
+		endif
 		
-	ADel(self:aImportFiles,nf)
-	ASize(self:aImportFiles,Len(self:aImportFiles)-1)
-	nf--
-NEXT
-// Import also import files from Czech WinDuo:
-aTxt:=Directory(CurPath+"\DENIK*.dbf")
-if Len(aTxt)<1
-	aTxt:=Directory(CurPath+"\deník*.dbf")
-endif	
-IF Len(aTxt)>0
-	nlen:=Len(self:aImportFiles)
-	ASize(self:aImportFiles,nlen+Len(aTxt))
-	ACopy(aTxt,self:aImportFiles,,,nlen+1)
-ENDIF
+		ADel(self:aImportFiles,nf)
+		ASize(self:aImportFiles,Len(self:aImportFiles)-1)
+		nf--
+	NEXT
+	// Import also import files from Czech WinDuo:
+	aTxt:=Directory(CurPath+"\DENIK*.dbf")
+	if Len(aTxt)<1
+		aTxt:=Directory(CurPath+"\deník*.dbf")
+	endif	
+	IF Len(aTxt)>0
+		nlen:=Len(self:aImportFiles)
+		ASize(self:aImportFiles,nlen+Len(aTxt))
+		ACopy(aTxt,self:aImportFiles,,,nlen+1)
+	ENDIF
 
-// Import also xml-files from PMIS
-aPMIS:=Directory(CurPath+"\"+sEntity+"_*.xml")
-FOR nf:=1 TO Len(aPMIS)
-	cFileName:=aPMIS[nf,F_NAME]
-	IF Len(cFileName)>=19
-		nImportDate:=SubStr(cFileName,5,8)
-		IF IsDigit(nImportDate)
-			dBatchDate:=SToD(nImportDate)
-			IF !dBatchDate==NULL_DATE
-				IF !(dBatchDate<Today()-365 .or. dBatchdate>Today()+31)
-					LOOP
+	// Import also xml-files from PMIS
+	aPMIS:=Directory(CurPath+"\"+sEntity+"_*.xml")
+	FOR nf:=1 TO Len(aPMIS)
+		cFileName:=aPMIS[nf,F_NAME]
+		IF Len(cFileName)>=19
+			nImportDate:=SubStr(cFileName,5,8)
+			IF IsDigit(nImportDate)
+				dBatchDate:=SToD(nImportDate)
+				IF !dBatchDate==NULL_DATE
+					IF !(dBatchDate<Today()-365 .or. dBatchdate>Today()+31)
+						LOOP
+					ENDIF
 				ENDIF
 			ENDIF
 		ENDIF
+		ADel(aPMIS,nf)
+		ASize(aPMIS,Len(aPMIS)-1)
+		nf--
+	NEXT
+	IF Len(aPMIS)>0
+		nlen:=Len(self:aImportFiles)
+		ASize(self:aImportFiles,nlen+Len(aPMIS))
+		ACopy(aPMIS,self:aImportFiles,,,nlen+1)
 	ENDIF
-	ADel(aPMIS,nf)
-	ASize(aPMIS,Len(aPMIS)-1)
-	nf--
-NEXT
-IF Len(aPMIS)>0
-	nlen:=Len(self:aImportFiles)
-	ASize(self:aImportFiles,nlen+Len(aPMIS))
-	ACopy(aPMIS,self:aImportFiles,,,nlen+1)
-ENDIF
-IF Len(self:aImportFiles)>0
-	RETURN TRUE
-ELSE
-	RETURN FALSE
-ENDIF
+	IF Len(self:aImportFiles)>0
+		RETURN TRUE
+	ELSE
+		RETURN FALSE
+	ENDIF
 METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	* Give next import batch with transaction from ImportTrans
-	LOCAL OrigBst, CurBatchNbr, cGiverName as STRING
+	LOCAL OrigBst, CurBatchNbr,CurDocid, cGiverName as STRING
 	LOCAL CurDate as date, CurOrigin as STRING
-	LOCAL cDescription, cExId as STRING
+	LOCAL cDescription, cExId,cType as STRING
 	local MultiCur:=false as logic 
 	local nPostStatus as int 
 	local oImpB,oImpTr1,oImpTr2,oSel as SQLSelect
@@ -489,7 +555,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	local aPrn:={} as array  // {accid,automatic} 
    self:m56_recognised:=false
 	SQLStatement{"start transaction",oConn}:execute() 
-	oImpTr1:=SQLSelect{"select transactnr,origin from importtrans "+;
+	oImpTr1:=SQLSelect{"select transactnr,origin,transdate,docid from importtrans "+;
 	"where processed=0 "+;
 	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < subdate(now(),interval 20 minute))"+;
 	iif(Empty(self:curimpid),''," and imptrid>"+Str(self:curimpid,-1))+;
@@ -500,22 +566,26 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	endif
 	CurBatchNbr:=oImpTr1:transactnr
 	CurOrigin:=oImpTr1:Origin
+	CurDate:=oImpTr1:transdate
+	CurDocid:=oImpTr1:docid
 	
 	//lock rest of same transaction:
 	oImpTr2:=SQLSelect{"select imptrid from importtrans "+;
-	"where transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+"' order by imptrid for update",oConn}
+	"where processed=0 and transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid for update",oConn}
 	// software lock importrans rows:
-	oLockSt:=SQLStatement{"update importtrans set lock_id="+MYEMPID+",lock_time=Now() where transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+"'",oConn}
+	oLockSt:=SQLStatement{"update importtrans set lock_id="+MYEMPID+",lock_time=Now() where transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+;
+	"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"'",oConn}
 	oLockSt:execute()		
 	if oLockSt:NumSuccessfulRows < 1
 		SQLStatement{"rollback",oConn}:execute()
 		loop
 	else
 		SQLStatement{"commit",oConn}:execute()
-	endif
+	endif                                                 
 	oImpB:=SQLSelect{"select a.description as accountname,a.accid,a.currency as acccurrency,a.multcurr,a.accnumber,a.department,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,i.*"+;
 	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
-	"where i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+"' order by imptrid",oConn}
+	"where processed=0 and i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+;
+	"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid",oConn}
 	if oImpB:reccount<1
 	   LogEvent(self,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
 	   lOK:=false
@@ -541,6 +611,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
       self:oHM:Gc := ""
 		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency) 
 		self:oHM:DepID:=ConI(oImpB:department)
+		cType:=Transform(oImpB:TYPE,"")
 		MultiCur:=false
 		self:oHM:Gc:=oImpB:assmntcd
 		IF !Empty(oImpB:accountnr)
@@ -562,13 +633,18 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			if Empty(aPrn)
 				self:lOK:=FALSE
 			else
-				oSel:=sqlselect{"select accnumber,description from account where accid="+aPrn[1],oConn}
+				oSel:=sqlselect{"select accnumber,a.description,a.currency,a.department,b.category as type,"+SQLAccType()+" as accounttype "+;
+				" from account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid),balanceitem as b  "+ ;
+				" where a.balitemid=b.balitemid and a.accid="+aPrn[1],oConn}
 				if oSel:reccount>0
 					self:oHM:accid:=aPrn[1]
 					self:oHM:accdesc := oSel:Description
-					self:oHM:AccNumber := oSel:AccNumber 
-					lOK:=aPrn[2] 
-					m56_recognised:=true
+					self:oHM:AccNumber := oSel:AccNumber
+					self:oHM:kind:=Upper(oSel:accounttype)	
+					self:oHM:currency:= iif(Empty(oSel:currency),sCurr,oSel:currency) 				 
+					self:oHM:DepID:=ConI(oSel:department)
+					cType:=oSel:TYPE
+					lOK:=aPrn[2] 					
 				else
 					lOK:=false
 				endif
@@ -600,7 +676,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 // aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
 //            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 		
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,oImpB:TYPE,'',oHM:DepID})
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,cType,'',oHM:DepID})
 		cDescription:=oImpB:descriptn
 		self:m56_description:=cDescription 
 		self:m56_assmntcd:=oImpB:assmntcd
@@ -733,7 +809,7 @@ METHOD Import() CLASS ImportBatch
 		SQLStatement{"rollback",oConn}:Execute() 
 		return
 	endif
-	oStmnt:=SQLStatement{"update importlock set lock_id='',lock_time='0000-00-00' where importfile='batchlock'",oConn}
+	oStmnt:=SQLStatement{"update importlock set lock_id='0',lock_time='0000-00-00' where importfile='batchlock'",oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("could not unlock required transactions")}:Show()
@@ -770,12 +846,12 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local aDat as array, impDat as date, cAcc,cAccNumber,cAccName,cAssmnt,cAccId,cdat as string , lUnique as logic
 	local oStmnt as SQLStatement
 	local oSel,oImpTr,oAcc as SQLSelect
-	local cStatement,cError,cAmount as string 
+	local cStatement,cError,cAmount,cDecDelim,cThousandDelim as string 
 	local lError,lSuccess as logic
 	local Amount as float 
 	local aValues:=self:aValues as array   // array with values to be inserted into importrans 
-// 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
-// 	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
+	// 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
+	// 	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
 	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid},{..},..} 
 	local aMbrAcc:={} as array  // array with member accounts
 	local aPers:={}  as array // array with giver data: {{externid,persid},{..}...} 
@@ -814,7 +890,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 		ptrHandle:Close()
 		return true
 	ENDIF
-   SetDecimalSep(Asc('.'))  // to guarante it is correct
+	SetDecimalSep(Asc('.'))  // to guarante it is correct
 	oSel:=SqlSelect{"select a.accnumber,a.description,a.accid from bankaccount b,account a where a.accid=b.accid",oConn}
 	if oSel:RecCount<1
 		(ErrorBox{,self:oLan:WGet("Specify first a bank account with its general ledger account")}):show() 
@@ -887,13 +963,28 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 				nAcc:=Len(aAccDest)
 			endif
 		ENDIF
-		cAmount:= StrTran(StrTran(AFields[ptCre],".",''),",",".")
+		if Empty(cDecDelim)
+			// establish used decimal separator: 
+			cDecDelim:=SubStr(AFields[ptCre],-3,1)
+			if cDecDelim=='.'
+				cThousandDelim:=','
+			elseif cDecDelim==','
+				cThousandDelim:='.'
+			else
+				cDecDelim:=''
+			endif
+		endif
+		if !Empty(cDecDelim)
+			cAmount:= StrTran(StrTran(AFields[ptCre],cThousandDelim,''),cDecDelim,".") 
+		else
+			cAmount:=AFields[ptCre]
+		endif
 		Amount:=Val(cAmount)
 		if Amount>=1000.00
 			LogEvent(self,"amount:"+AFields[ptCre]+'-> '+cAmount+' -> '+Str(amount,-1),"logsql")  // signal large amounts
 		endif
 		self:AddImport(cBank,aAccDest[nAcc,2],Amount,self:oLan:RGet("Gift") +iif(ptDesc<= Len(AFields)," "+AFields[ptDesc],""),impDat,AFields[ptPers],;
-		AFields[ptDoc],cBankName,cAccName,'Import',cOrigin,AFields[ptTrans],aMbrAcc,@nCnt)
+			AFields[ptDoc],cBankName,cAccName,'Import',cOrigin,AFields[ptTrans],aMbrAcc,@nCnt)
 		oMainWindow:STATUSMESSAGE("imported "+Str(nCnt,-1))		
 		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
@@ -1044,7 +1135,7 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	* Import of one batchfile with  transaction data into ImportTrans.dbf 
 	* Testformat: only test if this a file to be imported
 	LOCAL oImpCZR as DBFILESPEC
-	LOCAL nCnt:=0,nProc:=0,nTot,i,nTransId,nLastGift as int
+	LOCAL nCnt:=0,nProc:=0,nTot,i,nTransId,nLastGift, nPos as int
 	LOCAL SamAcc,PMCAcc as string 
 	local oSel,oImpTr,oAcc,oMbr as SQLSelect
 	local lSuccess as logic 
@@ -1052,7 +1143,8 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	local aMbrAcc:={} as array // array with member accounts 
 // 	local aValues:={} as array   // array with values to be inserted into importrans 
 	Local aMissingFld:={},aNeededFld:={"ICO","POPIS","CASTKA","CASTKAM","DAU","FIRMA","MD_UCET","D_UCET","DOKLAD"} as array
-	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date
+	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date 
+	local cSearchDesc as string  // how to check duplicates with description
 	
 	oImpCZR:=DbFileSpec{oFr:FullPath,"DBFCDX"}
 	oImpCZR:Path:=CurPath
@@ -1101,7 +1193,7 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 			ENDIF
 			PMCAcc:=oSel:ACCNUMBER
 			// Search latest transdate in Imptr: 
-			oImpTr:=SqlSelect{"select max(transdate) as transdate from importtrans where origin='CZR'",oConn}
+			oImpTr:=SqlSelect{"select max(transdate) as transdate from importtrans where fromrpp=0",oConn}
 			if Empty(oImpTr:status) .and. oImpTr:RecCount>0
 				LastDate:=oImpTr:transdate 
 			else
@@ -1121,11 +1213,13 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				FromDesc:=AllTrim(CZR->FieldGetSym(#MD_UCET))
 				ToDescr:=AllTrim(CZR->FieldGetSym(#D_UCET))
 				docid:=AllTrim(CZR->FieldGetSym(#DOKLAD))
-				cOrigin:="WD"+Pad(docid,9) 
+				cOrigin:="WD"+Pad(docid,9)
+				cTransnr:=StrZero(CZR->ICO,10,0) 
 				nTot++
 				if AScan(aMbrAcc,{|x|x==ToAcc}) > 0      // skip non member transaction
-					if !(FromAcc==SamAcc .or. FromAcc==PMCAcc)   // skip assessment and PMC transactions
-						self:AddImport(FromAcc,ToAcc,Amount,Description,impDat,ExtId,Firma,FromDesc,ToDescr,docid,cOrigin,cTransnr,aMbrAcc,@nCnt,true)
+					if !(FromAcc==SamAcc .or. FromAcc==PMCAcc)   // skip assessment and PMC transactions 
+// 						self:AddImport(FromAcc,ToAcc,Amount,Description,impDat,ExtId,Firma,FromDesc,ToDescr,docid,cOrigin,cTransnr,aMbrAcc,@nCnt,true)
+						self:AddImportCzech(FromAcc,ToAcc,Amount,Description,impDat,ExtId,Firma,FromDesc,ToDescr,docid,cOrigin,cTransnr,aMbrAcc,@nCnt,true)
 					endif
 				endif
 				CZR->DBSKIP()
@@ -1350,9 +1444,11 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		// first transaction roW 
 		// in case of BTA and gift form USA look up donor:
 		cExId:=""
-		if sEntity == "NTL" .or.sEntity=="BTA" .and.Origin=="USA".and.transtype=="CN"
-			cExId:=PadL(Split(transdescription," ")[1],10,"0")
-			if Empty(Val(cExId))
+// 		if sEntity == "NTL" .or.sEntity=="BTA" .and.Origin=="USA".and.transtype=="CN"
+		if Origin=="USA".and.transtype=="CN"
+// 			cExId:=PadL(Split(transdescription," ")[1],10,"0")
+			cExId:=Str(Val(Right(Split(transdescription," ")[1],10)),-1)
+			if cExId=='0'
 				cExId:=""
 			endif
 		endif
@@ -1442,7 +1538,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			//                1     2     3     4     5         6        7        10 11    12     13        14    15     16       17      18    19    20
 			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			AAdd(aValuesTrans,{shb,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
+				aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'0','1',origin,''})
 		endif
 		// second transaction row 
 
@@ -1481,7 +1577,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			nProc++
 			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],'','1',origin,''})
+				aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],'0','1',origin,''})
 			// add to income expense if needed: 
 			if !Empty(SINCHOME) .or.!Empty(SINC)
 				// add transactions for ministry income/expense:
@@ -1681,7 +1777,7 @@ METHOD SaveImport(nCnt ref int,nProc ref int) as logic CLASS ImportBatch
 							if	nAcc>0 
 								//	first	from bank account:
 								AAdd(aValuesTrans,{cBankaccId,aValues[i,6],aValues[i,6],aValues[i,7],aValues[i,7],sCURR,aValues[i,4],;
-									aValues[i,1],aValues[i,10],LOGON_EMP_ID,'2','1',aValues[i,2],aValues[i,3],'',0})
+									aValues[i,1],aValues[i,10],LOGON_EMP_ID,'2','1',aValues[i,2],aValues[i,3],'0',0})
 								aValues[i,13]:=1	//	set importrans	to	processed 
 								//	second transaction line	to	destination
 								i++
@@ -1913,12 +2009,6 @@ SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
 
 STATIC DEFINE IMPORTPATTERNBROWSER_DELETEBUTTON := 102 
-RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBACCNUMBER as DataColumn
@@ -1930,6 +2020,12 @@ CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   protect oOwner as ImportPatternBrowser
+RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 ACCESS Accnumber() CLASS ImportPatternBrowser_DETAIL
 RETURN SELF:FieldGet(#Accnumber)
 
