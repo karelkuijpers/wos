@@ -201,16 +201,17 @@ METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aD
 		ENDIF
 	ENDDO
 RETURN nCurrentRec
-METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
+METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=false as logic ) as string CLASS DepartmentExplorer
 	* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
 	* if lDBUpfate true: Update corresponding database items
 	*
 
 	LOCAL nNum as string
 	LOCAL nMain as STRING
-	LOCAL cError AS STRING
+	LOCAL cError as STRING
+	local oStmnt as SQLStatement
 
-	Default(@lDBUpdate,FALSE)
+//	Default(@lDBUpdate,FALSE)
 
 	* determine new main identifier:
 	nMain:=SELF:GetIdFromSymbol(oItemDrop:NameSym)
@@ -225,7 +226,12 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 			cError:=ValidateDepTransfer(nMain,nNum)
 			IF Empty(cError) 
 				* update account: 
-				SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}:execute()
+				oStmnt:=SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}
+				oStmnt:execute() 
+				if !Empty(oStmnt:Status)
+					cError:="Could not transfer account:"+oStmnt:ErrInfo:ErrorMessage
+					return cError
+				endif
 			ELSE
 				(ErrorBox{,cError}):Show()
 				RETURN cError
@@ -238,14 +244,19 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS DepartmentExplorer
 					(ErrorBox{,cError}):Show()
 					RETURN cError
 				ENDIF
-				SQLStatement{"update department set parentdep='"+nMain+"' where depid='"+nNum+"'",oConn}:Execute()
+				oStmnt:= SQLStatement{"update department set parentdep='"+nMain+"' where depid='"+nNum+"'",oConn}
+				oStmnt:execute()
+				if !Empty(oStmnt:Status)
+					cError:="Could not transfer department:"+oStmnt:ErrInfo:ErrorMessage
+					return cError
+				endif
 			endif
 		ENDIF
 	ENDIF
 
-	SUPER:TransferItem(aItemDrag,oItemDrop)
+	SUPER:TransferItem(aItemDrag,oItemDrop,lDBUpdate)
 
-	RETURN
+	RETURN cError
 Method ValidateTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as string,curdepid:="" as string) as string  class DepartmentExplorer
 	* Check if transition of currentdepartment to new parent is allowed
 	*
