@@ -831,12 +831,12 @@ local nCurrec as int
 		",banknumber='"+ZeroTrim(self:mBANKNUMMER)+"'"+;
 		",openall="+iif(self:mOPENALL,"1","0")+;
 		",giftsall ="+iif(self:mGIFTSALL,"1","0")+;
-	 	",payahead='"+ self:mRekP +"'"+;
+	 	",payahead='"+ Str(Val(self:mRekP),-1) +"'"+;
 	 	iif(self:mGIFTENIND .and. self:oDCSingleDest:Checked,; 
-		 	",singledst='"+mRekS +"'"+;
+		 	",singledst='"+Str(Val(self:mRekS),-1) +"'"+;
 		 	",syscodover='"+iif(self:oDCOverride:Checked,"O","A")+"'"+;
  			",fgmlcodes ='"+ MakeCod({self:mFGCod1,self:mFGCod2,self:mFGCod3})+"'",;
-		 	",singledst='',fgmlcodes='',syscodover=''")+;
+		 	",singledst='0',fgmlcodes='',syscodover=''")+;
 		iif(self:lNew,""," where bankid="+self:mBankId)	
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
