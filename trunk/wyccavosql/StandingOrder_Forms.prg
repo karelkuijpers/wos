@@ -321,7 +321,7 @@ METHOD OKButton( ) CLASS EditPeriodic
 			",docid='"+self:mdocid+"'"+;
 			",`period`="+Str(self:mperiod,-1)+;
 			",currency='"+self:mCurrency+"'"+;
-			",persid='"+cPersid+"'"+;
+			",persid='"+Str(val(cPersid),-1)+"'"+;
 			iif(lNew,""," where stordrid="+ self:curStordid)
 		// 		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
 		oStmnt:=SQLStatement{cStatement,oConn}
