@@ -31,7 +31,16 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	endif 
 	if FirstOfDay .or. DBVers>PrgVers
-		IF oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+		if oFTP:Open()
+			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+		endif
+		if !lSuc
+			// try again:
+			if oFTP:Open()
+				lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+			endif
+		endif
+		if lSuc
 			// remove old version if still present:
 			oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
 			if oFs:Find()
@@ -75,7 +84,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 			oFs:=null_object
 			oFTP:CloseRemote() 
 		else
-// 			__RaiseFTPError(oFTP)
+// 			__RaiseFTPError(oFTP) 
+			WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 		endif
 	endif
 	return false
@@ -750,6 +760,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// determine first login this day:
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
+	// turn off strict mode:
+//	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
 /*	if !self:lNewDb
 		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
@@ -1146,7 +1158,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","clc","char(8)","NO","",""},;
 		{"account","accnumber","char(12)","YES","NULL",""},;
 		{"account","department","int(11)","NO","0",""},;
-		{"account","propxtra","mediumtext","NO","",""},;
+		{"account","propxtra","mediumtext","YES","NULL",""},;
 		{"account","currency","char(3)","NO","",""},;
 		{"account","multcurr","tinyint(1)","NO","0",""},;
 		{"account","reevaluate","tinyint(1)","NO","0",""},;
@@ -1208,7 +1220,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankorder","amount","decimal(15,2)","NO","0",""},;
 		{"bankorder","datedue","date","NO","0000-00-00",""},;
 		{"bankorder","datepayed","date","NO","0000-00-00",""},;
-		{"bankorder","description","char(32)","NO","",""},;
+		{"bankorder","description","varchar(511)","NO","",""},;
 		{"bankorder","idfrom","int(11)","NO","0",""},;
 		{"bankorder","stordrid","int(11)","NO","0",""},;
 		{"budget","accid","int(11)","NO","NULL",""},;
@@ -1298,7 +1310,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","processed","tinyint(1)","NO","0",""},;
 		{"importtrans","origin","char(11)","NO","",""},;
 		{"importtrans","accname","char(25)","NO","",""},;
-		{"importtrans","giver","char(28)","NO","",""},;
+		{"importtrans","giver","varchar(127)","NO","",""},;
 		{"importtrans","transtyp","char(2)","NO","",""},;
 		{"importtrans","fromrpp","tinyint(1)","NO","0",""},;
 		{"importtrans","externid","varchar(24)","NO","",""},;
@@ -1370,13 +1382,13 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","alterdate","date","NO","0000-00-00",""},;
 		{"person","datelastgift","date","NO","0000-00-00",""},;
 		{"person","opc","char(10)","NO","",""},;
-		{"person","remarks","mediumtext","NO","",""},;
+		{"person","remarks","mediumtext","YES","NULL",""},;
 		{"person","email","varchar(64)","NO","",""},;
 		{"person","mobile","char(18)","NO","",""},;
 		{"person","type","smallint(6)","NO","1",""},;
 		{"person","birthdate","date","NO","0000-00-00",""},;
 		{"person","gender","smallint(6)","NO","0",""},;
-		{"person","propextr","mediumtext","NO","",""},;
+		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
 		{"person","deleted","tinyint(1)","NO","0",""},; 
 		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
@@ -1684,7 +1696,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","0","PRIMARY","1","transid"},;
 		{"transaction","0","PRIMARY","2","seqnr"},;
 		{"transaction","1","accid","1","accid"},;
-		{"transaction","1","accid","2","dat"},;
+		{"transaction","1","accid","2","bfm"},;
+		{"transaction","1","accid","3","dat"},;
 		{"transaction","1","docid","1","docid"},;
 		{"transaction","1","reference","1","reference"},;
 		{"transaction","1","transdate","1","dat"},;
@@ -2102,10 +2115,10 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
-	aStatCur:=AReplicate('',nLenCur)
+	aStatCur:=AReplicate('',nLenCur) 
 	// first search for columns with changed specifications: 
 
-	for nPosReq:=1 to nLenReq   
+	for nPosReq:=1 to nLenReq
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
 		nPosCur:=AScan(aCurColumn,{|x|Lower(x[2])==cReqname})
 		if nPosCur>0    // required column exists in current table?
@@ -2184,7 +2197,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		endif
 		// Table name, Field,Type,Null,Default,Extra 
 		cStatement+=sIdentChar+aReqColumn[nPosReq,2]+sIdentChar+' '+aReqColumn[nPosReq,3]+' '+iif(Upper(aReqColumn[nPosReq,4])=="NO","NOT NULL","NULL")+;
-			iif(Upper(aReqColumn[nPosReq,5])=="NULL",iif(Upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'")+;
+			iif(AtC('text',aReqColumn[nPosReq,3])>0,'',iif(Upper(aReqColumn[nPosReq,5])=="NULL",iif(Upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'"))+;
 			" "+aReqColumn[nPosReq,6]+;
 			iif(aStatReq[nPosReq,1]="a"," "+iif(nPosReq=1,"FIRST","AFTER "+aReqColumn[nPosReq-1,2]),"")
 	next
@@ -2232,13 +2245,16 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			cIndex:=aCurIndex[nPosCur,3]
 			if AtC(cIndex,cDropIndex)=0     // not yet dropped?
 				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
-				if (nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cAddIndex)=0 
+				if (nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cAddIndex)=0
+					aStatCur[nPosCur]:='x'  // processed
 					// add to indexes to be added:
 					aColName:=Split(aReqIndex[nPosReq,5],'(')
 					cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
-						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
+						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'') 
+					aStatReq[nPosCur,1]='c'  // changed
 					nPosReq++		
 					do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex 
+						aStatReq[nPosCur,1]:='c'  // changed
 						aColName:=Split(aReqIndex[nPosReq,5],'(')
 						cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar +iif(Len(aColName)>1,'('+aColName[2],'')
 						nPosReq++
@@ -2266,15 +2282,18 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			exit
 		endif
 		if AtC(cIndex,cAddIndex)=0 
-			if AScan(aCurIndex,{|x|x[3]==cIndex})>0 .and. AtC(cIndex,cDropIndex)=0
+			if (nPosCur:=AScan(aCurIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cDropIndex)=0
 				// add to drop index
-				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)			
+				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
+				aStatCur[nPosCur]:='x'  // processed
 			endif
 			aColName:=Split(aReqIndex[nPosReq,5],'(')
 			cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
 				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
+			aStatReq[nPosCur,1]:='c'  // changed
 			nPosReq++		
 			do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
+				aStatReq[nPosCur,1]='c'  // changed
 				aColName:=Split(aReqIndex[nPosReq,5],'(')
 				cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 				nPosReq++
@@ -2331,7 +2350,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				LogEvent(self,"Could	not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 			else
 				SQLStatement{"commit",oConn}:execute()
-				LogEvent(self,"Table	"+cTableName+"	reformated with:"+oStmnt:SQLString)
+				LogEvent(self,'Table '+cTableName+"	reformated with:"+oStmnt:SQLString)
 			endif	
 		endif
 		oMainWindow:STATUSMESSAGE(Space(80))
