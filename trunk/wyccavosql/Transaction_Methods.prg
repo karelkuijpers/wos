@@ -194,25 +194,25 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	local SubTotalRTF:="\trowd\cellx1060\cellx"+Str(2100+nDisp,-1)+"\clbrdrt\brdrw10\brdrth\cellx"+Str(2100+nDisp+1050,-1) as string  // use: \intbl Begin saldo Januari 2011\cell\intbl\qr 1882,65\cell\intbl\qr \cell\row\pard
 
 	
-// 	if self:SkipInactive
-// 		IF oTrans:RecCount<1
-// 			return true
-// 		endif
-// 	endif
+	if self:SkipInactive
+		IF oTrans:RecCount<1
+			return true
+		endif
+	endif
 	// skip to transaction of required account:
 	do while !oTrans:EoF .and.;
 			(cOrder="accnumber" .and. oTrans:ACCNUMBER<oAcc:ACCNUMBER .or.;
 			cOrder="accid".and. oTrans:accid<oAcc:accid) 
 		oTrans:Skip()
 	enddo
-// 	if self:SkipInactive
-// 		if oTrans:EoF .or. ;
-// 				(cOrder="accnumber" .and. oTrans:ACCNUMBER>oAcc:ACCNUMBER .or.;
-// 				cOrder="accid".and. oTrans:accid>oAcc:accid) 
-// 			// no transactions for this account 
-// 			return true
-// 		endif
-// 	endif
+	if self:SkipInactive
+		if oTrans:EoF .or. ;
+				(cOrder="accnumber" .and. oTrans:ACCNUMBER>oAcc:ACCNUMBER .or.;
+				cOrder="accid".and. oTrans:accid>oAcc:accid) 
+			// no transactions for this account 
+			return true
+		endif
+	endif
 	IF self:SendingMethod="SeperateFile"
 		lRtf:=true
 		BoldOn:="{\b "
@@ -511,7 +511,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 			Str(self:oBal:Per_Deb-self:oBal:Per_Cre,12,DecAantal))+RedCharOff,;
 			iif(self:lDebCreMerge,"",Space(12)+self:cTab+Str(self:oBal:Per_Cre-self:oBal:Per_Deb,12,DecAantal)))+BoldOff,Heading,0)
 	endif
-	IF self:SkipInactive .and. !lTransFound   // regarde liabilities and assets always as active
+	IF self:SkipInactive .and. !lTransFound   // regard liabilities and assets always as active
 		*  Skip accounts without a transaction:
 		* remove added member lines:
 		ASize(self:oReport:oPrintJob:aFIFO,nBeginmember)
@@ -1724,9 +1724,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		
 		oNew:Skip()
 	enddo
-	if !mCLNGiver==OrigPerson .and. !lNewPers
-		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
-	endif
+// 	if !mCLNGiver==OrigPerson .and. !lNewPers
+// 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
+// 	endif
 
 	oNew:ClearIndex(NewIndex)
 	Newmut:=FileSpec{NewIndex}
@@ -1886,7 +1886,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				* Check if giver is a member:
 				mbrRek:=oHm:aMirror[i,1]
 				mCLNGiverMbr := oHm:aMirror[i,17]
-				//	check	if	direct gift	report:
+				//	check	if	direct gift	report: 
+				lOK:=false
 				if	AScan(oHm:aMirror,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
 					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
 						(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
@@ -1955,13 +1956,15 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					self:oDCmperson:SetFocus()
 					RETURN FALSE
 				ELSEIF m54_pers_sta=='O' 
-					if !SubStr(self:mBST,1,3)=='COL' // skip storno's
-						oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
-						oBox:Type := BUTTONYESNO
-						IF (oBox:Show() = BOXREPLYNO)
-							self:oDCmperson:SetFocus()
-							RETURN FALSE
-						ENDIF
+					if Empty(self:mBST) .or.!SubStr(self:mBST,1,3)=='COL' // skip storno's
+						if !empty(SELF:oDCmPerson:TEXTValue)
+							oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
+							oBox:Type := BUTTONYESNO
+							IF (oBox:Show() = BOXREPLYNO)
+								self:oDCmperson:SetFocus()
+								RETURN FALSE
+							ENDIF 
+						endif
 					endif
 				ENDIF
 			ENDIF
@@ -2072,7 +2075,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
 						iif(oHm:aMirror[i,4]='PF'.or.oHm:aMirror[i,4] = 'AG' .or.oHm:aMirror[i,4] = 'MG';
 						.or. (oHm:aMirror[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
-						.or. oHm:aMirror[i,5]= 'A' .or. oHm:aMirror[i,5] = 'F'.or. oHm:aMirror[i,5]="C","persid='"+self:mCLNGiver+"',","")+;
+						.or. oHm:aMirror[i,5]= 'A' .or. oHm:aMirror[i,5] = 'F'.or. oHm:aMirror[i,5]="C","persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
 						"dat='"+SQLdate(self:mDAT)+"'"+;
 						",docid='"+Transform(self:mBST,"")+"'"+;
 						",description='"+AddSlashes(AllTrim(oHm:aMirror[i,16]))+"'"+; 
@@ -2084,7 +2087,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						",userid='"+LOGON_EMP_ID +"'"+;
 						",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
 						",opp='"+oHm:OPP+"'"+;
-						",ppdest='"+AllTrim(oHm:aMirror[i,15])+"'"+; 
+						",ppdest='"+SubStr(AllTrim(oHm:aMirror[i,15]),15)+"'"+; 
 					",currency='"+AllTrim(oHm:aMirror[i,11]) +"'"+;
 						",debforgn="+Str(oHm:aMirror[i,13],-1)+;
 						",creforgn="+Str(oHm:aMirror[i,14],-1)+;
@@ -2397,7 +2400,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 			do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='AG'.and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oHm:Goto(recnr)
 				oHm:gc	:=	'MG'
-				oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror
+				oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror 
 			ENDDO
 		elseif	oHm:gc == 'AG' 
 			// change to MG if needed 
@@ -3326,7 +3329,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	if !Empty(cBankDescription)
 		self:oTmt:m56_description+cBankDescription
 	endif
-	self:oDCcGirotelText:Caption:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(AllTrim(self:oTmt:m56_contra_bankaccnt)),'','('+AllTrim(self:oTmt:m56_contra_bankaccnt)+')')+' '+;
+	self:oDCcGirotelText:Caption:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(AllTrim(self:oTmt:m56_contra_bankaccnt)).or.Len(AllTrim(self:oTmt:m56_contra_bankaccnt))>60,'','('+AllTrim(self:oTmt:m56_contra_bankaccnt)+')')+' '+;
 		iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
 	Compress(self:oTmt:m56_description+" "+self:oTmt:m56_address+", "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
 	self:oDCmDat:Disable()
@@ -3920,7 +3923,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			oStmnt:=SQLStatement{"insert into transaction set "+;
 				"dat='"+SQLdate(self:mDAT)+"'"+;
 				",docid='"+self:oDCmBST:Value+"'"+;
-				",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)+' ('+AllTrim(self:odccGirotelText:TextValue)+')') +"'"+;
+				",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)+iif(Empty(self:odccGirotelText:TextValue),'',' ('+AllTrim(self:odccGirotelText:TextValue)+')')) +"'"+;
 				",accid="+self:DebAccId+;
 				",deb="+Str(self:mDebAmnt,-1)+;
 				",debforgn="+Str(self:mDebAmntF,-1)+;
@@ -3938,7 +3941,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						oStmnt:=SQLStatement{"insert into transaction set "+;
 							"transid="+cTransnr+;
 							",seqnr="+Str(nSeqnbr,-1)+;
-							",persid='"+self:mCLNGiver+"'"+;
+							",persid='"+Str(Val(self:mCLNGiver),-1)+"'"+;
 							",dat='"+SQLdate(self:mDAT)+"'"+;
 							",docid='"+self:oDCmBST:Value+"'"+;
 							",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
@@ -4080,7 +4083,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						i:= AScan(oHm:AMirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
 					ENDDO
 					oStmnt:=SQLStatement{"update person set "+iif(dlg < self:mDAT,"datelastgift='"+SQLdate(self:mDAT)+"',","")+"mailingcodes='"+cCod+"',propextr='"+AddSlashes(cExtra)+"'"+;
-						" where persid="+self:mCLNGiver,oConn}
+						" where persid="+Str(Val(self:mCLNGiver),-1),oConn}
 					oStmnt:execute()
 				ENDIF
 				IF self:lTeleBank
