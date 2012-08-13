@@ -4535,6 +4535,10 @@ Function StandardZip(ZipCode:="" as string) as string
 		IF isnum(SubStr(ZipCode,1,4)) .and. !isnum(SubStr(ZipCode,5,2))
 			RETURN SubStr(ZipCode,1,4)+" "+SubStr(ZipCode,5,2)
 		ENDIF
+	elseif Len(ZipCode)==5
+		IF countrycode='46' .and. isnum(ZipCode)  
+			RETURN SubStr(ZipCode,1,3)+" "+SubStr(ZipCode,4,2)
+		ENDIF
 	ENDIF
 RETURN ZipCode
 Function Title(nTit as int) as string 
