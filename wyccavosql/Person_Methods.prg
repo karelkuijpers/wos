@@ -4224,7 +4224,7 @@ f_row:=SQLFullName(Purpose,ALIAS)
 f_row:=SubStr(f_row,1,Len(f_row)-2)+;   // eliminate ) for trim and concat
 ',", ",'+"if("+mAlias+'address<>"" and address<>"X",concat('+mAlias+'address," "),""),'+;
 "if("+mAlias+'postalcode<>"" and postalcode<>"X",concat('+mAlias+'postalcode," "),""),'+;
-"if("+mAlias+'city<>"" and city<>"X" and city<>"??",concat('+mAlias+'city," "),""),country'+;
+"if("+mAlias+'city<>"" and city<>"X" and city<>"??",concat('+mAlias+'city," "),""),if(country<>"",country,'+iif(Empty(country),'""','"'+country+'"')+')'+;
 "))"  // add  )) for trim and concat
 RETURN AllTrim(f_row)
 Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string 
