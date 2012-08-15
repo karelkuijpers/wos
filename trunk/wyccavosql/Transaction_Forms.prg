@@ -2689,11 +2689,11 @@ METHOD DebSelect() CLASS PaymentJournal
 	*	Selection of bank accounts as candidate debitaccount for payments/gifts
 	LOCAL aDebAccs := {} as ARRAY
 	local oBank,oAcc as SQLSelect
-	oBank:=SQLSelect{"select b.usedforgifts,a.currency,a.description,a.accid,a.accnumber from bankaccount b, account a where a.accid=b.accid and b.telebankng=0 and a.active=1", oConn}
+	oBank:=SqlSelect{"select a.currency,a.description,b.accid,a.accnumber from bankaccount b, account a where a.accid=b.accid and b.telebankng=0 and a.active=1 and b.usedforgifts=1 order by a.description", oConn}
 	oBank:Execute() 
 	do WHILE !oBank:EOF
 		AAdd(aDebAccs,{oBank:Description,oBank:AccID})
-		IF Empty(cBankPreSet) .and.ConI(oBank:usedforgifts)=1
+		IF Empty(cBankPreSet) 
 			cBankPreSet := oBank:Description
 			self:DebAccNbr:=oBank:ACCNUMBER
 			self:DebAccId:=Str(oBank:AccID,-1) 
