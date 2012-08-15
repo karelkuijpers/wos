@@ -225,7 +225,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 	//Put your PreInit additions here 
 	self:cFrom:="bankaccount b, account a"
-	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,cast(b.telebankng as signed) as telebankng,cast(b.usedforgifts as signed) as usedforgifts"
+	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,cast(b.telebankng as char) as telebankng,cast(b.usedforgifts as char) as usedforgifts"
 	self:cOrder:="a.description"
 	self:cWhere:="a.accid=b.accid"
 	oBank:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
@@ -381,7 +381,7 @@ oDBMGIFTIND := DataColumn{Indicator{}}
 oDBMGIFTIND:Width := 17
 oDBMGIFTIND:HyperLabel := HyperLabel{#mGiftInd,"Gifts/Paymnts?",NULL_STRING,NULL_STRING} 
 oDBMGIFTIND:Caption := "Gifts/Paymnts?"
-oDBmGiftInd:Block := {|x| if(x:usedforgifts==1,'Yes','No')}
+oDBmGiftInd:Block := {|x| if(x:usedforgifts=='1','Yes','No')}
 oDBmGiftInd:BlockOwner := self:Server
 self:Browser:AddColumn(oDBMGIFTIND)
 
@@ -389,7 +389,7 @@ oDBMTELEBANKNG := DataColumn{indicator{}}
 oDBMTELEBANKNG:Width := 17
 oDBMTELEBANKNG:HyperLabel := HyperLabel{#mTELEBANKNG,"Telebank?",NULL_STRING,NULL_STRING} 
 oDBMTELEBANKNG:Caption := "Telebank?"
-oDBmTELEBANKNG:Block := {|x| if(x:telebankng==0,'No','Yes')}
+oDBmTELEBANKNG:Block := {|x| if(x:TELEBANKNG=='0','No','Yes')}
 oDBmTELEBANKNG:BlockOwner := self:Server
 self:Browser:AddColumn(oDBMTELEBANKNG)
 
