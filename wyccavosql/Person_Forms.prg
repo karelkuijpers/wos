@@ -1877,7 +1877,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 // 	SELF:oExtServer:=oServer && save external server 
 	self:cFields:= "p.persid,lastname,initials,firstname,prefix,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	self:cFrom:="person as p"
-	self:cOrder:="lastname"
+	self:cOrder:="lastname,firstname,city"
 	self:cWhere:='p.deleted=0' 
 	self:oCaller := uExtra 
 	if !Empty(oServer)
