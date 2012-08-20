@@ -770,7 +770,7 @@ METHOD Import() CLASS ImportBatch
 		ELSEIF Upper(oBF:Extension)==".XML"
 			// import file in PMIS-XML-format:
 // 			if self:ImportPMC(oBF,dBatchDate)
-			if self:ImportPMCNew(oBF,dBatchDate)
+			if self:ImportPMC(oBF,dBatchDate)
 				++lv_aant_toe
 				AAdd(aFiles,oBF)
 			ENDIF
