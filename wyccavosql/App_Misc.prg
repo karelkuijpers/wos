@@ -1477,6 +1477,8 @@ function InitGlobals()
 		CountryCode:=AllTrim(oSys:COUNTRYCOD)
 		if CountryCode='41'
 			Collate:=" COLLATE utf8_danish_ci"
+		elseif CountryCode='46'
+			Collate:=" COLLATE utf8_swedish_ci" 
 		else
 			Collate:=''
 		endif
