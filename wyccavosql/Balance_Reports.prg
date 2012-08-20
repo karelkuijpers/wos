@@ -2117,7 +2117,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 			LogEvent(self,"Error:"+oDep:ErrInfo:ErrorMessage+CRLF+"statement:"+oDep:SQLString,"LogErrors") 
 			ErrorBox{self,"Error:"+oDep:ErrInfo:ErrorMessage}:Show()
 		endif
-		return
+		return false
 	endif 
 	SetDecimalSep(Asc(DecSeparator)) 
 	nDep:=0
@@ -2327,7 +2327,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 
 	self:Pointer := Pointer{POINTERARROW}
 
-	RETURN
+	RETURN true
 METHOD DepstmntPrint() CLASS DeptReport
 	LOCAL lPrintFile as LOGIC
 	LOCAL nRow,nPage as int
