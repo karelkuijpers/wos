@@ -45,7 +45,7 @@ function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
 // add new mailing NewCodes to current string of mailing codes cCod
 LOCAL aPCod,aNCod as ARRAY, iStart as int
 if Empty(NewCodes)
-	return
+	return null_string
 endif
 	aPCod:=Split(AllTrim(cCod)," ")
 	aNCod:=Split(AllTrim(NewCodes)," ")
@@ -4097,7 +4097,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 	cFilename:=ToFileFS:FullPath
 	ptrHandle := MakeFile(self,@cFilename,oLan:WGet("Creating KID-file"))
 	IF ptrHandle = F_ERROR .or. ptrHandle==nil
-		RETURN
+		RETURN false
 	ENDIF
 	oReport := PrintDialog{self,"Producing of KID file",,70}
 	oReport:Show()
@@ -4168,7 +4168,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 		// erase file:
 		FErase(cFilename)
 	endif		
-	RETURN
+	RETURN true
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
 		IF Empty(oAcc).or.oAcc:reccount<1
