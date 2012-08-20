@@ -41,20 +41,18 @@ FUNCTION IsMAPIAvailable() as logic pascal
 	LOCAL nResult as LONG
 	LOCAL phkResult,mailResult as ptr
 	LOCAL lVista as LOGIC
-	LOCAL lpData, cRequired, cCurrent as psz
+	LOCAL lpData, cRequired, cCurrent,cCurrentVersion as psz
 	LOCAL cbData as DWORD                                                                          
 
 	local MyClient:=requiredemailclient as int
 	local cError as string, lFatal as logic
-// 	nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
-// 		'SOFTWARE\Microsoft\Windows Messaging Subsystem' ,0,KEY_ALL_ACCESS, @phkResult )
 	nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
 		String2Psz('SOFTWARE\Microsoft\Windows Messaging Subsystem') ,0,KEY_QUERY_VALUE, @phkResult )
 	IF nResult == ERROR_SUCCESS
 		lpData  := Space(256)
 		cbData  := 256			
 		nResult := RegQueryValueEx( phkResult , ;
-			"MAPI" , ;
+			String2Psz("MAPI") , ;
 			null_ptr , ;
 			null_ptr , ;
 			lpData , ;
@@ -62,16 +60,30 @@ FUNCTION IsMAPIAvailable() as logic pascal
 
 		IF ( nResult == ERROR_SUCCESS ) .and. ( lpData = "1" )
 			// Determine OS: Vista or higher:
-			nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Outlook Express') ,;
-				0,KEY_ALL_ACCESS, @mailResult )
+			nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Microsoft\Windows NT\CurrentVersion') ,;
+				0,KEY_QUERY_VALUE, @mailResult )
 			IF ( !nResult == ERROR_SUCCESS )
-				lVista:=true
+				LogEvent(," No currentversion:"+Str(nResult,-1),"MailError") 
+			else
+				cCurrentVersion  := Space(256)
+				cbData  := 256			
+				nResult := RegQueryValueEx( mailResult , ;
+					String2Psz("ProductName") , ;
+					null_ptr , ;
+					null_ptr , ;
+					cCurrentVersion , ;
+					@cbData )
+				IF !nResult == ERROR_SUCCESS
+					LogEvent(,"Currentversion:("+Str(nResult,-1)+") "+lpData,"MailError")
+				else
+					lVista:=iif(AtC('XP',cCurrentVersion)>0,false,true)
+				endif
 			endif
 			                                                                      
 			// Determine required client and available client	in cRequired 
 			if MyClient == 4   // Determine if Mapi2Xml present (tool to interface to webclients like Gmail):
 				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Mapi2Xml') ,;
-				0,KEY_ALL_ACCESS, @mailResult )
+				0,KEY_QUERY_VALUE, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Mapi2Xml"
 				else
@@ -81,7 +93,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			endif 
 			if MyClient == 3   // Determine if Windows Live Mail present:
 				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Windows Live Mail') ,;
-				0,KEY_ALL_ACCESS, @mailResult )
+				0,KEY_QUERY_VALUE, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Windows Live Mail"
 				else
@@ -91,7 +103,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			endif 
 			if MyClient == 2   // Determine if Thunderbird present:
 				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , ;
-					String2Psz('SOFTWARE\Clients\Mail\Mozilla Thunderbird') ,0,KEY_ALL_ACCESS, @phkResult )
+					String2Psz('SOFTWARE\Clients\Mail\Mozilla Thunderbird') ,0,KEY_QUERY_VALUE, @phkResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Mozilla Thunderbird"
 				else
@@ -103,7 +115,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			if MyClient == 1 
 				// is Microsoft Outlook available?
 				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Microsoft Outlook') ,;
-					0,KEY_ALL_ACCESS, @mailResult )
+					0,KEY_QUERY_VALUE, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Microsoft Outlook" 
 // 					LogEvent(,"3:"+Str(nResult,-1),"MailError")
@@ -115,7 +127,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			If MyClient==0
 				if lVista
 					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail\Windows Live Mail') ,;
-					0,KEY_ALL_ACCESS, @mailResult )
+					0,KEY_QUERY_VALUE, @mailResult )
 					IF ( nResult == ERROR_SUCCESS )
 						cRequired:="Windows Live Mail"
 					else
@@ -228,6 +240,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 		endif
 	endif
 	if !Empty(cError)
+		LogEvent(,cError,"MailError") 							
 		WarningBox{,"Sending by email",cError}:Show()
 	endif
 	EmailClient:=cCurrent
