@@ -221,7 +221,7 @@ METHOD PrintSubItem(nLevel as int,nPage ref int,nRow ref int,ParentNum as int,aB
 	ENDDO
 RETURN nCurrentRec
 
-METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
+METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=false as logic ) as string CLASS BalanceItemExplorer
 	* Transfer TreeviewItems from MyDraglist  to oItemDrop, with its childs
 	* if lDBUpfate true: Update corresponding database items
 	*
@@ -229,8 +229,7 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 	LOCAL nNum as USUAL
 	LOCAL nMain,cType as STRING 
 	LOCAL cError as STRING
-	local oBal as SQLStatement
-	Default(@lDBUpdate,FALSE)
+	local oStmnt as SQLStatement
 
 	* determine new main identifier:
 	nMain:=self:GetIdFromSymbol(oItemDrop:NameSym)
@@ -246,7 +245,12 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 			* check transfer allowed:
 			cError:=ValidateAccTransfer(nMain,nNum)
 			IF Empty(cError) 
-				SQLStatement{"update account set balitemid='"+nMain+"' where accid='"+nNum+"'",oConn}:Execute()
+				oStmnt:=SQLStatement{"update account set balitemid='"+nMain+"' where accid='"+nNum+"'",oConn}
+				oStmnt:execute()
+				if !Empty(oStmnt:Status)
+					cError:="Could not transfer account item:"+oStmnt:ErrInfo:ErrorMessage
+					return cError
+				endif
 			ELSE
 				(ErrorBox{,cError}):Show()
 				RETURN cError
@@ -265,15 +269,19 @@ METHOD TransferItem(aItemDrag , oItemDrop, lDBUpdate ) CLASS BalanceItemExplorer
 			// 					RETURN cError
 			// 				ENDIF 
 			// 		update balance item:
-			oBal:=SQLStatement{"update balanceitem set balitemidparent='"+nMain+"' where balitemid='"+nNum+"'",oConn}
-			oBal:Execute()
+			oStmnt:=SQLStatement{"update balanceitem set balitemidparent='"+nMain+"' where balitemid='"+nNum+"'",oConn}
+			oStmnt:execute()
+			if !Empty(oStmnt:Status)
+				cError:="Could not transfer balance item:"+oStmnt:ErrInfo:ErrorMessage
+				return cError
+			endif
 		ENDIF
 	ENDIF
 
-	SUPER:TransferItem(aItemDrag,oItemDrop)
+	SUPER:TransferItem(aItemDrag,oItemDrop,lDBUpdate)
 
 
-	RETURN
+	RETURN cError
 CLASS BalanceListView INHERIT ListView
 
 METHOD SortByDescription(oListViewItem1, oListViewItem2) CLASS BalanceListView
@@ -478,7 +486,7 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	Protect oLan as Language
 	export aAccnts:={} as array
 	export aItem:={} as array 
-	declare method BuildTreeViewItems,GetChild,GetTreeFromListItem,IsChildOf,ValidateBalanceTransition, GetIdFromSymbol
+	declare method BuildTreeViewItems,GetChild,GetTreeFromListItem,IsChildOf,ValidateBalanceTransition, GetIdFromSymbol,TransferItem
 METHOD Append ()  CLASS CustomExplorer
 	SELF:EditButton(TRUE)
 	RETURN
@@ -1044,7 +1052,7 @@ RETURN true
 
 	
 
-METHOD TransferItem(aItemDrag,oItemDrop) CLASS CustomExplorer
+METHOD TransferItem(aItemDrag as array,oItemDrop as TreeViewItem,lDBUpdate:=false as logic) as string CLASS CustomExplorer
 * Transfer item on screen:
 LOCAL aChilds:={} AS ARRAY
 LOCAL oTreeView			AS BalanceTreeView
@@ -1063,7 +1071,8 @@ LOCAL lSuccess AS LOGIC
 		FOR i := 1 TO ALen( aChilds )
 			oTreeView:AddItem( aChilds[i,1] , aChilds[i,2] )
 		NEXT
-	ENDIF
+	ENDIF 
+	return ''
 METHOD TreeViewDragBegin( oEvent ) CLASS CustomExplorer
 
 	LOCAL ptAction IS _WINPoint
@@ -1134,7 +1143,8 @@ METHOD TreeViewDragBegin( oEvent ) CLASS CustomExplorer
 
 	RETURN NIL
 METHOD TreeViewDragEnd( X , Y ) CLASS CustomExplorer
-	LOCAL i AS INT
+	LOCAL i as int
+	local cError as string
 	LOCAL oTreeView AS BalanceTreeView
 	LOCAL oListView AS ListView
 
@@ -1148,12 +1158,18 @@ METHOD TreeViewDragEnd( X , Y ) CLASS CustomExplorer
 	oListView:=SELF:ListView
 
 	IF oTVItemDrop != NULL_OBJECT .and.!Empty(SELF:aDragList)
-		* Determine current selected TreeViewItem for ListView:
+		* Determine current selected TreeViewItem for ListView: 
+		SQLStatement{"start transaction",oConn}:execute()
 		FOR i:=1 to Len(self:aDragList)
 			IF self:aDragList[i,1] != self:oTVItemDrop:NameSym
-				self:TransferItem(self:aDragList[i], self:oTVItemDrop, true )
+				cError:=self:TransferItem(self:aDragList[i], self:oTVItemDrop, true )
+				if !Empty(cError)
+					SQLStatement{"rollback",oConn}:execute()
+					return nil
+				endif
 			ENDIF
 		NEXT
+		SQLStatement{"commit",oConn}:execute()
 		oTreeView:SelectItem( oTVItemDrop , #DropHighlight, FALSE )
 		SELF:oTVItemDrop := NULL_OBJECT
 		SELF:lTreeDragging := FALSE
