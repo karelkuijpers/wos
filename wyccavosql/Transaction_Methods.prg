@@ -4163,9 +4163,12 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			self:oDCmPerson:Value:=""
 			self:oDCmDebAmntF:TEXTValue:=""
 			self:mDebAmntF:=""
-			self:oDCcGirotelText:TextValue:=" "
-// 			self:oDCmPerson:SetFocus()
-			self:oDCmDat:SetFocus()
+			self:odccGirotelText:TextValue:=" " 
+			if countrycode='33'
+				self:oDCmDat:SetFocus()
+			else
+				self:oDCmPerson:SetFocus()
+			endif
 			oDet:Browser:Refresh()
 		endif
 	ENDIF
