@@ -667,10 +667,12 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 							else
 								lv_budget:=""
 								lv_persid:=""
+								lv_kind:=""
 							endif
 						else
 							lv_budget:=""
 							lv_persid:=""
+							lv_kind:=""
 						endif
 					elseif Empty(lv_kind) 
 						lv_kind:="AC"
