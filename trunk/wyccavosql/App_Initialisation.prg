@@ -939,7 +939,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 				break
 			endif 
 			aLocal:=self:GetLocaleInfo() 
-			(CurrencySpec{,,,aLocal[5]}):Show()
+			(CurrencySpec{,,,aLocal[5]}):Show() 
+			if Empty(sCURR)  // nothing chosen
+				break
+			endif
 			mindate:=SToD(Str(Year(Today())-1,4,0)+"0101")
 			oTrans := SQLSelect{"select cast(min(dat) as date) as mindate from transaction",oConn}
 			IF oTrans:RecCount>0
