@@ -2629,16 +2629,16 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	ELSEIF myColumn:NameSym == #GC
 		IF !AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,4])
 			oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:VALUE
+// 			myColumn:TextValue:= myColumn:VALUE
 			oHm:gc:=myColumn:VALUE
-			IF !oHm:CheckUpdates()
-				* Reset to previuos values
-				oHm:gc:=oHm:aMirror[ThisRec,4]  && reset
-				RETURN
-			ELSE
+// 			IF !oHm:CheckUpdates()
+// 				* Reset to previuos values
+// 				oHm:gc:=oHm:aMirror[ThisRec,4]  && reset
+// 				RETURN
+// 			ELSE
 				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
 				myOwnerOwner:ValidateTempGift()
-			ENDIF
+// 			ENDIF
 		ENDIF
  	ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
  		self:SetColumnFocus(#Descriptn)
@@ -2762,9 +2762,11 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 				oHm:AccID := self:defbest
 				oHm:AccDesc:=self:defOms
 				oHm:ACCNUMBER:=self:DefNbr
-				oHm:KIND := if(Empty(self:defGc),"G","M")
+// 				oHm:KIND := if(Empty(self:defGc),"G","M")
+				oHm:KIND := self:Defaccounttype
 				oHm:Original := self:mDebAmnt
 				oHm:CURRENCY := self:DefCur
+				oHm:INCEXPFD := self:Defincexpfd
 				m51_agift :=1
 				if !Empty(self:mDebAmnt)
 					IF self:mDebAmnt>0
@@ -3382,8 +3384,8 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 				endif
 				self:oSFPaymentDetails:DebCreProc(true)
 // 				* save in mirror-array
-// 				oHm:aMirror[oHm:Recno]:=;
-// 					{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}    
+				oHm:aMirror[oHm:Recno]:=;
+					{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}    
 			ENDIF
 		elseif !Empty(self:DefBest)
 			// single destination bank account: 
@@ -3427,8 +3429,8 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					oHm:REFERENCE:=oSub:REFERENCE
 					self:oSFPaymentDetails:DebCreProc(true)
 // 					* save in mirror-array
-// 					oHm:aMirror[oHm:Recno]:=;
-// 						{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oSub:acctype,oHm:DESCRIPTN,oHm:INCEXPFD} 
+					oHm:aMirror[oHm:Recno]:=;
+						{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,0,oSub:acctype,oHm:DESCRIPTN,oHm:INCEXPFD} 
 					// check if Subscription InvoiceID equal to description of telebanking record in case of autogiro: 
 					if self:lTeleBank
 						if !Empty(self:oTmt:m56_description) .and.self:oTmt:m56_description==AllTrim(oSub:INVOICEID)
@@ -3466,8 +3468,8 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					oHm:Original := oDue:cre 
 					self:oSFPaymentDetails:DebCreProc(true)
 // 					* save in mirror-array
-// 					oHm:aMirror[oHm:Recno]:=;
-// 						{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,Str(oDue:dueid,-1),oDue:acctype,oHm:DESCRIPTN,oHm:INCEXPFD}
+					oHm:aMirror[oHm:Recno]:=;
+						{oHm:AccID,oHm:Original,oHm:cre,oHm:gc,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:accnumber,oHm:CREFORGN,oHm:CURRENCY,oHm:Multiple,Str(oDue:dueid,-1),oDue:acctype,oHm:DESCRIPTN,oHm:INCEXPFD}
 					++self:m51_apost
 					oDue:SKIP()
 				ENDDO
