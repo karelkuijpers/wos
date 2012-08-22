@@ -2492,7 +2492,7 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 	PROTECT cGiverName, cOrigName as STRING
 	EXPORT lMemberGiver as LOGIC
 	PROTECT DebAccNbr,DebAccId, DebCln, DebCurrency,DebCategory as STRING
-	PROTECT DefBest, DefOms, DefGc, DefNbr, DefMlcd, DefCur,DefType as STRING,DefOvrd, DefMulti as logic
+	PROTECT DefBest, DefOms, DefGc, DefNbr, DefMlcd, DefCur,DefType,Defincexpfd,Defaccounttype as STRING,DefOvrd, DefMulti as logic
 	EXPORT m51_agift,m51_apost as int
 	PROTECT m51_assrec as int
 	PROTECT cBankPreSet as STRING  // default debit accountname
@@ -2545,7 +2545,7 @@ END
 method AddCur(0 class PaymentJournal
 self:oSFPaymentDetails:AddCurr()
 return
-method bankanalyze() class PaymentJournal
+Method bankanalyze() class PaymentJournal
 	// analyze bankaccount belonging to current debaccount 
 	local oSel as SQLSelect
 	self:DefBest := ''
@@ -2556,9 +2556,9 @@ method bankanalyze() class PaymentJournal
 	self:DefOvrd:=False
 	self:DefCur:=sCurr
 	self:DefMulti:=false 
-	oSel:=SqlSelect{"select giftsall,openall,singledst,fgmlcodes,syscodover,i.category as acctype,a.description,a.accnumber,a.currency,a.multcurr,m.persid "+;
-		"from bankaccount b left join account a on (a.accid=b.singledst and a.active=1) right join balanceitem i on (i.balitemid=a.balitemid)  left join member m on (m.accid=a.accid or m.depid=a.department) "+;
-		"where b.accid="+self:DebAccId,oConn}
+	oSel:=SqlSelect{"select ba.giftsall,ba.openall,ba.singledst,ba.fgmlcodes,ba.syscodover,b.category,a.description,a.accnumber,a.currency,a.multcurr,m.persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype "+;
+		"from bankaccount ba left join account a on (a.accid=ba.singledst and a.active=1) right join balanceitem b on (b.balitemid=a.balitemid) left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) "+;
+		"where ba.accid="+self:DebAccId,oConn}
 	if oSel:reccount>0  
 		self:GiftsAutomatic:=iif(ConI(oSel:GIFTSALL)=1,true,false)
 		self:DueAutomatic:=iif(ConI(oSel:OPENALL)=1,true,false)
@@ -2577,7 +2577,9 @@ method bankanalyze() class PaymentJournal
 				self:DefMulti:=iif(ConI(oSel:MULTCURR)=1,true,false) 
 				self:DefMlcd:=oSel:FGMLCODES
 				self:DefOvrd:=iif(oSel:SYSCODOVER="O",true,false)
-				self:DefType:=oSel:acctype
+				self:DefType:=oSel:category
+				self:Defincexpfd:=oSel:incexpfd
+				self:Defaccounttype:=oSel:accounttype
 			endif
 		endif
 	ENDIF
