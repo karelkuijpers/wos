@@ -867,7 +867,7 @@ METHOD DateTimeSelectionChanged(oDateTimeSelectionEvent) CLASS EditAccount
 	//Put your changes here
 	IF !oDCBalanceDate:SelectedDate == dCurDate
 		
-		dCurDate := oDCBalanceDate:SelectedDate
+		self:dCurDate := oDCBalanceDate:SelectedDate
 		oBalncs:=Balances{}
 // 		oBalncs:GetBalance(mAccId,,oDCBalanceDate:SelectedDate,self:mCurrency)
 
