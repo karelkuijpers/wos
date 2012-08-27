@@ -353,6 +353,1285 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL destinstr:={} as ARRAY 
 	local aDistr:={} as array 
 	local oReport as PrintDialog
+	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,nTransnrDT,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
+	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
+	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
+	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
+	LOCAL me_has as LOGIC
+	LOCAL me_accid,currentaccid,me_mbrid, me_gc,PMCco,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
+	LOCAL cTransnr,cTransnrDT,mHomeAcc, cDestPersonId,me_householdid, me_destAcc,me_destPP,me_currency,cSeqnr as STRING
+	LOCAL ptrHandle
+	LOCAL cFilename, datestr as STRING
+	LOCAL DecSep as int
+	LOCAL oMapi as MAPISession
+	LOCAL oRecip,oRecip2 as MAPIRecip
+	LOCAL cPMISMail as STRING
+	LOCAL lSent as LOGIC
+	LOCAL uRet as USUAL
+	LOCAL oWindow as OBJECT
+	// 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
+	LOCAL CurMonth:=Year(self:closingDate)*100+Month(self:closingDate) as int
+	// 	LOCAL noIES as LOGIC
+	LOCAL DestAmnt as FLOAT
+	LOCAL oAfl as UpdateHouseHoldID
+	LOCAL datelstafl as date
+	LOCAL cDestAcc,cNoteText,cError,cErrorLog,cStmsg,cAccs,cCurAcc as STRING 
+	local nRow, nPage as int
+	Local cAccCng as string,  nAnswer as int 
+	local oAsk as AskSend 
+	local oAskUp as AskUpld 
+	local cErrMsg as string 
+	LOCAL PrvYearNotClosed as LOGIC
+	local fExChRate as float
+	local lStop:=true,PMCUpload as logic
+	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
+	local oMBal as Balances
+	local oStmnt,oStmntDistr as SQLStatement
+	local aTransLock:={},aDisLock:={},aYearStartEnd as array
+	local nTransLock as Dword,nTransSample as int
+	local cDistr as string
+	local time1,time0 as float
+	local cFatalError as string 
+	local Country as string 
+	local cStmnt,cClosingdate,cDueDate as string 
+	local cTransStmnt,cTransDTStmnt,cBankStmnt as string  
+	local cMbrSelect,cMbrSelectArr as string
+	local aMbr:={} as array   // array with all data of all members   :
+	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
+	//                   1       2       3      4        5      6      7         8      9         10       11
+	local aAccidMbr:={} as array  // array with accids of all members : {accid,mbrid,category},... 
+	local aBalMbr:={} as array  // array with balance per member; {{mbrid,balance},...
+	local aAccidRPP:={} as array  // array with accids of all members with remaining RPP distrbution instruction: {accid,mbrid},...  
+	local aAccidMbrF:={} as array  // array with accids of all foreign members : {accid,mbrid},...
+	local aPersDest:={} as array // array with destination persons of distribution instructions: {{bankaccntname,persid,fullname},...}
+	local aDBBalValue:={} as array
+	local aAssTot:={} as array   // array with total assessable amount per accid  {{accid,asstot},... 
+	local aAssMbr:={} as array   // array with total assessable amounts per membrid {{mbrid,asstot},...
+	local aAccRPP:={} as array   // array with total RPP amount per accid    {{accid,rpptot},...}
+	local aRPPMbr:={} as array   // array with total RPP amount per mbrid    {{mbrid,rpptot},...}
+	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername  
+	local aAccDestOwn:={} as array  // array with destination acounts within own system: {{accid,accnumber},...}
+	local aTransMT:={} as array  // array with values to be inserted into table transaction for PMC transactions
+	local aTransDT:={} as array  // array with values to be inserted into table transaction for direct transactions
+	//aTransMT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+	//            1    2     3      4      5      6            7      8   9  10   11         12    13     14      15  
+	local aBankOrder:={} as array  // 
+
+	oWindow:=GetParentWindow(self) 
+	// Import first account change list 
+	oWindow:Pointer := Pointer{POINTERHOURGLASS}
+	oAfl:=UpdateHouseHoldID{}
+	oAfl:Importaffiliated_person_account_list()
+
+	oWindow:Pointer := Pointer{POINTERARROW}
+
+	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	oCurr:=Currency{"Sending to PMC"}
+	fExChRate:=Round(oCurr:GetROE("USD",Today(),true,true,1.65),8)   // limit to 8 digits because that is sent to PMC 
+	if oCurr:lStopped
+		Return
+	endif 
+	Country:=SqlSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
+
+	PMCUpload:= iif(ConI(self:oSys:PMCUPLD)=1,true,false)
+	// fExChRate:=self:mxrate 
+
+	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
+	cClosingdate:=SQLdate(self:closingDate)
+	cDueDate:=SQLdate(Today())
+
+	if Empty(self:oSys:PMCMANCLN) 
+		(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
+		// 		self:ENDWindow()
+		self:Pointer := Pointer{POINTERARROW}
+		return
+	else
+		oPers:=SqlSelect{"select persid,email,"+SQLFullName()+" as fullname from person where persid="+Str(self:oSys:PMCMANCLN,-1),oConn}
+		if oPers:Reccount<1
+			(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
+			// 			self:ENDWindow()
+			self:Pointer := Pointer{POINTERARROW}
+			return
+		elseif Empty(oPers:email)
+			(ErrorBox{oWindow,self:oLan:WGet("Enter first email address for PMC manager")+" "+oPers:fullname+' '+self:oLan:WGet("who should approve the PMC file")}):Show()
+			// 			self:ENDWindow()
+			self:Pointer := Pointer{POINTERARROW}
+			return
+			
+		endif
+	endif  
+	self:Pointer := Pointer{POINTERHOURGLASS}
+
+	self:oSys:EXCHRATE := fExChRate 
+
+	// Select member data:
+	cMbrSelect:="select m.mbrid,m.homepp,m.homeacc,m.householdid,m.co,m.has,m.grade,m.offcrate,"+;
+		"ad.accid,ad.accnumber,"+SQLFullName(0,"p")+" as description,ad.currency,b.category as type,"+;
+		"ai.accid as accidinc,ai.accnumber as accnumberinc,ai.description as descriptioninc,ai.currency as currencyinc,"+;
+		"ae.accid as accidexp,ae.accnumber as accnumberexp,ae.description as descriptionexp,ae.currency as currencyexp,"+;
+		"an.accid as accidnet,an.accnumber as accnumbernet,an.description as descriptionnet,an.currency as currencynet,"+;
+		"pp.ppname as homeppname,"+;
+		"group_concat(cast(d.desttyp as char),'##',cast(d.destamt as char),'##',d.destpp,'##',d.destacc,'##',cast(d.lstdate as char),'##',cast(d.seqnbr as char),'##',"+;
+		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr" +;
+		" from member m left join ppcodes pp on (pp.ppcode=m.homepp) "+;
+		" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) left join ppcodes pd on (d.destpp=pd.ppcode) "+;
+		" left join account ad on (ad.accid=m.accid) left join balanceitem b on (b.balitemid=ad.balitemid) left join department dm on (dm.depid=m.depid) left join account ai on (ai.accid=dm.incomeacc) "+;
+		" left join account ae on (ae.accid=dm.expenseacc) left join account an on (an.accid=dm.netasset),person p "+;   
+	" where m.persid=p.persid group by m.mbrid order by m.mbrid"
+	cMbrSelectArr:="select group_concat(cast(mbrid as char),'%%',description,'%%',homepp,'%%',homeacc,'%%',householdid,'%%',co,'%%',cast(has as char),'%%',grade,'%%',offcrate,'%%',"+;
+		"if(isnull(accid),'%%%%%%%%',concat(cast(accid as char),'%%',accnumber,'%%',currency,'%%',cast(type as char),'%%')),"+;
+		"if(isnull(accidinc),'%%%%%%%%',concat(cast(accidinc as char),'%%',accnumberinc,'%%',descriptioninc,'%%',currencyinc,'%%')),"+;
+		"if(isnull(accidexp),'%%%%%%%%',concat(cast(accidexp as char),'%%',accnumberexp,'%%',descriptionexp,'%%',currencyexp,'%%')),"+;
+		"if(isnull(accidnet),'%%%%%%%%',concat(cast(accidnet as char),'%%',accnumbernet,'%%',descriptionnet,'%%',currencynet,'%%')),"+;
+		"coalesce(homeppname,''),'%%',coalesce(distr,'') order by mbrid separator '#%#') as grMbr"+;
+		" from ("+cMbrSelect+") as y group by 1=1" 
+	oMbr:=SqlSelect{cMbrSelectArr,oConn}
+	if oMbr:Reccount<1
+		LogEvent(self,oMbr:SQLString,"logerrors") 
+		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
+		return
+	endif
+	// 	LogEvent(self,"cMbrSelectArr: "+Str(Len(oMbr:grMbr),-1),"logsql")
+	// add to aMbr:
+	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
+	//                   1       2       3      4        5      6      7         8      9         10       11
+	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#'),{|x|x:=Split(x,'%%') })
+	// expand distribution instructions:
+	for i:=1 to Len(aMbr)
+		if !Empty(aMbr[i,27]) 
+			aMbr[i,27]:=AEvalA(Split(aMbr[i,27],"#;#"),{|x|x:=Split(x,'##')})
+			// collect own destination accounts: 
+			for j:=1 to Len(aMbr[i,27])
+				if aMbr[i,27,j,3]=SEntity .and. !Empty(aMbr[i,27,j,4])  // destination is account within own system? 
+					if AScan(aAccDestOwn,{|x|x[2]==aMbr[i,27,j,4]})=0
+						AAdd(aAccDestOwn,{'',aMbr[i,27,j,4]})       // {accid,accnumer}
+					endif
+				endif
+			next
+		else
+			aMbr[i,27]:={}
+		endif
+	next
+	// check distribution instructions:
+	oSel:=SqlSelect{"select mbrid,destacc from distributioninstruction d where destpp='AAA' and not exists (select 1 from personbank where banknumber= d.destacc)",oConn}
+	if oSel:Reccount>0
+		cError:=self:oLan:WGet("Following members contain an illegal distribution instruction")+':'
+		do while !oSel:EOF
+			i:=AScan(aMbr,{|x|x[1]==oSel:mbrid})
+			IF i>0
+				cError+=CRLF+aMbr[i,2]+' '+self:oLan:WGet("not found banknbr")+' '+oSel:destAcc
+			endif
+			oSel:skip()
+		enddo
+		ErrorBox{self,cError}
+		return
+	endif 
+	// collect destination persons:
+	oSel:=SqlSelect{"select group_concat(d.destacc,'%%',cast(b.persid as char),'%%',"+SQLFullName(0,'p')+" separator '##') as grpers from distributioninstruction d, personbank b, person p where d.destpp='AAA' and d.destacc=b.banknumber and b.persid=p.persid group by 1=1",oConn}
+	if oSel:Reccount>0
+		aPersDest:=AEvalA(Split(oSel:grpers,"##"),{|x|x:=Split(x,'%%')}) 
+	endif  
+	// Check member data:
+	i:=AScan(aMbr,{|x|Empty(x[26])})  // scan for empty homeppname
+	if i>0
+		cError:=self:oLan:WGet("Member")+' '+aMbr[i,2]+' '+self:oLan:WGet("contains an illegal Primary Finance entity")+':'+aMbr[i,3]	
+		(ErrorBox{self,cError}):Show()
+		return
+	endif 
+	// scan for: HOMEPP # SEntity .and. !Empty(accid) .and. (!TYPE==LIABILITY.and. !TYPE== asset )
+	i:=AScan(aMbr,{|x|!x[3]==SEntity .and. !Empty(x[10]) .and.(!x[13]==LIABILITY .and. !x[13]==asset)})
+	if i>0
+		cError:=oLan:WGet("Non-own")+" "+ self:oLan:WGet("member")+' '+aMbr[i,2]+' '+self:oLan:WGet("should have a liability/funds or asset account")
+		(ErrorBox{self,cError}):Show()
+		return
+	endif
+	if Len(aAccDestOwn)>0
+		// collect own destination accounts
+		oSel:=SqlSelect{"select group_concat(cast(accid as char),'%%',accnumber separator '##') as owndest from account where accnumber in ("+Implode(aAccDestOwn,',',,,2)+") and active=1",oConn}
+		if oSel:Reccount>0
+			aAccDestOwn:=AEvalA(Split(oSel:owndest,'##'),{|x|x:=Split(x,'%%')})
+		else
+			aAccDestOwn:={}
+		endif
+	endif
+
+	// make array of all accids:
+	for i:=1 to Len(aMbr)
+		if !Empty(aMbr[i,10])
+			AAdd(aAccidMbr,{aMbr[i,10],aMbr[i,1],aMbr[i,13]}) 
+			if !aMbr[i,3]==SEntity
+				// add to accids foreign members:
+				AAdd(aAccidMbrF,{aMbr[i,10],aMbr[i,1]})
+			elseif AScan(aMbr[i,27],{|x|x[1]=='3'})>0 
+				// add to accids members with remaining RPP instruction:
+				AAdd(aAccidRPP,{aMbr[i,10],aMbr[i,1]})				
+			endif 
+		else
+			AAdd(aAccidMbr,{aMbr[i,14],aMbr[i,1],income})
+			AAdd(aAccidMbr,{aMbr[i,18],aMbr[i,1],expense})
+			AAdd(aAccidMbr,{aMbr[i,22],aMbr[i,1],liability})
+			if !aMbr[i,3]==SEntity
+				// add to accids foreign members:
+				AAdd(aAccidMbrF,{aMbr[i,14],aMbr[i,1]})
+				AAdd(aAccidMbrF,{aMbr[i,18],aMbr[i,1]})
+				AAdd(aAccidMbrF,{aMbr[i,22],aMbr[i,1]})
+			elseif AScan(aMbr[i,27],{|x|x[1]=='3'})>0 
+				// add to accids members with remaining RPP instruction:
+				AAdd(aAccidRPP,{aMbr[i,14],aMbr[i,1]})				
+				AAdd(aAccidRPP,{aMbr[i,18],aMbr[i,1]})				
+				AAdd(aAccidRPP,{aMbr[i,22],aMbr[i,1]})				
+			endif
+		endif
+	next 
+
+	// Check if nobody else is busy with sending to PMC: 
+	// 	(time1:=Seconds())   
+	oTrans:=SqlSelect{'select transid from transaction t '+;
+		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
+		" t.lock_id<>0 and t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
+	if oTrans:Reccount>0
+		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
+		return
+	endif 
+	// Check consistency data
+	self:STATUSMESSAGE(self:oLan:WGet("Checking data, please wait")+"...")
+	if !CheckConsistency(self,true,false,@cFatalError)
+		ErrorBox{self,cFatalError}:Show()
+		// 		self:ENDWindow()
+		self:Pointer := Pointer{POINTERARROW}
+		return 
+	endif
+	time0:=time1 
+	self:STATUSMESSAGE(self:oLan:WGet('locking member transactions for update')+'...')
+
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'lock tables `transaction` write',oConn} 
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'update transaction set lock_id="'+MYEMPID+'",lock_time=now() where '+;
+		" bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+iif(Posting," and poststatus>1",""),oConn}
+	oStmnt:Execute() 
+	if !Empty(oStmnt:Status)
+		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oStmnt:Status:description+')'}:Show()
+		SQLStatement{"rollback",oConn}:Execute() 
+		SQLStatement{"unlock tables",oConn}:Execute()
+		return
+	endif
+	nTransLock:=oStmnt:NumSuccessfulRows
+	SQLStatement{"commit",oConn}:Execute()	
+	SQLStatement{"unlock tables",oConn}:Execute()
+	oSel:=SqlSelect{"select transid from transaction where lock_id='"+MYEMPID+"' and  bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>'' limit 1",oConn} 
+	nTransSample:=ConI(oSel:transid)  // save sample transid for checking purposes later
+
+
+	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
+	self:STATUSMESSAGE(cStmsg)
+	oMBal:=Balances{}
+	separatorline:= '--------------------|-----------|'+Replicate('-',126)+'|'
+	nRow:=0
+	nPage:=0
+	store 0 to a_tel
+	nRowCnt :=0 
+	time0:=time1 
+	// determine if previous year is closed for balances:
+	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
+	PrvYearNotClosed:=((aYearStartEnd[1]*12+aYearStartEnd[2])>(Year(LstYearClosed)*12+Month(LstYearClosed)))
+
+	// read balance of all members:
+	oMBal:cAccSelection:="a.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
+	oMBal:cTransSelection:="t.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
+	oAccBal:=SqlSelect{oMBal:SQLGetBalanceDate(self:closingDate),oConn}      // maximum balance is balance at closing date
+	oAccBal:Execute()
+	if	oAccBal:Reccount>0 
+		aDBBalValue:=AEvalA(Split(oAccBal:Balances,'#'),{|x|x:=Split(x,',') })
+		for i:=1 to Len(aDBBalValue)
+			if	(k:=AScan(aAccidMbr,{|x|x[1]==aDBBalValue[i,1]}))>0
+				me_balance:=	Round(Val(aDBBalValue[i,3])- Val(aDBBalValue[i,2]),2) 
+				if PrvYearNotClosed .and. (aAccidMbr[k,3]==INCOME .or.aAccidMbr[k,3]==expense)
+					me_balance:=Round(me_balance+Val(aDBBalValue[i,7])-Val(aDBBalValue[i,6]),2)   // add balance previous year because not in this account
+				endif
+				if (j:=AScan(aBalMbr,{|x|x[1]==aAccidMbr[k,2]}))>0     // balance found for this member?
+					aBalMbr[j,2]:=Round(aBalMbr[j,2]+me_balance,2)
+				else
+					AAdd(aBalMbr,{aAccidMbr[k,2],me_balance})   // otherwise add new balance
+				endif
+			endif
+		next
+		ASort(aBalMbr,,,{|x,y|x[1]<=y[1]})
+	endif
+	//
+	//	For all members non-staff: sum of all assessable transactions not yet sent to PMC:
+	// 
+	//	Sum off all assessable transactions with Empty BFM up till closing date:
+	if Len(aAccidMbr)>0
+		oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.asstot as char) order by y.accid separator "#") as grasssum from (select t.accid,sum(t.cre-t.deb) as asstot from transaction t where t.fromrpp=0 and t.bfm="" and t.gc="AG" and t.dat <="'+SQLdate(closingDate)+'" '+;
+			"and "+oMBal:cTransSelection+" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn} 
+		if oSel:Reccount>0
+			aAssTot:=AEvalA(Split(oSel:grasssum,'#'),{|x|x:=Split(x,',') })  // make array of sums of assessable amounts per account
+			// add to total assessable amount per member:
+			for i:=1 to Len(aAssTot)
+				if (j:=AScan(aAccidMbr,{|x|x[1]==aAssTot[i,1]}))>0
+					if (k:=AScan(aAssMbr,{|x|x[1]==aAccidMbr[j,2]}))>0
+						aAssMbr[k,2]:=Round(aAssMbr[k,2]+Val(aAssTot[i,2]),2)
+					else
+						AAdd(aAssMbr,{aAccidMbr[j,2],Val(aAssTot[i,2])})
+					endif
+				endif
+			next
+			ASort(aAssMbr,,,{|x,y|x[1]<=y[1]})
+		endif
+		if Len(aAccidMbrF)>0
+			// For foreign members: all transactions not yet sent to PMC with assmntcode <> ‘’
+			oSel:=SqlSelect{"select group_concat(cast(accid as char),'&&',cast(transid as char),'&&',cast(seqnr as char),'&&',coalesce(cast(t.persid as char),''),'&&',description,'&&',cast(deb as char),'&&',cast(cre as char),'&&',gc,'&&',"+;
+				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",'') order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
+				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
+				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn} 
+			if oSel:Reccount>0
+				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
+			endif 
+		endif
+		
+		if Len(aAccidRPP)>0
+			//	For all own members with remaining RPP distribution instruction: sum of all transactions fromRPP not yet sent to PMC
+			oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.rpptot as char) order by y.accid separator "#") as grrppsum from (select t.accid,sum(t.cre-t.deb) as rpptot from transaction t where t.fromrpp=1 and t.bfm="" and t.gc>"" and t.dat <="'+SQLdate(closingDate)+'" '+;
+				"and t.accid in ("+Implode(aAccidRPP,',',,,1)+") and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn}
+			if oSel:Reccount>0
+				aAccRPP:=AEvalA(Split(oSel:grrppsum,'#'),{|x|x:=Split(x,',') })  // make array of sums of rpp amounts per account  
+				// add to RPP total per member:
+				for i:=1	to	Len(aAccRPP)
+					if	(j:=AScan(aAccidMbr,{|x|x[1]==aAccRPP[i,1]}))>0
+						if	(k:=AScan(aRPPMbr,{|x|x[1]==aAccidMbr[j,2]}))>0
+							aRPPMbr[k,2]:=Round(aRPPMbr[k,2]+Val(aAccRPP[i,2]),2)
+						else
+							AAdd(aRPPMbr,{aAccidMbr[j,2],Val(aAccRPP[i,2])})
+						endif
+					endif
+				next
+				ASort(aRPPMbr,,,{|x,y|x[1]<=y[1]})
+			endif
+		endif
+	endif
+
+
+	// collect distribution instructions:	
+	nMbrAss:=1
+	nMbrRPP:=1
+	nMbrBal:=1
+	// Process members:
+	for nMbr:=1 to Len(aMbr)
+		// aMbr:
+		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+		me_mbrid:=aMbr[nMbr,1]
+		me_accid:= iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,18],aMbr[nMbr,10])       // accid or accidexp
+		me_accnbr:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,19],aMbr[nMbr,11])       // accnumberexp or ACCNUMBER
+		me_currency:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,21],aMbr[nMbr,12])       // currencyexp or currency
+		me_type:=iif(Empty(aMbr[nMbr,10]),EXPENSE,aMbr[nMbr,13])    // expense or type  
+		me_pers:=StrTran(StrTran(aMbr[nMbr,2],","," "),"-"," ")        // description 
+		me_stat:=aMbr[nMbr,8]  // Grade 
+		me_has:=iif(ConI(aMbr[nMbr,7])=1,true,false)   // has 
+		me_co:=aMbr[nMbr,6]   // co
+		me_rate:=Upper(aMbr[nMbr,9])
+		
+		// compile distribution instructions:
+		destinstr:={}
+		aDistr:={}
+		mHomeAcc:=aMbr[nMbr,4]  //HOMEACC
+		if !Empty(aMbr[nMbr,27]) // distribution instructions?
+			aDistr:=aMbr[nMbr,27] 
+			// check distribution instructions of this member:
+			for i:=1 to Len(aDistr)
+				// aDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,destppname},...
+				//              1       2       3      4        5      6      7         8      9         10       11
+				cDestPersonId:=""
+				IF aDistr[i,3]=="ACH"  //destpp
+					cDestAcc:=AllTrim(aDistr[i,4]) 			
+					if !Empty(cDestAcc) .and.(!cDestAcc=='1'.or.cDestAcc=='2')
+						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
+						exit
+					endif				
+					cDestAcc:=aMbr[nMbr,5]+iif(Empty(cDestAcc),"",+'#'+cDestAcc)  // household code is sufficient from 2011-04-03: householdid+seqnr in destacc
+				ELSE
+					if !aMbr[nMbr,3]== SEntity .and. (aDistr[i,3] # SEntity .and.aDistr[i,3] # "AAA") .and. me_co == "M"            // HOMEPP <> SEntity ?
+						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
+						exit
+					endif
+					cDestAcc:=AllTrim(aDistr[i,4]) 			
+					// check legal ppcode: 
+					if Empty(aDistr[i,11])
+						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
+						exit
+					endif
+					if aDistr[i,3] == "AAA"
+						k:=AScan(aPersDest,{|x|x[1]==cDestAcc})
+						if k>0
+							cDestPersonId:=aPersDest[k,2]
+						else
+							cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+", not found banknbr:"+cDestAcc
+							exit					
+						endif
+						if CountryCode=="31".and.Len(cDestAcc)>7
+							if !IsDutchBanknbr(cDestAcc)
+								cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+",no dutch banknbr:"+cDestAcc
+								exit
+							endif
+						endif
+					endif
+				ENDIF
+				// destinstr: {destpp,destacc,desttype,destamnt,lstdate,seqnbr,description,currency,amntsend,destperson,singleuse},...
+				//               1       2       3        4         5      6       7           8        9        10          11
+				AAdd(destinstr,{AllTrim(aDistr[i,3]),cDestAcc,Val(aDistr[i,1]),Val(aDistr[i,2]),SQLDate2Date(aDistr[i,5]),aDistr[i,6],aDistr[i,7],iif(aDistr[i,8]='1',true,false),Val(aDistr[i,9]),cDestPersonId, iif(aDistr[i,10]='1',true,false)})
+			Next
+			ASort(destinstr,,,{|x,y| x[3]<=y[3].or.y[3]>0.and.x[3]=3})   // sort in processing priority  (remaining RPP immeditialy after fixed
+		endif
+		if !Empty(cError)
+			exit
+		endif
+		DO CASE
+		CASE Empty(me_rate)
+			OfficeRate:=self:sAssmntOffc
+		CASE me_rate="L"
+			OfficeRate:=self:sWithldOffl
+		CASE me_rate="H"
+			OfficeRate:=self:sWithldOffH
+		CASE me_rate="M"
+			OfficeRate:=self:sWithldOffM
+		OTHERWISE
+			OfficeRate:=self:sAssmntOffc
+		ENDCASE		
+		IF me_co="M"
+			me_householdid:=aMbr[nMbr,5] 
+		ELSE
+			me_householdid:=""
+		ENDIF
+		me_homePP:=aMbr[nMbr,3]   // homepp
+		store 0 to AmntTrans
+		mbrfield:= 0
+		mbrint:= 0
+		mbroffice:= 0
+		mbrofficeProj:=0.00 
+		AmntFromRPP:=0.00
+		me_asshome:=0.00 
+		me_assblAmount:=0.00
+		// aMbr:
+		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+
+		// find assessable amount of this member:
+		do while nMbrAss<Len(aAssMbr) .and.aAssMbr[nMbrAss,1]<me_mbrid  
+			nMbrAss++
+		enddo
+		// calculate assessments:
+		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid .and.me_stat!="Staf" 
+			me_assblAmount:=aAssMbr[nMbrAss,2]
+			me_asshome:=Round((me_assblAmount*OfficeRate)/100,DecAantal)
+			mbrint:=Round((me_assblAmount*(self:sPercAssInt+self:sAssmntField))/100,DecAantal)
+		ENDIF
+		
+		// find RPP amount of this member:
+		do while nMbrRPP<Len(aRPPMbr) .and. aRPPMbr[nMbrRPP,1]<me_mbrid 
+			nMbrRPP++
+		enddo
+		// calculate RPP amount:
+		IF nMbrRPP<=Len(aRPPMbr) .and. aRPPMbr[nMbrRPP,1]==me_mbrid 
+			AmntFromRPP:=aRPPMbr[nMbrRPP,2]
+		ENDIF
+
+		IF me_homePP!=SEntity
+			// process transaction to be sent to PMC
+			// aTransF:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givernac
+			//              1     2      3      4       5         6  7   8     9     10    11  
+			TotAssrate:=Round(100.00 - Round(OfficeRate+self:sPercAssInt+self:sAssmntField,DecAantal),DecAantal)
+			me_amounttot:=round(me_asshome+mbrint,decaantal)
+			nAccmbr:=1 
+			do while nAccmbr>0 .and. nAccmbr<=Len(aAccidMbr)
+				nAccmbr:=AScan(aAccidMbr,{|x|x[2]==me_mbrid},nAccmbr)
+				if nAccmbr=0
+					exit
+				endif
+				currentaccid:= aAccidMbr[nAccmbr,1]
+				if (nTrans:=AScan(aTransF,{|x|x[1]==currentaccid}))>0
+					// process transactions:
+					do while nTrans<=Len(aTransF) .and. aTransF[nTrans,1]==currentaccid
+						me_amount:=Round(Val(aTransF[nTrans,7])-Val(aTransF[nTrans,6]),DecAantal)
+						me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(me_amount,-1) +"("+aTransF[nTrans,10]+")" 
+						me_gc:=aTransF[nTrans,8]
+						PMCco:=iif(me_gc=='AG','CN',iif(me_gc=='MG','MM','PC')) 
+						if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
+							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,11]
+						endif
+						if me_gc=='AG' .and. me_stat!="Staf"
+							me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
+							me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
+						endif
+						me_desc+=iif(Empty(me_desc),"","; ")+aTransF[nTrans,5]
+						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2])})				
+						AmntTrans:=Round(me_amount+AmntTrans,DecAantal)
+						nTrans++
+					enddo
+				endif
+				nAccmbr++
+			ENDDO
+			// correct assessment for rounding differences: 
+			fDiff:=Round(me_assblAmount-me_amounttot,DecAantal)
+			if fDiff<>0.00
+				//cErrMsg+="member:"+me_pers+"; me_asshome:"+Str(me_asshome,-1)+"; mbrint:"+Str(mbrint,-1)+"; me_amounttot:"+Str(me_amounttot,-1)+"; ass tot:"+Str(aAssMbr[nMbrAss,2],-1)+"; diff:"+Str(fDiff,-1)+CRLF				
+				me_asshome:=Round(me_asshome+fDiff,DecAantal)  
+			endif	
+		endif			
+
+		AssInt:=Round(AssInt+mbrint,DecAantal)
+		IF me_co="S" 
+			mbrofficeProj:=me_asshome
+			AssOfficeProj:=Round(AssOfficeProj+me_asshome,DecAantal) 
+		ELSE
+			mbroffice:=me_asshome
+			AssOffice:=Round(AssOffice+me_asshome,DecAantal)
+		endif
+		// 		AssOffice:=Round(AssOffice+mbroffice,DecAantal)
+		// 		AssOfficeProj:=Round(AssOfficeProj+mbrofficeProj,DecAantal) 
+		// calculate reversal for ministry income: 
+		if !Empty(SINC).and. me_type==LIABILITY 
+			if !me_has
+				AssInc:=Round(AssInc+mbroffice+mbrofficeProj,DecAantal)
+				if !Empty(samFld)
+					AssFldInt:=Round(AssFldInt+mbrfield+mbrint,DecAantal)
+				endif
+			else
+				AssIncHome:=Round(AssIncHome+mbroffice+mbrofficeProj,DecAantal)
+				if !Empty(samFld)
+					AssFldIntHome:=Round(AssFldIntHome+mbrfield+mbrint,DecAantal)
+				endif
+			endif
+		endif
+		
+		* Save: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
+		//        1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
+		// 1: assessment int+field:
+		IF mbrint # 0
+			AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},iif(me_co="M",mbroffice,mbrofficeProj),,,me_currency,0})  
+			//                      1      2        3      4    5     6      7,1          7,2                          7,3                       7,6                   8                     9 10   11      12
+		ENDIF
+
+		// Transfer balance conform distribution instructions:
+		if me_homePP!=SEntity  .or. (me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0
+			// aMbr:
+			// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+			//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+			
+			// determine limit for sending money:
+			// find balance amount of this member: 
+			BalanceSend:=0.00
+			do while nMbrBal<Len(aBalMbr) .and. aBalMbr[nMbrBal,1]<me_mbrid
+				nMbrBal++
+			enddo
+			// calculate remaining amount:
+			IF nMbrBal<=Len(aBalMbr) .and. aBalMbr[nMbrBal,1]==me_mbrid 
+				BalanceSend:=aBalMbr[nMbrBal,2]
+			ENDIF
+			
+			remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
+			IF me_homePP!=SEntity .and.self:closingDate= Today() 
+				// for transactions to be send to homepp:
+				AmntCorrection:=Round(remainingAmnt-AmntTrans,DecAantal)
+			endif
+			availableAmnt:=remainingAmnt
+			// 2: In case of member from own homePP or non-entity send distribution instructions:
+			IF me_homePP==SEntity .or. me_co="M"
+				// 3: according to distribution instructions:
+				// destinstr: {destpp,destacc,desttype,destamnt,lstdate,seqnbr,description,currency,amntsend,destperson,singleuse},...
+				//               1       2       3        4         5      6       7           8        9        10          11
+				FOR iDest:=1 to Len(destinstr)
+					destAcc:=""
+					iType:=GT
+					cDestPersonId:=""
+					IF destinstr[iDest,1]==SEntity .and. !Empty(destinstr[iDest,2])
+						// transaction own account: 
+						if (k:=AScan(aAccDestOwn,{|x|x[2]==destinstr[iDest,2]}))>0
+							// 						oAccD:=SqlSelect{"select accid from account where accnumber='"+destinstr[iDest,2]+"'",oConn}
+							// 						if oAccD:Reccount>0
+							iType:=DT
+							// 							destAcc:=Str(oAccD:accid,-1)
+							destAcc:=aAccDestOwn[k,1]
+						ENDIF
+					elseIF AllTrim(destinstr[iDest,1])=="AAA" .and. !Empty(AllTrim(destinstr[iDest,2]))
+						// transaction to local bank:
+						if Empty(sCRE)
+							self:ResetLocks()
+							(ErrorBox{self,self:oLan:WGet("Account payable not defined in System Parameters")+"!"}):Show()
+							return false
+						endif
+						iType:=DT
+						destAcc:=sCRE
+						cDestPersonId:=destinstr[iDest,10]
+					endif
+					IF destinstr[iDest,3]=0 // fixed amount
+						// enough balance and not yet sent within this month?:
+						IF Year(destinstr[iDest,5])*100+Month(destinstr[iDest,5])<CurMonth
+							//  enough balance ?
+							DestAmnt:=destinstr[iDest,4]
+							IF destinstr[iDest,8]
+								// convert from UD dollar:
+								DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
+							ENDIF
+							IF remainingAmnt>=DestAmnt
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})  
+								// aDisLock: {{mbrid,seqnr,amountsent,singleuse,lastdate},...}
+								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],DestAmnt,iif(destinstr[iDest,11],'1','0'),cClosingdate})
+								IF me_homePP!=SEntity
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+								endif
+								remainingAmnt:=Round(remainingAmnt-DestAmnt,DecAantal)
+							ELSE
+								// wait untill enough balance
+								exit
+							ENDIF
+						ENDIF
+					ELSEIF destinstr[iDest,3]=1 // proportional amount
+						me_amount:=Min(Round((destinstr[iDest,4]*availableAmnt)/100,DecAantal),remainingAmnt)
+						IF me_amount>0
+							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+							remainingAmnt:=Round(remainingAmnt-me_amount,DecAantal)
+							IF me_homePP!=SEntity
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+							endif
+							if destinstr[iDest,11]														//lock distribution record:
+								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],me_amount,iif(destinstr[iDest,11],'1','0'),cClosingdate})
+							endif
+						ENDIF
+					ELSEIF remainingAmnt>0 // remaining amount:
+						//============ include check cumulative amount (destinstr[iDest,9]) < limit (destinstr[iDest,4])
+						IF destinstr[iDest,4] > 0
+							// limit case:
+							IF Year(destinstr[iDest,5])*100+Month(destinstr[iDest,5])<CurMonth
+								// first time this month:
+								destinstr[iDest,9]:=0
+							ENDIF
+							DestAmnt:=destinstr[iDest,4]
+							IF destinstr[iDest,8]
+								// convert from USD dollar:
+								DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
+							ENDIF
+
+							IF destinstr[iDest,9] < DestAmnt
+								if destinstr[iDest,3]=3  // remaining from RPP
+									amntlimited:=Min(AmntFromRPP,remainingAmnt)
+								else
+									amntlimited:=remainingAmnt
+								endif
+								amntlimited:=Min(amntlimited, Round(DestAmnt-destinstr[iDest,9],DecAantal))
+								if amntlimited>0.00  
+									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],Round(destinstr[iDest,9]+amntlimited,DecAantal),iif(destinstr[iDest,11],'1','0'),cClosingdate})
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+									IF me_homePP!=SEntity
+										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+									endif
+								endif
+							ENDIF
+						ELSE  // no limit
+							if destinstr[iDest,3]=3  // remaining from RPP
+								amntlimited:=Min(AmntFromRPP,remainingAmnt)
+							else
+								amntlimited:=remainingAmnt
+							endif 
+							if amntlimited>0.00  
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+								IF me_homePP!=SEntity
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+								endif
+								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],amntlimited,iif(destinstr[iDest,11],'1','0'),cClosingdate})
+								remainingAmnt:=Round(remainingAmnt-amntlimited,DecAantal)
+							endif
+						ENDIF
+					ENDIF
+				NEXT
+			ENDIF
+			// 2: In case of member from other homePP seperate transactions for CN,MM and PC:
+			IF me_homePP!=SEntity .and.self:closingDate=Today()
+				IF !AmntCorrection=0.00
+					// send if applicable remaining balance to PMC
+					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
+				ENDIF
+			ENDIF
+		endif
+	Next
+	if !Empty(cError)
+		(ErrorBox{self,cError}):Show()
+		self:ResetLocks()
+		return
+	endif
+	// 	if !Empty(cErrMsg)
+	// 		WarningBox{,"Send to PMC","The following members have been skipped because of not posted transactions:"+CRLF+cErrMsg}:Show()
+	// 	endif
+	batchcount:=Len(aMemberTrans)
+	directcount:=0
+	mo_tot:=0
+	mo_direct:=0
+	IF batchcount=0
+		(InfoBox{self,self:oLan:WGet("Partner Monetary Clearinghouse"),self:oLan:WGet("Nothing needs to be send")+"!"}):Show()
+		self:Pointer := Pointer{POINTERARROW}
+		RETURN
+	ENDIF 
+	self:STATUSMESSAGE(self:oLan:WGet('Producing report')+'...')
+	// aMemberTrans: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
+	//                1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
+
+	ASort(aMemberTrans,,,{|x,y| x[3]<y[3] .or.x[3]==y[3].and.x[12]<=y[12]})  // sort on name member  and transid
+	FOR i=1 to batchcount
+		IF aMemberTrans[i,4]==DT    // transactions to own PP not send to PMC
+			mo_direct:=Round(mo_direct+aMemberTrans[i,5],DecAantal)
+			directcount++
+		ELSE
+			mo_tot:=Round(mo_tot+aMemberTrans[i,5],DecAantal)
+		ENDIF
+	NEXT
+	AmountDue:= mo_tot
+	// 	AmountDueTxt:='Amount due to '+AllTrim(if(AmountDue>0,'SIL',sland))+' '+;
+	// 		IF(AmountDue#0,AllTrim(Getal_inv(AmountDue,11))+' (Local currency: '+sCurr+')',;
+	// 			'***NIHIL***' )
+
+	heading:={;
+		'                            Partner Monetary Clearinghouse',;
+		'                                    Transactions to be send',' ',;
+		'ORGANIZATION:  '+sLand+Space(33)+'EXCHANGE RATE U.S. $1 = '+Str(fExChRate,-1,8),;
+		'PARTNERCODE :  '+SEntity,;
+		'currency    :  '+sCurr+'  '+Pad(sCurrName,27)+Space(81)+'PERIOD ' +iif(!Empty(self:oSys:pmislstsnd).and. self:closingDate>self:oSys:pmislstsnd,DToC(self:oSys:pmislstsnd),"")+ ' TO ' + DToC(self:closingDate),;
+		' ',;
+		Pad('MEMBER',20,' ')+PadL('AMOUNT',12,' ')+' DESCRIPTION',separatorline}
+	FOR a_tel=1 to batchcount
+		* Print member data:
+		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
+		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+		me_accid:=aMemberTrans[a_tel,1]
+		me_balance:=aMemberTrans[a_tel,5]
+		* Omschrijving:
+		me_desc:=""
+		IF !Empty(aMemberTrans[a_tel,9])
+			me_desc:=aMemberTrans[a_tel,9]
+		ENDIF
+		IF aMemberTrans[a_tel,4]=AG
+			me_desc:="Assessment Int+Field of gifts from "+Country+' '+self:AssPeriod
+		ELSE
+			IF aMemberTrans[a_tel,4]=MT
+				me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer OF "+AllTrim(aMemberTrans[a_tel,6])+" TO home:"+aMemberTrans[a_tel,7][2]+iif(Empty(aMemberTrans[a_tel,7][1]),"",", "+aMemberTrans[a_tel,7][1] )
+			ELSE
+				me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer TO:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
+			ENDIF
+		ENDIF
+		oReport:PrintLine(@nRow,@nPage,;
+			Pad(aMemberTrans[a_tel,3],20)+Str(me_balance,12,2)+' '+Pad(me_desc,127),heading,3-nRowCnt)
+		IF Len(heading)>6  && kop aanpassen voor nPage >=2
+			FOR i=1 to 4
+				ADel(heading,3)
+			NEXT
+			ASize(heading,3)
+		ENDIF
+	NEXT
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,3)
+	oReport:PrintLine(@nRow,@nPage,;
+		Pad('Subtotal:',20)+" "+Str(mo_tot+mo_direct,11,2)+"  ("+AllTrim(Str(batchcount,-1,0))+" "+oLan:RGet("lines")+")",heading,3-nRowCnt)
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
+	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment intern.+field',40)+Str(AssInt+AssField,11,2),null_array,0)
+	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO standard',40)+Str(AssOffice,11,2),null_array,0)
+	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO Projects',40)+Str(AssOfficeProj,11,2),null_array,0)
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
+	IF mo_direct#0
+		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:RGet("lines")+")",heading,0)
+	ENDIF
+	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(mo_tot/fExChRate,11,2),heading)
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
+	self:Pointer := Pointer{POINTERARROW}
+	uRet:=nil
+	uRet:=oReport:prstart(false)
+
+	oReport:prstop()
+	oWindow:Pointer := Pointer{POINTERARROW}
+	time0:=time1
+	// 	LogEvent(self,"print report:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
+
+	*After printing request confirmation for continuing: 
+	lStop:=true
+	cFilename := curPath + "\"+AllTrim(SEntity)+Str(Year(self:closingDate),4,0)+StrZero(Month(self:closingDate),2)+StrZero(Day(self:closingDate),2)+Str(Round(Seconds(),0),-1)+'PMC.XML'
+	if PMCUpload
+		if TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Is printing of PMC transactions OK")+CRLF+;
+				self:oLan:WGet("and can their file")+Space(1)+cFilename+CRLF+self:oLan:WGet("be uploaded to Insite")+"?",;
+				BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYYES
+			lStop:=false 
+		endif
+	else
+		oAsk:=AskSend{self}
+		oAsk:Show() 
+		if oAsk:Result==1
+			lStop:=false
+		endif
+	endif 
+	if !lStop .and. !self:RefreshLocks(nTransSample,nTransLock)
+		TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+		lStop:=true
+	endif
+
+	if !lStop 
+		// refresh locks
+		* Produce first Datafile: 
+		self:STATUSMESSAGE(self:oLan:WGet('Producing PMC file')+'...')
+		DecSep:=SetDecimalSep(Asc("."))
+		ptrHandle := MakeFile(self,cFilename,self:oLan:WGet("Creating PMC-file"))
+		IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
+			* header record:
+			//		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="ISO-8859-1" ?>')
+			//		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UNICODE" ?>')
+			FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8" ?>')
+			FWriteLineUni(ptrHandle,"<PMISBatch>")
+			FWriteLineUni(ptrHandle,"<Header>")
+			FWriteLineUni(ptrHandle,"<BatchCount>"+AllTrim(Str(batchcount-directcount))+"</BatchCount>")
+			FWriteLineUni(ptrHandle,"<BatchTotal>"+Str(-AmountDue,-1,DecAantal)+"</BatchTotal>")
+			FWriteLineUni(ptrHandle,"<Originating_PP>"+SEntity+"</Originating_PP>")
+			FWriteLineUni(ptrHandle,"<Exchange_Rate>"+AllTrim(Str(fExChRate,,8))+"</Exchange_Rate>")
+			FWriteLineUni(ptrHandle,"</Header>")
+			
+			* detail records:
+			datestr:=Str(Year(self:closingDate),4)+"-"+StrZero(Month(self:closingDate),2)+"-"+StrZero(Day(self:closingDate),2)
+			FOR a_tel=1 to batchcount
+				* Write member data:
+				* reknr,accnbr, accname, type transactie, bedrag,assmntcode, destination{destacc,destPP,housecode,distrseqnbr,destAcc,CO},homeassamnt,description:"
+				IF !aMemberTrans[a_tel,4]==DT
+					me_accnbr:=aMemberTrans[a_tel,2]
+					me_balance:=aMemberTrans[a_tel,5]
+					me_householdid:=AllTrim(aMemberTrans[a_tel,7][3])
+					IF !Empty(aMemberTrans[a_tel,9])
+						me_pers:=aMemberTrans[a_tel,9]
+						IF !Empty(aMemberTrans[a_tel,3])
+							me_pers+=" ("+AllTrim(aMemberTrans[a_tel,3])+")"
+						ENDIF
+					ELSE
+						me_pers:=AllTrim(aMemberTrans[a_tel,3])
+					ENDIF
+					me_destAcc:=aMemberTrans[a_tel,7][1]
+					me_destPP:=aMemberTrans[a_tel,7][2]
+					self:WritePMCTrans(ptrHandle,aMemberTrans[a_tel,4],me_accnbr,me_balance,me_pers,me_householdid,datestr,aMemberTrans[a_tel,6],me_destAcc,me_destPP)
+				ENDIF
+			NEXT
+			FWriteLineUni(ptrHandle,"</PMISBatch>")
+			* closing record:
+			FClose(ptrHandle)
+			if PMCUpload
+				lStop:=true
+				FileStart(WorkDir()+"InsitePMCUpload.html",self)
+				oAskUp:=AskUpld{self,,,cFilename}
+				oAskUp:Show() 
+				if oAskUp:Result==1
+					if !self:RefreshLocks(nTransSample,nTransLock)
+						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+					else
+						lStop:=false
+					endif
+				endif
+				if lStop
+					// remove datafile:
+					if !FileSpec{cFilename}:DELETE()
+						FErase(cFilename)
+					endif
+				endif
+			endif
+		endif
+	endif
+	if lStop 
+		self:ResetLocks()
+		return
+	else
+		IF Empty(self:oSys:PMISLSTSND) .or.self:oSys:PMISLSTSND<Today()-400
+			// still IES:
+			IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
+					self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
+				self:ResetLocks()
+				RETURN
+			ENDIF
+		ENDIF
+		oMapi := MAPISession{}
+		self:Pointer := Pointer{POINTERHOURGLASS}
+		cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
+		self:STATUSMESSAGE(cStmsg)  
+		// determine mbalance accounts to be locked for update 
+		cAccs:=sam+','+shb
+		if !Empty(samProj)
+			cAccs+=','+samProj
+		endif
+		if !Empty(SINCHOME)
+			cAccs+=','+SINCHOME+","+SEXPHOME
+		endif
+		if !Empty(SINC)
+			cAccs+=','+SINC+","+SEXP
+		endif
+		if !Empty(samFld)
+			cAccs+=','+samFld
+		endif
+		for a_tel:=1 to batchcount
+			if !cCurAcc==aMemberTrans[a_tel,1]
+				cCurAcc:=aMemberTrans[a_tel,1]
+				cAccs+=','+cCurAcc
+			endif 
+			IF aMemberTrans[a_tel,4]==DT
+				if At(','+aMemberTrans[a_tel,7][5]+',',cAccs)=0
+					cAccs+=","+aMemberTrans[a_tel,7][5]
+				endif
+			endif
+		next
+		// check transactions are still locked:
+
+		// Prepare transactions:
+		nSeqnr:=0
+		nSeqnrDT:=0
+		//aTransM/DT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+		//             1    2     3      4      5      6            7      8   9  10    11        12    13     14     15  
+		FOR a_tel = 1 to batchcount
+			* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
+			*               1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+			me_accid:=aMemberTrans[a_tel,1]
+			me_balance:=aMemberTrans[a_tel,5]
+			* Record transactions for decreasing balance of member:
+			IF aMemberTrans[a_tel,4]=AG
+				me_desc:=self:oLan:RGet("Assessment Intern+Field of gifts from")+Space(1)+Country+' '+self:AssPeriod
+			ELSE
+				me_desc:=aMemberTrans[a_tel,9]
+				IF aMemberTrans[a_tel,4]=MT
+					me_desc+=iif(Empty(me_desc),"",'; ')+"Transfer of "+AllTrim(aMemberTrans[a_tel,6])+" to home:"+aMemberTrans[a_tel,7][2]
+				ELSE
+					me_desc+=iif(Empty(me_desc),"",'; ')+"Transfer to:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
+				ENDIF 
+				if !aMemberTrans[a_tel,4]==DT
+					me_desc+=" (Exchange rate US $1="+Str(fExChRate,-1,8)+' '+sCurrName+")" 
+				endif
+			ENDIF
+			me_balanceF:=me_balance
+			if !aMemberTrans[a_tel,11]==sCurr
+				self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
+				if self:mxrate>0
+					me_balanceF:=Round(me_balance/self:mxrate,DecAantal)
+				endif 
+			endif
+			cError:=""
+			me_desc:=SubStr(AddSlashes(me_desc),1,511) // limit to fit into description 
+			if aMemberTrans[a_tel,4]==DT
+				// 					nSeqnrDT++
+				// 					cSeqnr:=Str(nSeqnrDT)
+				AAdd(aTransDT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2','','PMC',''})
+			else
+				nSeqnr++
+				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			endif 
+			oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11]) 
+			IF aMemberTrans[a_tel,4]==DT
+				if aMemberTrans[a_tel,7][5]==sCRE .and.aMemberTrans[a_tel,7][2]=="AAA" .and.me_balance>0.00 
+					// to account payable and local bank: make BankOrder: 
+					// accntfrom,amount,description,banknbrcre,datedue,idfrom
+					AAdd(aBankOrder,{sCRE,Str(me_balance,-1),AddSlashes(iif(Empty(aMemberTrans[a_tel,9]),me_desc,aMemberTrans[a_tel,9])),AddSlashes(aMemberTrans[a_tel,7][1]),cDueDate,me_accid}) 
+				endif
+				// 					nSeqnrDT++
+				// 					cSeqnr:=Str(nSeqnrDT)
+				me_desc:=SubStr(AddSlashes(aMemberTrans[a_tel,9]+iif(Empty(aMemberTrans[a_tel,9]),"",'; ')+oLan:RGet("From")+Space(1)+aMemberTrans[a_tel,3]),1,511)
+				// add second line for direct transactions:
+				AAdd(aTransDT,{aMemberTrans[a_tel,7][5],'0','0',Str(me_balance,-1),Str(me_balanceF,-1),aMemberTrans[a_tel,11],me_desc,;
+					cClosingdate,'H','',LOGON_EMP_ID,'2','','PMC',''})
+				oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_balance, 0, me_balanceF,'') 
+			endif
+			// Also transaction for Office assessment:
+			IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
+				IF aMemberTrans[a_tel,7][6]="M"
+					me_desc:=self:oLan:RGet("Assessment office of gifts from")+Space(1)+Country +' '+self:AssPeriod
+				ELSE
+					me_desc:=self:oLan:RGet("Assessment office projects of gifts from")+Space(1)+Country+' '+self:AssPeriod
+				ENDIF
+				nSeqnr++
+				// 					cSeqnr:=Str(nSeqnr)
+				me_balance:=aMemberTrans[a_tel,8]
+				me_balanceF:=me_balance
+				if !aMemberTrans[a_tel,11]==sCurr
+					self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
+					if self:mxrate>0
+						me_balanceF:=Round(me_balance/self:mxrate,DecAantal)
+					endif 
+				endif
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+				oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11])
+			ENDIF
+		NEXT
+		*Record Total amount AM:
+		IF !Empty(samProj)
+			IF !AssOfficeProj==0.00
+				nSeqnr++
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+				AAdd(aTransMT,{samProj,'0','0',Str(AssOfficeProj,-1),Str(AssOfficeProj,-1),sCurr,self:oLan:RGet("AM Office Projects Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+				oMBal:ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
+			ENDIF
+		ELSE
+			AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
+		ENDIF
+		IF AssOffice#0
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{sam,'0','0',Str(AssOffice,-1),Str(AssOffice,-1),sCurr,self:oLan:RGet("AM Office Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
+		ENDIF 
+		// reverse add to income: 
+		if !Empty(AssIncHome) 
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SINCHOME,Str(AssIncHome,-1),Str(AssIncHome,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssIncHome,-1),Str(AssIncHome,-1),sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
+		endif
+		if !Empty(AssInc) 
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SINC,Str(AssInc,-1),Str(AssInc,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SEXP,'0','0',Str(AssInc,-1),Str(AssInc,-1),sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR) 
+		endif
+		// add to expense assessment field + int: 
+		if!Empty(AssFldInt)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{samFld,Str(AssFldInt,-1),Str(AssFldInt,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SEXP,'0','0',Str(AssFldInt,-1),Str(AssFldInt,-1),sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
+		endif
+		if !Empty(AssFldIntHome)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{samFld,Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
+			nSeqnr++
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCURR)
+		endif
+
+		// 		Record total amount to PMC 
+		IF mo_tot # 0
+			nSeqnr++
+			if !self:cPMCCurr==sCurr .and. fExChRate>0
+				mo_totF:=Round(mo_tot/fExChRate,DecAantal)
+			else
+				mo_totF:=mo_tot
+			endif
+			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			AAdd(aTransMT,{shb,'0','0',Str(mo_tot,-1),Str(mo_totF,-1),self:cPMCCurr,self:oLan:RGet("PMC Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
+		ENDIF
+		// 		(time1:=Seconds())
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write,`bankorder` write,`sysparms` write,`distributioninstruction` write,`log` write',oConn} 
+		oStmnt:Execute()
+		if !Empty(oStmnt:Status)
+			cError:=self:oLan:WGet('PMC transactions could not be recorded')+":"+oStmnt:ErrInfo:errormessage
+			cErrorLog:=cError+': '+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:errormessage
+		endif
+		if Empty(cError)
+			IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
+				SQLStatement{"update sysparms set iesmailacc='PMC-Files_Intl@sil.org'",oConn}:Execute()
+			ENDIF
+		endif
+		if Empty(cError) .and.nTransLock>0 
+			*	Change status of transactions to "Send to PMC": bfm='H':  
+			oStmnt:=SQLStatement{"update transaction set	bfm='H' where bfm='' and dat<='"+cClosingdate+"' and gc>'' and "+;
+				" lock_id="+MYEMPID+" and lock_time > subdate(now(),interval 120 minute)",oConn}
+			// 			oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
+			oStmnt:Execute()
+			if	!Empty(oStmnt:Status)
+				cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
+				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+			ENDIF
+			if !oStmnt:NumSuccessfulRows=nTransLock 
+				cError:=self:oLan:WGet("someone else has manipulated transactions to be sent to PMC")
+				cErrorLog:=cError
+			endif
+		endif
+		if Empty(cError) .and. Len(aDisLock)>0
+			*	Record month within fixed/limited remaining amount distribution instructions: 
+			// aDisLock: {{mbrid,seqnr,amountsent,singleuse,lastdate},...}
+			cStmnt:="insert into distributioninstruction (`mbrid`,`seqnbr`,`amntsnd`,`disabled`,`lstdate`) values "+Implode(aDisLock,'","')+;
+				" ON DUPLICATE KEY UPDATE lstdate=values(lstdate),amntsnd=values(amntsnd),disabled=values(disabled)"
+			oStmntDistr:=SQLStatement{cStmnt,oConn} 
+			oStmntDistr:Execute()
+			if !Empty(oStmntDistr:Status)
+				cError:=self:oLan:WGet("could not update distribution instruction for members")
+				cErrorLog:=cError+': '+oStmntDistr:ErrInfo:errormessage+CRLF+"Statement:"+oStmntDistr:SQLString
+			endif
+		endif
+		cTransStmnt:=''
+		if Empty(cError)
+			cTransnr:=''
+			cTransnrDT:=''
+			//aTransM/DT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+			//             1    2     3      4      5      6            7      8   9  10    11        12    13     14     15  
+			if !Empty(aTransMT)
+				// add first PMC transaction line: 
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid) values ("+Implode(aTransMT[1],'","',1,14)+")",oConn}
+				oStmnt:Execute()
+				if	oStmnt:NumSuccessfulRows<1
+					cError:=self:oLan:WGet("could	no	record transaction for member")+Space(1)+aMemberTrans[a_tel,3]
+					cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+				endif
+				if Empty(cError)
+					cTransnr:=ConS(SqlSelect{"select	LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+					// update aTransMT with cTransnr:
+// 					AEvalA(aTransMT,{|x|x[15]:=cTransnr})
+					for i:=1 to Len(aTransMT)
+						aTransMT[i,15]:=cTransnr
+					next
+					if !Empty(aTransDT)
+						nTransnrDT:=Val(cTransnr)
+						for i:=1 to Len(aTransDT)
+							nTransnrDT++
+							aTransDT[i,13]:='1'
+							aTransDT[i,15]:=Str(nTransnrDT,-1)
+							i++
+							aTransDT[i,13]:='2'
+							aTransDT[i,15]:=Str(nTransnrDT,-1)
+						next
+					endif
+					oStmnt:=SQLStatement{'insert into transaction (`accid`,`deb`,`debforgn`,`cre`,`creforgn`,`currency`,`description`,`dat`,`bfm`,`gc`,`userid`,'+;
+						'`poststatus`,`seqnr`,`docid`,`transid`) values '+Implode(aTransMT,'","',2)+iif(Empty(aTransDT),"",','+Implode(aTransDT,'","')),oConn}
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows<1
+						cError:=self:oLan:WGet('Could	not record transactions for the members')+' ('+oStmnt:Status:description+')'
+						cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+					endif
+				endif
+			endif
+
+
+		endif
+		if Empty(cError)
+			if !oMBal:ChgBalanceExecute()
+				cError:=oMBal:cError
+			endif
+		endif 
+		if Empty(cError) .and. Len(aBankOrder)>0 
+			// aBankOrder: accntfrom,amount,description,banknbrcre,datedue,idfrom
+			oStmnt:=SQLStatement{'insert into bankorder (`accntfrom`,`amount`,`description`,`banknbrcre`,`datedue`,`idfrom`) values '+Implode(aBankOrder,'","'),oConn}
+			oStmnt:Execute()
+			if oStmnt:NumSuccessfulRows<1
+				cError:=self:oLan:WGet('could not record bankorder for members')
+				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+			ENDIF
+		endif
+		if Empty(cError)
+			oStmnt:=SQLStatement{"update sysparms set pmislstsnd=CURDATE(),exchrate='"+Str(fExChRate,-1)+"'",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
+				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+			endif
+		endif
+
+		time0:=time1
+		// 		LogEvent(self,"recording PMC transactions:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
+		self:STATUSMESSAGE(Space(80) )
+		if Empty(cError)
+			if	PMCUpload
+				LogEvent(self,self:oLan:WGet("Uploaded	file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+	Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR	)
+			endif
+			self:STATUSMESSAGE(self:oLan:WGet('unlocking member transactions')+'...')
+			oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
+			oStmnt:Execute()
+			SQLStatement{"commit",oConn}:Execute()
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			LogEvent(self,cErrorLog,"logerrors")
+			self:ResetLocks()
+			ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
+			return
+		ENDIF
+		SQLStatement{"unlock tables",oConn}:Execute()
+
+		// sending by email:
+		cPMISMail:=AllTrim(self:oSys:IESMAILACC)
+		cPMISMail:=StrTran(cPMISMail,";"+AllTrim(self:oSys:OWNMAILACC))
+		cPMISMail:=StrTran(cPMISMail,AllTrim(self:oSys:OWNMAILACC))
+		* Send file by email:
+		IF IsMAPIAvailable()
+			* Resolve IESname
+			IF oMapi:Open( "" , "" )
+				oPers:=SqlSelect{"select persid,lastname,firstname,email,"+SQLFullName(3)+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
+				if oPers:Reccount>0
+					if PMCUpload
+						oRecip := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+					else
+						oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+					endif
+				endif
+				if !PMCUpload
+					oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
+				endif
+				IF oRecip != null_object .and.(PMCUpload .or.!oRecip2==null_object)
+					cNoteText:="Dear "+oPers:fullname+","+CRLF+;
+						iif(PMCUpload,;
+						self:oLan:RGet("Will you please approve the uploaded OPP file")+Space(1)+FileSpec{cFilename}:Filename+Space(1)+;
+						self:oLan:RGet("by going to Insite")+Space(1)+"https://www.pmc.insitehome.org/OPPUpload.aspx";
+						,;
+						"I send you attached a OPP file and would be grateful if you would approve the file by means of a reply all.")+;
+						CRLF+LOGON_EMP_ID
+					IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
+						(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
+						self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
+						IF !PMCUpload
+							LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
+						endi
+						lSent:=true
+					ENDIF
+				ENDIF
+				//oMapi:Close()
+			ENDIF 
+			IF	!lSent
+				(InfoBox{self:OWNER,self:oLan:WGet("Partner Monetary Interchange System"),self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
+					iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet('mail to PMC mail address')+" "+;
+					AllTrim(self:oSys:IESMAILACC)+")")}):Show()
+				if !PMCUpload	
+					LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+ Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCurr +;
+						" ("+iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
+						AllTrim(self:oSys:IESMAILACC)+")"))
+				ENDIF
+			ENDIF
+		endif
+	ENDIF
+	SetDecimalSep(Asc('.') )
+
+	if !PMCUpload .and.!lStop
+		oMapi:Close()
+	endif
+
+	self:Pointer := Pointer{POINTERARROW}
+	RETURN
+METHOD PrintReportNew() CLASS PMISsend
+	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,AssFldInt,AssFldIntHome,me_balance,me_balanceF,OfficeRate,TotAssrate as FLOAT
+	local AssInc,AssIncHome as float  // to be reversed assement income totals
+	local separatorline as STRING
+	local heading as ARRAY
+	local oCurr as CURRENCY 
+	LOCAL aMemberTrans:={} as ARRAY
+	LOCAL destinstr:={} as ARRAY 
+	local aDistr:={} as array 
+	local oReport as PrintDialog
 	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
 	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
 	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
@@ -1577,1287 +2856,6 @@ METHOD PrintReport() CLASS PMISsend
 			ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
 			return
 		ENDIF
-
-		// sending by email:
-		cPMISMail:=AllTrim(self:oSys:IESMAILACC)
-		cPMISMail:=StrTran(cPMISMail,";"+AllTrim(self:oSys:OWNMAILACC))
-		cPMISMail:=StrTran(cPMISMail,AllTrim(self:oSys:OWNMAILACC))
-		* Send file by email:
-		IF IsMAPIAvailable()
-			* Resolve IESname
-			IF oMapi:Open( "" , "" )
-				oPers:=SqlSelect{"select persid,lastname,firstname,email,"+SQLFullName(3)+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
-				if oPers:Reccount>0
-					if PMCUpload
-						oRecip := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
-					else
-						oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
-					endif
-				endif
-				if !PMCUpload
-					oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
-				endif
-				IF oRecip != null_object .and.(PMCUpload .or.!oRecip2==null_object)
-					cNoteText:="Dear "+oPers:fullname+","+CRLF+;
-						iif(PMCUpload,;
-						self:oLan:RGet("Will you please approve the uploaded OPP file")+Space(1)+FileSpec{cFilename}:Filename+Space(1)+;
-						self:oLan:RGet("by going to Insite")+Space(1)+"https://www.pmc.insitehome.org/OPPUpload.aspx";
-						,;
-						"I send you attached a OPP file and would be grateful if you would approve the file by means of a reply all.")+;
-						CRLF+LOGON_EMP_ID
-					IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
-						(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
-						self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
-						IF !PMCUpload
-							LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
-						endi
-						lSent:=true
-					ENDIF
-				ENDIF
-				//oMapi:Close()
-			ENDIF 
-			IF	!lSent
-				(InfoBox{self:OWNER,self:oLan:WGet("Partner Monetary Interchange System"),self:oLan:WGet("Generated one file")+":	"+cFilename+" ("+;
-					iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet('mail to PMC mail address')+" "+;
-					AllTrim(self:oSys:IESMAILACC)+")")}):Show()
-				if !PMCUpload	
-					LogEvent(self,self:oLan:WGet("Generated one file")+":	"+cFilename+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+ Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCurr +;
-						" ("+iif(PMCUpload,self:oLan:WGet('Let PMCManager approve this file via Insite'),self:oLan:WGet("mail to PMC mail address")+" "+;
-						AllTrim(self:oSys:IESMAILACC)+")"))
-				ENDIF
-			ENDIF
-		endif
-	ENDIF
-	SetDecimalSep(Asc('.') )
-
-	if !PMCUpload .and.!lStop
-		oMapi:Close()
-	endif
-
-	self:Pointer := Pointer{POINTERARROW}
-	RETURN
-METHOD PrintReportNew() CLASS PMISsend
-	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,AssFldInt,AssFldIntHome,me_balance,me_balanceF,OfficeRate,TotAssrate as FLOAT
-	local AssInc,AssIncHome as float  // to be reversed assement income totals
-	local separatorline as STRING
-	local heading as ARRAY
-	local oCurr as CURRENCY 
-	LOCAL aMemberTrans:={} as ARRAY
-	LOCAL destinstr:={} as ARRAY 
-	local aDistr:={} as array 
-	local oReport as PrintDialog
-	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,nTransnrDT,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
-	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
-	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
-	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
-	LOCAL me_has as LOGIC
-	LOCAL me_accid,currentaccid,me_mbrid, me_gc,PMCco,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
-	LOCAL cTransnr,cTransnrDT,mHomeAcc, cDestPersonId,me_householdid, me_destAcc,me_destPP,me_currency,cSeqnr as STRING
-	LOCAL ptrHandle
-	LOCAL cFilename, datestr as STRING
-	LOCAL DecSep as int
-	LOCAL oMapi as MAPISession
-	LOCAL oRecip,oRecip2 as MAPIRecip
-	LOCAL cPMISMail as STRING
-	LOCAL lSent as LOGIC
-	LOCAL uRet as USUAL
-	LOCAL oWindow as OBJECT
-	// 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
-	LOCAL CurMonth:=Year(self:closingDate)*100+Month(self:closingDate) as int
-	// 	LOCAL noIES as LOGIC
-	LOCAL DestAmnt as FLOAT
-	LOCAL oAfl as UpdateHouseHoldID
-	LOCAL datelstafl as date
-	LOCAL cDestAcc,cNoteText,cError,cErrorLog,cStmsg,cAccs,cCurAcc as STRING 
-	local nStep as int
-	local nRow, nPage as int
-	Local cAccCng as string,  nAnswer as int 
-	local oAsk as AskSend 
-	local oAskUp as AskUpld 
-	local cErrMsg as string 
-	LOCAL PrvYearNotClosed as LOGIC
-	local fExChRate as float
-	local lStop:=true,PMCUpload as logic
-	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
-	local oMBal as Balances
-	local oStmnt,oStmntDistr as SQLStatement
-	local aTransLock:={},aDisLock:={},aYearStartEnd as array
-	local nTransLock as Dword,nTransSample as int
-	local cDistr as string
-	local time1,time0 as float
-	local cFatalError as string 
-	local Country as string 
-	local cStmnt,cClosingdate,cDueDate as string 
-	local cTransStmnt,cTransDTStmnt,cBankStmnt as string  
-	local cMbrSelect,cMbrSelectArr as string
-	local aMbr:={} as array   // array with all data of all members   :
-	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
-	//                   1       2       3      4        5      6      7         8      9         10       11
-	local aAccidMbr:={} as array  // array with accids of all members : {accid,mbrid,category},... 
-	local aBalMbr:={} as array  // array with balance per member; {{mbrid,balance},...
-	local aAccidRPP:={} as array  // array with accids of all members with remaining RPP distrbution instruction: {accid,mbrid},...  
-	local aAccidMbrF:={} as array  // array with accids of all foreign members : {accid,mbrid},...
-	local aPersDest:={} as array // array with destination persons of distribution instructions: {{bankaccntname,persid,fullname},...}
-	local aDBBalValue:={} as array
-	local aAssTot:={} as array   // array with total assessable amount per accid  {{accid,asstot},... 
-	local aAssMbr:={} as array   // array with total assessable amounts per membrid {{mbrid,asstot},...
-	local aAccRPP:={} as array   // array with total RPP amount per accid    {{accid,rpptot},...}
-	local aRPPMbr:={} as array   // array with total RPP amount per mbrid    {{mbrid,rpptot},...}
-	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername  
-	local aAccDestOwn:={} as array  // array with destination acounts within own system: {{accid,accnumber},...}
-	local aTransMT:={} as array  // array with values to be inserted into table transaction for PMC transactions
-	local aTransDT:={} as array  // array with values to be inserted into table transaction for direct transactions
-	//aTransMT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-	//            1    2     3      4      5      6            7      8   9  10   11         12    13     14      15  
-	local aBankOrder:={} as array  // 
-
-	oWindow:=GetParentWindow(self) 
-	// Import first account change list 
-	oWindow:Pointer := Pointer{POINTERHOURGLASS}
-	oAfl:=UpdateHouseHoldID{}
-	oAfl:Importaffiliated_person_account_list()
-
-	oWindow:Pointer := Pointer{POINTERARROW}
-
-	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
-	oReport:Show()
-	IF .not.oReport:lPrintOk
-		RETURN FALSE
-	ENDIF
-	oCurr:=Currency{"Sending to PMC"}
-	fExChRate:=Round(oCurr:GetROE("USD",Today(),true,true,1.65),8)   // limit to 8 digits because that is sent to PMC 
-	if oCurr:lStopped
-		Return
-	endif 
-	Country:=SqlSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
-
-	PMCUpload:= iif(ConI(self:oSys:PMCUPLD)=1,true,false)
-	// fExChRate:=self:mxrate 
-
-	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
-	cClosingdate:=SQLdate(self:closingDate)
-	cDueDate:=SQLdate(Today())
-
-	if Empty(self:oSys:PMCMANCLN) 
-		(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
-		// 		self:ENDWindow()
-		self:Pointer := Pointer{POINTERARROW}
-		return
-	else
-		oPers:=SqlSelect{"select persid,email,"+SQLFullName()+" as fullname from person where persid="+Str(self:oSys:PMCMANCLN,-1),oConn}
-		if oPers:Reccount<1
-			(ErrorBox{oWindow,self:oLan:WGet("Enter first within the system parameters")+" "+self:oLan:WGet("PMC Manager who should approve the PMC file")}):Show()
-			// 			self:ENDWindow()
-			self:Pointer := Pointer{POINTERARROW}
-			return
-		elseif Empty(oPers:email)
-			(ErrorBox{oWindow,self:oLan:WGet("Enter first email address for PMC manager")+" "+oPers:fullname+' '+self:oLan:WGet("who should approve the PMC file")}):Show()
-			// 			self:ENDWindow()
-			self:Pointer := Pointer{POINTERARROW}
-			return
-			
-		endif
-	endif  
-	self:Pointer := Pointer{POINTERHOURGLASS}
-
-	self:oSys:EXCHRATE := fExChRate 
-
-	// Select member data:
-	cMbrSelect:="select m.mbrid,m.homepp,m.homeacc,m.householdid,m.co,m.has,m.grade,m.offcrate,"+;
-		"ad.accid,ad.accnumber,"+SQLFullName(0,"p")+" as description,ad.currency,b.category as type,"+;
-		"ai.accid as accidinc,ai.accnumber as accnumberinc,ai.description as descriptioninc,ai.currency as currencyinc,"+;
-		"ae.accid as accidexp,ae.accnumber as accnumberexp,ae.description as descriptionexp,ae.currency as currencyexp,"+;
-		"an.accid as accidnet,an.accnumber as accnumbernet,an.description as descriptionnet,an.currency as currencynet,"+;
-		"pp.ppname as homeppname,"+;
-		"group_concat(cast(d.desttyp as char),'##',cast(d.destamt as char),'##',d.destpp,'##',d.destacc,'##',cast(d.lstdate as char),'##',cast(d.seqnbr as char),'##',"+;
-		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr" +;
-		" from member m left join ppcodes pp on (pp.ppcode=m.homepp) "+;
-		" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) left join ppcodes pd on (d.destpp=pd.ppcode) "+;
-		" left join account ad on (ad.accid=m.accid) left join balanceitem b on (b.balitemid=ad.balitemid) left join department dm on (dm.depid=m.depid) left join account ai on (ai.accid=dm.incomeacc) "+;
-		" left join account ae on (ae.accid=dm.expenseacc) left join account an on (an.accid=dm.netasset),person p "+;   
-	" where m.persid=p.persid group by m.mbrid order by m.mbrid"
-	cMbrSelectArr:="select group_concat(cast(mbrid as char),'%%',description,'%%',homepp,'%%',homeacc,'%%',householdid,'%%',co,'%%',cast(has as char),'%%',grade,'%%',offcrate,'%%',"+;
-		"if(isnull(accid),'%%%%%%%%',concat(cast(accid as char),'%%',accnumber,'%%',currency,'%%',cast(type as char),'%%')),"+;
-		"if(isnull(accidinc),'%%%%%%%%',concat(cast(accidinc as char),'%%',accnumberinc,'%%',descriptioninc,'%%',currencyinc,'%%')),"+;
-		"if(isnull(accidexp),'%%%%%%%%',concat(cast(accidexp as char),'%%',accnumberexp,'%%',descriptionexp,'%%',currencyexp,'%%')),"+;
-		"if(isnull(accidnet),'%%%%%%%%',concat(cast(accidnet as char),'%%',accnumbernet,'%%',descriptionnet,'%%',currencynet,'%%')),"+;
-		"coalesce(homeppname,''),'%%',coalesce(distr,'') order by mbrid separator '#%#') as grMbr"+;
-		" from ("+cMbrSelect+") as y group by 1=1" 
-	oMbr:=SqlSelect{cMbrSelectArr,oConn}
-	if oMbr:Reccount<1
-		LogEvent(self,oMbr:SQLString,"logerrors") 
-		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
-		return
-	endif
-	// 	LogEvent(self,"cMbrSelectArr: "+Str(Len(oMbr:grMbr),-1),"logsql")
-	// add to aMbr:
-	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
-	//                   1       2       3      4        5      6      7         8      9         10       11
-	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#'),{|x|x:=Split(x,'%%') })
-	// expand distribution instructions:
-	for i:=1 to Len(aMbr)
-		if !Empty(aMbr[i,27]) 
-			aMbr[i,27]:=AEvalA(Split(aMbr[i,27],"#;#"),{|x|x:=Split(x,'##')})
-			// collect own destination accounts: 
-			for j:=1 to Len(aMbr[i,27])
-				if aMbr[i,27,j,3]=SEntity .and. !Empty(aMbr[i,27,j,4])  // destination is account within own system? 
-					if AScan(aAccDestOwn,{|x|x[2]==aMbr[i,27,j,4]})=0
-						AAdd(aAccDestOwn,{'',aMbr[i,27,j,4]})       // {accid,accnumer}
-					endif
-				endif
-			next
-		else
-			aMbr[i,27]:={}
-		endif
-	next
-	// check distribution instructions:
-	oSel:=SqlSelect{"select mbrid,destacc from distributioninstruction d where destpp='AAA' and not exists (select 1 from personbank where banknumber= d.destacc)",oConn}
-	if oSel:Reccount>0
-		cError:=self:oLan:WGet("Following members contain an illegal distribution instruction")+':'
-		do while !oSel:EOF
-			i:=AScan(aMbr,{|x|x[1]==oSel:mbrid})
-			IF i>0
-				cError+=CRLF+aMbr[i,2]+' '+self:oLan:WGet("not found banknbr")+' '+oSel:destAcc
-			endif
-			oSel:skip()
-		enddo
-		ErrorBox{self,cError}
-		return
-	endif 
-	// collect destination persons:
-	oSel:=SqlSelect{"select group_concat(d.destacc,'%%',cast(b.persid as char),'%%',"+SQLFullName(0,'p')+" separator '##') as grpers from distributioninstruction d, personbank b, person p where d.destpp='AAA' and d.destacc=b.banknumber and b.persid=p.persid group by 1=1",oConn}
-	if oSel:Reccount>0
-		aPersDest:=AEvalA(Split(oSel:grpers,"##"),{|x|x:=Split(x,'%%')}) 
-	endif  
-	// Check member data:
-	i:=AScan(aMbr,{|x|Empty(x[26])})  // scan for empty homeppname
-	if i>0
-		cError:=self:oLan:WGet("Member")+' '+aMbr[i,2]+' '+self:oLan:WGet("contains an illegal Primary Finance entity")+':'+aMbr[i,3]	
-		(ErrorBox{self,cError}):Show()
-		return
-	endif 
-	// scan for: HOMEPP # SEntity .and. !Empty(accid) .and. (!TYPE==LIABILITY.and. !TYPE== asset )
-	i:=AScan(aMbr,{|x|!x[3]==SEntity .and. !Empty(x[10]) .and.(!x[13]==LIABILITY .and. !x[13]==asset)})
-	if i>0
-		cError:=oLan:WGet("Non-own")+" "+ self:oLan:WGet("member")+' '+aMbr[i,2]+' '+self:oLan:WGet("should have a liability/funds or asset account")
-		(ErrorBox{self,cError}):Show()
-		return
-	endif
-	if Len(aAccDestOwn)>0
-		// collect own destination accounts
-		oSel:=SqlSelect{"select group_concat(cast(accid as char),'%%',accnumber separator '##') as owndest from account where accnumber in ("+Implode(aAccDestOwn,',',,,2)+") and active=1",oConn}
-		if oSel:Reccount>0
-			aAccDestOwn:=AEvalA(Split(oSel:owndest,'##'),{|x|x:=Split(x,'%%')})
-		else
-			aAccDestOwn:={}
-		endif
-	endif
-
-	// make array of all accids:
-	for i:=1 to Len(aMbr)
-		if !Empty(aMbr[i,10])
-			AAdd(aAccidMbr,{aMbr[i,10],aMbr[i,1],aMbr[i,13]}) 
-			if !aMbr[i,3]==SEntity
-				// add to accids foreign members:
-				AAdd(aAccidMbrF,{aMbr[i,10],aMbr[i,1]})
-			elseif AScan(aMbr[i,27],{|x|x[1]=='3'})>0 
-				// add to accids members with remaining RPP instruction:
-				AAdd(aAccidRPP,{aMbr[i,10],aMbr[i,1]})				
-			endif 
-		else
-			AAdd(aAccidMbr,{aMbr[i,14],aMbr[i,1],income})
-			AAdd(aAccidMbr,{aMbr[i,18],aMbr[i,1],expense})
-			AAdd(aAccidMbr,{aMbr[i,22],aMbr[i,1],liability})
-			if !aMbr[i,3]==SEntity
-				// add to accids foreign members:
-				AAdd(aAccidMbrF,{aMbr[i,14],aMbr[i,1]})
-				AAdd(aAccidMbrF,{aMbr[i,18],aMbr[i,1]})
-				AAdd(aAccidMbrF,{aMbr[i,22],aMbr[i,1]})
-			elseif AScan(aMbr[i,27],{|x|x[1]=='3'})>0 
-				// add to accids members with remaining RPP instruction:
-				AAdd(aAccidRPP,{aMbr[i,14],aMbr[i,1]})				
-				AAdd(aAccidRPP,{aMbr[i,18],aMbr[i,1]})				
-				AAdd(aAccidRPP,{aMbr[i,22],aMbr[i,1]})				
-			endif
-		endif
-	next 
-
-	// Check if nobody else is busy with sending to PMC: 
-	// 	(time1:=Seconds())   
-	oTrans:=SqlSelect{'select transid from transaction t '+;
-		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
-		" t.lock_id<>0 and t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
-	if oTrans:Reccount>0
-		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
-		return
-	endif 
-	// Check consistency data
-	self:STATUSMESSAGE(self:oLan:WGet("Checking data, please wait")+"...")
-	if !CheckConsistency(self,true,false,@cFatalError)
-		ErrorBox{self,cFatalError}:Show()
-		// 		self:ENDWindow()
-		self:Pointer := Pointer{POINTERARROW}
-		return 
-	endif
-	time0:=time1 
-	self:STATUSMESSAGE(self:oLan:WGet('locking member transactions for update')+'...')
-
-	oStmnt:=SQLStatement{"set autocommit=0",oConn}
-	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `transaction` write',oConn} 
-	oStmnt:Execute()
-	oStmnt:=SQLStatement{'update transaction set lock_id="'+MYEMPID+'",lock_time=now() where '+;
-		" bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+iif(Posting," and poststatus>1",""),oConn}
-	oStmnt:Execute() 
-	if !Empty(oStmnt:Status)
-		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oStmnt:Status:description+')'}:Show()
-		SQLStatement{"rollback",oConn}:Execute() 
-		SQLStatement{"unlock tables",oConn}:Execute()
-		return
-	endif
-	nTransLock:=oStmnt:NumSuccessfulRows
-	SQLStatement{"commit",oConn}:Execute()	
-	SQLStatement{"unlock tables",oConn}:Execute()
-	oSel:=SqlSelect{"select transid from transaction where lock_id='"+MYEMPID+"' and  bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>'' limit 1",oConn} 
-	nTransSample:=ConI(oSel:transid)  // save sample transid for checking purposes later
-
-
-	cStmsg:=self:oLan:WGet("Collecting data for the sending, please wait")+"..."
-	self:STATUSMESSAGE(cStmsg)
-	oMBal:=Balances{}
-	separatorline:= '--------------------|-----------|'+Replicate('-',126)+'|'
-	nRow:=0
-	nPage:=0
-	store 0 to a_tel
-	nRowCnt :=0 
-	time0:=time1 
-	// determine if previous year is closed for balances:
-	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
-	PrvYearNotClosed:=((aYearStartEnd[1]*12+aYearStartEnd[2])>(Year(LstYearClosed)*12+Month(LstYearClosed)))
-
-	// read balance of all members:
-	oMBal:cAccSelection:="a.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
-	oMBal:cTransSelection:="t.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
-	oAccBal:=SqlSelect{oMBal:SQLGetBalanceDate(self:closingDate),oConn}      // maximum balance is balance at closing date
-	oAccBal:Execute()
-	if	oAccBal:Reccount>0 
-		aDBBalValue:=AEvalA(Split(oAccBal:Balances,'#'),{|x|x:=Split(x,',') })
-		for i:=1 to Len(aDBBalValue)
-			if	(k:=AScan(aAccidMbr,{|x|x[1]==aDBBalValue[i,1]}))>0
-				me_balance:=	Round(Val(aDBBalValue[i,3])- Val(aDBBalValue[i,2]),2) 
-				if PrvYearNotClosed .and. (aAccidMbr[k,3]==INCOME .or.aAccidMbr[k,3]==expense)
-					me_balance:=Round(me_balance+Val(aDBBalValue[i,7])-Val(aDBBalValue[i,6]),2)   // add balance previous year because not in this account
-				endif
-				if (j:=AScan(aBalMbr,{|x|x[1]==aAccidMbr[k,2]}))>0     // balance found for this member?
-					aBalMbr[j,2]:=Round(aBalMbr[j,2]+me_balance,2)
-				else
-					AAdd(aBalMbr,{aAccidMbr[k,2],me_balance})   // otherwise add new balance
-				endif
-			endif
-		next
-		ASort(aBalMbr,,,{|x,y|x[1]<=y[1]})
-	endif
-	//
-	//	For all members non-staff: sum of all assessable transactions not yet sent to PMC:
-	// 
-	//	Sum off all assessable transactions with Empty BFM up till closing date:
-	if Len(aAccidMbr)>0
-		oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.asstot as char) order by y.accid separator "#") as grasssum from (select t.accid,sum(t.cre-t.deb) as asstot from transaction t where t.fromrpp=0 and t.bfm="" and t.gc="AG" and t.dat <="'+SQLdate(closingDate)+'" '+;
-			"and "+oMBal:cTransSelection+" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn} 
-		if oSel:Reccount>0
-			aAssTot:=AEvalA(Split(oSel:grasssum,'#'),{|x|x:=Split(x,',') })  // make array of sums of assessable amounts per account
-			// add to total assessable amount per member:
-			for i:=1 to Len(aAssTot)
-				if (j:=AScan(aAccidMbr,{|x|x[1]==aAssTot[i,1]}))>0
-					if (k:=AScan(aAssMbr,{|x|x[1]==aAccidMbr[j,2]}))>0
-						aAssMbr[k,2]:=Round(aAssMbr[k,2]+Val(aAssTot[i,2]),2)
-					else
-						AAdd(aAssMbr,{aAccidMbr[j,2],Val(aAssTot[i,2])})
-					endif
-				endif
-			next
-			ASort(aAssMbr,,,{|x,y|x[1]<=y[1]})
-		endif
-		if Len(aAccidMbrF)>0
-			// For foreign members: all transactions not yet sent to PMC with assmntcode <> ‘’
-			oSel:=SqlSelect{"select group_concat(cast(accid as char),'&&',cast(transid as char),'&&',cast(seqnr as char),'&&',coalesce(cast(t.persid as char),''),'&&',description,'&&',cast(deb as char),'&&',cast(cre as char),'&&',gc,'&&',"+;
-				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",'') order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
-				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
-				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn} 
-			if oSel:Reccount>0
-				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
-			endif 
-		endif
-		
-		if Len(aAccidRPP)>0
-			//	For all own members with remaining RPP distribution instruction: sum of all transactions fromRPP not yet sent to PMC
-			oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.rpptot as char) order by y.accid separator "#") as grrppsum from (select t.accid,sum(t.cre-t.deb) as rpptot from transaction t where t.fromrpp=1 and t.bfm="" and t.gc>"" and t.dat <="'+SQLdate(closingDate)+'" '+;
-				"and t.accid in ("+Implode(aAccidRPP,',',,,1)+") and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn}
-			if oSel:Reccount>0
-				aAccRPP:=AEvalA(Split(oSel:grrppsum,'#'),{|x|x:=Split(x,',') })  // make array of sums of rpp amounts per account  
-				// add to RPP total per member:
-				for i:=1	to	Len(aAccRPP)
-					if	(j:=AScan(aAccidMbr,{|x|x[1]==aAccRPP[i,1]}))>0
-						if	(k:=AScan(aRPPMbr,{|x|x[1]==aAccidMbr[j,2]}))>0
-							aRPPMbr[k,2]:=Round(aRPPMbr[k,2]+Val(aAccRPP[i,2]),2)
-						else
-							AAdd(aRPPMbr,{aAccidMbr[j,2],Val(aAccRPP[i,2])})
-						endif
-					endif
-				next
-				ASort(aRPPMbr,,,{|x,y|x[1]<=y[1]})
-			endif
-		endif
-	endif
-	// 	if true
-	// 		self:ResetLocks()
-	// 		return
-	// 	endif
-
-
-	// collect distribution instructions:	
-	nStep:=Max(Ceil(Len(aMbr)/20.00),1) 
-	nMbrAss:=1
-	nMbrRPP:=1
-	nMbrBal:=1
-	// Process members:
-	for nMbr:=1 to Len(aMbr)
-		// aMbr:
-		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-		me_mbrid:=aMbr[nMbr,1]
-		me_accid:= iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,18],aMbr[nMbr,10])       // accid or accidexp
-		me_accnbr:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,19],aMbr[nMbr,11])       // accnumberexp or ACCNUMBER
-		me_currency:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,21],aMbr[nMbr,12])       // currencyexp or currency
-		me_type:=iif(Empty(aMbr[nMbr,10]),EXPENSE,aMbr[nMbr,13])    // expense or type  
-		me_pers:=StrTran(StrTran(aMbr[nMbr,2],","," "),"-"," ")        // description 
-		me_stat:=aMbr[nMbr,8]  // Grade 
-		me_has:=iif(ConI(aMbr[nMbr,7])=1,true,false)   // has 
-		me_co:=aMbr[nMbr,6]   // co
-		me_rate:=Upper(aMbr[nMbr,9])
-		
-		// compile distribution instructions:
-		destinstr:={}
-		aDistr:={}
-		mHomeAcc:=aMbr[nMbr,4]  //HOMEACC
-		if !Empty(aMbr[nMbr,27]) // distribution instructions?
-			aDistr:=aMbr[nMbr,27] 
-			// check distribution instructions of this member:
-			for i:=1 to Len(aDistr)
-				// aDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,destppname},...
-				//              1       2       3      4        5      6      7         8      9         10       11
-				cDestPersonId:=""
-				IF aDistr[i,3]=="ACH"  //destpp
-					cDestAcc:=AllTrim(aDistr[i,4]) 			
-					if !Empty(cDestAcc) .and.(!cDestAcc=='1'.or.cDestAcc=='2')
-						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
-						exit
-					endif				
-					cDestAcc:=aMbr[nMbr,5]+iif(Empty(cDestAcc),"",+'#'+cDestAcc)  // household code is sufficient from 2011-04-03: householdid+seqnr in destacc
-				ELSE
-					if !aMbr[nMbr,3]== SEntity .and. (aDistr[i,3] # SEntity .and.aDistr[i,3] # "AAA") .and. me_co == "M"            // HOMEPP <> SEntity ?
-						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
-						exit
-					endif
-					cDestAcc:=AllTrim(aDistr[i,4]) 			
-					// check legal ppcode: 
-					if Empty(aDistr[i,11])
-						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
-						exit
-					endif
-					if aDistr[i,3] == "AAA"
-						k:=AScan(aPersDest,{|x|x[1]==cDestAcc})
-						if k>0
-							cDestPersonId:=aPersDest[k,2]
-						else
-							cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+", not found banknbr:"+cDestAcc
-							exit					
-						endif
-						if CountryCode=="31".and.Len(cDestAcc)>7
-							if !IsDutchBanknbr(cDestAcc)
-								cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")+",no dutch banknbr:"+cDestAcc
-								exit
-							endif
-						endif
-					endif
-				ENDIF
-				// destinstr: {destpp,destacc,desttype,destamnt,lstdate,seqnbr,description,currency,amntsend,destperson,singleuse},...
-				//               1       2       3        4         5      6       7           8        9        10          11
-				AAdd(destinstr,{AllTrim(aDistr[i,3]),cDestAcc,Val(aDistr[i,1]),Val(aDistr[i,2]),SQLDate2Date(aDistr[i,5]),aDistr[i,6],aDistr[i,7],iif(aDistr[i,8]='1',true,false),Val(aDistr[i,9]),cDestPersonId, iif(aDistr[i,10]='1',true,false)})
-			Next
-			ASort(destinstr,,,{|x,y| x[3]<=y[3].or.y[3]>0.and.x[3]=3})   // sort in processing priority  (remaining RPP immeditialy after fixed
-		endif
-		if !Empty(cError)
-			exit
-		endif
-		DO CASE
-		CASE Empty(me_rate)
-			OfficeRate:=self:sAssmntOffc
-		CASE me_rate="L"
-			OfficeRate:=self:sWithldOffl
-		CASE me_rate="H"
-			OfficeRate:=self:sWithldOffH
-		CASE me_rate="M"
-			OfficeRate:=self:sWithldOffM
-		OTHERWISE
-			OfficeRate:=self:sAssmntOffc
-		ENDCASE		
-		IF me_co="M"
-			me_householdid:=aMbr[nMbr,5] 
-		ELSE
-			me_householdid:=""
-		ENDIF
-		me_homePP:=aMbr[nMbr,3]   // homepp
-		store 0 to AmntTrans
-		mbrfield:= 0
-		mbrint:= 0
-		mbroffice:= 0
-		mbrofficeProj:=0.00 
-		AmntFromRPP:=0.00
-		me_asshome:=0.00 
-		me_assblAmount:=0.00
-		// aMbr:
-		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-
-		// find assessable amount of this member:
-		do while nMbrAss<Len(aAssMbr) .and.aAssMbr[nMbrAss,1]<me_mbrid  
-			nMbrAss++
-		enddo
-		// calculate assessments:
-		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid .and.me_stat!="Staf" 
-			me_assblAmount:=aAssMbr[nMbrAss,2]
-			me_asshome:=Round((me_assblAmount*OfficeRate)/100,DecAantal)
-			mbrint:=Round((me_assblAmount*(self:sPercAssInt+self:sAssmntField))/100,DecAantal)
-		ENDIF
-		
-		// find RPP amount of this member:
-		do while nMbrRPP<Len(aRPPMbr) .and. aRPPMbr[nMbrRPP,1]<me_mbrid 
-			nMbrRPP++
-		enddo
-		// calculate RPP amount:
-		IF nMbrRPP<=Len(aRPPMbr) .and. aRPPMbr[nMbrRPP,1]==me_mbrid 
-			AmntFromRPP:=aRPPMbr[nMbrRPP,2]
-		ENDIF
-
-		IF me_homePP!=SEntity
-			// process transaction to be sent to PMC
-			// aTransF:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givernac
-			//              1     2      3      4       5         6  7   8     9     10    11  
-			TotAssrate:=Round(100.00 - Round(OfficeRate+self:sPercAssInt+self:sAssmntField,DecAantal),DecAantal)
-			me_amounttot:=round(me_asshome+mbrint,decaantal)
-			nAccmbr:=1 
-			do while nAccmbr>0 .and. nAccmbr<=Len(aAccidMbr)
-				nAccmbr:=AScan(aAccidMbr,{|x|x[2]==me_mbrid},nAccmbr)
-				if nAccmbr=0
-					exit
-				endif
-				currentaccid:= aAccidMbr[nAccmbr,1]
-				if (nTrans:=AScan(aTransF,{|x|x[1]==currentaccid}))>0
-					// process transactions:
-					do while nTrans<=Len(aTransF) .and. aTransF[nTrans,1]==currentaccid
-						me_amount:=Round(Val(aTransF[nTrans,7])-Val(aTransF[nTrans,6]),DecAantal)
-						me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(me_amount,-1) +"("+aTransF[nTrans,10]+")" 
-						me_gc:=aTransF[nTrans,8]
-						PMCco:=iif(me_gc=='AG','CN',iif(me_gc=='MG','MM','PC')) 
-						if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
-							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,11]
-						endif
-						if me_gc=='AG' .and. me_stat!="Staf"
-							me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
-							me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
-						endif
-						me_desc+=iif(Empty(me_desc),"","; ")+aTransF[nTrans,5]
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2])})				
-						AmntTrans:=Round(me_amount+AmntTrans,DecAantal)
-						nTrans++
-					enddo
-				endif
-				nAccmbr++
-			ENDDO
-			// correct assessment for rounding differences: 
-			fDiff:=Round(me_assblAmount-me_amounttot,DecAantal)
-			if fDiff<>0.00
-				//cErrMsg+="member:"+me_pers+"; me_asshome:"+Str(me_asshome,-1)+"; mbrint:"+Str(mbrint,-1)+"; me_amounttot:"+Str(me_amounttot,-1)+"; ass tot:"+Str(aAssMbr[nMbrAss,2],-1)+"; diff:"+Str(fDiff,-1)+CRLF				
-				me_asshome:=Round(me_asshome+fDiff,DecAantal)  
-			endif	
-		endif			
-
-		AssInt:=Round(AssInt+mbrint,DecAantal)
-		IF me_co="S" 
-			mbrofficeProj:=me_asshome
-			AssOfficeProj:=Round(AssOfficeProj+me_asshome,DecAantal) 
-		ELSE
-			mbroffice:=me_asshome
-			AssOffice:=Round(AssOffice+me_asshome,DecAantal)
-		endif
-		// 		AssOffice:=Round(AssOffice+mbroffice,DecAantal)
-		// 		AssOfficeProj:=Round(AssOfficeProj+mbrofficeProj,DecAantal) 
-		// calculate reversal for ministry income: 
-		if !Empty(SINC).and. me_type==LIABILITY 
-			if !me_has
-				AssInc:=Round(AssInc+mbroffice+mbrofficeProj,DecAantal)
-				if !Empty(samFld)
-					AssFldInt:=Round(AssFldInt+mbrfield+mbrint,DecAantal)
-				endif
-			else
-				AssIncHome:=Round(AssIncHome+mbroffice+mbrofficeProj,DecAantal)
-				if !Empty(samFld)
-					AssFldIntHome:=Round(AssFldIntHome+mbrfield+mbrint,DecAantal)
-				endif
-			endif
-		endif
-		
-		* Save: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
-		//        1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
-		// 1: assessment int+field:
-		IF mbrint # 0
-			AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},iif(me_co="M",mbroffice,mbrofficeProj),,,me_currency,0})  
-			//                      1      2        3      4    5     6      7,1          7,2                          7,3                       7,6                   8                     9 10   11      12
-		ENDIF
-
-		// Transfer balance conform distribution instructions:
-		if me_homePP!=SEntity  .or. (me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0
-			// aMbr:
-			// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-			//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-			
-			// determine limit for sending money:
-			// find balance amount of this member: 
-			BalanceSend:=0.00
-			do while nMbrBal<Len(aBalMbr) .and. aBalMbr[nMbrBal,1]<me_mbrid
-				nMbrBal++
-			enddo
-			// calculate remaining amount:
-			IF nMbrBal<=Len(aBalMbr) .and. aBalMbr[nMbrBal,1]==me_mbrid 
-				BalanceSend:=aBalMbr[nMbrBal,2]
-			ENDIF
-			
-			remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
-			IF me_homePP!=SEntity .and.self:closingDate= Today() 
-				// for transactions to be send to homepp:
-				AmntCorrection:=Round(remainingAmnt-AmntTrans,DecAantal)
-			endif
-			availableAmnt:=remainingAmnt
-			// 2: In case of member from own homePP or non-entity send distribution instructions:
-			IF me_homePP==SEntity .or. me_co="M"
-				// 3: according to distribution instructions:
-				// destinstr: {destpp,destacc,desttype,destamnt,lstdate,seqnbr,description,currency,amntsend,destperson,singleuse},...
-				//               1       2       3        4         5      6       7           8        9        10          11
-				FOR iDest:=1 to Len(destinstr)
-					destAcc:=""
-					iType:=GT
-					cDestPersonId:=""
-					IF destinstr[iDest,1]==SEntity .and. !Empty(destinstr[iDest,2])
-						// transaction own account: 
-						if (k:=AScan(aAccDestOwn,{|x|x[2]==destinstr[iDest,2]}))>0
-							// 						oAccD:=SqlSelect{"select accid from account where accnumber='"+destinstr[iDest,2]+"'",oConn}
-							// 						if oAccD:Reccount>0
-							iType:=DT
-							// 							destAcc:=Str(oAccD:accid,-1)
-							destAcc:=aAccDestOwn[k,1]
-						ENDIF
-					elseIF AllTrim(destinstr[iDest,1])=="AAA" .and. !Empty(AllTrim(destinstr[iDest,2]))
-						// transaction to local bank:
-						if Empty(sCRE)
-							self:ResetLocks()
-							(ErrorBox{self,self:oLan:WGet("Account payable not defined in System Parameters")+"!"}):Show()
-							return false
-						endif
-						iType:=DT
-						destAcc:=sCRE
-						cDestPersonId:=destinstr[iDest,10]
-					endif
-					IF destinstr[iDest,3]=0 // fixed amount
-						// enough balance and not yet sent within this month?:
-						IF Year(destinstr[iDest,5])*100+Month(destinstr[iDest,5])<CurMonth
-							//  enough balance ?
-							DestAmnt:=destinstr[iDest,4]
-							IF destinstr[iDest,8]
-								// convert from UD dollar:
-								DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
-							ENDIF
-							IF remainingAmnt>=DestAmnt
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})  
-								// aDisLock: {{mbrid,seqnr,amountsent,singleuse,lastdate},...}
-								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],DestAmnt,iif(destinstr[iDest,11],'1','0'),cClosingdate})
-								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
-								endif
-								remainingAmnt:=Round(remainingAmnt-DestAmnt,DecAantal)
-							ELSE
-								// wait untill enough balance
-								exit
-							ENDIF
-						ENDIF
-					ELSEIF destinstr[iDest,3]=1 // proportional amount
-						me_amount:=Min(Round((destinstr[iDest,4]*availableAmnt)/100,DecAantal),remainingAmnt)
-						IF me_amount>0
-							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
-							remainingAmnt:=Round(remainingAmnt-me_amount,DecAantal)
-							IF me_homePP!=SEntity
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
-							endif
-							if destinstr[iDest,11]														//lock distribution record:
-								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],me_amount,iif(destinstr[iDest,11],'1','0'),cClosingdate})
-							endif
-						ENDIF
-					ELSEIF remainingAmnt>0 // remaining amount:
-						//============ include check cumulative amount (destinstr[iDest,9]) < limit (destinstr[iDest,4])
-						IF destinstr[iDest,4] > 0
-							// limit case:
-							IF Year(destinstr[iDest,5])*100+Month(destinstr[iDest,5])<CurMonth
-								// first time this month:
-								destinstr[iDest,9]:=0
-							ENDIF
-							DestAmnt:=destinstr[iDest,4]
-							IF destinstr[iDest,8]
-								// convert from USD dollar:
-								DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
-							ENDIF
-
-							IF destinstr[iDest,9] < DestAmnt
-								if destinstr[iDest,3]=3  // remaining from RPP
-									amntlimited:=Min(AmntFromRPP,remainingAmnt)
-								else
-									amntlimited:=remainingAmnt
-								endif
-								amntlimited:=Min(amntlimited, Round(DestAmnt-destinstr[iDest,9],DecAantal))
-								if amntlimited>0.00  
-									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],Round(destinstr[iDest,9]+amntlimited,DecAantal),iif(destinstr[iDest,11],'1','0'),cClosingdate})
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
-									IF me_homePP!=SEntity
-										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
-									endif
-								endif
-							ENDIF
-						ELSE  // no limit
-							if destinstr[iDest,3]=3  // remaining from RPP
-								amntlimited:=Min(AmntFromRPP,remainingAmnt)
-							else
-								amntlimited:=remainingAmnt
-							endif 
-							if amntlimited>0.00  
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
-								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
-								endif
-								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],amntlimited,iif(destinstr[iDest,11],'1','0'),cClosingdate})
-								remainingAmnt:=Round(remainingAmnt-amntlimited,DecAantal)
-							endif
-						ENDIF
-					ENDIF
-				NEXT
-			ENDIF
-			// 2: In case of member from other homePP seperate transactions for CN,MM and PC:
-			IF me_homePP!=SEntity .and.self:closingDate=Today()
-				IF !AmntCorrection=0.00
-					// send if applicable remaining balance to PMC
-					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
-				ENDIF
-			ENDIF
-		endif
-	Next
-	if !Empty(cError)
-		(ErrorBox{self,cError}):Show()
-		self:ResetLocks()
-		return
-	endif
-	// 	if !Empty(cErrMsg)
-	// 		WarningBox{,"Send to PMC","The following members have been skipped because of not posted transactions:"+CRLF+cErrMsg}:Show()
-	// 	endif
-	batchcount:=Len(aMemberTrans)
-	directcount:=0
-	mo_tot:=0
-	mo_direct:=0
-	IF batchcount=0
-		(InfoBox{self,self:oLan:WGet("Partner Monetary Clearinghouse"),self:oLan:WGet("Nothing needs to be send")+"!"}):Show()
-		self:Pointer := Pointer{POINTERARROW}
-		RETURN
-	ENDIF 
-	self:STATUSMESSAGE(self:oLan:WGet('Producing report')+'...')
-	// aMemberTrans: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
-	//                1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
-
-	ASort(aMemberTrans,,,{|x,y| x[3]<y[3] .or.x[3]==y[3].and.x[12]<=y[12]})  // sort on name member  and transid
-	FOR i=1 to batchcount
-		IF aMemberTrans[i,4]==DT    // transactions to own PP not send to PMC
-			mo_direct:=Round(mo_direct+aMemberTrans[i,5],DecAantal)
-			directcount++
-		ELSE
-			mo_tot:=Round(mo_tot+aMemberTrans[i,5],DecAantal)
-		ENDIF
-	NEXT
-	AmountDue:= mo_tot
-	// 	AmountDueTxt:='Amount due to '+AllTrim(if(AmountDue>0,'SIL',sland))+' '+;
-	// 		IF(AmountDue#0,AllTrim(Getal_inv(AmountDue,11))+' (Local currency: '+sCurr+')',;
-	// 			'***NIHIL***' )
-
-	heading:={;
-		'                            Partner Monetary Clearinghouse',;
-		'                                    Transactions to be send',' ',;
-		'ORGANIZATION:  '+sLand+Space(33)+'EXCHANGE RATE U.S. $1 = '+Str(fExChRate,-1,8),;
-		'PARTNERCODE :  '+SEntity,;
-		'currency    :  '+sCurr+'  '+Pad(sCurrName,27)+Space(81)+'PERIOD ' +iif(!Empty(self:oSys:pmislstsnd).and. self:closingDate>self:oSys:pmislstsnd,DToC(self:oSys:pmislstsnd),"")+ ' TO ' + DToC(self:closingDate),;
-		' ',;
-		Pad('MEMBER',20,' ')+PadL('AMOUNT',12,' ')+' DESCRIPTION',separatorline}
-	FOR a_tel=1 to batchcount
-		* Print member data:
-		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
-		me_accid:=aMemberTrans[a_tel,1]
-		me_balance:=aMemberTrans[a_tel,5]
-		* Omschrijving:
-		me_desc:=""
-		IF !Empty(aMemberTrans[a_tel,9])
-			me_desc:=aMemberTrans[a_tel,9]
-		ENDIF
-		IF aMemberTrans[a_tel,4]=AG
-			me_desc:="Assessment Int+Field of gifts from "+Country+' '+self:AssPeriod
-		ELSE
-			IF aMemberTrans[a_tel,4]=MT
-				me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer OF "+AllTrim(aMemberTrans[a_tel,6])+" TO home:"+aMemberTrans[a_tel,7][2]+iif(Empty(aMemberTrans[a_tel,7][1]),"",", "+aMemberTrans[a_tel,7][1] )
-			ELSE
-				me_desc:=if(Empty(me_desc),"",me_desc+"; ")+"Transfer TO:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
-			ENDIF
-		ENDIF
-		oReport:PrintLine(@nRow,@nPage,;
-			Pad(aMemberTrans[a_tel,3],20)+Str(me_balance,12,2)+' '+Pad(me_desc,127),heading,3-nRowCnt)
-		IF Len(heading)>6  && kop aanpassen voor nPage >=2
-			FOR i=1 to 4
-				ADel(heading,3)
-			NEXT
-			ASize(heading,3)
-		ENDIF
-	NEXT
-	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,3)
-	oReport:PrintLine(@nRow,@nPage,;
-		Pad('Subtotal:',20)+" "+Str(mo_tot+mo_direct,11,2)+"  ("+AllTrim(Str(batchcount,-1,0))+" "+oLan:RGet("lines")+")",heading,3-nRowCnt)
-	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
-	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment intern.+field',40)+Str(AssInt+AssField,11,2),null_array,0)
-	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO standard',40)+Str(AssOffice,11,2),null_array,0)
-	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO Projects',40)+Str(AssOfficeProj,11,2),null_array,0)
-	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
-	IF mo_direct#0
-		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:RGet("lines")+")",heading,0)
-	ENDIF
-	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(mo_tot/fExChRate,11,2),heading)
-	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
-	self:Pointer := Pointer{POINTERARROW}
-	uRet:=nil
-	uRet:=oReport:prstart(false)
-
-	oReport:prstop()
-	oWindow:Pointer := Pointer{POINTERARROW}
-	time0:=time1
-	// 	LogEvent(self,"print report:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-
-	*After printing request confirmation for continuing: 
-	lStop:=true
-	cFilename := curPath + "\"+AllTrim(SEntity)+Str(Year(self:closingDate),4,0)+StrZero(Month(self:closingDate),2)+StrZero(Day(self:closingDate),2)+Str(Round(Seconds(),0),-1)+'PMC.XML'
-	if PMCUpload
-		if TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Is printing of PMC transactions OK")+CRLF+;
-				self:oLan:WGet("and can their file")+Space(1)+cFilename+CRLF+self:oLan:WGet("be uploaded to Insite")+"?",;
-				BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYYES
-			lStop:=false 
-		endif
-	else
-		oAsk:=AskSend{self}
-		oAsk:Show() 
-		if oAsk:Result==1
-			lStop:=false
-		endif
-	endif 
-	if !lStop .and. !self:RefreshLocks(nTransSample,nTransLock)
-		TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
-		lStop:=true
-	endif
-
-	if !lStop 
-		// refresh locks
-		* Produce first Datafile: 
-		self:STATUSMESSAGE(self:oLan:WGet('Producing PMC file')+'...')
-		DecSep:=SetDecimalSep(Asc("."))
-		ptrHandle := MakeFile(self,cFilename,self:oLan:WGet("Creating PMC-file"))
-		IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
-			* header record:
-			//		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="ISO-8859-1" ?>')
-			//		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UNICODE" ?>')
-			FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8" ?>')
-			FWriteLineUni(ptrHandle,"<PMISBatch>")
-			FWriteLineUni(ptrHandle,"<Header>")
-			FWriteLineUni(ptrHandle,"<BatchCount>"+AllTrim(Str(batchcount-directcount))+"</BatchCount>")
-			FWriteLineUni(ptrHandle,"<BatchTotal>"+Str(-AmountDue,-1,DecAantal)+"</BatchTotal>")
-			FWriteLineUni(ptrHandle,"<Originating_PP>"+SEntity+"</Originating_PP>")
-			FWriteLineUni(ptrHandle,"<Exchange_Rate>"+AllTrim(Str(fExChRate,,8))+"</Exchange_Rate>")
-			FWriteLineUni(ptrHandle,"</Header>")
-			
-			* detail records:
-			datestr:=Str(Year(self:closingDate),4)+"-"+StrZero(Month(self:closingDate),2)+"-"+StrZero(Day(self:closingDate),2)
-			FOR a_tel=1 to batchcount
-				* Write member data:
-				* reknr,accnbr, accname, type transactie, bedrag,assmntcode, destination{destacc,destPP,housecode,distrseqnbr,destAcc,CO},homeassamnt,description:"
-				IF !aMemberTrans[a_tel,4]==DT
-					me_accnbr:=aMemberTrans[a_tel,2]
-					me_balance:=aMemberTrans[a_tel,5]
-					me_householdid:=AllTrim(aMemberTrans[a_tel,7][3])
-					IF !Empty(aMemberTrans[a_tel,9])
-						me_pers:=aMemberTrans[a_tel,9]
-						IF !Empty(aMemberTrans[a_tel,3])
-							me_pers+=" ("+AllTrim(aMemberTrans[a_tel,3])+")"
-						ENDIF
-					ELSE
-						me_pers:=AllTrim(aMemberTrans[a_tel,3])
-					ENDIF
-					me_destAcc:=aMemberTrans[a_tel,7][1]
-					me_destPP:=aMemberTrans[a_tel,7][2]
-					self:WritePMCTrans(ptrHandle,aMemberTrans[a_tel,4],me_accnbr,me_balance,me_pers,me_householdid,datestr,aMemberTrans[a_tel,6],me_destAcc,me_destPP)
-				ENDIF
-			NEXT
-			FWriteLineUni(ptrHandle,"</PMISBatch>")
-			* closing record:
-			FClose(ptrHandle)
-			if PMCUpload
-				lStop:=true
-				FileStart(WorkDir()+"InsitePMCUpload.html",self)
-				oAskUp:=AskUpld{self,,,cFilename}
-				oAskUp:Show() 
-				if oAskUp:Result==1
-					if !self:RefreshLocks(nTransSample,nTransLock)
-						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
-					else
-						lStop:=false
-					endif
-				endif
-				if lStop
-					// remove datafile:
-					if !FileSpec{cFilename}:DELETE()
-						FErase(cFilename)
-					endif
-				endif
-			endif
-		endif
-	endif
-	if lStop 
-		self:ResetLocks()
-		return
-	else
-		IF Empty(self:oSys:PMISLSTSND) .or.self:oSys:PMISLSTSND<Today()-400
-			// still IES:
-			IF (TextBox{oWindow,self:oLan:WGet("Partner Monetary Clearinghouse"),;
-					self:oLan:WGet('Did you really get confirmation from Dallas that your WO is PMC enabled')+'?',BOXICONQUESTIONMARK + BUTTONYESNO}):Show() = BOXREPLYNO
-				self:ResetLocks()
-				RETURN
-			ENDIF
-		ENDIF
-		oMapi := MAPISession{}
-		self:Pointer := Pointer{POINTERHOURGLASS}
-		cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
-		self:STATUSMESSAGE(cStmsg)  
-		nStep:=Ceil(batchcount/10.00)
-		// determine mbalance accounts to be locked for update 
-		cAccs:=sam+','+shb
-		if !Empty(samProj)
-			cAccs+=','+samProj
-		endif
-		if !Empty(SINCHOME)
-			cAccs+=','+SINCHOME+","+SEXPHOME
-		endif
-		if !Empty(SINC)
-			cAccs+=','+SINC+","+SEXP
-		endif
-		if !Empty(samFld)
-			cAccs+=','+samFld
-		endif
-		for a_tel:=1 to batchcount
-			if !cCurAcc==aMemberTrans[a_tel,1]
-				cCurAcc:=aMemberTrans[a_tel,1]
-				cAccs+=','+cCurAcc
-			endif 
-			IF aMemberTrans[a_tel,4]==DT
-				if At(','+aMemberTrans[a_tel,7][5]+',',cAccs)=0
-					cAccs+=","+aMemberTrans[a_tel,7][5]
-				endif
-			endif
-		next
-		// check transactions are still locked:
-
-		// Prepare transactions:
-		nSeqnr:=0
-		nSeqnrDT:=0
-		//aTransM/DT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-		//             1    2     3      4      5      6            7      8   9  10    11        12    13     14     15  
-		FOR a_tel = 1 to batchcount
-			* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-			*               1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
-			me_accid:=aMemberTrans[a_tel,1]
-			me_balance:=aMemberTrans[a_tel,5]
-			* Record transactions for decreasing balance of member:
-			IF aMemberTrans[a_tel,4]=AG
-				me_desc:=self:oLan:RGet("Assessment Intern+Field of gifts from")+Space(1)+Country+' '+self:AssPeriod
-			ELSE
-				me_desc:=aMemberTrans[a_tel,9]
-				IF aMemberTrans[a_tel,4]=MT
-					me_desc+=iif(Empty(me_desc),"",'; ')+"Transfer of "+AllTrim(aMemberTrans[a_tel,6])+" to home:"+aMemberTrans[a_tel,7][2]
-				ELSE
-					me_desc+=iif(Empty(me_desc),"",'; ')+"Transfer to:"+AllTrim(aMemberTrans[a_tel,7][2])+", "+aMemberTrans[a_tel,7][1]
-				ENDIF 
-				if !aMemberTrans[a_tel,4]==DT
-					me_desc+=" (Exchange rate US $1="+Str(fExChRate,-1,8)+' '+sCurrName+")" 
-				endif
-			ENDIF
-			me_balanceF:=me_balance
-			if !aMemberTrans[a_tel,11]==sCurr
-				self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
-				if self:mxrate>0
-					me_balanceF:=Round(me_balance/self:mxrate,DecAantal)
-				endif 
-			endif
-			cError:=""
-			me_desc:=SubStr(AddSlashes(me_desc),1,511) // limit to fit into description 
-			if aMemberTrans[a_tel,4]==DT
-				// 					nSeqnrDT++
-				// 					cSeqnr:=Str(nSeqnrDT)
-				AAdd(aTransDT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2','1','PMC',''})
-			else
-				nSeqnr++
-				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			endif 
-			oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11]) 
-			IF aMemberTrans[a_tel,4]==DT
-				if aMemberTrans[a_tel,7][5]==sCRE .and.aMemberTrans[a_tel,7][2]=="AAA" .and.me_balance>0.00 
-					// to account payable and local bank: make BankOrder: 
-					// accntfrom,amount,description,banknbrcre,datedue,idfrom
-					AAdd(aBankOrder,{sCRE,Str(me_balance,-1),AddSlashes(iif(Empty(aMemberTrans[a_tel,9]),me_desc,aMemberTrans[a_tel,9])),AddSlashes(aMemberTrans[a_tel,7][1]),cDueDate,me_accid}) 
-				endif
-				// 					nSeqnrDT++
-				// 					cSeqnr:=Str(nSeqnrDT)
-				me_desc:=SubStr(AddSlashes(aMemberTrans[a_tel,9]+iif(Empty(aMemberTrans[a_tel,9]),"",'; ')+oLan:RGet("From")+Space(1)+aMemberTrans[a_tel,3]),1,511)
-				// add second line for direct transactions:
-				AAdd(aTransMT,{aMemberTrans[a_tel,7][5],'0','0',Str(me_balance,-1),Str(me_balanceF,-1),aMemberTrans[a_tel,11],me_desc,;
-					cClosingdate,'H','',LOGON_EMP_ID,'2','2','PMC',''})
-				oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_balance, 0, me_balanceF,'') 
-			endif
-			// Also transaction for Office assessment:
-			IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
-				IF aMemberTrans[a_tel,7][6]="M"
-					me_desc:=self:oLan:RGet("Assessment office of gifts from")+Space(1)+Country +' '+self:AssPeriod
-				ELSE
-					me_desc:=self:oLan:RGet("Assessment office projects of gifts from")+Space(1)+Country+' '+self:AssPeriod
-				ENDIF
-				nSeqnr++
-				// 					cSeqnr:=Str(nSeqnr)
-				me_balance:=aMemberTrans[a_tel,8]
-				me_balanceF:=me_balance
-				if !aMemberTrans[a_tel,11]==sCurr
-					self:mxrate:=oCurr:GetROE(aMemberTrans[a_tel,11],Today())
-					if self:mxrate>0
-						me_balanceF:=Round(me_balance/self:mxrate,DecAantal)
-					endif 
-				endif
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-				oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11])
-			ENDIF
-		NEXT
-		*Record Total amount AM:
-		IF !Empty(samProj)
-			IF !AssOfficeProj==0.00
-				nSeqnr++
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-				AAdd(aTransMT,{samProj,Str(AssOfficeProj,-1),Str(AssOfficeProj,-1),'0','0',sCurr,self:oLan:RGet("AM Office Projects Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-				oMBal:ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
-			ENDIF
-		ELSE
-			AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
-		ENDIF
-		IF AssOffice#0
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{sam,Str(AssOffice,-1),Str(AssOffice,-1),'0','0',sCurr,self:oLan:RGet("AM Office Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
-		ENDIF 
-		// reverse add to income: 
-		if !Empty(AssIncHome) 
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SINCHOME,Str(AssIncHome,-1),Str(AssIncHome,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssIncHome,-1),Str(AssIncHome,-1),sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
-		endif
-		if !Empty(AssInc) 
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SINC,Str(AssInc,-1),Str(AssInc,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SEXP,'0','0',Str(AssInc,-1),Str(AssInc,-1),sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR) 
-		endif
-		// add to expense assessment field + int: 
-		if!Empty(AssFldInt)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{samFld,Str(AssFldInt,-1),Str(AssFldInt,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SEXP,'0','0',Str(AssFldInt,-1),Str(AssFldInt,-1),sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
-		endif
-		if !Empty(AssFldIntHome)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{samFld,Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
-			nSeqnr++
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCURR)
-		endif
-
-		// 		Record total amount to PMC 
-		IF mo_tot # 0
-			nSeqnr++
-			if !self:cPMCCurr==sCurr .and. fExChRate>0
-				mo_totF:=Round(mo_tot/fExChRate,DecAantal)
-			else
-				mo_totF:=mo_tot
-			endif
-			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			AAdd(aTransMT,{shb,'0','0',Str(mo_tot,-1),Str(mo_totF,-1),self:cPMCCurr,self:oLan:RGet("PMC Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
-		ENDIF
-		// 		(time1:=Seconds())
-		oStmnt:=SQLStatement{"set autocommit=0",oConn}
-		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write,`bankorder` write,`sysparms` write,`distributioninstruction` write,`log` write',oConn} 
-		oStmnt:Execute()
-		if !Empty(oStmnt:Status)
-			cError:=self:oLan:WGet('PMC transactions could not be recorded')+":"+oStmnt:ErrInfo:errormessage
-			cErrorLog:=cError+': '+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:errormessage
-		endif
-		if Empty(cError)
-			IF Empty(self:oSys:IESMAILACC).or. Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,10))="ie_dallas@".or.Lower(SubStr(AllTrim(self:oSys:IESMAILACC),1,16))="data_ie_orlando@"
-				SQLStatement{"update sysparms set iesmailacc='PMC-Files_Intl@sil.org'",oConn}:Execute()
-			ENDIF
-		endif
-		if Empty(cError) 
-			*	Change status of transactions to "Send to PMC": bfm='H':  
-			oStmnt:=SQLStatement{"update transaction set	bfm='H' where bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>'' and "+;
-				" lock_id="+MYEMPID+" and lock_time > subdate(now(),interval 120 minute)",oConn}
-			// 			oStmnt:=SQLStatement{"update transaction set	bfm='H' where concat(cast(transid as char),';',cast(seqnr as char)) in ("+cTransLock+")",oConn}
-			oStmnt:Execute()
-			if	oStmnt:NumSuccessfulRows <1
-				cError:=self:oLan:WGet("could not mark transactions as sent to PMC")
-				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-			ENDIF
-			if !oStmnt:NumSuccessfulRows=nTransLock 
-				cError:=self:oLan:WGet("someone else has manipulated transactions to be sent to PMC")
-				cErrorLog:=cError
-			endif
-		endif
-		if Empty(cError) .and. Len(aDisLock)>0
-			*	Record month within fixed/limited remaining amount distribution instructions: 
-			// aDisLock: {{mbrid,seqnr,amountsent,singleuse,lastdate},...}
-			cStmnt:="insert into distributioninstruction (`mbrid`,`seqnbr`,`amntsnd`,`disabled`,`lstdate`) values "+Implode(aDisLock,'","')+;
-				" ON DUPLICATE KEY UPDATE lstdate=values(lstdate),amntsnd=values(amntsnd),disabled=values(disabled)"
-			oStmntDistr:=SQLStatement{cStmnt,oConn} 
-			oStmntDistr:Execute()
-			if !Empty(oStmntDistr:Status)
-				cError:=self:oLan:WGet("could not update distribution instruction for members")
-				cErrorLog:=cError+': '+oStmntDistr:ErrInfo:errormessage+CRLF+"Statement:"+oStmntDistr:SQLString
-			endif
-		endif
-		cTransStmnt:=''
-		if Empty(cError)
-			cTransnr:=''
-			cTransnrDT:=''
-			//aTransM/DT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
-			//             1    2     3      4      5      6            7      8   9  10    11        12    13     14     15  
-			if !Empty(aTransMT)
-				// add first PMC transaction line:
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid) values ("+Implode(aTransMT[1],'","',1,14)+")",oConn}
-				oStmnt:Execute()
-				if	oStmnt:NumSuccessfulRows<1
-					cError:=self:oLan:WGet("could	no	record transaction for member")+Space(1)+aMemberTrans[a_tel,3]
-					cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-				endif
-				if Empty(cError)
-					cTransnr:=ConS(SqlSelect{"select	LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-					// update aTransMT with cTransnr:
-					AEvalA(aTransMT,{|x|x[15]:=cTransnr})
-					if !Empty(aTransDT)
-						nTransnrDT:=Val(cTransnr)
-						for i:=1 to Len(aTransDT)
-							nTransnrDT++
-							aTransDT[i,15]=Str(nTransnrDT,-1)
-							i++
-							aTransDT[i,15]=Str(nTransnrDT,-1)
-						next
-					endif
-					oStmnt:=SQLStatement{'insert into transaction (`accid`,`deb`,`debforgn`,`cre`,`creforgn`,`currency`,`description`,`dat`,`bfm`,`gc`,`userid`,'+;
-						'`poststatus`,`seqnr`,`docid`,`transid`) values '+Implode(aTransMT,'","')+iif(Empty(aTransDT),"",Implode(aTransDT,'","')),oConn}
-					oStmnt:Execute()
-					if	oStmnt:NumSuccessfulRows<1
-						cError:=self:oLan:WGet('Could	not record transactions for the members')+' ('+oStmnt:Status:description+')'
-						cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-					endif
-				endif
-			endif
-
-
-		endif
-		if Empty(cError)
-			if !oMBal:ChgBalanceExecute()
-				cError:=oMBal:cError
-			endif
-		endif 
-		if Empty(cError) .and. !Empty(cBankStmnt) 
-			// aBankOrder: accntfrom,amount,description,banknbrcre,datedue,idfrom
-			oStmnt:=SQLStatement{'insert into bankorder (`accntfrom`,`amount`,`description`,`banknbrcre`,`datedue`,`idfrom`) values '+Implode(aBankOrder,'","'),oConn}
-			oStmnt:Execute()
-			if oStmnt:NumSuccessfulRows<1
-				cError:=self:oLan:WGet('could not record bankorder for members')
-				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-			ENDIF
-		endif
-		if Empty(cError)
-			oStmnt:=SQLStatement{"update sysparms set pmislstsnd=CURDATE(),exchrate='"+Str(fExChRate,-1)+"'",oConn}
-			oStmnt:Execute()
-			if !Empty(oStmnt:Status)
-				cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
-				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-			endif
-		endif
-
-		time0:=time1
-		// 		LogEvent(self,"recording PMC transactions:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
-		self:STATUSMESSAGE(Space(80) )
-		if Empty(cError)
-			if	PMCUpload
-				LogEvent(self,self:oLan:WGet("Uploaded	file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+	Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR	)
-			endif
-			self:STATUSMESSAGE(self:oLan:WGet('unlocking member transactions')+'...')
-			oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
-			oStmnt:Execute()
-			SQLStatement{"commit",oConn}:Execute()
-		else
-			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(self,cErrorLog,"logerrors")
-			self:ResetLocks()
-			ErrorBox{self,cError+"; "+self:oLan:WGet("nothing recorded; withdraw file sent to PMC")}:Show() 
-			return
-		ENDIF
-		SQLStatement{"unlock tables",oConn}:Execute()
 
 		// sending by email:
 		cPMISMail:=AllTrim(self:oSys:IESMAILACC)
