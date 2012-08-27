@@ -140,7 +140,8 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			// Read current email client:
 			If lVista 
 				// read HKCU 
-				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+				nResult := RegOpenKeyEx( HKEY_CURRENT_USER , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_QUERY_VALUE, @phkResult )
+// 				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
 				IF nResult == ERROR_SUCCESS
 					lpData  := Space(256)
 					cbData  := 256			
@@ -160,7 +161,8 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			endif
 			if Empty(cCurrent)
 				// read HKLM:
-				nResult:=RegCreateKeyEx(HKEY_LOCAL_MACHINE,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+// 				nResult:=RegCreateKeyEx(HKEY_LOCAL_MACHINE,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+				nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_QUERY_VALUE, @phkResult )
 				IF nResult == ERROR_SUCCESS
 					cCurrent  := Space(256)
 					cbData  := 256			
@@ -186,7 +188,8 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			if !cRequired==cCurrent		 
 				if lVista 	
 					// Write required client to HKCU
-					nResult := RegOpenKeyEx( HKEY_CURRENT_USER , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_ALL_ACCESS, @phkResult )
+					nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+// 					nResult := RegOpenKeyEx( HKEY_CURRENT_USER , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_ALL_ACCESS, @phkResult )
 					IF nResult == ERROR_SUCCESS
 						// set key:
 						nResult:=RegSetValueEx(phkResult, ;
@@ -203,6 +206,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					endif
 				else
 					// write required client to HKLM 
+				nResult:=RegCreateKeyEx(HKEY_LOCAL_MACHINE,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
 					nResult := RegOpenKeyEx( HKEY_LOCAL_MACHINE , String2Psz('SOFTWARE\Clients\Mail') ,0,KEY_ALL_ACCESS, @phkResult )
 					IF nResult == ERROR_SUCCESS
 						// set key:
