@@ -1622,14 +1622,14 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 						//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 						//                1     2     3     4     5         6        7        8   9    10     11        12    13     14       15      16    17    18
 						AAdd(aValuesTrans,{SHB,aValues[nPtr,10],aValues[nPtr,12],aValues[nPtr,9],aValues[nPtr,11],aValues[nPtr,13],aValues[nPtr,14],aValues[nPtr,1],;
-							aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'0','1',origin,''})
+							aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'0','1',aValues[nPtr,7],''})
 						aValues[nPtr,17]:=1	//	set importrans	to	processed 
 						aValues[nPtr+1,17]:=1	//	set importrans	to	processed 
 						//	second transaction line	to	destination
 						nPtr++
 						nProc++
 						AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-							aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],iif(nPers>0,aPers[nPers,2],'0'),'1',origin,''})
+							aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],iif(nPers>0,aPers[nPers,2],'0'),'1',aValues[nPtr,7],''})
 						// add to income expense if needed: 
 						if !Empty(SINCHOME) .or.!Empty(SINC)
 							// add transactions for ministry income/expense:
