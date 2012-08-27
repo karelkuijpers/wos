@@ -2237,6 +2237,22 @@ METHOD Close(oEvent) CLASS DonorProject
 	self:EndWindow()
 	RETURN nil
 
+method DateTimeSelectionChanged(oDateTimeSelectionEvent) class DonorProject
+	LOCAL oControl as DateTimePicker
+
+	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
+	//Put your changes here 
+	oControl := iif(oDateTimeSelectionEvent == null_object, null_object, oDateTimeSelectionEvent:Control)
+	
+	if oControl:NameSym== #Fromdate
+		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+'01')
+	elseif oControl:NameSym== #Todate
+		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+StrZero(MonthEnd(Year(oControl:SelectedDate),Month(oControl:SelectedDate)),2))
+	endif
+
+	return NIL
+
+
 METHOD DeselectAccount(nCur ref int,nPos as int) as void pascal CLASS DonorProject
 	// remove deselected account as nPos from group nCur
 	LOCAL myDim as Dimension
@@ -2503,7 +2519,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	LOCAL myDim as Dimension
 	LOCAL myOrg as Point
 	local OldestYear as date  
-	LOCAL StartDate as date
+	LOCAL StartDate as date 
 	
 	self:SetTexts()
 	myDim:=self:Size
@@ -2530,7 +2546,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	oDCTodate:DateRange:=DateRange{StartDate,Today()+31}
 
 	self:oDCFromdate:Value:=Today()-360
-	self:oDCFromdate:Value:=self:oDCFromdate:Value - Day(self:oDCFromdate:Value)+1
+	self:oDCFromdate:Value:=self:oDCFromdate:Value - Day(self:oDCFromdate:VALUE)+1 
+	self:oDCFromdate:Format:="MMMM yyy"
+	self:oDCTodate:Format:="MMMM yyy"
 	self:oDCTodate:Value:=Today() - Day(Today())
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
@@ -2650,8 +2668,9 @@ METHOD PrintReport() CLASS DonorProject
 		i:=AScan(pers_types,{|x|x[2]==oTrans:TYPE})
 		IF i>0		
 			FOR grp:=1 to Len(aDestGrp)
-				if AScan(aDestGrp[grp,2],{|x| x=oTrans:accid})>0                                  
+				if AScan(aDestGrp[grp,2],{|x| x==oTrans:accid})>0                                  
 					aMatrix[grp,i]+=oTrans:summa
+					exit
 				endif
 			next
 		ENDIF    
@@ -2975,21 +2994,6 @@ IF lProjects
 	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd,aBalIncl,aDepIncl)})
 ENDIF
 RETURN aAcc
-CLASS TotalsMembers INHERIT DataWindowMine 
-
-	PROTECT oCCOKButton as PUSHBUTTON
-	PROTECT oCCCancelButton as PUSHBUTTON
-	PROTECT oDCFixedText3 as FIXEDTEXT
-	PROTECT oDCFixedText5 as FIXEDTEXT
-	PROTECT oDCFromYear as SINGLELINEEDIT
-	PROTECT oDCFromMonth as SINGLELINEEDIT
-	PROTECT oDCToYear as SINGLELINEEDIT
-	PROTECT oDCToMonth as SINGLELINEEDIT
-	PROTECT oDCFixedText2 as FIXEDTEXT
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	PROTECT oReport as PrintDialog
-	
 resource TotalsMembers DIALOGEX  12, 11, 225, 99
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -3005,6 +3009,21 @@ BEGIN
 	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
 END
 
+CLASS TotalsMembers INHERIT DataWindowMine 
+
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCFixedText5 as FIXEDTEXT
+	PROTECT oDCFromYear as SINGLELINEEDIT
+	PROTECT oDCFromMonth as SINGLELINEEDIT
+	PROTECT oDCToYear as SINGLELINEEDIT
+	PROTECT oDCToMonth as SINGLELINEEDIT
+	PROTECT oDCFixedText2 as FIXEDTEXT
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT oReport as PrintDialog
+	
 METHOD CancelButton( ) CLASS TotalsMembers
 		self:EndWindow()
 RETURN nil
