@@ -347,9 +347,9 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	AAdd(aMenu,{6,14, oLan:MGet("&Currency rates")+"...","CurrRateEditor","",0,43,"AF"})
 	AAdd(aMenu,{6,15, oLan:MGet("&Language Translation tables"),,,,,})
 	AAdd(aMenu,{6,14, oLan:MGet("&Language Translation tables"),,,,,})
-	AAdd(aMenu,{14,1, oLan:MGet("&Menus")+"...","LanguageMenu","",0,51,"A"})
-	AAdd(aMenu,{14,1, oLan:MGet("&Reports")+"...","LanguageReport","",0,67,"A"})
-	AAdd(aMenu,{14,1, oLan:MGet("&Windows")+"...","LanguageScreen","",0,99,"A"})
+	AAdd(aMenu,{14,1, oLan:MGet("&Menus translation")+"...","LanguageMenu","",0,51,"A"})
+	AAdd(aMenu,{14,1, oLan:MGet("&Reports translation")+"...","LanguageReport","",0,67,"A"})
+	AAdd(aMenu,{14,1, oLan:MGet("&Windows translation")+"...","LanguageScreen","",0,99,"A"})
 
 	// add extra invisible items for extra permissions:
 	AAdd(aMenu,{-1,101,"Account Edit","AccountEdit","",0,101,"F"})
