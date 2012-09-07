@@ -1274,7 +1274,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
 	local aAccNbr:={} as array  // array with import accountnbrs
 	local aPersExt:={} as array // array with externids
-	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
+	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions 
+	
 	local oAddInc as AddToIncExp 
 	if Empty(SEntity)
 		(ErrorBox{self:OWNER,self:oLan:WGet('First specify PMC Participant Code in System parameter, tab PMC')}):show()
@@ -1466,6 +1467,16 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 					cExId:=""
 				else
 					cExId:=origin+cExId
+				endif
+			elseif origin=='NED' .or.origin=='SWE' .or. origin=='SAF' .or. origin=='NOR' .or. origin=='ASD' .or. origin=='CZR' .or. origin=='FRN' .or. origin=='ROM' .or. origin=='SPN' .or. origin=='SKD' .or. origin=='THD'
+				nPtr:=AtC(' from ',transdescription)
+				if nPtr>0
+					cExId:=Str(Val(Split(AllTrim(SubStr(transdescription,nPtr+6))," ")[1]),-1)
+					if cExId=='0'
+						cExId:=""
+					else
+						cExId:=origin+cExId
+					endif
 				endif
 			endif
 		endif
