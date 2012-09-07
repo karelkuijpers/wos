@@ -3481,7 +3481,7 @@ METHOD MakeAndCod() CLASS SelPersMailCd
 
 	IF !Empty(aCod)
 		FOR i=1 TO Len(aCod)
-			cCod := cCod +if(i=1,'(',' and ')+"instr(p.mailingcodes,'"+aCod[i]+"')>0"
+			cCod := cCod +if(i=1,'(',' and ')+"instr(p.mailingcodes,'"+AddSlashes(aCod[i])+"')>0"
 			cTekst := cTekst +if(i=1,'(',' and ')+GetMailAbrv(aCod[i])
 			IF "EG"==aCod[i]
 				oCaller:lEG:=TRUE
@@ -3506,7 +3506,7 @@ METHOD MakeNonCod() CLASS SelPersMailCd
 	aCod3:=self:oDCNonCod:GetSelectedItems()
 	IF !Empty(aCod3)
 		FOR i=1 TO Len(aCod3)
-			cCod := cCod +if(i=1,'(',' and ')+"instr(p.mailingcodes,'"+aCod3[i]+"')=0"
+			cCod := cCod +if(i=1,'(',' and ')+"instr(p.mailingcodes,'"+AddSlashes(aCod3[i])+"')=0"
 			cTekst := cTekst +if(i=1,'(not ',' and not ')+GetMailAbrv(aCod3[i])
 			IF "EG"==aCod3[i]
 				oCaller:lEG:=FALSE
@@ -3530,7 +3530,7 @@ METHOD MakeOrCod() CLASS SelPersMailCd
 	aCod2:=self:oDCOrCod:GetSelectedItems()
 	IF !Empty(aCod2)
 		FOR i=1 TO Len(aCod2)
-			cCod := cCod +if(i=1,'(',' or ')+"instr(p.mailingcodes,'"+aCod2[i]+"')>0"
+			cCod := cCod +if(i=1,'(',' or ')+"instr(p.mailingcodes,'"+AddSlashes(aCod2[i])+"')>0"
 			cTekst := cTekst +if(i=1,'(',' or ')+GetMailAbrv(aCod2[i])
 			IF "EG"==aCod2[i]
 				oCaller:lEG:=TRUE
