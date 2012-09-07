@@ -866,7 +866,7 @@ METHOD PrintReport() CLASS PMISsend
 						me_gc:=aTransF[nTrans,8]
 						PMCco:=iif(me_gc=='AG','CN',iif(me_gc=='MG','MM','PC')) 
 						if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
-							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,11]
+							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,4]+Space(1)+aTransF[nTrans,11]
 						endif
 						if me_gc=='AG' .and. me_stat!="Staf"
 							me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
