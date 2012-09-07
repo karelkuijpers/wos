@@ -641,7 +641,7 @@ method init() class Initialize
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 // 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
 			if AtC("Microsoft",oConn:ERRINFO:errormessage)>0 .and. AtC("ODBC",oConn:ERRINFO:errormessage)>0
-				ErrorBox{,"You have first to install the MYSQL ODBC connector"}:Show() 
+				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and it will be downloaded"+CRLF+"Run it and accept all defaults"}:Show() 
 				if oMainWindow==null_object
 					oMainWindow := StandardWycWindow{self}
 				endif
@@ -652,8 +652,13 @@ method init() class Initialize
 				break
 			endif
 			// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
-			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0
-				ErrorBox{,"You have first to install MYSQL"+iif(Lower(cServer)=='localhost','',' or connect to MYSQL server')}:Show()
+			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0 
+				if Lower(cServer)=='localhost' .or. cServer=='127.0.0.1'
+					// local Mysql:
+					ErrorBox{,"You have first to install MYSQL"}:Show() 
+				else
+					ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+				endif
 				break
 			endif
 			
@@ -1655,12 +1660,10 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","0","telecontent","2","bookingdate"},;
 		{"teletrans","0","telecontent","3","addsub"},;
 		{"teletrans","0","telecontent","4","amount"},;
-		{"teletrans","0","telecontent","5","kind"},;
-		{"teletrans","0","telecontent","6","contra_bankaccnt"},;
-		{"teletrans","0","telecontent","7","contra_name"},;
-		{"teletrans","0","telecontent","8","budgetcd"},;
-		{"teletrans","0","telecontent","9","seqnr"},;
-		{"teletrans","0","telecontent","10","description (120)"},;
+		{"teletrans","0","telecontent","5","contra_bankaccnt"},;
+		{"teletrans","0","telecontent","6","contra_name"},;
+		{"teletrans","0","telecontent","7","seqnr"},;
+		{"teletrans","0","telecontent","8","description (120)"},;
 		{"teletrans","1","bankaccntnbr","1","processed"},;
 		{"teletrans","1","bankaccntnbr","2","bankaccntnbr"},;
 		{"teletrans","1","bankaccntnbr","3","bookingdate"},;
@@ -2280,10 +2283,10 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	do while nPosReq>0 .and. nPosReq<=nLenReq
 		cIndex:=aReqIndex[nPosReq,3] 
 		//	process all	lines	of	this index
-		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
-		if nPosReq=0
-			exit
-		endif
+// 		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
+// 		if nPosReq=0
+// 			exit
+// 		endif
 		if AtC(cIndex,cAddIndex)=0 
 			if (nPosCur:=AScan(aCurIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cDropIndex)=0
 				// add to drop index
@@ -2293,10 +2296,9 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 			aColName:=Split(aReqIndex[nPosReq,5],'(')
 			cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
 				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
-			aStatReq[nPosCur,1]:='c'  // changed
 			nPosReq++		
 			do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
-				aStatReq[nPosCur,1]='c'  // changed
+				aStatReq[nPosReq,1]='c'  // changed
 				aColName:=Split(aReqIndex[nPosReq,5],'(')
 				cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 				nPosReq++
