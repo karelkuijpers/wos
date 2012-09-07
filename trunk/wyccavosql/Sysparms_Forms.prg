@@ -391,7 +391,7 @@ method InitParms() class LogReport
 	endif
 	self:oDCDateTimeFrom:DateRange:=DateRange{OldestYear,Today()}
 	self:oDCDateTimeTo:DateRange:=DateRange{OldestYear,Today()+1}
- 	self:oDCDateTimeFrom:SelectedDate:=MinDate
+ 	self:oDCDateTimeFrom:SelectedDate:=Max(MinDate,Today()-160)
 
 	self:oDCCollectionBox:FillUsing({{"standard report","log"},{"error report","logerrors"}})
 	self:oDCCollectionBox:Value:="log"
