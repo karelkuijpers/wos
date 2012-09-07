@@ -2237,22 +2237,6 @@ METHOD Close(oEvent) CLASS DonorProject
 	self:EndWindow()
 	RETURN nil
 
-method DateTimeSelectionChanged(oDateTimeSelectionEvent) class DonorProject
-	LOCAL oControl as DateTimePicker
-
-	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
-	//Put your changes here 
-	oControl := iif(oDateTimeSelectionEvent == null_object, null_object, oDateTimeSelectionEvent:Control)
-	
-	if oControl:NameSym== #Fromdate
-		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+'01')
-	elseif oControl:NameSym== #Todate
-		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+StrZero(MonthEnd(Year(oControl:SelectedDate),Month(oControl:SelectedDate)),2))
-	endif
-
-	return NIL
-
-
 METHOD DeselectAccount(nCur ref int,nPos as int) as void pascal CLASS DonorProject
 	// remove deselected account as nPos from group nCur
 	LOCAL myDim as Dimension
@@ -2513,6 +2497,22 @@ METHOD OKButton( ) CLASS DonorProject
 		self:Close()
 		self:Pointer := Pointer{POINTERARROW}
 	ENDIF
+method OldDateTimeSelectionChanged(oDateTimeSelectionEvent) class DonorProject
+	LOCAL oControl as DateTimePicker
+
+	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
+	//Put your changes here 
+	oControl := iif(oDateTimeSelectionEvent == null_object, null_object, oDateTimeSelectionEvent:Control)
+	
+	if oControl:NameSym== #Fromdate
+		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+'01')
+	elseif oControl:NameSym== #Todate
+		oControl:SelectedDate:=SToD(SubStr(DToS(oControl:SelectedDate),1,6)+StrZero(MonthEnd(Year(oControl:SelectedDate),Month(oControl:SelectedDate)),2))
+	endif
+
+	return NIL
+
+
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	//Put your PostInit additions here
 	LOCAL h as int
@@ -2547,8 +2547,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 
 	self:oDCFromdate:Value:=Today()-360
 	self:oDCFromdate:Value:=self:oDCFromdate:Value - Day(self:oDCFromdate:VALUE)+1 
-	self:oDCFromdate:Format:="MMMM yyy"
-	self:oDCTodate:Format:="MMMM yyy"
+// 	self:oDCFromdate:Format:="MMMM yyy"
+// 	self:oDCTodate:Format:="MMMM yyy"
 	self:oDCTodate:Value:=Today() - Day(Today())
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
@@ -2657,10 +2657,13 @@ METHOD PrintReport() CLASS DonorProject
 
 	sqlStr:=UnionTrans("select t.transid,t.accid,p.type,sum(t.cre-t.deb) as summa from transaction as t left join person as p on t.persid=p.persid ";
 		+ "where p.type is not null and t.GC<>'PF' and t.GC<>'CH' and ";
-		+ "t.dat>='" +  Str(nFromYear,4) + "-" + StrZero(nFromMonth,2) + "-01' and " ;
-		+ "t.dat<='" + Str(nToYear,4) + "-" + StrZero(nToMonth,2) + "-" + StrZero(MonthEnd(nToMonth,nToYear),2) + "' and ";
+		+ "t.dat>='" +  SQLdate(self:oDCFromdate:SelectedDate) + "' and " ;
+		+ "t.dat<='" + SQLdate(self:oDCTodate:SelectedDate) + "' and ";
 		+ "t.CRE>t.DEB group by t.accid,p.type") // t.transid is required to ensure uniqueness when UnionTrans is performed 
-	oTrans:=SQLSelect{sqlStr,oConn} 
+// 		+ "t.dat>='" +  Str(nFromYear,4) + "-" + StrZero(nFromMonth,2) + "-01' and " ;
+// 		+ "t.dat<='" + Str(nToYear,4) + "-" + StrZero(nToMonth,2) + "-" + StrZero(MonthEnd(nToMonth,nToYear),2) + "' and ";
+// 		+ "t.CRE>t.DEB group by t.accid,p.type") // t.transid is required to ensure uniqueness when UnionTrans is performed 
+	oTrans:=SqlSelect{sqlStr,oConn} 
 	
 	AEvalA(aMatrix,{|x|AFill(x,0.00)})
 
@@ -2680,7 +2683,8 @@ METHOD PrintReport() CLASS DonorProject
 	oTrans:=null_object
 
 	// markup report from matrix:
-	oFileSpec:=AskFileName(self,"DonorProject"+Str(nFromYear,4,0)+StrZero(nFromMonth,2)+"_"+Str(nToYear,4,0)+StrZero(nToMonth,2),,{"*.xls;"},{"spreadsheet"})
+// 	oFileSpec:=AskFileName(self,"DonorProject"+Str(nFromYear,4,0)+StrZero(nFromMonth,2)+"_"+Str(nToYear,4,0)+StrZero(nToMonth,2),,{"*.xls;"},{"spreadsheet"})
+	oFileSpec:=AskFileName(self,"DonorProject"+SQLdate(self:oDCFromdate:SelectedDate)+"_"+SQLdate(self:oDCTodate:SelectedDate),,{"*.xls;"},{"spreadsheet"})
 	IF oFileSpec==null_object
 		RETURN FALSE
 	ENDIF
