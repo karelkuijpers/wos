@@ -56,7 +56,7 @@ return
 	
 METHOD Close(oCloseEvent) CLASS StandardWycWindow
 
-	SELF:Owner:Quit()
+	myApp:Quit()
 	SUPER:Close(oCloseEvent)
 METHOD CloseAll() CLASS StandardWycWindow
 	
