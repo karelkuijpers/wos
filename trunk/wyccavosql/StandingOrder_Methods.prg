@@ -268,9 +268,9 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 		RETURN FALSE
 	ENDIF
 
-	do WHILE !oOrig:EOF
+	do WHILE !oOrig:EOF .or. !oNew:EOF
 		do CASE
-		CASE !oNew:EOF .and. oOrig:RecNbr== oNew:RecNbr .and. !oNew:Deb==oNew:cre
+		CASE !oNew:EOF .and. !oOrig:EOF .and. oOrig:RecNbr== oNew:RecNbr .and. !oNew:Deb==oNew:cre
 			* Line changed?:
 
 			IF oOrig:AccountId # oNew:AccountId .or.;
@@ -299,7 +299,7 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 			ENDIF
 			oNew:skip()
 			oOrig:skip()
-		CASE !oNew:EOF .and.oOrig:RecNbr == oNew:RecNbr .and. oNew:Deb==oNew:cre
+		CASE !oNew:EOF .and. !oOrig:EOF .and.oOrig:RecNbr == oNew:RecNbr .and. oNew:Deb==oNew:cre
 			* Remove dummy transaction line:
 			* Delete with origmut corresponding line:
 			oStmnt:=SQLStatement{"delete from standingorderline where stordrid="+self:curStordid+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
@@ -312,8 +312,8 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 			endif
 			oNew:skip()
 			oOrig:skip()
-		CASE oNew:EOF.or. oOrig:RecNbr < oNew:RecNbr .or. ;
-				(oOrig:RecNbr == oNew:RecNbr .and. oNew:Deb==oNew:Cre)
+		CASE oNew:EOF.or. !oOrig:EOF  .and.(oOrig:RecNbr < oNew:RecNbr .or. ;
+				(oOrig:RecNbr == oNew:RecNbr .and. oNew:Deb==oNew:cre))
 			* Line removed:
 			* Delete line which corresponds with orig:
 			* Delete with origmut corresponding line:
@@ -368,8 +368,8 @@ cStatement:=iif(Empty(oNew:RecNbr),"insert into","update")+" standingorderline s
 ",gc='"+oNew:GC+"'"+;
 ",stordrid="+self:curStordid+; 
 ",seqnr="+Str(oNew:Recno,-1)+;
-",reference='"+oNew:REFERENCE+"'"+;
-",descriptn='"+oNew:DESCRIPTN+"'"+; 
+",reference='"+AddSlashes(AllTrim(oNew:REFERENCE))+"'"+;
+",descriptn='"+AddSlashes(alltrim(oNew:DESCRIPTN))+"'"+; 
 iif(Str(oNew:ACCOUNTID,-1) == sCre,",creditor="+Str(oNew:CREDITOR,-1)+",bankacct='"+oNew:BANKACCT+"'",",creditor=0,bankacct=''")+;
 iif(Empty(oNew:RecNbr),""," where stordrid="+self:curStordid+" and seqnr="+Str(oNew:SEQNR,-1)) 
 oStmnt:=SQLStatement{cStatement,oConn}
