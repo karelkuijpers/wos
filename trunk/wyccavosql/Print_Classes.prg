@@ -2880,6 +2880,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	IF Empty(self:Pagetext)
 		self:Pagetext:=self:oLan:RGet('Page',,"!")
 	ENDIF
+  	SetDecimalSep(Asc(DecSeparator))   // set decimal separator to local value
 
 	
 	SELF:EndDialog()
@@ -3073,7 +3074,9 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 		endif
 	ENDIF
 	self:oPrintJob:lLblFinish:=true
-	self:Pointer := Pointer{POINTERARROW}
+	self:Pointer := Pointer{POINTERARROW} 
+	SetDecimalSep(Asc('.'))      //back to .
+
 
 	RETURN(self:ToFileFS:FullPath)
 METHOD prstop(Noskip) CLASS PrintDialog
