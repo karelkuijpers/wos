@@ -126,7 +126,7 @@ Method Alert() class AlertSuspense
 		return
 	endif
 	// get transaction balances per account per day:
-	oSel:=SqlSelect{"select gr.accid,group_concat(cast(gr.dat as char),',',cast(gr.daytot as char) order by gr.dat separator '#' ) as daytots "+;
+	oSel:=SqlSelect{"select gr.accid,group_concat(cast(gr.dat as char),',',cast(gr.daytot as char) order by gr.dat separator '#%' ) as daytots "+;
 		"from (select t.accid,t.dat,sum(cre-deb) as daytot from transaction t where  t.accid in ("+Implode(aSuspense,',',,,1)+") and t.dat between subdate(CurDate(),9) "+;
 		" and subdate(Curdate(),2) group by t.accid,dat having daytot<>0.00  order by t.accid,t.dat ) as gr group by gr.accid",oConn} 
 	oSel:Execute() 
@@ -134,7 +134,7 @@ Method Alert() class AlertSuspense
 		return
 	endif
 	do WHILE !oSel:EOF
-		AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
+		AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#%'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
 		i:=Len(aBal)
 		// convert dates and values
 		AEvalA(aBal[i,2],{|x|x:={SQLDate2Date(x[1]),Val(x[2])}})
@@ -514,12 +514,12 @@ METHOD OKButton( ) CLASS CheckSuspense
 		ENDIF
 		nRow := 0
 		// get transaction balances per account per day:
-		oSel:=SqlSelect{UnionTrans("select gr.accid,group_concat(cast(gr.dat as char),',',cast(gr.daytot as char) order by gr.dat separator '#' ) as daytots "+;
-			"from (select t.accid,t.dat,sum(cre-deb) as daytot from transaction t where  t.accid in ("+Implode(aSuspense,',',,,1)+") and t.dat>='"+SQLdate(Begindate+1)+;
+		oSel:=SqlSelect{UnionTrans("select gr.accid,group_concat(cast(gr.dat as char),',',cast(gr.daytot as char) order by gr.dat separator '#%' ) as daytots "+;
+			"from (select t.accid,t.dat,sum(cre-deb) as daytot from transaction t where  t.accid in ("+Implode(aSuspense,',',,,1)+") and t.dat>='"+SQLdate(Begindate)+;
 			"' and t.dat<='"+SQLdate(Endingdate)+"' "+"group by t.accid,dat having daytot<>0.00  order by t.accid,t.dat ) as gr group by gr.accid")+" order by accid,daytots",oConn} 
 		oSel:Execute()
 		do WHILE !oSel:EOF
-			AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
+			AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#%'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
 			i:=Len(aBal)
 			// convert dates and values
 			AEvalA(aBal[i,2],{|x|x:={SQLDate2Date(x[1]),Val(x[2])}})
