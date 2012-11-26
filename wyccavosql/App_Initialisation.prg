@@ -1080,7 +1080,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	WinIniFS := WinIniFileSpec{}
 	// Set default orientation to portrait:
 	WycIniFS:WriteInt( "Runtime", "PrintOrientation",DMORIENT_PORTRAIT)
-
 	oMainWindow:Pointer := Pointer{POINTERARROW}
 
 	return 
@@ -1100,7 +1099,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"log","InnoDB",cCollation},;	
 		{"account","InnoDB",cCollation},;
 		{"accountbalanceyear","InnoDB",cCollation},;
-		{"article","InnoDB",cCollation},;
+		{"article","InnoDB",cCollation},; 
+		{"assessmnttotal","InnoDB",cCollation},;
 		{"authfunc","InnoDB","latin1_swedish_ci"},;
 		{"balanceitem","InnoDB",cCollation},;
 		{"balanceyear","InnoDB",cCollation},;
@@ -1136,8 +1136,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","InnoDB",cCollation},;
 		{"teletrans","InnoDB",cCollation},;
 		{"titles","InnoDB",cCollation},;
-		{"transaction","InnoDB",cCollation},;
-		{"zgzip","InnoDB",cCollation} as array       // longer is too large for the compiler
+		{"transaction","InnoDB",cCollation}} as array
+//		{"zgzip","InnoDB",cCollation} as array       // longer is too large for the compiler
 
 	// required tables structure:
 
@@ -1195,6 +1195,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","supplier","char(30)","NO","",""},;
 		{"article","accountstock","int(11)","NO","0",""},;
 		{"article","accountpurchase","int(11)","NO","0",""},;   
+		{"assessmnttotal","assid","int(11)","NO","NULL","auto_increment"},;
+		{"assessmnttotal","mbrid","int(11)","NO","NULL",""},;
+		{"assessmnttotal","calcdate","date","NO","0000-00-00",""},;
+		{"assessmnttotal","periodbegin","date","NO","0000-00-00",""},;
+		{"assessmnttotal","periodend","date","NO","0000-00-00",""},;
+		{"assessmnttotal","amountassessed","decimal(15,2)","NO","0",""},;
+		{"assessmnttotal","amountofficeassmnt","decimal(12,2)","NO","0",""},;
+		{"assessmnttotal","amountintassmnt","decimal(12,2)","NO","0",""},;
+		{"assessmnttotal","percofficeassmnt","decimal(4,1)","NO","0",""},;
+		{"assessmnttotal","percintassmnt","decimal(4,1)","NO","0",""},;
 		{"authfunc","empid","int(11)","NO","NULL",""},;
 		{"authfunc","funcname","char(32)","NO","",""},;
 		{"balanceitem","balitemid","int(11)","NO","NULL","auto_increment"},;
@@ -1402,18 +1412,18 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
 		{"person_properties","type","int(1)","NO","0",""},;
-		{"person_properties","values","mediumtext","NO","",""},;
+		{"person_properties","values","mediumtext","NO","",""};
+		} as array
+	// additional required tables structure:
+	// Table name, Field,Type,Null,Default,Extra 
+	local aColumn2:={;
 		{"personbank","persid","int(11)","NO","0",""},;
 		{"personbank","banknumber","varchar(64)","NO","",""},;
 		{"persontype","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"persontype","descrptn","char(30)","YES","NULL",""},;
 		{"persontype","abbrvtn","char(3)","YES","NULL",""},;
 		{"ppcodes","ppcode","char(3)","NO","",""},;
-		{"ppcodes","ppname","char(40)","NO","",""};
-		} as array
-	// additional required tables structure:
-	// Table name, Field,Type,Null,Default,Extra 
-	local aColumn2:={;
+		{"ppcodes","ppname","char(40)","NO","",""},;
 		{"standingorder","stordrid","int(11)","NO","NULL","auto_increment"},;
 		{"standingorder","idat","date","NO","0000-00-00",""},;
 		{"standingorder","edat","date","NO","0000-00-00",""},;
@@ -1505,7 +1515,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","datlstafl","date","NO","0000-00-00",""},;
 		{"sysparms","surnmfirst","tinyint(1)","NO","0",""},;
 		{"sysparms","strzipcity","tinyint(1)","NO","0",""},;
-		{"sysparms","sysname","varchar(50)","NO","",""},;
+		{"sysparms","sysname","varchar(150)","NO","",""},;
 		{"sysparms","homeincac","int(11)","NO","0",""},;
 		{"sysparms","homeexpac","int(11)","NO","0",""},;
 		{"sysparms","fgmlcodes","char(30)","NO","",""},;
@@ -1575,10 +1585,10 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
 		{"transaction","ppdest","char(3)","NO","",""},;
 		{"transaction","lock_id","int(11)","NO","0",""},;
-		{"transaction","lock_time","timestamp","NO","0000-00-00",""},;
-		{"zgzip","zipid","int(11)","NO","NULL","auto_increment"},;
-		{"zgzip","description","varchar(511)","NO","dummy",""};
+		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
 	} as array  
+// 		{"zgzip","zipid","int(11)","NO","NULL","auto_increment"},;
+// 		{"zgzip","description","varchar(511)","NO","dummy",""};
 	
 	// specify indexes per table:
 	// Table,Non_unique,Key_name,Seq_in_index,Column_name
@@ -1593,9 +1603,12 @@ method InitializeDB() as void Pascal  class Initialize
 		{"accountbalanceyear","0","PRIMARY","3","monthstart"},;
 		{"accountbalanceyear","0","PRIMARY","4","currency"},;
 		{"article","0","PRIMARY","1","articleid"},;
-		{"article","0","description","1","description"},;
-		{"authfunc","0","PRIMARY","1","EMPID"},;
-		{"authfunc","0","PRIMARY","2","FUNCNAME"},;
+		{"article","0","description","1","description"},;              
+		{"assessmnttotal","0","PRIMARY","1","assid"},;
+		{"assessmnttotal","1","membrid","1","mbrid"},;
+		{"assessmnttotal","1","membrid","2","calcdate"},;
+		{"authfunc","0","PRIMARY","1","empid"},;
+		{"authfunc","0","PRIMARY","2","funcname"},;
 		{"balanceitem","0","PRIMARY","1","balitemid"},;
 		{"balanceitem","0","NUMBER","1","NUMBER"},;
 		{"balanceitem","1","balitemidparent","1","balitemidparent"},;
@@ -1604,25 +1617,25 @@ method InitializeDB() as void Pascal  class Initialize
 		{"balanceyear","0","PRIMARY","1","yearstart"},;
 		{"balanceyear","0","PRIMARY","2","monthstart"},;
 		{"bankaccount","0","PRIMARY","1","bankid"},;
-		{"bankaccount","0","BANKNUMBER","1","banknumber"},;
+		{"bankaccount","0","banknumber","1","banknumber"},;
 		{"bankaccount","1","accid","1","accid"},;
 		{"bankbalance","0","PRIMARY","1","accid"},;
 		{"bankbalance","0","PRIMARY","2","datebalance"},;
 		{"bankorder","0","PRIMARY","1","id"},;
-		{"bankorder","1","ACCNTFROM","1","accntfrom"},;
+		{"bankorder","1","accntfrom","1","accntfrom"},;
 		{"budget","0","PRIMARY","1","accid"},;
 		{"budget","0","PRIMARY","2","year"},;
 		{"budget","0","PRIMARY","3","month"},;
 		{"currencylist","0","PRIMARY","1","aed"},;
 		{"currencyrate","0","PRIMARY","1","rateid"},;
-		{"currencyrate","0","AEDDATE","1","aed"},;
-		{"currencyrate","0","AEDDATE","2","daterate"},;
-		{"currencyrate","0","AEDDATE","3","aedunit"},;
+		{"currencyrate","0","aeddate","1","aed"},;
+		{"currencyrate","0","aeddate","2","daterate"},;
+		{"currencyrate","0","aeddate","3","aedunit"},;
 		{"department","0","PRIMARY","1","depid"},;
-		{"department","0","DEPTMNTNBR_2","1","deptmntnbr"},;
-		{"department","0","DESCRIPTN","1","descriptn"},;
-		{"department","1","DEPTMNTNBR_3","1","parentdep"},;
-		{"department","1","DEPTMNTNBR_3","2","deptmntnbr"},;
+		{"department","0","deptmntnbr_2","1","deptmntnbr"},;
+		{"department","0","descriptn","1","descriptn"},;
+		{"department","1","deptmntnbr_3","1","parentdep"},;
+		{"department","1","deptmntnbr_3","2","deptmntnbr"},;
 		{"distributioninstruction","0","PRIMARY","1","mbrid"},;
 		{"distributioninstruction","0","PRIMARY","2","seqnbr"},;
 		{"dueamount","0","PRIMARY","1","dueid"},;
@@ -1635,8 +1648,8 @@ method InitializeDB() as void Pascal  class Initialize
 	{"importlock","0","IMPORTLOCK","1","importfile"},;
 	{"importpattern","0","PRIMARY","1","imppattrnid"},;
 	{"importtrans","0","PRIMARY","1","imptrid"},;
-		{"importtrans","1","TRANSACTNR","1","origin"},;
-		{"importtrans","1","TRANSACTNR","2","transactnr"},;
+		{"importtrans","1","transactnr","1","origin"},;
+		{"importtrans","1","transactnr","2","transactnr"},;
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
 		{"language","0","PRIMARY","1","location"},;
 		{"language","0","PRIMARY","2","sentenceen"},;
@@ -1708,9 +1721,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","1","reference","1","reference"},;
 		{"transaction","1","transdate","1","dat"},;
 		{"transaction","1","transdate","2","transid"},;
-		{"transaction","1","person","1","persid"},;
-		{"zgzip","0","PRIMARY","1","zipid"};
+		{"transaction","1","person","1","persid"};
 		} as array
+ // 		{"zgzip","0","PRIMARY","1","zipid"};
 
 
 	// 		{"transaction","1","amountdeb","1","deb"},;
