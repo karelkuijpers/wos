@@ -289,7 +289,7 @@ protect aMessages:={} as array  // messages about successfully imported files
 protect aValues:={} as array   // array with values to be inserted into importrans
 	//avalues: transdate,docid,transactnr,descriptn,giver,debitamnt,creditamnt,accname,accountnr,assmntcd,externid,origin,processed
 
-declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport,AddImportCzech,CheckPattern,ImportPMCOld 
+declare method GetNextBatch,LockBatch,CloseBatch,ImportPMC,ImportBatch,ImportAustria,SkipBatch,ImportCzech,SaveImport,AddImport,AddImportCzech,CheckPattern
 Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description as string,impDat as date,ExtId as string,Name as string,FromDesc as string,ToDescr as string,;
 		docid as string, cOrigin as string,cTransnr as string,aMbrAcc as Array,nCnt ref int,lCheckDuplicates:=false as logic) as void pascal class ImportBatch 
 	// 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date
@@ -1488,8 +1488,12 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		IF !Empty(oppAmount).and.oppAmount#USamountAbs.and. oppAmount#amount
 			oppdescr:="("+origin+" amount:"+Str(oppAmount,-1)+iif(Empty(oppdate),"",", date:"+DToC(oppdate))+") "
 		ELSEIF !Empty(USamountAbs)
-			oppdescr:="(USD:"+Str(USamountAbs,-1,2)+iif(Empty(oppdate),"",", "+origin+" date:"+DToC(oppdate))+") "
-		ELSEIF !Empty(oppdate)
+			if origin=='USA'
+				oppdescr:="("+origin+" amount:"+Str(USamountAbs,-1)+iif(Empty(oppdate),"",", date:"+DToC(oppdate))+") "
+			else
+				oppdescr:="(USD amount:"+Str(USamountAbs,-1,2)+iif(Empty(oppdate),"",", "+origin+" date:"+DToC(oppdate))+") "
+			endif
+		ELSEIF !Empty(oppdate) 
 			oppdescr+="("+origin+" Date:"+DToC(oppdate)+") "
 		ENDIF
 		oppdescr+=" (Exch rate US $1="+ZeroRTrim(Str(mxrate,-1,8))+' '+sCURR+") "
@@ -1763,457 +1767,6 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+'; '+Str(nProc,-1)+' automatic processed')
 
 	RETURN true
-METHOD ImportPMCOld(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
-	* Import of one RPPfile with  transaction data from PMC into ImportTrans.dbf
-	LOCAL cBuffer AS STRING
-	LOCAL ptrHandle
-	LOCAL PMISDocument AS XMLDocument
-	LOCAL childfound, recordfound AS LOGIC
-	LOCAL ChildName AS STRING
-	LOCAL amount, USamountAbs, USDAmount, oppAmount,TotAmount,TotUSDAmount as FLOAT
-	LOCAL transdescription,description,oppdescr, docid, accnbr,accnbrdest,acciddest,origin,transtype,housecode,samnbr,shbnbr, reference as STRING
-	LOCAL transdate, oppdate,rppdate,cmsdate as date
-	LOCAL oAfl AS UpdateHouseHoldID
-	LOCAL datelstafl AS DATE
-	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt,nSeqnbr as int
-	local nTransId as Dword 
-	lOCAL cPmisCurrency as string, lUSD as logic 
-	local oCurr as CURRENCY 
-	local RPP_date as date
-	LOCAL oExch as GetExchRate
-	Local oInST as Insite, cAccCng,cDescription,cMsg,cError as string
-	Local cExId as string
-	local osel as SQLSelect 
-	local cStatement,cTrans as string
-	local time1,time0 as float
-	local oMBal as Balances
-	local oStmnt as SQLStatement 
-	local aValues:={} as array   // array with values to be inserted into importrans 
-	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
-	local aAccMbr:={} as array   // array with accounts of members: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset},{...}... } 
-	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid},{..},..}
-	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
-	local oAddInc as AddToIncExp 
-	if Empty(SEntity)
-		(ErrorBox{self:OWNER,self:oLan:WGet('First specify PMC Participant Code in System parameter, tab PMC')}):show()
-		RETURN false
-	ENDIF
-	IF Empty(SHB)
-		(ErrorBox{self:Owner,self:oLan:WGet('Add first account for Clearance PMC to system data')}):Show()
-		self:EndWindow()
-		RETURN true
-	ENDIF
-
-	ptrHandle:=FOpen(oFr:FullPath)
-	IF ptrHandle = F_ERROR
-		(ErrorBox{,self:oLan:WGet("Could not open file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
-		RETURN FALSE
-	ENDIF
-	cBuffer:=FReadStr(ptrHandle,4096000)
-	cBuffer:=HtmlDecode(cBuffer)
-	IF ptrHandle = F_ERROR
-		(ErrorBox{,self:oLan:WGet("Could not read file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
-		RETURN FALSE
-	ENDIF 
-	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
-	oAfl:=UpdateHouseHoldID{}
-	oAfl:Importaffiliated_person_account_list()
-
-	// 	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
-	// 	if datelstafl<Today()  
-	// 		self:oParent:STATUSMESSAGE(self:oLan:WGet('Processing account changes report')+'...')
-	// 		oAfl:=UpdateHouseHoldID{}
-	// 		IF !oAfl:Importaffiliated_person_account_list()
-	// 			IF datelstafl<(Today()-31) 
-	// 				nAnswer:= (TextBox{,self:oLan:WGet("Import RPP"),;
-	// 					self:oLan:WGet('Your last import of the Account Changes Report from Insite is of')+' '+DToC(datelstafl)+'.'+LF+self:oLan:WGet('If you stop now you can first download that report from Insite into folder')+' '+curPath+' '+self:oLan:WGet('before the send to PMC')+CRLF+CRLF+self:oLan:WGet('Do you want to stop now?'),BOXICONQUESTIONMARK + BUTTONYESNO}):show()
-	// 				IF nAnswer == BOXREPLYYES 
-	// 					FClose(ptrHandle)
-	// 					RETURN FALSE
-	// 				ENDIF
-	// 			ENDIF
-	// 		ENDIF
-	// 	ENDIF
-	self:oParent:Pointer := Pointer{POINTERARROW} 
-
-	IF Empty(sCURR)
-		(ErrorBox{,self:oLan:WGet('First specify the currency in System parameters')}):show()
-		FClose(ptrHandle)
-		RETURN false
-	ENDIF
-
-	oCurr:=Currency{self:oLan:WGet("Importing RPP")} 
-	RPP_date:=SToD(SubStr(oFr:FileName,5,8))
-	mxrate:=SQLSelect{"select exchrate from sysparms",oConn}:EXCHRATE
-	mxrate:=oCurr:GetROE("USD", RPP_date,true,true,-0.5) 
-	if oCurr:lStopped
-		FClose(ptrHandle)
-		return false
-	endif
-
-	// Proces records:
-	PMISDocument:=XMLDocument{cBuffer}
-	// first check intehrity of document:
-	If !PMISDocument:GetElement("RPP_Records") 
-		If PMISDocument:GetElement("Message") 
-			FClose(ptrHandle)
-			return true
-		else
-			(ErrorBox{,self:oLan:WGet('No correct RPP file')+' '+AllTrim(oFr:FileName)}):show()
-			FClose(ptrHandle)
-			RETURN false
-		endif
-	ENDIF
-	
-	recordfound:= PMISDocument:GetElement("Record")
-	osel:=SQLSelect{"select accnumber,currency from account where accid="+sam,oConn}
-	IF osel:RecCount<1
-		(errorbox{self:OWNER,self:oLan:WGet('Account for assemments not found')}):Show()
-		FClose(ptrHandle)
-		return false
-	ENDIF
-	samnbr:=osel:ACCNUMBER
-	osel:=SQLSelect{"select accnumber,currency from account where accid="+SHB,oConn}
-	IF osel:RecCount<1
-		(errorbox{self:OWNER,self:oLan:WGet('Account for sending to PMC not found')}):Show()
-		FClose(ptrHandle)
-		return false
-	ENDIF
-	shbnbr:=osel:ACCNUMBER
-	cPmisCurrency:=osel:CURRENCY
-	if cPmisCurrency=="USD"
-		lUSD:=true
-	elseif Empty(cPmisCurrency)
-		cPmisCurrency:=sCURR
-	endif
-	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
-	cMsg:=self:oLan:WGet('Importing RPP transactions')+'...'
-	self:oParent:STATUSMESSAGE(cMsg)
-	// 	(time1:=Seconds()) 
-	if !Empty(SINCHOME) .or.!Empty(SINC)
-		// add transactions for ministry income/expense:
-		oAddInc:=AddToIncExp{}
-	endif
-
-	DO WHILE recordfound
-		childfound:=PMISDocument:GetFirstChild()
-		docid:=""
-		origin:=""
-		transdescription:=""
-		description:=""
-		amount:=0.00
-		USamountAbs:=0.00 
-		USDAmount:=0.00
-		oppAmount:=0.00
-		transdate:=Today()
-		oppdate:=NULL_DATE
-		rppdate:=NULL_DATE
-		cmsdate:=NULL_DATE
-		accnbr:=""
-		oppdescr:=""
-		housecode:="" 
-		reference:=""
-		transtype:="GT" 
-		acciddest:=''
-		accnbrdest:=""
-		nTot++
-		DO WHILE childfound
-			ChildName:=PMISDocument:ChildName
-			DO CASE
-			CASE ChildName=="RPP_Transaction_Amount"
-				amount:=Val(PMISDocument:ChildContent)
-			CASE ChildName=="OPP_Transaction_Ref"
-				description+=PMISDocument:ChildContent+" "
-				reference:= PMISDocument:ChildContent
-			CASE ChildName="Transaction_Description"
-				transdescription:=PMISDocument:ChildContent
-			CASE ChildName=="PMIS_Received_Date_Time"
-				rppdate:=SToD(StrTran(SubStr(PMISDocument:ChildContent,1,10),"-"))
-			CASE ChildName=="OPP_Transaction_Date"
-				oppdate:=SToD(StrTran(SubStr(PMISDocument:ChildContent,1,10),"-"))
-			CASE ChildName=="OPP_Transaction_Amount"
-				oppAmount:=AbsFloat(Val(PMISDocument:ChildContent))
-			CASE ChildName=="CMS_Processed_Date_Time"
-				cmsdate:=SToD(StrTran(SubStr(PMISDocument:ChildContent,1,10),"-"))
-			CASE ChildName="Originating_PP_Code"
-				origin:=AllTrim(PMISDocument:ChildContent)
-			CASE ChildName="General_Transaction_Id"
-				docid:=PMISDocument:ChildContent
-			CASE ChildName="RPP_Destination_String"
-				accnbr:=AllTrim(PMISDocument:ChildContent)
-			CASE ChildName="RPP_Household_Code"
-				housecode:=PMISDocument:ChildContent
-			CASE ChildName="RPP_Trans_Type_Code"
-				IF !Empty(PMISDocument:ChildContent)
-					transtype:=PMISDocument:ChildContent
-				ENDIF
-			CASE ChildName="Assessment_Transaction_Id"
-				IF Val(PMISDocument:ChildContent)>0
-					transtype:="AT"
-				ENDIF
-			CASE ChildName="USD_Amount"
-				USDAmount:=Val(PMISDocument:ChildContent)
-				USamountAbs:=AbsFloat(USDAmount)
-			ENDCASE
-			childfound:=PMISDocument:GetNextChild()			
-		ENDDO
-		IF !Empty(rppdate)
-			transdate:= rppdate
-		ELSEIF !Empty(cmsdate)
-			transdate:=cmsdate
-		ELSEIF !Empty(oppdate)
-			transdate:=oppdate
-		ENDIF
-		// first transaction roW 
-		// in case of BTA and gift form USA look up donor:
-		cExId:=""
-// 		if sEntity == "NTL" .or.sEntity=="BTA" .and.Origin=="USA".and.transtype=="CN"
-		if Origin=="USA".and.transtype=="CN"
-// 			cExId:=PadL(Split(transdescription," ")[1],10,"0")
-			cExId:=Str(Val(Right(Split(transdescription," ")[1],10)),-1)
-			if cExId=='0'
-				cExId:=""
-			endif
-		endif
-		nCnt++
-		self:oParent:STATUSMESSAGE(cMsg+Str(nCnt,-1))
-		if !Empty(mxrate)
-			amount:=Round(mxrate*USDAmount,DecAantal)
-		endif
-		IF !Empty(oppAmount).and.oppAmount#USamountAbs.and. oppAmount#amount
-			oppdescr:="("+origin+" amount:"+Str(oppAmount,-1)+iif(Empty(oppdate),"",", date:"+DToC(oppdate))+") "
-		ELSEIF !Empty(USamountAbs)
-			oppdescr:="(USD:"+Str(USamountAbs,-1,2)+iif(Empty(oppdate),"",", "+origin+" date:"+DToC(oppdate))+") "
-		ELSEIF !Empty(oppdate)
-			oppdescr+="("+origin+" Date:"+DToC(oppdate)+") "
-		ENDIF
-		oppdescr+=" (Exch rate US $1="+ZeroRTrim(Str(mxrate,-1,8))+' '+sCURR+") "
-		cDescription:=StrTran(transdescription+" "+description,"&amp;","&")+oppdescr
-		// determine destination account for second line: 
-		IF !Empty(accnbr)
-			nAcc:=AScan(aAccDest,{|x|x[1]==accnbr})
-			if nAcc=0
-				osel:=SQLSelect{"select accnumber,accid from account where accnumber='"+accnbr+"'",oConn}
-				IF osel:RecCount>0
-					AAdd(aAccDest,{osel:ACCNUMBER,Str(osel:accid,-1)})
-					nAcc:=Len(aAccDest)
-				ENDIF
-			endif
-			if nAcc>0
-				accnbrdest:=aAccDest[nAcc,1] 
-				acciddest:=aAccDest[nAcc,2] 
-			ELSE
-				IF transtype="AT"
-					accnbrdest:=samnbr
-					acciddest:=sam
-				ENDIF
-			endif
-		ELSEIF transtype="AT"
-			accnbrdest:=samnbr
-			acciddest:=sam
-		ENDIF
-		IF !Empty(housecode) .and.Empty(accnbrdest)
-			// search corresponding member:
-			nMbr:=AScan(aAccMbr,{|x|x[1]==housecode})
-			if nMbr=0
-				osel:=SqlSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense,an.accnumber as accnetasset,"+;
-					"m.accid as acciddirect,d.incomeacc,d.expenseacc,d.netasset "+;
-					"from member m left join account ad on (ad.accid=m.accid) left join department d on (m.depid=d.depid) "+;
-					"left join account ai on (ai.accid=d.incomeacc) "+;
-					"left join account ae on (ae.accid=d.expenseacc) "+;
-					"left join account an on (an.accid=d.netasset) "+;
-					"where m.householdid='"+housecode+"'",oConn}
-				if osel:RecCount>0
-					AAdd(aAccMbr,iif(Empty(osel:accdirect),{housecode,osel:accincome,osel:accexpense,osel:accnetasset,Str(osel:incomeacc,-1),Str(osel:expenseacc,-1),Str(osel:netasset,-1)},;
-						{housecode,osel:accdirect,osel:accdirect,osel:accdirect,Str(osel:acciddirect,-1),Str(osel:acciddirect,-1),Str(osel:acciddirect,-1)}))
-					nMbr:=Len(aAccMbr)
-				endif
-			endif
-			if nMbr>0
-				if transtype="CN" .or. transtype="CP".or.transtype="MM"
-					accnbrdest:=aAccMbr[nMbr,2]   //accincome 
-					acciddest:=aAccMbr[nMbr,5]
-				elseif transtype="PC" .and. amount<0
-					accnbrdest:=aAccMbr[nMbr,4]   //netasset
-					acciddest:=aAccMbr[nMbr,7]
-				else							
-					accnbrdest:=aAccMbr[nMbr,3]   //accexpense
-					acciddest:=aAccMbr[nMbr,6]
-				endif
-			ENDIF
-		ENDIF
-		//     1       2       3         4           5       6       7       8        9         10        11      12      13         14        15          16       17
-		// transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
-		AAdd(aValues,{SQLdate(transdate),docid,docid,shbnbr,'','',origin,'1',;
-			iif(USDAmount<0,0.00,amount),;  //creditamnt
-		iif(USDAmount<0,-amount,0.00),; //debitamnt
-		iif(USDAmount<0,0.00,USDAmount),; //creforgn
-		iif(USDAmount<0,-USDAmount,0.00),; //debgorgn
-		cPmisCurrency,AddSlashes(cDescription),iif((transtype="PC" .or. transtype="AT") .and.!Empty(accnbrdest),"2","1"),'',iif(Empty(acciddest),'0','1')})
-		// totalize transactions 
-		TotAmount:=Round(TotAmount+amount,DecAantal)
-		TotUSDAmount:=Round(TotUSDAmount+USDAmount,DecAantal)
-		nPtr:=Len(aValues)
-		if !Empty(acciddest) 
-			// transaction can be processed automatically:
-			//               1       2       3        4          5       6       7       8        9         10        11      12        13       14         15         16       17
-			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed 
-			//                1     2     3     4     5         6        7        10 11    12     13        14    15     16       17      18    19    20
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
-			AAdd(aValuesTrans,{shb,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,'2','1',aValues[nPtr,2],aValues[nPtr,16],'0','1',origin,''})
-		endif
-		// second transaction row 
-
-		if Empty(accnbrdest) .and.!Empty(accnbr)
-			cDescription+=" "+accnbr				
-		endif		
-		IF transtype="CN" .or. transtype="CP".or.transtype="MM"
-			cDescription:="Gift "+cDescription
-		endif 
-		// transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
-		AAdd(aValues,{SQLdate(transdate),docid,docid,Transform(accnbrdest,""),;
-			iif(transtype="CN" .or. transtype="CP",;
-			'AG';
-			,;
-			iif(transtype="MM","MG",;
-			iif(transtype="PC",;
-			iif(amount<0,"PF","CH");
-			,;
-			"";
-			);
-			);
-			),;
-			iif(transtype="CN" .or. transtype="CP",cExId,''),;
-			origin,'1',;
-			iif(amount<0,-amount,0.00),; //creditamnt
-		iif(amount<0,0.00,amount),; //debitamnt
-		iif(amount<0,-amount,0.00),; //creforgn
-		iif(amount<0,0.00,amount),; //debforgn
-		sCURR,AddSlashes(cDescription),iif(transtype="PC" .and.!Empty(accnbrdest),"2","1"),reference,iif(Empty(acciddest),'0','1')})
-		nPtr++ 
-		if !Empty(acciddest)
-			// transaction can be processed automatically: 
-			//             1         2      3         4          5       6        7       8         9         10        11     12        13       14        15         16        17
-			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
-			//                1     2     3     4     5         6        7        8   9    10     11        12    13     14       15      16    17    18
-			//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
-			nProc++
-			AAdd(aValuesTrans,{acciddest,avalues[nPtr,10],avalues[nPtr,12],avalues[nPtr,9],avalues[nPtr,11],avalues[nPtr,13],avalues[nPtr,14],avalues[nPtr,1],;
-				aValues[nPtr,5],LOGON_EMP_ID,'2','2',aValues[nPtr,2],aValues[nPtr,16],'0','1',origin,''})
-			// add to income expense if needed: 
-			if !Empty(SINCHOME) .or.!Empty(SINC)
-				// add transactions for ministry income/expense:
-				nSeqnbr:=2 
-				aTransIncExp:=oAddInc:AddToIncome(aValues[nPtr,5],true,acciddest,aValues[nPtr,9],aValues[nPtr,10],aValues[nPtr,12],aValues[nPtr,11],;
-				aValues[nPtr,13],aValues[nPtr,14],'',aValues[nPtr,1],aValues[nPtr,2],@nSeqnbr,aValues[nPtr,15])
-				if Len(aTransIncExp)=2
-				// aTransIncExp:
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
-// 					aTransIncExp[1,16]:=1    // replace by fromrpp
-// 					aTransIncExp[2,16]:=1 
-					aTransIncExp[1,11]:='2'  // poststatus -> posted
-					aTransIncExp[2,11]:='2'  // poststatus -> posted
-					AAdd(aValuesTrans,aTransIncExp[1])
-					AAdd(aValuesTrans,aTransIncExp[2]) 
-				endif
-			endif
-		endif 
-		recordfound:=PMISDocument:GetNextSibbling()
-	ENDDO
-	FClose(ptrHandle)
-	// Perform inserts:
-	if !Empty(aValues)
-		// check record allready loaded: 
-		if SqlSelect{"select imptrid from importtrans where origin='"+aValues[1,7]+"' and transactnr='"+aValues[1,3]+"'"+;
-				iif(Len(aValues)>2," or origin='"+aValues[Len(aValues),7]+"' and transactnr='"+aValues[Len(aValues),3]+"'",''),oConn}:RecCount<1 
-			// not yet loaded (first and last sufficient check):
-			cStatement:=Implode(aValues,"','") 
-			// 			SQLStatement{"start transaction",oConn}:Execute()
-			// prepare adapting mbalance values:
-			oMBal:=Balances{}
-			for i:=1 to Len(aValuesTrans) 
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
-				oMBal:ChgBalance(aValuesTrans[i,1],SQLDate2Date(aValuesTrans[i,8]),aValuesTrans[i,2],aValuesTrans[i,4],aValuesTrans[i,3],;
-					aValuesTrans[i,5],aValuesTrans[i,6])
-			next
-			oStmnt:=SQLStatement{"set autocommit=0",oConn}
-			oStmnt:Execute()
-			oStmnt:=SQLStatement{'lock tables `transaction` write,`importtrans` write,`mbalance` write',oConn} 
-			oStmnt:Execute()
-			oStmnt:=SQLStatement{'insert into importtrans '+;
-				'(`transdate`,`docid`,`transactnr`,`accountnr`,`assmntcd`,`externid`,`origin`,`fromrpp`,`creditamnt`,`debitamnt`,`creforgn`,`debforgn`,`currency`,`descriptn`,`poststatus`,`reference`,`processed`)'+;
-				' values '+cStatement,oConn} 
-			oStmnt:Execute()                                                            
-			if oStmnt:NumSuccessfulRows<1
-				SQLStatement{"rollback",oConn}:Execute()
-				SQLStatement{"unlock tables",oConn}:Execute()
-				LogEvent(self,"error:"+cStatement,"LogErrors")
-				ErrorBox{,self:oLan:WGet('Transactions could not be imported')+":"+oStmnt:status:Description}:show()
-				return false 
-			else 
-				nCnt:=oStmnt:NumSuccessfulRows/2
-			endif
-			if !Empty(aValuesTrans) 
-				// insert first line:
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
-					" values ("+Implode(aValuesTrans[1],"','",1,16)+')',oConn}
-				oStmnt:Execute()
-				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
-				aValuesTrans[2,18]:=nTransId
-				for i:=3 to Len(aValuesTrans) step 2
-					// next line income/expense?
-					if aValuesTrans[i,12]=='3'
-						aValuesTrans[i,18]:=nTransId
-						aValuesTrans[i+1,18]:=nTransId
-						i+=2
-					endif		
-					nTransId++
-					if i<Len(aValuesTrans)
-						aValuesTrans[i,18]:=nTransId
-						aValuesTrans[i+1,18]:=nTransId
-					endif
-				next
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid) "+;
-					" values "+Implode(aValuesTrans,"','",2),oConn}
-				oStmnt:Execute()
-				if oStmnt:NumSuccessfulRows<1
-					SQLStatement{"rollback",oConn}:Execute() 
-					SQLStatement{"unlock tables",oConn}:Execute()
-					LogEvent(self,"error:"+cStatement,"LogErrors")
-					ErrorBox{,self:oLan:WGet('Transactions could not be inserted')+":"+oStmnt:status:Description}:show()
-					return false
-				endif 
-// 				nProc:=(oStmnt:NumSuccessfulRows+1)/2
-
-				// adapt mbalance values:
-				if !oMBal:ChgBalanceExecute()
-					SQLStatement{"rollback",oConn}:Execute() 
-					SQLStatement{"unlock tables",oConn}:Execute()
-					LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-					ErrorBox{,self:oLan:WGet('Month balances could not be updated')+":"+cError}:show()
-					return false 
-				endif
-				
-			endif
-			SQLStatement{"commit",oConn}:Execute()
-			SQLStatement{"unlock tables",oConn}:Execute() 
-			self:lv_imported:=self:lv_imported+nCnt
-			self:lv_processed+=nProc
-		else
-			nCnt:=0
-			nProc:=0
-			TotAmount:=0.00 
-		endif
-	endif
-	time0:=time1
-	// 	LogEvent(self,"import RPP:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	oParent:Pointer := Pointer{POINTERARROW}
-	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+'; '+Str(nProc,-1)+' automatic processed')
-
-	RETURN true
 METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch 
 	local oSel as SQLSelect
 	SetPath(CurPath)
@@ -2403,20 +1956,6 @@ SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatc
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
 RETURN 
-RESOURCE ImportPatternBrowser DIALOGEX  4, 3, 534, 279
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", IMPORTPATTERNBROWSER_IMPORTPATTERNBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 25, 473, 235
-	CONTROL	"Edit", IMPORTPATTERNBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 42, 40, 12
-	CONTROL	"Delete", IMPORTPATTERNBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 155, 40, 13
-	CONTROL	"", IMPORTPATTERNBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
-	CONTROL	"Found:", IMPORTPATTERNBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
-	CONTROL	"Find", IMPORTPATTERNBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
-	CONTROL	"", IMPORTPATTERNBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
-	CONTROL	"Search like google:", IMPORTPATTERNBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
-END
-
 CLASS ImportPatternBrowser INHERIT DataWindowExtra 
 
 	PROTECT oCCEditButton AS PUSHBUTTON
@@ -2431,6 +1970,20 @@ CLASS ImportPatternBrowser INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   	export oImpPat as SqlSelect 
   	export cWhereBase,cWhereSpec,cFields,cOrder,cFrom as string
+RESOURCE ImportPatternBrowser DIALOGEX  4, 3, 534, 279
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", IMPORTPATTERNBROWSER_IMPORTPATTERNBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 25, 473, 235
+	CONTROL	"Edit", IMPORTPATTERNBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 42, 40, 12
+	CONTROL	"Delete", IMPORTPATTERNBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 486, 155, 40, 13
+	CONTROL	"", IMPORTPATTERNBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
+	CONTROL	"Found:", IMPORTPATTERNBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
+	CONTROL	"Find", IMPORTPATTERNBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
+	CONTROL	"", IMPORTPATTERNBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
+	CONTROL	"Search like google:", IMPORTPATTERNBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
+END
+
 METHOD DeleteButton( ) CLASS ImportPatternBrowser 
 local oStmnt as SQLStatement
 	IF self:Server:EOF.or.self:Server:reccount<1
@@ -2532,12 +2085,6 @@ SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
 
 STATIC DEFINE IMPORTPATTERNBROWSER_DELETEBUTTON := 102 
-RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBACCNUMBER as DataColumn
@@ -2549,6 +2096,12 @@ CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   protect oOwner as ImportPatternBrowser
+RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 ACCESS Accnumber() CLASS ImportPatternBrowser_DETAIL
 RETURN SELF:FieldGet(#Accnumber)
 
