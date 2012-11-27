@@ -322,6 +322,72 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 	LOCAL oMyPers as SQLSelect
 	LOCAL cMailAdress as STRING
 	* first attempt with familyname and without dialog:
+	self:oClick:Resume() 
+	If !Empty(cEmail) .and. At('@',cEmail)>0 // valid email address given?
+		// use that address
+		sRecip := MemAlloc( _sizeof( MapiMessage ) )
+		MemSet( sRecip , 0 , _sizeof( MapiMessage ) )
+		sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
+		sRecip.lpszName:=String2Psz(cFullName)
+		oRecip:=MAPIRecip{sRecip} 
+		self:oClick:Suspend()
+		Return oRecip
+	endif
+	// Otherwise try to fetch email address:
+	nResult := MAPIResolveName( self:hSession , ;
+		0 , ;
+		String2Psz( AllTrim(cLastName) ) , 0 , ;
+		0 , ;
+		@sRecip )
+
+
+	IF nResult == SUCCESS_SUCCESS
+		oRecip := MAPIRecip{ sRecip } 
+		cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1)) 
+		if !At('@',cMailAdress)>0
+			cMailAdress:=''
+		endif
+	ENDIF
+	IF Empty(cMailAdress)
+		*	Not found:
+		* second attempt with dialog and fullname:
+		(TextBox{,"Resolve name for email address of:",cFullName}):Show()
+		nResult := MAPIResolveName( self:hSession , ;
+			0 , ;
+			String2Psz( AllTrim(cFullName) ) , ;
+			MAPI_DIALOG , ;
+			0 , ;
+			@sRecip )
+		IF nResult == SUCCESS_SUCCESS
+			oRecip := MAPIRecip{ sRecip } 
+			cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1)) 
+			if !At('@',cMailAdress)>0
+				cMailAdress:=''
+			endif
+		ENDIF
+
+	ENDIF
+	self:oClick:Suspend()
+	IF Empty(cMailAdress)
+		IF !cEmail==cMailAdress 
+			* save email address for send time:
+			SQLStatement{"update person set email='"+cMailAdress+"' where persid='"+Str(persid,-1)+"'",oConn}:execute()
+		endif 
+		RETURN oRecip
+	ENDIF
+	IF nResult==MAPI_E_FAILURE
+		(ErrorBox{,"Could not get correct eMail address of:"+cFullName}):Show()
+	ENDIF
+	RETURN null_object
+
+METHOD ResolvenameOld( cLastName as string, persid as int, cFullName as string,cEmail as string) as MAPIRecip CLASS MAPISession
+
+	LOCAL sRecip as MAPIRecipDesc
+	LOCAL nResult as DWORD
+	LOCAL oRecip as MAPIRecip
+	LOCAL oMyPers as SQLSelect
+	LOCAL cMailAdress as STRING
+	* first attempt with familyname and without dialog:
 	self:oClick:Resume()
 	nResult := MAPIResolveName( self:hSession , ;
 		0 , ;
@@ -332,12 +398,15 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 
 	IF nResult == SUCCESS_SUCCESS
 		oRecip := MAPIRecip{ sRecip } 
-		cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1))
+		cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1)) 
+		if !At('@',cMailAdress)>0
+			cMailAdress:=''
+		endif
 	ENDIF
-	IF !nResult == SUCCESS_SUCCESS .or.;
+	IF !nResult == SUCCESS_SUCCESS   .or.;
 			(!Empty(CEmail).and.!cEmail==cMailAdress)
 		*	Not found or different from current e-mail address:
-		IF !Empty(CEmail).and.!nResult == SUCCESS_SUCCESS
+		IF !Empty(CEmail).and.Empty(cMailAdress)
 			* Not found, but current e-mail address known:
 			* Use email address:
 			nResult := MAPIResolveName( self:hSession , ;
@@ -356,7 +425,7 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 				Return oRecip
 			endif
 		ELSE
-			* Current e-mail address dfferent from found address or nothing found:
+			* Current e-mail address different from found address or nothing found:
 			* second attempt with dialog and fullname:
 			(TextBox{,"Resolve name for email address of:",cFullName}):Show()
 			IF nResult==MAPI_E_FAILURE .or.;
@@ -377,9 +446,17 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 		oRecip := MAPIRecip{ sRecip }
 		MAPIFreeBuffer( sRecip )
 		cMailAdress:=AllTrim(SubStr(oRecip:Address,RAt(":",oRecip:Address)+1))
-		IF !cEmail==cMailAdress
-			* save email address for send time:
-			SQLStatement{"update person set email='"+cMailAdress+"' where persid='"+Str(persid,-1)+"'",oConn}:execute()
+		if At('@',cMailAdress)>0
+			IF !cEmail==cMailAdress 
+				* save email address for send time:
+				SQLStatement{"update person set email='"+cMailAdress+"' where persid='"+Str(persid,-1)+"'",oConn}:execute()
+			endif 
+		else 
+			sRecip := MemAlloc( _sizeof( MapiMessage ) )
+			MemSet( sRecip , 0 , _sizeof( MapiMessage ) )
+			sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
+			sRecip.lpszName:=String2Psz(cFullName)
+			oRecip:=MAPIRecip{sRecip} 
 		ENDIF
 		RETURN oRecip
 	ENDIF
@@ -387,20 +464,6 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 		(ErrorBox{,"Could not get correct eMail address of:"+cFullName}):Show()
 	ENDIF
 	RETURN null_object
-
-METHOD ResolveNameOld( cLastName as string, persid as int, cFullName as string,cEmail as string) as MAPIRecip CLASS MAPISession
-
-	LOCAL sRecip as MAPIRecipDesc
-	LOCAL oRecip as MAPIRecip
-	// use current address
-	sRecip := MemAlloc( _sizeof( MapiMessage ) )
-	MemSet( sRecip , 0 , _sizeof( MapiMessage ) )
-	sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
-	sRecip.lpszName:=String2Psz(AllTrim(StrTran(StrTran(cFullName,',','-'),'.',' ')))
-	oRecip:=MAPIRecip{sRecip} 
-	MAPIFreeBuffer( sRecip )
-	Return oRecip	
-
 
 assign Seed( cValue ) class MAPISession
 	local pszValue as psz
@@ -568,7 +631,12 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		sMessage , ;
 		0 , ;
 		0 )
-	self:oClick:Suspend()
+	self:oClick:Suspend() 
+	if !nResult == SUCCESS_SUCCESS
+			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION )
+			RETURN false
+		
+	endif
 	MemFree( sMessage )
 	MemFree( pszSubject )
 
