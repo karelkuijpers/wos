@@ -697,8 +697,9 @@ METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBSer
 
     IF !oMyFileSpec:Find()
 		// create a DBF/DBV file
-		lSuccess := (DbFileSpec{}):Create( oMyFileSpec:FullPath,AStruct,xDriver,true)
-		if !lSuccess
+		lSuccess	:=	(DbFileSpec{}):Create( oMyFileSpec:FullPath,aStruct,xDriver,true)
+		if !lSuccess 
+			LogEvent(self,"Could not create: "+oMyFileSpec:FullPath,"logerrors")
 			(ErrorBox{,"You have no write permission for "+AllTrim(oMyFileSpec:Path)}):Show()
 			return false
 		endif
@@ -1295,6 +1296,22 @@ function HtmlDecode(cText as string) as string
 	local i as int
 	for i:=1 to 5
 		cText:=StrTran(cText,aKey[i],aRepl[i])
+	next
+	Return cText  
+function HtmlEncode(cText as string) as string
+	/*
+	Decode html encoded characters:
+	'&' (ampersand) becomes '&amp;'
+	'"' (double quote) becomes '&quot;' when ENT_NOQUOTES is not set.
+	''' (single quote) becomes '&#039;' only when ENT_QUOTES is set.
+	'<' (less than) becomes '&lt;'
+	'>' (greater than) becomes '&gt;'
+	*/
+	Local aKey:={'&amp;','&quot;', '&#039;', '&lt;', '&gt;'} as array
+	Local aRepl:={'&','"',"'",'<','>'} 
+	local i as int
+	for i:=1 to 5
+		cText:=StrTran(cText,aRepl[i],aKey[i])
 	next
 	Return cText  
 FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='),(')
@@ -2828,7 +2845,7 @@ RETURN m_str
 FUNCTION ZeroTrim(m_str as string) as string
 // left trim leading zeroes from a string 
 m_str:=AllTrim(m_str)
-DO WHILE SubStr(m_str,1,1)=="0" 
+DO WHILE SubStr(m_str,1,1)=="0" .and. Len(m_str)>1 
 	m_str:=SubStr(m_str,2)
 ENDDO
 RETURN m_str
