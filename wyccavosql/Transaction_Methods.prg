@@ -1032,7 +1032,7 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 		oDCGiroText:TEXTValue:=AllTrim(self:oTmt:m56_contra_name)+ ": "+AllTrim(self:oTmt:m56_description)
 	endif
 // 	if self:oTmt:m56_description="NAAM/NUMMER STEMMEN NIET OVEREEN" 
-	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A"    // refused order
+	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A" .and. AtC("Geweigerd:",self:oTmt:m56_description)>0    // refused order
 		oHm:AccID:=self:oTmt:m56_payahead 
 		self:oTmt:m56_autmut:=FALSE
 	endif
@@ -1207,7 +1207,8 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		oHm:DEPID:=ConI(oAccount:department)
 		if !Empty(oAccount:persid) .and.(oHm:KIND=="M" .or.(oHm:KIND='K' .and.!Empty(oHm:incexpfd)))
 			cPersId:=ConS(oAccount:persid)
-			if (oHm:cre-oHm:deb)<0 .or.Empty(self:mCLNGiver).and.(oHm:cre-oHm:deb)=0
+// 			if (oHm:cre-oHm:deb)<0 .or.Empty(self:mCLNGiver).and.(oHm:cre-oHm:deb)=0
+			if (oHm:cre-oHm:deb)<0 .and.Empty(self:mCLNGiver)
 				self:mCLNGiver:=cPersId
 			endif
 		endif
@@ -1435,46 +1436,56 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 
 RETURN TRUE
 METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as string CLASS General_Journal
-* Wijzigen van velden van mutatie a.h.v. waarden in oMutNew
-local cStatement as string
-local oStmnt as SQLStatement 
-lGiver:=(oMutNew:GC='PF'.or.oMutNew:GC = 'AG' .or. oMutNew:GC = 'MG';
-.or. oMutNew:KIND= 'G'.or. oMutNew:KIND= 'D';
-.or. oMutNew:KIND= 'A' .or. oMutNew:KIND = 'F' .or. oMutNew:KIND = 'C') 
-if Empty(oMutNew:SEQNR)
-	self:nLstSEqNr++
-endif
-cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "+;
-"accid="+oMutNew:AccID+;
-",deb="+Str(oMutNew:Deb,-1)+;
-",cre="+Str(oMutNew:cre,-1)+;
-",debforgn="+Str(oMutNew:debforgn,-1)+;
-",creforgn="+Str(oMutNew:CREFORGN,-1)+;
-",currency='"+oMutNew:Currency+"'"+;
-",docid='"+AddSlashes(AllTrim(self:mBST))+"'"+;
-",dat='"+SQLdate(self:mDAT)+"'"+;
-",gc='"+AllTrim(oMutNew:GC)+"'"+;
-",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
-",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
-",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
-",persid='"+iif(lGiver,AllTrim(self:mCLNGiver),"0")+"'"+;
-iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
-",seqnr="+Str(self:nLstSEqNr,-1),'')+;
-",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
-",reference='"+AddSlashes(AllTrim(oMutNew:REFERENCE))+"'"+; 
-",lock_id=0"+;
-iif(Posting,",poststatus="+ ConS(self:mPostStatus),"")+;
-iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
-iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
-iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(oMutNew:SEQNR,-1)
+	* Wijzigen van velden van mutatie a.h.v. waarden in oMutNew
+	local cStatement as string
+	local oStmnt as SQLStatement 
+	lGiver:=(oMutNew:GC='PF'.or.oMutNew:GC = 'AG' .or. oMutNew:GC = 'MG';
+		.or. oMutNew:KIND= 'G'.or. oMutNew:KIND= 'D';
+		.or. oMutNew:KIND= 'A' .or. oMutNew:KIND = 'F' .or. oMutNew:KIND = 'C') 
+	if Empty(oMutNew:SEQNR)
+		self:nLstSEqNr++
+	endif
+	cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "+;
+		"accid="+oMutNew:AccID+;
+		",deb="+Str(oMutNew:Deb,-1)+;
+		",cre="+Str(oMutNew:cre,-1)+;
+		",debforgn="+Str(oMutNew:debforgn,-1)+;
+		",creforgn="+Str(oMutNew:CREFORGN,-1)+;
+		",currency='"+oMutNew:Currency+"'"+;
+		",docid='"+AddSlashes(AllTrim(self:mBST))+"'"+;
+		",dat='"+SQLdate(self:mDAT)+"'"+;
+		",gc='"+AllTrim(oMutNew:GC)+"'"+;
+		",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
+		",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
+	",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
+		",persid='"+iif(lGiver,AllTrim(self:mCLNGiver),"0")+"'"+;
+		iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
+	",seqnr="+Str(self:nLstSEqNr,-1),'')+;
+		",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
+		",reference='"+AddSlashes(AllTrim(oMutNew:REFERENCE))+"'"+; 
+	",lock_id=0"+;
+		iif(Posting,",poststatus="+ ConS(self:mPostStatus),"")+;
+		iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
+		iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
+	iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(oMutNew:SEQNR,-1))
 
-oStmnt:=SQLStatement{cStatement,oConn}
-oStmnt:Execute()
-if !Empty(oStmnt:Status)
-	return oStmnt:ErrInfo:errormessage
-else
+	oStmnt:=SQLStatement{cStatement,oConn}
+	oStmnt:Execute()
+	if !Empty(oStmnt:Status)
+		return oStmnt:ErrInfo:errormessage
+	else
+		// update balance:
+		if !Empty(oMutNew:SEQNR)
+			// update balance with old contenct:
+			IF !ChgBalance(oOrigMut:AccID,self:OrigDat,-oOrigMut:Deb,-oOrigMut:cre,-oOrigMut:debforgn,-oOrigMut:CREFORGN,oOrigMut:Currency)
+				return "balance not changed"
+			endif
+		endif
+		if !ChgBalance(oMutNew:AccID,self:mDAT,oMutNew:Deb,oMutNew:cre,oMutNew:debforgn,oMutNew:CREFORGN,oMutNew:Currency)
+			return "balance not changed"
+		endif
+	endif
 	return ""
-endif
 METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	* Update of an existing transaction with the modified data in TempTrans:
 	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost as STRING, NewMut as Filespec
@@ -1600,18 +1611,18 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 				ENDIF
 			ENDIF
 			* When date, accid or amounts have been updated change rerecord to new:
-			IF self:mDAT # OrigDat.or.;
+			IF self:mDAT # self:OrigDat.or.;
 					oOrig:AccID # oNew:AccID .or.;
 					oOrig:deb # oNew:deb .or.;
 					oOrig:cre # oNew:cre
-				* Reverse balances on old date:
-				if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
-					return "balance not changed"
-				endif
-				* Update balances on new date:
-				if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
-					return "balance not changed"
-				endif
+// 				* Reverse balances on old date:
+// 				if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
+// 					return "balance not changed"
+// 				endif
+// 				* Update balances on new date:
+// 				if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
+// 					return "balance not changed"
+// 				endif
 				* Update fields of the transaction line:
 				cError:=self:UpdateLine(oNew,oOrig,@lGiver)
 				if !Empty(cError)
@@ -1655,7 +1666,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 			endif
 			lDeleted:=true
 			* Update balance:
-			if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
+			if !ChgBalance(oOrig:AccID,self:OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
 				return "balance not changed"
 			endif
 			cError:= self:ChgDueAmnts("D",oOrig, oNew)
@@ -1675,7 +1686,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 				return oStmnt:ErrInfo:errormessage
 			endif
 			* Update balance:
-			if !ChgBalance(oOrig:AccID,OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
+			if !ChgBalance(oOrig:AccID,self:OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
 				return "balance not changed"
 			endif
 			cError:= self:ChgDueAmnts("D",oOrig, oNew)
@@ -1691,10 +1702,10 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 				if !Empty(cError)
 					return cError
 				endif
-				* Update balance:
-				if !ChgBalance(oNew:AccID,self:mDat,oNew:deb,oNew:cre,oNew:DEBFORGN,oNew:CREFORGN,oNew:Currency)
-					return "balance not changed"
-				endif
+				// 				* Update balance:
+				// 				if !ChgBalance(oNew:AccID,self:mDat,oNew:deb,oNew:cre,oNew:DEBFORGN,oNew:CREFORGN,oNew:Currency)
+				// 					return "balance not changed"
+				// 				endif
 				cError:= self:ChgDueAmnts("T", oOrig, oNew)
 				if !Empty(cError)
 					return cError
@@ -1712,10 +1723,10 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 			if !Empty(cError)
 				return cError
 			endif
-			* Update balance:
-			if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
-				return "balance not changed"
-			endif
+			// 			* Update balance:
+			// 			if !ChgBalance(oNew:AccID,self:mDAT,oNew:Deb,oNew:cre,oNew:debforgn,oNew:CREFORGN,oNew:Currency)
+			// 				return "balance not changed"
+			// 			endif
 			cError:= self:ChgDueAmnts("T", oOrig, oNew)
 			if !Empty(cError)
 				return cError
@@ -1724,9 +1735,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		
 		oNew:Skip()
 	enddo
-// 	if !mCLNGiver==OrigPerson .and. !lNewPers
-// 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
-// 	endif
+	// 	if !mCLNGiver==OrigPerson .and. !lNewPers
+	// 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
+	// 	endif
 
 	oNew:ClearIndex(NewIndex)
 	Newmut:=FileSpec{NewIndex}
@@ -1898,11 +1909,12 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					
 				endif						 
 				IF !lOK
-					if !Empty(self:mCLNGiver).and. !mCLNGiverMbr==self:mCLNGiver
+					if !Empty(self:mCLNGiver).and. !Empty(self:mCLNGiver).and.!mCLNGiverMbr==self:mCLNGiver
 						cError := self:cGiverName+";  "
 						lError := true
 					ELSE
-						self:mCLNGiver:=mCLNGiverMbr
+						self:mCLNGiver:=mCLNGiverMbr 
+						lError:=false
 					ENDIF
 					DO WHILE i>0
 						oHm:RecNo:=oHm:AMirror[i,6] // RECNO
@@ -2304,7 +2316,7 @@ METHOD BlockColumns() CLASS GeneralJournal1
 	self:oDBGC:SetStandardStyle(gbsReadOnly)
 	self:oDBACCDESC:SetStandardStyle(gbsReadOnly)
 	RETURN NIL
-METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
+METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	LOCAL recnr AS INT
 	LOCAL oHm:= self:Server as TempTrans
 	LOCAL lFound AS LOGIC
@@ -2320,7 +2332,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 			self:Owner:lwaitingForExchrate:=false 
 			if oCurr:lStopped
 				self:Owner:EndWindow()
-				return
+				return false
 			endif
 			oHm:deb:=Round(oHm:DEBFORGN*ROE,DecAantal)
 			oHm:cre:=Round(oHm:CREFORGN*ROE,DecAantal)
@@ -2331,7 +2343,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	endif
 	IF oHm:lFilling
 		self:owner:Totalise(false,false)
-		RETURN
+		RETURN true
 	ENDIF
 	if !Empty(self:oOwner:oOwner)
 		oTransH:=self:oOwner:oOwner:oMyTrans
@@ -2343,7 +2355,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 		oHm:DEBFORGN:=oHm:aMirror[ThisRec,13]
 		oHm:CREFORGN:=oHm:aMirror[ThisRec,14]
 		self:Owner:Totalise(false,false)
-		RETURN
+		RETURN false
 	ENDIF
 	*	save new values into aMirror: 
 	if !oHm:lFilling
@@ -2358,7 +2370,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	oHm:aMirror[ThisRec,20]:=oHm:DEPID
 	IF oHm:KIND == 'M'		
 		IF oHm:Deb > oHm:Cre  .and. !self:oParent:mBST="COL"     // inverse direct debit
-			oHm:gc := 'CH'
+			oHm:gc := 'AG'
 		ELSEIF oHm:deb = oHm:cre
 			oHm:gc := '  '
 		ELSE
@@ -2426,7 +2438,7 @@ METHOD DebCreProc(lNil:=false as logic) as void pascal CLASS GeneralJournal1
 	self:Owner:Totalise(false,false)
 
 	self:Owner:Goto(ThisRec)
-	RETURN
+	RETURN true
 METHOD RegAccount(oRek,ItemName) CLASS InquirySelection
 	LOCAL oAccount as SQLSelect
 	LOCAL crek AS STRING
@@ -3102,7 +3114,7 @@ DO WHILE !oHm:EOF
 ENDDO
 oHm:Recno:=nCurRec
 oHm:ResetNotification()
-SetDecimalSep(DecSep)
+SetDecimalSep(Asc('.'))
 oReport:prstart()
 oReport:prstop()
 RETURN NIL
@@ -3538,7 +3550,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 		endif			
 		self:ShowDebBal()
 		*    	SELF:lMemberGiver := FALSE
-		IF !Empty(self:DebCln)
+		IF !Empty(Val(self:DebCln)) 
 			oPers:=PersonContainer{}
 			oPers:persid:=self:DebCln
 			self:RegPerson(oPers)
