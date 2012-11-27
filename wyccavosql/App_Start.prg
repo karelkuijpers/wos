@@ -43,10 +43,10 @@ method Start() class App
 		SetDefault(CurPath)
 		SetPath(CurPath)
 		myApp:=self
-		if Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
-			HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
-		elseIF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
+		IF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
 			HelpDir:='C:\Windows\Temp'
+		elseif Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
+			HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
 		ELSEIF Len(aDir:=Directory("C:\TEMP",FA_DIRECTORY))>0
 			HelpDir:="C:\TEMP"
 		ELSE
