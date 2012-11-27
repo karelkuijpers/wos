@@ -144,7 +144,7 @@ cCity:=StrTran(cCity,'Y','IJ')
 // endif
 woonplaats:=cCity 
 
-housenrOrg:=(GetStreetHousnbr(cAddress))[2]
+housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
 
 // remove housenbr addition from address:
 aWord:=GetTokens(cAddress)
@@ -230,7 +230,7 @@ if !Empty(output)
 		nPos2:=At3(" </td> ",output,nPos1)
 		postcode:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
 		nPos1:=nPos2+11
-		nPos2:=At3(" </td> ",output,nPos1+3)
+		nPos2:=At3(" </td> ",output,nPos1+1)
 		straat:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
 		nPos1:=At3(" <td> ",output,nPos2+11)+5
 		if (nPos1>5)
@@ -523,10 +523,10 @@ FUNCTION MarkUpAddress(oPers as SQLSelect,p_recnr:=0 as int,p_width:=0 as int,p_
 * Global variable sSTRZIPCITY, specified in system params:
 *				0: address, zip, city, country  
 *				1: postalcode,city, address, country 
-*				2: country, postalcode city, address, 
-*				3: address, city, zip, country
-* Global CITYUPC: true: City name in uppercase, false± only first character uppercase 
-* Global LSTNUPC: true: last name in uppercase, false± only first character uppercase 
+*				2: country, postalcode city, address,  (Russia)
+*				3: address, city, zip, country   (USA, Canada)
+* Global CITYUPC: true: City name in uppercase, false: only first character uppercase 
+* Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
 * Returns: ARRAY met adressen + IN nederland 1 extra row met Kixkode
 LOCAL arraynr:=0 as int,naam1:='',titel:='',naam2:='', lstnm as STRING
 LOCAL i,j,aant as int
@@ -1063,7 +1063,11 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmGender:Value:=self:oPerson:GENDER
 	self:oDCmType:Value:=self:oPerson:TYPE
 	if ConL(self:oPerson:removed)
-		self:oDCDeletedText:Show()
+		self:oDCDeletedText:Show() 
+		self:oCCOKButton:Hide() 
+		self:oCCCancelButton:Hide()
+		self:oCCDonationsButton:Hide() 
+		self:oCCUndelete:Show()
 	else
 		self:oDCDeletedText:Hide()		
 	endif
@@ -1112,7 +1116,7 @@ METHOD SetState() CLASS NewPersonWindow
 	
 	RETURN nil
 METHOD StateExtra()CLASS NewPersonWindow
-	LOCAL i,j:=0 AS INT
+	LOCAL i,j:=0 as int
 	LOCAL mCodH as USUAL, aCod as array
 // 	LOCAL oPers AS Person
 	LOCAL cDescr:="Bank# " AS STRING
@@ -1127,7 +1131,8 @@ METHOD StateExtra()CLASS NewPersonWindow
 			mCodH:=nil
 		endif
 		++j
-		IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH)
+		IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH) 
+			
 	NEXT
 
 	IF SELF:lImport
@@ -2502,7 +2507,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 						for n:=1 to 28 step 3
 							mCodH  := SubStr(oSel:mailingcodes,n,2)
 							IF Empty(mCodH)
-								exit
+								loop
 							else
 								IF (k:=AScan(pers_codes,{|x|x[2]==mCodH}))>0
 									IF Empty(cCodOms)
@@ -3422,10 +3427,10 @@ METHOD Show() CLASS SelPers
 						"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'EO','FI') where instr(mailingcodes,'EG')>0 or instr(mailingcodes,'EO')>0)",oConn}
 				elseif self:lEG
 					oStmnt :=SQLStatement{;
-						"update person set mailingcodes=replace(replace(mailingcodes,'EG','FI'),'FI FI','FI') where instr(mailingcodes,'EG')>0",oConn}
+						"update person set mailingcodes=replace(replace(replace(mailingcodes,'EG','FI'),'FI FI ','FI '),'FI FI','FI') where instr(mailingcodes,'EG')>0",oConn}
 				else //EO
 					oStmnt :=SQLStatement{;
-						"update person set mailingcodes=replace(replace(mailingcodes,'EO','FI'),'FI FI','FI'), where instr(mailingcodes,'EO')>0",oConn}
+						"update person set mailingcodes=replace(replace(replace(mailingcodes,'EO','FI'),'FI FI ','FI '),'FI FI','FI') where instr(mailingcodes,'EO')>0",oConn}
 				endif
 				oStmnt:Execute()
 			ENDIF
@@ -3794,12 +3799,12 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
-		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
+		" and '"+SQLdate(end_due)+"' and invoicedate<s.enddate and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by personname",oConn}
 	IF oDue:RecCount<1
 		(WarningBox{self,"Producing CLIEOP03 file","No due amounts to be debited direct!"}):Show()
 		RETURN false
 	ENDIF
-
+//    LogEvent(self,oDue:SQLString,"logsql")
 	headinglines:={self:oLan:Rget("Overview of generated automatic collection (CLIEOP03)"),self:oLan:Rget("Name",41)+self:oLan:Rget("Bankaccount",11)+self:oLan:Rget("Amount",12,,"R")+" "+self:oLan:Rget("Destination",12)+self:oLan:Rget("Due Date",11)+" "+self:oLan:Rget("Description",20),Replicate('-',120)}
 	// write Header
 	// remove old clieop03-files:
@@ -4167,7 +4172,9 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 	else
 		// erase file:
 		FErase(cFilename)
-	endif		
+	endif
+	SetDecimalSep(Asc("."))
+
 	RETURN true
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
@@ -4212,20 +4219,50 @@ STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON2 := 102
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON3 := 103 
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON4 := 104 
 STATIC DEFINE SELPERSPRIMARY_SELX_KEUZE1 := 100 
+Function SQLAddress(country:="" as string,alias:="" as string,cSep:=',' as string) as string 
+// composition of SQL code for getting address of a person
+// -	country: default country (optional) 
+// -	alias  : table alias used for table person: e.g. " p."  (optional)
+// -	cSep	 :	separator text between address lines; e.g. for html: "<br>"
+//				
+// Global variable sSTRZIPCITY, specified in system params:
+//				0: address, zip, city, country  
+//				1: postalcode,city, address, country 
+//				2: country, postalcode city, address,  (Russia)
+//				3: address, city, zip, country    (USA, Canada)
+// Global CITYUPC: true: City name in uppercase, false: only first character uppercase
+// 
+LOCAL fRow:="" as string 
+local mAlias:=iif(Empty(ALIAS),"",alias+".") as string
+local cAddress:="if("+mAlias+'address<>"" and ' +mAlias+'address<>"X",'+mAlias+'address,"")' as string
+local cZip:='if(' +mAlias+'postalcode<>"" and ' +mAlias+'postalcode<>"X",'+mAlias+'postalcode,"")'  as string
+local cCity:='if(' +mAlias+'city<>"" and ' +mAlias+'city<>"X" and ' +mAlias+'city<>"??",'+if(CITYUPC,'upper(','')+mAlias+'city'+if(CITYUPC,')','')+',"")' as string
+local cCountry:='if('+mAlias+'country<>""'+iif(empty(OwnCountryNames),'',' and not '+mAlias+'country in('+implode(OwnCountryNames)+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string 
+local cUSA:='if('+mAlias+'country="USA" or '+mAlias+'country="UNITED STATES" or '+mAlias+'country="CANADA" or '+mAlias+'country="U.S.A.",'
+local cCityZip as string
+local mySep:=',"'+cSep+' ",' as string
+
+
+cCityZip:=iif(sSTRZIPCITY==3,'concat('+cCity+'," ",'+cZip+')',cUSA+'concat('+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+'))')  
+if sSTRZIPCITY==0.or. sSTRZIPCITY==3
+	fRow:=cAddress+mySep+cCityZip+mySep+cCountry
+elseif sSTRZIPCITY==1
+	fRow:=cCityZip+mySep+cAddress+mySep+cCountry 
+elseif sSTRZIPCITY==2
+	fRow:=cCountry+mySep+cUSA+'concat('+cAddress+mySep+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+mySep+cAddress+'))'
+endif	
+
+RETURN 'concat('+fRow+')'
 Function SQLFullNAC(Purpose:=1 as int,country:="" as string,alias:="" as string) as string 
 // composition of SQL code for getting full name and address of a person
 // Purpose: see SQLFullName
 // country: default country (optional)
-LOCAL f_row:="",mAlias as STRING
-mAlias:=iif(Empty(ALIAS),"",alias+".")
+LOCAL f_row as STRING
 
 f_row:=SQLFullName(Purpose,ALIAS)
 
-f_row:=SubStr(f_row,1,Len(f_row)-2)+;   // eliminate ) for trim and concat
-',", ",'+"if("+mAlias+'address<>"" and address<>"X",concat('+mAlias+'address," "),""),'+;
-"if("+mAlias+'postalcode<>"" and postalcode<>"X",concat('+mAlias+'postalcode," "),""),'+;
-"if("+mAlias+'city<>"" and city<>"X" and city<>"??",concat('+mAlias+'city," "),""),if(country<>"",country,'+iif(Empty(country),'""','"'+country+'"')+')'+;
-"))"  // add  )) for trim and concat
+f_row:=SubStr(f_row,1,Len(f_row)-2)+',", ",'+;   // eliminate ) for trim and concat
+SQLAddress(country,ALIAS)+"))"  // add  )) for trim and concat
 RETURN AllTrim(f_row)
 Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string 
 // composition of SQL code for getting full name of a person
@@ -4234,6 +4271,8 @@ Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string
 //		1: fullname conform address specification
 //		2: name for identification: lastname, firstname prefix 
 //		3: like 1 but always with firstname 
+// Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
+//
 LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
 local i as int
 mAlias:=iif(Empty(aliasp),"",aliasp+".")
@@ -4256,7 +4295,7 @@ IF titelINADR.and.!Empty(pers_titles) .and.(Purpose==1.or.Purpose==3)
 	title+=" END)"+iif(sSalutation .and.(Purpose==1.or.Purpose==3),")","")
 ENDIF
 prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
-fullname := mAlias+"lastname"
+fullname :=iif(LSTNUPC,'upper(','')+ mAlias+"lastname"+iif(LSTNUPC,')','')
 IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
 	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
 ELSE
