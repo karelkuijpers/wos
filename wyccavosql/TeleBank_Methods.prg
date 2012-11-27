@@ -376,7 +376,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 	// aValuesTrans:
 	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
 	//      1            2        3          4           5      6           7      8      9        10        11       12
-		AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),''),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
+		AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
 	endif
 
 	return true
@@ -709,7 +709,7 @@ METHOD Import() CLASS TeleMut
 	LOCAL oPF as FileSpec
 	LOCAL i as int
 	local nOld:=12 as int   // after Nold months imported transactions are removed
-	LOCAL lDelete,lSuccess as LOGIC
+	LOCAL lSuccess,lFilesFound as LOGIC
 	LOCAL lv_eind as date
 	Local oLock,oSel as SQLSelect 
 	local oStmnt as SQLStatement
@@ -774,7 +774,7 @@ METHOD Import() CLASS TeleMut
 	self:aValuesTrans:={}
 	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileSA2).or.!Empty(aFileKB).or.;
 			!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG).or.!Empty(aFileVWI).or.!Empty(aFileTL).or.!Empty(aFileRO)
-		lDelete:=true 
+		lFilesFound:=true 
 		self:oParent:Pointer := Pointer{POINTERHOURGLASS}
 
 		* Establish last recording date per bank account: 
@@ -940,7 +940,7 @@ METHOD Import() CLASS TeleMut
 
 
 		* Removing old transactions:
-		IF lv_aant_toe>0
+		IF self:lv_aant_toe>0
 			* Calculate date too old (6 months old):
 			nOld:=Min(nOld,12)
 			lv_mm := Month(Today())
@@ -984,13 +984,12 @@ METHOD Import() CLASS TeleMut
 	else 
 		SQLStatement{"commit",oConn}:execute()  // save locks 
 	endif
-
-	// 	if Len(self:aMessages)>0
-	(InfoBox{,"Import of telebanking transactions",Str(lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
-	for i:=1 to Len(self:aMessages)
-		LogEvent(self,self:aMessages[i],"Log")
-	next
-	// 	endif
+	if lFilesFound
+		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
+		for i:=1 to Len(self:aMessages)
+			LogEvent(self,self:aMessages[i],"Log")
+		next
+	endif
 	RETURN
 METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	* Import of Norwegian BBS Bank data into teletrans.dbf
@@ -2019,9 +2018,6 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 						endif
 						oHlM:Skip()
 					ENDDO
-					if lv_BankAcntContra=="2320750"
-						lv_BankAcntContra:=lv_BankAcntContra
-					endif
 					if cType86=="VX"
 						if (nNumPos:=AtC("BETALINGSKENM",lv_description))>0
 							if !isnum(AllTrim(SubStr(lv_description,nNumPos+16,16)) )
@@ -2221,7 +2217,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	LOCAL ld_bookingdate as date 
 	local oStmnt as SQLStatement
 
-	cSep:=SetDecimalSep(Asc(","))
+// 	cSep:=SetDecimalSep(Asc(","))
 	ptrHandle:=MyFile{oFs}
 	pbType:=Upper(oFs:Extension)
 	IF FError() >0
@@ -2266,12 +2262,12 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 			ld_bookingdate:=SToD(SubStr(hl_boekdat,7,4)+;
 				SubStr(hl_boekdat,4,2)+SubStr(hl_boekdat,1,2))
 		ENDIF
-		++nTrans
-		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
-			cBuffer:=ptrHandle:FReadLine(ptrHandle)
-			aFields:=Split(cBuffer,cDelim)
-			loop
-		ENDIF
+// 		++nTrans
+// 		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+// 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+// 			aFields:=Split(cBuffer,cDelim)
+// 			loop
+// 		ENDIF
 		lv_NameContra:=AllTrim(AFields[ptDesc])
 		lName:=Len(lv_NameContra)
 		lv_description:=AllTrim(AFields[ptMed])
@@ -2285,10 +2281,11 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 		ENDIF
 		lv_description:=AllTrim(Compress(lv_description))
 		lv_NameContra:=AllTrim(Compress(lv_NameContra))
-		lv_addsub:=PadR(AFields[ptCode],3)
+		lv_kind:=AFields[ptCode]
+// 		lv_addsub:=PadR(AFields[ptCode],3)
 		lv_addsub:=SubStr(AFields[ptAfBij],1,1)
 		cCurrency := "EUR"
-		lv_kind:=AFields[ptSoort]		
+// 		lv_kind:=AFields[ptSoort]		
 		IF Empty(lv_kind)  && alleen mutaties laden
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
 			aFields:=Split(cBuffer,cDelim)
@@ -2307,7 +2304,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 			ENDIF
 		ENDIF
 		lv_BankAcntContra:=Str(Val(AFields[ptTeg]),-1)
-		lv_Amount:=Val(AFields[ptBedr])
+		lv_Amount:=Val(StrTran(AFields[ptBedr],',','.',,1))
 		IF Empty(lv_Amount)  && geen lege mutaties laden
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
 			aFields:=Split(cBuffer,cDelim)
@@ -2330,27 +2327,17 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	  	lv_description:=AddSlashes(AllTrim(lv_description))
   		lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))
 	  	lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra)
-		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
+		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'0',lv_BankAcntContra,;
 		lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
 		lv_description:="" 
 		nTrans++
-		
-// 		* controleer op reeds geladen zijn van mutatie:
-// 		IF self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_addsub,lv_BankAcntContra,lv_NameContra,"")
-// 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
-// 			aFields:=Split(cBuffer,cDelim)
-// 			LOOP
-// 		ENDIF 
 		cBuffer:=ptrHandle:FReadLine(ptrHandle)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
 	ptrHandle:Close()
 	ptrHandle:=null_object 
-	SetDecimalSep(cSep)  // restore decimal separator
-// 	nImp:=self:lv_aant_toe
-// 	nProc:=self:lv_processed 
-	lSuccess:=self:SaveTeleTrans(false,false,"ING file:"+oFs:FileName,nTrans)
-// 	AAdd(self:aMessages,"Imported ING file:"+oFs:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	SetDecimalSep('.')  // restore decimal separator
+	lSuccess:=self:SaveTeleTrans(true,true,"ING file:"+oFs:FileName,nTrans)
 	if lSuccess
 		return true
 	else
@@ -3269,7 +3256,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	// 	(time1:=Seconds()) 
 	if Len(avalueTrans)=0
 		return true
-	endif
+	endif 
 	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
 	//      1            2        3          4           5      6           7      8      9        10        11       12
 	if lCheckPerson
@@ -3596,9 +3583,17 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				cBudgetcd:=avalueTrans[i,7]
 				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
 					cDestAcc:=aAccnbrDb[l,2]
-					lProcAuto:=true
-					if aAccnbrDb[l,3]='1'
-						lv_gc:='CH'
+					if aAccnbrDb[l,3]='1'  // is member
+						if !Empty(avalueTrans[i,11])  // giver connected?
+							// apparently contra booking of direct debit
+							lv_gc:='AG'
+							// no automatic processing
+						else 
+							lv_gc:='CH'
+							lProcAuto:=true
+						endif
+					else
+						lProcAuto:=true
 					endif
 				endif
 			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="OCR") .and.Empty(aValueTrans[i,4]).and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
