@@ -2095,7 +2095,7 @@ METHOD OkButton CLASS EditMember
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg as array 
 	local oDep as SQLSelect
 	local cFatalError as string
-
+   SetDecimalSep(Asc('.'))
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
