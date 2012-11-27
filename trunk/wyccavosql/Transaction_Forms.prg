@@ -234,22 +234,32 @@ SELF:Destroy()
 
 	RETURN SUPER:Close(oEvent)
 method DateTimeSelectionChanged(oDateTimeSelectionEvent) class General_Journal
-local i as int
+local i as int 
+local lError as logic
+
 Local oHm as TempTrans
 	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
 	//Put your changes here
 	IF !self:mDat == self:CurDate 
 		oHm:= self:server
-		self:CurDate := oDCmDat:SelectedDate
 		self:oSFGeneralJournal1:Browser:SuspendUpdate()
 
 		FOR i=1 to Len(oHm:aMirror)
 			if oHm:aMirror[i,12]#sCurr
 				oHm:Goto(oHm:aMirror[i,6])
-				self:oSFGeneralJournal1:DebCreProc(nil) 
+				if !self:oSFGeneralJournal1:DebCreProc(nil)
+					lError:=true
+					exit
+				endif 
 			endif
 		next
-		self:oSFGeneralJournal1:Browser:RestoreUpdate()
+		if lError
+			self:mDat:=self:CurDate
+// 			self:oDCmDat:SelectedDate:=self:CurDate
+		else
+			self:CurDate := oDCmDat:SelectedDate
+			self:oSFGeneralJournal1:Browser:RestoreUpdate()
+		endif
 	endif
 
 	return nil	
@@ -2284,8 +2294,9 @@ oDCAccNumber:FieldSpec := Account_AccNumber{}
 oDCAccNumber:HyperLabel := HyperLabel{#AccNumber,"Account","Account of transaction",NULL_STRING}
 
 oDCDescriptn := SingleLineEdit{SELF,ResourceID{PAYMENTDETAILS_DESCRIPTN,_GetInst()}}
-oDCDescriptn:FieldSpec := Description{}
+oDCDescriptn:FieldSpec := transaction_OMS{}
 oDCDescriptn:HyperLabel := HyperLabel{#Descriptn,"Description",NULL_STRING,"Transaction_OMS"}
+oDCDescriptn:FocusSelect := FSEL_HOME
 
 oDCORIGINAL := SingleLineEdit{SELF,ResourceID{PAYMENTDETAILS_ORIGINAL,_GetInst()}}
 oDCORIGINAL:HyperLabel := HyperLabel{#ORIGINAL,"Original","Amount previous registered",NULL_STRING}
@@ -2344,7 +2355,7 @@ oDBREFERENCE:HyperLabel := HyperLabel{#Reference,"Reference","for selection or a
 oDBREFERENCE:Caption := "Reference"
 self:Browser:AddColumn(oDBREFERENCE)
 
-oDBDESCRIPTN := JAPDataColumn{Description{}}
+oDBDESCRIPTN := JAPDataColumn{transaction_OMS{}}
 oDBDESCRIPTN:Width := 31
 oDBDESCRIPTN:HyperLabel := oDCDESCRIPTN:HyperLabel 
 oDBDESCRIPTN:Caption := "Description"
@@ -2555,34 +2566,36 @@ Method bankanalyze() class PaymentJournal
 	self:DefMlcd:=""
 	self:DefOvrd:=False
 	self:DefCur:=sCurr
-	self:DefMulti:=false 
-	oSel:=SqlSelect{"select ba.giftsall,ba.openall,ba.singledst,ba.fgmlcodes,ba.syscodover,b.category,a.description,a.accnumber,a.currency,a.multcurr,m.persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype "+;
-		"from bankaccount ba left join account a on (a.accid=ba.singledst and a.active=1) right join balanceitem b on (b.balitemid=a.balitemid) left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) "+;
-		"where ba.accid="+self:DebAccId,oConn}
-	if oSel:reccount>0  
-		self:GiftsAutomatic:=iif(ConI(oSel:GIFTSALL)=1,true,false)
-		self:DueAutomatic:=iif(ConI(oSel:OPENALL)=1,true,false)
-		IF MultiDest
-			self:DefBest := iif(Empty(oSel:SINGLEDST),'',Str(oSel:SINGLEDST,-1))
-			* Check if it concerns a bank account with a single destination:
-			// 	if DefBest # oSel:SINGLEDST
-			if !Empty(oSel:Description)
-				// 				self:DefBest := Str(oSel:AccID,-1)   
-				self:DefOms := oSel:Description
-				self:DefNbr:=oSel:ACCNUMBER
-				IF !Empty(oSel:persid)
-					self:DefGc := "AG"
-				ENDIF
-				self:DefCur:=oSel:Currency
-				self:DefMulti:=iif(ConI(oSel:MULTCURR)=1,true,false) 
-				self:DefMlcd:=oSel:FGMLCODES
-				self:DefOvrd:=iif(oSel:SYSCODOVER="O",true,false)
-				self:DefType:=oSel:category
-				self:Defincexpfd:=oSel:incexpfd
-				self:Defaccounttype:=oSel:accounttype
+	self:DefMulti:=false
+	if !Empty(self:DebAccId) 
+		oSel:=SqlSelect{"select ba.giftsall,ba.openall,ba.singledst,ba.fgmlcodes,ba.syscodover,b.category,a.description,a.accnumber,a.currency,a.multcurr,m.persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype "+;
+			"from bankaccount ba left join account a on (a.accid=ba.singledst and a.active=1) right join balanceitem b on (b.balitemid=a.balitemid) left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) "+;
+			"where ba.accid="+self:DebAccId,oConn}
+		if oSel:reccount>0  
+			self:GiftsAutomatic:=iif(ConI(oSel:GIFTSALL)=1,true,false)
+			self:DueAutomatic:=iif(ConI(oSel:OPENALL)=1,true,false)
+			IF MultiDest
+				self:DefBest := iif(Empty(oSel:SINGLEDST),'',Str(oSel:SINGLEDST,-1))
+				* Check if it concerns a bank account with a single destination:
+				// 	if DefBest # oSel:SINGLEDST
+				if !Empty(oSel:Description)
+					// 				self:DefBest := Str(oSel:AccID,-1)   
+					self:DefOms := oSel:Description
+					self:DefNbr:=oSel:ACCNUMBER
+					IF !Empty(oSel:persid)
+						self:DefGc := "AG"
+					ENDIF
+					self:DefCur:=oSel:Currency
+					self:DefMulti:=iif(ConI(oSel:MULTCURR)=1,true,false) 
+					self:DefMlcd:=oSel:FGMLCODES
+					self:DefOvrd:=iif(oSel:SYSCODOVER="O",true,false)
+					self:DefType:=oSel:category
+					self:Defincexpfd:=oSel:incexpfd
+					self:Defaccounttype:=oSel:accounttype
+				endif
 			endif
-		endif
-	ENDIF
+		ENDIF
+	endif
 
 
 METHOD CancelButton( ) CLASS PaymentJournal
@@ -2742,7 +2755,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 				SELF:oDCmPerson:TEXTValue := ""
 			ELSE
 				self:cOrigName:=AllTrim(self:cGiverName)
-           	self:cGiverName:=AllTrim(oControl:VALUE)
+				self:cGiverName:=AllTrim(oControl:VALUE)
 				if !self:cGiverName==self:cOrigName
 					self:PersonButton(true,,false,PersonContainer{}) 
 				else
@@ -2761,10 +2774,30 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 			self:AssignTo()
 			self:Totalise(false,true)
 			SELF:oSFPaymentDetails:Browser:RestoreUpdate()
-			SELF:oSFPaymentDetails:Browser:Refresh()
+			self:oSFPaymentDetails:Browser:Refresh()
+		elseif oControl:NameSym==#DebitAccount .and.!AllTrim(Transform(oControl:Value,""))==self:DebAccId    
+			GiftsAutomatic:=FALSE
+			DueAutomatic:=FALSE
+			IF Empty(oControl:VALUE) 
+				// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
+				AccountSelect(self,"","DEBITACCOUNT")
+				self:ShowDebBal()
+				IF MultiDest
+					self:DefBest := ""
+					self:DefOms := ""
+					self:DefNbr:=""
+					self:DefGc := "" 
+					self:DebCategory:=''
+				endif
+			ELSEif !Empty(oControl:CurrentItemNo)
+				self:DebAccId := AllTrim(Transform(oControl:Value,""))
+				self:ShowDebBal()
+				self:lMemberGiver := FALSE
+				self:bankanalyze()
+			ENDIF
 		ENDIF
 	ENDIF
-		
+	
 	RETURN NIL
 METHOD EndGiro() CLASS PaymentJournal
 		oTmt:Close()
@@ -2788,7 +2821,8 @@ METHOD EndGiro() CLASS PaymentJournal
 *		SELF:Append()
 		oDCDebitAccount:SetFocus()
 		oDCDebitAccount:CurrentItemNo := ;
-		oDCDebitAccount:FindItem(cBankPreSet,FALSE)
+		self:oDCDebitAccount:CurrentItemNo := self:oDCDebitAccount:FindItem(self:cBankPreSet,FALSE)
+// 		oDCDebitAccount:FindItem(self:cBankPreSet,FALSE)
 		SELF:ShowDebBal()
 RETURN
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal 
@@ -2917,8 +2951,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 		GiftsAutomatic:=FALSE
 		DueAutomatic:=FALSE
 		IF Empty(oControlEvent:Control:VALUE)
-// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
-			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter)
+			// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
+			AccountSelect(self,"","DEBITACCOUNT")
 			self:ShowDebBal()
 			IF MultiDest
 				self:DefBest := ""
@@ -2930,8 +2964,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 		ELSE
 			self:DebAccId := AllTrim(Transform(oControlEvent:Control:value,""))
 			self:ShowDebBal()
-		   self:lMemberGiver := FALSE
-		   self:bankanalyze()
+			self:lMemberGiver := FALSE
+			self:bankanalyze()
 		ENDIF
 	ENDIF
 	RETURN nil
@@ -3112,7 +3146,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	self:Server:oLan:=self:oLan
 	self:Server:oBrowse := self:oSFPaymentDetails:Browser
 // 	self:oDCDebitAccount:SetFocus()
-	self:oDCDebitAccount:CurrentItemNo := self:oDCDebitAccount:FindItem(cBankPreSet,FALSE)
+	self:oDCDebitAccount:CurrentItemNo := self:oDCDebitAccount:FindItem(self:cBankPreSet,FALSE)
 	self:mDebAmntF:=0
 	self:mDebAmnt:=0 
 	self:oDCmBST:SetFocus()
@@ -3220,11 +3254,11 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	// endif
 	omBal:=Balances{}
 	omBal:GetBalance( self:DebAccId,,,self:DebCurrency)
-   if self:DebCurrency==sCurr
+	if self:DebCurrency==sCurr
 		self:DebBalance:=round(omBal:per_deb-omBal:per_cre,decaantal)
-   else 
+	else 
 		self:DebBalance:=Round(omBal:per_debF-omBal:per_creF,DecAantal)
-   endif 
+	endif 
 	self:oDCDebbalance:Value:=self:DebBalance
 	self:oDCCurText1:Value :=self:DebCurrency 
 	self:oDCCurText2:Value:=self:DebCurrency 
