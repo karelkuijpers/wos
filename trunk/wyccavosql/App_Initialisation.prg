@@ -1137,7 +1137,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","InnoDB",cCollation},;
 		{"titles","InnoDB",cCollation},;
 		{"transaction","InnoDB",cCollation}} as array
-//		{"zgzip","InnoDB",cCollation} as array       // longer is too large for the compiler
 
 	// required tables structure:
 
@@ -1587,8 +1586,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","lock_id","int(11)","NO","0",""},;
 		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
 	} as array  
-// 		{"zgzip","zipid","int(11)","NO","NULL","auto_increment"},;
-// 		{"zgzip","description","varchar(511)","NO","dummy",""};
 	
 	// specify indexes per table:
 	// Table,Non_unique,Key_name,Seq_in_index,Column_name
@@ -1723,7 +1720,6 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","1","transdate","2","transid"},;
 		{"transaction","1","person","1","persid"};
 		} as array
- // 		{"zgzip","0","PRIMARY","1","zipid"};
 
 
 	// 		{"transaction","1","amountdeb","1","deb"},;
@@ -1898,10 +1894,6 @@ method InitializeDB() as void Pascal  class Initialize
 	if SqlSelect{"select importfile from importlock where importfile='batchlock'",oConn}:RecCount<1
 		SQLStatement{"insert into importlock set importfile='batchlock'",oConn}:Execute()
 	endif 
-	// ensure zgzip has required record:
-	if SqlSelect{"select zipid from zgzip",oConn}:RecCount<1
-		SQLStatement{"insert into zgzip set description='dummy last table to ensure that gzip file of mysqldumper is correctly saved'",oConn}:Execute()
-	endif
 	// fill tables from old database: 
 	if self:lNewDb
 		self:ConvertDBFSQL(aColumn,aIndex)
