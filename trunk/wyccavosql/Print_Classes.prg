@@ -76,6 +76,7 @@ METHOD ButtonClick(oControlEvent) CLASS _PrintDialog
 METHOD Close(oEvent) CLASS _PrintDialog
 	SUPER:Close(oEvent)
 	//Put your changes here
+	SetDecimalSep(Asc('.'))
 SELF:Destroy()
 	RETURN NIL
 
@@ -2839,7 +2840,8 @@ METHOD OkButton(cDest) CLASS PrintDialog
 		self:ToFileFS:=AskFileName(self,self:Heading,"Print to file","*."+self:Extension,self:Extension)
 		
 		IF self:ToFileFS==null_object
-			self:lPrintOk := FALSE 
+			self:lPrintOk := FALSE
+			return false 
 		ENDIF
 		IF self:Extension=="xls" .and. self:Destination="File"
 			self:lXls:=true
@@ -2880,7 +2882,9 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	IF Empty(self:Pagetext)
 		self:Pagetext:=self:oLan:RGet('Page',,"!")
 	ENDIF
-  	SetDecimalSep(Asc(DecSeparator))   // set decimal separator to local value
+	if self:lPrintOk
+	  	SetDecimalSep(Asc(DecSeparator))   // set decimal separator to local value
+	endif
 
 	
 	SELF:EndDialog()
