@@ -452,7 +452,9 @@ METHOD OKButton( ) CLASS EditSubscription
 		ENDIF
 	ENDIF
 	// 		mCurRek:=oSub:accid 
-	// 		mCurCLN:=oSub:personid   
+	// 		mCurCLN:=oSub:personid 
+	SetDecimalSep(Asc('.'))  // to be sure
+	SQLStatement{"start transaction",oConn}:execute()
 	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
@@ -470,17 +472,26 @@ METHOD OKButton( ) CLASS EditSubscription
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
+	if !Empty(oStmnt:status)
+		ErrorBox{self,self:oLan:WGet("Could not update subscription")}:show()
+		SQLStatement{"rollback",oConn}:execute()
+		LogEvent(self,"Could not update subscription"+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+cStatement,"logerrors")
+		return
+	endif
 	//		// change corresponding due amounts:
 	// 		if !self:lNew .and.(!self:mCurRek== self:mRek .or. !self:mCurCLN==self:mCLN) 
 	// 			SQLStatement{"update dueamount set accid="+self:mRek+",persid="+self:mCLN+" where accid="+self:mCurRek+" and persid="+self:mCurCLN+" and AmountInvoice>AmountRecvd",oConn}:Execute() 
-	// 		endif
-	if Empty(oStmnt:status) .and. oStmnt:NumSuccessfulRows>0
+	// 		endif 
+	SQLStatement{"commit",oConn}:execute()
+	if oStmnt:NumSuccessfulRows>0
 		self:oCaller:oSub:Execute()
 		if self:lNew
 			self:oCaller:goTop()
 		else
 			self:oCaller:goto(self:nCurRec)
 		endif
+	else
+		WarningBox{self,self:oLan:WGet("editing subscription"),self:oLan:WGet("Nothing changed")}:show()
 	endif
 	self:EndWindow()
 	return nil
