@@ -194,7 +194,7 @@ METHOD FilePrint CLASS MemberBrowser
 			PadC(iif(oSel:co=="M",oSel:Grade,"Entity"),6)+cTab+PadC(iif(Empty(oSel:OFFCRATE),"",oSel:OFFCRATE),10)+cTab+;
 			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+;
 			cTab,cTab)+Str(iif(Empty(oSel:budget),0,oSel:budget),11,0)+cTab+;
-			Pad(AllTrim(iif(Empty(oSel:assacc),"",oSel:assacc)),37) +;
+			iif(oReport:Extension #"xls",Pad(AllTrim(iif(Empty(oSel:assacc),"",oSel:assacc)),37),iif(Empty(oSel:assacc),"",oSel:assacc)) +;
 			iif(oReport:Extension #"xls" .or. oSel:HOMEPP#SEntity,"",cTab+iif(Empty(oSel:Distr),"",oSel:Distr)),kopregels) 
 		oSel:Skip()
 	ENDDO
