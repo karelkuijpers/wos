@@ -2728,11 +2728,7 @@ METHOD CancelButton() CLASS PrintDialog
 METHOD CopyPers(oPerson) CLASS PrintDialog
 	* Copy of array with record-id in database Person (oPers)
 	LOCAL i AS INT
-// 	SELF:oPrintJob:aFifo := {}
-	SELF:oPrintJob:oPers := oPerson
-// 	FOR i = 1 TO Len(aNN)
-// 		AAdd(SELF:oPrintJob:aFifo,aNN[i,2])
-// 	NEXT
+	self:oPrintJob:oPers := oPerson
 	RETURN TRUE
 
 METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS PrintDialog
@@ -3330,7 +3326,7 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 	ENDIF
 return
 METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
-	* Printing of buffer self:aFiFo or buffer aNN with address-record-ids
+	* Printing of buffer self:aFiFo with address-record-ids
 	* self:aFiFo can has two kinds of contents
 	*	-	flat text lines to be printed as fifo-buffer,
 	*	-	record-id pointing to persons of which addresslabels has to be printed
@@ -3388,7 +3384,7 @@ METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
 				IF Empty(self:oRange)
 					RETURN TRUE
 				ELSEIF self:nCurPage > self:oRange:Max
-					self:lLblFinish := FALSE  // All pages have not been printed yet
+					self:lLblFinish := true  // All pages have not been printed yet
 					EXIT
 				ELSEIF self:nCurPage > self:oRange:Min
 					RETURN TRUE
@@ -3435,7 +3431,6 @@ METHOD Stckrprt(nDisp as int,iY as int) as void pascal CLASS PrintJob
 
 
 ************** PARAMETERS  ***********************
-* aNN   		: array with recno's of persons to print from left to right
 *             with  displacement nDisp in array
 * iY	      : current Y-coordinate
 LOCAL m_rectel:=0
@@ -3444,16 +3439,10 @@ LOCAL oPrintFont := SELF:font AS font
 LOCAL oSize AS Dimension
 LOCAL i,j as int
 LOCAL iX AS INT
-// IF Empty(aNN[nDisp])
-//    RETURN
-// ENDIF
 if self:oPers:RECCOUNT<1
 	return
 endif
 FOR m_rectel = nDisp to Min(nDisp+self:nLblColCnt-1,self:oPers:RECCOUNT)
-//    IF Empty(aNN[m_rectel])   && stop when no more recno's
-//       EXIT
-//    ENDIF 
 	if self:oPers:EoF
 		exit
 	endif
