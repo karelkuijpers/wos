@@ -2659,10 +2659,10 @@ ENDIF
 *	Vul evenveel brieven als maximumrange:
 IF !Empty(oRange)
 	IF Empty(oRange:Max)
-		oRange:Max:=Len(aNN)
+		oRange:Max:=self:oDB:RECCOUNT
 	ENDIF
 ELSE
-	oRange:=Range{1,Len(aNN)}
+	oRange:=Range{1,self:oDB:RECCOUNT}
 ENDIF
 aantal:=oRange:max-oRange:Min+1
 IF lAcceptNorway
@@ -3193,13 +3193,14 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			IF .not.oReport:lPrintOk
 				RETURN FALSE
 			ENDIF
-			nTo:=oReport:oRange:Max
+			nTo:=oReport:oRange:Max 
+// 			oDB:GoTo(oReport:oRange:Min)
 			self:FillLetters(oLtrFrm:brief,oReport:oRange,lAcceptNorway,oReport)
 			oReport:prstart()
 			lReady := oReport:oPrintJob:lLblFinish
 			oReport:prstop()
 			IF lReady
-				IF oReport:oRange:Max<Len(aNN)
+				IF oReport:oRange:Max<self:oDB:RECCOUNT
 					lReady:=FALSE
 				ENDIF
 			ENDIF
@@ -3247,7 +3248,6 @@ local oReport as PrintDialog
 	oSel:GoTop()
 // 	fSecStart:=Seconds()
 	do while !oSel:Eof
-		// 	oPers:Goto(aNN[i,2])
 		IF nType = 1
 			self:NAW_Compact(@nRow,@nPage, kopregels,oReport,oSel)
 		ELSE
@@ -3329,7 +3329,6 @@ METHOD Show() CLASS SelPers
 
 	self:selx_Ok:=true 
 	* bepaal gewenste selectie:
-	aNN := {}
 	IF cType=="REMINDERS".or.cType=="DONATIONS".or.cType=="SUBSCRIPTIONS"
 		self:selx_keus1 := 2
 	ELSEIF cType=="STANDARD GIVERS"
