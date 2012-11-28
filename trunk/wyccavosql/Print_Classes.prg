@@ -2115,7 +2115,7 @@ METHOD OKButton( ) CLASS LetterFormat
 	SetRTRegInt( cRoot, "brfrega", self:brfrega )
 	SetRTRegInt( cRoot, "brfCola", self:brfCola )
 	SetRTRegInt( cRoot, "brfColt", self:brfColt )
-	brief:=MemoRead(self:oDCTemplates:VALUE)
+	brief:=MemoRead(CurPath+"\"+self:oDCTemplates:VALUE)
 	SetRTRegString( cRoot, "LetterName", self:oDCTemplates:TextValue)
 
 	SELF:EndWindow()
@@ -3053,6 +3053,7 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 		// 		oPrintShow:Show(SHOWZOOMED)
 		
 		RetFileName:= "2"
+		self:oPrintJob:lLblFinish:=true
 		RETURN oPrintShow
 	ELSE
 		*		write to file
