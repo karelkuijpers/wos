@@ -751,7 +751,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 	LOCAL oMyFileSpec1,oMyFileSpec2,oDBFileSpec1 as FileSpec
 	LOCAL oReg as CLASS_HKCU
-	LOCAL lCopy as LOGIC
+	LOCAL lCopyPP,lCopyIPC,lCopyCur as LOGIC
 	LOCAL cWorkdir := WorkDir() as STRING
 	Local CurVersion as string ,DBVers, PrgVers as float
 	Local aDir,aLocal as array
@@ -766,33 +766,105 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	// turn off strict mode:
-//	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
-/*	if !self:lNewDb
-		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
-			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
-			if Empty(oSel:status).and. oSel:RecCount>0
-				self:FirstOfDay:=FALSE
-			else	
-				self:FirstOfDay:=true
-				if !Empty(oSel:status)
-					self:lNewDb:=true    // apparently partly new database which need to be converted
+	//	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
+	/*	if !self:lNewDb
+	if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
+	oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
+	if Empty(oSel:status).and. oSel:RecCount>0
+	self:FirstOfDay:=FALSE
+	else	
+	self:FirstOfDay:=true
+	if !Empty(oSel:status)
+	self:lNewDb:=true    // apparently partly new database which need to be converted
+	endif
+	endif
+	else
+	self:lNewDb:=true    // apparently partly new database which need to be converted			
+	endif
+	if !self:lNewDb .and.SqlSelect{"show tables like 'sysparms'",oConn}:RecCount<1
+	self:lNewDb:=true
+	endif
+	ENDIF */
+	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1) 
+	RddSetDefault("DBFCDX") 
+
+	if self:FirstOfDay
+		// check if new ppcodes, ipcaccounts or cuurencylist should be imported:
+		oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
+		lCopyPP:=false
+		IF oDBFileSpec1:Find()
+			IF oDBFileSpec1:Size>4096  // not empty? 
+				oSel:=SqlSelect{"show table status like 'ppcodes'",oConn}
+				if oSel:RecCount=1
+					if ConI(oSel:rows) > 0
+						if iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
+							lCopyPP:=true
+						endif					
+					else
+						lCopyPP:=true
+					endif
 				endif
 			endif
-		else
-			self:lNewDb:=true    // apparently partly new database which need to be converted			
+			if lCopyPP
+				SQLStatement{"drop table ppcodes",oConn}:Execute()
+			endif
+		endif 
+		oDBFileSpec1:=DbFileSpec{cWorkdir+"\CURRENCYLIST.DBF"}
+		lCopyCur:=false
+		IF oDBFileSpec1:Find()
+			IF oDBFileSpec1:Size>4096  // not empty? 
+				oSel:=SqlSelect{"show table status like 'currencylist'",oConn}
+				if oSel:RecCount=1
+					if ConI(oSel:rows) > 0
+						if  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
+							lCopyCur:=true
+						endif					
+					else
+						lCopyCur:=true
+					endif
+				endif
+			endif
+			if lCopyCur
+				SQLStatement{"drop table currencylist",oConn}:Execute()
+			endif
 		endif
-		if !self:lNewDb .and.SqlSelect{"show tables like 'sysparms'",oConn}:RecCount<1
-			self:lNewDb:=true
+		oDBFileSpec1:=DbFileSpec{cWorkdir+"\IPCACCOUNTS.DBF"}
+		lCopyIPC:=false
+		IF oDBFileSpec1:Find()
+			IF oDBFileSpec1:Size>4096  // not empty? 
+				oSel:=SqlSelect{"show table status like 'ipcaccounts'",oConn}
+				if oSel:RecCount=1
+					if Val(oSel:FIELDGET(#rows)) > 0
+						if SToD(StrTran(oSel:Create_time,"-","")) < oDBFileSpec1:DateChanged
+							lCopyIPC:=true
+						endif					
+					else
+						lCopyIPC:=true
+					endif
+				endif
+			endif
+			if lCopyIPC
+				SQLStatement{"drop table ipcaccounts",oConn}:Execute()
+			endif
 		endif
-	ENDIF */
-	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1)
-	if self:FirstOfDay.or.self:lNewDb 
-		self:InitializeDB() 
+	endif
+	if self:FirstOfDay.or.self:lNewDb                                                                                
+		self:InitializeDB()
+		// fill eventually dropped tables with new values:
+		if lCopyPP 
+			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{}) 
+		endif
+		if lCopyCur
+			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
+		endif 
+		if lCopyIPC
+			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
+		endif
+
 		// reset employee online:
 		oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
 		oStmnt:Execute()  
 	endif
-	RddSetDefault("DBFCDX") 
 
 	// copy helpfile to c because it cannot read from a server:
 	oMyFileSpec1:=FileSpec{cWorkdir+"\WOSHlp.chm"}
@@ -859,84 +931,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 	cStatement:=""
 	IF FirstOfDay
-		// import PPCodes.dbf from folder with .exe to folder with database:
-// 		IF !cWorkdir == CurPath
 
-			oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
-			lCopy:=false
-			IF oDBFileSpec1:Find()
-				IF oDBFileSpec1:Size>4096  // not empty? 
-					oSel:=SQLSelect{"show table status like 'ppcodes'",oConn}
-					if oSel:RecCount=1
-						if ConI(oSel:rows) > 0
-							if !Empty(oSel:Update_Time)
-								if iif(IsDate(oSel:Update_Time),oSel:Update_Time,SToD(StrTran(oSel:Update_Time,"-",""))) < oDBFileSpec1:DateChanged
-									lCopy:=true
-								endif
-							elseif iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
-								lCopy:=true
-							endif					
-						else
-							lCopy:=true
-						endif
-					endif
-				endif
-				if lCopy
-					SQLStatement{"delete from ppcodes",oConn}:Execute()
-					self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
-				endif
-			endif 
-			// import CURRENCYLIST.dbf from folder with .exe to folder with database:
-			oDBFileSpec1:=DbFileSpec{cWorkdir+"\CURRENCYLIST.DBF"}
-			lCopy:=false
-			IF oDBFileSpec1:Find()
-				IF oDBFileSpec1:Size>4096  // not empty? 
-					oSel:=SQLSelect{"show table status like 'currencylist'",oConn}
-					if oSel:RecCount=1
-						if ConI(oSel:rows) > 0
-							if !Empty(oSel:Update_Time)
-								if iif(IsDate(oSel:Update_Time),oSel:Update_Time,SToD(StrTran(oSel:Update_Time,"-",""))) < oDBFileSpec1:DateChanged
-									lCopy:=true
-								endif
-							elseif  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
-								lCopy:=true
-							endif					
-						else
-							lCopy:=true
-						endif
-					endif
-				endif
-				if lCopy
-					SQLStatement{"delete from currencylist",oConn}:Execute()
-					self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
-				endif
-			endif
-			// import IPCAccounts.dbf from folder with .exe to folder with database:
-			oDBFileSpec1:=DbFileSpec{cWorkdir+"\IPCACCOUNTS.DBF"}
-			lCopy:=false
-			IF oDBFileSpec1:Find()
-				IF oDBFileSpec1:Size>4096  // not empty? 
-					oSel:=SQLSelect{"show table status like 'ipcaccounts'",oConn}
-					if oSel:RecCount=1
-						if Val(oSel:FIELDGET(#rows)) > 0
-							if !Empty(oSel:Update_Time)
-								if SToD(StrTran(oSel:Update_Time,"-","")) < oDBFileSpec1:DateChanged
-									lCopy:=true
-								endif
-							elseif SToD(StrTran(oSel:Create_time,"-","")) < oDBFileSpec1:DateChanged
-								lCopy:=true
-							endif					
-						else
-							lCopy:=true
-						endif
-					endif
-				endif
-				if lCopy
-					SQLStatement{"delete from ipcaccounts",oConn}:Execute()
-					self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})
-				endif
-			endif
-// 		endif
+		// 		endif
 		// Initialize sysparms:
 		IF oSys:RecCount=0
 			if SqlSelect{"select united_ara,aed from currencylist",oConn}:RecCount<1
