@@ -2338,8 +2338,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	LOCAL i,j,k, n as int
 	LOCAL aMapping, aExpF:={}, aPerF as ARRAY
 	LOCAL oSpecPers as SelPersExport
-	LOCAL mCodH as USUAL, cCodOms, cCap as STRING
-	LOCAL aStreet:={} as ARRAY
+	LOCAL cCodOms, cCap as STRING
+	LOCAL aStreet:={},aCod:={} as ARRAY
 	LOCAL lAppend, lDistinct, lDestination, lPropXtr,lgrDat  as LOGIC
 	LOCAL cLine,lstnm as STRING
 	LOCAL ToFileFS as Filespec
@@ -2504,12 +2504,12 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 					* Determine mailcodes:
 					cCodOms:=""
 					IF .not.Empty(oSel:mailingcodes)
-						for n:=1 to 28 step 3
-							mCodH  := SubStr(oSel:mailingcodes,n,2)
-							IF Empty(mCodH)
+						aCod:=Split(oSel:mailingcodes)  
+						for n:=1 to Len(aCod)
+							IF Empty(aCod[n])
 								loop
 							else
-								IF (k:=AScan(pers_codes,{|x|x[2]==mCodH}))>0
+								IF (k:=AScan(pers_codes,{|x|x[2]==aCod[n]}))>0
 									IF Empty(cCodOms)
 										cCodOms:=pers_codes[k,1]
 									else
@@ -2534,12 +2534,12 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 					* Determine mailcodes:
 					cCodOms:=""
 					IF .not.Empty(oSel:mailingcodes)
-						for n:=1 to 28 step 3
-							mCodH  := SubStr(oSel:mailingcodes,n,2)
-							IF Empty(mCodH)
-								exit
+						aCod:=Split(oSel:mailingcodes)  
+						for n:=1 to Len(aCod)
+							IF Empty(aCod[n])
+								loop
 							else
-								IF (k:=AScan(mail_abrv,{|x|x[2]==mCodH}))>0
+								IF (k:=AScan(mail_abrv,{|x|x[2]==aCod[n]}))>0
 									IF Empty(cCodOms)
 										cCodOms:=mail_abrv[k,1]
 									else
@@ -3139,7 +3139,6 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	LOCAL nTo AS INT
 	local oReport as PrintDialog 
 	local oSel as SQLSelect 
-	local CurLetter as string
 	local cGroup,cHaving,cSQLString,cGrFields as string 
 	
 	self:splaats:=SQLSelect{"select cityletter from sysparms",oConn}:cityletter
@@ -3182,10 +3181,6 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 			IF oLtrFrm:lCancel
 				RETURN FALSE
 			ENDIF
-			if !CurLetter== oLtrFrm:brief
-				// select persons with their Data
-				
-			endif
 			brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
 			oReport := PrintDialog{oParent,cTitel,,brfWidth}
 			oReport:InitRange(Range{nTo+1,self:oDB:RECCOUNT})
