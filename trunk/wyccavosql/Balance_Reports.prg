@@ -13,6 +13,35 @@ STATIC DEFINE ASKUPLD_CANCELBUTTON := 100
 STATIC DEFINE ASKUPLD_FIXEDTEXT2 := 103 
 STATIC DEFINE ASKUPLD_OKBUTTON := 101 
 STATIC DEFINE ASKUPLD_TEXTQESTION := 102 
+RESOURCE BalanceReport DIALOGEX  38, 35, 371, 225
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Year under review:", BALANCEREPORT_FIXEDTEXT1, "Static", WS_CHILD, 16, 14, 70, 12
+	CONTROL	"Start with month:", BALANCEREPORT_FIXEDTEXT2, "Static", WS_CHILD, 16, 36, 53, 12
+	CONTROL	"", BALANCEREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 85, 13, 88, 72
+	CONTROL	"", BALANCEREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 35, 33, 12, WS_EX_CLIENTEDGE
+	CONTROL	"End with month:", BALANCEREPORT_FIXEDTEXT3, "Static", WS_CHILD, 16, 55, 53, 12
+	CONTROL	"", BALANCEREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 54, 32, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", BALANCEREPORT_MBALNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 81, 93, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", BALANCEREPORT_BALBUTTON, "Button", WS_CHILD, 176, 81, 16, 13
+	CONTROL	"With details of subitems?", BALANCEREPORT_WHATDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 81, 114, 12
+	CONTROL	"", BALANCEREPORT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 116, 93, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", BALANCEREPORT_DEPBUTTON, "Button", WS_CHILD, 176, 116, 16, 13
+	CONTROL	"With details of subdepartments?", BALANCEREPORT_WHODETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 116, 120, 12
+	CONTROL	"With Numbers of all items", BALANCEREPORT_NUMBERS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 148, 97, 12
+	CONTROL	"With explanation", BALANCEREPORT_IND_EXPLANATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 166, 80, 11
+	CONTROL	"Condense", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 80, 11
+	CONTROL	"With account statements", BALANCEREPORT_IND_ACCSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 200, 99, 11
+	CONTROL	"OK", BALANCEREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 306, 5, 54, 12
+	CONTROL	"Cancel", BALANCEREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 307, 29, 53, 12
+	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 83, 40, 13
+	CONTROL	"Balance Items:", BALANCEREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 72, 350, 29
+	CONTROL	"Departments:", BALANCEREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 107, 350, 29
+	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 118, 40, 13
+	CONTROL	"Options", BALANCEREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 70, 139, 116, 79
+END
+
 CLASS BalanceReport INHERIT DataWindowMine 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -82,35 +111,6 @@ protect cNegative,cPositive as string
 
 
 declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading,BalFishTot
-RESOURCE BalanceReport DIALOGEX  38, 35, 371, 225
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Year under review:", BALANCEREPORT_FIXEDTEXT1, "Static", WS_CHILD, 16, 14, 70, 12
-	CONTROL	"Start with month:", BALANCEREPORT_FIXEDTEXT2, "Static", WS_CHILD, 16, 36, 53, 12
-	CONTROL	"", BALANCEREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 85, 13, 88, 72
-	CONTROL	"", BALANCEREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 35, 33, 12, WS_EX_CLIENTEDGE
-	CONTROL	"End with month:", BALANCEREPORT_FIXEDTEXT3, "Static", WS_CHILD, 16, 55, 53, 12
-	CONTROL	"", BALANCEREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 54, 32, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", BALANCEREPORT_MBALNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 81, 93, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", BALANCEREPORT_BALBUTTON, "Button", WS_CHILD, 176, 81, 16, 13
-	CONTROL	"With details of subitems?", BALANCEREPORT_WHATDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 81, 114, 12
-	CONTROL	"", BALANCEREPORT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 116, 93, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", BALANCEREPORT_DEPBUTTON, "Button", WS_CHILD, 176, 116, 16, 13
-	CONTROL	"With details of subdepartments?", BALANCEREPORT_WHODETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 116, 120, 12
-	CONTROL	"With Numbers of all items", BALANCEREPORT_NUMBERS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 148, 97, 12
-	CONTROL	"With explanation", BALANCEREPORT_IND_EXPLANATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 166, 80, 11
-	CONTROL	"Condense", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 80, 11
-	CONTROL	"With account statements", BALANCEREPORT_IND_ACCSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 200, 99, 11
-	CONTROL	"OK", BALANCEREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 306, 5, 54, 12
-	CONTROL	"Cancel", BALANCEREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 307, 29, 53, 12
-	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 83, 40, 13
-	CONTROL	"Balance Items:", BALANCEREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 72, 350, 29
-	CONTROL	"Departments:", BALANCEREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 107, 350, 29
-	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 118, 40, 13
-	CONTROL	"Options", BALANCEREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 70, 139, 116, 79
-END
-
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array, level as int,r_indmain ref array,r_parentid ref array,r_balid ref array,r_balnbr ref array,r_cat ref array,r_heading ref array,r_footer ref array) as int  CLASS BalanceReport
 * Find subbalance items and add to arrays withbalance Items
 	LOCAL nChildRec, iWidth, p	AS INT
@@ -322,7 +322,7 @@ if self:oReport:lRTF
 // 	END
 	aBalYr:=GetBalYear(Val(SubStr(self:BalYears,1,4)),Val(SubStr(self:BalYears,5,2)))
 	self:YEARSTART:=aBalYr[1]
-	BalYear:=YEARSTART
+	BalYear:=self:YEARSTART
 	BalMonth:= aBalYr[2]
 	self:YEAREND:=aBalYr[3]
 	IF BalMonth>aBalYr[4] // spanning two calendar years?
@@ -1850,36 +1850,6 @@ STATIC DEFINE CONFIRMSEND_CANCELBUTTON := 101
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT1 := 102 
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT2 := 103 
 STATIC DEFINE CONFIRMSEND_OKBUTTON := 100 
-RESOURCE DeptReport DIALOGEX  26, 24, 404, 227
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
-	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
-	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
-	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
-	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 195, 53, 13
-	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 22, 125, 170, WS_EX_CLIENTEDGE
-	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
-	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
-	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
-	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
-	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
-	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
-	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
-	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
-	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 164, 196, 62
-	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 176, 181, 11
-	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 192, 181, 11
-	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 208, 181, 11
-	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
-	CONTROL	"", DEPTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 11, 64, 9
-	CONTROL	"Show details of gifts", DEPTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 140, 80, 11
-END
-
 CLASS DeptReport INHERIT DataWindowMine 
 
 	PROTECT oDCFromDep AS SINGLELINEEDIT
@@ -1939,6 +1909,36 @@ PROTECT mDepartment AS STRING
 
 	declare method RegDepartment,DepartmentStmntPrint
 	
+RESOURCE DeptReport DIALOGEX  26, 24, 404, 227
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
+	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
+	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
+	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
+	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 195, 53, 13
+	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 22, 125, 170, WS_EX_CLIENTEDGE
+	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
+	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
+	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
+	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
+	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
+	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
+	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
+	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
+	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 164, 196, 62
+	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 176, 181, 11
+	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 192, 181, 11
+	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 208, 181, 11
+	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
+	CONTROL	"", DEPTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 11, 64, 9
+	CONTROL	"Show details of gifts", DEPTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 140, 80, 11
+END
+
 ACCESS BalYears() CLASS DeptReport
 RETURN SELF:FieldGet(#BalYears)
 
@@ -2713,6 +2713,45 @@ STATIC DEFINE GETEXCHRATE_MEXCHRATE := 100
 STATIC DEFINE GETEXCHRATE_OKBUTTON := 102 
 STATIC DEFINE GETEXCHRATE_ROETEXT1 := 101 
 STATIC DEFINE GETEXCHRATE_ROETEXT2 := 104 
+RESOURCE GiftReport DIALOGEX  58, 59, 398, 279
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
+	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
+	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
+	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
+	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
+	CONTROL	"Year:", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 96, 28, 12
+	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 229, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_REPORTYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 96, 34, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 96, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 176, 96, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
+	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
+	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
+	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
+	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
+	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
+	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 217, 196, 55
+	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 127, 53, 11
+	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 141, 48, 11
+	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 118, 70, 38
+	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 166, 121, 11
+	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 177, 92, 11
+	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
+	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 226, 180, 12
+	CONTROL	"From month:", GIFTREPORT_FIXEDTEXT8, "Static", WS_CHILD, 80, 96, 48, 12
+	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 241, 181, 12
+	CONTROL	"till:", GIFTREPORT_FIXEDTEXT9, "Static", WS_CHILD, 156, 96, 16, 12
+	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 256, 181, 12
+	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 262, 53, 12
+	CONTROL	"Show details of gifts", GIFTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 188, 80, 11
+	CONTROL	"html format", GIFTREPORT_HTML_FORMAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 12, 200, 80, 11
+END
+
 CLASS GiftReport INHERIT DataWindowMine 
 
 	PROTECT oDCHomeBox AS CHECKBOX
@@ -2747,6 +2786,7 @@ CLASS GiftReport INHERIT DataWindowMine
 	PROTECT oCCSeparateFilesMail AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
 	PROTECT oDCGiftDetails AS CHECKBOX
+	PROTECT oDChtml_format AS CHECKBOX
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	INSTANCE HomeBox
@@ -2755,7 +2795,6 @@ CLASS GiftReport INHERIT DataWindowMine
 	INSTANCE FromAccount
 	INSTANCE ToAccount
 	INSTANCE SubSet
-	INSTANCE Memberstmnt
 	INSTANCE Footnotes
 	INSTANCE mailcontact
 	PROTECT PeilMax, MaxJaar,MinJaar, StartJaar as int
@@ -2769,50 +2808,16 @@ CLASS GiftReport INHERIT DataWindowMine
 	PROTECT SendingMethod as STRING
 	PROTECT oGftRpt as GiftsReport
 	PROTECT CalcYear, CalcMonthStart,CalcMonthEnd as int
-	EXPORT BeginReport:=FALSE as LOGIC
-	
-	declare method CheckAccInRange,GiftsPrint
+	EXPORT BeginReport:=FALSE as LOGIC 
+	protect aPPCode:={} as array 
+	protect DecFrac,DecFrac1 as int 
+	protect aMailMember:={} as ARRAY    // array with files to be emailed: {{mbrid,membername,FileName,persid member,persid contact}
+
+
+	declare method CheckAccInRange,GiftsPrint,GiftsYearOverview,MemberStatementPrint
 
 	
 
-
-RESOURCE GiftReport DIALOGEX  58, 59, 398, 267
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
-	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
-	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
-	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
-	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
-	CONTROL	"Year:", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 96, 28, 12
-	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 215, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_REPORTYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 96, 34, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 176, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
-	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
-	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
-	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
-	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
-	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
-	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 210, 196, 55
-	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 127, 53, 11
-	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 141, 48, 11
-	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 118, 70, 38
-	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 166, 121, 11
-	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 177, 92, 11
-	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
-	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 219, 180, 12
-	CONTROL	"From month:", GIFTREPORT_FIXEDTEXT8, "Static", WS_CHILD, 80, 96, 48, 12
-	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 233, 181, 13
-	CONTROL	"till:", GIFTREPORT_FIXEDTEXT9, "Static", WS_CHILD, 156, 96, 16, 12
-	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 249, 181, 12
-	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 243, 53, 13
-	CONTROL	"Show details of gifts", GIFTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 188, 80, 11
-END
 
 METHOD AccFil() CLASS GiftReport
 	LOCAL i AS INT
@@ -2852,15 +2857,8 @@ METHOD ButtonClick(oControlEvent) CLASS GiftReport
 	if !oControl:NameSym=#SkipInactive
 		if FromAccount==ToAccount
 			self:SkipInactive:=false
-				self:oDCSkipInactive:ToolTipText:="Suppress reports with no financial transaction in All Months"
 		else
-// 			if self:Memberstmnt
-				self:SkipInactive:=false 
-				self:oDCSkipInactive:ToolTipText:="Suppress reports with no financial transaction in All Months"
-// 			else
-// 				self:SkipInactive:=true
-// 				self:oDCSkipInactive:ToolTipText:="Suppress reports with no financial transaction in Last Month"
-// 			endif
+			self:SkipInactive:=true
 		endif
 	endif
 
@@ -3027,6 +3025,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	ENDIF
 	lPrintFile:=(self:oReport:Destination=="File")
 	cFileNameBasic:=self:oReport:ToFileFS:FileName
+	self:oReport:ToFileFS:Extension:='doc' 
 
 	IF self:SendingMethod=="SeperateFileMail"
 		(oEMLFrm := eMailFormat{oParent}):Show()
@@ -3035,12 +3034,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		ENDIF
 	ENDIF
 
-	self:Pointer := Pointer{POINTERHOURGLASS}
-
-	IF self:oGftRpt == null_object
-		self:oGftRpt:=GiftsReport{}
-		self:oGftRpt:Country:=self:Country
-	ENDIF		
 	oMBal:=Balances{}
 	oPPcd := SqlSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
 	
@@ -3050,8 +3043,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 
 	startdate:=SToD(Str(ReportYear,4)+'0101') 
 	enddate:=SToD(Str(ReportYear,4)+Strzero(ReportMonth,2)+strzero(MonthEnd(ReportMonth,ReportYear),2))
-	self:Pointer := Pointer{POINTERHOURGLASS}
-	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
 	nRow := 0
 	cPeriod:=Str(ReportYear,4)+Space(1)+iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")
 	IF self:SendingMethod=="SeperateFileMail"
@@ -3073,22 +3064,33 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	aAcc:=self:oDCSubSet:GetSelectedItems()
 	if Len(aAcc)<1
 		return
-	endif
-
+	endif 
+	// select all account (in case of htmlformat ingore memberdepartmenst (they are processen in MemberStatementPrint):
 	oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,a.currency,a.giftalwd,b.category,m.persid,m.householdid,m.homepp,m.contact,m.RPTDEST,m.depid,"+;
 		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.lastname as contactlstname,pc.email as contactemail"+;
 		",pm.lastname,pm.email "+;
 		" from balanceitem b,account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=d.depid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
-		" and a.accid in ("+Implode(aAcc,"','")+" ) group by a.accid order by "+iif(self:SendingMethod="SeperateFile","a.accnumber","a.accid"),oConn}
-	if oAcc:RecCount>1 
+		" and a.accid in ("+Implode(aAcc,"','")+" )"+iif(self:html_format,' and m.depid IS NULL','')+" group by a.accid order by "+iif(self:SendingMethod="SeperateFile","a.accnumber","a.accid"),oConn}
+	oAcc:Execute()
+	if oAcc:RecCount<1
+		return   // nothing to print
+	endif
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:STATUSMESSAGE(self:oLan:WGet("Collecting data for the report, please wait")+"...")
+	if oAcc:RecCount>1
 		oPro:=ProgressPer{,oMainWindow}
 		oPro:Caption:="Printing giftreports and member statements"
 		oPro:SetRange(1,oAcc:RecCount+1)
 		oPro:SetUnit(1)
-		oPro:Show()
+		oPro:Show() 
 	endif
+
+	IF self:oGftRpt == null_object
+		self:oGftRpt:=GiftsReport{}
+		self:oGftRpt:Country:=self:Country
+	ENDIF		
 	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description'+;
 		+iif(self:SendingMethod="SeperateFile",",a.accnumber",'')+;
 		' from transaction t'+iif(self:SendingMethod="SeperateFile",', account a where a.accid=t.accid and',' where')+;
@@ -3135,12 +3137,12 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			oDepStmnt:MonthEnd:=ReportMonth
 			oDepStmnt:MONTHSTART:=ASsStart
 			aBal:=GetBalYear(ReportYear,ReportMonth)
-			oDepStmnt:BalYears:=str(aBal[1],4,0)+strzero(aBal[2],2,0)
+			oDepStmnt:BalYears:=Str(aBal[1],4,0)+StrZero(aBal[2],2,0)
 			oDepStmnt:SendingMethod:=self:SendingMethod
 			oDepStmnt:Footnotes:=self:Footnotes
 			oDepStmnt:oReport:=self:oReport 
 			oDepStmnt:GiftDetails:=self:GiftDetails
-			aDep:={oAcc:DepId}
+			aDep:={oAcc:depid}
 			self:oReport:ToFileFS:FileName:= cFileNameBasic
 			oDepStmnt:mailsubject:=oLan:RGet('Giftreport')  
 			oDepStmnt:DepartmentStmntPrint(aDep,@nRow,@nPage)
@@ -3222,28 +3224,28 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			// Print gifts matrix:
 			nRow:=0  // force page skip
 			oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,aAssmntAmount,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,me_hbn,@nRow,@nPage)
-			IF lPrintFile.and.!Empty(self:SendingMethod)
+			if lPrintFile.and.!Empty(self:SendingMethod)
 				// separate files:
 				cFileName:=self:oReport:prstart() // save separate file
 			endif 
 			*	
 			*	Proces e-mail:
-			IF lPrintFile.and. self:SendingMethod=="SeperateFileMail"
-				IF !Empty(oAcc:persid)  // skip funds
+			if lPrintFile.and. self:SendingMethod=="SeperateFileMail"
+				if !Empty(oAcc:persid)  // skip funds
 					aOneMember:={}          //
 					AAdd(aOneMember,{AllTrim(StrTran(oAcc:description,".",Space(1))),oAcc:persid,oAcc:email,cFileName})
-					IF !Empty(oAcc:CONTACT)
-						IF self:mailcontact .and.Empty(oAcc:RPTDEST)
+					if !Empty(oAcc:CONTACT)
+						if self:mailcontact .and.Empty(oAcc:RPTDEST)
 							AAdd(aOneMember,{2,oAcc:contactlstname,oAcc:CONTACT,oAcc:contactfullname,oAcc:contactemail})
 						ELSE
 							AAdd(aOneMember,{oAcc:RPTDEST,oAcc:contactlstname,oAcc:CONTACT,oAcc:contactfullname,oAcc:contactemail})		//Destination member statements: 0: member, 1: contact, 2: member+contact			
-						ENDIF
+						endif
 					ELSE
 						AAdd(aOneMember,{0,""})
-					ENDIF
+					endif
 					AAdd(aMailMember,aOneMember)
-				ENDIF
-			ENDIF
+				endif
+			endif
 		endif
 		oAcc:Skip()
 		Alg_taal:=myLang
@@ -3254,9 +3256,9 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		oPro:EndDialog()
 		oPro:Destroy()
 	ENDIF
-// 	IF !lPrintFile.or.!self:SendingMethod="SeperateFile"   ????
-		self:oReport:prstart()    
-// 	endif
+	// 	IF !lPrintFile.or.!self:SendingMethod="SeperateFile"   ????
+	self:oReport:prstart()    
+	// 	endif
 	IF self:SendingMethod=="SeperateFileMail"
 		oSelpers:=Selpers{self,,}
 		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
@@ -3267,22 +3269,22 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 			oRecip2:=null_object
 			// 					memberName:=StrTran(StrTran(GetFullName(aMailMember[i,1,2]),"\",""),"/","")
 			memberName:=StrTran(StrTran(aMailMember[i,1,1],"\",""),"/","")
-			IF aMailMember[i,2,1]<>1    // Destination 0: member, 1: contact, 2: member+contact
+			if aMailMember[i,2,1]<>1    // Destination 0: member, 1: contact, 2: member+contact
 				* Resolve membername:
 				oRecip1 := oMapi:ResolveName( memberName,aMailMember[i,1,2],memberName,aMailMember[i,1,3])
-				IF !IsNil(aMailMember[i,2,1]).and.!Empty(aMailMember[i,2,1])
-					IF aMailMember[i,2,1]=2
+				if !IsNil(aMailMember[i,2,1]).and.!Empty(aMailMember[i,2,1])
+					if aMailMember[i,2,1]=2
 						* Resolve contactname for cc:
 						oRecip2 := oMapi:ResolveName(aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
-					ENDIF
-				ENDIF
+					endif
+				endif
 			ELSE
 				// only contact:
 				* Resolve contactname for to:
 				oRecip1 := oMapi:ResolveName( aMailMember[i,2,2],aMailMember[i,2,3],aMailMember[i,2,4],aMailMember[i,2,5])
-			ENDIF
-			IF oRecip1 != null_object
-				IF !Empty(oEMLFrm:Template)
+			endif
+			if oRecip1 != null_object
+				if !Empty(oEMLFrm:Template)
 					oSelpers:oDB:=SQLSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
 						"attention,cast(datelastgift as date) as datelastgift from person "+;
 						"where persid='"+iif(aMailMember[i,2,1]=1,Str(aMailMember[i,2,3],-1),Str(aMailMember[i,1,2],-1))+"'",oConn} 
@@ -3290,10 +3292,14 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 				ELSE
 					mailcontent:=""
-				ENDIF
+				endif
 				oFileSpec:=FileSpec{aMailMember[i,1,4]}
-				oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+cPeriod,mailcontent)
-			ENDIF
+				if !oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+cPeriod,mailcontent)
+					Logevent(self,"Could not mail Giftreport "+cPeriod+" to "+memberName,"logerrors")
+					ErrorBox{self,"Could not mail Giftreport "+cPeriod+" to "+memberName}:Show()
+				endif
+				
+			endif
 		NEXT
 		oMapi:Close()
 	ENDIF
@@ -3306,20 +3312,78 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	// remove old giftreports:
 	aFilePF:=Directory(CurPath+"\"+self:oLan:RGet("Giftreport")+"*.doc")
 	FOR i:=1 to Len(aFilePF)
-		IF aFilePF[i,F_DATE]<(Today()-90)
+		if aFilePF[i,F_DATE]<(Today()-90)
 			oPF := MyFileSpec{aFilePF[i,F_NAME]}
-			IF oPF:FileLock()
+			if oPF:FileLock()
 				oPF:DELETE()
-			ENDIF
-		ENDIF
+			endif
+		endif
 	NEXT
 	RETURN
+METHOD GiftsYearOverview(ReportYear as int,ReportMonth as int, aGiftdata as array,aGiftsTotals as array,ptrHandle as ptr) as void pascal CLASS GiftReport
+	//	Markup of overview of givers and gifts from the beginning of a year for one destination 
+	//  aGiftdata: contains all gifts with id of giver
+	// aGiftData: {{sortkey,persid,addressblock,{amount,gc },{amount,gc },...{amount,gc }}},...
+	//                 1       2        3          4,1  4,2    5,1   5,2        12,1 12,2
+	// aGiftsTotals array with totals per GC and month : total,AG,PF,MG  
+	// uses css of  MemberStatementPrint
+	local cUpTillMonth,cMonthHd,cLine,cLine1 as string
+	local AssTot as float
+	local i,j as int
+	local aAsmntDescr:={} as array
+	* Array aAssmntAmount with 12 totalised amounts per assessment code per month:
+	* per row [1]:total, [2]:AG,  [3]:PF,  [4]:PF,  [5]: MG
+	cUpTillMonth:=Lower(oLan:RGet("UP TILL")+' '+Str(ReportYear,-1)+' '+oLan:RGet(MonthEn[ReportMonth],,"!"))
+	// print new heading
+	cMonthHd:='<th style="width:28%;border-bottom:2px solid black;">'+oLan:RGet("Giver",,"!")+'('+Str(Len(aGiftdata),-1)+')</th>' 
+	aAsmntDescr:={self:oLan:RGet("Total Gifts/Own Funds",,"!"),self:oLan:RGet("Assessable Gifts",,"!"),;
+		self:oLan:RGet("Personal Funds",,"!"),self:oLan:RGet("Member Gifts",,"!")}
+	FOR i=1 to 12
+		cMonthHd:=cMonthHd+'<th style="width:6%;">'+self:oLan:RGet(MonthEn[i],,"!")+"</th>"
+	NEXT
 
+	FWriteLineUni(ptrHandle,'<table style="border:0;width:25cm;" class="break">'+;
+		'<tr><td style="width:100%;"><h1>'+oLan:RGet("Year Overview Gifts")+'   '+cUpTillMonth+"</h1></td></tr>"+CRLF+;
+		'<tr><td style="width:100%;"><table class="grid" style="width:100%;">'+CRLF+;		
+	'<thead><tr class="columnhd">'+cMonthHd+'</tr></thead>'+CRLF+'<tbody>')  
+	// Print lines with totals: 
+	cLine1:=''
+	for i:=1 to Len(aGiftsTotals)
+		cLine:='<tr><td'+iif(i=4,' style=";border-bottom:2px solid black;"','')+'>'+aAsmntDescr[i]+'</td>'
+		for j:=1 to 12
+			cLine+='<td'+iif(i=4,' style=";border-bottom:2px solid black;"','')+'>'+Str(aGiftsTotals[i,j],-1,self:DecFrac1)+'</td>'
+		next 
+		cLine1+=cLine+'</tr>'+CRLF   // prevent too large string manupilation
+	next 
+	FWriteLineUni(ptrHandle,cLine1+CRLF)
+	//	Print gift lines:
+	cLine1:=''
+	for i:=1 to Len(aGiftdata) 
+		cLine:='<tr><td style="page-break-inside: avoid;position: relative;">'+aGiftdata[i,3]+'</td>'
+		for j:=4 to Len(aGiftdata[i])
+			cLine+='<td style="text-align:right;">'+aGiftdata[i,j,2]+'<br>'+Str(aGiftdata[i,j,1],-1,self:DecFrac)+'</td>'
+		next
+		cLine1+=cLine+'</tr>'+CRLF    // prevent too large string manupilation
+	next
+	if !Empty(cLine1)
+		FWriteLineUni(ptrHandle,cLine1)
+	endif
+	FWriteLineUni(ptrHandle,'</tbody></table></td></tr></table>')
+
+
+	RETURN
 ACCESS HomeBox() CLASS GiftReport
 RETURN SELF:FieldGet(#HomeBox)
 
 ASSIGN HomeBox(uValue) CLASS GiftReport
 SELF:FieldPut(#HomeBox, uValue)
+RETURN uValue
+
+ACCESS html_format() CLASS GiftReport
+RETURN SELF:FieldGet(#html_format)
+
+ASSIGN html_format(uValue) CLASS GiftReport
+SELF:FieldPut(#html_format, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport 
@@ -3404,7 +3468,7 @@ oDCmailcontact := CheckBox{SELF,ResourceID{GIFTREPORT_MAILCONTACT,_GetInst()}}
 oDCmailcontact:HyperLabel := HyperLabel{#mailcontact,"eMail also to contact person",NULL_STRING,NULL_STRING}
 
 oDCSkipInactive := CheckBox{SELF,ResourceID{GIFTREPORT_SKIPINACTIVE,_GetInst()}}
-oDCSkipInactive:HyperLabel := HyperLabel{#SkipInactive,"Skip inactive accounts","Suppress reports with no financial transaction in Last/All Months",NULL_STRING}
+oDCSkipInactive:HyperLabel := HyperLabel{#SkipInactive,"Skip inactive accounts","Suppress reports with no financial transaction in specified months",NULL_STRING}
 oDCSkipInactive:UseHLforToolTip := True
 
 oDCSelectedCnt := FixedText{SELF,ResourceID{GIFTREPORT_SELECTEDCNT,_GetInst()}}
@@ -3432,6 +3496,10 @@ oCCCancelButton:OwnerAlignment := OA_Y
 oDCGiftDetails := CheckBox{SELF,ResourceID{GIFTREPORT_GIFTDETAILS,_GetInst()}}
 oDCGiftDetails:HyperLabel := HyperLabel{#GiftDetails,"Show details of gifts",NULL_STRING,NULL_STRING}
 oDCGiftDetails:TooltipText := "Show gifts also as separate transactions "
+
+oDChtml_format := CheckBox{SELF,ResourceID{GIFTREPORT_HTML_FORMAT,_GetInst()}}
+oDChtml_format:HyperLabel := HyperLabel{#html_format,"html format",NULL_STRING,NULL_STRING}
+oDChtml_format:TooltipText := "Print statement in html format"
 
 oDCFootnotes := RadioButtonGroup{SELF,ResourceID{GIFTREPORT_FOOTNOTES,_GetInst()}}
 oDCFootnotes:FillUsing({ ;
@@ -3469,6 +3537,1006 @@ ASSIGN mailcontact(uValue) CLASS GiftReport
 SELF:FieldPut(#mailcontact, uValue)
 RETURN uValue
 
+METHOD MemberStatementPrint(FromAccount as string,ToAccount as string,ReportYear as int,ReportMonth as int) as void pascal CLASS GiftReport 
+	//
+	// Producing of memberstatement to html-file
+	//
+	local aAcc:={} as array  // selected accounts for the reports
+	local aMbr:={} as array   // array with all data of all members   :
+	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
+	//     1       2         3       4        5     6         7        8        9          10        11           12
+	local aAccidMbr:={} as array  // array with accounts of all members : 
+	// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb}},...   
+	local aAccidIncFu:={} as array // array with all accids of income and fund accounts
+	local aBalMbr:={} as array  // array with balance per member; {{mbrid,balance},...   
+	local aBalAcc1:={},aBalAcc2:={} as array  // intermediate arrays for balances
+	local aAssMbr:={} as array  // array with assessment data: {mbrid,periodbegin,periodend,amountassessed,assessment amount, perc},...	
+	local aTrans:={},aTransRPP,aTransMG:={} as array   // {{accid,dat,transid,seqnr,persid,deb,cre,description,docid,opp,gc,fromrpp},...   
+	local aBalYr:={},aPers:={} as array
+	local aPersData:={} as array  // {{persid,fullname, fulladdress, email},...	
+	//      1       2         3        4       
+	local aGiftdata:={} as array // contains all gifts 
+	// aGiftData: {{sortkey,persid,addressblock,{amount,gc },{amount,gc },...{amount,gc }}},...
+	//                 1       2        3          4,1  4,2    5,1   5,2        12,1 12,2
+	local aGiftsTotals:={} as array // with totals per GC and month : total,AG,PF,MG
+	local aDesc:={} as array // array with parts of transaction description									 
+
+	local cMbrSelect,cAccSellect,cStatement,minpl as string 
+	local cFileNameBasic,cFileMember as string
+	LOCAL myLang:=Alg_taal as STRING 
+	local cUpTillMonth,cCurrMonth,cCurrKind,cCurrAcc,cCurrOPP,cStartinMonth,cScore,cLeft,cLeft1,cPeriod,cNAW as string
+	local cDescr,cDateRPP,cAmntRPP as string 
+	local cMess as string
+	local fBalance,fIncome,fIncomeUpt,fExpense,fExpenseUpt,fFund,fBalanceBeginYear,fBalanceBeginMonth as float 
+	local fSubAccGrp,fAccGrp,fKindGrp as float
+	local fBudgetIncYr,fBudgetIncYTD,fBudgetExpYr,fBudgetExpYTD,fScore as float
+	local time1,time0 as float
+	local nAcc,nAss,nTrans,i,j,m,p,accPtr,prsPtr,nGift,nMonth,nCurrMbrId,nCurrMonth,nCurrYear:=self:CalcYear,nIncr as int
+	local StartinMonth,EndInMonth,StartinYear,EndInyear, EndOfNotYetClosedYear as date 
+	local lOtherAcc,lFirstIncome,lColumnHeading as logic 
+	Local oSel,oTrans as SqlSelect
+	local oStmnt as SQLStatement
+	local oMBal as Balances
+	local oFileSpec as FileSpec 
+	local ptrHandle as ptr
+	// '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+CRLF+;
+	local cHtmlHeader:='<!DOCTYPE html><html><head><title>%%title%%</title><style type="text/css">'+CRLF+;//		'@page{size:landscape;}'+CRLF+; 
+	'h1{color:navy;font-size:14px;font-weight:bold;margin-top:2px;margin-bottom:3px;} h2{color:navy;font-size:12px;font-weight:bold;margin-top:2px;margin-bottom:3px;}'+CRLF+;
+		'td.date{width:9%;}'+CRLF+;
+		'td.amount{text-align:right;width:100px;}'+CRLF+;
+		'td.sumamount{text-align:right;width:100px;border:1px solid;border-right:0;border-left:0;}'+CRLF+; 
+	'td.sumamountSub{text-align:right;width:100px;border-top:1px solid;border-right:0;border-left:0;font-size:12px;font-weight:bold;}'+CRLF+; 
+	'td.sumamountAcc{text-align:right;width:100px;border:1px solid;border-right:0;border-left:0;font-size:12px;font-weight:bold;}'+CRLF+; 
+	'td.sumamountKind{text-align:right;width:100px;border-top:thick double;font-size:14px;font-weight:bold;}'+CRLF+; 
+	'tr.columnhd{background-color:rgb(255,255,204);font-style:italic;font-weight:bold;}'+CRLF+;
+		'tr.columnhdother{background-color:rgb(204,255,204);font-style:italic;font-weight:bold;}'+CRLF+; 
+	'.block{width:100%;border:2px solid black;padding-bottom:5px;}'+CRLF+; 
+	'.break{page-break-before:always;}'+CRLF+;
+		'div.level0{position:relative;width:100%;height:1.8cm;font-size:10px;}'+CRLF+;
+		'div.level21{float:left;width:1cm;heigth:0.3cm;text-align:right;}'+CRLF+;
+		'div.level22{float:left;width:4cm;heigth:0.3cm;text-align:right;}'+CRLF+;
+		'div.level23{float:left;width:4cm;heigth:0.3cm;text-align:right;}'+CRLF+;
+		'div.level24{float:right;text-align:right;}'+CRLF+;
+		'div.level25{float:right;text-align:right;padding-right:10px;}'+CRLF+;
+		'div.levelVL1{position:absolute;top:12px;left:1cm;width:2px;height:0.9cm;border-left:2px solid black;}'+CRLF+;
+		'div.levelVL2{position:absolute;top:12px;left:3cm;width:2px;height:0.9cm;border-left:2px solid black;;}'+CRLF+;
+		'div.levelVL3{position:absolute;top:12px;left:5cm;width:2px;height:0.9cm;border-left:2px solid black;}'+CRLF+;
+		'div.levelVL4{position:absolute;top:12px;left:7cm;width:2px;height:0.9cm;border-left:2px solid black;}'+CRLF+;
+		'div.levelVL5{position:absolute;top:12px;left:9cm;width:2px;height:0.9cm;border-left:2px solid black;}'+CRLF+;
+		'div.levelSC{position:absolute;top:0.6cm;left:1cm;height:0.3cm;}'+CRLF+;
+		'div.levelCM{position:absolute;top:0.2cm;width:2px;height:1.1cm;border-left:2px solid maroon;}'+CRLF+;
+		'div.levelCMT{position:absolute;top:1.4cm;width:1.4cm;color:maroon;text-align:center;}' +CRLF+;
+		'#grid{;border-collapse:collapse;border:1px solid black;}'+CRLF+;
+		'table.grid{border-collapse: collapse;}'+CRLF+;
+		'table.grid th{border:1px inset black;border-bottom:2px solid black;}'+CRLF+;
+		'table.grid td{border:1px inset black;}'+CRLF+;
+		'@page{ div{orphans:4;}}'+CRLF+; 
+	'</style></head><body style="font-family:Verdana;font-size:10px;">' as string
+
+	// mailing variables:
+	LOCAL oSelpers as Selpers
+	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
+	LOCAL oMapi as MAPISession
+	LOCAL oRecip1, oRecip2 as MAPIRecip
+	local aOneMember:={} as ARRAY
+	LOCAL oEMLFrm as eMailFormat
+	LOCAL mailcontent,memberName,cPers as STRING
+
+	IF self:SendingMethod=="SeperateFileMail"
+		oMapi := MAPISession{}	
+		IF !oMapi:Open( "" , "" )
+			MessageBox( 0 , self:oLan:WGet("MAPI-Services not available") , self:oLan:WGet("Problem") , MB_ICONEXCLAMATION )
+			RETURN
+		ENDIF		
+		(oEMLFrm := eMailFormat{oParent}):Show()
+		IF oEMLFrm:lCancel
+			RETURN 
+		ENDIF
+	ENDIF
+
+	//
+	// Initialize headings:	  
+	aAcc:=self:oDCSubSet:GetSelectedItems() 
+	time0:=Seconds()
+
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	cMess:=self:oLan:WGet("Collecting data for the report, please wait")
+	self:STATUSMESSAGE(cMess)
+	
+	// convert aAcc to aMbr: 
+	cMbrSelect:= "select m.mbrid,"+SQLFullName(2,"p")+" as description,m.homepp,m.householdid,m.co,d.deptmntnbr,m.rptdest,p.persid,if(isnull(pc.persid),'',pc.persid) as persidcontact,"+;
+		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname "+;
+		"from member m left join person pc on (pc.persid=m.contact),person p, department d where p.persid=m.persid and m.depid=d.depid and d.incomeacc in ("+Implode(aAcc,",")+")" +;
+		" group by m.mbrid order by m.mbrid" 
+	oSel:=SqlSelect{"select group_concat(cast(mbrid as char),'#$#',description,'#$#',homepp,'#$#',householdid,'#$#',co,'#$#',y.deptmntnbr,'#$#',cast(rptdest as char),'#$#',"+;
+		"cast(persid as char),'#$#',cast(persidcontact as char),'#$#',email,'#$#',emailcontact,'#$#',contactname order by mbrid separator '#%#') as grMbr from ("+cMbrSelect+") as y group by 1=1",oConn}
+	oSel:Execute()
+	if !Empty(oSel:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve members")+':'+oSel:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve members")}:Show()
+		return
+	endif
+	if oSel:Reccount<1
+		return
+	endif
+	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname},...}
+	//     1       2         3       4        5     6         7        8        9          10        11            12
+	aMbr:=AEvalA(Split(oSel:grMbr,'#%#'),{|x|x:=Split(x,'#$#') }) 
+	// 	time1:=time0
+	// 	LogEvent(,"aMbr:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	self:STATUSMESSAGE(cMess+='.')
+	
+	// select all accounts corresponding with these members: 
+	SQLStatement{"DROP TABLE IF EXISTS accidmbr",oConn}:Execute()
+	oStmnt:=SQLStatement{"create temporary table accidmbr (kind tinyint, index (accid)) "+;
+		"select z.mbrid,a.accid,case when a.accid=z.incomeacc then 1 when a.accid=z.netasset then 2 when a.accid=z.expenseacc then 3 else 4 end as kind  ,"+;
+		"a.accnumber,a.description,a.currency from account a,"+;
+		"(select m.mbrid,m.depid,d.incomeacc,d.expenseacc,d.netasset from member m,department d where d.depid=m.depid and mbrid in ("+Implode(aMbr,",",,,1)+")) as z "+;
+		"where exists(select 1 from department d where d.depid=a.department and d.depid=z.depid)  or exists(select 1 from memberassacc ma where a.accid=ma.accid and ma.mbrid=z.mbrid)",oConn} 
+	oStmnt:Execute()
+	if !Empty(oStmnt:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve member accounts")+':'+oStmnt:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve member accounts")}:Show()
+		return
+	endif
+	// 	time1:=time0
+	// 	LogEvent(,"AccidMbr create:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	self:STATUSMESSAGE(cMess+='.')
+	oSel:=SqlSelect{"select group_concat(cast(mbrid as char),'#$#',cast(accid as char),'#$#',cast(kind as char),'#$#',"+;
+		"accnumber,'#$#',description,'#$#',currency order by accid separator '#%#') as grAcc from accidmbr",oConn}  
+	oSel:Execute()
+	if !Empty(oSel:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve member accounts")+':'+oSel:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve member accounts")}:Show()
+		return
+	endif
+
+	// 	time1:=time0
+	// 	LogEvent(,"aAccidMbr read:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	self:STATUSMESSAGE(cMess+='.')
+	aAccidMbr:=AEvalA(Split(oSel:grAcc,'#%#'),{|x|x:=Split(x,'#$#') })
+	// 	time1:=time0
+	// 	LogEvent(,"aAccidMbr1:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	self:STATUSMESSAGE(cMess+='.')
+	
+	//	Collect balances of all accounts of the members:  
+	// - beginning of year, 
+	// - beginning of month and 
+	// - end of month 
+	// - including budget
+	// : accid, mbrid, date, amount (deb:-), kind, budget in selected year period  
+	oMBal:=Balances{}
+	oMBal:AccSelection:="a.accid in ("+Implode(aAccidMbr,",",,,2)+")"
+	// 	oMBal:AccSelection:="exists(select 1 from accidmbr m where a.accid=m.accid)"
+	for nCurrMonth:=self:CalcMonthStart to self:CalcMonthEnd
+		cStatement:=oMBal:SQLGetBalance(self:CalcYear*100+nCurrMonth,self:CalcYear*100+nCurrMonth,true,false,true,false)
+		minpl:="if(z.category='"+EXPENSE+"' or z.category='"+ASSET+"',-1,1)" 
+		cStatement:="select group_concat(cast(z.accid as char),'#$#',z.category,'#$#',cast(z.yr_bud as char),'#$#',cast(z.prvper_bud+z.per_bud as char),'#$#',cast((z.per_cre-z.per_deb)*"+minpl+" as char),'#$#',"+;
+			"cast((z.prvper_cre-z.prvper_deb)*"+minpl+" as char),'#$#',cast((z.prvyr_cre-z.prvyr_deb)*"+minpl+" as char),'#$#',cast(z.pl_cre-z.pl_deb as char) order by accid separator '#%#') as grBal from ("+cStatement+") as z" 
+		oSel:=SqlSelect{cStatement,oConn}
+		oSel:Execute()
+		if !Empty(oSel:status)
+			LogEvent(self,self:oLan:WGet("could not retrieve member accounts balances")+':'+oSel:ErrInfo:errormessage,"logerrors")
+			ErrorBox{self, self:oLan:WGet("could not retrieve member accounts balances")}:Show()
+			return
+		endif
+		// 		time1:=time0
+		// 		LogEvent(,"aAccidMbr("+Str(nCurrMonth,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
+		self:STATUSMESSAGE(cMess+='.')
+		// save results in aAccidMbr:
+		// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
+		//     1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
+		aBalAcc1:=Split(oSel:grBal,'#%#')	
+		for i:=1 to Len(aBalAcc1)
+			aBalAcc2:=Split(aBalAcc1[i],'#$#')
+			nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]})  // accid
+			if nAcc>0
+				if Len(aAccidMbr[nAcc]) <10
+					ASize(aAccidMbr[nAcc],10)
+					aAccidMbr[nAcc,10]:={}
+					aAccidMbr[nAcc,7]:=aBalAcc2[2]  //category
+					aAccidMbr[nAcc,8]:=Val(aBalAcc2[3])  //yr_bud
+					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud
+				endif
+				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Val(aBalAcc2[5]),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])})
+			endif
+		next
+	next 
+	// sort aAccidMbr on: mbrid,kind,accid
+	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3]).or.(x[3]=y[3].and.x[2]<=y[2]))}) 
+	// 	time1:=time0
+	// 	LogEvent(,"aAccidMbr3:"+Str((time0:=Seconds())-time1,-1),"logsql") 
+	self:STATUSMESSAGE(cMess+='.')
+	
+	// Collect assessment data: 
+	StartinMonth:=SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01')
+	oSel:=SqlSelect{"select group_concat(cast(mbrid as char),'#$#',periodbegin,'#$#',periodend,'#$#',cast(amountassessed as char),'#$#',"+;
+		"cast((amountofficeassmnt+amountintassmnt) as char),'#$#',cast((percofficeassmnt+percintassmnt) as char) order by mbrid separator '#%#') as grAss "+;
+		"from assessmnttotal where calcdate between '"+SQLdate(StartinMonth)+"' and '"+SQLdate(EndOfMonth(StartinMonth))+"' and mbrid in ("+Implode(aMbr,",",,,1)+")",oConn}
+	oSel:Execute()
+	if !Empty(oSel:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve member assessment data")+':'+oSel:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve member assessment data")}:Show()
+		return
+	endif
+	if !(oSel:Reccount<1 .or.Empty(oSel:grAss))
+		aAssMbr:=AEvalA(Split(oSel:grAss,'#%#'),{|x|x:=Split(x,'#$#') })
+	endif
+	// 	time1:=time0
+	// 	LogEvent(,"aAssMbr:"+Str((time0:=Seconds())-time1,-1),"logsql")   
+	self:STATUSMESSAGE(cMess+='.')
+	time0:=Seconds()
+	
+	// Collect transactions for all these accounts:  accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc   
+	StartinMonth:=SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthStart,2,0)+'01')
+	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))  
+	SQLStatement{"DROP TABLE IF EXISTS transmbr",oConn}:Execute()
+	
+	// create temporary table with all required transactions: 
+	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp,a.kind from "+;
+		'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'+;
+		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0 and t.gc<>"CH" and t.gc<>"")'
+	cStatement:=UnionTrans(cStatement)
+	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
+		cStatement+' order by mbrid,kind,accid,dat,transid ',oConn}
+	oStmnt:Execute() 
+	if !Empty(oStmnt:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
+		return
+	endif
+	time1:=time0
+	LogEvent(,"trans create("+Str(oStmnt:NumSuccessfulrows,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
+	self:STATUSMESSAGE(cMess+='.')
+	// retrieve all transaction data grouped per mbr, account and month
+	// This is a compromise between performance of mysql, data communication and processing of large strings and arrays by windows:   
+	oTrans:=SqlSelect{"select mbrid,group_concat(cast(accid as char),'#$#',cast(dat as char),'#$#',cast(transid as char),'#$#',cast(seqnr as char),'#$#',cast(persid as char),'#$#',cast(credeb as char),'#$#',description"+;
+		",'#$#',docid,'#$#',opp,'#$#',gc,'#$#',cast(fromrpp as char),'#$#',cast(kind as char) order by kind,accid,dat,transid separator '#%#') as grTr from "+;
+		' transmbr group by mbrid',oConn}
+	oTrans:Execute()
+	if !Empty(oTrans:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oTrans:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
+		return
+	endif
+	time1:=time0
+	LogEvent(,"trans read("+Str(oTrans:Reccount,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql") 
+	self:STATUSMESSAGE(cMess+='.')
+	
+	// Read all concerning persons:
+	// aPersdata: {{persid, fullname, fulladdress, email},...	
+	//                  1       2         3        4 
+	if oTrans:Reccount>0       
+		oSel:=SqlSelect{"select group_concat(cast(persid as char),'#$#',"+SQLFullName(2)+",'#$#',"+SQLAddress(,,'#@#')+",'#$#',email order by lastname,city,address separator '#%#') "+;
+			"as grPers from person p where exists (select 1 from transmbr t where t.persid=p.persid) order by lastname,city,address",oConn}
+		oSel:Execute() 
+		if !Empty(oSel:status)
+			LogEvent(self,self:oLan:WGet("could not retrieve person data")+':'+oSel:ErrInfo:errormessage,"logerrors")
+			ErrorBox{self, self:oLan:WGet("could not retrieve person data")}:Show()
+			return
+		endif
+		time1:=time0
+		LogEvent(,"pers read("+Str(oSel:Reccount,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
+		self:STATUSMESSAGE(cMess+='.')
+		// aPersdata: {{persid,fullname, fulladdress, email},...	
+		//                  1       2         3        4
+		if oSel:Reccount>0 .and.!Empty(oSel:grPers)             
+			aPersData:=	AEvalA(Split(oSel:grPers,'#%#'),{|x|x:=Split(x,'#$#') })
+			// Html encode name and address:
+			for i:=1 to Len(aPersData)
+				aPersData[i,2]:=HtmlEncode(aPersData[i,2])
+				aPersData[i,3]:=StrTran(HtmlEncode(aPersData[i,3]),'#@#','<br/>')
+			next
+			time1:=time0
+			LogEvent(self,"apers("+Str(Len(aPersData),-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql") 
+		endif
+	endif
+	self:STATUSMESSAGE(cMess+='.')
+
+	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp},...
+	//              1   2     3      4      5     6         7       8      9  10    11       
+	/*	i:=0
+	// Read transactions into aTrans
+	do while !oTrans:EOF
+	nCurrMbrId:=oTrans:mbrid
+	aPers:={} 
+	aTrans:={}
+	do while !oTrans:EOF .and. oTrans:mbrid==nCurrMbrId
+	if !Empty(oTrans:grtr)
+	aTransRPP:=AEvalA(Split(oTrans:grtr,'#%#'),{|x|x:=Split(x,'#$#') })				
+	// 				m:=Len(aTrans)
+	// 				ASize(aTrans,m+Len(aTransRPP) )
+	// 				ACopy(aTransRPP,aTrans,,,m+1)
+	i+=m
+	endif
+	// 			ASort(aTrans,,,{|x,y|x[12]<y[12].or.(x[12]=y[12].and.x[1]<y[1].or.(x[1]=y[1].and.x[2]<=y[2]))})       
+	oTrans:Skip()
+	end do
+	enddo
+	time1:=time0
+	LogEvent(,"atrans("+Str(i,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")        
+	if m>0
+	return
+	endif           */
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+	//
+	// PRODUCE OUTPUT PER MEMBER
+	//
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+	cMess:=self:oLan:WGet('Printing the reports.')
+
+	if Empty(self:oReport:ToFileFS:FileName)
+		self:oReport:ToFileFS:FileName:= self:oLan:RGet("Giftreport")+Str(self:CalcYear,4)+StrZero(self:CalcMonthEnd,2)
+	endif
+	cFileNameBasic:=self:oReport:ToFileFS:FileName
+	oFileSpec:=self:oReport:ToFileFS
+	oFileSpec:Extension:='html' 
+	IF Empty(self:SendingMethod)
+		// make one file for all reports
+		if !self:oReport:Destination=='File'
+			oFileSpec:FullPath:=HelpDir+'\'+cFileNameBasic
+			oFileSpec:Extension:='html' 			
+		endif 
+		cFileMember:=oFileSpec:FullPath
+		ptrHandle := MakeFile(self,@cFileMember,"Creating member statements")
+		IF ptrHandle = F_ERROR .or. Empty(ptrHandle)
+			return 
+		ENDIF
+		// write one header for all:
+		FWriteLineUni(ptrHandle,StrTran(cHtmlHeader,'%%title%%',self:oLan:RGet('Member statement'),,1))
+	endif
+	StartinYear:=SToD(Str(self:CalcYear,4,0)+'0101') 
+	EndInyear:=SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+Str(MonthEnd(self:CalcMonthEnd,self:CalcYear),-1))
+	// determine end of balance year directly after last closed balance year 
+	aBalYr:=GetBalYear(Year(LstYearClosed),Month(LstYearClosed)) 
+	EndOfNotYetClosedYear:=SToD(Str(aBalYr[3],-1)+StrZero(aBalYr[4],2,0)+Str(MonthEnd(aBalYr[4],aBalYr[3]),-1))
+	cStartinMonth:=SQLdate(StartinMonth) 
+	
+	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname},...}
+	//          1       2         3       4        5     6         7        8        9          10        11             12
+	// aMbr sorted on mbrid
+	accPtr:=0 
+	nIncr:=Ceil(Len(aMbr)/100.0)
+	for m:=1 to Len(aMbr) 
+		nCurrMbrId:=Val(aMbr[m,1])
+		// Read transactions into array aTrans
+		// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp},...
+		//              1   2     3      4      5     6         7       8      9  10    11      
+		// Transactions are in order of: kind,month,accid,dat
+		// Read corresponding oTrans record for this member: 
+		aTrans:={}
+		SetDecimalSep(Asc('.'))
+		if !oTrans:EOF .and. oTrans:mbrid==nCurrMbrId 
+			aTrans:=AEvalA(Split(oTrans:grtr,'#%#'),{|x|x:=Split(x,'#$#') })
+			oTrans:Skip()
+		endif
+		
+		if self:SkipInactive
+			if Len(aTrans)==0 .or. AScan(aTrans,{|x|x[2]>=cStartinMonth})=0  
+				*  skip member without transaction in report period 
+				loop
+			endif
+		endif 
+		// convert cre-deb to numeric: 
+		for i:= 1 to Len(aTrans)
+			aTrans[i,6]:=Val(aTrans[i,6])
+		next
+		IF !Empty(self:SendingMethod) 
+			// rename filename to add member name:                   
+			oFileSpec:FileName:= cFileNameBasic+Space(1)+CleanFileName(StrTran(aMbr[m,2],'.',' '))
+			cFileMember:=oFileSpec:FullPath
+			ptrHandle := MakeFile(self,@cFileMember,"Creating member statements")
+			IF ptrHandle = F_ERROR .or. Empty(ptrHandle)
+				return 
+			ENDIF
+			//	header record:
+			FWriteLineUni(ptrHandle,StrTran(cHtmlHeader,'%%title%%',self:oLan:RGet('Member statement')+' '+aMbr[m,2],,1))
+		ENDIF
+		SetDecimalSep(Asc(DecSeparator))
+		
+		oFileSpec:FullPath:=cFileMember
+		IF !Empty(aMbr[m,3]) .and.aMbr[m,3]!=sEntity     // homepp
+			Alg_taal:="E"
+		ENDIF
+		FWriteLineUni(ptrHandle,'<table style="border:0;width:16cm"'+iif(Empty(self:SendingMethod).and.m>1,' class="break"','')+'><tr><td style="width:100%;">'+CRLF+;
+			'<table><tr>'+;
+			'<td colspan="2"><h1>'+oLan:RGet("MEMBER STATEMENT",,'@!')+"   "+Str(ReportYear,4)+'  '+Upper(oLan:RGet(MonthEn[self:CalcMonthEnd],,"!"))+"   "+self:Country+"</h1></td></tr>"+CRLF+;
+			'<tr><td style="width:20%">'+oLan:RGet("Name",,"!")+":</td><td>"+HtmlEncode(aMbr[m,2])+"</td></tr>"+CRLF+;
+			"<tr><td>"+oLan:RGet("Account",,"!")+":</td><td>"+aMbr[m,6]+"</td></tr>"+CRLF+;
+			"<tr><td>"+oLan:RGet("Household id",,"!")+":</td><td>"+aMbr[m,4]+"</td></tr>"+CRLF+;
+			"<tr><td>"+self:oLan:RGet("Currency",,"!")+":</td><td>"+sCurr+"</td></tr></table></td></tr><tr><td><p></p></td></tr>")
+		
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// YEAR OVERVIEW:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+
+		// calculate totals from aAccidMbr: 
+		// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
+		//     1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
+		nAcc:=0
+		fBalance:=0.00 
+		fBalanceBeginYear:=0.00
+		fIncomeUpt:=0.00
+		fBudgetIncYr:=0.00
+		fBudgetExpYr:=0.00
+		fBudgetIncYTD:=0.00
+		fBudgetExpYTD:=0.00
+		fExpenseUpt:=0.00
+		fFund:=0.00 
+		aTransMG:={}
+		aTransRPP:={} 
+		nCurrMonth:=self:CalcMonthEnd
+		do while (nAcc:=AScan(aAccidMbr,{|x|x[1]==aMbr[m,1] .and.x[3]<'4'},nAcc+1))>0  // mbrid
+			
+			if aAccidMbr[nAcc,3]=='1'      // income
+				fBudgetIncYr+=aAccidMbr[nAcc,8]
+				fBudgetIncYTD+=aAccidMbr[nAcc,9]
+			elseif aAccidMbr[nAcc,3]=='3'   //expense
+				fBudgetExpYr+=aAccidMbr[nAcc,8]
+				fBudgetExpYTD+=aAccidMbr[nAcc,9]
+			endif	  
+			if (nMonth:=AScan(aAccidMbr[nAcc,10],{|x|x[1]==nCurrMonth}))>0
+				do case 
+				case aAccidMbr[nAcc,3]=='1'  // income
+					fIncomeUpt+=aAccidMbr[nAcc,10,nMonth,3]+aAccidMbr[nAcc,10,nMonth,2]
+					if StartinYear>LstYearClosed                       // previous year not yet closed?
+						fBalanceBeginYear+=aAccidMbr[nAcc,10,nMonth,5]  // add profit/loss previous year
+						fBalance+=aAccidMbr[nAcc,10,nMonth,5]           // add profit/loss previous year
+					elseif EndInyear>EndOfNotYetClosedYear             // month after end of not yet closed balance year?
+						fBalance+=aAccidMbr[nAcc,10,nMonth,5]           // add profit/loss previous balance year
+					endif  
+				case aAccidMbr[nAcc,3]=='2'  // fund
+					fFund+=aAccidMbr[nAcc,10,nMonth,3]-aAccidMbr[nAcc,10,nMonth,4] 
+					fBalance+=aAccidMbr[nAcc,10,nMonth,3]
+					fBalanceBeginYear+=aAccidMbr[nAcc,10,nMonth,4]
+				case aAccidMbr[nAcc,3]=='3'   // expense 
+					fExpenseUpt+=aAccidMbr[nAcc,10,nMonth,3]+aAccidMbr[nAcc,10,nMonth,2]   
+					if StartinYear>LstYearClosed                        // previous year not yet closed?
+						fBalanceBeginYear+=aAccidMbr[nAcc,10,nMonth,5]   // add profit/loss previous year
+						fBalance+=aAccidMbr[nAcc,10,nMonth,5]            // add profit/loss previous year
+					elseif EndInyear>EndOfNotYetClosedYear              // month after end of not yet closed balance year?
+						fBalance+=aAccidMbr[nAcc,10,nMonth,5]            // add profit/loss previous balance year
+					endif  
+				end case
+			endif
+		end do 
+		fBalance:= Round(fBalance+fIncomeUpt-fExpenseUpt,DecAantal)
+		cUpTillMonth:=Lower(oLan:RGet("UP TILL")+' '+Str(nCurrYear,-1)+' '+oLan:RGet(MonthEn[self:CalcMonthEnd],,"!"))
+		
+		FWriteLineUni(ptrHandle,'<tr><td style="width:100%"><table class="block"><tr>'+;
+			'<td colspan="4"><h2>'+oLan:RGet("YEAR OVERVIEW",,"@!")+' '+oLan:RGet("UP TILL",,'@!')+' '+Str(nCurrYear,-1)+' '+oLan:RGet(MonthEn[self:CalcMonthEnd],,"@!")+"</h2></td></tr>"+CRLF+;
+			'<tr class="columnhd"><td>'+oLan:RGet("Balance on",,'!')+' '+DToC(SToD(Str(nCurrYear,-1)+'0101'))+'</td><td></td><td></td><td style="font-weight:bold;" class="amount">'+Str(fBalanceBeginYear,12,DecAantal)+"</td></tr>"+CRLF+; 
+		'<tr><td>'+oLan:RGet("Income",,'!')+' '+cUpTillMonth+'</td><td class="amount">'+Str(fIncomeUpt,12,DecAantal)+"</td><td></td><td></td></tr>"+CRLF+; 
+		'<tr><td>'+oLan:RGet("Fund",,'!')+' '+cUpTillMonth+'</td><td class="amount">'+Str(fFund,12,DecAantal)+"</td><td></td><td></td></tr>"+CRLF+; 
+		'<tr><td>'+oLan:RGet("Expense",,'!')+' '+cUpTillMonth+'</td><td></td><td class="amount">'+Str(fExpenseUpt,12,DecAantal)+"</td><td></td></tr>"+CRLF+; 
+		'<tr class="columnhd"><td>'+oLan:RGet("Balance",,'!')+' '+cUpTillMonth+'</td><td class="sumamount">'+Str(fIncomeUpt+fFund,12,DecAantal)+'</td><td class="sumamount">'+Str(fExpenseUpt,12,DecAantal)+'</td><td style="font-weight:bold;'+iif(fBalance<-1.00,'color:red;','')+'" class="sumamount">'+Str(fBalance,12,DecAantal)+"</td></tr>"+CRLF+; 
+		"</table></td></tr><tr><td><p></p></td></tr>")
+		
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// MONTH OVERVIEWS:
+		//
+		// calculate totals from aAccidMbr: 
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+
+		// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
+		//     1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
+		for nCurrMonth:=self:CalcMonthStart to self:CalcMonthEnd 
+			nAcc:=0
+			fBalance:=0.00 
+			fBalanceBeginMonth:=0.00
+			fIncome:=0.00
+			fExpense:=0.00
+			fFund:=0.00
+			StartinMonth:=SToD(Str(self:CalcYear,4,0)+StrZero(nCurrMonth,2,0)+'01')
+			EndInMonth:=EndOfMonth(StartinMonth)
+			cCurrMonth:=Lower(oLan:RGet(MonthEn[nCurrMonth]))
+			do while (nAcc:=AScan(aAccidMbr,{|x|x[1]==aMbr[m,1]},nAcc+1))>0  // mbrid
+				
+				if aAccidMbr[nAcc,3]<'4' .and.(nMonth:=AScan(aAccidMbr[nAcc,10],{|x|x[1]==nCurrMonth}))>0
+					do case 
+					case aAccidMbr[nAcc,3]=='1'
+						fIncome+=aAccidMbr[nAcc,10,nMonth,2]
+						fBalanceBeginMonth+=aAccidMbr[nAcc,10,nMonth,3]  // add income of previous period 
+						if EndInMonth>EndOfNotYetClosedYear              // month after end of not yet closed balance year?
+							fBalanceBeginMonth+=aAccidMbr[nAcc,10,nMonth,5]   // add profit/loss previous balance year
+						endif
+					case aAccidMbr[nAcc,3]=='3' 
+						fExpense+=aAccidMbr[nAcc,10,nMonth,2]   
+						fBalanceBeginMonth-=aAccidMbr[nAcc,10,nMonth,3]  // subtract expense of previous period  
+						if EndInMonth>EndOfNotYetClosedYear              // month after end of not yet closed balanced year?
+							fBalanceBeginMonth+=aAccidMbr[nAcc,10,nMonth,5]   // add profit/loss previous balance year
+						endif
+					case aAccidMbr[nAcc,3]=='2' 
+						fFund+=aAccidMbr[nAcc,10,nMonth,3]-aAccidMbr[nAcc,10,nMonth,2] 
+						fBalanceBeginMonth+=aAccidMbr[nAcc,10,nMonth,3]    // add fund at end of previous period
+					end case
+				endif
+			end do
+			fBalance:= Round(fBalanceBeginMonth+fFund+fIncome-fExpense,DecAantal)
+			
+			FWriteLineUni(ptrHandle,'<tr><td style="width:100%"><table class="block"><tr>'+;
+				'<td colspan="4"><h2>'+oLan:RGet("MONTH",,"@!")+' '+Upper(cCurrMonth)+"</h2></td>"+CRLF+;
+				'<tr class="columnhd"><td>'+oLan:RGet("Balance on",,'!')+' '+DToC(StartinMonth)+'</td><td></td><td></td><td style="font-weight:bold;" class="amount">'+Str(fBalanceBeginMonth,12,DecAantal)+"</td></tr>"+CRLF+; 
+			'<tr><td>'+oLan:RGet("Income",,'!')+' '+cCurrMonth+'</td><td class="amount">'+Str(fIncome,12,DecAantal)+"</td><td></td><td></td></tr>"+CRLF+; 
+			'<tr><td>'+oLan:RGet("Fund",,'!')+' '+cCurrMonth+'</td><td class="amount">'+Str(fFund,12,DecAantal)+"</td><td></td><td></td></tr>"+CRLF+;
+				'<tr><td>'+oLan:RGet("Expense",,'!')+' '+cCurrMonth+'</td><td></td><td class="amount">'+Str(fExpense,12,DecAantal)+"</td><td></td></tr>"+CRLF+; 
+			'<tr class="columnhd"><td>'+oLan:RGet("Balance on",,'!')+' '+DToC(EndOfMonth(StartinMonth))+'</td><td class="sumamount">'+Str(fIncome+fFund,12,DecAantal)+'</td><td class="sumamount">'+Str(fExpense,12,DecAantal)+'</td><td style="font-weight:bold;" class="sumamount">'+Str(fBalance,12,DecAantal)+"</td></tr>"+CRLF+; 
+			"</table></td></tr><tr><td><p></p></td></tr>")
+		next
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// Comparision with budget:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Income:
+		if !Empty(fBudgetIncYr) .or.aMbr[m,3]==sEntity  // budget filled or own member: 	
+			SetDecimalSep(Asc('.'))
+			fScore:=iif(Empty(fBudgetIncYr),100.00,(fIncomeUpt*100.00)/fBudgetIncYr)
+			cScore:=Str(Min((fScore*8.0)/100.0,11.0),-1) 
+			cLeft:=Str(1.00+((self:CalcMonthEnd*8.0)/12.0),-1)
+			cLeft1:=Str(0.3+((self:CalcMonthEnd*8.0)/12.0),-1)
+			SetDecimalSep(Asc(DecSeparator))
+			FWriteLineUni(ptrHandle,'<tr><td style="width:100%"><table class="block" style><tr>'+;
+				"<td><h2>"+oLan:RGet("Income versus Budget")+"</h2></td>"+CRLF+; 
+			'<tr><td>'+oLan:RGet("Income up till now",,'!')+' '+Str(fIncomeUpt,-1)+' '+sCurr +', '+self:oLan:RGet("or")+' '+Str(Round(fScore,2),-1)+;
+				+'% '+self:oLan:RGet('of your year budget')+' '+Str(fBudgetIncYr,-1)+' '+sCurr+"</td></tr>"+CRLF+; 
+			'<tr><td>'+CRLF+;
+				'<div class="level0"><div class="level21">0%</div><div class="level22">50%</div><div class="level23">100%</div>'+CRLF+;
+				'<div class="level24"><span style="font-weight:bold;">'+self:oLan:RGet("Budgeted",,'!')+'</span><p>'+Str(fBudgetIncYTD,-1)+'</p></div>'+CRLF+;
+				'<div class="level25"><span style="font-weight:bold;">'+self:oLan:RGet("Income from gifts",,'!')+'</span><p>'+Str(fIncomeUpt,-1)+'</p></div>'+CRLF+;
+				'<div class="levelVL1"></div><div class="levelVL2"></div><div class="levelVL3"></div><div class="levelVL4"></div><div class="levelVL5"></div>'+CRLF+;
+				'<div class="levelSC" style="width:'+cScore+'cm;border-left:'+cScore+'cm solid '+iif(fIncomeUpt-fBudgetIncYTD<-1.00,'red','green')+';"></div>'+CRLF+;
+				'<div class="levelCM" style="left:'+cLeft+'cm;"></div>'+CRLF+;
+				'<div class="levelCMT" style="left:'+cLeft1+'cm;">'+oLan:RGet(MonthEn[self:CalcMonthEnd])+'</div>'+CRLF+;
+				"</div></td></tr></table></td></tr><tr><td><p></p></td></tr>")
+		endif
+		// Expense:	
+		if !Empty(fBudgetExpYr) .or.aMbr[m,3]==sEntity  // budget filled or own member: 	
+			SetDecimalSep(Asc('.'))
+			fScore:=iif(Empty(fBudgetExpYr),100.00,(fExpenseUpt*100.00)/fBudgetExpYr)
+			cScore:=Str(Min((fScore*8.0)/100.0,11.0),-1) 
+			SetDecimalSep(Asc(DecSeparator))
+			FWriteLineUni(ptrHandle,'<tr><td style="width:100%"><table class="block"><tr>'+;
+				'<td><h2>'+oLan:RGet("Expense versus Budget")+"</h2></td>"+CRLF+; 
+			'<tr><td>'+oLan:RGet("Expense up till now",,'!')+' '+Str(fExpenseUpt,-1)+' '+sCurr +', '+self:oLan:RGet("or")+' '+Str(Round(fScore,2),-1)+;
+				'% '+self:oLan:RGet('of your year budget')+' '+Str(fBudgetExpYr,-1)+' '+sCurr+"</td></tr>"+CRLF+; 
+			'<tr><td>'+CRLF+;
+				'<div class="level0"><div class="level21">0%</div><div class="level22">50%</div><div class="level23">100%</div>'+CRLF+;
+				'<div class="level24"><span style="font-weight:bold;">'+self:oLan:RGet("Budgeted",,'!')+'</span><p>'+Str(fBudgetExpYTD,-1)+'</p></div>'+CRLF+;
+				'<div class="level25"><span style="font-weight:bold;">'+self:oLan:RGet("Expense",,'!')+'</span><p>'+Str(fExpenseUpt,-1)+'</p></div>'+CRLF+;
+				'<div class="levelVL1"></div><div class="levelVL2"></div><div class="levelVL3"></div><div class="levelVL4"></div><div class="levelVL5"></div>'+CRLF+;
+				'<div class="levelSC" style="width:'+cScore+'cm;border-left:'+cScore+'cm solid '+iif(fExpenseUpt-fBudgetExpYTD>1.00,'red','green')+';"></div>'+CRLF+;
+				'<div class="levelCM" style="left:'+cLeft+'cm;"></div>'+CRLF+;
+				'<div class="levelCMT" style="left:'+cLeft1+'cm;">'+oLan:RGet(MonthEn[self:CalcMonthEnd])+'</div>'+CRLF+;
+				"</div></td></tr></table></td></tr><tr><td><p></p></td></tr>")
+		endif
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// Other accounts overview:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// calculate totals from aAccidMbr: 
+		// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
+		//     1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
+		nAcc:=0
+		fBalance:=0.00 
+		nCurrMonth:=self:CalcMonthEnd 
+		lOtherAcc:=false
+		do while (nAcc:=AScan(aAccidMbr,{|x|x[1]==aMbr[m,1].and.x[3]=='4'},nAcc+1))>0  // mbrid
+			if !lOtherAcc
+				lOtherAcc:=true
+				cUpTillMonth:=Lower(oLan:RGet("UP TILL")+' '+Str(nCurrYear,-1))+' '+oLan:RGet(MonthEn[self:CalcMonthEnd])
+				FWriteLineUni(ptrHandle,'<tr><td style="width:100%"><table class="block"><tr>'+;
+					'<td colspan="4"><h2>'+oLan:RGet("Other accounts",,"!")+"</h2></td></tr>")
+			endif
+			if (nMonth:=AScan(aAccidMbr[nAcc,10],{|x|x[1]==nCurrMonth}))>0 
+				if aAccidMbr[nAcc,7]==liability .or.  aAccidMbr[nAcc,7]==ASSET
+					fBalance:=aAccidMbr[nAcc,10,nMonth,2]
+				else
+					fBalance:=aAccidMbr[nAcc,10,nMonth,3]+aAccidMbr[nAcc,10,nMonth,2]
+				endif
+				FWriteLineUni(ptrHandle,'<tr><td>'+HtmlEncode(aAccidMbr[nAcc,5])+' '+cUpTillMonth+'</td><td></td><td></td><td style="font-weight:bold;" class="amount">'+Str(fBalance,12,DecAantal)+"</td></tr>") 
+			endif
+		end do 
+		if lOtherAcc
+			FWriteLineUni(ptrHandle,"</table></td></tr><tr><td><p></p></td></tr>")
+		endif
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// Assessment overview:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// calculate totals from aAssMbr: 
+		// {mbrid,periodbegin,periodend,amountassessed,assessment amount, perc},...
+		//     1    2             3            4               5           6     
+		nAss:=AScan(aAssMbr,{|x|x[1]==aMbr[m,1]},nAss+1)     
+		if nAss>0
+			FWriteLineUni(ptrHandle,'<tr><td style="width:100%;"><table style="width:100%;border:0;"><tr>'+;
+				'<td colspan="3"><h2>'+oLan:RGet("Assessment summary",,"!")+"</h2></td></tr>")
+			nAss:=0
+			do while nAss>0  // mbrid
+				FWriteLineUni(ptrHandle,'<tr><td>'+self:oLan:RGet("Total gift amount received during")+' '+DToC(SQLDate2Date(aAssMbr[nAss,2]))+' - '+DToC(SQLDate2Date(aAssMbr[nAss,3]))+'</td><td></td><td></td><td class="amount">'+aAssMbr[nAss,4]+"</td></tr>"+CRLF+; 
+				'<tr><td>'+self:oLan:RGet("Assessment",,'!')+' '+aAssMbr[nAss,6]+'% '+self:oLan:RGet("of total gifts during")+' '+DToC(SQLDate2Date(aAssMbr[nAss,2]))+' - '+DToC(SQLDate2Date(aAssMbr[nAss,3]))+'</td><td></td><td></td><td class="amount">'+aAssMbr[nAss,5]+"</td></tr>")
+				nAss:=AScan(aAssMbr,{|x|x[1]==aMbr[m,1]},nAss+1)
+			end do            
+			FWriteLineUni(ptrHandle,"</table></td></tr><tr><td><p></p></td></tr>")       
+		endif
+		FWriteLineUni(ptrHandle,"</table>")        // end of first page
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// TRANSACTIANS OVERVIEWS:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Produce overview from aTrans:
+		// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
+		//              1   2     3      4      5     6         7       8      9  10    11     12
+		// atrans in order of kind,accid,dat 
+		//
+		// accounts in aAccidMbr in order of mbrid,kind,accid:
+		// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
+		//     1    2      3                                        4          5         6         7            8      9         10,1        10,2            10,3                   10,4          10,5             
+		cPeriod:="   "+Str(ReportYear,4)+'  '+iif(self:CalcMonthEnd>self:CalcMonthStart,Upper(oLan:RGet(MonthEn[self:CalcMonthStart],,"!"))+' - ','')+Upper(oLan:RGet(MonthEn[self:CalcMonthEnd],,"!"))
+		FWriteLineUni(ptrHandle,'<table style="border:0;width:25cm;" class="break"><tr><td style="width:100%;"><table style="width:100%">')
+		cCurrKind:=''
+		cCurrAcc:=''
+		lFirstIncome:=true 
+		aTransRPP:={} 
+		lColumnHeading:=true 
+		fSubAccGrp:=0.00
+		fBalance:=0.00 
+		aGiftsTotals:={aReplicate(0.00,12),aReplicate(0.00,12),aReplicate(0.00,12),aReplicate(0.00,12)} 
+		aGiftdata:={}
+		// add stop line at end of aTrans:
+		AAdd(aTrans,{,,,,,,,,,,,'5'})  // kind 5 as stop to print remaining totals
+		for nTrans:=1 to Len(aTrans)
+			if !Empty(aTrans[nTrans,5]).and.!Empty(aTrans[nTrans,10]).and. !aTrans[nTrans,10]=='CH'   //giver present and not "CH"
+				// add to aGiftData:
+				// aGiftData: {{sortkey,persid,addressblock,{amount,gc },{amount,gc },...{amount,gc }}},...
+				//                 1       2        3          4,1  4,2    5,1   5,2        12,1 12,2
+				nMonth:=Val(SubStr(aTrans[nTrans,2],6,2))+3
+				nGift:=AScan(aGiftdata,{|x|x[2]==aTrans[nTrans,5]})
+				if Empty(nGift)
+					// look up corresponding person:
+					// aPersdata: {{persid, fullname, fulladdress, email},...	
+					//                  1       2         3        4              
+					prsPtr:=AScan(aPersData,{|x|x[1]==aTrans[nTrans,5]})
+					if prsPtr>0
+						cNAW:= StrTran(StrTran(aPersData[prsPtr,2]+'<br/>'+aPersData[prsPtr,3]+'<br/>'+aPersData[prsPtr,4],'<br/><br/>','<br/>'),'<br/><br/>','<br/>') 
+						if SubStr(cNAW,Len(cNAW)-3)=='<br/>'
+							cNAW:=SubStr(cNAW,1,Len(cNAW)-4)   // remove trailing break
+						endif
+					else
+						cNAW:=''
+					endif
+					AAdd(aGiftdata,{prsPtr,aTrans[nTrans,5],cNAW,;
+						{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''},{0.00,''}})
+					nGift:=Len(aGiftdata) 
+				endif
+				if Empty(aGiftdata[nGift,nMonth,2])
+					aGiftdata[nGift,nMonth,2]:=aTrans[nTrans,10]
+				elseif At(aTrans[nTrans,10],aGiftdata[nGift,nMonth,2])=0
+					aGiftdata[nGift,nMonth,2]+='/'+aTrans[nTrans,10]
+				endif
+				aGiftdata[nGift,nMonth,1]:=Round(aGiftdata[nGift,nMonth,1]+aTrans[nTrans,6],DecAantal) 
+				nAss:=iif(aTrans[nTrans,10]=='AG',2,iif(aTrans[nTrans,10]=='PF',3,4))
+				nMonth-=3 
+				aGiftsTotals[1,nMonth]:=Round(aGiftsTotals[1,nMonth]+aTrans[nTrans,6],DecAantal)       // total
+				aGiftsTotals[nAss,nMonth]:=Round(aGiftsTotals[nAss,nMonth]+aTrans[nTrans,6],DecAantal) // gc
+				if aTrans[nTrans,2]<cStartinMonth    // skip when not in report period
+					loop
+				endif
+			endif
+
+			if cCurrAcc<>aTrans[nTrans,1]
+				if !Empty(cCurrAcc)
+					// print totals per account
+					if cCurrKind='1' // income: 
+						if !self:GiftDetails
+							// write one total line for all gifts
+							FWriteLineUni(ptrHandle,'<tr><td colspan="2">'+;
+								'<td colspan="3">'+self:oLan:RGet("Total gifts")+' ('+self:oLan:RGet("see details in gifts overview at the end")+')</td><td class="amount">'+Str(fSubAccGrp,12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+						endif
+						FWriteLineUni(ptrHandle,'<tr><td colspan="6"></td><td class="sumamountSub">'+Str(fSubAccGrp,12,DecAantal)+'</td><td></td></tr>' )
+						fAccGrp:=Round(fAccGrp+fSubAccGrp,DecAantal)
+						fSubAccGrp:=0.00
+						if Len(aTransRPP)>0
+							// print income from other WMO's:
+							ASort(aTransRPP,,,{|x,y|x[9]<y[9] .or. (x[9]=y[9].and.x[2]<=y[2])})
+							FWriteLineUni(ptrHandle,'<tr><td colspan="6"><h2>'+oLan:RGet("Income from abroad",,"!")+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+								'<tr class="columnhd"><td>'+oLan:RGet('Document id',,"!")+'</td><td class="date">'+oLan:RGet("Date",,"!")+'</td>'+;
+								'<td>'+oLan:RGet("Description",,"!")+'</td><td class="date">'+oLan:RGet("Date(origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount(origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>') 
+							cCurrOPP:=''
+							fSubAccGrp:=0.00
+							for i:=1 to Len(aTransRPP)
+								if !aTransRPP[i,9]==cCurrOPP
+									if !Empty(cCurrOPP)
+										// print totals
+										FWriteLineUni(ptrHandle,'<tr><td colspan="3"></td><td colspan="3" style="font-weight:bold;">'+oLan:RGet("Total income",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td class="sumamountSub">'+Str(fSubAccGrp,12,DecAantal)+'</td><td></td></tr>' )
+										fAccGrp:=Round(fAccGrp+fSubAccGrp,DecAantal)
+										fSubAccGrp:=0.00
+									endif
+									cCurrOPP:=aTransRPP[i,9] 
+									// print Opp heading:
+									p:=AScan(self:aPPCode,{|x|x[1]==cCurrOPP})
+									FWriteLineUni(ptrHandle,'<tr><td colspan="6" style="font-weight:bold;">'+oLan:RGet("From",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td colspan="2"></td></tr>')
+								endif
+								// print transaction: 
+								aDesc:=Split(aTransRPP[i,7],'(')
+								cAmntRPP:=''
+								cDateRPP:=''
+								if Len(aDesc)>2
+									cDescr:= aDesc[Len(aDesc)-1]   // opp amount and date
+									aTransRPP[i,7]:=Compress(StrTran(aTransRPP[i,7],'('+cDescr,''))  // remove OPP amount and date
+									aDesc:=Split(cDescr,':')
+									if Len(aDesc)=3
+										cAmntRPP:=StrTran(SubStr(aDesc[2],1,At(',',aDesc[2])-1),'.',',')  // change decimal char to ,
+										cDateRPP:=StrTran(aDesc[3],')','')
+									endif
+								endif
+								FWriteLineUni(ptrHandle,'<tr><td>'+aTransRPP[i,8]+'</td><td class="date">'+DToC(SQLDate2Date(aTransRPP[i,2]))+'</td>'+;
+									'<td>'+HtmlEncode(aTransRPP[i,7])+'</td><td class=" date">'+cDateRPP+'</td><td class="amount">'+Str(Val(cAmntRPP),12,DecAantal)+;
+									'</td><td class="amount">'+Str(aTransRPP[i,6],12,DecAantal)+'</td><td colspan="2"></td></tr>')
+								fSubAccGrp:=Round(fSubAccGrp+aTransRPP[i,6],DecAantal) 													
+							next
+							if !Empty(cCurrOPP)
+								// print totals
+								FWriteLineUni(ptrHandle,'<tr><td colspan="3"></td><td colspan="3" style="font-weight:bold;">'+oLan:RGet("Total income",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td class="sumamountSub">'+Str(fSubAccGrp,12,DecAantal)+'</td><td></td></tr>' )
+								fAccGrp:=Round(fAccGrp+fSubAccGrp,DecAantal)
+							endif
+							fSubAccGrp:=0.00
+						endif 
+						if Len(aTransMG)>0
+							// Print member gifts:
+							FWriteLineUni(ptrHandle,'<tr><td colspan="6"><h2>'+oLan:RGet("member gifts",,"!")+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+								'<tr class="columnhd"><td>'+oLan:RGet('Document id',,"!")+'</td><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
+								'<td>'+oLan:RGet("Description",,"!")+'</td><td colspan="2">'+oLan:RGet("Name",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>') 
+							for i:=1 to Len(aTransMG)
+								// get person data:
+								// aPersdata: {{persid, fullname, fulladdress, email},...	
+								//                  1       2         3        4              
+								prsPtr:=AScan(aPersData,{|x|x[1]==aTransMG[i,5]})
+								// print transaction:
+								// aTransMG: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
+								//              1   2     3      4      5     6         7       8      9  10    11     12
+								FWriteLineUni(ptrHandle,'<tr><td>'+aTransMG[i,8]+'</td><td class=" date">'+DToC(SQLDate2Date(aTransMG[i,2]))+'</td>'+;
+									'<td>'+HtmlEncode(aTransMG[i,7])+'</td><td colspan="2">'+aPersData[prsPtr,2]+'</td><td class="amount">'+Str(aTransMG[i,6],12,DecAantal)+'</td><td colspan="2"></td></tr>')
+								fSubAccGrp:=Round(fSubAccGrp+aTransMG[i,6],DecAantal) 						
+							next				
+							// print total MG
+							FWriteLineUni(ptrHandle,'<tr><td colspan="6"></td><td class="sumamountSub">'+Str(fSubAccGrp,12,DecAantal)+'</td><td></td></tr>' )
+							fAccGrp:=Round(fAccGrp+fSubAccGrp,DecAantal)
+						endif
+						// print total gifts:
+						FWriteLineUni(ptrHandle,'<tr><td colspan="5"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total gifts",,"!")+'</td><td class="sumamountAcc">'+Str(fAccGrp,12,DecAantal)+'</td></tr>' )
+						fKindGrp:=Round(fKindGrp+fAccGrp,DecAantal)
+					else   // other kinds:
+						// print total account:
+						FWriteLineUni(ptrHandle,'<tr><td colspan="6"></td><td class="sumamountSub">'+Str(fAccGrp,12,DecAantal)+'</td><td></td></tr>' ) 
+						if cCurrKind="2"
+							// in case of fund also total account column:
+							FWriteLineUni(ptrHandle,'<tr><td colspan="7"></td><td class="sumamountAcc">'+Str(fAccGrp,12,DecAantal)+'</td></tr>' ) 							
+							
+						elseif cCurrKind='4'   // other accounts: 
+							// determine closing balance: 
+							nCurrMonth:=self:CalcMonthEnd 
+							fBalance:=0.00
+							if (nMonth:=AScan(aAccidMbr[accPtr,10],{|x|x[1]==nCurrMonth}))>0 
+								if aAccidMbr[accPtr,7]==liability .or.  aAccidMbr[accPtr,7]==ASSET
+									fBalance:=aAccidMbr[accPtr,10,nMonth,2]
+								else
+									fBalance:=aAccidMbr[accPtr,10,nMonth,3]+aAccidMbr[accPtr,10,nMonth,2]
+								endif
+							endif
+							EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(nCurrMonth,2,0)+'01'))
+							FWriteLineUni(ptrHandle,'<tr style="font-weight:bold;"><td colspan="2"></td><td colspan="3">'+oLan:RGet("Balance on",,'!')+' '+DToC(EndInMonth)+'</td><td class="amount">'+Str(fBalance,12,2)+'</td><td colspan="2"></td></tr>') 
+						endif
+						fKindGrp:=Round(fKindGrp+fAccGrp,DecAantal)						
+					endif				
+					fAccGrp:=0.00
+					fSubAccGrp:=0.00
+				endif
+				if	cCurrKind<>aTrans[nTrans,12]
+					if	!Empty(cCurrKind)
+						if aTrans[nTrans,12]>'2'   // income and fund in one summation category
+							//	print	totals kind
+							FWriteLineUni(ptrHandle,'<tr><td colspan="5"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total",,"!")+' '+;
+								oLan:RGet(iif(cCurrKind<'3',"Income",iif(cCurrKind='3',"Expense","Other accounts")),,'!')+'</td><td class="sumamountKind">'+Str(fKindGrp,12,DecAantal)+'</td></tr>' )
+							fKindGrp:=0.00
+						endif 
+						// print new heading
+						cCurrKind:=aTrans[nTrans,12]
+						if cCurrKind>'2' .and. cCurrKind<'5'   // expenses or other accounts 
+							FWriteLineUni(ptrHandle,'<tr>'+;
+								'<td colspan="8" style="width:100%;border-bottom:2px solid black;"><h1>'+oLan:RGet(iif(cCurrKind<'3',"Income",iif(cCurrKind='3',"Expense","Other accounts")),,'!')+cPeriod+"</h1></td></tr>")
+						endif
+					else      // first time of kinds
+						cCurrKind:=aTrans[nTrans,12] 
+						if cCurrKind<'5'
+							FWriteLineUni(ptrHandle,'<tr>'+;
+								'<td colspan="8" style="width:100%;border-bottom:2px solid black;"><h1>'+oLan:RGet(iif(cCurrKind<'3',"Income",iif(cCurrKind='3',"Expense","Other accounts")),,'!')+cPeriod+"</h1></td></tr>")
+							fKindGrp:=0.00    
+						endif
+					endif	
+					if cCurrKind='5'
+						exit   // end printing of transactions
+					endif
+				endif
+				cCurrAcc:=aTrans[nTrans,1]
+				//	look for	corresponding aAccidMbr
+				accPtr:=AScan(aAccidMbr,{|x|x[1]==aMbr[m,1] .and.x[2]==cCurrAcc})
+				if cCurrKind='2'  // fund
+					FWriteLineUni(ptrHandle,'<tr><td ><h2>'+oLan:RGet("Fund",,"!")+'</h2></td><td colspan="5" style="font-weight:bold;">'+HtmlEncode(aAccidMbr[accPtr,4])+'</td><td colspan="2"></td></tr>')
+				elseif cCurrKind<'4' 
+					// print account heading:
+					FWriteLineUni(ptrHandle,'<tr><td >'+oLan:RGet("Account",,"!")+':</td><td colspan="5" style="font-weight:bold;">'+HtmlEncode(aAccidMbr[accPtr,4])+'</td><td colspan="2"></td></tr>') 
+				else   // other accounts: 
+					// determine opening balance: 
+					nCurrMonth:=self:CalcMonthStart 
+					fBalance:=0.00
+					if (nMonth:=AScan(aAccidMbr[accPtr,10],{|x|x[1]==nCurrMonth}))>0 
+						fBalance:=aAccidMbr[accPtr,10,nMonth,3]
+					endif
+					StartinMonth:=SToD(Str(self:CalcYear,4,0)+StrZero(nCurrMonth,2,0)+'01')
+					// print account heading:
+					FWriteLineUni(ptrHandle,'<tr><td colspan="6"><h2>'+aAccidMbr[accPtr,5]+'</h2></td><td colspan="2"></td></tr>') 
+				endif
+				if cCurrKind>='2' 
+					// print column heading:
+					FWriteLineUni(ptrHandle,'<tr class="'+iif(cCurrKind<'4','columnhd','columnhdother')+'"><td>'+oLan:RGet('Document id',,"!")+'</td><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
+						'<td colspan="3">'+oLan:RGet("Description",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>'+;
+						iif(cCurrKind='4','<tr style="font-weight:bold;"><td colspan="2"></td><td colspan="3">'+oLan:RGet("Balance on",,'!')+' '+DToC(StartinMonth)+'</td><td class="amount">'+Str(fBalance,12,2)+'</td><td colspan="2"></td></tr>','')) 
+				endif
+			endif
+			// print transaction:
+			IF cCurrKind=='1'
+				if !Empty(aTrans[nTrans,9])
+					AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate 
+				elseif aTrans[nTrans,10]=='MG'
+					AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate 
+				else
+					if self:GiftDetails
+						if	lColumnHeading
+							lColumnHeading:=false
+							FWriteLineUni(ptrHandle,'<tr><td	colspan="6"><h2>'+oLan:RGet("Income",,"!")+' '+sLand+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+								'<tr class="columnhd"><td>'+oLan:RGet('Document id',,"!")+'</td><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
+								'<td style="width:50%">'+oLan:RGet("Description",,"!")+'</td><td colspan="2" style="width:20%">'+oLan:RGet("Name",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>')	
+						endif
+						// get person data:
+						// aPersdata: {{persid, fullname, fulladdress, email},...	
+						//                  1       2         3        4              
+						prsPtr:=AScan(aPersData,{|x|x[1]==aTrans[nTrans,5]})
+						// print transaction:
+						// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
+						//              1   2     3      4      5     6         7       8      9  10    11     12
+						FWriteLineUni(ptrHandle,'<tr><td>'+aTrans[nTrans,8]+'</td><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
+							'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td colspan="2">'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+					endif
+					fSubAccGrp:=Round(fSubAccGrp+aTrans[nTrans,6],DecAantal) 						
+				endif
+			elseif cCurrKind>'1' .and. cCurrKind<='4'
+				FWriteLineUni(ptrHandle,'<tr><td>'+aTrans[nTrans,8]+'</td><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
+					'<td colspan="3" style="width:70%">'+HtmlEncode(aTrans[nTrans,7])+'</td><td class="amount">'+Str(aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),12,DecAantal)+'</td><td colspan="2"></td></tr>')
+				fAccGrp:=Round(fAccGrp+aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),DecAantal) 						
+			endif
+		next
+		FWriteLineUni(ptrHandle,"<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table></td></tr></table>")
+
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
+		//
+		// GIFTS YEAR OVERVIEWS:
+		//
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Produce overview all gifts sorted by giver and month from aGiftData:
+		// aGiftData: {{sortkey,persid,addressblock,{{amount,  gc },...}},...
+		//                 1       2        3          4,1,1 4,1,2  
+		// aGiftData: {{sortkey,persid,addressblock,{amount,gc },{amount,gc },...{amount,gc }}},...
+		//                 1       2        3          4,1  4,2    5,1   5,2        12,1 12,2
+		ASort(aGiftdata,,,{|x,y|x[1]<=y[1]})
+		self:GiftsYearOverview(self:CalcYear,self:CalcMonthEnd,aGiftdata,aGiftsTotals,ptrHandle )
+		SetDecimalSep(Asc('.'))
+		IF !Empty(self:SendingMethod) 
+			FWriteLineUni(ptrHandle,"</body></html>")  
+			// closing record:
+			FClose(ptrHandle)
+			if	self:SendingMethod=="SeperateFileMail"	
+				//	add to be emailed	statements aMailMember:	//	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,fullname contact}
+				//	aMbr:	{{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
+				//				1		  2			3		  4		  5	  6			7			8			9			  10			11               12
+				AAdd(self:aMailMember,{aMbr[m,1],aMbr[m,2],cFileMember,iif(aMbr[m,7]<>'1',aMbr[m,8],''),iif(aMbr[m,7]<>'0'.or.self:mailcontact,aMbr[m,9],''),aMbr[m,10],aMbr[m,11],aMbr[m,12]})
+			endif
+		endif
+		Alg_taal:=myLang 
+		if Mod(m,nIncr)=0
+			self:STATUSMESSAGE(cMess+='.')
+		endif
+	next
+	time1:=time0
+	LogEvent(,"Printing:"+Str((time0:=Seconds())-time1,-1),"logsql")   
+	SQLStatement{"DROP TABLE IF EXISTS accidmbr",oConn}:Execute()
+	SQLStatement{"DROP TABLE IF EXISTS transmbr",oConn}:Execute()
+	IF Empty(self:SendingMethod) 
+		// closing record:
+		FWriteLineUni(ptrHandle,"</body></html>")  
+		FClose(ptrHandle) 
+		// show file with browser:
+		FileStart(cFileMember,self) 
+	elseif self:SendingMethod=="SeperateFileMail" 
+		// Prepare sending files by email:
+		oSelpers:=Selpers{self,,}
+		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
+		// lookup al person data of all required recipients: 
+		aPers:={}
+		// aMailMember:	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,contact name} 
+		//                    1        2        3        4              5               6           7               8
+		for i:=1 to Len(self:aMailMember)
+			if !Empty(aMailMember[i,4])      // member
+				AAdd(aPers,aMailMember[i,4])
+			elseif !Empty(aMailMember[i,5])
+				AAdd(aPers,aMailMember[i,5])	// contact			
+			endif
+		next
+		if !Empty(aPers)
+			self:STATUSMESSAGE(self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")+"...")
+			oSelpers:oDB:=SQLSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
+				"attention,cast(datelastgift as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
+			oSelpers:oDB:Execute()
+			if !Empty(oSelpers:oDB:status)
+				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage,"logerrors")
+				ErrorBox{self, self:oLan:WGet("could not retrieve member assessment data")}:Show()
+				return
+			endif
+			oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
+			do while !oSelpers:oDB:EOF .and. !Empty(aMailMember) 
+				oRecip1:=null_object
+				oRecip2:=null_object 
+				cPers:=Str(oSelpers:oDB:persid,-1)
+				if (m:=AScan(self:aMailMember,{|x|x[4]==cPers .or.(Empty(x[4]).and.x[5]==cPers)}))>0
+					memberName:=aMailMember[m,2]
+					IF !Empty(aMailMember[m,4])    // Destination member
+						* Resolve membername:
+						oRecip1 := oMapi:ResolveName( oSelpers:oDB:lastname,Val(aMailMember[m,4]),memberName,aMailMember[m,6])
+						IF !Empty(aMailMember[m,5])    // Destination also contact
+							* Resolve contactname for cc:
+							oRecip2 := oMapi:ResolveName(aMailMember[m,8],Val(aMailMember[m,5]),aMailMember[m,8],aMailMember[m,7])
+						ENDIF
+					ELSE
+						// only contact:
+						* Resolve contactname for to:
+						oRecip1 := oMapi:ResolveName(aMailMember[m,8],Val(aMailMember[m,5]),aMailMember[m,8],aMailMember[m,7])
+					ENDIF
+					IF oRecip1 != null_object
+						IF !Empty(oEMLFrm:Template)
+							mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
+						ELSE
+							mailcontent:=""
+						ENDIF
+						oFileSpec:=FileSpec{aMailMember[m,3]}
+						if !oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
+							Logevent(self,"Could not mail Giftreport "+cPeriod+" to "+memberName,"logerrors")
+							ErrorBox{self,"Could not mail Giftreport "+cPeriod+" to "+memberName}:Show()
+						endif
+						
+					ENDIF 
+				endif
+				ADel(aMailMember,m) 
+				aSize(aMailMember,len(aMailMember)-1)
+				oSelpers:oDB:Skip()
+			enddo 
+		endif
+		oMapi:Close()  
+	ENDIF 
+	self:Pointer := Pointer{POINTERARROW}
+	return
 ACCESS MonthEnd() CLASS GiftReport
 RETURN SELF:FieldGet(#MonthEnd)
 
@@ -3492,16 +4560,20 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS GiftReport
 	LOCAL nAcc as STRING
-	LOCAL nRow, nPage as int
+	LOCAL nRow, nPage as int 
+	local oPPcd as SqlSelect
 
 
 	// 	IF ValidateControls( self, self:AControls )
 	IF SendingMethod=="SeperateFileMail"
 		IF !IsMAPIAvailable()
-			(ErrorBox{self:Owner,self:oLan:WGet("Outlook not default mailing system or no interface to it")}):show()
+			(ErrorBox{self:Owner,self:oLan:WGet("No email client available")}):show()
 			RETURN true
-		ENDIF
+		ENDIF 
+		self:aMailMember:={}
 	ENDIF
+	self:DecFrac:=ConI(SqlSelect{"select decmgift from sysparms",oConn}:FIELDGET(1)) 
+	self:DecFrac1:=Max(0,self:DecFrac-1)
 	self:CalcYear:=Round(Val(self:oDCReportYear:TextValue),0)
 	self:CalcMonthEnd:=Round(Val(self:oDCMonthEnd:TextValue),0)
 	self:CalcMonthStart:=Round(Val(self:oDCMonthStart:TextValue),0)
@@ -3529,8 +4601,21 @@ METHOD OKButton( ) CLASS GiftReport
 		ELSE
 			self:oReport:show()
 		ENDIF
-		self:GiftsPrint(self:FromAccount,self:ToAccount,self:CalcYear,self:CalcMonthEnd,@nRow,@nPage)
-	ENDIF
+		IF .not.oReport:lPrintOk
+			RETURN FALSE
+		ENDIF
+		// read opp codes:
+		oPPcd := SqlSelect{"select group_concat(ppcode,'#$#',ppname separator '#%#') as grPP from ppcodes order by ppcode",oConn}
+		oPPcd:Execute()
+		if oPPcd:Reccount>0 
+			self:aPPCode:=AEvalA(Split(oPPcd:grPP,'#%#'),{|x|x:=Split(x,'#$#') }) 
+		endif
+		if self:html_format
+			self:MemberStatementPrint(self:FromAccount,self:ToAccount,self:CalcYear,self:CalcMonthEnd)
+		endif 
+		self:GiftsPrint(self:FromAccount,self:ToAccount,self:CalcYear,self:CalcMonthEnd,@nRow,@nPage) 
+	ENDIF 
+	SetDecimalSep(Asc('.'))
 	// 	ENDIF
 	RETURN true
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
@@ -3555,19 +4640,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	if FromAccount==ToAccount
 		self:SkipInactive:=false
 	else
-// 		if self:Memberstmnt="ALLST"
-// 			self:SkipInactive:=false 
-// 			self:oDCSkipInactive:ToolTipText:=self:oLan:WGet("Suppress reports with no financial transaction in All Months")
-// 		else
-			self:SkipInactive:=true
-			self:oDCSkipInactive:ToolTipText:=self:oLan:WGet("Suppress reports with no financial transaction in Last Month")
-// 		endif
+		self:SkipInactive:=true
 	endif
 	self:BeginReport:=true 
-	if sEntity=='FRN'
+	if sEntity=='FRN' .or. sEntity=='NED'
 		self:oDCGiftDetails:Checked :=true
 	endif
-
+   if sEntity=='NED'
+   	self:oDChtml_format:show() 
+   	self:oDChtml_format:Checked:=true
+   endif
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	//Put your PreInit additions here
@@ -3578,7 +4660,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 METHOD Printreport( ) CLASS GiftReport 
 	self:SendingMethod:=""
 	self:OKButton()
-RETURN NIL
+	RETURN NIL
 ACCESS ProjectsBox() CLASS GiftReport
 RETURN SELF:FieldGet(#ProjectsBox)
 
@@ -3672,6 +4754,7 @@ STATIC DEFINE GIFTREPORT_GIFTDETAILS := 131
 STATIC DEFINE GIFTREPORT_GROUPBOX1 := 112 
 STATIC DEFINE GIFTREPORT_GROUPBOX2 := 118 
 STATIC DEFINE GIFTREPORT_HOMEBOX := 100 
+STATIC DEFINE GIFTREPORT_HTML_FORMAT := 132 
 STATIC DEFINE GIFTREPORT_LASTMONTH := 119 
 STATIC DEFINE GIFTREPORT_MAILCONTACT := 122 
 STATIC DEFINE GIFTREPORT_MONTHEND := 111 
@@ -3722,74 +4805,74 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	LOCAL separator := Replicate('-',40)+'|-------|-------|-------|-------|-------|'+;
 		'-------|-------|-------|-------|-------|-------|-------|'  as string
 	local HeadingRTF:="\trowd\trautofit1\trgaph60"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx3950"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx4750"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx5620"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx6455"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx7290"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx8125"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx8960"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx9795"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx10630"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx11465"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx12300"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx13135"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
-"\cellx13950\f0"
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx3950"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx4750"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx5620"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx6455"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx7290"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx8125"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx8960"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx9795"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx10630"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx11465"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx12300"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx13135"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrt\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw20\brdrth\clcbpat4"+; 
+	"\cellx13950\f0"
 	local RowRTFline:="\trowd\trautofit1\aspalpha\aspnum\trpaddr40\trpaddfr3\trgaph60"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs\clNoWrap"+; 
-"\cellx3950"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx4750"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx5620"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx6455"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx7290"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx8125"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx8960"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx9795"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx10630"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx11465"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx12300"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx13135"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
-"\cellx13950"  as string
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs\clNoWrap"+; 
+	"\cellx3950"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx4750"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx5620"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx6455"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx7290"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx8125"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx8960"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx9795"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx10630"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx11465"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx12300"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx13135"+;
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clbrdrb\brdrw10\brdrs"+; 
+	"\cellx13950"  as string
 	local RowRTF:="\trowd\trautofit1\aspalpha\aspnum\trpaddr40\trpaddfr3\trgaph60"+;
-"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clNoWrap"+;
-"\cellx3950\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx4750\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx5620\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx6455\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx7290\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx8125\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx8960\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx9795\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx10630\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx11465\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx12300\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx13135\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
-"\cellx13950"  as string 
+		"\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs\clNoWrap"+;
+		"\cellx3950\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx4750\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx5620\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx6455\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx7290\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx8125\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx8960\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx9795\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx10630\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx11465\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx12300\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx13135\clbrdrl\brdrw10\brdrs\clbrdrr\brdrw10\brdrs"+;
+		"\cellx13950"  as string 
 	LOCAL RowCnt,NoteNumber,GClen,CurPersid as int
 	local cPersids as string 
 
@@ -3943,7 +5026,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 				*          	processing Footnotes:
 				IF .not.Empty(aGiversdata[gvr,DESCR]).and.Upper(aGiversdata[gvr,DESCR]) # GiftDesc; 
 					.and. AtC('maandelijks',aGiversdata[gvr,DESCR])=0 .and.AtC('kwartaal',aGiversdata[gvr,DESCR])=0 ;
-					.and. aGiversdata[gvr,amnt] # 0.and.aGiversdata[gvr,DESCR] # NonEarDesc
+						.and. aGiversdata[gvr,amnt] # 0.and.aGiversdata[gvr,DESCR] # NonEarDesc
 					IF Empty(NoteRef[iMonth])
 						++NoteNumber
 						NoteRef[iMonth]:=Pad("    *"+AllTrim(Str(NoteNumber,3)),8)
@@ -3977,15 +5060,15 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 		next
 		LineContent+=+iif(oReport:lRTF,"\row\pard",'')
 		oReport:PrintLine(@nRow,@nPage,LineContent,aHeading)
-// 		oReport:PrintLine(@nRow,@nPage,aRow[3] + NoteRef[1]+NoteRef[2]+NoteRef[3];
-// 			+NoteRef[4]+NoteRef[5]+NoteRef[6]+NoteRef[7]+;
-// 			NoteRef[8]+NoteRef[9]+NoteRef[10]+;
-// 			NoteRef[11]+NoteRef[12],aHeading)
-			
+		// 		oReport:PrintLine(@nRow,@nPage,aRow[3] + NoteRef[1]+NoteRef[2]+NoteRef[3];
+		// 			+NoteRef[4]+NoteRef[5]+NoteRef[6]+NoteRef[7]+;
+		// 			NoteRef[8]+NoteRef[9]+NoteRef[10]+;
+		// 			NoteRef[11]+NoteRef[12],aHeading)
+		
 		if AddressRow>3 
 			FOR i=4 to AddressRow
 				LineContent:=iif(oReport:lRTF,iif(i=AddressRow,RowRTFline,RowRTF)+"\intbl\ql "+AllTrim(aRow[i]) +"\cell\intbl\cell\intbl\cell\intbl\cell"+;
-				"\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\row\pard",aRow[i])
+					"\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\intbl\cell\row\pard",aRow[i])
 				oReport:PrintLine(@nRow,@nPage,LineContent,aHeading)
 			NEXT
 		endif
@@ -4211,15 +5294,6 @@ STATIC DEFINE PMISSEND_BALANCETEXT := 102
 STATIC DEFINE PMISSEND_CANCELBUTTON := 101 
 STATIC DEFINE PMISSEND_OKBUTTON := 100 
 STATIC DEFINE PRSID:=2
-CLASS ReImbursement INHERIT DataWindowExtra 
-
-	PROTECT oDCBalanceText AS FIXEDTEXT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  protect oEmp as SQLSelect 
-  protect Begindate,CloseDate as date
 RESOURCE ReImbursement DIALOGEX  4, 3, 300, 64
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -4229,6 +5303,15 @@ BEGIN
 	CONTROL	"Cancel", REIMBURSEMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 240, 32, 53, 12
 END
 
+CLASS ReImbursement INHERIT DataWindowExtra 
+
+	PROTECT oDCBalanceText AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oEmp as SQLSelect 
+  protect Begindate,CloseDate as date
 METHOD CancelButton( ) CLASS ReImbursement 
 	self:ENDWindow()
 	super:Cancel()
@@ -4469,6 +5552,18 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class ReImbursement
 STATIC DEFINE REIMBURSEMENT_BALANCETEXT := 100 
 STATIC DEFINE REIMBURSEMENT_CANCELBUTTON := 102 
 STATIC DEFINE REIMBURSEMENT_OKBUTTON := 101 
+RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
+	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
+	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
+	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
+	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
+	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
+END
+
 class TaxReport inherit DataWindowMine 
 
 	protect oDCYearTax as COMBOBOX
@@ -4482,18 +5577,6 @@ class TaxReport inherit DataWindowMine
 	instance YearTax 
 	instance Threshold 
   PROTECT TaxID as STRING
-RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
-	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
-	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
-	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
-	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
-	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
-END
-
 METHOD CancelButton( ) CLASS TaxReport
 	SELF:endWindow()
 	RETURN
