@@ -559,7 +559,7 @@ METHOD PrintReport() CLASS PMISsend
 	endif
 	if Len(aAccDestOwn)>0
 		// collect own destination accounts
-		oSel:=SqlSelect{"select group_concat(cast(accid as char),'#$#',accnumber separator '##') as owndest from account where accnumber in ("+Implode(aAccDestOwn,',',,,2)+") and active=1",oConn}
+		oSel:=SqlSelect{"select group_concat(cast(accid as char),'#$#',accnumber separator '##') as owndest from account where accnumber in ("+Implode(aAccDestOwn,'","',,,2)+") and active=1",oConn}
 		if oSel:Reccount>0
 			aAccDestOwn:=AEvalA(Split(oSel:owndest,'##'),{|x|x:=Split(x,'#$#')})
 		else
@@ -709,7 +709,7 @@ METHOD PrintReport() CLASS PMISsend
 				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",'') order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
 				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
 				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}  
-				
+logevent(self,oSel:sqlstring,"logsql")				
 			if oSel:Reccount>0
 				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
 			endif 
