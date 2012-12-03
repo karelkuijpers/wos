@@ -16,7 +16,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 	// check if there is a new wosupgradeinstaller.exe
 	LOCAL oFTP  as cFtp
 	Local aInsRem as Array 
-	Local oFs as FileSpec, LocalDate as date, RemoteDate as date 
+	Local oFs as FileSpec, LocalDate as date , RemoteDate as date,LocalTime,Remotetime as string 
 	local aCurvers as array
 	local DBVers,PrgVers as float 
 	local oSys as SqlSelect
@@ -51,18 +51,23 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 			aInsRem:=oFTP:Directory("variable/*.*")
 			for i:=1 to Len(aInsRem)
 				oFs:=FileSpec{cWorkdir+aInsRem[i,F_NAME]}
-				if !oFs:Find() .or. oFs:DateChanged <aInsRem[i,F_DATE]   // newer?
+				if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false)
+					if lSuc
+						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] ) 
+					endif
 				endif					 
 			next
 			oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
 			if oFs:Find()
-				LocalDate:=oFs:DateChanged  
+				LocalDate:=oFs:DateChanged
+				LocalTime:=oFs:TimeChanged  
 			endif
 			aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
 			if Len(aInsRem)>0
 				RemoteDate:=aInsRem[1,F_DATE]
-				if LocalDate < RemoteDate .or.DBVers>PrgVers
+				Remotetime:=aInsRem[1,F_TIME]
+				if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or.DBVers>PrgVers
 					// apparently new version:
 					if (TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
 						// load first latest version of install program:
@@ -73,8 +78,11 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 							oFs:Find()
 							CollectForced()  // to force some wait
 							if oFs:Find()
+								// change date to remote date: 
+								SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
 								startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
-							endif 
+							endif
+*/
 							oFTP:CloseRemote()
 							return true 
 						ENDIF
