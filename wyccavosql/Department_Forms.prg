@@ -793,6 +793,7 @@ METHOD OKButton( ) CLASS EditDepartment
 	local cSQLStatement as string
 	local oStmnt as SQLStatement 
 	local cLastname as string
+	local cGiftsAccs as string
 
 	IF Empty(self:mDepartmntNbr)
 		(ErrorBox{,"Please fill number of department"}):Show()
@@ -836,7 +837,13 @@ METHOD OKButton( ) CLASS EditDepartment
 		IF Empty(self:NbrExpense)
 			(ErrorBox{,"Expense account obliged for this member department"}):Show()
 			RETURN
-		ENDIF		
+		ENDIF
+		// check if only Income account is Gifts receivable:
+		cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+self:NbrIncome,oConn}:giftsaccs)
+		if !Empty(cGiftsAccs)
+			(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
+			RETURN			
+		endif
 	endif
 	// 	IF SELF:lNew
 	// 		IF !Empty(SELF:NbrCAPITAL)
