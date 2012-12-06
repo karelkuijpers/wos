@@ -2719,7 +2719,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 	LOCAL oMem as SQLSelect
 	LOCAL aDistrm:=self:aDistr as array
 	Local n,myMbrId:=Val(self:mMbrId) as int
-	local cLastname as string
+	local cLastname,cGiftsAccs as string
 	local oDep,aAcc as SQLSelect 
 
 	*Check obliged fields:
@@ -2807,7 +2807,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			endif 
 			if lValid
 				oDep:=SQLSelect{"select d.incomeacc,d.expenseacc,ai.description as incname,ae.description as expname from department d "+;
-				"left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where d.depid="+self:mDepId,oConn}
+					"left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where d.depid="+self:mDepId,oConn}
 				if oDep:RecCount>0
 					if Empty(oDep:incomeacc)
 						cError:=self:oLan:WGet('Account income obliged for department member')
@@ -2826,6 +2826,15 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 						lValid:=FALSE
 						self:oDCmAccDept:SetFocus() 
 					ENDIF
+					if lValid 
+						// check if only Income account is Gifts receivable:
+						cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+ConS(oDep:incomeacc),oConn}:giftsaccs)
+						if !Empty(cGiftsAccs)
+							cError:=self:oLan:WGet("Following accounts should not be gifts receivable")+': '+cGiftsAccs
+							lValid:=FALSE
+							self:oDCmAccDept:SetFocus()
+						endif 
+					endif
 				endif				
 			endif
 		endif
