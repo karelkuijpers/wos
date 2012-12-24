@@ -414,7 +414,7 @@ METHOD PrintReport() CLASS PMISsend
                                 //                                                                  1      2         3             4           5             6              7                  8             9                10
 	local aAccRPP:={} as array   // array with total RPP amount per accid    {{accid,rpptot},...}
 	local aRPPMbr:={} as array   // array with total RPP amount per mbrid    {{mbrid,rpptot},...}
-	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername  
+	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername,fromRPP  
 	local aAccDestOwn:={} as array  // array with destination acounts within own system: {{accid,accnumber},...}
 	local aTransMT:={} as array  // array with values to be inserted into table transaction for PMC transactions
 	local aTransDT:={} as array  // array with values to be inserted into table transaction for direct transactions
@@ -706,10 +706,10 @@ METHOD PrintReport() CLASS PMISsend
 		if Len(aAccidMbrF)>0
 			// For foreign members: all transactions not yet sent to PMC with assmntcode <> ‘’
 			oSel:=SqlSelect{"select group_concat(cast(accid as char),'&&',cast(transid as char),'&&',cast(seqnr as char),'&&',coalesce(cast(t.persid as char),''),'&&',description,'&&',cast(deb as char),'&&',cast(cre as char),'&&',gc,'&&',"+;
-				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",'') order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
+				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",''),'&&',cast(fromrpp as char) order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
 				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
 				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}  
-logevent(self,oSel:sqlstring,"logsql")				
+// logevent(self,oSel:sqlstring,"logsql")				
 			if oSel:Reccount>0
 				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
 			endif 
@@ -746,7 +746,7 @@ logevent(self,oSel:sqlstring,"logsql")
 		// aMbr:
 		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
 		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-		me_mbrid:=aMbr[nMbr,1]
+		me_mbrid:=aMbr[nMbr,1] 
 		me_accid:= iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,18],aMbr[nMbr,10])       // accid or accidexp
 		me_accnbr:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,19],aMbr[nMbr,11])       // accnumberexp or ACCNUMBER
 		me_currency:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,21],aMbr[nMbr,12])       // currencyexp or currency
@@ -870,8 +870,8 @@ logevent(self,oSel:sqlstring,"logsql")
 
 		IF me_homePP!=SEntity
 			// process transaction to be sent to PMC
-			// aTransF:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givernac
-			//              1     2      3      4       5         6  7   8     9     10    11  
+			// aTransF:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givernac,fromRPP
+			//              1     2      3      4       5         6  7   8     9     10    11        12
 			TotAssrate:=Round(100.00 - Round(OfficeRate+self:sPercAssInt+self:sAssmntField,DecAantal),DecAantal)
 			me_amounttot:=round(me_asshome+mbrint,decaantal)
 			nAccmbr:=1 
@@ -891,7 +891,7 @@ logevent(self,oSel:sqlstring,"logsql")
 						if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
 							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,4]+Space(1)+aTransF[nTrans,11]
 						endif
-						if me_gc=='AG' .and. me_stat!="Staf"
+						if me_gc=='AG' .and.aTransF[nTrans,12]=='0' .and. me_stat!="Staf" 
 							me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
 							me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
 						endif
