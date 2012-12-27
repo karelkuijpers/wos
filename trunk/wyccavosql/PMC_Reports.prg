@@ -1603,7 +1603,7 @@ METHOD PrintReport() CLASS PMISsend
 		self:STATUSMESSAGE(Space(80) )
 		if Empty(cError)
 			if	PMCUpload
-				LogEvent(self,self:oLan:WGet("Uploaded	file")+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet("total amount")+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+	Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR	)
+				LogEvent(self,self:oLan:WGet('Uploaded file')+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet('total amount')+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+	Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR	)
 			endif
 			self:STATUSMESSAGE(self:oLan:WGet('unlocking member transactions')+'...')
 			oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
