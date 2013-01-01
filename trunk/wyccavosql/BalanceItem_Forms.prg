@@ -31,10 +31,10 @@ METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemE
 		ELSE
 			FieldValue:="Liabilities&Funds"
 		ENDIF
-		oListViewItem:SetValue(self:aItem[nCurrentRec,1],#Identifier)  // balitemid
-		oListViewItem:SetText(self:aItem[nCurrentRec,4],#Identifier)   //  number
-		oListViewItem:SetValue(self:aItem[nCurrentRec,3], #Description)  // heading
-		oListViewItem:SetValue(FieldValue, #Type)
+		oListViewItem:SetValue(self:aItem[nCurrentRec,1],self:sListIdentify)  // balitemid
+		oListViewItem:SetText(self:aItem[nCurrentRec,4],self:sListIdentify)   //  number
+		oListViewItem:SetValue(self:aItem[nCurrentRec,3], self:sListDescription)  // heading
+		oListViewItem:SetValue(FieldValue, self:sListType)
 		oListView:AddItem(oListViewItem)
 		nCurrentRec:=AScan(self:aItem,{|x|x[2]==ParentNum},nCurrentRec+1)
 		
@@ -46,9 +46,9 @@ METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemE
 		oListViewItem := ListViewItem{}
 		oListViewItem:ImageIndex	:=	3
 		//	for each	field, set the	value	in	the item
-		oListViewItem:SetValue(self:aAccnts[nCurAcc,1],#Identifier)  // accid
-		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	#Identifier)  //accnumber
-		oListViewItem:SetValue(self:aAccnts[nCurAcc,3],#Description)  //  description
+		oListViewItem:SetValue(self:aAccnts[nCurAcc,1],self:sListIdentify)  // accid
+		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	self:sListIdentify)  //accnumber
+		oListViewItem:SetValue(self:aAccnts[nCurAcc,3],self:sListDescription)  //  description
 		category:=self:aAccnts[nCurAcc,5]
 		IF	category==expense
 			FieldValue:="Expense"
@@ -59,7 +59,7 @@ METHOD BuildListViewItems(ParentNum:=0 as int) as void pascal CLASS BalanceItemE
 		ELSE
 			FieldValue:="Liabilities&Funds"
 		ENDIF
-		oListViewItem:SetValue(FieldValue, #Type)
+		oListViewItem:SetValue(FieldValue, self:sListType)
 		oListView:AddItem(oListViewItem)
 		nCurAcc:=AScan(self:aAccnts,{|x|x[2]==ParentNum},nCurAcc+1)
 	ENDDO
@@ -288,8 +288,8 @@ METHOD SortByDescription(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetValue(#Description)
-    uValue2 := oListViewItem2:GetValue(#Description)
+    uValue1 := oListViewItem1:GetValue(self:sListDescription)
+    uValue2 := oListViewItem2:GetValue(self:sListDescription)
 
     IF uValue1 > uValue2
     	RETURN 1
@@ -303,8 +303,8 @@ METHOD SortByIdentifier(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetText(#Identifier)
-    uValue2 := oListViewItem2:GetText(#Identifier)
+    uValue1 := oListViewItem1:GetText(self:sListIdentify)
+    uValue2 := oListViewItem2:GetText(self:sListIdentify)
 
     IF uValue1 > uValue2
     	RETURN 1
@@ -318,8 +318,8 @@ METHOD SortByType(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetValue(#Type)
-    uValue2 := oListViewItem2:GetValue(#Type)
+    uValue1 := oListViewItem1:GetValue( self:sListType )
+    uValue2 := oListViewItem2:GetValue(self:sListType)
 
     IF uValue1 > uValue2
     	RETURN 1
@@ -486,6 +486,7 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	Protect oLan as Language
 	export aAccnts:={} as array
 	export aItem:={} as array 
+	export sListIdentify,sListDescription,sListType as symbol // symbols for listview columns
 	declare method BuildTreeViewItems,GetChild,GetTreeFromListItem,IsChildOf,ValidateBalanceTransition, GetIdFromSymbol,TransferItem
 METHOD Append ()  CLASS CustomExplorer
 	SELF:EditButton(TRUE)
@@ -596,8 +597,8 @@ METHOD DELETE() CLASS CustomExplorer
 	oListView := self:ListView
 	oListViewItem:=oListView:GetSelectedItem()
 	IF !Empty(oListViewItem)
-		nNum:=Str(oListViewItem:GetValue(#Identifier),-1)
-		cNumber:=oListViewItem:GetText(#Identifier)
+		nNum:=ConS(oListViewItem:GetValue(self:sListIdentify))
+		cNumber:=oListViewItem:GetText(self:sListIdentify)
 		lAccount:=(oListViewItem:MyImageIndex==3)
 		cNameSym:= self:GetTreeFromListItem(oListViewItem)
 	ENDIF
@@ -725,8 +726,8 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 			oListView := self:ListView
 			oListViewItem:=oListView:GetSelectedItem()
 			IF !Empty(oListViewItem)
-				nNum:=Str(oListViewItem:GetValue(#Identifier),-1)
-				// 				nNum:=oListViewItem:GetValue(#Identifier)
+				nNum:=Str(oListViewItem:GetValue(self:sListIdentify),-1)
+				// 				nNum:=oListViewItem:GetValue(self:sListIdentify)
 				lAccount:=(oListViewItem:MyImageIndex==3)
 			else
 				oTreeView:=self:TreeView
@@ -781,8 +782,8 @@ RETURN SubStr(nId,wLen+1)
 METHOD GetTreeFromListItem(oListViewItem as ListViewItem ) as symbol CLASS CustomExplorer
 LOCAL nNUm AS STRING, lAccount AS LOGIC
 * Determine corresponding Treeview item namesys:
-nNUm:=Str(oListViewItem:GetValue(#Identifier),-1)
-// lAccount:=(oListViewItem:GetValue(#Type)=="Account")
+nNum:=ConS(oListViewItem:GetValue(self:sListIdentify))
+// lAccount:=(oListViewItem:GetValue(self:sListType)=="Account")
 lAccount:=(oListViewItem:ImageIndex == 3)  //  Account?
 RETURN String2Symbol(if(lAccount,"ACCOUNT","Parent")+"_" + nNUm)
 METHOD Init(oOwner,SymTree,SymList) CLASS CustomExplorer
@@ -852,7 +853,14 @@ self:SetTexts()
 	oDimension:Height := 52
 	SELF:SetPaneSize(oDimension, 1)
 	oDimension:Width := oDimension:Width * 3 / 2
-	SELF:SetPaneSize(oDimension, 2)
+	self:SetPaneSize(oDimension, 2) 
+	
+	// initialize listview column symbols:
+	self:sListIdentify:=String2Symbol(self:oLan:WGet("Identifier"))
+	self:sListDescription:=String2Symbol(self:oLan:WGet("Description"))
+	self:sListType:=String2Symbol(self:oLan:WGet("Type"))
+	
+
 	// initialize data
 	SELF:InitData()
 	IF!Empty(cSearch)
@@ -915,10 +923,10 @@ METHOD ListViewColumnClick(oListViewClickEvent) CLASS CustomExplorer
 
 	// based on the column name, set the appropriate sort routine name
 	DO CASE
-		CASE symColumnName == #Identifier
+		CASE symColumnName == self:sListIdentify
 			SELF:ListView:EnableSort(#SortByIdentifier)
 
-		CASE symColumnName == #Description
+		CASE symColumnName == self:sListDescription
 			SELF:ListView:EnableSort(#SortByDescription)
 
 		CASE symColumnName == #Type
@@ -945,7 +953,7 @@ method ListViewMouseButtonDown(oListViewMouseEvent) class CustomExplorer
 	if IsObject( oListViewItem)
 		if IsMethod(oListViewItem,#GetValue)
 			if !oListViewItem:ImageIndex==1 
-				self:SelectedItem:=Str(oListViewItem:GetValue(#Identifier),-1)
+				self:SelectedItem:=Str(oListViewItem:GetValue(self:sListIdentify),-1)
 			endif
 		endif
 	endif
@@ -979,7 +987,7 @@ METHOD Paste()  CLASS CustomExplorer
 	IF !oLVItem==NULL_OBJECT .and. oLVItem:Focused
 		IF !(oLVItem:GetValue(#Type)=="Account")
 			* determine corresponding treeview item:
-			oTVItem:=oTreeView:GetItemAttributes(String2Symbol("Parent_" + oLVItem:GetValue(#Identifier)))
+			oTVItem:=oTreeView:GetItemAttributes(String2Symbol("Parent_" + oLVItem:GetValue(self:sListIdentify)))
 			SELF:oLVItemDrop:= oLVItem
 			SELF:oTVItemDrop := oTVItem
 			oTreeView:SelectItem( oTVItem:NameSym , #DropHighlight )
@@ -1274,7 +1282,7 @@ METHOD TreeViewDragMove( X , Y ) CLASS CustomExplorer
 		ENDIF
 		IF oLVItem != NULL_OBJECT.and.lCanDrop.and.!oLVItem:ImageIndex==3 //no account
 			* determine corresponding treeview item:
-			oTVItem:=oTreeView:GetItemAttributes(String2Symbol("Parent_" + Str(oLVItem:GetValue(#Identifier),-1)))
+			oTVItem:=oTreeView:GetItemAttributes(String2Symbol("Parent_" + Str(oLVItem:GetValue(self:sListIdentify),-1)))
 			* Check if found Treeview item not a child of a drag item:
 			nDropItemId:=Val(self:GetIdFromSymbol(oTVItem:NameSym))   
 			for i:=1 to Len(self:aDragList)
