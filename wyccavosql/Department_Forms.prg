@@ -22,10 +22,10 @@ METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentE
 
 		// for each field, set the value in the item
 		Fieldvalue:="department"
-		oListViewItem:SetValue(self:aItem[nCurrentRec,1], #Identifier)  //id
-		oListViewItem:SetText(self:aItem[nCurrentRec,4], #Identifier)   // number
-		oListViewItem:SetValue(self:aItem[nCurrentRec,3], #Description)
-		oListViewItem:SetValue(FieldValue, #Type)
+		oListViewItem:SetValue(self:aItem[nCurrentRec,1], self:sListIdentify)  //id
+		oListViewItem:SetText(self:aItem[nCurrentRec,4], self:sListIdentify)   // number
+		oListViewItem:SetValue(self:aItem[nCurrentRec,3], self:sListDescription)
+		oListViewItem:SetValue(FieldValue, self:sListType)
 		oListView:AddItem(oListViewItem)
 
 		nCurrentRec:=AScan(self:aItem,{|x|x[2]==ParentNum},nCurrentRec+1)
@@ -37,9 +37,9 @@ METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentE
 		oListViewItem := ListViewItem{}
 		oListViewItem:ImageIndex	:=	3
 		//	for each	field, set the	value	in	the item
-		oListViewItem:SetValue(self:aAccnts[nCurAcc,1],#Identifier)  // accid
-		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	#Identifier)  //AccNumber
-		oListViewItem:SetValue(self:aAccnts[nCurAcc,3],#Description)  //  description 
+		oListViewItem:SetValue(self:aAccnts[nCurAcc,1],self:sListIdentify)  // accid
+		oListViewItem:SetText(self:aAccnts[nCurAcc,4],	self:sListIdentify)  //AccNumber
+		oListViewItem:SetValue(self:aAccnts[nCurAcc,3],self:sListDescription)  //  description 
 		category:=self:aAccnts[nCurAcc,5]
 		IF	category==expense
 			FieldValue:="Expense"
@@ -50,7 +50,7 @@ METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentE
 		ELSE
 			FieldValue:="Liabilities&Funds"
 		ENDIF
-		oListViewItem:SetValue(FieldValue, #Type)
+		oListViewItem:SetValue(FieldValue, self:sListType)
 		oListView:AddItem(oListViewItem)
 		nCurAcc:=AScan(self:aAccnts,{|x|x[2]==ParentNum},nCurAcc+1)
 	ENDDO
