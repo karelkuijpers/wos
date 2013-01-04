@@ -30,6 +30,7 @@ GLOBAL EXCEL as STRING
 global FirstLogin as logic  // first login user this day?
 global GlBalYears:={} as Array
 GLOBAL HelpDir:="C:" as STRING
+global iban_registry as array
 GLOBAL KeyWords as ARRAY
 GLOBAL LENACCNBR:=12 as int
 GLOBAL LENBANKNBR as int
@@ -84,6 +85,7 @@ GLOBAL sCURRNAME as STRING
 GLOBAL SDEB as STRING   //account receivable 
 GLOBAL SDON as STRING
 GLOBAL SEntity as STRING
+global SepaEnabled as logic
 GLOBAL SEXP as STRING
 GLOBAL SEXPHOME as STRING
 global SFGC as string
@@ -114,7 +116,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.145" as string
+global Version:="3.0.0.160" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
