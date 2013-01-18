@@ -53,11 +53,11 @@ Method GetNextKey() as string class EditMailCd
 // determine next free key for mailingcode
 local oSel as SQLSelect
 local nKey as int
-	oSel := SQLSelect{"select max(pers_code) as maxvalue from perscod",oConn}
+	oSel := SqlSelect{"select pers_code from perscod order by pers_code desc limit 1",oConn}
 	if oSel:RecCount<1
 		return NtoC(1,2)
 	endif
-	nKey:=CtoN(oSel:maxvalue)+1
+	nKey:=CtoN(oSel:pers_code)+1
 	return NtoC(nKey,2)
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd 
