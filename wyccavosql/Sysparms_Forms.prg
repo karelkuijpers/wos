@@ -1,16 +1,3 @@
-CLASS EditLog INHERIT DATAWINDOW 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCSource AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDClogtime AS SINGLELINEEDIT
-	PROTECT oDCmMessage AS MULTILINEEDIT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCuserid AS SINGLELINEEDIT
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-	protect nLineLength:=100 as int
-	protect cMessage as string 
 RESOURCE EditLog DIALOGEX  4, 3, 420, 281
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -24,6 +11,19 @@ BEGIN
 	CONTROL	"", EDITLOG_USERID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 192, 11, 76, 12, WS_EX_CLIENTEDGE
 END
 
+CLASS EditLog INHERIT DATAWINDOW 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCSource AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDClogtime AS SINGLELINEEDIT
+	PROTECT oDCmMessage AS MULTILINEEDIT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCuserid AS SINGLELINEEDIT
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+	protect nLineLength:=100 as int
+	protect cMessage as string 
 method FillText() class EditLog
 	// distrubute text over lines in Multiline Edit
 	local n,nLines as int
@@ -442,12 +442,6 @@ STATIC DEFINE LOGREPORT_FOUNDTEXT := 109
 STATIC DEFINE LOGREPORT_SEARCHUNI := 110 
 STATIC DEFINE LOGREPORT_SUB_LOGREPORT := 106 
 STATIC DEFINE SELBANKACC_LISTBOX1 := 100 
-RESOURCE Sub_LogReport DIALOGEX  2, 2, 372, 279
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS Sub_LogReport INHERIT DataWindowMine 
 
 	PROTECT oDBSOURCE as DataColumn
@@ -456,6 +450,12 @@ CLASS Sub_LogReport INHERIT DataWindowMine
 	PROTECT oDBMESSAGE as DataColumn
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+
+RESOURCE Sub_LogReport DIALOGEX  2, 2, 372, 279
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
 
 method ButtonDoubleClick(oControlEvent) class Sub_LogReport
 	local oControl as Control
@@ -565,6 +565,42 @@ STATIC DEFINE SUB_LOGREPORT_LOGTIME := 101
 STATIC DEFINE SUB_LOGREPORT_MESSAGE := 102 
 STATIC DEFINE SUB_LOGREPORT_SOURCE := 100 
 STATIC DEFINE SUB_LOGREPORT_USERID := 103 
+RESOURCE TAB_PARM1 DIALOGEX  54, 48, 262, 240
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAB_PARM1_MCASH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 103, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 25, 103, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_MKRUISPSTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 44, 103, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_CLOSEMONTH, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 59, 120, 121
+	CONTROL	"Account cash:", TAB_PARM1_SC_SKAS, "Static", WS_CHILD, 4, 11, 73, 12
+	CONTROL	"Account Net Assets:", TAB_PARM1_SC_SKAP, "Static", WS_CHILD, 4, 25, 79, 13
+	CONTROL	"Account internal bank transfers:", TAB_PARM1_SC_SKRUIS, "Static", WS_CHILD, 4, 44, 106, 12
+	CONTROL	"End of Balance Year:", TAB_PARM1_FIXEDTEXT4, "Static", WS_CHILD, 4, 59, 94, 12
+	CONTROL	"v", TAB_PARM1_CASHBUTTON, "Button", WS_CHILD, 212, 11, 15, 12
+	CONTROL	"v", TAB_PARM1_CAPBUTTON, "Button", WS_CHILD, 212, 25, 15, 13
+	CONTROL	"v", TAB_PARM1_CROSSBUTTON, "Button", WS_CHILD, 212, 44, 15, 12
+	CONTROL	"Type of Administration:", TAB_PARM1_FIXEDTEXT5, "Static", WS_CHILD, 4, 77, 86, 12
+	CONTROL	"", TAB_PARM1_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 77, 120, 62
+	CONTROL	"", TAB_PARM1_SYSNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 107, 134, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Own Organisation:", TAB_PARM1_FIXEDTEXT6, "Static", WS_CHILD, 4, 129, 90, 12
+	CONTROL	"", TAB_PARM1_MPERSONOWN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 128, 108, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM1_PERSONBUTTONORG, "Button", WS_CHILD, 218, 128, 14, 12
+	CONTROL	"", TAB_PARM1_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 150, 108, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM1_PERSONBUTTONCONTACT, "Button", WS_CHILD, 218, 150, 14, 12
+	CONTROL	"Financial contact person:", TAB_PARM1_FIXEDTEXT7, "Static", WS_CHILD, 4, 151, 90, 12
+	CONTROL	"Organisation Acronym:", TAB_PARM1_ACROFIXED, "Static", WS_CHILD, 4, 171, 92, 13
+	CONTROL	"", TAB_PARM1_ENTITY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 171, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM1_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 188, 134, 119
+	CONTROL	"Currency name:", TAB_PARM1_CURRNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 205, 134, 12
+	CONTROL	"Country for I.E.:", TAB_PARM1_HBLAND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 222, 134, 12
+	CONTROL	"Country :", TAB_PARM1_SC_SLAND, "Static", WS_CHILD, 4, 222, 81, 12
+	CONTROL	"System Currency:", TAB_PARM1_SC_SMUNT, "Static", WS_CHILD, 4, 189, 66, 12
+	CONTROL	"Currency description:", TAB_PARM1_SC_SMUNTNAAM, "Static", WS_CHILD, 4, 206, 88, 12
+	CONTROL	"System name:", TAB_PARM1_FIXEDTEXT11, "Static", WS_CHILD, 4, 107, 54, 12
+	CONTROL	"Posting batch required?", TAB_PARM1_POSTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 112, 92, 87, 11
+END
+
 CLASS TAB_PARM1 INHERIT DataWindowMine 
 
 	PROTECT oDCmCASH AS SINGLELINEEDIT
@@ -604,42 +640,6 @@ CLASS TAB_PARM1 INHERIT DataWindowMine
   EXPORT cSoortCash, cSoortCAPITAL, cSoortCROSS as STRING
   EXPORT mCLNOrg,mCLNContact,cOrgName,cContactName as STRING 
   protect oSys as SQLSelect
-RESOURCE TAB_PARM1 DIALOGEX  54, 48, 262, 240
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAB_PARM1_MCASH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 11, 103, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 25, 103, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_MKRUISPSTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 44, 103, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_CLOSEMONTH, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 59, 120, 121
-	CONTROL	"Account cash:", TAB_PARM1_SC_SKAS, "Static", WS_CHILD, 4, 11, 73, 12
-	CONTROL	"Account Net Assets:", TAB_PARM1_SC_SKAP, "Static", WS_CHILD, 4, 25, 79, 13
-	CONTROL	"Account internal bank transfers:", TAB_PARM1_SC_SKRUIS, "Static", WS_CHILD, 4, 44, 106, 12
-	CONTROL	"End of Balance Year:", TAB_PARM1_FIXEDTEXT4, "Static", WS_CHILD, 4, 59, 94, 12
-	CONTROL	"v", TAB_PARM1_CASHBUTTON, "Button", WS_CHILD, 212, 11, 15, 12
-	CONTROL	"v", TAB_PARM1_CAPBUTTON, "Button", WS_CHILD, 212, 25, 15, 13
-	CONTROL	"v", TAB_PARM1_CROSSBUTTON, "Button", WS_CHILD, 212, 44, 15, 12
-	CONTROL	"Type of Administration:", TAB_PARM1_FIXEDTEXT5, "Static", WS_CHILD, 4, 77, 86, 12
-	CONTROL	"", TAB_PARM1_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 77, 120, 62
-	CONTROL	"", TAB_PARM1_SYSNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 107, 134, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Own Organisation:", TAB_PARM1_FIXEDTEXT6, "Static", WS_CHILD, 4, 129, 90, 12
-	CONTROL	"", TAB_PARM1_MPERSONOWN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 128, 108, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM1_PERSONBUTTONORG, "Button", WS_CHILD, 218, 128, 14, 12
-	CONTROL	"", TAB_PARM1_MPERSONCONTACT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 150, 108, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM1_PERSONBUTTONCONTACT, "Button", WS_CHILD, 218, 150, 14, 12
-	CONTROL	"Financial contact person:", TAB_PARM1_FIXEDTEXT7, "Static", WS_CHILD, 4, 151, 90, 12
-	CONTROL	"Organisation Acronym:", TAB_PARM1_ACROFIXED, "Static", WS_CHILD, 4, 171, 92, 13
-	CONTROL	"", TAB_PARM1_ENTITY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 171, 53, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM1_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 188, 134, 119
-	CONTROL	"Currency name:", TAB_PARM1_CURRNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 205, 134, 12
-	CONTROL	"Country for I.E.:", TAB_PARM1_HBLAND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 222, 134, 12
-	CONTROL	"Country :", TAB_PARM1_SC_SLAND, "Static", WS_CHILD, 4, 222, 81, 12
-	CONTROL	"System Currency:", TAB_PARM1_SC_SMUNT, "Static", WS_CHILD, 4, 189, 66, 12
-	CONTROL	"Currency description:", TAB_PARM1_SC_SMUNTNAAM, "Static", WS_CHILD, 4, 206, 88, 12
-	CONTROL	"System name:", TAB_PARM1_FIXEDTEXT11, "Static", WS_CHILD, 4, 107, 54, 12
-	CONTROL	"Posting batch required?", TAB_PARM1_POSTING, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 112, 92, 87, 11
-END
-
 METHOD CAPButton( lUnique) CLASS TAB_PARM1
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -1098,6 +1098,65 @@ STATIC DEFINE TAB_PARM1_SC_SLAND := 125
 STATIC DEFINE TAB_PARM1_SC_SMUNT := 126 
 STATIC DEFINE TAB_PARM1_SC_SMUNTNAAM := 127 
 STATIC DEFINE TAB_PARM1_SYSNAME := 113 
+RESOURCE Tab_Parm2 DIALOGEX  44, 36, 261, 264
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"PP Codes", TAB_PARM2_ENTITY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 3, 134, 217
+	CONTROL	"", TAB_PARM2_MHB, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 18, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_HBBUTTON, "Button", WS_CHILD, 232, 18, 15, 12
+	CONTROL	"", TAB_PARM2_MAM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 33, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_AMBUTTON, "Button", WS_CHILD, 232, 33, 15, 12
+	CONTROL	"", TAB_PARM2_MAMPROJ, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 48, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_AMPROJBUTTON, "Button", WS_CHILD, 232, 48, 15, 12
+	CONTROL	"", TAB_PARM2_MGIFTINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 96, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_INCBUTTON, "Button", WS_CHILD, 232, 96, 15, 12
+	CONTROL	"", TAB_PARM2_MGIFTEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 110, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_EXPBUTTON, "Button", WS_CHILD, 232, 110, 15, 13
+	CONTROL	"", TAB_PARM2_MHOMEINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 129, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_INCBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 129, 16, 12
+	CONTROL	"", TAB_PARM2_MHOMEEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 144, 121, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_EXPBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 144, 15, 12
+	CONTROL	"Assessment home assigned:", TAB_PARM2_ASSMNTFIELD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 166, 20, 12
+	CONTROL	"Assessment international", TAB_PARM2_ASSMNTINT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 158, 166, 20, 12
+	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 193, 21, 12
+	CONTROL	"Assessment office:", TAB_PARM2_ASSMNTOFFC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 152, 193, 22, 12
+	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 190, 193, 22, 12
+	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 193, 22, 12
+	CONTROL	"Sending to PMC via Insite upload", TAB_PARM2_PMCUPLD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 116, 214, 127, 11
+	CONTROL	"", TAB_PARM2_MPERSONPMCMAN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 228, 125, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Email account of IES:", TAB_PARM2_IESMAILACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 243, 136, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_PERSONBUTTONCONTACT, "Button", WS_CHILD, 236, 228, 13, 12
+	CONTROL	"Account PMC clearance:", TAB_PARM2_SC_SHB, "Static", WS_CHILD, 4, 18, 90, 12
+	CONTROL	"Account Assessments standard:", TAB_PARM2_SC_SAM, "Static", WS_CHILD, 4, 33, 105, 12
+	CONTROL	"Assessment:", TAB_PARM2_SC_SINHDHAS, "Static", WS_CHILD, 4, 166, 44, 12
+	CONTROL	"office:", TAB_PARM2_SC_SINHDKNTR, "Static", WS_CHILD, 92, 193, 20, 13
+	CONTROL	"PMC Participant code:", TAB_PARM2_SC_ENTITY, "Static", WS_CHILD, 4, 3, 87, 13
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT8, "Static", WS_CHILD, 136, 166, 8, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT9, "Static", WS_CHILD, 138, 193, 8, 12
+	CONTROL	"Email address of PMC:", TAB_PARM2_SC_IESMAILACC, "Static", WS_CHILD, 4, 245, 83, 12
+	CONTROL	"field:", TAB_PARM2_SC_SINHDHAS1, "Static", WS_CHILD, 92, 166, 18, 12
+	CONTROL	"int:", TAB_PARM2_SC_SINHDKNTR1, "Static", WS_CHILD, 145, 166, 13, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT10, "Static", WS_CHILD, 179, 166, 9, 12
+	CONTROL	"low", TAB_PARM2_FIXEDTEXT14, "Static", WS_CHILD, 114, 183, 19, 10
+	CONTROL	"standard", TAB_PARM2_FIXEDTEXT15, "Static", WS_CHILD, 151, 182, 29, 10
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT11, "Static", WS_CHILD, 174, 193, 9, 12
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT12, "Static", WS_CHILD, 212, 193, 9, 12
+	CONTROL	"middle", TAB_PARM2_FIXEDTEXT16, "Static", WS_CHILD, 189, 182, 29, 10
+	CONTROL	"high", TAB_PARM2_FIXEDTEXT17, "Static", WS_CHILD, 226, 182, 30, 10
+	CONTROL	"%", TAB_PARM2_FIXEDTEXT13, "Static", WS_CHILD, 249, 193, 9, 12
+	CONTROL	"Account Project Assessments", TAB_PARM2_SC_SAM1, "Static", WS_CHILD, 4, 48, 99, 12
+	CONTROL	"Accounts to record assessable gifts to measure activity", TAB_PARM2_GROUPBOXINCOME, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 84, 253, 79
+	CONTROL	"Account Gifts Expense:", TAB_PARM2_SC_SAM2, "Static", WS_CHILD, 4, 110, 99, 13
+	CONTROL	"Account Gifts Income:", TAB_PARM2_SC_SAM3, "Static", WS_CHILD, 4, 96, 99, 12
+	CONTROL	"Account Home Gifts Expense:", TAB_PARM2_SC_SAM4, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 144, 99, 12
+	CONTROL	"Account Home Gifts Income:", TAB_PARM2_SC_SAM5, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 129, 99, 13
+	CONTROL	"PMC Manager:", TAB_PARM2_FIXEDTEXT24, "Static", WS_CHILD, 4, 228, 103, 13
+	CONTROL	"", TAB_PARM2_MASSFLDAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 62, 121, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", TAB_PARM2_ASSFLDACBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 62, 16, 13
+	CONTROL	"Account Assessment Field+Int", TAB_PARM2_SC_SAMFLD, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 62, 99, 13
+END
+
 CLASS Tab_Parm2 INHERIT DataWindowMine 
 
 	PROTECT oDCEntity AS COMBOBOX
@@ -1176,65 +1235,6 @@ CLASS Tab_Parm2 INHERIT DataWindowMine
   	EXPORT cSoortHB, cSoortAM, cSoortAMProj,cSoortAssFldAc,cSoortGIFTINCAC,cSoortGIFTEXPAC,cSoortHOMEINCAC,cSoortHomeEXPAC as STRING
    Export mCLNPMCMan,cPMCManName as string 
    protect oSys as SQLSelect
-RESOURCE Tab_Parm2 DIALOGEX  44, 36, 261, 264
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"PP Codes", TAB_PARM2_ENTITY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 3, 134, 217
-	CONTROL	"", TAB_PARM2_MHB, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 18, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_HBBUTTON, "Button", WS_CHILD, 232, 18, 15, 12
-	CONTROL	"", TAB_PARM2_MAM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 33, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_AMBUTTON, "Button", WS_CHILD, 232, 33, 15, 12
-	CONTROL	"", TAB_PARM2_MAMPROJ, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 48, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_AMPROJBUTTON, "Button", WS_CHILD, 232, 48, 15, 12
-	CONTROL	"", TAB_PARM2_MGIFTINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 96, 121, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_INCBUTTON, "Button", WS_CHILD, 232, 96, 15, 12
-	CONTROL	"", TAB_PARM2_MGIFTEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 110, 121, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_EXPBUTTON, "Button", WS_CHILD, 232, 110, 15, 13
-	CONTROL	"", TAB_PARM2_MHOMEINCAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 129, 121, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_INCBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 129, 16, 12
-	CONTROL	"", TAB_PARM2_MHOMEEXPAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 144, 121, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_EXPBUTTONHOME, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 144, 15, 12
-	CONTROL	"Assessment home assigned:", TAB_PARM2_ASSMNTFIELD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 166, 20, 12
-	CONTROL	"Assessment international", TAB_PARM2_ASSMNTINT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 158, 166, 20, 12
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 193, 21, 12
-	CONTROL	"Assessment office:", TAB_PARM2_ASSMNTOFFC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 152, 193, 22, 12
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 190, 193, 22, 12
-	CONTROL	"Assessment office:", TAB_PARM2_WITHLDOFFH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 193, 22, 12
-	CONTROL	"Sending to PMC via Insite upload", TAB_PARM2_PMCUPLD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 116, 214, 127, 11
-	CONTROL	"", TAB_PARM2_MPERSONPMCMAN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 228, 125, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Email account of IES:", TAB_PARM2_IESMAILACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 243, 136, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_PERSONBUTTONCONTACT, "Button", WS_CHILD, 236, 228, 13, 12
-	CONTROL	"Account PMC clearance:", TAB_PARM2_SC_SHB, "Static", WS_CHILD, 4, 18, 90, 12
-	CONTROL	"Account Assessments standard:", TAB_PARM2_SC_SAM, "Static", WS_CHILD, 4, 33, 105, 12
-	CONTROL	"Assessment:", TAB_PARM2_SC_SINHDHAS, "Static", WS_CHILD, 4, 166, 44, 12
-	CONTROL	"office:", TAB_PARM2_SC_SINHDKNTR, "Static", WS_CHILD, 92, 193, 20, 13
-	CONTROL	"PMC Participant code:", TAB_PARM2_SC_ENTITY, "Static", WS_CHILD, 4, 3, 87, 13
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT8, "Static", WS_CHILD, 136, 166, 8, 12
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT9, "Static", WS_CHILD, 138, 193, 8, 12
-	CONTROL	"Email address of PMC:", TAB_PARM2_SC_IESMAILACC, "Static", WS_CHILD, 4, 245, 83, 12
-	CONTROL	"field:", TAB_PARM2_SC_SINHDHAS1, "Static", WS_CHILD, 92, 166, 18, 12
-	CONTROL	"int:", TAB_PARM2_SC_SINHDKNTR1, "Static", WS_CHILD, 145, 166, 13, 12
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT10, "Static", WS_CHILD, 179, 166, 9, 12
-	CONTROL	"low", TAB_PARM2_FIXEDTEXT14, "Static", WS_CHILD, 114, 183, 19, 10
-	CONTROL	"standard", TAB_PARM2_FIXEDTEXT15, "Static", WS_CHILD, 151, 182, 29, 10
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT11, "Static", WS_CHILD, 174, 193, 9, 12
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT12, "Static", WS_CHILD, 212, 193, 9, 12
-	CONTROL	"middle", TAB_PARM2_FIXEDTEXT16, "Static", WS_CHILD, 189, 182, 29, 10
-	CONTROL	"high", TAB_PARM2_FIXEDTEXT17, "Static", WS_CHILD, 226, 182, 30, 10
-	CONTROL	"%", TAB_PARM2_FIXEDTEXT13, "Static", WS_CHILD, 249, 193, 9, 12
-	CONTROL	"Account Project Assessments", TAB_PARM2_SC_SAM1, "Static", WS_CHILD, 4, 48, 99, 12
-	CONTROL	"Accounts to record assessable gifts to measure activity", TAB_PARM2_GROUPBOXINCOME, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 84, 253, 79
-	CONTROL	"Account Gifts Expense:", TAB_PARM2_SC_SAM2, "Static", WS_CHILD, 4, 110, 99, 13
-	CONTROL	"Account Gifts Income:", TAB_PARM2_SC_SAM3, "Static", WS_CHILD, 4, 96, 99, 12
-	CONTROL	"Account Home Gifts Expense:", TAB_PARM2_SC_SAM4, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 144, 99, 12
-	CONTROL	"Account Home Gifts Income:", TAB_PARM2_SC_SAM5, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 129, 99, 13
-	CONTROL	"PMC Manager:", TAB_PARM2_FIXEDTEXT24, "Static", WS_CHILD, 4, 228, 103, 13
-	CONTROL	"", TAB_PARM2_MASSFLDAC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 62, 121, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", TAB_PARM2_ASSFLDACBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 232, 62, 16, 13
-	CONTROL	"Account Assessment Field+Int", TAB_PARM2_SC_SAMFLD, "Static", WS_CHILD|NOT WS_VISIBLE, 4, 62, 99, 13
-END
-
 METHOD AMButton( lUnique) CLASS Tab_Parm2
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -1980,19 +1980,24 @@ BEGIN
 	CONTROL	"", TAB_PARM3_MPOSTAGE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 18, 122, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", TAB_PARM3_POSTAGEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 220, 18, 15, 12
 	CONTROL	"Account Postage:", TAB_PARM3_SC_SPOSTZ, "Static", WS_CHILD, 12, 22, 64, 12
-	CONTROL	"Receiving/sending Bills", TAB_PARM3_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 7, 232, 129
+	CONTROL	"Receiving/sending Bills", TAB_PARM3_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 7, 232, 181
 	CONTROL	"", TAB_PARM3_MDEBTORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 36, 122, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", TAB_PARM3_DEBBUTTON, "Button", WS_CHILD, 220, 36, 15, 13
 	CONTROL	"", TAB_PARM3_MCREDITORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 55, 122, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", TAB_PARM3_CREBUTTON, "Button", WS_CHILD, 220, 55, 15, 12
 	CONTROL	"Account Receivable", TAB_PARM3_SC_SDEB, "Static", WS_CHILD, 12, 36, 68, 13
-	CONTROL	"Contract number direct debit:", TAB_PARM3_FIXEDTEXT2, "Static", WS_CHILD, 12, 73, 84, 19
+	CONTROL	"Id Contract direct debit/ Chamber of Commerce:", TAB_PARM3_FIXEDTEXT2, "Static", WS_CHILD, 12, 73, 84, 19
 	CONTROL	"", TAB_PARM3_CNTRNRCOLL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 73, 135, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Bank account direct debit:", TAB_PARM3_FIXEDTEXT3, "Static", WS_CHILD, 12, 92, 88, 18
 	CONTROL	"", TAB_PARM3_BANKNBRCOL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 100, 92, 135, 140
 	CONTROL	"Account Payable", TAB_PARM3_SC_SCRE, "Static", WS_CHILD, 12, 55, 68, 12
 	CONTROL	"Bank account payments:", TAB_PARM3_FIXEDTEXT4, "Static", WS_CHILD, 12, 110, 82, 18
 	CONTROL	"", TAB_PARM3_BANKNBRCRE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 100, 110, 135, 118
+	CONTROL	"", TAB_PARM3_DDMAXINDVDL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 129, 135, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Maximum direct debit/person:", TAB_PARM3_FIXEDTEXT5, "Static", WS_CHILD, 12, 129, 84, 18
+	CONTROL	"", TAB_PARM3_DDMAXBATCH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 147, 135, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Maximum direct debit/batch:", TAB_PARM3_FIXEDTEXT6, "Static", WS_CHILD, 12, 147, 84, 18
+	CONTROL	"Sepa enabled?", TAB_PARM3_SEPAENABLED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 100, 163, 80, 11
 END
 
 CLASS Tab_Parm3 INHERIT DataWindowMine 
@@ -2016,6 +2021,11 @@ CLASS Tab_Parm3 INHERIT DataWindowMine
 	PROTECT oDCSC_SCRE AS FIXEDTEXT
 	PROTECT oDCFixedText4 AS FIXEDTEXT
 	PROTECT oDCBANKNBRCRE AS COMBOBOX
+	PROTECT oDCddmaxindvdl AS SINGLELINEEDIT
+	PROTECT oDCFixedText5 AS FIXEDTEXT
+	PROTECT oDCddmaxbatch AS SINGLELINEEDIT
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCsepaenabled AS CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
     EXPORT cPostageName, cDEBTORSName, cCREDITORSName as STRING
@@ -2050,6 +2060,20 @@ METHOD CreButton(lUnique ) CLASS TAB_PARM3
 	cfilter:=MakeFilter({NbrCreditors},{"PA"},"N",0)
 	AccountSelect(self:Owner,AllTrim(oDCmCREDITORS:TEXTValue ),"Payable",lUnique,cfilter)
 	RETURN nil
+ACCESS ddmaxbatch() CLASS Tab_Parm3
+RETURN SELF:FieldGet(#ddmaxbatch)
+
+ASSIGN ddmaxbatch(uValue) CLASS Tab_Parm3
+SELF:FieldPut(#ddmaxbatch, uValue)
+RETURN uValue
+
+ACCESS ddmaxindvdl() CLASS Tab_Parm3
+RETURN SELF:FieldGet(#ddmaxindvdl)
+
+ASSIGN ddmaxindvdl(uValue) CLASS Tab_Parm3
+SELF:FieldPut(#ddmaxindvdl, uValue)
+RETURN uValue
+
 METHOD DebButton(lUnique ) CLASS TAB_PARM3
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -2096,8 +2120,14 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm3
 	ENDIF
 	RETURN nil
 
-METHOD FillBank() CLASS Tab_Parm3
-	RETURN FillBankAccount("b.Telebankng")
+METHOD FillBank() CLASS Tab_Parm3            
+local aret:={} as array
+// 	RETURN FillBankAccount("b.Telebankng")
+aret:= SqlSelect{"select concat(b.banknumber,' ',a.description) as description,cast(b.bankid as char) as bankid from bankaccount b, account a where a.accid=b.accid and b.Telebankng",oConn}:GetLookupTable(500,#description,#bankid)
+asize(aret,len(aret)+1)
+AIns(aret,1)
+aret[1]:={'','0'}
+return aret
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3 
 
@@ -2141,10 +2171,10 @@ oDCSC_SDEB := FixedText{SELF,ResourceID{TAB_PARM3_SC_SDEB,_GetInst()}}
 oDCSC_SDEB:HyperLabel := HyperLabel{#SC_SDEB,"Account Receivable",NULL_STRING,NULL_STRING}
 
 oDCFixedText2 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Contract number direct debit:",NULL_STRING,NULL_STRING}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Id Contract direct debit/ Chamber of Commerce:",NULL_STRING,NULL_STRING}
 
 oDCCNTRNRCOLL := SingleLineEdit{SELF,ResourceID{TAB_PARM3_CNTRNRCOLL,_GetInst()}}
-oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,NULL_STRING,"Contract number automatic collection (KID files)",NULL_STRING}
+oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,NULL_STRING,"Contract number automatic collection (KID files) or Chamber of Commerce Id",NULL_STRING}
 oDCCNTRNRCOLL:UseHLforToolTip := True
 
 oDCFixedText3 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT3,_GetInst()}}
@@ -2165,6 +2195,25 @@ oDCBANKNBRCRE := combobox{SELF,ResourceID{TAB_PARM3_BANKNBRCRE,_GetInst()}}
 oDCBANKNBRCRE:FillUsing(Self:FillBank( ))
 oDCBANKNBRCRE:HyperLabel := HyperLabel{#BANKNBRCRE,NULL_STRING,"Own telebanking bank account used to send payments to creditor",NULL_STRING}
 oDCBANKNBRCRE:UseHLforToolTip := True
+
+oDCddmaxindvdl := SingleLineEdit{SELF,ResourceID{TAB_PARM3_DDMAXINDVDL,_GetInst()}}
+oDCddmaxindvdl:HyperLabel := HyperLabel{#ddmaxindvdl,NULL_STRING,"maximum allowed amount to be directly debited from a person",NULL_STRING}
+oDCddmaxindvdl:UseHLforToolTip := True
+oDCddmaxindvdl:FieldSpec := transaction_CRE{}
+
+oDCFixedText5 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Maximum direct debit/person:",NULL_STRING,NULL_STRING}
+
+oDCddmaxbatch := SingleLineEdit{SELF,ResourceID{TAB_PARM3_DDMAXBATCH,_GetInst()}}
+oDCddmaxbatch:HyperLabel := HyperLabel{#ddmaxbatch,NULL_STRING,"maximum allowed amount to be directly debited per batch",NULL_STRING}
+oDCddmaxbatch:UseHLforToolTip := True
+oDCddmaxbatch:FieldSpec := transaction_CRE{}
+
+oDCFixedText6 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT6,_GetInst()}}
+oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Maximum direct debit/batch:",NULL_STRING,NULL_STRING}
+
+oDCsepaenabled := CheckBox{SELF,ResourceID{TAB_PARM3_SEPAENABLED,_GetInst()}}
+oDCsepaenabled:HyperLabel := HyperLabel{#sepaenabled,"Sepa enabled?",NULL_STRING,NULL_STRING}
 
 SELF:Caption := ""
 SELF:HyperLabel := HyperLabel{#Tab_Parm3,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -2232,41 +2281,51 @@ METHOD PostageButton( lUnique) CLASS Tab_Parm3
 	RETURN nil
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 	//Put your PostInit additions here
-	LOCAL oAcc as SQLSelect
+	LOCAL oSel as SQLSelect
 	self:SetTexts()
 	self:NbrPostage := '0'
 	IF !Empty(self:oSys:Postage)
-		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:Postage,-1),oConn}
-		IF oAcc:RecCount>0
-			self:NbrPostage :=  Str(oAcc:accid,-1)
-			self:oDCmPostage:TEXTValue := AllTrim(oAcc:Description)
-			self:cPostageName := AllTrim(oAcc:Description)
-			self:cSoortPostage:=oAcc:TYPE
+		oSel:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:Postage,-1),oConn}
+		IF oSel:RecCount>0
+			self:NbrPostage :=  Str(oSel:accid,-1)
+			self:oDCmPostage:TEXTValue := AllTrim(oSel:Description)
+			self:cPostageName := AllTrim(oSel:Description)
+			self:cSoortPostage:=oSel:TYPE
 		ENDIF		
 	ENDIF
 	self:NbrDEBTORS := '0'
 	IF !Empty(self:oSys:DEBTORS)
-		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:DEBTORS,-1),oConn}
-		IF oAcc:RecCount>0
-			self:NbrDEBTORS :=  Str(oAcc:accid,-1)
-			self:oDCmDEBTORS:TEXTValue := AllTrim(oAcc:Description)
-			self:cDEBTORSName := AllTrim(oAcc:Description)
-			self:cSoortDEBTORS:=oAcc:TYPE
+		oSel:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:DEBTORS,-1),oConn}
+		IF oSel:RecCount>0
+			self:NbrDEBTORS :=  Str(oSel:accid,-1)
+			self:oDCmDEBTORS:TEXTValue := AllTrim(oSel:Description)
+			self:cDEBTORSName := AllTrim(oSel:Description)
+			self:cSoortDEBTORS:=oSel:TYPE
 		ENDIF		
 	ENDIF
 	self:NbrCreditors := '0'
 	IF !Empty(self:oSys:CREDITORS)
-		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:CREDITORS,-1),oConn}
-		IF oAcc:RecCount>0
-			self:NbrCreditors :=  Str(oAcc:accid,-1)
-			self:oDCmCREDITORS:TEXTValue := AllTrim(oAcc:Description)
-			self:cCREDITORSName := AllTrim(oAcc:Description)
-			self:cSoortCREDITORS:=oAcc:TYPE
+		oSel:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:CREDITORS,-1),oConn}
+		IF oSel:RecCount>0
+			self:NbrCreditors :=  Str(oSel:accid,-1)
+			self:oDCmCREDITORS:TEXTValue := AllTrim(oSel:Description)
+			self:cCREDITORSName := AllTrim(oSel:Description)
+			self:cSoortCREDITORS:=oSel:TYPE
 		ENDIF		
 	ENDIF 
 	self:CNTRNRCOLL:=self:oSys:CNTRNRCOLL
-	self:BANKNBRCOL:=self:oSys:BANKNBRCOL
-	self:BANKNBRCRE:=self:oSys:BANKNBRCRE
+// 	if !Empty(self:oSys:BANKNBRCOL)
+// 		self:BANKNBRCOL:=ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(self:oSys:BANKNBRCOL),oConn}:banknumber)
+// 	endif
+// 	if !Empty(self:oSys:BANKNBRCRE)
+// 		self:BANKNBRCRE:=ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(self:oSys:BANKNBRCRE),oConn}:banknumber)
+// 	endif
+// 	self:BANKNBRCOL:=ConS(self:oSys:BANKNBRCOL) 
+	self:odcBANKNBRCOL:Value:=ConS(self:oSys:BANKNBRCOL) 
+	self:odcBANKNBRCRE:Value:=ConS(self:oSys:BANKNBRCRE)
+	self:sepaenabled :=ConL(self:oSys:sepaenabled) 
+	self:ddmaxbatch:=self:oSys:ddmaxbatch
+	self:ddmaxindvdl:=self:oSys:ddmaxindvdl
 
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class Tab_Parm3
@@ -2274,14 +2333,25 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class Tab_Parm3
 	self:oSys:=oWindow:oSys
 	return nil
 
+ACCESS sepaenabled() CLASS Tab_Parm3
+RETURN SELF:FieldGet(#sepaenabled)
+
+ASSIGN sepaenabled(uValue) CLASS Tab_Parm3
+SELF:FieldPut(#sepaenabled, uValue)
+RETURN uValue
+
 STATIC DEFINE TAB_PARM3_BANKNBRCOL := 112 
 STATIC DEFINE TAB_PARM3_BANKNBRCRE := 115 
 STATIC DEFINE TAB_PARM3_CNTRNRCOLL := 110 
 STATIC DEFINE TAB_PARM3_CREBUTTON := 107 
+STATIC DEFINE TAB_PARM3_DDMAXBATCH := 118 
+STATIC DEFINE TAB_PARM3_DDMAXINDVDL := 116 
 STATIC DEFINE TAB_PARM3_DEBBUTTON := 105 
 STATIC DEFINE TAB_PARM3_FIXEDTEXT2 := 109 
 STATIC DEFINE TAB_PARM3_FIXEDTEXT3 := 111 
 STATIC DEFINE TAB_PARM3_FIXEDTEXT4 := 114 
+STATIC DEFINE TAB_PARM3_FIXEDTEXT5 := 117 
+STATIC DEFINE TAB_PARM3_FIXEDTEXT6 := 119 
 STATIC DEFINE TAB_PARM3_GROUPBOX3 := 103 
 STATIC DEFINE TAB_PARM3_MCREDITORS := 106 
 STATIC DEFINE TAB_PARM3_MDEBTORS := 104 
@@ -2290,6 +2360,22 @@ STATIC DEFINE TAB_PARM3_POSTAGEBUTTON := 101
 STATIC DEFINE TAB_PARM3_SC_SCRE := 113 
 STATIC DEFINE TAB_PARM3_SC_SDEB := 108 
 STATIC DEFINE TAB_PARM3_SC_SPOSTZ := 102 
+STATIC DEFINE TAB_PARM3_SEPAENABLED := 120 
+RESOURCE Tab_Parm4 DIALOGEX  16, 14, 212, 141
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAB_PARM4_MDONORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 19, 83, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TAB_PARM4_MPROJECTS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 32, 83, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Acc nbr non-designated gifts:", TAB_PARM4_SC_SPROJ, "Static", WS_CHILD, 12, 33, 96, 12
+	CONTROL	"Account number Donors:", TAB_PARM4_SC_SDON, "Static", WS_CHILD, 12, 19, 81, 12
+	CONTROL	"Gifts", TAB_PARM4_GROUPBOX4, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 10, 202, 119
+	CONTROL	"v", TAB_PARM4_PROJECTSBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 32, 15, 12
+	CONTROL	"v", TAB_PARM4_DONORSBUTTON, "Button", WS_CHILD, 189, 18, 15, 12
+	CONTROL	"Length of decimal fraction:", TAB_PARM4_FIXEDTEXT2, "Static", WS_CHILD, 13, 49, 87, 13
+	CONTROL	"", TAB_PARM4_MDECIMALGIFTREPORT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 48, 83, 12, WS_EX_CLIENTEDGE
+END
+
 CLASS Tab_Parm4 INHERIT DataWindowMine 
 
 	PROTECT oDCmDONORS AS SINGLELINEEDIT
@@ -2307,21 +2393,6 @@ CLASS Tab_Parm4 INHERIT DataWindowMine
   	EXPORT NbrPROJECTS, NbrDONORS as STRING
   	EXPORT cSoortPROJECTS, cSoortDONORS as STRING
    protect oSys as SQLSelect
-RESOURCE Tab_Parm4 DIALOGEX  16, 14, 212, 141
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAB_PARM4_MDONORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 19, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TAB_PARM4_MPROJECTS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 32, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Acc nbr non-designated gifts:", TAB_PARM4_SC_SPROJ, "Static", WS_CHILD, 12, 33, 96, 12
-	CONTROL	"Account number Donors:", TAB_PARM4_SC_SDON, "Static", WS_CHILD, 12, 19, 81, 12
-	CONTROL	"Gifts", TAB_PARM4_GROUPBOX4, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 10, 202, 119
-	CONTROL	"v", TAB_PARM4_PROJECTSBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 32, 15, 12
-	CONTROL	"v", TAB_PARM4_DONORSBUTTON, "Button", WS_CHILD, 189, 18, 15, 12
-	CONTROL	"Length of decimal fraction:", TAB_PARM4_FIXEDTEXT2, "Static", WS_CHILD, 13, 49, 87, 13
-	CONTROL	"", TAB_PARM4_MDECIMALGIFTREPORT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 48, 83, 12, WS_EX_CLIENTEDGE
-END
-
 METHOD DonorsButton(lUnique ) CLASS Tab_Parm4
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
@@ -2981,18 +3052,6 @@ STATIC DEFINE TAB_PARM7_OWNMAILACC := 102
 STATIC DEFINE TAB_PARM7_SC_OWNMAILACC := 100 
 STATIC DEFINE TAB_PARM7_SC_SMTPSERVER := 101 
 STATIC DEFINE TAB_PARM7_SMTPSERVER := 103 
-CLASS TABPARM_PAGE7 INHERIT DataWindowMine 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmPSWDURA AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCmPSWRDLEN AS SINGLELINEEDIT
-	PROTECT oDCmPSWALNUM AS CHECKBOX
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   protect oSys as SQLSelect
 RESOURCE TABPARM_PAGE7 DIALOGEX  12, 11, 254, 135
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -3006,6 +3065,18 @@ BEGIN
 	CONTROL	"Password properties:", TABPARM_PAGE7_FIXEDTEXT4, "Static", SS_CENTER|WS_CHILD, 10, 9, 210, 13
 END
 
+CLASS TABPARM_PAGE7 INHERIT DataWindowMine 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmPSWDURA AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCmPSWRDLEN AS SINGLELINEEDIT
+	PROTECT oDCmPSWALNUM AS CHECKBOX
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   protect oSys as SQLSelect
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TABPARM_PAGE7 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -3280,6 +3351,15 @@ RETURN nil
 STATIC DEFINE TABPARM_PAGE9_MTOPPACCT := 100 
 STATIC DEFINE TABPARM_PAGE9_SC_TOPP := 102 
 STATIC DEFINE TABPARM_PAGE9_TOPPBUTTON := 101 
+RESOURCE TabSysParms DIALOGEX  38, 35, 304, 303
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TABSYSPARMS_TABPARM, "SysTabControl32", WS_CHILD, 4, 7, 293, 277
+	CONTROL	"OK", TABSYSPARMS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 176, 288, 53, 12
+	CONTROL	"Cancel", TABSYSPARMS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 241, 288, 53, 12
+END
+
 CLASS TabSysParms INHERIT DataWindowMine 
 
 	PROTECT oDCTabParm AS TABCONTROL
@@ -3298,15 +3378,6 @@ CLASS TabSysParms INHERIT DataWindowMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT nOrigCloseMonth as int
 	export oSys as SQLSelect
-RESOURCE TabSysParms DIALOGEX  38, 35, 304, 303
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TABSYSPARMS_TABPARM, "SysTabControl32", WS_CHILD, 4, 7, 293, 277
-	CONTROL	"OK", TABSYSPARMS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 176, 288, 53, 12
-	CONTROL	"Cancel", TABSYSPARMS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 241, 288, 53, 12
-END
-
 METHOD CancelButton( ) CLASS TabSysParms
 // 	oTPTAB_PARM1:UndoAll()
 // 	IF !oTPTAB_PARM2==null_object
@@ -3567,8 +3638,11 @@ METHOD OKButton( ) CLASS TabSysParms
 			",debtors='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
 			",creditors='"+self:oTPTAB_PARM3:NbrCreditors+"'"+;
 			",cntrnrcoll='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
-			",banknbrcol='"+self:oTPTAB_PARM3:BANKNBRCOL+"'" + ;
-			",banknbrcre='"+self:oTPTAB_PARM3:BANKNBRCRE+"'")+;
+			",banknbrcol='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCOL),'0',self:oTPTAB_PARM3:BANKNBRCOL)+"'" + ;
+			",banknbrcre='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCRE),'0',self:oTPTAB_PARM3:BANKNBRCRE)+"'"+;
+			",sepaenabled="+iif(self:oTPTAB_PARM3:sepaenabled,'1','0')+;
+	 		",ddmaxindvdl="+Str(self:oTPTAB_PARM3:ddmaxindvdl,-1)+;
+			",ddmaxbatch="+Str(self:oTPTAB_PARM3:ddmaxbatch,-1))+; 
 			iif(self:oTPTAB_PARM4==null_object,'',;
 			",donors='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
 			",projects='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
@@ -3596,7 +3670,7 @@ METHOD OKButton( ) CLASS TabSysParms
 			",pswalnum="+iif(self:oTPTABPARM_PAGE7:mPSWALNUM,'1','0')) +;
 			",crlanguage='"+self:oTPTabParm_Page8:CRLANGUAGE+"'")+;
 			iif(self:oTPTABPARM_PAGE9==null_object,'',;      
-		",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'") 
+		",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'")
 	endif
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
@@ -3716,7 +3790,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
 		"assmntint,cast(destgrps as char) as destgrps,cast(nosalut as unsigned) as nosalut,withldoffl,withldoffm,withldoffh,assproja,cast(owncntry as char) as owncntry,giftincac,giftexpac,cntrnrcoll,banknbrcol,idorg,idcontact,"+;
 		"cast(datlstafl as date) as datlstafl,cast(surnmfirst as unsigned) as surnmfirst,cast(strzipcity as unsigned) as strzipcity,sysname,homeincac,homeexpac,fgmlcodes,creditors,countrycod,banknbrcre,"+;
 		"cast(lstreeval as date) as lstreeval,cast(citynmupc as unsigned) as citynmupc,pmcmancln,version,cast(lstnmupc as unsigned) as lstnmupc,cast(titinadr as unsigned) as titinadr,cast(docpath as char) as docpath,checkemp,cast(mailclient as unsigned) as mailclient,posting,toppacct,cast(lstcurrt as unsigned) as lstcurrt,"+;
-		"cast(pmcupld as unsigned) as pmcupld,cast(accpacls as date) as accpacls,assfldac from sysparms",oConn}
+		"cast(pmcupld as unsigned) as pmcupld,cast(accpacls as date) as accpacls,assfldac,cast(sepaenabled as unsigned) as sepaenabled,ddmaxindvdl,ddmaxbatch from sysparms",oConn}
 		
 	self:oSys:Execute()
 	RETURN nil
