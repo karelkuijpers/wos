@@ -354,7 +354,7 @@ FUNCTION Comparr(aStruct1 as array,aStruct2 as array) as logic
 	ENDIF
 	RETURN true
 FUNCTION Compress (f_tekst)
-** Comprimeren van overbodige spaties
+** Compress redundant spaces
 ****
 IF Empty(f_tekst)
 	RETURN null_string
@@ -434,45 +434,10 @@ CLASS DataDialogMine inherit DataDialog
 	
 	declare method FillMbrProjArray
 
-METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMine
-LOCAL oSQL as SQLSelect
-
+METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMine 
 // Fill 3 arrays: home members, non home members, projects
-
-// select projects:
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
-iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
-oSQL:Execute()
-
-DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	oSQL:Skip()
-ENDDO                                                                                               
-// select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
-oSQL:Execute()
-DO WHILE !oSQL:EOF
-	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ELSE
-		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ENDIF
-	oSQL:Skip()
-ENDDO
-//select nonhome members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
-oSQL:Execute()
-DO WHILE !oSQL:EOF
-	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ELSE
-		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ENDIF
-	oSQL:Skip()
-ENDDO
-
+FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
+return
 CLASS DataWindowExtra INHERIT DataWindow
 *	PROTECT uControlValue AS USUAL
 *	PROTECT cControlName AS STRING
@@ -573,46 +538,10 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	EXPORT aProjects:={} as ARRAY
 // 	Export oLan as Language 
 // 	declare method FillMbrProjArray
-METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataWindowMine
-LOCAL oSQL as SQLSelect
-
+METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataWindowMine  
 // Fill 3 arrays: home members, non home members, projects
-
-// select projects:
-// oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
-// iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m left join department d ON (m.depid=d.depid) where m.accid=a.accid or a.accid=d.incomeacc or a.accid=d.expenseacc or a.accid=d.netasset) ",oConn}
-oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
-iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}
-oSQL:Execute()
-
-DO WHILE !oSQL:EOF
-	AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	oSQL:Skip()
-ENDDO                                                                                               
-// select home members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp='"+SEntity+"'",oConn}
-oSQL:Execute()
-DO WHILE !oSQL:EOF
-	IF oSQL:CO=="M"
-		AAdd(self:aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ELSE
-		// entities of own WO are regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ENDIF
-	oSQL:Skip()
-ENDDO
-//select nonhome members: 
-oSQL:=SQLSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (m.accid=a.accid or a.accid=d.incomeacc) where m.homepp<>'"+SEntity+"'",oConn}
-oSQL:Execute()
-DO WHILE !oSQL:EOF
-	IF oSQL:CO=="M"
-		AAdd(self:aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ELSE
-		// entities of other WO are also regarded as projects:
-		AAdd(self:aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
-	ENDIF
-	oSQL:Skip()
-ENDDO
+FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
+return
 DEFINE DATEFIELD:=3
 CLASS DateStandard INHERIT DATETIMEPICKER
 	* Standard date for normal use
@@ -967,6 +896,109 @@ FUNCTION FillBankAccount( cFilter:="" as string) as array
 return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
 
 	
+function FillIbanregistry()
+// fill Iban-registry with {countrycode, iban-templatem iban length, sepa?},...
+	iban_registry:= {{"AL","AL2!n8!n16!c",28,0},;
+		{"AD","AD2!n4!n4!n12!c",24,0},;
+		{"AT","AT2!n5!n11!n",20,1},;
+		{"AZ","AZ2!n4!a20!c",28,0},;
+		{"BH","BH2!n4!a14!c",22,0},;
+		{"BE","BE2!n3!n7!n2!n",16,1},;
+		{"BA","BA2!n3!n3!n8!n2!n",20,0},;
+		{"BG","BG2!n4!a4!n2!n8!c",22,1},;
+		{"CR","CR2!n3!n14!n",21,0},;
+		{"HR","HR2!n7!n10!n",21,0},;
+		{"CY","CY2!n3!n5!n16!c",28,1},;
+		{"CZ","CZ2!n4!n6!n10!n",24,1},;
+		{"DK","DK2!n4!n9!n1!n",18,1},;
+		{"GL","DK2!n4!n9!n1!n",18,1},;
+		{"FO","DK2!n4!n9!n1!n",18,1},;
+		{"DO","DO2!n4!c20!n",28,0},;
+		{"EE","EE2!n2!n2!n11!n1!n ",20,1},;
+		{"FI","FI2!n6!n7!n1!n",18,1},;
+		{"FR","FR2!n5!n5!n11!c2!n",27,1},;
+		{"GE","GE2!n2!a16!n",22,0},;
+		{"DE","DE2!n8!n10!n ",22,1},;
+		{"GI","GI2!n4!a15!c: ",23,1},;
+		{"GR","GR2!n3!n4!n16!c ",27,1},;
+		{"GT","GT2!n4!c20!c ",28,0},;
+		{"HU","HU2!n3!n4!n1!n15!n1!n ",28,1},;
+		{"IS","IS2!n4!n2!n6!n10!n ",26,1},;
+		{"IE","IE2!n4!a6!n8!n ",22,1},;
+		{"IL","IL2!n3!n3!n13!n ",23,0},;
+		{"IT","IT2!n1!a5!n5!n12!c",27,1},;
+		{"KZ","KZ2!n3!n13!c",20,0},;
+		{"KW","KW2!n4!a22!",30,0},;
+		{"LV","LV2!n4!a13!c",21,1},;
+		{"LB","LB2!n4!n20!c",28,0},;
+		{"LI","LI2!n5!n12!c",21,1},;
+		{"LT","LT2!n5!n11!n",20,1},;
+		{"LU","LU2!n3!n13!c",20,1},;
+		{"MK","MK2!n3!n10!c2!n",19,0},;
+		{"MT","MT2!n4!a5!n18!c",31,1},;
+		{"MR","MR135!n5!n11!n2!n",27,0},;
+		{"MU","MU2!n4!a2!n2!n12!n3!n3!a",30,0},;
+		{"MD","MD2!n2!a18!n",24,0},;
+		{"MC","MC2!n5!n5!n11!c2!n",27,1},;
+		{"ME","ME2!n3!n13!n2!n ",22,0},;
+		{"NL","NL2!n4!a10!n",18,1},;
+		{"NO","NO2!n4!n6!n1!n",15,1},;
+		{"PK","PK2!n4!a16!c",24,0},;
+		{"PL","PL2!n8!n16n",28,1},;
+		{"PT","PT2!n4!n4!n11!n2!n",25,1},;
+		{"RO","RO2!n4!a16!c",24,1},;
+		{"SM","SM2!n1!a5!n5!n12!c",27,0},;
+		{"SA","SA2!n2!n18!c",24,0},;
+		{"RS","RS2!n3!n13!n2!n",22,0},;
+		{"SK","SK2!n4!n6!n10!n",24,1},;
+		{"SI","SI2!n5!n8!n2!n",19,0},;
+		{"ES","ES2!n4!n4!n1!n1!n10!n",24,1},;
+		{"SE","SE2!n3!n16!n1!n",24,1},;
+		{"CH","CH2!n5!n12!c",21,1},;
+		{"TN","TN592!n3!n13!n2!n",24,0},;
+		{"TR","TR2!n5!n1!c16!c",26,0},;
+		{"AE","AE2!n19!n",23,0},;  
+	{"GB","GB2!n4!a6!n8!n",22,1},;
+		{"VG","VG2!n4!a16!n",24,0} } 
+Function FillMbrProjArray(aProjects as array,aMemHome as array,aMemNonHome as array)
+LOCAL oSQL as SQLSelect
+
+// Fill 3 arrays: home members, non home members, projects
+
+// select projects:
+oSQL:=SQLSelect{"select a.accnumber, a.description, a.accid,a.balitemid,a.department from account as a where a.active=1 and (a.giftalwd=1"+iif(Empty(SDON),""," or a.accid="+SDON)+;
+iif(Empty(SPROJ),""," or a.accid="+SPROJ)+") and not exists (select m.mbrid from member m where m.accid=a.accid or m.depid=a.department) ",oConn}  
+oSQL:Execute()
+
+DO WHILE !oSQL:EOF
+	AAdd(aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	oSQL:Skip()
+ENDDO                                                                                               
+// select home members: 
+oSQL:=SqlSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp='"+SEntity+"' and a.accid is not null",oConn}
+oSQL:Execute()
+DO WHILE !oSQL:EOF
+	IF oSQL:CO=="M"
+		AAdd(aMemHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	ELSE
+		// entities of own WO are regarded as projects:
+		AAdd(aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	ENDIF
+	oSQL:Skip()
+ENDDO
+//select nonhome members: 
+oSQL:=SqlSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp<>'"+SEntity+"' and a.accid is not null",oConn}
+oSQL:Execute()
+DO WHILE !oSQL:EOF
+	IF oSQL:CO=="M"
+		AAdd(aMemNonHome,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	ELSE
+		// entities of other WO are also regarded as projects:
+		AAdd(aProjects,{Pad(oSQL:accnumber,LENACCNBR)+" "+AllTrim(oSQL:Description),oSQL:accid,oSQL:balitemid,oSQL:department})
+	ENDIF
+	oSQL:Skip()
+ENDDO
+
 FUNCTION FillPersCode ()
 * Fill Array with description + code + abrv of Pers-codes
 // LOCAL aPersCd := {}
@@ -1070,16 +1102,16 @@ Function GetDelimiter(cBuffer as string, aStruct ref array, cLim:="" ref string,
 	if Len(cLim)=0
 		cLim:=Listseparator
 	endif
-	aStruct:=Split(Upper(cBuffer),cLim)
+	aStruct:=Split(Upper(cBuffer),cLim,true)
 	IF Len(aStruct)<nMin .or.Len(aStruct)>nMax
 		cLim:=','
-		aStruct:=Split(Upper(cBuffer),cLim)
-		IF Len(aStruct)<nMin .or.Len(aStruct)>nMax
+		aStruct:=Split(Upper(cBuffer),cLim,true)
+		IF Len(aStruct)<nMin .or.Len(aStruct)>nMax                             
 			cLim:=";"
-			aStruct:=Split(Upper(cBuffer),cLim)
+			aStruct:=Split(Upper(cBuffer),cLim,true)
 			IF Len(aStruct)<nMin .or.Len(aStruct)>nMax
 				cLim:=CHR(9)
-				aStruct:=Split(Upper(cBuffer),cLim)
+				aStruct:=Split(Upper(cBuffer),cLim,true)
 				IF Len(aStruct)<nMin .or.Len(aStruct)>nMax
 					return false
 				endif 
@@ -1314,10 +1346,40 @@ function HtmlEncode(cText as string) as string
 		cText:=StrTran(cText,aRepl[i],aKey[i])
 	next
 	Return cText  
-FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='),(')
+	Function IbanChecksum(Iban as string) as int
+	local IBanTemp as string
+	local nChecksum as int 
+		// move First 4 chars (countrycode and checksum) to the end of the string
+	Iban:=SubStr(Iban, 5)+SubStr(Iban, 1, 4)
+	// subsitutute chars 
+	IBanTemp:=''
+	SEval(Iban,{|c|IBanTemp+=iif(IsAlpha(CHR(c)),Str(c-55,-1),CHR(c))})
+	// mod97-10  
+
+	nChecksum:=Val(SubStr(IBanTemp,1,1)) 
+	SEval(IBanTemp,{|c|nChecksum:=(nChecksum*10+Val(CHR(c))) % 97},2) 
+	return 98-nChecksum
+
+
+
+
+Function IbanFormat(Iban ref string) 
+	// standardize fromat of a Iban Bank account number
+	local IBanTemp as string
+	// Uppercase and trim spaces from left  
+	Iban := AllTrim(Upper(Iban))
+	// remove Iban from start of string, if present 
+	if SubStr(Iban,1,4)=='IBAN'
+		Iban := SubStr(Iban,5,)
+	endif
+	// remove all non basic roman letter / digit characters
+	SEval(Iban,{|c|IBanTemp+=iif(IsDigit(CHR(c)).or.IsAlpha(CHR(c)),CHR(c),null_string)})
+	Iban:=IBanTemp    // machine format
+	return
+FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='' as string) as string
 	// Implode array to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
-	// Optionally in case of a 2-dimenional array and empty nCol you can specify separator between rows 
+	// Optionally in case of a 2-dimenional array you can specify separator between rows (default: '),(' but none when empty nCol )
 	LOCAL i, l:=Len(aText) as int 
 	local cQuote as STRING    // string quote text around separators (CSV)
 	local cLine  as STRING    // one line of concatinated text 
@@ -1344,9 +1406,12 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 		IF nCount>0 
 			FOR i:=1 to nCount
 				if IsArray(aText[nStart+i-1])
-					if Empty(nCol)
-						lMulti:=true
-						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep)+iif(i==nCount,Left(cSepRow,1),'')
+					if Empty(nCol) .or.!Empty(cSepRow)
+						lMulti:=true 
+						if Empty(cSepRow)
+							cSepRow:='),('  // default row seperator
+						endif	
+						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep,,,nCol)+iif(i==nCount,Left(cSepRow,1),'')
 					else
 						if IsString(aText[nStart+i-1][nCol])
 							cLine:=AllTrim(aText[nStart+i-1][nCol])
@@ -1362,13 +1427,15 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 							cPartLv1+=cLine
 						endif
 					endif
-				else
+				elseif Empty(nCol) .or. nCol==i
 					if IsString(aText[nStart+i-1])
 						cLine:=aText[nStart+i-1]
 					else
 						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
 					endif
 					cPartLv1+=iif(i=1,"",cSep)+cLine
+				else
+					loop
 				endif
 				if Len(cPartLv1)>1000
 					cPartLv2+=cPartLv1
@@ -1415,7 +1482,7 @@ function InitGlobals()
 	"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
 	"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
 	"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
-	"`yearclosed`,`debtors`,`currency`,`sysname` from sysparms",oConn}
+	"`yearclosed`,`debtors`,`currency`,`sysname`,`sepaenabled` from sysparms",oConn}
 	IF oSys:RecCount>0
 		oSel:=SQLSelect{"select yearstart,yearlength,monthstart from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
@@ -1462,12 +1529,13 @@ function InitGlobals()
 		sCURRNAME:= AllTrim(oSys:CURRNAME) 
 		Posting:=iif(ConI(oSys:Posting)=1,true,false)
 		LstCurRate := ConL(oSys:LSTCURRT)
+		SepaEnabled:=ConL(oSys:SepaEnabled)
 		oSel:= SQLSelect{"select `aed` from currencylist where aed='"+AllTrim(oSys:Currency)+"'",oConn}
 		if oSel:RecCount>0
 			sCURR   :=  oSel:AED
 		endif
-		BANKNBRDEB:=iif(Empty(oSys:BANKNBRCOL),'',AllTrim(oSys:BANKNBRCOL)) 
-		BANKNBRCRE:=iif(Empty(oSys:BANKNBRCRE),'',AllTrim(oSys:BANKNBRCRE)) 
+		BANKNBRDEB:=iif(Empty(oSys:BANKNBRCOL),'',ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(oSys:BANKNBRCOL),oConn}:banknumber)) 
+		BANKNBRCRE:=iif(Empty(oSys:BANKNBRCRE),'',ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(oSys:BANKNBRCRE),oConn}:banknumber)) 
 		sIDORG := iif(Empty(oSys:IDORG),'',Str(oSys:IDORG,-1))
 		if !Empty(oSys:ADMINTYPE)
 			if !Admin==oSys:ADMINTYPE
@@ -1564,7 +1632,8 @@ function InitGlobals()
 	FillPersGender()
 	FillPersTitle()
 	FillPropTypes()
-	FillPersProp() 
+	FillPersProp()
+	FillIbanregistry() 
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
@@ -1626,6 +1695,70 @@ FUNCTION IsDutchBanknbr(cGetal)
 	else
 		return true
 	endif
+Function IsIban(Iban as string) as logic
+	
+	// Verify an Iban number.  Returns true or false.
+	//  NOTE: Input can be printed 'IBAN xx xx xx...' or machine 'xxxxx' format. 
+	// So convert if before with IbanFormat
+
+	local IBanTemp,country,regex as string
+	local nPos,nChecksum,i,qty,nDisp as int 
+	local aReg:={} as array
+
+
+	// Format should be standdardized with IbanForma()
+	
+	// Get country of Iban
+	country:=SubStr(Iban,1,2)
+
+	// Test length of Iban 
+	if (nPos:=AScan(iban_registry,{|x|x[1]==country}))>0
+		if !Len(Iban)==iban_registry[nPos,3] 
+			return false
+		endif
+	else
+		return false
+	endif
+
+	// Get country-specific Iban format regex 
+	regex:=SubStr(iban_registry[nPos,2],3) 
+	aReg:=Split(regex,'!') 
+	nDisp:=3      // skip first 2 positions with country code 
+	// Check regex
+	qty:=Val(aReg[1])
+	for i:=2 to Len(aReg) 
+		if SubStr(aReg[i],1,1)=='n'
+			if !isnum(SubStr(Iban,nDisp,qty))
+				return false
+			endif
+		elseif SubStr(aReg[i],1,1)=='a'
+			if !IsAlphabetic(SubStr(Iban,nDisp,qty))
+				return false
+			endif
+		endif
+		nDisp+=qty
+		qty:=Val(SubStr(aReg[i],2))
+	next
+
+	// verify checksum:
+/*	// move First 4 chars (countrycode and checksum) to the end of the string
+	Iban:=SubStr(Iban, 5)+SubStr(Iban, 1, 4)
+	// subsitutute chars 
+	IBanTemp:=''
+	SEval(Iban,{|c|IBanTemp+=iif(IsAlpha(CHR(c)),Str(c-55,-1),CHR(c))})
+	// mod97-10  
+
+	nChecksum:=Val(SubStr(IBanTemp,1,1)) 
+	SEval(IBanTemp,{|c|nChecksum:=(nChecksum*10+Val(CHR(c))) % 97},2)   */  
+	
+	nChecksum:=IbanChecksum(Iban)
+	// checkvalue of 97 indicates correct Iban checksum
+	if (nChecksum != 97)
+		return false
+	endif
+
+	// Otherwise it 'could' exist
+	return true
 FUNCTION IsMod10(cGetal)
 // test if cGetal (string of a mod10 number) satisfies mod10 criteria (Luhn algoritme)
 LOCAL sum,i,length:=Len(cGetal),temp as int
@@ -1680,6 +1813,16 @@ FOR p_num_tel:=1 to Len(p_str)
     ENDIF
 NEXT
 RETURN true
+Function IsSEPA(Iban as string) as logic
+	// check if a banknumber is a valid sepa banknumber
+	local country as string
+// 	local sepacountries:={"FI","AT","BE","BG","CY","CZ","DK","FI","FR","DE","GI","GR","FR","HU",;
+// 		"IS","IE","IT","LI","LT","LU","MT","MC","NL","NO","PL","PT","RO","SK","SI","ES","SE","CH","GB"} as  array
+	country:=SubStr(Iban,1,2)
+	if AScanExact(iban_registry,{|x|x[4]=1.and.x[1]==country})=0
+		return false
+	endif
+	return IsIban(Iban)
 DEFINE LF                   := _chr(10)
 CLASS ListboxBal INHERIT ListBox
 * Special version of listbox to support multiple selction of Departments
@@ -2582,12 +2725,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2595,6 +2732,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -2675,8 +2818,9 @@ LOCAL myDim as Dimension
 	myDim:Width:=w
 	self:Size:=myDim
  return
-FUNCTION Split(cTarget:="" as string,cSep:=' ' as string) as array
-	* Split string cTarget into array, seperated by cSep
+FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as logic) as array
+	* Split string cTarget into array, seperated by cSep 
+	* Optionally the result is compressed
 	LOCAL nIncr as int
 	LOCAL aToken:={} as ARRAY
 	LOCAL cSearch,cQuote as STRING
@@ -2701,7 +2845,11 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string) as array
 					nPos:=nEnd +1
 				endif
 			ENDIF
-			AAdd(aToken,Compress(StrTran(SubStr(cTarget,nStart+1,nPos-nStart-1),CHR(160),Space(1))))      // replace non-breaking space by space
+			if lCompress
+				AAdd(aToken,Compress(StrTran(SubStr(cTarget,nStart+1,nPos-nStart-1),CHR(160),Space(1))))      // replace non-breaking space by space
+			else
+					AAdd(aToken,SubStr(cTarget,nStart+1,nPos-nStart-1))
+			endif
 			nStart:=nPos+nIncr
 		ENDDO
 	endif
@@ -2843,9 +2991,14 @@ if commaPos>0
 endif
 RETURN m_str
 FUNCTION ZeroTrim(m_str as string) as string
-// left trim leading zeroes from a string 
+// left trim leading zeroes from a string
+local nNonZero:=1,i as int 
 m_str:=AllTrim(m_str)
-DO WHILE SubStr(m_str,1,1)=="0" .and. Len(m_str)>1 
-	m_str:=SubStr(m_str,2)
-ENDDO
-RETURN m_str
+for i:=1 to Len(m_str)
+	if SubStr(m_str,i,1)=='0'
+		nNonZero++
+	else
+		exit
+	endif
+next
+RETURN SubStr(m_str,nNonZero)
