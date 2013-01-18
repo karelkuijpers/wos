@@ -1947,7 +1947,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_description:="" 
 				IF !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"
 					* description of transaction:
-					lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5))
+					lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
 					IF !lMTExtended
 						IF  Empty(lv_BankAcntContra) 
 							IF lv_Oms = "GIRO "
@@ -2002,7 +2002,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 					oHlM:Skip()
 					// compose description:
 					DO WHILE !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description
-						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5)) 
+						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
 						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
 							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
 							lv_description+=" "+lv_Oms
