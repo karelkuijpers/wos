@@ -350,7 +350,8 @@ SELF:FieldPut(#mType, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditSubscription
-	LOCAL i, nPrevRec,m,d,y,me as int
+	LOCAL i, nPrevRec,m,d,y,me as int 
+	local fLimit as float
 	local mCurRek, mCurCLN as string 
 	local oDue as SQLSelect
 	local cStatement as string
@@ -431,7 +432,13 @@ METHOD OKButton( ) CLASS EditSubscription
 				RETURN nil		
 			ENDIF 
 		else
-			IF CountryCode="31"
+			if SepaEnabled
+				if !IsSEPA(AllTrim(mBankAccnt))
+					(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not a valid SEPA bank account number")+"!!" }):Show()
+					self:oDCmBankAccnt:SetFocus()
+					RETURN nil		
+				endif
+			elseIF CountryCode="31"
 				if Len(AllTrim(mBankAccnt))>7
 					if !IsDutchBanknbr(AllTrim(mBankAccnt))
 						(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
@@ -439,6 +446,16 @@ METHOD OKButton( ) CLASS EditSubscription
 						RETURN nil		
 					endif 
 				endif
+			endif
+		endif
+		IF self:mPayMethod="C" 
+			fLimit:=SqlSelect{"select ddmaxindvdl from sysparms",oConn}:ddmaxindvdl
+			if fLimit>0.00
+				if self:mamount> fLimit
+					(ErrorBox{,self:oLan:WGet("Periodic amount")+Space(1)+str(self:mamount,-1)+Space(1)+self:oLan:WGet("is above limit")+": "+str(fLimit,-1) }):Show()
+					self:oDCmamount:SetFocus()
+					RETURN nil		
+				endif 
 			endif
 		endif
 		
@@ -683,25 +700,26 @@ STATIC DEFINE EDITSUBSCRIPTION_SC_RLN := 100
 STATIC DEFINE EDITSUBSCRIPTION_SC_term := 104 
 STATIC DEFINE EDITSUBSCRIPTION_TYPETEXT := 123 
 Function ProlongateAll(oCall as Window ) as logic
-	LOCAL mSubid as STRING, bed_toez as FLOAT
+	LOCAL mSubid,SeqType as STRING, bed_toez as FLOAT
 	LOCAL DueCount as int
-	LOCAL rjaar,rmnd,rdag AS INT
+	LOCAL rjaar,rmnd,rdag,nbrdue as int
 	LOCAL mSeqnr as int
 	LOCAL DueDate:=Today()+31, MinDate:=Today()-93 as date
 	LOCAL oSub as SQLSelect
 	local oStmnt as SQLStatement 
 	local CurSubId as int, dDueDate as date 
-	local cValuesDue,cValuesSub as string  // values to insert into the database
+	local cValuesDue,cValuesSub as string  // values to insert into the database  
+	local aValuesDue:={} as array // {{subscribid,invoicedate,seqnr,amountinvoice,SeqTp},..
 
 
 	* last end date should be after next due date
 	* only donations and subscriptions 
-// 	oSub:=SQLSelect{"select s.*,max(d.seqnr) as maxseqnbr from subscription s left join dueamount d "+; 
-// 	"on (s.subscribid=d.subscribid and d.invoicedate=s.duedate) "+;
-// 		"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate " +;
-// 		" group by s.subscribid,s.duedate",oConn}
-	oSub:=SqlSelect{"select s.* from subscription s "+; 
-		"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate ",oConn}
+	// 	oSub:=SQLSelect{"select s.*,max(d.seqnr) as maxseqnbr from subscription s left join dueamount d "+; 
+	// 	"on (s.subscribid=d.subscribid and d.invoicedate=s.duedate) "+;
+	// 		"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate " +;
+	// 		" group by s.subscribid,s.duedate",oConn}
+	oSub:=SqlSelect{"select s.*,count(dueid) as nbrdue from subscription s left join dueamount d on (s.subscribid=d.subscribid) "+; 
+	"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate group by s.subscribid",oConn}       
 	if oSub:RecCount<1
 		return false
 	endif
@@ -715,39 +733,49 @@ Function ProlongateAll(oCall as Window ) as logic
 		DueCount:=DueCount+1
 		mSubid:=Str(oSub:subscribid,-1)
 		bed_toez:=oSub:amount
-		*	Calculate seqnr:
-// 		CurSubId:=oSub:subscribid 
 		dDueDate:=oSub:DueDate
-// 		if	!Empty(oSub:maxseqnbr)
-// 			mSeqnr:=oSub:maxseqnbr+1
-// 		ELSE
-			mSeqnr:=1
-// 		ENDIF
-
-		* Add new due amount:
-		cValuesDue+=',('+mSubid+',"'+SQLdate(dDueDate)+'",'+Str(mSeqnr,-1)+','+Str(bed_toez,-1)+')' 
+		// determine sequence type:
+		nbrdue:=ConI(oSub:nbrdue)
+		SeqType:=''
+		if nbrdue=0
+			if Empty(oSub:term) .or. oSub:term>12
+				SeqType:='OOFF' //OOFF
+			elseif (Today() - oSub:begindate) < 120
+				SeqType:='FRST'
+			endif
+		endif
+		if Empty(SeqType)
+			// final??
+			if (oSub:enddate - oSub:DueDate) < oSub:term*30
+				SeqType:='FNAL' //final
+			else
+				SeqType:='RCUR'
+			endif
+		endif
+		* Add new due amount: 
+		AAdd(aValuesDue,{mSubid, SQLdate(dDueDate),'1' ,Str(bed_toez,-1),SeqType })
 		* update date due with term within subscription: 
-		cValuesSub+=',('+mSubid+')'
 		oSub:skip()
 	ENDDO
-	if !Empty(cValuesDue)
+	if !Empty(aValuesDue)
 		SQLStatement{"start transaction",oConn}:Execute()
-		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn}
+		// 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn}
+		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice,seqtype) values "+Implode(aValuesDue,'","'),oConn}
 		oStmnt:Execute()
-// 		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
+		// 		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
 		if Empty(oStmnt:Status)
 			* update date due with term within subscription:
-			oStmnt:=SQLStatement{"insert into subscription (subscribid) values "+SubStr(cValuesSub,2)+;
-			" on DUPLICATE KEY UPDATE duedate=adddate(duedate,INTERVAL term MONTH)",oConn} 
+			oStmnt:=SQLStatement{"insert into subscription (subscribid) values "+Implode(aValuesDue,',',,,1,'),(')+;
+				" on DUPLICATE KEY UPDATE duedate=adddate(duedate,INTERVAL term MONTH)",oConn} 
 			oStmnt:Execute() 
 			if !Empty(oStmnt:Status)
-				LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
 				SQLStatement{"rollback",oConn}:Execute()
+				LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
 				return false				
 			endif
 		elseif !Empty(oStmnt:Status)
-			LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
 			SQLStatement{"rollback",oConn}:Execute()
+			LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
 			return false				
 		endif
 		* remove old due amounts:
