@@ -906,7 +906,8 @@ METHOD PrintReport() CLASS PMISsend
 			// correct assessment for rounding differences: 
 			fDiff:=Round(me_assblAmount-me_amounttot,DecAantal)
 			if fDiff<>0.00
-				me_asshome:=Round(me_asshome+fDiff,DecAantal)  
+				me_asshome:=Round(me_asshome+fDiff,DecAantal)
+				aAssMbr[nMbrAss,6]:= me_asshome  
 			endif	
 		endif			
 
