@@ -31,13 +31,14 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	endif 
 	if FirstOfDay .or. DBVers>PrgVers
-		if oFTP:Open()
+		if oFTP:Open()                                                              
 			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		endif
 		if !lSuc
 			// try again:
 			if oFTP:Open()
 				lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
 			endif
 		endif
 		if lSuc
@@ -72,8 +73,9 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 					if (TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
 						// load first latest version of install program:
 						
-						IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false)
-							__RaiseFTPError(oFTP) 
+						IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
+							WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
+// 							__RaiseFTPError(oFTP) 
 						else
 							oFs:Find()
 							CollectForced()  // to force some wait
@@ -357,7 +359,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 							elseif dbasename=="person" .and. fieldname==#EXTERNID
 								cDBValue:=ZeroTrim(cDBValue)
 							elseif dbasename=="person" .and. fieldname==#COD 
-								cDBValue:=MakeCod(Split(cDBValue," "))
+								cDBValue:=MakeCod(Split(cDBValue," ",true))
 							elseif dbasename=="perstitl" .and.fieldname==#ID
 								cDBValue:=Str(Val(cDBValue)+1,-1)
 							elseif dbasename=="bankacc" .and. fieldname==#TELEBANKNG
@@ -503,10 +505,10 @@ do while (i:=AScan(aIndex,{|x|x[1]==table_name},i+1))>0
 				cIndex+="UNIQUE "
 			endif
 		endif
-		aColName:=Split(aIndex[i,5],'(')  // split in name and key length 
+		aColName:=Split(aIndex[i,5],'(',true)  // split in name and key length 
 		cIndex+="KEY "+iif(aIndex[i,3]=="PRIMARY","",sIdentChar+aIndex[i,3]+sIdentChar+" ")+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 	else
-		aColName:=Split(aIndex[i,5],'(')  // split in name and key length 
+		aColName:=Split(aIndex[i,5],'(',true)  // split in name and key length 
 		cIndex+=","+sIdentChar+AllTrim(aColName[1])+sIdentChar +iif(Len(aColName)>1,'('+aColName[2],'')
 	endif
 enddo
@@ -602,7 +604,7 @@ method init() class Initialize
 			cLine:=AllTrim(ptrHandle:FReadLine(ptrHandle))
 			do WHILE !ptrHandle:FEof
 				if !Empty(cLine) .and.!SubStr(cLine,1,1)=='#'   // skip comment lines
-					aWord:=Split(cLine,"=")
+					aWord:=Split(cLine,"=",true)
 					for i:=1 to Len(aIniKey) 
 						j:=AScan(aWord,{|x|Lower(AllTrim(x))==aIniKey[i]})
 						if j>0 .and.j<Len(aWord)
@@ -905,8 +907,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	oSys:Execute()
 	if oSys:RecCount>0
 		CurVersion:=oSys:Version
-		AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
+		AEval(AEvalA(Split(CurVersion,".",true),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+		AEval(AEvalA(Split(Version,".",true),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 		if DBVers > PrgVers
 			(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
 				"Make sure you have the correct version of WycOffSy.exe"}):Show()
@@ -1159,6 +1161,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// 	{"dueamount","paymethod","char(1)","NO","",""},;
 	// 	{"dueamount","category","char(1)","NO","",""},;
 
+  	// Table name, Field,Type,Null,Default,Extra 
 
 	local aColumn:={;
 		{"account","accid","int(11)","NO","NULL","auto_increment"},;
@@ -1231,6 +1234,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankaccount","payahead","int(11)","NO","0",""},;
 		{"bankaccount","singledst","int(11)","NO","0",""},;
 		{"bankaccount","fgmlcodes","char(30)","NO","",""},;
+		{"bankaccount","bic","varchar(11)","NO","",""},;
 		{"bankaccount","syscodover","char(1)","NO","",""},;
 		{"bankbalance","accid","int(11)","NO","NULL",""},;
 		{"bankbalance","datebalance","date","NO","0000-00-00",""},;
@@ -1250,7 +1254,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"budget","amount","decimal(18,2)","NO","0",""},;
 		{"currencylist","aed","char(3)","NO","",""},;
 		{"currencylist","united_ara","varchar(59)","NO","",""},;
-		{"currencyrate","rateid","int(11)","NO","NULL","auto_increment"},;
+		{"currencyrate","rateid","int(11)","NO","NULL","auto_increment"},;           
 		{"currencyrate","aed","char(3)","NO","NULL",""},;
 		{"currencyrate","daterate","date","NO","0000-00-00",""},;
 		{"currencyrate","roe","decimal(16,10)","NO","0",""},;
@@ -1291,6 +1295,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"dueamount","datelstreminder","date","NO","0000-00-00",""},;
 		{"dueamount","remindercnt","int(1)","NO","0",""},;
 		{"dueamount","subscribid","int(11)","NO","NULL",""},;
+		{"dueamount","seqtype","char(4)","NO","",""},;
 		{"employee","empid","int(11)","NO","NULL","auto_increment"},;
 		{"employee","loginname","varbinary(64)","NO","",""},;
 		{"employee","password","varchar(64)","NO","",""},;
@@ -1411,17 +1416,18 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","gender","smallint(6)","NO","0",""},;
 		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
-		{"person","deleted","tinyint(1)","NO","0",""},; 
-		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
-		{"person_properties","name","char(30)","YES","NULL",""},;
-		{"person_properties","type","int(1)","NO","0",""},;
-		{"person_properties","values","mediumtext","NO","",""};
+		{"person","deleted","tinyint(1)","NO","0",""}; 
 		} as array
 	// additional required tables structure:
 	// Table name, Field,Type,Null,Default,Extra 
 	local aColumn2:={;
+		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
+		{"person_properties","name","char(30)","YES","NULL",""},;
+		{"person_properties","type","int(1)","NO","0",""},;
+		{"person_properties","values","mediumtext","NO","",""},;
 		{"personbank","persid","int(11)","NO","0",""},;
 		{"personbank","banknumber","varchar(64)","NO","",""},;
+		{"personbank","bic","varchar(11)","NO","",""},;
 		{"persontype","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"persontype","descrptn","char(30)","YES","NULL",""},;
 		{"persontype","abbrvtn","char(3)","YES","NULL",""},;
@@ -1511,8 +1517,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","owncntry","mediumtext","NO","",""},;
 		{"sysparms","giftincac","int(11)","NO","0",""},;
 		{"sysparms","giftexpac","int(11)","NO","0",""},;
-		{"sysparms","cntrnrcoll","char(10)","NO","",""},;
-		{"sysparms","banknbrcol","varchar(64)","NO","",""},;
+		{"sysparms","cntrnrcoll","varchar(32)","NO","",""},;
+		{"sysparms","banknbrcol","int(11)","NO","0",""},;
 		{"sysparms","idorg","int(11)","NO","0",""},;
 		{"sysparms","idcontact","int(11)","NO","0",""},;
 		{"sysparms","datlstafl","date","NO","0000-00-00",""},;
@@ -1524,7 +1530,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","fgmlcodes","char(30)","NO","",""},;
 		{"sysparms","creditors","int(11)","NO","0",""},;
 		{"sysparms","countrycod","char(3)","NO","",""},;
-		{"sysparms","banknbrcre","varchar(64)","NO","",""},;
+		{"sysparms","banknbrcre","int(11)","NO","0",""},;
 		{"sysparms","lstreeval","date","NO","0000-00-00",""},;
 		{"sysparms","citynmupc","tinyint(1)","NO","0",""},;
 		{"sysparms","pmcmancln","int(11)","NO","0",""},;
@@ -1535,11 +1541,14 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","checkemp","char(32)","NO","",""},;
 		{"sysparms","mailclient","tinyint(1)","NO","0",""},;
 		{"sysparms","posting","tinyint(1)","NO","0",""},; 
-	{"sysparms","toppacct","int(11)","NO","0",""},;
+		{"sysparms","toppacct","int(11)","NO","0",""},;
 		{"sysparms","lstcurrt","tinyint(1)","NO","0",""},; 
-	{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
-	{"sysparms","accpacls","date","NO","0000-00-00",""},; 
-	{"sysparms","assfldac","int(11)","NO","0",""},;
+		{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
+		{"sysparms","accpacls","date","NO","0000-00-00",""},; 
+		{"sysparms","assfldac","int(11)","NO","0",""},;
+		{"sysparms","sepaenabled","tinyint(1)","NO","0",""},; 
+		{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
+		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
@@ -1565,6 +1574,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","persid","int(11)","NO","0",""},;
 		{"teletrans","lock_id","int(11)","NO","0",""},;
 		{"teletrans","lock_time","timestamp","NO","0000-00-00",""},;
+		{"teletrans","bic","varchar(11)","NO","",""},;
 		{"titles","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"titles","descrptn","char(12)","NO","",""},;
 		{"transaction","persid","int(11)","YES","NULL",""},;
@@ -1759,7 +1769,7 @@ method InitializeDB() as void Pascal  class Initialize
 		break
 	endif 
 	if oSel:RecCount>0	
-		AEval(Split(oSel:tablegroup,'##'),{|x|AAdd(aMyCurTable,Split(x,','))}) 
+		AEval(Split(oSel:tablegroup,'##',true),{|x|AAdd(aMyCurTable,Split(x,','))}) 
 	endif 
 	
 	//read current columns:
@@ -1772,7 +1782,7 @@ method InitializeDB() as void Pascal  class Initialize
 		break
 	endif 
 	if oSel:RecCount>0 
-		AEval(Split(oSel:columngroup,'##'),{|x|AAdd(aCurColumn,Split(x,';'))})
+		AEval(Split(oSel:columngroup,'##',true),{|x|AAdd(aCurColumn,Split(x,';',true))})
 		// adapt aCurColumn: 
 		//                   1          2          3            4            5           6
 		// aCurColumn: {table_name,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,extra,collation_name},...  
@@ -1802,7 +1812,7 @@ method InitializeDB() as void Pascal  class Initialize
 	endif
 	 
 	if oSel:RecCount>0
-		AEval(Split(oSel:indexgroup,'##'),{|x|AAdd(aCurIndex,Split(x,','))})
+		AEval(Split(oSel:indexgroup,'##',true),{|x|AAdd(aCurIndex,Split(x,',',true))})
 	endif
 	// add archive files to aTable: 
 	nTbl:=AScan(aTable,{|x|x[1]=='transaction'})
@@ -2121,12 +2131,12 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	local nPosCurbefore as int // position of corresponding current item before this required one
 	local nPosCurAfter  as int // position of corresponding current item after this required one
 	local cReqname,cIndex as string 
-	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1) as string 
+	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1),cvalues as string 
 	local aColName:={} as array
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect                 // for correcting teletrans
 	local CurDate as date, CurSeqnr,SubSeqnr as int  // for correcting teletrans
-	local avalues:={} as array  // array for correcting teletrans : {{teletrid,seqnr},...}
+	local avalues:={} as array  // array for converting values : {{fieldname,new value},...}
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
@@ -2227,7 +2237,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	for nPosReq:=1 to nLenReq   
 		// Table,Non_unique,Key_name,Seq_in_index,Column_name
 		cReqname:=Lower(aReqIndex[nPosReq,5])       // first position is table name, fith column name
-		cReqname:=Split(cReqname,'(')[1]  // not key length 
+		cReqname:=Split(cReqname,'(',true)[1]  // not key length 
 		if ascan(aReqColumn,{|x|lower(x[2])==cReqname})=0
 			ErrorBox{,"Index '"+aReqIndex[nPosReq,3]+"' of table '"+cTableName+"' contains unknown column name '"+cReqname+"'"}:show()
 			break
@@ -2263,14 +2273,14 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				if (nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cAddIndex)=0
 					aStatCur[nPosCur]:='x'  // processed
 					// add to indexes to be added:
-					aColName:=Split(aReqIndex[nPosReq,5],'(')
+					aColName:=Split(aReqIndex[nPosReq,5],'(',true)
 					cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
 						"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'') 
 					aStatReq[nPosCur,1]='c'  // changed
 					nPosReq++		
 					do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex 
 						aStatReq[nPosCur,1]:='c'  // changed
-						aColName:=Split(aReqIndex[nPosReq,5],'(')
+						aColName:=Split(aReqIndex[nPosReq,5],'(',true)
 						cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar +iif(Len(aColName)>1,'('+aColName[2],'')
 						nPosReq++
 					enddo
@@ -2302,13 +2312,13 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				cDropIndex+=iif(Empty(cDropIndex),'',', ')+"drop"+Sp+iif(cIndex=="PRIMARY","PRIMARY KEY",'INDEX '+sIdentChar+cIndex+sIdentChar)
 				aStatCur[nPosCur]:='x'  // processed
 			endif
-			aColName:=Split(aReqIndex[nPosReq,5],'(')
+			aColName:=Split(aReqIndex[nPosReq,5],'(',true)
 			cAddIndex+=iif(Empty(cAddIndex),'',', ')+"add"+Sp+iif(cIndex=="PRIMARY","PRIMARY"+Sp,iif(aReqIndex[nPosReq,2]="0","UNIQUE"+Sp,""))+;
 				"KEY"+Sp+iif(cIndex=="PRIMARY","",sIdentChar+aReqIndex[nPosReq,3]+sIdentChar+Sp)+"("+sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 			nPosReq++		
 			do	while	nPosReq<=nLenReq .and. aReqIndex[nPosReq,3]==cIndex
 				aStatReq[nPosReq,1]='c'  // changed
-				aColName:=Split(aReqIndex[nPosReq,5],'(')
+				aColName:=Split(aReqIndex[nPosReq,5],'(',true)
 				cAddIndex+="," +sIdentChar+AllTrim(aColName[1])+sIdentChar  +iif(Len(aColName)>1,'('+aColName[2],'')
 				nPosReq++
 			enddo
@@ -2325,37 +2335,68 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
  
 	if !Empty(cStatement) 
 		oMainWindow:STATUSMESSAGE("Reformating table "+cTableName+", moment please...")
-		if cIndex=='telecontent'
-			// make each line in teletrans unique:
-			oSel:=SqlSelect{'select teletrid,cast(bookingdate as date) as bookingdate,seqnr from teletrans order by bankaccntnbr,seqnr,bookingdate,teletrid',oConn}
-			if oSel:RecCount>0
-				do while !oSel:EoF
-					if !oSel:bookingdate=CurDate .or.!oSel:seqnr=CurSeqnr
-						CurDate:=oSel:bookingdate
-						CurSeqnr:=oSel:seqnr
-						SubSeqnr:=0
-					endif
-					SubSeqnr++
-					if SubSeqnr>1
-						AAdd(avalues,{Str(oSel:teletrid,-1),Str(CurSeqnr,-1)+Str(SubSeqnr,-1)})
-					endif      
-					oSel:Skip()
-				enddo
+// 		if cIndex=='telecontent'
+// 			// make each line in teletrans unique:
+// 			oSel:=SqlSelect{'select teletrid,cast(bookingdate as date) as bookingdate,seqnr from teletrans order by bankaccntnbr,seqnr,bookingdate,teletrid',oConn}
+// 			if oSel:RecCount>0
+// 				do while !oSel:EoF
+// 					if !oSel:bookingdate=CurDate .or.!oSel:seqnr=CurSeqnr
+// 						CurDate:=oSel:bookingdate
+// 						CurSeqnr:=oSel:seqnr
+// 						SubSeqnr:=0
+// 					endif
+// 					SubSeqnr++
+// 					if SubSeqnr>1
+// 						AAdd(avalues,{Str(oSel:teletrid,-1),Str(CurSeqnr,-1)+Str(SubSeqnr,-1)})
+// 					endif      
+// 					oSel:Skip()
+// 				enddo
+// 			endif
+// 		endif
+		if cTableName=='sysparms'
+			// Table name, Field,Type,Null,Default,Extra 
+			if AScan(aCurColumn,{|x|x[2]=='banknbrcol'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcol'.and. Left(x[3],3)='int'})>0
+				// select od values and new values for banknbrcol:
+				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where s.banknbrcol>"" and b.banknumber=s.banknbrcol',oConn}
+				if oSel:RecCount>0
+					AAdd(avalues,{'banknbrcol',oSel:bankid})
+				endif
+			endif
+			if AScan(aCurColumn,{|x|x[2]=='banknbrcre'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcre'.and. Left(x[3],3)=='int'})>0
+				// select od values and new values for banknbrcol:
+				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where banknbrcre>"" and b.banknumber=s.banknbrcre',oConn}
+				if oSel:RecCount>0
+					AAdd(avalues,{'banknbrcre',oSel:bankid})
+				endif
 			endif
 		endif
 		SQLStatement{"start transaction",oConn}:Execute() 
-		lError:=false
-		if cIndex=='telecontent' .and. Len(avalues)>0
-			// correct teletrans to make each line unique	
-			oStmnt:=SQLStatement{'insert into teletrans (teletrid,seqnr) values '+Implode(avalues,'","')+;
-				" ON DUPLICATE KEY UPDATE seqnr=values(seqnr) ",oConn}
-			oStmnt:execute()
+		lError:=false 
+		if cTableName=='sysparms' .and. Len(avalues)>0
+			// fill new values: 
+			cvalues:="set "
+			for i:=1 to Len(avalues)
+				cvalues+=avalues[i,1]+'="'+avalues[i,2]+'"'+iif(i<Len(avalues),',','')
+			next
+			oStmnt:=SQLStatement{'update sysparms '+cvalues,oConn}
+			oStmnt:Execute()
 			if!Empty(oStmnt:Status)
 				SQLStatement{"rollback",oConn}:execute()
 				LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 				lError:=true
 			endif
-		endif
+		endif 
+// 		if cIndex=='telecontent' .and. Len(avalues)>0
+// 			// correct teletrans to make each line unique	
+// 			oStmnt:=SQLStatement{'insert into teletrans (teletrid,seqnr) values '+Implode(avalues,'","')+;
+// 				" ON DUPLICATE KEY UPDATE seqnr=values(seqnr) ",oConn}
+// 			oStmnt:execute()
+// 			if!Empty(oStmnt:Status)
+// 				SQLStatement{"rollback",oConn}:execute()
+// 				LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+// 				lError:=true
+// 			endif
+// 		endif
 		if !lError
 			oStmnt:=SQLStatement{'alter table'+Sp+cTableName+'	'+cStatement,oConn} 
 			oStmnt:execute() 
