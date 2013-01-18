@@ -1288,7 +1288,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 		self:oDCmDestPP:SetFocus()
 	ENDIF
 	// 	IF lValid .and. self:mDestTyp # DistributionTypes[3] .and. self:mDestAmt<=0
-	IF lValid .and. self:mDestTyp <2 .and. self:mDestAmt<=0
+	IF lValid .and. self:mDestTyp >1 .and. self:mDestAmt<=0
 		lValid := FALSE
 		cError :=  "Amount should be larger than zero!"
 		self:oDCmDestAmt:SetFocus()
@@ -1578,7 +1578,7 @@ METHOD AccButton(lUnique ) CLASS EditMember
 // 	oMem:MemberBal:=cCurBal
 // 	oMem:MemberDep:=cCurDep
 	IF Empty(self:oDCmAccDept:TEXTValue)
-		cAccDepName:=cMemberName
+		cAccDepName:=self:cMemberName
 	ELSE
 		cAccDepName:= AllTrim(self:oDCmAccDept:TEXTValue)
 	ENDIF
@@ -2403,10 +2403,10 @@ METHOD PersonButtonContact(lUnique) CLASS EditMember
 	local oPersCnt:=PersonContainer{} as PersonContainer
 	Default(@lUnique,FALSE)
 	if self:lNewMember 
-		PersonSelect(self,cValue,lUnique,'persid<>"'+self:mCLN+'"',"Contact Person")
+		PersonSelect(self,cValue,lUnique,'p.persid<>"'+self:mCLN+'"',"Contact Person")
 	else
 		oPersCnt:current_PersonID:=self:oMbr:CONTACT
- 		PersonSelect(self,cValue,lUnique,'persid<>"'+self:mCLN+'"',"Contact Person",oPersCnt)
+ 		PersonSelect(self,cValue,lUnique,'p.persid<>"'+self:mCLN+'"',"Contact Person",oPersCnt)
 	endif
 // 	PersonSelect(self,cValue,lUnique,'persid<>"'+self:mCLN+'"',"Contact Person")
 	return
