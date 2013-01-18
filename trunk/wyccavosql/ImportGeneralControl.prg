@@ -139,7 +139,7 @@ endif
 		IVarPutSelf(self:oEdit:oPersCnt,#m51_lastname,cTargetStr)
 		return
 	endif
-	aWord:=Split(cTargetStr," ")
+	aWord:=Split(cTargetStr," ",true)
 	lenAW:=Len(aWord)
 	if lenAW>2 .and. !oEdit:lSalutation
 		titPtr:=AScan(pers_titles,{|x| x[1]==Lower(aWord[lenAW])})
@@ -561,7 +561,7 @@ ELSE  // tab separated text or CSV
 		lCSV:=TRUE
 		cDelim:=Listseparator
 	ENDIF
-	aStruct:=Split(cBuffer,cDelim)
+	aStruct:=Split(cBuffer,cDelim,true)
 	// replace space in name by underscore:
 	aStruct:=AEvalA(aStruct,{|x| StrTran(AllTrim(x)," ","_")})
 	self:NbrCol:=Len(aStruct) 
@@ -718,7 +718,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	self:lOverwrite:=self:oDCReplaceDuplicates:Checked 
 	IF self:lImportFile
 		//cBuffer:=StrTran(StrTran(cBuffer,CR," "),LF," ")
-		aWord:=Split(cBuffer,cDelim)
+		aWord:=Split(cBuffer,cDelim,true)
 		IF (Len(aWord)+8)<SELF:NbrCol
 			(ErrorBox{SELF,"nbr("+Str(Len(aWord),-1)+" <-> "+Str(SELF:NbrCol,-1)+") of columns wrong at:"+Implode(aWord,",")}):show()
 			SELF:ErrCount++
@@ -926,7 +926,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#NewPersonWindow .and. (self:lOverwrite.or.!self:lExists)  // do not add mailing code when not overwrite
 		// add default codes even when mCod not mapped:
 		cMlCod:=self:oEdit:mCod
-		aCod:=Split(AllTrim(cMlCod)+" "+AllTrim(DefaultCod)," ")
+		aCod:=Split(AllTrim(cMlCod)+" "+AllTrim(DefaultCod)," ",true)
 		cCodes:=MakeCod(aCod)
 		self:oEdit:mCod:=cCodes
 	endif
@@ -971,7 +971,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 					endif
 				ELSEIF IDs=#mMailingcodes
 					cMlCod:=self:oEdit:mCod
-					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(AllTrim(cTargetStr)))+" "+AllTrim(DefaultCod)," ")
+					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(AllTrim(cTargetStr)))+" "+AllTrim(DefaultCod)," ",true)
 					if !lMember     
 						// remove member mailing code from
 						if AScan(aCod,'MW')>0
@@ -1056,7 +1056,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 						self:oEdit:mDepartment:=""					
 					endif
 				elseif IDs=#mBankNumber
-					aBank:=Split(cTargetStr) 
+					aBank:=Split(cTargetStr,,true) 
 					for j:=1 to Len(aBank)
 						self:oEdit:AddBankAcc(aBank[j])
 					next
@@ -1507,7 +1507,7 @@ endif
 if self:oEdit:lFirstName .and. self:oEdit:lSalutation 
 	return cTargetStr
 endif
-aWord:=Split(cTargetStr," ")
+aWord:=Split(cTargetStr," ",true)
 if Len(aWord)>=2 .and. !self:oEdit:lSalutation 
 	if lOverwrite .or.Empty(self:oPersExist:Title)
 		for WordPtr:=1 to Len(aWord) 
@@ -1621,7 +1621,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 						AAdd(self:aFields,'mailingcodes')
 					endif
 					aCod:=MakeAbrvCod(cTargetStr)
-					AAdd(aValueRow,MakeCod(Split(iif(Empty(aCod),'',MakeCod(aCod)+' ')+iif(Empty(DefaultCod),'',AllTrim(DefaultCod)))))
+					AAdd(aValueRow,MakeCod(Split(iif(Empty(aCod),'',MakeCod(aCod)+' ')+iif(Empty(DefaultCod),'',AllTrim(DefaultCod)),,true)))
 				ELSEIF IDs=#Titel
 					if lFillFields
 						AAdd(self:aFields,'title')
@@ -1670,7 +1670,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					endif
 					AAdd(aValueRow,ZeroTrim(cTargetStr))
 				ELSEIF IDs=#banknumber 
-					aBank:=Split(cTargetStr)
+					aBank:=Split(cTargetStr,,true)
 					for j:=1 to Len(aBank)
 						AAdd(self:avaluesbank,{cPersid,aBank[j]})
 					next
@@ -1947,7 +1947,7 @@ local aCod:={} as array
 		NEXT
 		if !self:lMailingCode .and.!Empty( self:DefaultCOD)
 			// add code for adding default codes
-			aCod:=Split(AllTrim(DefaultCOD)," ")
+			aCod:=Split(AllTrim(DefaultCod)," ",true)
 			cUpdateStatement+=",mailingcodes=concat(concat(mailingcodes,' ')"
 			FOR j:=1 to Len(aCod)
 				cUpdateStatement+=",if(instr(mailingcodes,'"+aCod[j]+"')>0,'','"+aCod[j]+" ')"	
