@@ -3210,12 +3210,16 @@ METHOD OKButton( ) CLASS TotalsMembers
 			aTotM[iPos,5]:=Round(aTotM[iPos,5]+oTransH:cre-oTransH:DEB,DecAantal)
 		CASE oTransH:GC=="PF"
 			aTotM[iPos,6]:=Round(aTotM[iPos,6]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="CH" .and. oTransH:tdesc # "Assessment"
-			aTotM[iPos,7]:=Round(aTotM[iPos,7]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="CH" .and. oTransH:tdesc = "Assessment office"
-			aTotM[iPos,8]:=Round(aTotM[iPos,8]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="CH" .and. oTransH:tdesc = "Assessment Int"
-			aTotM[iPos,9]:=Round(aTotM[iPos,9]+oTransH:cre-oTransH:DEB,DecAantal)
+		CASE oTransH:GC=="CH"
+			if AtC("Assessment",oTransH:tdesc)=0 
+				aTotM[iPos,7]:=Round(aTotM[iPos,7]+oTransH:cre-oTransH:DEB,DecAantal)
+			else
+				if AtC("office",oTransH:tdesc)>0 
+					aTotM[iPos,8]:=Round(aTotM[iPos,8]+oTransH:cre-oTransH:DEB,DecAantal)
+				else
+					aTotM[iPos,9]:=Round(aTotM[iPos,9]+oTransH:cre-oTransH:DEB,DecAantal) 
+				endif
+			endif
 		ENDCASE       
 		oTransH:Skip()	
 	ENDDO 
