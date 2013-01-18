@@ -1455,7 +1455,15 @@ Method UpdBankAcc(cBankAcc) Class NewPersonWindow
 local aToken as Array, i as int , cI as string
 LOCAL cDescr:="Bank# " 
 aToken:=Split(self:oDCSC_BankNumber:TextValue)
-cBankAcc:=ZeroTrim(StrTran(StrTran(AllTrim(cBankAcc),".")," ")) 
+IbanFormat(@cBankAcc)
+if Len(cBankAcc)>14 .and.Len(cBankAcc)<=31 .and. IsAlphabetic(SubStr(cBankAcc,1,2)) .and. isnum(SubStr(cBankAcc,3,2)) 
+	if !IsIban(cBankAcc)
+// 	if !IsSEPA(cBankAcc)
+// 		ErrorBox{self,cBankAcc +' '+self:oLan:WGet("is not a valid SEPA bank account number")}:show()
+		ErrorBox{self,cBankAcc +' '+self:oLan:WGet("is not a valid IBAN bank account number")}:show()
+		return
+	endif
+endif
 cI:=ATail(aToken)
 IF isnum(cI)
 	i:=Val(cI)
@@ -1717,9 +1725,9 @@ METHOD FindButton( ) CLASS PersonBrowser
 					self:cWhere+=iif(lStart," or ","")+AFields[j]+" like '%"+aKeyw[i,1]+"%'" 
 					lStart:=true
 				next
-				if !IsAlphabetic(aKeyw[i,1])
-					self:cWhere+=iif(lStart," or ","")+"p.persid in (select b.persid from personbank as b where b.banknumber='"+aKeyw[i,1]+"')"
-				endif
+// 				if !IsAlphabetic(aKeyw[i,1])
+					self:cWhere+=iif(lStart," or ","")+"p.persid in (select b.persid from personbank as b where b.banknumber like '%"+aKeyw[i,1]+"')"
+// 				endif
 				self:cWhere+=")"
 			next
 		endif
@@ -3087,7 +3095,7 @@ CLASS SelPersOpen INHERIT DialogWinDowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT oCaller AS SelPers
   PROTECT cType as STRING 
-  declare method Abon_Con,MakeCliop03File,MakeKIDFile
+  declare method Abon_Con,MakeCliop03File,MakeKIDFile,SEPADirectDebit
 RESOURCE SelPersOpen DIALOGEX  24, 38, 266, 187
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select Persons with Unpaid Items"
@@ -3252,8 +3260,10 @@ METHOD OKButton( ) CLASS SelPersOpen
 	ELSEIF keuze == 1    && donateurs
 		IF self:oDCmPayMethod:Value="C" // automatic collection?
 			//self:oCaller:selx_rek:=NULL_STRING
-			self:oCaller:Selx_OK:=FALSE // do not continue with caller 
-			if CountryCode="47"
+			self:oCaller:Selx_OK:=FALSE // do not continue with caller
+			if ConI(SqlSelect{"select sepaenabled from sysparms",oConn}:sepaenabled)=1
+				self:SEPADirectDebit(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
+			elseif CountryCode="47"
 				self:MakeKIDFile(begin_due,end_due,process_date)
 			elseif CountryCode="31"
 				if !self:MakeCliop03File(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
