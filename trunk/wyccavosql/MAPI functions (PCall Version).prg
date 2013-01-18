@@ -260,8 +260,8 @@ FUNCTION IsMAPIAvailable() as logic pascal
 		else
 			cError:="You have no permission to change email client to "+cRequired+";"+CRLF+"the default email client will be used."
 		endif
-	else
-		LogEvent(,"Required client: "+cRequired+" and current: "+cCurrent,"MailError")									
+// 	else
+// 		LogEvent(,"Required client: "+cRequired+" and current: "+cCurrent,"MailError")									
 	endif
 	if !Empty(cError)
 		LogEvent(,cError,"MailError") 							
