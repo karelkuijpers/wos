@@ -502,28 +502,22 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 			ENDIF
 		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:VALUE)==AllTrim(self:cCAPITALName)
 			IF Empty(oControl:Value) && leeg gemaakt?
-				SELF:NBrCAPITAL:="  "
-				SELF:cCAPITALName := ""
-				SELF:oDCmCAPITAL:TEXTValue := ""
+				self:RegAccount(' ','Net Asset')
          ELSE
 				self:cCAPITALName:=AllTrim(oControl:VALUE)
 				SELF:CAPButton(TRUE)
 			ENDIF
 		ELSEIF oControl:Name == "MINCOMEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cIncName)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
-				self:NbrIncome:="  "
-				self:cIncName := ""
-				self:oDCmincomeacc:TextValue := ""
+				self:RegAccount(' ','Income')
          ELSE
 				self:cIncName:=AllTrim(oControl:VALUE)
 				self:IncButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MEXPENSEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cExpname)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
-				self:NbrExpense:="  "
-				self:cExpname := ""
-				self:oDCmexpenseacc:TextValue := ""
-            ELSE
+				self:RegAccount(' ','Expense')
+         ELSE
 				self:cExpname:=AllTrim(oControl:VALUE)
 				self:ExpButton(true)
 			ENDIF
@@ -868,15 +862,15 @@ METHOD OKButton( ) CLASS EditDepartment
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
 		"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
 		"parentdep='"+cMainId+"',"+;
-		"netasset='"+self:NbrCAPITAL+"',"+;
-		"incomeacc='"+self:NbrIncome+"',"+;
-		"expenseacc='"+self:NbrExpense+"',"+;
-		"assacc1 ='"+ self:mAcc1+"',"+;
-		"assacc2 ='"+ self:mAcc2+"',"+;
-		"assacc3 ='"+ self:mAcc3+"',"+;
-		"persid ='"+ self:mCLN1+"',"+;
-		"persid2 ='"+ self:mCLN2+"',"+; 
-	"ipcproject='"+self:IPCPROJECT+"'"+;
+		"netasset='"+Str(Val(self:NbrCAPITAL),-1)+"',"+;
+		"incomeacc='"+Str(Val(self:NbrIncome),-1)+"',"+;
+		"expenseacc='"+Str(Val(self:NbrExpense),-1)+"',"+;
+		"assacc1 ='"+ Str(Val(self:mAcc1),-1)+"',"+;
+		"assacc2 ='"+ Str(Val(self:mAcc2),-1)+"',"+;
+		"assacc3 ='"+ Str(Val(self:mAcc3),-1)+"',"+;
+		"persid ='"+ Str(Val(self:mCLN1),-1)+"',"+;
+		"persid2 ='"+ Str(Val(self:mCLN2),-1)+"',"+; 
+	"ipcproject='"+Str(Val(self:IPCPROJECT),-1)+"'"+;
 		iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
@@ -1067,16 +1061,24 @@ ELSE
 		self:NbrCAPITAL:="0"
 		SELF:oDCmCAPITAL:TEXTValue := " "
 		SELF:cCAPITALName := " "
+	ELSEIF ItemName=="Income"
+		self:NbrIncome :=  "0"
+		self:oDCmincomeacc:TextValue :=" "
+		self:cIncName := " "
+	ELSEIF ItemName=="Expense"
+		self:NbrExpense :=  "0"
+		self:oDCmexpenseacc:TextValue := " "
+		self:cExpname := " "
 	ELSEIF ItemName=="Associated Account 1"
-		self:mAcc1 :=  null_string
+		self:mAcc1 := "0"
 		SELF:oDCmAccount1:TEXTValue := NULL_STRING
 		self:cAccount1Name := null_string
 	ELSEIF ItemName=="Associated Account 2"
-		self:mAcc2 :=  null_string
+		self:mAcc2 :=  "0"
 		SELF:oDCmAccount2:TEXTValue := NULL_STRING
-		SELF:cAccount2Name := NULL_STRING
+		self:cAccount2Name :="0"
 	ELSEIF ItemName=="Associated Account 3"
-		self:mAcc3 := null_string
+		self:mAcc3 := "0"
 		SELF:oDCmAccount3:TEXTValue := NULL_STRING
 		SELF:cAccount3Name := NULL_STRING
 	ENDIF
