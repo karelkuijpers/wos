@@ -1128,7 +1128,7 @@ METHOD StateExtra()CLASS NewPersonWindow
 			mCodH  :=aCod[i]
 		endif
 		if Empty(mCodH).or.AScan(pers_codes,{|x|x[2]==mCodH})=0
-			mCodH:=nil
+			loop
 		endif
 		++j
 		IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH) 
@@ -1275,7 +1275,11 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	IF lValid .and. Len(self:aBankAcc)>0
 		* Check duplicate bankaccount:
 		FOR i:=1 to Len(self:aBankAcc)
-			IF !Empty(self:aBankAcc[i,2]).and.!Empty(self:aBankAcc[1,2])
+			IF !Empty(self:aBankAcc[i,2]).and.!Empty(self:aBankAcc[1,2]) 
+				if sepaenabled .and.!IsSEPA(self:aBankAcc[1,2])
+					cError+=self:aBankAcc[i,2]+' '+self:oLan:WGet("is not a valid sepa bank account number") 
+					lValid:=false
+				endif  
 				cSelBank+=iif(Empty(cSelBank),"("," or ")+"banknumber='"+self:aBankAcc[i,2]+"'"
 			endif
 		next
@@ -1556,9 +1560,10 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 method RegPerson(oCLN) class PersonBrowser 
 Local oTextBox as TextBox 
 local CurRec as int
-Local oP1:=oCLN, oP2:=self:Server as SQLSelect 
+Local oP1, oP2:=self:Server as SQLSelect 
 Local Id1, Id2,Name1,Name2 as string
-IF !Empty(oCLN)
+IF !Empty(oCLN) 
+	oP1:=oCLN
 	Id1:=Str(oP1:persid,-1)
 	Id2:=Str(oP2:persid,-1) 
 	Name1:=GetFullNAW(Id1,,3)	
@@ -1773,7 +1778,10 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 					nInitialsPos:=i
 					lInitials:=true
 				ENDIF
-				aWord[i]:={"",""} // empty word
+				aWord[i]:={"",""} // empty word 
+// 				ADel(aWord,i)
+// 				nLength--
+// 				ASize(aWord,nLength)
 			ELSEIF lInitials
 				exit
 			ENDIF
@@ -1835,7 +1843,10 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 		* Determine Prefix:
 		self:m51_prefix:=""
 		nLength:=Len(aWord)
-		for i:=1 to nLength
+		for i:=1 to nLength 
+			if i== nInitialsPos
+				loop
+			endif 
 			IF AScanExact(aFirstPrefix,Upper(aWord[i,1]))>0 
 				IF IsAlpha(aWord[i,1]).and.!aWord[i,2]="-".and.!aWord[i,2]="/".and.; //not followed by -/
 					!(i>1.and.(aWord[i-1,2]="-".or.aWord[i-1,2]="/")) //no "-/" preceding
@@ -2050,7 +2061,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	if !Empty(cValue) .and.!lParmUni 
 		// 		cValue:=AllTrim(SubStr(cValue,1,if(iEnd<2,nil,iEnd-1)))
 		If IsDigit(cVALUE)
-			if Len(cValue)>=7.and.isnum(cValue) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber))
+			if Len(cValue)>=7.and.isnum(Right(cValue,7)) .and.(Empty(oPersCnt).or.Empty(oPersCnt:m56_banknumber))
 				cWhere+=iif(Empty(cWhere),""," and ")+"p.persid=b.persid and b.banknumber='"+cValue+"'"
 				cFrom+=",personbank as b" 
 			elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_pos)
@@ -2075,7 +2086,6 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		ENDIF	
 		RETURN
 	ENDIF
-	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller}
 	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller} 
 	oPersBw:cWhere:= cWhere
 	oPersBw:cFrom:=cFrom
@@ -3700,7 +3710,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	LOCAL ptrHandle
 	LOCAL cFilename, cOrgName, cDescr,cTransnr,m56_Payahead,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING 
 	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string
-	LOCAL fSum:=0,fAmnt,fMbal as FLOAT, GrandTotal:=0 as float
+	LOCAL fSum:=0,fAmnt,fMbal as FLOAT, GrandTotal:=0,fLimitInd,fLimitBatch as float
 	LOCAL lError as LOGIC
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j, nSeq,nSeqnbr,nTransId as int
 	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds,cAccs as STRING
@@ -3737,7 +3747,16 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	if Empty(cOrgName)
 		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN false
-	ENDIF
+	ENDIF 
+	oSel:=SqlSelect{"select ddmaxindvdl,ddmaxbatch from sysparms",oConn}
+	oSel:Execute()
+	fLimitInd:=oSel:ddmaxindvdl
+	fLimitBatch:=oSel:ddmaxbatch
+	if empty(fLimitBatch) .or. empty(fLimitInd)
+		(ErrorBox{self,self:oLan:WGet("no maximum direct debit amounts for individual or batch specified in system data")}):Show() 
+		return false		
+	endif
+
 
 	oSel:=SqlSelect{"select payahead from bankaccount where banknumber='"+BANKNBRDEB+"' and telebankng=1",oConn}
 	if oSel:RecCount<1
@@ -3846,6 +3865,13 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 // 		else
 // 			cBank:=StrTran(cBank,'P','')
 		endif
+		if oDue:AmountInvoice> fLimitInd
+			(ErrorBox{self,self:oLan:WGet("Direct debit amount of person")+' '+oDue:PersonName+"(Intern ID "+Str(oDue:personid,-1)+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'}):Show()
+			self:Pointer := Pointer{POINTERARROW}
+			return false  
+			loop
+		endif
+
 		cBank:=PadL(cBank,10,"0")
 		// Transaction record:
 		FWriteLine(ptrHandle,"0100A1001"+StrZero(oDue:AmountInvoice*100,12,0)+cBank + PadL(BANKNBRDEB,10,"0")+Space(9))
@@ -3885,9 +3911,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		cPersId:= ConS(oDue:personid)
 		cAccMlCd:=Transform(oDue:CLC,"")	
 		cAccID:=ConS(oDue:accid)
-		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','','0','',''})
+		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','0','0','',''})
 		// second row:
-		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',cPersId,'0','',''})
+		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',iif(Empty(cPersId),'0',cPersId),'0','',''})
 		// add person data:
 		IF	!Empty(cType) .and. (cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D') 
 			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
@@ -3914,6 +3940,12 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	oReport:prstart()
 	oReport:prstop()
 	self:Pointer := Pointer{POINTERARROW}
+	if fSum>fLimitBatch
+		if TextBox{self,self:oLan:WGet("Direct Debit"),self:oLan:WGet("Total direct debit amount")+' '+Str(fSum,-1)+' '+self:oLan:WGet("is above limit")+'! ('+Str(fLimitBatch,-1)+sCurr+')'+CRLF+self:oLan:WGet("Continue")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
+			return false
+		endif
+	endif
+
 	oWarn:=TextBox{self,"Direct Debit",;
 		'Printing O.K.? Can shown '+Str(Len(aTrans),-1)+' transactions('+sCurrName+Str(fSum,-1)+') be imported into telebanking?',BOXICONQUESTIONMARK + BUTTONYESNO}
 	IF (oWarn:Show() = BOXREPLYNO)
@@ -4170,6 +4202,546 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 	SetDecimalSep(Asc("."))
 
 	RETURN true
+Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,accid as int) as logic CLASS SelPersOpen
+	// produce XML file for SEPA Direct Debit to be imported into telebanking package
+	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead,m56_currency,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING 
+	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds,cAccs,CreditorID as STRING
+	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string
+	local cTransDate:=SQLdate(process_date) as string 
+	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
+	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
+	LOCAL lError,lSetAMPM as LOGIC
+	local dlg,invoicedate as date
+	LOCAL ptrHandle
+	Local oWarn as TextBox
+	local aDue:={} as array // array with dueamount values: 
+	// {{},...
+	Local aTrans:={} as array // accid,persid,amount,description,membertype,mailcode,account type,id 
+	Local aDir as array
+	local aTransValues:={} as array  // array with values to be inserted into table transaction:
+	//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
+	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
+	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
+	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person
+	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre}   
+	local aDD:={} as array // values voor CT-file: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid},... 
+	local aSeqTp:={{'FRST',0,0.00},{'RECUR',0,0.00},{'FNAL',0,0.00},{'OOFF',0,0.00}} // array with total per sequencetype: {{name,total transactions, ctrl sum},...    
+	//                 1                2               3              4
+	local aDescr:=ArrayNew(13) as array
+	local DrctDbtTxInf:={} as array  // array with output per DrctDbtTxInf
+	local oMBal as Balances
+	local oSel as SQLSelect
+	local oStmnt as SQLStatement 
+	LOCAL oDue,oPers as SQLSelect 
+	Local oAddInEx as AddToIncExp
+	
+
+	if Empty(BANKNBRDEB)
+		(ErrorBox{,self:oLan:WGet("Bank account invoices/ direct debit not specified in system data")}):Show()
+		return false
+	endif 
+	if !IsSEPA(BANKNBRDEB)
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
+			self:oLan:WGet("for Payments is not correct SEPA bank account")}):Show()
+		RETURN FALSE
+	ENDIF
+	IF Empty(sIDORG)
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
+		RETURN FALSE
+	ENDIF
+	oSel:=SqlSelect{"select "+SQLFullName(2)+'as orgname,'+SQLAddress(CRLF)+' as orgaddress from person where persid='+sIDORG,oConn}
+	oSel:Execute()
+	if oSel:RecCount=1
+		cOrgName:=oSel:OrgName
+		cOrgAddress:=oSel:orgaddress
+	endif
+	cOrgName:=GetFullName(sIDORG,2)
+	if Empty(cOrgName)
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
+		RETURN false
+	ENDIF
+
+	oSel:=SqlSelect{"select payahead,currency from bankaccount b, account a where banknumber='"+BANKNBRDEB+"' and telebankng=1 and b.accid=a.accid",oConn}
+	if oSel:RecCount<1
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
+			self:oLan:WGet("not specified as telebanking in system data")}):Show()
+		RETURN FALSE
+	else
+		m56_Payahead:=Str(oSel:PAYAHEAD,-1)
+		if Empty(m56_Payahead)
+			(ErrorBox{self,self:oLan:WGet("For bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
+				self:oLan:WGet("no account for Payments en route specified in system data")}):Show() 
+			return false
+		endif
+		m56_currency:=oSel:currency
+	endif
+	CreditorID:=(oSel:=SqlSelect{"select cntrnrcoll,ddmaxindvdl,ddmaxbatch from sysparms",oConn}):cntrnrcoll
+	if Empty(CreditorID)
+		(ErrorBox{self,self:oLan:WGet("no chamber of commerce number specified in system data")}):Show() 
+		return false
+	endif
+	fLimitInd:=oSel:ddmaxindvdl
+	fLimitBatch:=oSel:ddmaxbatch
+	if empty(fLimitBatch) .or. empty(fLimitInd)
+		(ErrorBox{self,self:oLan:WGet("no maximum direct debit amounts for individual or batch specified in system data")}):Show() 
+		return false		
+	endif
+	// file description array: 
+	
+	aDescr[1]:=oLan:Rget("Single gift")
+	aDescr[2]:=self:oLan:Rget("Monthly gift")
+	aDescr[3]:=self:oLan:Rget("Bimonthly gift")
+	aDescr[4]:=self:oLan:Rget("Quarterly gift")
+	aDescr[5]:=self:oLan:Rget("Periodic gift")
+	aDescr[6]:=self:oLan:Rget("Periodic gift")
+	aDescr[7]:=self:oLan:Rget("Half-yearly gift")
+	aDescr[8]:=self:oLan:Rget("Periodic gift")
+	aDescr[9]:=self:oLan:Rget("Periodic gift")
+	aDescr[10]:=self:oLan:Rget("Periodic gift")
+	aDescr[11]:=self:oLan:Rget("Periodic gift")
+	aDescr[12]:=self:oLan:Rget("Periodic gift")
+	aDescr[13]:=self:oLan:Rget("Yearly gift")
+	nChecksum:=IbanChecksum(SubStr(BANKNBRDEB,1,2)+'00'+Pad(CreditorID,Max(Len(CreditorID),Len(BANKNBRDEB)-7),'0'))
+	CreditorID:=SubStr(BANKNBRDEB,1,2)+StrZero(nChecksum,2,0)+'ZZZ'+Pad(CreditorID,Len(BANKNBRDEB)-7,'0')
+	// Check if all bankaccounts are valid, belonging to the direct debited person:   
+  	self:Pointer := Pointer{POINTERHOURGLASS}
+
+	oDue:=SqlSelect{"select distinct s.bankaccnt,s.subscribid,s.personid,"+SQLFullName(0,'ps')+" as fullname,group_concat(pb.banknumber separator ',') as bankaccounts from dueamount d,subscription s "+;
+		"left join person ps on (ps.persid=s.personid) left join personbank pb on (pb.persid=ps.persid) "+;
+		"where s.subscribid=d.subscribid "+;
+		"and s.paymethod='C' and invoicedate between '"+SQLdate(begin_due)+;
+		"' and '"+SQLdate(end_due)+"' and d.amountrecvd<d.amountinvoice "+;
+		iif(Empty(accid),""," and s.accid='"+Str(accid,-1)+"'")+" and "+;
+		"s.bankaccnt not in (select p.banknumber from personbank p where p.persid=s.personid)"+;
+		" group by s.personid",oConn} 
+	if oDue:RecCount>0 
+		// try to correct donations: 
+		
+		// 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
+		do while !oDue:EoF
+			if !Empty(oDue:bankaccounts)
+				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"' where subscribid="+Str(oDue:subscribid,-1),oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:status)
+					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")" 
+				endif
+			else
+				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+			endif
+			oDue:skip()
+		enddo
+		if !Empty(cErrMsg)
+			ErrorBox{self,self:oLan:WGet("Of the following donations the bankaccount does not belong to the person")+':'+cErrMsg}:Show()
+			return false
+		endif
+	endif
+	
+
+	oDue:=SqlSelect{"select group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
+	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
+	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+" separator '#%#') as grDue " +;
+		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
+		"balanceitem b,person p, dueamount du,subscription s "+;
+		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
+		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
+		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
+		" and '"+SQLdate(end_due)+"' and invoicedate<s.enddate and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by p.lastname",oConn}
+// 	LogEvent(self,oDue:SQLString,"logsql")
+	oDue:Execute()
+	IF oDue:RecCount<1 .or. Empty(oDue:grDue)
+		(WarningBox{self,"Producing SEPA Direct Debit file","No due amounts to be debited direct!"}):Show()
+		RETURN false
+	ENDIF
+	// Add to aDue:
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16
+	aeval(Split(oDue:grDue,'#%#'),{|x|aadd(aDue,split(x,'#$#'))}) 
+	
+	//    LogEvent(self,oDue:SQLString,"logsql")
+	headinglines:={self:oLan:Rget("Overview of generated automatic collection (SEPA DD)"),self:oLan:Rget("Name",41)+self:oLan:Rget("Bankaccount",25)+self:oLan:Rget("Amount",12,,"R")+" "+self:oLan:Rget("Destination",12)+self:oLan:Rget("Due Date",11)+" "+self:oLan:Rget("Description",20),Replicate('-',134)}
+	// write Header
+	// remove old SEPADD-files:
+	aDir := Directory(CurPath +"\SEPADD*.xml") 
+	// determine sequencenumber per day:
+	nSeq:=1
+	FOR i := 1 upto ALen(ADir)
+		if ADir[i][F_DATE] < (Today()-12) 	
+			(FileSpec{ADir[i][F_NAME]}):DELETE() 
+			FErase(ADir[i][F_NAME])
+		elseif ADir[i][F_DATE] == Today() 
+			nSeq++
+		endif
+	NEXT
+	self:Pointer := Pointer{POINTERARROW}
+	oReport := PrintDialog{self,self:oLan:WGet("Producing of ")+"SEPA DD"+DToS(Today())+Str(nSeq,-1)+" file",,134}
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	* Datafile aanmaken:
+	cFilename := CurPath + "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml'
+   cErrMsg:=''
+	for i:=1 to Len(aDue)
+		cBank:=aDue[i,11]
+		nTerm:=Val(aDue[i,10])
+		invoicedate:=SQLDate2Date(aDue[i,8]) 
+		AmountInvoice:=Val(aDue[i,7])
+		cAmnt:=Str(AmountInvoice,-1,2)
+		cType:=aDue[i,15]
+		cPersId:= aDue[i,3]
+		cAccMlCd:=aDue[i,13]	
+		cAccID:=aDue[i,4]
+		if AmountInvoice> fLimitInd
+			cErrMsg+=CRLF+self:oLan:WGet("Direct debit amount of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'
+// 			(ErrorBox{self,self:oLan:WGet("Direct debit amount of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'}):Show()
+// 			self:Pointer := Pointer{POINTERARROW}
+// 			return false  
+			loop
+		endif
+			
+		IF !IsSEPA(cBank)
+			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
+			loop
+		endif
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16
+
+		// determine description from Subscription: 
+		IF Empty(nTerm) .or.nTerm>12
+			cDescr:=aDescr[1] 
+		elseif nTerm==1 .or.nTerm==2
+			cDescr:=aDescr[nTerm+1]+' ' +Lower(maand[Month(invoicedate)])+" "+Str(Year(invoicedate),-1)
+		elseif nTerm==3
+			cDescr:=aDescr[nTerm+1] +' '+Str(Floor((Month(invoicedate)-1)/4)+1,-1)+" "+Str(Year(invoicedate),-1)
+		elseif nTerm==6
+			cDescr:=aDescr[nTerm+1] +' '+Str(Floor((Month(invoicedate)-1)/6)+1,-1)+" "+Str(Year(invoicedate),-1)
+		elseif nTerm==12
+			cDescr:=aDescr[nTerm+1] +' '+Str(Year(invoicedate),-1)
+		else
+			cDescr:=aDescr[nTerm+1] 
+		ENDIF
+		oReport:PrintLine(@nRow,@nPage,;
+			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+"  "+cDescr,headinglines)  
+		fSum:=Round(fSum+AmountInvoice,DecAantal) 
+		// add to aTrans:
+		AAdd(aTrans,{cAccID,cPersId,cAmnt,cDescr,cType,cAccMlCd,aDue[i,14],aDue[i,1]})
+		//                 1         2              3               4      5         6         7                 8 
+		// add to aTransValues
+		//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
+		//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
+		// first row:
+		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','0','0','',''})
+		// second row:
+		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',iif(Empty(cPersId),'0',cPersId),'0','',''})
+		// add person data:
+		IF	!Empty(cType) .and. (cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D') 
+			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
+		endif 
+		// add to balance values:
+		// {accid,year,month,currency,deb,cre} 
+		j:=AScan(aMbalValues,{|x|x[1]==cAccID})
+		if j>0
+			fMbal:=aMbalValues[j,6]
+			aMbalValues[j,6]:=Round(fMbal+AmountInvoice,DecAantal)
+		else
+			AAdd(aMbalValues,{cAccID,cYear,cMonth,sCurr,0.00,AmountInvoice})		
+		endif 
+		// determine ,SeqTp(1=FRST/2=RECUR,3=FNAL,4=OOFF):
+		SeqTp:=0  
+		if !Empty(aDue[i,6])
+			SeqTp:=AScan(aSeqTp,{|x|x[1]==aDue[i,6]})
+		endif
+		if Empty(SeqTp)
+			IF Empty(nTerm) .or.nTerm>12
+				SeqTp:=4  //OOFF
+			else
+				SeqTp:=2  // RECUR
+			endif
+		endif
+		aSeqTp[SeqTp,2]++
+		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
+		// add to aCt for mailing DD file:
+		// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF)},...
+		AAdd(aDD,{cAmnt,aDue[i,2],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp})
+	next
+
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
+	oReport:PrintLine(@nRow,@nPage,Space(66)+Str(Round(fSum,2),12,2),headinglines)
+	oReport:prstart()
+	oReport:prstop()
+	self:Pointer := Pointer{POINTERARROW} 
+	if !Empty(cErrMsg)
+		ErrorBox{self,self:oLan:WGet("With the following donations are problems")+':'+cErrMsg}:Show()
+		return false
+	endif
+	if fSum>fLimitBatch
+		if TextBox{self,self:oLan:WGet("Direct Debit"),self:oLan:WGet("Total direct debit amount")+' '+Str(fSum,-1)+' '+self:oLan:WGet("is above limit")+'! ('+Str(fLimitBatch,-1)+sCurr+')'+CRLF+self:oLan:WGet("Continue")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
+			return false
+		endif
+	endif
+	oWarn:=TextBox{self,self:oLan:WGet("Direct Debit"),;
+		self:oLan:WGet("Printing O.K.")+'? '+self:oLan:WGet("Can file")+;
+		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+' transactions('+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
+	IF (oWarn:Show() = BOXREPLYNO)
+		Return false
+	endif
+	oMainWindow:STATUSMESSAGE("Producing SEPA Direct Debit file, moment please")
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	* Prepare Datafile:
+	ptrHandle := MakeFile(self,@cFilename,"Creating SEPA_DD-file")
+	IF ptrHandle = F_ERROR .or. ptrHandle==nil
+		self:Pointer := Pointer{POINTERARROW}
+		RETURN false
+	ENDIF
+	//	write	document	and group header:	
+	lSetAMPM:=SetAmPm(false)
+	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
+		FWriteLineUni(ptrHandle,'<?xml version="1.0"	encoding="UTF-8"?>'+CRLF+;
+		'<Document xmnls="urn:iso:20022:tech:xsd:pain.008.001.02">'+CRLF+;
+		'<CstmrDrctDbtfinitn>'+CRLF+;
+		'<GrpHdr>'+CRLF+;
+		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
+		'<CreDtTm>'+SQLdate(Today())+'T'+Time()+'</CreDtTm>'+CRLF+;
+		'<NbOfTxs>'+Str(Len(aTrans),-1)+'</NbOfTxs>'+CRLF+;
+		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
+		'<InitgPty>'+CRLF+;
+		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
+		'<PstlAdr>'+cOrgAddress+'</PstlAdr>'+CRLF+;
+		'<CtryOfRes>'+ SubStr(BANKNBRDEB,1,2) +'</CtryOfRes>'+CRLF+;
+		'</InitgPty>'+;                                                                                
+	'</GrpHdr>')
+	SetAmPm(lSetAMPM)	//	reset	AMPM 
+	// write transactions from aDD:
+	// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF)}},... 
+	//            1            2            3        4          5           6         7         8
+	ASort(aDD,,,{|x,y|x[8]<=y[8]})
+	SeqTp:=0
+	for i:=1 to Len(aDD)
+		if !SeqTp==aDD[i,8]
+			//new seqtp thus new PmtInf
+			SeqTp:=aDD[i,8] 
+			FWriteLineUni(ptrHandle,iif(i=1,'','</PmtInf>')+'<PmtInf>'+CRLF+;
+				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+'</PmtInfId>'+CRLF+;
+				'<PmtMtd>DD</PmtMtd>'+CRLF+;
+				'<NbOfTxs>'+Str(aSeqTp[SeqTp,2],-1)+'</NbOfTxs>'+CRLF+;
+				'<CtrlSum>'+Str(aSeqTp[SeqTp,3],-1,2)+'</CtrlSum>'+CRLF+; 
+			'<PmtTpInf>'+CRLF+;
+				'<SvcLvl>SEPA</SvcLvl>'+CRLF+;
+				'<LclInstrm><Code>CORE</Code></LclInstrm>'+CRLF+;
+				'<SeqTp>'+aSeqTp[aDD[i,8],1]+'</SeqTp>'+CRLF+;
+				'</PmtTpInf>' +CRLF+;
+				'<ReqdColltnDt>'+SQLdate(iif(SeqTp=1.or.SeqTp=4, Max(Today()+5,process_date),Max(Today()+2,process_date)))+'</ReqdColltnDt>'+CRLF+;        // for firsand single 5 day ahead, otherwise 2 days
+				'<Cdtr>'+CRLF+;
+				'<Nm>'+cOrgName+'</Nm>'+CRLF+;
+				'</Cdtr>'+CRLF+;
+				'<CdtrAcct>'+CRLF+;
+				'<ID>'+CRLF+;
+				'<IBAN>'+BANKNBRDEB+'</IBAN>'+CRLF+;
+				'<Ccy>'+m56_currency+'</Ccy>'+CRLF+;
+				'</ID>'+CRLF+;
+				'</CdtrAcct>'+CRLF+;
+				'<ChrgBr>SLEV</ChrgBr>'+CRLF+;
+				'<CdtrSchmeId><Id><PrvtId><Othr><Id>'+CreditorID+'</Id><SchmeNm><Prtry>SEPA</Prtry></SchmeNm></Othr></PrvtId></Id></CdtrSchmeId>') 
+		endif
+
+		// 			'<EndToEndId>'+Pad(aDue[i,12]+DToC(invoicedate)+'</EndToEndId>'+CRLF+;
+		AAdd(DrctDbtTxInf,'<DrctDbtTxInf>'+CRLF+;
+			'<PmtId>'+CRLF+;
+			'</PmtId>'+CRLF+;
+			'<InstdAmt>'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
+		'<DrctDbtTX><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf><CdtrSchmId></CdtrSchmId></DrctDbtTX>'+CRLF+;
+			'<Dbtr>'+CRLF+;
+			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
+			'</Dbtr>'+CRLF+;
+			'<DbtrAcct>'+CRLF+;
+			'<ID>'+CRLF+;
+			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
+			'</ID>'+CRLF+;
+			'</DbtrAcct>'+CRLF+;
+			'<RmtInf>'+CRLF+;
+			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
+		'<Strd>'+aDD[i,7]+'</Strd>'+CRLF+;     // invoiceid
+		'</RmtInf>'+CRLF+;
+			'</DrctDbtTxInf>')
+// 		FWriteLineUni(ptrHandle,'<DrctDbtTxInf>'+CRLF+;
+// 			'<PmtId>'+CRLF+;
+// 			'</PmtId>'+CRLF+;
+// 			'<InstdAmt>'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
+// 		'<DrctDbtTX><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf><CdtrSchmId></CdtrSchmId></DrctDbtTX>'+CRLF+;
+// 			'<Dbtr>'+CRLF+;
+// 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
+// 			'</Dbtr>'+CRLF+;
+// 			'<DbtrAcct>'+CRLF+;
+// 			'<ID>'+CRLF+;
+// 			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
+// 			'</ID>'+CRLF+;
+// 			'</DbtrAcct>'+CRLF+;
+// 			'<RmtInf>'+CRLF+;
+// 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
+// 		'<Strd>'+aDD[i,7]+'</Strd>'+CRLF+;     // invoiceid
+// 		'</RmtInf>'+CRLF+;
+// 			'</DrctDbtTxInf>') 
+		if Len(DrctDbtTxInf)= 100
+			FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write per 100 transactions to reduce I/O
+			DrctDbtTxInf:={}
+		endif
+	next
+	if Len(DrctDbtTxInf) > 0
+		FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write latest transactions 
+	endif
+	// Write closing lines:
+	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrDrctDbtfinitn>'+CRLF+'</Document>')
+	FClose(ptrHandle)
+	self:Pointer := Pointer{POINTERARROW} 
+	if TextBox{self,"Direct Debits",cFilename+' '+self:oLan:WGet("successfully uploaded to your online banking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
+		// remove file:
+		(FileSpec{cFilename}):DELETE() 
+		cFilename:=""
+		return true
+	endif
+
+
+	oMainWindow:STATUSMESSAGE("Recording direct debit transactions") 
+	self:oCCCancelButton:Disable()
+	self:oCCOKButton:Disable()
+
+	self:Pointer := Pointer{POINTERHOURGLASS}
+
+	if !Empty(SINCHOME) .or.!Empty(SINC)
+		// add transactions for ministry income/expense:
+		oAddInEx:=AddToIncExp{}
+		for i:=2 to Len(aTransValues) step 2
+			nSeqnbr:=2 
+			aTransIncExp:=oAddInEx:AddToIncome(aTransValues[i,9],false,aTransValues[i,1],Val(aTransValues[i,4]),Val(aTransValues[i,2]),Val(aTransValues[i,3]),Val(aTransValues[i,5]),aTransValues[i,6],;
+				aTransValues[i,7],aTransValues[i,15],aTransValues[i,8],aTransValues[i,13],@nSeqnbr,aTransValues[i,11]) 
+			if Len(aTransIncExp)=2
+				ASize(aTransValues,Len(aTransValues)+2)
+				i++
+				AIns(aTransValues,i)
+				aTransValues[i]:=aTransIncExp[1]
+				i++
+				AIns(aTransValues,i)
+				aTransValues[i]:=aTransIncExp[2]
+				// add to balance values:
+				// {accid,year,month,currency,deb,cre} 
+				j:=AScan(aMbalValues,{|x|x[1]==aTransIncExp[1,1]})
+				if j>0
+					aMbalValues[j,5]:=Round(aMbalValues[j,5]+aTransIncExp[1,2],DecAantal)
+					aMbalValues[j,6]:=Round(aMbalValues[j,6]+aTransIncExp[1,4],DecAantal)
+				else
+					AAdd(aMbalValues,{aTransIncExp[1,1],cYear,cMonth,sCurr,aTransIncExp[1,2],aTransIncExp[1,4]})		
+				endif
+				j:=AScan(aMbalValues,{|x|x[1]==aTransIncExp[2,1]})
+				if j>0
+					aMbalValues[j,5]:=Round(aMbalValues[j,5]+aTransIncExp[2,2],DecAantal)
+					aMbalValues[j,6]:=Round(aMbalValues[j,6]+aTransIncExp[2,4],DecAantal)
+				else
+					AAdd(aMbalValues,{aTransIncExp[2,1],cYear,cMonth,sCurr,aTransIncExp[2,2],aTransIncExp[2,4]})		
+				endif
+			endif
+		next			
+	endif
+	// add line for total against payahead:
+	AAdd(aMbalValues,{m56_Payahead,cYear,cMonth,sCurr,fSum,0.00})		
+	
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'lock tables `transaction` write,`dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
+	oStmnt:Execute()
+
+	// make transactions:
+	if !Empty(oStmnt:status)
+		lError:=true
+	endif
+	if !lError
+		// Reconcile Due Amounts:
+		oStmnt:=SQLStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+Implode(aTrans,",",,,8)+")",oConn}
+		oStmnt:Execute()
+		if	!Empty(oStmnt:status)
+			SQLStatement{"rollback",oConn}:Execute() 
+			SQLStatement{"unlock tables",oConn}:Execute()
+			LogEvent(self,"Due amounts error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+			ErrorBox{,self:oLan:WGet('due amounts could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+			return false 
+		endif
+	endif
+	if !lError
+		//	make transaction:
+		* add	first	transaction:
+		* against DebitAccount:	
+		//	insert first line:
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
+			" values	("+Implode(aTransValues[1],"','",1,16)+')',oConn}
+		oStmnt:Execute()
+		nTransId:=ConI(SqlSelect{"select	LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
+		aTransValues[2,18]:=nTransId
+		for i:=3	to	Len(aTransValues)	step 2
+			//	next line income/expense?
+			if	aTransValues[i,12]=='3'
+				aTransValues[i,18]:=nTransId
+				aTransValues[i+1,18]:=nTransId
+				i+=2
+			endif		
+			nTransId++
+			if	i<Len(aTransValues)
+				aTransValues[i,18]:=nTransId
+				aTransValues[i+1,18]:=nTransId
+			endif
+		next 
+		for i:=2 to Len(aTransValues) step 2000
+			oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid)	"+;
+				" values	"+Implode(aTransValues,"','",i,2000),oConn}
+			oStmnt:Execute()
+			if	oStmnt:NumSuccessfulRows<1
+				SQLStatement{"rollback",oConn}:Execute() 
+				SQLStatement{"unlock	tables",oConn}:Execute()
+				LogEvent(self,'Transactions could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
+				ErrorBox{,self:oLan:WGet('Transactions could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+				return false 
+			endif
+		next
+		//	adapt	mbalance	values: 
+		oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+Implode(aMbalValues,"','")+;
+			" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:status) 
+			SQLStatement{"rollback",oConn}:Execute() 
+			SQLStatement{"unlock	tables",oConn}:Execute()
+			LogEvent(self,'Month balances could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
+			ErrorBox{,self:oLan:WGet('Month balances could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+			return false 
+		endif
+		// oPro:AdvancePro()
+		self:Pointer := Pointer{POINTERHOURGLASS}
+		if Len(avaluesPers)>0
+			*	Update person info of giver: 
+			oStmnt:=SQLStatement{'insert into person (persid,datelastgift,mailingcodes) values '+Implode(avaluesPers,'","')+;
+				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),mailingcodes="+SQLUpdMailCode(true),oConn}
+			oStmnt:Execute()
+			if	!Empty(oStmnt:status)
+				SQLStatement{"rollback",oConn}:Execute() 
+				SQLStatement{"unlock tables",oConn}:Execute()
+				LogEvent(self,"error:"+oMBal:cError,"LogErrors")
+				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000)}:Show()
+				return false 
+			endif
+		endif
+	endif
+	if !lError
+		SQLStatement{"commit",oConn}:Execute()	
+		SQLStatement{"unlock tables",oConn}:Execute()
+	endif
+	SQLStatement{"set autocommit=1",oConn}:Execute()
+
+	self:oCCCancelButton:Enable()
+	self:oCCOKButton:Enable()
+	self:Pointer := Pointer{POINTERARROW}
+	(InfoBox{self,"Producing SEPADD file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" amounts("+sCurrName+Str(fSum,-1)+")"}):Show()
+	LogEvent(self, "SEPA Direct Debit file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(fSum,-1)+")")
+
+	RETURN true
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
 	IF Itemname="Account From"
 		IF Empty(oAcc).or.oAcc:reccount<1
@@ -4231,7 +4803,7 @@ local mAlias:=iif(Empty(ALIAS),"",alias+".") as string
 local cAddress:="if("+mAlias+'address<>"" and ' +mAlias+'address<>"X",'+mAlias+'address,"")' as string
 local cZip:='if(' +mAlias+'postalcode<>"" and ' +mAlias+'postalcode<>"X",'+mAlias+'postalcode,"")'  as string
 local cCity:='if(' +mAlias+'city<>"" and ' +mAlias+'city<>"X" and ' +mAlias+'city<>"??",'+if(CITYUPC,'upper(','')+mAlias+'city'+if(CITYUPC,')','')+',"")' as string
-local cCountry:='if('+mAlias+'country<>""'+iif(empty(OwnCountryNames),'',' and not '+mAlias+'country in('+implode(OwnCountryNames)+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string 
+local cCountry:='if('+mAlias+'country<>""'+iif(Empty(OwnCountryNames),'',' and not '+mAlias+'country in('+Implode(OwnCountryNames,'","')+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string 
 local cUSA:='if('+mAlias+'country="USA" or '+mAlias+'country="UNITED STATES" or '+mAlias+'country="CANADA" or '+mAlias+'country="U.S.A.",'
 local cCityZip as string
 local mySep:=',"'+cSep+' ",' as string
