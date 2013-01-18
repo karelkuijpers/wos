@@ -1,18 +1,3 @@
-RESOURCE BankBrowser DIALOGEX  14, 9, 421, 234
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Delete", BANKBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 357, 144, 53, 12
-	CONTROL	"New", BANKBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 356, 107, 53, 12
-	CONTROL	"Edit", BANKBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 356, 66, 53, 12
-	CONTROL	"", BANKBROWSER_BANKSUB_FORM, "static", WS_CHILD|WS_BORDER, 12, 29, 326, 172
-	CONTROL	"Find", BANKBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
-	CONTROL	"", BANKBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
-	CONTROL	"Search like google:", BANKBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
-	CONTROL	"", BANKBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
-	CONTROL	"Found:", BANKBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
-END
-
 CLASS BankBrowser INHERIT DataWindowExtra 
 
 	PROTECT oCCDeleteButton AS PUSHBUTTON
@@ -28,6 +13,21 @@ CLASS BankBrowser INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT oBank as SQLSelect
   export cFields, cFrom, cWhere,cOrder as string
+
+RESOURCE BankBrowser DIALOGEX  14, 9, 421, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Delete", BANKBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 357, 144, 53, 12
+	CONTROL	"New", BANKBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 356, 107, 53, 12
+	CONTROL	"Edit", BANKBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 356, 66, 53, 12
+	CONTROL	"", BANKBROWSER_BANKSUB_FORM, "static", WS_CHILD|WS_BORDER, 12, 29, 326, 172
+	CONTROL	"Find", BANKBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 196, 7, 53, 12
+	CONTROL	"", BANKBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 7, 116, 12
+	CONTROL	"Search like google:", BANKBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
+	CONTROL	"", BANKBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 324, 7, 47, 12
+	CONTROL	"Found:", BANKBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 8, 27, 12
+END
 
 METHOD Close(oEvent) CLASS BankBrowser
 	SUPER:Close(oEvent)
@@ -262,20 +262,6 @@ STATIC DEFINE BANKREG_SC_BANKNUMMER := 100
 STATIC DEFINE BANKREG_SC_REK := 101 
 STATIC DEFINE BANKREG_SC_TELEBANKNG := 102 
 STATIC DEFINE BANKREG_TELEBANKNG := 106 
-RESOURCE BankSub_Form DIALOGEX  20, 18, 323, 168
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Bank/Giro:", BANKSUB_FORM_SC_BANKNUMMER, "Static", WS_CHILD, 13, 14, 37, 13
-	CONTROL	"AccountId:", BANKSUB_FORM_SC_REK, "Static", WS_CHILD, 13, 29, 37, 12
-	CONTROL	"Account for commission:", BANKSUB_FORM_SC_PROVISIERK, "Static", WS_CHILD, 13, 73, 79, 13
-	CONTROL	"Bank/Giro", BANKSUB_FORM_BANKNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 14, 60, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Account#", BANKSUB_FORM_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 29, 22, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Gifts/Payments?", BANKSUB_FORM_GIFTENIND, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 102, 44, 80, 12
-	CONTROL	"Account commission", BANKSUB_FORM_PROVIACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 73, 22, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Account#", BANKSUB_FORM_ACCNTNUMBER1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 106, 33, 22, 12, WS_EX_CLIENTEDGE
-END
-
 CLASS BankSub_Form INHERIT DATAWINDOW 
 
 	PROTECT oDBBANKNUMBER as DataColumn
@@ -292,6 +278,20 @@ CLASS BankSub_Form INHERIT DATAWINDOW
 	PROTECT oDCAccntnumber1 AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE BankSub_Form DIALOGEX  20, 18, 323, 168
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Bank/Giro:", BANKSUB_FORM_SC_BANKNUMMER, "Static", WS_CHILD, 13, 14, 37, 13
+	CONTROL	"AccountId:", BANKSUB_FORM_SC_REK, "Static", WS_CHILD, 13, 29, 37, 12
+	CONTROL	"Account for commission:", BANKSUB_FORM_SC_PROVISIERK, "Static", WS_CHILD, 13, 73, 79, 13
+	CONTROL	"Bank/Giro", BANKSUB_FORM_BANKNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 14, 60, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Account#", BANKSUB_FORM_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 29, 22, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Gifts/Payments?", BANKSUB_FORM_GIFTENIND, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 102, 44, 80, 12
+	CONTROL	"Account commission", BANKSUB_FORM_PROVIACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 73, 22, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Account#", BANKSUB_FORM_ACCNTNUMBER1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 106, 33, 22, 12, WS_EX_CLIENTEDGE
+END
+
 ACCESS Accntnumber1() CLASS BankSub_Form
 RETURN SELF:FieldGet(#Accntnumber1)
 
@@ -1021,7 +1021,7 @@ METHOD ValidateBank() CLASS EditBank
 		lValid := FALSE
 		cError := "Account general ledger is mandatory!"
 		self:oDCmAccount:SetFocus()
-	ELSEIF Empty(mBANKNUMMER)
+	ELSEIF Empty(self:mBANKNUMMER)
 		lValid := FALSE
 		cError := "Number bank account is mandatory!" 
 		self:oDCmBANKNUMMER:SetFocus()
@@ -1029,7 +1029,14 @@ METHOD ValidateBank() CLASS EditBank
 		lValid := FALSE
 		cError := "Single desitination account is mandatory!" 
 		self:oDCmAccountSingle:SetFocus()
-	endif	
+	endif
+	if SepaEnabled
+		if !IsSEPA(AllTrim(self:mBANKNUMMER))
+			cError:=self:mBANKNUMMER+' '+self:oLan:WGet("is not a valid SEPA bank account number")
+			lValid:=FALSE
+		endif
+			
+	endif
 	IF lNew .or.!AllTrim(oBank:banknumber)==AllTrim(self:mBANKNUMMER)
 		* Check if bank account allready exists: 
 		if SQLSelect{"select banknumber from bankaccount where banknumber='"+AllTrim(self:mBANKNUMMER)+"'" +iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
@@ -1127,7 +1134,7 @@ CLASS SelBankOrder INHERIT DialogWinDowExtra
 	PROTECT oDCDate_PaymentText AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  declare method MakeCliop03File
+  declare method MakeCliop03File,SepaCreditTransfer
 METHOD CancelButton( ) CLASS SelBankOrder 
 	self:EndDialog()
 RETURN NIL
@@ -1445,8 +1452,11 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	RETURN true
 METHOD OKButton( ) CLASS SelBankOrder 
 	LOCAL begin_due:=oDCbegin_verv:SelectedDate, end_due:=oDCeind_verv:SelectedDate, process_date:=self:oDCDatePayment:SelectedDate as date
-
-	IF CountryCode="31"
+	if ConI(SqlSelect{"select sepaenabled from sysparms",oConn}:sepaenabled)=1
+		if	self:SepaCreditTransfer( begin_due,end_due,process_date)
+			self:EndDialog()
+		endif
+	elseIF CountryCode="31"
 		if self:MakeCliop03File(begin_due,end_due,process_date)
 			self:EndDialog()
 		endif
@@ -1475,6 +1485,309 @@ ASSIGN Selx_rek(uValue) CLASS SelBankOrder
 SELF:FieldPut(#Selx_rek, uValue)
 RETURN uValue
 
+Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as date) as logic CLASS SelBankOrder
+	// produce XML file for SEPA Credit transfer to be imported into telebanking package
+	LOCAL cFilter as STRING
+	LOCAL oAcc as SQLSelect, oBank as SQLSelect, oMBal as SQLSelect, oTrans as SQLSelect
+	LOCAL ptrHandle
+	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead, cErrMsg as STRING 
+	local cAmnt as string
+	LOCAL fSum:=0 as FLOAT, fAmnt as float
+	LOCAL lError,lSetAMPM as LOGIC
+	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
+	LOCAL cBank, cAccFrom as STRING
+	Local oWarn as TextBox
+	Local aTrans:={} as array 
+	Local aDir as array
+	local oPro as ProgressPer
+	LOCAL oBord as SQLSelect, oPers as SQLSelect, oPersBank, oSel as SQLSelect 
+	local oStmnt as SQLStatement
+
+	if Empty(BANKNBRCRE)
+		(ErrorBox{self,"Bank account for payments not specified in system data"}):Show()
+		return FALSE
+	endif
+	oBank:=SqlSelect{"select payahead,accid from bankaccount where banknumber='"+BANKNBRCRE+"' and telebankng=1",oConn}
+	if oBank:Reccount<1
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRCRE+Space(1)+;
+			self:oLan:WGet("not specified as telebanking in system data")}):Show()
+		RETURN FALSE
+	else
+		m56_Payahead:=Str(oBank:payahead,-1) 
+		if Empty(m56_Payahead)
+			(ErrorBox{self,self:oLan:WGet("For bank account number")+space(1)+BANKNBRCRE+space(1)+;
+				self:oLan:WGet("no account for Payments en route specified in system data")}):Show()
+			RETURN FALSE
+		endif
+	endif
+
+	if !IsSEPA(BANKNBRCRE)
+		(ErrorBox{self,self:oLan:WGet("Bank account number")+Space(1)+BANKNBRCRE+Space(1)+;
+			self:oLan:WGet("for Payments is not correct SEPA bank account")}):Show()
+		RETURN FALSE
+	ENDIF
+	IF Empty(sIDORG)
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
+		RETURN FALSE
+	ENDIF 
+	oSel:=SqlSelect{"select "+SQLFullName(2)+'as orgname,'+SQLAddress(CRLF)+' as orgaddress from person where persid='+sIDORG,oConn}
+	oSel:execute()
+	if oSel:Reccount=1
+		cOrgName:=oSel:OrgName
+		cOrgAddress:=oSel:orgaddress
+	endif
+	if Empty(cOrgName)
+		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
+		RETURN FALSE
+	ENDIF
+	// Check validity of recipient bankaccounts:
+	oBord:=SqlSelect{"select distinct o.banknbrcre,o.stordrid, a.accnumber,a.description from bankorder o"+;
+		" left join account a on (a.accid=o.idfrom) "+;
+		" where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'"+;
+		" and banknbrcre not in (select b.banknumber from personbank b)",oConn}
+	if oBord:Reccount>0
+		cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
+		do while !oBord:EoF
+			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+				iif(Empty(oBord:stordrid),;
+				iif(Empty(oBord:IDFrom),"unknown account",self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"),;
+				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1))
+			oBord:skip()
+		enddo
+		ErrorBox{self,cErrMsg}:Show()
+		return false
+	endif	
+	
+	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.accntfrom,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
+		"from bankorder o,personbank b,person p "+;
+		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
+		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
+	IF oBord:Reccount<1
+		(WarningBox{self,"Producing Credit Transfer file","No bank orders to be sent to the bank!"}):Show()
+		RETURN FALSE
+	ENDIF
+	headinglines:={oLan:RGet("Overview of payment orders (SEPA CT)"),oLan:RGet("bankaccount",25)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("Destination",25)+oLan:RGet("Due Date",11)+" "+oLan:RGet("Name",25)+oLan:RGet("Description",20),Replicate('-',133)}
+	// write Header
+	oReport := PrintDialog{self,"Producing Credit Transfer file",,133}
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
+	// remove old credittransfer-files:
+	aDir := Directory(CurPath +"\credittransfer*.txt") 
+	// determine sequencenumber per day:
+	nSeq:=1
+	FOR i := 1 upto ALen(ADir)
+		if ADir[i][F_DATE] < (Today()-12) 	
+			(FileSpec{ADir[i][F_NAME]}):DELETE()
+		elseif ADir[i][F_DATE] == Today() 
+			nSeq++
+		endif
+	NEXT 
+	cFilename := CurPath	+ "\credittransfer"+DToS(Today())+Str(nSeq,-1)+'.xml'
+	
+	do WHILE !oBord:EoF
+		cBank:=oBord:BANKNBRCRE
+		if !IsSEPA(cBank)
+			(ErrorBox{self,"bankaccount "+cBank+" in bank order is not correct SEPA bank account!"}):Show()
+			return false
+		endif
+		
+		fSum:=Round(fSum+oBord:AMOUNT,DecAantal) 
+		oReport:PrintLine(@nRow,@nPage,;
+			Pad(BANKNBRCRE,25)+Str(oBord:AMOUNT,12,2)+' '+Pad(cBank,25)+DToC(oBord:DATEDUE)+"  "+Pad(oBord:FullName,24)+" "+oBord:Description,headinglines)  
+		// add to aTrans: 
+		AAdd(aTrans,{oBord:AMOUNT,oBord:Description,ConS(oBord:accntfrom)})
+		oBord:skip()		
+	ENDDO
+	
+	oReport:PrintLine(@nRow,@nPage,Replicate('-',133),headinglines,3)
+	oReport:PrintLine(@nRow,@nPage,Space(25)+Str(Round(fSum,2),12,2),headinglines)
+	oReport:prstart()
+	oReport:prstop()
+	oWarn:=TextBox{self,self:oLan:WGet("Bank Orders"),self:oLan:WGet("Printing O.K.")+'? '+self:oLan:WGet("Can file")+;
+		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+;
+		self:oLan:WGet("bankorders")+" ("+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
+	IF (oWarn:Show() = BOXREPLYNO)
+		return
+	endif
+
+	self:Owner:STATUSMESSAGE("Producing Credit Transfer file, moment please")
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	* Prepare Datafile:
+	ptrHandle := MakeFile(self,cFilename,"Creating Credit	Transfer-file")
+	IF	ptrHandle =	F_ERROR .or. ptrHandle==nil
+		RETURN false
+	ENDIF
+	//	write	document	and group header:	
+	lSetAMPM:=SetAmPm(false)
+	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
+		FWriteLineUni(ptrHandle,'<?xml version="1.0"	encoding="UTF-8"?>'+CRLF+;
+		'<Document xmnls="urn:iso:20022:tech:xsd:pain.001.001.03">'+CRLF+;
+		'<CstmrCdtTrfinitn>'+CRLF+;
+		'<GrpHdr>'+CRLF+;
+		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
+		'<CreDtTm>'+SQLdate(Today())+'T'+Time()+'</CreDtTm>'+CRLF+;
+		'<NbOfTxs>'+Str(Len(aTrans),-1)+'</NbOfTxs>'+CRLF+;
+		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
+		'<InitgPty>'+CRLF+;
+		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
+		'<PstlAdr>'+cOrgAddress+'</PstlAdr>'+CRLF+;
+		'<CtryOfRes>'+ SubStr(BANKNBRCRE,1,2) +'</CtryOfRes>'+CRLF+;
+		'</InitgPty>'+;
+		'</GrpHdr>')
+	SetAmPm(lSetAMPM)	//	reset	AMPM 
+	oBord:GoTop()
+	FWriteLineUni(ptrHandle,'<PmtInf>'+CRLF+;
+		'<PmtInfId>wycliffeCT'+sEntity+DToS(Today())+Str(nSeq,-1)+'</PmtInfId>'+CRLF+;
+		'<PmtMtd>TRF</PmtMtd>'+CRLF+;
+		'<NbOfTxs>'+Str(Len(aTrans),-1)+'</NbOfTxs>'+CRLF+;
+		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
+		'<ReqdExctnDt>'+SQLdate(process_date)+'</ReqdExctnDt>'+CRLF+;
+		'<Dbtr>'+CRLF+;
+		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
+		'</Dbtr>'+CRLF+;
+		'<DbtrAcct>'+CRLF+;
+		'<ID>'+CRLF+;
+		'<IBAN>'+BANKNBRCRE+'</IBAN>'+CRLF+;
+		'</ID>'+CRLF+;
+		'</DbtrAcct>'+CRLF+;
+		'<ChrgBr>SLEV</ChrgBr>')
+	do while !oBord:EoF
+		FWriteLineUni(ptrHandle,'<CdtTrfTxInf>'+CRLF+;
+			'<PmtId>'+CRLF+;
+			'<EndToEndId>'+Mod11(StrZero(oBord:ID,6,0)+DToS(oBord:DATEDUE)+"1")+'</EndToEndId>'+CRLF+;
+			'</PmtId>'+CRLF+;
+			'<Amt>'+CRLF+;
+			'<InstdAmt Ccy="EUR">'+str(oBord:amount,-1,2)+'</InstdAmt>'+CRLF+;
+			'</Amt>'+CRLF+;
+			'<Cdtr>'+CRLF+;
+			'<Nm>'+HtmlEncode(oBord:FullName)+'</Nm>'+CRLF+;
+			'</Cdtr>'+CRLF+;
+			'<CdtrAcct>'+CRLF+;
+			'<ID>'+CRLF+;
+			'<IBAN>'+oBord:BANKNBRCRE+'</IBAN>'+CRLF+;
+			'</ID>'+CRLF+;
+			'</CdtrAcct>'+CRLF+;
+			'<RmtInf>'+CRLF+;
+			'<Ustrd>'+HtmlEncode(oBord:Description)+'</Ustrd>'+CRLF+;
+			'</RmtInf>'+CRLF+;
+			'</CdtTrfTxInf>')
+		oBord:skip()
+	enddo
+	// Write closing lines:
+	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrCdtTrfinitn>'+CRLF+'</Document>')
+	FClose(ptrHandle)
+	if TextBox{self,"Bank Orders",cFilename+' '+self:oLan:WGet("successfully uploaded to your online banking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
+		// remove file:
+		(FileSpec{cFilename}):DELETE() 
+		cFilename:=""
+		return true
+	endif
+	oPro:=ProgressPer{,self}
+	oPro:Caption:="Recording bank order transactions"
+	oPro:SetRange(1,Len(aTrans)+3)
+	oPro:SetUnit(1)
+	oPro:Show() 
+	self:oCCCancelButton:Disable()
+	self:oCCOKButton:Disable()
+	self:Owner:STATUSMESSAGE("Recording transactions, moment please")
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	// add accounts for add to income
+	
+	SQLStatement{"start transaction",oConn}:execute()
+	// lock mbalance record for update:
+	oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+m56_Payahead+','+cAccFrom+")"+;
+		" and	year="+Str(Year(process_date),-1)+;
+		" and	month="+Str(Month(process_date),-1)+" order by mbalid for update",oConn}
+	if	!Empty(oMBal:Status)
+		ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:Show()
+		SQLStatement{"rollback",oConn}:execute()
+		return true
+	endif	  
+	// Reconcile Bank Order:
+	oStmnt:=SQLStatement{"update bankorder set datepayed='"+SQLdate(process_date)+"' "+;
+		"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'",oConn}
+	oStmnt:execute()
+	oPro:AdvancePro()
+	if !Empty(oStmnt:Status)
+		lError:=true
+		LogEvent(self,"error "+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
+	else
+
+		// make transactions: 
+		for i:=1 to Len(aTrans) 
+			oPro:AdvancePro()
+			* add transaction:
+			* book against account payable:
+			fAmnt:=float(_cast,aTrans[i,1])
+			cAmnt:=Str(fAmnt,-1)
+			cDescr:=Transform(aTrans[i,2],"") 
+			
+			oStmnt:=SQLStatement{"insert into transaction set "+;
+				"dat='"+SQLdate(process_date)+"'"+;
+				",docid='BETOPD'"+;
+				",description ='"+cDescr +"'"+;
+				",accid ='"+m56_Payahead+"'"+;
+				",cre ='"+cAmnt+"'"+;
+				",creforgn ='"+cAmnt+"'"+;
+				",seqnr=1,poststatus=2"+;
+				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
+			oStmnt:execute()
+			if oStmnt:NumSuccessfulRows<1
+				LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				lError:=true
+				exit
+			endif
+			cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			// record debit on from account:
+			oStmnt:=SQLStatement{"insert into transaction set "+;
+				"transid='"+cTransnr+"'"+;
+				",dat='"+SQLdate(process_date)+"'"+;
+				",docid='BETOPD'"+;
+				",description ='"+cDescr +"'"+;
+				",accid ='"+aTrans[i,3]+"'"+;
+				",deb ='"+cAmnt+"'"+;
+				",debforgn ='"+cAmnt+"'"+;
+				",seqnr=2,poststatus=2"+;
+				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
+			oStmnt:execute()
+			if oStmnt:NumSuccessfulRows<1
+				LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				lError:=true
+				exit
+			endif
+			if !ChgBalance(aTrans[i,3],process_date,fAmnt,0,fAmnt,0,sCURR)  //account payable deb
+				lError:=true
+				exit
+			ENDIF
+			nSeq:=2
+		next
+		if !lError
+			if !ChgBalance(m56_Payahead,process_date,0,fSum,0,fSum,sCURR) // payahead cre
+				lError:=true
+				exit
+			endif
+			oPro:AdvancePro()				
+			oPro:AdvancePro()
+		endif
+	endif
+	oPro:EndDialog()
+	oPro:Close()
+	self:Pointer := Pointer{POINTERARROW}
+	if lError
+		SQLStatement{"rollback",oConn}:execute()
+		LogEvent(self,self:oLan:WGet("could not record bank order transaction"),"LogErrors")
+		ErrorBox{self,self:oLan:WGet("could not record bank ordert transaction")}:Show()
+		RETURN false
+	else
+		SQLStatement{"commit",oConn}:execute()
+	endif
+	self:oCCCancelButton:Enable()
+	self:oCCOKButton:Enable()
+	(InfoBox{self,"Producing Credit Transfer file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders"}):Show() 
+	LogEvent(self, "Credit Ttransfer file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders; total:"+Str(Round(fSum,2),12,2),"Log")
+	RETURN true
 STATIC DEFINE SELBANKORDER_BEGIN_VERV := 101 
 STATIC DEFINE SELBANKORDER_CANCELBUTTON := 108 
 STATIC DEFINE SELBANKORDER_DATE_PAYMENTTEXT := 109 
