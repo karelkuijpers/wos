@@ -1403,27 +1403,29 @@ METHOD RegPerson(oCLN) CLASS General_Journal
 			self:cGiverName := ""
 			self:oDCmperson:TEXTValue := ""
 		endif
-	ENDIF
-	if self:lMemberGiver
-		// replace AG with MG if needed
-		recnr := 0
-		do WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='AG'},recnr+1))>0
-			oHm:Goto(recnr)
-			oHm:gc := 'MG'
-			oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
-			oHm:Goto(ThisRec)
-		ENDDO
-	else
-		if AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
-			// replace MG if needed: 
+	ENDIF 
+	if !self:server:lFilling
+		if self:lMemberGiver
+			// replace AG with MG if needed
 			recnr := 0
-			do WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+			do WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='AG'},recnr+1))>0
 				oHm:Goto(recnr)
-				oHm:gc := 'AG'
+				oHm:gc := 'MG'
 				oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
+				oHm:Goto(ThisRec)
 			ENDDO
-			oHm:Goto(ThisRec)
-		endif
+		else
+			if AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
+				// replace MG if needed: 
+				recnr := 0
+				do WHILE (recnr:=AScan(oHm:aMirror,{|x| x[4] =='MG'},recnr+1))>0
+					oHm:Goto(recnr)
+					oHm:gc := 'AG'
+					oHm:aMirror[recnr,4]:=oHm:gc  && save in mirror
+				ENDDO
+				oHm:Goto(ThisRec)
+			endif
+		endif 
 	endif
 
 	RETURN NIL
