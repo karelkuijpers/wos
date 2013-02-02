@@ -104,6 +104,7 @@ CLASS General_Journal INHERIT DataWindowExtra
   	PROTECT lInqUpd as LOGIC
   	EXPORT lTeleBank as LOGIC
   	EXPORT lMemberGiver as LOGIC
+  	export lDirectIncome as logic
   	PROTECT OrigBst, OrigPerson as STRING, OrigDat as date
   	PROTECT oInqBrowse as OBJECT && Calling Browser (inquiry/update)
 	PROTECT oFocusControl as Control
@@ -182,7 +183,7 @@ IF !self:lStop.and.!self:lTeleBank.and.AScanExact(self:Server:Amirror,{|x| !x[3]
 					IF !self:oImpB:lOK .or.!self:ValStore()
 						RETURN NIL
 					ENDIF
-					self:oImpB:CloseBatch()
+					// self:oImpB:CloseBatch() // allready in Valstore
 				ELSE
 					SELF:oDCmBST:Enable()
 					SELF:oDCmDat:Enable()
