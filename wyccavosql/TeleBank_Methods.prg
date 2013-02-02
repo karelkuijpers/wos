@@ -2369,8 +2369,9 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	cBuffer:=ptrHandle:FReadLine()
 	do while !Upper(Left(cBuffer,15))=='DATA TRANZACTIE' .and. !ptrHandle:FEof
 		cBuffer:=ptrHandle:FReadLine()
-	enddo	
-	if !GetDelimiter(cBuffer,@aStruct,@cDelim,5,6)
+	enddo
+	cBuffer:=StrTran(StrTran(cBuffer,';',''),':','')
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,5,7)
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		ptrHandle:Close()
 		RETURN FALSE
@@ -2386,17 +2387,20 @@ METHOD ImportRO(oFb) CLASS TeleMut
 	ENDIF
 
 	cBuffer:=ptrHandle:FReadLine()   // skip first line
-	// skip balance line:
+	// skip balance line: 
+	cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 	aFields:=Split(cBuffer,cDelim)
 	if Empty(AFields[ptDate])
-		cBuffer:=ptrHandle:FReadLine()
+		cBuffer:=ptrHandle:FReadLine()                                       
+		cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 		aFields:=Split(cBuffer,cDelim)
 	endif
 
 	DO WHILE Len(AFields)>3 
-		ld_bookingdate:=SToD(StrTran(AFields[ptDate],'-',''))
+		ld_bookingdate:=SToD(StrTran(SubStr(AFields[ptDate],1,10),'-',''))        //   2013-01-17T12:21:30
 		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 			aFields:=Split(cBuffer,cDelim)
 			loop
 		ENDIF
@@ -2407,6 +2411,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 			lv_Amount:=Round(Val(StrTran(StrTran(AFields[ptBal],'"',''),',','')),DecAantal)
 			AAdd(self:avaluesBal,{lv_bankAcntOwn,ld_bookingdate,lv_Amount})
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)   // skip balance lines
+			cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 			aFields:=Split(cBuffer,cDelim) 
 			loop
 		ENDIF
@@ -2416,6 +2421,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 				lv_descriptionPrv:=lv_description
 			endif
 			cBuffer:=ptrHandle:FReadLine(ptrHandle)
+			cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 			aFields:=Split(cBuffer,cDelim)
 			loop
 		ENDIF
@@ -2431,6 +2437,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
 		lv_description:=""
 		cBuffer:=ptrHandle:FReadLine()
+		cBuffer:=StrTran(StrTran(cBuffer,'""','"'),'"','',1,1)
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
 	ptrHandle:Close()
