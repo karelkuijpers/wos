@@ -2025,7 +2025,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
 	local oSel as SQLSelect 
 	LOCAL iEnd := At(",",cValue) as int
-	local cFields:= "p.persid,lastname,initials,firstname,prefix,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
+	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
 	// 	IF lUnique 
 	if !Empty(oPersCnt)
