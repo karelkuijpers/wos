@@ -1368,27 +1368,49 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	RETURN nil
 METHOD RegPerson(oCLN) CLASS General_Journal
 	LOCAL oHm:=self:server as TempTrans
-	LOCAL ThisRec:=oHm:RECNO,recnr as int
+	LOCAL ThisRec:=oHm:RECNO,recnr,i,TYPE as int
+	local oSel as SQLSelect 
 	IF !Empty(oCLN)
-		self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
-		self:cGiverName := GetFullName(self:mCLNGiver)
-		if Empty(self:cGiverName)       // person does not exist
-			// 			self:lMemberGiver := true
-			self:oDCmperson:Value:=""
-			self:cOrigName:=""
-			if AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
-				self:lMemberGiver := false
+		self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid) 
+		if !Empty(self:mCLNGiver)
+			oSel:=SqlSelect{"select "+SQLFullName() +" as fullname,type from person where persid="+self:mCLNGiver,oConn}
+			oSel:Execute()
+			if oSel:RecCount>0
+				self:cGiverName:=oSel:fullname 
+				self:lDirectIncome:=false 
+				self:lMemberGiver := FALSE
+				if (i:=AScan(pers_types_abrv,{|x|x[2]==oSel:TYPE}))>0
+					if pers_types_abrv[i,1]=='DIR'
+						self:lDirectIncome:=true 
+					elseif pers_types_abrv[i,1]=='MBR' .or. pers_types_abrv[i,1]=='ENT' 
+						self:lMemberGiver := true
+					endif
+				endif
+				self:oDCmperson:TEXTValue := self:cGiverName 
+				self:cOrigName:=self:cGiverName
+				// 				IF SqlSelect{"select mbrid from member where persid="+self:mCLNGiver,oConn}:Reccount>0
+				// 					self:lMemberGiver := true
+				// 				ELSEif AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
+				// 					self:lMemberGiver := FALSE
+				// 				ENDIF
+				if !self:Server:lFilling
+					self:lStop:=false
+				endif
+			else
+				// 			self:lMemberGiver := true
+				self:oDCmperson:Value:=""
+				self:cOrigName:=""
+				self:lDirectIncome:=false
+				if AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
+					self:lMemberGiver := false
+				endif
 			endif
 		else
-			self:oDCmPerson:TEXTValue := self:cGiverName 
-			self:cOrigName:=self:cGiverName
-			IF SQLSelect{"select mbrid from member where persid="+self:mCLNGiver,oConn}:Reccount>0
-				self:lMemberGiver := true
-			ELSEif AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
-				SELF:lMemberGiver := FALSE
-			ENDIF
-			if !self:server:lFilling
-				self:lStop:=false
+			self:oDCmperson:Value:=""
+			self:cOrigName:=""
+			self:lDirectIncome:=false
+			if AScan(oHm:aMirror,{|x| x[4] =='CH'})=0
+				self:lMemberGiver := false
 			endif
 		endif
 	ELSE
@@ -1401,9 +1423,13 @@ METHOD RegPerson(oCLN) CLASS General_Journal
 			self:lStop:=false
 			self:mCLNGiver :=  ""
 			self:cGiverName := ""
-			self:oDCmperson:TEXTValue := ""
+			self:oDCmperson:TEXTValue := "" 
+			self:lDirectIncome:=false
 		endif
-	ENDIF 
+	ENDIF
+	if self:lDirectIncome .and. self:lMemberGiver
+		self:lMemberGiver:=false
+	endif
 	if !self:server:lFilling
 		if self:lMemberGiver
 			// replace AG with MG if needed
@@ -1428,7 +1454,7 @@ METHOD RegPerson(oCLN) CLASS General_Journal
 		endif 
 	endif
 
-	RETURN NIL
+	RETURN nil
 METHOD ReSet() CLASS General_Journal
 	*	LOCAL cServer AS STRING
 	LOCAL oHm:=self:Server as TempTrans
@@ -1971,8 +1997,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				mCLNGiverMbr := oHm:aMIRROR[i,17]
 				//	check	if	direct gift	report: 
 				lOK:=false
-				if	AScan(oHm:aMIRROR,{|x| AllTrim(x[1])==mbrRek	.and.	x[4]="AG"})>0
-					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
+				if	AScan(oHm:aMIRROR,{|x| x[4]="AG" .and. (x[1]==mbrRek .or.x[17]==mCLNGiverMbr)	})>0
+// 					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
+					IF	Empty(self:mCLNGiver).and.	Empty(mCLNGiverMbr)
 						(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
 						RETURN FALSE
 					else
@@ -1980,8 +2007,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					endif
 					
 				endif						 
-				IF !lOK
-					if !Empty(self:mCLNGiver).and. !Empty(self:mCLNGiver).and.!mCLNGiverMbr==self:mCLNGiver
+				IF !lOK .and.!self:lDirectIncome
+					if !Empty(self:mCLNGiver).and. !Empty(mCLNGiverMbr).and.!mCLNGiverMbr==self:mCLNGiver
 						cError := self:cGiverName+";  "
 						lError := true
 					ELSE
@@ -2302,48 +2329,57 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					return false
 				endif
 			next
-			self:Pointer := Pointer{POINTERARROW}
-			IF self:lTeleBank
-				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
-			elseif self:lImport
-				self:oImpB:CloseBatch(lSave,self:Owner)  // includes commit
-			ENDIF
-			self:oDCGiroText:TextValue:="   "
-			lSave:=FALSE
+			// 			self:Pointer := Pointer{POINTERARROW}
+			// 			IF self:lTeleBank
+			// 				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
+			// 			elseif self:lImport
+			// 				self:oImpB:CloseBatch(lSave,self:Owner)  // includes commit
+			// 			ENDIF
+			// 			self:oDCGiroText:TextValue:="   "
+			// 			lSave:=FALSE
 			oHm:ResetNotification()	
 		ENDIF
 		if !lError
-			oStmnt:=SQLStatement{"commit",oConn}
-			oStmnt:Execute() 
-			if Empty(oStmnt:Status) 
-				IF !Empty(self:mCLNGiver)
-					*  update data of giver:
-					i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
-					IF i>0 
-						oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
-						if oPers:Reccount>0
-							cCodNew:=oPers:mailingcodes
-							DO WHILE i>0
-								PersonGiftdata(oHm:AMirror[i,5],@cCodNew,iif(empty(oPers:datelastgift),null_date,oPers:datelastgift),oHm:AMirror[i,4],null_string,false)
-								i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
-							ENDDO
-							if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
-								&& fill date last gift:
-								oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
-								oStmnt:execute() 
-								if !Empty(oStmnt:Status)
-									lError:=true 
-									cError:=oStmnt:ErrInfo:errorstatus
-								endif
+			// 			oStmnt:=SQLStatement{"commit",oConn}
+			// 			oStmnt:Execute() 
+			// 			if Empty(oStmnt:Status) 
+			IF !Empty(self:mCLNGiver)
+				*  update data of giver:
+				i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
+				IF i>0 
+					oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
+					if oPers:Reccount>0
+						cCodNew:=oPers:mailingcodes
+						DO WHILE i>0
+							PersonGiftdata(oHm:AMirror[i,5],@cCodNew,iif(empty(oPers:datelastgift),null_date,oPers:datelastgift),oHm:AMirror[i,4],null_string,false)
+							i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
+						ENDDO
+						if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
+							&& fill date last gift:
+							oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
+							oStmnt:execute() 
+							if !Empty(oStmnt:Status)
+								lError:=true 
+								cError:=oStmnt:ErrInfo:errorstatus
 							endif
-						else
-							
 						endif
-					ENDIF
+					endif
 				ENDIF
-				self:oDCmTRANSAKTNR:TextValue := cTransnr
+			ENDIF 
+			if !lError.and. self:lImport
+				oStmnt:=SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:oImpB:CurBatchNbr+;
+					"' and origin='"+self:oImpB:CurOrigin+"' and transdate='"+SQLdate(self:oImpB:CurDate)+"'",oConn}
+				oStmnt:execute()
+				if !Empty(oStmnt:Status)
+					lError:=true 
+					cError:=oStmnt:ErrInfo:errorstatus
+				endif 
 			endif
-		ENDIF
+			if !lError
+				self:oDCmTRANSAKTNR:TEXTValue := cTransnr
+			endif
+		endif
+		// 		ENDIF
 	ENDIF
 	IF lError
 		SQLStatement{"rollback",oConn}:execute()
@@ -2362,7 +2398,17 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		RETURN FALSE
 	endif 
 	SQLStatement{"commit",oConn}:execute()
-	SQLStatement{"unlock tables",oConn}:execute()
+	SQLStatement{"unlock tables",oConn}:execute() 
+	SQLStatement{"set autocommit=1",oConn}:execute()
+	self:Pointer := Pointer{POINTERARROW}
+	IF self:lTeleBank 
+		self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
+	elseif self:lImport
+		self:oImpB:CloseBatch(lSave,self:Owner)  
+	ENDIF
+	self:oDCGiroText:TEXTValue:="   "
+	lSave:=FALSE
+
 	IF lInqUpd
 		if self:oOwner:lShowFind
 			self:oOwner:FindButton()
@@ -2477,13 +2523,13 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 			ENDIF
 		ENDIF
 	ELSEif oHm:KIND=='K'  //member department
-			if oHm:INCEXPFD='F'
-				oHm:gc := 'PF'
-			ELSEIF oHm:INCEXPFD='E'
-				oHm:gc := 'CH'
-			elseif oHm:INCEXPFD='I'
-				oHm:gc:='AG'
-			ENDIF
+		if oHm:INCEXPFD='F'
+			oHm:gc := 'PF'
+		ELSEIF oHm:INCEXPFD='E'
+			oHm:gc := 'CH'
+		elseif oHm:INCEXPFD='I'
+			oHm:gc:='AG'
+		ENDIF
 	else
 		IF oHm:gc == 'CH' .and.!self:Owner:lMemberGiver
 			* Reset present MG:
@@ -2502,28 +2548,33 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	IF oHm:KIND == 'M' .or.oHm:KIND == 'K'   //member (department)
 		cAccId:=AllTrim(oHm:AccID)
 		nDepId:=oHm:DEPID
-// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
-//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
+		// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+		//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 		if	oHm:gc == 'CH'
-			//	change AG to MG if needed:
-			recnr	:=	0
-			do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='AG'.and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0)},recnr+1))>0
-				oHm:Goto(recnr)
-				oHm:gc	:=	'MG'
-				oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror 
-			ENDDO
-		elseif	oHm:gc == 'AG' 
-			// change to MG if needed 
-			cPersId:=self:Owner:mCLNGiver 
-// 			i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.or.x[20]==nDepId.or.x[17]==cPersId)})
-			i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0) .and.(Empty(cPersid).or.x[17]==cPersId)})
-			IF (self:Owner:lMemberGiver.and.!(self:Owner:mCLNGiver==oHm:aMirror[ThisRec,17])) ;
-				.or.i>0
-				oHm:gc := 'MG'
-				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
-			ENDIF
+			//	change AG to MG if needed:  
+			if !self:Owner:lDirectIncome
+				recnr	:=	0
+				do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='AG'.and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0)},recnr+1))>0
+					oHm:Goto(recnr)
+					oHm:gc	:=	'MG'
+					oHm:aMirror[recnr,4]:=oHm:gc	 && save	in	mirror 
+				ENDDO
+			endif
+		elseif	oHm:gc == 'AG'
+			if !self:Owner:lDirectIncome
+				// change to MG if needed 
+				cPersId:=self:Owner:mCLNGiver 
+				// 			i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.or.x[20]==nDepId.or.x[17]==cPersId)})
+				i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0) .and.(Empty(cPersid).or.x[17]==cPersId)})
+				IF (self:Owner:lMemberGiver.and.!(self:Owner:mCLNGiver==oHm:aMirror[ThisRec,17])) ;
+						.or.i>0
+					oHm:gc := 'MG'
+					oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
+				endif
+			endif
 		elseif AScan(oHm:aMirror,{|x|x[4]=="CH"})=0
-			//	change MG to AG if needed:
+			//	change MG to AG if needed: 
+
 			recnr	:=	0
 			do	WHILE	(recnr:=AScan(oHm:aMirror,{|x|	x[4] =='MG'.and.(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oHm:Goto(recnr)
