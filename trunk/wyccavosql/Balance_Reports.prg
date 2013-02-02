@@ -3343,7 +3343,7 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	// 
 	local nCurrMonth,nMonth,i,p,prsPtr as int 
-	local fBalance as float
+	local fBalance,fAmntRPP as float
 	local cCurrOPP,cAmntRPP,cDateRPP,cDescr as string
 	local EndInMonth as date 
 	local aDesc:={} as array
@@ -3409,20 +3409,25 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 					endif
 					// print transaction: 
 					aDesc:=Split(aTransRPP[i,7],'(')
-					cAmntRPP:=''
+					cAmntRPP:='' 
+					fAmntRPP:=0
 					cDateRPP:=''
 					if Len(aDesc)>2
 						cDescr:= aDesc[Len(aDesc)-1]   // opp amount and date
 						aTransRPP[i,7]:=Compress(StrTran(aTransRPP[i,7],'('+cDescr,''))  // remove OPP amount and date
 						aDesc:=Split(cDescr,':')
 						if Len(aDesc)=3
-							cAmntRPP:=StrTran(SubStr(aDesc[2],1,At(',',aDesc[2])-1),'.',',')  // change decimal char to ,
+// 							cAmntRPP:=StrTran(SubStr(aDesc[2],1,At(',',aDesc[2])-1),'.',',')  // change decimal char to ,
+ 							cAmntRPP:=SubStr(aDesc[2],1,At(',',aDesc[2])-1)
+							SetDecimalSep(Asc('.'))
+							fAmntRPP:=Val(cAmntRPP)
+							SetDecimalSep(Asc(DecSeparator)) 
 							cDateRPP:=StrTran(aDesc[3],')','')
 						endif
 					endif
 					// 								aadd(aOutput,'<tr><td>'+aTransRPP[i,8]+'</td><td class="date">'+DToC(SQLDate2Date(aTransRPP[i,2]))+'</td>'+;
 					AAdd(aOutput,'<tr><td class="date">'+DToC(SQLDate2Date(aTransRPP[i,2]))+'</td>'+;
-						'<td>'+HtmlEncode(aTransRPP[i,7])+'</td><td class=" date">'+cDateRPP+'</td><td class="amount">'+Str(Val(cAmntRPP),12,DecAantal)+;
+						'<td>'+HtmlEncode(aTransRPP[i,7])+'</td><td class=" date">'+cDateRPP+'</td><td class="amount">'+Str(fAmntRPP,-1,DecAantal)+;
 						'</td><td class="amount">'+Str(aTransRPP[i,6],12,DecAantal)+'</td><td colspan="2"></td></tr>')
 					fSubKind:=Round(fSubKind+aTransRPP[i,6],DecAantal) 													
 				next
@@ -4268,36 +4273,28 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	Local oTrans as SqlSelect
 	local oFileSpec as FileSpec 
 	local ptrHandle as ptr
-	local time0,time1 as float
 
 	
 	cMess:=self:oLan:WGet("Collecting data for the report, please wait") 
 	self:aMbr:={}
 	self:aIsMbr:={}
 	self:aNonMbr:={}
-// 	time0:=Seconds()
 	if !self:Acc2Mbr(aAccidMbr,@cMess)
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	endif 
 	self:STATUSMESSAGE(cMess+='.')
-// 	time1:=time0
-// 	LogEvent(self,"Acc2Mbr:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	
 	//	Collect balances of all accounts of the members:  
 	if !self:CollectBalances(aAccidMbr,@cMess)
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	endif
-	time1:=time0
-	LogEvent(self,"CollectBalances:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	// Collect assessment data into aAssMbr: 
 	if !self:CollectAsssement(aAssMbr,@cMess)
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	endif
-//  	time1:=time0
-// 	LogEvent(self,"CollectBalances:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 
 	// Collect transactions for all these accounts into oTrans:  accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind   
 	// and collect corresponding persons:
@@ -4305,8 +4302,6 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 		self:Pointer := Pointer{POINTERARROW}
 		return
 	endif
-//  	time1:=time0
-// 	LogEvent(self,"CollectTransPers:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
@@ -4883,7 +4878,10 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate
 				loop 
 			endif
+		elseif !Empty(aTrans[nTrans,2]) .and. aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
+			loop
 		endif
+
 		
 		// if kind 1 not present force first begin processing for MG and RPP		                       
 		if empty(cCurrKind).and.aTrans[nTrans,12]>'1'.and.(!empty(aTransMG).or.!empty(aTransRPP))  
