@@ -1591,7 +1591,7 @@ METHOD PrintReport() CLASS PMISsend
 			ENDIF
 		endif
 		if Empty(cError)
-			oStmnt:=SQLStatement{"update sysparms set pmislstsnd=CURDATE(),exchrate='"+Str(fExChRate,-1)+"'",oConn}
+			oStmnt:=SQLStatement{"update sysparms set pmislstsnd='"+SQLdate(self:closingDate)+"',exchrate='"+Str(fExChRate,-1)+"'",oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
 				cError:=self:oLan:WGet("could	no	update sysparms")+'	('+oStmnt:Status:description+')'
