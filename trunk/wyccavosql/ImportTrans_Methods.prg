@@ -134,8 +134,8 @@ oDCmDebCre:FillUsing({ ;
 oDCmDebCre:HyperLabel := HyperLabel{#mDebCre,"Debit/Credit",NULL_STRING,NULL_STRING}
 oDCmDebCre:TooltipText := "should it a debit or credit transaction or don't care"
 
-SELF:Caption := "DataDialog Caption"
-SELF:HyperLabel := HyperLabel{#EditImportPattern,"DataDialog Caption",NULL_STRING,NULL_STRING}
+SELF:Caption := "Editing import pattern"
+SELF:HyperLabel := HyperLabel{#EditImportPattern,"Editing import pattern",NULL_STRING,NULL_STRING}
 
 if !IsNil(oServer)
 	SELF:Use(oServer)
@@ -237,7 +237,8 @@ METHOD SaveButton( ) CLASS EditImportPattern
 		AllTrim(self:mAssmntcd)+"',automatic="+iif(self:mAutomatic,'1','0')+",debcre='"+self:mDebCre+"',accid="+self:maccid+iif(self:lNew,",recdate=curdate()","")+;
 		iif(self:lNew,""," where imppattrnid="+self:CurImpPatId),oConn}
 	oStmnt:execute()
-	if !Empty(oStmnt:Status) 
+	if !Empty(oStmnt:Status)
+		LogEvent(self,self:olan:WGet("could not save import pattern")+': '+oStmnt:ErrInfo:errormessage+CRLF+oStmnt:SQLString,"LogErrors") 
 		errorbox{self,self:olan:WGet("could not save import pattern")+': '+oStmnt:ErrInfo:errormessage}:show() 
 	else
 		if lNew
@@ -436,30 +437,38 @@ SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatc
 
 RETURN true
 METHOD CloseBatch(lSave:=false as logic,oCaller:=nil as object) as void pascal CLASS ImportBatch
-* Closing of batch as being processes
-local i as int
-local oEditImpb as EditImportPattern
-SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:cCurBatchNbr+;
-"' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
-SQLStatement{"commit",oConn}:execute()
+	* Closing of batch as being processes
+	local i as int
+	local oEditImpb as EditImportPattern
+// 	SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:cCurBatchNbr+;
+// 		"' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
+// 	SQLStatement{"commit",oConn}:execute()
 	IF lSave 
 		i:=Len(self:oHM:aMirror)
 		oEditImpb := EditImportPattern{ oCaller,,,self}
-// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
-//             1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
+		// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+		//             1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
 		oEditImpb:maccid := self:oHM:aMirror[i,1]
 		oEditImpb:mAccount:=self:oHM:aMirror[i,9] 
 		oEditImpb:mdescriptn := self:m56_description
 		oEditImpb:massmntcd := self:m56_assmntcd
-      oEditImpb:mDebCre := iif(self:oHM:aMirror[i,3]>=self:oHM:aMirror[i,2]'C','D') 
-      oEditImpb:mOrigin := self:m56_origin 
-      oEditImpb:mAutomatic := true
+		oEditImpb:mDebCre := iif(self:oHM:aMirror[i,3]>=self:oHM:aMirror[i,2]'C','D') 
+		oEditImpb:mOrigin := self:m56_origin 
+		oEditImpb:mAutomatic := true
 
 		oEditImpb:Show()
 	ENDIF
-RETURN 
+	RETURN 
 ACCESS Count CLASS ImportBatch
 	RETURN SELF:oImpB:Count()
+ACCESS CurBatchNbr() CLASS ImportBatch
+RETURN self:cCurBatchNbr  
+ACCESS CurDate() CLASS ImportBatch
+RETURN self:dCurDate  
+
+
+ACCESS CurOrigin() CLASS ImportBatch
+RETURN self:cCurOrigin  
 ACCESS EoF CLASS ImportBatch
 return (SQLSelect{"select imptrid from importtrans where processed=0 "+;
 	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < addtime(now(),'00-20-00'))",oConn}:reccount<1)
@@ -908,7 +917,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	ASort(aPt)
 	maxPt=aPt[Len(aPt)] 
 	cBuffer:=ptrHandle:FReadLine()
-	aFields:=Split(cBuffer,cDelim)
+	aFields:=Split(cBuffer,cDelim,true)
 	oParent:Pointer := Pointer{POINTERHOURGLASS} 
 
 	DO WHILE Len(AFields)>1
@@ -934,7 +943,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 			cAccNumber:="" 
 			cAccId:=''
 			if nAcc=0
-				cAcc:=Split(cAccName," ")[1] 
+				cAcc:=Split(cAccName," ",true)[1] 
 				if IsDigit(cAcc)
 					cAcc:= LTrimZero(cAcc)
 					oAcc:=SqlSelect{"select a.accnumber,a.accid,m.mbrid from account a left join member m on (m.accid=a.accid or m.depid=a.department) where a.accnumber='"+cAcc+"'",oConn}
@@ -988,7 +997,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 			AFields[ptDoc],cBankName,cAccName,'Import',cOrigin,AFields[ptTrans],aMbrAcc,@nCnt)
 		oMainWindow:STATUSMESSAGE("imported "+Str(nCnt,-1))		
 		cBuffer:=ptrHandle:FReadLine()
-		aFields:=Split(cBuffer,cDelim)
+		aFields:=Split(cBuffer,cDelim,true)
 	ENDDO
 	ptrHandle:Close()
 	if nCnt>0
@@ -1068,7 +1077,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		return true
 	ENDIF 
 	cBuffer:=ptrHandle:FReadLine()
-	aFields:=Split(cBuffer,cDelim)
+	aFields:=Split(cBuffer,cDelim,true)
 	linenr=1 
 	cSep:=DecSeparator    // default decimal separator of Windows 
 	// check if different separator used:
@@ -1126,7 +1135,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 			nCnt++
 		ENDIF
 		cBuffer:=ptrHandle:FReadLine()
-		aFields:=Split(cBuffer,cDelim)
+		aFields:=Split(cBuffer,cDelim,true)
 	ENDDO 
 
 	AAdd(self:amessages,"Imported batch file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(linenr,-1)+" transactions")
@@ -1455,7 +1464,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		// 		if sEntity == "NTL" .or.sEntity=="BTA" .and.Origin=="USA".and.transtype=="CN"
 		if transtype=="CN"
 			if origin=="USA"
-				cExId:=Str(Val(Right(Split(transdescription," ")[1],10)),-1)
+				cExId:=Str(Val(Right(Split(transdescription," ",true)[1],10)),-1)
 				if cExId=='0'
 					cExId:=""
 				else
@@ -1764,7 +1773,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	time0:=time1
 	// 	LogEvent(self,"import RPP:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
 	oParent:Pointer := Pointer{POINTERARROW}
-	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+'; '+Str(nProc,-1)+' automatic processed')
+	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+' (Exchange rate: 1 USD='+Str(mxrate,-1)+sCURR+')'+'; '+Str(nProc,-1)+' automatic processed')
 
 	RETURN true
 METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch 
@@ -1780,7 +1789,7 @@ METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch
 	oSel:=SqlSelect{"select origin,assmntcd,descriptn,debcre,automatic,accid from importpattern",oConn} 
 	if oSel:reccount>0
 		do while !oSel:EoF
-			AAdd(self:aImpPattern,{oSel:origin,oSel:assmntcd,Split(oSel:descriptn,Space(1)),oSel:debcre,ConL(oSel:Automatic),cons(oSel:accid)})	
+			AAdd(self:aImpPattern,{oSel:origin,oSel:assmntcd,Split(oSel:descriptn,Space(1),true),oSel:debcre,ConL(oSel:Automatic),cons(oSel:accid)})	
 			oSel:Skip()
 		enddo
 	endif
@@ -1956,20 +1965,6 @@ SQLStatement{"update importtrans set lock_id=0 where transactnr='"+self:cCurBatc
 "' and origin='"+self:cCurOrigin+"' and transdate='"+SQLdate(self:dCurDate)+"'",oConn}:execute()
 SQLStatement{"commit",oConn}:execute()
 RETURN 
-CLASS ImportPatternBrowser INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oDCFound AS FIXEDTEXT
-	PROTECT oDCFoundtext AS FIXEDTEXT
-	PROTECT oCCFindButton AS PUSHBUTTON
-	PROTECT oDCSearchUni AS SINGLELINEEDIT
-	PROTECT oDCFixedText4 AS FIXEDTEXT
-	PROTECT oSFImportPatternBrowser_DETAIL AS ImportPatternBrowser_DETAIL
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	export oImpPat as SqlSelect 
-  	export cWhereBase,cWhereSpec,cFields,cOrder,cFrom as string
 RESOURCE ImportPatternBrowser DIALOGEX  4, 3, 534, 279
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1984,6 +1979,20 @@ BEGIN
 	CONTROL	"Search like google:", IMPORTPATTERNBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 12, 7, 64, 12
 END
 
+CLASS ImportPatternBrowser INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
+	PROTECT oSFImportPatternBrowser_DETAIL AS ImportPatternBrowser_DETAIL
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	export oImpPat as SqlSelect 
+  	export cWhereBase,cWhereSpec,cFields,cOrder,cFrom as string
 METHOD DeleteButton( ) CLASS ImportPatternBrowser 
 local oStmnt as SQLStatement
 	IF self:Server:EOF.or.self:Server:reccount<1
@@ -2085,6 +2094,12 @@ SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
 
 STATIC DEFINE IMPORTPATTERNBROWSER_DELETEBUTTON := 102 
+RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBACCNUMBER as DataColumn
@@ -2096,12 +2111,6 @@ CLASS ImportPatternBrowser_DETAIL INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   protect oOwner as ImportPatternBrowser
-RESOURCE ImportPatternBrowser_DETAIL DIALOGEX  2, 2, 472, 234
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 ACCESS Accnumber() CLASS ImportPatternBrowser_DETAIL
 RETURN SELF:FieldGet(#Accnumber)
 
@@ -2192,8 +2201,7 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 ACCESS origin() CLASS ImportPatternBrowser_DETAIL
-RETURN SELF:FieldGet(#origin)
-
+RETURN self:FieldGet(#origin)
 ASSIGN origin(uValue) CLASS ImportPatternBrowser_DETAIL
 SELF:FieldPut(#origin, uValue)
 RETURN uValue
