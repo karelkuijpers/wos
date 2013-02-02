@@ -1915,7 +1915,7 @@ self:SetTexts()
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PreInit additions here
 // 	SELF:oExtServer:=oServer && save external server 
-	self:cFields:= "p.persid,lastname,initials,firstname,prefix,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
+	self:cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	self:cFrom:="person as p"
 	self:cOrder:="lastname,firstname,city"
 	self:cWhere:='p.deleted=0' 
