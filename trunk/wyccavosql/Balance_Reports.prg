@@ -3792,7 +3792,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		*	
 		*	Proces e-mail:
 		if lPrintFile.and. self:SendingMethod=="SeperateFileMail"
-			if !Empty(oAcc:persid)  // skip funds
+			if !Empty(oAcc:persid) .and.ConI(oAcc:rptdest)<3  // skip funds and none sending
 				//	add to be emailed	statements aMailMember:	//	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,fullname contact} 
 				AAdd(self:aMailMember,{ConS(oAcc:mbrid),AllTrim(StrTran(oAcc:description,".",Space(1))),cFileName,;
 				iif(ConS(oAcc:rptdest)<>'1',ConS(oAcc:persid),''),iif(ConS(oAcc:rptdest)<>'0'.or.self:mailcontact,ConS(oAcc:CONTACT),''),;
@@ -4370,8 +4370,10 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 			if	self:SendingMethod=="SeperateFileMail"	
 				//	add to be emailed	statements aMailMember:	//	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,fullname contact}
 				//	aMbr:	{{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
-				//				1		  2			3		  4		  5	  6			7			8			9			  10			11               12
-				AAdd(self:aMailMember,{self:aMbr[m,1],self:aMbr[m,2],oFileSpec:FullPath,iif(self:aMbr[m,7]<>'1',self:aMbr[m,8],''),iif(self:aMbr[m,7]<>'0'.or.self:mailcontact,self:aMbr[m,9],''),self:aMbr[m,10],self:aMbr[m,11],self:aMbr[m,12]})
+				//				1		  2			3		  4		  5	  6			7			8			9			  10			11               12 
+				if ConI(self:aMbr[m,7])<3        // 3: none
+					AAdd(self:aMailMember,{self:aMbr[m,1],self:aMbr[m,2],oFileSpec:FullPath,iif(self:aMbr[m,7]<>'1',self:aMbr[m,8],''),iif(self:aMbr[m,7]<>'0'.or.self:mailcontact,self:aMbr[m,9],''),self:aMbr[m,10],self:aMbr[m,11],self:aMbr[m,12]})
+				endif
 			endif
 		else
 			FWriteLineUni(ptrHandle,Implode(aOutput,CRLF))  
