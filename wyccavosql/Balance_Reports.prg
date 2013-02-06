@@ -2831,8 +2831,8 @@ END
 Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	// convert selected members and gifts receivable account to aMbr and aAccidMbr:  
 	// convert aAcc to self:aMbr and aAccidMbr:
-	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname},...}
-	//          1       2         3       4        5     6         7        8        9          10        11            12
+	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr},...}
+	//          1       2         3       4        5     6         7        8        9          10        11            12         13
 	// aAccidMbr: {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
 	//              1    2                                               4          5         6         7                     8      9       10,1       10,2            10,3                   10,4          10,5         
 	local i as int
@@ -2854,11 +2854,11 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 
 	cMbrSelect:= "select coalesce(m.mbrid,a.accid) as membrid,a.description,"+SQLFullName(2,"p")+" as membername,m.homepp,m.householdid,m.co,d.deptmntnbr,m.rptdest,if(isnull(p.persid),'',p.persid) as persid,"+;
 	"if(isnull(pc.persid),'',pc.persid) as persidcontact,"+;
-		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname "+;
+		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname,if(isnull(m.depid) or m.depid=0,'0','1') as isdepmbr "+;
 		"from account a left join department d ON (a.department=d.depid) left join member m ON (a.accid=m.accid or (d.depid=m.depid and d.incomeacc=a.accid)) left join person pc ON (pc.persid=m.contact) "+;
 		"left join person p ON (p.persid=m.persid) where  a.accid in ("+Implode(aAcc,",")+") and a.active=1  group by membrid"
 	oSel:=SqlSelect{"select group_concat(cast(y.membrid as char),'#$#',coalesce(y.membername,y.description),'#$#',coalesce(y.homepp,''),'#$#',coalesce(y.householdid,''),'#$#',coalesce(y.co,''),'#$#',coalesce(y.deptmntnbr,''),'#$#',"+;
-	"cast(coalesce(y.rptdest,'') as char),'#$#',cast(persid as char),'#$#',cast(persidcontact as char),'#$#',coalesce(y.email,''),'#$#',emailcontact,'#$#',contactname order by membrid separator '#%#') as grMbr "+;
+	"cast(coalesce(y.rptdest,'') as char),'#$#',cast(persid as char),'#$#',cast(persidcontact as char),'#$#',coalesce(y.email,''),'#$#',emailcontact,'#$#',contactname,'#$#',isdepmbr order by membrid separator '#%#') as grMbr "+;
 	"from ("+cMbrSelect+") as y",oConn}  
 // 		LogEvent(self,oSel:sqlstring,"logsql")
 	oSel:Execute()
@@ -4032,8 +4032,8 @@ return self
 
 Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSelect,aTrans ref array,ptrHandle ref ptr, aOutput ref array,oFileSpec ref FileSpec) as logic class GiftReport 
 	// Initialize memberstatement report
-	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...} 
-	//           1        2        3       4       5       6     7        8        7            9         10           11       12
+	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact,isdepmbr},...} 
+	//           1        2        3       4       5       6     7        8        7            9         10           11       12      13
 	// mPtr: pointer to current row in self:aMbr 
 	// returns false if member skipped
 	local cCurrMbrId,cPP as string
@@ -4076,9 +4076,10 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
 	
 	IF !Empty(self:aMbr[mPtr,3]) .and.self:aMbr[mPtr,3]!=sEntity     // homepp
 		Alg_taal:="E"
-	endif
-	cAccNumber:=self:aMbr[mPtr,6]
-	if Empty(cAccNumber)
+	endif 
+	if self:aMbr[mPtr,13]=='1'
+		cAccNumber:=self:aMbr[mPtr,6]
+	else
 		// apparently no department member:
 		if (i:=AScan(aAccidMbr,{|x|x[1]== mbrid}))>0
 			cAccNumber:=aAccidMbr[i,4]
@@ -4412,7 +4413,7 @@ Method MonthOverView(mPtr as int,aAccidMbr as array,aTrans as array,aOutput as a
 	local fBalance,fBalanceBeginMonth,fIncome,fExpense,fFund as float
 	loca nAcc,nCurrMonth,nMonth,i as int 
 	local StartinMonth,EndInMonth as date
-	local lDepMbr:=!Empty(self:aMbr[mPtr,6]) as logic 
+	local lDepMbr:=(self:aMbr[mPtr,13]=='1') as logic 
 	local cCurrMonth,cStartinMonth,cEndInMonth as string
 	local mbrid:=self:aMbr[mPtr,1] as string
 
@@ -4969,7 +4970,7 @@ method YearOverView(mPtr as int,aAccidMbr as array,aOutput as array) as void pas
 	self:fBudgetExpYTD:=0.00
 	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
 	//           1       2         3       4        5     6         7        8        9          10        11           12
-	if !Empty(aMbr[mPtr,6])
+	if self:aMbr[mPtr,13]=='1'
 		lDepMbr:=true    // department member 
 		
 	endif 
