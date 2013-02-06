@@ -2141,7 +2141,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
 	aStatCur:=AReplicate('',nLenCur) 
-	// first search for columns with changed specifications: 
+	// first search for columns with changed specifications:  
 
 	for nPosReq:=1 to nLenReq
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
@@ -2178,6 +2178,9 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	// check remaining required columns if they have been renamed or added:
 	nPosCurbefore:=0
 	nPosCurAfter:=0
+	if cTableName=="sysparms"
+		cTableName:=cTableName
+	endif
 	for nPosReq :=1 to nLenReq
 		if !Empty(aStatReq[nPosReq,1])
 			// allready recognised:
@@ -2356,18 +2359,26 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		if cTableName=='sysparms'
 			// Table name, Field,Type,Null,Default,Extra 
 			if AScan(aCurColumn,{|x|x[2]=='banknbrcol'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcol'.and. Left(x[3],3)='int'})>0
-				// select od values and new values for banknbrcol:
+				// select old values and new values for banknbrcol:
 				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where s.banknbrcol>"" and b.banknumber=s.banknbrcol',oConn}
 				if oSel:RecCount>0
-					AAdd(avalues,{'banknbrcol',oSel:bankid})
+					AAdd(avalues,{'banknbrcol',oSel:bankid}) 
+				else
+					AAdd(avalues,{'banknbrcol','0'}) 					
 				endif
+			else
+				AAdd(avalues,{'banknbrcol','0'}) 					
 			endif
 			if AScan(aCurColumn,{|x|x[2]=='banknbrcre'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcre'.and. Left(x[3],3)=='int'})>0
 				// select od values and new values for banknbrcol:
 				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where banknbrcre>"" and b.banknumber=s.banknbrcre',oConn}
 				if oSel:RecCount>0
 					AAdd(avalues,{'banknbrcre',oSel:bankid})
+				else
+					AAdd(avalues,{'banknbrcre','0'}) 					
 				endif
+			else
+				AAdd(avalues,{'banknbrcre','0'}) 					
 			endif
 		endif
 		SQLStatement{"start transaction",oConn}:Execute() 
