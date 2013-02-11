@@ -3143,14 +3143,16 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 	local oSel as SqlSelect
 	
 	oMBal:=Balances{}
+	// sort aAccidMbr on: mbrid,kind,accid
+	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3]).or.(x[3]=y[3].and.x[2]<=y[2]))}) 
 	oMBal:AccSelection:="a.accid in ("+Implode(aAccidMbr,",",,,2)+")"
 	// 	oMBal:AccSelection:="exists(select 1 from accidmbr m where a.accid=m.accid)"
 	for nCurrMonth:=self:CalcMonthStart to self:CalcMonthEnd
 		cStatement:=oMBal:SQLGetBalance(self:CalcYear*100+nCurrMonth,self:CalcYear*100+nCurrMonth,true,false,true,false)
-		minpl:="if(z.category='"+EXPENSE+"' or z.category='"+ASSET+"',-1,1)" 
+		minpl:="if(z.category='"+EXPENSE+"' or z.category='"+ASSET+"',-1,1)"  
 		cStatement:="select group_concat(cast(z.accid as char),'#$#',z.category,'#$#',cast(z.yr_bud as char),'#$#',cast(z.prvper_bud+z.per_bud as char),'#$#',cast((z.per_cre-z.per_deb)*"+minpl+" as char),'#$#',"+;
 			"cast((z.prvper_cre-z.prvper_deb)*"+minpl+" as char),'#$#',cast((z.prvyr_cre-z.prvyr_deb)*"+minpl+" as char),'#$#',cast(z.pl_cre-z.pl_deb as char) order by accid separator '#%#') as grBal from ("+cStatement+") as z" 
-		oSel:=SqlSelect{cStatement,oConn} 
+		oSel:=SqlSelect{cStatement,oConn}  
 		oSel:Execute()
 		if !Empty(oSel:status)
 			LogEvent(self,self:oLan:WGet("could not retrieve member accounts balances")+':'+oSel:ErrInfo:errormessage,"logerrors")
@@ -3163,9 +3165,9 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 		//     1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
 		aBalAcc1:=Split(oSel:grBal,'#%#')	
 		for i:=1 to Len(aBalAcc1)
-			aBalAcc2:=Split(aBalAcc1[i],'#$#') 
-			nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]})  // accid
-			if nAcc>0
+			aBalAcc2:=Split(aBalAcc1[i],'#$#')
+			nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]})  // accid 
+			do while nAcc>0
 				if Len(aAccidMbr[nAcc]) <10
 					ASize(aAccidMbr[nAcc],10)
 					aAccidMbr[nAcc,10]:={}
@@ -3173,12 +3175,14 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 					aAccidMbr[nAcc,8]:=Val(aBalAcc2[3])  //yr_bud
 					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud
 				endif
-				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Val(aBalAcc2[5]),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])})
-			endif
+				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Val(aBalAcc2[5]),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])}) 
+// 				if nAcc==Len(aAccidMbr)
+// 					exit
+// 				endif
+				nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]},nAcc+1)  // accid 
+			enddo
 		next
 	next 
-	// sort aAccidMbr on: mbrid,kind,accid
-	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3]).or.(x[3]=y[3].and.x[2]<=y[2]))}) 
 	self:STATUSMESSAGE(cMess+='.') 
 	return true
 	
@@ -5016,7 +5020,7 @@ method YearOverView(mPtr as int,aAccidMbr as array,aOutput as array) as void pas
 			case aAccidMbr[nAcc,3]=='2'  // fund
 				self:fFundUpt:=aAccidMbr[nAcc,10,nMonth,2]-aAccidMbr[nAcc,10,nMonth,4] 
 				fBalance+=aAccidMbr[nAcc,10,nMonth,2]
-				fBalanceBeginYear:=aAccidMbr[nAcc,10,nMonth,4]
+				fBalanceBeginYear+=aAccidMbr[nAcc,10,nMonth,4]
 			case aAccidMbr[nAcc,3]=='3'   // expense 
 				self:fExpenseUpt:=aAccidMbr[nAcc,10,nMonth,3]+aAccidMbr[nAcc,10,nMonth,2]   
 				if StartinYear>LstYearClosed                        // previous year not yet closed?
