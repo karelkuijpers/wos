@@ -589,7 +589,9 @@ method init() class Initialize
 	local dim akeyval[4] as string
 	local lConnected as logic
 	Local CurVersion as string ,DBVers, PrgVers as float
-	local time0,time1 as float 
+	local time0,time1 as float
+	local oTCPIP as TCPIP
+	
 
 	// make connection 
 	CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
@@ -649,7 +651,7 @@ method init() class Initialize
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
-// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
+			// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
 			if AtC("Microsoft",oConn:ERRINFO:errormessage)>0 .and. AtC("ODBC",oConn:ERRINFO:errormessage)>0
 				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and it will be downloaded"+CRLF+"Run it and accept all defaults"}:Show() 
 				if oMainWindow==null_object
@@ -667,7 +669,23 @@ method init() class Initialize
 					// local Mysql:
 					ErrorBox{,"You have first to install MYSQL"}:Show() 
 				else
-					ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+					oTCPIP:=TCPIP{}
+					oTCPIP:timeout:=2000
+					oTCPIP:Ping(cServer)
+					if AtC("timeout",oTCPIP:Response)>0
+						if cServer=="192.168.16.2"
+							// try VPN server:
+							oTCPIP:Ping("192.168.16.8")
+							if	AtC("timeout",oTCPIP:Response)>0
+								ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+								break
+							endif
+						else
+							ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+							break							
+						endif
+					endif 
+					ErrorBox{,"There is something wrong with the database manager on "+cServer}:Show()
 				endif
 				break
 			endif
@@ -692,7 +710,7 @@ method init() class Initialize
 	endif 
 	sIdentChar:='`'
 	if oSel:RecCount<1
-   	// database does not yet exist:
+		// database does not yet exist:
 		self:lNewDb:=true
 		self:FirstOfDay:=true 
 		//create database: 
@@ -746,7 +764,7 @@ method init() class Initialize
 			endif
 		endif
 	ENDIF
-// 	cLine:=SqlSelect{"select cast(sha1('dd kle 123 k mmmmmm wwwwww lllllll dddddd') as char) as hash",oConn }:hash
+	// 	cLine:=SqlSelect{"select cast(sha1('dd kle 123 k mmmmmm wwwwww lllllll dddddd') as char) as hash",oConn }:hash
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
