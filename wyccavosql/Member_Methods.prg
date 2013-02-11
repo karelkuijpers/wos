@@ -111,10 +111,15 @@ IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 		self:oDCmPerson:TEXTValue := self:cMemberName
 		
 		self:mCod:=SQLSelect{"select mailingcodes from person where persid="+self:mCLN,oConn}:mailingcodes
-	ELSE
+	ELSE   // contact person:
 		self:mCLNContact :=  Str(oCLN:persid,-1)
 		self:cContactName := GetFullName(self:mCLNContact,0)
-		SELF:oDCmPersonContact:TEXTValue := SELF:cContactName
+		self:oDCmPersonContact:TEXTValue := self:cContactName 
+		if !Empty(self:cContactName)
+			self:oCCDestButton2:Show()
+			self:oCCDestButton3:Show()
+		endif
+			
 	ENDIF
 ENDIF
 SELF:ShowStmntDest()
