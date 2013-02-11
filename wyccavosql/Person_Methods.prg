@@ -1535,7 +1535,7 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 	ENDIF
 	if self:oPers:RecCount>1 .and.!Empty(oPersCnt)
 		if !Empty(oPersCnt:current_PersonID) 
-			do while !self:oPers:persid==oPersCnt:current_PersonID
+			do while !self:oPers:EoF .and. !self:oPers:persid==oPersCnt:current_PersonID
 				self:Skip()
 			enddo
 		else
