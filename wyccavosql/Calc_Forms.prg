@@ -313,46 +313,56 @@ METHOD Init(oOwner, xID, oPoint, oDimension, kStyle) CLASS JapSingleEdit
 	SELF:SetStyle(EDITLEFT,TRUE)
 	RETURN SELF
 METHOD KeyUp(oEvent) CLASS JapSingleEdit
-//METHOD Dispatch(oEvent) CLASS JapSingleEdit
-LOCAL uRet as USUAL
-LOCAL cOperator AS STRING
-LOCAL oWindow AS OBJECT
-*LOCAL lUpdate AS LOGIC
-LOCAL myValue AS STRING
-uRet:=SUPER:KeyUp(oEvent)
-IF ClassName(oEvent)==#KeyEvent
-	IF CHR(oEvent:AsciiChar) $ "+-*/".and.!CalcActive.and.self:Fieldspec:Valtype=="N"
-		cOperator:=CHR(oEvent:AsciiChar) 
-		IF !Empty(Val(SELF:TEXTvalue)).or.!Empty(SELF:Value)
+	//METHOD Dispatch(oEvent) CLASS JapSingleEdit
+	LOCAL uRet as USUAL
+	LOCAL cOperator AS STRING
+	LOCAL oWindow AS OBJECT
+	*LOCAL lUpdate AS LOGIC
+	LOCAL myValue AS STRING
+	uRet:=SUPER:KeyUp(oEvent)
+	IF ClassName(oEvent)==#KeyEvent
+		IF CHR(oEvent:AsciiChar) $ "+-*/".and.!CalcActive.and.self:Fieldspec:Valtype=="N"
+			cOperator:=CHR(oEvent:AsciiChar) 
+			IF !Empty(Val(SELF:TEXTvalue)).or.!Empty(SELF:Value)
 				
-			CalcActive:=TRUE
-			IF Empty(Val(SELF:TEXTvalue))
-				myValue:=Str(SELF:Value)
-				SELF:value:=0
-				SELF:TextValue:=myValue
-			ENDIF
-*			lUpdate:= Empty(Val(SELF:TEXTvalue))
-*			IF !lUpdate
+				CalcActive:=TRUE
+				IF Empty(Val(SELF:TEXTvalue))
+					myValue:=Str(SELF:Value)
+					SELF:value:=0
+					SELF:TextValue:=myValue
+				ENDIF
+				*			lUpdate:= Empty(Val(SELF:TEXTvalue))
+				*			IF !lUpdate
 				IF IsAccess(SELF:Owner:Owner,#Server)
 					SELF:LinkDf(SELF:Owner:Owner:Server,;
-					SELF:Owner:Owner:Server:FieldPos(SELF:FieldSpec:HyperLabel:NameSym))
+						SELF:Owner:Owner:Server:FieldPos(SELF:FieldSpec:HyperLabel:NameSym))
 				ENDIF
-*			ENDIF
-			oWindow:=GetParentWindow(SELF)
-			(Calculator{oWindow,{self,cOperator,self:oBrowser,self:oColumn:NameSym}}):Show()
-			IF IsAccess(SELF:Owner:Owner,#Server)
-				SELF:oColumn:Value:=SELF:Value
-*				IF !lUpdate.and.IsMethod(SELF:owner,#ColumnFocusChange)
-				IF IsMethod(SELF:owner,#ColumnFocusChange)
-					SELF:owner:ColumnFocusChange(SELF:oColumn, TRUE)
+				*			ENDIF
+				oWindow:=GetParentWindow(SELF)
+				(Calculator{oWindow,{self,cOperator,self:oBrowser,self:oColumn:NameSym}}):Show()
+				IF IsAccess(SELF:Owner:Owner,#Server)
+					SELF:oColumn:Value:=SELF:Value
+					*				IF !lUpdate.and.IsMethod(SELF:owner,#ColumnFocusChange)
+					IF IsMethod(SELF:owner,#ColumnFocusChange)
+						SELF:owner:ColumnFocusChange(SELF:oColumn, TRUE)
+					ENDIF
+					SELF:Owner:SetColumnFocus(SELF:Owner:GetColumn(SELF:owner:ColPos()+1))
 				ENDIF
-				SELF:Owner:SetColumnFocus(SELF:Owner:GetColumn(SELF:owner:ColPos()+1))
+				CalcActive:=FALSE
 			ENDIF
-			CalcActive:=FALSE
+// 		else
+// 			IF IsAccess(self:Owner:Owner,#Server)
+// 				self:oColumn:Value:=self:Value
+// 				IF oEvent:AsciiChar == 9
+// 					IF IsMethod(self:Owner,#ColumnFocusChange)
+// 						self:Owner:ColumnFocusChange(self:oColumn, true)
+// 					ENDIF
+// 					self:Owner:SetColumnFocus(self:Owner:GetColumn(self:Owner:ColPos()+1))
+// 				endif
+// 			ENDIF
 		ENDIF
 	ENDIF
-ENDIF
-RETURN uRet
+	RETURN uRet
 CLASS mySingleEdit INHERIT SingleLineEdit
 	EXPORT CalcActive AS LOGIC
 	EXPORT oBrowser AS DataBrowser
@@ -363,11 +373,11 @@ METHOD Init(oOwner, xID, oPoint, oDimension, kStyle) CLASS mySingleEdit
 	self:SetStyle(EDITLEFT,true)
 	RETURN self
 METHOD KeyUp(oEvent) CLASS mySingleEdit
-LOCAL uRet AS USUAL
-LOCAL cOperator AS STRING
-LOCAL oWindow AS OBJECT
-uRet:=SUPER:KeyUp(oEvent)
-//IF ClassName(oEvent)==#KeyEvent
+	LOCAL uRet AS USUAL
+	LOCAL cOperator AS STRING
+	LOCAL oWindow AS OBJECT
+	uRet:=SUPER:KeyUp(oEvent)
+	//IF ClassName(oEvent)==#KeyEvent
 	IF CHR(oEvent:AsciiChar) $ "+-*/".and.SELF:Fieldspec:Valtype=="N"
 		cOperator:=CHR(oEvent:AsciiChar)
 		IF !Empty(Val(self:TEXTvalue)).or.!Empty(self:VALUE)
@@ -379,5 +389,5 @@ uRet:=SUPER:KeyUp(oEvent)
 			(Calculator{oWindow,{self,cOperator,self:oBrowser,self:NameSym}}):Show()
 		ENDIF
 	ENDIF
-//ENDIF
-RETURN uRet
+	//ENDIF
+	RETURN uRet
