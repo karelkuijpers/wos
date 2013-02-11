@@ -2401,8 +2401,10 @@ METHOD PersonButton(lUnique )  CLASS EditMember
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,'p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member")
 	else
-		oPersCnt:current_PersonID:=self:oMbr:persid
- 		PersonSelect(self,cValue,lUnique,'persid="'+Str(self:oMbr:persid,-1)+'" or p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member",oPersCnt)
+		oPersCnt:current_PersonID:=self:oMbr:persid 
+		oPersCnt:persid:=ConS(self:oMbr:persid)
+//  		PersonSelect(self,cValue,lUnique,'persid="'+Str(self:oMbr:persid,-1)+'" or p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member",oPersCnt)
+ 		PersonSelect(self,cValue,lUnique,,"Member",oPersCnt)
 	endif
 METHOD PersonButtonContact(lUnique) CLASS EditMember
 	LOCAL cValue := AllTrim(SELF:oDCmPersonContact:TEXTValue ) AS STRING
@@ -2517,10 +2519,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		endif
 
 		self:mCod:=self:oMbr:mailingcodes
-		self:mCLNContact := Str(self:oMbr:CONTACT,-1)
+		self:mCLNContact := ConS(self:oMbr:CONTACT)
 		if !Empty(self:mCLNContact)
 			self:mPersonContact := self:oMbr:contactname
-			self:cContactName := mPersonContact
+			self:cContactName := self:mPersonContact
+			if Empty(self:mPersonContact)
+				self:mCLNContact:=''  // apparently non-existing person 
+			else
+				self:oCCDestButton2:show()
+				self:oCCDestButton3:show()
+			endif
 		endif
 		self:StatemntsDest:=Str(self:oMbr:RPTDEST,-1)
 		self:oDCmPPCode:Value:=self:oMbr:HomePP
@@ -2548,7 +2556,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		if oDis:RecCount>0
 			DO WHILE !oDis:EoF 
 				AAdd(self:aDistr,{+;
-					oDis:mbrid,+;
+					oDis:MbrId,+;
 					oDis:SEQNBR,+;
 					oDis:DESTACC,+;
 					oDis:DESTPP,+;
@@ -2567,7 +2575,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			ENDDO
 			self:aDistrOrg:=AClone(self:aDistr)	
 		endif
-		oLast:=SQLSelect{"select max(seqnbr) as maxseq from distributioninstruction where mbrid="+self:mMbrId,oConn}
+		oLast:=SqlSelect{"select max(seqnbr) as maxseq from distributioninstruction where mbrid="+self:mMbrId,oConn}
 		IF Empty(oLast:maxseq)
 			self:maxseq:=1
 		ELSE
@@ -2593,9 +2601,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			self:oDCmHBN:Hide()
 			self:oDCmHAS:Hide()
 			self:oDCHousecodetxt:Hide()
-			IF self:oMbr:HomePP!=sentity
+			IF self:oMbr:HomePP!=SEntity
 				self:oDCHomeAccTxt:show()
-				self:oDCmHomeAcc:Show()
+				self:oDCmHomeAcc:show()
 				self:ShowDistribution(FALSE)
 			ELSE
 				self:ShowDistribution(true)
