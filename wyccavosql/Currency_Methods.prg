@@ -3,25 +3,46 @@ STATIC DEFINE ASKCURRENCY_OKBUTTON := 102
 STATIC DEFINE ASKCURRENCY_SC_SMUNT := 101 
 CLASS CurRateBrowser INHERIT DatabrowserExtra
 method ColumnFocusChange(oColumn, lHasFocus)   CLASS CurRateBrowser
-	LOCAL oCurRt:=self:OWNER:Server as SQLSelect
-	LOCAL ThisRec, nErr as int 
+	LOCAL oCurRt:=self:OWNER:Server as SQLSelect 
+	LOCAL ThisRec, nErr,rateid as int 
 	Local myValue as float
 	LOCAL myColumn:=oColumn as DataColumn
 	SUPER:ColumnFocusChange(oColumn, lHasFocus)
 	IF self:OWNER:lFilling  && ingore change column during filling screen
 		RETURN
 	ENDIF
-	ThisRec:=oCurRt:RecNo
+	ThisRec:=oCurRt:RecNo 
+	rateid:=oCurRt:rateid
 	IF myColumn:NameSym == #AED 
 		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AED,""))
-			myColumn:TextValue:= myColumn:VALUE
 			oCurRt:AED:=myColumn:VALUE
+			SQLStatement{'update currencyrate set aed="'+myColumn:VALUE+'" where rateid='+Str(rateid,-1),oConn}:execute() 
+			myColumn:TextValue:= myColumn:VALUE
+			self:Refresh() 
+			self:OWNER:goto(ThisRec)
 		endif
 	ELSEIF myColumn:NameSym == #AEDUNIT
 		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AEDUNIT,""))
-			myColumn:TextValue:= myColumn:VALUE
 			oCurRt:AEDUNIT:=myColumn:VALUE
+			SQLStatement{'update currencyrate set aedunit="'+myColumn:VALUE+'" where rateid='+Str(rateid,-1),oConn}:execute()
+			myColumn:TextValue:= myColumn:VALUE
+			self:Refresh() 
+			self:OWNER:goto(ThisRec)
 		endif
+	elseif myColumn:NameSym == #DATERATE
+		IF !myColumn:VALUE == oCurRt:daterate
+			oCurRt:daterate:=myColumn:VALUE
+			SQLStatement{'update currencyrate set daterate="'+sqldate(myColumn:VALUE)+'" where rateid='+str(rateid,-1),oConn}:execute()
+ 			myColumn:TextValue:= DToC(myColumn:VALUE)
+ 			self:OWNER:daterate:=myColumn:VALUE 
+		endif
+	elseif myColumn:NameSym == #ROE
+		IF !myColumn:VALUE == oCurRt:roe
+			oCurRt:roe:=myColumn:VALUE
+			SQLStatement{'update currencyrate set roe="'+Str(myColumn:VALUE,-1,-1)+'" where rateid='+Str(rateid,-1),oConn}:execute() 
+			myColumn:TextValue:= Str(myColumn:VALUE,-1,-1)
+		endif
+		
 	ENDIF
 	RETURN nil 
 METHOD GetCurCell CLASS CurRateBrowser
@@ -206,15 +227,6 @@ Default(@cBase,sCURR)
 self:cCurCaption:=cCaption 
 self:cBaseCur:=cBase
 return self
-RESOURCE CurrencySpec DIALOGEX  4, 3, 282, 26
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", CURRENCYSPEC_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 76, 7, 134, 185
-	CONTROL	"System Currency:", CURRENCYSPEC_SC_SMUNT, "Static", WS_CHILD, 4, 7, 66, 12
-	CONTROL	"OK", CURRENCYSPEC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 220, 7, 53, 12
-END
-
 CLASS CurrencySpec INHERIT DataDialogMine 
 
 	PROTECT oDCCurrency AS COMBOBOX
@@ -224,6 +236,15 @@ CLASS CurrencySpec INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   instance CURRENCY as string 
   
+RESOURCE CurrencySpec DIALOGEX  4, 3, 282, 26
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", CURRENCYSPEC_CURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 76, 7, 134, 185
+	CONTROL	"System Currency:", CURRENCYSPEC_SC_SMUNT, "Static", WS_CHILD, 4, 7, 66, 12
+	CONTROL	"OK", CURRENCYSPEC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 220, 7, 53, 12
+END
+
 ACCESS Currency() CLASS CurrencySpec
 RETURN SELF:FieldGet(#Currency)
 
@@ -314,40 +335,42 @@ METHOD append() CLASS CurrRateEditor
 	Local fRate as Float
 	LOCAL oCurRt:=self:Server as SQLSelect
 	local oStmnt as SQLStatement 
-	local oCurr as Currency
-// 	IF !oCurRt:Reccount<1
-// 		oCurRt:GoTop()
-// 		cCurr:=oCurRt:AED 
-// 		cUnit:=oCurRt:AEDUNIT
-// 		oCurr:=Currency{'',cUnit}
-// 		fRate:=oCurr:GetROE(cCurr,Today(),false,false) 
-// 		// 		fRate:=oCurRt:ROE 
-// 		// 		if Empty(fRate)
-// 		// 			fRate:=1.00
-// 		// 		endif
-// 		oCurRt:GoBottom()
-// 	ENDIF
-// 	oStmnt:=SQLStatement{"insert into currencyrate set aed='"+cCurr+"',AEDUNIT='"+cUnit+"',DATERATE='"+SQLdate(Today())+"',roe="+Str(fRate,19,10),oConn}
-// 	oStmnt:Execute()
-// 	if oStmnt:NumSuccessfulRows>0
-// 		oCurRt:Execute()
-// 		self:oSFSub_Rates:Browser:refresh()
-// 		// 	self:oSFSub_Rates:append()
-// 		//  	self:oSFSub_Rates:GoTop()
-// 		// 	self:oSFSub_Rates:AED:=cCurr
-// 		// 	self:oSFSub_Rates:AEDUNIT:=cUnit
-// 		// 	self:oSFSub_Rates:DATERATE:=Today()
-// 		// 	self:oSFSub_Rates:ROE:=fRate
-// 		// 	oCurRt:AED:=cCurr
-// 		// 	oCurRt:AEDUNIT:=cUnit
-// 		// 	oCurRt:DATERATE:=SQLdate(Today())
-// 		// 	oCurRt:ROE:=fRate
-// 		// 	self:oSFSub_Rates:GoTop()
-// 	else
-		self:oSFSub_Rates:GoBottom()
-		self:oSFSub_Rates:append()
-		self:oSFSub_Rates:GoBottom()
-// 	endif
+	local oCurr as Currency 
+	local lSuccess as logic
+	IF !oCurRt:Reccount<1
+		oCurRt:GoTop()
+		cCurr:=oCurRt:AED 
+		cUnit:=oCurRt:AEDUNIT
+		oCurr:=Currency{'',cUnit}
+		fRate:=oCurr:GetROE(cCurr,Today(),false,false) 
+		// 		fRate:=oCurRt:ROE 
+		// 		if Empty(fRate)
+		// 			fRate:=1.00
+		// 		endif
+		oCurRt:GoBottom()
+	ENDIF
+	oStmnt:=SQLStatement{"insert into currencyrate set aed='"+cCurr+"',AEDUNIT='"+cUnit+"',DATERATE='"+SQLdate(Today())+"',roe="+Str(fRate,19,10),oConn}
+	oStmnt:Execute()
+	if oStmnt:NumSuccessfulRows>0
+		oCurRt:Execute()
+		self:oSFSub_Rates:Browser:refresh()
+		// 	self:oSFSub_Rates:append()
+		//  	self:oSFSub_Rates:GoTop()
+		// 	self:oSFSub_Rates:AED:=cCurr
+		// 	self:oSFSub_Rates:AEDUNIT:=cUnit
+		// 	self:oSFSub_Rates:DATERATE:=Today()
+		// 	self:oSFSub_Rates:ROE:=fRate
+		// 	oCurRt:AED:=cCurr
+		// 	oCurRt:AEDUNIT:=cUnit
+		// 	oCurRt:DATERATE:=SQLdate(Today())
+		// 	oCurRt:ROE:=fRate
+		// 	self:oSFSub_Rates:GoTop()
+	else
+// 		self:oSFSub_Rates:GoBottom()
+		lSuccess:=self:oSFSub_Rates:append()
+// 		self:oSFSub_Rates:GoBottom()
+		self:oSFSub_Rates:GoTop()
+	endif
 	RETURN FALSE
 method ButtonClick(oControlEvent) class CurrRateEditor
 	local oControl as Control 
@@ -363,6 +386,11 @@ method ButtonClick(oControlEvent) class CurrRateEditor
 			
 
 	return NIL
+method Close(oEvent) class CurrRateEditor
+	super:Close(oEvent)
+	//Put your changes here
+	return NIL
+
 ACCESS CurrencySelect() CLASS CurrRateEditor
 RETURN SELF:FieldGet(#CurrencySelect)
 
@@ -502,17 +530,6 @@ METHOD Init() CLASS ExchangeRate
 
 
 
-RESOURCE GetExchRate DIALOGEX  14, 11, 256, 50
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", GETEXCHRATE_MEXCHRATE, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 7, 64, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Exchange rate: 1 ", GETEXCHRATE_ROETEXT1, "Static", WS_CHILD, 8, 7, 57, 12
-	CONTROL	"OK", GETEXCHRATE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 190, 32, 54, 12
-	CONTROL	"", GETEXCHRATE_CURNAME, "Static", WS_CHILD, 160, 7, 88, 12
-	CONTROL	"USD = ", GETEXCHRATE_ROETEXT2, "Static", WS_CHILD, 64, 7, 28, 13
-END
-
 CLASS GetExchRate INHERIT DataDialogMine 
 
 	PROTECT oDCmExchRate AS MYSINGLEEDIT
@@ -525,6 +542,17 @@ CLASS GetExchRate INHERIT DataDialogMine
   	instance mExchRate
   	protect oOwner as OBJECT
   	Export lStopped:=true as logic 
+RESOURCE GetExchRate DIALOGEX  14, 11, 256, 50
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", GETEXCHRATE_MEXCHRATE, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 7, 64, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Exchange rate: 1 ", GETEXCHRATE_ROETEXT1, "Static", WS_CHILD, 8, 7, 57, 12
+	CONTROL	"OK", GETEXCHRATE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 190, 32, 54, 12
+	CONTROL	"", GETEXCHRATE_CURNAME, "Static", WS_CHILD, 160, 7, 88, 12
+	CONTROL	"USD = ", GETEXCHRATE_ROETEXT2, "Static", WS_CHILD, 64, 7, 28, 13
+END
+
 method Close(oEvent) class GetExchRate
 	super:Close(oEvent)
 	//Put your changes here 
@@ -734,12 +762,6 @@ Method ReEvaluate() Class Reevaluation
 
 
 	return 
-RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS Sub_Rates INHERIT DataWindowMine 
 
 	PROTECT oDBAED as JapDataColumn
@@ -749,6 +771,12 @@ CLASS Sub_Rates INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export lFilling:=true as logic 
+RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 ACCESS AED() CLASS Sub_Rates
 RETURN SELF:FieldGet(#AED)
 
