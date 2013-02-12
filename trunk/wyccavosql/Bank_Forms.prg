@@ -1609,7 +1609,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+;
 		self:oLan:WGet("bankorders")+" ("+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
 	IF (oWarn:Show() = BOXREPLYNO)
-		return
+		return false
 	endif
 
 	self:Owner:STATUSMESSAGE("Producing Credit Transfer file, moment please")
