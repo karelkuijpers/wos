@@ -115,9 +115,10 @@ IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 		self:mCLNContact :=  Str(oCLN:persid,-1)
 		self:cContactName := GetFullName(self:mCLNContact,0)
 		self:oDCmPersonContact:TEXTValue := self:cContactName 
-		if !Empty(self:cContactName)
-			self:oCCDestButton2:Show()
-			self:oCCDestButton3:Show()
+		if Empty(self:cContactName)
+			self:mCLNContact:=''
+// 			self:oCCDestButton2:Show()
+// 			self:oCCDestButton3:Show()
 		endif
 			
 	ENDIF
