@@ -875,12 +875,12 @@ METHOD PrintReport() CLASS PMISsend
 			TotAssrate:=Round(100.00 - Round(OfficeRate+self:sPercAssInt+self:sAssmntField,DecAantal),DecAantal)
 			me_amounttot:=round(me_asshome+mbrint,decaantal)
 			nAccmbr:=1 
-			do while nAccmbr>0 .and. nAccmbr<=Len(aAccidMbr)
-				nAccmbr:=AScan(aAccidMbr,{|x|x[2]==me_mbrid},nAccmbr)
+			do while nAccmbr>0 .and. nAccmbr<=Len(aAccidMbrF)
+				nAccmbr:=AScan(aAccidMbrF,{|x|x[2]==me_mbrid},nAccmbr)
 				if nAccmbr=0
 					exit
 				endif
-				currentaccid:= aAccidMbr[nAccmbr,1]
+				currentaccid:= aAccidMbrF[nAccmbr,1]
 				if (nTrans:=AScan(aTransF,{|x|x[1]==currentaccid}))>0
 					// process transactions:
 					do while nTrans<=Len(aTransF) .and. aTransF[nTrans,1]==currentaccid
