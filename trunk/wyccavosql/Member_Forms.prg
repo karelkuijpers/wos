@@ -1480,13 +1480,13 @@ BEGIN
 	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 352, 66, 72, 57
 	CONTROL	"Contact Person", EDITMEMBER_FIXEDTEXT9, "Static", WS_CHILD, 11, 300, 53, 12
 	CONTROL	"Memberstatements should be send to:", EDITMEMBER_STATEMNTSDEST, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 200, 297, 133, 57
-	CONTROL	"Member", EDITMEMBER_DESTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 306, 80, 11
-	CONTROL	"Contact Person", EDITMEMBER_DESTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 316, 80, 12
-	CONTROL	"Member && Contact Person", EDITMEMBER_DESTBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 206, 328, 117, 11
+	CONTROL	"None", EDITMEMBER_DESTBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 306, 116, 11
+	CONTROL	"Member", EDITMEMBER_DESTBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 317, 80, 11
+	CONTROL	"Contact Person", EDITMEMBER_DESTBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 208, 328, 80, 11
+	CONTROL	"Member && Contact Person", EDITMEMBER_DESTBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 208, 339, 116, 11
 	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 352, 66, 68, 12
 	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
 	CONTROL	"Owns ", EDITMEMBER_SC_ACCDEP, "Static", SS_CENTERIMAGE|WS_CHILD, 132, 0, 27, 12
-	CONTROL	"None", EDITMEMBER_DESTBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 208, 339, 116, 11
 END
 
 CLASS EditMember INHERIT DataWindowExtra 
@@ -1526,13 +1526,13 @@ CLASS EditMember INHERIT DataWindowExtra
 	PROTECT oDCwithldoffrate AS COMBOBOX
 	PROTECT oDCFixedText9 AS FIXEDTEXT
 	PROTECT oDCStatemntsDest AS RADIOBUTTONGROUP
+	PROTECT oCCDestButton4 AS RADIOBUTTON
 	PROTECT oCCDestButton1 AS RADIOBUTTON
 	PROTECT oCCDestButton2 AS RADIOBUTTON
 	PROTECT oCCDestButton3 AS RADIOBUTTON
 	PROTECT oDCmHAS AS CHECKBOX
 	PROTECT oDCAccDepSelect AS COMBOBOX
 	PROTECT oDCSC_AccDep AS FIXEDTEXT
-	PROTECT oCCDestButton4 AS RADIOBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mPerson 
@@ -1916,6 +1916,9 @@ oDCwithldoffrate:HyperLabel := HyperLabel{#withldoffrate,NULL_STRING,NULL_STRING
 oDCFixedText9 := FixedText{SELF,ResourceID{EDITMEMBER_FIXEDTEXT9,_GetInst()}}
 oDCFixedText9:HyperLabel := HyperLabel{#FixedText9,"Contact Person",NULL_STRING,NULL_STRING}
 
+oCCDestButton4 := RadioButton{SELF,ResourceID{EDITMEMBER_DESTBUTTON4,_GetInst()}}
+oCCDestButton4:HyperLabel := HyperLabel{#DestButton4,"None",NULL_STRING,NULL_STRING}
+
 oCCDestButton1 := RadioButton{SELF,ResourceID{EDITMEMBER_DESTBUTTON1,_GetInst()}}
 oCCDestButton1:HyperLabel := HyperLabel{#DestButton1,"Member",NULL_STRING,NULL_STRING}
 
@@ -1935,15 +1938,12 @@ oDCAccDepSelect:HyperLabel := HyperLabel{#AccDepSelect,NULL_STRING,NULL_STRING,N
 oDCSC_AccDep := FixedText{SELF,ResourceID{EDITMEMBER_SC_ACCDEP,_GetInst()}}
 oDCSC_AccDep:HyperLabel := HyperLabel{#SC_AccDep,"Owns ",NULL_STRING,NULL_STRING}
 
-oCCDestButton4 := RadioButton{SELF,ResourceID{EDITMEMBER_DESTBUTTON4,_GetInst()}}
-oCCDestButton4:HyperLabel := HyperLabel{#DestButton4,"None",NULL_STRING,NULL_STRING}
-
 oDCStatemntsDest := RadioButtonGroup{SELF,ResourceID{EDITMEMBER_STATEMNTSDEST,_GetInst()}}
 oDCStatemntsDest:FillUsing({ ;
+								{oCCDestButton4,"3"}, ;
 								{oCCDestButton1,"0"}, ;
 								{oCCDestButton2,"1"}, ;
-								{oCCDestButton3,"2"}, ;
-								{oCCDestButton4,"3"} ;
+								{oCCDestButton3,"2"} ;
 								})
 oDCStatemntsDest:HyperLabel := HyperLabel{#StatemntsDest,"Memberstatements should be send to:",NULL_STRING,NULL_STRING}
 
@@ -2129,7 +2129,7 @@ METHOD OkButton CLASS EditMember
 		",zkv="+Str(self:mZKV,-1)+;
 			",has="+iif(self:mGrade='Entity','0',iif(self:mPPCode=Sentity,iif(self:mHAS,'1','0'),'0')) +;
 			",contact='"+Str(val(self:mCLNContact),-1)+"'"+;
-			",rptdest='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest).or.Empty(self:mCLNContact),"0",self:StatemntsDest)+"'"+;
+			",rptdest='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest),"0",self:StatemntsDest)+"'"+;
 			",grade='"+if(mGrade='Entity','',self:mGrade)+"'" +;
 			",co='"+iif(self:mGrade='Entity',if(self:mGrade=='Entity','S','6'),'M')+"'"+;
 			",homepp='"+self:mPPCode+"'"+;
@@ -2525,9 +2525,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			self:cContactName := self:mPersonContact
 			if Empty(self:mPersonContact)
 				self:mCLNContact:=''  // apparently non-existing person 
-			else
-				self:oCCDestButton2:show()
-				self:oCCDestButton3:show()
 			endif
 		endif
 		self:StatemntsDest:=Str(self:oMbr:RPTDEST,-1)
@@ -2703,15 +2700,16 @@ METHOD ShowDistribution(show)  CLASS EditMember
 
 METHOD ShowStmntDest() CLASS EditMember
 	IF Empty(mCLNContact)
-		SELF:oDCStatemntsDest:Hide()
-		SELF:oCCDestButton1:Hide()
 		SELF:oCCDestButton2:Hide()
-		SELF:oCCDestButton2:Hide()
+		self:oCCDestButton3:Hide() 
+		if self:StatemntsDest=='1'
+			self:StatemntsDest:='3'
+		elseif self:StatemntsDest=='2'
+			self:StatemntsDest:='0'
+		endif
 	ELSE
-		SELF:oDCStatemntsDest:Show()
-		SELF:oCCDestButton1:Show()
 		SELF:oCCDestButton2:Show()
-		SELF:oCCDestButton2:Show()
+		self:oCCDestButton3:show()
 	ENDIF		
 RETURN
 ACCESS StatemntsDest() CLASS EditMember
@@ -2890,14 +2888,14 @@ SELF:FieldPut(#withldoffrate, uValue)
 RETURN uValue
 
 STATIC DEFINE EDITMEMBER_ACCBUTTON := 103 
-STATIC DEFINE EDITMEMBER_ACCDEPSELECT := 139 
+STATIC DEFINE EDITMEMBER_ACCDEPSELECT := 140 
 STATIC DEFINE EDITMEMBER_ADDBUTTON := 128 
 STATIC DEFINE EDITMEMBER_CANCELBUTTON := 106 
 STATIC DEFINE EDITMEMBER_DELETEBUTTON := 107 
-STATIC DEFINE EDITMEMBER_DESTBUTTON1 := 135 
-STATIC DEFINE EDITMEMBER_DESTBUTTON2 := 136 
-STATIC DEFINE EDITMEMBER_DESTBUTTON3 := 137 
-STATIC DEFINE EDITMEMBER_DESTBUTTON4 := 141 
+STATIC DEFINE EDITMEMBER_DESTBUTTON1 := 136 
+STATIC DEFINE EDITMEMBER_DESTBUTTON2 := 137 
+STATIC DEFINE EDITMEMBER_DESTBUTTON3 := 138 
+STATIC DEFINE EDITMEMBER_DESTBUTTON4 := 135 
 STATIC DEFINE EDITMEMBER_DISTRLISTVIEW := 130 
 STATIC DEFINE EDITMEMBER_EDITBUTTON := 108 
 STATIC DEFINE EDITMEMBER_FIXEDTEXT9 := 133 
@@ -2910,7 +2908,7 @@ STATIC DEFINE EDITMEMBER_LISTVIEWASSACC := 127
 STATIC DEFINE EDITMEMBER_MACCDEPT := 102 
 STATIC DEFINE EDITMEMBER_MAOW := 119 
 STATIC DEFINE EDITMEMBER_MGRADE := 116 
-STATIC DEFINE EDITMEMBER_MHAS := 138 
+STATIC DEFINE EDITMEMBER_MHAS := 139 
 STATIC DEFINE EDITMEMBER_MHBN := 112 
 STATIC DEFINE EDITMEMBER_MHOMEACC := 124 
 STATIC DEFINE EDITMEMBER_MPERSON := 100 
@@ -2922,7 +2920,7 @@ STATIC DEFINE EDITMEMBER_OKBUTTON := 105
 STATIC DEFINE EDITMEMBER_PERSONBUTTON := 101 
 STATIC DEFINE EDITMEMBER_PERSONBUTTONCONTACT := 122 
 STATIC DEFINE EDITMEMBER_REMOVEBUTTON := 129 
-STATIC DEFINE EDITMEMBER_SC_ACCDEP := 140 
+STATIC DEFINE EDITMEMBER_SC_ACCDEP := 141 
 STATIC DEFINE EDITMEMBER_SC_AOW := 117 
 STATIC DEFINE EDITMEMBER_SC_CLN := 104 
 STATIC DEFINE EDITMEMBER_SC_FINANCEPO := 114 
