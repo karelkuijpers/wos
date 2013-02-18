@@ -2300,49 +2300,64 @@ METHOD AnalyseTxt(template as string,DueRequired ref logic,GiftsRequired ref log
 	ENDIF
 	RETURN
 METHOD ChangeMailCodes(dummy as string) as logic CLASS Selpers
-// add, change or remove mailingcodes of a selection of persons
-LOCAL i,j,iStart,fSecStart as int
-local oStmnt as SQLStatement 
-// local oSQL as SQLSelect
-local cStatmnt as string 
-if self:selx_MaxAmnt>0 .or. self:selx_MinAmnt>0 .or. self:selx_MinIndAmnt>0
-	ErrorBox{self:oWindow,"You can't combine total amount bounderies with change of mailing codes"}:Show()
-	return false
-endif
-(SelPersChangeMailCodes{self}):Show() 
-if !self:selx_Ok
-	return false
-endif
-if !Empty(self:DelMailCds)
-	// remove mail codes:
-	cStatmnt:= "Replace(concat(mailingcodes,' '),'"+self:DelMailCds[1]+" ','')"	
-	FOR j:=2 to Len(self:DelMailCds)
-		cStatmnt:= "Replace("+cStatmnt+",'"+self:DelMailCds[j]+" ','')"
-	next
-endif
-if !Empty(self:AddMailCds) 
-	// add mail codes
-	cStatmnt:="concat("+iif(Empty(cStatmnt),"concat(mailingcodes,' ')",cStatmnt)
-	FOR j:=1 to Len(self:AddMailCds)
-		cStatmnt+=",if(instr(mailingcodes,'"+self:AddMailCds[j]+"')>0,'','"+self:AddMailCds[j]+" ')"	
-	next
-	cStatmnt+=")"
-endif
-// oSQL:=SQLSelect{"select p.persid from "+cFrom+cWherep+" LOCK IN SHARE MODE",oConn}
-// oSQL:Execute()
+	// add, change or remove mailingcodes of a selection of persons
+	LOCAL i,j,iStart,fSecStart as int
+	local oStmnt as SQLStatement
+	local osel as sqlselect   
+	// local oSQL as SQLSelect
+	local cStatmnt as string 
+	if self:selx_MaxAmnt>0 .or. self:selx_MinAmnt>0 .or. self:selx_MinIndAmnt>0
+		ErrorBox{self:oWindow,"You can't combine total amount bounderies with change of mailing codes"}:Show()
+		return false
+	endif
+	(SelPersChangeMailCodes{self}):Show() 
+	if !self:selx_Ok
+		return false
+	endif
+	if !Empty(self:DelMailCds)
+		// remove mail codes:
+		cStatmnt:= "Replace(concat(mailingcodes,' '),'"+self:DelMailCds[1]+" ','')"	
+		FOR j:=2 to Len(self:DelMailCds)
+			cStatmnt:= "Replace("+cStatmnt+",'"+self:DelMailCds[j]+" ','')"
+		next
+	endif
+	if !Empty(self:AddMailCds) 
+		// add mail codes
+		cStatmnt:="concat("+iif(Empty(cStatmnt),"concat(mailingcodes,' ')",cStatmnt)
+		FOR j:=1 to Len(self:AddMailCds)
+			cStatmnt+=",if(instr(mailingcodes,'"+self:AddMailCds[j]+"')>0,'','"+self:AddMailCds[j]+" ')"	
+		next
+		cStatmnt+=")"
+	endif
+	// oSQL:=SQLSelect{"select p.persid from "+cFrom+cWherep+" LOCK IN SHARE MODE",oConn}
+	// oSQL:Execute()
+	osel:=SqlSelect{"select count(*) as cnt FROM "+self:cFrom+cWherep,oConn} 
+	if osel:RecCount>0
+		if ConI(osel:cnt) > 0
+			if ((TextBox{self:oWindow,self:oLan:WGet("Add/remove mailing codes"),self:oLan:WGet("Do you want to add/remove mailing codes")+"("+ConS(osel:cnt)+" " +self:oLan:WGet("persons affected")+")",BUTTONOKAYCANCEL+BOXICONQUESTIONMARK}):Show() == BOXREPLYCANCEL)
+				self:Close() 
+				return false
+			endif   		
+			
+			oStmnt:=SQLStatement{"update "+self:cFrom+" set p.mailingcodes="+cStatmnt+self:cWherep,oConn}
+			// fSecStart:=Seconds()
+			// LogEvent(self,oStmnt:SQLString,"logsql")
+			oStmnt:Execute()  
+			IF !Empty(oStmnt:Status)
+				ErrorBox{self:oWindow,"Update failed:"+oStmnt:Status:Description}:Show()
+				return false
+			else
+				(InfoBox{self:oWindow,"Change of mailing codes",self:oLan:WGet('Mailcodes changed of')+Space(1)+Str(oStmnt:NumSuccessfulRows,-1)+Space(1) + self:oLan:WGet("Persons")}):Show()
+			endif 
+		else
+			
+			WarningBox{self:oWindow,self:oLan:WGet("Add/remove mailing codes"),self:oLan:WGet("No persons affected")}:Show()
 
-oStmnt:=SQLStatement{"update "+self:cFrom+" set p.mailingcodes="+cStatmnt+cWherep,oConn}
-// fSecStart:=Seconds()
-LogEvent(self,oStmnt:SQLString,"logsql")
-oStmnt:Execute()  
-if !Empty(oStmnt:Status)
-	ErrorBox{self:oWindow,"Update failed:"+oStmnt:Status:Description}:Show()
-	return false
-else
-	(InfoBox{self:oWindow,"Change of mailing codes",self:oLan:WGet('Mailcodes changed of')+Space(1)+Str(oStmnt:NumSuccessfulRows,-1)+Space(1) + self:oLan:WGet("Persons")}):Show()
-endif	
+		endif    
+		
+	endif
 	
-RETURN TRUE	
+	RETURN true	
 
 METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	LOCAL i,j,k, n as int
@@ -3355,10 +3370,10 @@ METHOD Show() CLASS SelPers
 			(SelPersOpen{,{self,cType}}):Show()
 			self:cFrom+=",dueamount as d,subscription as t"
 			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid" 
-// 		ELSEIF self:selx_keus1 == 3
-// 			(SelPersGifts{oWindow,SELF}):Show()
-// 			self:cFrom+=",subscription as t"
-// 			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.personid" 
+			// 		ELSEIF self:selx_keus1 == 3
+			// 			(SelPersGifts{oWindow,SELF}):Show()
+			// 			self:cFrom+=",subscription as t"
+			// 			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.personid" 
 		ELSEIF self:selx_keus1 == 4
 			//		(SelPersPayments{oWindow,SELF}):Show()
 			(SelPersPayments{,,,self}):Show()
@@ -3396,11 +3411,11 @@ METHOD Show() CLASS SelPers
 			self:cWherep:=" where "+self:cWherep+iif(Empty(self:cWhereOther),""," and "+self:cWhereOther)
 		endif
 	endif
-// 	self:cWherep+=" and p.persid>0"
+	// 	self:cWherep+=" and p.persid>0"
 	IF !Empty(self:selx_AccStart) .and. !Empty(self:selx_AccStart) .and. !self:selx_AccStart==self:selx_Accend 
 		// range of account numbers:
 		self:cFrom+=",account as a"
-// 		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
+		// 		self:cWherep+=" and a.accid=t.accid and a.accnumber between '"+self:selx_AccStart+"' and '"+self:selx_Accend+"'"	
 		self:cWherep+=" and t.accid=a.accid "	
 	endif
 
