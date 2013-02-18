@@ -676,7 +676,7 @@ Method ReEvaluate() Class Reevaluation
 	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
 		"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
 	if oAccnt:RecCount>0
-		if ((TextBox{self:oCall,"Reevaluation of foreign currency accounts","Do you want to reevaluate up till date "+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
+		if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("Do you want to reevaluate up till date")+' '+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
 			self:Close() 
 			return
 		endif   
