@@ -2246,7 +2246,7 @@ CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT oCaller AS OBJECT
-RESOURCE SelPersChangeMailCodes DIALOGEX  8, 18, 404, 146
+RESOURCE SelPersChangeMailCodes DIALOGEX  8, 22, 404, 142
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Add/Remove Mailing Codes"
 FONT	8, "MS Shell Dlg"
@@ -2282,6 +2282,7 @@ aFonts[1] := Font{,9,"Microsoft Sans Serif"}
 
 oDCmCodAdd5 := combobox{SELF,ResourceID{SELPERSCHANGEMAILCODES_MCODADD5,_GetInst()}}
 oDCmCodAdd5:HyperLabel := HyperLabel{#mCodAdd5,NULL_STRING,"Mailing code",NULL_STRING}
+oDCmCodAdd5:FillUsing(pers_codes)
 
 oDCmCodAdd4 := combobox{SELF,ResourceID{SELPERSCHANGEMAILCODES_MCODADD4,_GetInst()}}
 oDCmCodAdd4:HyperLabel := HyperLabel{#mCodAdd4,NULL_STRING,"Mailing code",NULL_STRING}
