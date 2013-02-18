@@ -74,12 +74,13 @@ METHOD SetColumnFocus(ColumnSym)  CLASS CurRateBrowser
 		RETURN SUPER:SetColumnFocus(ColumnSym)
 	ENDIF
 Class Currency
-protect CurTable as array
-protect cBaseCur as string  // base currency, normally system currency sCurr 
-export mxrate as float 
-protect cCurCaption:="Get exchange rate" as string 
-export lStopped as logic 
-declare method GetROE
+	protect CurTable as array
+	protect cBaseCur as string  // base currency, normally system currency sCurr 
+	export mxrate as float 
+	protect cCurCaption:="Get exchange rate" as string 
+	export lStopped as logic   
+	Export oLan as Language
+	declare method GetROE
 Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk:=true as logic,nUp:=0.00 as float) as float class Currency
 	// CodeRoe: 3 character currency code
 	// date Roe: date aplicable for roe of exchange
@@ -638,14 +639,17 @@ STATIC DEFINE GETEXCHRATE_ROETEXT2 := 104
 Class Reevaluation
 	Protect oCall as Object
 	Export mxrate as Float
+	Export oLan as Language
 Method Close() Class Reevaluation
 self:oCall:Pointer := Pointer{POINTERARROW}
 Method Init(oWindow) class Reevaluation
-self:oCall:=oWindow
-return self
+	self:oCall:=oWindow  
+	self:oLan:=Language{}
+
+	return self
 Method ReEvaluate() Class Reevaluation
 	local UltimoMonth,UltimoYear as date
-	local oAccnt,oSys,oBal as SQLSelect, oMBal as Balances, oTrans as SQLStatement
+	local oAccnt,oSys,oBal as SQLSelect, oMBal as Balances, oTrans,oStmnt as SQLStatement
 	Local oCurr as Currency 
 	Local CurRate,mDiff, mDiff1, mDiff2 as float, TransId, cStatement as string 
 	LOCAL first:=true as LOGIC
@@ -670,19 +674,26 @@ Method ReEvaluate() Class Reevaluation
 	oCurr:=Currency{"Reevaluation"}
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
 	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
-	"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
+		"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
 	if oAccnt:RecCount>0
-		if ((TextBox{oCall,"Reevaluation of foreign currency accounts","Do you want to reevaluate up till date "+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
+		if ((TextBox{self:oCall,"Reevaluation of foreign currency accounts","Do you want to reevaluate up till date "+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
 			self:Close() 
 			return
+		endif   
+		if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("Are all foreign currency accounts reconciled with the bank/RIA till")+' '+DToC(UltimoMonth)+'?',BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
+			self:Close() 
+			return 
 		endif
 		oCall:STATUSMESSAGE(cSm)
 	ENDIF
 	// Check first consistency data
 	CheckConsistency(oMainWindow,true,false,@cFatalError)
 
-	oMBal:=Balances{}
-	do while !oAccnt:EoF 
+	oMBal:=Balances{} 
+	SQLStatement{"start transaction",oConn}:Execute()
+	//  				lError:=true
+	lError:=false
+	do while !oAccnt:EoF .and. !lError
 		cCur:= oAccnt:Currency
 		// determine balance in foreign currency:
 		oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,cCur)
@@ -692,24 +703,26 @@ Method ReEvaluate() Class Reevaluation
 				CurRate:=aROE[nCurPntr,2]
 			else
 				mxrate:=oCurr:GetROE(cCur,UltimoMonth,true) 
+				if oCurr:lStopped
+					lError:=true
+					exit
+				endif 
 				CurRate:=mxrate
 				AAdd(aROE,{cCur,CurRate})
 			endif
 			if CurRate > 0
-				lError:=true
 				mDiff1:=Round((oMBal:per_creF - oMBal:per_debF)*CurRate,DecAantal)
 				// determine old balance in local currency:
 				mDiff2:=Round(oMBal:per_cre - oMBal:per_deb,DecAantal)
 				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
 				if mDiff <> 0
-					SQLStatement{"start transaction",oConn}:Execute()
 					oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Str(oAccnt:GAINLSACC,-1)+','+Str(oAccnt:accid,-1)+")"+;
-					" and	year="+Str(Year(UltimoMonth),-1)+;
-					" and	month="+Str(Month(UltimoMonth),-1)+" order by mbalid for update",oConn}
+						" and	year="+Str(Year(UltimoMonth),-1)+;
+						" and	month="+Str(Month(UltimoMonth),-1)+" order by mbalid for update",oConn}
 					if	!Empty(oBal:status)
 						ErrorBox{self,self:oLan:WGet("balance records locked by someone else")}:Show()
-						SQLStatement{"rollback",oConn}:Execute()
-						return 
+						lError:=true
+						exit 
 					endif	  
 
 					cStatement:="insert into transaction set "+;
@@ -729,7 +742,7 @@ Method ReEvaluate() Class Reevaluation
 							",seqnr=2"+;
 							",dat='"+SQLdate(UltimoMonth)+"'"+;
 							",transid='"+TransId+"'"+; 
-							",cre='"+Str(mDiff,-1)+"'"+;
+						",cre='"+Str(mDiff,-1)+"'"+;
 							",currency='"+cCur+"'"+;
 							",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
 							",bfm='C'"   // regard as allready sent to CMS/AccPac
@@ -737,19 +750,24 @@ Method ReEvaluate() Class Reevaluation
 						oTrans:Execute()
 						if oTrans:NumSuccessfulRows>0
 							if ChgBalance(Str(oAccnt:GAINLSACC,-1),UltimoMonth,mDiff,0,0,0,sCURR)
-								if ChgBalance(Str(oAccnt:accid,-1),UltimoMonth,0,mDiff,0,0,cCur)
-									SQLStatement{"commit",oConn}:Execute()
-									lError:=false
+								if .not. ChgBalance(Str(oAccnt:accid,-1),UltimoMonth,0,mDiff,0,0,cCur) 
+									lError:=true
+									// 									SQLStatement{"commit",oConn}:Execute()
+									// 									lError:=false
 								endif
+							else
+								lError:=true
 							endif
-						endif
+						endif 
+					else
+						lError:=true
 					endif
-               if lError
-     					LogEvent(self,"Error:"+oTrans:SQLString,"LogErrors")
+					if lError
+						LogEvent(self,"Error:"+oTrans:SQLString,"LogErrors")
 						ErrorBox{self:oCall,"reevaluation transaction for account "+oAccnt:accnumber+"could not be stored"}:Show()
-						SQLStatement{"rollback",oConn}:Execute()
-						return
-               endif
+						lError:=true
+						exit
+					endif
 				endif						
 			endif
 		endif
@@ -757,7 +775,19 @@ Method ReEvaluate() Class Reevaluation
 
 		oAccnt:Skip()
 	enddo 
-	SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}:Execute()
+	if !lError
+		oStmnt:=SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:status)
+			lError:=true
+		endif
+	endif
+	if !lError
+		SQLStatement{"commit",oConn}:Execute()
+	else
+		SQLStatement{"rollback",oConn}:Execute()
+		
+	endif
 	self:Close() 
 
 
