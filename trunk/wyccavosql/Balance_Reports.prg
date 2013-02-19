@@ -3203,7 +3203,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 // 	time0:=Seconds()
 	
 	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind 
-	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(t.gc='CH' or left(a.mbrid,1)='a',3,a.kind))) as kind from "+;
+	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(a.kind<4 and (t.gc='CH' or left(a.mbrid,1)='a'),3,a.kind))) as kind from "+;
 		'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'+;
 		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)'
 	cStatement:=UnionTrans(cStatement)  // temporary
@@ -4841,7 +4841,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	// add stop line at end of aTrans:
 	AAdd(aTrans,{,,,,,,,,,,,'9'})  // kind 6 as stop to print remaining totals
 	for nTrans:=1 to Len(aTrans) 
-		// preprocess gifts and collect gifts for later printing:
+		// preprocess gifts and collect gifts for later printing: 
 		if aTrans[nTrans,12]<='2'   //gift or own money 
 			if aTrans[nTrans,5]>'0'  // giver present?
 				// add to aGiftData:
