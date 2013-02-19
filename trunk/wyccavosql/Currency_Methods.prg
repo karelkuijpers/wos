@@ -651,11 +651,14 @@ Method ReEvaluate() Class Reevaluation
 	local UltimoMonth,UltimoYear as date
 	local oAccnt,oSys,oBal as SQLSelect, oMBal as Balances, oTrans,oStmnt as SQLStatement
 	Local oCurr as Currency 
-	Local CurRate,mDiff, mDiff1, mDiff2 as float, TransId, cStatement as string 
+	Local CurRate,mDiff, mDiff1, mDiff2 as float 
+	local TransId, cStatement,cMessage,cError,cErrorMessage as string 
 	LOCAL first:=true as LOGIC
-	Local aROE:={} as Array
+	Local aROE:={} as Array 
+	local aAccnt:={} as array 
+	local aBalAcc:={} as array
 	local aBalYr:={} as array 
-	Local cCur as string, nCurPntr as int 
+	Local cCur as string, nCurPntr,na,nb as int 
 	local lError as logic
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
 	local cFatalError as string
@@ -673,120 +676,167 @@ Method ReEvaluate() Class Reevaluation
 	endif
 	oCurr:=Currency{"Reevaluation"}
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
-	oAccnt:=SQLSelect{"select a.accid,a.accnumber,a.currency,a.gainlsacc,b.category as type from account a, balanceitem b "+;
+	oAccnt:=SQLSelect{"select group_concat(cast(a.accid as char),'#$#',a.accnumber,'#$#',a.currency,'#$#',cast(a.gainlsacc as char),'#$#',a.description separator '#%#') as gracc from account a, balanceitem b "+;
 		"where reevaluate=1 and gainlsacc>0 and b.balitemid=a.balitemid",oConn} 
-	if oAccnt:RecCount>0
-		if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("Do you want to reevaluate up till date")+' '+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
-			self:Close() 
-			return
-		endif   
-		if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("Are all foreign currency accounts reconciled with the bank/RIA till")+' '+DToC(UltimoMonth)+'?',BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
-			self:Close() 
-			return 
-		endif
-		oCall:STATUSMESSAGE(cSm)
-	ENDIF
+	if oAccnt:RecCount>0 .and.!Empty(oAccnt:grAcc)             
+		// aAccnt: {{accid,accnumber,currency,gainlsacc,description,mDiff},...}
+		//             1       2         3       4          5         6
+		AEval(Split(oAccnt:grAcc,'#%#'),{|x|AAdd(aAccnt,Split(x,'#$#')) }) 
+	else
+		return
+	endif
+	if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("Do you want to reevaluate up till date")+' '+DToC(UltimoMonth),BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
+		self:Close() 
+		return
+	endif
+
 	// Check first consistency data
 	CheckConsistency(oMainWindow,true,false,@cFatalError)
 
-	oMBal:=Balances{} 
-	SQLStatement{"start transaction",oConn}:Execute()
-	//  				lError:=true
-	lError:=false
-	do while !oAccnt:EoF .and. !lError
-		cCur:= oAccnt:Currency
-		// determine balance in foreign currency:
-		oMBal:GetBalance(Str(oAccnt:accid,-1),,UltimoMonth,cCur)
-		if oMBal:per_debF # 0 .or. oMBal:per_creF # 0
-			// calculate new balance in local currency: 
-			if (nCurPntr:=AScan(aROE,{|x|x[1]== cCur}))>0
-				CurRate:=aROE[nCurPntr,2]
-			else
-				mxrate:=oCurr:GetROE(cCur,UltimoMonth,true) 
-				if oCurr:lStopped
-					lError:=true
-					exit
-				endif 
-				CurRate:=mxrate
-				AAdd(aROE,{cCur,CurRate})
-			endif
-			if CurRate > 0
-				mDiff1:=Round((oMBal:per_creF - oMBal:per_debF)*CurRate,DecAantal)
-				// determine old balance in local currency:
-				mDiff2:=Round(oMBal:per_cre - oMBal:per_deb,DecAantal)
-				mDiff:=Round(mDiff1 - mDiff2,DecAantal) 
-				if mDiff <> 0
-					oBal:=SQLSelect{"select mbalid from mbalance where accid in ("+Str(oAccnt:GAINLSACC,-1)+','+Str(oAccnt:accid,-1)+")"+;
-						" and	year="+Str(Year(UltimoMonth),-1)+;
-						" and	month="+Str(Month(UltimoMonth),-1)+" order by mbalid for update",oConn}
-					if	!Empty(oBal:status)
-						ErrorBox{self,self:oLan:WGet("balance records locked by someone else")}:Show()
-						lError:=true
-						exit 
-					endif	  
+	// get balances:
+	oMBal:=Balances{}
+	oMBal:AccSelection:="a.accid in ("+Implode(aAccnt,",",,,1)+")"
+	// 	oMBal:AccSelection:="exists(select 1 from accidmbr m where a.accid=m.accid)"
+	cStatement:=oMBal:SQLGetBalance(,year(UltimoMonth)*100+month(UltimoMonth),,true)
+	cStatement:="select group_concat(cast(z.accid as char),'#$#',cast(z.per_cre as char),'#$#',cast(z.per_deb as char),'#$#',cast(z.per_creF as char),'#$#',cast(z.per_debF as char)"+;
+		" order by accid separator '#%#') as grBal from ("+cStatement+") as z" 
+	oBal:=SqlSelect{cStatement,oConn}  
+	oBal:Execute()
+	if !Empty(oBal:status)
+		LogEvent(self,self:oLan:WGet("could not retrieve member accounts balances")+':'+oBal:ErrInfo:errormessage,"logerrors")
+		ErrorBox{self, self:oLan:WGet("could not retrieve member accounts balances")}:Show()
+		return false
+	endif
+	if oBal:RecCount>0 .and.!Empty(oBal:grBal) 
+		// aBalAcc: {{accid,per_cre,per_deb,per_creF,per_debF},...}
+		//              1      2       3        4       5
+		AEval(Split(oBal:grBal,'#%#'),{|x|AAdd(aBalAcc,Split(x,'#$#')) })
+	else
+		return
+	endif
+	for na:=1 to Len(aAccnt)
+		nb:=AScan(aBalAcc,{|x|x[1]==aAccnt[na,1]})
+		if nb==0 
+			mDiff1:=0.00
+		else
+			mDiff1:=Round(Val(aBalAcc[nb,4])-Val(aBalAcc[nb,5]),DecAantal)
+		endif
+		cMessage+=aAccnt[na,2]+' '+aAccnt[na,5]+' ( '+Str(mDiff1,-1,DecAantal)+' '+aAccnt[na,3]+')' +CRLF
+	next
+	if ((TextBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet(iif(Len(aAccnt)>1,"Are all foreign currency accounts","Is foreign currency account"))+':'+CRLF+cMessage+' '+self:oLan:WGet("reconciled with the bank/RIA on")+' '+DToC(UltimoMonth)+'?',BUTTONYESNO+BOXICONQUESTIONMARK}):Show() == BOXREPLYNO)
+		self:Close() 
+		return 
+	endif
+	oCall:STATUSMESSAGE(cSm)
 
-					cStatement:="insert into transaction set "+;
-						"accid='"+Str(oAccnt:GAINLSACC,-1)+"'"+;
-						",dat='"+SQLdate(UltimoMonth)+"'"+;
-						",deb='"+Str(mDiff,-1)+"'"+;
-						",currency='"+sCURR+"'"+;
-						",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
-						",seqnr=1"+;
-						",bfm='C'"   // regard as allready sent to CMS/AccPac
-					oTrans:=SQLStatement{cStatement,oConn}
-					oTrans:Execute()
-					if oTrans:NumSuccessfulRows>0
-						TransId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-						cStatement:="insert into transaction set "+;
-							"accid='"+Str(oAccnt:accid,-1)+"'"+;
-							",seqnr=2"+;
-							",dat='"+SQLdate(UltimoMonth)+"'"+;
-							",transid='"+TransId+"'"+; 
-						",cre='"+Str(mDiff,-1)+"'"+;
-							",currency='"+cCur+"'"+;
-							",description='Reevaluation with ROE "+Str(CurRate,-1)+"'"+;
-							",bfm='C'"   // regard as allready sent to CMS/AccPac
-						oTrans:=SQLStatement{cStatement,oConn}
-						oTrans:Execute()
-						if oTrans:NumSuccessfulRows>0
-							if ChgBalance(Str(oAccnt:GAINLSACC,-1),UltimoMonth,mDiff,0,0,0,sCURR)
-								if .not. ChgBalance(Str(oAccnt:accid,-1),UltimoMonth,0,mDiff,0,0,cCur) 
-									lError:=true
-									// 									SQLStatement{"commit",oConn}:Execute()
-									// 									lError:=false
-								endif
-							else
-								lError:=true
-							endif
-						endif 
+	// Get exchange rates first:
+	lError:=false 
+	for na:=1 to Len(aAccnt) 
+		ASize(aAccnt[na],6)
+		aAccnt[na,6]:=0.00
+		// determine balance in foreign currency: 
+		nb:=AScan(aBalAcc,{|x|x[1]==aAccnt[na,1]})
+		if nb=0 .or. (val(aBalAcc[nb,4])=0.00 .and.val(aBalAcc[nb,5])=0.00)  
+			loop
+		endif
+		// calculate new balance in local currency: 
+		cCur:= aAccnt[na,3]
+		if (nCurPntr:=AScan(aROE,{|x|x[1]== cCur}))>0
+			CurRate:=aROE[nCurPntr,2]
+		else
+			mxrate:=oCurr:GetROE(cCur,UltimoMonth,true) 
+			if oCurr:lStopped
+				return
+			endif 
+			CurRate:=mxrate
+			AAdd(aROE,{cCur,CurRate})
+		endif
+		if CurRate > 0
+			mDiff1:=Round((Val(aBalAcc[nb,4])-Val(aBalAcc[nb,5]))*CurRate,DecAantal)
+			//	determine old balance in local currency:
+			mDiff2:=Round(Val(aBalAcc[nb,2])-Val(aBalAcc[nb,3]),DecAantal)
+			mDiff:=Round(mDiff1 - mDiff2,DecAantal)
+			aAccnt[na,6]:=mDiff
+		else
+			loop
+		endif
+	next 
+	na:=0
+	lError:=false
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write, `sysparms` write',oConn} 
+	oStmnt:Execute()
+	do while (na:=AScan(aAccnt,{|x|!x[6]==0.00},na+1))>0 .and. !lError
+		cCur:= aAccnt[na,3]
+		if (nCurPntr:=AScan(aROE,{|x|x[1]== cCur}))>0
+			CurRate:=aROE[nCurPntr,2]
+			mDiff:= aAccnt[na,6]
+			cStatement:="insert into transaction set "+;
+				"accid='"+aAccnt[na,4]+"'"+;
+				",dat='"+SQLdate(UltimoMonth)+"'"+;
+				",deb='"+Str(mDiff,-1)+"'"+;
+				",currency='"+sCURR+"'"+;
+				",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
+				",seqnr=1"+;
+				",bfm='C'"   // regard as allready sent to CMS/AccPac
+			oTrans:=SQLStatement{cStatement,oConn}
+			oTrans:Execute()
+			if oTrans:NumSuccessfulRows>0
+				TransId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+				cStatement:="insert into transaction set "+;
+					"accid='"+aAccnt[na,1]+"'"+;
+					",seqnr=2"+;
+					",dat='"+SQLdate(UltimoMonth)+"'"+;
+					",transid='"+TransId+"'"+; 
+				",cre='"+Str(mDiff,-1)+"'"+;
+					",currency='"+cCur+"'"+;
+					",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
+					",bfm='C'"   // regard as allready sent to CMS/AccPac
+				oTrans:=SQLStatement{cStatement,oConn}
+				oTrans:Execute()
+				if oTrans:NumSuccessfulRows>0
+					if ChgBalance(aAccnt[na,4],UltimoMonth,mDiff,0,0,0,sCURR)
+						if !ChgBalance(aAccnt[na,1],UltimoMonth,0,mDiff,0,0,cCur) 
+							lError:=true
+						endif
 					else
 						lError:=true
 					endif
-					if lError
-						LogEvent(self,"Error:"+oTrans:SQLString,"LogErrors")
-						ErrorBox{self:oCall,"reevaluation transaction for account "+oAccnt:accnumber+"could not be stored"}:Show()
-						lError:=true
-						exit
-					endif
-				endif						
+				endif 
+			else
+				lError:=true
 			endif
-		endif
+			if lError
+				cError:="Error:"+oTrans:SQLString+CRLF+oTrans:ErrInfo:errorstatus
+				cErrorMessage:="reevaluation transaction for account "+aAccnt[na,2]+"could not be stored"
+				exit
+			endif
+		endif						
 		oCall:STATUSMESSAGE(cSm+=".")
-
-		oAccnt:Skip()
+		if na>=Len(aAccnt)
+			exit
+		endif
 	enddo 
 	if !lError
 		oStmnt:=SQLStatement{"update sysparms set lstreeval='"+SQLdate(UltimoMonth)+"'",oConn}
 		oStmnt:Execute()
 		if !Empty(oStmnt:status)
 			lError:=true
+			cError:="Error:"+oStmnt:ErrInfo:errorstatus
+			cErrorMessage:="reevaluation transaction for account "+aAccnt[na,2]+"could not be stored"
 		endif
 	endif
 	if !lError
 		SQLStatement{"commit",oConn}:Execute()
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
 	else
 		SQLStatement{"rollback",oConn}:Execute()
-		
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
+		LogEvent(self,cError,"LogErrors")
+		ErrorBox{self:oCall,cErrorMessage}:Show()		
 	endif
 	self:Close() 
 
