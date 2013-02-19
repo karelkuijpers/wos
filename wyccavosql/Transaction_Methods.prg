@@ -2384,6 +2384,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	IF lError
 		SQLStatement{"rollback",oConn}:execute()
 		SQLStatement{"unlock tables",oConn}:execute()
+		SQLStatement{"set autocommit=1",oConn}:execute()
 		self:Pointer := Pointer{POINTERARROW}
 		if !Empty(cError)
 			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
