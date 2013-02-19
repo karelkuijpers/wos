@@ -239,6 +239,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 // 	if !oSel:totdebcre==0.00
 	if !Empty(oSel:totdebcre)
 		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
+		lTrMError:=true
 	endif
 	oSel:=SQLSelect{"select transid,dat from transaction group by transid having sum(cre-deb)<>0 order by transid",oConn}
 	oSel:Execute()
