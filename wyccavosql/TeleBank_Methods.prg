@@ -3438,7 +3438,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember separator '#') as graccnumber "+;
 			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember "+;
 			"from account a left join department d on (d.depid=a.department) "+;
-			"left join member as m on (a.accid=m.accid or m.depid=d.depid) "+; 
+			"left join member as m on (a.accid=m.accid or m.depid=d.depid and (d.incomeacc=a.accid or d.expenseacc=a.accid or d.netasset=a.accid)) "+; 
 		" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
 		if oSel:RecCount>0
 			aAccnbrDb:=Split(oSel:graccnumber,'#')
