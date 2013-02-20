@@ -824,7 +824,7 @@ Method ReEvaluate() Class Reevaluation
 		if !Empty(oStmnt:status)
 			lError:=true
 			cError:="Error:"+oStmnt:ErrInfo:errorstatus
-			cErrorMessage:="reevaluation transaction for account "+aAccnt[na,2]+"could not be stored"
+			cErrorMessage:=self:oLan:WGet("reevaluation transaction could not be stored for account")+' '+aAccnt[na,2]
 		endif
 	endif
 	if !lError
