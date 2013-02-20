@@ -3110,18 +3110,21 @@ METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 
 METHOD OKButton( ) CLASS TotalsMembers
 	LOCAL nRow, nPage as int
-	LOCAL headingtext:={} as ARRAY, ad_banmsg  as STRING
-	LOCAL oTransH as SQLSelect
-	local aTotM:={} as array  // {{AccountId,category 1=home,2:projekts home,3: projects home sep.department,4:nonHome,5:unknown member,6:unknown account,totAg, totAGFromRpp, TotMG, totPF, TotCH,TotAssOff,TotAssInt, membername},...} 
-	Local aSubTot:={0,0,0,0,0,0,0}, aTotTot:={0,0,0,0,0,0,0} as array
-	Local iPos,i,j as int, AccountId as string, CurCat as int 
-	local oAcc as SQLSelect 
-	LOCAL cTab:=CHR(9) as STRING
 	local nNameLen:=30 as int 
-	local aGroupName as array
 	local MainDeP as int
 	local nUnknown as int
+	Local iPos,i,j, CurCat as int
+	local ad_banmsg  as STRING
+	local AccountId as string
+	local ctext as string 
+	local oAcc as SQLSelect 
+	LOCAL cTab:=CHR(9) as STRING
 	local sqlStr as string
+	LOCAL headingtext:={} as ARRAY 
+	local aGroupName as array
+	local aTotM:={} as array  // {{AccountId,category 1=home,2:projekts home,3: projects home sep.department,4:nonHome,5:unknown member,6:unknown account,totAg, totAGFromRpp, TotMG, totPF, TotCH,TotAssOff,TotAssInt, membername},...} 
+	Local aSubTot:={0,0,0,0,0,0,0}, aTotTot:={0,0,0,0,0,0,0} as array
+	LOCAL oTransH, oSel as SQLSelect
 	
 
 	* Check values:
@@ -3170,57 +3173,31 @@ METHOD OKButton( ) CLASS TotalsMembers
 		self:oLan:RGet("Charges",12,,"R")+cTab +self:oLan:RGet("Assmnt Off",12,,"R")+cTab +self:oLan:RGet("Assmnt Int/F",12,,"R"))
 
 	sqlStr:=UnionTrans("select ";
-		+ "t.transid,t.seqnr,t.dat,t.cre,t.deb,t.fromrpp,t.description as tdesc,t.gc,t.accid as taccid,";
-		+ "a.department,a.description as adesc,a.accid as aaccid,";
-		+ "m.co,m.homepp,m.mbrid ";
+		+ "t.cre-t.deb as balance,t.accid,"; 
+		+ 'if(a.accid is null,7,if(m.co is null,6,if(m.homepp="'+sEntity+'",if(m.co="M",1,if(a.department='+Str(MainDeP,-1)+',2,3)),if(m.co="M",4,5)))) as category,'+; 
+		+ 'if(t.gc="AG",if(t.fromrpp=0,3,4),if(gc="MG",5,if(gc="PF",6,if(instr(t.description,"assessment")=0 or instr(t.description,"Transfer of PC")>0,7,if(instr(t.description,"office")>0,8,9))))) as type,'; 
+		+ 'if(a.accid is null,"unknown",a.description) as descr ';
 		+ "from transaction as t ";
-		+ "left join account as a on a.accid=t.accid ";
-		+ "left join member as m on (m.accid=t.accid or m.depid=a.department)";
+		+ "left join account as a on a.accid=t.accid "; 
+		+ "left join department as d on d.depid=a.department ";
+		+ "left join member as m on (m.accid=t.accid or m.depid=d.depid and (a.accid=d.incomeacc or a.accid=expenseacc or a.accid=d.netasset))";
 		+ "where t.dat>='" +  Str(self:FromYear,4) + "-" + StrZero(self:FromMonth,2) + "-01' and " ;
 		+ "t.dat<='" + Str(self:ToYear,4) + "-" + StrZero(self:ToMonth,2) + "-" + StrZero(MonthEnd(self:ToMonth,self:ToYear),2) + "' and t.gc>''") //;
-		//		+ " order by taccid"
-	oTransH:=SQLSelect{sqlStr, oConn} 
+
+	oTransH:=SqlSelect{'select z.accid,z.category,z.type,z.descr,sum(z.balance) as balance from ('+sqlStr+') as z group by z.accid,z.type', oConn} 
 	oTransH:Execute()
 
 	do WHILE !oTransH:EoF
-		AccountId:=Str(oTransH:taccid,-1)
+		AccountId:=Str(oTransH:accid,-1) 
 		iPos:=AScan(aTotM,{|x|x[1]==AccountId})
 		if Empty(iPos) 
-			if !Empty(oTransH:aaccid)
-				if !Empty(oTransH:mbrid)
-					// category 1=home,2:projekts home,3: projects home sep.department,4:nonHome,5:unknown member,6:unknown account
-					AAdd(aTotM,{AccountId,iif(oTransH:HOMEPP==sEntity,iif(oTransH:CO="M",1,iif(oTransH:Department==MainDeP,2,3)),4),0,0,0,0,0,0,0,AllTrim(Transform(oTransH:adesc,""))})
-				else
-					// add as unknown member:
-					AAdd(aTotM,{AccountId,5,0,0,0,0,0,0,0,AllTrim(Transform(oTransH:adesc,""))})
-				endif
-			else
-				// add as totally unknown member: 
+			if oTransH:category==7 
 				nUnknown++
-				AAdd(aTotM,{AccountId,6,0,0,0,0,0,0,0,"unknown"+Str(nUnknown,-1)})
 			endif
+			AAdd(aTotM,{AccountId,oTransH:category,0,0,0,0,0,0,0,oTransH:descr+iif(oTransH:category==7,' '+Str(nUnknown,-1),''),""}) 
 			iPos:=Len(aTotM)
 		endif   
-		do CASE
-		CASE oTransH:GC=="AG".and. ConI(oTransH:FROMRPP)=0
-			aTotM[iPos,3]:=Round(aTotM[iPos,3]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="AG".and. ConI(oTransH:FROMRPP)=1
-			aTotM[iPos,4]:=Round(aTotM[iPos,4]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="MG"
-			aTotM[iPos,5]:=Round(aTotM[iPos,5]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="PF"
-			aTotM[iPos,6]:=Round(aTotM[iPos,6]+oTransH:cre-oTransH:DEB,DecAantal)
-		CASE oTransH:GC=="CH"
-			if AtC("Assessment",oTransH:tdesc)=0 
-				aTotM[iPos,7]:=Round(aTotM[iPos,7]+oTransH:cre-oTransH:DEB,DecAantal)
-			else
-				if AtC("office",oTransH:tdesc)>0 
-					aTotM[iPos,8]:=Round(aTotM[iPos,8]+oTransH:cre-oTransH:DEB,DecAantal)
-				else
-					aTotM[iPos,9]:=Round(aTotM[iPos,9]+oTransH:cre-oTransH:DEB,DecAantal) 
-				endif
-			endif
-		ENDCASE       
+		aTotM[iPos,oTransH:TYPE]:=Round(aTotM[iPos,oTransH:TYPE]+oTransH:balance,DecAantal)
 		oTransH:Skip()	
 	ENDDO 
 	// {{AccountId,category,totAg, totAGFromRpp, TotMG, totPF, TotCH,TotAssOff,TotAssInt, membername},...} 
@@ -3233,7 +3210,7 @@ METHOD OKButton( ) CLASS TotalsMembers
 	endif
 	aGroupName:={self:oLan:RGet("Members",,"@!")+" "+sEntity,self:oLan:RGet("Projects",,"@!")+" "+sEntity,;
 		self:oLan:RGet("Projects",,"@!")+" "+sEntity+" "+oLan:RGet("separate department",,"@!"),;
-		self:oLan:RGet("Members",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,self:oLan:RGet("Unknown Members",,"@!"),self:oLan:RGet("Unknown Account",,"@!")}      
+		self:oLan:RGet("Members",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,self:oLan:RGet("Projects",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,self:oLan:RGet("Unknown Members",,"@!"),self:oLan:RGet("Unknown Account",,"@!")}      
 	oReport:PrintLine(@nRow,@nPage,aGroupName[CurCat],headingtext,5)
 	for i:=1	to	Len(aTotM)
 		if !CurCat==aTotM[i,2]  
@@ -3277,16 +3254,16 @@ METHOD OKButton( ) CLASS TotalsMembers
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PostInit additions here
-	self:SetTexts()
-	IF Month(Today()) <=9
-		self:FromYear:=Year(Today())-2
-		self:ToYear:=Year(Today())-1
-	ELSE
-		self:FromYear:=Year(Today())-1
-		self:ToYear:=Year(Today())
-	ENDIF
-	self:FromMonth:=10
-	self:ToMonth:=9
+		LOCAL aYearStartEnd:={} as ARRAY
+	self:SetTexts() 
+	
+	Default(@uExtra,true)
+self:SetTexts()
+		aYearStartEnd := GetBalYear(Year(Today())-1,Month(Today()))
+		self:FromYear := aYearStartEnd[1]
+		self:FromMonth:=aYearStartEnd[2]
+		self:ToYear := aYearStartEnd[3]
+		self:ToMonth:=aYearStartEnd[4]
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PreInit additions here
