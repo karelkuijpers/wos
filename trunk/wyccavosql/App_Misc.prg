@@ -1537,6 +1537,8 @@ function InitGlobals()
 		endif
 		BANKNBRDEB:=iif(Empty(oSys:BANKNBRCOL),'',ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(oSys:BANKNBRCOL),oConn}:banknumber)) 
 		BANKNBRCRE:=iif(Empty(oSys:BANKNBRCRE),'',ConS(SqlSelect{"select banknumber from bankaccount where bankid="+ConS(oSys:BANKNBRCRE),oConn}:banknumber)) 
+		BICNBRDEB:=iif(Empty(oSys:BANKNBRCOL),'',ConS(SqlSelect{"select bic from bankaccount where bankid="+ConS(oSys:BANKNBRCOL),oConn}:bic)) 
+		BICNBRCRE:=iif(Empty(oSys:BANKNBRCRE),'',ConS(SqlSelect{"select bic from bankaccount where bankid="+ConS(oSys:BANKNBRCRE),oConn}:bic)) 
 		sIDORG := iif(Empty(oSys:IDORG),'',Str(oSys:IDORG,-1))
 		if !Empty(oSys:ADMINTYPE)
 			if !Admin==oSys:ADMINTYPE
