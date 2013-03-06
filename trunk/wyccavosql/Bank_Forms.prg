@@ -1568,11 +1568,6 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	ENDIF
 	headinglines:={oLan:RGet("Overview of payment orders (SEPA CT)"),oLan:RGet("bankaccount",25)+oLan:RGet("Amount",12,,"R")+" "+oLan:RGet("Destination",25)+oLan:RGet("Due Date",11)+" "+oLan:RGet("Name",25)+oLan:RGet("Description",20),Replicate('-',133)}
 	// write Header
-	oReport := PrintDialog{self,"Producing Credit Transfer file",,133}
-	oReport:Show()
-	IF .not.oReport:lPrintOk
-		RETURN FALSE
-	ENDIF
 	// remove old credittransfer-files:
 	aDir := Directory(CurPath +"\credittransfer*.txt") 
 	// determine sequencenumber per day:
@@ -1584,7 +1579,12 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			nSeq++
 		endif
 	NEXT 
-	cFilename := CurPath	+ "\credittransfer"+DToS(Today())+Str(nSeq,-1)+'.xml'
+	cFilename := CurPath	+ "\SEPACT"+DToS(Today())+Str(nSeq,-1)+'.xml'
+	oReport := PrintDialog{self,"Producing of SEPA CT"+DToS(Today())+Str(nSeq,-1)+" file",,133}
+	oReport:Show()
+	IF .not.oReport:lPrintOk
+		RETURN FALSE
+	ENDIF
 	
 	do WHILE !oBord:EoF
 		cBank:=oBord:BANKNBRCRE
@@ -1622,9 +1622,9 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	//	write	document	and group header:	
 	lSetAMPM:=SetAmPm(false)
 	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
-		FWriteLineUni(ptrHandle,'<?xml version="1.0"	encoding="UTF-8"?>'+CRLF+;
-		'<Document xmnls="urn:iso:20022:tech:xsd:pain.001.001.03">'+CRLF+;
-		'<CstmrCdtTrfinitn>'+CRLF+;
+		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8"?>'+CRLF+;
+		'<Document xmlns= "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03" xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
+		'<CstmrCdtTrfInitn>'+CRLF+;
 		'<GrpHdr>'+CRLF+;
 		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
 		'<CreDtTm>'+SQLdate(Today())+'T'+Time()+'</CreDtTm>'+CRLF+;
@@ -1632,7 +1632,6 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
 		'<InitgPty>'+CRLF+;
 		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
-		'<PstlAdr>'+cOrgAddress+'</PstlAdr>'+CRLF+;
 		'<CtryOfRes>'+ SubStr(BANKNBRCRE,1,2) +'</CtryOfRes>'+CRLF+;
 		'</InitgPty>'+;
 		'</GrpHdr>')
@@ -1643,15 +1642,17 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		'<PmtMtd>TRF</PmtMtd>'+CRLF+;
 		'<NbOfTxs>'+Str(Len(aTrans),-1)+'</NbOfTxs>'+CRLF+;
 		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
-		'<ReqdExctnDt>'+SQLdate(process_date)+'</ReqdExctnDt>'+CRLF+;
+		'<PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf>'+CRLF+ ;
+		'<ReqdExctnDt>'+SQLdate(process_date)+'</ReqdExctnDt>'+CRLF+; 
 		'<Dbtr>'+CRLF+;
 		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
 		'</Dbtr>'+CRLF+;
 		'<DbtrAcct>'+CRLF+;
-		'<ID>'+CRLF+;
+		'<Id>'+CRLF+;
 		'<IBAN>'+BANKNBRCRE+'</IBAN>'+CRLF+;
-		'</ID>'+CRLF+;
-		'</DbtrAcct>'+CRLF+;
+		'</Id>'+CRLF+;
+		'</DbtrAcct>'+CRLF+; 
+		'<DbtrAgt><FinInstnId><BIC>RABONL2U</BIC></FinInstnId></DbtrAgt>'+CRLF+;
 		'<ChrgBr>SLEV</ChrgBr>')
 	do while !oBord:EoF
 		FWriteLineUni(ptrHandle,'<CdtTrfTxInf>'+CRLF+;
@@ -1665,9 +1666,9 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			'<Nm>'+HtmlEncode(oBord:FullName)+'</Nm>'+CRLF+;
 			'</Cdtr>'+CRLF+;
 			'<CdtrAcct>'+CRLF+;
-			'<ID>'+CRLF+;
+			'<Id>'+CRLF+;
 			'<IBAN>'+oBord:BANKNBRCRE+'</IBAN>'+CRLF+;
-			'</ID>'+CRLF+;
+			'</Id>'+CRLF+;
 			'</CdtrAcct>'+CRLF+;
 			'<RmtInf>'+CRLF+;
 			'<Ustrd>'+HtmlEncode(oBord:Description)+'</Ustrd>'+CRLF+;
@@ -1676,7 +1677,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		oBord:skip()
 	enddo
 	// Write closing lines:
-	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrCdtTrfinitn>'+CRLF+'</Document>')
+	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrCdtTrfInitn>'+CRLF+'</Document>')
 	FClose(ptrHandle)
 	if TextBox{self,"Bank Orders",cFilename+' '+self:oLan:WGet("successfully uploaded to your online banking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
 		// remove file:
