@@ -4220,7 +4220,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,accid as int) as logic CLASS SelPersOpen
 	// produce XML file for SEPA Direct Debit to be imported into telebanking package
 	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead,m56_currency,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING 
-	LOCAL cBank,cCod,cErrMsg,cAccType,cDueIds,cAccs,CreditorID as STRING
+	LOCAL cBank,cBic,cCod,cErrMsg,cAccType,cDueIds,cAccs,CreditorID as STRING
 	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string
 	local cTransDate:=SQLdate(process_date) as string 
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
@@ -4355,10 +4355,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oDue:=SqlSelect{"select group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
 	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+" separator '#%#') as grDue " +;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic separator '#%#') as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
-		"balanceitem b,person p, dueamount du,subscription s "+;
-		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
+		"balanceitem b,person p, dueamount du,subscription s,personbank pb "+;
+		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid and pb.banknumber=s.bankaccnt "+;
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
 		" and '"+SQLdate(end_due)+"' and invoicedate<s.enddate and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by p.lastname",oConn}
@@ -4369,8 +4369,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN false
 	ENDIF
 	// Add to aDue:
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17
 	aeval(Split(oDue:grDue,'#%#'),{|x|aadd(aDue,split(x,'#$#'))}) 
 	
 	//    LogEvent(self,oDue:SQLString,"logsql")
@@ -4399,7 +4399,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	cFilename := CurPath + "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml'
    cErrMsg:=''
 	for i:=1 to Len(aDue)
-		cBank:=aDue[i,11]
+		cBank:=aDue[i,11] 
+		cBic:=aDue[i,17]
 		nTerm:=Val(aDue[i,10])
 		invoicedate:=SQLDate2Date(aDue[i,8]) 
 		AmountInvoice:=Val(aDue[i,7])
@@ -4479,7 +4480,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
 		// add to aCt for mailing DD file:
 		// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF)},...
-		AAdd(aDD,{cAmnt,aDue[i,2],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp})
+		AAdd(aDD,{cAmnt,aDue[i,2],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
 	next
 
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
@@ -4513,9 +4514,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	//	write	document	and group header:	
 	lSetAMPM:=SetAmPm(false)
 	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
-		FWriteLineUni(ptrHandle,'<?xml version="1.0"	encoding="UTF-8"?>'+CRLF+;
-		'<Document xmnls="urn:iso:20022:tech:xsd:pain.008.001.02">'+CRLF+;
-		'<CstmrDrctDbtfinitn>'+CRLF+;
+		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8"?>'+CRLF+;
+		'<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
+		'<CstmrDrctDbtInitn>'+CRLF+;
 		'<GrpHdr>'+CRLF+;
 		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
 		'<CreDtTm>'+SQLdate(Today())+'T'+Time()+'</CreDtTm>'+CRLF+;
@@ -4523,28 +4524,26 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
 		'<InitgPty>'+CRLF+;
 		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
-		'<PstlAdr>'+cOrgAddress+'</PstlAdr>'+CRLF+;
-		'<CtryOfRes>'+ SubStr(BANKNBRDEB,1,2) +'</CtryOfRes>'+CRLF+;
-		'</InitgPty>'+;                                                                                
+		'</InitgPty>'+CRLF+;                                                                                
 	'</GrpHdr>')
 	SetAmPm(lSetAMPM)	//	reset	AMPM 
 	// write transactions from aDD:
-	// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF)}},... 
-	//            1            2            3        4          5           6         7         8
+	// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF),Bic}},... 
+	//            1            2            3        4          5           6         7         8                          9
 	ASort(aDD,,,{|x,y|x[8]<=y[8]})
 	SeqTp:=0
 	for i:=1 to Len(aDD)
 		if !SeqTp==aDD[i,8]
 			//new seqtp thus new PmtInf
 			SeqTp:=aDD[i,8] 
-			FWriteLineUni(ptrHandle,iif(i=1,'','</PmtInf>')+'<PmtInf>'+CRLF+;
+			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
 				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+'</PmtInfId>'+CRLF+;
 				'<PmtMtd>DD</PmtMtd>'+CRLF+;
 				'<NbOfTxs>'+Str(aSeqTp[SeqTp,2],-1)+'</NbOfTxs>'+CRLF+;
 				'<CtrlSum>'+Str(aSeqTp[SeqTp,3],-1,2)+'</CtrlSum>'+CRLF+; 
 			'<PmtTpInf>'+CRLF+;
-				'<SvcLvl>SEPA</SvcLvl>'+CRLF+;
-				'<LclInstrm><Code>CORE</Code></LclInstrm>'+CRLF+;
+				'<SvcLvl><Cd>SEPA</Cd></SvcLvl>'+CRLF+;
+				'<LclInstrm><Cd>CORE</Cd></LclInstrm>'+CRLF+;
 				'<SeqTp>'+aSeqTp[aDD[i,8],1]+'</SeqTp>'+CRLF+;
 				'</PmtTpInf>' +CRLF+;
 				'<ReqdColltnDt>'+SQLdate(iif(SeqTp=1.or.SeqTp=4, Max(Today()+5,process_date),Max(Today()+2,process_date)))+'</ReqdColltnDt>'+CRLF+;        // for firsand single 5 day ahead, otherwise 2 days
@@ -4552,28 +4551,31 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				'<Nm>'+cOrgName+'</Nm>'+CRLF+;
 				'</Cdtr>'+CRLF+;
 				'<CdtrAcct>'+CRLF+;
-				'<ID>'+CRLF+;
+				'<Id>'+CRLF+;
 				'<IBAN>'+BANKNBRDEB+'</IBAN>'+CRLF+;
+				'</Id>'+CRLF+;
 				'<Ccy>'+m56_currency+'</Ccy>'+CRLF+;
-				'</ID>'+CRLF+;
 				'</CdtrAcct>'+CRLF+;
-				'<ChrgBr>SLEV</ChrgBr>'+CRLF+;
+				'<CdtrAgt><FinInstnId><BIC>RABONL2U</BIC></FinInstnId></CdtrAgt>'+CRLF+;
+				'<ChrgBr>SLEV</ChrgBr>'+CRLF+; 
 				'<CdtrSchmeId><Id><PrvtId><Othr><Id>'+CreditorID+'</Id><SchmeNm><Prtry>SEPA</Prtry></SchmeNm></Othr></PrvtId></Id></CdtrSchmeId>') 
 		endif
 
 		// 			'<EndToEndId>'+Pad(aDue[i,12]+DToC(invoicedate)+'</EndToEndId>'+CRLF+;
 		AAdd(DrctDbtTxInf,'<DrctDbtTxInf>'+CRLF+;
-			'<PmtId>'+CRLF+;
+			'<PmtId>'+CRLF+; 
+			'<EndToEndId>'+aDD[i,7]+'</EndToEndId>'+CRLF+;
 			'</PmtId>'+CRLF+;
-			'<InstdAmt>'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
-		'<DrctDbtTX><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf><CdtrSchmId></CdtrSchmId></DrctDbtTX>'+CRLF+;
+			'<InstdAmt  Ccy="EUR">'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
+			'<DrctDbtTx><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf></DrctDbtTx>'+CRLF+; 
+			'<DbtrAgt><FinInstnId><BIC>'+aDD[i,9]+'</BIC></FinInstnId></DbtrAgt>'+CRLF+;
 			'<Dbtr>'+CRLF+;
 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
 			'</Dbtr>'+CRLF+;
 			'<DbtrAcct>'+CRLF+;
-			'<ID>'+CRLF+;
+			'<Id>'+CRLF+;
 			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
-			'</ID>'+CRLF+;
+			'</Id>'+CRLF+;
 			'</DbtrAcct>'+CRLF+;
 			'<RmtInf>'+CRLF+;
 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
@@ -4589,16 +4591,16 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 // 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
 // 			'</Dbtr>'+CRLF+;
 // 			'<DbtrAcct>'+CRLF+;
-// 			'<ID>'+CRLF+;
+// 			'<Id>'+CRLF+;
 // 			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
-// 			'</ID>'+CRLF+;
+// 			'</Id>'+CRLF+;
 // 			'</DbtrAcct>'+CRLF+;
 // 			'<RmtInf>'+CRLF+;
 // 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
 // 		'<Strd>'+aDD[i,7]+'</Strd>'+CRLF+;     // invoiceid
 // 		'</RmtInf>'+CRLF+;
 // 			'</DrctDbtTxInf>') 
-		if Len(DrctDbtTxInf)= 100
+		if Len(DrctDbtTxInf)>= 100
 			FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write per 100 transactions to reduce I/O
 			DrctDbtTxInf:={}
 		endif
@@ -4607,7 +4609,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write latest transactions 
 	endif
 	// Write closing lines:
-	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrDrctDbtfinitn>'+CRLF+'</Document>')
+	FWriteLineUni(ptrHandle,'</PmtInf>'+CRLF+'</CstmrDrctDbtInitn>'+CRLF+'</Document>')
 	FClose(ptrHandle)
 	self:Pointer := Pointer{POINTERARROW} 
 	if TextBox{self,"Direct Debits",cFilename+' '+self:oLan:WGet("successfully uploaded to your online banking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
