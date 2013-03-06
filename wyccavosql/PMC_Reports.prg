@@ -1082,7 +1082,7 @@ METHOD PrintReport() CLASS PMISsend
 			IF me_homePP!=SEntity .and.self:closingDate=Today()
 				IF !AmntCorrection=0.00
 					// send if applicable remaining balance to PMC
-					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"CN",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
+					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"PC",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
 				ENDIF
 			ENDIF
 		endif
