@@ -9,6 +9,8 @@ GLOBAL AutoGiro as LOGIC
 GLOBAL BankAccs:={} as ARRAY
 GLOBAL BANKNBRCRE as STRING
 GLOBAL BANKNBRDEB as STRING
+GLOBAL BICNBRCRE as STRING
+GLOBAL BICNBRDEB as STRING
 global cAccAlwd as string
 GLOBAL cdate  as STRING
 global cDepmntIncl as string
