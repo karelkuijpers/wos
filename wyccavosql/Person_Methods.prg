@@ -4820,7 +4820,7 @@ local mAlias:=iif(Empty(ALIAS),"",alias+".") as string
 local cAddress:="if("+mAlias+'address<>"" and ' +mAlias+'address<>"X",'+mAlias+'address,"")' as string
 local cZip:='if(' +mAlias+'postalcode<>"" and ' +mAlias+'postalcode<>"X",'+mAlias+'postalcode,"")'  as string
 local cCity:='if(' +mAlias+'city<>"" and ' +mAlias+'city<>"X" and ' +mAlias+'city<>"??",'+if(CITYUPC,'upper(','')+mAlias+'city'+if(CITYUPC,')','')+',"")' as string
-local cCountry:='if('+mAlias+'country<>""'+iif(Empty(OwnCountryNames),'',' and not '+mAlias+'country in('+Implode(OwnCountryNames,'","')+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string 
+local ccountry:='if('+mAlias+'country<>""'+iif(Empty(OwnCountryNames),'',' and not '+mAlias+'country in('+Implode(OwnCountryNames,'","')+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string
 local cUSA:='if('+mAlias+'country="USA" or '+mAlias+'country="UNITED STATES" or '+mAlias+'country="CANADA" or '+mAlias+'country="U.S.A.",'
 local cCityZip as string
 local mySep:=',"'+cSep+' ",' as string
@@ -4828,9 +4828,9 @@ local mySep:=',"'+cSep+' ",' as string
 
 cCityZip:=iif(sSTRZIPCITY==3,'concat('+cCity+'," ",'+cZip+')',cUSA+'concat('+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+'))')  
 if sSTRZIPCITY==0.or. sSTRZIPCITY==3
-	fRow:=cAddress+mySep+cCityZip+mySep+cCountry
+	fRow:=cAddress+mySep+cCityZip+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
 elseif sSTRZIPCITY==1
-	fRow:=cCityZip+mySep+cAddress+mySep+cCountry 
+	fRow:=cCityZip+mySep+cAddress+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
 elseif sSTRZIPCITY==2
 	fRow:=cCountry+mySep+cUSA+'concat('+cAddress+mySep+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+mySep+cAddress+'))'
 endif	
