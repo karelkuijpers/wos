@@ -479,7 +479,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 		lValid := FALSE
 		cError :=  "Select a creditor"
 		self:oDCmPerson:SetFocus()
-	elseIF AScan(oStOrdLH:aMirror,{|x| x[4]=="AG".or.x[4]=="MG"})>0
+	elseIF AScan(oStOrdLH:Amirror,{|x| x[4]=="AG".or.x[4]=="MG" .or.x[3]=='G'})>0
 		i:= AScan(oStOrdLH:aMirror,{|x| x[4]=="CH".and.x[2]<x[1]})
 		IF i > 0
 			self:mCLNFrom:=Transform(oStOrdLH:Amirror[i,10],"")
