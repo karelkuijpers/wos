@@ -349,6 +349,7 @@ CLASS TeleMut
 	protect aValuesTrans:={} as array  // array with values to be stored into table teletrans:
 	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed},...}  
 	protect avaluesBal:={} as array  // array with values to be stored in bankbalances: {{banknumber,SQLdate,value},...
+	export nTooOld as int // number of too old trasnactions
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
@@ -364,19 +365,24 @@ method AddTeleTrans(bankaccntnbr as string,;
 		addsub:="" as string,;
 		description:="" as string,;
 		persid as string ) as logic CLASS TeleMut 
-	IF !self:TooOldTeleTrans(bankaccntnbr,bookingdate) .and.!Empty(amount) 
-		if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
-			self:nSubSeqnr++
+	if !Empty(amount)
+		IF self:TooOldTeleTrans(bankaccntnbr,bookingdate) 
+			// too old:
+			self:nTooOld++
 		else
-			self:nSubSeqnr:=1
-			self:CurDate:=bookingdate
-			self:CurSeq:=seqnr
-			self:CurBank:=bankaccntnbr
-		endif
-	// aValuesTrans:
-	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
-	//      1            2        3          4           5      6           7      8      9        10        11       12
-		AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
+			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
+				self:nSubSeqnr++
+			else
+				self:nSubSeqnr:=1
+				self:CurDate:=bookingdate
+				self:CurSeq:=seqnr
+				self:CurBank:=bankaccntnbr
+			endif
+			// aValuesTrans:
+			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,processed 
+			//      1            2        3          4           5      6           7      8      9        10        11       12
+			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,Description,persid,''})
+		endif 
 	endif
 
 	return true
@@ -983,6 +989,9 @@ METHOD Import() CLASS TeleMut
 		SQLStatement{"rollback",oConn}:execute()
 	else 
 		SQLStatement{"commit",oConn}:execute()  // save locks 
+	endif
+	if self:nTooOld>0
+		WarningBox{,"Import of telebanking transactions",Str(self:nTooOld,-1) +" transactions skipped because older than 240 days"}:Show()		
 	endif
 	if lFilesFound
 		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
@@ -3885,6 +3894,10 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 // 	NbrDays:=1000
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
 	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
-		RETURN TRUE
+		RETURN true 
+	else
+		if transdate <(Today() - NbrDays)
+			return true
+		endif
 	ENDIF
 	RETURN FALSE
