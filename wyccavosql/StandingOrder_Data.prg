@@ -173,7 +173,9 @@ CLASS StOrdLineHelp INHERIT DBSERVEREXTRA
 	INSTANCE lSharedMode  := nil	 as USUAL
 	INSTANCE nOrder 	  := 0	 as int
 	//USER CODE STARTS HERE (do NOT remove this line)  
-	export aMirror:={} as array  // {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
+	export aMirror:={} as array  
+	// {{ deb,cre,category,gc,accountid,recno,account#,creditor,bankacct,persid,INCEXPFD,depid}
+   //     1   2     3     4     5        8      7       8        9       10      11      12
 ACCESS  ACCOUNTID  CLASS StOrdLineHelp
 
     RETURN SELF:FieldGet(#ACCOUNTID)
