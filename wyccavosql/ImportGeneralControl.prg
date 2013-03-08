@@ -1966,7 +1966,6 @@ local aCod:={} as array
 	endif
 	if !Empty(self:avaluesbank)
 		oStmnt:=SQLStatement{'insert ignore into personbank (persid,banknumber) values '+Implode(self:avaluesbank,"','"),oConn}
-		LogEvent(self,oStmnt:sqlstring,'logsql') 
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			LogEvent(self,"error:"+oStmnt:Status:description+" in update bank statement","LogErrors")
