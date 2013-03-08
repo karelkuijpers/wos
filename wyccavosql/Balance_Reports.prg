@@ -3656,7 +3656,6 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(self:SendingMethod="SeperateFile","accnumber","accid")+",dat,transid,seqnr",oConn} 
 	oTrans:Execute() 
 	time1:=time0
-	LogEvent(self,"Giftsprint trans:"+Str((time0:=Seconds()-time1),-1,2),"logsql") 
 	// 	if oTrans:RecCount<1
 	// 		TextBox{self,self:oLan:WGet("Gift report"),self:oLan:WGet("Nothing to be reported")}:Show()
 	// 	endif
