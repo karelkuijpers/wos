@@ -137,7 +137,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 		endif
 	endif
 	if lnew
-		// try to read from internet 
+		// try to read from internet   http://www.xe.com/currencytables/?from=EUR&date=2013-03-08                                        
 		oHttp 	:= CHttp{"Wyccavo"}
 		cPostData	:= "from="+self:cBaseCur+"&date="+SQLdate(DateROE) 
 
@@ -148,7 +148,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			"POST",;
 			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
 			/*INTERNET_FLAG_SECURE*/)
-		iSt:=At3('xetrade/?utm_source',cPage,10050)
+		iSt:=At3('xetrade/?',cPage,10050)
 		if iSt>0
 			cPage:=SubStr(cPage,iSt) 
 			iSt:=At3('<tbody>',cPage,28)+7 			
