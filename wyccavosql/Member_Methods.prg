@@ -1,3 +1,5 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
 METHOD RegBalance(myNum,myItemName) CLASS ConvertMembers
 local oBal as SQLSelect
 	Default(@myNum,null_string) 
@@ -173,7 +175,6 @@ METHOD FilePrint CLASS MemberBrowser
 		" left join budget bu on (bu.accid=y.accid and (bu.year*12+bu.month) between "+Str(YrSt*12+MnSt,-1)+" and "+Str(aYearStartEnd[3]*12+aYearStartEnd[4],-1)+") group by y.mbrid "+;
 		" order by "+self:cOrder 
 	oSel:=SqlSelect{cStatement,oConn}
-	LogEvent(self,oSel:sqlstring,"logSQL") 
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
 		kopregels :={oLan:RGet('Members',,"@!"),' '}
@@ -199,8 +200,8 @@ METHOD FilePrint CLASS MemberBrowser
 	nPage := 0
 	DO WHILE .not. oSel:EOF
 		oReport:PrintLine(@nRow,@nPage,Pad(iif(Empty(oSel:deptmntnbr),oSel:ACCNUMBER,oSel:deptmntnbr),11)+cTab+Pad(oSel:membername,25)+;
-			iif(oReport:lXls, cTab+oSel:memberemail+cTab+StrTran(oSel:memberaddress,CRLF,", "),"")+;
-			iif(oReport:lXls,if(Empty(oSel:pcpersid),cTab+cTab+cTab, cTab+oSel:contactname + cTab+oSel:contactemail+cTab+StrTran(oSel:contactaddress,CRLF,", ")),"")+cTab+;
+			iif(oReport:lXls, cTab+oSel:memberemail+cTab+StrTran(oSel:memberaddress,CRLF,", ")+cTab+;
+			IF(Empty(oSel:pcpersid),cTab+cTab, oSel:contactname + cTab+oSel:contactemail+cTab+StrTran(oSel:contactaddress,CRLF,", ")),"")+cTab+;
 			IF(Admin=="WO".or.Admin="HO",;
 			PadC(iif(oSel:co=="M",oSel:Grade,"Entity"),6)+cTab+PadC(iif(Empty(oSel:OFFCRATE),"",oSel:OFFCRATE),10)+cTab+;
 			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+;
