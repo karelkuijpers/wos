@@ -892,11 +892,6 @@ if oSel:RecCount>0
 	enddo
 endif
 return GlBalYears
-FUNCTION FillBankAccount( cFilter:="" as string) as array
- 
-return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
-
-	
 function FillIbanregistry()
 // fill Iban-registry with {countrycode, iban-templatem iban length, sepa?},...
 	iban_registry:= {{"AL","AL2!n8!n16!c",28,0},;
