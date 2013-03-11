@@ -1537,6 +1537,7 @@ oDCSC_HFDRBRNUM:HyperLabel := HyperLabel{#SC_HFDRBRNUM,"Parent Group#:",NULL_STR
 oDCmNUM := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MNUM,_GetInst()}}
 oDCmNUM:HyperLabel := HyperLabel{#mNUM,NULL_STRING,"Number of balance group","Rubriek_NUM"}
 oDCmNUM:TooltipText := "Number of balance group"
+oDCmNUM:Picture := "XXXXXXXXXXXXXXXXXXXX"
 
 oDCmKOPTEKST := SingleLineEdit{SELF,ResourceID{EDITBALANCEITEM_MKOPTEKST,_GetInst()}}
 oDCmKOPTEKST:FieldSpec := BalanceItem_KOPTEKST{}
@@ -1689,6 +1690,8 @@ METHOD OKButton( ) CLASS EditBalanceItem
 				oCaller:RefreshTree()
 			ENDIF
 		endif
+	else
+		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:ErrorMessage}:Show()
 	endif
 	self:EndWindow()
 
