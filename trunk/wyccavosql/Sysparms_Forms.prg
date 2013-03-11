@@ -2122,7 +2122,6 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm3
 
 METHOD FillBank() CLASS Tab_Parm3            
 local aret:={} as array
-// 	RETURN FillBankAccount("b.Telebankng")
 aret:= SqlSelect{"select concat(b.banknumber,' ',a.description) as description,cast(b.bankid as char) as bankid from bankaccount b, account a where a.accid=b.accid and b.Telebankng",oConn}:GetLookupTable(500,#description,#bankid)
 asize(aret,len(aret)+1)
 AIns(aret,1)
