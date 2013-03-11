@@ -3238,9 +3238,9 @@ local oReport as PrintDialog
 	
 
 	if self:ReportAction=1
-		cFields:="p.persid, p.lastname,p.gender,p.title,p.initials,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,p.telbusiness,p.telhome,p.fax,p.mobile,p.remarks"  
+		cFields:="p.persid, p.lastname,p.gender,p.title,p.initials,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,p.telbusiness,p.telhome,p.fax,p.mobile,ifnull(p.remarks,'') as remarks"  
 	else
-		cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,p.telbusiness,p.telhome,p.fax,p.mobile,p.remarks,p.mailingcodes"  	
+		cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,p.telbusiness,p.telhome,p.fax,p.mobile,ifnull(p.remarks,'') as remarks,p.mailingcodes"  	
 	endif
 	
 	oSel:= SqlSelect{UnionTrans("Select distinct "+cFields+" from "+ self:cFrom+self:cWherep)+" order by "+self:SortOrder+Collate,oConn} 
@@ -4240,7 +4240,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person
 	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre}   
 	local aDD:={} as array // values voor CT-file: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid},... 
-	local aSeqTp:={{'FRST',0,0.00},{'RECUR',0,0.00},{'FNAL',0,0.00},{'OOFF',0,0.00}} // array with total per sequencetype: {{name,total transactions, ctrl sum},...    
+	local aSeqTp:={{'FRST',0,0.00},{'RCUR',0,0.00},{'FNAL',0,0.00},{'OOFF',0,0.00}} // array with total per sequencetype: {{name,total transactions, ctrl sum},...    
 	//                 1                2               3              4
 	local aDescr:=ArrayNew(13) as array
 	local DrctDbtTxInf:={} as array  // array with output per DrctDbtTxInf
@@ -4567,7 +4567,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			'<EndToEndId>'+aDD[i,7]+'</EndToEndId>'+CRLF+;
 			'</PmtId>'+CRLF+;
 			'<InstdAmt  Ccy="EUR">'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
-			'<DrctDbtTx><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf></DrctDbtTx>'+CRLF+; 
+			'<DrctDbtTx><MndtRltdInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltdInf></DrctDbtTx>'+CRLF+; 
 			'<DbtrAgt><FinInstnId><BIC>'+aDD[i,9]+'</BIC></FinInstnId></DbtrAgt>'+CRLF+;
 			'<Dbtr>'+CRLF+;
 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
@@ -4579,7 +4579,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			'</DbtrAcct>'+CRLF+;
 			'<RmtInf>'+CRLF+;
 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
-		'<Strd>'+aDD[i,7]+'</Strd>'+CRLF+;     // invoiceid
+		'<Strd><CdtrRefInf><Tp>SCOR</Tp><CdOrPrtry><Cd>'+aDD[i,7]+'</Cd></CdOrPrtry></CdtrRefInf></Strd>'+CRLF+;     // invoiceid
 		'</RmtInf>'+CRLF+;
 			'</DrctDbtTxInf>')
 // 		FWriteLineUni(ptrHandle,'<DrctDbtTxInf>'+CRLF+;
