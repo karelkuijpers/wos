@@ -565,6 +565,7 @@ oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Department#:",NULL_STRING,NU
 oDCmDepartmntNbr := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MDEPARTMNTNBR,_GetInst()}}
 oDCmDepartmntNbr:HyperLabel := HyperLabel{#mDepartmntNbr,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmDepartmntNbr:FieldSpec := Department_DEPTMNTNBR{}
+oDCmDepartmntNbr:Picture := "XXXXXXXXXXXXXXXXXXXX"
 
 oDCFixedText2 := FixedText{SELF,ResourceID{EDITDEPARTMENT_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Name:",NULL_STRING,NULL_STRING}
@@ -885,7 +886,9 @@ METHOD OKButton( ) CLASS EditDepartment
 			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
 			AAdd(oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
-		oCaller:Refresh()
+		oCaller:Refresh() 
+	else
+		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:errorMessage}:Show()
 	endif
 	self:EndWindow()
 
