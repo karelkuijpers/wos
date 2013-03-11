@@ -97,19 +97,6 @@ method Init() class AddToIncExp
 		endif
 	endif
 
-RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 36, 204, 251, WS_EX_CLIENTEDGE
-	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 3, 53, 13
-	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 18, 53, 12
-	CONTROL	"", SELBANKACC_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 64, 18, 47, 12
-	CONTROL	"Found:", SELBANKACC_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 32, 18, 27, 12
-	CONTROL	"Find", SELBANKACC_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 72, 3, 40, 13
-	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
-END
-
 CLASS SelBankAcc INHERIT DataDialogMine 
 
 	PROTECT oDCListBoxBank AS LISTBOX
@@ -123,6 +110,19 @@ CLASS SelBankAcc INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export oCaller as TeleMut 
   declare method FillBank
+RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", SELBANKACC_LISTBOXBANK, "ListBox", LBS_DISABLENOSCROLL|LBS_EXTENDEDSEL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 8, 36, 204, 251, WS_EX_CLIENTEDGE
+	CONTROL	"OK", SELBANKACC_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 3, 53, 13
+	CONTROL	"Cancel", SELBANKACC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 160, 18, 53, 12
+	CONTROL	"", SELBANKACC_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 64, 18, 47, 12
+	CONTROL	"Found:", SELBANKACC_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 32, 18, 27, 12
+	CONTROL	"Find", SELBANKACC_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 72, 3, 40, 13
+	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
+END
+
 METHOD CancelButton( ) CLASS SelBankAcc 
    self:EndWindow(1)
 RETURN NIL
@@ -134,8 +134,16 @@ method Close(oEvent) class SelBankAcc
 	endif 
 	return NIL
 
-METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc
-	RETURN FillBankAccount('b.Telebankng=1')
+METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc 
+	local cStatement as string 
+	local cSelect as string 
+	cSelect:=self:oCaller:GetTeleSelect()
+	cStatement:="select concat('(', lpad(cast(count(t.teletrid) AS CHAR),4,' ') ,') ', b.banknumber,' ',a.description) as description,b.banknumber"+; 
+	" from bankaccount b, account a, teletrans as t "+;
+		" where a.accid=b.accid and b.Telebankng=1 and t.bankaccntnbr = b.banknumber and t.processed<>'X' and "+cSelect+; 
+	" group by  b.banknumber order by description desc"
+	return SqlSelect{cStatement,oConn}:GetLookupTable(500,#description,#banknumber) 
+
 
 METHOD FindButton( ) CLASS SelBankAcc 
 	local aKeyw:={} as array
@@ -172,6 +180,7 @@ SUPER:Init(oWindow,ResourceID{"SelBankAcc",_GetInst()},iCtlID)
 oDCListBoxBank := ListBox{SELF,ResourceID{SELBANKACC_LISTBOXBANK,_GetInst()}}
 oDCListBoxBank:HyperLabel := HyperLabel{#ListBoxBank,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCListBoxBank:FillUsing(Self:FillBank( ))
+oDCListBoxBank:OwnerAlignment := OA_X_HEIGHT
 
 oCCOKButton := PushButton{SELF,ResourceID{SELBANKACC_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
@@ -256,6 +265,11 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankAcc
 	self:oCaller:lOK:=false
 	self:oDCFound:TextValue :=Str(self:oDCListBoxBank:ItemCount,-1)
 	return nil
+method PreInit(oWindow,iCtlID,oServer,uExtra) class SelBankAcc
+	//Put your PreInit additions here  
+	self:oCaller := uExtra
+	return NIL
+
 ACCESS SearchUni() CLASS SelBankAcc
 RETURN SELF:FieldGet(#SearchUni)
 
@@ -353,7 +367,7 @@ CLASS TeleMut
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
-		GetAddress,AllreadyImported,ImportSA2
+		GetAddress,AllreadyImported,ImportSA2,GetTeleSelect
 method AddTeleTrans(bankaccntnbr as string,;
 		bookingdate as date,; 
 	seqnr as string,;
@@ -557,17 +571,18 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 	if Empty(self:m57_BankAcc)    // skip if no telebanking accounts
 		Return false
 	endif
-	cSelect:="b.usedforgifts=1 "+;
-		"and addsub='B' and t.kind not in ('OCR','BGC') and t.description <> 'Betreft acceptgiro' and not t.description  like 'NAAM/NUMMER STEMMEN NIET OVEREEN%' and "+; 
-	"(t.kind<>'COL' or cast(t.contra_bankaccnt as unsigned)>0) and "+;
-		"(cast(t.contra_bankaccnt as unsigned)=0 or t.contra_bankaccnt not in ("+self:cBankAcc+")) "
-	if LookingForGifts
-		if ADMIN="HO"
-			cSelect=""
-		endif
-	else
-		cSelect:="not ("+cSelect+")"		
-	endif
+	cSelect:=self:GetTeleSelect()
+// 	cSelect:="b.usedforgifts=1 "+;
+// 		"and addsub='B' and t.kind not in ('OCR','BGC') and t.description <> 'Betreft acceptgiro' and not t.description  like 'NAAM/NUMMER STEMMEN NIET OVEREEN%' and "+; 
+// 	"(t.kind<>'COL' or cast(t.contra_bankaccnt as unsigned)>0) and "+;
+// 		"(cast(t.contra_bankaccnt as unsigned)=0 or t.contra_bankaccnt not in ("+self:cBankAcc+")) "
+// 	if LookingForGifts
+// 		if ADMIN="HO"
+// 			cSelect=""
+// 		endif
+// 	else
+// 		cSelect:="not ("+cSelect+")"		
+// 	endif
 	cSelect+=iif(Empty(cSelect),""," and ")+"t.bankaccntnbr in ("+self:cReqTeleBnk+")"     // should contain requested bankaccounts
 
 	DO WHILE true
@@ -706,6 +721,20 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 	endif
 	return
 
+Method GetTeleSelect(dummy:=nil as logic) as string class TeleMut
+	local cSelect as string 
+	cSelect:="b.usedforgifts=1 "+;
+		"and addsub='B' and t.kind not in ('OCR','BGC') and t.description <> 'Betreft acceptgiro' and not t.description  like 'NAAM/NUMMER STEMMEN NIET OVEREEN%' and "+; 
+	"(t.kind<>'COL' or cast(t.contra_bankaccnt as unsigned)>0) and "+;
+		"(cast(t.contra_bankaccnt as unsigned)=0 or t.contra_bankaccnt not in ("+self:cBankAcc+")) "
+	if self:lGift
+		if ADMIN="HO"
+			cSelect=""
+		endif
+	else
+		cSelect:="not ("+cSelect+")"		
+	endif
+	return cSelect
 METHOD Import() CLASS TeleMut
 	* Import of telebanking data into table teletrans
 	LOCAL oFs, oFC, oFrabo as MyFileSpec
