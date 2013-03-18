@@ -1144,6 +1144,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","InnoDB",cCollation},;
 		{"ipcaccounts","InnoDB",cCollation},;  
 		{"language","InnoDB",cCollation},;
+		{"mailaccount","InnoDB",cCollation},;
 		{"mbalance","InnoDB",cCollation},;
 		{"member","InnoDB",cCollation},;
 		{"memberassacc","InnoDB",cCollation},;
@@ -1379,6 +1380,13 @@ method InitializeDB() as void Pascal  class Initialize
 		{"log","logtime","datetime","NO","0000-00-00",""},;
 		{"log","message","mediumtext","NO","",""},;
 		{"log","userid","varchar(64)","NO","",""},;
+		{"mailaccount","empid","int(11)","NO","0",""},;
+		{"mailaccount","emailaddress","varchar(64)","NO","",""},;
+		{"mailaccount","username","varchar(64)","NO","",""},;
+		{"mailaccount","password","varbinary(64)","NO","",""},;
+		{"mailaccount","outgoingserver","varchar(64)","NO","",""},;
+		{"mailaccount","port","int(5)","NO","587",""},;
+		{"mailaccount","protocol","char(3)","NO","",""},;
 		{"mbalance","mbalid","int(11)","NO","NULL","auto_increment"},;
 		{"mbalance","accid","int(11)","NO","0",""},;
 		{"mbalance","year","smallint(6)","NO","0",""},;
@@ -1405,7 +1413,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
 		{"perscod","description","char(20)","YES","NULL",""},;
-		{"perscod","abbrvtn","char(3)","NO","NULL",""},;
+		{"perscod","abbrvtn","char(3)","NO","NULL",""};
+		} as array
+	// additional required tables structure:
+	// Table name, Field,Type,Null,Default,Extra 
+	local aColumn2:={;
 		{"person","persid","int(11)","NO","NULL","auto_increment"},;
 		{"person","title","smallint(6)","NO","0",""},;
 		{"person","lastname","char(28)","NO","",""},;
@@ -1434,11 +1446,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","gender","smallint(6)","NO","0",""},;
 		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
-		{"person","deleted","tinyint(1)","NO","0",""}; 
-		} as array
-	// additional required tables structure:
-	// Table name, Field,Type,Null,Default,Extra 
-	local aColumn2:={;
+		{"person","deleted","tinyint(1)","NO","0",""},; 
 		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
 		{"person_properties","type","int(1)","NO","0",""},;
