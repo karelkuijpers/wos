@@ -851,7 +851,7 @@ Function EndOfMonth(DateInMonth as date) as date
 // get date of end of month given a certain date
 return SToD(Str(Year(DateInMonth),4,0)+StrZero(Month(DateInMonth),2,0)+StrZero(MonthEnd(Month(DateInMonth),Year(DateInMonth)),2,0))
 DEFINE FEMALE := 1
-function FileStart(cFilename as string, OwnerWindow as Window )
+function FileStart(cFilename as string, OwnerWindow as Window ) as dword
 // start application for processing given filename, e.g word document 
    LOCAL lpShellInfo is _winShellExecuteInfo
    LOCAL hProc as ptr
@@ -876,7 +876,7 @@ function FileStart(cFilename as string, OwnerWindow as Window )
 		END
 	END				
 
-	RETURN 
+	RETURN lpExitCode
 Function FillBalYears()
 // determine available balance years:
 local oSel as SQLSelect
@@ -892,6 +892,11 @@ if oSel:RecCount>0
 	enddo
 endif
 return GlBalYears
+FUNCTION FillBankAccount( cFilter:="" as string) as array
+ 
+return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
+
+	
 function FillIbanregistry()
 // fill Iban-registry with {countrycode, iban-templatem iban length, sepa?},...
 	iban_registry:= {{"AL","AL2!n8!n16!c",28,0},;
