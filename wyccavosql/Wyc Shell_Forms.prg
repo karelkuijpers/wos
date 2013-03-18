@@ -25,9 +25,7 @@ CLASS StandardWycWindow INHERIT ShellWindow
 	PROTECT aChildWindows AS ARRAY
 	PROTECT oPrinter      AS PrintingDevice
 // 	EXPORT oPersbw AS PersonBrowser
-// 	EXPORT oAccBw AS AccountBrowser
-
-	
+// 	EXPORT oAccBw AS AccountBrowser 
 METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
@@ -171,6 +169,10 @@ METHOD INIT( oOwnerApp ) CLASS StandardWycWindow
 	
 	self:oPrinter := PrintingDevice{}
 	SELF:Pointer := Pointer{POINTERARROW}
+// 	if AtC('test',CurPath)>0
+// 		self:background:=Brush{Color{164,255,164}} 
+
+// 	endif
 
 	
 	RETURN SELF
@@ -205,19 +207,20 @@ METHOD QueryClose( oEvent ) CLASS StandardWycWindow
 	* Save runtime PARAMETERS:
 	
     	SetRTRegString( cRoot, "AlgTaal", Alg_Taal )
-	    SetRTRegInt( cRoot, "Maximized", IF(SELF:IsZoomed(),1,0) )
-	//	IF !_DynCheck()
-	//		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
-	//	ENDIF
+	   SetRTRegInt( cRoot, "Maximized", if(self:IsZoomed(),1,0) )
 		// Stop clickyes to be sure:
-		myApp:Run("ClickYes.exe -stop")
+		myApp:Run("ClickYes.exe -stop")  
+		SQLStatement{"set autocommit=0",oConn}:Execute()
+		SQLStatement{'lock tables `employee` write',oConn}:Execute()
       SQLStatement{"update employee set online='0' where empid='"+MYEMPID+"'",oConn}:Execute()
-*		SELF:CloseAll()
+		SQLStatement{"commit",oConn}:Execute()
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
 		RETURN TRUE // Quit application.
 	ELSE
 		RETURN FALSE
 		// Don't quit the application.
-	END
+	ENDif
 	
 METHOD RefreshMenu() CLASS StandardWycWindow
 	GetUserMenu(LOGON_EMP_ID)
