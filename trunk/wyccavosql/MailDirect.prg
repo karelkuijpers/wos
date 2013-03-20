@@ -16,11 +16,14 @@ CLASS EditEmailAccount INHERIT DataDialogMine
 	PROTECT oDCprotocol AS COMBOBOX
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oCCTestButton AS PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect lNew as logic
   export lSuccess as logic
-RESOURCE EditEmailAccount DIALOGEX  4, 3, 330, 167
+RESOURCE EditEmailAccount DIALOGEX  4, 3, 412, 181
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -38,8 +41,11 @@ BEGIN
 	CONTROL	"", EDITEMAILACCOUNT_PORT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 118, 54, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Protocol:", EDITEMAILACCOUNT_FIXEDTEXT6, "Static", WS_CHILD, 12, 137, 54, 12
 	CONTROL	"", EDITEMAILACCOUNT_PROTOCOL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 88, 133, 54, 33
-	CONTROL	"OK", EDITEMAILACCOUNT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 11, 53, 12
-	CONTROL	"Cancel", EDITEMAILACCOUNT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 268, 30, 53, 12
+	CONTROL	"OK", EDITEMAILACCOUNT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 340, 114, 53, 12
+	CONTROL	"Cancel", EDITEMAILACCOUNT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 132, 53, 13
+	CONTROL	"Test account settings", EDITEMAILACCOUNT_FIXEDTEXT7, "Static", WS_CHILD, 276, 7, 115, 12
+	CONTROL	"It is recommended to test your account by clicking the button below. (required internet connection)", EDITEMAILACCOUNT_FIXEDTEXT8, "Static", WS_CHILD, 276, 25, 127, 30
+	CONTROL	"Test Account Settings...", EDITEMAILACCOUNT_TESTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 272, 55, 91, 12
 END
 
 METHOD CancelButton( ) CLASS EditEmailAccount 
@@ -54,7 +60,7 @@ SELF:FieldPut(#emailaddress, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditEmailAccount 
-LOCAL DIM aFonts[1] AS OBJECT
+LOCAL DIM aFonts[2] AS OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -62,6 +68,8 @@ SUPER:Init(oWindow,ResourceID{"EditEmailAccount",_GetInst()},iCtlID)
 
 aFonts[1] := Font{,9,"Microsoft Sans Serif"}
 aFonts[1]:Italic := TRUE
+aFonts[2] := Font{,9,"Microsoft Sans Serif"}
+aFonts[2]:Bold := TRUE
 
 oDCFixedText1 := FixedText{SELF,ResourceID{EDITEMAILACCOUNT_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Email address:",NULL_STRING,NULL_STRING}
@@ -115,6 +123,16 @@ oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
 oCCCancelButton := PushButton{SELF,ResourceID{EDITEMAILACCOUNT_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCFixedText7 := FixedText{SELF,ResourceID{EDITEMAILACCOUNT_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Test account settings",NULL_STRING,NULL_STRING}
+oDCFixedText7:Font(aFonts[2], FALSE)
+
+oDCFixedText8 := FixedText{SELF,ResourceID{EDITEMAILACCOUNT_FIXEDTEXT8,_GetInst()}}
+oDCFixedText8:HyperLabel := HyperLabel{#FixedText8,"It is recommended to test your account by clicking the button below. (required internet connection)",NULL_STRING,NULL_STRING}
+
+oCCTestButton := PushButton{SELF,ResourceID{EDITEMAILACCOUNT_TESTBUTTON,_GetInst()}}
+oCCTestButton:HyperLabel := HyperLabel{#TestButton,"Test Account Settings...",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "My email account"
 SELF:HyperLabel := HyperLabel{#EditEmailAccount,"My email account",NULL_STRING,NULL_STRING}
@@ -264,6 +282,51 @@ ASSIGN protocol(uValue) CLASS EditEmailAccount
 SELF:FieldPut(#protocol, uValue)
 RETURN uValue
 
+METHOD TestButton( ) CLASS EditEmailAccount 
+	local nRet,i as int
+	local cbatchfile as string 
+	local clogfile as string
+	local logtext as string
+	local cRun as string 
+	local lError as logic
+	local oFilespecB as FileSpec
+	local ptrLog as ptr
+	local oMf 
+
+	GetHelpDir()
+	cbatchfile:=HelpDir+'\'+"batchtest"+Str(GetTickCountLow(),-1)+".bat"
+	clogfile:=HelpDir+'\'+"logtest"+Str(GetTickCountLow(),-1)+".txt"
+	cRun:= 'cmd.exe /c '+WorkDir()+'senditquiet.exe -s '+self:outgoingserver+' -port '+ConS(self:port)+' -u '+self:username+iif(Empty(self:protocol),'',' -protocol '+self:protocol)+;
+		' -p '+self:password+' -f '+self:emailaddress+' -t '+self:emailaddress+' -subject "test WOS email" -body "Hi<br><strong>This is a  test email</strong>.<br>Thanks." >"';
+		+clogfile+'"'
+	self:Pointer := Pointer{POINTERHOURGLASS}
+	Run(cRun) 
+//	FileStart(cbatchfile,self) 
+	oFilespecB:=FileSpec{clogfile} 
+	for i:=1 to 90
+		Tone(30000,2)
+		ptrLog:=FOpen(clogfile,FO_READ+FO_EXCLUSIVE) 
+		if !ptrLog==F_ERROR
+			exit
+		endif
+	next
+	self:Pointer := Pointer{POINTERARROW}
+	if oFilespecB:Find()
+		logtext:=FReadStr(ptrLog,1024) 
+		FClose(ptrLog) 
+		oFilespecB:DELETE()
+		if AtC('done',logtext)>0 
+			TextBox{self,self:oLan:WGet("Testing Account settings"),self:oLan:WGet("Account settings correct")}:show()
+		else
+			ErrorBox{self,self:oLan:WGet("Error sending email with this account settings")}:show()
+			return false 
+		endif
+	else
+		ErrorBox{self,self:oLan:WGet("Error sending email with this account settings (no lgfile)")}:show()
+		return false 
+	endif
+
+	RETURN true
 ACCESS username() CLASS EditEmailAccount
 RETURN SELF:FieldGet(#username)
 
@@ -279,6 +342,8 @@ STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT3 := 102
 STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT4 := 108 
 STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT5 := 110 
 STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT6 := 112 
+STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT7 := 116 
+STATIC DEFINE EDITEMAILACCOUNT_FIXEDTEXT8 := 117 
 STATIC DEFINE EDITEMAILACCOUNT_GROUPBOX1 := 103 
 STATIC DEFINE EDITEMAILACCOUNT_GROUPBOX2 := 107 
 STATIC DEFINE EDITEMAILACCOUNT_OKBUTTON := 114 
@@ -286,7 +351,19 @@ STATIC DEFINE EDITEMAILACCOUNT_OUTGOINGSERVER := 109
 STATIC DEFINE EDITEMAILACCOUNT_PASSWORD := 106 
 STATIC DEFINE EDITEMAILACCOUNT_PORT := 111 
 STATIC DEFINE EDITEMAILACCOUNT_PROTOCOL := 113 
+STATIC DEFINE EDITEMAILACCOUNT_TESTBUTTON := 118 
 STATIC DEFINE EDITEMAILACCOUNT_USERNAME := 105 
+RESOURCE EmailConfirm DIALOGEX  8, 20, 391, 312
+STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
+CAPTION	"Sending emails"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Should all these emails be send? (uncheck the ones you want to skip)?", EMAILCONFIRM_FIXEDTEXT1, "Static", WS_CHILD, 6, 4, 306, 25
+	CONTROL	"OK", EMAILCONFIRM_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 3, 53, 13
+	CONTROL	"Cancel", EMAILCONFIRM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 18, 53, 12
+	CONTROL	"", EMAILCONFIRM_EMAILLISTVIEW, "SysListView32", LVS_REPORT|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 4, 36, 378, 270
+END
+
 CLASS EmailConfirm INHERIT DialogWinDowExtra 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -298,17 +375,6 @@ CLASS EmailConfirm INHERIT DialogWinDowExtra
   protect oCaller as SendEmailsDirect
 protect sTo,sDesc as symbol 
 export lSend as logic
-RESOURCE EmailConfirm DIALOGEX  8, 22, 385, 308
-STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
-CAPTION	"Sending emails"
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Should all these emails be send? (uncheck the ones you want to skip)?", EMAILCONFIRM_FIXEDTEXT1, "Static", WS_CHILD, 6, 4, 306, 25
-	CONTROL	"OK", EMAILCONFIRM_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 3, 53, 13
-	CONTROL	"Cancel", EMAILCONFIRM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 18, 53, 12
-	CONTROL	"", EMAILCONFIRM_EMAILLISTVIEW, "SysListView32", LVS_REPORT|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 4, 36, 378, 270
-END
-
 METHOD CancelButton( ) CLASS EmailConfirm 
 	self:EndDialog(false) 
 RETURN NIL
@@ -350,36 +416,6 @@ SELF:HyperLabel := HyperLabel{#EmailConfirm,"Sending emails",NULL_STRING,NULL_ST
 self:PostInit(oParent,uExtra)
 
 return self
-
-method KeyUpOld(oKeyEvent) class EmailConfirm
-	local nKeyCode,i,nPos,m as int 
-	local aItem:={} as array 
-	local oListviewItem as ListViewItem
-	nKeyCode := IIf(oKeyEvent = NULL_OBJECT, 0, IIf(IsNil(oKeyEvent:ASCIIChar), oKeyEvent:KeyCode, oKeyEvent:ASCIIChar))
-	super:KeyUp(oKeyEvent)
-	//Put your changes here
-	LogEvent(self,"delete items key:"+Str(oKeyEvent:KeyCode,-1),"logsql")
-	IF oKeyEvent:KeyCode==KEYDELETE
-		if Len(aItem:=self:oDCEmailListView:GetAllSelectedItems())=0
-			WarningBox{self,self:oLan:WGet("confirm emails to be send"),self:oLan:WGet("Select one or more emails to be deleted first")}:show()
-			return
-		endif
-		// remove items to be deleted: 
-		LogEvent(self,"delete items:"+Str(Len(aItem),-1),"logsql")
-		for i:=1 to Len(aItem)
-			oListviewItem:=aItem[i]
-			m:=oListviewItem:GetValue(self:sTo)
-			if m>0
-				nPos:=AScan(self:oCaller:aEmail,{|x|x[5]==m})
-				if nPos>0
-					ADel(self:oCaller:aEmail,nPos)
-					self:oDCEmailListView:DeleteItem(oListviewItem:ItemIndex)
-				endif
-			endif
-		next			
-
-	endif
-	return nil
 
 METHOD OKButton( ) CLASS EmailConfirm 
 	local i,nPos,m as int 
@@ -584,14 +620,14 @@ method Close() class SendEmailsDirect
 	else
 		TextBox{self:oOwner,"Sending of emails",Str(Len(self:aEmail),-1)+' '+"emails have been sent"}:Show()
 	endif
-	//	remove body	content files	
-	for i:=1 to Len(self:aEmail)
-		FileSpec{self:cFileContentBase+Str(i,-1)+'.html'}:DELETE()
-	next 
-	// remove batch file:
+/*	// remove batch file:
 	if !Empty(self:cbatchfile)
 		FileSpec{self:cbatchfile}:DELETE()
 	endif 
+	//	remove body	content files	
+	for i:=1 to Len(self:aEmail)
+		FileSpec{self:cFileContentBase+Str(i,-1)+'.html'}:DELETE()
+	next  */
 	
 
 	return 
@@ -625,7 +661,7 @@ Method Init(oWindow) class SendEmailsDirect
 	self:outgoingserver:=oSel:outgoingserver
 	self:port:=ConS(oSel:port)
 	self:protocol:=oSel:protocol 
-	self:cMailBasic:="senditquiet.exe -s "+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
+	self:cMailBasic:=WorkDir()+"senditquiet.exe -s "+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
 	return self 
 method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect 
 	local i,m,nRet as int
@@ -633,7 +669,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	local cbatchfile as string 
 	local oFilespecB as FileSpec
 	local ptrHandleBatch,ptrHandleBody as ptr
-	local oConfirm as EmailConfirm 
+	local oConfirm as EmailConfirm
 	// The actually sending of the emails to the outgoing server
 	// Option: lConfirm=true: show emails to the user with the options to cancel all, to remove some
 	if lConfirm
@@ -653,7 +689,13 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		return true
 	endif
 	GetHelpDir()
-	cbatchfile:=HelpDir+'\'+"batchmail"+Str(GetTickCountLow(),-1)+".vbs"
+	cbatchfile:=HelpDir+'\'+"batchmail.vbs"
+	self:cFileContentBase:=HelpDir+'\'+"mailbody"
+	// remove previous batch file:
+	FileSpec{cbatchfile}:DELETE()
+	// remove mailbody files:
+	AEval(Directory(self:cFileContentBase+"*.html"), {|aFile|FErase(aFile[F_NAME])})
+//
 	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for mailing")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
 		self:cError:="Couldn't compose email"
@@ -665,8 +707,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	// aEmail:  {{to,subject,mailbody,attachements},...}
 	//             1    2       3           4
 	for i:=1 to Len(self:aEmail)
-		self:cFileContentBase:=HelpDir+'\'+"mailbody"+Str(GetTickCountLow(),-1)
-		cFileContent:=self:cFileContentBase+Str(m,-1)+".html"
+		cFileContent:=self:cFileContentBase+Str(i,-1)+".html"
 		ptrHandleBody := MakeFile(self,@cFileContent,"Creating mailbody file")
 		IF ptrHandleBody = F_ERROR .or. Empty(ptrHandleBody)
 			self:lError:=true
