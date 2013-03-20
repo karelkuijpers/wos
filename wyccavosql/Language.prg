@@ -6,21 +6,21 @@ METHOD Init( ) CLASS Language
 local olanT as SQLSelect 
 
 if Empty(aLanM)
-	olanT:=SQLSelect{"select sentenceen,sentencemy from language where `location`='M'",oConn}
-	if olanT:RecCount>0
-		aLanM:=olanT:getLookuptable(olanT:RECCOUNT)
+	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='M'",oConn}
+	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
+		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanM,Split(x,'#%#'))})
 	endif
 endif
 if Empty(aLanW)
-	olanT:=SQLSelect{"select sentenceen,sentencemy from language where `location`='W'",oConn}
-	if olanT:RecCount>0
-		aLanW:=olanT:getLookuptable(olanT:RECCOUNT)
+	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='W'",oConn}
+	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
+		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanW,Split(x,'#%#'))})
 	endif
 endif
 if Empty(aLanR)
-	olanT:=SQLSelect{"select sentenceen,sentencemy from language where `location`='R'",oConn}
-	if olanT:RecCount>0
-		aLanR:=olanT:getLookuptable(olanT:RECCOUNT)
+	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='R'",oConn}
+	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
+		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanR,Split(x,'#%#'))})
 	endif
 endif
 RETURN SELF
