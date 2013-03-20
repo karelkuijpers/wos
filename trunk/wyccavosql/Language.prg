@@ -77,7 +77,7 @@ IF !Alg_taal="E"
 			cText:=aLanM[iPos,2]
 		ENDIF
 	ELSE
-		SQLStatement{"insert into language set location='M',sentenceen='"+cText+"',length="+Str(Min(nLength,80),-1),oConn}:execute()
+		SQLStatement{"insert into language set location='M',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
 		AAdd(aLanM,{cText,''})
 	ENDIF
 ENDIF 
@@ -104,7 +104,7 @@ IF !Alg_taal="E"
 			cText:=aLanR[iPos,2]
 		ENDIF
 	ELSE
-		SQLStatement{"insert into language set location='R',sentenceen='"+cText+"',length="+Str(Min(nLength,80),-1),oConn}:execute()
+		SQLStatement{"insert into language set location='R',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
 		AAdd(aLanR,{cText,''})
 	ENDIF
 ENDIF 
@@ -139,7 +139,7 @@ IF !Alg_taal="E"
 			cText:=aLanW[iPos,2]
 		ENDIF
 	ELSE
-		SQLStatement{"insert into language set location='W',sentenceen='"+cText+"',length="+Str(Min(nLength,80),-1),oConn}:execute()
+		SQLStatement{"insert into language set location='W',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
 		AAdd(aLanW,{cText,''})
 	ENDIF
 ENDIF 
