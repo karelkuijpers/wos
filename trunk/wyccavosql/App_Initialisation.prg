@@ -30,7 +30,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
 		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	endif 
-	if FirstOfDay .or. DBVers>PrgVers
+	if FirstOfDay .or. (!Empty(PrgVers).and. DBVers>PrgVers)    // sometimes a global value like Version disappears 
 		if oFTP:Open()                                                              
 			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		endif
