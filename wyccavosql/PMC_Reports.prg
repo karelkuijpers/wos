@@ -367,7 +367,9 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL DecSep as int
 	LOCAL oMapi as MAPISession
 	LOCAL oRecip,oRecip2 as MAPIRecip
-	LOCAL cPMISMail as STRING
+	LOCAL cPMISMail as STRING 
+	local oSendMail as SendEmailsDirect
+	local aRecip:={} as array // {{name,email,persid},...}
 	LOCAL lSent as LOGIC
 	LOCAL uRet as USUAL
 	LOCAL oWindow as OBJECT
@@ -411,7 +413,7 @@ METHOD PrintReport() CLASS PMISsend
 	local aDBBalValue:={} as array
 	local aAssTot:={} as array   // array with total assessable amount per accid  {{accid,asstot},... 
 	local aAssMbr:={} as array   // array with total assessable amounts+assessments per membrid {{mbrid,calcdate,assessmnttotal,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-                                //                                                                  1      2         3             4           5             6              7                  8             9                10
+	//                                                                  1      2         3             4           5             6              7                  8             9                10
 	local aAccRPP:={} as array   // array with total RPP amount per accid    {{accid,rpptot},...}
 	local aRPPMbr:={} as array   // array with total RPP amount per mbrid    {{mbrid,rpptot},...}
 	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername,fromRPP  
@@ -430,11 +432,11 @@ METHOD PrintReport() CLASS PMISsend
 
 	oWindow:Pointer := Pointer{POINTERARROW}
 
-// 	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
-// 	oReport:Show()
-// 	IF .not.oReport:lPrintOk
-// 		RETURN FALSE
-// 	ENDIF
+	// 	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
+	// 	oReport:Show()
+	// 	IF .not.oReport:lPrintOk
+	// 		RETURN FALSE
+	// 	ENDIF
 	oCurr:=Currency{"Sending to PMC"}
 	fExChRate:=Round(oCurr:GetROE("USD",Today(),true,true,1.65),8)   // limit to 8 digits because that is sent to PMC 
 	if oCurr:lStopped
@@ -501,7 +503,6 @@ METHOD PrintReport() CLASS PMISsend
 		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
 		return
 	endif
-	// 	LogEvent(self,"cMbrSelectArr: "+Str(Len(oMbr:grMbr),-1),"logsql")
 	// add to aMbr:
 	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
 	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
@@ -688,10 +689,10 @@ METHOD PrintReport() CLASS PMISsend
 			aAssTot:=AEvalA(Split(oSel:grasssum,'#'),{|x|x:=Split(x,',') })  // make array of sums of assessable amounts per account
 			// add to total assessable amount per member:
 			// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-         //              1      2         3             4           5             6              7                  8               9 
-         cToday:=SQLdate(Today()) 
-         cPeriodBegin:=SQLdate(self:oSys:pmislstsnd)
-         cPeriodEnd:=SQLdate(self:closingDate)
+			//              1      2         3             4           5             6              7                  8               9 
+			cToday:=SQLdate(Today()) 
+			cPeriodBegin:=SQLdate(self:oSys:pmislstsnd)
+			cPeriodEnd:=SQLdate(self:closingDate)
 			for i:=1 to Len(aAssTot)
 				if (j:=AScan(aAccidMbr,{|x|x[1]==aAssTot[i,1]}))>0
 					if (k:=AScan(aAssMbr,{|x|x[1]==aAccidMbr[j,2]}))>0
@@ -709,7 +710,6 @@ METHOD PrintReport() CLASS PMISsend
 				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",''),'&&',cast(fromrpp as char) order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
 				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
 				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}  
-// logevent(self,oSel:sqlstring,"logsql")				
 			if oSel:Reccount>0
 				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
 			endif 
@@ -847,7 +847,7 @@ METHOD PrintReport() CLASS PMISsend
 		enddo
 		// calculate assessments:
 		// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-      //              1      2         3             4           5             6              7                  8                9
+		//              1      2         3             4           5             6              7                  8                9
 
 		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid .and.me_stat!="Staf" 
 			me_assblAmount:=aAssMbr[nMbrAss,5]
@@ -1180,7 +1180,6 @@ METHOD PrintReport() CLASS PMISsend
 	oReport:prstop()
 	oWindow:Pointer := Pointer{POINTERARROW}
 	time0:=time1
-	// 	LogEvent(self,"print report:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
 
 	*After printing request confirmation for continuing: 
 	lStop:=true
@@ -1279,12 +1278,15 @@ METHOD PrintReport() CLASS PMISsend
 				self:ResetLocks()
 				RETURN
 			ENDIF
-		ENDIF
-		oMapi := MAPISession{}
+		ENDIF 
+	
+		if !maildirect		
+			oMapi := MAPISession{}
+		endif
 		self:Pointer := Pointer{POINTERHOURGLASS}
 		cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
 		self:STATUSMESSAGE(cStmsg)  
-		// determine mbalance accounts to be locked for update 
+			// determine mbalance accounts to be locked for update 
 		cAccs:=sam+','+shb
 		if !Empty(samProj)
 			cAccs+=','+samProj
@@ -1326,7 +1328,7 @@ METHOD PrintReport() CLASS PMISsend
 			me_mbrid:=''
 			* Record transactions for decreasing balance of member:
 			// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-   	   //              1      2         3             4           5             6              7                  8                9
+			//              1      2         3             4           5             6              7                  8                9
 			IF aMemberTrans[a_tel,4]=AG
 				nMbr:=AScan(aAccidMbr,{|x|x[1]==me_accid})
 				if nMbr>0
@@ -1334,7 +1336,7 @@ METHOD PrintReport() CLASS PMISsend
 					nMbrAss:=AScan(aAssMbr,{|x|x[1]==me_mbrid})
 				endif 			 
 				me_desc:=self:oLan:RGet("Assessment Intern+Field of gifts from")+Space(1)+Country+' '+self:AssPeriod + ' ('+Str(self:sPercAssInt+self:sAssmntField,-1)+'%'+Space(1)+self:oLan:RGet('of total gift amount')+' '+;
-				iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+')'
+					iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+')'
 			ELSE
 				me_desc:=aMemberTrans[a_tel,9]
 				IF aMemberTrans[a_tel,4]=MT
@@ -1386,9 +1388,9 @@ METHOD PrintReport() CLASS PMISsend
 					me_desc:=self:oLan:RGet("Assessment office projects of gifts from")+Space(1)+Country+' '+self:AssPeriod
 				ENDIF
 				if !Empty(nMbrAss)
-				// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-   		   //              1      2         3             4           5             6              7                  8                9
-  					me_desc+= ' ('+iif(nMbrAss>0,Str(aAssMbr[nMbrAss,8],-1),'0')+'%'+Space(1)+self:oLan:RGet('of total gift amount')+' '+iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+')'
+					// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
+					//              1      2         3             4           5             6              7                  8                9
+					me_desc+= ' ('+iif(nMbrAss>0,Str(aAssMbr[nMbrAss,8],-1),'0')+'%'+Space(1)+self:oLan:RGet('of total gift amount')+' '+iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+')'
 				ENDIF
 				nSeqnr++
 				// 					cSeqnr:=Str(nSeqnr)
@@ -1489,11 +1491,11 @@ METHOD PrintReport() CLASS PMISsend
 			cErrorLog:=cError+': '+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:errormessage
 		endif
 		if Empty(cError) .and. Len(aAssMbr)>0 
-		// Record data of assessed amounts:
-		// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
-      //              1      2         3             4           5             6              7                  8                9
+			// Record data of assessed amounts:
+			// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
+			//              1      2         3             4           5             6              7                  8                9
 			oStmnt:=SQLStatement{"insert into assessmnttotal (`mbrid`,`calcdate`,`periodbegin`,`periodend`,`amountassessed`,`amountofficeassmnt`,`amountintassmnt`,`percofficeassmnt`,`percintassmnt`) values "+;
-			Implode(aAssMbr,'","'),oConn} 
+				Implode(aAssMbr,'","'),oConn} 
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
 				cError:=self:oLan:WGet('PMC transactions could not be recorded')+":"+oStmnt:ErrInfo:errormessage
@@ -1549,7 +1551,7 @@ METHOD PrintReport() CLASS PMISsend
 				if Empty(cError)
 					cTransnr:=ConS(SqlSelect{"select	LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 					// update aTransMT with cTransnr:
-// 					AEvalA(aTransMT,{|x|x[15]:=cTransnr})
+					// 					AEvalA(aTransMT,{|x|x[15]:=cTransnr})
 					for i:=1 to Len(aTransMT)
 						aTransMT[i,15]:=cTransnr
 					next
@@ -1600,7 +1602,6 @@ METHOD PrintReport() CLASS PMISsend
 		endif
 
 		time0:=time1
-		// 		LogEvent(self,"recording PMC transactions:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime") 
 		self:STATUSMESSAGE(Space(80) )
 		if Empty(cError)
 			if	PMCUpload
@@ -1624,36 +1625,62 @@ METHOD PrintReport() CLASS PMISsend
 		cPMISMail:=StrTran(cPMISMail,";"+AllTrim(self:oSys:OWNMAILACC))
 		cPMISMail:=StrTran(cPMISMail,AllTrim(self:oSys:OWNMAILACC))
 		* Send file by email:
-		IF IsMAPIAvailable()
-			* Resolve IESname
-			IF oMapi:Open( "" , "" )
-				oPers:=SqlSelect{"select persid,lastname,firstname,email,"+SQLFullName(3)+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
-				if oPers:Reccount>0
-					if PMCUpload
-						oRecip := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+		IF maildirect .or. IsMAPIAvailable()
+			IF maildirect .or.oMapi:Open( "" , "" )
+				* Resolve IESname 
+				// aRecip: {{name,email,persid},...}
+				if !PMCUpload
+					IF maildirect
+						aRecip:={{"Partner Monetary Interchange System",cPMISMail,0}}
 					else
-						oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+						oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
 					endif
 				endif
-				if !PMCUpload
-					oRecip := oMapi:ResolveMailName( "Partner Monetary Interchange System",@cPMISMail,"Partner Monetary Interchange System")
+				oPers:=SqlSelect{"select persid,lastname,firstname,email,"+SQLFullName(3)+" as fullname from person where persid='"+Str(self:oSys:PMCMANCLN,-1)+"'",oConn} 
+				if oPers:Reccount>0
+					IF maildirect
+						AAdd(aRecip,{oPers:fullname,oPers:email,oPers:persid})
+					else
+						if PMCUpload
+							oRecip := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+						else
+							oRecip2 := oMapi:ResolveName( oPers:lastname,oPers:persid,oPers:fullname,oPers:email)
+						endif
+					endif
 				endif
-				IF oRecip != null_object .and.(PMCUpload .or.!oRecip2==null_object)
+				IF (oRecip != null_object.or.!Empty(aRecip)) .and.(PMCUpload .or.(!oRecip2==null_object.or.Len(aRecip)>1))
 					cNoteText:="Dear "+oPers:fullname+","+CRLF+;
 						iif(PMCUpload,;
 						self:oLan:RGet("Will you please approve the uploaded OPP file")+Space(1)+FileSpec{cFilename}:Filename+Space(1)+;
 						self:oLan:RGet("by going to Insite")+Space(1)+"https://www.pmc.insitehome.org/InSitePMC.aspx , tab OPP Upload.";
 						,;
 						"I send you attached a OPP file and would be grateful if you would approve the file by means of a reply all.")+;
-						CRLF+LOGON_EMP_ID
-					IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
-						(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
-						self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
-						IF !PMCUpload
-							LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
-						endi
-						lSent:=true
-					ENDIF
+						CRLF+LOGON_EMP_ID 
+					if maildirect
+						oSendMail:=SendEmailsDirect{self}
+						if oSendMail:lError
+							ErrorBox{self,self:oLan:WGet("Couldn't send PMC report by email")}:Show()
+						else
+							oSendMail:AddEmail("PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText,aRecip,iif(PMCUpload,{},{cFilename}))
+							oSendMail:SendEmails()
+							oSendMail:Close() 
+							if oSendMail:lError
+								ErrorBox{self,self:oLan:WGet("Couldn't send PMC report by email")}:Show()
+							else
+								lSent:=true
+							endif
+						endif
+						
+					else
+						IF oMapi:SendDocument( iif(PMCUpload,null_object,FileSpec{cFilename}) ,oRecip,oRecip2,"PMC Transactions "+FileSpec{cFilename}:Filename+" of "+sLand,cNoteText)
+							(InfoBox{self:OWNER,"Partner Monetary Interchange System",;                                                                  
+							self:oLan:WGet("Placed one mail message in the outbox of")+" "+EmailClient+" "+iif(PMCUpload,self:oLan:WGet("for approving of"),self:oLan:WGet("with attached the file"))+": "+cFilename}):Show()
+							IF !PMCUpload
+								LogEvent(self,self:oLan:WGet("Placed one PMC mail message in the outbox of")+" "+EmailClient+" "+self:oLan:WGet("with attached the file")+": "+cFilename,"Log")
+							endif
+							lSent:=true
+						ENDIF
+					endif
 				ENDIF
 				//oMapi:Close()
 			ENDIF 
@@ -1671,7 +1698,7 @@ METHOD PrintReport() CLASS PMISsend
 	ENDIF
 	SetDecimalSep(Asc('.') )
 
-	if !PMCUpload .and.!lStop
+	if !PMCUpload .and.!lStop .and.!maildirect
 		oMapi:Close()
 	endif
 
