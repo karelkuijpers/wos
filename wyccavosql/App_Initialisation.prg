@@ -1329,6 +1329,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","lstreimb","date","NO","0000-00-00",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
+		{"employee","lstnews","date","NO","0000-00-00",""},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
 		{"emplacc","accid","int(11)","NO","NULL",""},;
 		{"emplacc","type","tinyint(1)","NO","0",""},;
@@ -1370,9 +1371,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","lock_time","timestamp","NO","0000-00-00",""},;
 		{"ipcaccounts","ipcaccount","int(7)","NO","NULL",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
-		{"language","sentenceen","varchar(80)","NO","",""},;
-		{"language","sentencemy","varchar(80)","NO","",""},;
-		{"language","length","int(2)","NO","80",""},;
+		{"language","sentenceen","varchar(512)","NO","",""},;
+		{"language","sentencemy","varchar(512)","NO","",""},;
+		{"language","length","int(3)","NO","80",""},;
 		{"language","location","char(1)","NO","",""},;
 		{"log","logid","int(11)","NO","NULL","auto_increment"},;
 		{"log","collection","varchar(20)","NO","log",""},;
@@ -1575,6 +1576,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","sepaenabled","tinyint(1)","NO","0",""},; 
 		{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
+		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(4)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
@@ -1689,7 +1691,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","1","transactnr","2","transactnr"},;
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
 		{"language","0","PRIMARY","1","location"},;
-		{"language","0","PRIMARY","2","sentenceen"},;
+		{"language","0","PRIMARY","2","sentenceen (240)"},;
 		{"log","0","PRIMARY","1","logid"},;
 		{"log","1","coltime","1","collection"},;
 		{"log","1","coltime","2","logtime"},;
