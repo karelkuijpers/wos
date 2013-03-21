@@ -69,7 +69,7 @@ local oStmnt as SQLStatement
 IF Empty(cSentenceEnglish)
 	RETURN ""
 ENDIF
-cText:=AllTrim(cSentenceEnglish)
+cText:=AllTrim(SubStr(cSentenceEnglish,1,512))
 IF !Alg_taal="E" 
 
 	if (iPos:=AScan(aLanM,{|x|Lower(x[1])==Lower(cText)}))>0
@@ -97,7 +97,7 @@ local oStmnt as SQLStatement
 IF Empty(cSentenceEnglish)
 	RETURN ""
 ENDIF
-cText:=AllTrim(cSentenceEnglish)
+cText:=AllTrim(SubStr(cSentenceEnglish,1,512))
 IF !Alg_taal="E" 
 	if (iPos:=AScan(aLanR,{|x|Lower(x[1])==Lower(cText)}))>0
 		IF !Empty(aLanR[iPos,2])
@@ -132,7 +132,7 @@ local oStmnt as SQLStatement
 IF Empty(cSentenceEnglish)
 	RETURN ""
 ENDIF
-cText:=AllTrim(cSentenceEnglish)
+cText:=AllTrim(SubStr(cSentenceEnglish,1,512))
 IF !Alg_taal="E" 
 	if (iPos:=AScan(aLanW,{|x|Lower(x[1])==Lower(cText)}))>0
 		IF !Empty(aLanW[iPos,2])
