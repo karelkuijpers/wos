@@ -291,8 +291,17 @@ METHOD TestButton( ) CLASS EditEmailAccount
 	local lError as logic
 	local oFilespecB as FileSpec
 	local ptrLog as ptr
-	local oMf 
+	local oMf
+	local oTCPIP as TCPIP  
 
+// test internet available:
+	oTCPIP:=TCPIP{}
+	oTCPIP:timeout:=2000
+	oTCPIP:Ping('www.google.com')
+	if AtC("timeout",oTCPIP:Response)>0
+		ErrorBox{self,self:oLan:WGet("No internet connection")}:show()
+		return false
+	endif
 	GetHelpDir()
 	cbatchfile:=HelpDir+'\'+"batchtest"+Str(GetTickCountLow(),-1)+".bat"
 	clogfile:=HelpDir+'\'+"logtest"+Str(GetTickCountLow(),-1)+".txt"
@@ -322,7 +331,7 @@ METHOD TestButton( ) CLASS EditEmailAccount
 			return false 
 		endif
 	else
-		ErrorBox{self,self:oLan:WGet("Error sending email with this account settings (no lgfile)")}:show()
+		ErrorBox{self,self:oLan:WGet("Error sending email with this account settings")}:show()
 		return false 
 	endif
 
@@ -588,6 +597,7 @@ class SendEmailsDirect
 	protect cFileContentBase as string // beginning of name of bodyfile 
 	protect cbatchfile as string   // file with emails to send  
 	protect oOwner as Window
+	protect oLan as Language
 
 	
 	declare method AddEmail,SendEmails
@@ -605,9 +615,11 @@ method AddEmail(subject as string,mailbody as string,aRecip as array,aFiles:={} 
 			if Empty(oResName:recipemail)
 				loop
 			endif
-			aRecip[i,2]:=oResName:recipemail 
-			// update database:
-			SQLStatement{'update person set email="'+oResName:recipemail+'" where persid='+ConS(aRecip[i,3]),oConn}:execute()
+			aRecip[i,2]:=oResName:recipemail
+			if !Empty(aRecip[i,3]) // person known in database? 
+				// update database:
+				SQLStatement{'update person set email="'+oResName:recipemail+'" where persid='+ConS(aRecip[i,3]),oConn}:execute()
+			endif
 		endif
 		cRecip+=iif(Empty(cRecip),'',',')+AllTrim(aRecip[i,2])
 	next
@@ -618,7 +630,8 @@ method Close() class SendEmailsDirect
 	if self:lError
 		ErrorBox{,"Could not send emails"+iif(Empty(self:cError),'',': '+self:cError)}:Show() 
 	else
-		TextBox{self:oOwner,"Sending of emails",Str(Len(self:aEmail),-1)+' '+"emails have been sent"}:Show()
+		i:=Len(self:aEmail)
+		TextBox{self:oOwner,"Sending of emails",Str(i,-1)+' '+"email"+iif(i>1,'s have',' has')+" been sent"}:Show()
 	endif
 /*	// remove batch file:
 	if !Empty(self:cbatchfile)
@@ -635,20 +648,21 @@ method Close() class SendEmailsDirect
 Method Init(oWindow) class SendEmailsDirect
 	local oSel as SQLSelect
 	local oEditAccount as EditEmailAccount
+	self:oLan:=Language{}
 	oSel:=SqlSelect{'select emailaddress,username,cast('+Crypt_Emp(false,"password")+' as char) as password,protocol,outgoingserver,port from mailaccount where empid='+MyEmpID,oConn}
 	if oSel:RecCount<1
 		// let user specify his mailaccount data:
 		oEditAccount:=EditEmailAccount{} 
 		oEditAccount:Show()
 		if !oEditAccount:lSuccess 
-			self:cError:="No email account settings available"
+			self:cError:=self:oLan:WGet("No email account settings available")
 			self:lError:=true
 			return self
 		endif			
 		oSel:Execute()
 		if oSel:RecCount<1
 			self:lError:=true
-			self:cError:="No email account settings available"
+			self:cError:=self:oLan:WGet("No email account settings available")
 			return self
 		endif 
 	endif
@@ -664,20 +678,22 @@ Method Init(oWindow) class SendEmailsDirect
 	self:cMailBasic:=WorkDir()+"senditquiet.exe -s "+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
 	return self 
 method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect 
+	// The actually sending of the emails to the outgoing server
+	// Option: lConfirm=true: show emails to the user with the options to cancel all, to remove some
 	local i,m,nRet as int
 	local cFileContent as string
 	local cbatchfile as string 
 	local oFilespecB as FileSpec
 	local ptrHandleBatch,ptrHandleBody as ptr
 	local oConfirm as EmailConfirm
-	// The actually sending of the emails to the outgoing server
-	// Option: lConfirm=true: show emails to the user with the options to cancel all, to remove some
+	local oTCPIP as TCPIP  
+
 	if lConfirm
 		oConfirm:=EmailConfirm{,self}
 		oConfirm:Show()
 		if oConfirm:lSend=false
 			self:lError:=true
-			self:cError:="Email cancelled"
+			self:cError:=self:oLan:WGet("Email cancelled")
 			return false
 		endif
 	endif
@@ -685,7 +701,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	// send emails
 	if Len(self:aEmail)=0 
 		self:lError:=true
-		self:cError:="Nothing to send"
+		self:cError:=self:oLan:WGet("Nothing to send")
 		return true
 	endif
 	GetHelpDir()
@@ -695,10 +711,10 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	FileSpec{cbatchfile}:DELETE()
 	// remove mailbody files:
 	AEval(Directory(self:cFileContentBase+"*.html"), {|aFile|FErase(aFile[F_NAME])})
-//
+	//
 	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for mailing")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
-		self:cError:="Couldn't compose email"
+		self:cError:=self:oLan:WGet("Couldn't compose email")
 		self:lError:=true
 		return false 
 	ENDIF
@@ -711,7 +727,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		ptrHandleBody := MakeFile(self,@cFileContent,"Creating mailbody file")
 		IF ptrHandleBody = F_ERROR .or. Empty(ptrHandleBody)
 			self:lError:=true
-			self:cError:="Couldn't compose email"
+			self:cError:=self:oLan:WGet("Couldn't compose email")
 			return false 
 		endif
 		m:= FWriteLineUni(ptrHandleBody,StrTran(self:aEmail[i,3],CRLF,'<br>'))
@@ -719,27 +735,31 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		oFilespecB:=FileSpec{cFileContent} 
 		if oFilespecB:Find()             
 			FWriteLine(ptrHandleBatch,'return = WshShell.Run("'+StrTran(self:cMailBasic+" -t "+self:aEmail[i,1]+' -subject "'+self:aEmail[i,2]+'" -bodyfile "'+cFileContent+;
-				iif(Empty(self:aEmail[i,4]),"",'" -files "'+self:aEmail[i,4]+'"'),'"','""')+'",0'+iif(i=1,',true','')+')')
+				iif(Empty(self:aEmail[i,4]),"",'" -files "'+self:aEmail[i,4]+'"'),'"','""')+'",0)')
+			// 				iif(Empty(self:aEmail[i,4]),"",'" -files "'+self:aEmail[i,4]+'"'),'"','""')+'",0'+iif(i=1,',true','')+')')
 		else
 			self:lError:=true
-			self:cError:="Couldn't compose email"
+			self:cError:=self:oLan:WGet("Couldn't compose email")
 			return false
 		endif
 	next
 	FWriteLine(ptrHandleBatch,'Set WshShell = Nothing')
 	FClose(ptrHandleBatch)
 	if FileSpec{self:cbatchfile}:Find() 
-		// check internet connection: 
-		if ! CFtp{"WycOffSy FTP Agent"}:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
-			self:lError:=true 
-			self:cError:="No internet connection"
+		// test internet available:
+		oTCPIP:=TCPIP{}
+		oTCPIP:timeout:=2000
+		oTCPIP:Ping('www.google.com')
+		if AtC("timeout",oTCPIP:Response)>0
+			self:lError:=true
+			self:cError:=self:oLan:WGet("No internet connection")
 			return false
-		endif 
+		endif
 
 		nRet:=FileStart(self:cbatchfile,self:oOwner)
 		if nRet>0 .and. nRet<33
 			self:lError:=true 
-			self:cError:="Email send failed"+': '+Str(nRet,-1)			
+			self:cError:=self:oLan:WGet("Email send failed")+': '+Str(nRet,-1)			
 			return false
 		endif					
 	endif
