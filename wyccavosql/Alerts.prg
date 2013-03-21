@@ -110,6 +110,24 @@ Method GetDiffernces(Reportdate as date) as array class AlertBankbalance
 //       LogEvent(self,"differences:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	endif
 	return aDiff
+class AlertNew
+// show what is new when there is soemthing new
+method ShowNew() class AlertNew
+	LOCAL oMyFileSpec1 as FileSpec
+	local oSel as SQLSelect
+	oMyFileSpec1:=FileSpec{WorkDir()+"\WosSQLNew.chm"} 
+	if oMyFileSpec1:find()
+		oSel:=SqlSelect{"select cast(lstnews as date) as lstnews from employee where empid="+MyEMPID,oConn}
+		if oSel:reccount>0
+			if Empty(oSel:lstnews) .or. oMyFileSpec1:DateChanged>oSel:lstnews
+				// something new for this user:
+				SQLStatement{'update employee set lstnews="'+SQLdate(oMyFileSpec1:DateChanged)+'" where empid='+MyEMPID,oConn}:execute()
+				oMainWindow:WhatIsNew()
+			endif
+		endif
+	endif
+	return
+
 class AlertSuspense  
 	declare method CollectSuspense,CollectSuspense
 Method Alert() class AlertSuspense
@@ -337,6 +355,18 @@ STATIC DEFINE CHECKBANKBALANCE_FIXEDTEXT6 := 104
 STATIC DEFINE CHECKBANKBALANCE_FIXEDTEXT9 := 100 
 STATIC DEFINE CHECKBANKBALANCE_OKBUTTON := 102 
 STATIC DEFINE CHECKBANKBALANCE_REPORTDATE := 103 
+CLASS CheckSuspense INHERIT DataWindowExtra 
+
+	PROTECT oDCTodate AS DATESTANDARD
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCFromdate AS DATESTANDARD
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCGroupBox3 AS GROUPBOX
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE CheckSuspense DIALOGEX  4, 3, 288, 92
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -351,18 +381,6 @@ BEGIN
 	CONTROL	"Cancel", CHECKSUSPENSE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 216, 7, 53, 12
 END
 
-CLASS CheckSuspense INHERIT DataWindowExtra 
-
-	PROTECT oDCTodate AS DATESTANDARD
-	PROTECT oDCFixedText8 AS FIXEDTEXT
-	PROTECT oDCFromdate AS DATESTANDARD
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCGroupBox3 AS GROUPBOX
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS CheckSuspense 
 self:EndWindow()
 RETURN NIL
