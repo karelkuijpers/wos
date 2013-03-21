@@ -1483,7 +1483,7 @@ function InitGlobals()
 	"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
 	"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
 	"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
-	"`yearclosed`,`debtors`,`currency`,`sysname`,`sepaenabled` from sysparms",oConn}
+	"`yearclosed`,`debtors`,`currency`,`sysname`,`sepaenabled`,`maildirect` from sysparms",oConn}
 	IF oSys:RecCount>0
 		oSel:=SQLSelect{"select yearstart,yearlength,monthstart from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
@@ -1546,7 +1546,8 @@ function InitGlobals()
 			ENDIF
 			Admin:=oSys:ADMINTYPE
 		ENDIF
-		requiredemailclient:=ConI(oSys:MAILCLIENT)                                 
+		requiredemailclient:=ConI(oSys:MAILCLIENT)
+		maildirect:=ConL(oSys:maildirect)                                 
 		sFirstNmInAdr := ConL(oSys:FirstName)
 		sLand	:= AllTrim(oSys:CountryOwn)
 		OwnCountryNames:=Split(AllTrim(oSys:OWNCNTRY),",")
