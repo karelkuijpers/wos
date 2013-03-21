@@ -329,6 +329,9 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	AAdd(aMenu,{6,8, oLan:MGet("&Show log"),"LogReport","",0,46,"AF"})
 	AAdd(aMenu,{6,8,,,,,})           // separator
 	AAdd(aMenu,{6,9, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
+	if maildirect .and. SqlSelect{'select empid from mailaccount where empid='+MyEmpID,oConn}:Reccount>0
+		AAdd(aMenu,{6,9, oLan:MGet("&Change mail account")+"...","EditEmailAccount",,0,50,"Z"})
+	endif
 	IF lSystemAdmin
 		AAdd(aMenu,{6,10, oLan:MGet("&User_ids and passwords")+"...","EmployeeBrowser",,0,45,"A"})
 	ENDIF
