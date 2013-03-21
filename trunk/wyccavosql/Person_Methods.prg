@@ -4362,7 +4362,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
 		" and '"+SQLdate(end_due)+"' and invoicedate<s.enddate and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid order by p.lastname",oConn}
-// 	LogEvent(self,oDue:SQLString,"logsql")
 	oDue:Execute()
 	IF oDue:RecCount<1 .or. Empty(oDue:grDue)
 		(WarningBox{self,"Producing SEPA Direct Debit file","No due amounts to be debited direct!"}):Show()
@@ -4411,9 +4410,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		cAccID:=aDue[i,4]
 		if AmountInvoice> fLimitInd
 			cErrMsg+=CRLF+self:oLan:WGet("Direct debit amount of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'
-// 			(ErrorBox{self,self:oLan:WGet("Direct debit amount of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'}):Show()
-// 			self:Pointer := Pointer{POINTERARROW}
-// 			return false  
 			loop
 		endif
 			
@@ -4421,8 +4417,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
 			loop
 		endif
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17
 
 		// determine description from Subscription: 
 		IF Empty(nTerm) .or.nTerm>12
@@ -4478,8 +4474,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 		aSeqTp[SeqTp,2]++
 		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
-		// add to aCt for mailing DD file:
-		// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF)},...
+		// add to aDD for mailing DD file:
+		// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RCUR,FNAL,OOFF)},...
 		AAdd(aDD,{cAmnt,aDue[i,2],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
 	next
 
@@ -4537,8 +4533,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			//new seqtp thus new PmtInf
 			SeqTp:=aDD[i,8] 
 			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
-				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+'</PmtInfId>'+CRLF+;
+				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(SeqTp,-1)+'</PmtInfId>'+CRLF+; 
 				'<PmtMtd>DD</PmtMtd>'+CRLF+;
+				'<BtchBookg>true</BtchBookg>'+CRLF+;
 				'<NbOfTxs>'+Str(aSeqTp[SeqTp,2],-1)+'</NbOfTxs>'+CRLF+;
 				'<CtrlSum>'+Str(aSeqTp[SeqTp,3],-1,2)+'</CtrlSum>'+CRLF+; 
 			'<PmtTpInf>'+CRLF+;
@@ -4564,7 +4561,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		// 			'<EndToEndId>'+Pad(aDue[i,12]+DToC(invoicedate)+'</EndToEndId>'+CRLF+;
 		AAdd(DrctDbtTxInf,'<DrctDbtTxInf>'+CRLF+;
 			'<PmtId>'+CRLF+; 
-			'<EndToEndId>'+aDD[i,7]+'</EndToEndId>'+CRLF+;
+			'<EndToEndId>'+aDD[i,7]+'</EndToEndId>'+CRLF+;     // invoiceid
 			'</PmtId>'+CRLF+;
 			'<InstdAmt  Ccy="EUR">'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
 			'<DrctDbtTx><MndtRltdInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltdInf></DrctDbtTx>'+CRLF+; 
@@ -4579,7 +4576,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			'</DbtrAcct>'+CRLF+;
 			'<RmtInf>'+CRLF+;
 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
-		'<Strd><CdtrRefInf><Tp>SCOR</Tp><CdOrPrtry><Cd>'+aDD[i,7]+'</Cd></CdOrPrtry></CdtrRefInf></Strd>'+CRLF+;     // invoiceid
 		'</RmtInf>'+CRLF+;
 			'</DrctDbtTxInf>')
 // 		FWriteLineUni(ptrHandle,'<DrctDbtTxInf>'+CRLF+;
