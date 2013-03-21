@@ -2784,10 +2784,8 @@ CLASS GiftReport INHERIT DataWindowMine
 
 
 	declare method CheckAccInRange,GiftsPrint,GiftsYearOverview,MailStatements,MemberStatementHtml,Acc2Mbr,CollectAsssement,CollectBalances,CollectTransPers,;
-		CompareBudget,OtherAccounts,AssmntOverView,YearOverView,MonthOverView,InitializeMbrStmntReport,TransOverView,BeginOfTransGroupKind,EndOfTransGroupKind
-
-	
-
+		CompareBudget,OtherAccounts,AssmntOverView,YearOverView,MonthOverView,InitializeMbrStmntReport,TransOverView,BeginOfTransGroupKind,EndOfTransGroupKind,;
+		MailStatementsDirect
 
 RESOURCE GiftReport DIALOGEX  58, 59, 398, 279
 STYLE	WS_CHILD
@@ -4250,9 +4248,128 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			oPro:Destroy()
 		ENDIF
 
-		TextBox{self,self:oLan:WGet("Member statements"),Str(mCnt,-1)+' '+self:oLan:WGet("messsages placed in the outbox")}:Show()  
+		TextBox{self,self:oLan:WGet("Member statements"),Str(mCnt,-1)+' '+self:oLan:WGet("messsages placed in the outbox")}:Show()
+		if mCnt>0
+        	LogEvent(self,Str(mCnt,-1)+' '+self:oLan:RGet("member statements sent by email"))
+      endif
 	ENDIF
 	return
+	method MailStatementsDirect(ReportYear as int,ReportMonth as int) as void pascal class GiftReport
+	// sending of statments mentioned in self:aMailMember 
+	// mailing variables:
+	LOCAL mailcontent,memberName,cPers,cPeriod,cMess,cRun,cFileContent,cBatchFile as STRING
+	local i,m,mCnt,nRet as int
+	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
+	local aOneMember:={}, aPers:={} as ARRAY 
+	local aRecip:={} as ARRAY  // {{name,email,persid},...}
+	local oFileSpec,oFilespecB as FileSpec
+	LOCAL oEMLFrm as eMailFormat
+	local ptrHandle,ptrHandleBatch as ptr 
+// 	LOCAL oPro as ProgressPer
+	LOCAL oSelpers as Selpers 
+	local oSendMail as SendEmailsDirect
+
+	if self:SendingMethod=="SeperateFileMail" .and. !Empty(self:aMailMember)
+		// Prepare sending files by email:
+		self:STATUSMESSAGE(self:oLan:WGet('Mailing statements...') )
+		(oEMLFrm := eMailFormat{self:oParent}):Show()
+		IF oEMLFrm:lCancel
+			RETURN 
+		ENDIF
+		cPeriod:="   "+Str(ReportYear,4)+'  '+iif(self:CalcMonthEnd>self:CalcMonthStart,Upper(oLan:RGet(MonthEn[self:CalcMonthStart],,"!"))+' - ','')+Upper(oLan:RGet(MonthEn[self:CalcMonthEnd],,"!"))
+
+		oSelpers:=Selpers{self,,}
+		oSelpers:AnalyseTxt(oEMLFrm:Template,@DueRequired,@GiftsRequired,@AddressRequired,@repeatingGroup,1)
+		// lookup al person data of all required recipients: 
+		aPers:={}
+		self:Pointer := Pointer{POINTERHOURGLASS}
+// 		oPro:=ProgressPer{,oMainWindow}
+// 		oPro:Caption:="Mailing member statements"
+// 		oPro:SetRange(1,Len(self:aMailMember)+1)
+// 		oPro:SetUnit(1)
+// 		oPro:Show() 
+		self:Pointer := Pointer{POINTERHOURGLASS}
+		// aMailMember:	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,contact name} 
+		//                    1        2        3        4              5               6           7               8
+		for i:=1 to Len(self:aMailMember)
+			if !Empty(self:aMailMember[i,4])      // member
+				AAdd(aPers,self:aMailMember[i,4])
+			elseif !Empty(self:aMailMember[i,5])
+				AAdd(aPers,self:aMailMember[i,5])	// contact			
+			endif
+		next
+		if !Empty(aPers) 
+			cMess:=self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")
+			self:STATUSMESSAGE(cMess)
+			oSelpers:oDB:=SqlSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
+				"attention,cast(datelastgift as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
+			oSelpers:oDB:Execute()
+			if !Empty(oSelpers:oDB:status)
+				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage,"logerrors")
+				ErrorBox{self, self:oLan:WGet("could not retrieve member assessment data")}:Show()
+				return
+			endif
+			oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4) 
+			oSendMail:=SendEmailsDirect{self}
+			if oSendMail:lError
+				ErrorBox{self,self:oLan:WGet("Couldn't send member statements by email")}:Show()
+				return
+			endif
+			do while !oSelpers:oDB:EOF .and. !Empty(aMailMember) 
+				cPers:=Str(oSelpers:oDB:persid,-1)
+				aRecip:={}
+				if (m:=AScan(self:aMailMember,{|x|x[4]==cPers .or.(Empty(x[4]).and.x[5]==cPers)}))>0
+					oFileSpec:=FileSpec{self:aMailMember[m,3]} 
+					if oFileSpec:Find() ;// don't mail when skipped
+						.and.!(Empty(self:aMailMember[m,4]).and.Empty(self:aMailMember[m,5]))  // skip also if no memeber and no contact
+						memberName:=self:aMailMember[m,2]
+						self:STATUSMESSAGE(self:oLan:WGet('Mailing the statement of')+Space(1)+memberName) 
+						IF !Empty(self:aMailMember[m,4])    // Destination member
+							aRecip:= {{self:aMailMember[m,2],self:aMailMember[m,6],self:aMailMember[m,4]}}
+							* Resolve membername:
+							IF !Empty(self:aMailMember[m,5])    // Destination also contact 
+								AAdd(aRecip,{self:aMailMember[m,8],self:aMailMember[m,7],self:aMailMember[m,5]})
+							ENDIF
+						ELSE
+							// only contact:
+							aRecip:= aRecip:= {{self:aMailMember[m,8],self:aMailMember[m,7],self:aMailMember[m,5]}}
+						ENDIF
+						IF !Empty(oEMLFrm:Template)
+							mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
+						ELSE
+							mailcontent:=""
+						ENDIF
+						oSendMail:AddEmail(oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent,aRecip,{oFileSpec:FullPath}) 
+					endif 
+				endif
+				ADel(self:aMailMember,m) 
+				aSize(self:aMailMember,len(self:aMailMember)-1)
+// 				if !Empty(oPro)
+// 					oPro:AdvancePro()
+// 					self:Pointer := Pointer{POINTERHOURGLASS}
+// 				endif
+				oSelpers:oDB:Skip() 
+			enddo
+			IF !oSelpers==null_object
+				oSelpers:Close()
+				oSelpers:=null_object
+			ENDIF
+         oSendMail:SendEmails(true)
+         oSendMail:Close() 
+         if !oSendMail:lError .and. Len(oSendMail:aEmail)>0
+         	LogEvent(self,Str(Len(oSendMail:aEmail),-1)+' '+self:oLan:RGet("member statements sent by email"))
+         endif
+		endif
+		self:Pointer := Pointer{POINTERARROW}
+// 		IF !oPro==null_object
+// 			oPro:EndDialog()
+// 			oPro:Destroy()
+// 		ENDIF
+	ENDIF
+	return
+
+
+
 METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear as int,ReportMonth as int) as void pascal CLASS GiftReport 
 	//
 	// Producing of memberstatement for members to html-file
@@ -4572,7 +4689,11 @@ METHOD OKButton( ) CLASS GiftReport
 		else 
 			self:GiftsPrint(self:FromAccount,self:ToAccount,self:CalcYear,self:CalcMonthEnd,@nRow,@nPage) 
 		endif
-		self:MailStatements(self:CalcYear,self:CalcMonthEnd)
+		if maildirect
+			self:MailStatementsDirect(self:CalcYear,self:CalcMonthEnd)
+		else
+			self:MailStatements(self:CalcYear,self:CalcMonthEnd)
+		endif
 	ENDIF 
 	SetDecimalSep(Asc('.'))
 	// 	ENDIF
@@ -5863,18 +5984,6 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class ReImbursement
 STATIC DEFINE REIMBURSEMENT_BALANCETEXT := 100 
 STATIC DEFINE REIMBURSEMENT_CANCELBUTTON := 102 
 STATIC DEFINE REIMBURSEMENT_OKBUTTON := 101 
-RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
-	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
-	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
-	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
-	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
-	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
-END
-
 class TaxReport inherit DataWindowMine 
 
 	protect oDCYearTax as COMBOBOX
@@ -5888,6 +5997,18 @@ class TaxReport inherit DataWindowMine
 	instance YearTax 
 	instance Threshold 
   PROTECT TaxID as STRING
+RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
+	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
+	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
+	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
+	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
+	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
+END
+
 METHOD CancelButton( ) CLASS TaxReport
 	SELF:endWindow()
 	RETURN
@@ -6608,16 +6729,6 @@ STATIC DEFINE TRIALBALANCE_MONTHEND := 104
 STATIC DEFINE TRIALBALANCE_MONTHSTART := 103 
 STATIC DEFINE TRIALBALANCE_OKBUTTON := 106 
 STATIC DEFINE TRIALBALANCE_YEARTRIAL := 102 
-RESOURCE YearClosing DIALOGEX  16, 14, 278, 88
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", YEARCLOSING_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 14, 53, 12
-	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 36, 53, 13
-	CONTROL	"Balance Year:", YEARCLOSING_FIXEDTEXT2, "Static", WS_CHILD, 22, 19, 64, 13
-	CONTROL	"", YEARCLOSING_STARTYEARTEXT, "Static", WS_CHILD, 77, 19, 109, 13
-END
-
 CLASS YearClosing INHERIT DataWindowMine 
 
 	PROTECT oCCOKButton as PUSHBUTTON
@@ -6639,6 +6750,16 @@ CLASS YearClosing INHERIT DataWindowMine
 		d_PLcre:={}	   as ARRAY 
 	
 	declare method SubDepartment
+RESOURCE YearClosing DIALOGEX  16, 14, 278, 88
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", YEARCLOSING_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 14, 53, 12
+	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 36, 53, 13
+	CONTROL	"Balance Year:", YEARCLOSING_FIXEDTEXT2, "Static", WS_CHILD, 22, 19, 64, 13
+	CONTROL	"", YEARCLOSING_STARTYEARTEXT, "Static", WS_CHILD, 77, 19, 109, 13
+END
+
 METHOD CancelButton( ) CLASS YearClosing
 	SELF:EndWindow()
 	RETURN
