@@ -4250,8 +4250,8 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 
 		TextBox{self,self:oLan:WGet("Member statements"),Str(mCnt,-1)+' '+self:oLan:WGet("messsages placed in the outbox")}:Show()
 		if mCnt>0
-        	LogEvent(self,Str(mCnt,-1)+' '+self:oLan:RGet("member statements sent by email"))
-      endif
+			LogEvent(self,Str(mCnt,-1)+' '+self:oLan:RGet("member statements sent by email"))
+		endif  
 	ENDIF
 	return
 	method MailStatementsDirect(ReportYear as int,ReportMonth as int) as void pascal class GiftReport
@@ -4355,9 +4355,9 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 				oSelpers:=null_object
 			ENDIF
          oSendMail:SendEmails(true)
-         oSendMail:Close() 
+         oSendMail:Close()
          if !oSendMail:lError .and. Len(oSendMail:aEmail)>0
-         	LogEvent(self,Str(Len(oSendMail:aEmail),-1)+' '+self:oLan:RGet("member statements sent by email"))
+				LogEvent(self,Str(Len(oSendMail:aEmail),-1)+' '+self:oLan:RGet("member statements sent by email"))         	
          endif
 		endif
 		self:Pointer := Pointer{POINTERARROW}
