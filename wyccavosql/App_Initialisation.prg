@@ -894,7 +894,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		oStmnt:Execute()  
 	endif
 
-	// copy helpfile to c because it cannot read from a server:
+	// copy helpfile to c because it cannot read from a server: 
+	GetHelpDir()
 	oMyFileSpec1:=FileSpec{cWorkdir+"\WOSHlp.chm"}
 	IF oMyFileSpec1:Find()
 		oMyFileSpec2:=FileSpec{HelpDir+"\WOSHlp.chm"}
@@ -2384,47 +2385,47 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 // 				enddo
 // 			endif
 // 		endif
-		if cTableName=='sysparms'
-			// Table name, Field,Type,Null,Default,Extra 
-			if AScan(aCurColumn,{|x|x[2]=='banknbrcol'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcol'.and. Left(x[3],3)='int'})>0
-				// select old values and new values for banknbrcol:
-				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where s.banknbrcol>"" and b.banknumber=s.banknbrcol',oConn}
-				if oSel:RecCount>0
-					AAdd(avalues,{'banknbrcol',oSel:bankid}) 
-				else
-					AAdd(avalues,{'banknbrcol','0'}) 					
-				endif
-			else
-				AAdd(avalues,{'banknbrcol','0'}) 					
-			endif
-			if AScan(aCurColumn,{|x|x[2]=='banknbrcre'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcre'.and. Left(x[3],3)=='int'})>0
-				// select od values and new values for banknbrcol:
-				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where banknbrcre>"" and b.banknumber=s.banknbrcre',oConn}
-				if oSel:RecCount>0
-					AAdd(avalues,{'banknbrcre',oSel:bankid})
-				else
-					AAdd(avalues,{'banknbrcre','0'}) 					
-				endif
-			else
-				AAdd(avalues,{'banknbrcre','0'}) 					
-			endif
-		endif
+// 		if cTableName=='sysparms'
+// 			// Table name, Field,Type,Null,Default,Extra 
+// 			if AScan(aCurColumn,{|x|x[2]=='banknbrcol'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcol'.and. Left(x[3],3)='int'})>0
+// 				// select old values and new values for banknbrcol:
+// 				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where s.banknbrcol>"" and b.banknumber=s.banknbrcol',oConn}
+// 				if oSel:RecCount>0
+// 					AAdd(avalues,{'banknbrcol',oSel:bankid}) 
+// 				else
+// 					AAdd(avalues,{'banknbrcol','0'}) 					
+// 				endif
+// 			else
+// 				AAdd(avalues,{'banknbrcol','0'}) 					
+// 			endif
+// 			if AScan(aCurColumn,{|x|x[2]=='banknbrcre'.and. !Left(x[3],3)=='int'})>0 .and.AScan(aReqColumn,{|x|x[2]=='banknbrcre'.and. Left(x[3],3)=='int'})>0
+// 				// select od values and new values for banknbrcol:
+// 				oSel:=SqlSelect{'select cast(bankid as char) as bankid from sysparms s,bankaccount b where banknbrcre>"" and b.banknumber=s.banknbrcre',oConn}
+// 				if oSel:RecCount>0
+// 					AAdd(avalues,{'banknbrcre',oSel:bankid})
+// 				else
+// 					AAdd(avalues,{'banknbrcre','0'}) 					
+// 				endif
+// 			else
+// 				AAdd(avalues,{'banknbrcre','0'}) 					
+// 			endif
+// 		endif
 		SQLStatement{"start transaction",oConn}:Execute() 
 		lError:=false 
-		if cTableName=='sysparms' .and. Len(avalues)>0
-			// fill new values: 
-			cvalues:="set "
-			for i:=1 to Len(avalues)
-				cvalues+=avalues[i,1]+'="'+avalues[i,2]+'"'+iif(i<Len(avalues),',','')
-			next
-			oStmnt:=SQLStatement{'update sysparms '+cvalues,oConn}
-			oStmnt:Execute()
-			if!Empty(oStmnt:Status)
-				SQLStatement{"rollback",oConn}:execute()
-				LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
-				lError:=true
-			endif
-		endif 
+// 		if cTableName=='sysparms' .and. Len(avalues)>0
+// 			// fill new values: 
+// 			cvalues:="set "
+// 			for i:=1 to Len(avalues)
+// 				cvalues+=avalues[i,1]+'="'+avalues[i,2]+'"'+iif(i<Len(avalues),',','')
+// 			next
+// 			oStmnt:=SQLStatement{'update sysparms '+cvalues,oConn}
+// 			oStmnt:Execute()
+// 			if!Empty(oStmnt:Status)
+// 				SQLStatement{"rollback",oConn}:execute()
+// 				LogEvent(self,"Could not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+// 				lError:=true
+// 			endif
+// 		endif 
 // 		if cIndex=='telecontent' .and. Len(avalues)>0
 // 			// correct teletrans to make each line unique	
 // 			oStmnt:=SQLStatement{'insert into teletrans (teletrid,seqnr) values '+Implode(avalues,'","')+;
