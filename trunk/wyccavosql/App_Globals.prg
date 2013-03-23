@@ -26,8 +26,7 @@ global DecSeparator as string
 
 GLOBAL Departments as LOGIC
 GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining','remaining RPP'}
-global emailclient as string 
- 
+global emailclient as string
 GLOBAL EXCEL as STRING
 global FirstLogin as logic  // first login user this day?
 global GlBalYears:={} as Array
@@ -51,6 +50,8 @@ GLOBAL maand := ;
 {'January','February','March','April','May','June','July','August',;
 'September','October','November','December'} as ARRAY
 global mail_abrv as array
+global maildirect as logic 
+ 
 GLOBAL mdw as STRING
 GLOBAL MemberStates := {'MIT','STA','JM','SM','Entity','Entity 19999','Staf'} as ARRAY
 GLOBAL MinDate as date
@@ -118,7 +119,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.162" as string
+global Version:="3.0.0.163" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
