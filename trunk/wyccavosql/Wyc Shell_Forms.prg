@@ -99,52 +99,27 @@ METHOD HelpAboutDialog() CLASS StandardWycWindow
 	
 METHOD HelpContents CLASS StandardWycWindow
 	LOCAL nResult AS DWORD
-nResult := HTMLHelp(;
-            SELF:Handle(),;
-            psz(_cast,HelpDir+"/" + "WOSHlp.chm::/Introduction.htm"), ;
-            HH_DISPLAY_TOPIC,;
-            0)
+	GetHelpDir()
+	nResult := HTMLHelp(;
+		SELF:Handle(),;
+		psz(_cast,HelpDir+"/" + "WOSHlp.chm::/Introduction.htm"), ;
+		HH_DISPLAY_TOPIC,;
+		0)
 
 
 	RETURN
-// METHOD Reminders() CLASS StandardWycWindow
-// 	(Selpers{SELF,"REMINDERS"}):Show()
-// 	RETURN
-// METHOD DonationsMail() CLASS StandardWycWindow
-// 	(Selpers{SELF,"DONATIONS"}):Show()
-// 	RETURN
-// METHOD SubScriptionsMail() CLASS StandardWycWindow
-// 	(Selpers{SELF,"SUBSCRIPTIONS"}):Show()
-// 	RETURN
-// METHOD ThankYouLetters() CLASS StandardWycWindow
-// 	(Selpers{SELF,"THANKYOU"}):Show()
-// 	RETURN
-// METHOD FirstGivers() CLASS StandardWycWindow
-// 	(Selpers{SELF,"FIRSTGIVERS"}):Show()
-// 	RETURN
-// METHOD FirstNonEarmarked() CLASS StandardWycWindow
-// 	(Selpers{SELF,"FIRSTNONEAR"}):Show()
-// 	RETURN
 METHOD HelpIndex CLASS StandardWycWindow
 	LOCAL nResult AS DWORD
-nResult := HTMLHelp(;
-            SELF:Handle(),;
-            psz(_cast,HelpDir+"/"+ "WOSHlp.chm::/Introduction.htm"), ;
-            HH_DISPLAY_INDEX,;
-            0)
+	GetHelpDir()
+	nResult := HTMLHelp(;
+		SELF:Handle(),;
+		psz(_cast,HelpDir+"/"+ "WOSHlp.chm::/Introduction.htm"), ;
+		HH_DISPLAY_INDEX,;
+		0)
 
 
-*	SELF:HelpDisplay:Show( "Index" )
 
 	RETURN SELF
-// METHOD OptionsChangePassword() CLASS StandardWycWindow
-
-// 	LOCAL oDW as DialogWinDowExtra
-// 	
-// 	oDW := NewPasswordDialog{ SELF }
-// 	oDW:Show()
-// 	
-// 	RETURN SELF
 METHOD INIT( oOwnerApp ) CLASS StandardWycWindow
 	LOCAL oSB AS StatusBar
 	
@@ -282,18 +257,16 @@ METHOD ThankYouLetters() CLASS StandardWycWindow
 	(SelPers{self,"THANKYOU"}):Show()
 	RETURN
 METHOD WhatIsNew CLASS StandardWycWindow
-	LOCAL nResult as DWORD
-nResult := HTMLHelp(;
-            self:Handle(),;
-            psz(_cast,HelpDir+"/" + "WosSQLNew.chm::/WhatIsNew2_6.htm"), ;
-            HH_DISPLAY_TOPIC,;
-            0)
+	LOCAL nResult as DWORD  
+	GetHelpDir()
+	nResult := HTMLHelp(;
+		self:Handle(),;
+		psz(_cast,HelpDir+"/" + "WosSQLNew.chm::/WhatIsNew3_0.htm"), ;
+		HH_DISPLAY_TOPIC,;
+		0)
 
 
 	RETURN
-// METHOD SubScriptions() CLASS StandardWycWindow
-// 	(SubscriptionBrowser{self,,,"SUBSCRIPTIONS"}):Show()
-// 	RETURN
 METHOD WindowCascade() CLASS StandardWycWindow
 
 	self:Arrange(ARRANGECASCADE)
