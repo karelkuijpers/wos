@@ -2659,11 +2659,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 				self:mCLNContact2:=''  // apparently non-existing person 
 			endif
 		endif
-		if !Empty(self:mCLNContact)
-			self:mPersonContact := self:oMbr:contactname
-			self:cContactName := self:mPersonContact
-			if Empty(self:mPersonContact)
-				self:mCLNContact:=''  // apparently non-existing person 
+		if !Empty(self:mCLNContact3)
+			self:mPersonContact3 := self:oMbr:contactname3
+			self:cContactName3 := self:mPersonContact3
+			if Empty(self:mPersonContact3)
+				self:mCLNContact3:=''  // apparently non-existing person 
 			endif
 		endif
 		self:StatemntsDest:=Str(self:oMbr:RPTDEST,-1)
