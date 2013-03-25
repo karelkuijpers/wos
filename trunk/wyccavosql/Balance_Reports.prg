@@ -2772,7 +2772,8 @@ CLASS GiftReport INHERIT DataWindowMine
 	EXPORT BeginReport:=FALSE as LOGIC 
 	protect aPPCode:={} as array 
 	protect DecFrac,DecFrac1 as int 
-	protect aMailMember:={} as ARRAY    // array with files to be emailed: {{mbrid,membername,FileName,persid member,persid contact} 
+	protect aMailMember:={} as ARRAY    // array with files to be emailed: {{mbrid,membername,FileName,{{persid,email,name},...}} 
+		//                                                                      1        2        3         4:1   4:2   4:3     
 	protect aMbr:={} as array   // array with all data of all members   :
 	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
 	//     1       2         3       4        5     6         7        8        9          10        11           12
@@ -2830,7 +2831,7 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	// convert selected members and gifts receivable account to aMbr and aAccidMbr:  
 	// convert aAcc to self:aMbr and aAccidMbr:
 	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr},...}
-	//          1       2         3       4        5     6         7        8        9          10        11            12         13
+	//          1       2           3       4       5     6        7        8        9          10        11            12         13  
 	// aAccidMbr: {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
 	//              1    2                                               4          5         6         7                     8      9       10,1       10,2            10,3                   10,4          10,5         
 	local i as int
@@ -2843,20 +2844,19 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	aAcc:=self:oDCSubSet:GetSelectedItems() 
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-// 	cMbrSelect:= "select m.mbrid,"+SQLFullName(2,"p")+" as description,m.homepp,m.householdid,m.co,d.deptmntnbr,m.rptdest,p.persid,if(isnull(pc.persid),'',pc.persid) as persidcontact,"+;
-// 		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname "+;
-// 		"from account a,member m left join person pc on (pc.persid=m.contact)left join department d on(d.depid=m.depid),person p where p.persid=m.persid and "+;
-// 		"(a.accid=m.accid or d.incomeacc=a.accid) and a.accid in ("+Implode(aAcc,",")+")" +;
-// 		" group by m.mbrid order by m.mbrid" 
-
 
 	cMbrSelect:= "select coalesce(m.mbrid,a.accid) as membrid,a.description,"+SQLFullName(2,"p")+" as membername,m.homepp,m.householdid,m.co,d.deptmntnbr,m.rptdest,if(isnull(p.persid),'',p.persid) as persid,"+;
 	"if(isnull(pc.persid),'',pc.persid) as persidcontact,"+;
-		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname,if(isnull(m.depid) or m.depid=0,'0','1') as isdepmbr "+;
-		"from account a left join department d ON (a.department=d.depid) left join member m ON (a.accid=m.accid or (d.depid=m.depid and d.incomeacc=a.accid)) left join person pc ON (pc.persid=m.contact) "+;
+		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname,if(isnull(m.depid) or m.depid=0,'0','1') as isdepmbr,"+; 
+		"if(isnull(pc2.persid),'',pc2.persid) as persidcontact2,if(isnull(pc2.email),'',pc2.email) as emailcontact2,if(isnull(pc2.persid),'',"+SQLFullName(2,"pc2")+") as contactname2,"+;
+		"if(isnull(pc3.persid),'',pc3.persid) as persidcontact3,if(isnull(pc3.email),'',pc3.email) as emailcontact3,if(isnull(pc3.persid),'',"+SQLFullName(2,"pc3")+") as contactname3 "+;		
+		"from account a left join department d ON (a.department=d.depid) left join member m ON (a.accid=m.accid or (d.depid=m.depid and d.incomeacc=a.accid)) "+;
+		"left join person pc ON (pc.persid=m.contact) left join person pc2 ON (pc2.persid=m.contact2) left join person pc3 ON (pc3.persid=m.contact3) "+;
 		"left join person p ON (p.persid=m.persid) where  a.accid in ("+Implode(aAcc,",")+") and a.active=1  group by membrid"
 	oSel:=SqlSelect{"select group_concat(cast(y.membrid as char),'#$#',coalesce(y.membername,y.description),'#$#',coalesce(y.homepp,''),'#$#',coalesce(y.householdid,''),'#$#',coalesce(y.co,''),'#$#',coalesce(y.deptmntnbr,''),'#$#',"+;
-	"cast(coalesce(y.rptdest,'') as char),'#$#',cast(persid as char),'#$#',cast(persidcontact as char),'#$#',coalesce(y.email,''),'#$#',emailcontact,'#$#',contactname,'#$#',isdepmbr order by membrid separator '#%#') as grMbr "+;
+	"cast(coalesce(y.rptdest,'') as char),'#$#',cast(persid as char),'#$#',cast(persidcontact as char),'#$#',coalesce(y.email,''),'#$#',emailcontact,'#$#',contactname,'#$#',isdepmbr,'#$#',"+;
+	"cast(persidcontact2 as char),'#$#',emailcontact2,'#$#',contactname2,'#$#',cast(persidcontact3 as char),'#$#',emailcontact3,'#$#',contactname3 "+;
+	" order by membrid separator '#%#') as grMbr "+;
 	"from ("+cMbrSelect+") as y",oConn}  
 // 		LogEvent(self,oSel:sqlstring,"logsql")
 	oSel:Execute()
@@ -2873,8 +2873,8 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	endif
 	self:STATUSMESSAGE(cMess)
 
-	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname},...}
-	//     1       2         3       4        5     6         7        8        9          10        11            12 
+	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr,persidcontact2,emailcontact2,contactname2,persidcontact3,emailcontact3,contactname3},...}
+	//     1       2         3         4     5       6       7        8        9          10        11          12         13           14             15           16             17              18          19
 	AEval(Split(oSel:grMbr,'#%#'),{|x|AAdd(aMbr,Split(x,'#$#')) })
 	self:STATUSMESSAGE(cMess+='.')
 
@@ -3622,10 +3622,12 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	// select all account (in case of htmlformat ingore members (they are processen in MemberStatementDepPrint and MemberStatementSinglePrint ): 
 
 	oAcc:=SQLSelect{"select a.accid,a.description,a.accnumber,a.currency,a.giftalwd,b.category,m.persid,m.householdid,m.homepp,m.contact,m.rptdest,m.depid,m.mbrid,"+;
-		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.lastname as contactlstname,pc.email as contactemail"+;
-		",pm.lastname,pm.email "+;
+		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.email as contactemail,"+;
+		"m.contact2,"+SQLFullName(0,'pc2')+" as contactfullname2,pc2.email as contactemail2,"+;
+		"m.contact3,"+SQLFullName(0,'pc3')+" as contactfullname3,pc3.email as contactemail3,"+;
+		","+SQLFullName(0,'pm')+" as memberfullname,pm.email "+;
 		" from balanceitem b,account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=d.depid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
-		" left join person pc on (pc.persid=m.contact) left join person pm on (pm.persid=m.persid)"+;
+		" left join person pc on (pc.persid=m.contact) left join person pc2 on (pc2.persid=m.contact2) left join person pc3 on (pc3.persid=m.contact3) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
 		" and a.accid in ("+Implode(aAcc,"','")+" )"+iif(self:html_format,' and m.mbrid IS NULL','')+" group by a.accid order by "+iif(self:SendingMethod="SeperateFile","a.accnumber","a.accid"),oConn}
 	oAcc:Execute()
@@ -3794,10 +3796,24 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		*	Proces e-mail:
 		if lPrintFile.and. self:SendingMethod=="SeperateFileMail"
 			if !Empty(oAcc:persid) .and.ConI(oAcc:rptdest)<3  // skip funds and none sending
-				//	add to be emailed	statements aMailMember:	//	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,fullname contact} 
-				AAdd(self:aMailMember,{ConS(oAcc:mbrid),AllTrim(StrTran(oAcc:description,".",Space(1))),cFileName,;
-				iif(ConS(oAcc:rptdest)<>'1',ConS(oAcc:persid),''),iif(ConS(oAcc:rptdest)<>'0'.or.self:mailcontact,ConS(oAcc:CONTACT),''),;
-				oAcc:email,oAcc:contactemail,oAcc:contactfullname})
+				//	add to be emailed	statements aMailMember:	{{mbrid,membername,FileName,{{persid,email,name},...}} 
+				//                                              1        2        3         4:1    4:2   4:3    
+				AAdd(self:aMailMember,{ConS(oAcc:mbrid),AllTrim(StrTran(oAcc:description,".",Space(1))),cFileName,{}})
+				j:=Len(self:aMailMember)
+				IF ConS(oAcc:rptdest)<>'1'
+					AAdd(self:aMailMember[j,4],{ConS(oAcc:persid),oAcc:memberfullname,oAcc:email})
+				endif
+				if ConS(oAcc:rptdest)<>'0'.or.self:mailcontact
+					if !Empty(oAcc:CONTACT) 
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:CONTACT),oAcc:contactfullname,oAcc:contactemail})
+					endif
+					if !Empty(oAcc:contact2) 
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact2),oAcc:contactfullname2,oAcc:contactemail2})
+					endif
+					if !Empty(oAcc:contact3) 
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact3),oAcc:contactfullname3,oAcc:contactemail3})
+					endif
+				endif
 			endif
 		endif
 		oAcc:Skip()
@@ -4133,7 +4149,7 @@ RETURN uValue
 method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class GiftReport
 	// sending of statments mentioned in self:aMailMember 
 	local oFileSpec as FileSpec
-	local i,m,mCnt as int
+	local i,j,m,mCnt as int
 	// mailing variables:
 	LOCAL oSelpers as Selpers
 	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
@@ -4169,13 +4185,11 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		oPro:SetUnit(1)
 		oPro:Show() 
 		self:Pointer := Pointer{POINTERHOURGLASS}
-		// aMailMember:	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,contact name} 
-		//                    1        2        3        4              5               6           7               8
+		// aMailMember:	aMailMember:	{{mbrid,membername,FileName,{{persid,email,name},...}} 
+		//                                  1        2        3         4:1    4:2   4:3   
 		for i:=1 to Len(self:aMailMember)
-			if !Empty(self:aMailMember[i,4])      // member
-				AAdd(aPers,self:aMailMember[i,4])
-			elseif !Empty(self:aMailMember[i,5])
-				AAdd(aPers,self:aMailMember[i,5])	// contact			
+			if !Empty(self:aMailMember[i,4])      // member/contact
+				AAdd(aPers,self:aMailMember[i,4,1,1])
 			endif
 		next
 		if !Empty(aPers) 
@@ -4194,38 +4208,33 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 				oRecip1:=null_object
 				oRecip2:=null_object 
 				cPers:=Str(oSelpers:oDB:persid,-1)
-				if (m:=AScan(self:aMailMember,{|x|x[4]==cPers .or.(Empty(x[4]).and.x[5]==cPers)}))>0
+				if (m:=AScan(self:aMailMember,{|x|x[4,1,1]==cPers}))>0
 					oFileSpec:=FileSpec{self:aMailMember[m,3]} 
 					if oFileSpec:Find()   // don't mail when skipped
 						memberName:=self:aMailMember[m,2]
-						self:STATUSMESSAGE(self:oLan:WGet('Mailing the statement of')+Space(1)+memberName) 
-						IF !Empty(aMailMember[m,4])    // Destination member
-							* Resolve membername:
-							oRecip1 := oMapi:ResolveName( oSelpers:oDB:lastname,Val(aMailMember[m,4]),memberName,aMailMember[m,6])
-							IF !Empty(self:aMailMember[m,5])    // Destination also contact
-								* Resolve contactname for cc:
-								oRecip2 := oMapi:ResolveName(self:aMailMember[m,8],Val(self:aMailMember[m,5]),self:aMailMember[m,8],self:aMailMember[m,7])
-							ENDIF
-						ELSE
-							// only contact:
-							* Resolve contactname for to:
-							oRecip1 := oMapi:ResolveName(self:aMailMember[m,8],Val(self:aMailMember[m,5]),self:aMailMember[m,8],self:aMailMember[m,7])
-						ENDIF
-						IF oRecip1 != null_object
-							IF !Empty(oEMLFrm:Template)
-								mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
-							ELSE
-								mailcontent:=""
-							ENDIF
-							if !oMapi:SendDocument( oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
-								LogEvent(self,"Could not mail Giftreport "+cPeriod+" to "+memberName,"logerrors")
-								ErrorBox{self,"Could not mail Giftreport "+cPeriod+" to "+memberName}:show() 
+						self:STATUSMESSAGE(self:oLan:WGet('Mailing the statement of')+Space(1)+memberName)
+						for i:=1 to Len(self:aMailMember[m,4])     // send document per 2 recipients (to,CC)
+							// resolve name
+							IF Mod(i,2)=1
+								oRecip1 := oMapi:ResolveName(iif(i==1,oSelpers:oDB:lastname,self:aMailMember[m,4,i,3]),Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
+								IF	!Empty(oEMLFrm:Template) .and. i=1
+									mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
+								ELSE
+									mailcontent:=""
+								ENDIF 
 							else
-								mCnt++
-							endif
-							
-						ENDIF 
-					endif 
+								oRecip2 := oMapi:ResolveName(self:aMailMember[m,4,i,3],Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
+							endif    
+							IF	oRecip1 != null_object .and. (Mod(i,2)=0 .or.i=Len(self:aMailMember[m,4]))
+								if	!oMapi:SendDocument(	oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
+									LogEvent(self,"Could	not mail	Giftreport "+cPeriod+" to "+memberName,"logerrors")
+									ErrorBox{self,"Could	not mail	Giftreport "+cPeriod+" to "+memberName}:Show() 
+								elseif i<=3
+									mCnt++
+								endif
+							ENDIF 
+						next
+					endif
 				endif
 				ADel(self:aMailMember,m) 
 				aSize(self:aMailMember,len(self:aMailMember)-1)
@@ -4258,14 +4267,13 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 	// sending of statments mentioned in self:aMailMember 
 	// mailing variables:
 	LOCAL mailcontent,memberName,cPers,cPeriod,cMess,cRun,cFileContent,cBatchFile as STRING
-	local i,m,mCnt,nRet as int
+	local i,j,m,mCnt,nRet as int
 	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
 	local aOneMember:={}, aPers:={} as ARRAY 
 	local aRecip:={} as ARRAY  // {{name,email,persid},...}
 	local oFileSpec,oFilespecB as FileSpec
 	LOCAL oEMLFrm as eMailFormat
 	local ptrHandle,ptrHandleBatch as ptr 
-// 	LOCAL oPro as ProgressPer
 	LOCAL oSelpers as Selpers 
 	local oSendMail as SendEmailsDirect
 
@@ -4283,20 +4291,16 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		// lookup al person data of all required recipients: 
 		aPers:={}
 		self:Pointer := Pointer{POINTERHOURGLASS}
-// 		oPro:=ProgressPer{,oMainWindow}
-// 		oPro:Caption:="Mailing member statements"
-// 		oPro:SetRange(1,Len(self:aMailMember)+1)
-// 		oPro:SetUnit(1)
-// 		oPro:Show() 
 		self:Pointer := Pointer{POINTERHOURGLASS}
-		// aMailMember:	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,contact name} 
-		//                    1        2        3        4              5               6           7               8
+		// aMailMember:	{{mbrid,membername,FileName,{{persid,email contact,name},...}} 
+		//                    1        2        3         4:1       4:2      4:3       
 		for i:=1 to Len(self:aMailMember)
-			if !Empty(self:aMailMember[i,4])      // member
-				AAdd(aPers,self:aMailMember[i,4])
-			elseif !Empty(self:aMailMember[i,5])
-				AAdd(aPers,self:aMailMember[i,5])	// contact			
-			endif
+			for j:=1 to Len(self:aMailMember[i,4])
+				if	!Empty(self:aMailMember[i,4,j])		//	persid
+					AAdd(aPers,self:aMailMember[i,4,j,1]) 
+					exit
+				endif
+			next
 		next
 		if !Empty(aPers) 
 			cMess:=self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")
@@ -4318,22 +4322,14 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			do while !oSelpers:oDB:EOF .and. !Empty(aMailMember) 
 				cPers:=Str(oSelpers:oDB:persid,-1)
 				aRecip:={}
-				if (m:=AScan(self:aMailMember,{|x|x[4]==cPers .or.(Empty(x[4]).and.x[5]==cPers)}))>0
+				if (m:=AScan(self:aMailMember,{|x|x[4,1,1]==cPers }))>0
 					oFileSpec:=FileSpec{self:aMailMember[m,3]} 
-					if oFileSpec:Find() ;// don't mail when skipped
-						.and.!(Empty(self:aMailMember[m,4]).and.Empty(self:aMailMember[m,5]))  // skip also if no memeber and no contact
+					if oFileSpec:Find() // don't mail when skipped
 						memberName:=self:aMailMember[m,2]
-						self:STATUSMESSAGE(self:oLan:WGet('Mailing the statement of')+Space(1)+memberName) 
-						IF !Empty(self:aMailMember[m,4])    // Destination member
-							aRecip:= {{self:aMailMember[m,2],self:aMailMember[m,6],self:aMailMember[m,4]}}
-							* Resolve membername:
-							IF !Empty(self:aMailMember[m,5])    // Destination also contact 
-								AAdd(aRecip,{self:aMailMember[m,8],self:aMailMember[m,7],self:aMailMember[m,5]})
-							ENDIF
-						ELSE
-							// only contact:
-							aRecip:= aRecip:= {{self:aMailMember[m,8],self:aMailMember[m,7],self:aMailMember[m,5]}}
-						ENDIF
+						self:STATUSMESSAGE(self:oLan:WGet('Mailing the statement of')+Space(1)+memberName)
+						for i:=1 to Len(self:aMailMember[m,4]) 
+							AAdd(aRecip,{self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2],self:aMailMember[m,4,i,1]})     //aRecip: {{name,email,persid},...}
+						next
 						IF !Empty(oEMLFrm:Template)
 							mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
 						ELSE
@@ -4343,11 +4339,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 					endif 
 				endif
 				ADel(self:aMailMember,m) 
-				aSize(self:aMailMember,len(self:aMailMember)-1)
-// 				if !Empty(oPro)
-// 					oPro:AdvancePro()
-// 					self:Pointer := Pointer{POINTERHOURGLASS}
-// 				endif
+				ASize(self:aMailMember,Len(self:aMailMember)-1)
 				oSelpers:oDB:Skip() 
 			enddo
 			IF !oSelpers==null_object
@@ -4361,10 +4353,6 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
          endif
 		endif
 		self:Pointer := Pointer{POINTERARROW}
-// 		IF !oPro==null_object
-// 			oPro:EndDialog()
-// 			oPro:Destroy()
-// 		ENDIF
 	ENDIF
 	return
 
@@ -4390,7 +4378,7 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	local cFileMember as string
 	LOCAL myLang:=Alg_taal as STRING 
 	local cMess as string
-	local m,nIncr as int
+	local m,i,nIncr as int
 	Local oTrans as SqlSelect
 	local oFileSpec as FileSpec 
 	local ptrHandle as ptr
@@ -4453,8 +4441,8 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 		FWriteLineUni(ptrHandle,StrTran(self:cHtmlHeader,'%%title%%',self:oLan:RGet('Member statement'),,1))
 	endif
 	
-	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname},...}
-	//          1       2         3       4        5     6         7        8        9          10        11             12
+	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr,persidcontact2,emailcontact2,contactname2,persidcontact3,emailcontact3,contactname3},...}
+	//           1       2         3         4     5       6       7        8        9          10        11          12         13           14             15           16             17              18          19
 	// aMbr sorted on mbrid
 	nIncr:=Ceil(Len(self:aMbr)/100.0)
 	for m:=1 to Len(self:aMbr)
@@ -4489,11 +4477,30 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 			// closing record:
 			FClose(ptrHandle)
 			if	self:SendingMethod=="SeperateFileMail"	
-				//	add to be emailed	statements aMailMember:	//	{{mbrid,membername,FileName,persid member,persid contact,email member,email contact,fullname contact}
-				//	aMbr:	{{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,fullname contact},...}
-				//				1		  2			3		  4		  5	  6			7			8			9			  10			11               12 
+				//	add to be emailed	statements aMailMember:	{{mbrid,membername,FileName,{{persid,email,name},...}} 
+				//                                              1        2        3         4:1    4:2   4:3          
+				// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr,persidcontact2,emailcontact2,contactname2,persidcontact3,emailcontact3,contactname3},...}
+				//           1       2         3         4     5       6       7        8        9          10        11          12         13           14             15           16             17              18          19
+				
+				// aMailMember:	{{mbrid,membername,FileName,{{persid,email ,name},...}} 
+				//                    1        2        3         4:1   4:2    4:3       
 				if ConI(self:aMbr[m,7])<3        // 3: none
-					AAdd(self:aMailMember,{self:aMbr[m,1],self:aMbr[m,2],oFileSpec:FullPath,iif(self:aMbr[m,7]<>'1',self:aMbr[m,8],''),iif(self:aMbr[m,7]<>'0'.or.self:mailcontact,self:aMbr[m,9],''),self:aMbr[m,10],self:aMbr[m,11],self:aMbr[m,12]})
+					AAdd(self:aMailMember,{self:aMbr[m,1],self:aMbr[m,2],oFileSpec:FullPath,{}})
+					i:=Len(self:aMailMember)
+					if self:aMbr[m,7]<>'1'
+						AAdd(self:aMailMember[i,4],{self:aMbr[m,8],self:aMbr[m,10],self:aMbr[m,2]})
+					endif
+					if self:aMbr[m,7]<>'0'.or.self:mailcontact 
+						if !Empty(self:aMbr[m,9])
+							AAdd(self:aMailMember[i,4],{self:aMbr[m,9],self:aMbr[m,11],self:aMbr[m,12]})
+						endif
+						if !Empty(self:aMbr[m,14])
+							AAdd(self:aMailMember[i,4],{self:aMbr[m,14],self:aMbr[m,15],self:aMbr[m,16]})
+						endif
+						if !Empty(self:aMbr[m,17])
+							AAdd(self:aMailMember[i,4],{self:aMbr[m,17],self:aMbr[m,18],self:aMbr[m,19]})
+						endif
+					endif
 				endif
 			endif
 		else
