@@ -1,5 +1,3 @@
-FUNCTION __DBG_EXP( ) AS USUAL PASCAL
-RETURN ( NIL )
 METHOD RegBalance(myNum,myItemName) CLASS ConvertMembers
 local oBal as SQLSelect
 	Default(@myNum,null_string) 
@@ -113,14 +111,26 @@ IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 		self:oDCmPerson:TEXTValue := self:cMemberName
 		
 		self:mCod:=SQLSelect{"select mailingcodes from person where persid="+self:mCLN,oConn}:mailingcodes
-	ELSE   // contact person:
+	ELSEIF ItemName=='Contact Person'   // contact person:
 		self:mCLNContact :=  Str(oCLN:persid,-1)
 		self:cContactName := GetFullName(self:mCLNContact,0)
 		self:oDCmPersonContact:TEXTValue := self:cContactName 
 		if Empty(self:cContactName)
 			self:mCLNContact:=''
-// 			self:oCCDestButton2:Show()
-// 			self:oCCDestButton3:Show()
+		endif
+	ELSEIF ItemName=='Contact Person2'   // contact person:
+		self:mCLNContact2 :=  Str(oCLN:persid,-1)
+		self:cContactName2 := GetFullName(self:mCLNContact2,0)
+		self:oDCmPersonContact2:TEXTValue := self:cContactName2 
+		if Empty(self:cContactName2)
+			self:mCLNContact2:=''
+		endif
+	ELSEIF ItemName=='Contact Person3'   // contact person:
+		self:mCLNContact3 :=  Str(oCLN:persid,-1)
+		self:cContactName3 := GetFullName(self:mCLNContact3,0)
+		self:oDCmPersonContact3:TEXTValue := self:cContactName3 
+		if Empty(self:cContactName3)
+			self:mCLNContact3:=''
 		endif
 			
 	ENDIF
