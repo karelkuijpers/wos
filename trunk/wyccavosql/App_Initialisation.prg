@@ -1411,6 +1411,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","contact","int(11)","NO","0",""},;
 		{"member","rptdest","int(2)","NO","0",""},; 
 		{"member","depid","int(11)","YES","NULL",""},;
+		{"member","contact2","int(11)","NO","0",""},;
+		{"member","contact3","int(11)","NO","0",""},;
 	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
