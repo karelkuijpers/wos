@@ -170,13 +170,16 @@ METHOD FilePrint CLASS MemberBrowser
 	aYearStartEnd:=GetBalYear(Year(Today()),Month(Today()))
 	YrSt:=aYearStartEnd[1]
 	MnSt:=aYearStartEnd[2]
-	cFields:= "p.persid,pc.persid as pcpersid,a.accnumber,m.mbrid,a.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,d.deptmntnbr,"+;
+	cFields:= "p.persid,pc1.persid as pc1persid,pc2.persid as pc2persid,pc3.persid as pc3persid,a.accnumber,m.mbrid,a.accid,m.grade,m.co,m.offcrate,m.homepp,m.homeacc,m.householdid,d.deptmntnbr,"+;
 		SQLFullName(0,"p")+" as membername,p.email as memberemail,"+SQLAddress(,"p")+" as memberaddress,"+;  
-	SQLFullName(0,"pc")+" as contactname,pc.email as contactemail,"+SQLAddress(,"pc")+" as contactaddress,"+;
+	SQLFullName(0,"pc1")+" as contactname1,pc1.email as contactemail1,"+SQLAddress(,"pc1")+" as contactaddress1,"+;
+	SQLFullName(0,"pc2")+" as contactname2,pc2.email as contactemail2,"+SQLAddress(,"pc2")+" as contactaddress2,"+;
+	SQLFullName(0,"pc3")+" as contactname3,pc3.email as contactemail3,"+SQLAddress(,"pc3")+" as contactaddress3,"+;
 		"group_concat(distinct ass.accnumber separator ',') as assacc"+;
 		",group_concat(IF(di.desttyp<2,concat(cast(di.destamt as char),if(di.desttyp=1,'%',''),' to ',di.destpp,' ',di.destacc),concat('Remaining to ',di.destpp,' ',di.destacc)) separator ',') as distr"
 	
-	cFrom:="member as m left join person as pc on (pc.persid=m.contact) left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
+	cFrom:="member as m left join person as pc1 on (pc1.persid=m.contact) left join person as pc2 on (pc2.persid=m.contact2) left join person as pc3 on (pc3.persid=m.contact3) "+;
+	"left join memberassacc ma on (ma.mbrid=m.mbrid) left join account as ass on (ass.accid=ma.accid)"+;
 		" left join distributioninstruction di on (di.mbrid=m.mbrid and di.disabled=0) left join department d on (m.depid=d.depid) "+;
 		"left join account a on (a.accid=m.accid) "+;
 		",person as p " 
@@ -193,8 +196,11 @@ METHOD FilePrint CLASS MemberBrowser
 	//oLan:RGet("Members",,"@!"),' ',;
 	AAdd(kopregels, ;
 		oLan:RGet("Number",11,"!")+cTab+oLan:RGet("name",25,"!")+;  
-	   iif(oReport:lXls, cTab+oLan:RGet("memberemail",25,"!")+cTab+oLan:RGet("memberaddress",40,"!"),"")+;
-		iif(oReport:lXls, cTab+oLan:RGet("contactname",25,"!")+cTab+oLan:RGet("contactemail",25,"!")+cTab+oLan:RGet("contactaddress",40,"!"),"")+cTab+;
+	   iif(oReport:lXls, cTab+oLan:RGet("memberemail",25,"!")+cTab+oLan:RGet("memberaddress",40,"!")+;
+		cTab+oLan:RGet("contactname1",25,"!")+cTab+oLan:RGet("contactemail1",25,"!")+cTab+oLan:RGet("contactaddress1",40,"!")+;
+		cTab+oLan:RGet("contactname2",25,"!")+cTab+oLan:RGet("contactemail2",25,"!")+cTab+oLan:RGet("contactaddress2",40,"!")+;
+		cTab+oLan:RGet("contactname3",25,"!")+cTab+oLan:RGet("contactemail3",25,"!")+cTab+oLan:RGet("contactaddress3",40,"!");
+		,"")+cTab+;
 		IF(Admin=="WO",oLan:RGet("State",6,"!","C")+cTab+oLan:RGet("home rate",10,"!","C")+cTab+;
 		oLan:RGet("HomePP",6,"!")+cTab+oLan:RGet("HomeAccount",11,"!")+cTab+oLan:RGet("HouseCd",7,"!")+cTab,"")+;
 		PadL(AllTrim(oLan:RGet("Budget",6,"!","R"))+Str(YrSt,4,0),11)+cTab+;
@@ -211,7 +217,10 @@ METHOD FilePrint CLASS MemberBrowser
 	DO WHILE .not. oSel:EOF
 		oReport:PrintLine(@nRow,@nPage,Pad(iif(Empty(oSel:deptmntnbr),oSel:ACCNUMBER,oSel:deptmntnbr),11)+cTab+Pad(oSel:membername,25)+;
 			iif(oReport:lXls, cTab+oSel:memberemail+cTab+StrTran(oSel:memberaddress,CRLF,", ")+cTab+;
-			IF(Empty(oSel:pcpersid),cTab+cTab, oSel:contactname + cTab+oSel:contactemail+cTab+StrTran(oSel:contactaddress,CRLF,", ")),"")+cTab+;
+			IF(Empty(oSel:pc1persid),cTab+cTab, oSel:contactname1 + cTab+oSel:contactemail1+cTab+StrTran(oSel:contactaddress1,CRLF,", "))+cTab+;
+			IF(Empty(oSel:pc2persid),cTab+cTab, oSel:contactname2 + cTab+oSel:contactemail2+cTab+StrTran(oSel:contactaddress2,CRLF,", "))+cTab+;
+			IF(Empty(oSel:pc3persid),cTab+cTab, oSel:contactname3 + cTab+oSel:contactemail3+cTab+StrTran(oSel:contactaddress3,CRLF,", "));
+			,"")+cTab+;
 			IF(Admin=="WO".or.Admin="HO",;
 			PadC(iif(oSel:co=="M",oSel:Grade,"Entity"),6)+cTab+PadC(iif(Empty(oSel:OFFCRATE),"",oSel:OFFCRATE),10)+cTab+;
 			Pad(oSel:HOMEPP,6)+cTab+Pad(iif(oSel:HOMEPP=sEntity,"",SubStr(oSel:HOMEACC,1,11)),11)+cTab+Pad(iif(oSel:co="M",oSel:householdid,''),7)+;
