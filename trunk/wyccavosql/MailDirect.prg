@@ -597,7 +597,8 @@ class SendEmailsDirect
 	protect cFileContentBase as string // beginning of name of bodyfile 
 	protect cbatchfile as string   // file with emails to send  
 	protect oOwner as Window
-	protect oLan as Language
+	protect oLan as Language 
+	protect IsSystem as logic
 
 	
 	declare method AddEmail,SendEmails
@@ -645,36 +646,50 @@ method Close() class SendEmailsDirect
 
 	return 
 
-Method Init(oWindow) class SendEmailsDirect
+Method Init(oWindow,lSystem) class SendEmailsDirect 
+	// initialize direct emailing
+	// lSystem: true: system message to system administrator
+	//          false: normal email from user
 	local oSel as SQLSelect
-	local oEditAccount as EditEmailAccount
-	self:oLan:=Language{}
-	oSel:=SqlSelect{'select emailaddress,username,cast('+Crypt_Emp(false,"password")+' as char) as password,protocol,outgoingserver,port from mailaccount where empid='+MyEmpID,oConn}
-	if oSel:RecCount<1
-		// let user specify his mailaccount data:
-		oEditAccount:=EditEmailAccount{} 
-		oEditAccount:Show()
-		if !oEditAccount:lSuccess 
-			self:cError:=self:oLan:WGet("No email account settings available")
-			self:lError:=true
-			return self
-		endif			
-		oSel:Execute()
+	local oEditAccount as EditEmailAccount 
+	Default(@lSystem,false)
+	self:oLan:=Language{} 
+	self:oOwner:=oWindow 
+	self:IsSystem:=lSystem
+	if lSystem
+		self:emailaddress:= "wycliffeofficesystem@gmail.com"
+		self:username:="wycliffeofficesystem@gmail.com"
+		self:password:=GetWosmasterPwd()
+		self:outgoingserver:="smtp.gmail.com"
+		self:port:="587"
+		self:protocol:="ssl" 
+	else		
+		oSel:=SqlSelect{'select emailaddress,username,cast('+Crypt_Emp(false,"password")+' as char) as password,protocol,outgoingserver,port from mailaccount where empid='+MyEmpID,oConn}
 		if oSel:RecCount<1
-			self:lError:=true
-			self:cError:=self:oLan:WGet("No email account settings available")
-			return self
-		endif 
+			// let user specify his mailaccount data:
+			oEditAccount:=EditEmailAccount{} 
+			oEditAccount:Show()
+			if !oEditAccount:lSuccess 
+				self:cError:=self:oLan:WGet("No email account settings available")
+				self:lError:=true
+				return self
+			endif			
+			oSel:Execute()
+			if oSel:RecCount<1
+				self:lError:=true
+				self:cError:=self:oLan:WGet("No email account settings available")
+				return self
+			endif 
+		endif
+		// existing mail account:
+		// fill fields: 
+		self:emailaddress:= oSel:emailaddress
+		self:username:=oSel:username
+		self:password:=oSel:password
+		self:outgoingserver:=oSel:outgoingserver
+		self:port:=ConS(oSel:port)
+		self:protocol:=oSel:protocol 
 	endif
-	self:oOwner:=oWindow
-	// existing mail account:
-	// fill fields: 
-	self:emailaddress:= oSel:emailaddress
-	self:username:=oSel:username
-	self:password:=oSel:password
-	self:outgoingserver:=oSel:outgoingserver
-	self:port:=ConS(oSel:port)
-	self:protocol:=oSel:protocol 
 	self:cMailBasic:=WorkDir()+"senditquiet.exe -s "+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
 	return self 
 method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect 
