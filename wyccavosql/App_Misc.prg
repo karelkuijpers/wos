@@ -2108,7 +2108,9 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	LOCAL cFileName, selftext as STRING
 	LOCAL ptrHandle 
 	local oStmnt as SQLStatement
-	local lDBError as logic
+	local lDBError as logic 
+	local oMl as sendemailsdirect
+
 	*	Logging of info to table log 
 	if AtC("Access denied for user",strText)>0
 		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
@@ -2156,7 +2158,14 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 			break
 // 		endif
 	endif
-
+	if Lower(Logname)=="logerrors"
+		// email error to system administrator:
+		oMl:=SendEmailsDirect{oMainWindow,true} 
+		oMl:AddEmail("Wos error "+sEntity,;
+		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",message="+strText+",userid=" +LOGON_EMP_ID,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+		oMl:SendEmails()
+		
+	endif
 	RETURN true
 FUNCTION LTrimZero(cString as STRING) as STRING
 * Left trim leading zeroes in string
