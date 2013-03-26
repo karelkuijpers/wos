@@ -3235,7 +3235,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	//                  1       2         3        4        5
 	if oTrans:Reccount>0       
 		oSel:=SqlSelect{"select group_concat(cast(persid as char),'#$#',"+SQLFullName(2)+",'#$#',"+SQLAddress(,,'#@#')+",'#$#',email,'#$#',cast(gender as char) order by lastname,city,address separator '#%#') "+;
-			"as grPers from person p where exists (select 1 from transmbr t where t.persid=p.persid) order by lastname,city,address",oConn}   
+			"as grPers from person p where exists (select 1 from transmbr t where t.persid=p.persid) order by lastname,city,address",oConn}
 		oSel:Execute() 
 		if !Empty(oSel:status)
 			LogEvent(self,self:oLan:WGet("could not retrieve person data")+':'+oSel:ErrInfo:errormessage,"logerrors")
@@ -3252,9 +3252,9 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 // 				aPersData[i,2]:=HtmlEncode(AllTrim(iif(sSalutation,Salutation(Val(aPersData[i,5]))+' ','')+aPersData[i,2]))
 				aPersData[i,2]:=HtmlEncode(aPersData[i,2])
 				aPersData[i,3]:=StrTran(HtmlEncode(StrTran(StrTran(aPersData[i,3],'#@##@#','#@#'),'#@##@#','#@#')),'#@#','<br/>')       // replace empty lines
-				if (p:=RAt('<br/>',aPersData[i,3]))>0
-					aPersData[i,3]:=SubStr(aPersData[i,3],1,p-1)
-				endif
+// 				if (p:=RAt('<br/>',aPersData[i,3]))>0
+// 					aPersData[i,3]:=SubStr(aPersData[i,3],1,p-1)
+// 				endif
 			next
 		endif
 	endif
