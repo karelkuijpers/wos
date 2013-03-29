@@ -3625,7 +3625,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		"group_concat(cast(ass.accid as char) separator ',') as assacc,"+SQLFullName(0,'pc')+" as contactfullname,pc.email as contactemail,"+;
 		"m.contact2,"+SQLFullName(0,'pc2')+" as contactfullname2,pc2.email as contactemail2,"+;
 		"m.contact3,"+SQLFullName(0,'pc3')+" as contactfullname3,pc3.email as contactemail3,"+;
-		","+SQLFullName(0,'pm')+" as memberfullname,pm.email "+;
+		SQLFullName(0,'pm')+" as memberfullname,pm.email "+;
 		" from balanceitem b,account a left join department d on (d.depid=a.department) left join member m on (a.accid=m.accid or m.depid=d.depid) left join memberassacc ass on (ass.mbrid=m.mbrid)"+ ;
 		" left join person pc on (pc.persid=m.contact) left join person pc2 on (pc2.persid=m.contact2) left join person pc3 on (pc3.persid=m.contact3) left join person pm on (pm.persid=m.persid)"+;
 		" where a.balitemid=b.balitemid and a.giftalwd=1 and a.accnumber between '"+FromAccount+"' and '"+ToAccount+"'"+;
