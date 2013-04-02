@@ -86,7 +86,7 @@ CLASS ImportMapping INHERIT DataWindowExtra
 	protect aValues:={} as array   // array with new values to be applied to existing persons
 	protect aPers:={} as array  // array with {{persid,externid},{..},...}  
 	protect aFields:={} as array   // array with the fields of a person to be updated 
-	protect avaluesbank:={} as array  // array with bankaccounts to be stored {{persi,bankaccount},{..},...}  
+	protect avaluesbank:={} as array  // array with bankaccounts to be stored {{persi,bankaccount,bic},{..},...}  
 	protect lMailingCode,lDlg,lBdat,lMdat as logic
 	// 	protect oPersExist as SQLSelect
 	
@@ -892,6 +892,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 				self:oEdit:aPropEx[i]:Value:=""
 			NEXT
 			self:oEdit:mBankNumber:=""
+			self:oEdit:mBic:=""
 			self:oEdit:PostInit(self:Owner,,,true)
 			self:oEdit:StateExtra()
 			self:oEdit:FIELDPUT(#mtype,"individual")
@@ -1672,7 +1673,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 				ELSEIF IDs=#banknumber 
 					aBank:=Split(cTargetStr,,true)
 					for j:=1 to Len(aBank)
-						AAdd(self:avaluesbank,{cPersid,aBank[j]})
+						AAdd(self:avaluesbank,{cPersid,aBank[j],GetBIC(aBank[j])})
 					next
 				ELSE 
 					if lFillFields
@@ -1965,7 +1966,7 @@ local aCod:={} as array
 // 		LogEvent(self,"time batch update:"+Str((time0:=Seconds())-time1,-1)+' sec',"logsql")
 	endif
 	if !Empty(self:avaluesbank)
-		oStmnt:=SQLStatement{'insert ignore into personbank (persid,banknumber) values '+Implode(self:avaluesbank,"','"),oConn}
+		oStmnt:=SQLStatement{'insert ignore into personbank (persid,banknumber,bic) values '+Implode(self:avaluesbank,"','"),oConn}
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			LogEvent(self,"error:"+oStmnt:Status:description+" in update bank statement","LogErrors")
