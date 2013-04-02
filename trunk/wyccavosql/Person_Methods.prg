@@ -742,21 +742,22 @@ Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
 	ASize(aPCod,iStart+Len(aNCod))
 	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
 	return MakeCod(aPCod)	
-	method FillBankNbr(cBankNbr,cDescr,i) class NewPersonWindow 
-	if AScan(aBankAcc,{|x|x[2]==cBankNbr})==0  // not yest stored?
+	method FillBankNbr(aBankNbr,cDescr,i) class NewPersonWindow 
+	if AScan(self:aBankAcc,{|x|x[1]==aBankNbr[1]})==0  // not yet stored?
 		IF Empty(self:oDCmbankNumber:VALUE)
-			self:oDCmbankNumber:Value:=cBankNbr
+			self:oDCmbankNumber:VALUE:=aBankNbr[1]
 			self:oDCSC_BankNumber:TextValue:=cDescr+Str(1,1)
-			ASize(aBankAcc,Len(aBankAcc)+1)
-			AIns(aBankAcc,1)
-			aBankAcc[1]:={cDescr+Str(1,-1)+": "+AllTrim(cBankNbr),cBankNbr}
-			ASize(OrigaBank,Len(OrigaBank)+1)
-			AIns(OrigaBank,1)
-			OrigaBank[1]:=cBankNbr
+			self:mBic:=aBankNbr[2] 
+			ASize(self:aBankAcc,Len(self:aBankAcc)+1)
+			AIns(self:aBankAcc,1)   // insert at top
+			self:aBankAcc[1]:={aBankNbr[1],aBankNbr[2]} 
+			ASize(self:OrigaBank,Len(self:OrigaBank)+1)
+			AIns(self:OrigaBank,1)
+			self:OrigaBank[1]:=aBankNbr
 			i--
 		ELSE
-			AAdd(aBankAcc,{cDescr+Str(i+1,-1)+": "+AllTrim(cBankNbr),cBankNbr})
-			AAdd(OrigaBank,cBankNbr)
+			AAdd(self:aBankAcc,{aBankNbr[1],aBankNbr[2]})
+			AAdd(self:OrigaBank,aBankNbr)
 		endif
 	ENDIF
 	return i
@@ -1021,7 +1022,7 @@ METHOD SetState() CLASS NewPersonWindow
 	"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
 	"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
 	"externid,gender,opc,propextr,p.`deleted` as removed,"+;
-	"m.mbrid,group_concat(b.banknumber separator ',') as bankaccounts from person as p "+;
+	"m.mbrid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
 	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
 	self:oPerson:Execute()
@@ -1101,12 +1102,13 @@ METHOD SetState() CLASS NewPersonWindow
 		cDescr:="Bank/KID	"
 	ENDIF
 	if !Empty(self:oPerson:bankaccounts)
-		aBank:=Split(self:oPerson:bankaccounts,",")
-		i:=1
-
-		for j:=1	to	Len(aBank) 
-			i:= self:FillBankNbr(aBank[j],cDescr,i)
-		NEXT
+		AEval(Split(self:oPerson:bankaccounts,","),{|x|AAdd(aBank,Split(x,'#$#'))})
+		self:aBankAcc:=ArrayNew(Len(aBank),2) 
+		self:OrigaBank:=ArrayNew(Len(aBank),2) 
+		ACopy(aBank,self:aBankAcc)
+		ACopy(aBank,self:OrigaBank)
+		self:mBankNumber:=aBank[1,1]
+		self:mBic:=aBank[1,2]
 	endif
 	self:Curlastname:=self:oDCmLastname:TextValue
 	self:curNa2:=self:oDCmInitials:TextValue
@@ -1275,12 +1277,18 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	IF lValid .and. Len(self:aBankAcc)>0
 		* Check duplicate bankaccount:
 		FOR i:=1 to Len(self:aBankAcc)
-			IF !Empty(self:aBankAcc[i,2]).and.!Empty(self:aBankAcc[1,2]) 
-				if sepaenabled .and.!IsSEPA(self:aBankAcc[1,2])
-					cError+=self:aBankAcc[i,2]+' '+self:oLan:WGet("is not a valid sepa bank account number") 
-					lValid:=false
-				endif  
-				cSelBank+=iif(Empty(cSelBank),"("," or ")+"banknumber='"+self:aBankAcc[i,2]+"'"
+			IF !Empty(self:aBankAcc[i,1]) 
+				if sepaenabled
+					if !IsSEPA(self:aBankAcc[i,1])
+						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("is not a valid sepa bank account number") 
+						lValid:=false
+					endif
+					if Empty(self:aBankAcc[i,2])
+						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("should have a bic") 
+						lValid:=false
+					endif						
+				endif
+				cSelBank+=iif(Empty(cSelBank),"("," or ")+"banknumber='"+self:aBankAcc[i,1]+"'"
 			endif
 		next
 		IF !Empty(cSelBank) 
