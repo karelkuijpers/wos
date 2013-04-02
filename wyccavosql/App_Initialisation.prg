@@ -24,13 +24,14 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 	local cDirname as string 
 	local lSuc as logic
 
-	oFTP := CFtp{"WycOffSy FTP Agent"}
+	oFTP := CFtp{"WycOffSy FTP Agent"} 
+	
 	oSys := SqlSelect{"select version from sysparms",oConn}
 	if oSys:RecCount>0
 		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
 		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	endif 
-	if FirstOfDay .or. (!Empty(PrgVers).and. DBVers>PrgVers)    // sometimes a global value like Version disappears 
+	IF FirstOfDay .or. (!Empty(PrgVers).and. DBVers>PrgVers)    
 		if oFTP:Open()                                                              
 			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		endif
@@ -70,7 +71,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=
 				Remotetime:=aInsRem[1,F_TIME]
 				if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or.DBVers>PrgVers
 					// apparently new version:
-					if (TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
+					if DBVers>PrgVers .or.(TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
 						// load first latest version of install program:
 						
 						IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
@@ -685,7 +686,7 @@ method init() class Initialize
 							break							
 						endif
 					endif 
-					ErrorBox{,"There is something wrong with the database manager on "+cServer}:Show()
+					ErrorBox{,"There is something wrong with the database manager on "+cServer+" or your connection is to slow"}:Show()
 				endif
 				break
 			endif
@@ -768,24 +769,23 @@ method init() class Initialize
 	return self
 Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	// initialise constants: 
-	LOCAL oSys as SQLSelect
-	LOCAL oTrans as SQLSelect
+	LOCAL i, NwHb as int
 	LOCAL nLastPers := 1 as int
 	LOCAL nLastTrans as FLOAT
+	Local CurVersion as string ,DBVers, PrgVers as float
+	local cStatement as string
+	LOCAL cWorkdir := WorkDir() as STRING 
+	local mindate as date
 	LOCAL uMaandafsl as USUAL
-	LOCAL i, NwHb as int
+	LOCAL lCopyPP,lCopyIPC,lCopyCur,lCopyBIC as LOGIC
+	Local aDir,aLocal as array
 	local oSel as SQLSelect
+	LOCAL oSys as SQLSelect
+	LOCAL oTrans as SQLSelect
 	local oStmnt as SQLStatement
-
 	LOCAL oMyFileSpec1,oMyFileSpec2,oDBFileSpec1 as FileSpec
 	LOCAL oReg as CLASS_HKCU
-	LOCAL lCopyPP,lCopyIPC,lCopyCur as LOGIC
-	LOCAL cWorkdir := WorkDir() as STRING
-	Local CurVersion as string ,DBVers, PrgVers as float
-	Local aDir,aLocal as array
-	local cStatement as string
-	local oStmnt as SQLStatement
-	local mindate as date
+
 	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
 	AdoDateTimeAsDate(true)
 	SET OPTIMIZE ON
@@ -816,12 +816,23 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1) 
 	RddSetDefault("DBFCDX") 
 
-	if self:FirstOfDay
-		// check if new ppcodes, ipcaccounts or cuurencylist should be imported:
+	oSys := SqlSelect{"select version from sysparms",oConn}
+	if oSys:RecCount>0
+		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
+	endif 
+	if DBVers > PrgVers
+		(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
+			"Make sure you have the correct version of WycOffSy.exe"}):Show()
+		myApp:Quit()
+		break
+	endif 
+	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
+		// check if new ppcodes, ipcaccounts or currencylist should be imported:
 		oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
 		lCopyPP:=false
 		IF oDBFileSpec1:Find()
-			IF oDBFileSpec1:Size>4096  // not empty? 
+			IF oDBFileSpec1:Size>20  // not empty? 
 				oSel:=SqlSelect{"show table status like 'ppcodes'",oConn}
 				if oSel:RecCount=1
 					if ConI(oSel:rows) > 0
@@ -831,16 +842,18 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 					else
 						lCopyPP:=true
 					endif
+					if	lCopyPP
+						SQLStatement{"drop table ppcodes",oConn}:Execute()
+					endif
+				else
+					lCopyPP:=true
 				endif
-			endif
-			if lCopyPP
-				SQLStatement{"drop table ppcodes",oConn}:Execute()
 			endif
 		endif 
 		oDBFileSpec1:=DbFileSpec{cWorkdir+"\CURRENCYLIST.DBF"}
 		lCopyCur:=false
 		IF oDBFileSpec1:Find()
-			IF oDBFileSpec1:Size>4096  // not empty? 
+			IF oDBFileSpec1:Size>20  // not empty? 
 				oSel:=SqlSelect{"show table status like 'currencylist'",oConn}
 				if oSel:RecCount=1
 					if ConI(oSel:rows) > 0
@@ -850,33 +863,58 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 					else
 						lCopyCur:=true
 					endif
+					if lCopyCur
+						SQLStatement{"drop table currencylist",oConn}:Execute()
+					endif
+				else
+					lCopyCur:=true
 				endif
-			endif
-			if lCopyCur
-				SQLStatement{"drop table currencylist",oConn}:Execute()
 			endif
 		endif
 		oDBFileSpec1:=DbFileSpec{cWorkdir+"\IPCACCOUNTS.DBF"}
 		lCopyIPC:=false
 		IF oDBFileSpec1:Find()
-			IF oDBFileSpec1:Size>4096  // not empty? 
+			IF oDBFileSpec1:Size>20  // not empty? 
 				oSel:=SqlSelect{"show table status like 'ipcaccounts'",oConn}
 				if oSel:RecCount=1
-					if Val(oSel:FIELDGET(#rows)) > 0
-						if SToD(StrTran(oSel:Create_time,"-","")) < oDBFileSpec1:DateChanged
+					if ConI(oSel:rows) > 0
+						if  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
 							lCopyIPC:=true
 						endif					
 					else
 						lCopyIPC:=true
 					endif
+					if lCopyIPC
+						SQLStatement{"drop table ipcaccounts",oConn}:Execute()
+					endif
+				else
+					lCopyIPC:=true
 				endif
 			endif
-			if lCopyIPC
-				SQLStatement{"drop table ipcaccounts",oConn}:Execute()
+		endif
+		oMyFileSpec1:=FileSpec{cWorkdir+"\bic.csv"}
+		lCopyBIC:=false
+		IF oMyFileSpec1:Find()
+			IF oMyFileSpec1:Size>10  // not empty? 
+				oSel:=SqlSelect{"show table status like 'bic'",oConn}
+				if oSel:RecCount=1
+					if ConI(oSel:rows) > 0
+						if  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oMyFileSpec1:DateChanged
+							lCopyBIC:=true
+						endif					
+					else
+						lCopyBIC:=true
+					endif
+					if	lCopyBIC
+						SQLStatement{"drop table `bic`",oConn}:Execute()
+					endif
+				else
+					lCopyBIC:=true
+				endif
 			endif
 		endif
 	endif
-	if self:FirstOfDay.or.self:lNewDb                                                                                
+	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 		self:InitializeDB()
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
@@ -892,6 +930,10 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		// reset employee online:
 		oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
 		oStmnt:Execute()  
+		// load bic table
+		if lCopyBIC
+			FillBIC()
+		endif
 	endif
 
 	// copy helpfile to c because it cannot read from a server: 
@@ -920,7 +962,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		ELSE
 			oMyFileSpec1:Copy(oMyFileSpec2)
 		ENDIF
-	ENDIF
+	ENDIF 
+	
 	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
 
 	oSys:Execute()
@@ -959,7 +1002,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 
 
 	cStatement:=""
-	IF FirstOfDay
+	IF FirstOfDay .or.self:lNewDb
 
 		// 		endif
 		// Initialize sysparms:
@@ -1029,6 +1072,8 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		AEval(Directory(HelpDir+"\HP*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
 		AEval(Directory(HelpDir+"\OR*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
 		AEval(Directory(HelpDir+"\IN*.DBF"),{|x| FErase(HelpDir+"\"+x[F_NAME])})
+		// remove mailbody files:
+		AEval(Directory(HelpDir+"\mailbody*.html"), {|aFile|FErase(HelpDir+"\"+aFile[F_NAME])})
 		IF .not.Empty(oSys:HB)
 			oTrans := SqlSelect{"select cast(max(dat) as date) as datmax from transaction where accid="+Str(oSys:HB,-1)+" and bfm='H'",oConn}
 			IF oTrans:RecCount>0 .and. !Empty(oTrans:DATmax)
@@ -1132,6 +1177,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankaccount","InnoDB",cCollation},;
 		{"bankbalance","InnoDB",cCollation},;
 		{"bankorder","InnoDB",cCollation},;
+		{"bic","InnoDB",cCollation},;
 		{"budget","InnoDB",cCollation},;
 		{"currencylist","InnoDB",cCollation},;
 		{"currencyrate","InnoDB",cCollation},;
@@ -1268,6 +1314,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankorder","description","varchar(511)","NO","",""},;
 		{"bankorder","idfrom","int(11)","NO","0",""},;
 		{"bankorder","stordrid","int(11)","NO","0",""},;
+		{"bic","bic","char(8)","NO","",""},;
 		{"budget","accid","int(11)","NO","NULL",""},;
 		{"budget","year","smallint(4)","NO","0",""},;
 		{"budget","month","tinyint(2)","NO","0",""},;
@@ -1665,6 +1712,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankbalance","0","PRIMARY","2","datebalance"},;
 		{"bankorder","0","PRIMARY","1","id"},;
 		{"bankorder","1","accntfrom","1","accntfrom"},;
+		{"bic","0","PRIMARY","1","bic"},;
 		{"budget","0","PRIMARY","1","accid"},;
 		{"budget","0","PRIMARY","2","year"},;
 		{"budget","0","PRIMARY","3","month"},;
