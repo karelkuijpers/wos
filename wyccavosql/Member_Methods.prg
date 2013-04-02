@@ -196,10 +196,10 @@ METHOD FilePrint CLASS MemberBrowser
 	//oLan:RGet("Members",,"@!"),' ',;
 	AAdd(kopregels, ;
 		oLan:RGet("Number",11,"!")+cTab+oLan:RGet("name",25,"!")+;  
-	   iif(oReport:lXls, cTab+oLan:RGet("memberemail",25,"!")+cTab+oLan:RGet("memberaddress",40,"!")+;
-		cTab+oLan:RGet("contactname1",25,"!")+cTab+oLan:RGet("contactemail1",25,"!")+cTab+oLan:RGet("contactaddress1",40,"!")+;
-		cTab+oLan:RGet("contactname2",25,"!")+cTab+oLan:RGet("contactemail2",25,"!")+cTab+oLan:RGet("contactaddress2",40,"!")+;
-		cTab+oLan:RGet("contactname3",25,"!")+cTab+oLan:RGet("contactemail3",25,"!")+cTab+oLan:RGet("contactaddress3",40,"!");
+	   iif(oReport:lXls, cTab+oLan:RGet("memberemail",,"!")+cTab+oLan:RGet("memberaddress",,"!")+;
+		cTab+oLan:RGet("contactname1",,"!")+cTab+oLan:RGet("contactemail1",,"!")+cTab+oLan:RGet("contactaddress1",40,"!")+;
+		cTab+oLan:RGet("contactname2",,"!")+cTab+oLan:RGet("contactemail2",,"!")+cTab+oLan:RGet("contactaddress2",,"!")+;
+		cTab+oLan:RGet("contactname3",,"!")+cTab+oLan:RGet("contactemail3",,"!")+cTab+oLan:RGet("contactaddress3",,"!");
 		,"")+cTab+;
 		IF(Admin=="WO",oLan:RGet("State",6,"!","C")+cTab+oLan:RGet("home rate",10,"!","C")+cTab+;
 		oLan:RGet("HomePP",6,"!")+cTab+oLan:RGet("HomeAccount",11,"!")+cTab+oLan:RGet("HouseCd",7,"!")+cTab,"")+;
