@@ -246,6 +246,7 @@ STATIC DEFINE BANKBROWSER_FOUND := 107
 STATIC DEFINE BANKBROWSER_FOUNDTEXT := 108 
 STATIC DEFINE BANKBROWSER_NEWBUTTON := 101 
 STATIC DEFINE BANKBROWSER_SEARCHUNI := 105 
+STATIC DEFINE BANKREG_BANKNUMBER := 103 
 STATIC DEFINE BANKREG_BANKNUMMER := 103 
 STATIC DEFINE BANKREG_BETAALIND := 105 
 STATIC DEFINE BANKREG_COMALL := 108 
@@ -258,10 +259,25 @@ STATIC DEFINE BANKREG_OPENAC := 111
 STATIC DEFINE BANKREG_OPENALL := 112 
 STATIC DEFINE BANKREG_PO := 109 
 STATIC DEFINE BANKREG_REK := 114 
+STATIC DEFINE BANKREG_SC_BANKNUMBER := 100 
 STATIC DEFINE BANKREG_SC_BANKNUMMER := 100 
 STATIC DEFINE BANKREG_SC_REK := 101 
 STATIC DEFINE BANKREG_SC_TELEBANKNG := 102 
 STATIC DEFINE BANKREG_TELEBANKNG := 106 
+RESOURCE BankSub_Form DIALOGEX  20, 18, 323, 168
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Bank/Giro:", BANKSUB_FORM_SC_BANKNUMMER, "Static", WS_CHILD, 13, 14, 37, 13
+	CONTROL	"AccountId:", BANKSUB_FORM_SC_REK, "Static", WS_CHILD, 13, 29, 37, 12
+	CONTROL	"Account for commission:", BANKSUB_FORM_SC_PROVISIERK, "Static", WS_CHILD, 13, 73, 79, 13
+	CONTROL	"Bank/Giro", BANKSUB_FORM_BANKNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 14, 60, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Account#", BANKSUB_FORM_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 29, 22, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Gifts/Payments?", BANKSUB_FORM_GIFTENIND, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 102, 44, 80, 12
+	CONTROL	"Account commission", BANKSUB_FORM_PROVIACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 73, 22, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Account#", BANKSUB_FORM_ACCNTNUMBER1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 106, 33, 22, 12, WS_EX_CLIENTEDGE
+END
+
 CLASS BankSub_Form INHERIT DATAWINDOW 
 
 	PROTECT oDBBANKNUMBER as DataColumn
@@ -278,20 +294,6 @@ CLASS BankSub_Form INHERIT DATAWINDOW
 	PROTECT oDCAccntnumber1 AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE BankSub_Form DIALOGEX  20, 18, 323, 168
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Bank/Giro:", BANKSUB_FORM_SC_BANKNUMMER, "Static", WS_CHILD, 13, 14, 37, 13
-	CONTROL	"AccountId:", BANKSUB_FORM_SC_REK, "Static", WS_CHILD, 13, 29, 37, 12
-	CONTROL	"Account for commission:", BANKSUB_FORM_SC_PROVISIERK, "Static", WS_CHILD, 13, 73, 79, 13
-	CONTROL	"Bank/Giro", BANKSUB_FORM_BANKNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 14, 60, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Account#", BANKSUB_FORM_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 29, 22, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Gifts/Payments?", BANKSUB_FORM_GIFTENIND, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 102, 44, 80, 12
-	CONTROL	"Account commission", BANKSUB_FORM_PROVIACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 73, 22, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Account#", BANKSUB_FORM_ACCNTNUMBER1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 106, 33, 22, 12, WS_EX_CLIENTEDGE
-END
-
 ACCESS Accntnumber1() CLASS BankSub_Form
 RETURN SELF:FieldGet(#Accntnumber1)
 
@@ -445,7 +447,7 @@ STATIC DEFINE BANKSUB_FORM_SC_REK := 101
 CLASS EditBank INHERIT DataWindowExtra 
 
 	PROTECT oDBMBIC as DataColumn
-	PROTECT oDBMBANKNUMMER as DataColumn
+	PROTECT oDBMBANKNUMBER as DataColumn
 	PROTECT oDBMACCOUNT as DataColumn
 	PROTECT oDBMGIFTENIND as DataColumn
 	PROTECT oDBMTELEBANKNG as DataColumn
@@ -455,7 +457,7 @@ CLASS EditBank INHERIT DataWindowExtra
 	PROTECT oDBSINGLEDEST as DataColumn
 	PROTECT oDBMACCOUNTSINGLE as DataColumn
 	PROTECT oDBOVERRIDE as DataColumn
-	PROTECT oDCmBANKNUMMER AS SINGLELINEEDIT
+	PROTECT oDCmBANKNUMBER AS SINGLELINEEDIT
 	PROTECT oDCmAccount AS SINGLELINEEDIT
 	PROTECT oDCmGIFTENIND AS CHECKBOX
 	PROTECT oDCmTelebankng AS CHECKBOX
@@ -468,7 +470,7 @@ CLASS EditBank INHERIT DataWindowExtra
 	PROTECT oCCAccButton AS PUSHBUTTON
 	PROTECT oDCSC_REK AS FIXEDTEXT
 	PROTECT oCCAccButtonP AS PUSHBUTTON
-	PROTECT oDCSC_BANKNUMMER AS FIXEDTEXT
+	PROTECT oDCSC_BANKNUMBER AS FIXEDTEXT
 	PROTECT oDCFixedText2 AS FIXEDTEXT
 	PROTECT oDCSingleDest AS CHECKBOX
 	PROTECT oDCmFGCod2 AS COMBOBOX
@@ -483,44 +485,29 @@ CLASS EditBank INHERIT DataWindowExtra
 	PROTECT oDCmBic AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	instance mBANKNUMMER 
-	instance mAccount 
-	instance mGIFTENIND 
-	instance mTelebankng 
-	instance mCOMFL 
-	instance mCOMALL 
-	instance mPO 
-	instance mGIFTSALL 
-	instance mOPENAC 
-	instance mOPENALL 
-	instance mAccountPaymnt 
-	instance mAccountSingle
-	instance mFGCod1  
-	instance mFGCod2  
-	instance mFGCod3  
   	PROTECT mRek, mRekP, mRekS,mBankId as STRING
-	PROTECT cAccountName, cAccountNameP, cAccountNameS as STRING
+	PROTECT cAccountName, cAccountNameP, cAccountNameS,cBankNumber as STRING
 	PROTECT nCurRec as int
 	protect oCaller as object 
 	protect oBank as SQLSelect
-RESOURCE EditBank DIALOGEX  29, 27, 317, 208
+RESOURCE EditBank DIALOGEX  29, 27, 359, 204
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Bank/Giro:", EDITBANK_MBANKNUMMER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 22, 122, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITBANK_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 51, 106, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Bank/Giro:", EDITBANK_MBANKNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 22, 200, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITBANK_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 51, 185, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Gifts/Payments?", EDITBANK_MGIFTENIND, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 108, 66, 79, 12
 	CONTROL	"Telebanking?", EDITBANK_MTELEBANKNG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 66, 80, 11
 	CONTROL	"Gifts all", EDITBANK_MGIFTSALL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 92, 56, 12
 	CONTROL	"Automatic telebank recording ", EDITBANK_GROUPBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 81, 100, 48
 	CONTROL	"Due amounts all", EDITBANK_MOPENALL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 107, 64, 12
-	CONTROL	"", EDITBANK_MACCOUNTPAYMNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 104, 174, 106, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITBANK_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 249, 23, 53, 12
-	CONTROL	"Cancel", EDITBANK_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 249, 66, 53, 12
-	CONTROL	"v", EDITBANK_ACCBUTTON, "Button", WS_CHILD, 212, 51, 15, 13
+	CONTROL	"", EDITBANK_MACCOUNTPAYMNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 108, 174, 185, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITBANK_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 300, 7, 53, 12
+	CONTROL	"Cancel", EDITBANK_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 240, 7, 53, 12
+	CONTROL	"v", EDITBANK_ACCBUTTON, "Button", WS_CHILD, 292, 51, 15, 13
 	CONTROL	"Account general ledger: ", EDITBANK_SC_REK, "Static", WS_CHILD, 8, 52, 79, 12
-	CONTROL	"v", EDITBANK_ACCBUTTONP, "Button", WS_CHILD, 210, 173, 15, 12
-	CONTROL	"Bank/Giro:", EDITBANK_SC_BANKNUMMER, "Static", WS_CHILD, 9, 23, 37, 12
+	CONTROL	"v", EDITBANK_ACCBUTTONP, "Button", WS_CHILD, 292, 173, 14, 12
+	CONTROL	"Bank/Giro:", EDITBANK_SC_BANKNUMBER, "Static", WS_CHILD, 9, 23, 37, 12
 	CONTROL	"Account payments en route:", EDITBANK_FIXEDTEXT2, "Static", WS_CHILD, 8, 174, 94, 12
 	CONTROL	"Single destination for gifts?", EDITBANK_SINGLEDEST, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 108, 81, 104, 11
 	CONTROL	"", EDITBANK_MFGCOD2, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 172, 121, 61, 72
@@ -579,37 +566,49 @@ METHOD Close(oEvent) CLASS EditBank
 
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditBank
 	LOCAL oControl AS Control
-	LOCAL lGotFocus AS LOGIC
+	LOCAL lGotFocus as LOGIC 
+	local ib as int
+	local cBIC as string
 	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
 	lGotFocus := IIf(oEditFocusChangeEvent == NULL_OBJECT, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
 	IF !lGotFocus
-		IF oControl:Name == "MACCOUNT".and.!AllTrim(oControl:Value)==AllTrim(cAccountName)
-			cAccountName:=AllTrim(oControl:VALUE) 
-			if Empty(cAccountName)  //emptied?
+		IF oControl:Name == "MACCOUNT".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccountName)
+			self:cAccountName:=AllTrim(oControl:VALUE) 
+			if Empty(self:cAccountName)  //emptied?
 				self:mRek :=  "0"
 				self:oDCmAccount:TEXTValue := ""
 			else
 				self:AccButton(true)
 			endif
 			RETURN
-		ELSEIF oControl:Name == "MACCOUNTPAYMNT".and.!AllTrim(oControl:Value)==AllTrim(cAccountNameP)
-			cAccountNameP:=AllTrim(oControl:Value)
-			if Empty(cAccountNameP)  //emptied?
+		ELSEIF oControl:Name == "MACCOUNTPAYMNT".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccountNameP)
+			self:cAccountNameP:=AllTrim(oControl:VALUE)
+			if Empty(self:cAccountNameP)  //emptied?
 				self:mRekP :=  "0"
 				self:oDCmAccountPaymnt:TEXTValue := ""
 			else
 				self:AccButtonP(true)
 			endif
 			RETURN
-		ELSEIF oControl:Name == "MACCOUNTSINGLE".and.!AllTrim(oControl:VALUE)==AllTrim(cAccountNameS)
-			cAccountNameS:=AllTrim(oControl:VALUE)
-			if Empty(cAccountNameS)  //emptied?
+		ELSEIF oControl:Name == "MACCOUNTSINGLE".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccountNameS)
+			self:cAccountNameS:=AllTrim(oControl:VALUE)
+			if Empty(self:cAccountNameS)  //emptied?
 				self:mRekS :=  "0"
 				self:oDCmAccountSingle:TEXTValue := ""
 			else
 				self:AccButtonSingle(true)
+			endif
+			RETURN
+		ELSEIF oControl:Name == "MBANKNUMBER".and.!AllTrim(oControl:VALUE)==AllTrim(self:cBankNumber)
+			self:cBankNumber:= AllTrim(oControl:VALUE)
+			if Empty(self:cBankNumber)  //emptied?
+				self:oDCmBic:TEXTValue :=  ""
+				self:oDCmBANKNUMBER:TEXTValue := ""
+			else
+				// determine BIC if possible:
+				self:mBic:= GetBIC(self:cBankNumber,self:mBic)
 			endif
 			RETURN
 		ENDIF
@@ -622,9 +621,9 @@ self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"EditBank",_GetInst()},iCtlID)
 
-oDCmBANKNUMMER := SingleLineEdit{SELF,ResourceID{EDITBANK_MBANKNUMMER,_GetInst()}}
-oDCmBANKNUMMER:FieldSpec := BANK{}
-oDCmBANKNUMMER:HyperLabel := HyperLabel{#mBANKNUMMER,"Bank/Giro:","Number of bankaccount","BANK"}
+oDCmBANKNUMBER := SingleLineEdit{SELF,ResourceID{EDITBANK_MBANKNUMBER,_GetInst()}}
+oDCmBANKNUMBER:FieldSpec := BANK{}
+oDCmBANKNUMBER:HyperLabel := HyperLabel{#mBANKNUMBER,"Bank/Giro:","Number of bankaccount","BANK"}
 
 oDCmAccount := SingleLineEdit{SELF,ResourceID{EDITBANK_MACCOUNT,_GetInst()}}
 oDCmAccount:HyperLabel := HyperLabel{#mAccount,NULL_STRING,"Number of account",NULL_STRING}
@@ -670,8 +669,8 @@ oCCAccButtonP := PushButton{SELF,ResourceID{EDITBANK_ACCBUTTONP,_GetInst()}}
 oCCAccButtonP:HyperLabel := HyperLabel{#AccButtonP,"v","Browse in accounts",NULL_STRING}
 oCCAccButtonP:TooltipText := "Browse in accounts"
 
-oDCSC_BANKNUMMER := FixedText{SELF,ResourceID{EDITBANK_SC_BANKNUMMER,_GetInst()}}
-oDCSC_BANKNUMMER:HyperLabel := HyperLabel{#SC_BANKNUMMER,"Bank/Giro:",NULL_STRING,NULL_STRING}
+oDCSC_BANKNUMBER := FixedText{SELF,ResourceID{EDITBANK_SC_BANKNUMBER,_GetInst()}}
+oDCSC_BANKNUMBER:HyperLabel := HyperLabel{#SC_BANKNUMBER,"Bank/Giro:",NULL_STRING,NULL_STRING}
 
 oDCFixedText2 := FixedText{SELF,ResourceID{EDITBANK_FIXEDTEXT2,_GetInst()}}
 oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Account payments en route:",NULL_STRING,NULL_STRING}
@@ -718,6 +717,7 @@ oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"BIC:",NULL_STRING,NULL_STRIN
 oDCmBic := SingleLineEdit{SELF,ResourceID{EDITBANK_MBIC,_GetInst()}}
 oDCmBic:FieldSpec := BANK{}
 oDCmBic:HyperLabel := HyperLabel{#mBic,"Bic","Bic of bank off bankaccount","BANK"}
+oDCmBic:Picture := "@! NNNNNNNNNNN"
 
 SELF:Caption := "Edit of a Bank Account"
 SELF:HyperLabel := HyperLabel{#EditBank,"Edit of a Bank Account",NULL_STRING,NULL_STRING}
@@ -734,11 +734,11 @@ oDBMBIC:HyperLabel := oDCMBIC:HyperLabel
 oDBMBIC:Caption := "Bic"
 self:Browser:AddColumn(oDBMBIC)
 
-oDBMBANKNUMMER := DataColumn{BANK{}}
-oDBMBANKNUMMER:Width := 13
-oDBMBANKNUMMER:HyperLabel := oDCMBANKNUMMER:HyperLabel 
-oDBMBANKNUMMER:Caption := "Bank/Giro:"
-self:Browser:AddColumn(oDBMBANKNUMMER)
+oDBMBANKNUMBER := DataColumn{BANK{}}
+oDBMBANKNUMBER:Width := 13
+oDBMBANKNUMBER:HyperLabel := oDCMBANKNUMBER:HyperLabel 
+oDBMBANKNUMBER:Caption := "Bank/Giro:"
+self:Browser:AddColumn(oDBMBANKNUMBER)
 
 oDBMACCOUNT := DataColumn{MEMBERACCOUNT{}}
 oDBMACCOUNT:Width := 10
@@ -822,11 +822,11 @@ ASSIGN mAccountSingle(uValue) CLASS EditBank
 SELF:FieldPut(#mAccountSingle, uValue)
 RETURN uValue
 
-ACCESS mBANKNUMMER() CLASS EditBank
-RETURN SELF:FieldGet(#mBANKNUMMER)
+ACCESS mBANKNUMBER() CLASS EditBank
+RETURN SELF:FieldGet(#mBANKNUMBER)
 
-ASSIGN mBANKNUMMER(uValue) CLASS EditBank
-SELF:FieldPut(#mBANKNUMMER, uValue)
+ASSIGN mBANKNUMBER(uValue) CLASS EditBank
+SELF:FieldPut(#mBANKNUMBER, uValue)
 RETURN uValue
 
 ACCESS mBic() CLASS EditBank
@@ -927,7 +927,7 @@ local nCurrec as int
 		"accid="+self:mRek +;
 		",telebankng="+iif(self:mTelebankng,"1","0")+;
 		",usedforgifts="+iif(self:mGIFTENIND,"1","0")+;
-		",banknumber='"+ZeroTrim(self:mBANKNUMMER)+"'"+; 
+		",banknumber='"+ZeroTrim(self:mBANKNUMBER)+"'"+; 
 		",bic='"+AllTrim(self:mBic)+"'"+;
 		",openall="+iif(self:mOPENALL,"1","0")+;
 		",giftsall ="+iif(self:mGIFTSALL,"1","0")+;
@@ -967,33 +967,34 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
 	self:SetTexts()
 
 	IF lNew
-		self:oDCmBANKNUMMER:SetFocus()
+		self:oDCmBANKNUMBER:SetFocus()
     ELSE
 		self:mRek := Str(self:oBank:accid,-1)
 		self:mAccount := AllTrim(self:oBank:Description)
-		self:cAccountName := mAccount
+		self:cAccountName := self:mAccount
 		if !Empty(self:oBank:payahead)			
 			self:mRekP:=Str(self:oBank:payahead,-1)
 		 	self:mAccountPaymnt := self:oBank:AccountPaymnt
-			self:cAccountNameP:= mAccountPaymnt
+			self:cAccountNameP:= self:mAccountPaymnt
 		endif
 		if !Empty(self:oBank:SINGLEDST)
 			self:mRekS:=Str(self:oBank:SINGLEDST,-1)
 		 	self:mAccountSingle := self:oBank:accountsingle
-			self:cAccountNameS:= mAccountSingle
+			self:cAccountNameS:= self:mAccountSingle
 		endif
-		self:mBANKNUMMER:=AllTrim(self:oBank:banknumber)
+		self:mBANKNUMBER:=AllTrim(self:oBank:banknumber)
+		self:cBankNumber:=self:mBANKNUMBER
 		self:mBic:=self:oBank:bic
 		self:oDCmTelebankng:Checked:=iif(self:oBank:telebankng=0,FALSE,true)
 		self:oDCmGIFTENIND:Checked:=iif(self:oBank:usedforgifts=0,false,true)
-		self:mBANKNUMMER:=self:oBank:banknumber
+		self:mBANKNUMBER:=self:oBank:banknumber
 		self:mOPENALL:=self:oBank:openall
 // 	 	self:mOPENAC   :=self:oBank:OPENAC
 		self:mGIFTSALL :=self:oBank:giftsall
 // 		self:mPO       :=self:oBank:PO
 // 		self:mCOMALL   :=self:oBank:COMALL
 // 	 	self:mCOMFL    :=self:oBank:COMFL
-	 	if !Empty(mAccountSingle) 
+	 	if !Empty(self:mAccountSingle) 
 			self:oDCSingleDest:Checked:=true
 			self:oDCOverride:Checked:=iif(self:oBank:SYSCODOVER=="O",true,false)
 			IF!Empty(self:oBank:FGMLCODES)
@@ -1007,6 +1008,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
     ENDIF
 	self:SetTele()
 	RETURN nil	
+
 
 method PreInit(oWindow,iCtlID,oServer,uExtra) class EditBank
 	//Put your PreInit additions here 
@@ -1122,7 +1124,7 @@ METHOD ValidateBank() CLASS EditBank
 		lValid := FALSE
 		cError := "Account general ledger is mandatory!"
 		self:oDCmAccount:SetFocus()
-	ELSEIF Empty(self:mBANKNUMMER)
+	ELSEIF Empty(self:mBANKNUMBER)
 		lValid := FALSE
 		cError := "Number bank account is mandatory!" 
 		self:oDCmBANKNUMMER:SetFocus()
@@ -1132,15 +1134,19 @@ METHOD ValidateBank() CLASS EditBank
 		self:oDCmAccountSingle:SetFocus()
 	endif
 	if SepaEnabled
-		if !IsSEPA(AllTrim(self:mBANKNUMMER))
-			cError:=self:mBANKNUMMER+' '+self:oLan:WGet("is not a valid SEPA bank account number")
+		if !IsSEPA(AllTrim(self:mBANKNUMBER))
+			cError:=self:mBANKNUMBER+' '+self:oLan:WGet("is not a valid SEPA bank account number")
 			lValid:=FALSE
 		endif
-			
+		self:mBic:=GetBIC(AllTrim(self:mBANKNUMBER),self:mBic)   // make sure BIC is filled 
+		if Empty(self:mBic)
+			cError:=self:oLan:WGet("BIC must be filled")
+			lValid:=FALSE			
+		endif
 	endif
-	IF lNew .or.!AllTrim(oBank:banknumber)==AllTrim(self:mBANKNUMMER)
+	IF lNew .or.!AllTrim(oBank:banknumber)==AllTrim(self:mBANKNUMBER)
 		* Check if bank account allready exists: 
-		if SQLSelect{"select banknumber from bankaccount where banknumber='"+AllTrim(self:mBANKNUMMER)+"'" +iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
+		if SqlSelect{"select banknumber from bankaccount where banknumber='"+AllTrim(self:mBANKNUMBER)+"'" +iif(self:lNew,""," and bankid<>"+self:mBankId),oConn}:Reccount>0 
 			cError:="Bank Account number allready exits"
 			lValid:=FALSE
 		endif
@@ -1175,7 +1181,7 @@ STATIC DEFINE EDITBANK_GROUPBOX2 := 118
 STATIC DEFINE EDITBANK_MACCOUNT := 101 
 STATIC DEFINE EDITBANK_MACCOUNTPAYMNT := 107 
 STATIC DEFINE EDITBANK_MACCOUNTSINGLE := 121 
-STATIC DEFINE EDITBANK_MBANKNUMMER := 100 
+STATIC DEFINE EDITBANK_MBANKNUMBER := 100 
 STATIC DEFINE EDITBANK_MBIC := 125 
 STATIC DEFINE EDITBANK_MFGCOD1 := 117 
 STATIC DEFINE EDITBANK_MFGCOD2 := 116 
@@ -1186,7 +1192,7 @@ STATIC DEFINE EDITBANK_MOPENALL := 106
 STATIC DEFINE EDITBANK_MTELEBANKNG := 103 
 STATIC DEFINE EDITBANK_OKBUTTON := 108 
 STATIC DEFINE EDITBANK_OVERRIDE := 123 
-STATIC DEFINE EDITBANK_SC_BANKNUMMER := 113 
+STATIC DEFINE EDITBANK_SC_BANKNUMBER := 113 
 STATIC DEFINE EDITBANK_SC_REK := 111 
 STATIC DEFINE EDITBANK_SINGLEDEST := 115 
 STATIC DEFINE EDITBANK_SINGLETEXT := 122 
@@ -1206,6 +1212,21 @@ METHOD Init() CLASS Indicator
     RETURN SELF
 
 
+CLASS SelBankOrder INHERIT DialogWinDowExtra 
+
+	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
+	PROTECT oDCbegin_verv AS DATESTANDARD
+	PROTECT oDCeind_verv AS DATESTANDARD
+	PROTECT oDCDatePayment AS WORKDAYDATE
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCDate_PaymentText AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  declare method MakeCliop03File,SepaCreditTransfer
 RESOURCE SelBankOrder DIALOGEX  5, 18, 235, 137
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select bank orders to send to bank"
@@ -1223,21 +1244,6 @@ BEGIN
 	CONTROL	"Date bank processing:", SELBANKORDER_DATE_PAYMENTTEXT, "Static", WS_CHILD, 16, 72, 76, 12
 END
 
-CLASS SelBankOrder INHERIT DialogWinDowExtra 
-
-	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
-	PROTECT oDCbegin_verv AS DATESTANDARD
-	PROTECT oDCeind_verv AS DATESTANDARD
-	PROTECT oDCDatePayment AS WORKDAYDATE
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCDate_PaymentText AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  declare method MakeCliop03File,SepaCreditTransfer
 METHOD CancelButton( ) CLASS SelBankOrder 
 	self:EndDialog()
 RETURN NIL
