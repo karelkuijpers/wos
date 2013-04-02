@@ -294,7 +294,7 @@ METHOD TestButton( ) CLASS EditEmailAccount
 	local oMf
 	local oTCPIP as TCPIP  
 
-// test internet available:
+	// test internet available:
 	oTCPIP:=TCPIP{}
 	oTCPIP:timeout:=2000
 	oTCPIP:Ping('www.google.com')
@@ -310,7 +310,7 @@ METHOD TestButton( ) CLASS EditEmailAccount
 		+clogfile+'"'
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	Run(cRun) 
-//	FileStart(cbatchfile,self) 
+	//	FileStart(cbatchfile,self) 
 	oFilespecB:=FileSpec{clogfile} 
 	for i:=1 to 90
 		Tone(30000,2)
@@ -690,7 +690,7 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 		self:port:=ConS(oSel:port)
 		self:protocol:=oSel:protocol 
 	endif
-	self:cMailBasic:=WorkDir()+"senditquiet.exe -s "+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
+	self:cMailBasic:='"'+WorkDir()+'senditquiet.exe" -s '+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
 	return self 
 method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect 
 	// The actually sending of the emails to the outgoing server
@@ -723,9 +723,11 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	cbatchfile:=HelpDir+'\'+"batchmail.vbs"
 	self:cFileContentBase:=HelpDir+'\'+"mailbody"
 	// remove previous batch file:
-	FileSpec{cbatchfile}:DELETE()
+	if FileSpec{cbatchfile}:Find()
+		FErase(cbatchfile)
+	endif
 	// remove mailbody files:
-	AEval(Directory(self:cFileContentBase+"*.html"), {|aFile|FErase(aFile[F_NAME])})
+	AEval(Directory(HelpDir+"\mailbody*.html"), {|aFile|FErase(HelpDir+"\"+aFile[F_NAME])})
 	//
 	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for mailing")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
@@ -749,8 +751,8 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		FClose(ptrHandleBody) 
 		oFilespecB:=FileSpec{cFileContent} 
 		if oFilespecB:Find()             
-			FWriteLine(ptrHandleBatch,'return = WshShell.Run("'+StrTran(self:cMailBasic+" -t "+self:aEmail[i,1]+' -subject "'+self:aEmail[i,2]+'" -bodyfile "'+cFileContent+;
-				iif(Empty(self:aEmail[i,4]),"",'" -files "'+self:aEmail[i,4]+'"'),'"','""')+'",0)')
+			FWriteLine(ptrHandleBatch,'return = WshShell.Run("'+StrTran(self:cMailBasic+' -t '+self:aEmail[i,1]+' -subject "'+self:aEmail[i,2]+'" -bodyfile "'+cFileContent+'" '+;
+				iif(Empty(self:aEmail[i,4]),"",' -files "'+self:aEmail[i,4]+'" '),'"','""')+'",0)')
 			// 				iif(Empty(self:aEmail[i,4]),"",'" -files "'+self:aEmail[i,4]+'"'),'"','""')+'",0'+iif(i=1,',true','')+')')
 		else
 			self:lError:=true
@@ -760,23 +762,31 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	next
 	FWriteLine(ptrHandleBatch,'Set WshShell = Nothing')
 	FClose(ptrHandleBatch)
-	if FileSpec{self:cbatchfile}:Find() 
-		// test internet available:
-		oTCPIP:=TCPIP{}
-		oTCPIP:timeout:=2000
-		oTCPIP:Ping('www.google.com')
-		if AtC("timeout",oTCPIP:Response)>0
-			self:lError:=true
-			self:cError:=self:oLan:WGet("No internet connection")
-			return false
+	// test if written to disk: 
+	for i:=1 to 90
+		Tone(30000,1)
+		ptrHandleBatch:=FOpen(cbatchfile,FO_READ+FO_EXCLUSIVE) 
+		if !ptrHandleBatch==F_ERROR
+			exit
 		endif
-
-		nRet:=FileStart(self:cbatchfile,self:oOwner)
-		if nRet>0 .and. nRet<33
-			self:lError:=true 
-			self:cError:=self:oLan:WGet("Email send failed")+': '+Str(nRet,-1)			
-			return false
-		endif					
+	next
+	FClose(ptrHandleBatch)
+	// test internet available:
+	oTCPIP:=TCPIP{}
+	oTCPIP:timeout:=2000
+	oTCPIP:Ping('www.google.com')
+	if AtC("timeout",oTCPIP:Response)>0
+		self:lError:=true
+		self:cError:=self:oLan:WGet("No internet connection")
+		return false
 	endif
+	// 	if	FileSpec{self:cbatchfile}:Find()	
+	nRet:=FileStart(self:cbatchfile,self:oOwner)
+	if nRet>0 .and. nRet<33
+		self:lError:=true 
+		self:cError:=self:oLan:WGet("Email send failed")+': '+Str(nRet,-1)			
+		return false
+	endif					
+	// 	endif
 
 	return true
