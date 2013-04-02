@@ -897,6 +897,29 @@ FUNCTION FillBankAccount( cFilter:="" as string) as array
 return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
 
 	
+function FillBIC()
+	local cLine as string
+	local ptrHandle as ptr 
+	local aBic:={} as array
+	local oMyFileSpec1 as FileSpec
+	local oStmnt as SQLStatement
+	// Read BIC codes from file into global:
+	oMyFileSpec1:=FileSpec{WorkDir()+"\BIC.csv"}
+	IF !oMyFileSpec1:Find()
+		return
+	endif
+	ptrHandle:=FOpen(oMyFileSpec1:FullPath,FO_READ+FO_SHARED)  
+	if !ptrHandle== F_ERROR
+		cLine:=FReadLine(ptrHandle,8) 
+		do while !Empty(cLine)
+			AAdd(aBic,cLine)
+			cLine:=FReadLine(ptrHandle,8) 
+		enddo		
+		SQLStatement{"truncate table `bic`",oConn}:Execute()
+		(oStmnt:=SQLStatement{"insert ignore into `bic` (`bic`) values ("+Implode(aBic,"'),('")+")",oConn})
+		oStmnt:Execute() 
+	endif
+	return
 function FillIbanregistry()
 // fill Iban-registry with {countrycode, iban-templatem iban length, sepa?},...
 	iban_registry:= {{"AL","AL2!n8!n16!c",28,0},;
@@ -1089,6 +1112,20 @@ endif
 FUNCTION GetBalType(cSoort)
 * Translate baltype code to text
 RETURN aBalType[AScan(aBalType,{|x| x[1]==cSoort}),2]
+Function GetBIC(cIBAN as string, cBIC:='' as string) as string
+	// determine BIC from IBAN if possible:
+	// cIBAN: bankaccount nummber
+	// cBIC: current value of corresponding BIC 
+	local oSel as SQLSelect 
+	if IsIban(cIBAN)
+		oSel:=SQLSelect{"select `bic` from `bic` where substr(`bic`,1,6)='"+SubStr(cIBAN,5,4)+SubStr(cIBAN,1,2)+"'",oConn}
+		if oSel:RecCount>0	
+			cBIC:=oSel:BIC
+		endif
+	endif
+	return cBIC
+
+
 Function GetDelimiter(cBuffer as string, aStruct ref array, cLim:="" ref string, nMin as int, nMax as int) as logic
 	/* determine delimiter and column names of input file with spreadsheet:
 	Input: cBuffer with content of first line of file
@@ -1637,7 +1674,7 @@ function InitGlobals()
 	FillPersTitle()
 	FillPropTypes()
 	FillPersProp()
-	FillIbanregistry() 
+	FillIbanregistry()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
