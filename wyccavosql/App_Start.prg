@@ -53,12 +53,12 @@ method Start() class App
 			HelpDir:="C:"
 		ENDIF
 		
-		oUpg:=CheckUPGRADE{} 
 		cWorkdir:=WorkDir() 
-		oInit:=Initialize{} 
-		if !oInit:lNewDB 
+		oInit:=Initialize{}  // make connection with mysql and database
+		oUpg:=CheckUPGRADE{}
+		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
-			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir)
 		endif 
 		if lStop .and.!Empty(startfile)
 			if Empty(startfile)
@@ -87,7 +87,7 @@ method Start() class App
 				oMainWindow:Show(SHOWCENTERED)
 				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
 			ENDIF
-			oInit:Initialize()
+			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers)
 			FirstOfDay:=oInit:FirstOfDay
 			oInit:=null_object
 			SetDeleted( true )
