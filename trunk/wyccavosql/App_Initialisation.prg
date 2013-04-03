@@ -10,94 +10,102 @@ IF nRet > 0
 	ENDIF
 ENDIF
 RETURN nRet
-class CheckUPGRADE  
-	declare method LoadInstallerUpgrade
-Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string,FirstOfDay:=true as logic) as logic class CheckUPGRADE
+class CheckUPGRADE
+	export DBVers, PrgVers as float  
+	declare method LoadInstallerUpgrade 
+	method Init() class CheckUPGRADE
+	local oSys as SqlSelect
+	local DBVers, PrgVers as float
+	// determine program version as float:
+	AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
+	self:PrgVers:=PrgVers
+	// determine database version as float: 
+	if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
+		oSys:=SqlSelect{"select `version` from sysparms",oConn}
+		if oSys:RecCount>0
+			AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+		endif
+	endif
+	self:DBVers:=DBVers
+	return self
+
+Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic class CheckUPGRADE
 	// check if there is a new wosupgradeinstaller.exe
 	LOCAL oFTP  as cFtp
 	Local aInsRem as Array 
 	Local oFs as FileSpec, LocalDate as date , RemoteDate as date,LocalTime,Remotetime as string 
 	local aCurvers as array
-	local DBVers,PrgVers as float 
-	local oSys as SqlSelect
 	local i as int 
 	local cDirname as string 
 	local lSuc as logic
 
 	oFTP := CFtp{"WycOffSy FTP Agent"} 
 	
-	oSys := SqlSelect{"select version from sysparms",oConn}
-	if oSys:RecCount>0
-		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
-	endif 
-	IF FirstOfDay .or. (!Empty(PrgVers).and. DBVers>PrgVers)    
-		if oFTP:Open()                                                              
+	if oFTP:Open()                                                              
+		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+	endif
+	if !lSuc
+		// try again:
+		if oFTP:Open()
 			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+			// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
 		endif
-		if !lSuc
-			// try again:
-			if oFTP:Open()
-				lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
-// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
-			endif
+	endif
+	if lSuc
+		// remove old version if still present:
+		oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
+		if oFs:Find()
+			FErase(oFs:FullPath)
+			oFs:Find()
 		endif
-		if lSuc
-			// remove old version if still present:
-			oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
-			if oFs:Find()
-				FErase(oFs:FullPath)
-				oFs:Find()
-			endif
-			// check newer tables, etc: 
-			aInsRem:=oFTP:Directory("variable/*.*")
-			for i:=1 to Len(aInsRem)
-				oFs:=FileSpec{cWorkdir+aInsRem[i,F_NAME]}
-				if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?
-					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false)
-					if lSuc
-						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] ) 
-					endif
-				endif					 
-			next
-			oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
-			if oFs:Find()
-				LocalDate:=oFs:DateChanged
-				LocalTime:=oFs:TimeChanged  
-			endif
-			aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
-			if Len(aInsRem)>0
-				RemoteDate:=aInsRem[1,F_DATE]
-				Remotetime:=aInsRem[1,F_TIME]
-				if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or.DBVers>PrgVers
-					// apparently new version:
-					if DBVers>PrgVers .or.(TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
-						// load first latest version of install program:
-						
-						IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
-							WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
-// 							__RaiseFTPError(oFTP) 
-						else
-							oFs:Find()
-							CollectForced()  // to force some wait
-							if oFs:Find()
-								// change date to remote date: 
-								SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-								startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
-							endif
-*/
-							oFTP:CloseRemote()
-							return true 
-						ENDIF
-					endif
+		// check newer tables, etc: 
+		aInsRem:=oFTP:Directory("variable/*.*")
+		for i:=1 to Len(aInsRem)
+			oFs:=FileSpec{cWorkdir+aInsRem[i,F_NAME]}
+			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?
+				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false)
+				if lSuc
+					SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] ) 
+				endif
+			endif					 
+		next
+		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
+		if oFs:Find()
+			LocalDate:=oFs:DateChanged
+			LocalTime:=oFs:TimeChanged  
+		endif
+		aInsRem:=oFTP:Directory("wosupgradeinstaller.exe")
+		if Len(aInsRem)>0
+			RemoteDate:=aInsRem[1,F_DATE]
+			Remotetime:=aInsRem[1,F_TIME]
+			if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or. self:DBVers>self:PrgVers
+				// apparently new version:
+				if DBVers>PrgVers .or.(TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
+					// load first latest version of install program:
+					
+					IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
+						WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
+						// 							__RaiseFTPError(oFTP) 
+					else
+						oFs:Find()
+						CollectForced()  // to force some wait
+						if oFs:Find()
+							// change date to remote date: 
+							SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
+							startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
+						endif
+						*/
+						oFTP:CloseRemote()
+						return true 
+					ENDIF
 				endif
 			endif
-			oFs:=null_object
-			oFTP:CloseRemote() 
-		else
-// 			__RaiseFTPError(oFTP) 
-			WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 		endif
+		oFs:=null_object
+		oFTP:CloseRemote() 
+	else
+		// 			__RaiseFTPError(oFTP) 
+		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 	endif
 	return false
 
@@ -107,7 +115,8 @@ class Initialize
 protect sIdentChar as string 
 export lNewDb:=false as logic
 protect aCurTable:={} as array
-export FirstOfDay as logic  
+export FirstOfDay as logic
+ 
 declare method create_table, ConvertDBFSQL, ConVertOneTable, InitializeDB,RenameField,Initialize,SyncColumns,Matchunequalgaps
 
 Method ConvertDBFSQL(aColumn as array,aIndex as array) as void pascal class Initialize 
@@ -582,14 +591,12 @@ method init() class Initialize
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
-	// 	local ptrHandle as ptr
 	local cLine as string
 	local aWord:={} as array
 	local i,j as int
 	local aIniKey:={'database','password','server','username'} as array
 	local dim akeyval[4] as string
 	local lConnected as logic
-	Local CurVersion as string ,DBVers, PrgVers as float
 	local time0,time1 as float
 	local oTCPIP as TCPIP
 	
@@ -748,31 +755,19 @@ method init() class Initialize
 		endif
 		if !lNewDb
 			// check if programversion is newer than db
-			if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
-				oSel:=SqlSelect{"select `version` from sysparms",oConn}
-				if oSel:RecCount>0
-					CurVersion:=oSel:Version
-					AEval(AEvalA(Split(CurVersion,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-					AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
-					If DBVers < PrgVers 			
-						self:FirstOfDay:=true   // IntializeDB will be executed
-					ENDIF
-				else
-					self:lNewDb:=true
-				ENDIF
-			else
+			if !SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
 				self:lNewDb:=true
 			endif
 		endif
 	ENDIF
 	// 	cLine:=SqlSelect{"select cast(sha1('dd kle 123 k mmmmmm wwwwww lllllll dddddd') as char) as hash",oConn }:hash
 	return self
-Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
+Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal class Initialize
 	// initialise constants: 
 	LOCAL i, NwHb as int
 	LOCAL nLastPers := 1 as int
 	LOCAL nLastTrans as FLOAT
-	Local CurVersion as string ,DBVers, PrgVers as float
+	Local CurVersion as string 
 	local cStatement as string
 	LOCAL cWorkdir := WorkDir() as STRING 
 	local mindate as date
@@ -816,11 +811,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1) 
 	RddSetDefault("DBFCDX") 
 
-	oSys := SqlSelect{"select version from sysparms",oConn}
-	if oSys:RecCount>0
-		AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-		AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
-	endif 
 	if DBVers > PrgVers
 		(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
 			"Make sure you have the correct version of WycOffSy.exe"}):Show()
@@ -926,14 +916,16 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 		if lCopyIPC
 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
 		endif
-
-		// reset employee online:
-		oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
-		oStmnt:Execute()  
 		// load bic table
 		if lCopyBIC
 			FillBIC()
 		endif
+
+		if FirstOfDay
+			// reset employee online:
+			oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
+			oStmnt:Execute()
+		endif  
 	endif
 
 	// copy helpfile to c because it cannot read from a server: 
@@ -950,7 +942,7 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			oMyFileSpec1:Copy(oMyFileSpec2)
 		ENDIF
 	ENDIF	
-	// copy WhtaIsNewfile to c because it cannot read from a server:
+	// copy WhatIsNewfile to c because it cannot read from a server:
 	oMyFileSpec1:=FileSpec{cWorkdir+"\WosSQLNew.chm"}
 	IF oMyFileSpec1:Find()
 		oMyFileSpec2:=FileSpec{HelpDir+"\WosSQLNew.chm"}
@@ -963,14 +955,20 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			oMyFileSpec1:Copy(oMyFileSpec2)
 		ENDIF
 	ENDIF 
+	// copy senditquit to c because it it asks permission when executed from a server:
+	oMyFileSpec1:=FileSpec{cWorkdir+"\senditquiet.exe"}
+	IF oMyFileSpec1:Find()
+		oMyFileSpec2:=FileSpec{HelpDir+"\senditquiet.exe"}
+		IF oMyFileSpec2:Find()
+			IF oMyFileSpec2:DateChanged<oMyFileSpec1:DateChanged .or.;
+					(oMyFileSpec2:DateChanged=oMyFileSpec1:DateChanged .and. oMyFileSpec2:TimeChanged<oMyFileSpec1:TimeChanged)
+				oMyFileSpec1:Copy(oMyFileSpec2)
+			ENDIF
+		ELSE
+			oMyFileSpec1:Copy(oMyFileSpec2)
+		ENDIF
+	ENDIF 
 	
-	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
-
-	oSys:Execute()
-	if oSys:RecCount>0
-		CurVersion:=oSys:Version
-		AEval(AEvalA(Split(CurVersion,".",true),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
-		AEval(AEvalA(Split(Version,".",true),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 		if DBVers > PrgVers
 			(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
 				"Make sure you have the correct version of WycOffSy.exe"}):Show()
@@ -986,7 +984,6 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 			// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
 			// 			endif
 		endif
-	endif
 	SetDigit(18)
 
 	// get LOCAL separator:
@@ -1000,9 +997,12 @@ Method Initialize(dummy:=nil as logic) as void Pascal class Initialize
 	mdw := CDoW(Today())
 	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
 
+	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
+
+	oSys:Execute()
 
 	cStatement:=""
-	IF FirstOfDay .or.self:lNewDb
+	IF self:FirstOfDay .or.self:lNewDb
 
 		// 		endif
 		// Initialize sysparms:
