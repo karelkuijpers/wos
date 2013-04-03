@@ -305,7 +305,7 @@ METHOD TestButton( ) CLASS EditEmailAccount
 	GetHelpDir()
 	cbatchfile:=HelpDir+'\'+"batchtest"+Str(GetTickCountLow(),-1)+".bat"
 	clogfile:=HelpDir+'\'+"logtest"+Str(GetTickCountLow(),-1)+".txt"
-	cRun:= 'cmd.exe /c '+WorkDir()+'senditquiet.exe -s '+self:outgoingserver+' -port '+ConS(self:port)+' -u '+self:username+iif(Empty(self:protocol),'',' -protocol '+self:protocol)+;
+	cRun:= 'cmd.exe /c '+HelpDir+'\senditquiet.exe -s '+self:outgoingserver+' -port '+ConS(self:port)+' -u '+self:username+iif(Empty(self:protocol),'',' -protocol '+self:protocol)+;
 		' -p '+self:password+' -f '+self:emailaddress+' -t '+self:emailaddress+' -subject "test WOS email" -body "Hi<br><strong>This is a  test email</strong>.<br>Thanks." >"';
 		+clogfile+'"'
 	self:Pointer := Pointer{POINTERHOURGLASS}
@@ -690,7 +690,8 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 		self:port:=ConS(oSel:port)
 		self:protocol:=oSel:protocol 
 	endif
-	self:cMailBasic:='"'+WorkDir()+'senditquiet.exe" -s '+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
+	GetHelpDir()
+	self:cMailBasic:='"'+HelpDir+'\senditquiet.exe" -s '+self:outgoingserver+" -port "+self:port+" -u "+self:username+iif(Empty(self:protocol),""," -protocol "+self:protocol)+" -p "+self:password+" -f "+self:emailaddress
 	return self 
 method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect 
 	// The actually sending of the emails to the outgoing server
