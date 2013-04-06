@@ -3171,7 +3171,9 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 					aAccidMbr[nAcc,10]:={}
 					aAccidMbr[nAcc,7]:=aBalAcc2[2]  //category
 					aAccidMbr[nAcc,8]:=Val(aBalAcc2[3])  //yr_bud
-					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud
+					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud 
+				else
+					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud // should contain last value					
 				endif
 				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Val(aBalAcc2[5]),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])}) 
 // 				if nAcc==Len(aAccidMbr)
@@ -3801,17 +3803,17 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				AAdd(self:aMailMember,{ConS(oAcc:mbrid),AllTrim(StrTran(oAcc:description,".",Space(1))),cFileName,{}})
 				j:=Len(self:aMailMember)
 				IF ConS(oAcc:rptdest)<>'1'
-					AAdd(self:aMailMember[j,4],{ConS(oAcc:persid),oAcc:memberfullname,oAcc:email})
+					AAdd(self:aMailMember[j,4],{ConS(oAcc:persid),oAcc:email,oAcc:memberfullname})
 				endif
 				if ConS(oAcc:rptdest)<>'0'.or.self:mailcontact
 					if !Empty(oAcc:CONTACT) 
-						AAdd(self:aMailMember[j,4],{ConS(oAcc:CONTACT),oAcc:contactfullname,oAcc:contactemail})
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:CONTACT),oAcc:contactemail,oAcc:contactfullname})
 					endif
 					if !Empty(oAcc:contact2) 
-						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact2),oAcc:contactfullname2,oAcc:contactemail2})
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact2),oAcc:contactemail2,oAcc:contactfullname2})
 					endif
 					if !Empty(oAcc:contact3) 
-						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact3),oAcc:contactfullname3,oAcc:contactemail3})
+						AAdd(self:aMailMember[j,4],{ConS(oAcc:contact3),oAcc:contactemail3,oAcc:contactfullname3})
 					endif
 				endif
 			endif
@@ -4200,7 +4202,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			oSelpers:oDB:Execute()
 			if !Empty(oSelpers:oDB:status)
 				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage,"logerrors")
-				ErrorBox{self, self:oLan:WGet("could not retrieve member assessment data")}:Show()
+				ErrorBox{self, self:oLan:WGet("could not retrieve email data")}:Show()
 				return
 			endif
 			oSelpers:ReportMonth:=iif(ReportMonth=1,'',oLan:RGet('up incl'))+Space(1)+oLan:RGet(MonthEn[ReportMonth],,"!")+Space(1)+Str(ReportYear,4)
