@@ -322,7 +322,6 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 	LOCAL oMyPers as SQLSelect
 	LOCAL cMailAdress as STRING
 	* first attempt with familyname and without dialog:
-	self:oClick:Resume() 
 	If !Empty(cEmail) .and. At('@',cEmail)>0 // valid email address given?
 		// use that address
 		sRecip := MemAlloc( _sizeof( MapiMessage ) )
@@ -330,10 +329,10 @@ METHOD Resolvename( cLastName as string, persid as int, cFullName as string,cEma
 		sRecip.lpszAddress:=String2Psz('SMTP:'+CEmail)
 		sRecip.lpszName:=String2Psz(cFullName)
 		oRecip:=MAPIRecip{sRecip} 
-		self:oClick:Suspend()
 		Return oRecip
 	endif
 	// Otherwise try to fetch email address:
+	self:oClick:Resume() 
 	nResult := MAPIResolveName( self:hSession , ;
 		0 , ;
 		String2Psz( AllTrim(cLastName) ) , 0 , ;
