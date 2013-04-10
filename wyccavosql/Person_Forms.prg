@@ -1324,9 +1324,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 		IF !Empty(self:oPersCnt:m56_banknumber)
 			//mBankNumber := self:oPersCnt:m56_banknumber
 			self:mbankNumber:=self:oPersCnt:m56_banknumber
-			self:mBic:=GetBIC(self:oPersCnt:m56_banknumber)
-         self:aBankAcc:=ArrayNew(1,2)
-         self:aBankAcc:={self:mbankNumber,self:mBic}
+			self:mBic:=self:oPersCnt:m51_bic
+			self:mBic:=GetBIC(self:oPersCnt:m56_banknumber,self:mBic)
+         self:aBankAcc:={{self:mbankNumber,self:mBic}}
 // 			pos:=1 
 // 			pos:=self:FillBankNbr(self:oPersCnt:m56_banknumber,self:oDCSC_BankNumber:TextValue,pos)
 			// clear aOrigbank:
@@ -2074,7 +2074,7 @@ STATIC DEFINE PERSONBROWSER_SEARCHUNI := 100
 STATIC DEFINE PERSONBROWSER_UNIONBUTTON := 111 
 class PersonContainer
 // class to contain person attributes
-	EXPORT m51_initials, m51_lastname, m51_firstname, m51_title, m51_prefix, m51_pos, m51_ad1,m51_city, m56_banknumber as STRING
+	EXPORT m51_initials, m51_lastname, m51_firstname, m51_title, m51_prefix, m51_pos, m51_ad1,m51_city, m56_banknumber,m51_bic as STRING
 	export persid, m51_exid, m51_country, m51_gender, m51_type as STRING
 	EXPORT md_address1, md_address2, md_address3, md_address4 as STRING 
 	export current_PersonID as int 
