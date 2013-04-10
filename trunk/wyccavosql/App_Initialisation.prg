@@ -80,25 +80,24 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 			Remotetime:=aInsRem[1,F_TIME]
 			if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or. self:DBVers>self:PrgVers
 				// apparently new version:
-				if DBVers>PrgVers .or.(TextBox{,"New version of Wycliffe Office System available!","do you want to install it?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()= BOXREPLYYES
-					// load first latest version of install program:
-					
-					IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
-						WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
-						// 							__RaiseFTPError(oFTP) 
-					else
-						oFs:Find()
-						CollectForced()  // to force some wait
-						if oFs:Find()
-							// change date to remote date: 
-							SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-							startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
-						endif
-						*/
-						oFTP:CloseRemote()
-						return true 
-					ENDIF
-				endif
+				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()
+				// load first latest version of install program:
+				
+				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
+					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
+					// 							__RaiseFTPError(oFTP) 
+				else
+					oFs:Find()
+					CollectForced()  // to force some wait
+					if oFs:Find()
+						// change date to remote date: 
+						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
+						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
+					endif
+					*/
+					oFTP:CloseRemote()
+					return true 
+				ENDIF
 			endif
 		endif
 		oFs:=null_object
@@ -812,10 +811,18 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	RddSetDefault("DBFCDX") 
 
 	if DBVers > PrgVers
-		(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
+		(ErrorBox{,"Version of Wycliffe Office System is older than version of the database."+CRLF+;
 			"Make sure you have the correct version of WycOffSy.exe"}):Show()
 		myApp:Quit()
-		break
+		break 
+	elseif !FirstOfDay .and.!lNewDb .and. PrgVers>DBVers
+		// check nobody online:
+		if SqlSelect{"select empid from employee where online=1 and lstlogin >=curdate()",oConn}:RecCount>0
+			(ErrorBox{,"Version of Wycliffe Office System is newer than version of the database."+CRLF+;
+				"Wait till other users are logged off"}):Show()
+			myApp:Quit()
+			break 
+		endif	
 	endif 
 	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 		// check if new ppcodes, ipcaccounts or currencylist should be imported:
@@ -905,6 +912,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 		endif
 	endif
 	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
+		LogEvent(self,"Initialize DB:"+iif(FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),''),"logsql")
 		self:InitializeDB()
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
@@ -969,21 +977,21 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 		ENDIF
 	ENDIF 
 	
-		if DBVers > PrgVers
-			(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
-				"Make sure you have the correct version of WycOffSy.exe"}):Show()
-			myApp:Quit()
-			break 
-		elseif DBVers < PrgVers 			
-			SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-			// 			if !FirstOfDay
-			// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
-			// 					myApp:Quit() 
-			// 					break
-			// 				endif
-			// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-			// 			endif
-		endif
+	if DBVers > PrgVers
+		(ErrorBox{,"version of Wycliffe Office System is older than version of the database."+CRLF+;
+			"Make sure you have the correct version of WycOffSy.exe"}):Show()
+		myApp:Quit()
+		break 
+	elseif DBVers < PrgVers 			
+		SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+		// 			if !FirstOfDay
+		// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
+		// 					myApp:Quit() 
+		// 					break
+		// 				endif
+		// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
+		// 			endif
+	endif
 	SetDigit(18)
 
 	// get LOCAL separator:
@@ -1628,7 +1636,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
 		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
-		{"telebankpatterns","kind","char(4)","NO","",""},;
+		{"telebankpatterns","kind","char(5)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
 		{"telebankpatterns","addsub","char(1)","NO","",""},;
@@ -1642,7 +1650,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","seqnr","int(10)","NO","0",""},;
 		{"teletrans","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"teletrans","kind","char(4)","NO","",""},;
-		{"teletrans","contra_name","char(32)","NO","",""},;
+		{"teletrans","contra_name","varchar(64)","NO","",""},;
 		{"teletrans","budgetcd","char(20)","NO","",""},;
 		{"teletrans","amount","decimal(15,2)","NO","0",""},;
 		{"teletrans","addsub","char(1)","NO","",""},;
@@ -1653,6 +1661,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","lock_id","int(11)","NO","0",""},;
 		{"teletrans","lock_time","timestamp","NO","0000-00-00",""},;
 		{"teletrans","bic","varchar(11)","NO","",""},;
+		{"teletrans","country","char(2)","NO","",""},;
+		{"teletrans","adrline","varchar(70)","NO","",""},;
 		{"titles","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"titles","descrptn","char(12)","NO","",""},;
 		{"transaction","persid","int(11)","YES","NULL",""},;
