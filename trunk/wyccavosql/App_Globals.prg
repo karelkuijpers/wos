@@ -10,7 +10,7 @@ GLOBAL BankAccs:={} as ARRAY
 GLOBAL BANKNBRCRE as STRING
 GLOBAL BANKNBRDEB as STRING
 GLOBAL BICNBRCRE as STRING
-GLOBAL BICNBRDEB as STRING
+GLOBAL BICNBRDEB as STRING  
 global cAccAlwd as string
 GLOBAL cdate  as STRING
 global cDepmntIncl as string
@@ -18,7 +18,8 @@ global cDepmntXtr as string
 Global CITYUPC as logic
 GLOBAL ClosingMonth as int
 Global Collate as string // can be used for order by to conform local alphabet order 
-GLOBAL CountryCode as string
+GLOBAL CountryCode as string 
+Global CountryNames:={} as array
 GLOBAL CurPath as STRING
 global dbname as string
 GLOBAL DecAantal:= 2 as SHORT
@@ -119,7 +120,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.163" as string
+global Version:="3.0.0.167" as string
 global Versiondate:= __date__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
