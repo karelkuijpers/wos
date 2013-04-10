@@ -364,7 +364,7 @@ f_tekst:=AllTrim(StrTran(f_tekst,CHR(160),Space(1)))         // replace non-brea
 DO WHILE At("  ",f_tekst)>0
    f_tekst:=StrTran(f_tekst,"  "," ")
 ENDDO
-RETURN f_tekst
+RETURN AllTrim(f_tekst)
 function ConI(uValue as usual) as int
 // convert usual from tyniint to int
 return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),Val(uValue)))
@@ -920,6 +920,51 @@ function FillBIC()
 		oStmnt:Execute() 
 	endif
 	return
+Function FillCountryNames() 
+local oLan:=Language{} as Language
+CountryNames:={{"AT",oLan:Rget("Austria")},;
+{"PT",oLan:Rget("Azores")},;
+{"BE",oLan:Rget("Belgium")},;
+{"BG",oLan:Rget("Bulgaria")},;
+{"ES",oLan:Rget("Canary Islands")},;
+{"CY",oLan:Rget("Cyprus")},;
+{"CZ",oLan:Rget("Czech Republic")},;
+{"DK",oLan:Rget("Denmark")},;
+{"EE",oLan:Rget("Estonia")},;
+{"FI",oLan:Rget("Finland")},;
+{"FR",oLan:Rget("France")},;
+{"GF",oLan:Rget("French Guiana")},;
+{"DE",oLan:Rget("Germany")},;
+{"GI",oLan:Rget("Gibraltar")},;
+{"GR",oLan:Rget("Greece")},;
+{"GP",oLan:Rget("Guadeloupe")},;
+{"HU",oLan:Rget("Hungary")},;
+{"is",oLan:Rget("Iceland")},;
+{"IE",oLan:Rget("Ireland")},;
+{"IT",oLan:Rget("Italy")},;
+{"LV",oLan:Rget("Latvia")},;
+{"LI",oLan:Rget("Liechtenstein")},;
+{"LT",oLan:Rget("Lithuania")},;
+{"LU",oLan:wget("Luxembourg")},;
+{"PT",oLan:wget("Madeira")},;
+{"MT",oLan:wget("Malta")},;
+{"MQ",oLan:wget("Martinique")},;
+{"YT",oLan:wget("Mayotte")},;
+{"MC",oLan:wget("Monaco")},;
+{"NL",oLan:wget("Netherlands")},;
+{"NO",oLan:wget("Norway")},;
+{"PL",oLan:wget("Poland")},;
+{"PT",oLan:wget("Portugal")},;
+{"RE",oLan:wget("R‚union")},;
+{"RO",oLan:wget("Romania")},;
+{"BL",oLan:wget("Saint Barth‚lemy")},;
+{"MF",oLan:wget("Saint Martin (French part)")},;
+{"PM",oLan:wget("Saint Pierre and Miquelon")},;
+{"SK",oLan:wget("Slovakia")}}
+
+ 
+
+
 function FillIbanregistry()
 // fill Iban-registry with {countrycode, iban-templatem iban length, sepa?},...
 	iban_registry:= {{"AL","AL2!n8!n16!c",28,0},;
@@ -1126,6 +1171,13 @@ Function GetBIC(cIBAN as string, cBIC:='' as string) as string
 	return cBIC
 
 
+
+Function GetCountryName(CntrCd as string) as string
+local i as int
+if (i:=AScan(CountryNames,{|x|x[1]==CntrCd}))>0
+	return CountryNames[i,2]
+endif
+return CntrCd
 Function GetDelimiter(cBuffer as string, aStruct ref array, cLim:="" ref string, nMin as int, nMax as int) as logic
 	/* determine delimiter and column names of input file with spreadsheet:
 	Input: cBuffer with content of first line of file
@@ -1389,7 +1441,7 @@ function HtmlEncode(cText as string) as string
 	local nChecksum as int 
 		// move First 4 chars (countrycode and checksum) to the end of the string
 	Iban:=SubStr(Iban, 5)+SubStr(Iban, 1, 4)
-	// subsitutute chars 
+	// substitute chars 
 	IBanTemp:=''
 	SEval(Iban,{|c|IBanTemp+=iif(IsAlpha(CHR(c)),Str(c-55,-1),CHR(c))})
 	// mod97-10  
@@ -1674,7 +1726,8 @@ function InitGlobals()
 	FillPersTitle()
 	FillPropTypes()
 	FillPersProp()
-	FillIbanregistry()
+	FillIbanregistry() 
+	FillCountryNames()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
@@ -1747,7 +1800,7 @@ Function IsIban(Iban as string) as logic
 	local aReg:={} as array
 
 
-	// Format should be standdardized with IbanForma()
+	// Format should be standdardized with IbanFormat()
 	
 	// Get country of Iban
 	country:=SubStr(Iban,1,2)
@@ -1782,15 +1835,6 @@ Function IsIban(Iban as string) as logic
 	next
 
 	// verify checksum:
-/*	// move First 4 chars (countrycode and checksum) to the end of the string
-	Iban:=SubStr(Iban, 5)+SubStr(Iban, 1, 4)
-	// subsitutute chars 
-	IBanTemp:=''
-	SEval(Iban,{|c|IBanTemp+=iif(IsAlpha(CHR(c)),Str(c-55,-1),CHR(c))})
-	// mod97-10  
-
-	nChecksum:=Val(SubStr(IBanTemp,1,1)) 
-	SEval(IBanTemp,{|c|nChecksum:=(nChecksum*10+Val(CHR(c))) % 97},2)   */  
 	
 	nChecksum:=IbanChecksum(Iban)
 	// checkvalue of 97 indicates correct Iban checksum
