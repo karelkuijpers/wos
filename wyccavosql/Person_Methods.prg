@@ -1280,11 +1280,12 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 			IF !Empty(self:aBankAcc[i,1]) 
 				if sepaenabled
 					if !IsSEPA(self:aBankAcc[i,1])
-						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("is not a valid sepa bank account number") 
+						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("is not a valid sepa bank account number")+CRLF+self:oLan:WGet("go to https://www.ibanbicservice.nl/SingleRequest.aspx to convert")+CRLF+ ;
+						" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF
 						lValid:=false
 					endif
 					if Empty(self:aBankAcc[i,2])
-						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("should have a bic") 
+						cError+=self:aBankAcc[i,1]+' '+self:oLan:WGet("should have a bic")+CRLF 
 						lValid:=false
 					endif						
 				endif
@@ -1617,7 +1618,7 @@ METHOD Adres_Analyse(aWord as array, nStartAnalyse:=1 as int,lZipCode:=false ref
 *
 LOCAL i,j,wp,l,  nNumPosition:=0, nZipPosition, nCityPosition, nStart, nStartAddress as int
 LOCAL aStreetPrefix:={"VAN","OP","V/D","V/H","O/H","DEN","VON","VD","DE","HET"} as ARRAY 
-local lBelgium as logic 
+local lForeign as logic 
 local aDrWord:={} as array
 
 * search for zip code:
@@ -1631,7 +1632,9 @@ if aWord[i,1]=='BE'
 	self:m51_country:='België'
 	ASize(aWord,i-1)
 	wp:=i-1 
-	lBelgium:=true
+	lForeign:=true 
+elseif !Empty(self:m51_country) .and. AScanExact(OwnCountryNames,self:m51_country)=0 
+	lForeign:=true
 endif
 
 IF !lZipCode
@@ -1655,8 +1658,8 @@ IF !lZipCode
 					ENDIF
 				ENDIF
 			ENDIF
-			if lBelgium .and. Len(aWord[i,1])=4
-			// probably Belgium zip code:
+			if lForeign .and. Len(aWord[i,1])>=4 .and. isnum(aWord[i,1])
+			// probably foreign zip code:
 				self:m51_pos:=StandardZip(aWord[i,1])
 				nZipPosition:=i
 				nStart:=nZipPosition-1
@@ -2062,7 +2065,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 				cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+oPersCnt:m51_pos+"%'"
 			ENDIF
 			if !Empty(oPersCnt:m51_country)
-				cWhere+=iif(Empty(cWhere),""," and ")+"city like '"+AddSlashes(oPersCnt:m51_city)+"%'"
+				cWhere+=iif(Empty(cWhere),""," and ")+"country like '"+AddSlashes(oPersCnt:m51_country)+"%'"
 			ENDIF
 		endif
 	endif
