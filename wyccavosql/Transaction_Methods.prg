@@ -1368,8 +1368,12 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	RETURN nil
 METHOD RegPerson(oCLN) CLASS General_Journal
 	LOCAL oHm:=self:server as TempTrans
-	LOCAL ThisRec:=oHm:RECNO,recnr,i,TYPE as int
+	LOCAL ThisRec,recnr,i,Type as int
 	local oSel as SQLSelect 
+	if self:server==null_object  // apparently owner closed
+		return nil
+	endif
+	ThisRec:=oHm:Recno
 	IF !Empty(oCLN)
 		self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid) 
 		if !Empty(self:mCLNGiver)
@@ -3378,7 +3382,8 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	oPersCnt:m51_ad1:=self:oTmt:m56_address
 	oPersCnt:m51_city:=self:oTmt:m56_town
 	oPersCnt:m51_country:=self:oTmt:m56_country
-	oPersCnt:m56_banknumber:= self:oTmt:m56_contra_bankaccnt
+	oPersCnt:m56_banknumber:=self:oTmt:m56_contra_bankaccnt
+	oPersCnt:m51_bic:=self:oTmt:m56_bic  
 	oPersCnt:m51_type:="individual"
 	oPersCnt:m51_gender:="unknown"
 	if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
@@ -3439,10 +3444,13 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		
 		IF !Empty(self:oTmt:m56_contra_bankaccnt) 
-			oPers:=SqlSelect{'select pb.persid,p.postalcode,p.address,p.externid from personbank pb, person p where p.persid=pb.persid and p.deleted=0 and pb.banknumber="'+AllTrim(self:oTmt:m56_contra_bankaccnt)+'"',oConn}
+			oPers:=SqlSelect{'select pb.persid,pb.banknumber,p.postalcode,p.address,p.externid from personbank pb, person p where p.persid=pb.persid and p.deleted=0 and '+;
+			iif(!sepaenabled.or.IsIban(self:oTmt:m56_contra_bankaccnt),'pb.banknumber','right(pb.banknumber,'+Str(Len(self:oTmt:m56_contra_bankaccnt),-1)+')')+'="'+AllTrim(self:oTmt:m56_contra_bankaccnt)+'"',oConn}
 			if oPers:RecCount>0
 				self:Recognised:=true 
 				lAddressChanged:=false
+				self:oTmt:m56_contra_bankaccnt:=oPers:banknumber     // can be different when non-IBan
+				oPersCnt:m56_banknumber:= self:oTmt:m56_contra_bankaccnt
 				// 					m51_assrec:=self:oPers:Recno
 				IF Len(oPersCnt:m51_pos)>=7 
 					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode)
@@ -3494,9 +3502,9 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	if !Empty(cBankDescription)
 		self:oTmt:m56_description+cBankDescription
 	endif
-	self:oDCcGirotelText:Caption:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(AllTrim(self:oTmt:m56_contra_bankaccnt)).or.Len(AllTrim(self:oTmt:m56_contra_bankaccnt))>60,'','('+AllTrim(self:oTmt:m56_contra_bankaccnt)+')')+' '+;
+	self:oDCcGirotelText:Caption:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(AllTrim(self:oTmt:m56_contra_bankaccnt)).or.Len(AllTrim(self:oTmt:m56_contra_bankaccnt))>60,'',' ('+AllTrim(self:oTmt:m56_contra_bankaccnt)+') ')+' '+;
 		iif(Empty(self:oTmt:m56_description).or.!Empty(self:oTmt:m56_address).and.!self:oTmt:m56_address $ self:oTmt:m56_description,; 
-	Compress(self:oTmt:m56_description+" "+self:oTmt:m56_address+", "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
+	Compress(self:oTmt:m56_description+", "+self:oTmt:m56_address+" "+self:oTmt:m56_zip+" "+self:oTmt:m56_town+" "+self:oTmt:m56_country),self:oTmt:m56_description)
 	self:oDCmDat:Disable()
 	self:oDCDebitAccount:Disable()
 	self:oDCmDebAmntF:Disable()
@@ -3775,7 +3783,8 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	* cItemname: use for extra text for gift
 	
-	LOCAL lNewGift:= TRUE AS LOGIC
+	LOCAL lNewGift:= true as LOGIC
+	local oSel as SQLSelect
 	Default(@cItemname,NULL_STRING)
 	Default(@lOK,FALSE)
 	IF Empty(oCLN) .or. (IsInstanceOf(oCLN,#SQLSELECT) .and. oCLN:RecCount<1)
@@ -3795,6 +3804,13 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	ELSE
 		self:lMemberGiver := FALSE
 	ENDIF
+	if !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
+		// check if banknumber converted:
+		oSel:=SqlSelect{"select banknumber from personbank where persid="+self:mCLNGiver+" and right(banknumber,"+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +")="+ self:oTmt:m56_contra_bankaccnt,oConn}
+		if oSel:reccount>0
+			self:oTmt:m56_contra_bankaccnt:=oSel:banknumber
+		endif
+	endif
 	if IsObject(oPersBr)
 		if IsMethod(oPersBr,#ENDWINDOW)
 			oPersBr:EndWindow()
@@ -3987,32 +4003,37 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	AEval(oHm:Amirror,{|x| fCreTot += x[3]})
 	fCreTot:=Round(fCreTot,DecAantal)
 	IF !self:fTotal == 0
-		(errorbox{self:owner,"Sum of transactions not equal zero"}):show()
+		(errorbox{self:owner,self:oLan:WGet("Sum of transactions not equal zero")}):show()
 		lError := true
 	ELSEIF oHm:reccount < 1 .or. fCreTot = 0
-		(errorbox{self:owner,"Transactions not complete"}):show()
+		(errorbox{self:owner,self:oLan:WGet("Transactions not complete")}):show()
 		lError := true
 	ELSE
 		IF Empty(self:DebAccId)
-			(errorbox{self:owner,"Debit Account is obliged!"}):show()
+			(errorbox{self:owner,self:oLan:WGet("Debit Account is obliged")}):show()
 			self:oDCDebitAccount:SetFocus()
 			RETURN FALSE
 		ELSEIF 	!self:ValidateTempGift()
 			curPntr := oHm:Recno
 			lError := true
-// 		ELSEIF ValidateControls( self, self:AControls )
 		ELSE
+			if sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
+				ErrorBox{self:owner, self:oTmt:m56_contra_bankaccnt+': '+self:oLan:WGet("not a sepa bank account; convert it via https://www.ibanbicservice.nl/SingleRequest.aspx")+CRLF+; 
+				" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF;
+				+self:oLan:wget("and add it to this giver before entering this gift")}:show()
+				return false
+			endif
 			* Check giver:
 			IF !Recognised
 				m54_pers_sta:=oHm:m54w_rek_pers()
 				IF Val(self:mCLNGiver)=0
 					IF m54_pers_sta='V'
-						(errorbox{self:owner,'Specify a person as payer'}):show()
+						(ErrorBox{self:owner,self:oLan:wget('Specify a person as payer')}):show()
 						self:oDCmPerson:SetFocus()
 						RETURN FALSE
 					ELSEIF m54_pers_sta=='W'
-						oBox := Warningbox{self:owner, "Input of Payments/Gifts", ;
-							"Don't you need to specify a giver/payer?"}
+						oBox := Warningbox{self:owner, self:oLan:WGet("Input of Payments/Gifts"), ;
+							self:oLan:wget("Don't you need to specify a giver/payer")+'?'}
 						oBox:Type := BUTTONYESNO
 						IF (oBox:Show() = BOXREPLYYES)
 							self:oDCmperson:SetFocus()
@@ -4021,11 +4042,11 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					ENDIF
 				ELSE
 					IF m54_pers_sta='N'
-						(errorbox{self:owner,'No person allowed in this case'}):show()
+						(errorbox{self:owner,self:oLan:WGet('No person allowed in this case')}):show()
 						self:oDCmperson:SetFocus()
 						RETURN FALSE
 					ELSEIF m54_pers_sta=='O'
-						oBox := Warningbox{self:owner, "Input of oDCmPerson",'Payer really a person?'}
+						oBox := WarningBox{self:owner, self:oLan:wget("Input of Payments/Gifts"),self:oLan:wget('Payer really a person')+'?'}
 						oBox:Type := BUTTONYESNO
 						IF (oBox:Show() = BOXREPLYNO)
 							self:oDCmperson:SetFocus()
