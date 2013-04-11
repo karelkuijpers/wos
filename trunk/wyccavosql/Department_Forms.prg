@@ -825,7 +825,7 @@ METHOD OKButton( ) CLASS EditDepartment
 			(ErrorBox{,"Net asset account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
-		IF Empty(self:NbrIncome)
+		IF ConI(self:NbrIncome) =0
 			(ErrorBox{,"Income account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
@@ -833,11 +833,13 @@ METHOD OKButton( ) CLASS EditDepartment
 			(ErrorBox{,"Expense account obliged for this member department"}):Show()
 			RETURN
 		ENDIF
-		// check if only Income account is Gifts receivable:
-		cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+self:NbrIncome,oConn}:giftsaccs)
-		if !Empty(cGiftsAccs)
-			(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
-			RETURN			
+		// check if only Income account is Gifts receivable: 
+		IF ConI(self:NbrIncome) >0
+			cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+self:NbrIncome,oConn}:giftsaccs)
+			if !Empty(cGiftsAccs)
+				(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
+				RETURN			
+			endif 
 		endif
 	endif
 	// 	IF SELF:lNew
@@ -1033,61 +1035,61 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 
 	RETURN nil
 METHOD RegAccount(oAccA,ItemName) CLASS EditDepartment
-IF !Empty(oAccA).and.oAccA:reccount>0
-	IF ItemName=="Net Asset"
-		self:NbrCAPITAL :=  Str(oAccA:accid,-1)
-		self:oDCmCAPITAL:TEXTValue := AllTrim(oAccA:Description)
-		self:cCAPITALName := AllTrim(oAccA:Description)
-	ELSEIF ItemName=="Income"
-		self:NbrIncome :=  Str(oAccA:accid,-1)
-		self:oDCmincomeacc:TextValue := AllTrim(oAccA:Description)
-		self:cIncName := AllTrim(oAccA:Description)
-	ELSEIF ItemName=="Expense"
-		self:NbrExpense :=  Str(oAccA:accid,-1)
-		self:oDCmexpenseacc:TextValue := AllTrim(oAccA:Description)
-		self:cExpname := AllTrim(oAccA:Description)
-	ELSEIF ItemName=="Associated Account 1"
-		self:mAcc1 :=  Str(oAccA:accid,-1)
-		self:oDCmAccount1:TEXTValue := AllTrim(oAccA:Description)
-		self:cAccount1Name := AllTrim(oAccA:Description)
-	ELSEIF ItemName=="Associated Account 2"
-		self:mAcc2 :=  Str(oAccA:accid,-1)
-		self:oDCmAccount2:TEXTValue := AllTrim(oAccA:Description)
-		self:cAccount2Name := AllTrim(oAccA:Description)
-	ELSEIF ItemName=="Associated Account 3"
-		self:mAcc3 :=  Str(oAccA:accid,-1)
-		self:oDCmAccount3:TEXTValue := AllTrim(oAccA:Description)
-		self:cAccount3Name := AllTrim(oAccA:Description)
+	IF !Empty(oAccA).and.oAccA:reccount>0
+		IF ItemName=="Net Asset"
+			self:NbrCAPITAL :=  Str(oAccA:accid,-1)
+			self:oDCmCAPITAL:TEXTValue := AllTrim(oAccA:Description)
+			self:cCAPITALName := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Income"
+			self:NbrIncome :=  Str(oAccA:accid,-1)
+			self:oDCmincomeacc:TextValue := AllTrim(oAccA:Description)
+			self:cIncName := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Expense"
+			self:NbrExpense :=  Str(oAccA:accid,-1)
+			self:oDCmexpenseacc:TextValue := AllTrim(oAccA:Description)
+			self:cExpname := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Associated Account 1"
+			self:mAcc1 :=  Str(oAccA:accid,-1)
+			self:oDCmAccount1:TEXTValue := AllTrim(oAccA:Description)
+			self:cAccount1Name := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Associated Account 2"
+			self:mAcc2 :=  Str(oAccA:accid,-1)
+			self:oDCmAccount2:TEXTValue := AllTrim(oAccA:Description)
+			self:cAccount2Name := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Associated Account 3"
+			self:mAcc3 :=  Str(oAccA:accid,-1)
+			self:oDCmAccount3:TEXTValue := AllTrim(oAccA:Description)
+			self:cAccount3Name := AllTrim(oAccA:Description)
+		ENDIF
+	ELSE
+		IF ItemName=="Net Asset"
+			self:NbrCAPITAL:="0"
+			SELF:oDCmCAPITAL:TEXTValue := " "
+			SELF:cCAPITALName := " "
+		ELSEIF ItemName=="Income"
+			self:NbrIncome :=  "0"
+			self:oDCmincomeacc:TextValue :=" "
+			self:cIncName := " "
+		ELSEIF ItemName=="Expense"
+			self:NbrExpense :=  "0"
+			self:oDCmexpenseacc:TextValue := " "
+			self:cExpname := " "
+		ELSEIF ItemName=="Associated Account 1"
+			self:mAcc1 := "0"
+			SELF:oDCmAccount1:TEXTValue := NULL_STRING
+			self:cAccount1Name := null_string
+		ELSEIF ItemName=="Associated Account 2"
+			self:mAcc2 :=  "0"
+			SELF:oDCmAccount2:TEXTValue := NULL_STRING
+			self:cAccount2Name :="0"
+		ELSEIF ItemName=="Associated Account 3"
+			self:mAcc3 := "0"
+			SELF:oDCmAccount3:TEXTValue := NULL_STRING
+			SELF:cAccount3Name := NULL_STRING
+		ENDIF
 	ENDIF
-ELSE
-	IF ItemName=="Net Asset"
-		self:NbrCAPITAL:="0"
-		SELF:oDCmCAPITAL:TEXTValue := " "
-		SELF:cCAPITALName := " "
-	ELSEIF ItemName=="Income"
-		self:NbrIncome :=  "0"
-		self:oDCmincomeacc:TextValue :=" "
-		self:cIncName := " "
-	ELSEIF ItemName=="Expense"
-		self:NbrExpense :=  "0"
-		self:oDCmexpenseacc:TextValue := " "
-		self:cExpname := " "
-	ELSEIF ItemName=="Associated Account 1"
-		self:mAcc1 := "0"
-		SELF:oDCmAccount1:TEXTValue := NULL_STRING
-		self:cAccount1Name := null_string
-	ELSEIF ItemName=="Associated Account 2"
-		self:mAcc2 :=  "0"
-		SELF:oDCmAccount2:TEXTValue := NULL_STRING
-		self:cAccount2Name :="0"
-	ELSEIF ItemName=="Associated Account 3"
-		self:mAcc3 := "0"
-		SELF:oDCmAccount3:TEXTValue := NULL_STRING
-		SELF:cAccount3Name := NULL_STRING
-	ENDIF
-ENDIF
 
-RETURN TRUE
+	RETURN TRUE
 METHOD RegPerson(oCLN,ItemName) CLASS EditDepartment
 IF !Empty(oCLN).and.!oCLN:EoF
 	IF ItemName=="Contactperson1"
