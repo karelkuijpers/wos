@@ -553,7 +553,8 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditAccount
 RETURN
 METHOD ValidateAccount() CLASS EditAccount
 	LOCAL lValid := true as LOGIC
-	LOCAL cError,cLastname as STRING
+	LOCAL cError,cLastname as STRING   
+	local cGiftsAccs as string
 	local oSel as SQLSelect
 	self:mAccNumber:=AllTrim(self:mAccNumber)
 	IF Empty(self:mAccNumber)
@@ -637,18 +638,32 @@ METHOD ValidateAccount() CLASS EditAccount
 			lValid:=FALSE
 		ENDIF
 		if lValid
-			cError:=ValidateDepTransfer(self:mDep,self:mAccId)
+			cError:=ValidateDepTransfer(self:mDep,self:mAccId,ConI(self:mGIFTALWD))
 			IF !Empty(cError)
 				lValid:=FALSE
 			ENDIF		
 		endif
 	ENDIF
 	
-	IF ! lValid
-		(ErrorBox{self,cError}):Show()
-	ENDIF
+	
+	// check if only Income account is Gifts receivable: 
+	if self:odcmembertext:TextValue =='department member' .and. self:mGIFTALWD 
+		
+		oSel:=SqlSelect{"SELECT `incomeacc` FROM `department` WHERE `depid`=" +self:mDep,oConn}
+		if oSel:Reccount>0 
+			IF!lNew .or. !ConS(oSel:incomeacc) == self:mAccId 
+				cError:=self:oLan:WGet("Only 1 account gift receivable allowed")
+				lValid:=FALSE	
+				self:oDCmGIFTALWD:SetFocus()					
+			endif 
+		endif
+	endif	
+		
+		IF ! lValid
+			(ErrorBox{self,cError}):Show()
+		ENDIF
 
-	RETURN lValid
+		RETURN lValid
 Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
 SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
 // make filter condition for account
@@ -814,12 +829,12 @@ Function ValidateAccTransfer (cParentId as string,mAccId as string) as string
 	ENDIF
 	// ENDIF
 	RETURN cError
-Function ValidateDepTransfer (cDepartment as string,mAccId as string) as string 
+Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int) as string 
 	* Check if transfer of current account mAccId to another department with identifciation cDepartment is allowed
 	* Returns Error text if not allowed
 
 	LOCAL cError  as STRING
-	LOCAL oAcc as SQLSelect  
+	LOCAL oAcc,oSel as SQLSelect  
 	local oLan as Language 
 
 	oAcc:=SqlSelect{"select d.deptmntnbr,d.depid,d.descriptn,d.netasset,d.incomeacc,d.expenseacc from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
@@ -827,5 +842,22 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string) as string
 		oLan:=Language{}
 		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(AllTrim(Transform(oAcc:netasset,""))==mAccId,;
 		oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
+	endif 
+		// check if only Income account is Gifts receivable:  
+	if mGIFTALWD==2 
+		oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
+		if oAcc:Reccount>0 
+			mGIFTALWD:= ConI(oAcc:giftalwd)
+		endif
 	endif
+	if mGIFTALWD=1
+		oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
+		if oSel:Reccount>0 
+			IF !ConS(oSel:incomeacc) == mAccId 
+			oLan:=Language{}
+			cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
+			endif 
+		endif
+	endif	
+
 	return cError
