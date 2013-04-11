@@ -1787,7 +1787,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		if empty(self:mDescription) .and.!empty(self:oAccCnt:m51_description)
 			self:mDescription:=self:oAccCnt:m51_description
 		endif
-		if !Empty(self:mNumSave)
+		if ConI(self:mNumSave)>0
 			// read balance item:
 			osel:=SqlSelect{"select number,heading from balanceitem where balitemid="+mNumSave,oConn} 
 			if osel:RecCount>0
@@ -1795,7 +1795,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				self:cCurBal:=self:mBalitemid
 			endif
 		ENDIF
-		IF Empty(self:mDep)
+		IF ConI(self:mDep)=0
 			self:mDepartment:="0:"+sEntity+" "+sLand
 		else
 			osel:=SQLSelect{"select deptmntnbr,descriptn,ipcproject from department where depid="+self:mDep,oConn} 
@@ -1828,7 +1828,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		self:mNumSave := Str(self:oAcc:balitemid,-1)
 		self:nCurNum:=mNumSave
 		self:mDep:=Str(self:oAcc:Department,-1) 
-		if !Empty(self:oAcc:GAINLSACC) 
+		if ConI(self:oAcc:GAINLSACC)>0 
 			oAccG:=SQLSelect{"select accid,description from account where accid="+Str(self:oAcc:GAINLSACC,-1),oConn}
 			self:cCurGainLossAcc:=AllTrim(oAccG:Description)
 			self:oDCmGainLossacc:textValue:= oAccG:Description
