@@ -250,7 +250,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditEmailAccount
 			cMailaddress:= oSel:email
 			self:emailaddress:= cMailaddress
 			self:username:=StrTran(cMailaddress,'@wycliffe.net','@wycliffe.org')
-			if AtC('@wycliffe.',cMailaddress)>0 .or.AtC(cMailaddress,'@sil.')>0 
+			if AtC('@wycliffe.',cMailaddress)>0 .or.AtC('@sil.',cMailaddress)>0 
 				self:outgoingserver:='mail.jaars.org'
 				self:port:=587
 				self:protocol:='ssl'
