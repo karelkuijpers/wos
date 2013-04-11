@@ -658,12 +658,12 @@ METHOD ValidateAccount() CLASS EditAccount
 			endif 
 		endif
 	endif	
-		
-		IF ! lValid
-			(ErrorBox{self,cError}):Show()
-		ENDIF
+	
+	IF ! lValid
+		(ErrorBox{self,cError}):Show()
+	ENDIF
 
-		RETURN lValid
+	RETURN lValid
 Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
 SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
 // make filter condition for account
@@ -841,23 +841,27 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=
 	if oAcc:Reccount>0 .and. Str(oAcc:depid,-1)<>cDepartment
 		oLan:=Language{}
 		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(AllTrim(Transform(oAcc:netasset,""))==mAccId,;
-		oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
+			oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
 	endif 
-		// check if only Income account is Gifts receivable:  
-	if mGIFTALWD==2 
-		oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
-		if oAcc:Reccount>0 
-			mGIFTALWD:= ConI(oAcc:giftalwd)
+	// check if only Income account is Gifts receivable:  
+	oAcc:=SqlSelect{"SELECT `accid` FROM `member` WHERE `accid` is null and `depid`=" +cDepartment,oConn} 
+	if oAcc:Reccount >0 
+		
+		if mGIFTALWD==2 
+			oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
+			if oAcc:Reccount>0 
+				mGIFTALWD:= ConI(oAcc:giftalwd)
+			endif
+		endif
+		if mGIFTALWD=1
+			oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
+			if oSel:Reccount>0 
+				IF !ConS(oSel:incomeacc) == mAccId 
+					oLan:=Language{}
+					cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
+				endif 
+			endif
 		endif
 	endif
-	if mGIFTALWD=1
-		oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
-		if oSel:Reccount>0 
-			IF !ConS(oSel:incomeacc) == mAccId 
-			oLan:=Language{}
-			cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
-			endif 
-		endif
-	endif	
 
 	return cError
