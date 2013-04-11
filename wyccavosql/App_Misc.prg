@@ -367,7 +367,7 @@ ENDDO
 RETURN AllTrim(f_tekst)
 function ConI(uValue as usual) as int
 // convert usual from tyniint to int
-return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),Val(uValue)))
+return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )
 function ConL(uValue as usual) as logic
 // convert usual from tiniint to logic
 return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
