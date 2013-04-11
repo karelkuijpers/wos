@@ -59,7 +59,8 @@ DECLARE METHOD FillElementFromString
 DECLARE METHOD FillAttributes
 DECLARE METHOD FillSubElements
 
-DECLARE METHOD GetElementOnName
+DECLARE METHOD GetElementOnName 
+DECLARE METHOD GetNextElementOnName
 DECLARE METHOD GetElementOnPosition
 DECLARE METHOD GetAttributeOnName
 DECLARE METHOD GetAttributeOnPosition
@@ -323,6 +324,10 @@ METHOD GetElementOnPosition ( dwPosition AS DWORD ) AS XMLElement STRICT CLASS X
 RETURN self:SubElements:GetElementOnPosition ( dwPosition )
 ~"ONLYEARLY-"
 
+METHOD GetNextElementOnName ( symElementName as SYMBOL ) as XMLElement STRICT CLASS XMLElement
+~"ONLYEARLY+"
+RETURN self:SubElements:GetNextElementOnName ( symElementName )
+~"ONLYEARLY-"
 METHOD Init() CLASS XMLElement
 
 self:Attributes 		:= XMLAttributes{}
@@ -490,12 +495,14 @@ RETURN strNewValue
 
 CLASS XMLElementen
 
-PROTECT Elementen AS ARRAY
+PROTECT Elementen as ARRAY
+Protect CurrentPosition:={} as array  // {{name,position},...}
 
 ~"ONLYEARLY+"
 DECLARE METHOD AddElement
 DECLARE METHOD GetElementOnName
-DECLARE METHOD GetElementOnPosition
+DECLARE METHOD GetElementOnPosition 
+DECLARE METHOD GetNextElementOnName
 
 DECLARE ACCESS AantalElementen
 ~"ONLYEARLY-"
@@ -512,20 +519,45 @@ RETURN
 
 METHOD GetElementOnName ( symElementName AS SYMBOL ) AS XMLElement STRICT CLASS XMLElementen
 
-LOCAL dwPos           AS DWORD
+LOCAL dwPos           as DWORD 
+local curPos			as DWORD
 LOCAL oXMLElement 		AS XMLElement
 ~"ONLYEARLY+"
 dwPos := AScan ( SELF:Elementen , {|x| x[1]==symElementName } )
 IF dwPos > 0
-	oXMLElement := SELF:Elementen [ dwPos , 2 ]
+	oXMLElement := self:Elementen [ dwPos , 2 ] 
+	curPos:=AScan(self:CurrentPosition,{|x|x[1]==symElementName})
+	if curPos>0
+		self:CurrentPosition[curPos,2]:=dwPos
+	else
+		AAdd(self:CurrentPosition,{symElementName,dwPos})
+	endif
 ENDIF
 
 RETURN oXMLElement	
 ~"ONLYEARLY-"
-
 METHOD GetElementOnPosition ( dwPosition AS DWORD ) AS XMLElement STRICT CLASS XMLElementen
 ~"ONLYEARLY+"
 RETURN SELF:Elementen [ dwPosition , 2 ]
+~"ONLYEARLY-"
+
+METHOD GetNextElementOnName ( symElementName as SYMBOL ) as XMLElement STRICT CLASS XMLElementen
+
+LOCAL dwPos           as DWORD 
+local curPos			as DWORD
+LOCAL oXMLElement 		as XMLElement
+~"ONLYEARLY+"
+curPos:=AScan(self:CurrentPosition,{|x|x[1]==symElementName}) 
+if curPos>0
+	dwPos:= self:CurrentPosition[curPos,2]+1
+	dwPos := AScan ( self:Elementen , {|x| x[1]==symElementName },dwPos )
+	IF dwPos > 0
+		oXMLElement := self:Elementen [ dwPos , 2 ] 
+		self:CurrentPosition[curPos,2]:=dwPos
+	endif
+endif
+
+RETURN oXMLElement	
 ~"ONLYEARLY-"
 
 METHOD Init() CLASS XMLElementen
@@ -659,8 +691,8 @@ ELSE
 		ELSE
 			strElementData := NULL_STRING
 		ENDIF
-  	strElementData 					:= StrTran( strElementData , "&lt;" , "<" )
-		strElementData 					:= StrTran( strElementData , "&gt;" , ">" )
+//   	strElementData 					:= StrTran( strElementData , "&lt;" , "<" )
+// 		strElementData 					:= StrTran( strElementData , "&gt;" , ">" )
 
     // OCh : 08-01-2001 spaties verwijderen, ook voorloop spaties!
 		oXMLElement:STRINGValue := AllTrim( strElementData )
@@ -779,8 +811,8 @@ METHOD LoadFile ( strFileName AS STRING ) AS LOGIC STRICT CLASS XMLParser
 			strXMLString:=(UTF2String{SubStr(strXMLString,4)}):OutBuf
 		elseif SubStr(strXMLString,1,2)==UTF16
 			strXMLString:=(UTF2String{SubStr(strXMLString,4)}):OutBuf
-		else
-			strXMLString:=strXMLString
+// 		else
+// 			strXMLString:=strXMLString
 		endif
 
 		strXMLString := StrTran( strXmlString , CRLF   ,NULL_STRING)
@@ -805,7 +837,7 @@ METHOD LoadFile ( strFileName AS STRING ) AS LOGIC STRICT CLASS XMLParser
 		oXMLElement := SELF:CreateElementFromString ( strXMLString , 1 , @dwDummy )
 
 		// Haal de XMLString weer uit Static Memory
-		//	OldSpaceFree ( strXMLString )
+		OldSpaceFree ( strXMLString )
 		
 		SELF:RootElement := oXMLElement
 		
