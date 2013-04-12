@@ -1026,7 +1026,7 @@ METHOD Import() CLASS TeleMut
 		SQLStatement{"commit",oConn}:execute()  // save locks 
 	endif
 	if self:nTooOld>0
-		WarningBox{,"Import of telebanking transactions",Str(self:nTooOld,-1) +" transactions skipped because older than 240 days"}:Show()		
+		WarningBox{,"Import of telebanking transactions",Str(self:nTooOld,-1) +" transactions skipped because older than 240 days or before month closing date"}:Show()		
 	endif
 	if lFilesFound
 		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
@@ -1864,10 +1864,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 					endif
 				endif
 				lv_description:=Compress(lv_description+' '+lv_reference)
-				lv_description:=AddSlashes(lv_description)
 				lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
 				self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
-					lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid,lv_AdrLine,lv_Country,lv_BIC)
+					lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(lv_description),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC)
 
 				oNtry:=oStmt:GetNextElementOnName(#Ntry)
 			enddo
@@ -3987,7 +3986,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 										endif
 									endif
 									if Empty(avalueTrans[i,12]) .and.!(Empty(self:m56_zip).and.Empty(self:m56_town))
-										aValuesTrans[i,12]:=AddSlashes(self:m56_address+' '+self:m56_zip+' '+self:m56_town)  // as determined by getaddress
+										aValuesTrans[i,12]:=self:m56_address+' '+self:m56_zip+' '+self:m56_town  // as determined by getaddress
 									endif
 								endif
 							endif
@@ -4007,8 +4006,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
 									nTransId++
-									AAdd(aTrans,{cBankAccOwn,avalueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,AddSlashes(lv_description+' ('+aValuesTrans[i,6]+ iif(len(aValuesTrans[i,4])>60,' ',' ('+aValuesTrans[i,4]+') ')+;
-										+aValuesTrans[i,10]+', '+aValuesTrans[i,12]+')'),;
+									AAdd(aTrans,{cBankAccOwn,avalueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+' ('+aValuesTrans[i,6]+ iif(len(aValuesTrans[i,4])>60,' ',' ('+aValuesTrans[i,4]+') ')+;
+										+aValuesTrans[i,10]+', '+aValuesTrans[i,12]+')',;
 										aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','0','0','',str(nTransId,-1)} )
 									AAdd(aTransTele,{i,nTransId}) 
 									// second row: 
@@ -4020,7 +4019,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 									else
 										lv_gc:=''
 									endif
-									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,AddSlashes(lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage)),;
+									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
 										avalueTrans[i,2],lv_gc,LOGON_EMP_ID,'2','2',avalueTrans[i,5]+avalueTrans[i,3],'',Str(Val(avalueTrans[i,11]),-1),'0','',Str(nTransId,-1)} )
 									// person data:
 									AAdd(avaluesPers,{lv_persid,avalueTrans[i,2]}) 
@@ -4377,11 +4376,11 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 	// temporary:
 // 	NbrDays:=1000
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
-	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
-		RETURN true 
-	else
-		if transdate <(Today() - NbrDays)
+// 	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
+// 		RETURN true 
+// 	else
+		if transdate <(Today() - NbrDays) .or. transdate < mindate        // tolder than 240 days or before month closed
 			return true
 		endif
-	ENDIF
+// 	ENDIF
 	RETURN FALSE
