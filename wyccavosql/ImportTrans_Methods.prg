@@ -310,6 +310,9 @@ Method AddImport(FromAcc as string,ToAcc as string,Amount as float,Description a
 		endif
 	endif
 	cImpDat:=SQLdate(impDat) 
+	if impDat< mindate
+		return
+	endif
 	if lCheckDuplicates
 		// Check if transaction already present:
 
@@ -1103,7 +1106,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				lv_geladen:=true 
 			ENDIF
 		ENDIF
-		IF !lv_geladen
+		IF !lv_geladen .and.SToD(AFields[ptDate])>=mindate
 			cStatement:=;
 				iif(ptDate<= Len(AFields),",transdate='"+SQLdate(SToD(AFields[ptDate]))+"'","")+;
 				iif(ptDoc<= Len(AFields),",docid='"+AFields[ptDoc]+"'","")+; 
@@ -1262,7 +1265,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	LOCAL transdate, oppdate,rppdate,cmsdate as date
 	LOCAL oAfl as UpdateHouseHoldID
 	LOCAL datelstafl as date
-	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt,nSeqnbr,nPers,nLastGift as int
+	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt,nSeqnbr,nPers,nLastGift,nCntTooOld as int
 	local nTransId as Dword 
 	lOCAL cPmisCurrency as string, lUSD as logic 
 	local oCurr as CURRENCY 
@@ -1489,8 +1492,14 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				endif
 			endif
 		endif
-		nCnt++
 		self:oParent:STATUSMESSAGE(cMsg+Str(nCnt,-1))
+		if transdate < mindate
+			nCntTooOld++
+			recordfound:=PMISDocument:GetNextSibbling()
+			loop
+		endif
+		nCnt++
+			
 		if !Empty(mxrate)
 			amount:=Round(mxrate*USDAmount,DecAantal)
 		endif
@@ -1772,8 +1781,12 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	endif
 	time0:=time1
 	// 	LogEvent(self,"import RPP:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
-	oParent:Pointer := Pointer{POINTERARROW}
+	oParent:Pointer := Pointer{POINTERARROW} 
 	AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions; total amount:"+Str(-TotAmount,-1,DecAantal)+sCURR+' (Exchange rate: 1 USD='+Str(mxrate,-1)+sCURR+')'+'; '+Str(nProc,-1)+' automatic processed')
+	if nCntTooOld>0
+		AAdd(self:aMessages,"Imported RPP file:"+oFr:FileName+" "+Str(nCntTooOld,-1)+' '+ self:olan:WGet("transactions skipped because in closed year or month"))
+		ErrorBox{,Str(nCntTooOld,-1)+' '+ self:oLan:WGet("transactions skipped because in closed year or month")}:show()	
+	endif
 
 	RETURN true
 METHOD INIT(oOwner,oHulpMut,Share,ReadOnly) CLASS ImportBatch 
