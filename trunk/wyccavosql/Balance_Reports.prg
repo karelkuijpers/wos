@@ -7172,7 +7172,7 @@ METHOD OKButton( ) CLASS YearClosing
 		(ErrorBox{self:OWNER,self:cError}):Show()
 		return
 	endif
-	oStmnt:=SQLStatement{"update sysparms set yearclosed="+Str(self:YearClose,-1)+",mindate='"+SQLdate(self:BalanceEndDate+1)+"'",oConn}
+	oStmnt:=SQLStatement{"update sysparms set yearclosed="+Str(self:YearClose,-1)+",mindate=max(mindate,'"+SQLdate(self:BalanceEndDate+1)+"')",oConn}
 	oStmnt:Execute()	
 	if !Empty(oStmnt:Status)
 		self:cError:=self:oLan:WGet("could not change sysparms")+";Error:"+oStmnt:ErrInfo:ErrorMessage
