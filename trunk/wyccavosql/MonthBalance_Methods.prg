@@ -176,7 +176,7 @@ METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=
 	// self:vorig_cre:=0
 	// self:vjr_deb:=0
 	// self:vjr_cre:=0
-	LastClose := Round(Year(MinDate)*12,0)+Month(MinDate)
+	LastClose := Round(Year(LstYearClosed)*12,0)+Month(LstYearClosed)
 	*
 	* Determine required period from inputparameters:
 	*
@@ -332,14 +332,14 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	*
 	* CALCULATION
 	* prvyr_deb/cre: if previous year closed: svjc/d from Accountbalanceyear of balance year required period starts with
-	*                else: if Cost/profit: total of mbalance from previous year, else: svjc/d of Accountbalanceyear of MinDate + 
+	*                else: if Cost/profit: total of mbalance from previous year, else: svjc/d of Accountbalanceyear of LstYearClosed + 
 	*                                                                                  total of mbalance up till including previous year
 	* prvyrytd_deb/cre: if Cost/profit: total of mbalance from same yeartodate period during previous year as required period
 	*                   else: svjc/d from last available accountbalanceyear of previous year or earlier + 
 	* 									total of mbalance from same yeartodate period during previous year as required period	* 
 	* Thus needed accountbalanceyear: 
 	*		if previous year closed:	year/month of required balance year 3 or one year before
-	*		else:								year/month of Mindate							
+	*		else:								year/month of LstYearClosed							
 	**************
 	*
 	LOCAL CurrStartYear, CurrStartMonth,CurrEndYear, CurrEndMonth as int // variables for stepping through years and months
@@ -374,7 +374,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	local cStatement as string
 	local cSelectx,cSelecty,cSelectz as string 
 
-	LastClose := Round(Year(MinDate)*12,0)+Month(MinDate) 
+	LastClose := Round(Year(LstYearClosed)*12,0)+Month(LstYearClosed) 
 	*
 	* Determine required period from inputparameters:
 	*
@@ -416,8 +416,8 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 
 	IF PrvYearNotClosed
 		*	start at first non closed year to cumulate from last svjd/c for assets/liability:
-		PrvYearStartYr:=Year(MinDate)
-		PrvYearStartMn:=Month(MinDate)
+		PrvYearStartYr:=Year(LstYearClosed)
+		PrvYearStartMn:=Month(LstYearClosed)
 	else
 		PrvYearStartYr:=CurrStartYear
 		PrvYearStartMn:=CurrStartMonth
@@ -650,7 +650,7 @@ Method SQLGetBalanceDate( dDate:=Today() as date, lForeignCurr:=false as logic, 
 	*
 	* Thus needed accountbalanceyear: 
 	*		if previous year closed:	year/month of required balance year 3 or one year before
-	*		else:								year/month of Mindate							
+	*		else:								year/month of LstYearClosed							
 	**************
 	*
 	// 	LOCAL CurrStartYear, CurrStartMonth,CurrEndYear, CurrEndMonth as int // variables for stepping through years and months
@@ -680,7 +680,7 @@ Method SQLGetBalanceDate( dDate:=Today() as date, lForeignCurr:=false as logic, 
 	local cStatement as string
 	local cSelectx,cSelecty,cSelectz,cSelectt,cSelectR as string 
 
-	LastClose := Round(Year(MinDate)*12,0)+Month(MinDate) 
+	LastClose := Round(Year(LstYearClosed)*12,0)+Month(LstYearClosed) 
 	dUltMonth:=EndOfMonth(dDate)
 	if	dDate < dUltMonth
 		lBeforeUlt:=true
@@ -715,8 +715,8 @@ Method SQLGetBalanceDate( dDate:=Today() as date, lForeignCurr:=false as logic, 
 
 	IF PrvYearNotClosed
 		*	start at first non closed year to cumulate from last svjd/c for assets/liability:
-		PrvYearStartYr:=Year(MinDate)
-		PrvYearStartMn:=Month(MinDate)
+		PrvYearStartYr:=Year(LstYearClosed)
+		PrvYearStartMn:=Month(LstYearClosed)
 	else
 		PrvYearStartYr:=CurrStartYear
 		PrvYearStartMn:=CurrStartMonth
@@ -974,8 +974,8 @@ function GetBalYears(NbrFutureYears:=0 as int) as array
 	*	Add non closed years:
 
 	
-// 	aYearStartEnd:=GetBalYear(Year(MinDate),ClosingMonth)
-	aYearStartEnd:=GetBalYear(Year(MinDate),Month(MinDate))
+// 	aYearStartEnd:=GetBalYear(Year(LstYearClosed),ClosingMonth)
+	aYearStartEnd:=GetBalYear(Year(LstYearClosed),Month(LstYearClosed))
 	AAdd(aMyYear,{Str(aYearStartEnd[1],4,0)+":"+StrZero(aYearStartEnd[2],2,0)+" - "+;
 	Str(aYearStartEnd[3],4,0)+":"+StrZero(aYearStartEnd[4],2,0),Str(aYearStartEnd[1],4,0)+StrZero(aYearStartEnd[2],2,0)})
 	MONTHEND:=aYearStartEnd[4]
