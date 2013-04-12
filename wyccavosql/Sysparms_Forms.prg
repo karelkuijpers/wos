@@ -387,11 +387,11 @@ method InitParms() class LogReport
 	if !Empty(GlBalYears)
 		OldestYear:=GlBalYears[Len(GlBalYears),1] 
 	else
-		OldestYear:=MinDate
+		OldestYear:=LstYearClosed
 	endif
 	self:oDCDateTimeFrom:DateRange:=DateRange{OldestYear,Today()}
 	self:oDCDateTimeTo:DateRange:=DateRange{OldestYear,Today()+1}
- 	self:oDCDateTimeFrom:SelectedDate:=Max(MinDate,Today()-160)
+ 	self:oDCDateTimeFrom:SelectedDate:=Max(LstYearClosed,Today()-160)
 
 	self:oDCCollectionBox:FillUsing({{"standard report","log"},{"error report","logerrors"}})
 	self:oDCCollectionBox:Value:="log"
