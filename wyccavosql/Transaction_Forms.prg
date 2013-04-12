@@ -4021,7 +4021,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 METHOD FindButton( ) CLASS TransInquiry 
 local nQty as int
 local oSel as SQLSelect
-	self:cWhereSpec:="t.transid>= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat>='"+SQLdate(MinDate)+"'"
+	self:cWhereSpec:="t.transid>= "+Str(self:lsttrnr-Val(self:NbrTrans),-1)+" and t.dat>='"+SQLdate(LstYearClosed)+"'"
 	self:cSelectStmnt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec 
 	self:cOrder:="transid desc,seqnr" 
 	oSel:=SqlSelect{UnionTrans("select count(*) as qty from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec),oConn}
@@ -4173,7 +4173,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TransInquiry
 	local	oBank as SQLSelect
 
 self:SetTexts()
-	self:StartDate:=MinDate
+	self:StartDate:=LstYearClosed
 	self:EndDate:=Today()+31
 	self:TransTypeSelected:="A"
 	self:NoUpdate:=FALSE	
@@ -4200,7 +4200,7 @@ self:SetTexts()
 	if !Empty(GlBalYears)
 		OldestYear:=GlBalYears[Len(GlBalYears),1] 
 	else
-		OldestYear:=MinDate
+		OldestYear:=LstYearClosed
 	endif
   	self:oDCFound:TextValue :=Str(self:oTrans:RecCount,-1)
  
@@ -4231,7 +4231,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class TransInquiry
 		endif		
 	endif
 	if Empty(uExtra)
-		cWhereSpec:="transid>"+Str(self:lsttrnr-100,-1)+" and t.dat>='"+SQLdate(MinDate)+"'"
+		cWhereSpec:="transid>"+Str(self:lsttrnr-100,-1)+" and t.dat>='"+SQLdate(LstYearClosed)+"'"
 	else
 		cWhereSpec:=uExtra
 	endif
