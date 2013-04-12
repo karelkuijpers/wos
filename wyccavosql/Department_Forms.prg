@@ -468,7 +468,7 @@ METHOD CancelButton( ) CLASS EditDepartment
 METHOD CAPButton( lUnique) CLASS EditDepartment
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrCAPITAL},{liability})
+	cfilter:=MakeFilter({self:NbrCAPITAL},{liability},,,,{self:NbrIncome,self:NbrExpense})
 	if !self:lNew 
 		cfilter+= " and department="+self:mDepId
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmCAPITAL:TextValue ),"Net Asset",lUnique,cfilter,self:owner,false)
@@ -537,7 +537,7 @@ ENDIF
 METHOD ExpButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrExpense},{expense})
+	cfilter:=MakeFilter({self:NbrExpense},{expense},,,,{self:NbrCAPITAL,self:NbrIncome})
 	if !self:lNew 
 		cfilter+= " and department="+self:mDepId
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmexpenseacc:TextValue ),"Expense",lUnique,cfilter,self:owner,false)
@@ -547,7 +547,7 @@ RETURN NIL
 METHOD IncButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrIncome},{income})
+	cfilter:=MakeFilter({self:NbrIncome},{income},,,,{self:NbrCAPITAL,self:NbrExpense})
 	if !self:lNew 
 		cfilter+= " and department="+self:mDepId
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmincomeacc:TextValue ),"Income",lUnique,cfilter,self:owner,false)
