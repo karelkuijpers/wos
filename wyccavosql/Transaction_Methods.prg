@@ -3804,11 +3804,13 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	ELSE
 		self:lMemberGiver := FALSE
 	ENDIF
-	if !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
-		// check if banknumber converted:
-		oSel:=SqlSelect{"select banknumber from personbank where persid="+self:mCLNGiver+" and right(banknumber,"+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +")="+ self:oTmt:m56_contra_bankaccnt,oConn}
-		if oSel:reccount>0
-			self:oTmt:m56_contra_bankaccnt:=oSel:banknumber
+	if self:lTeleBank
+		if !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
+			// check if banknumber converted:
+			oSel:=SqlSelect{"select banknumber from personbank where persid="+self:mCLNGiver+" and right(banknumber,"+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +")="+ self:oTmt:m56_contra_bankaccnt,oConn}
+			if oSel:reccount>0
+				self:oTmt:m56_contra_bankaccnt:=oSel:banknumber
+			endif
 		endif
 	endif
 	if IsObject(oPersBr)
