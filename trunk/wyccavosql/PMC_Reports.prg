@@ -1249,9 +1249,11 @@ METHOD PrintReport() CLASS PMISsend
 			if PMCUpload
 				lStop:=true
 				FileStart(WorkDir()+"InsitePMCUpload.html",self)
-				oAskUp:=AskUpld{self,,,cFilename}
-				oAskUp:Show() 
-				if oAskUp:Result==1
+				if TextBox{,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Has file with transactions successfully been uploaded without errors into Insite")+'?'+;
+				CRLF+self:oLan:WGet("This is irrevocable",,'@!')+'!',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYYES
+// 				oAskUp:=AskUpld{self,,,cFilename}
+// 				oAskUp:Show() 
+// 				if oAskUp:Result==1
 					if !self:RefreshLocks(nTransSample,nTransLock)
 						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
 					else
@@ -1263,6 +1265,8 @@ METHOD PrintReport() CLASS PMISsend
 					if !FileSpec{cFilename}:DELETE()
 						FErase(cFilename)
 					endif
+					TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Nothing recorded as sent to PMC")+CRLF+CRLF+self:oLan:WGet("Remove from Insite file") +;
+					': '+SEntity+'_'+FileSpec{cFilename}:Filename+'.xml',BOXICONHAND}:Show()
 				endif
 			endif
 		endif
