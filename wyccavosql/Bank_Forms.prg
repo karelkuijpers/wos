@@ -46,12 +46,13 @@ METHOD DeleteButton( ) CLASS BankBrowser
 		RETURN
 	ENDIF
 	
-	oTextBox := TextBox{ SELF, "Delete Bank Account",;
-		"Delete Bank Account?" }	
-	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
+	oTextBox := TextBox{ self, self:oLan:WGet("Bank Accounts"),;
+		self:oLan:WGet("Delete Bank Account")+' '+self:Server:banknumber+': '+self:Server:Description+'?', BUTTONYESNO + BOXICONQUESTIONMARK}	
 	
-	IF ( oTextBox:Show() == BOXREPLYYES )
-		oSFBankSub_Form:Delete()
+	IF ( oTextBox:Show() == BOXREPLYYES ) 
+		SQLStatement{"delete from bankaccount where bankid="+ConS(self:Server:bankid),oConn}:execute()
+// 		oSFBankSub_Form:Delete() 
+		self:Server:execute()
 		oSFBankSub_Form:Browser:REFresh()
 
 	ENDIF
@@ -228,7 +229,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 	self:cFields:="b.bankid,b.banknumber,a.description,a.accnumber,a.accid,cast(b.telebankng as char) as telebankng,cast(b.usedforgifts as char) as usedforgifts"
 	self:cOrder:="a.description"
 	self:cWhere:="a.accid=b.accid"
-	oBank:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
+	self:oBank:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn}
 	RETURN nil
 ACCESS SearchUni() CLASS BankBrowser
 RETURN SELF:FieldGet(#SearchUni)
