@@ -1466,10 +1466,11 @@ Function IbanFormat(Iban ref string)
 	SEval(Iban,{|c|IBanTemp+=iif(IsDigit(CHR(c)).or.IsAlpha(CHR(c)),CHR(c),null_string)})
 	Iban:=IBanTemp    // machine format
 	return
-FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='' as string) as string
-	// Implode array to string seperated by cSep 
+FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='' as string,Filter:=nil as usual ) as string
+	// Implode array aText to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
-	// Optionally in case of a 2-dimenional array you can specify separator between rows (default: '),(' but none when empty nCol )
+	// Optionally in case of a 2-dimenional array you can specify separator between rows (default: '),(' but none when empty nCol ) 
+	// Optionally yoy can specify a codeblock Filter to select certain rows from aText
 	LOCAL i, l:=Len(aText) as int 
 	local cQuote as STRING    // string quote text around separators (CSV)
 	local cLine  as STRING    // one line of concatinated text 
@@ -1494,7 +1495,13 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 		endif
 		nCount:=Min(nCount,l-nStart+1)
 		IF nCount>0 
-			FOR i:=1 to nCount
+			FOR i:=1 to nCount 
+				if IsCodeBlock(Filter)  
+					i:=AScan(aText,Filter,i)
+					if i=0
+						exit
+					endif
+				endif
 				if IsArray(aText[nStart+i-1])
 					if Empty(nCol) .or.!Empty(cSepRow)
 						lMulti:=true 
@@ -2463,29 +2470,19 @@ PROTECT cBuffer as STRING
 PROTECT nStart:=0 as int
 PROTECT ptrHandle
 protect Eof as logic 
-protect CP as int
-export MyFile as FileSpec
-METHOD Close CLASS MyFile
+protect CP as int 
+declare method FReadLine,Close 
+METHOD Close(dummy:=nil as logic) as void pascal CLASS MyFile
 	FClose(ptrHandle)
 	ptrHandle:=null_object
+	self:cBuffer:=null_string
 RETURN
-
-
-
-	
-	
-		
 Access FEof() class MyFile
 return self:Eof
-METHOD FReadLine() CLASS MyFile
+METHOD FReadLine(dummy:=nil as logic) as string CLASS MyFile
 	LOCAL nSt,nLen,nPos:=0 as int
 	LOCAL cLine:="" as STRING
-// 	nPos:=At3(self:cDelim, self:cBuffer,self:nStart)
 	nPos:=At3(LF, self:cBuffer,self:nStart)
-// 	if SubStr(self:MyFile:filename,1,2)=='RO'
-// 		SEval(self:cDelim,{|x|cLine+=Str(x,-1)+'#'}) 
-// 		LogEvent(self,"line:"+Str(self:nStart,-1)+'- '+ Str(nPos,-1)+", delim:"+cLine+"; incr:"+Str(nIncr,-1)+"; from:"+AsHexString(SubStr(self:cBuffer,Max(1,self:nStart),25)),'logsql')
-// 	endif
 	IF nPos==0
 		* read next buffer:
 		cLine:=SubStr(self:cBuffer,self:nStart+1) 
@@ -2509,18 +2506,15 @@ METHOD FReadLine() CLASS MyFile
 	ENDIF
 	nSt:=self:nStart+1
 	nLen:=nPos-self:nStart-1
-// 	if SubStr(self:cBuffer,nSt+nLen-1,1)==CR
 	if nPos>1 .and. Asc(SubStr(self:cBuffer,nPos-1,1))==13
 		nLen--
 	endif
-// 	self:nStart:=nPos+nIncr
 	self:nStart:=nPos
 	RETURN SubStr(self:cBuffer,nSt,nLen) 
 	
 METHOD Init(oFr) CLASS MyFile
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
-   self:MyFile:=oFr
 	self:ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
 	IF self:ptrHandle = F_ERROR
 		(ErrorBox{,"Could not open file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
