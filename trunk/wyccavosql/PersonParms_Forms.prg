@@ -355,8 +355,8 @@ METHOD OKButton( ) CLASS EditPersProp
 	if !self:lnew .and. self:mType==DROPDOWN
 		aNewDropValues:=Split(self:mValues,",")
 		for i:=1 to Len(self:CurDropVal)
-			CurValue:=CurDropVal[i]
-			if AScan(aNewDropValues,CurValue)=0 
+			CurValue:=AllTrim(StrTran(CurDropVal[i],LF,''))
+			if !Empty(CurValue) .and.AScan(aNewDropValues,{|x|StrTran(x,LF,'')==CurValue})=0  
 				oProp:=SQLSelect{"select count(*) as total from person where deleted=0 and instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
 				if oProp:RecCount>0
 					cTotal:=ConS(oProp:total)
@@ -374,7 +374,7 @@ METHOD OKButton( ) CLASS EditPersProp
 			endif
 		endif
 	endif
-	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(self:mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),", ",",")," ,",","),"'","\'")))+"'"+;
+	cStatement:=iif(self:lnew,"insert into ","update ")+"person_properties set name='"+AddSlashes(AllTrim(self:MPROPNAME))+"',type="+Str(self:mType,-1)+",`values`='"+AllTrim(Lower(StrTran(StrTran(StrTran(StrTran(AllTrim(Compress(self:mValues)),LF,''),", ",",")," ,",","),"'","\'")))+"'"+;
 	iif(self:lnew,""," where id="+Str(self:mId,-1)) 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
@@ -412,9 +412,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp
 		self:oDCmType:TextValue := oProp:typedescr
 		self:mValues:=oProp:VALUES
 		IF self:mType==DROPDOWN
-			self:CurDropVal:=Split(self:mValues,",")
 			self:oDCmValues:Show()
-			SELF:oDCFixedText3:Show()
+			self:CurDropVal:=Split(self:oDCmValues:TextValue,",")
+			self:oDCFixedText3:Show()
 			SELF:oDCFixedText4:Show()
 		ENDIF
 	ELSE
