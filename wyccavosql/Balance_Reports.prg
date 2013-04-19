@@ -4980,11 +4980,11 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 				nGift:=AScan(aGiftdata,{|x|x[2]==aTrans[nTrans,5]})
 				if Empty(nGift)
 					// look up corresponding person:
-					// aPersdata: {{persid, fullname, fulladdress, email},...	
-					//                  1       2         3        4              
+					// aPersdata: {{persid, fullname, fulladdress, email,id},...	
+					//                  1       2         3        4      5        
 					prsPtr:=AScan(aPersData,{|x|x[1]==aTrans[nTrans,5]})
 					if prsPtr>0 
-						cNAW:= AllTrim(iif(sSalutation,HtmlEncode(Salutation(Val(aPersData[prsPtr,5])))+' ','')+aPersData[prsPtr,2])+'<br/>'+aPersData[prsPtr,3]+iif(Empty(aPersData[prsPtr,4]),'','<br/>'+aPersData[prsPtr,4])+'<br/>'+aPersData[prsPtr,1] 
+						cNAW:= AllTrim(iif(sSalutation,HtmlEncode(Salutation(Val(aPersData[prsPtr,5])))+' ','')+aPersData[prsPtr,2])+'<br/>'+aPersData[prsPtr,3]+iif(Empty(aPersData[prsPtr,4]),'','<br/>'+aPersData[prsPtr,4])+'<br/>#'+aPersData[prsPtr,1] 
 					else
 						cNAW:=aTrans[nTrans,5]
 					endif
@@ -5064,7 +5064,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 					// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
 					//              1   2     3      4      5     6         7       8      9  10    11     12
 					AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
-						'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td>'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td>'+iif(prsPtr>0,aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+						'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td>'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td>'+iif(prsPtr>0,"#"+aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
 				endif
 				fSubKind:=Round(fSubKind+aTrans[nTrans,6],DecAantal) 						
 			endif
