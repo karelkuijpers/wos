@@ -3753,7 +3753,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
-	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person
+	local avaluesPers:={} as array // {persid,dategift,maillcode},...  array with values to be updated into table person
 	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre} 
 
 	if Empty(BANKNBRDEB)
@@ -3832,7 +3832,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,cast(du.invoicedate as date) as invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
 	SQLAccType()+" as type,"+;
-		"cast(p.datelastgift as date) as datelastgift,"+SQLFullName(0,'p')+" as personname "+;
+		"cast(p.datelastgift as date) as datelastgift,"+SQLFullName(0,'p')+" as personname,p.mailingcodes "+;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid "+;
@@ -3935,7 +3935,9 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		fAmnt:=float(_cast,oDue:AmountInvoice)
 		cAmnt:=Str(fAmnt,-1)
 		cPersId:= ConS(oDue:personid)
-		cAccMlCd:=Transform(oDue:CLC,"")	
+		cAccMlCd:= oDue:mailingcodes
+		cAccMlCd:=ADDMLCodes(Transform(oDue:CLC,""),cAccMlCd)
+		cAccMlCd:=ADDMLCodes('FI',cAccMlCd)	
 		cAccID:=ConS(oDue:accid)
 		AAdd(aTransValues,{m56_Payahead,cAmnt,cAmnt,'0.00','0.00',sCurr,cDescr,cTransDate,'',LOGON_EMP_ID,'2','1','COL','','0','0','',''})
 		// second row:
@@ -4093,7 +4095,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			if Len(avaluesPers)>0
 				*	Update person info of giver: 
 				oStmnt:=SQLStatement{'insert into person (persid,datelastgift,mailingcodes) values '+Implode(avaluesPers,'","')+;
-				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),mailingcodes="+SQLUpdMailCode(true),oConn}
+				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),"+;
+				"mailingcodes=values(mailingcodes)",oConn}
 				oStmnt:Execute()
 				if	!Empty(oStmnt:status)
 					SQLStatement{"rollback",oConn}:Execute() 
@@ -4366,7 +4369,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oDue:=SqlSelect{"select group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
 	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic separator '#%#') as grDue " +;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes separator '#%#') as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s,personbank pb "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid and pb.banknumber=s.bankaccnt "+;
@@ -4379,8 +4382,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN false
 	ENDIF
 	// Add to aDue:
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18
 	aeval(Split(oDue:grDue,'#%#'),{|x|aadd(aDue,split(x,'#$#'))}) 
 	
 	//    LogEvent(self,oDue:SQLString,"logsql")
@@ -4417,7 +4420,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		cAmnt:=Str(AmountInvoice,-1,2)
 		cType:=aDue[i,15]
 		cPersId:= aDue[i,3]
-		cAccMlCd:=aDue[i,13]	
 		cAccID:=aDue[i,4]
 		if AmountInvoice> fLimitInd
 			cErrMsg+=CRLF+self:oLan:WGet("Direct debit amount of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'
@@ -4428,8 +4430,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
 			loop
 		endif
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic , mailingcodes
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17       18
 
 		// determine description from Subscription: 
 		IF Empty(nTerm) .or.nTerm>12
@@ -4449,7 +4451,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+"  "+cDescr,headinglines)  
 		fSum:=Round(fSum+AmountInvoice,DecAantal) 
 		// add to aTrans:
-		AAdd(aTrans,{cAccID,cPersId,cAmnt,cDescr,cType,cAccMlCd,aDue[i,14],aDue[i,1]})
+		AAdd(aTrans,{cAccID,cPersId,cAmnt,cDescr,cType,aDue[i,13],aDue[i,14],aDue[i,1]})
 		//                 1         2              3               4      5         6         7                 8 
 		// add to aTransValues
 		//aTransValues: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
@@ -4460,6 +4462,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',iif(Empty(cPersId),'0',cPersId),'0','',''})
 		// add person data:
 		IF	!Empty(cType) .and. (cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D') 
+			cAccMlCd:= aDue[i,18]	
+			cAccMlCd:=ADDMLCodes(Transform(aDue[i,13],""),cAccMlCd)
+			cAccMlCd:=ADDMLCodes('FI',cAccMlCd)	
 			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
 		endif 
 		// add to balance values:
@@ -4742,7 +4747,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if Len(avaluesPers)>0
 			*	Update person info of giver: 
 			oStmnt:=SQLStatement{'insert into person (persid,datelastgift,mailingcodes) values '+Implode(avaluesPers,'","')+;
-				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),mailingcodes="+SQLUpdMailCode(true),oConn}
+				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),mailingcodes=values(mailingcodes)",oConn}
 			oStmnt:Execute()
 			if	!Empty(oStmnt:status)
 				SQLStatement{"rollback",oConn}:Execute() 
