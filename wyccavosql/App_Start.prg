@@ -159,6 +159,7 @@ method Start() class App
 			if FirstLogin
 				AlertNew{}:ShowNew()
 			endif
+			oMainWindow:Pointer := Pointer{POINTERARROW}
 			
 			self:Exec()
 			// RECOVER USING oError	 
