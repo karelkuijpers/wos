@@ -1546,20 +1546,20 @@ CLASS EditMember INHERIT DataWindowExtra
 	PROTECT oCCCancelButton AS PUSHBUTTON
 	PROTECT oDCAccDepSelect AS COMBOBOX
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-// 	instance mPerson 
-// 	instance mAccDept 
-// 	instance mHBN 
-// 	instance mPPCode 
-// 	instance mGrade 
-// 	instance mAOW 
-// 	instance mZKV 
-// 	instance mPersonContact 
-// 	instance mHomeAcc 
-// 	instance withldoffrate 
-// 	instance StatemntsDest
-// 	instance mHAS 
-   PROTECT lNewMember := FALSE as LOGIC
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	// 	instance mPerson 
+	// 	instance mAccDept 
+	// 	instance mHBN 
+	// 	instance mPPCode 
+	// 	instance mGrade 
+	// 	instance mAOW 
+	// 	instance mZKV 
+	// 	instance mPersonContact 
+	// 	instance mHomeAcc 
+	// 	instance withldoffrate 
+	// 	instance StatemntsDest
+	// 	instance mHAS 
+	PROTECT lNewMember := FALSE as LOGIC
 	PROTECT oAccount, oAcc, oAccA as SQLSelect
 	PROTECT oMbr,oMemA as SQLSelect
 	PROTECT oPerson,oPers as SQLSelect
@@ -1629,14 +1629,22 @@ METHOD AddButton( ) CLASS EditMember
 	LOCAL oLVI	AS ListViewItem, x AS INT
 	LOCAL aAccExcl:={} AS ARRAY
 	LOCAL lSuccess AS LOGIC
-	LOCAL cfilter as string
+	LOCAL cfilter as string 
+	Local oDepidexcl as SQLSelect 
 
 	IF SELF:oDCListViewAssAcc:ItemCount=30
 		(ErrorBox{,"maximum of 30 associated accounts!"}):Show()
 		RETURN NIL
 	ENDIF
-	// add all existing ass.accounts:
-	aAccExcl:={mRek}
+	// add all existing ass.accounts:  
+	if Empty(self:oMbr:depid)
+		aAccExcl:={self:mRek}
+	else      
+		oDepidexcl:=SqlSelect{"SELECT group_concat(cast(accid as char) separator ',') as depidexcl FROM `account` where `department` = "+ ConS(self:oMbr:depid),oConn}	
+		if oDepidexcl:RecCount >0
+			aAccExcl:= Split(oDepidexcl:depidexcl,",")             
+		endif 
+	endif
 	FOR x := 1 UPTO SELF:oDCListViewAssAcc:ItemCount
 		oLVI := SELF:oDCListViewAssAcc:GetNextItem( LV_GNIBYITEM,,,,,x-1 )
 		AAdd(aAccExcl,oLVI:GetValue(#Number))
