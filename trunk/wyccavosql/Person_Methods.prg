@@ -164,75 +164,72 @@ if nEnd>1
 endif
 housenr:=(GetStreetHousnbr(cAddress))[2]
 if !Empty(cPostcode) 
-	cSearch:="address="+cPostcode+"+"+housenr
+	cSearch:=cPostcode+"%20"+housenr
 elseif !Empty(cCity)
 	aWord:=GetTokens(cCity)
-	cSearch:="address="+aWord[1,1]+"%2C+"+StrTran(cAddress," ","+")
+	cSearch:=StrTran(cAddress," ","%20")+'%20'+aWord[1,1]
 endif
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
 //oHttp:ConnectRemote("http://www.postcode.nl")
-httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/index?action=search&goto=postcoderesult&"+cSearch)
+httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/search/"+cSearch)
 
-nPos1:=At("Deze pagina heeft javascript nodig om te functioneren",httpfile)
+nPos1:=At('<div class="col-main">',httpfile)
 if nPos1>0
-	nPos1:=At3("var order = new Array(",httpfile,nPos1)+22
-endif
-if nPos1<=22
+// 	nPos1:=At3("var order = new Array(",httpfile,nPos1)+22
+// endif
+// if nPos1<=22
 	// without scrambling:
-	nPos1:=At("<p> Uw zoekactie naar <strong>'",httpfile)
+	nPos1:=At('<td><a class="view"',httpfile)
 	if nPos1>0
-		httpfile:=SubStr(httpfile,nPos1)
-		aorder:={"0"}
-		nPos2:=At3("<ul>",httpfile,10)+5
-		if nPos2>0
-			httpfile:=SubStr(httpfile,1,nPos2)
-		endif
-		abits:={httpfile}
-	endif
-else
-	httpfile:=SubStr(httpfile,nPos1)
-	nPos2:=At(");",httpfile)
-	order := SubStr(httpfile,1,nPos2-1)
-	aorder:=Split(order,",")
-	httpfile:=SubStr(httpfile,nPos2+22)
-	nPos3:=At(");",httpfile)
-	bits:=SubStr(httpfile,3,nPos3-3) 
-	bits:=StrTran(StrTran(bits,"',"+'"',"','"),'",'+"'","','") 
-	nStart:=1
-	nEnd:=Len(bits)-1
-	DO WHILE true
-		nPos:=At3("','", bits,nStart)
-		IF nPos==0
-			exit
-		ENDIF
-		AAdd(abits,SubStr(bits,nStart+1,nPos-nStart-1))
-		nStart:=nPos+2
-	ENDDO
-	AAdd(abits,SubStr(bits,nStart+1,nEnd-nStart))
+		output:=SubStr(httpfile,nPos1+20)
+	endif 
 endif
-if !Empty(abits)
-	output:=""
-	for i:=1 to Len(aorder) 
-		j:=Val(aorder[i])+1
-		if j<=Len(abits)
-			output+=abits[j]
-			if At("<ul>",output)>0
-				exit
-			endif
-		endif
-	next
-endif
-output:=StrTran(StrTran(StrTran(StrTran(StrTran(output,"''",""),'""',""),"'"+'"',""),'"'+"'",""),'\',"") 
+// else
+// 	httpfile:=SubStr(httpfile,nPos1)
+// 	nPos2:=At(");",httpfile)
+// 	order := SubStr(httpfile,1,nPos2-1)
+// 	aorder:=Split(order,",")
+// 	httpfile:=SubStr(httpfile,nPos2+22)
+// 	nPos3:=At(");",httpfile)
+// 	bits:=SubStr(httpfile,3,nPos3-3) 
+// 	bits:=StrTran(StrTran(bits,"',"+'"',"','"),'",'+"'","','") 
+// 	nStart:=1
+// 	nEnd:=Len(bits)-1
+// 	DO WHILE true
+// 		nPos:=At3("','", bits,nStart)
+// 		IF nPos==0
+// 			exit
+// 		ENDIF
+// 		AAdd(abits,SubStr(bits,nStart+1,nPos-nStart-1))
+// 		nStart:=nPos+2
+// 	ENDDO
+// 	AAdd(abits,SubStr(bits,nStart+1,nEnd-nStart))
+// endif
+// if !Empty(abits)
+// 	output:=""
+// 	for i:=1 to Len(aorder) 
+// 		j:=Val(aorder[i])+1
+// 		if j<=Len(abits)
+// 			output+=abits[j]
+// 			if At("<ul>",output)>0
+// 				exit
+// 			endif
+// 		endif
+// 	next
+// endif
+// output:=StrTran(StrTran(StrTran(StrTran(StrTran(output,"''",""),'""',""),"'"+'"',""),'"'+"'",""),'\',"") 
 if !Empty(output)
 //	nPos1:=At('</thead> <tbody> <tr class="even"> <td>',output)+39
-	nPos1:=At('<td>',output)+4
-	if (nPos1>4)
-		nPos2:=At3(" </td> ",output,nPos1)
+	nPos1:=At('>',output)+1
+	if (nPos1>1)
+		nPos2:=At3("</a>",output,nPos1)
 		postcode:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
-		nPos1:=nPos2+11
-		nPos2:=At3(" </td> ",output,nPos1+1)
+		nPos1:=nPos2+7
+		nPos1:=At3("<td>",output,nPos1+1)+4
+		nPos2:=At3('</td>',output,nPos1)
 		straat:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
-		nPos1:=At3(" <td> ",output,nPos2+11)+5
+		nPos1:=At3("<td>",output,nPos2+2)+1
+		nPos1:=At3("<td>",output,nPos1)+4
 		if (nPos1>5)
 			nPos2:=At3("</td>",output,nPos1)
 			woonplaats:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
