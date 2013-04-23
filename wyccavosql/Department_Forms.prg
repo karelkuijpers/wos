@@ -405,7 +405,7 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	instance mAccount2 
 	instance mAccount3 
    PROTECT cCAPITALName,cIncName,cExpname as STRING
-	PROTECT NbrCAPITAL,NbrIncome,NbrExpense as STRING
+	PROTECT NbrCAPITAL,NbrIncome,IdIncomeOrg,NbrExpense as STRING
   	PROTECT lNew AS LOGIC
 	PROTECT oCaller AS OBJECT
 	PROTECT OrgDescription AS STRING
@@ -835,7 +835,8 @@ METHOD OKButton( ) CLASS EditDepartment
 		ENDIF
 		// check if only Income account is Gifts receivable: 
 		IF ConI(self:NbrIncome) >0
-			cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+self:NbrIncome,oConn}:giftsaccs)
+			cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+;
+			" and giftalwd=1 and accid<>"+self:NbrIncome+iif(!Empty(self:idIncomeOrg),' and accid<>'+self:idIncomeOrg,''),oConn}:giftsaccs)
 			if !Empty(cGiftsAccs)
 				(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
 				RETURN			
@@ -878,6 +879,11 @@ METHOD OKButton( ) CLASS EditDepartment
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
+		if !self:NbrIncome==self:idIncomeOrg .and. !Empty(self:idIncomeOrg) .and.!Empty(self:NbrIncome)
+			SQLStatement{"update account set giftalwd=0 where accid="+self:idIncomeOrg,oConn}:Execute() 
+			SQLStatement{"update account set giftalwd=1 where accid="+self:NbrIncome,oConn}:Execute() 
+		endif
+			
 		Departments:=true
 		IF !lNew
 			IF !OrgDescription==mDescription.or.!OrgParent==mParentDep.or.!OrgDepNbr=mDepartmntNbr
@@ -964,7 +970,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			self:cCAPITALName := AllTrim(self:oDCmCAPITAL:TEXTValue)
 		ENDIF
 		IF !Empty(self:oDep:incomeacc)
-			self:NbrIncome :=  Str(self:oDep:incomeacc,-1)
+			self:NbrIncome :=  Str(self:oDep:incomeacc,-1) 
+			self:IdIncomeOrg:=self:NbrIncome
 			self:oDCmincomeacc:TEXTValue := Transform(self:oDep:incname,"")
 			self:cIncName := AllTrim(self:oDCmincomeacc:TEXTValue)
 		ENDIF
