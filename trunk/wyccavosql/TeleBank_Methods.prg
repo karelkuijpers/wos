@@ -3448,6 +3448,11 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 			loop
 		ENDIF
 		lv_bankAcntOwn:=ZeroTrim(AllTrim(SubStr(oHlM:MTLINE,27,10)))
+	   if sepaenabled .and. Len(lv_bankAcntOwn)<=7
+			// convert to sepa: 
+			lv_bankAcntOwn:=  "INGB000"+PadL(lv_bankAcntOwn,7,"0")
+			lv_bankAcntOwn:= 'NL'+StrZero(IbanChecksum("NL00"+lv_bankAcntOwn),2,0)+lv_bankAcntOwn	   	
+	   endif
 		lv_BankAcntContra:=ZeroTrim(AllTrim(StrTran(SubStr(oHlM:MTLINE,17,10),"P","")))
 		lv_Amount:=Round(Val(AllTrim(SubStr(oHlM:MTLINE,4,13)))/100.00,2)
 		lv_addsub:=iif(batchsoort=="A","A","B") 
@@ -3482,7 +3487,9 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 					lv_persid:=SubStr(betkenm,-5)
 					lv_budget:=SubStr(betkenm,2,Len(betkenm)-6)
 					if Val(SubStr(lv_budget,6))==0
-						lv_budget:=LTrimZero(SubStr(lv_budget,1,5))
+						lv_budget:=LTrimZero(SubStr(lv_budget,1,5)) 
+					else
+						lv_budget:=ZeroTrim(lv_budget)
 					endif
 				endif
 				
@@ -3536,7 +3543,11 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 		lv_description:=AddSlashes(AllTrim(lv_description))
 		lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))
 // 		IF !self:AllreadyImported(ld_bookingdate,lv_Amount,lv_addsub,lv_description,lv_kind,lv_BankAcntContra,lv_BankAcntContra,lv_budget)
-
+		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+			oHlM:Skip()
+			loop
+		ENDIF
+      lv_bankAcntOwn:= self:m57_BankAcc[self:CurTelePtr,1]  // translate to sepa if sepaenabled 
 		nTot++ 
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'',lv_BankAcntContra,;
 			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
@@ -4381,7 +4392,13 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 	local oBank,oSel as SQLSelect
 	local cDestname as string
 	banknbr:=AllTrim(banknbr)
-	IF (self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| x[1]==banknbr}))=0
+	IF (self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| x[1]==banknbr}))=0 
+		if sepaenabled .and. Len(ZeroTrim(banknbr))<10
+			banknbr:=PadL(banknbr,10,'0')
+			self:CurTelePtr:=AScan(self:m57_BankAcc,{|x| Right(x[1],10)==banknbr}) 
+		endif
+	endif
+	if self:CurTelePtr=0 
 		IF AScan(self:NonTeleAcc,banknbr)=0 
 			oStmnt:=SQLStatement{"update bankaccount set telebankng=1 where banknumber='"+banknbr+"'",oConn}
 			oStMnt:Execute()
