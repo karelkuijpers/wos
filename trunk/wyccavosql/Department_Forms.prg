@@ -889,7 +889,7 @@ METHOD OKButton( ) CLASS EditDepartment
 			AAdd(oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
 		oCaller:Refresh() 
-	else
+	elseif !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:errorMessage}:Show()
 	endif
 	self:EndWindow()
