@@ -2489,7 +2489,7 @@ METHOD FReadLine(dummy:=nil as logic) as string CLASS MyFile
 		if self:CP>0
 			self:cBuffer:=UTF2String{FReadStr(ptrHandle,4096)}:Outbuf
 		else
-			self:cBuffer:=FReadStr(ptrHandle,4096)
+			self:cBuffer:=FReadStr(ptrHandle,65536)
 		endif
 		IF Empty(self:cBuffer)
 			if FEof(self:ptrHandle) .and. Empty(cLine)
