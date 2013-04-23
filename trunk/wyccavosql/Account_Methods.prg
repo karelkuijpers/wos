@@ -659,6 +659,33 @@ METHOD ValidateAccount() CLASS EditAccount
 		endif
 	endif	
 	
+	// check if inactive is unchecked incase account is used for expense, income or netasset for a department: 
+	if self:odcmembertext:TextValue =='department member' .and. self:mactive = false
+		
+		oSel:=SqlSelect{"SELECT  `descriptn`, `expenseacc`, `incomeacc`,`netasset` FROM `department` WHERE `depid`=" +self:mDep,oConn}
+		if oSel:Reccount>0 
+			IF!lNew 
+				if ConS(oSel:incomeacc) == self:mAccId  
+					cError:=self:oLan:WGet("Can't be inactive for it is used for Income in department:")+oSel:descriptn
+					lValid:=FALSE	
+					self:oDCmGIFTALWD:SetFocus()	
+				endif
+				if ConS(oSel:expenseacc) == self:mAccId 
+					cError:=self:oLan:WGet("Can't be inactive for it is used for Expenses in department:")+oSel:descriptn
+					lValid:=FALSE	
+					self:oDCmGIFTALWD:SetFocus()	
+				endif	
+				if ConS(oSel:netasset) == self:mAccId   
+					cError:=self:oLan:WGet("Can't be inactive for it is used for Netassets in department:")+oSel:descriptn
+					lValid:=FALSE	
+					self:oDCmGIFTALWD:SetFocus()	
+				endif
+				
+			endif 
+		endif
+	endif	
+
+	
 	IF ! lValid
 		(ErrorBox{self,cError}):Show()
 	ENDIF
