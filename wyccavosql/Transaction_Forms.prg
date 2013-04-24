@@ -3955,9 +3955,9 @@ METHOD ExportButton( ) CLASS TransInquiry
 				FSeek(ptrHandle, 0, FS_END)
 			ENDIF
 			* detail records with complete transactions: 
-			cSelectSt:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in ("+;
-			"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by transId) order by transid,seqnr" 
-			oTrans2:=SQLSelect{cSelectSt,oConn}
+			cSelectSt:=UnionTrans("select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in (" +;
+			"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by t.transId) order by transid,seqnr")
+			oTrans2:=SqlSelect{cSelectSt,oConn}
 			if oTrans2:RecCount>0
 				do WHILE !oTrans2:EoF
 					FWriteLine(ptrHandle,;
