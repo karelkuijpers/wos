@@ -1209,7 +1209,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 		mvrgsal:=pr_salvrg
 		msal:=pr_sal
 		mbalprvyrYtD:=pr_balprvyrYtD
-	ENDIF
+	ENDIF 
 	regel:=iif(self:lXls,iif(pr_level>0,Replicate(self:TAB,pr_level),'')+pr_footer+iif(levelrest>0,Replicate(self:TAB,levelrest),''),Pad(Space(pr_level*2)+pr_footer,BalColWidth))+self:TAB
 	IF pr_cat==INCOME.or.pr_cat==EXPENSE
 		if !self:SimpleDepStmnt
@@ -1223,11 +1223,10 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	ELSEIF pr_cat=='SD'
 		regel:=regel+Str(mbalprvyrYtD,9,DecAantal)+self:TAB+Str(mvjsaltot,11,DecAantal)+self:TAB+;
 			Str(-pr_inc,13,DecAantal)+self:TAB+Str(pr_exp,11,DecAantal)+self:TAB+Str(mvrgsal,11,DecAantal)+self:TAB+iif(msal<0,self:BoldOn+self:RedOn,'')+Str(msal,11,DecAantal)+iif(msal<0,self:Boldoff+self:RedOff,'')
+	elseIF pr_cat==LIABILITY.or.pr_cat==ASSET
+		regel:=regel+self:TAB+Str(mbalprvyrYtD,11,decaantal)+'  '+self:TAB+Str(msal,11,decaantal)
 	ELSE
 		regel:=regel+Space(9)
-	ENDIF
-	IF pr_cat==LIABILITY.or.pr_cat==ASSET
-		regel:=regel+self:TAB+Str(mbalprvyrYtD,11,decaantal)+'  '+self:TAB+Str(msal,11,decaantal)
 	ENDIF
 	IF pr_cat==INCOME.or.pr_cat==EXPENSE
 		mtmsal:=mvrgsal+msal
