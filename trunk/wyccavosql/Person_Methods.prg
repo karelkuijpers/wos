@@ -136,7 +136,7 @@ if Empty(cAddress)
 	return {cPostcode,cAddress,cCity}
 endif
 straat:=AllTrim(cAddress)
-postcode:=AllTrim(cPostcode)
+postcode:=AllTrim(StrTran(cPostcode,' ',''))  
 cCity:=AllTrim(cCity)
 cCity:=StrTran(cCity,'Y','IJ')
 // if cCity=="WYK BY DUURSTEDE"
@@ -167,8 +167,9 @@ if !Empty(cPostcode)
 	cSearch:=cPostcode+"%20"+housenr
 elseif !Empty(cCity)
 	aWord:=GetTokens(cCity)
-	cSearch:=StrTran(cAddress," ","%20")+'%20'+aWord[1,1]
+	cSearch:=cAddress+'%20'+aWord[1,1]
 endif
+StrTran(cSearch," ","%20")
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
 //oHttp:ConnectRemote("http://www.postcode.nl")
 httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/search/"+cSearch)
@@ -223,7 +224,7 @@ if !Empty(output)
 	nPos1:=At('>',output)+1
 	if (nPos1>1)
 		nPos2:=At3("</a>",output,nPos1)
-		postcode:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
+		postcode:=StandardZip(SubStr(output,nPos1,nPos2-nPos1))
 		nPos1:=nPos2+7
 		nPos1:=At3("<td>",output,nPos1+1)+4
 		nPos2:=At3('</td>',output,nPos1)
@@ -1016,12 +1017,12 @@ METHOD SetState() CLASS NewPersonWindow
 	local oContr as Control
 	
 	self:oPerson:=SQLSelect{ "select lastname,prefix,title,initials,firstname,nameext,attention,address,postalcode,city,"+;
-	"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
-	"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
-	"externid,gender,opc,propextr,p.`deleted` as removed,"+;
-	"m.mbrid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
-	"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
-	"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
+		"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
+		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
+		"externid,gender,opc,propextr,p.`deleted` as removed,"+;
+		"m.mbrid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
+		"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
+		"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
 	self:oPerson:Execute()
 	if !Empty(self:oPerson:Status)
 		LogEvent(self,"can not read person, error:"+self:oPerson:errinfo:errormessage+CRLF+"statement:"+self:oPerson:SqlString,"logerrors")
@@ -1069,7 +1070,7 @@ METHOD SetState() CLASS NewPersonWindow
 	else
 		self:oDCDeletedText:Hide()		
 	endif
-	 
+	
 	// Fill extra properties: 
 	oXMLDoc:=XMLDocument{self:oPerson:PROPEXTR}
 	FOR i:=1 to Len(self:aPropEx) 
@@ -1114,67 +1115,26 @@ METHOD SetState() CLASS NewPersonWindow
 	self:StateExtra() 
 	
 	RETURN nil
-METHOD StateExtra()CLASS NewPersonWindow
+METHOD StateExtra() CLASS NewPersonWindow
 	LOCAL i,j:=0 as int
-	LOCAL mCodH as USUAL, aCod as array
-// 	LOCAL oPers AS Person
-	LOCAL cDescr:="Bank# " AS STRING
-
-	aCod:=Split(self:mCodInt," ")
-	FOR i:=1 to 10 
-		mCodH:=""
-		if i<=Len(aCod)
-			mCodH  :=aCod[i]
-		endif
-		if Empty(mCodH).or.AScan(pers_codes,{|x|x[2]==mCodH})=0
-			loop
-		endif
-		++j
-		IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH) 
+	LOCAL mCodH as string, aCod as array
+	if !Empty(self:mCodInt)
+		aCod:=Split(self:mCodInt," ")
+		FOR i:=1 to 10 
+			mCodH:=""
+			if i<=Len(aCod)
+				mCodH  :=aCod[i]
+			endif
+			if Empty(mCodH).or.AScan(pers_codes,{|x|x[2]==mCodH})=0
+				loop
+			endif
+			++j
+			IVarPutSelf(self,String2Symbol("mCod"+AllTrim(Str(j,2))),mCodH) 
 			
-	NEXT
-
-	IF SELF:lImport
-		* Analyse name if needed:
-/*		IF !lImportAutomatic
-			oPers:=SELF:Server
-			IF lLastName .and. lAddress
-				* m51_lastname and m51_AD1 allready filled within DataWindowextra:MapItems
-				IF !lInitials .or. !lMiddleName .or. ! lSalutation
-				   * analyse name
-					oPers:NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName)
-				ENDIF
-				IF !lZipCode .or. !lCity
-					oPers:Adres_Analyse(GetTokens(oPers:m51_ad1),,lZipCode,lCity)
-				ENDIF
-			ELSE
-				IF !lLastName
-					oPers:m51_lastname:=oPers:m51_ad1
-				ENDIF
-				oPers:m51_ad1 := ""
-				oPers:NAW_ANALYSE(lInitials,lSalutation,lMiddleName,lZipCode,lCity)
-			ENDIF
-			SELF:mLastname:=oPers:m51_lastname
-			IF !lInitials
-				SELF:oDCmInitials:Value:=oPers:m51_initials
-			ENDIF
-			IF !lSalutation
-				SELF:oDCmTit:Value:=oPers:m51_title
-			ENDIF
-			IF !lMiddleName
-				SELF:oDCmHISN:Value:=oPers:m51_prefix
-			ENDIF
-			SELF:oDCmAddress:Value:=oPers:m51_ad1
-			IF !lCity
-				SELF:oDCmPla:Value:=oPers:m51_city
-			ENDIF
-			IF !lZipCode
-				SELF:oDCmPos:Value:=oPers:StandardZip(oPers:m51_pos)
-			ENDIF
-		ENDIF */
-	ENDIF
-			
-RETURN
+		NEXT
+	endif
+	
+	RETURN
 METHOD Sync(oPerson,oPersBank,oReport,oAddrs,type,kopregels,nRow,nPage,nver) CLASS NewPersonWindow
 // save kidnbr as bank account and telephone#, email, remarks and mailing codes
 LOCAL cEml,cFax,cMob,cType, cTelex as STRING
