@@ -93,12 +93,16 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditMember
 	Default(@myItemName,null_string)
 	Default(@myNum,null_string) 
 	
-	oDep:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+myNum+"'",oConn} 
-	IF oDep:reccount=1 
+	oDep:=SQLSelect{"select d.deptmntnbr,d.descriptn,m.mbrid from department d left join member m on (m.depid=d.depid) where d.depid='"+myNum+"'",oConn} 
+	IF oDep:reccount=1
+		if empty(oDep:mbrid) .or. (!self:lNewMember.and. cons(oDep:mbrid)==self:mMbrId)  
 		self:mDepid:=AllTrim(myNum)
 		self:mAccDept:=oDep:DESCRIPTN 
 		self:cDepartmentName:=oDep:DESCRIPTN 
-		self:mRek:=''
+		self:mRek:='' 
+		else
+			ErrorBox{self,self:olan:WGet("This department belongs already to another member")}:show()
+		endif
 	else
 		ErrorBox{self,self:olan:WGet("select a department")}:show()
 	ENDIF
