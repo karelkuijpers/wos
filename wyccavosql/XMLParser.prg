@@ -8,7 +8,6 @@ CLASS XMLElement
 	PROTECT Value					AS STRING
 	PROTECT SubElements as ARRAY
 	PROTECT Attributes as ARRAY
-	Protect CurrentPosition as array  // {{name,position},...}
 
 	~"ONLYEARLY+"
 	DECLARE METHOD FillElementFromString
@@ -16,7 +15,6 @@ CLASS XMLElement
 	DECLARE METHOD FillSubElements
 
 	DECLARE METHOD GetElementOnName 
-	DECLARE METHOD GetNextElementOnName
 	DECLARE METHOD GetElementOnPosition
 	DECLARE METHOD GetAttributeOnName
 	DECLARE METHOD GetAttributeOnPosition
@@ -31,7 +29,10 @@ CLASS XMLElement
 
 	DECLARE ACCESS STRINGValue
 	DECLARE ASSIGN STRINGValue
-	DECLARE METHOD Save2String
+	DECLARE METHOD Save2String 
+	
+	DECLARE METHOD ScanElement
+	DECLARE METHOD XMLScan
 	~"ONLYEARLY-"
 METHOD AddAttribute ( oXMLAttribute as XMLAttribute ) as void STRICT CLASS XMLElement
 ~"ONLYEARLY+"
@@ -260,20 +261,12 @@ RETURN self:Attributes [ dwPosition ]
 METHOD GetElementOnName ( symElementName as SYMBOL ) as XMLElement STRICT CLASS XMLElement
 
 	LOCAL dwPos           as DWORD 
-	local curPos			as DWORD
 	LOCAL oXMLElement 		AS XMLElement
 	~"ONLYEARLY+" 
 	if !self:SubElements==null_array
 		dwPos := AScan ( self:SubElements , {|x| x:Name==symElementName } )
 		IF dwPos > 0
 			oXMLElement := self:SubElements [ dwPos  ] 
-			if self:CurrentPosition==null_array 
-				self:CurrentPosition:={{symElementName,dwPos}}
-			elseif (curPos:=AScan(self:CurrentPosition,{|x|x[1]==symElementName}))>0 
-				self:CurrentPosition[curPos,2]:=dwPos
-			else
-				AAdd(self:CurrentPosition,{symElementName,dwPos})
-			endif
 		ENDIF
 	endif
 	RETURN oXMLElement	
@@ -282,27 +275,6 @@ METHOD GetElementOnPosition ( dwPosition as DWORD ) as XMLElement STRICT CLASS X
 ~"ONLYEARLY+"
 RETURN self:SubElements [ dwPosition  ]
 ~"ONLYEARLY-"
-
-METHOD GetNextElementOnName ( symElementName as SYMBOL ) as XMLElement STRICT CLASS XMLElement
-
-	LOCAL dwPos           as DWORD 
-	local curPos			as DWORD
-	LOCAL oXMLElement 		as XMLElement
-	~"ONLYEARLY+" 
-	if !self:CurrentPosition==null_array 
-
-		curPos:=AScan(self:CurrentPosition,{|x|x[1]==symElementName}) 
-		if curPos>0
-			dwPos:= self:CurrentPosition[curPos,2]+1
-			dwPos := AScan ( self:SubElements , {|x| x:Name==symElementName },dwPos )
-			IF dwPos > 0
-				oXMLElement := self:SubElements [ dwPos ] 
-				self:CurrentPosition[curPos,2]:=dwPos
-			endif
-		endif
-	endif
-	RETURN oXMLElement	
-	~"ONLYEARLY-"
 
 ACCESS NbrOfAttributes() as DWORD STRICT CLASS XMLElement
 ~"ONLYEARLY+"
@@ -405,6 +377,23 @@ FWrite ( ptrFileHandle ,  "</" + Symbol2String(SELF:Name) + ">" )
 
 RETURN
 ~"ONLYEARLY-"
+METHOD ScanElement ( symElementName as SYMBOL,Position:=1 ref DWORD ) as XMLElement STRICT CLASS XMLElement
+// get next element with name symElementName  after position  Position
+// new position is returned
+
+	LOCAL dwPos:=Position           as DWORD 
+	local curPos			as DWORD
+	LOCAL oXMLElement 		as XMLElement
+	~"ONLYEARLY+" 
+	if !self:SubElements==null_array .and. dwPos<Len(self:SubElements)
+		dwPos := AScan ( self:SubElements , {|x| x:Name==symElementName },dwPos+1 )
+		IF dwPos > 0
+			oXMLElement := self:SubElements [ dwPos  ] 
+		ENDIF
+		Position:=dwPos
+	endif
+	RETURN oXMLElement	
+	~"ONLYEARLY-"
 ACCESS STRINGValue() AS STRING STRICT CLASS XMLElement
 ~"ONLYEARLY+"
 RETURN SELF:Value
@@ -417,6 +406,21 @@ RETURN strNewValue
 ~"ONLYEARLY-"
 
 
+METHOD XMLScan ( symElementName as SYMBOL,Position:=0 as DWORD ) as DWORD STRICT CLASS XMLElement
+// get next element with name symElementName  after position  Position
+// new position is returned
+
+	LOCAL dwPos:=Position           as DWORD 
+	local curPos			as DWORD
+	LOCAL oXMLElement 		as XMLElement
+	~"ONLYEARLY+" 
+	if !self:SubElements==null_array .and. dwPos<Len(self:SubElements)
+		dwPos := AScan ( self:SubElements , {|x| x:Name==symElementName },dwPos+1 ) 
+	else
+		dwPos:=0
+	endif 
+	RETURN dwPos	
+	~"ONLYEARLY-"
 CLASS XMLParser
 
 EXPORT FileName	      AS STRING
@@ -427,11 +431,126 @@ EXPORT XSLTFileName   AS STRING
 DECLARE METHOD LoadFile
 DECLARE METHOD CreateElementFromString
 DECLARE METHOD SaveFile
-DECLARE METHOD XMLString
+DECLARE METHOD XMLString 
+declare method CreateElementFromFile
+declare method LoadFileLines
 // LET OP : XML_Parser is NIET! Case-sensitive voor namen van Attributes en elementen!!!!
 ~"ONLYEARLY-"
 
-METHOD CreateElementFromString ( strXMLString AS STRING , dwIntervalStartPos AS DWORD , dwEindPositie REF DWORD ) AS XMLElement STRICT CLASS XMLParser
+ METHOD CreateElementFromFile ( oMf as MyFile ) as XMLElement STRICT CLASS XMLParser
+
+	//#p strXMLString					-> De String waarin we moeten zoeken.
+	//#p dwIntervalStartPos   -> StartPositie van het interval binnen strXMLString dat we mogen gebruiken.
+	//#p dwIntervalEndPos			-> EindPositie van het interval binnen strXMLString dat we mogen gebruiken.
+
+	LOCAL oXMLElement					as XMLElement
+	LOCAL oSubXMLElement      as XMLElement
+
+	LOCAL oXMLAttribute				as XMLAttribute
+
+	LOCAL dwStartTagStartPos 	as DWORD
+	LOCAL dwStartTagEndPos 		as DWORD
+	LOCAL dwSpacePos          as DWORD
+	local dwLength					as DWORD 
+
+	LOCAL strStartTag					as STRING
+	LOCAL dwNewTagStartPos 		as DWORD
+
+	LOCAL dwQuotePos          as DWORD
+	LOCAL dwEqualPos          as DWORD
+	LOCAL strAttributeName    as STRING
+	LOCAL strAttributeValue   as STRINg 
+	local strXMLString			as string
+	// 	local cBuffer					as string
+
+	~"ONLYEARLY+"
+	// read next line with tags
+	strXMLString := oMf:FReadLine() 
+	if oMf:FEof
+		return oXMLElement
+	endif
+	do while At2('<?' , strXMLString )>0 
+		// skip information tags
+		strXMLString := oMf:FReadLine()
+	enddo
+	dwStartTagStartPos := At ( '<' , strXMLString  ) 
+	IF dwStartTagStartPos == 0
+		return oXMLElement
+	ELSE
+		if SubStr3(strXMLString , dwStartTagStartPos , 2)=='</'
+			// end tag
+			return oXMLElement
+		endif
+		// Look for end tag:
+		dwStartTagEndPos := At3 ( '>' , strXMLString , dwStartTagStartPos )
+		IF dwStartTagEndPos == 0
+			return oXMLElement
+		ENDIF
+		
+		// Retrieve StartTag out of XMLString. 
+		dwLength:=dwStartTagEndPos - dwStartTagStartPos
+		strStartTag := SubStr3 ( strXMLString , dwStartTagStartPos , dwLength )
+		
+		// Determine first space spatie StartTag 
+		// It is an indication of an attribute
+		dwSpacePos := At2 ( ' ' , strStartTag )
+		// Create new element:
+		oXMLElement := XMLElement{} 
+
+		DO CASE
+		CASE dwSpacePos > 0
+			oXMLElement:Name:=String2Symbol(SubStr3(strStartTag,2,dwSpacePos - 2 ))
+			DO WHILE true
+				// Look for '=' character.
+				dwEqualPos := At3 ( '=' , strStartTag , dwSpacePos )
+				IF dwEqualPos > 0
+					strAttributeName := SubStr3 ( strStartTag , dwSpacePos , dwEqualPos - dwSpacePos )
+					dwQuotePos := At3 ( '"' , strStartTag , dwEqualPos + 1 )
+					IF dwQuotePos > 0
+						strAttributeValue := SubStr ( strStartTag , dwEqualPos + 2 , dwQuotePos - dwEqualPos - 2 )
+					ELSE
+						// error situation
+						exit	
+					ENDIF
+					
+					oXMLAttribute := XMLAttribute{}
+					oXMLAttribute:Name 	:= String2Symbol(AllTrim(strAttributeName))
+					oXMLAttribute:Value	:= strAttributeValue
+					
+					oXMLElement:AddAttribute ( oXMLAttribute)
+					
+					// A next attribute after last '"'
+					dwSpacePos := dwQuotePos + 1
+				ELSE
+					exit
+				ENDIF
+			ENDDO
+		CASE SubStr3 ( strStartTag , dwLength , 1 ) == '/'
+			// Tag is endtag
+			oXMLElement:Name:=String2Symbol(SubStr3 ( strStartTag, 2 , dwLength - 2 ))
+		OTHERWISE
+			// normal situation
+			oXMLElement:Name:=String2Symbol(SubStr2(strStartTag,2))
+		ENDCASE
+		
+		// Look for end tag, then at lowets level
+		dwNewTagStartPos := At3 ( '</' , strXMLString , dwStartTagEndPos )
+
+		IF dwNewTagStartPos > 0
+			// lowest level with value:
+			oXMLElement:STRINGValue := AllTrim( SubStr3 ( strXMLString , dwStartTagEndPos + 1 , dwNewTagStartPos - dwStartTagEndPos - 1 ) )
+		ELSE
+			// look for lower level:
+			do while !(oSubXMLElement := self:CreateElementFromFile (oMf))=null_object		
+				oXMLElement:AddElement ( oSubXMLElement )
+			ENDDO
+		ENDIF	
+	ENDIF 
+
+	RETURN oXMLElement
+	~"ONLYEARLY-"
+
+METHOD CreateElementFromString ( strXMLString as STRING, dwIntervalStartPos as DWORD , dwEindPositie ref DWORD ) as XMLElement STRICT CLASS XMLParser
 
 	//#p strXMLString					-> De String waarin we moeten zoeken.
 	//#p dwIntervalStartPos   -> StartPositie van het interval binnen strXMLString dat we mogen gebruiken.
@@ -682,11 +801,32 @@ METHOD LoadFile ( strFileName AS STRING ) AS LOGIC STRICT CLASS XMLParser
 		
 		// Haal de XMLString weer uit Static Memory
 // 		OldSpaceFree ( strXMLString ) 
-		
+		strXMLString:=null_string // clear
 		SELF:RootElement := oXMLElement
 		
 	ENDIF
 
+	RETURN true
+
+METHOD LoadFileLines ( strFileName as STRING ) as LOGIC STRICT CLASS XMLParser
+
+	local oMf as MyFile
+	
+
+	~"ONLYEARLY+"
+	// Check file
+	#IFDEF __debug__
+		IF ! File ( strFileName )
+			return false
+		ENDIF
+	#ENDIF	
+
+	oMf:=MyFile{FileSpec{strFileName}}
+	IF !oMf:FEof
+		self:RootElement := self:CreateElementFromFile (oMf )		
+	ENDIF
+   oMf:Close()
+   
 	RETURN true
 
 METHOD SaveFile ( strFileName AS STRING ) AS LOGIC STRICT CLASS XMLParser
