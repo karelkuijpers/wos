@@ -839,12 +839,11 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	protect nPos as int // position of aDis within aDistr of caller 
 	protect cAccountName as string
 
-	declare method ValidateDistribution  
-METHOD AccButton(lUnique ) CLASS EditDistribution 
+	declare method ValidateDistribution,AccButton  
+METHOD AccButton(lUnique:=false as logic ) as void pascal CLASS EditDistribution 
 	LOCAL cfilter as string
 	LOCAL aExclRek:={},aInclRek:={} as ARRAY 
 	local oSel as SQLSelect	
-	Default(@lUnique,false) 
 	if self:oCaller:AccDepSelect='account'
 		if !Empty(self:oCaller:mREK)
 			aExclRek:={self:oCaller:mREK}
@@ -868,7 +867,7 @@ METHOD AccButton(lUnique ) CLASS EditDistribution
 	cfilter:=MakeFilter(,,"N",,,aExclRek)
 	AccountSelect(self,AllTrim(self:oDCmDestAcc:TEXTValue ),"Account Destination",lUnique,cfilter,,,)
 
-RETURN NIL
+RETURN 
 METHOD CancelButton( ) CLASS EditDistribution
 SELF:EndWindow()
 	
@@ -1148,7 +1147,7 @@ IF SELF:ValidateDistribution()
 	aDis[DESTPP]:= AllTrim(self:mDestPP)
 	aDis[DESTACC]:= iif(Empty(self:mDestPP),"",AllTrim(self:mDestAcc))
 	aDis[DESTAMT]:=iif(Empty(self:mDestPP),0.00,self:mDestAmt)
-	aDis[DESTTYP]:= iif(Empty(self:mDestPP),0,oDCmDestTyp:CurrentItemNo-1)
+	aDis[DESTTYP]:= iif(Empty(self:mDestPP),0,self:oDCmDestTyp:CurrentItemNo-1)
 	aDis[CURRENCY]:=iif(self:CurrencyGroup=="dollar",1,0)
 	aDis[DISABLED]:= iif(!self:CheckBoxActive,1,0)
 	aDis[SINGLEUSE]:= iif(self:ChecBoxSingelUse,1,0)
@@ -1174,7 +1173,7 @@ self:SetTexts()
 	SELF:oDCMemberText:TextValue:=oCaller:cMemberName
 	if !self:OwnPPCode==SEntity
 		oPP:= SqlSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
-		oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
+		self:oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
 	endif
 	IF !lNew
 		self:mDescription := self:aDis[DESCRPTN]
@@ -1287,8 +1286,7 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 		cError :=  "Destination PP is obliged!"
 		self:oDCmDestPP:SetFocus()
 	ENDIF
-	// 	IF lValid .and. self:mDestTyp # DistributionTypes[3] .and. self:mDestAmt<=0
-	IF lValid .and. self:mDestTyp >1 .and. self:mDestAmt<=0
+	IF lValid .and. self:mDestTyp <=1 .and. self:mDestAmt<=0
 		lValid := FALSE
 		cError :=  "Amount should be larger than zero!"
 		self:oDCmDestAmt:SetFocus()
@@ -1316,7 +1314,13 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 				lValid:=False
 				self:oDCmDestAcc:SetFocus() 
 			endif
-			if lValid .and.CountryCode="31"
+			if lValid.and. sepaenabled
+				if !IsSEPA(AllTrim(self:mDestAcc))
+						cError:="Bankaccount "+AllTrim(self:mDestAcc)+" is not correct!!"
+						lValid:=False
+						self:oDCmDestAcc:SetFocus()
+				endif
+			elseif lValid .and.CountryCode="31"
 				if Len(AllTrim(self:mDestAcc))>7
 					if !IsDutchBanknbr(AllTrim(self:mDestAcc))
 						cError:="Bankaccount "+AllTrim(self:mDestAcc)+" is not correct!!"
@@ -1342,14 +1346,11 @@ METHOD ValidateDistribution(dummy:=nil as logic) as logic CLASS EditDistribution
 		endif 
 	endif 
 
-	// 	IF lValid .and. self:mDestTyp # DistributionTypes[1] .and. CheckBoxActive
-	IF lValid .and. self:mDestTyp >0 .and. CheckBoxActive
-		// 		IF mDestTyp=DistributionTypes[2]
-		IF mDestTyp=1
+	IF lValid .and. self:mDestTyp >0 .and. self:CheckBoxActive
+		IF self:mDestTyp=1
 			propsum:=self:mDestAmt
 		endif		
 		do WHILE (nDPos:=AScan(aDistrm,{|x|x[disabled]==0 .and. !x[seqnbr]==nSeq},NDPos+1))>0
-			// 			IF self:mDestTyp=DistributionTypes[3] .and. aDistrm[nDPos,DESTTYP]==2
 			IF self:mDestTyp=2 .and. aDistrm[nDPos,DESTTYP]==2
 				lValid := FALSE
 				cError :=  "Only one destination of type remaining allowed!"
@@ -1441,6 +1442,81 @@ STATIC DEFINE EDITDISTRIBUTIONOUD_MDESTTYP := 106
 STATIC DEFINE EDITDISTRIBUTIONOUD_MEMBERTEXT := 101 
 STATIC DEFINE EDITDISTRIBUTIONOUD_OKBUTTON := 113 
 STATIC DEFINE EDITDISTRIBUTIONOUD_PERC := 102 
+CLASS EditMember INHERIT DataWindowExtra 
+
+	PROTECT oDCmPerson AS SINGLELINEEDIT
+	PROTECT oCCPersonButton AS PUSHBUTTON
+	PROTECT oDCmAccDept AS SINGLELINEEDIT
+	PROTECT oCCAccButton AS PUSHBUTTON
+	PROTECT oDCSC_CLN AS FIXEDTEXT
+	PROTECT oDCSC_GRADE AS FIXEDTEXT
+	PROTECT oDCmGrade AS COMBOBOX
+	PROTECT oDCmHBN AS SINGLELINEEDIT
+	PROTECT oDCmPPCode AS COMBOBOX
+	PROTECT oDCwithldoffrate AS COMBOBOX
+	PROTECT oDCmHAS AS CHECKBOX
+	PROTECT oDCmHomeAcc AS SINGLELINEEDIT
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCGroupBox3 AS GROUPBOX
+	PROTECT oDCHousecodetxt AS FIXEDTEXT
+	PROTECT oDCSC_FinancePO AS FIXEDTEXT
+	PROTECT oDCSC_AOW AS FIXEDTEXT
+	PROTECT oDCSC_ZKV AS FIXEDTEXT
+	PROTECT oDCGroupBox1 AS GROUPBOX
+	PROTECT oDCHomeAccTxt AS FIXEDTEXT
+	PROTECT oDCGroupBox2 AS GROUPBOX
+	PROTECT oDCListViewAssAcc AS LISTVIEW
+	PROTECT oCCAddButton AS PUSHBUTTON
+	PROTECT oCCRemoveButton AS PUSHBUTTON
+	PROTECT oDCDistrListView AS LISTVIEW
+	PROTECT oDCwithldofftxt AS FIXEDTEXT
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oDCSC_AccDep AS FIXEDTEXT
+	PROTECT oDCmAOW AS MYSINGLEEDIT
+	PROTECT oDCmZKV AS MYSINGLEEDIT
+	PROTECT oCCPersonButtonContact AS PUSHBUTTON
+	PROTECT oDCmPersonContact AS SINGLELINEEDIT
+	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oDCmPersonContact2 AS SINGLELINEEDIT
+	PROTECT oCCPersonButtonContact2 AS PUSHBUTTON
+	PROTECT oDCFixedText11 AS FIXEDTEXT
+	PROTECT oDCmPersonContact3 AS SINGLELINEEDIT
+	PROTECT oCCPersonButtonContact3 AS PUSHBUTTON
+	PROTECT oDCStatemntsDest AS RADIOBUTTONGROUP
+	PROTECT oCCDestButton4 AS RADIOBUTTON
+	PROTECT oCCDestButton1 AS RADIOBUTTON
+	PROTECT oCCDestButton2 AS RADIOBUTTON
+	PROTECT oCCDestButton3 AS RADIOBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCAccDepSelect AS COMBOBOX
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT lNewMember := FALSE as LOGIC
+	PROTECT oAccount, oAcc, oAccA as SQLSelect
+	PROTECT oMbr,oMemA as SQLSelect
+	PROTECT oPerson,oPers as SQLSelect
+	PROTECT mCLN, mCLNContact,mCLNContact2,mCLNContact3 as STRING
+	EXPORT cMemberName, cContactName,cContactName2,cContactName3, mCod as STRING
+	EXPORT mREK,mRekOrg,mGradeOrg,mMbrId,mDepId as STRING
+	PROTECT cDepartmentName:="" as STRING
+	PROTECT cAccountName:="" as STRING
+	PROTECT cAccount1Name AS STRING
+	PROTECT cAccount2Name as STRING
+	PROTECT cAccount3Name AS STRING
+	PROTECT cOrdInfo AS STRING
+	PROTECT cFilter AS STRING
+	EXPORT dReportDate AS DATE
+	PROTECT cCurBal, cCurDep,cCurType as STRING 
+	protect aAssOrg:={} as array
+	export oCaller as MemberBrowser
+	export aDistr:={},aDistrOrg as array  // content of all corresponding distribution instructions:
+	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
+	export maxseq as int // next available sequence number within distribution instructions of this member
+	declare method FillDistribution, ValidateMember,AccButton,AddButton,DeleteButton,MemberStates, OffRates,PersonButton 
+	declare method PersonButtonContact,PersonButtonContact2,PersonButtonContact3,ShowDistribution,ShowPensionHealth,ShowStmntDest
 RESOURCE EditMember DIALOGEX  34, 32, 433, 363
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1495,93 +1571,7 @@ BEGIN
 	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
 END
 
-CLASS EditMember INHERIT DataWindowExtra 
-
-	PROTECT oDCmPerson AS SINGLELINEEDIT
-	PROTECT oCCPersonButton AS PUSHBUTTON
-	PROTECT oDCmAccDept AS SINGLELINEEDIT
-	PROTECT oCCAccButton AS PUSHBUTTON
-	PROTECT oDCSC_CLN AS FIXEDTEXT
-	PROTECT oDCSC_GRADE AS FIXEDTEXT
-	PROTECT oDCmGrade AS COMBOBOX
-	PROTECT oDCmHBN AS SINGLELINEEDIT
-	PROTECT oDCmPPCode AS COMBOBOX
-	PROTECT oDCwithldoffrate AS COMBOBOX
-	PROTECT oDCmHAS AS CHECKBOX
-	PROTECT oDCmHomeAcc AS SINGLELINEEDIT
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oDCGroupBox3 AS GROUPBOX
-	PROTECT oDCHousecodetxt AS FIXEDTEXT
-	PROTECT oDCSC_FinancePO AS FIXEDTEXT
-	PROTECT oDCSC_AOW AS FIXEDTEXT
-	PROTECT oDCSC_ZKV AS FIXEDTEXT
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oDCHomeAccTxt AS FIXEDTEXT
-	PROTECT oDCGroupBox2 AS GROUPBOX
-	PROTECT oDCListViewAssAcc AS LISTVIEW
-	PROTECT oCCAddButton AS PUSHBUTTON
-	PROTECT oCCRemoveButton AS PUSHBUTTON
-	PROTECT oDCDistrListView AS LISTVIEW
-	PROTECT oDCwithldofftxt AS FIXEDTEXT
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oDCSC_AccDep AS FIXEDTEXT
-	PROTECT oDCmAOW AS MYSINGLEEDIT
-	PROTECT oDCmZKV AS MYSINGLEEDIT
-	PROTECT oCCPersonButtonContact AS PUSHBUTTON
-	PROTECT oDCmPersonContact AS SINGLELINEEDIT
-	PROTECT oDCFixedText10 AS FIXEDTEXT
-	PROTECT oDCmPersonContact2 AS SINGLELINEEDIT
-	PROTECT oCCPersonButtonContact2 AS PUSHBUTTON
-	PROTECT oDCFixedText11 AS FIXEDTEXT
-	PROTECT oDCmPersonContact3 AS SINGLELINEEDIT
-	PROTECT oCCPersonButtonContact3 AS PUSHBUTTON
-	PROTECT oDCStatemntsDest AS RADIOBUTTONGROUP
-	PROTECT oCCDestButton4 AS RADIOBUTTON
-	PROTECT oCCDestButton1 AS RADIOBUTTON
-	PROTECT oCCDestButton2 AS RADIOBUTTON
-	PROTECT oCCDestButton3 AS RADIOBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCAccDepSelect AS COMBOBOX
-
-	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	// 	instance mPerson 
-	// 	instance mAccDept 
-	// 	instance mHBN 
-	// 	instance mPPCode 
-	// 	instance mGrade 
-	// 	instance mAOW 
-	// 	instance mZKV 
-	// 	instance mPersonContact 
-	// 	instance mHomeAcc 
-	// 	instance withldoffrate 
-	// 	instance StatemntsDest
-	// 	instance mHAS 
-	PROTECT lNewMember := FALSE as LOGIC
-	PROTECT oAccount, oAcc, oAccA as SQLSelect
-	PROTECT oMbr,oMemA as SQLSelect
-	PROTECT oPerson,oPers as SQLSelect
-	PROTECT mCLN, mCLNContact,mCLNContact2,mCLNContact3 as STRING
-	EXPORT cMemberName, cContactName,cContactName2,cContactName3, mCod as STRING
-	EXPORT mREK,mRekOrg,mGradeOrg,mMbrId,mDepId as STRING
-	PROTECT cDepartmentName:="" as STRING
-	PROTECT cAccountName:="" as STRING
-	PROTECT cAccount1Name AS STRING
-	PROTECT cAccount2Name as STRING
-	PROTECT cAccount3Name AS STRING
-	PROTECT cOrdInfo AS STRING
-	PROTECT cFilter AS STRING
-	EXPORT dReportDate AS DATE
-	PROTECT cCurBal, cCurDep,cCurType as STRING 
-	protect aAssOrg:={} as array
-	export oCaller as MemberBrowser
-	export aDistr:={},aDistrOrg as array  // content of all corresponding distribution instructions:
-	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
-	export maxseq as int // next available sequence number within distribution instructions of this member
-	declare method FillDistribution, ValidateMember
-METHOD AccButton(lUnique ) CLASS EditMember
+METHOD AccButton(lUnique:=false as logic ) as void pascal CLASS EditMember
 	LOCAL cAccDepName as STRING
 	LOCAL cfilter as string
 	LOCAL aExclRek:={},aInclRek:={} as ARRAY
@@ -1616,7 +1606,7 @@ METHOD AccButton(lUnique ) CLASS EditMember
 		(DepartmentExplorer{self:Owner,"Department Member",self:mDepId,self,cAccDepName}):show()	
 	endif
 
-	RETURN NIL
+	RETURN 
 ACCESS AccDepSelect() CLASS EditMember
 RETURN SELF:FieldGet(#AccDepSelect)
 
@@ -1624,7 +1614,7 @@ ASSIGN AccDepSelect(uValue) CLASS EditMember
 SELF:FieldPut(#AccDepSelect, uValue)
 RETURN uValue
 
-METHOD AddButton( ) CLASS EditMember
+METHOD AddButton( ) as void pascal CLASS EditMember
 	LOCAL cSelect AS STRING
 	LOCAL oLVI	AS ListViewItem, x AS INT
 	LOCAL aAccExcl:={} AS ARRAY
@@ -1634,7 +1624,7 @@ METHOD AddButton( ) CLASS EditMember
 
 	IF SELF:oDCListViewAssAcc:ItemCount=30
 		(ErrorBox{,"maximum of 30 associated accounts!"}):Show()
-		RETURN NIL
+		RETURN 
 	ENDIF
 	// add all existing ass.accounts:  
 	if Empty(self:oMbr:depid)
@@ -1651,7 +1641,7 @@ METHOD AddButton( ) CLASS EditMember
 	NEXT x
 	cfilter:=MakeFilter(,{"BA","PA","KO"},"B",,,aAccExcl)
 	AccountSelect(self,"","Associated Accounts",FALSE,cfilter,self:Owner,)
-	RETURN nil
+	RETURN 
 METHOD Append() CLASS EditMember
 	SELF:oSFSub_Distributions:Append()
 RETURN NIL
@@ -1666,38 +1656,13 @@ METHOD Close( oE ) CLASS EditMember
 			self:OkButton()
 		endif
 	endif
-	IF !oPerson == null_object
-		IF oPerson:Used
-			oPerson:Close()
-		ENDIF
-		oPerson:=NULL_OBJECT
-	ENDIF
-	IF !oAcc == NULL_OBJECT
-		IF oAcc:Used
-			oAcc:Close()
-		ENDIF
-		oAcc:=NULL_OBJECT
-	ENDIF
 	SELF:Destroy()
 	// force garbage collection
-	CollectForced()
+// 	CollectForced()
 
 	RETURN SUPER:Close(oE)
 
-METHOD Commit() CLASS EditMember
- 	LOCAL oTextBox AS TextBox
-	IF .not. SELF:oMbr:Commit()
-		oTextBox := TextBox{ SELF, "Changes discarded:",;
-		"Changes discarded because somebody else has updated the person at the same time ";
-	    	+ SELF:oMbr:Status:Caption +;
-		":" + SELF:oMbr:Status:Description}		
-		oTextBox:Type := BUTTONOKAY
-		oTextBox:Show()
-		RETURN FALSE
-	ENDIF
-	RETURN TRUE
-
-METHOD DeleteButton( ) CLASS EditMember
+METHOD DeleteButton( ) as void pascal CLASS EditMember
 	LOCAL oDis as SqlStatement
 	LOCAL oItem AS ListViewItem
 	LOCAL mSeq as STRING 
@@ -1706,7 +1671,7 @@ METHOD DeleteButton( ) CLASS EditMember
 	oItem:=SELF:oDCDistrListView:GetSelectedItem()
 	IF Empty(oItem)
 		(Errorbox{,"Select a distribution Instruction first"}):Show()
-		RETURN NIL
+		RETURN 
 	ENDIF
 	IF (TextBox{ SELF, "Delete Distribution Instruction",;
 		"Delete Distribution Instruction: " + AllTrim(oItem:GetText(#DestTyp))+" "+oItem:GetText(#DestAmt) + "?";
@@ -1719,21 +1684,18 @@ METHOD DeleteButton( ) CLASS EditMember
 			ADel(self:aDistr,nPos) 
 			aSize(self:aDistr,len(self:aDistr)-1)
 					
-// 		oDis:=SQLStatement{"delete from DistributionInstruction where mbrId="+self:mMbrId+" and seqnbr="+mSeq,oConn} 
-// 		oDis:Execute()
-// 		if oDis:NumSuccessfulRows=1
     	    self:FillDistribution()
 		ENDIF
 	ENDIF
 
-	RETURN NIL
+	RETURN 
 METHOD EditButton(lNewDis ) CLASS EditMember
 
 	LOCAL EditDistribution AS EditDistribution
 	LOCAL oDis as SQLSelect
 	LOCAL oItem AS ListViewItem
-	LOCAL mSeq AS STRING
-	Default(@lNewDis,FALSE)
+	LOCAL mSeq as STRING    
+	Default(@lNewDis,false)
 	oItem:=SELF:oDCDistrListView:GetSelectedItem()
 	IF !lNewDis
 		IF Empty(oItem)
@@ -1747,8 +1709,8 @@ METHOD EditButton(lNewDis ) CLASS EditMember
 	ENDIF
 	EditDistribution := EditDistribution{ self:Owner,,,{lNewDis,self,self:mPPCode,self:mMbrId,mSeq} }
 	EditDistribution:Show()
-	RETURN NIL
-METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditMember
+	RETURN 
+METHOD EditFocusChange(oEditFocusChangeEvent )  CLASS EditMember
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
 	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
@@ -1797,7 +1759,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditMember
 			self:AccButton(true)
 		ENDIF
 	ENDIF
-	RETURN NIL
+	RETURN 
 METHOD FillDistribution() as void pascal CLASS EditMember
 	// LOCAL oDist as SQLSelect
 	LOCAL oItem as ListViewItem
@@ -2087,7 +2049,7 @@ ASSIGN mAOW(uValue) CLASS EditMember
 SELF:FieldPut(#mAOW, uValue)
 RETURN uValue
 
-METHOD MemberStates( ) CLASS EditMember
+METHOD MemberStates(lDummy:=nil as logic ) as array CLASS EditMember
 	RETURN {{"Entity","Entity"},{"Senior member","SM"},{"Junior member","JM"},{"Member in training","MIT"},{"Trainy","Sta"},{"Staff","Staf"}}
 ACCESS mGrade() CLASS EditMember
 RETURN SELF:FieldGet(#mGrade)
@@ -2162,7 +2124,7 @@ RETURN uValue
 METHOD NewButton( ) CLASS EditMember
 	SELF:EditButton(TRUE)
 	RETURN NIL
-METHOD OffRates() CLASS EditMember
+METHOD OffRates(lDummy:=nil as logic) as array CLASS EditMember
 	LOCAL aRate AS ARRAY
 	LOCAL oSys as SQLSelect
 	oSys:=SQLSelect{"select withldoffl,assmntOffc,withldoffM,withldoffH from sysparms",oConn} 
@@ -2170,7 +2132,7 @@ METHOD OffRates() CLASS EditMember
 		aRate:={{"low ("+Str(oSys:withldoffl,-1,0)+"%)","L"},{"standard ("+Str(oSys:assmntOffc,-1,2)+"%)",""},{"middle ("+Str(oSys:withldoffM,-1,2)+"%)","M"},{"high ("+Str(oSys:withldoffH,-1,2)+"%)","H"}}
 	endif
 RETURN aRate
-METHOD OkButton CLASS EditMember
+METHOD OkButton()  CLASS EditMember
 	LOCAL nMWPos as int
 	LOCAL cFilter, cStatement,cIncAcc,cExpAcc,cNetAcc,cIncAccPrv,cExpAccPrv,cNetAccPrv as STRING
 	local cIncAccNbr,cExpAccNbr,cNetAccNbr,cIncAccPrvNbr,cExpAccPrvNbr,cNetAccPrvNbr,cAccPrvNbr as string
@@ -2239,10 +2201,10 @@ METHOD OkButton CLASS EditMember
 		if !Empty(oStmnt:Status) 
 			self:Pointer := Pointer{POINTERARROW}
 			ErrorBox{,"Error:"+oStmnt:Status:Description}:Show()
-			return false
+			return 
 		endif		
 
-		IF !lNewMember .and.;
+		IF !self:lNewMember .and.;
 				(!mCLNPrv == self:mCLN .or. !mAccidPrv == self:mREK.or. !mDepPrv == self:mDepId )
 			* connected person, account or department changed?
 			IF mCLNPrv # self:mCLN  
@@ -2345,9 +2307,6 @@ METHOD OkButton CLASS EditMember
 					cIncAcc:=Transform(oDep:incomeacc,"") 
 					cExpAcc:=Transform(oDep:expenseacc,"") 
 					cNetAcc:=Transform(oDep:netasset,"") 
-// 					cIncAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select incomeacc from department where depid="+self:mDepId+")",oConn}:accid,"")
-// 					cExpAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select expenseacc from department where depid="+self:mDepId+")",oConn}:accid,"")					
-// 					cNetAcc:=Transform(SQLSelect{"select accid from account a where a.accid in (select netasset from department where depid="+self:mDepId+")",oConn}:accid,"")					
 				else
 					cIncAcc:=self:mREK 
 					cExpAcc:=self:mREK
@@ -2403,7 +2362,7 @@ METHOD OkButton CLASS EditMember
 				endif
 			endif 
 		ENDIF
-		IF lNewMember
+		IF self:lNewMember
 			self:mMbrId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			* Connect person to member: 
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
@@ -2414,7 +2373,7 @@ METHOD OkButton CLASS EditMember
 			oStmnt:Execute()
 		ENDIF
 		IF self:AccDepSelect=='account'
-			if lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == mCLN
+			if self:lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == mCLN
 				* New Account or new description?
 				* Connect new Account:
 				// 			oStmnt:SQLString:="update account set persid="+self:mCLN+",GIFTALWD=1,description='"+cMemberName+"' where accid="+self:mREK
@@ -2426,7 +2385,7 @@ METHOD OkButton CLASS EditMember
 				oStmnt:Execute()
 			ENDIF
 		else
-			if lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == mCLN
+			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == mCLN
 				* New Department 
 				* Connect new Department:
 				oStmnt:SQLString:="update account set giftalwd=1 where accid in (select incomeacc from department where depid="+self:mDepId+")"
@@ -2490,11 +2449,10 @@ METHOD OkButton CLASS EditMember
 		
 	ENDIF
 	
-	RETURN nil
-METHOD PersonButton(lUnique )  CLASS EditMember
+	RETURN 
+METHOD PersonButton(lUnique:=false as logic )  as void pascal CLASS EditMember
 	LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
 	local oPersCnt:=PersonContainer{} as PersonContainer
-	Default(@lUnique,FALSE)
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,'p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member")
 	else
@@ -2503,12 +2461,12 @@ METHOD PersonButton(lUnique )  CLASS EditMember
 //  		PersonSelect(self,cValue,lUnique,'persid="'+Str(self:oMbr:persid,-1)+'" or p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member",oPersCnt)
  		PersonSelect(self,cValue,lUnique,,"Member",oPersCnt)
 	endif
-METHOD PersonButtonContact(lUnique) CLASS EditMember
+METHOD PersonButtonContact(lUnique:=false as logic) as void pascal CLASS EditMember
 	LOCAL cValue := AllTrim(self:oDCmPersonContact:TEXTValue ) as STRING
 	local fieldname:='Contact Person' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
-	Default(@lUnique,FALSE)
+// 	Default(@lUnique,FALSE)
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+ConS(ConI(self:mCLNContact2))+','+ConS(ConI(self:mCLNContact3))+')'
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
@@ -2517,12 +2475,11 @@ METHOD PersonButtonContact(lUnique) CLASS EditMember
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
 	return
-METHOD PersonButtonContact2(lUnique ) CLASS EditMember 
+METHOD PersonButtonContact2(lUnique:=false ) as void pascal CLASS EditMember 
 	LOCAL cValue := AllTrim(self:oDCmPersonContact2:TEXTValue ) as STRING 
 	local fieldname:='Contact Person2' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
-	Default(@lUnique,FALSE) 
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+cons(coni(self:mCLNContact))+','+cons(coni(self:mCLNContact3))+')'
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
@@ -2530,13 +2487,12 @@ METHOD PersonButtonContact2(lUnique ) CLASS EditMember
 		oPersCnt:current_PersonID:=self:oMbr:CONTACT2
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
-RETURN nil
-METHOD PersonButtonContact3( lUnique) CLASS EditMember 
+RETURN 
+METHOD PersonButtonContact3( lUnique:=false) as void pascal CLASS EditMember 
 	LOCAL cValue := AllTrim(self:oDCmPersonContact3:TEXTValue ) as STRING 
 	local fieldname:='Contact Person3' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
-	Default(@lUnique,FALSE)
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+cons(coni(self:mCLNContact))+','+cons(coni(self:mCLNContact2))+')'
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
@@ -2544,7 +2500,7 @@ METHOD PersonButtonContact3( lUnique) CLASS EditMember
 		oPersCnt:current_PersonID:=self:oMbr:CONTACT3
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
-RETURN nil
+RETURN 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	//Put your PostInit additions here
 	LOCAL it as int
@@ -2584,8 +2540,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	self:oDCDistrListView:AddColumn(oColDesc)
 	self:oDCDistrListView:AddColumn(oColTyp)
 	self:oDCDistrListView:AddColumn(oColAmt)
-	oDCDistrListView:GridLines := true
-	oDCDistrListView:FullRowSelect := true
+	self:oDCDistrListView:GridLines := true
+	self:oDCDistrListView:FullRowSelect := true
 	// 	if SuperUser .or. SEntity=='NED'
 	// 		self:oDCAccDepSelect:AddItem("department:",2,'department')
 	// 	endif
@@ -2829,7 +2785,7 @@ METHOD RemoveButton( ) CLASS EditMember
 METHOD RestoreUpdate() CLASS EditMember
 	SELF:oSFSub_Distributions:Browser:RestoreUpdate()
 RETURN NIL
-METHOD ShowDistribution(show)  CLASS EditMember
+METHOD ShowDistribution(show as logic) as void pascal  CLASS EditMember
 	// show or hide distribution instructions:
 	IF show
 		SELF:oDCGroupBox3:Show()
@@ -2848,7 +2804,7 @@ METHOD ShowDistribution(show)  CLASS EditMember
 
 	ENDIF 
 	return
-method ShowPensionHealth() class EditMember
+method ShowPensionHealth() as void pascal class EditMember
 	IF self:oDCmGrade:Value="Entity"
 		self:oDCmAOW:Hide()
 		self:oDCmZKV:Hide()
@@ -2872,7 +2828,7 @@ method ShowPensionHealth() class EditMember
 	
 
 
-METHOD ShowStmntDest() CLASS EditMember
+METHOD ShowStmntDest() as void pascal CLASS EditMember
 	IF Empty(self:mCLNContact) .and.Empty(self:mCLNContact2) .and.Empty(self:mCLNContact3)
 		SELF:oCCDestButton2:Hide()
 		self:oCCDestButton3:Hide() 
@@ -3294,7 +3250,9 @@ CLASS MemberBrowser INHERIT DataWindowExtra
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
   export oMem as SQLSelect 
-  export cFrom,cOrder,cFields,cWhere as string
+  export cFrom,cOrder,cFields,cWhere as string 
+  
+  declare method DeleteButton,FindButton
 RESOURCE MemberBrowser DIALOGEX  21, 19, 431, 341
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -3349,7 +3307,7 @@ if TextBox{self,oLan:WGet("Members"),oLan:WGet("Do you really want to convert")+
 endif 
  
 RETURN NIL
-METHOD DeleteButton CLASS MemberBrowser
+METHOD DeleteButton() as void pascal CLASS MemberBrowser
 	LOCAL oTextBox as TextBox
 	LOCAL mMbrId,mAccid,mDepid,mNetasset,mExpAcc,mIncAcc,cMemName as STRING
 	local oStmnt as SQLStatement
@@ -3367,9 +3325,9 @@ METHOD DeleteButton CLASS MemberBrowser
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
 	IF ( oTextBox:Show() == BOXREPLYYES )
-		mMbrId:=Str(oSFMemberBrowser_DETAIL:Server:MbrId,-1)
-		mAccid:=Transform(oSFMemberBrowser_DETAIL:Server:accid,"")
-		mDepid:=Transform(oSFMemberBrowser_DETAIL:Server:depid,"")
+		mMbrId:=Str(self:oSFMemberBrowser_DETAIL:Server:MbrId,-1)
+		mAccid:=Transform(self:oSFMemberBrowser_DETAIL:Server:accid,"")
+		mDepid:=Transform(self:oSFMemberBrowser_DETAIL:Server:depid,"")
 		oMBAL :=Balances{}
 		if !Empty(mAccid)
 			oMBAL:GetBalance(mAccid)
@@ -3406,7 +3364,7 @@ METHOD DeleteButton CLASS MemberBrowser
 		endif			                                   
 		* Disconnect corresponding person:
 		SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
-			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(oSFMemberBrowser_DETAIL:Server:persid,-1)+"'",oConn}:execute()
+			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(self:oSFMemberBrowser_DETAIL:Server:persid,-1)+"'",oConn}:execute()
 		// delete corresponding Distribution Instructions:
 		oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid='"+mMbrId+"'",oConn}
 		oStmnt:execute()
@@ -3430,27 +3388,23 @@ METHOD DeleteButton CLASS MemberBrowser
 		endif
 		LogEvent(self,"member "+cMemName+" deleted")
 		self:oMem:execute()
-		oSFMemberBrowser_DETAIL:GoTop()
+		self:oSFMemberBrowser_DETAIL:GoTop()
 	ENDIF
 
-	RETURN nil
-METHOD EditButton(lNew) CLASS MemberBrowser
-
-	Default(@lNew,FALSE)
+	RETURN 
+METHOD EditButton(lNew)  CLASS MemberBrowser
+Default(@lNew,false)
 	IF !lNew
 		IF SELF:Server:EOF.or.SELF:Server:BOF
 			(Errorbox{,"Select a member first"}):Show()
-			RETURN
+			RETURN 
 		ENDIF
 	ENDIF
-// 	(EditMember{self:Owner,,,{lNew,self,self:oSFMemberBrowser_DETAIL:Server:accid} }):Show()
 	(EditMember{self:Owner,,,{lNew,self,self:oSFMemberBrowser_DETAIL:Server:mbrid} }):show()
-	
 
+	RETURN 
 
-	RETURN NIL
-
-METHOD FindButton( ) CLASS MemberBrowser 
+METHOD FindButton( ) as void pascal CLASS MemberBrowser 
 	local aKeyw:={} as array
 	local aFields:={"a.accnumber","a.description","d.deptmntnbr","d.descriptn","m.grade","m.householdid","m.homepp"} as array
 	local i,j as int 
@@ -3517,7 +3471,7 @@ METHOD FindButton( ) CLASS MemberBrowser
 	else
 		self:oCCConvertButton:Hide()		
 	endif
-RETURN NIL
+RETURN 
 ASSIGN FOUND(uValue) CLASS MemberBrowser
 self:FIELDPUT(#Found, uValue)
 RETURN uValue
