@@ -4,8 +4,8 @@ EXPORT Name						as SYMBOL
 EXPORT Value					as STRING
 CLASS XMLElement
 
-	EXPORT Name						AS SYMBOL
-	PROTECT Value					AS STRING
+	EXPORT Name						as SYMBOL
+	PROTECT Value					as STRING
 	PROTECT SubElements as ARRAY
 	PROTECT Attributes as ARRAY
 
@@ -437,11 +437,9 @@ declare method LoadFileLines
 // LET OP : XML_Parser is NIET! Case-sensitive voor namen van Attributes en elementen!!!!
 ~"ONLYEARLY-"
 
- METHOD CreateElementFromFile ( oMf as MyFile ) as XMLElement STRICT CLASS XMLParser
+METHOD CreateElementFromFile ( oMf as MyFile ) as XMLElement STRICT CLASS XMLParser
 
-	//#p strXMLString					-> De String waarin we moeten zoeken.
-	//#p dwIntervalStartPos   -> StartPositie van het interval binnen strXMLString dat we mogen gebruiken.
-	//#p dwIntervalEndPos			-> EindPositie van het interval binnen strXMLString dat we mogen gebruiken.
+	//#p oMf			-> File with XML
 
 	LOCAL oXMLElement					as XMLElement
 	LOCAL oSubXMLElement      as XMLElement
@@ -451,7 +449,6 @@ declare method LoadFileLines
 	LOCAL dwStartTagStartPos 	as DWORD
 	LOCAL dwStartTagEndPos 		as DWORD
 	LOCAL dwSpacePos          as DWORD
-	local dwLength					as DWORD 
 
 	LOCAL strStartTag					as STRING
 	LOCAL dwNewTagStartPos 		as DWORD
@@ -461,7 +458,6 @@ declare method LoadFileLines
 	LOCAL strAttributeName    as STRING
 	LOCAL strAttributeValue   as STRINg 
 	local strXMLString			as string
-	// 	local cBuffer					as string
 
 	~"ONLYEARLY+"
 	// read next line with tags
@@ -469,83 +465,78 @@ declare method LoadFileLines
 	if oMf:FEof
 		return oXMLElement
 	endif
-	do while At2('<?' , strXMLString )>0 
+	
+	do while Left(strXMLString,2)=='<?' 
 		// skip information tags
 		strXMLString := oMf:FReadLine()
 	enddo
-	dwStartTagStartPos := At ( '<' , strXMLString  ) 
-	IF dwStartTagStartPos == 0
+	if (dwStartTagStartPos := At2 ( '<' , strXMLString  )+1)=1 
 		return oXMLElement
-	ELSE
-		if SubStr3(strXMLString , dwStartTagStartPos , 2)=='</'
-			// end tag
-			return oXMLElement
-		endif
-		// Look for end tag:
-		dwStartTagEndPos := At3 ( '>' , strXMLString , dwStartTagStartPos )
-		IF dwStartTagEndPos == 0
-			return oXMLElement
-		ENDIF
+	endif
+	// Look for end of tag:
+	if (dwStartTagEndPos := At3 ( '>' , strXMLString , dwStartTagStartPos ))==0
+		return oXMLElement
+	ENDIF
+	
+	// Retrieve StartTag out of XMLString. 
+	strStartTag := SubStr3 ( strXMLString , dwStartTagStartPos , dwStartTagEndPos - dwStartTagStartPos ) 
+	if Left(strStartTag,1)=='/'
+		// end tag
+		return oXMLElement
+	endif
 		
-		// Retrieve StartTag out of XMLString. 
-		dwLength:=dwStartTagEndPos - dwStartTagStartPos
-		strStartTag := SubStr3 ( strXMLString , dwStartTagStartPos , dwLength )
-		
-		// Determine first space spatie StartTag 
-		// It is an indication of an attribute
-		dwSpacePos := At2 ( ' ' , strStartTag )
-		// Create new element:
-		oXMLElement := XMLElement{} 
-
-		DO CASE
-		CASE dwSpacePos > 0
-			oXMLElement:Name:=String2Symbol(SubStr3(strStartTag,2,dwSpacePos - 2 ))
-			DO WHILE true
-				// Look for '=' character.
-				dwEqualPos := At3 ( '=' , strStartTag , dwSpacePos )
-				IF dwEqualPos > 0
-					strAttributeName := SubStr3 ( strStartTag , dwSpacePos , dwEqualPos - dwSpacePos )
-					dwQuotePos := At3 ( '"' , strStartTag , dwEqualPos + 1 )
-					IF dwQuotePos > 0
-						strAttributeValue := SubStr ( strStartTag , dwEqualPos + 2 , dwQuotePos - dwEqualPos - 2 )
-					ELSE
-						// error situation
-						exit	
-					ENDIF
-					
-					oXMLAttribute := XMLAttribute{}
-					oXMLAttribute:Name 	:= String2Symbol(AllTrim(strAttributeName))
-					oXMLAttribute:Value	:= strAttributeValue
-					
-					oXMLElement:AddAttribute ( oXMLAttribute)
-					
-					// A next attribute after last '"'
-					dwSpacePos := dwQuotePos + 1
+	// Create new element:
+	oXMLElement := XMLElement{} 
+	
+	// Determine first space in StartTag 
+	// It is an indication of an attribute
+	if (dwSpacePos := At2 ( ' ' , strStartTag ))>0
+		oXMLElement:Name:=String2Symbol(SubStr3(strStartTag,1,dwSpacePos - 1 ))
+		DO WHILE true
+			// Look for '=' character.
+			dwEqualPos := At3 ( '=' , strStartTag , dwSpacePos )
+			IF dwEqualPos > 0
+				strAttributeName := SubStr3 ( strStartTag , dwSpacePos , dwEqualPos - dwSpacePos )
+				dwQuotePos := At3 ( '"' , strStartTag , dwEqualPos + 1 )
+				IF dwQuotePos > 0
+					strAttributeValue := SubStr ( strStartTag , dwEqualPos + 2 , dwQuotePos - dwEqualPos - 2 )
 				ELSE
-					exit
+					// error situation
+					exit	
 				ENDIF
-			ENDDO
-		CASE SubStr3 ( strStartTag , dwLength , 1 ) == '/'
-			// Tag is endtag
-			oXMLElement:Name:=String2Symbol(SubStr3 ( strStartTag, 2 , dwLength - 2 ))
-		OTHERWISE
-			// normal situation
-			oXMLElement:Name:=String2Symbol(SubStr2(strStartTag,2))
-		ENDCASE
-		
-		// Look for end tag, then at lowets level
-		dwNewTagStartPos := At3 ( '</' , strXMLString , dwStartTagEndPos )
+				
+				oXMLAttribute := XMLAttribute{}
+				oXMLAttribute:Name 	:= String2Symbol(AllTrim(strAttributeName))
+				oXMLAttribute:Value	:= strAttributeValue
+				
+				oXMLElement:AddAttribute ( oXMLAttribute)
+				
+				// A next attribute after last '"'
+				dwSpacePos := dwQuotePos + 1
+			ELSE
+				exit
+			ENDIF
+		ENDDO 
+	elseif Right( strStartTag , 1 ) == '/' 
+		// Tag is endtag
+		oXMLElement:Name:=String2Symbol(SubStr3 ( strStartTag, 1 , Len(strStartTag) - 1 ))
+	else
+		// normal situation
+		oXMLElement:Name:=String2Symbol(strStartTag)		
+	endif
+	
+	// Look for end tag, then at lowest level
+	dwNewTagStartPos := At3 ( '</' , strXMLString , dwStartTagEndPos )
 
-		IF dwNewTagStartPos > 0
-			// lowest level with value:
-			oXMLElement:STRINGValue := AllTrim( SubStr3 ( strXMLString , dwStartTagEndPos + 1 , dwNewTagStartPos - dwStartTagEndPos - 1 ) )
-		ELSE
-			// look for lower level:
-			do while !(oSubXMLElement := self:CreateElementFromFile (oMf))=null_object		
-				oXMLElement:AddElement ( oSubXMLElement )
-			ENDDO
-		ENDIF	
-	ENDIF 
+	IF dwNewTagStartPos > 0
+		// lowest level with value:
+		oXMLElement:STRINGValue := AllTrim( SubStr3 ( strXMLString , dwStartTagEndPos + 1 , dwNewTagStartPos - dwStartTagEndPos - 1 ) )
+	ELSE
+		// look for lower level:
+		do while !(oSubXMLElement := self:CreateElementFromFile (oMf))=null_object		
+			oXMLElement:AddElement ( oSubXMLElement )
+		ENDDO
+	ENDIF	
 
 	RETURN oXMLElement
 	~"ONLYEARLY-"
