@@ -32,12 +32,12 @@ method Start() class App
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
 		Enable3dControls() 
-		SetMaxDynSize(134217728)   //128MB max dynamic memory
+		SetMaxDynSize(268435456)   //256MB max dynamic memory
 		SetWipeDynSpace(false)
-		SetKidStackSize(524288)
-		SetMaxRegisteredKids(60000)
-		SetMaxThreadDynSize(33554432)  //32 MB Tread memory 
-		SetMaxRegisteredAxitMethods(32000)
+		SetKidStackSize(1048576)
+		SetMaxRegisteredKids(131072)
+		SetMaxThreadDynSize(67108864)  //64 MB Thread memory 
+		SetMaxRegisteredAxitMethods(65536)
 		SetExclusive( FALSE )
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 		SetDefault(CurPath)
