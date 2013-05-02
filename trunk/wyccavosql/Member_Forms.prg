@@ -1515,7 +1515,7 @@ CLASS EditMember INHERIT DataWindowExtra
 	export aDistr:={},aDistrOrg as array  // content of all corresponding distribution instructions:
 	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
 	export maxseq as int // next available sequence number within distribution instructions of this member
-	declare method FillDistribution, ValidateMember,AccButton,AddButton,DeleteButton,MemberStates, OffRates,PersonButton 
+	declare method FillDistribution, ValidateMember,AddButton,DeleteButton,MemberStates, OffRates 
 	declare method PersonButtonContact,PersonButtonContact2,PersonButtonContact3,ShowDistribution,ShowPensionHealth,ShowStmntDest
 RESOURCE EditMember DIALOGEX  34, 32, 433, 363
 STYLE	WS_CHILD
@@ -1571,7 +1571,7 @@ BEGIN
 	CONTROL	"", EDITMEMBER_ACCDEPSELECT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 160, 0, 73, 72, WS_EX_TRANSPARENT
 END
 
-METHOD AccButton(lUnique:=false as logic ) as void pascal CLASS EditMember
+METHOD AccButton(lUnique ) CLASS EditMember
 	LOCAL cAccDepName as STRING
 	LOCAL cfilter as string
 	LOCAL aExclRek:={},aInclRek:={} as ARRAY
@@ -2450,9 +2450,10 @@ METHOD OkButton()  CLASS EditMember
 	ENDIF
 	
 	RETURN 
-METHOD PersonButton(lUnique:=false as logic )  as void pascal CLASS EditMember
+METHOD PersonButton(lUnique)   CLASS EditMember
 	LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING 
 	local oPersCnt:=PersonContainer{} as PersonContainer
+	Default(@lUnique,FALSE)
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,'p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member")
 	else
