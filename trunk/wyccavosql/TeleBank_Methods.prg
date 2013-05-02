@@ -1909,7 +1909,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	oNtry:=null_object 
 	oSub:=null_object   // clear
 	aBudg:=null_array // clear  
-	CollectForced()  //garbagecollect()
+// 	CollectForced()  //garbagecollect()
 	time1:=time0
 	LogEvent(self,"interprete:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//    LogEvent(self,"all transactions loaded","logsql")
