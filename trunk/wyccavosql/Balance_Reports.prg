@@ -722,33 +722,32 @@ if self:oReport:lRTF
 
 	SELF:Pointer := Pointer{POINTERARROW}
 	* Reset arrays to free memory:
-	r_balid:={}
-	r_balnbr:={}
-	r_cat:={}
-	r_parentid:={}
-	r_indmain:={}
-	r_heading:={}
-	r_footer:={}
-	d_dep:={}
-	d_depname:={}
-	d_parentdep:={}
-	d_indmaindep:={}
-	d_PLdeb:={}
-	d_PLcre:={}
-	d_PrfLssPrYr:={}
-	d_acc:={}
-	d_netasset:={}
-	d_netnum:={}
-	rd_BalPrvYr:={}
-	rd_BalPrvYrYtD:={}
-	rd_BalPrvPer:={}
-	rd_BalPer:={}
-	rd_bud:={}
-	rd_budper:={}
-	rd_budytd:={}
-	accnts:={}
-	d_sort:={}
-	CollectForced()
+	r_balid:= null_array
+	r_balnbr:= null_array
+	r_cat:= null_array
+	r_parentid:= null_array
+	r_indmain:= null_array
+	r_heading:= null_array
+	r_footer:= null_array
+	d_dep:= null_array
+	d_depname:= null_array
+	d_parentdep:= null_array
+	d_indmaindep:= null_array
+	d_PLdeb:= null_array
+	d_PLcre:= null_array
+	d_PrfLssPrYr:= null_array
+	d_acc:= null_array
+	d_netasset:= null_array
+	d_netnum:= null_array
+	rd_BalPrvYr:= null_array
+	rd_BalPrvYrYtD:= null_array
+	rd_BalPrvPer:= null_array
+	rd_BalPer:= null_array
+	rd_bud:= null_array
+	rd_budper:= null_array
+	rd_budytd:= null_array
+	accnts:= null_array
+	d_sort:= null_array
 	self:iLine:=iLine
 	self:iPage:=iPage
 
@@ -2014,12 +2013,12 @@ IF  !oBalReport==NULL_OBJECT
 	oBalReport:Close()
 	oBalReport:=NULL_OBJECT
 ENDIF
-CollectForced()
+// CollectForced()
 IF !oTransMonth == NULL_OBJECT
 	//oTransMonth:Close()
 	oTransMonth:=NULL_OBJECT
 ENDIF
-CollectForced()
+// CollectForced()
 
 SELF:destroy()
 	RETURN NIL
