@@ -42,15 +42,15 @@ Default(@InvoiceID,null_string)
 		
 	RETURN
 function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
-// add new mailing NewCodes to current string of mailing codes cCod
-LOCAL aPCod,aNCod as ARRAY, iStart as int
-if Empty(NewCodes)
-	return null_string
-endif
+	// add new mailing NewCodes to current string of mailing codes cCod
+	LOCAL aPCod,aNCod as ARRAY, iStart as int
+	if Empty(NewCodes)
+		return cCod
+	endif
 	aPCod:=Split(AllTrim(cCod)," ")
 	aNCod:=Split(AllTrim(NewCodes)," ")
 	iStart:=Len(aPCod)
- 
+	
 	ASize(aPCod,iStart+Len(aNCod))
 	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
 	cCod:=MakeCod(aPCod)
@@ -128,21 +128,16 @@ METHOD Init() CLASS Destination
 Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:="" as string) as array
 LOCAL oHttp  as cHttp
 LOCAL nStart, nPos, nEnd as int
-local nPos1,nPos2, nPos3,i,j as int,straat,postcode, woonplaats,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
+local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
 LOCAL aWord as ARRAY
-// Default(@cPostcode,null_string)
-// Default(@cCity,null_string)
 if Empty(cAddress)
 	return {cPostcode,cAddress,cCity}
 endif
-straat:=AllTrim(cAddress)
-postcode:=AllTrim(StrTran(cPostcode,' ',''))  
+street:=AllTrim(cAddress)
+zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
 cCity:=AllTrim(cCity)
 cCity:=StrTran(cCity,'Y','IJ')
-// if cCity=="WYK BY DUURSTEDE"
-// 	cCity:="WIJK BIJ DUURSTEDE"
-// endif
-woonplaats:=cCity 
+cityname:=cCity 
 
 housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
 
@@ -152,7 +147,6 @@ nEnd:=Len(aWord)
 if nEnd>1
 	if Empty(aWord[nEnd-1,1])  // separation character?
 		nEnd-=2
-//	elseif Len(aWord[nEnd,1])=1 .or.aWord[nEnd,2]="-" .or.aWord[nEnd,2]="/"
 	elseif isnum(aWord[nEnd-1,1])
 		nEnd--
 	endif
@@ -171,85 +165,45 @@ elseif !Empty(cCity)
 endif
 StrTran(cSearch," ","%20")
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-//oHttp:ConnectRemote("http://www.postcode.nl")
-httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/search/"+cSearch)
+httpfile:= oHttp:GetDocumentByURL("http://www.zipcode.nl/search/"+cSearch)
 
 nPos1:=At('<div class="col-main">',httpfile)
 if nPos1>0
-// 	nPos1:=At3("var order = new Array(",httpfile,nPos1)+22
-// endif
-// if nPos1<=22
-	// without scrambling:
+	// search unique string before response
 	nPos1:=At('<td><a class="view"',httpfile)
 	if nPos1>0
-		output:=SubStr(httpfile,nPos1+20)
+		output:=SubStr(httpfile,nPos1+20) 
+	elseif AtC("Uw zoekopdracht heeft geen resultaten opgeleverd",httpfile)=0 
+		// apparently website changed:
+		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 	endif 
 endif
-// else
-// 	httpfile:=SubStr(httpfile,nPos1)
-// 	nPos2:=At(");",httpfile)
-// 	order := SubStr(httpfile,1,nPos2-1)
-// 	aorder:=Split(order,",")
-// 	httpfile:=SubStr(httpfile,nPos2+22)
-// 	nPos3:=At(");",httpfile)
-// 	bits:=SubStr(httpfile,3,nPos3-3) 
-// 	bits:=StrTran(StrTran(bits,"',"+'"',"','"),'",'+"'","','") 
-// 	nStart:=1
-// 	nEnd:=Len(bits)-1
-// 	DO WHILE true
-// 		nPos:=At3("','", bits,nStart)
-// 		IF nPos==0
-// 			exit
-// 		ENDIF
-// 		AAdd(abits,SubStr(bits,nStart+1,nPos-nStart-1))
-// 		nStart:=nPos+2
-// 	ENDDO
-// 	AAdd(abits,SubStr(bits,nStart+1,nEnd-nStart))
-// endif
-// if !Empty(abits)
-// 	output:=""
-// 	for i:=1 to Len(aorder) 
-// 		j:=Val(aorder[i])+1
-// 		if j<=Len(abits)
-// 			output+=abits[j]
-// 			if At("<ul>",output)>0
-// 				exit
-// 			endif
-// 		endif
-// 	next
-// endif
-// output:=StrTran(StrTran(StrTran(StrTran(StrTran(output,"''",""),'""',""),"'"+'"',""),'"'+"'",""),'\',"") 
 if !Empty(output)
-//	nPos1:=At('</thead> <tbody> <tr class="even"> <td>',output)+39
 	nPos1:=At('>',output)+1
 	if (nPos1>1)
 		nPos2:=At3("</a>",output,nPos1)
-		postcode:=StandardZip(SubStr(output,nPos1,nPos2-nPos1))
+		zipcode:=StandardZip(SubStr(output,nPos1,nPos2-nPos1))
 		nPos1:=nPos2+7
 		nPos1:=At3("<td>",output,nPos1+1)+4
 		nPos2:=At3('</td>',output,nPos1)
-		straat:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
+		street:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
 		nPos1:=At3("<td>",output,nPos2+2)+1
 		nPos1:=At3("<td>",output,nPos1)+4
 		if (nPos1>5)
 			nPos2:=At3("</td>",output,nPos1)
-			woonplaats:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
-			if (woonplaats=="'S-GRAVENHAGE")
-				woonplaats:='DEN HAAG'
-			elseif (woonplaats=="'S-HERTOGENBOSCH")
-				woonplaats:="DEN BOSCH" 
+			cityname:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
+			if (cityname=="'S-GRAVENHAGE")
+				cityname:='DEN HAAG'
+			elseif (cityname=="'S-HERTOGENBOSCH")
+				cityname:="DEN BOSCH" 
 			endif
-			woonplaats:=Upper(SubStr(woonplaats,1,1))+Lower(SubStr(woonplaats,2))				
+			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
 		endif
-	else
-// 		logevent(self,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
 	endif	
-else
-// 	logevent(self,"Geen postcode gevonden voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile, "LogErrors")
 endif
 oHttp:CloseRemote()
 oHttp:Axit() 
-RETURN {postcode,straat,woonplaats}
+RETURN {zipcode,street,cityname}
 function GENDERDSCR(cGnd as int) as string
 	// Return Gender description of a person:
 	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
@@ -3788,7 +3742,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	
 
 	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,cast(du.invoicedate as date) as invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
-	SQLAccType()+" as type,"+;
+		SQLAccType()+" as type,"+;
 		"cast(p.datelastgift as date) as datelastgift,"+SQLFullName(0,'p')+" as personname,p.mailingcodes "+;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s "+;
@@ -3800,7 +3754,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		(WarningBox{self,"Producing CLIEOP03 file","No due amounts to be debited direct!"}):Show()
 		RETURN false
 	ENDIF
-//    LogEvent(self,oDue:SQLString,"logsql")
+	//    LogEvent(self,oDue:SQLString,"logsql")
 	headinglines:={self:oLan:Rget("Overview of generated automatic collection (CLIEOP03)"),self:oLan:Rget("Name",41)+self:oLan:Rget("Bankaccount",11)+self:oLan:Rget("Amount",12,,"R")+" "+self:oLan:Rget("Destination",12)+self:oLan:Rget("Due Date",11)+" "+self:oLan:Rget("Description",20),Replicate('-',120)}
 	// write Header
 	// remove old clieop03-files:
@@ -3845,8 +3799,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				self:Pointer := Pointer{POINTERARROW}
 				return false
 			endif
-// 		else
-// 			cBank:=StrTran(cBank,'P','')
+			// 		else
+			// 			cBank:=StrTran(cBank,'P','')
 		endif
 		if oDue:AmountInvoice> fLimitInd
 			(ErrorBox{self,self:oLan:WGet("Direct debit amount of person")+' '+oDue:PersonName+"(Intern ID "+Str(oDue:personid,-1)+") "+self:oLan:WGet("is above limit")+'! ('+Str(fLimitInd,-1)+sCurr+')'}):Show()
@@ -3901,7 +3855,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		AAdd(aTransValues,{cAccID,'0.00','0.00',cAmnt,cAmnt,sCurr,cDescr,cTransDate,iif(cType=='M',"AG",""),LOGON_EMP_ID,'2','2','COL','',iif(Empty(cPersId),'0',cPersId),'0','',''})
 		// add person data:
 		IF	!Empty(cType) .and. (cType	==	'G' .or.	cType	==	'M' .or.	cType	==	'D') 
-			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
+			AAdd(avaluesPers,{cPersId,cTransDate,AddSlashes(cAccMlCd)} )
 		endif 
 		// add to balance values:
 		// {accid,year,month,currency,deb,cre} 
@@ -4005,7 +3959,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			//	make transaction:
 			* add	first	transaction:
 			* against DebitAccount:	
-		//	insert first line:
+			//	insert first line:
 			oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
 				" values	("+Implode(aTransValues[1],"','",1,16)+')',oConn}
 			oStmnt:Execute()
@@ -4052,14 +4006,14 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 			if Len(avaluesPers)>0
 				*	Update person info of giver: 
 				oStmnt:=SQLStatement{'insert into person (persid,datelastgift,mailingcodes) values '+Implode(avaluesPers,'","')+;
-				" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),"+;
-				"mailingcodes=values(mailingcodes)",oConn}
+					" ON DUPLICATE	KEY UPDATE datelastgift=if(values(datelastgift)>datelastgift,values(datelastgift),datelastgift),"+;
+					"mailingcodes=values(mailingcodes)",oConn} 
 				oStmnt:Execute()
 				if	!Empty(oStmnt:status)
 					SQLStatement{"rollback",oConn}:Execute() 
 					SQLStatement{"unlock tables",oConn}:Execute()
-					LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000)}:Show()
+					LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 					return false 
 				endif
 			endif
@@ -4193,7 +4147,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead,m56_currency,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING 
 	LOCAL cBank,cBic,cCod,cErrMsg,cAccType,cDueIds,cAccs,CreditorID as STRING
 	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string
-	local cTransDate:=SQLdate(process_date) as string 
+	local cTransDate:=SQLdate(process_date) as string
+	local cNextDD:=self:oLan:Rget("next direct debit in") as string 
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
 	LOCAL lError,lSetAMPM as LOGIC
@@ -4394,7 +4349,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		IF Empty(nTerm) .or.nTerm>12
 			cDescr:=aDescr[1] 
 		elseif nTerm==1 .or.nTerm==2
-			cDescr:=aDescr[nTerm+1]+' ' +Lower(maand[Month(invoicedate)])+" "+Str(Year(invoicedate),-1)
+			cDescr:=aDescr[nTerm+1]+' ' +Lower(maand[Month(invoicedate)])+" "+Str(Year(invoicedate),-1)  
 		elseif nTerm==3
 			cDescr:=aDescr[nTerm+1] +' '+Str(Floor((Month(invoicedate)-1)/4)+1,-1)+" "+Str(Year(invoicedate),-1)
 		elseif nTerm==6
@@ -4404,6 +4359,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		else
 			cDescr:=aDescr[nTerm+1] 
 		ENDIF
+		if !empty(nTerm) .and. nterm<=12
+			// prenotification:
+			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
+		endif
 		oReport:PrintLine(@nRow,@nPage,;
 			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+"  "+cDescr,headinglines)  
 		fSum:=Round(fSum+AmountInvoice,DecAantal) 
@@ -4422,7 +4381,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cAccMlCd:= aDue[i,18]	
 			cAccMlCd:=ADDMLCodes(Transform(aDue[i,13],""),cAccMlCd)
 			cAccMlCd:=ADDMLCodes('FI',cAccMlCd)	
-			AAdd(avaluesPers,{cPersId,cTransDate,cAccMlCd} )
+			AAdd(avaluesPers,{cPersId,cTransDate,AddSlashes(cAccMlCd)} )
 		endif 
 		// add to balance values:
 		// {accid,year,month,currency,deb,cre} 
@@ -4469,7 +4428,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oWarn:=TextBox{self,self:oLan:WGet("Direct Debit"),;
 		self:oLan:WGet("Printing O.K.")+'? '+self:oLan:WGet("Can file")+;
 		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+' transactions('+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
-	IF (oWarn:Show() = BOXREPLYNO)
+	IF !(oWarn:Show() = BOXREPLYYES)
 		Return false
 	endif
 	oMainWindow:STATUSMESSAGE("Producing SEPA Direct Debit file, moment please")
@@ -4516,7 +4475,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				'<LclInstrm><Cd>CORE</Cd></LclInstrm>'+CRLF+;
 				'<SeqTp>'+aSeqTp[aDD[i,8],1]+'</SeqTp>'+CRLF+;
 				'</PmtTpInf>' +CRLF+;
-				'<ReqdColltnDt>'+SQLdate(iif(SeqTp=1.or.SeqTp=4, Max(Today()+5,process_date),Max(Today()+2,process_date)))+'</ReqdColltnDt>'+CRLF+;        // for firsand single 5 day ahead, otherwise 2 days
+				'<ReqdColltnDt>'+SQLdate(iif(SeqTp=1.or.SeqTp=4, Max(Today()+6,process_date),Max(Today()+3,process_date)))+'</ReqdColltnDt>'+CRLF+;        // for firsand single 5 day ahead, otherwise 2 days
 				'<Cdtr>'+CRLF+;
 				'<Nm>'+cOrgName+'</Nm>'+CRLF+;
 				'</Cdtr>'+CRLF+;
@@ -4551,24 +4510,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
 		'</RmtInf>'+CRLF+;
 			'</DrctDbtTxInf>')
-// 		FWriteLineUni(ptrHandle,'<DrctDbtTxInf>'+CRLF+;
-// 			'<PmtId>'+CRLF+;
-// 			'</PmtId>'+CRLF+;
-// 			'<InstdAmt>'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
-// 		'<DrctDbtTX><MndtRltInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr></MndtRltInf><CdtrSchmId></CdtrSchmId></DrctDbtTX>'+CRLF+;
-// 			'<Dbtr>'+CRLF+;
-// 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
-// 			'</Dbtr>'+CRLF+;
-// 			'<DbtrAcct>'+CRLF+;
-// 			'<Id>'+CRLF+;
-// 			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
-// 			'</Id>'+CRLF+;
-// 			'</DbtrAcct>'+CRLF+;
-// 			'<RmtInf>'+CRLF+;
-// 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
-// 		'<Strd>'+aDD[i,7]+'</Strd>'+CRLF+;     // invoiceid
-// 		'</RmtInf>'+CRLF+;
-// 			'</DrctDbtTxInf>') 
 		if Len(DrctDbtTxInf)>= 100
 			FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write per 100 transactions to reduce I/O
 			DrctDbtTxInf:={}
@@ -4709,8 +4650,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			if	!Empty(oStmnt:status)
 				SQLStatement{"rollback",oConn}:Execute() 
 				SQLStatement{"unlock tables",oConn}:Execute()
-				LogEvent(self,"error:"+oMBal:cError,"LogErrors")
-				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000)}:Show()
+				LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
 		endif
