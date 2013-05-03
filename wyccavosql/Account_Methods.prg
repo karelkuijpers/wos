@@ -650,8 +650,8 @@ METHOD ValidateAccount() CLASS EditAccount
 	if self:odcmembertext:TextValue =='department member' .and. self:mGIFTALWD 
 		
 		oSel:=SqlSelect{"SELECT `incomeacc` FROM `department` WHERE `depid`=" +self:mDep,oConn}
-		if oSel:Reccount>0 
-			IF!lNew .or. !ConS(oSel:incomeacc) == self:mAccId 
+		if oSel:Reccount>0  .and. !Empty(oSel:incomeacc)
+			IF lNew .or. !ConS(oSel:incomeacc) == self:mAccId 
 				cError:=self:oLan:WGet("Only 1 account gift receivable allowed")
 				lValid:=FALSE	
 				self:oDCmGIFTALWD:SetFocus()					
@@ -664,7 +664,7 @@ METHOD ValidateAccount() CLASS EditAccount
 		
 		oSel:=SqlSelect{"SELECT  `descriptn`, `expenseacc`, `incomeacc`,`netasset` FROM `department` WHERE `depid`=" +self:mDep,oConn}
 		if oSel:Reccount>0 
-			IF!lNew 
+			IF !lNew 
 				if ConS(oSel:incomeacc) == self:mAccId  
 					cError:=self:oLan:WGet("Can't be inactive for it is used for Income in department:")+oSel:descriptn
 					lValid:=FALSE	
