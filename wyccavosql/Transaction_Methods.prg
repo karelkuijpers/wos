@@ -1977,414 +1977,423 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	self:mDAT:= self:oDCmDat:SelectedDate
 	IF !self:fTotal==0
 		(ErrorBox{self,self:oLan:WGet("Sum of transactions not equal zero")}):show()
-		lError := true
-	ELSEIF Len(oHm:aMIRROR)< 2.and.!lInqUpd
+		RETURN FALSE
+	ELSEIF Len(oHm:Amirror)< 2.and.!lInqUpd
 		(ErrorBox{self,self:oLan:WGet("Transactions not complete")}):show()
-		lError := true
+		RETURN FALSE
 	ELSEIF 	!self:ValidateTempTrans(FALSE,@ErrorLine)
-		lError := true
+		RETURN FALSE
 		*		RETURN NIL
 	elseif Empty(self:mDAT)
 		(ErrorBox{self,self:oLan:WGet("Select a date")}):show()
-		lError := true
+		RETURN FALSE
 	elseif self:lwaitingForExchrate
 		(ErrorBox{self,self:oLan:WGet("wait for exchange rate")}):show()
-		lError := true
-	ELSE
-		*		Check only one membergiver:
-		IF ADMIN=="WO" .and. !oHm:lFromRPP .and. (AScan(oHm:aMIRROR,{|x| x[4]=="AG".or.x[4]=="MG"})>0)
-			i:= AScan(oHm:aMIRROR,{|x| x[4]=="CH".and.x[3]<x[2]})
-			IF i > 0
-				curRec:=oHm:aMIRROR[i,6]  // RECNO
-				* Check if giver is a member:
-				mbrRek:=oHm:aMIRROR[i,1]
-				mCLNGiverMbr := oHm:aMIRROR[i,17]
-				//	check	if	direct gift	report: 
-				lOK:=false
-				if	AScan(oHm:aMIRROR,{|x| x[4]="AG" .and. (x[1]==mbrRek .or.x[17]==mCLNGiverMbr)	})>0
-// 					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
-					IF	Empty(self:mCLNGiver).and.	Empty(mCLNGiverMbr)
-						(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
-						RETURN FALSE
-					else
-						lOK:=true
-					endif
-					
-				endif						 
-				IF !lOK .and.!self:lDirectIncome
-					if !Empty(self:mCLNGiver).and. !Empty(mCLNGiverMbr).and.!mCLNGiverMbr==self:mCLNGiver
-						cError := self:cGiverName+";  "
-						lError := true
-					ELSE
-						self:mCLNGiver:=mCLNGiverMbr 
-						lError:=false
-					ENDIF
-					DO WHILE i>0
-						oHm:RecNo:=oHm:AMirror[i,6] // RECNO
-						IF Empty(OmsMbr)
-							OmsMbr:=AllTrim(oHm:AccDesc)
-							cError += OmsMbr+"; "
-						ELSE
-							IF !OmsMbr==AllTrim(oHm:AccDesc)
-								cError += AllTrim(oHm:AccDesc)+"; "
-								lError := true
-							ENDIF
-						ENDIF
-						i:= AScan(oHm:aMIRROR,{|x| x[4]=="CH".and.x[3]<x[2].and.!x[6]==curRec},i+1)
-					ENDDO
-				endif
-				IF lError
-					(ErrorBox{self,self:oLan:WGet("Givers")+" "+self:oLan:WGet("are")+" "+cError+"  "+self:oLan:WGet("Only one giver allowed")+"!"}):show()
+		RETURN FALSE
+	endif
+	*		Check only one membergiver:
+	IF ADMIN=="WO" .and. !oHm:lFromRPP .and. (AScan(oHm:aMIRROR,{|x| x[4]=="AG".or.x[4]=="MG"})>0)
+		i:= AScan(oHm:aMIRROR,{|x| x[4]=="CH".and.x[3]<x[2]})
+		IF i > 0
+			curRec:=oHm:aMIRROR[i,6]  // RECNO
+			* Check if giver is a member:
+			mbrRek:=oHm:aMIRROR[i,1]
+			mCLNGiverMbr := oHm:aMIRROR[i,17]
+			//	check	if	direct gift	report: 
+			lOK:=false
+			if	AScan(oHm:aMIRROR,{|x| x[4]="AG" .and. (x[1]==mbrRek .or.x[17]==mCLNGiverMbr)	})>0
+				// 					IF	Empty(self:mCLNGiver).or.	mCLNGiverMbr==self:mCLNGiver
+				IF	Empty(self:mCLNGiver).and.	Empty(mCLNGiverMbr)
+					(ErrorBox{self,self:oLan:WGet("You should	specify a giver")+"!"}):show()
 					RETURN FALSE
+				else
+					lOK:=true
+				endif
+				
+			endif						 
+			IF !lOK .and.!self:lDirectIncome
+				if !Empty(self:mCLNGiver).and. !Empty(mCLNGiverMbr).and.!mCLNGiverMbr==self:mCLNGiver
+					cError := self:cGiverName+";  "
+					lError := true
+				ELSE
+					self:mCLNGiver:=mCLNGiverMbr 
+					lError:=false
 				ENDIF
+				DO WHILE i>0
+					oHm:RecNo:=oHm:AMirror[i,6] // RECNO
+					IF Empty(OmsMbr)
+						OmsMbr:=AllTrim(oHm:AccDesc)
+						cError += OmsMbr+"; "
+					ELSE
+						IF !OmsMbr==AllTrim(oHm:AccDesc)
+							cError += AllTrim(oHm:AccDesc)+"; "
+							lError := true
+						ENDIF
+					ENDIF
+					i:= AScan(oHm:aMIRROR,{|x| x[4]=="CH".and.x[3]<x[2].and.!x[6]==curRec},i+1)
+				ENDDO
+			endif
+			IF lError
+				(ErrorBox{self,self:oLan:WGet("Givers")+" "+self:oLan:WGet("are")+" "+cError+"  "+self:oLan:WGet("Only one giver allowed")+"!"}):show()
+				RETURN FALSE
 			ENDIF
 		ENDIF
+	ENDIF
 
-		IF !oHm:lFromRPP
-			m54_pers_sta:='N'  && Not allowed
-			m54_pers_sta:= checkpayer( oHm:aMIRROR )
-			IF Empty(self:mCLNGiver)
-				IF self:lImport .and.!Empty(AllTrim(self:cGiverName)).and.(m54_pers_sta='V' .or.m54_pers_sta=='W')
-					// busy with searching person
-					RETURN FALSE
-				ENDIF
-				IF m54_pers_sta='V'
-					(ErrorBox{self,self:oLan:WGet('Giver must be a person')}):show()
-					lError := true
-					RETURN FALSE
-				elseIF m54_pers_sta='C'
-					(ErrorBox{self,self:oLan:WGet('Creditor must be a person')}):show()
-					lError := true
-					RETURN FALSE
-				ELSEIF m54_pers_sta=='W'
-					oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"), ;
-						self:oLan:WGet("Don't you need to specify a giver/payer")+"?"}
-					oBox:Type := BUTTONYESNO
-					IF (oBox:show() = BOXREPLYYES)
-						self:oDCmperson:SetFocus()
-						RETURN FALSE
-					ENDIF
-				ENDIF
-			ELSE
-				IF m54_pers_sta='N'
-					(ErrorBox{self,self:oLan:WGet('No person allowed in this case')}):show()
+	IF !oHm:lFromRPP
+		m54_pers_sta:='N'  && Not allowed
+		m54_pers_sta:= checkpayer( oHm:aMIRROR )
+		IF Empty(self:mCLNGiver)
+			IF self:lImport .and.!Empty(AllTrim(self:cGiverName)).and.(m54_pers_sta='V' .or.m54_pers_sta=='W')
+				// busy with searching person
+				RETURN FALSE
+			ENDIF
+			IF m54_pers_sta='V'
+				(ErrorBox{self,self:oLan:WGet('Giver must be a person')}):show()
+				lError := true
+				RETURN FALSE
+			elseIF m54_pers_sta='C'
+				(ErrorBox{self,self:oLan:WGet('Creditor must be a person')}):show()
+				lError := true
+				RETURN FALSE
+			ELSEIF m54_pers_sta=='W'
+				oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"), ;
+					self:oLan:WGet("Don't you need to specify a giver/payer")+"?"}
+				oBox:Type := BUTTONYESNO
+				IF (oBox:show() = BOXREPLYYES)
 					self:oDCmperson:SetFocus()
 					RETURN FALSE
-				ELSEIF m54_pers_sta=='O' 
-					if Empty(self:mBst) .or.!SubStr(self:mBst,1,3)=='COL' // skip storno's
-						if !Empty(self:oDCmPerson:TEXTValue)
-							oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
-							oBox:Type := BUTTONYESNO
-							IF (oBox:show() = BOXREPLYNO)
-								self:oDCmperson:SetFocus()
-								RETURN FALSE
-							ENDIF 
-						endif
-					endif
 				ENDIF
 			ENDIF
-		ENDIF
-		//	determine accounts to be locked for change balance
-		cAccs:=Implode(oHm:aMIRROR,",",,,1)+iif(lInqUpd,','+ self:cOrgAccs,'')
-		if !lInqUpd 
-			//	add income records:
-			if	(!Empty(SINCHOME) .or.!Empty(SINC)) .and.(!Empty(self:mCLNGiver).or. oHm:lFromRPP)
-				if	AScan(oHm:aMIRROR,{|x|x[4]='AG' .and.x[18]=liability})>0
-					IF	!Empty(SINC)
-						cAccs+=','+SEXP+','+ SINC
-					endif	 			
-					IF	!Empty(SINCHOME)
-						cAccs+=','+SINCHOME+','+SEXPHOME
-					endif	
-				endif
-			endif
-			// add rabat accounts:
-			if oHm:lFromRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
-				for nMir:=1 to Len(oHm:aMIRROR)
-					IF	(j:=AScan(oHm:aMIRROR,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
-						oHm:Recno=j	
-						IF	oHm:OPP== sEntity
-							if	At(cAccs,','+SEXP+',')=0
-								cAccs+=','+SEXP
-							endif
-							cAccs+=','+	samFld
-							exit
-						endif
-						nMir:=j
+		ELSE
+			IF m54_pers_sta='N'
+				(ErrorBox{self,self:oLan:WGet('No person allowed in this case')}):show()
+				self:oDCmperson:SetFocus()
+				RETURN FALSE
+			ELSEIF m54_pers_sta=='O' 
+				if Empty(self:mBst) .or.!SubStr(self:mBst,1,3)=='COL' // skip storno's
+					if !Empty(self:oDCmPerson:TEXTValue)
+						oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
+						oBox:Type := BUTTONYESNO
+						IF (oBox:show() = BOXREPLYNO)
+							self:oDCmperson:SetFocus()
+							RETURN FALSE
+						ENDIF 
 					endif
-				next
+				endif
+			ENDIF
+		ENDIF
+	ENDIF
+	//	determine accounts to be locked for change balance
+	cAccs:=Implode(oHm:aMIRROR,",",,,1)+iif(lInqUpd,','+ self:cOrgAccs,'')
+	if !lInqUpd 
+		//	add income records:
+		if	(!Empty(SINCHOME) .or.!Empty(SINC)) .and.(!Empty(self:mCLNGiver).or. oHm:lFromRPP)
+			if	AScan(oHm:aMIRROR,{|x|x[4]='AG' .and.x[18]=liability})>0
+				IF	!Empty(SINC)
+					cAccs+=','+SEXP+','+ SINC
+				endif	 			
+				IF	!Empty(SINCHOME)
+					cAccs+=','+SINCHOME+','+SEXPHOME
+				endif	
 			endif
 		endif
-		// determine accounts for locks for dueamounts:
-		IF	!Empty(self:mCLNGiver) .and. !lInqUpd
-			for nMir:=1 to Len(oHm:aMIRROR) 
-				// search for: KIND= 'D'	.or. KIND=	'A' .or.	KIND	= 'F'	.or.(Deb >	Cre .and.gc<>'CH' )     // storno also
-				IF	(j:=AScan(oHm:aMIRROR,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
-					cDueAccs+=iif(Empty(cDueAccs),'',',')+oHm:aMIRROR[nMir,1]	
+		// add rabat accounts:
+		if oHm:lFromRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
+			for nMir:=1 to Len(oHm:aMIRROR)
+				IF	(j:=AScan(oHm:aMIRROR,{|x|Empty(x[4]) .and.!Empty(x[15])	},nMir))>0	  // empty(gc)	and !empty(reference)
+					oHm:Recno=j	
+					IF	oHm:OPP== sEntity
+						if	At(cAccs,','+SEXP+',')=0
+							cAccs+=','+SEXP
+						endif
+						cAccs+=','+	samFld
+						exit
+					endif
 					nMir:=j
 				endif
 			next
-		endif 
-		self:Pointer := Pointer{POINTERHOURGLASS}
-
-		oStmnt:=SQLStatement{"set autocommit=0",oConn}
-		oStmnt:execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write'+iif(self:lTeleBank,',`teletrans` write','')+iif(self:lImport,',`importtrans` write','')+iif(!Empty(self:mCLNGiver),',`person` write','')+iif(!Empty(cDueAccs).or.lInqUpd,',`dueamount` write,`subscription` read',''),oConn} 
-		oStmnt:execute()
-		//	lock mbalance records:
-		// 		oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
-		// 			" and	year="+Str(Year(self:mDAT),-1)+;
-		// 			" and	month="+Str(Month(self:mDAT),-1)+' order by mbalid for update',oConn}
-		// 		if	!Empty(oMBal:Status)
-		// 			self:Pointer := Pointer{POINTERARROW}
-		// 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
-		// 			SQLStatement{"rollback",oConn}:Execute()
-		// 			self:mCLNGiver:=''
-		// 			return true
-		// 		endif	  
-
-		IF lInqUpd
-			* Update transaction
-			nSavRec:=oInqBrowse:Owner:server:Recno
-			oHm:SuspendNotification()	
-			cError:=self:UpdateTrans()
-			if !Empty(cError)
-				lError:=true
-				cError:=''
-			else
-				lError:=false
+		endif
+	endif
+	// determine accounts for locks for dueamounts:
+	IF	!Empty(self:mCLNGiver) .and. !lInqUpd
+		for nMir:=1 to Len(oHm:aMIRROR) 
+			// search for: KIND= 'D'	.or. KIND=	'A' .or.	KIND	= 'F'	.or.(Deb >	Cre .and.gc<>'CH' )     // storno also
+			IF	(j:=AScan(oHm:aMIRROR,{|x|x[5]=='D'.or.x[5]=='A'.or.x[5]=='F'.or.(x[2]>x[3].and.x[4]<>'CH')},nMir))>0	  
+				cDueAccs+=iif(Empty(cDueAccs),'',',')+oHm:aMIRROR[nMir,1]	
+				nMir:=j
 			endif
-		ELSE
-			* add new transaction:
-			self:Owner:STATUSMESSAGE( self:oLan:WGet("Recording transaction")+" "+cTransnr)
-			oHm:SuspendNotification()
-			if self:lTeleBank
-				// lock teletrans record:
-				oMyTele:=SqlSelect{"select lock_id from teletrans where teletrid="+Str(self:oTmt:CurTelId,-1)+;
-					" and processed='' and lock_id="+MYEMPID,oConn}
-				oMyTele:Execute()
-				if oMyTele:Reccount<1
-					SQLStatement{"rollback",oConn}:execute()
-					SQLStatement{"unlock tables",oConn}:execute()
-					self:mCLNGiver:=''
-					self:Pointer := Pointer{POINTERARROW}
-					ErrorBox{self,self:oLan:WGet("This telebank transaction has already been processed by someone else, thus skipped")}:show()
-					return true
-				endif
-			elseif self:lImport
-				// lock importrans records
-				if !self:oImpB:LockBatch()
-					SQLStatement{"rollback",oConn}:execute()
-					SQLStatement{"unlock tables",oConn}:execute()
-					self:mCLNGiver:=''
-					return true
-				endif				
+		next
+	endif 
+	self:Pointer := Pointer{POINTERHOURGLASS}
+
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:execute()
+	oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write'+iif(self:lTeleBank,',`teletrans` write','')+iif(self:lImport,',`importtrans` write','')+iif(!Empty(self:mCLNGiver),',`person` write','')+iif(!Empty(cDueAccs).or.lInqUpd,',`dueamount` write,`subscription` read',''),oConn} 
+	oStmnt:execute()
+	//	lock mbalance records:
+	// 		oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
+	// 			" and	year="+Str(Year(self:mDAT),-1)+;
+	// 			" and	month="+Str(Month(self:mDAT),-1)+' order by mbalid for update',oConn}
+	// 		if	!Empty(oMBal:Status)
+	// 			self:Pointer := Pointer{POINTERARROW}
+	// 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
+	// 			SQLStatement{"rollback",oConn}:Execute()
+	// 			self:mCLNGiver:=''
+	// 			return true
+	// 		endif	  
+
+	IF lInqUpd
+		* Update transaction
+		nSavRec:=oInqBrowse:Owner:server:Recno
+		oHm:SuspendNotification()	
+		cError:=self:UpdateTrans()
+		if !Empty(cError)
+			lError:=true
+			cError:=''
+		else
+			lError:=false
+		endif
+	ELSE
+		* add new transaction:
+		self:Owner:STATUSMESSAGE( self:oLan:WGet("Recording transaction")+" "+cTransnr)
+		oHm:SuspendNotification()
+		if self:lTeleBank
+			// lock teletrans record:
+			oMyTele:=SqlSelect{"select lock_id from teletrans where teletrid="+Str(self:oTmt:CurTelId,-1)+;
+				" and processed='' and lock_id="+MYEMPID,oConn}
+			oMyTele:Execute()
+			if oMyTele:Reccount<1
+				SQLStatement{"rollback",oConn}:execute()
+				SQLStatement{"unlock tables",oConn}:execute()
+				self:mCLNGiver:=''
+				self:Pointer := Pointer{POINTERARROW}
+				ErrorBox{self,self:oLan:WGet("This telebank transaction has already been processed by someone else, thus skipped")}:show()
+				return true
 			endif
-			/*			// set locks for dueamounts:
-			IF	!Empty(cDueAccs)
-			oDue:=SqlSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
-			oDue;Execute()
-			endif   */
-			// add to gifts income: 
-			//             1    2   3  4    5       6         7         8          9       10     11      12      13       14      15        16        17    18      19
-			// mirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
-			For i:=1 to Len(oHm:aMIRROR)
-				oHm:GoTo(i)
-				if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
-					// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
-					nSeqNbr++ 
-					cStatement:="insert into transaction set "+;
-						iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
-						iif(oHm:aMIRROR[i,4]='PF'.or.oHm:aMIRROR[i,4] = 'AG' .or.oHm:aMIRROR[i,4] = 'MG';
-						.or. (oHm:aMIRROR[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
-						.or. oHm:aMIRROR[i,5]= 'A' .or. oHm:aMIRROR[i,5] = 'F'.or. oHm:aMIRROR[i,5]="C","persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
-						"dat='"+SQLdate(self:mDAT)+"'"+;
-						",docid='"+Transform(self:mBst,"")+"'"+;
-						",description='"+AddSlashes(AllTrim(oHm:aMIRROR[i,16]))+"'"+; 
-					",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-						",accid='"+AllTrim(oHm:aMIRROR[i,1])+"'"+;
-						",deb="+Str(oHm:aMIRROR[i,2],-1)+;
-						",cre="+Str(oHm:aMIRROR[i,3],-1)+;
-						",gc='"+oHm:aMIRROR[i,4]+"'"+;
-						",userid='"+LOGON_EMP_ID +"'"+;
-						",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
-						",opp='"+oHm:OPP+"'"+;
-						",ppdest='"+SubStr(AllTrim(oHm:aMIRROR[i,15]),15)+"'"+; 
-					",currency='"+AllTrim(oHm:aMIRROR[i,11]) +"'"+;
-						",debforgn="+Str(oHm:aMIRROR[i,13],-1)+;
-						",creforgn="+Str(oHm:aMIRROR[i,14],-1)+;
-						",seqnr="+Str(nSeqnbr,-1)+;
-						iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
-					",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
-						iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:cre>oHm:Deb,",bfm='O'","")
-					oStmnt:=SQLStatement{cStatement,oConn}
-					oStmnt:Execute()
-					if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
-						if Empty(cTransnr)
-							cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-						endif
-						*	Update monthbalance value of corresponding account:
-						if ChgBalance(oHm:aMIRROR[i,1],self:mDAT,oHm:aMIRROR[i,2],oHm:aMIRROR[i,3],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11]) //accid,deb,cre
-							if oHm:aMIRROR[i,4]='AG'
-								// if from bank account, payahead or pretty cash or accounts receivable:
-								j:=AScan(oHm:aMIRROR,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or. AScanExact(aMyPayaHead,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})
-								do while j>0 .and.j=i
-									if j=Len(oHm:aMIRROR)
-										j:=0
-										exit
-									endif
-									j:=AScan(oHm:aMIRROR,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or. AScanExact(aMyPayaHead,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)},j+1)
-								enddo 
-								if oHm:FROMRPP .or. j>0 
-									// assessable gift not from income or expense account:
-									// 									lError:=!AddToIncome(oHm:aMirror[i,4],oHm:FROMRPP,oHm:aMirror[i,1],oHm:aMirror[i,3],oHm:aMirror[i,2],oHm:aMirror[i,13],oHm:aMirror[i,14],oHm:aMirror[i,11],oHm:aMirror[i,16],oHm:aMirror[i,18], self:mCLNGiver,;
-									// 										self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
-									lError:=!oAddInEx:AddToIncomeExp(oHm:aMIRROR[i,4],oHm:FROMRPP,oHm:aMIRROR[i,1],oHm:aMIRROR[i,3],oHm:aMIRROR[i,2],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11],oHm:aMIRROR[i,16],oHm:aMIRROR[i,18], self:mCLNGiver,;
-										self:mDAT,Transform(self:mBst,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+		elseif self:lImport
+			// lock importrans records
+			if !self:oImpB:LockBatch()
+				SQLStatement{"rollback",oConn}:execute()
+				SQLStatement{"unlock tables",oConn}:execute()
+				self:mCLNGiver:=''
+				return true
+			endif				
+		endif
+		/*			// set locks for dueamounts:
+		IF	!Empty(cDueAccs)
+		oDue:=SqlSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
+		oDue;Execute()
+		endif   */
+		// add to gifts income: 
+		//             1    2   3  4    5       6         7         8          9       10     11      12      13       14      15        16        17    18      19
+		// mirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
+		For i:=1 to Len(oHm:aMIRROR)
+			oHm:GoTo(i)
+			if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
+				// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
+				nSeqNbr++ 
+				cStatement:="insert into transaction set "+;
+					iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
+					iif(oHm:aMIRROR[i,4]='PF'.or.oHm:aMIRROR[i,4] = 'AG' .or.oHm:aMIRROR[i,4] = 'MG';
+					.or. (oHm:aMIRROR[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
+					.or. oHm:aMIRROR[i,5]= 'A' .or. oHm:aMIRROR[i,5] = 'F'.or. oHm:aMIRROR[i,5]="C","persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
+					"dat='"+SQLdate(self:mDAT)+"'"+;
+					",docid='"+Transform(self:mBst,"")+"'"+;
+					",description='"+AddSlashes(AllTrim(oHm:aMIRROR[i,16]))+"'"+; 
+				",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+					",accid='"+AllTrim(oHm:aMIRROR[i,1])+"'"+;
+					",deb="+Str(oHm:aMIRROR[i,2],-1)+;
+					",cre="+Str(oHm:aMIRROR[i,3],-1)+;
+					",gc='"+oHm:aMIRROR[i,4]+"'"+;
+					",userid='"+LOGON_EMP_ID +"'"+;
+					",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
+					",opp='"+oHm:OPP+"'"+;
+					",ppdest='"+SubStr(AllTrim(oHm:aMIRROR[i,15]),15)+"'"+; 
+				",currency='"+AllTrim(oHm:aMIRROR[i,11]) +"'"+;
+					",debforgn="+Str(oHm:aMIRROR[i,13],-1)+;
+					",creforgn="+Str(oHm:aMIRROR[i,14],-1)+;
+					",seqnr="+Str(nSeqnbr,-1)+;
+					iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
+				",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
+					iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:cre>oHm:Deb,",bfm='O'","")
+				oStmnt:=SQLStatement{cStatement,oConn}
+				oStmnt:Execute()
+				if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
+					if Empty(cTransnr)
+						cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+					endif
+					*	Update monthbalance value of corresponding account:
+					if ChgBalance(oHm:aMIRROR[i,1],self:mDAT,oHm:aMIRROR[i,2],oHm:aMIRROR[i,3],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11]) //accid,deb,cre
+						if oHm:aMIRROR[i,4]='AG'
+							// if from bank account, payahead or pretty cash or accounts receivable:
+							j:=AScan(oHm:aMIRROR,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or. AScanExact(aMyPayaHead,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})
+							do while j>0 .and.j=i
+								if j=Len(oHm:aMIRROR)
+									j:=0
+									exit
 								endif
+								j:=AScan(oHm:aMIRROR,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or. AScanExact(aMyPayaHead,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)},j+1)
+							enddo 
+							if oHm:FROMRPP .or. j>0 
+								// assessable gift not from income or expense account:
+								// 									lError:=!AddToIncome(oHm:aMirror[i,4],oHm:FROMRPP,oHm:aMirror[i,1],oHm:aMirror[i,3],oHm:aMirror[i,2],oHm:aMirror[i,13],oHm:aMirror[i,14],oHm:aMirror[i,11],oHm:aMirror[i,16],oHm:aMirror[i,18], self:mCLNGiver,;
+								// 										self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+								lError:=!oAddInEx:AddToIncomeExp(oHm:aMIRROR[i,4],oHm:FROMRPP,oHm:aMIRROR[i,1],oHm:aMIRROR[i,3],oHm:aMIRROR[i,2],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11],oHm:aMIRROR[i,16],oHm:aMIRROR[i,18], self:mCLNGiver,;
+									self:mDAT,Transform(self:mBst,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
 							endif
-							if !lError
-								if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
-									// correct rabat assessment if needed: 
-									if Empty(oHm:aMIRROR[i,4]) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
-										oAccFld:=SqlSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
-											AllTrim(oHm:REFERENCE)+"'",oConn}
-										if oAccFld:category==liability
-											if ChgBalance(SEXP, self:mDAT,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,sCURR)
-												nSeqnbr++ 
-												cStatement:="insert into transaction set "+;
-													"transid="+cTransnr+;
-													",dat='"+SQLdate(self:mDAT)+"'"+;
-													",docid='"+self:mBst+"'"+;
-													",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense for assessment field&int')))+"'"+; 
-												",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-													",accid='"+SEXP+"'"+;
-													",deb="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
-													",userid='"+LOGON_EMP_ID +"'"+;
-													",debforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
-													",currency='"+sCurr+"'"+;
-													",seqnr="+Str(nSeqnbr,-1)+;
-													",poststatus=2" 
-												oStmnt:=SQLStatement{cStatement,oConn}
-												oStmnt:Execute()
-												if oStmnt:NumSuccessfulRows>0
-													if ChgBalance(samFld,self:mDAT,0,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal), 0	,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal),sCURR)
-														nSeqnbr++ 
-														cStatement:="insert into transaction set "+;
-															"transid="+cTransnr+;
-															",dat='"+SQLdate(self:mDAT)+"'"+;
-															",docid='"+self:mBst+"'"+;
-															",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense	for assessment	field&int')))+"'"+; 
-														",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-															",accid='"+samFld+"'"+;
-															",cre="+Str(oHm:aMIRROR[i,3]	- oHm:aMIRROR[i,2],-1)+;
-															",userid='"+LOGON_EMP_ID +"'"+;
-															",creforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
-															",currency='"+sCurr+"'"+;
-															",seqnr="+Str(nSeqnbr,-1)+;
-															",poststatus=2" 
-														oStmnt:=SQLStatement{cStatement,oConn}
-														oStmnt:Execute()
-														if	!oStmnt:NumSuccessfulRows>0
-															lError:=true
-														endif
-													else
+						endif
+						if !lError
+							if oHm:FROMRPP  .and.!Empty( samFld ) .and.!Empty( SEXP )
+								// correct rabat assessment if needed: 
+								if Empty(oHm:aMIRROR[i,4]) .and. oHm:OPP== sEntity .and. !Empty(oHm:REFERENCE) 
+									oAccFld:=SqlSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
+										AllTrim(oHm:REFERENCE)+"'",oConn}
+									if oAccFld:category==liability
+										if ChgBalance(SEXP, self:mDAT,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,sCURR)
+											nSeqnbr++ 
+											cStatement:="insert into transaction set "+;
+												"transid="+cTransnr+;
+												",dat='"+SQLdate(self:mDAT)+"'"+;
+												",docid='"+self:mBst+"'"+;
+												",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense for assessment field&int')))+"'"+; 
+											",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+												",accid='"+SEXP+"'"+;
+												",deb="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
+												",userid='"+LOGON_EMP_ID +"'"+;
+												",debforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
+												",currency='"+sCurr+"'"+;
+												",seqnr="+Str(nSeqnbr,-1)+;
+												",poststatus=2" 
+											oStmnt:=SQLStatement{cStatement,oConn}
+											oStmnt:Execute()
+											if oStmnt:NumSuccessfulRows>0
+												if ChgBalance(samFld,self:mDAT,0,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal), 0	,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal),sCURR)
+													nSeqnbr++ 
+													cStatement:="insert into transaction set "+;
+														"transid="+cTransnr+;
+														",dat='"+SQLdate(self:mDAT)+"'"+;
+														",docid='"+self:mBst+"'"+;
+														",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense	for assessment	field&int')))+"'"+; 
+													",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+														",accid='"+samFld+"'"+;
+														",cre="+Str(oHm:aMIRROR[i,3]	- oHm:aMIRROR[i,2],-1)+;
+														",userid='"+LOGON_EMP_ID +"'"+;
+														",creforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
+														",currency='"+sCurr+"'"+;
+														",seqnr="+Str(nSeqnbr,-1)+;
+														",poststatus=2" 
+													oStmnt:=SQLStatement{cStatement,oConn}
+													oStmnt:Execute()
+													if	!oStmnt:NumSuccessfulRows>0
 														lError:=true
 													endif
 												else
 													lError:=true
-													cError:=oStmnt:ErrInfo:errormessage
 												endif
 											else
 												lError:=true
+												cError:=oStmnt:ErrInfo:errormessage
 											endif
+										else
+											lError:=true
 										endif
 									endif
 								endif
 							endif
-						ELSE
-							lError:=true
 						endif
 					ELSE
-						cError:=oStmnt:ErrInfo:errormessage
 						lError:=true
 					endif
+				ELSE
+					cError:=oStmnt:ErrInfo:errormessage
+					lError:=true
 				endif
-				if !lError
-					//	Update balances of subscriptions/due amounts/ donations:
-					// 					IF	!Empty(self:mCLNGiver)
-					IF	!Empty(cDueAccs)
-						IF	(oHm:aMIRROR[i,5]= 'D'	.or. oHm:aMIRROR[i,5]=	'A' .or.	oHm:aMIRROR[i,5]	= 'F'	.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' ))			 // storno also
-							cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:aMirror[i,1]),oHm:aMirror[i,2],oHm:aMirror[i,3])
-							if !Empty(cError)
-								lError:=true
-								// 								exit
-							endif
-						ENDIF
-					endif
-				endif
-				if lError
-					SQLStatement{"rollback",oConn}:execute()
-					SQLStatement{"unlock tables",oConn}:execute()
-					self:Pointer := Pointer{POINTERARROW}
-					LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-					ErrorBox{self,"transaction could not be stored:"+cError}:show()
-					self:mCLNGiver:=''
-					return false
-				endif
-			next
-			// 			self:Pointer := Pointer{POINTERARROW}
-			// 			IF self:lTeleBank
-			// 				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
-			// 			elseif self:lImport
-			// 				self:oImpB:CloseBatch(lSave,self:Owner)  // includes commit
-			// 			ENDIF
-			// 			self:oDCGiroText:TextValue:="   "
-			// 			lSave:=FALSE
-			oHm:ResetNotification()	
-		ENDIF
-		if !lError
-			// 			oStmnt:=SQLStatement{"commit",oConn}
-			// 			oStmnt:Execute() 
-			// 			if Empty(oStmnt:Status) 
-			IF !Empty(self:mCLNGiver)
-				*  update data of giver:
-				i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
-				IF i>0 
-					oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
-					if oPers:Reccount>0
-						cCodNew:=oPers:mailingcodes
-						DO WHILE i>0
-							PersonGiftdata(oHm:AMirror[i,5],@cCodNew,iif(empty(oPers:datelastgift),null_date,oPers:datelastgift),oHm:AMirror[i,4],null_string,false)
-							i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
-						ENDDO
-						if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
-							&& fill date last gift:
-							oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
-							oStmnt:execute() 
-							if !Empty(oStmnt:Status)
-								lError:=true 
-								cError:=oStmnt:ErrInfo:errorstatus
-							endif
-						endif
-					endif
-				ENDIF
-			ENDIF 
-			if !lError.and. self:lImport
-				oStmnt:=SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:oImpB:CurBatchNbr+;
-					"' and origin='"+self:oImpB:CurOrigin+"' and transdate='"+SQLdate(self:oImpB:CurDate)+"'",oConn}
-				oStmnt:execute()
-				if !Empty(oStmnt:Status)
-					lError:=true 
-					cError:=oStmnt:ErrInfo:errorstatus
-				endif 
 			endif
 			if !lError
-				self:oDCmTRANSAKTNR:TEXTValue := cTransnr
+				//	Update balances of subscriptions/due amounts/ donations:
+				// 					IF	!Empty(self:mCLNGiver)
+				IF	!Empty(cDueAccs)
+					IF	(oHm:aMIRROR[i,5]= 'D'	.or. oHm:aMIRROR[i,5]=	'A' .or.	oHm:aMIRROR[i,5]	= 'F'	.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' ))			 // storno also
+						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:aMirror[i,1]),oHm:aMirror[i,2],oHm:aMirror[i,3])
+						if !Empty(cError)
+							lError:=true
+							// 								exit
+						endif
+					ENDIF
+				endif
+			endif
+			if lError
+				SQLStatement{"rollback",oConn}:execute()
+				SQLStatement{"unlock tables",oConn}:execute()
+				self:Pointer := Pointer{POINTERARROW}
+				LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+				ErrorBox{self,"transaction could not be stored:"+cError}:show()
+				self:mCLNGiver:=''
+				return false
+			endif
+		next
+		// 			self:Pointer := Pointer{POINTERARROW}
+		// 			IF self:lTeleBank
+		// 				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
+		// 			elseif self:lImport
+		// 				self:oImpB:CloseBatch(lSave,self:Owner)  // includes commit
+		// 			ENDIF
+		// 			self:oDCGiroText:TextValue:="   "
+		// 			lSave:=FALSE
+		oHm:ResetNotification()	
+	ENDIF
+	if !lError
+		// 			oStmnt:=SQLStatement{"commit",oConn}
+		// 			oStmnt:Execute() 
+		// 			if Empty(oStmnt:Status) 
+		IF !Empty(self:mCLNGiver)
+			*  update data of giver:
+			i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
+			IF i>0 
+				oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
+				if oPers:Reccount>0
+					cCodNew:=oPers:mailingcodes
+					DO WHILE i>0
+						PersonGiftdata(oHm:AMirror[i,5],@cCodNew,iif(empty(oPers:datelastgift),null_date,oPers:datelastgift),oHm:AMirror[i,4],null_string,false)
+						i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
+					ENDDO
+					if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
+						&& fill date last gift:
+						oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
+						oStmnt:execute() 
+						if !Empty(oStmnt:Status)
+							lError:=true 
+							cError:=oStmnt:ErrInfo:errorstatus
+						endif
+					endif
+				endif
+			ENDIF
+		ENDIF 
+		if !lError.and. self:lImport
+			oStmnt:=SQLStatement{"update importtrans set processed=1,lock_id=0 where transactnr='"+self:oImpB:CurBatchNbr+;
+				"' and origin='"+self:oImpB:CurOrigin+"' and transdate='"+SQLdate(self:oImpB:CurDate)+"'",oConn}
+			oStmnt:execute()
+			if !Empty(oStmnt:Status)
+				lError:=true 
+				cError:=oStmnt:ErrInfo:errorstatus
+			endif 
+		endif
+		if !lError .and. self:lTeleBank 
+			oStmnt:=SQLStatement{"update teletrans set processed='X', lock_id=0 where teletrid="+Str(self:oTmt:CurTelId,-1),oConn}
+			oStmnt:execute()
+			if !Empty(oStmnt:status)
+				lError:=true 
+				cError:=oStmnt:ErrInfo:errorstatus
 			endif
 		endif
-		// 		ENDIF
-	ENDIF
+		if !lError
+			self:oDCmTRANSAKTNR:TEXTValue := cTransnr
+		endif
+	endif 
+	// 	else
+	// 		ENDIF
+// 	ENDIF
 	IF lError
 		SQLStatement{"rollback",oConn}:execute()
 		SQLStatement{"unlock tables",oConn}:execute()
@@ -2396,22 +2405,15 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		ErrorBox{self,"transaction could not be stored:"+cError}:show()
 		self:mCLNGiver:=''
 		return false
-		self:oSFGeneralJournal1:Browser:SetFocus()
-		oHm:GoTop()
-		self:oSFGeneralJournal1:Browser:Refresh()
-		oHm:GoTo(ErrorLine,6)
-		RETURN FALSE
 	endif 
 	SQLStatement{"commit",oConn}:execute()
 	SQLStatement{"unlock tables",oConn}:execute() 
 	SQLStatement{"set autocommit=1",oConn}:execute()
 	self:Pointer := Pointer{POINTERARROW}
-	IF self:lTeleBank 
-		self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
-	elseif self:lImport
-		self:oImpB:CloseBatch(lSave,self:Owner)  
+	if self:lImport
+		self:oImpB:CloseBatch(lSave,self:owner)  
 	ENDIF
-	self:oDCGiroText:TEXTValue:="   "
+	self:oDCGiroText:TextValue:="   "
 	lSave:=FALSE
 
 	IF lInqUpd
@@ -2420,7 +2422,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		else
 			self:oOwner:ShowSelection()
 		endif
-		self:oInqBrowse:Owner:GoTo(nSavRec)
+		self:oInqBrowse:owner:Goto(nSavRec)
 		self:lStop:=true
 		self:EndWindow()
 	ENDIF
@@ -4017,336 +4019,382 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			RETURN FALSE
 		ELSEIF 	!self:ValidateTempGift()
 			curPntr := oHm:Recno
-			lError := true
-		ELSE
-			if sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
-				ErrorBox{self:owner, self:oTmt:m56_contra_bankaccnt+': '+self:oLan:WGet("not a sepa bank account; convert it via https://www.ibanbicservice.nl/SingleRequest.aspx")+CRLF+; 
-				" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF;
+			RETURN FALSE
+		endif
+		if sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
+			ErrorBox{self:owner, self:oTmt:m56_contra_bankaccnt+': '+self:oLan:WGet("not a sepa bank account; convert it via https://www.ibanbicservice.nl/SingleRequest.aspx")+CRLF+; 
+			" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF;
 				+self:oLan:wget("and add it to this giver before entering this gift")}:show()
-				return false
-			endif
-			* Check giver:
-			IF !Recognised
-				m54_pers_sta:=oHm:m54w_rek_pers()
-				IF Val(self:mCLNGiver)=0
-					IF m54_pers_sta='V'
-						(ErrorBox{self:owner,self:oLan:wget('Specify a person as payer')}):show()
-						self:oDCmPerson:SetFocus()
-						RETURN FALSE
-					ELSEIF m54_pers_sta=='W'
-						oBox := Warningbox{self:owner, self:oLan:WGet("Input of Payments/Gifts"), ;
-							self:oLan:wget("Don't you need to specify a giver/payer")+'?'}
-						oBox:Type := BUTTONYESNO
-						IF (oBox:Show() = BOXREPLYYES)
-							self:oDCmperson:SetFocus()
-							RETURN FALSE
-						ENDIF
-					ENDIF
-				ELSE
-					IF m54_pers_sta='N'
-						(errorbox{self:owner,self:oLan:WGet('No person allowed in this case')}):show()
+			return false
+		endif
+		* Check giver:
+		IF !Recognised
+			m54_pers_sta:=oHm:m54w_rek_pers()
+			IF Val(self:mCLNGiver)=0
+				IF m54_pers_sta='V'
+					(ErrorBox{self:owner,self:oLan:wget('Specify a person as payer')}):show()
+					self:oDCmPerson:SetFocus()
+					RETURN FALSE
+				ELSEIF m54_pers_sta=='W'
+					oBox := Warningbox{self:owner, self:oLan:WGet("Input of Payments/Gifts"), ;
+						self:oLan:wget("Don't you need to specify a giver/payer")+'?'}
+					oBox:Type := BUTTONYESNO
+					IF (oBox:Show() = BOXREPLYYES)
 						self:oDCmperson:SetFocus()
 						RETURN FALSE
-					ELSEIF m54_pers_sta=='O'
-						oBox := WarningBox{self:owner, self:oLan:wget("Input of Payments/Gifts"),self:oLan:wget('Payer really a person')+'?'}
-						oBox:Type := BUTTONYESNO
-						IF (oBox:Show() = BOXREPLYNO)
-							self:oDCmperson:SetFocus()
-							RETURN FALSE
-						ENDIF
+					ENDIF
+				ENDIF
+			ELSE
+				IF m54_pers_sta='N'
+					(errorbox{self:owner,self:oLan:WGet('No person allowed in this case')}):show()
+					self:oDCmperson:SetFocus()
+					RETURN FALSE
+				ELSEIF m54_pers_sta=='O'
+					oBox := WarningBox{self:owner, self:oLan:wget("Input of Payments/Gifts"),self:oLan:wget('Payer really a person')+'?'}
+					oBox:Type := BUTTONYESNO
+					IF (oBox:Show() = BOXREPLYNO)
+						self:oDCmperson:SetFocus()
+						RETURN FALSE
 					ENDIF
 				ENDIF
 			ENDIF
-			oHm:SuspendNotification()	
-			* add transaction:
-			oHm:ClearFilter()
-			oHm:SetFilter({||!Empty(oHm:Cre)},"!Empty(Cre)") //skip non-assigned rows
-			oHm:gotop()
-			//	determine accounts to be locked for change balance
-			cAccs:=Implode(oHm:Amirror,",",,,1)
-			//	add income records:
-			if	(!Empty(SINCHOME) .or.!Empty(SINC)) .and.!Empty(self:mCLNGiver)
-				if	AScan(oHm:Amirror,{|x|x[4]='AG' .and.x[13]=liability})>0
-					IF	!Empty(SINC)
-						cAccs+=','+SEXP+','+ SINC
-					endif	 			
-					IF	!Empty(SINCHOME)
-						cAccs+=','+SINCHOME+','+SEXPHOME
-					endif	
-				endif
+		ENDIF
+		oHm:SuspendNotification()	
+		* add transaction:
+		oHm:ClearFilter()
+		oHm:SetFilter({||!Empty(oHm:Cre)},"!Empty(Cre)") //skip non-assigned rows
+		oHm:gotop()
+		//	determine accounts to be locked for change balance
+		cAccs:=Implode(oHm:Amirror,",",,,1)
+		//	add income records:
+		if	(!Empty(SINCHOME) .or.!Empty(SINC)) .and.!Empty(self:mCLNGiver)
+			if	AScan(oHm:Amirror,{|x|x[4]='AG' .and.x[13]=liability})>0
+				IF	!Empty(SINC)
+					cAccs+=','+SEXP+','+ SINC
+				endif	 			
+				IF	!Empty(SINCHOME)
+					cAccs+=','+SINCHOME+','+SEXPHOME
+				endif	
 			endif
-     		self:Pointer := Pointer{POINTERHOURGLASS}
+		endif
+		self:Pointer := Pointer{POINTERHOURGLASS}   
+		IF !Empty(self:mCLNGiver) 
+			// prepare values of person fields to be updated:
+			oPers:=SqlSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
+			if oPers:Reccount>0
+				cCod:=oPers:mailingcodes
+				cExtra:=oPers:PROPEXTR 
+				BDAT:=iif(Empty(oPers:creationdate),null_date,oPers:creationdate) 
+				dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
+			else
+				cCod:=''
+				cExtra:=''
+				BDAT:=null_date
+				dlg:=null_date
+			endif
+			FOR i=1 to Len(oHm:aMIRROR)
+				IF oHm:aMIRROR[i,3]<=0.or.Empty(oHm:aMIRROR[i,5]) //cre, category
+					loop
+				ENDIF
+				IF oHm:aMIRROR[1,5]="G".or.oHm:aMIRROR[1,5]="M" // gift to a project/fund/member     //category
+					* Update Mailing code in Person :
+					oAcc:=SqlSelect{"select clc,propxtra from account where accid="+oHm:aMIRROR[i,7],oConn}
+					IF oAcc:Reccount>0
+						if !Empty(oAcc:CLC)
+							ADDMLCodes(oAcc:CLC,@cCod)
+						endif
+						// idem for extra properties for new persons:
+						IF !Empty(oAcc:PROPXTRA) .and. BDAT=Today()
+							IF Empty(cExtra) .or. cExtra="<velden></velden>"
+								cExtra:=oAcc:PROPXTRA
+							else
+								oXMLDocAcc:=XMLDocument{oAcc:PROPXTRA}
+								oXMLDocPrs:=XMLDocument{cExtra} 
+								IF oXMLDocAcc:GetElement("velden")
+									recordfound:=oXMLDocAcc:GetFirstChild()
+									do while recordfound
+										ChildName:=oXMLDocAcc:ChildName
+										cValue:=oXMLDocAcc:ChildContent
+										IF oXMLDocPrs:GetElement(ChildName)
+											IF Empty(oXMLDocPrs:GetContentCurrentElement())
+												oXMLDocPrs:UpdateContentCurrentElement(cValue)
+											endif
+										else
+											oXMLDocPrs:AddElement(ChildName,cValue,"velden")
+										endif
+										recordfound:=oXMLDocAcc:GetNextChild()			
+									ENDDO
+									cExtra:= oXMLDocPrs:GetBuffer()
+								endif	
+							endif																		
+						endif
+					endif  
+				endif  
 
-			SQLStatement{"start transaction",oConn}:Execute()
-			nSeqnbr:=1 
-			//	lock mbalance records:
-			oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
-				" and	year="+Str(Year(self:mDAT),-1)+;
-				" and	Month="+Str(Month(self:mDAT),-1)+" order by mbalid for	update",oConn}
-			if	!Empty(oMBal:status)
-				self:Pointer := Pointer{POINTERARROW}
-				ErrorBox{self,self:oLan:wget("balance records locked by someone else, thus	skipped")}:show()
-				SQLStatement{"rollback",oConn}:Execute()
-				return true
-			endif	  
-			if self:lEarmarking
-				// check if current non-earmarked transaction still not yet assigned
-				oSel:=SQLSelect{"select bfm,userid from transaction where transid="+Str(self:nEarmarkTrans,-1)+" and seqnr="+Str(self:nEarmarkSeqnr,-1)+" order by transid,seqnr for update",oConn}
-				if oSel:reccount>0
-					if !oSel:bfm=="O"
-						self:Pointer := Pointer{POINTERARROW}
-						ErrorBox{self:owner,self:oLan:wget("current non-earmarked gift allready assigned by")+Space(1)+oSel:userid}:show()
-						SQLStatement{"rollback",oConn}:Execute()
-						return false
-					endif
-				else 
+			NEXT
+		endif
+		
+		
+		// 			SQLStatement{"start transaction",oConn}:execute()  
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:execute()
+		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write'+iif(self:lTeleBank,',`teletrans` write','')+;
+			iif(!Empty(self:mCLNGiver),',`person` write, `personbank` write '+;
+			iif(AScan(oHm:aMIRROR,{|x|!Empty(x[12])})>0 ,',`dueamount` write,`subscription` write',''),''),oConn} 
+		oStmnt:execute()
+		
+		nSeqnbr:=1 
+		//	lock mbalance records:
+		// 			oMBal:=SQLSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
+		// 				" and	year="+Str(Year(self:mDAT),-1)+;
+		// 				" and	Month="+Str(Month(self:mDAT),-1)+" order by mbalid for	update",oConn}
+		// 			if	!Empty(oMBal:status)
+		// 				self:Pointer := Pointer{POINTERARROW}
+		// 				ErrorBox{self,self:oLan:wget("balance records locked by someone else, thus	skipped")}:show()
+		// 				SQLStatement{"rollback",oConn}:Execute()
+		// 				return true
+		// 			endif	  
+		if self:lEarmarking
+			// check if current non-earmarked transaction still not yet assigned
+			oSel:=SqlSelect{"select bfm,userid from transaction where transid="+Str(self:nEarmarkTrans,-1)+" and seqnr="+Str(self:nEarmarkSeqnr,-1)+" order by transid,seqnr",oConn}
+			if oSel:reccount>0
+				if !oSel:bfm=="O"
 					self:Pointer := Pointer{POINTERARROW}
-					ErrorBox{self:owner,self:oLan:wget("current non-earmarked gift allready assigned by someone else")}:show() 
-					SQLStatement{"rollback",oConn}:Execute()
+					SQLStatement{"rollback",oConn}:execute()
+					SQLStatement{"unlock tables",oConn}:execute()
+					SQLStatement{"set autocommit=1",oConn}:execute()
+					ErrorBox{self:Owner,self:oLan:WGet("current non-earmarked gift allready assigned by")+Space(1)+oSel:userid}:show()
 					return false
 				endif
+			else 
+				self:Pointer := Pointer{POINTERARROW}
+				SQLStatement{"rollback",oConn}:Execute()
+				SQLStatement{"unlock tables",oConn}:execute()
+				SQLStatement{"set autocommit=1",oConn}:execute()
+				ErrorBox{self:Owner,self:oLan:WGet("current non-earmarked gift allready assigned by someone else")}:show() 
+				return false
 			endif
-			* book contra DebitAccount:
-			cTransnr:='' 
-			oStmnt:=SQLStatement{"insert into transaction set "+;
-				"dat='"+SQLdate(self:mDAT)+"'"+;
-				",docid='"+self:oDCmBST:Value+"'"+;
-				",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)+iif(Empty(self:odccGirotelText:TextValue),'',' ('+AllTrim(self:odccGirotelText:TextValue)+')')) +"'"+;
-				",accid="+self:DebAccId+;
-				",deb="+Str(self:mDebAmnt,-1)+;
-				",debforgn="+Str(self:mDebAmntF,-1)+;
-				",currency='"+self:DebCurrency+"'"+;
-				",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
-			",seqnr="+Str(nSeqnbr,-1)+;
-				iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",gc='CH'",iif(self:lEarmarking,",bfm='T'","")),oConn} // member giver from member account
-			oStmnt:Execute()
-			if oStmnt:NumSuccessfulRows>0
-				cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-				self:Owner:STATUSMESSAGE( "Recording transaction "+cTransnr)
-				if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
-					DO	WHILE	! oHm:EOF 
-						nSeqnbr++ 
-						oStmnt:=SQLStatement{"insert into transaction set "+;
-							"transid="+cTransnr+;
-							",seqnr="+Str(nSeqnbr,-1)+;
-							",persid='"+Str(Val(self:mCLNGiver),-1)+"'"+;
-							",dat='"+SQLdate(self:mDAT)+"'"+;
-							",docid='"+self:oDCmBST:Value+"'"+;
-							",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-							",description='"+AddSlashes( AllTrim(oHm:DESCRIPTN)) +"'"+;
-							",accid='"+oHm:AccID+"'"+;
-							",cre='"+Str(oHm:Cre,-1)+"'"+; 
-						",creforgn='"+ Str(oHm:CREFORGN,-1)+"'"+; 
-						",currency='"+ oHm:CURRENCY+"'"+;
-							",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+;
-							iif(SPROJ ==AllTrim(oHm:AccID).and.!Empty(self:mCLNGiver).and.oHm:Cre>0,",bfm='O'","")+;
-							",gc='"+oHm:GC+"'",oConn} 
-						oStmnt:Execute()
-						if	oStmnt:NumSuccessfulRows>0
-							if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
-								if !oHm:Cre==0 .and. (self:DebCategory==liability .or. self:DebCategory==asset)
-// 									if !AddToIncome(oHm:GC,false,oHm:AccID,oHm:cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
-									if !self:oAddInEx:AddToIncomeExp(oHm:GC,false,oHm:AccID,oHm:Cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:CURRENCY,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
-										lError:=true
-										exit
-									endif
-								endif 
-							else
-								lError:=true
-								exit
-							endif
+		endif
+		* book contra DebitAccount:
+		cTransnr:='' 
+		oStmnt:=SQLStatement{"insert into transaction set "+;
+			"dat='"+SQLdate(self:mDAT)+"'"+;
+			",docid='"+self:oDCmBST:Value+"'"+;
+			",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)+iif(Empty(self:odccGirotelText:TextValue),'',' ('+AllTrim(self:odccGirotelText:TextValue)+')')) +"'"+;
+			",accid="+self:DebAccId+;
+			",deb="+Str(self:mDebAmnt,-1)+;
+			",debforgn="+Str(self:mDebAmntF,-1)+;
+			",currency='"+self:DebCurrency+"'"+;
+			",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
+		",seqnr="+Str(nSeqnbr,-1)+;
+			iif(self:lMemberGiver.and.!Empty(Val(self:DebCln)),",gc='CH'",iif(self:lEarmarking,",bfm='T'","")),oConn} // member giver from member account
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows>0
+			cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			self:Owner:STATUSMESSAGE( "Recording transaction "+cTransnr)
+			if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
+				DO	WHILE	! oHm:EOF 
+					nSeqnbr++ 
+					oStmnt:=SQLStatement{"insert into transaction set "+;
+						"transid="+cTransnr+;
+						",seqnr="+Str(nSeqnbr,-1)+;
+						",persid='"+Str(Val(self:mCLNGiver),-1)+"'"+;
+						",dat='"+SQLdate(self:mDAT)+"'"+;
+						",docid='"+self:oDCmBST:Value+"'"+;
+						",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+						",description='"+AddSlashes( AllTrim(oHm:DESCRIPTN)) +"'"+;
+						",accid='"+oHm:AccID+"'"+;
+						",cre='"+Str(oHm:Cre,-1)+"'"+; 
+					",creforgn='"+ Str(oHm:CREFORGN,-1)+"'"+; 
+					",currency='"+ oHm:CURRENCY+"'"+;
+						",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+;
+						iif(SPROJ ==AllTrim(oHm:AccID).and.!Empty(self:mCLNGiver).and.oHm:Cre>0,",bfm='O'","")+;
+						",gc='"+oHm:GC+"'",oConn} 
+					oStmnt:Execute()
+					if	oStmnt:NumSuccessfulRows>0
+						if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
+							if !oHm:Cre==0 .and. (self:DebCategory==liability .or. self:DebCategory==asset)
+								// 									if !AddToIncome(oHm:GC,false,oHm:AccID,oHm:cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
+								if !self:oAddInEx:AddToIncomeExp(oHm:GC,false,oHm:AccID,oHm:Cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:CURRENCY,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
+									lError:=true
+									exit
+								endif
+							endif 
 						else
 							lError:=true
-							LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 							exit
 						endif
-						oHm:skip()
-					ENDDO
-					if self:lEarmarking
-						oStmnt:=SQLStatement{"update transaction set bfm='T',userid='"+AddSlashes(LOGON_EMP_ID)+"' where transid="+Str(self:nEarmarkTrans,-1)+" and accid="+SPROJ,oConn}
-						oStmnt:Execute()
-						if !Empty(oStmnt:status)
-							lError:=true
-							LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-						endif
+					else
+						lError:=true
+						LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+						exit
 					endif
-				else
-					lError:=true
+					oHm:skip()
+				ENDDO
+				if self:lEarmarking
+					oStmnt:=SQLStatement{"update transaction set bfm='T',userid='"+AddSlashes(LOGON_EMP_ID)+"' where transid="+Str(self:nEarmarkTrans,-1)+" and accid="+SPROJ,oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:status)
+						lError:=true
+						LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+					endif
 				endif
 			else
 				lError:=true
 			endif
-			if !lError
-				IF !Empty(self:mCLNGiver)
-					FOR i=1 to Len(oHm:Amirror)
-						IF	!Empty(oHm:Amirror[i,12]) 
-							**	update due amount
-							oStmnt:=	SQLStatement{"update	dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
-								"where dueid="+oHm:Amirror[i,12],oConn}
-							oStmnt:Execute() 
-							if	!empty(oStmnt:Status)
-								lError:=true
-								LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-								exit
-							endif
-						ENDIF
-					next
-				endif
-			endif
-			self:Pointer := Pointer{POINTERARROW}
-			if lError
-				SQLStatement{"rollback",oConn}:Execute()
-				ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:Errormessage)}:show()
-				self:mCLNGiver:=''
-// 				Break
-				return false
-			else
-				SQLStatement{"commit",oConn}:execute()
-			endif
-			self:ShowDebBal()
+		else
+			lError:=true
+		endif
+		if !lError
 			IF !Empty(self:mCLNGiver)
-				oPers:=SQLSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
-				if oPers:reccount>0
-					cCod:=oPers:mailingcodes
-					cExtra:=oPers:PROPEXTR 
-					BDAT:=iif(Empty(oPers:creationdate),null_date,oPers:creationdate) 
-					dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
-				else
-					cCod:=''
-					cExtra:=''
-					BDAT:=null_date
-					dlg:=null_date
-				endif
 				FOR i=1 to Len(oHm:Amirror)
-					IF oHm:aMirror[i,3]<=0.or.Empty(oHm:aMirror[i,5]) //cre, category
-						loop
-					ENDIF
-					IF oHm:Amirror[1,5]="G".or.oHm:Amirror[1,5]="M" // gift to a project/fund/member     //category
-						* Update Mailing code in Person :
-						oAcc:=SQLSelect{"select clc,propxtra from account where accid="+oHm:Amirror[i,7],oConn}
-						IF oAcc:reccount>0
-							if !Empty(oAcc:CLC)
-								ADDMLCodes(oAcc:CLC,@cCod)
-							endif
-							// idem for extra properties for new persons:
-							IF !Empty(oAcc:PROPXTRA) .and. BDAT=Today()
-								IF Empty(cExtra) .or. cExtra="<velden></velden>"
-									cExtra:=oAcc:PROPXTRA
-								else
-									oXMLDocAcc:=XMLDocument{oAcc:PROPXTRA}
-									oXMLDocPrs:=XMLDocument{cExtra} 
-									IF oXMLDocAcc:GetElement("velden")
-										recordfound:=oXMLDocAcc:GetFirstChild()
-										do while recordfound
-											ChildName:=oXMLDocAcc:ChildName
-											cValue:=oXMLDocAcc:ChildContent
-											IF oXMLDocPrs:GetElement(ChildName)
-												IF Empty(oXMLDocPrs:GetContentCurrentElement())
-													oXMLDocPrs:UpdateContentCurrentElement(cValue)
-												endif
-											else
-												oXMLDocPrs:AddElement(ChildName,cValue,"velden")
-											endif
-											recordfound:=oXMLDocAcc:GetNextChild()			
-										ENDDO
-										cExtra:= oXMLDocPrs:GetBuffer()
-									endif	
-								endif																		
-							endif
-						endif  
-					endif
-					// 					IF !Empty(oHm:aMirror[i,12]) 
-					// 						** update due amount
-					// 						oStmnt:= SQLStatement{"update dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
-					// 							"where dueid="+oHm:Amirror[i,12],oConn}
-					// 						oStmnt:execute()
-					// 					ENDIF
-				NEXT
-				*  Update person info of giver:
-				i:= AScan(oHm:Amirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
-				IF i>0
-					DO WHILE i>0
-						// 						PersonGiftdata(AllTrim(oHm:aMirror[i,7]),oHm:aMirror[i,5],@cCod,dlg,self:lEarmarking,oHm:aMirror[i,4], self:DefMlcd,self:DefOvrd)
-						PersonGiftdata(AllTrim(oHm:aMirror[i,5]),@cCod,dlg,oHm:aMirror[i,4], self:DefMlcd,self:DefOvrd)
-						i:= AScan(oHm:AMirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
-					ENDDO
-					oStmnt:=SQLStatement{"update person set "+iif(dlg < self:mDAT,"datelastgift='"+SQLdate(self:mDAT)+"',","")+"mailingcodes='"+cCod+"',propextr='"+AddSlashes(cExtra)+"'"+;
-						" where persid="+Str(Val(self:mCLNGiver),-1),oConn}
-					oStmnt:execute()
-				ENDIF
-				IF self:lTeleBank
-					* save bankaccntnbr:
-					IF !Recognised
-						oStmnt:=SQLStatement{"insert into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
-						oStmnt:Execute()
-					ELSE
-						oStmnt:=SQLStatement{"update personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
-					ENDIF
-				ENDIF
-				// After all updates update regular gifts:
-				FOR i=1 to Len(oHm:Amirror)
-					IF oHm:Amirror[i,3]<=0 .or.Empty(oHm:Amirror[i,5]) .or. ;  //cre, category
-						!Empty(oHm:Amirror[i,12]) ;   //due amount
-						.or.AutoRec .or.AllTrim(oHm:Amirror[i,7])==SPROJ // category = G or M//accid
-						loop
-					ENDIF
-					* Update regular gifts:
-					* Check if already present within Subscription: 
-					oSub:=SQLSelect{"select amount,reference,subscribid from subscription where personid="+self:mCLNGiver+" and accid="+oHm:Amirror[i,7],oConn}
-					IF oSub:reccount>0
-						if !oSub:amount==oHm:Amirror[i,3].or.!oSub:REFERENCE==AllTrim(oHm:REFERENCE)
-							* update regular gift:
-							IF (Admin=="WO" .or. Admin=="GI") .and. Empty(self:DefBest)
-								oHm:Goto(oHm:Amirror[i,6])
-								if TextBox{self:owner, "Input of Payments", ;
-										"Apply "+Str(oHm:Amirror[i,3],-1)+;
-										" to standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()=BOXREPLYYES 
-									oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-										",lstchange='"+SQLdate(self:mDAT)+"' where subscribid="+Str(oSub:Subscribid,-1),oConn}
-									oStmnt:Execute()
-								ENDIF
-							ENDIF
-						ENDIF
-					ELSE
-						* Add new regular gift:
-						IF (Admin=="WO" .or. Admin=="GI") .and. Empty(DefBest)
-							oHm:Goto(oHm:Amirror[i,6])
-							if TextBox{self:owner, "Input of Payments", ;
-									"Add "+Str(oHm:Amirror[i,3],-1)+;
-									" as standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()==BOXREPLYYES 
-								oStmnt:=SQLStatement{"insert into subscription set personid="+self:mCLNGiver+",accid="+oHm:Amirror[i,7]+;
-									",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-									",category='G',begindate='"+SQLdate(self:mDAT)+"',gc='"+oHm:Amirror[i,4]+"'",oConn}
-								oStmnt:Execute()
-							ENDIF
-						ENDIF
+					IF	!Empty(oHm:Amirror[i,12]) 
+						**	update due amount
+						oStmnt:=	SQLStatement{"update	dueamount set amountrecvd=round(amountrecvd+"+Str(oHm:Amirror[i,3],-1)+",2) "+;
+							"where dueid="+oHm:Amirror[i,12],oConn}
+						oStmnt:Execute() 
+						if	!empty(oStmnt:Status)
+							lError:=true
+							LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+							exit
+						endif
 					ENDIF
 				next
+			endif
+		endif
+
+		IF !lError.and.!Empty(self:mCLNGiver)
+			*  Update person info of giver:
+			i:= AScan(oHm:Amirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
+			IF i>0
+				DO WHILE i>0
+					// 						PersonGiftdata(AllTrim(oHm:aMirror[i,7]),oHm:aMirror[i,5],@cCod,dlg,self:lEarmarking,oHm:aMirror[i,4], self:DefMlcd,self:DefOvrd)
+					PersonGiftdata(AllTrim(oHm:aMirror[i,5]),@cCod,dlg,oHm:aMirror[i,4], self:DefMlcd,self:DefOvrd)
+					i:= AScan(oHm:AMirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
+				ENDDO
+				oStmnt:=SQLStatement{"update person set "+iif(dlg < self:mDAT,"datelastgift='"+SQLdate(self:mDAT)+"',","")+"mailingcodes='"+cCod+"',propextr='"+AddSlashes(cExtra)+"'"+;
+					" where persid="+Str(Val(self:mCLNGiver),-1),oConn}
+				oStmnt:execute()  
+				if !Empty(oStmnt:Status)
+					lError:=true
+					LogEvent(self,"error:"+oStmnt:ErrInfo:errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				endif
+
 			ENDIF
-			oHm:ClearFilter()
-			self:ReSet() 
-			oHm:=self:server
-			oHm:ResetNotification()	
-			self:oDCmTRANSAKTNR:TextValue := AllTrim(cTransnr)
-			self:mDebAmntF := 0
-			self:mDebAmnt:=0
-			self:fTotal := 0
-			self:AutoRec := FALSE
-			self:m51_agift:= 0
-			self:m51_apost := 0
-// 		ELSE
-// 			lError := true
-		ENDIF
+		endif
+		IF !lError.and.self:lTeleBank
+			* save bankaccntnbr:
+			IF !self:Recognised
+				oStmnt:=SQLStatement{"insert into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
+				oStmnt:execute()
+			ELSE
+				oStmnt:=SQLStatement{"update personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn} 
+				oStmnt:execute()
+			ENDIF 
+			if !Empty(oStmnt:status)
+				lError:=true
+				LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+			endif
+			if !lError 
+				oStmnt:=SQLStatement{"update teletrans set processed='X', lock_id=0 where teletrid="+Str(self:oTmt:CurTelId,-1),oConn}
+				oStmnt:execute()
+				if !Empty(oStmnt:status)
+					lError:=true 
+					cError:=oStmnt:ErrInfo:errorstatus
+				endif
+			endif
+
+		ENDIF  
+		if lError
+			SQLStatement{"rollback",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
+			self:Pointer := Pointer{POINTERARROW}
+			ErrorBox{self,"transaction could not be stored"}:show() 
+			if self:lTeleBank
+				self:mCLNGiver:=''
+			endif
+			return false
+		endif 
+		SQLStatement{"commit",oConn}:execute()
+		SQLStatement{"unlock tables",oConn}:execute() 
+		SQLStatement{"set autocommit=1",oConn}:execute()
+		self:Pointer := Pointer{POINTERARROW}
+		
+		// 				if lError
+		// 					SQLStatement{"rollback",oConn}:execute()
+		// 					ErrorBox{self,"transaction could not be stored:"+AllTrim(oStmnt:ErrInfo:errormessage)}:show()
+		//						self:mCLNGiver:=''
+		// 					// 				Break
+		// 					return false
+		// 				else
+		// 					SQLStatement{"commit",oConn}:execute()
+		// 				endif
+		self:ShowDebBal()	   
+		
+		
+		// After all updates update regular gifts:
+		FOR i=1 to Len(oHm:Amirror)
+			IF oHm:Amirror[i,3]<=0 .or.Empty(oHm:Amirror[i,5]) .or. ;  //cre, category
+				!Empty(oHm:Amirror[i,12]) ;   //due amount
+				.or.AutoRec .or.AllTrim(oHm:Amirror[i,7])==SPROJ // category = G or M//accid
+				loop
+			ENDIF
+			* Update regular gifts:
+			* Check if already present within Subscription: 
+			oSub:=SqlSelect{"select amount,reference,subscribid from subscription where personid="+self:mCLNGiver+" and accid="+oHm:Amirror[i,7],oConn}
+			IF oSub:reccount>0
+				if !oSub:amount==oHm:Amirror[i,3].or.!oSub:REFERENCE==AllTrim(oHm:REFERENCE)
+					* update regular gift:
+					IF (Admin=="WO" .or. Admin=="GI") .and. Empty(self:DefBest)
+						oHm:Goto(oHm:Amirror[i,6])
+						if TextBox{self:owner, "Input of Payments", ;
+								"Apply "+Str(oHm:Amirror[i,3],-1)+;
+								" to standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()=BOXREPLYYES 
+							oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+								",lstchange='"+SQLdate(self:mDAT)+"' where subscribid="+Str(oSub:Subscribid,-1),oConn}
+							oStmnt:execute()
+						ENDIF
+					ENDIF
+				ENDIF
+			ELSE
+				* Add new regular gift:
+				IF (Admin=="WO" .or. Admin=="GI") .and. Empty(DefBest)
+					oHm:Goto(oHm:Amirror[i,6])
+					if TextBox{self:owner, "Input of Payments", ;
+							"Add "+Str(oHm:Amirror[i,3],-1)+;
+							" as standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()==BOXREPLYYES 
+						oStmnt:=SQLStatement{"insert into subscription set personid="+self:mCLNGiver+",accid="+oHm:Amirror[i,7]+;
+							",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+							",category='G',begindate='"+SQLdate(self:mDAT)+"',gc='"+oHm:Amirror[i,4]+"'",oConn}
+						oStmnt:execute()
+					ENDIF
+				ENDIF
+			ENDIF
+		next
 	ENDIF
-	self:mCLNGiver:=''
+	oHm:ClearFilter()
+	self:ReSet() 
+	oHm:=self:server
+	oHm:ResetNotification()	
+	self:oDCmTRANSAKTNR:TextValue := AllTrim(cTransnr)
+	self:mDebAmntF := 0
+	self:mDebAmnt:=0
+	self:fTotal := 0
+	self:AutoRec := FALSE
+	self:m51_agift:= 0
+	self:m51_apost := 0
+	// 		ELSE
+	// 			lError := true
+	// 	self:mCLNGiver:=''
 	IF lError
 		oHm:Recno := curPntr
 		oDet:Browser:Refresh()
 		RETURN FALSE
 	ELSE 
-			self:mCLNGiver:=""
+		self:mCLNGiver:=""
 		if !self:lTeleBank
-// 			self:mCLNGiver:=""
+			// 			self:mCLNGiver:=""
 			self:cGiverName:=""
 			self:oDCmPerson:Value:=""
 			self:oDCmDebAmntF:TEXTValue:=""
