@@ -2571,7 +2571,7 @@ Method bankanalyze() class PaymentJournal
 	if !Empty(self:DebAccId) 
 		oSel:=SqlSelect{"select ba.giftsall,ba.openall,ba.singledst,ba.fgmlcodes,ba.syscodover,b.category,a.description,a.accnumber,a.currency,a.multcurr,m.persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype "+;
 			"from bankaccount ba left join account a on (a.accid=ba.singledst and a.active=1) right join balanceitem b on (b.balitemid=a.balitemid) left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid) "+;
-			"where ba.accid="+self:DebAccId,oConn}
+			"where ba.accid='"+self:DebAccId+"'",oConn}
 		if oSel:reccount>0  
 			self:GiftsAutomatic:=iif(ConI(oSel:GIFTSALL)=1,true,false)
 			self:DueAutomatic:=iif(ConI(oSel:OPENALL)=1,true,false)
@@ -3107,7 +3107,7 @@ METHOD OKButton( ) CLASS PaymentJournal
 	ENDIF
 	
 	DO WHILE lTeleBank
-		oTmt:CloseMut(SELF:server)
+		oTmt:CloseMut(self:server)
 		IF oTmt:NextTeleGift()
 			self:FillTeleBanking()
 			IF AutoRec
@@ -3242,7 +3242,7 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	if Empty(self:DebAccId)
 		return
 	endif
-	oSel:=SQLSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid="+self:DebAccId+" and b.balitemid=a.balitemid",oConn}
+	oSel:=SqlSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid='"+self:DebAccId+"' and b.balitemid=a.balitemid",oConn}
 	if oSel:reccount>0
 		self:DebAccNbr:=oSel:ACCNUMBER 
 		self:DebCurrency:=oSel:CURRENCY
