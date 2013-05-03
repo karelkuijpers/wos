@@ -454,8 +454,8 @@ METHOD CloseMut(oHlp ,lSave,oCaller)  CLASS TeleMut
 	LOCAL oNewTeleWindow as EditTeleBankPattern
 	Default(@lSave,false)
 	
-	SQLStatement{"update teletrans set processed='X', lock_id=0 where teletrid="+Str(self:CurTelId,-1),oConn}:execute()
-	SQLStatement{"commit",oConn}:execute()
+// 	SQLStatement{"update teletrans set processed='X', lock_id=0 where teletrid="+Str(self:CurTelId,-1),oConn}:execute()
+// 	SQLStatement{"commit",oConn}:execute()
 
 	IF !self:m56_recognised.and.!self:m56_autmut.and.!lGift.and.lSave
 		oHlp:GoBottom()
