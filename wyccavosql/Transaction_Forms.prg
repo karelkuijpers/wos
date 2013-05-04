@@ -1340,8 +1340,8 @@ BEGIN
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
 	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
-	CONTROL	"zaterdag 2 juni 2012", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
-	CONTROL	"zaterdag 2 juni 2012", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
+	CONTROL	"zaterdag 4 mei 2013", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
+	CONTROL	"zaterdag 4 mei 2013", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
 	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
 	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
 	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
@@ -2779,7 +2779,10 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 		elseif oControl:NameSym==#DebitAccount .and.!AllTrim(Transform(oControl:Value,""))==self:DebAccId    
 			GiftsAutomatic:=FALSE
 			DueAutomatic:=FALSE
-			IF Empty(oControl:VALUE) 
+			if self:oDCDebitAccount:CurrentItemNo=0
+				// nothing seleted:
+				self:DebAccId:=''
+			elseif Empty(oControl:VALUE)  //other:
 				// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
 				AccountSelect(self,"","DEBITACCOUNT")
 				self:ShowDebBal()
@@ -2790,8 +2793,10 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 					self:DefGc := "" 
 					self:DebCategory:=''
 				endif
-			ELSEif !Empty(oControl:CurrentItemNo)
-				self:DebAccId := AllTrim(Transform(oControl:Value,""))
+			else
+				self:oDCDebitAccount:SelectItem(self:oDCDebitAccount:CurrentItemNo) 
+				self;oDCDebitAccount:TEXTValue:=self:oDCDebitAccount:GetItem(self:oDCDebitAccount:CurrentItemNo)
+				self:DebAccId := AllTrim(Transform(self:oDCDebitAccount:GetItemValue(self:oDCDebitAccount:CurrentItemNo),""))
 				self:ShowDebBal()
 				self:lMemberGiver := FALSE
 				self:bankanalyze()
@@ -2951,7 +2956,10 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 	IF oControlEvent:Name == "DEBITACCOUNT"
 		GiftsAutomatic:=FALSE
 		DueAutomatic:=FALSE
-		IF Empty(oControlEvent:Control:VALUE)
+		if self:oDCDebitAccount:CurrentItemNo=0
+			// nothing seleted:
+			self:DebAccId:=''
+		elseif Empty(oControl:VALUE)  //other:
 			// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
 			AccountSelect(self,"","DEBITACCOUNT")
 			self:ShowDebBal()
@@ -2962,8 +2970,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 				self:DefGc := "" 
 				self:DebCategory:=''
 			endif
-		ELSE
-			self:DebAccId := AllTrim(Transform(oControlEvent:Control:value,""))
+		else  
+			self:DebAccId := AllTrim(Transform(oControl:VALUE,""))
 			self:ShowDebBal()
 			self:lMemberGiver := FALSE
 			self:bankanalyze()
