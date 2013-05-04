@@ -9,13 +9,20 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 		RETURN
 	ENDIF
 	IF !AutoGiro
-		IF mtype == "D" .or.mtype=="A"
-			cInvoice:=PadL(mcln,6,"0")+PadL(mAccNumber,6,"0")
-			self:mInvoiceID:=cInvoice+Mod10(cInvoice)
+		IF self:mtype == "D" .or.self:mtype=="A"
+			if self:mPayMethod='C' .and. sepaenabled // direct debit
+				cInvoice:='WDDA'+self:mAccNumber+'P'+self:mcln
+				self:mInvoiceID:=cInvoice
+				self:oDCmInvoiceID:Show() 
+				self:oDCInvoiceText:Show()	
+			else
+				cInvoice:=PadL(self:mcln,6,"0")+PadL(self:mAccNumber,6,"0")
+				self:mInvoiceID:=cInvoice+Mod10(cInvoice)
+			endif
 		ENDIF
 	else
-		cStartDate:=SubStr(DTOS(if(Empty(oDCmbegindate:SelectedDate),Today(),oDCmbegindate:SelectedDate)),3,4)
-		cInvoice:=mcln+cStartDate+PadL(mAccNumber,5,"0")
+		cStartDate:=SubStr(DToS(if(Empty(self:oDCmbegindate:SelectedDate),Today(),self:oDCmbegindate:SelectedDate)),3,4)
+		cInvoice:=self:mCLN+cStartDate+PadL(self:mAccNumber,5,"0")
 		self:mInvoiceID:=cInvoice
 	ENDIF
 
@@ -30,27 +37,27 @@ METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 		self:mRek :=  Str(oAcc:accid,-1)
 		self:oDCmAccount:TEXTValue := AllTrim(oAcc:Description)
 		self:cAccountName := AllTrim(oAcc:Description)
-		SELF:mAccNumber:=Str(Val(AllTrim(oAcc:ACCNUMBER)),-1)
+		self:mAccNumber:=oAcc:ACCNUMBER
 		oDCmamount:Enable()
 		IF oAcc:accid==Val(SDON)
-			IF Empty(mterm)
-				mterm   := 12
+			IF Empty(self:mterm)
+				self:mterm   := 12
 			ENDIF
 		ELSEIF oAcc:subscriptionprice>0
-			mtype := "A"
-			oDCTypeText:Value:="Subscription"
-			mamount   := oAcc:subscriptionprice
-			oDCmamount:Disable()
-			mterm   := 12
+			self:mtype := "A"
+			self:oDCTypeText:Value:="Subscription"
+			self:mamount   := oAcc:subscriptionprice
+			self:oDCmamount:Disable()
+			self:mterm   := 12
 		ELSE
 			//mtype := "G"
 			//oDCTypeText:Value:="Periodic Gift"
-			mterm   := 1
+			self:mterm   := 1
 		ENDIF
-		IF mtype=="A"
-			oDCmamount:Disable()
+		IF self:mtype=="A"
+			self:oDCmamount:Disable()
 		ELSE
-			oDCmamount:Enable()
+			self:oDCmamount:Enable()
 		ENDIF
 		SELF:GenerateInvoiceID()
 
@@ -65,7 +72,7 @@ IF !Empty(oCLN)
 	SELF:oDCmPerson:TEXTValue := SELF:cPersonName
 // 	SELF:mCod:=oPers:Cod
 	self:GenerateInvoiceID()
-	IF mtype == "D" .or.mtype=="A"
+	IF self:mtype == "D" .or. self:mtype=="A"
 		self:oDCmBankAccnt:FillUsing(GetBankAccnts(self:mCLN)) 
 		self:oDCmBankAccnt:CurrentItemNo:=1
 	endif	
