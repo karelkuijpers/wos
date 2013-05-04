@@ -161,11 +161,13 @@ if !Empty(cPostcode)
 	cSearch:=cPostcode+"%20"+housenr
 elseif !Empty(cCity)
 	aWord:=GetTokens(cCity)
-	cSearch:=cAddress+'%20'+aWord[1,1]
+	cSearch:=cAddress+'%20'+aWord[1,1] 
+else
+	return {cPostcode,cAddress,cCity}	
 endif
 StrTran(cSearch," ","%20")
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-httpfile:= oHttp:GetDocumentByURL("http://www.zipcode.nl/search/"+cSearch)
+httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/search/"+cSearch)
 
 nPos1:=At('<div class="col-main">',httpfile)
 if nPos1>0
@@ -173,7 +175,7 @@ if nPos1>0
 	nPos1:=At('<td><a class="view"',httpfile)
 	if nPos1>0
 		output:=SubStr(httpfile,nPos1+20) 
-	elseif AtC("Uw zoekopdracht heeft geen resultaten opgeleverd",httpfile)=0 
+	elseif AtC('class="alert warning"',httpfile)=0 
 		// apparently website changed:
 		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 	endif 
@@ -3727,10 +3729,10 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"' where subscribid="+Str(oDue:subscribid,-1),oConn}
 				oStmnt:Execute()
 				if !Empty(oStmnt:status)
-					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")" 
+					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+Space(1)+AllTrim(oDue:FullName)+"(intern ID "+Str(oDue:personid,-1)+")" 
 				endif
 			else
-				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+Space(1)+AllTrim(oDue:FullName)+"(intern ID "+Str(oDue:personid,-1)+")"
 			endif
 			oDue:skip()
 		enddo
@@ -3741,7 +3743,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 	endif
 	
 
-	oDue:=SQLSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,cast(du.invoicedate as date) as invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
+	oDue:=SqlSelect{"select du.dueid,s.personid,s.accid,du.amountinvoice,cast(du.invoicedate as date) as invoicedate,du.seqnr,s.term,s.bankaccnt,a.accnumber,a.clc,b.category as acctype,"+;
 		SQLAccType()+" as type,"+;
 		"cast(p.datelastgift as date) as datelastgift,"+SQLFullName(0,'p')+" as personname,p.mailingcodes "+;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
@@ -3986,7 +3988,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 					SQLStatement{"rollback",oConn}:Execute() 
 					SQLStatement{"unlock	tables",oConn}:Execute()
 					LogEvent(self,'Transactions could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
-					ErrorBox{,self:oLan:WGet('Transactions could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+					ErrorBox{,self:oLan:WGet('Transactions could	not be inserted, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 					return false 
 				endif
 			next
@@ -3998,7 +4000,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 				SQLStatement{"rollback",oConn}:Execute() 
 				SQLStatement{"unlock	tables",oConn}:Execute()
 				LogEvent(self,'Month balances could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
-				ErrorBox{,self:oLan:WGet('Month balances could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+				ErrorBox{,self:oLan:WGet('Month balances could	not be inserted, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
 			// oPro:AdvancePro()
@@ -4013,7 +4015,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 					SQLStatement{"rollback",oConn}:Execute() 
 					SQLStatement{"unlock tables",oConn}:Execute()
 					LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-					ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+					ErrorBox{,self:oLan:WGet('persons could not be updated, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 					return false 
 				endif
 			endif
@@ -4032,6 +4034,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 
 	endif
 	RETURN true
+
 METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as logic CLASS SelPersOpen
 	// make KID file for automatic collection for Norwegian Banks
 	LOCAL cFilter as STRING
@@ -4590,7 +4593,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			SQLStatement{"rollback",oConn}:Execute() 
 			SQLStatement{"unlock tables",oConn}:Execute()
 			LogEvent(self,"Due amounts error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-			ErrorBox{,self:oLan:WGet('due amounts could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+			ErrorBox{,self:oLan:WGet('due amounts could not be updated, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 			return false 
 		endif
 	endif
@@ -4625,7 +4628,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				SQLStatement{"rollback",oConn}:Execute() 
 				SQLStatement{"unlock	tables",oConn}:Execute()
 				LogEvent(self,'Transactions could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
-				ErrorBox{,self:oLan:WGet('Transactions could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+				ErrorBox{,self:oLan:WGet('Transactions could	not be inserted, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
 		next
@@ -4637,7 +4640,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			SQLStatement{"rollback",oConn}:Execute() 
 			SQLStatement{"unlock	tables",oConn}:Execute()
 			LogEvent(self,'Month balances could not be inserted:'+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+SubStr(oStmnt:SQLString,1,10000),"LogErrors")
-			ErrorBox{,self:oLan:WGet('Month balances could	not be inserted')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+			ErrorBox{,self:oLan:WGet('Month balances could	not be inserted, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 			return false 
 		endif
 		// oPro:AdvancePro()
@@ -4651,7 +4654,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				SQLStatement{"rollback",oConn}:Execute() 
 				SQLStatement{"unlock tables",oConn}:Execute()
 				LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
-				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+				ErrorBox{,self:oLan:WGet('persons could not be updated, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
 		endif
@@ -4767,8 +4770,10 @@ Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string
 // Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
 //
 LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
-local i as int
-mAlias:=iif(Empty(aliasp),"",aliasp+".")
+local i as int 
+if !Empty(aliasp)
+	mAlias:=aliasp+"."
+endif
 
 IF sSalutation .and.(Purpose==1.or.Purpose==3) 
 	title:="case "
