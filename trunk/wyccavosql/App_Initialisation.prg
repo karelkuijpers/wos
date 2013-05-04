@@ -1550,7 +1550,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","category","char(1)","NO","",""},;
 		{"subscription","gc","char(2)","NO","",""},;
 		{"subscription","paymethod","char(1)","NO","",""},;
-		{"subscription","invoiceid","char(20)","NO","",""},;
+		{"subscription","invoiceid","varchar(35)","NO","",""},;
 		{"subscription","bankaccnt","varchar(64)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
