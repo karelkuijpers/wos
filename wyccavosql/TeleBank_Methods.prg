@@ -137,13 +137,20 @@ method Close(oEvent) class SelBankAcc
 METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc
 // 	RETURN FillBankAccount('b.Telebankng=1')
 	local cStatement as string 
-	local cSelect as string 
+	local cSelect as string
+	local oSel as SQLSelect 
 	cSelect:=self:oCaller:GetTeleSelect()
 	cStatement:="select concat('(', lpad(cast(count(t.teletrid) AS CHAR),4,' ') ,') ', b.banknumber,' ',a.description) as description,b.banknumber"+; 
 	" from bankaccount b, account a, teletrans as t "+;
 		" where a.accid=b.accid and b.Telebankng=1 and t.bankaccntnbr = b.banknumber and t.processed<>'X' and "+cSelect+; 
-	" group by  b.banknumber order by description desc"
-	return SqlSelect{cStatement,oConn}:GetLookupTable(500,#description,#banknumber) 
+	" group by  b.banknumber order by description desc" 
+	oSel:=SqlSelect{cStatement,oConn}
+	if oSel:RecCount>0
+		return oSel:GetLookupTable(500,#description,#banknumber)
+	else
+		return {{"No more telebanking transactions",""}}
+	endif
+		
 
 METHOD FindButton( ) CLASS SelBankAcc 
 	local aKeyw:={} as array
