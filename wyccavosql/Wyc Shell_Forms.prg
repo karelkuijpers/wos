@@ -48,6 +48,7 @@ else
 	(TextBox{,"Check new version","No new version found"}):Show()
 endif
 if lStop
+   SQLStatement{"update employee set online='0' where empid='"+MYEMPID+"'",oConn}:Execute()
 	myApp:Quit()
 endif 
 return
