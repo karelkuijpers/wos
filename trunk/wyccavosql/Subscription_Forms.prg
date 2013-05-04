@@ -33,15 +33,15 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	PROTECT oDCFixedText11 AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	instance mPerson 
-	instance mAccount 
-	instance mterm 
-	instance mamount 
-	instance mlstchange 
-	instance mtype 
-	instance mPayMethod 
-	instance mInvoiceID 
-	instance mBankAccnt 
+// 	instance mPerson 
+// 	instance mAccount 
+// 	instance mterm 
+// 	instance mamount 
+// 	instance mlstchange 
+// 	instance mtype 
+// 	instance mPayMethod 
+// 	instance mInvoiceID 
+// 	instance mBankAccnt 
 
     PROTECT cPersonName,cAccountName as STRING
 	PROTECT mCLN,msubid as STRING
@@ -52,40 +52,40 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	PROTECT mCod AS STRING
 	PROTECT nCurRec AS INT
 	PROTECT cType, cHeading as STRING
-RESOURCE EditSubscription DIALOGEX  37, 30, 271, 165
+RESOURCE EditSubscription DIALOGEX  37, 30, 323, 170
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"Person:", EDITSUBSCRIPTION_SC_RLN, "Static", WS_CHILD, 6, 0, 30, 12
-	CONTROL	"Account:", EDITSUBSCRIPTION_SC_P01N, "Static", WS_CHILD, 135, 0, 41, 12
+	CONTROL	"Account:", EDITSUBSCRIPTION_SC_P01N, "Static", WS_CHILD, 129, 0, 41, 12
 	CONTROL	"Begin date:", EDITSUBSCRIPTION_SC_P04, "Static", WS_CHILD, 8, 44, 38, 12
 	CONTROL	"Next due date:", EDITSUBSCRIPTION_SC_P06, "Static", WS_CHILD, 8, 59, 48, 12
 	CONTROL	"Term in months:", EDITSUBSCRIPTION_SC_P07, "Static", WS_CHILD, 8, 73, 52, 13
 	CONTROL	"Periodic amount:", EDITSUBSCRIPTION_SC_P08, "Static", WS_CHILD, 8, 88, 54, 12
 	CONTROL	"Alter date:", EDITSUBSCRIPTION_SC_P13, "Static", WS_CHILD, 8, 140, 34, 13
-	CONTROL	"", EDITSUBSCRIPTION_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 11, 92, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITSUBSCRIPTION_PERSONBUTTON, "Button", WS_CHILD, 96, 11, 14, 13
-	CONTROL	"", EDITSUBSCRIPTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 134, 11, 92, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITSUBSCRIPTION_ACCBUTTON, "Button", WS_CHILD, 224, 11, 15, 12
-	CONTROL	"21-2-2011", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
-	CONTROL	"21-2-2011", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
+	CONTROL	"", EDITSUBSCRIPTION_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 11, 92, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITSUBSCRIPTION_PERSONBUTTON, "Button", WS_CHILD, 96, 11, 13, 12
+	CONTROL	"", EDITSUBSCRIPTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 11, 92, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITSUBSCRIPTION_ACCBUTTON, "Button", WS_CHILD, 218, 11, 15, 13
+	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
+	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
 	CONTROL	"", EDITSUBSCRIPTION_MTERM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 73, 83, 11, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 88, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 103, 53, 12
-	CONTROL	"Giro Accept", EDITSUBSCRIPTION_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 183, 94, 53, 11
-	CONTROL	"Direct Debit", EDITSUBSCRIPTION_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 183, 108, 56, 12
-	CONTROL	"Type:", EDITSUBSCRIPTION_MTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 178, 59, 67, 24
-	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 103, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITSUBSCRIPTION_MBANKACCNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 68, 105, 83, 72
+	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 160, 103, 53, 12
+	CONTROL	"Giro Accept", EDITSUBSCRIPTION_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 224, 70, 53, 11
+	CONTROL	"Direct Debit", EDITSUBSCRIPTION_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 223, 86, 56, 11
+	CONTROL	"Type:", EDITSUBSCRIPTION_MTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 244, 7, 66, 25
+	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 216, 103, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSUBSCRIPTION_MBANKACCNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 68, 103, 83, 72
 	CONTROL	"", EDITSUBSCRIPTION_MREFERENCE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 119, 84, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MLSTCHANGE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 44, 140, 50, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITSUBSCRIPTION_TYPETEXT, "Static", WS_CHILD, 182, 66, 54, 12
-	CONTROL	"Payment Method", EDITSUBSCRIPTION_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 176, 85, 66, 38
-	CONTROL	"Bank account:", EDITSUBSCRIPTION_BANKTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 107, 53, 12
-	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 152, 147, 53, 13
-	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 208, 147, 53, 13
+	CONTROL	"", EDITSUBSCRIPTION_TYPETEXT, "Static", WS_CHILD, 248, 14, 53, 13
+	CONTROL	"Payment Method", EDITSUBSCRIPTION_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 216, 62, 66, 38
+	CONTROL	"Bank account:", EDITSUBSCRIPTION_BANKTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 104, 53, 12
+	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 147, 53, 13
+	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 147, 53, 13
 	CONTROL	"Reference:", EDITSUBSCRIPTION_SC_REF, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 119, 53, 12
-	CONTROL	"21-2-2011", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
+	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
 	CONTROL	"End:", EDITSUBSCRIPTION_FIXEDTEXT11, "Static", WS_CHILD, 156, 44, 20, 12
 END
 
@@ -109,9 +109,14 @@ METHOD ButtonClick(oControlEvent) CLASS EditSubscription
 	SUPER:ButtonClick(oControlEvent)
 	//Put your changes here
 	IF oControl:Name=="RADIOBUTTONCOLLECTION"
-		 IF Empty(SELF:oDCmInvoiceID:TextValue)
-		 	SELF:GenerateInvoiceID()
+		 IF Empty(self:oDCmInvoiceID:TextValue) .or.sepaenabled
+			self:oDCmInvoiceID:Show() 
+			self:oDCInvoiceText:Show()	
+		 	self:GenerateInvoiceID()
 		 ENDIF
+	else
+			self:oDCmInvoiceID:hide() 
+			self:oDCInvoiceText:hide()	
 	ENDIF
 
 	RETURN NIL
@@ -364,20 +369,20 @@ METHOD OKButton( ) CLASS EditSubscription
 	// 	ENDIF
 	// 	IF ValidateControls( self, self:AControls )
 	*Check obliged fields:
-	IF Empty(mRek)
+	IF Empty(self:mRek)
 		(ErrorBox{,self:oLan:WGet("You have to enter an Account") }):Show()
 		self:oDCmAccount:SetFocus()
 		RETURN nil
-	ELSEIF Empty(mCLN)
+	ELSEIF Empty(self:mCLN)
 		(ErrorBox{self,self:oLan:WGet("You should enter a Person") }):Show()
 		self:oDCmPerson:SetFocus()
 		RETURN nil
-	ELSEIF Empty(mamount)
+	ELSEIF Empty(self:mamount)
 		(ErrorBox{self,self:oLan:WGet("You have to enter a periodic amount") }):Show()
 		self:oDCmPerson:SetFocus()
 		RETURN nil
 	ELSE
-		if mType#'G'
+		if !self:mtype == 'G'
 			IF Empty(oDCmDueDate:SelectedDate)
 				(ErrorBox{self:Owner,self:oLan:WGet("Due date obliged in case of donor/subscription") }):Show()
 				self:oDCmDueDate:SetFocus()
@@ -412,20 +417,29 @@ METHOD OKButton( ) CLASS EditSubscription
 				next
 			endif					
 		ENDIF
-		IF !Empty(mInvoiceID)
+		IF !Empty(self:mInvoiceID)
 			IF CountryCode=="47"
-				if !IsMod10(AllTrim(mInvoiceID))
+				if !IsMod10(AllTrim(self:mInvoiceID))
 					(ErrorBox{,self:oLan:WGet("Invoice ID is not a modulus 10 number") }):Show()
 					self:oDCmInvoiceID:SetFocus()
 					RETURN nil
 				ENDIF
 			ENDIF
 		ELSEIF self:mPayMethod="C"
-			(ErrorBox{,self:oLan:WGet("Invoice ID is mandatory in case of Direct Debit") }):Show()
+			(ErrorBox{,self:oLan:WGet(iif(SepaEnabled,"Mandate id","Invoice ID")+" is mandatory in case of Direct Debit") }):Show()
 			self:oDCmInvoiceID:SetFocus()
 			RETURN nil		
-		ENDIF
-		IF Empty(mBankAccnt)
+		endif
+		if self:mPayMethod="C"
+			// check mandate id is unique:
+			self:mInvoiceID:=AllTrim(self:mInvoiceID)
+			if	SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
+				(ErrorBox{,self:oLan:WGet(iif(SepaEnabled,"Mandate id","Invoice ID")+" allready exists") }):Show()
+				self:oDCmInvoiceID:SetFocus()
+				RETURN nil
+			endif		
+		endif
+		IF Empty(self:mBankAccnt)
 			IF CountryCode="31" .and. self:mPayMethod="C"
 				(ErrorBox{,self:oLan:WGet("Bank account is mandatory in case of Direct Debit") }):Show()
 				self:oDCmBankAccnt:SetFocus()
@@ -433,15 +447,15 @@ METHOD OKButton( ) CLASS EditSubscription
 			ENDIF 
 		else
 			if SepaEnabled
-				if !IsSEPA(AllTrim(mBankAccnt))
-					(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not a valid SEPA bank account number")+"!!" }):Show()
+				if !IsSEPA(AllTrim(self:mBankAccnt))
+					(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(self:mBankAccnt)+Space(1)+self:oLan:WGet("is not a valid SEPA bank account number")+"!!" }):Show()
 					self:oDCmBankAccnt:SetFocus()
 					RETURN nil		
 				endif
 			elseIF CountryCode="31"
-				if Len(AllTrim(mBankAccnt))>7
-					if !IsDutchBanknbr(AllTrim(mBankAccnt))
-						(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
+				if Len(AllTrim(self:mBankAccnt))>7
+					if !IsDutchBanknbr(AllTrim(self:mBankAccnt))
+						(ErrorBox{,self:oLan:WGet("Bankaccount")+Space(1)+AllTrim(self:mBankAccnt)+Space(1)+self:oLan:WGet("is not correct")+"!!" }):Show()
 						self:oDCmBankAccnt:SetFocus()
 						RETURN nil		
 					endif 
@@ -463,7 +477,7 @@ METHOD OKButton( ) CLASS EditSubscription
 
 	IF self:lNew
 		* check if subscription allready exists: 
-		if SQLSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
+		if SqlSelect{"select subscribid from subscription where personid="+self:mCLN+" and accid="+self:mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
 			(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
 			RETURN nil
 		ENDIF
@@ -478,7 +492,7 @@ METHOD OKButton( ) CLASS EditSubscription
 		",begindate='"+ SQLdate(iif(Empty(self:oDCmbegindate:SelectedDate),Today(),self:oDCmbegindate:SelectedDate))+"'"+;
 		",enddate='"+ SQLdate(self:oDCmEndDate:SelectedDate)+"'"+;
 		",duedate='"+ SQLdate(self:oDCmDueDate:SelectedDate)+"'"+;
-		",term="+ Str(mterm,-1)+;
+		",term="+ Str(self:mterm,-1)+;
 		",amount="+ Str(self:mamount,-1) +;
 		",lstchange=NOW()"+;
 		",category='"+ self:mtype+"'"+;
@@ -530,21 +544,21 @@ PersonSelect(self,cValue,lUnique,,"Person for "+cType,oPers)
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	//Put your PostInit additions here
 	LOCAL oSub,oSel as SQLSelect
-self:SetTexts()
+	self:SetTexts()
 	self:lNew :=uExtra[1]
 	self:oCaller:=uExtra[2]
 	IF !self:lNew
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
 		oSub:=SQLSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,"+;
-		"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
-		SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
-		"from subscription s, account a,person p "+; 
+			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
+			SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
+			"from subscription s, account a,person p "+; 
 		+" left join personbank b on (b.persid=p.persid) " +;
-		" where a.accid=s.accid and p.persid=s.personid and subscribid="+self:msubid+" group by s.personid",oConn}
+			" where a.accid=s.accid and p.persid=s.personid and subscribid="+self:msubid+" group by s.personid",oConn}
 	ENDIF 
 
-   self:cType:=iCtlID
+	self:cType:=iCtlID
 	IF self:cType=="STANDARD GIFTS"
 		self:mtype:="G"
 		self:oDCInvoiceText:hide()
@@ -574,7 +588,7 @@ self:SetTexts()
 			self:oDCmInvoiceID:Show()
 		endif
 	ELSE
-	ENDIF	
+	ENDIF
 
 	IF self:lNew
 		self:cPersonName :=""
@@ -586,9 +600,9 @@ self:SetTexts()
 		endif			
 		self:oDCmEndDate:SelectedDate:=Today()+365*100
 		self:mterm   := 1
-  		self:mamount   := 0
+		self:mamount   := 0
 		IF !self:cType=="STANDARD GIFTS"
-	      self:oDCmPayMethod:Value:="C"
+			self:oDCmPayMethod:Value:="C"
 		endif
 		IF self:mtype=="D".and.!Empty(SDON)
 			oSel:=SQLSelect{"select accnumber,description from account where accid="+SDON,oConn}
@@ -596,10 +610,10 @@ self:SetTexts()
 				self:cAccountName :=oSel:description 
 				self:mAccount:= cAccountName
 				self:mRek:=SDON
-	      	self:mAccNumber:=oSel:ACCNUMBER
+				self:mAccNumber:=oSel:ACCNUMBER
 			ENDIF			
 		ENDIF
-    ELSE
+	ELSE
 		self:mRek := Str(oSub:accid,-1)                  
 		self:cAccountName := oSub:AccountName
 		self:mAccount:= cAccountName
@@ -623,7 +637,7 @@ self:SetTexts()
 		self:mlstchange := oSub:lstchange                 
 		self:mtype := oSub:category
 		IF Empty(oSub:PAYMETHOD)
-	        self:oDCmPayMethod:Value:="G"
+			self:oDCmPayMethod:Value:="G"
 		ELSE
 			self:oDCmPayMethod:Value:=oSub:PAYMETHOD
 		ENDIF
@@ -637,7 +651,7 @@ self:SetTexts()
 		else
 			self:oDCmBankAccnt:CurrentItemNo:=1
 		endif	
-    ENDIF
+	ENDIF
 	IF self:mtype=="D"
 		self:oDCTypeText:Value:=self:oLan:WGet("Donation")
 		self:cHeading:="Donation Account"
@@ -649,10 +663,10 @@ self:SetTexts()
 		endif                                                                        c
 
 	ELSEIF self:mtype == "A"
- 		self:oDCTypeText:Value:=self:oLan:WGet("Subscription")
+		self:oDCTypeText:Value:=self:oLan:WGet("Subscription")
 		self:cHeading:=self:oLan:WGet("Subscription Account")
- 	ELSE
-  		self:oDCTypeText:Value:=self:oLan:WGet("Periodic Gift")
+	ELSE
+		self:oDCTypeText:Value:=self:oLan:WGet("Periodic Gift")
 		self:cHeading:=self:oLan:WGet("Periodic Gift Account")
 	ENDIF
 	self:Caption:="Edit "+self:oDCTypeText:Value
@@ -660,7 +674,18 @@ self:SetTexts()
 		self:oDCmamount:Disable()
 	ELSE
 		self:oDCmamount:Enable()
-	ENDIF
+	ENDIF 
+	if sepaenabled .and. self:mPayMethod='C' 
+		self:oDCInvoiceText:TextValue:=self:oLan:WGet("Mandate id")+': '
+		if !lNew
+			self:oDCmInvoiceID:Show() 
+			self:oDCInvoiceText:Show()
+			if SqlSelect{"select dueid from dueamount where subscribid="+self:msubid+" and (`seqtype`='RCUR' or `amountrecvd`>0.00)",oConn}:RecCount>0  ;
+				.or. (self:oDCmduedate:SelectedDate - coni(self:mterm)*30) < (today() - 240)   // too old, allready removed
+				self:oDCmInvoiceID:Disable()
+			endif
+		endif
+	endif
 
 	RETURN nil
 STATIC DEFINE EDITSUBSCRIPTION_ACCBUTTON := 110 
