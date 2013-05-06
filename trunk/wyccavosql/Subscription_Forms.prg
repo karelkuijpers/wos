@@ -496,8 +496,8 @@ METHOD OKButton( ) CLASS EditSubscription
 		",amount="+ Str(self:mamount,-1) +;
 		",lstchange=NOW()"+;
 		",category='"+ self:mtype+"'"+;
-		",INVOICEID='"+ iif(IsNil(self:mInvoiceID),"",self:mInvoiceID)+"'"+;
-		",REFERENCE='"+iif(IsNil(self:mReference),"",self:mReference)+"'"+;
+		",INVOICEID='"+ iif(IsNil(self:mInvoiceID),"",AddSlashes(self:mInvoiceId))+"'"+;
+		",REFERENCE='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
 		",PAYMETHOD='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 	",BANKACCNT='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
