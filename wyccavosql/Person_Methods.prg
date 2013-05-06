@@ -4284,7 +4284,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oDue:=SqlSelect{"select group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
 	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes separator '#%#') as grDue " +;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid separator '#%#') as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s,personbank pb "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid and pb.banknumber=s.bankaccnt "+;
@@ -4297,8 +4297,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN false
 	ENDIF
 	// Add to aDue:
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes,mandate id
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18            19
 	aeval(Split(oDue:grDue,'#%#'),{|x|aadd(aDue,split(x,'#$#'))}) 
 	
 	//    LogEvent(self,oDue:SQLString,"logsql")
@@ -4345,8 +4345,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
 			loop
 		endif
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic , mailingcodes
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17       18
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic , mailingcodes,mandateid
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17       18           19
 
 		// determine description from Subscription: 
 		IF Empty(nTerm) .or.nTerm>12
@@ -4364,6 +4364,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		ENDIF
 		if !empty(nTerm) .and. nterm<=12
 			// prenotification:
+// 			cDescr+=', '+self:oLan:RGet("mandate id")+':'+aDue[i,19]+', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
 			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
 		endif
 		oReport:PrintLine(@nRow,@nPage,;
@@ -4410,8 +4411,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		aSeqTp[SeqTp,2]++
 		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
 		// add to aDD for mailing DD file:
-		// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RCUR,FNAL,OOFF)},...
-		AAdd(aDD,{cAmnt,aDue[i,2],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
+		// aDD: {{AmountInvoice,mandateid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RCUR,FNAL,OOFF)},...
+		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
 	next
 
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
@@ -4459,7 +4460,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	'</GrpHdr>')
 	SetAmPm(lSetAMPM)	//	reset	AMPM 
 	// write transactions from aDD:
-	// aDD: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF),Bic}},... 
+	// aDD: {{AmountInvoice,mandateid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RECUR,FNAL,OOFF),Bic}},... 
 	//            1            2            3        4          5           6         7         8                          9
 	ASort(aDD,,,{|x,y|x[8]<=y[8]})
 	SeqTp:=0
