@@ -579,7 +579,8 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	*Check validity of standing order:
 	CurStOrdrid:=oStOrdL:stordrid
 	IF !Empty(dat_controle(datum,true))
-		lError:=true
+// 		lError:=true
+		return true  // skip to next date
 	elseIF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
 		lError:=true
 	endif
