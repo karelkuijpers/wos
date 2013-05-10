@@ -3359,7 +3359,7 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 	oDateR:=self:oDCdatedirectdebit:DateRange
 	oDateR:Min:=Today()
    self:oDCdatedirectdebit:DateRange:=oDateR
-	self:oDCdatedirectdebit:SelectedDate:=Today()+iif(CountryCode="47",9,1)
+	self:oDCdatedirectdebit:SelectedDate:=Today()+iif(CountryCode="47",9,2)      // 2 workdays ahead
 	if DoW(self:oDCdatedirectdebit:SelectedDate)=1       // not on sunday
 		self:oDCdatedirectdebit:SelectedDate++
 	elseif DoW(self:oDCdatedirectdebit:SelectedDate)=7   // not on saturday
