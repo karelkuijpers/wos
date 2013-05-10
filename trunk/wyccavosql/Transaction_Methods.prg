@@ -4272,7 +4272,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 					PersonGiftdata(AllTrim(oHm:aMirror[i,5]),@cCod,dlg,oHm:aMirror[i,4], self:DefMlcd,self:DefOvrd)
 					i:= AScan(oHm:AMirror,{|x| x[3]>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")},i+1)
 				ENDDO
-				oStmnt:=SQLStatement{"update person set "+iif(dlg < self:mDAT,"datelastgift='"+SQLdate(self:mDAT)+"',","")+"mailingcodes='"+cCod+"',propextr='"+AddSlashes(cExtra)+"'"+;
+				oStmnt:=SQLStatement{"update person set "+iif(dlg < self:mDAT,"datelastgift='"+SQLdate(self:mDAT)+"',","")+"mailingcodes='"+AddSlashes(cCod)+"',propextr='"+AddSlashes(cExtra)+"'"+;
 					" where persid="+Str(Val(self:mCLNGiver),-1),oConn}
 				oStmnt:execute()  
 				if !Empty(oStmnt:Status)
@@ -4284,16 +4284,18 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		IF !lError.and.self:lTeleBank
 			* save bankaccntnbr:
-			IF !self:Recognised
-				oStmnt:=SQLStatement{"insert into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
-				oStmnt:execute()
-			ELSE
-				oStmnt:=SQLStatement{"update personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn} 
-				oStmnt:execute()
-			ENDIF 
-			if !Empty(oStmnt:status)
-				lError:=true
-				LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+			if !Empty(self:mCLNGiver)
+				IF !self:Recognised          // it is possible that the bank account is not yet recorded
+					oStmnt:=SQLStatement{"insert ignore into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
+					oStmnt:execute()
+				ELSE
+					oStmnt:=SQLStatement{"update ignore personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn} 
+					oStmnt:execute()
+				ENDIF 
+				if !Empty(oStmnt:status)
+					lError:=true
+					LogEvent(self,"error:"+oStmnt:ErrInfo:Errormessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				endif
 			endif
 			if !lError 
 				oStmnt:=SQLStatement{"update teletrans set processed='X', lock_id=0 where teletrid="+Str(self:oTmt:CurTelId,-1),oConn}
