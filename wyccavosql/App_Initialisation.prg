@@ -78,8 +78,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 		if Len(aInsRem)>0
 			RemoteDate:=aInsRem[1,F_DATE]
 			Remotetime:=aInsRem[1,F_TIME]
-// 			if (LocalDate < RemoteDate .or. LocalDate = RemoteDate .and. LocalTime<Remotetime ).or. self:DBVers>self:PrgVers
-			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
+			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
+// 			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
 				// apparently new version:
 				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()
 				// load first latest version of install program:
