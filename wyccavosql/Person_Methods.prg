@@ -167,14 +167,14 @@ else
 endif
 StrTran(cSearch," ","%20")
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-httpfile:= oHttp:GetDocumentByURL("http://www.postcode.nl/search/"+cSearch)
+httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
 
 nPos1:=At('<div class="col-main">',httpfile)
 if nPos1>0
 	// search unique string before response
-	nPos1:=At('<td><a class="view"',httpfile)
+	nPos1:=At3('<td><a class="view"',httpfile,nPos1+22)
 	if nPos1>0
-		output:=SubStr(httpfile,nPos1+20) 
+		output:=SubStr(httpfile,nPos1+20,200) 
 	elseif AtC('class="alert warning"',httpfile)=0 
 		// apparently website changed:
 		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
@@ -185,8 +185,7 @@ if !Empty(output)
 	if (nPos1>1)
 		nPos2:=At3("</a>",output,nPos1)
 		zipcode:=StandardZip(SubStr(output,nPos1,nPos2-nPos1))
-		nPos1:=nPos2+7
-		nPos1:=At3("<td>",output,nPos1+1)+4
+		nPos1:=At3("<td>",output,nPos2+8)+4
 		nPos2:=At3('</td>',output,nPos1)
 		street:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
 		nPos1:=At3("<td>",output,nPos2+2)+1
@@ -4155,7 +4154,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
 	LOCAL lError,lSetAMPM as LOGIC
-	local dlg,invoicedate as date
+	local dlg,invoicedate,dReqCol as date
 	LOCAL ptrHandle
 	Local oWarn as TextBox
 	local aDue:={} as array // array with dueamount values: 
@@ -4468,6 +4467,19 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if !SeqTp==aDD[i,8]
 			//new seqtp thus new PmtInf
 			SeqTp:=aDD[i,8] 
+			// determine requested collection date:
+		 	// for first and single 5 worksday ahead, otherwise 2 workdays
+			if SeqTp=1.or.SeqTp=4
+				dReqCol:=Max(Today()+7,process_date)
+			else
+				dReqCol:=Today()+2
+				if DoW(dReqCol)=1
+					dReqCol+=1     // on Sunday go to Monday
+				elseif DoW(dReqCol)=7
+					dReqCol+=2     // on saturday: go to Monday
+				endif
+				dReqCol:=Max(dReqCol,process_date)
+			endif
 			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
 				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(SeqTp,-1)+'</PmtInfId>'+CRLF+; 
 				'<PmtMtd>DD</PmtMtd>'+CRLF+;
@@ -4479,7 +4491,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				'<LclInstrm><Cd>CORE</Cd></LclInstrm>'+CRLF+;
 				'<SeqTp>'+aSeqTp[aDD[i,8],1]+'</SeqTp>'+CRLF+;
 				'</PmtTpInf>' +CRLF+;
-				'<ReqdColltnDt>'+SQLdate(iif(SeqTp=1.or.SeqTp=4, Max(Today()+6,process_date),Max(Today()+3,process_date)))+'</ReqdColltnDt>'+CRLF+;        // for firsand single 5 day ahead, otherwise 2 days
+				'<ReqdColltnDt>'+SQLdate(dReqCol)+'</ReqdColltnDt>'+CRLF+;       
 				'<Cdtr>'+CRLF+;
 				'<Nm>'+cOrgName+'</Nm>'+CRLF+;
 				'</Cdtr>'+CRLF+;
