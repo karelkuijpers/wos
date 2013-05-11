@@ -2607,6 +2607,7 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as USUAL, cText,lv_budget,lv_kind,lv_persid,lv_bankid as STRING 
 	local Cur_RekNrOwn, Cur_enRoute as string
 	local cType86 as string  //type of tag 86: B=bank,
+	local cRefType as string // type of reference: EREF,MARF,PREF, NONREF
 	LOCAL lv_Amount,lv_balance as FLOAT
 	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL lSuccess:=true as LOGIC
@@ -2643,11 +2644,17 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 	nImp:=0
 	self:aValuesTrans:={}
 	DO WHILE .not.oHlM:EOF
-		* Search 25 record:
-		IF !SubStr(oHlM:MTLINE,1,4)==":25:"
+		* Search 20 or 25 record:
+		IF !SubStr(oHlM:MTLINE,1,4)==":25:" .and. !SubStr(oHlM:MTLINE,1,4)==":20:"
 			oHlM:Skip()
 			loop
 		ENDIF
+		if SubStr(oHlM:MTLINE,1,4)==":20:"
+			ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,5,6)) // valuta date 
+			oHlM:Skip()
+			loop
+		ENDIF
+			 
 		lv_bankAcntOwn:=AllTrim(SubStr(oHlM:MTLINE,5))
 		lv_bankAcntOwn:=ZeroTrim(StrTran(lv_bankAcntOwn,".",""))
 		lv_bankAcntOwn:=Str(Val(lv_bankAcntOwn),-1)  // remove currency
@@ -2686,7 +2693,7 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_kind:=""
 				lv_persid:=""
 				lv_bankid:=""
-				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,5,6)) // valuta date 
+//				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,5,6)) // valuta date   ????
 				lv_description:=""
 				
 				nDC:=At("C",SubStr(oHlM:MTLINE,11,6))  //D or C
@@ -2697,32 +2704,39 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 					lv_addsub:="B"
 				ENDIF
 				nEndAmnt:= At("N",SubStr(oHlM:MTLINE,nDC+11,16))
+				lv_kind:=SubStr(oHlM:MTLINE,nDC+1,3)  // transactioncode
 				lv_AmountStr:=StrTran(SubStr(oHlM:MTLINE,nDC+11,nEndAmnt-1),",",'.')
 				// 				lv_AmountStr:=StrTran(lv_AmountStr,".",DecSeparator)
 				lv_Amount:=Round(Val(lv_AmountStr),2)
 				lv_NameContra:=""
 				lv_BankAcntContra:=""
-				* get contra bank account number:
+					
+				* get reference type or contra bank account number:
 				IF Len(oHlM:MTLINE)>nEndAmnt+nDC+20
-					cText:=AllTrim(StrTran(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+3,16),"P",""))
-					IF isnum(cText)
-						lv_BankAcntContra:=ZeroTrim(StrTran(cText,".")) 
-					else
-						if IsSEPA(cText)
-							lv_BankAcntContra:= cText
+					cText:=AllTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+3,16))
+					if cText=="EREF" .or.cText=="MARF" .or. cText=="PREF" .or. cText=="NONREF"
+						cRefType:=cText
+					else 
+						cText:=StrTran(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+3,16),"P","")
+						IF	isnum(cText)
+							lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))	
 						else
-							// check if pseudo IBAN:
-							if IsAlphabetic(SubStr(cText,3,4)) .and.isnum(SubStr(cText,1,2) )
-								if isnum(SubStr(cText,7))
-									lv_BankAcntContra:=ZeroTrim(SubStr(cText,7)) 
+							if	IsSEPA(cText)
+								lv_BankAcntContra:= cText
+							else
+								//	check	if	pseudo IBAN:
+								if	IsAlphabetic(SubStr(cText,3,4)) .and.isnum(SubStr(cText,1,2) )
+									if	isnum(SubStr(cText,7))
+										lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))	
+									endif
 								endif
 							endif
-						endif
-					ENDIF
-					* get contra name:
-					IF Len(oHlM:MTLINE)>nEndAmnt+nDC+35
-						lv_NameContra:=ZeroTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+19))
-					ENDIF
+						ENDIF
+						* get	contra name:
+						IF	Len(oHlM:MTLINE)>nEndAmnt+nDC+35
+							lv_NameContra:=ZeroTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+19))
+						ENDIF
+					endif
 				ENDIF
 				oHlM:Skip()
 				lv_description:="" 
