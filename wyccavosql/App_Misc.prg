@@ -1249,8 +1249,9 @@ elseIF Len(Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
 	HelpDir:="C:\Windows\Temp"
 ELSEIF Len(Directory("C:\TEMP",FA_DIRECTORY))>0
 	HelpDir:="C:\TEMP"
-ELSE
-	HelpDir:="C:"
+ELSE 
+	DirMake("C:\TEMP")
+	HelpDir:="C:\TEMP"
 ENDIF 
 Function GetMailAbrv(cCode as string) as string
 	* Return abbrivation corresponding with given pers_code
@@ -1553,6 +1554,43 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 		ENDIF 
 	endif
 	RETURN iif(lMulti,cPartLv4,cQuote+cPartLv4+cQuote)
+Function ImportCSV(SourceFile as string,Desttable as string,nMinCol:=2 as int) as logic 
+	// import of a CSV or tab-seperated file SourceFile into table Desttable with minimal of nMinCol columns
+	local NbrCol as int 
+	local cDelim as string 
+	local cBuffer as string 
+	local aStruct as array
+	local aFields as array
+	local avalues:={} as array // array with values to be stored 
+	LOCAL ptrHandle as MyFile 
+	local oFs as FileSpec
+	local oStmnt as sqlstatement 
+	oFs:=FileSpec{SourceFile}
+	ptrHandle:=MyFile{oFs}
+	if FError() >0
+		(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
+		RETURN FALSE
+	endif
+	cBuffer:=ptrHandle:FReadLine()
+	if Upper(oFs:Extension)=".TXT"
+		cDelim:=CHR(9)
+	ELSE
+		cDelim:=Listseparator
+	endif 
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,1,20)
+		return false
+	endif
+	// replace space in name by underscore:
+	NbrCol:=Len(aStruct)
+	cBuffer:=ptrHandle:FReadLine()
+	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol 
+		aadd(aValues,aFields)
+		cBuffer:=ptrHandle:FReadLine()
+	enddo
+	oStmnt:=SQLStatement{"insert ignore into `"+Desttable+"` ("+Implode(aStruct,',')+') values '+Implode(avalues,'","'),oConn}
+	oStmnt:Execute()
+	ptrHandle:Close()
+	return Empty((oStmnt:Status))
 function InitGlobals() 
 	LOCAL oLan as Language
 	// 	Local oPP as PPCodes
@@ -2471,7 +2509,7 @@ PROTECT nStart:=0 as int
 PROTECT ptrHandle
 protect Eof as logic 
 protect CP as int 
-declare method FReadLine,Close 
+declare method FReadLine,Close,Init 
 METHOD Close(dummy:=nil as logic) as void pascal CLASS MyFile
 	FClose(ptrHandle)
 	ptrHandle:=null_object
@@ -2512,7 +2550,7 @@ METHOD FReadLine(dummy:=nil as logic) as string CLASS MyFile
 	self:nStart:=nPos
 	RETURN SubStr(self:cBuffer,nSt,nLen) 
 	
-METHOD Init(oFr) CLASS MyFile
+METHOD Init(oFr as FileSpec) CLASS MyFile
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
 	self:ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
@@ -2813,6 +2851,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2820,12 +2864,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -2925,7 +2963,8 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 			else
 				cSearch:=cSep
 			endif
-			nIncr:=Len(cSearch)-1
+			nIncr:=Len(cSearch)
+			nIncr:=iif(nIncr>0,nIncr-1,0)
 			IF (nPos:=At3(cSearch, cTarget,nStart))==0
 				if Empty(cQuote)
 					nPos:=nEnd +1
