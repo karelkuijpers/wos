@@ -2134,18 +2134,22 @@ METHOD OffRates(lDummy:=nil as logic) as array CLASS EditMember
 RETURN aRate
 METHOD OkButton()  CLASS EditMember
 	LOCAL nMWPos as int
+	local i,j as int
 	LOCAL cFilter, cStatement,cIncAcc,cExpAcc,cNetAcc,cIncAccPrv,cExpAccPrv,cNetAccPrv as STRING
 	local cIncAccNbr,cExpAccNbr,cNetAccNbr,cIncAccPrvNbr,cExpAccPrvNbr,cNetAccPrvNbr,cAccPrvNbr as string
-	LOCAL lResetBFM:=false as LOGIC
 	LOCAL oLVI	as ListViewItem, x as int, cAss, mCLNPrv, mAccidPrv,mCOPrv,mDepPrv as STRING
-	local oStmnt as SQLStatement
+	local cFatalError as string
+	local cError,cErrMessage as string
 	local cStatement as string
+	LOCAL lResetBFM:=false as LOGIC 
+	local lError as logic
+	local lCheckCons as logic
 	local aAss:={} as array
-	local i,j as int
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg,aContact:={'0','0','0'} as array 
 	local oDep as SQLSelect
-	local cFatalError as string
-   SetDecimalSep(Asc('.'))
+	local oStmnt as SQLStatement
+	
+	SetDecimalSep(Asc('.'))
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
@@ -2153,10 +2157,10 @@ METHOD OkButton()  CLASS EditMember
 			lResetBFM:=true
 		ENDIF
 		if !self:lNewMember
-// 			mAccidPrv:=Transform(oMbr:accid,"") 
+			// 			mAccidPrv:=Transform(oMbr:accid,"") 
 			mAccidPrv:=self:mRekOrg                                                         
 			mCLNPrv:=Str(oMbr:persid,-1)
-// 			mDepPrv:=Transform(oMbr:depid,"") 
+			// 			mDepPrv:=Transform(oMbr:depid,"") 
 			mDepPrv:=self:cCurDep
 			mCOPrv:=oMbr:CO
 		endif
@@ -2179,6 +2183,8 @@ METHOD OkButton()  CLASS EditMember
 			i++
 			aContact[i]:=ConS(self:mCLNContact3)
 		endif
+	oStmnt:=SQLStatement{"start transaction",oConn}
+	oStmnt:Execute()
 		cStatement:=iif(self:lNewMember,"insert into member ","update member ")+;
 			"set accid="+iif( self:AccDepSelect=='account',self:mREK,'DEFAULT')+",depid="+iif( self:AccDepSelect=='department',self:mDepId,'DEFAULT')+;
 			",persid="+self:mCLN+;
@@ -2198,19 +2204,25 @@ METHOD OkButton()  CLASS EditMember
 			iif(self:lNewMember,""," where mbrid="+self:mMbrId)
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
-		if !Empty(oStmnt:Status) 
-			self:Pointer := Pointer{POINTERARROW}
-			ErrorBox{,"Error:"+oStmnt:Status:Description}:Show()
-			return 
+		if !Empty(oStmnt:Status)
+			lError:=true
+			cError:=oStmnt:ErrInfo:errormessage 
+			// 			self:Pointer := Pointer{POINTERARROW}
+			// 			ErrorBox{,"Error:"+oStmnt:Status:Description}:Show()
+			// 			return 
 		endif		
 
-		IF !self:lNewMember .and.;
+		IF !lError .and.!self:lNewMember .and.;
 				(!mCLNPrv == self:mCLN .or. !mAccidPrv == self:mREK.or. !mDepPrv == self:mDepId )
 			* connected person, account or department changed?
 			IF mCLNPrv # self:mCLN  
 				// disconnect old person from member:
 				oStmnt:SQLString:="update person set type='"+iif(mCOPrv="M","1",PersTypeValue("COM"))+"',mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW','') where persid="+mCLNPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			ENDIF 
 			// connect new person to member:
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
@@ -2219,6 +2231,10 @@ METHOD OkButton()  CLASS EditMember
 				iif(lNewMember .or.! mCLNPrv == mCLN,",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'","")+;
 				" where persid="+self:mCLN 
 			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:=oStmnt:ErrInfo:errormessage 
+			endif
 			IF !Empty(mAccidPrv) .and.(!Empty(self:mDepId) .or. !Empty(self:mREK) .and.!mAccidPrv == self:mREK)
 				* From account to department or Account replaced:
 				if !Empty(self:mDepId)
@@ -2234,45 +2250,89 @@ METHOD OkButton()  CLASS EditMember
 				* Disconnect old account from member:
 				oStmnt:SQLString:="update account set giftalwd=0"+iif(mAccidPrv==cNetAcc,"",",description=concat('Disconnected:',description)")+" where accid="+mAccidPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change subscriptions to new income account 
 				oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change standing orders to new expense or income account:
 				oStmnt:SQLString:="update standingorderline set "+sIdentChar+"accountid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv +" and cre>deb"
 				oStmnt:Execute()
 				oStmnt:SQLString:="update standingorderline set "+sIdentChar+"accountid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accountid"+sIdentChar+"="+mAccidPrv +" and deb>cre"
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change telepatterns
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv  + " and addsub='B'"
 				oStmnt:Execute()
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv  + " and addsub='A'"
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change importpatterns
 				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='C'" 
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='D'" 
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change bankaccount single destination:
 				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+mAccidPrv 
 				oStmnt:Execute()
-				 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
+				
 				// change transactions not yet sent to PMC: 
 				if	(!Empty(SINCHOME) .or.!Empty(SINC))
 					// remove recordings to gift income/expense:
 					oStmnt:SQLString:='delete from transaction where (accid='+SINC+iif(SINC==SINCHOME,'',' or accid='+SINCHOME)+' or accid='+SEXP+;
-					iif(SEXP==SEXPHOME,'',' or accid='+SEXPHOME)+') and '+;
-					'`transid` in (select `transid` from (select transid from transaction b where b.accid='+mAccidPrv+' and b.bfm="" and b.gc<>"") as x)'
+						iif(SEXP==SEXPHOME,'',' or accid='+SEXPHOME)+') and '+;
+						'`transid` in (select `transid` from (select transid from transaction b where b.accid='+mAccidPrv+' and b.bfm="" and b.gc<>"") as x)'
 					// and `transid` in (select `transid` from( select `transid` from transaction b where b.accid=100412 and b.bfm="" and b.gc<>"") as x)
 					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 				endif   
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='CH'"
 				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				if cNetAcc<>mAccidPrv 
 					oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cNetAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc='PF'"
 					oStmnt:Execute() 
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 				endif 
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv +" and bfm='' and gc in ('AG','MG')"
 				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change importtrans not yet processed: ???  (normally all immediately after import processed) 
 				if ConI(SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
 					cAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+mAccidPrv,oConn}:accnumber,"") 
@@ -2280,25 +2340,46 @@ METHOD OkButton()  CLASS EditMember
 					cExpAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cExpAcc,oConn}:accnumber,"") 
 					cNetAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cNetAcc,oConn}:accnumber,"") 
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
 					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='PF'"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='PF'"
 					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='CH'"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cAccPrvNbr +"' and processed=0 and assmntcd='CH'"
 					oStmnt:Execute() 
-				endif
-				// correct month balances data
-				CheckConsistency(oMainWindow,true,false,@cFatalError)
-								
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
+				endif 
+				lCheckCons:=true
+				
 			elseIF !Empty(mDepPrv) .and.(!Empty(self:mREK) .or.!Empty(self:mDepId) .and.!mDepPrv == self:mDepId)
 				* From department to account or Department replaced:
 				* Disconnect old department from member:
-				SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepPrv,oConn}:Execute() 
+				oStmnt:=SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepPrv,oConn}
+				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// set all its accounts on no gifts
-				SQLStatement{"update account set giftalwd=0 where department="+mDepPrv,oConn}:Execute()
-				oDep:=SQLSelect{"select incomeacc,expenseacc,netasset from department where depid="+mDepPrv,oConn}
+				oStmnt:=SQLStatement{"update account set giftalwd=0 where department="+mDepPrv,oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
+				oDep:=SqlSelect{"select incomeacc,expenseacc,netasset from department where depid="+mDepPrv,oConn}
 				cIncAccPrv:=Transform(oDep:incomeacc,"") 
 				cExpAccPrv:=Transform(oDep:expenseacc,"") 
 				cNetAccPrv:=Transform(oDep:netasset,"") 
@@ -2315,33 +2396,76 @@ METHOD OkButton()  CLASS EditMember
 				// change subscriptions to new income account 
 				oStmnt:SQLString:="update subscription set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change standing orders to new expense or income account:
 				oStmnt:SQLString:="update standingorderline set "+sIdentChar+"accountid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accountid"+sIdentChar+"="+cIncAccPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update standingorderline set "+sIdentChar+"accountid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accountid"+sIdentChar+"="+cExpAccPrv
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change telepatterns
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv +" and addsub='B'"
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update telebankpatterns set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='A'"
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change importpatterns
 				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv  +" and addsub='C'"
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='D'" 
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change bankaccount single destination:
 				oStmnt:SQLString:="update bankaccount set "+sIdentChar+"singledst"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"singledst"+sIdentChar+"="+cIncAccPrv 
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				// change transactions not yet sent to PMC:
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and bfm='' and gc='CH'"
 				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv +" and bfm='' and gc in ('AG,'MG')"
 				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update transaction set "+sIdentChar+"accid"+sIdentChar+"="+cNetAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cNetAccPrv +" and bfm='' and gc='PF'"
-				oStmnt:Execute() 
-				// correct month balances data
-				CheckConsistency(oMainWindow,true,false,@cFatalError)
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
+				lCheckCons:=true 
 				// change importtrans not yet processed: (normally all immediately after import processed) 
 				if ConI(SQLSelect{"select count(*) as total from importtrans where processed=0",oConn}:total)>0
 					cIncAccPrvNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cIncAccPrv,oConn}:accnumber,"") 
@@ -2351,14 +2475,26 @@ METHOD OkButton()  CLASS EditMember
 					cExpAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cExpAcc,oConn}:accnumber,"") 
 					cNetAccNbr:=Transform(SQLSelect{"select accnumber from account where accid="+cNetAcc,oConn}:accnumber,"") 
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cIncAccPrvNbr +"' and processed=0 and assmntcd in ('AG','MG')"
 					oStmnt:Execute() 
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccPrvNbr +"' and processed=0 and assmntcd='PF'"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cNetAccPrvNbr +"' and processed=0 and assmntcd='PF'"
 					oStmnt:Execute() 
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 					oStmnt:SQLString:="update importtrans set "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccNbr+;
-					"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccPrvNbr +"' and processed=0 and assmntcd='CH'"
+						"' where "+sIdentChar+"accountnr"+sIdentChar+"='"+cExpAccPrvNbr +"' and processed=0 and assmntcd='CH'"
 					oStmnt:Execute() 
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 				endif
 			endif 
 		ENDIF
@@ -2371,6 +2507,10 @@ METHOD OkButton()  CLASS EditMember
 				",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'"+;
 				" where persid="+self:mCLN 
 			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:=oStmnt:ErrInfo:errormessage 
+			endif
 		ENDIF
 		IF self:AccDepSelect=='account'
 			if self:lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == mCLN
@@ -2379,10 +2519,18 @@ METHOD OkButton()  CLASS EditMember
 				// 			oStmnt:SQLString:="update account set persid="+self:mCLN+",GIFTALWD=1,description='"+cMemberName+"' where accid="+self:mREK
 				oStmnt:SQLString:="update account set giftalwd=1,description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			ELSEIF !AllTrim(self:cAccountName)==AllTrim(self:cMemberName)
 				* Name changed of member:
 				oStmnt:SQLString:="update account set description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			ENDIF
 		else
 			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == mCLN
@@ -2390,34 +2538,64 @@ METHOD OkButton()  CLASS EditMember
 				* Connect new Department:
 				oStmnt:SQLString:="update account set giftalwd=1 where accid in (select incomeacc from department where depid="+self:mDepId+")"
 				oStmnt:execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 				oStmnt:SQLString:="update department set descriptn='"+StrTran(self:cMemberName,"'","\'")+"' where depid="+self:mDepId
 				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			endif
 		endif
 		// remove associated accounts:
 		for i:=1 to Len(self:aAssOrg)
 			if AScan(aAss,self:aAssOrg[i])=0
 				// remove:
-				SQLStatement{"delete from memberassacc where mbrid="+self:mMbrId+" and accid="+self:aAssOrg[i],oConn}:Execute()
+				oStmnt:=SQLStatement{"delete from memberassacc where mbrid="+self:mMbrId+" and accid="+self:aAssOrg[i],oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			endif
 		next
 		// add associated accounts:
 		for i:=1 to Len(aAss)
 			if AScan(self:aAssOrg,aAss[i])=0
 				// add:
-				SQLStatement{"insert into memberassacc set mbrid="+self:mMbrId+",accid="+aAss[i],oConn}:Execute()
+				oStmnt:=SQLStatement{"insert into memberassacc set mbrid="+self:mMbrId+",accid="+aAss[i],oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			endif
 		next
 		// remove distribution instructions:
 		for i:=1 to Len(self:aDistrOrg)
 			if AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]})=0
 				// remove:
-				SQLStatement{"delete from distributioninstruction where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistrOrg[i,SEQNBR],-1),oConn}:Execute()
+				oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistrOrg[i,SEQNBR],-1),oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage 
+				endif
 			endif
 		next
-		// add distribution instructions:
+		// add distribution instructions: 
+		if !Empty(self:mDepId)
+			oDep:=SqlSelect{"select incomeacc,expenseacc,netasset from department where depid="+self:mDepId,oConn}
+			cExpAcc:=Str(oDep:expenseacc,-1) 
+		else
+			cExpAcc:=self:mREK
+		endif
 		for i:=1 to Len(self:aDistr)
-			// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;
+			// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;  
+			j:=0
 			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"',",;
 				"update distributioninstruction set ")+;
 				"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
@@ -2428,11 +2606,55 @@ METHOD OkButton()  CLASS EditMember
 				",currency="+Str(self:aDistr[i,CURRENCY],-1)+;
 				",disabled="+Str(self:aDistr[i,DISABLED],-1)+; 
 			",singleuse="+Str(self:aDistr[i,SINGLEUSE],-1) +;
-				iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
+				iif(self:lNew.or.(j:=AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]}))=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
 			oStmnt:=SQLStatement{cStatement,oConn}
 			oStmnt:Execute()
-		next 
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:=oStmnt:ErrInfo:errormessage
+				exit  
+			endif
+			// check if dest acc changed
+			if j>0 .and. self:aDistr[i,DESTPP]=='AAA' .and. !aDistrOrgm[j,DESTACC]==aDistrm[i,DESTACC]
+				// dest acc changed, change also corresponding bankorders:
+				oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aDistrm[i,DESTACC]+"' where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[j,DESTACC]+"'",oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage
+					exit  
+				endif
+			endif
+		next
+		// Remove bankorders of deleted distribution instructions:
+		for i:=1 to Len(aDistrOrgm)
+			if (j:=AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]}))=0 // not in current distr instr?
+				// delete bank orders:
+				oStmnt:=SQLStatement{"delete from bankorder where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[i,DESTACC]+"'",oConn}
+				oStmnt:Execute()				
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:=oStmnt:ErrInfo:errormessage
+					exit  
+				endif
+			endif
+		next
+		if lError
+			SQLStatement{"rollback",oConn}:Execute()
+			self:Pointer := Pointer{POINTERARROW}
+			if !Empty(cError)
+				LogEvent(self,"Error:"+cError,"LogErrors")
+			endif
+			ErrorBox{self,"member could not be stored:"+cError}:Show()
+			return false
+		endif 
+		SQLStatement{"commit",oConn}:Execute()
+		self:Pointer := Pointer{POINTERARROW}
 		self:aDistrOrg:=self:aDistr    // for close
+		if lCheckCons
+			// correct month balances data
+			CheckConsistency(oMainWindow,true,false,@cFatalError)
+		endif
 		* Reset BFM for not-reporting backwards to IES/PMC:  ( at this moment dReportDate always empty) 
 		// 		IF lResetBFM.and. dReportDate>LstYearClosed
 		// 			* Reset all transactions: 
