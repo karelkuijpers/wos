@@ -810,6 +810,11 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	ENDIF */
 	cWorkdir:=SubStr(cWorkdir,1,Len(cWorkdir)-1) 
 	RddSetDefault("DBFCDX") 
+	// get LOCAL separator:
+	oReg:=Class_HKCU{}
+	Listseparator:=oReg:GetString("Control Panel\International","sList")   // delimiter for CSV
+	Decseparator:=oReg:GetString("Control Panel\International","sDecimal")   // delimiter for decimals
+	oReg:=null_object 
 
 	if DBVers > PrgVers
 		(ErrorBox{,"Version of Wycliffe Office System is older than version of the database."+CRLF+;
@@ -827,7 +832,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	endif 
 	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 		// check if new ppcodes, ipcaccounts or currencylist should be imported:
-		oDBFileSpec1:=DbFileSpec{cWorkdir+"\PPCODES.DBF"}
+		oDBFileSpec1:=FileSpec{cWorkdir+"\ppcodes.csv"}
 		lCopyPP:=false
 		IF oDBFileSpec1:Find()
 			IF oDBFileSpec1:Size>20  // not empty? 
@@ -848,7 +853,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 				endif
 			endif
 		endif 
-		oDBFileSpec1:=DbFileSpec{cWorkdir+"\CURRENCYLIST.DBF"}
+		oDBFileSpec1:=FileSpec{cWorkdir+"\currencylist.csv"}
 		lCopyCur:=false
 		IF oDBFileSpec1:Find()
 			IF oDBFileSpec1:Size>20  // not empty? 
@@ -869,7 +874,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 				endif
 			endif
 		endif
-		oDBFileSpec1:=DbFileSpec{cWorkdir+"\IPCACCOUNTS.DBF"}
+		oDBFileSpec1:=FileSpec{cWorkdir+"\ipcaccounts.csv"}
 		lCopyIPC:=false
 		IF oDBFileSpec1:Find()
 			IF oDBFileSpec1:Size>20  // not empty? 
@@ -917,17 +922,21 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 		self:InitializeDB()
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
-			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{}) 
+// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
+			ImportCSV(cWorkdir+"\ppcodes.csv","ppcodes",2) 
 		endif
 		if lCopyCur
-			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
+			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2) 
+// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
 		endif 
 		if lCopyIPC
-			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
+			ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2) 
+// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
 		endif
 		// load bic table
 		if lCopyBIC
-			FillBIC()
+// 			FillBIC()
+			ImportCSV(cWorkdir+"\bic.csv","bic",1)
 		endif
 
 		if FirstOfDay
@@ -995,11 +1004,6 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	endif
 	SetDigit(18)
 
-	// get LOCAL separator:
-	oReg:=Class_HKCU{}
-	Listseparator:=oReg:GetString("Control Panel\International","sList")   // delimiter for CSV
-	Decseparator:=oReg:GetString("Control Panel\International","sDecimal")   // delimiter for decimals
-	oReg:=null_object 
 
 
 	mmj := CMonth(Today())
