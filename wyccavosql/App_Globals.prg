@@ -31,7 +31,7 @@ global emailclient as string
 GLOBAL EXCEL as STRING
 global FirstLogin as logic  // first login user this day?
 global GlBalYears:={} as Array
-GLOBAL HelpDir:="C:" as STRING
+GLOBAL HelpDir:="C:\Windows\Temp" as STRING
 global iban_registry as array
 GLOBAL KeyWords as ARRAY
 GLOBAL LENACCNBR:=12 as int
