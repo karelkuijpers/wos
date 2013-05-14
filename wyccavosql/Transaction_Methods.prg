@@ -4334,47 +4334,48 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		// 				endif
 		self:ShowDebBal()	   
 		
-		
-		// After all updates update regular gifts:
-		FOR i=1 to Len(oHm:Amirror)
-			IF oHm:Amirror[i,3]<=0 .or.Empty(oHm:Amirror[i,5]) .or. ;  //cre, category
-				!Empty(oHm:Amirror[i,12]) ;   //due amount
-				.or.AutoRec .or.AllTrim(oHm:Amirror[i,7])==SPROJ // category = G or M//accid
-				loop
-			ENDIF
-			* Update regular gifts:
-			* Check if already present within Subscription: 
-			oSub:=SqlSelect{"select amount,reference,subscribid from subscription where personid="+self:mCLNGiver+" and accid="+oHm:Amirror[i,7],oConn}
-			IF oSub:reccount>0
-				if !oSub:amount==oHm:Amirror[i,3].or.!oSub:REFERENCE==AllTrim(oHm:REFERENCE)
-					* update regular gift:
-					IF (Admin=="WO" .or. Admin=="GI") .and. Empty(self:DefBest)
+		if !Empty(self:mCLNGiver)
+			// After all updates update regular gifts:
+			FOR i=1 to Len(oHm:Amirror)
+				IF oHm:Amirror[i,3]<=0 .or.Empty(oHm:Amirror[i,5]) .or. ;  //cre, category
+					!Empty(oHm:Amirror[i,12]) ;   //due amount
+					.or.AutoRec .or.AllTrim(oHm:Amirror[i,7])==SPROJ // category = G or M//accid
+					loop
+				ENDIF
+				* Update regular gifts:
+				* Check if already present within Subscription: 
+				oSub:=SqlSelect{"select amount,reference,subscribid from subscription where personid='"+self:mCLNGiver+"' and accid="+oHm:Amirror[i,7],oConn}
+				IF oSub:reccount>0
+					if !oSub:amount==oHm:Amirror[i,3].or.!oSub:REFERENCE==AllTrim(oHm:REFERENCE)
+						* update regular gift:
+						IF (Admin=="WO" .or. Admin=="GI") .and. Empty(self:DefBest)
+							oHm:Goto(oHm:Amirror[i,6])
+							if TextBox{self:owner, "Input of Payments", ;
+									"Apply "+Str(oHm:Amirror[i,3],-1)+;
+									" to standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()=BOXREPLYYES 
+								oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+									",lstchange='"+SQLdate(self:mDAT)+"' where subscribid="+Str(oSub:Subscribid,-1),oConn}
+								oStmnt:execute()
+							ENDIF
+						ENDIF
+					ENDIF
+				ELSE
+					* Add new regular gift:
+					IF (Admin=="WO" .or. Admin=="GI") .and. Empty(DefBest)
 						oHm:Goto(oHm:Amirror[i,6])
 						if TextBox{self:owner, "Input of Payments", ;
-								"Apply "+Str(oHm:Amirror[i,3],-1)+;
-								" to standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()=BOXREPLYYES 
-							oStmnt:=SQLStatement{"update subscription set amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-								",lstchange='"+SQLdate(self:mDAT)+"' where subscribid="+Str(oSub:Subscribid,-1),oConn}
+								"Add "+Str(oHm:Amirror[i,3],-1)+;
+								" as standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()==BOXREPLYYES 
+							oStmnt:=SQLStatement{"insert into subscription set personid="+self:mCLNGiver+",accid="+oHm:Amirror[i,7]+;
+								",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
+								",category='G',begindate='"+SQLdate(self:mDAT)+"',gc='"+oHm:Amirror[i,4]+"'",oConn}
 							oStmnt:execute()
 						ENDIF
 					ENDIF
 				ENDIF
-			ELSE
-				* Add new regular gift:
-				IF (Admin=="WO" .or. Admin=="GI") .and. Empty(DefBest)
-					oHm:Goto(oHm:Amirror[i,6])
-					if TextBox{self:owner, "Input of Payments", ;
-							"Add "+Str(oHm:Amirror[i,3],-1)+;
-							" as standard gift pattern for "+AllTrim(oHm:AccDesc),BUTTONYESNO+BOXICONQUESTIONMARK}:show()==BOXREPLYYES 
-						oStmnt:=SQLStatement{"insert into subscription set personid="+self:mCLNGiver+",accid="+oHm:Amirror[i,7]+;
-							",lstchange='"+SQLdate(self:mDAT)+"',amount="+Str(oHm:Amirror[i,3],-1)+", reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
-							",category='G',begindate='"+SQLdate(self:mDAT)+"',gc='"+oHm:Amirror[i,4]+"'",oConn}
-						oStmnt:execute()
-					ENDIF
-				ENDIF
-			ENDIF
-		next
-	ENDIF
+			next
+		ENDIF 
+	endif
 	oHm:ClearFilter()
 	self:ReSet() 
 	oHm:=self:server
