@@ -13,6 +13,39 @@ STATIC DEFINE ASKUPLD_CANCELBUTTON := 100
 STATIC DEFINE ASKUPLD_FIXEDTEXT2 := 103 
 STATIC DEFINE ASKUPLD_OKBUTTON := 101 
 STATIC DEFINE ASKUPLD_TEXTQESTION := 102 
+RESOURCE BalanceReport DIALOGEX  38, 35, 418, 225
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Year under review:", BALANCEREPORT_FIXEDTEXT1, "Static", WS_CHILD, 16, 14, 70, 12
+	CONTROL	"Start with month:", BALANCEREPORT_FIXEDTEXT2, "Static", WS_CHILD, 16, 36, 53, 12
+	CONTROL	"", BALANCEREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 85, 13, 88, 72
+	CONTROL	"", BALANCEREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 35, 33, 12, WS_EX_CLIENTEDGE
+	CONTROL	"End with month:", BALANCEREPORT_FIXEDTEXT3, "Static", WS_CHILD, 16, 55, 53, 12
+	CONTROL	"", BALANCEREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 54, 32, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", BALANCEREPORT_MBALNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 81, 93, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", BALANCEREPORT_BALBUTTON, "Button", WS_CHILD, 176, 81, 16, 13
+	CONTROL	"With details of subitems?", BALANCEREPORT_WHATDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 81, 114, 12
+	CONTROL	"", BALANCEREPORT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 116, 93, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", BALANCEREPORT_DEPBUTTON, "Button", WS_CHILD, 176, 116, 16, 13
+	CONTROL	"With details of subdepartments?", BALANCEREPORT_WHODETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 116, 120, 12
+	CONTROL	"With Numbers of all items", BALANCEREPORT_NUMBERS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 148, 97, 12
+	CONTROL	"With explanation", BALANCEREPORT_IND_EXPLANATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 166, 80, 11
+	CONTROL	"Condense", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 80, 11
+	CONTROL	"With account statements", BALANCEREPORT_IND_ACCSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 200, 99, 11
+	CONTROL	"OK", BALANCEREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 348, 7, 53, 12
+	CONTROL	"Cancel", BALANCEREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 348, 31, 54, 12
+	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 83, 40, 13
+	CONTROL	"Balance Items:", BALANCEREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 72, 400, 29
+	CONTROL	"Departments:", BALANCEREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 107, 400, 29
+	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 118, 40, 13
+	CONTROL	"Options", BALANCEREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 70, 139, 116, 79
+	CONTROL	"", BALANCEREPORT_MAXWHATLEVEL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 379, 81, 27, 72
+	CONTROL	"Down to level:", BALANCEREPORT_WHATLEVELTEXT, "Static", WS_CHILD, 320, 81, 53, 12
+	CONTROL	"", BALANCEREPORT_MAXWHOLEVEL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 379, 118, 27, 72
+	CONTROL	"Down to level:", BALANCEREPORT_WHOLEVELTEXT, "Static", WS_CHILD, 320, 118, 53, 12
+END
+
 CLASS BalanceReport INHERIT DataWindowMine 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -38,9 +71,13 @@ CLASS BalanceReport INHERIT DataWindowMine
 	PROTECT oDCGroupBox2 AS GROUPBOX
 	PROTECT oDCFixedText5 AS FIXEDTEXT
 	PROTECT oDCGroupBox3 AS GROUPBOX
+	PROTECT oDCMaxWhatLevel AS COMBOBOX
+	PROTECT oDCWhatLevelText AS FIXEDTEXT
+	PROTECT oDCMaxWhoLevel AS COMBOBOX
+	PROTECT oDCWhoLevelText AS FIXEDTEXT
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	INSTANCE BalYears
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+/*	INSTANCE BalYears
 	INSTANCE MONTHSTART
 	INSTANCE MONTHEND
 	INSTANCE mBalNumber
@@ -50,67 +87,38 @@ CLASS BalanceReport INHERIT DataWindowMine
 	INSTANCE Numbers
 	INSTANCE ind_explanation
 	INSTANCE lCondense
-	INSTANCE ind_accstmnt
+	INSTANCE ind_accstmnt */
 	PROTECT balsoort, cCurBal, cCurDep as STRING
 	PROTECT BalCount, DepCount AS INT
 	PROTECT oTransMonth AS AccountStatements
 
-PROTECT mainheading:={},;
+	PROTECT mainheading:={},;
 		HeadingCache:={} as ARRAY 
-export addheading as string
-PROTECT TAB:=" " as STRING, lXls as logic
-PROTECT mbud  AS FLOAT
-EXPORT oReport AS PrintDialog
-EXPORT iLine,iPage AS INT
-EXPORT BeginReport:=FALSE AS LOGIC
-EXPORT YEARSTART,YEAREND AS INT
-PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
-* Options for report type:
-//EXPORT WhatFrom:=Space(11), WhoFrom:=Space(11) AS STRING
-EXPORT WhatFrom, WhoFrom as int
-PROTECT BalColWidth, TotalWidth, maxlevel as int
-EXPORT SendToMail AS LOGIC
-EXPORT  netassBalId as int
-EXPORT showopeningclosingfund:=FALSE as LOGIC 
-Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,RedCharOn,RedCharOff as STRING 
-Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
-export SimpleDepStmnt as logic
-// Fiexed texts to print:
-protect cSummary,cDirectText,cDirectOn,cIncome,cIncomeL,cExpense,cExpenseL,cLiability,cAsset,cDetailed,cInscriptionInEx,cInscriptionAsLi,cInscriptionDep as string 
-protect cFrom,cTo,cYear,cFullyear,cDescription,cPrvYrYTD,cCurPeriod,cYtD,cSurPlus,cClsBal,cClosingBal,cAmount,cBudget,cOpeningBal as string 
-protect cNegative,cPositive as string 
+	export addheading as string
+	PROTECT TAB:=" " as STRING, lXls as logic
+	PROTECT mbud  AS FLOAT
+	EXPORT oReport AS PrintDialog
+	EXPORT iLine,iPage AS INT
+	EXPORT BeginReport:=FALSE AS LOGIC
+	EXPORT YEARSTART,YEAREND AS INT
+	PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
+	* Options for report type:
+	//EXPORT WhatFrom:=Space(11), WhoFrom:=Space(11) AS STRING
+	EXPORT WhatFrom, WhoFrom as int
+	PROTECT BalColWidth, TotalWidth, maxlevel as int
+	EXPORT SendToMail AS LOGIC
+	EXPORT  netassBalId as int
+	EXPORT showopeningclosingfund:=FALSE as LOGIC 
+	Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,RedCharOn,RedCharOff as STRING 
+	Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
+	export SimpleDepStmnt as logic
+	// Fiexed texts to print:
+	protect cSummary,cDirectText,cDirectOn,cIncome,cIncomeL,cExpense,cExpenseL,cLiability,cAsset,cDetailed,cInscriptionInEx,cInscriptionAsLi,cInscriptionDep as string 
+	protect cFrom,cTo,cYear,cFullyear,cDescription,cPrvYrYTD,cCurPeriod,cYtD,cSurPlus,cClsBal,cClosingBal,cAmount,cBudget,cOpeningBal as string 
+	protect cNegative,cPositive as string 
 
 
-declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading,BalFishTot
-RESOURCE BalanceReport DIALOGEX  38, 35, 371, 225
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Year under review:", BALANCEREPORT_FIXEDTEXT1, "Static", WS_CHILD, 16, 14, 70, 12
-	CONTROL	"Start with month:", BALANCEREPORT_FIXEDTEXT2, "Static", WS_CHILD, 16, 36, 53, 12
-	CONTROL	"", BALANCEREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 85, 13, 88, 72
-	CONTROL	"", BALANCEREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 35, 33, 12, WS_EX_CLIENTEDGE
-	CONTROL	"End with month:", BALANCEREPORT_FIXEDTEXT3, "Static", WS_CHILD, 16, 55, 53, 12
-	CONTROL	"", BALANCEREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 54, 32, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", BALANCEREPORT_MBALNUMBER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 81, 93, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", BALANCEREPORT_BALBUTTON, "Button", WS_CHILD, 176, 81, 16, 13
-	CONTROL	"With details of subitems?", BALANCEREPORT_WHATDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 81, 114, 12
-	CONTROL	"", BALANCEREPORT_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 85, 116, 93, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", BALANCEREPORT_DEPBUTTON, "Button", WS_CHILD, 176, 116, 16, 13
-	CONTROL	"With details of subdepartments?", BALANCEREPORT_WHODETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 116, 120, 12
-	CONTROL	"With Numbers of all items", BALANCEREPORT_NUMBERS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 148, 97, 12
-	CONTROL	"With explanation", BALANCEREPORT_IND_EXPLANATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 166, 80, 11
-	CONTROL	"Condense", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 80, 11
-	CONTROL	"With account statements", BALANCEREPORT_IND_ACCSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 200, 99, 11
-	CONTROL	"OK", BALANCEREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 306, 5, 54, 12
-	CONTROL	"Cancel", BALANCEREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 307, 29, 53, 12
-	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 83, 40, 13
-	CONTROL	"Balance Items:", BALANCEREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 72, 350, 29
-	CONTROL	"Departments:", BALANCEREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 107, 350, 29
-	CONTROL	"Down from:", BALANCEREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 118, 40, 13
-	CONTROL	"Options", BALANCEREPORT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 70, 139, 116, 79
-END
-
+	declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading,BalFishTot
 METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array, level as int,r_indmain ref array,r_parentid ref array,r_balid ref array,r_balnbr ref array,r_cat ref array,r_heading ref array,r_footer ref array) as int  CLASS BalanceReport
 * Find subbalance items and add to arrays withbalance Items
 	LOCAL nChildRec, iWidth, p	AS INT
@@ -150,8 +158,8 @@ METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array, lev
 	AAdd(r_cat,aItem[nCurrentRec,4])  //category
 	AAdd(r_parentid,aItem[nCurrentRec,3])   //balitemidparent
 	AAdd(r_indmain,FALSE)
-	AAdd(r_heading,if(Numbers,aItem[nCurrentRec,2]+self:TAB,"")+aItem[nCurrentRec,5])
-	AAdd(r_footer,if(Numbers,aItem[nCurrentRec,2]+self:TAB,"")+aItem[nCurrentRec,6])
+	AAdd(r_heading,if(self:Numbers,aItem[nCurrentRec,2]+self:TAB,"")+aItem[nCurrentRec,5])
+	AAdd(r_footer,if(self:Numbers,aItem[nCurrentRec,2]+self:TAB,"")+aItem[nCurrentRec,6])
 	p:=Len(r_heading)
 	iWidth:=level*2+Max(Len(r_heading[p]),Len(r_footer[p]))
 	IF iWidth>self:BalColWidth
@@ -291,8 +299,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	rd_budper:={},;  // idem
 	rd_budytd:={} as array // idem
 	// LOCAL BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff as STRING
-// 	IF self:SendToMail
-if self:oReport:lRTF 
+	// 	IF self:SendToMail
+	if self:oReport:lRTF 
 		BoldOn:="{\b "
 		BoldOff:="}" 
 		RedCharOn:="\cf1 "
@@ -316,10 +324,10 @@ if self:oReport:lRTF
 		GreenOff:=""	
 	ENDIF
 
-// Check input data:
-// 	IF !ValidateControls( SELF, SELF:AControls )
-// 		RETURN
-// 	END
+	// Check input data:
+	// 	IF !ValidateControls( SELF, SELF:AControls )
+	// 		RETURN
+	// 	END
 	aBalYr:=GetBalYear(Val(SubStr(self:BalYears,1,4)),Val(SubStr(self:BalYears,5,2)))
 	self:YEARSTART:=aBalYr[1]
 	BalYear:=self:YEARSTART
@@ -389,7 +397,7 @@ if self:oReport:lRTF
 		AAdd(d_dep,0)
 		AAdd(d_parentdep,nil)
 		AAdd(d_indmaindep,if(Departments,true,FALSE))
-		AAdd(d_depname,if(Numbers,"0"+self:TAB,"")+sEntity+" "+AllTrim(SLAND))
+		AAdd(d_depname,if(self:Numbers,"0"+self:TAB,"")+sEntity+" "+AllTrim(SLAND))
 		AAdd(d_acc,{})
 		AAdd(d_netasset,Val(SKAP))
 		AAdd(d_netnum,self:netassBalId)
@@ -399,7 +407,7 @@ if self:oReport:lRTF
 			AAdd(d_dep,oDep:DepId)
 			AAdd(d_parentdep,oDep:ParentDep)
 			AAdd(d_indmaindep,FALSE)
-			AAdd(d_depname,if(Numbers,AllTrim(oDep:DEPTMNTNBR)+SELF:TAB,"")+AllTrim(oDep:Descriptn))
+			AAdd(d_depname,if(self:Numbers,AllTrim(oDep:DEPTMNTNBR)+self:TAB,"")+AllTrim(oDep:Descriptn))
 			AAdd(d_acc,{})
 			AAdd(d_netasset,oDep:NETASSET)
 			AAdd(d_netnum,oDep:balitemid)
@@ -476,7 +484,7 @@ if self:oReport:lRTF
 	oMBal:=Balances{}
 	oMbal:AccSelection:=iif(Empty(self:WhatFrom),"","a.balitemid in ("+Implode(r_balid,",")+")")+;
 		iif(Empty(self:WhoFrom),"",iif(Empty(self:WhatFrom),""," and ")+"a.department in ("+Implode(d_dep,",")+")")
-	cStatement:=oMbal:SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+MONTHEND,;
+	cStatement:=oMbal:SQLGetBalance(self:YEARSTART*100+self:MONTHSTART,self:YEAREND*100+self:MONTHEND,;
 		true,false,true,true)
 	oAcc:=SQLSelect{cStatement,oConn}
 
@@ -586,7 +594,7 @@ if self:oReport:lRTF
 	self:cYtD:=oLan:RGet('YEAR TO DATE',20,"@!","R")
 	self:cSurPlus:=oLan:RGet('Surplus',9,"!","R")
 	self:cClsBal:=oLan:RGet('Cls.Balance',11,"!","R")
-	self:cClosingBal:=oLan:RGet('CLOSING BALANCE',,"!")+Space(1)+DToC(SToD(Str(self:YEAREND,4,0)+StrZero(MONTHEND,2,0)+StrZero(MonthEnd(self:MONTHEND,self:YEAREND),2,0)))
+	self:cClosingBal:=oLan:RGet('CLOSING BALANCE',,"!")+Space(1)+DToC(SToD(Str(self:YEAREND,4,0)+StrZero(self:MONTHEND,2,0)+StrZero(MonthEnd(self:MONTHEND,self:YEAREND),2,0)))
 	self:cAmount:=oLan:RGet('Amount',11,"!","R") 
 	self:cBudget:=oLan:RGet('Budget-%',8,"!","R")
 	self:cOpeningBal:=Pad(oLan:RGet('OPENING FUND BALANCE',,"!")+Space(1)+DToC(stod(str(self:BalSt/12,4,0)+strzero(self:Balst%12,2,0)+'01')),BalColWidth+iif(self:SimpleDepStmnt,2,46))
@@ -639,7 +647,7 @@ if self:oReport:lRTF
 				// details per department: 
 				self:mainheading:=self:prheading(self:cDetailed,'DEP',Dep_Ptr,,d_dep,d_parentdep,d_depname,;
 					r_balid,r_heading,r_footer,r_parentid)
-// 				iLine:=0  && force iPageskip 
+				// 				iLine:=0  && force iPageskip 
 				store 0.00 to fPrvYr_bal,fPrvYr_YtD,fPrvPer_bal,fper_bal,fYr_Bud,fPer_Bud,fYTDbud 
 				CurHeading:=''
 			endif
@@ -682,14 +690,14 @@ if self:oReport:lRTF
 				oAcc:GoTo(nRecno)
 				m_accid:=Str(oAcc:accid,-1)
 				PrvYr_YtD:=oAcc:PrvYrYtD_deb - oAcc:PrvYrYtD_cre
-				IF !lCondense.or.!PrvYr_YtD=0.or.!(oAcc:PrvPer_deb=oAcc:PrvPer_cre).or.!(oAcc:per_deb=oAcc:per_cre)
+				IF !self:lCondense.or.!PrvYr_YtD=0.or.!(oAcc:PrvPer_deb=oAcc:PrvPer_cre).or.!(oAcc:per_deb=oAcc:per_cre)
 					IF Empty(aant_gev)
 						if self:WhatDetails    // only then usefull totalization
 							Totalize:=true
 						endif
 						if !cHeading==CurHeading
 							self:oReport:PrintLine(@iLine,@iPage,cHeading,self:mainheading,12)
-// 							self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1) 
+							// 							self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1) 
 							CurHeading:=cHeading
 						endif
 						self:oReport:PrintLine(@iLine,@iPage,iif(self:WhatDetails,r_heading[Bal_Ptr],d_depname[Dep_Ptr]),self:mainheading,11)
@@ -713,7 +721,7 @@ if self:oReport:lRTF
 						r_balPrvPer[Bal_Ptr],r_balPer[Bal_Ptr],r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],1,r_footer[Bal_Ptr],r_heading,0.00,0.00,@iLine,@iPage)
 				endif
 				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,1)
-// 				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
+				// 				self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
 			ENDIF
 			iLine:=0  && force bladskip		
 		NEXT
@@ -847,9 +855,30 @@ METHOD ButtonClick(oControlEvent) CLASS BalanceReport
 			self:oDCind_explanation:Checked:=false
 			self:oDCind_explanation:Hide()
 			self:oDClCondense:Hide()
+			self:oDCWhatLevelText:Hide()
+			self:oDCMaxWhatLevel:Hide()
+			self:oDCWhoLevelText:Hide()
+			self:oDCMaxWhoLevel:Hide()
 		else
 			self:oDCind_explanation:Show()
-		endif		
+		endif
+		if oControl:NameSym== #WhatDetails
+			if self:oDCWhatDetails:Checked
+				self:oDCWhatLevelText:Show()
+				self:oDCMaxWhatLevel:Show()
+			else
+				self:oDCWhatLevelText:Hide()
+				self:oDCMaxWhatLevel:Hide()
+			endif
+		else
+			if self:oDCWhoDetails:Checked
+				self:oDCWhoLevelText:Show()
+				self:oDCMaxWhoLevel:Show()
+			else
+				self:oDCWhoLevelText:Hide()
+				self:oDCMaxWhoLevel:Hide()
+			endif
+		endif
 	elseIF oControl:NameSym == #ind_explanation
 		IF self:oDCind_explanation:Checked
 			self:oDClCondense:Show()
@@ -1028,6 +1057,22 @@ oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Down from:",NULL_STRING,NULL
 oDCGroupBox3 := GroupBox{SELF,ResourceID{BALANCEREPORT_GROUPBOX3,_GetInst()}}
 oDCGroupBox3:HyperLabel := HyperLabel{#GroupBox3,"Options",NULL_STRING,NULL_STRING}
 
+oDCMaxWhatLevel := combobox{SELF,ResourceID{BALANCEREPORT_MAXWHATLEVEL,_GetInst()}}
+oDCMaxWhatLevel:TooltipText := "Deepest level of What-hierarchy  to report"
+oDCMaxWhatLevel:FillUsing({'','1','2','3','4','5','6','7','8','9'})
+oDCMaxWhatLevel:HyperLabel := HyperLabel{#MaxWhatLevel,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCWhatLevelText := FixedText{SELF,ResourceID{BALANCEREPORT_WHATLEVELTEXT,_GetInst()}}
+oDCWhatLevelText:HyperLabel := HyperLabel{#WhatLevelText,"Down to level:",NULL_STRING,NULL_STRING}
+
+oDCMaxWhoLevel := combobox{SELF,ResourceID{BALANCEREPORT_MAXWHOLEVEL,_GetInst()}}
+oDCMaxWhoLevel:TooltipText := "Deepest level of Who-hierarchy  to report"
+oDCMaxWhoLevel:FillUsing({'','1','2','3','4','5','6','7','8','9'})
+oDCMaxWhoLevel:HyperLabel := HyperLabel{#MaxWhoLevel,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCWhoLevelText := FixedText{SELF,ResourceID{BALANCEREPORT_WHOLEVELTEXT,_GetInst()}}
+oDCWhoLevelText:HyperLabel := HyperLabel{#WhoLevelText,"Down to level:",NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Balance Report"
 SELF:HyperLabel := HyperLabel{#BalanceReport,"Balance Report",NULL_STRING,NULL_STRING}
 SELF:EnableStatusBar(True)
@@ -1063,6 +1108,20 @@ METHOD ListBoxSelect(oControlEvent) CLASS BalanceReport
 	ENDIF
 
 	RETURN NIL
+
+ACCESS MaxWhatLevel() CLASS BalanceReport
+RETURN SELF:FieldGet(#MaxWhatLevel)
+
+ASSIGN MaxWhatLevel(uValue) CLASS BalanceReport
+SELF:FieldPut(#MaxWhatLevel, uValue)
+RETURN uValue
+
+ACCESS MaxWhoLevel() CLASS BalanceReport
+RETURN SELF:FieldGet(#MaxWhoLevel)
+
+ASSIGN MaxWhoLevel(uValue) CLASS BalanceReport
+SELF:FieldPut(#MaxWhoLevel, uValue)
+RETURN uValue
 
 ACCESS mBalNumber() CLASS BalanceReport
 RETURN SELF:FieldGet(#mBalNumber)
@@ -1133,33 +1192,35 @@ RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BalanceReport
 	//Put your PostInit additions here 
 	local aBal:={} as array
-self:SetTexts()
-aBal:=GetBalYear(Year(Today()-28),Month(Today()-28))
-// self:MONTHSTART:=aBal[4]
-// self:MONTHEND:=aBal[4]
-self:MONTHSTART:=Month(Today()-28)
-self:MONTHEND:=self:MONTHSTART
-self:oDCBalYears:Value:=Str(aBal[1],4,0)+StrZero(aBal[2],2,0)
-self:WhatDetails:=true
-self:WhoDetails:=false 
-self:lCondense:=true
-self:mBalNumber:="0: Balance Structure"
-self:mDepartment:="0:"+sEntity+" "+sLand
-self:cCurBal:=mBalNumber
-self:cCurDep:=mDepartment
-self:WhatFrom:=0
-self:WhoFrom:=0
+	self:SetTexts()
+	aBal:=GetBalYear(Year(Today()-28),Month(Today()-28))
+	// self:MONTHSTART:=aBal[4]
+	// self:MONTHEND:=aBal[4]
+	self:MONTHSTART:=Month(Today()-28)
+	self:MONTHEND:=self:MONTHSTART
+	self:oDCBalYears:Value:=Str(aBal[1],4,0)+StrZero(aBal[2],2,0)
+	self:WhatDetails:=true
+	self:WhoDetails:=false 
+	self:oDCWhoLevelText:Hide()
+	self:oDCMaxWhoLevel:Hide()
+	self:lCondense:=true
+	self:mBalNumber:="0: Balance Structure"
+	self:mDepartment:="0:"+sEntity+" "+sLand
+	self:cCurBal:=self:mBalNumber
+	self:cCurDep:=self:mDepartment
+	self:WhatFrom:=0
+	self:WhoFrom:=0
 
-IF !Departments
-	oDCGroupBox2:Hide()
-	oDCFixedText5:Hide()
-	oCCDepButton:Hide()
-	oDCmDepartment:Hide()
-	oDCWhoDetails:Hide()
-ENDIF
+	IF !Departments
+		self:oDCGroupBox2:Hide()
+		self:oDCFixedText5:Hide()
+		self:oCCDepButton:Hide()
+		self:oDCmDepartment:Hide()
+		self:oDCWhoDetails:Hide()
+	ENDIF
 
-RETURN NIL
-		
+	RETURN NIL
+	
 METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 		pr_bud,pr_budper,pr_budytd,pr_level,pr_footer,pr_heading,pr_inc,pr_exp,iLine,iPage) CLASS BalanceReport
 	//////////////////////////////////////////////////////////////////
@@ -1223,7 +1284,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 		regel:=regel+Str(mbalprvyrYtD,9,DecAantal)+self:TAB+Str(mvjsaltot,11,DecAantal)+self:TAB+;
 			Str(-pr_inc,13,DecAantal)+self:TAB+Str(pr_exp,11,DecAantal)+self:TAB+Str(mvrgsal,11,DecAantal)+self:TAB+iif(msal<0,self:BoldOn+self:RedOn,'')+Str(msal,11,DecAantal)+iif(msal<0,self:Boldoff+self:RedOff,'')
 	elseIF pr_cat==LIABILITY.or.pr_cat==ASSET
-		regel:=regel+self:TAB+Str(mbalprvyrYtD,11,decaantal)+'  '+self:TAB+Str(msal,11,decaantal)
+		regel:=regel+Space(9)+self:TAB+Str(mbalprvyrYtD,11,decaantal)+'  '+self:TAB+Str(msal,11,decaantal)
 	ELSE
 		regel:=regel+Space(9)
 	ENDIF
@@ -1273,7 +1334,7 @@ elseif  heading_category=='DEP'
 ENDIF
 IF self:WhatDetails
 	* Determine departname in heading:
-	IF !WhoDetails
+	IF !self:WhoDetails
 		* name of WhoFrom inclusive names of its parents in heading:
 		pntr:=AScan(d_dep,WhoFrom)
 	ELSE
@@ -1307,7 +1368,7 @@ ENDIF
 
 Heading:={iif(Empty(self:addheading),cDepName+cDirect,self:addheading)+Replicate(self:TAB,8),;
 + BoldOn+YellowOn+inscription+" "+Trim(heading_type)+'  '+self:cFrom+;
-' '+maand[MONTHSTART]+self:cTo + maand[MonthEnd]+BoldOff+YellowOff,;
+' '+maand[self:MONTHSTART]+self:cTo + maand[self:MonthEnd]+BoldOff+YellowOff,;
 self:cYear+oDCBalYears:TextValue,' ',;
 iif(self:lXls.and.self:Numbers,self:TAB,"")+self:cDescription+;
 iif(self:SimpleDepStmnt,"",self:TAB+self:cPrvYrYTD+Space(6)+self:TAB+self:TAB+;
@@ -1452,9 +1513,9 @@ METHOD RegDepartment(myNum,myItemName) CLASS BalanceReport
 	//	ENDIF
 	RETURN
 METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dLevel as int,r_parentid as array,r_indmain as array,r_heading as array,;
-r_footer as array,r_balpryrtot ref array,r_balPrvYrYtD ref array,r_balPrvPer ref array,r_balPer ref array,r_bud ref array,r_budper ref array,;
-r_budytd ref array,r_cat as array,r_balid as array,d_netnum as array,d_depname as array,aTot ref array,aTotprv ref array,;
-iLine ref int,iPage ref int) as int CLASS BalanceReport
+		r_footer as array,r_balpryrtot ref array,r_balPrvYrYtD ref array,r_balPrvPer ref array,r_balPer ref array,r_bud ref array,r_budper ref array,;
+		r_budytd ref array,r_cat as array,r_balid as array,d_netnum as array,d_depname as array,aTot ref array,aTotprv ref array,;
+		iLine ref int,iPage ref int) as int CLASS BalanceReport
 	* Recursive processing of a balance item with its subbalance items
 	*
 	LOCAL TotalFound,SubBalPtr, CachePtr,kap_num AS INT
@@ -1471,7 +1532,7 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 	ENDIF
 
 	IF r_indmain[Bal_Ptr]
-		IF WhatDetails
+		IF self:WhatDetails .and. (Empty(self:maxwhatlevel) .or. Val(self:maxwhatlevel)>level)
 			IF .not.Empty(r_heading[Bal_Ptr])
 				AAdd(HeadingCache,{level,bal_ptr})
 				CachePtr:=Len(HeadingCache)
@@ -1526,7 +1587,7 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 			ENDIF
 		ENDDO
 	ENDIF
-	IF (WhatDetails)
+	IF (self:WhatDetails) .and. (Empty(self:maxwhatlevel) .or. Val(self:maxwhatlevel)>level)
 		m_soort:=Upper(r_cat[Bal_Ptr]) 
 		if (m_soort==INCOME.or.m_soort==expense) .or. !self:SimpleDepStmnt      // skip balance items in case of simple report
 			IF	r_indmain[Bal_Ptr].and. TotalFound>1
@@ -1553,7 +1614,7 @@ iLine ref int,iPage ref int) as int CLASS BalanceReport
 			ENDIF
 		ENDIF
 	ENDIF
-	IF SELF:showopeningclosingfund .or.!WhatDetails
+	IF self:showopeningclosingfund .or.!self:WhatDetails
 		// add for summary lines for BTA: opening fund balance, end closing balance :
 		m_soort:=Upper(r_cat[Bal_Ptr])
 		IF !IsNil(r_balPer[Bal_Ptr]).and.!Empty(r_balPer[Bal_Ptr])
@@ -1641,7 +1702,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 	LOCAL TotalFound,subDepPtr AS INT
 	LOCAL TopWhatPtr AS INT
 	IF d_indmaindep[p_depptr]
-		IF self:WhoDetails
+		IF self:WhoDetails .and. (Empty(self:maxwholevel) .or. Val(self:maxwholevel)>level)
 			IF !self:WhatDetails
 				self:oReport:PrintLine(@iLine,@iPage,Space(level*2)+d_depname[p_depptr],self:mainheading,0)
 			ENDIF
@@ -1727,8 +1788,9 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 			ENDIF
 		ENDDO
 	ENDIF
-	IF self:WhoDetails.or.p_depptr==1
-		IF self:WhoDetails .and. !self:WhatDetails
+	IF self:WhoDetails .and. (Empty(self:maxwholevel) .or. Val(self:maxwholevel)>level) .or.p_depptr==1
+// 		IF self:WhoDetails .and. !self:WhatDetails
+		IF !self:WhatDetails
 			IF d_indmaindep[p_depptr].and. TotalFound>1
 				IF level=0
 					self:oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
@@ -1836,6 +1898,8 @@ STATIC DEFINE BALANCEREPORT_IND_ACCSTMNT := 115
 STATIC DEFINE BALANCEREPORT_IND_EXPLANATION := 113 
 STATIC DEFINE BALANCEREPORT_IND_TOEL := 113 
 STATIC DEFINE BALANCEREPORT_LCONDENSE := 114 
+STATIC DEFINE BALANCEREPORT_MAXWHATLEVEL := 123 
+STATIC DEFINE BALANCEREPORT_MAXWHOLEVEL := 125 
 STATIC DEFINE BALANCEREPORT_MBALNUMBER := 106 
 STATIC DEFINE BALANCEREPORT_MDEPARTMENT := 109 
 STATIC DEFINE BALANCEREPORT_MONTHEND := 105 
@@ -1843,11 +1907,43 @@ STATIC DEFINE BALANCEREPORT_MONTHSTART := 103
 STATIC DEFINE BALANCEREPORT_NUMBERS := 112 
 STATIC DEFINE BALANCEREPORT_OKBUTTON := 116 
 STATIC DEFINE BALANCEREPORT_WHATDETAILS := 108 
+STATIC DEFINE BALANCEREPORT_WHATLEVELTEXT := 124 
 STATIC DEFINE BALANCEREPORT_WHODETAILS := 111 
+STATIC DEFINE BALANCEREPORT_WHOLEVELTEXT := 126 
 STATIC DEFINE CONFIRMSEND_CANCELBUTTON := 101 
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT1 := 102 
 STATIC DEFINE CONFIRMSEND_FIXEDTEXT2 := 103 
 STATIC DEFINE CONFIRMSEND_OKBUTTON := 100 
+RESOURCE DeptReport DIALOGEX  26, 24, 404, 227
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
+	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
+	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
+	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
+	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 195, 53, 13
+	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 22, 125, 170, WS_EX_CLIENTEDGE
+	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
+	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
+	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
+	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
+	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
+	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
+	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
+	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
+	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 164, 196, 62
+	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 176, 181, 11
+	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 192, 181, 11
+	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 208, 181, 11
+	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
+	CONTROL	"", DEPTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 11, 64, 9
+	CONTROL	"Show details of gifts", DEPTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 140, 80, 11
+END
+
 CLASS DeptReport INHERIT DataWindowMine 
 
 	PROTECT oDCFromDep AS SINGLELINEEDIT
@@ -1907,36 +2003,6 @@ PROTECT mDepartment AS STRING
 
 	declare method RegDepartment,DepartmentStmntPrint
 	
-RESOURCE DeptReport DIALOGEX  26, 24, 404, 227
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", DEPTREPORT_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 18, 136, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", DEPTREPORT_FROMDEPBUTTON, "Button", WS_CHILD, 220, 18, 15, 12
-	CONTROL	"", DEPTREPORT_BALYEARS, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 51, 118, 72
-	CONTROL	"", DEPTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 72, 32, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", DEPTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 91, 32, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Reduced pageskips", DEPTREPORT_BEGINREPORT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 110, 80, 11
-	CONTROL	"Departments", DEPTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 4, 377, 39
-	CONTROL	"Cancel", DEPTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 195, 53, 13
-	CONTROL	"", DEPTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 248, 22, 125, 170, WS_EX_CLIENTEDGE
-	CONTROL	"Down from:", DEPTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 20, 53, 10
-	CONTROL	"Subset:", DEPTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 9, 53, 10
-	CONTROL	"Year under review:", DEPTREPORT_FIXEDTEXT3, "Static", WS_CHILD, 14, 51, 71, 12
-	CONTROL	"Start with month:", DEPTREPORT_FIXEDTEXT4, "Static", WS_CHILD, 14, 73, 54, 12
-	CONTROL	"End with month:", DEPTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 14, 92, 54, 12
-	CONTROL	"Last month", DEPTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 80, 53, 11
-	CONTROL	"All months", DEPTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 169, 94, 49, 11
-	CONTROL	"Footnotes", DEPTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 165, 70, 70, 38
-	CONTROL	"Required Action:", DEPTREPORT_SENDINGMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 164, 196, 62
-	CONTROL	"Print", DEPTREPORT_PRINTALL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 176, 181, 11
-	CONTROL	"Save seperate printfile per department", DEPTREPORT_SEPARATEFILE, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 192, 181, 11
-	CONTROL	"Send separate printfile by email to each department", DEPTREPORT_SEPARATEFILEMAIL, "Button", BS_AUTORADIOBUTTON|WS_CHILD|WS_OVERLAPPED|0x1000L, 19, 208, 181, 11
-	CONTROL	"Simplified report", DEPTREPORT_SIMPLEDEPSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 125, 80, 11
-	CONTROL	"", DEPTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 11, 64, 9
-	CONTROL	"Show details of gifts", DEPTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 84, 140, 80, 11
-END
-
 ACCESS BalYears() CLASS DeptReport
 RETURN SELF:FieldGet(#BalYears)
 
@@ -2711,6 +2777,45 @@ STATIC DEFINE GETEXCHRATE_MEXCHRATE := 100
 STATIC DEFINE GETEXCHRATE_OKBUTTON := 102 
 STATIC DEFINE GETEXCHRATE_ROETEXT1 := 101 
 STATIC DEFINE GETEXCHRATE_ROETEXT2 := 104 
+RESOURCE GiftReport DIALOGEX  58, 59, 398, 279
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
+	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
+	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
+	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
+	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
+	CONTROL	"Year:", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 96, 28, 12
+	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 229, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_REPORTYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 96, 34, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 96, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", GIFTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 176, 96, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
+	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
+	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
+	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
+	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
+	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
+	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 217, 196, 55
+	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 127, 53, 11
+	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 141, 48, 11
+	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 118, 70, 38
+	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 166, 121, 11
+	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 177, 92, 11
+	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
+	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 226, 180, 12
+	CONTROL	"From month:", GIFTREPORT_FIXEDTEXT8, "Static", WS_CHILD, 80, 96, 48, 12
+	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 241, 181, 12
+	CONTROL	"till:", GIFTREPORT_FIXEDTEXT9, "Static", WS_CHILD, 156, 96, 16, 12
+	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 256, 181, 12
+	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 262, 53, 12
+	CONTROL	"Show details of gifts", GIFTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 188, 80, 11
+	CONTROL	"html format", GIFTREPORT_HTML_FORMAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 12, 200, 80, 11
+END
+
 CLASS GiftReport INHERIT DataWindowMine 
 
 	PROTECT oDCHomeBox AS CHECKBOX
@@ -2785,45 +2890,6 @@ CLASS GiftReport INHERIT DataWindowMine
 	declare method CheckAccInRange,GiftsPrint,GiftsYearOverview,MailStatements,MemberStatementHtml,Acc2Mbr,CollectAsssement,CollectBalances,CollectTransPers,;
 		CompareBudget,OtherAccounts,AssmntOverView,YearOverView,MonthOverView,InitializeMbrStmntReport,TransOverView,BeginOfTransGroupKind,EndOfTransGroupKind,;
 		MailStatementsDirect
-
-RESOURCE GiftReport DIALOGEX  58, 59, 398, 279
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Members of", GIFTREPORT_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 16, 211, 11
-	CONTROL	"Members not of", GIFTREPORT_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 27, 215, 11
-	CONTROL	"Projects", GIFTREPORT_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 38, 80, 11
-	CONTROL	"", GIFTREPORT_FROMACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 13, 61, 79, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_FROMACCBUTTON, "Button", WS_CHILD, 91, 61, 15, 12
-	CONTROL	"", GIFTREPORT_TOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 60, 78, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", GIFTREPORT_TOACCBUTTON, "Button", WS_CHILD, 214, 60, 16, 13
-	CONTROL	"Year:", GIFTREPORT_FIXEDTEXT5, "Static", WS_CHILD, 8, 96, 28, 12
-	CONTROL	"", GIFTREPORT_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_SORT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|WS_BORDER|WS_VSCROLL, 250, 25, 125, 229, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_REPORTYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 96, 34, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", GIFTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 176, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 6, 377, 81
-	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
-	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
-	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
-	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
-	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 250, 16, 42, 9
-	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 217, 196, 55
-	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 127, 53, 11
-	CONTROL	"All months", GIFTREPORT_ALLMONTHS, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 141, 48, 11
-	CONTROL	"Footnotes", GIFTREPORT_FOOTNOTES, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 118, 70, 38
-	CONTROL	"eMail also to contact person", GIFTREPORT_MAILCONTACT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 166, 121, 11
-	CONTROL	"Skip inactive accounts", GIFTREPORT_SKIPINACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 177, 92, 11
-	CONTROL	"", GIFTREPORT_SELECTEDCNT, "Static", WS_CHILD, 312, 16, 64, 9
-	CONTROL	"Print", GIFTREPORT_PRINTREPORT, "Button", WS_TABSTOP|WS_CHILD, 16, 226, 180, 12
-	CONTROL	"From month:", GIFTREPORT_FIXEDTEXT8, "Static", WS_CHILD, 80, 96, 48, 12
-	CONTROL	"Save seperate printfile per member", GIFTREPORT_SEPARATEFILES, "Button", WS_TABSTOP|WS_CHILD, 15, 241, 181, 12
-	CONTROL	"till:", GIFTREPORT_FIXEDTEXT9, "Static", WS_CHILD, 156, 96, 16, 12
-	CONTROL	"Send separate printfile by email to each member", GIFTREPORT_SEPARATEFILESMAIL, "Button", WS_TABSTOP|WS_CHILD, 15, 256, 181, 12
-	CONTROL	"Cancel", GIFTREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 324, 262, 53, 12
-	CONTROL	"Show details of gifts", GIFTREPORT_GIFTDETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 188, 80, 11
-	CONTROL	"html format", GIFTREPORT_HTML_FORMAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 12, 200, 80, 11
-END
 
 Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	// convert selected members and gifts receivable account to aMbr and aAccidMbr:  
@@ -5991,6 +6057,18 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class ReImbursement
 STATIC DEFINE REIMBURSEMENT_BALANCETEXT := 100 
 STATIC DEFINE REIMBURSEMENT_CANCELBUTTON := 102 
 STATIC DEFINE REIMBURSEMENT_OKBUTTON := 101 
+RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
+	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
+	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
+	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
+	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
+	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
+END
+
 class TaxReport inherit DataWindowMine 
 
 	protect oDCYearTax as COMBOBOX
@@ -6004,18 +6082,6 @@ class TaxReport inherit DataWindowMine
 	instance YearTax 
 	instance Threshold 
   PROTECT TaxID as STRING
-RESOURCE TaxReport DIALOGEX  8, 7, 268, 103
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TAXREPORT_YEARTAX, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 78, 9, 104, 83
-	CONTROL	"Tax year", TAXREPORT_FIXEDTEXT1, "Static", WS_CHILD, 12, 9, 54, 12
-	CONTROL	"OK", TAXREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 202, 8, 53, 12
-	CONTROL	"Cancel", TAXREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 201, 28, 53, 12
-	CONTROL	"Threshold amount:", TAXREPORT_FIXEDTEXT2, "Static", WS_CHILD, 12, 38, 66, 13
-	CONTROL	"", TAXREPORT_THRESHOLD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 35, 104, 12, WS_EX_CLIENTEDGE
-END
-
 METHOD CancelButton( ) CLASS TaxReport
 	SELF:endWindow()
 	RETURN
@@ -6736,6 +6802,16 @@ STATIC DEFINE TRIALBALANCE_MONTHEND := 104
 STATIC DEFINE TRIALBALANCE_MONTHSTART := 103 
 STATIC DEFINE TRIALBALANCE_OKBUTTON := 106 
 STATIC DEFINE TRIALBALANCE_YEARTRIAL := 102 
+RESOURCE YearClosing DIALOGEX  16, 14, 278, 88
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", YEARCLOSING_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 14, 53, 12
+	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 36, 53, 13
+	CONTROL	"Balance Year:", YEARCLOSING_FIXEDTEXT2, "Static", WS_CHILD, 22, 19, 64, 13
+	CONTROL	"", YEARCLOSING_STARTYEARTEXT, "Static", WS_CHILD, 77, 19, 109, 13
+END
+
 CLASS YearClosing INHERIT DataWindowMine 
 
 	PROTECT oCCOKButton as PUSHBUTTON
@@ -6757,16 +6833,6 @@ CLASS YearClosing INHERIT DataWindowMine
 		d_PLcre:={}	   as ARRAY 
 	
 	declare method SubDepartment
-RESOURCE YearClosing DIALOGEX  16, 14, 278, 88
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", YEARCLOSING_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 14, 53, 12
-	CONTROL	"Cancel", YEARCLOSING_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 36, 53, 13
-	CONTROL	"Balance Year:", YEARCLOSING_FIXEDTEXT2, "Static", WS_CHILD, 22, 19, 64, 13
-	CONTROL	"", YEARCLOSING_STARTYEARTEXT, "Static", WS_CHILD, 77, 19, 109, 13
-END
-
 METHOD CancelButton( ) CLASS YearClosing
 	SELF:EndWindow()
 	RETURN
