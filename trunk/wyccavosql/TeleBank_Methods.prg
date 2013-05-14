@@ -2604,18 +2604,19 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL oHlM as HlpMT940
 	LOCAL i, nEndAmnt, nDC, nOffset, nTrans,nImp,nNumPos,nSepPos,nLenLine1,nBGCSeq,nProc as int
 	LOCAL lv_bankAcntOwn, lv_description, lv_Oms, lv_addsub, lv_AmountStr, lv_reference,lv_referenceCur, lv_NameContra as STRING
-	LOCAL lv_loaded as LOGIC,  lv_BankAcntContra as USUAL, cText,lv_budget,lv_kind,lv_persid,lv_bankid as STRING 
+	local lv_BankAcntContra, cText,lv_budget,lv_kind,lv_persid,lv_bankid as STRING 
 	local Cur_RekNrOwn, Cur_enRoute as string
 	local cType86 as string  //type of tag 86: B=bank,
 	local cRefType as string // type of reference: EREF,MARF,PREF, NONREF
 	LOCAL lv_Amount,lv_balance as FLOAT
-	local oBank as SQLSelect, oBord as SQLSelect 
-	LOCAL lSuccess:=true as LOGIC
-	LOCAL oHlp as Filespec
-	LOCAL ld_bookingdate as date 
+	LOCAL lSuccess:=true as LOGIC 
+	LOCAL lv_loaded as LOGIC
 	local lMTExtended as logic
+	LOCAL ld_bookingdate as date 
 	local aBudg:={} as array
 	local aWord as array
+	local oBank as SQLSelect, oBord as SQLSelect 
+	LOCAL oHlp as Filespec
 	local oStmnt as SQLStatement
 
 	
@@ -2654,7 +2655,7 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 			oHlM:Skip()
 			loop
 		ENDIF
-			 
+		
 		lv_bankAcntOwn:=AllTrim(SubStr(oHlM:MTLINE,5))
 		lv_bankAcntOwn:=ZeroTrim(StrTran(lv_bankAcntOwn,".",""))
 		lv_bankAcntOwn:=Str(Val(lv_bankAcntOwn),-1)  // remove currency
@@ -2693,7 +2694,7 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_kind:=""
 				lv_persid:=""
 				lv_bankid:=""
-//				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,5,6)) // valuta date   ????
+				//				ld_bookingdate:=SToD("20"+SubStr(oHlM:MTLINE,5,6)) // valuta date   ????
 				lv_description:=""
 				
 				nDC:=At("C",SubStr(oHlM:MTLINE,11,6))  //D or C
@@ -2710,7 +2711,9 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_Amount:=Round(Val(lv_AmountStr),2)
 				lv_NameContra:=""
 				lv_BankAcntContra:=""
-					
+				cText:=''
+				cRefType:=''
+				
 				* get reference type or contra bank account number:
 				IF Len(oHlM:MTLINE)>nEndAmnt+nDC+20
 					cText:=AllTrim(SubStr(oHlM:MTLINE,nDC+11+nEndAmnt+3,16))
@@ -2739,80 +2742,117 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 					endif
 				ENDIF
 				oHlM:Skip()
-				lv_description:="" 
+				lv_description:=""
+				lv_Oms:='' 
 				IF !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"
 					* description of transaction:
-					lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
-					IF !lMTExtended
-						IF  Empty(lv_BankAcntContra) 
-							IF lv_Oms = "GIRO "
-								lv_BankAcntContra:= ZeroTrim(SubStr(lv_Oms,8,8))
-								lv_description := AllTrim(SubStr(lv_Oms,16))
-							ELSE
-								cText := SubStr(lv_Oms,1,13)
-								IF isnum(AllTrim(cText))
-									lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))
-									IF Val(lv_BankAcntContra)<100000000
-										lv_BankAcntContra:=""
-									ELSE
-										lv_Oms := AllTrim(SubStr(lv_Oms,14))
-									ENDIF
+					if !Empty(cRefType)
+						lv_Oms+=SubStr(oHlM:MTLINE,5,)
+					else
+						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
+						IF !lMTExtended
+							IF  Empty(lv_BankAcntContra) 
+								IF lv_Oms = "GIRO "
+									lv_BankAcntContra:= ZeroTrim(SubStr(lv_Oms,8,8))
+									lv_description := AllTrim(SubStr(lv_Oms,16))
 								ELSE
-									lv_BankAcntContra:=""
-								ENDIF
-								IF Empty(lv_BankAcntContra)
-									// 									lv_description := lv_Oms
+									cText := SubStr(lv_Oms,1,13)
+									IF isnum(AllTrim(cText))
+										lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))
+										IF Val(lv_BankAcntContra)<100000000
+											lv_BankAcntContra:=""
+										ELSE
+											lv_Oms := AllTrim(SubStr(lv_Oms,14))
+										ENDIF
+									ELSE
+										lv_BankAcntContra:=""
+									ENDIF
+									IF Empty(lv_BankAcntContra)
+										// 									lv_description := lv_Oms
+									ENDIF
 								ENDIF
 							ENDIF
-						ENDIF
-						if Empty(lv_NameContra) .and.lv_addsub=="B" 
-							aWord:=GetTokens(lv_Oms)
-							lv_NameContra:=aWord[Len(aWord),1] 
+							if Empty(lv_NameContra) .and.lv_addsub=="B" 
+								aWord:=GetTokens(lv_Oms)
+								lv_NameContra:=aWord[Len(aWord),1] 
+							endif 
+						endif
+						// 					Analyze first line: 
+						cType86:=''
+						nNumPos:=AtC('-nummer',lv_Oms)
+						if AtC('BETREFT ACCEPTGIRO',lv_Oms)>0  .or. AtC('VX-NUMMER',lv_Oms)>0.or. AtC('CREDITEURENBETALING',lv_Oms)>0
+							if AtC('VX-NUMMER',lv_Oms)>0
+								cType86:='VX'
+							else 
+								cType86:='BGC'
+							endif
+							if Empty(Cur_enRoute)
+								(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):Show()
+								return false 
+							endif
+							lv_budget:=Cur_enRoute
+							lv_kind:="BGC"
+						elseif nNumPos>2
+							cType86:='Bank'
+						else
+							cType86:="ADRES" 
+							nLenLine1:=Len(lv_Oms)
+						endif
+						if nNumPos=0
+							lv_description:=lv_Oms
 						endif 
-					endif
-					// 					Analyze first line: 
-					cType86:=''
-					nNumPos:=AtC('-nummer',lv_Oms)
-					if AtC('BETREFT ACCEPTGIRO',lv_Oms)>0  .or. AtC('VX-NUMMER',lv_Oms)>0.or. AtC('CREDITEURENBETALING',lv_Oms)>0
-						if AtC('VX-NUMMER',lv_Oms)>0
-							cType86:='VX'
-						else 
-							cType86:='BGC'
-						endif
-						if Empty(Cur_enRoute)
-							(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):Show()
-							return false 
-						endif
-						lv_budget:=Cur_enRoute
-						lv_kind:="BGC"
-					elseif nNumPos>2
-						cType86:='Bank'
-					else
-						cType86:="ADRES" 
-						nLenLine1:=Len(lv_Oms)
-					endif
-					if nNumPos=0
-						lv_description:=lv_Oms
 					endif
 					oHlM:Skip()
 					// compose description:
-					DO WHILE !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description
-						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
-						if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
-							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
-							lv_description+=" "+lv_Oms
+					DO WHILE !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"  // all :86: with description 
+						if !Empty(cRefType)
+							lv_Oms+=SubStr(oHlM:MTLINE,5,)
+						else
+							lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
+							if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
+								self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+								lv_description+=" "+lv_Oms
+							endif
 						endif
 						oHlM:Skip()
 					ENDDO 
 					DO WHILE !oHlM:EOF .and. !(Occurs(":",SubStr(oHlM:MTLINE,1,6))=2)  // no TAG
-						lv_Oms:=AllTrim(oHlM:MTLINE) 
-						if !lv_Oms="TRANSACTIEDATUM".and. AtC('-nummer',lv_Oms)=0 ;   // skip line with "TRANSACTIEDATUM" or number
-							.and. !(SubStr(lv_Oms,1,2)='BE' .and. IsDigit(SubStr(lv_Oms,3)))  // skip belgié nummers
-							self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
-							lv_description+=" "+lv_Oms
+						if !Empty(cRefType)
+							lv_Oms+=oHlM:MTLINE
+						else
+							lv_Oms:=AllTrim(oHlM:MTLINE) 
+							if !lv_Oms="TRANSACTIEDATUM".and. AtC('-nummer',lv_Oms)=0 ;   // skip line with "TRANSACTIEDATUM" or number
+								.and. !(SubStr(lv_Oms,1,2)='BE' .and. IsDigit(SubStr(lv_Oms,3)))  // skip belgié nummers
+								self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+								lv_description+=" "+lv_Oms
+							endif
 						endif
 						oHlM:Skip()
 					ENDDO
+					if !Empty(cRefType)
+						// mt940 strcutured:
+						aWord:=GetTokens(lv_Oms,{'/MARF/','/EREF/','/PREF/','/RTRN/','/ACCW/','/BENM/','/ORDP/','/NAME/','/ID/','/ADDR/','/REMI/','/CSID/','/ISDT/'})
+						// analyse aWord:
+						for i:=1 to Len(aWord)
+						do case 
+						case aWord[i,2]=='/MARF/'
+						case aWord[i,2]=='/EREF/'
+						case aWord[i,2]=='/PREF/'
+						case aWord[i,2]=='/RTRN/'
+						case aWord[i,2]=='/ACCW/'
+						case aWord[i,2]=='/BENM/' .or.aWord[i,2]=='/ORDP/' 
+						case aWord[i,2]=='/NAME/'
+						case aWord[i,2]=='/ID/'
+						case aWord[i,2]=='/ADDR/'
+						case aWord[i,2]=='/REMI/'
+							if AtC('CDTRREFTP//CD/SCOR/ISSR/ CUR/CDTRREF/',aWord[i,1])>0
+							else
+							endif
+						case aWord[i,2]=='/CSID/'
+						case aWord[i,2]=='/ISDT/'
+						endcase
+						next
+					endif
 					if cType86=="VX"
 						if (nNumPos:=AtC("BETALINGSKENM",lv_description))>0
 							if !isnum(AllTrim(SubStr(lv_description,nNumPos+16,16)) )
