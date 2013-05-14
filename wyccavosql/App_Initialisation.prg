@@ -1207,9 +1207,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","InnoDB",cCollation},;
 		{"standingorderline","InnoDB",cCollation},;
 		{"perscod","InnoDB",cCollation},;
-		{"person","MyIsam",cCollation},;
+		{"person","InnoDB",cCollation},;
 		{"person_properties","InnoDB",cCollation},;
-		{"personbank","MyIsam",cCollation},;
+		{"personbank","InnoDB",cCollation},;
 		{"persontype","InnoDB",cCollation},;
 		{"ppcodes","InnoDB",cCollation},;
 		{"subscription","InnoDB",cCollation},;
