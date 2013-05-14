@@ -1315,7 +1315,8 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i, nSeq as int
 	LOCAL cBank, cAccFrom as STRING
 	Local oWarn as TextBox
-	Local aTrans:={} as array // amount,Description,accountfrom 
+	Local aTrans:={} as array // amount,Description,accountfrom
+	local aBank as array 
 	Local aDir as array
 	local oPro as ProgressPer
 	local oStmnt as SQLStatement
@@ -1354,20 +1355,47 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 		RETURN FALSE
 	ENDIF
 	fBANKNBRCRE:=Val(BANKNBRCRE)
-	// Check validity of recipient bankaccounts:
-	oBord:=SqlSelect{"select distinct o.banknbrcre,o.stordrid, a.accnumber,a.description from bankorder o"+;
-		" left join account a on (a.accid=o.idfrom) "+;
-		" where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'"+;
-		" and banknbrcre not in (select b.banknumber from personbank b)",oConn}
+	// Check validity of recipient bankaccounts from standing orders:
+	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.stordrid,s.bankacct, group_concat(p.banknumber separator '#%#') as banknumbers from bankorder o "+;
+	"right join standingorderline s on(s.stordrid=o.stordrid and creditor>0) left join personbank p on (p.persid=s.creditor ) "+; 
+	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) group by s.creditor",oConn}
 	if oBord:Reccount>0
-		cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
+		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
-			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-				iif(Empty(oBord:stordrid),;
-				iif(Empty(oBord:IDFrom),"unknown account",self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"),;
-				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1))
+			// try to correct banknumber:
+			if !Empty(oBord:banknumbers) 
+				aBank:= Split(oBord:banknumbers,'#%#')
+				if AScan(aBank,oBord:bankacct)>0
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+oBord:bankacct+"' where id="+Str(oBord:ID,-1),oConn}
+					oStmnt:execute()
+				else
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aBank[1]+"' where id="+Str(oBord:ID,-1),oConn}
+					oStmnt:execute()
+				endif
+				if	oStmnt:NumSuccessfulRows<1	
+					cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+					self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+				endif
+			else
+				cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+			endif
 			oBord:skip()
 		enddo
+	endif	
+	// Check validity of recipient bankaccounts from distribution instructions:
+	oBord:=SqlSelect{"select o.banknbrcre, a.accnumber,a.description from bankorder o right join account a on (a.accid=o.idfrom) "+; 
+	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) ",oConn}
+	if oBord:Reccount>0
+		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
+		do while !oBord:EoF
+			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+			self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"
+			oBord:skip()
+		enddo
+	endif	
+   if !Empty(cErrMsg)
+   	cErrMsg:= self:oLan:WGet("The following bank accounts are not found in person data")+":"+cErrMsg
 		ErrorBox{self,cErrMsg}:Show()
 		return false
 	endif	
@@ -1562,7 +1590,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date) 
 	RETURN true
 METHOD OKButton( ) CLASS SelBankOrder 
 	LOCAL begin_due:=oDCbegin_verv:SelectedDate, end_due:=oDCeind_verv:SelectedDate, process_date:=self:oDCDatePayment:SelectedDate as date
-	if ConI(SqlSelect{"select sepaenabled from sysparms",oConn}:sepaenabled)=1
+	if ConI(SqlSelect{"select sepaenabled from sysparms",oConn}:SepaEnabled)=1
 		if	self:SepaCreditTransfer( begin_due,end_due,process_date)
 			self:EndDialog()
 		endif
@@ -1576,17 +1604,25 @@ RETURN NIL
 method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankOrder
 	//Put your PostInit additions here
 	LOCAL rjaar := Year(Today()) as int
-	LOCAL rmnd := Month(Today()) as int 
+	LOCAL rmnd := Month(Today()) as int
+	local oStJournal as StandingOrderJournal
+
+	
 	self:SetTexts()
 	oDCbegin_verv:SelectedDate := Today()-35
-//	oDCeind_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2))
+	//	oDCeind_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2))
 	oDCeind_verv:SelectedDate := Today()+15
 	self:oDCDatePayment:SelectedDate:=Today()+1
 	if DoW(self:oDCDatePayment:SelectedDate)=1       // not on sunday
 		self:oDCDatePayment:SelectedDate++
 	elseif DoW(self:oDCDatePayment:SelectedDate)=7   // not on saturday
 		self:oDCDatePayment:SelectedDate+=2
-	endif
+	endif 
+	// generate eventualy new standding order which can cause bank orders:
+	oStJournal:=StandingOrderJournal{}
+	oStJournal:recordstorders()
+	oStJournal:=null_object 
+
 	return nil
 ACCESS Selx_rek() CLASS SelBankOrder
 RETURN SELF:FieldGet(#Selx_rek)
@@ -1608,6 +1644,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	LOCAL cBank, cAccFrom as STRING
 	Local oWarn as TextBox
 	Local aTrans:={} as array 
+	local aBank as array 
 	Local aDir as array
 	local oPro as ProgressPer
 	LOCAL oBord as SQLSelect, oPers as SQLSelect, oPersBank, oSel as SQLSelect 
@@ -1650,24 +1687,51 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF
-	// Check validity of recipient bankaccounts:
-	oBord:=SqlSelect{"select distinct o.banknbrcre,o.stordrid, a.accnumber,a.description from bankorder o"+;
-		" left join account a on (a.accid=o.idfrom) "+;
-		" where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'"+;
-		" and banknbrcre not in (select b.banknumber from personbank b)",oConn}
+	// Check validity of recipient bankaccounts from standing orders:
+	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.stordrid,s.bankacct, group_concat(p.banknumber separator '#%#') as banknumbers from bankorder o "+;
+	"right join standingorderline s on(s.stordrid=o.stordrid and creditor>0) left join personbank p on (p.persid=s.creditor ) "+; 
+	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) group by s.creditor",oConn}
 	if oBord:Reccount>0
-		cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
+		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
-			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-				iif(Empty(oBord:stordrid),;
-				iif(Empty(oBord:IDFrom),"unknown account",self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"),;
-				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1))
+			// try to correct banknumber:
+			if !Empty(oBord:banknumbers) 
+				aBank:= Split(oBord:banknumbers,'#%#')
+				if AScan(aBank,oBord:bankacct)>0
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+oBord:bankacct+"' where id="+Str(oBord:ID,-1),oConn}
+					oStmnt:execute()
+				else
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aBank[1]+"' where id="+Str(oBord:ID,-1),oConn}
+					oStmnt:execute()
+				endif
+				if	oStmnt:NumSuccessfulRows<1	
+					cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+					self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+				endif
+			else
+				cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+			endif
 			oBord:skip()
 		enddo
+	endif	
+	// Check validity of recipient bankaccounts from distribution instructions:
+	oBord:=SqlSelect{"select o.banknbrcre, a.accnumber,a.description from bankorder o right join account a on (a.accid=o.idfrom) "+; 
+	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) ",oConn}
+	if oBord:Reccount>0
+		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
+		do while !oBord:EoF
+			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
+			self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"
+			oBord:skip()
+		enddo
+	endif	
+   if !Empty(cErrMsg)
+   	cErrMsg:= self:oLan:WGet("The following bank accounts are not found in person data")+":"+cErrMsg
 		ErrorBox{self,cErrMsg}:Show()
 		return false
-	endif	
-	
+   endif	
+   
 	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.accntfrom,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
 		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
