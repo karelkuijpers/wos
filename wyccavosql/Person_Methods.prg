@@ -165,34 +165,35 @@ elseif !Empty(cCity)
 else
 	return {cPostcode,cAddress,cCity}	
 endif
-StrTran(cSearch," ","%20")
+cSearch:=StrTran(cSearch,' ',"%20")
 oHttp := CHttp{"WycOffSy HTP Agent",80,true}
 httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
 
-nPos1:=At('<div class="col-main">',httpfile)
+nPos1:=At('<dt>Postcode</dt>',httpfile)
 if nPos1>0
 	// search unique string before response
-	nPos1:=At3('<td><a class="view"',httpfile,nPos1+22)
-	if nPos1>0
-		output:=SubStr(httpfile,nPos1+20,200) 
+	nPos1:=At3('<dd><a href=',httpfile,nPos1+17)
+	if nPos1>0                                                
+		output:=SubStr(httpfile,nPos1+21,200) 
 	elseif AtC('class="alert warning"',httpfile)=0 
 		// apparently website changed:
 		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 	endif 
+elseif AtC('class="alert warning"',httpfile)=0 
+		// apparently website changed:
+		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 endif
 if !Empty(output)
-	nPos1:=At('>',output)+1
-	if (nPos1>1)
-		nPos2:=At3("</a>",output,nPos1)
-		zipcode:=StandardZip(SubStr(output,nPos1,nPos2-nPos1))
-		nPos1:=At3("<td>",output,nPos2+8)+4
-		nPos2:=At3('</td>',output,nPos1)
-		street:=AllTrim(AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg) 
-		nPos1:=At3("<td>",output,nPos2+2)+1
-		nPos1:=At3("<td>",output,nPos1)+4
-		if (nPos1>5)
-			nPos2:=At3("</td>",output,nPos1)
-			cityname:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))
+	zipcode:=StandardZip(SubStr(output,1,6))
+	nPos1:=At('<dd>',output)+4
+	if nPos1>1
+		nPos2:=At3("</dd>",output,nPos1+4)
+		street:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg 
+		nPos1:=At3("<dt>Woonplaats</dt>",output,nPos2+4)+19
+		if nPos1>1
+			nPos1:=At3('<dd>',output,nPos1)+4
+			nPos2:=At3("</dd>",output,nPos1)
+			cityname:=AllTrim(SubStr(output,nPos1,nPos2-nPos1)) 
 			if (cityname=="'S-GRAVENHAGE")
 				cityname:='DEN HAAG'
 			elseif (cityname=="'S-HERTOGENBOSCH")
