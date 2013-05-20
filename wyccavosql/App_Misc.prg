@@ -1554,13 +1554,14 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 		ENDIF 
 	endif
 	RETURN iif(lMulti,cPartLv4,cQuote+cPartLv4+cQuote)
-Function ImportCSV(SourceFile as string,Desttable as string,nMinCol:=2 as int) as logic 
-	// import of a CSV or tab-seperated file SourceFile into table Desttable with minimal of nMinCol columns
+Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int) as logic 
+	// import of a CSV or tab-seperated file SourceFile into table Desttable with first nNbrCol columns
 	local NbrCol as int 
 	local cDelim as string 
 	local cBuffer as string 
 	local aStruct as array
-	local aFields as array
+	local aFields as array 
+	local aSubFields as array
 	local avalues:={} as array // array with values to be stored 
 	LOCAL ptrHandle as MyFile 
 	local oFs as FileSpec
@@ -1577,17 +1578,23 @@ Function ImportCSV(SourceFile as string,Desttable as string,nMinCol:=2 as int) a
 	ELSE
 		cDelim:=Listseparator
 	endif 
-	if !GetDelimiter(cBuffer,@aStruct,@cDelim,1,20)
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,nNbrCol,20)
 		return false
 	endif
 	// replace space in name by underscore:
 	NbrCol:=Len(aStruct)
 	cBuffer:=ptrHandle:FReadLine()
-	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol 
-		aadd(aValues,aFields)
+	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol
+		if Len(AFields)>nNbrCol 
+			aSubFields:=ArrayCreate(nNbrCol)
+			ACopy(aFields,aSubFields,1,nNbrCol,1)
+			AAdd(avalues,aSubFields)
+		else
+			AAdd(avalues,aFields)
+		endif 
 		cBuffer:=ptrHandle:FReadLine()
 	enddo
-	oStmnt:=SQLStatement{"insert ignore into `"+Desttable+"` ("+Implode(aStruct,',')+') values '+Implode(avalues,'","'),oConn}
+	oStmnt:=SQLStatement{"insert ignore into `"+Desttable+"` ("+Implode(aStruct,',',1,nNbrCol)+') values '+Implode(avalues,'","'),oConn}
 	oStmnt:Execute()
 	ptrHandle:Close()
 	return Empty((oStmnt:Status))
@@ -2967,9 +2974,11 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 			nIncr:=iif(nIncr>0,nIncr-1,0)
 			IF (nPos:=At3(cSearch, cTarget,nStart))==0
 				if Empty(cQuote)
-					nPos:=nEnd +1
-				elseif (nPos:=At3(cQuote, cTarget,nStart))=0 
-					nPos:=nEnd +1
+					nPos:=nEnd +1 
+				else
+					nPos:=nEnd 
+// 				elseif (nPos:=At3(cQuote, cTarget,nStart))=0 
+// 					nPos:=nEnd +1
 				endif
 			ENDIF
 			if lCompress
