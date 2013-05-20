@@ -838,7 +838,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			IF oDBFileSpec1:Size>20  // not empty? 
 				oSel:=SqlSelect{"show table status like 'ppcodes'",oConn}
 				if oSel:RecCount=1
-					if ConI(oSel:rows) > 0
+					if ConI(oSel:rows) > 2
 						if iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
 							lCopyPP:=true
 						endif					
