@@ -1672,7 +1672,7 @@ function InitGlobals()
 		Posting:=iif(ConI(oSys:Posting)=1,true,false)
 		LstCurRate := ConL(oSys:LSTCURRT)
 		SepaEnabled:=ConL(oSys:SepaEnabled)
-		oSel:= SQLSelect{"select `aed` from currencylist where aed='"+AllTrim(oSys:Currency)+"'",oConn}
+		oSel:= SQLSelect{'select `aed` from `currencylist` where `aed`="'+AllTrim(oSys:Currency)+'"',oConn}
 		if oSel:RecCount>0
 			sCURR   :=  oSel:AED
 		endif
