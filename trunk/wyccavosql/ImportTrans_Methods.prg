@@ -744,7 +744,8 @@ METHOD Import() CLASS ImportBatch
 	endif
 	SQLStatement{"commit",oConn}:Execute()  // save locks 
 
-	self:GetImportFiles() 
+	self:GetImportFiles()
+	InitGlobals()  // sometimes globals disappear 
 	FOR nf:=1 to Len(aImportFiles)
 		cFileName:=aImportFiles[nf,F_NAME]
 		oBF := FileSpec{cFileName}
