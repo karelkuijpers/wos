@@ -2238,7 +2238,7 @@ RETURN self:nImageIndex
 FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Log" as string) as logic
 	*	Logging of info to file <Logname>.txt
 	LOCAL ToFileFS as FileSpec
-	LOCAL cFileName, selftext as STRING
+	LOCAL cFileName, selftext,cUser as STRING
 	LOCAL ptrHandle 
 	local oStmnt as SQLStatement
 	local lDBError as logic 
@@ -2251,12 +2251,13 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	endif 
 // 	if oConn=null_object
 // 		lDBError:=true
-// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1
+// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
+	cUser:=iif(Empty(LOGON_EMP_ID),myApp:GetUser(),LOGON_EMP_ID)
 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
 	else
 		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
-		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +cUser+"'",oConn}
 		oStmnt:execute()
 		If !Empty(oStmnt:status)
 			lDBError:=true
@@ -2295,7 +2296,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity,;
-		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",message="+strText+",userid=" +LOGON_EMP_ID,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",message="+strText+",userid=" +cUser,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
 	endif
@@ -2968,6 +2969,7 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 				cSearch:=cQuote+cSep
 				nStart++
 			else
+				cQuote:=''
 				cSearch:=cSep
 			endif
 			nIncr:=Len(cSearch)
