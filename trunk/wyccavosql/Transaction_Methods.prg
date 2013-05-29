@@ -3242,7 +3242,7 @@ oReport:PrintLine(@nRow,@nPage,;
 Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),koparr)
 oReport:PrintLine(@nRow,@nPage," ")  //skip one line
 oReport:PrintLine(@nRow,@nPage,;
-Pad(oLan:RGet("document id",,"!")+":",20)+mBst,koparr)
+Pad(oLan:RGet("document id",,"!")+":",20)+self:mBST,koparr)
 oReport:PrintLine(@nRow,@nPage," ")  //skip one line
 IF !Empty(self:mCLNGiver)
 *	oPers:Seek(AllTrim(mCLNGiver))
@@ -3327,7 +3327,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	self:cGiverName := ""
 	self:oDCmPerson:TEXTValue := ""
 	self:DebCurrency:=myAcc:CURRENCY
-	self:DebAccNbr:=myAcc:ACCNUMBER 
+	self:DebAccNbr:=myAcc:description 
 	self:oDCDebitAccount:Value  := myAcc:Description
 	if !self:DebAccId== self:oTmt:m56_sgir 
 		self:DebAccId:=self:oTmt:m56_sgir
@@ -3698,15 +3698,16 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 		ENDIF
 		self:GiftsAutomatic := FALSE			
 		self:DueAutomatic := FALSE			
-		self:DebitAccount :=  cAcc
-		self:DebAccNbr := oAccount:ACCNUMBER
+		self:DebitAccount :=  cAcc 
+		self:oDCDebitAccount:TEXTValue:=oAccount:Description
+		self:DebAccNbr := oAccount:Description
 		self:DebAccId:=cAcc
 		self:DefType:=oAcc:Type
 		self:DebCln := Transform(oAccount:persid,"")
 		self:oDCDebitAccount:TEXTValue := AllTrim(oAccount:Description) 
 		self:DebCurrency:=oAccount:CURRENCY 
 		if !Empty(self:mDebAmntF) .and. !self:DebCurrency==sCurr
-			self:mDebAmnt:=Round(mDebAmntF*oCurr:GetROE(DebCurrency,self:mDat),DecAantal) 
+			self:mDebAmnt:=Round(self:mDebAmntF*oCurr:GetROE(DebCurrency,self:mDAT),DecAantal) 
 			self:AssignTo()
 		endif			
 		self:ShowDebBal()
