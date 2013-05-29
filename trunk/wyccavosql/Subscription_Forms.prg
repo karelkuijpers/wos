@@ -430,11 +430,18 @@ METHOD OKButton( ) CLASS EditSubscription
 			self:oDCmInvoiceID:SetFocus()
 			RETURN nil		
 		endif
-		if self:mPayMethod="C"
+		IF self:lNew
+			* check if subscription allready exists: 
+			if SqlSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'",oConn}:reccount>0
+				(ErrorBox{,self:oLan:WGet('Subscription of person already exists for this account')}):Show()
+				RETURN nil
+			ENDIF
+		ENDIF
+		if self:mPayMethod="C" .and. SepaEnabled
 			// check mandate id is unique:
 			self:mInvoiceID:=AllTrim(self:mInvoiceID)
 			if	SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
-				(ErrorBox{,self:oLan:WGet(iif(SepaEnabled,"Mandate id","Invoice ID")+" allready exists") }):Show()
+				(ErrorBox{,self:oLan:WGet("Mandate id allready exists") }):Show()
 				self:oDCmInvoiceID:SetFocus()
 				RETURN nil
 			endif		
@@ -496,10 +503,10 @@ METHOD OKButton( ) CLASS EditSubscription
 		",amount="+ Str(self:mamount,-1) +;
 		",lstchange=NOW()"+;
 		",category='"+ self:mtype+"'"+;
-		",INVOICEID='"+ iif(IsNil(self:mInvoiceID),"",AddSlashes(self:mInvoiceId))+"'"+;
-		",REFERENCE='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
-		",PAYMETHOD='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
-	",BANKACCNT='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
+		",invoiceid='"+ iif(IsNil(self:mInvoiceID),"",AddSlashes(self:mInvoiceID))+"'"+;
+		",reference='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
+		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
+	",bankaccnt='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
