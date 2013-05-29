@@ -2488,13 +2488,6 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 
-	instance mBst 
-	instance DebitAccount 
-	instance mPerson 
-	instance mDebAmntF 
-	instance mTRANSAKTNR 
-	instance DebBalance
-	instance CurText1,CurText2 
 	PROTECT oTmt as TeleMut
 	EXPORT lTeleBank as LOGIC
 	PROTECT lEarmarking as LOGIC
@@ -2711,7 +2704,7 @@ METHOD DebSelect() CLASS PaymentJournal
 		AAdd(aDebAccs,{oBank:Description,oBank:AccID})
 		IF Empty(cBankPreSet) 
 			cBankPreSet := oBank:Description
-			self:DebAccNbr:=oBank:ACCNUMBER
+			self:DebAccNbr:=oBank:Description
 			self:DebAccId:=Str(oBank:AccID,-1) 
 			self:DebCurrency:=oBank:CURRENCY
 			self:ShowDebBal()
@@ -2721,7 +2714,7 @@ METHOD DebSelect() CLASS PaymentJournal
 	IF Empty(cBankPreSet).and.oBank:reccount>0
 		oBank:GoBottom()
 		cBankPreSet := oBank:Description
-		self:DebAccNbr:=oBank:ACCNUMBER
+		self:DebAccNbr:=oBank:Description
 		self:DebAccId:=Str(oBank:AccID,-1) 
 		self:DebCurrency:=oBank:CURRENCY
 		self:ShowDebBal()
@@ -2732,14 +2725,14 @@ METHOD DebSelect() CLASS PaymentJournal
 			AAdd(aDebAccs,{oAcc:Description,SKAS})
 			IF Empty(cBankPreSet)
 				cBankPreSet := oAcc:Description
-				self:DebAccNbr:= oAcc:ACCNUMBER
+				self:DebAccNbr:= oAcc:Description
 				self:DebAccId:=SKAS
 				self:DebCurrency:=oAcc:CURRENCY
 				self:ShowDebBal()
 			ENDIF
 		endif
 	ENDIF
-	AAdd(aDebAccs,{"<Other>",""}) 
+	AAdd(aDebAccs,{"<Other>",''}) 
 	RETURN aDebAccs
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 	LOCAL oControl AS Control
@@ -2776,7 +2769,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 			self:Totalise(false,true)
 			SELF:oSFPaymentDetails:Browser:RestoreUpdate()
 			self:oSFPaymentDetails:Browser:Refresh()
-		elseif oControl:NameSym==#DebitAccount .and.!AllTrim(Transform(oControl:Value,""))==self:DebAccId    
+		elseif oControl:NameSym==#DebitAccount .and.!AllTrim(oControl:TEXTValue)==self:DebAccNbr
 			GiftsAutomatic:=FALSE
 			DueAutomatic:=FALSE
 			if self:oDCDebitAccount:CurrentItemNo=0
@@ -2796,7 +2789,8 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS PaymentJournal
 			else
 				self:oDCDebitAccount:SelectItem(self:oDCDebitAccount:CurrentItemNo) 
 				self;oDCDebitAccount:TEXTValue:=self:oDCDebitAccount:GetItem(self:oDCDebitAccount:CurrentItemNo)
-				self:DebAccId := AllTrim(Transform(self:oDCDebitAccount:GetItemValue(self:oDCDebitAccount:CurrentItemNo),""))
+				self:DebAccId := AllTrim(Transform(self:oDCDebitAccount:GetItemValue(self:oDCDebitAccount:CurrentItemNo),"")) 
+				self:DebAccNbr:=self:oDCDebitAccount:TEXTValue
 				self:ShowDebBal()
 				self:lMemberGiver := FALSE
 				self:bankanalyze()
@@ -2953,14 +2947,17 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
-	IF oControlEvent:Name == "DEBITACCOUNT"
+	IF oControlEvent:Name == "DEBITACCOUNT"  .and. !AllTrim(oControl:TextValue)==self:DebAccNbr
 		GiftsAutomatic:=FALSE
 		DueAutomatic:=FALSE
 		if self:oDCDebitAccount:CurrentItemNo=0
 			// nothing seleted:
 			self:DebAccId:=''
+			self:DebAccNbr:=""
 		elseif Empty(oControl:VALUE)  //other:
-			// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc)
+			// 			AccountSelect(self,"","DEBITACCOUNT",FALSE,cAccFilter,,oAcc) 
+			self:DebAccId := '' 
+			self:DebAccNbr:=AllTrim(oControl:TextVALUE)
 			AccountSelect(self,"","DEBITACCOUNT")
 			self:ShowDebBal()
 			IF MultiDest
@@ -2971,7 +2968,8 @@ METHOD ListBoxSelect(oControlEvent) CLASS PaymentJournal
 				self:DebCategory:=''
 			endif
 		else  
-			self:DebAccId := AllTrim(Transform(oControl:VALUE,""))
+			self:DebAccId := AllTrim(Transform(oControl:VALUE,"")) 
+			self:DebAccNbr:=AllTrim(oControl:TextVALUE)
 			self:ShowDebBal()
 			self:lMemberGiver := FALSE
 			self:bankanalyze()
@@ -3021,7 +3019,7 @@ METHOD NonEarmarked( ) CLASS PaymentJournal
 		oAcc:=SQLSelect{"select a.accnumber,a.description,b.category as debcat from account a, balanceitem b where b.balitemid=a.balitemid and accid="+SPROJ,oConn}
 		if oAcc:RecCount>0
 			self:DebAccId:=sproj
-			self:DebAccNbr:=oAcc:ACCNUMBER
+			self:DebAccNbr:=oAcc:Description
 			self:DebCategory:=oAcc:debcat
 			self:oDCDebitAccount:CurrentText  := oAcc:Description
 			self:ShowDebBal()
@@ -3252,7 +3250,7 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	endif
 	oSel:=SqlSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid='"+self:DebAccId+"' and b.balitemid=a.balitemid",oConn}
 	if oSel:reccount>0
-		self:DebAccNbr:=oSel:ACCNUMBER 
+// 		self:DebAccNbr:=oSel:ACCNUMBER 
 		self:DebCurrency:=oSel:CURRENCY
 		self:DebCategory:=oSel:category
 	else
