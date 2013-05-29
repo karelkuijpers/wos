@@ -371,6 +371,8 @@ CLASS TeleMut
 	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed},...}  
 	protect avaluesBal:={} as array  // array with values to be stored in bankbalances: {{banknumber,SQLdate,value},...
 	export nTooOld as int // number of too old trasnactions
+	export nNonTele as int // number of transactions not on telebanking account  
+	export nDuplicate as int // number of transactions skipped because of duplicates
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportMT940,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
@@ -388,8 +390,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 		persid as string,adrline:='' as string,country:='' as string,bic:="" as string ) as logic CLASS TeleMut 
 	if !Empty(amount)
 		IF self:TooOldTeleTrans(bankaccntnbr,bookingdate) 
-			// too old:
-			self:nTooOld++
+// 			LogEvent(self,"Skipped:"+ bankaccntnbr +' on '+DToC(bookingdate)+", contra_bankaccnt:"+contra_bankaccnt+", contra_name:"+contra_name+", amount:"+Str(amount,-1)+",description:"+description,"logsql")
 		else
 			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
 				self:nSubSeqnr++
@@ -1032,8 +1033,13 @@ METHOD Import() CLASS TeleMut
 	else 
 		SQLStatement{"commit",oConn}:execute()  // save locks 
 	endif
-	if self:nTooOld>0
-		WarningBox{,"Import of telebanking transactions",Str(self:nTooOld,-1) +" transactions skipped because older than 240 days or before month closing date"}:Show()		
+	if self:nTooOld>0 .or. self:nNonTele>0 .or. self:nDuplicate>0
+		WarningBox{,"Import of telebanking transactions",iif(self:nTooOld>0,Str(self:nTooOld,-1) +" transactions skipped because older than 240 days or before month closing date"+CRLF,"")+;
+		iif(self:nNonTele>0,Str(self:nNonTele,-1) +" transactions skipped because non telebank accounts:"+Implode(self:NonTeleAcc,', '),"")+CRLF+;
+		iif(self:nDuplicate>0,Str(self:nDuplicate,-1) +" transactions skipped because duplicates of already imported transactions","")}:Show()	
+		LogEvent(self,iif(self:nTooOld>0,Str(self:nTooOld,-1) +" transactions skipped because older than 240 days or before month closing date"+CRLF,"")+;
+		iif(self:nNonTele>0,Str(self:nNonTele,-1) +" transactions skipped because non telebank accounts:"+Implode(self:NonTeleAcc,', '),"")+CRLF+;
+		iif(self:nDuplicate>0,Str(self:nDuplicate,-1) +" transactions skipped because duplicates of already imported transactions",""))	
 	endif
 	if lFilesFound
 		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
@@ -4639,6 +4645,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 
 	if nTele>0 .and.Len(aTrans)>0  .and. nTele<Len(avalueTrans) 
 		// remove transactions to be stored from ingnored teletrans transactions: 
+		self:nDuplicate+=(Len(avalueTrans)-nTele)
 		nProc:=0
 		// teletransactions ignored: which ones?
 		oSel:=SqlSelect{"select seqnr,amount,bankaccntnbr,cast(bookingdate as date) as bookingdate,kind,contra_bankaccnt,"+; 
@@ -4792,6 +4799,7 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 				LogEvent(self,"Bank account "+banknbr+" not as telebanking account in system data")
 				(ErrorBox{,"Bank account "+banknbr+" not as telebanking account in system data"}):Show()
 				AAdd(self:NonTeleAcc,AllTrim(banknbr)) 
+				self:nNonTele++
 				RETURN true
 			else
 				// add to tele bank accounts:                                            
@@ -4811,6 +4819,8 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 				endif
 			endif
 		else
+			self:nNonTele++ 
+// 			LogEvent(self,"Non tele:"+ banknbr +' on '+DToC(transdate),"logsql")
 			RETURN true
 		ENDIF
 	else
@@ -4822,7 +4832,9 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 // 	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
 // 		RETURN true 
 // 	else
-		if transdate <(Today() - NbrDays) .or. transdate < mindate        // tolder than 240 days or before month closed
+		if transdate <(Today() - NbrDays) .or. transdate < mindate        // tolder than 240 days or before month closed 
+			// too old:
+			self:nTooOld++
 			return true
 		endif
 // 	ENDIF
