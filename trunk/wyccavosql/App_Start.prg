@@ -54,6 +54,7 @@ method Start() class App
 		ENDIF
 		
 		cWorkdir:=WorkDir() 
+		LOGON_EMP_ID:=self:GetUser()   // prelimninary
 		oInit:=Initialize{}  // make connection with mysql and database
 		oUpg:=CheckUPGRADE{}
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers) 
