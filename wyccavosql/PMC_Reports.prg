@@ -3,6 +3,15 @@ STATIC DEFINE AREAREPORT_AFSLDAGTEXT := 103
 STATIC DEFINE AREAREPORT_BALANCETEXT := 102 
 STATIC DEFINE AREAREPORT_CANCELBUTTON := 101 
 STATIC DEFINE AREAREPORT_OKBUTTON := 100 
+CLASS AskSend INHERIT DataDialogMine 
+
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export Result as shortint
 RESOURCE AskSend DIALOGEX  4, 3, 265, 83
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -13,15 +22,6 @@ BEGIN
 	CONTROL	"(this is IRREVOCABLE)", ASKSEND_FIXEDTEXT2, "Static", WS_CHILD, 4, 25, 236, 13
 END
 
-CLASS AskSend INHERIT DataDialogMine 
-
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export Result as shortint
 METHOD CancelButton( ) CLASS AskSend 
      Result:=0
      self:EndWindow()
@@ -77,6 +77,15 @@ STATIC DEFINE ASKSEND_CANCELBUTTON := 100
 STATIC DEFINE ASKSEND_FIXEDTEXT1 := 102 
 STATIC DEFINE ASKSEND_FIXEDTEXT2 := 103 
 STATIC DEFINE ASKSEND_OKBUTTON := 101 
+CLASS AskUpld INHERIT DataDialogMine 
+
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oDCTextQestion AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  export Result as shortint
 RESOURCE AskUpld DIALOGEX  4, 3, 212, 86
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -87,15 +96,6 @@ BEGIN
 	CONTROL	"(this is IRREVOCABLE)", ASKUPLD_FIXEDTEXT2, "Static", WS_CHILD, 4, 40, 196, 12
 END
 
-CLASS AskUpld INHERIT DataDialogMine 
-
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oDCTextQestion AS FIXEDTEXT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  export Result as shortint
 METHOD CancelButton( ) CLASS AskUpld 
      Result:=0
      self:EndWindow()
@@ -163,6 +163,19 @@ STATIC DEFINE IESREPORT_AFSLDAGTEXT := 104
 STATIC DEFINE IESREPORT_BALANCETEXT := 103 
 STATIC DEFINE IESREPORT_CANCELBUTTON := 102 
 STATIC DEFINE IESREPORT_OKBUTTON := 101 
+RESOURCE PMISsend DIALOGEX  13, 12, 319, 143
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", PMISSEND_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 250, 16, 53, 12
+	CONTROL	"Cancel", PMISSEND_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 250, 33, 53, 12
+	CONTROL	"Fixed Text", PMISSEND_BALANCETEXT, "Static", WS_CHILD, 12, 19, 221, 29
+	CONTROL	"Up to day:", PMISSEND_AFSLDAGTEXT, "Static", WS_CHILD, 23, 67, 39, 13
+	CONTROL	"donderdag 30 mei 2013", PMISSEND_AFSLDAG, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 92, 66, 118, 14
+	CONTROL	"", PMISSEND_MAXTRANSID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 92, 81, 54, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Up till transaction#", PMISSEND_TRANSACTIONEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 24, 84, 64, 13
+END
+
 CLASS PMISsend INHERIT DataWindowExtra 
 
 	PROTECT oCCOKButton AS PUSHBUTTON
@@ -170,6 +183,8 @@ CLASS PMISsend INHERIT DataWindowExtra
 	PROTECT oDCBalanceText AS FIXEDTEXT
 	PROTECT oDCAfsldagtext AS FIXEDTEXT
 	PROTECT oDCAfsldag AS DATESTANDARD
+	PROTECT oDCMaxTransId AS MYSINGLEEDIT
+	PROTECT oDCTransactionext AS FIXEDTEXT
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	//   	PROTECT oAcc as SQLSelect
@@ -187,19 +202,9 @@ CLASS PMISsend INHERIT DataWindowExtra
 	protect cPMCCurr as string // currency of Clearance PMC account
 	protect mxrate as float
 	PROTECT rmaand as STRING 
+	protect nMaxTransid as int // maximum transid up till which report trasnactions to PMC
 	
 	declare method RefreshLocks
-RESOURCE PMISsend DIALOGEX  13, 12, 319, 143
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", PMISSEND_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 250, 16, 53, 12
-	CONTROL	"Cancel", PMISSEND_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 250, 33, 53, 12
-	CONTROL	"Fixed Text", PMISSEND_BALANCETEXT, "Static", WS_CHILD, 12, 19, 221, 29
-	CONTROL	"Up to day:", PMISSEND_AFSLDAGTEXT, "Static", WS_CHILD, 23, 67, 39, 13
-	CONTROL	"donderdag 14 oktober 2010", PMISSEND_AFSLDAG, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 65, 118, 14
-END
-
 METHOD CancelButton( ) CLASS PMISsend
  	SELF:EndWindow()
 	RETURN TRUE
@@ -208,6 +213,27 @@ METHOD Close(oEvent) CLASS PMISsend
 	//Put your changes here
 	SELF:Destroy()
 	RETURN
+method DateTimeSelectionChanged(oDateTimeSelectionEvent) class PMISsend
+	local oControl as Control 
+	local oSel as SQLSelect
+	oControl := iif(oDateTimeSelectionEvent == null_object, null_object, oDateTimeSelectionEvent:Control)
+	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
+	//Put your changes here 
+	if oControl:NameSym=#Afsldag
+		if self:oDCAfsldag:SelectedDate < Today()
+			self:oDCTransactionext:Show()
+			self:oDCMaxTransId:Show()
+			oSel:=SqlSelect{'select max(transid) as maxtr from transaction where dat<="'+SQLdate( self:oDCAfsldag:SelectedDate)+'" and gc<>""',oConn}
+			if oSel:RecCount>0
+				self:oDCMaxTransId:Value :=ConI(oSel:maxtr)
+			endif
+		endif 
+		
+	endif
+	
+	return NIL
+
+
 METHOD HTMLConv(tekst) CLASS PMISsend
 	// Converting text to html appriate text
 	tekst:=StrTran(tekst,"&","&amp;")
@@ -240,6 +266,14 @@ oDCAfsldag:FieldSpec := Subscription_P04{}
 oDCAfsldag:HyperLabel := HyperLabel{#Afsldag,NULL_STRING,"Transactions up to this date will be send",NULL_STRING}
 oDCAfsldag:UseHLforToolTip := True
 
+oDCMaxTransId := mySingleEdit{SELF,ResourceID{PMISSEND_MAXTRANSID,_GetInst()}}
+oDCMaxTransId:TooltipText := "Maximum transaction# up till which sould be sent to PMC"
+oDCMaxTransId:Picture := "99999999999"
+oDCMaxTransId:HyperLabel := HyperLabel{#MaxTransId,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCTransactionext := FixedText{SELF,ResourceID{PMISSEND_TRANSACTIONEXT,_GetInst()}}
+oDCTransactionext:HyperLabel := HyperLabel{#Transactionext,"Up till transaction#",NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Sending Transactions to PMC"
 SELF:HyperLabel := HyperLabel{#PMISsend,"Sending Transactions to PMC",NULL_STRING,NULL_STRING}
 
@@ -250,6 +284,13 @@ ENDIF
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
+
+ACCESS MaxTransId() CLASS PMISsend
+RETURN SELF:FieldGet(#MaxTransId)
+
+ASSIGN MaxTransId(uValue) CLASS PMISsend
+SELF:FieldPut(#MaxTransId, uValue)
+RETURN uValue
 
 METHOD OKButton( ) CLASS PMISsend
 	LOCAL oWarn as warningbox, lSuc as LOGIC 
@@ -263,6 +304,7 @@ METHOD OKButton( ) CLASS PMISsend
 // 		self:AssPeriod:="( - "+DToC(self:closingDate)+")"
 		self:AssPeriod:=" - "+DToC(self:closingDate)
 	endif
+	self:nMaxTransid:=ConI(self:MaxTransId)
 	* check if there are non earmarked gifts: 
 	if !Empty(SPROJ).and.SQLSelect{"select transid from transaction where accid='"+SPROJ+"' and BFM='O' and dat <='"+SQLdate(self:closingDate)+"'",oConn}:Reccount>0
 		oWarn := WarningBox{self:Owner,self:oLan:WGet("Partner Monetary Interchange System"),;
@@ -600,7 +642,7 @@ METHOD PrintReport() CLASS PMISsend
 	// Check if nobody else is busy with sending to PMC: 
 	// 	(time1:=Seconds())   
 	oTrans:=SqlSelect{'select transid from transaction t '+;
-		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+;
+		" where t.bfm='' and t.dat<='"+SQLdate(self:closingDate)+"' and t.gc>'' and "+iif(Empty(self:nMaxTransid),"","t.transid<="+Str(self:nMaxTransId,-1)+" and ")+;
 		" t.lock_id<>0 and t.lock_id<>"+MYEMPID+" and t.lock_time > subdate(now(),interval 120 minute)",oConn}
 	if oTrans:Reccount>0
 		ErrorBox{self,self:oLan:WGet("somebody else busy with sending to PMC")}:Show()
@@ -627,7 +669,7 @@ METHOD PrintReport() CLASS PMISsend
 	oStmnt:=SQLStatement{'lock tables `transaction` write',oConn} 
 	oStmnt:Execute()
 	oStmnt:=SQLStatement{'update transaction set lock_id="'+MYEMPID+'",lock_time=now() where '+;
-		" bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+iif(Posting," and poststatus>1",""),oConn}
+		" bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+iif(Empty(self:nMaxTransid),""," and transid<="+Str(self:nMaxTransId,-1))+iif(Posting," and poststatus>1",""),oConn}
 	oStmnt:Execute() 
 	if !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("could not select transactions")+Space(1)+' ('+oStmnt:Status:description+')'}:Show()
@@ -639,7 +681,8 @@ METHOD PrintReport() CLASS PMISsend
 	nTransLock:=oStmnt:NumSuccessfulRows
 	SQLStatement{"commit",oConn}:Execute()	
 	SQLStatement{"unlock tables",oConn}:Execute()
-	oSel:=SqlSelect{"select transid from transaction where lock_id='"+MYEMPID+"' and  bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>'' limit 1",oConn} 
+	oSel:=SqlSelect{"select transid from transaction where lock_id='"+MYEMPID+"' and  bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+;
+	+iif(Empty(self:nMaxTransid),""," and transid<="+Str(self:nMaxTransid,-1))+" limit 1",oConn} 
 	nTransSample:=ConI(oSel:transid)  // save sample transid for checking purposes later
 
 
@@ -683,8 +726,9 @@ METHOD PrintReport() CLASS PMISsend
 	// 
 	//	Sum off all assessable transactions with Empty BFM up till closing date:
 	if Len(aAccidMbr)>0
-		oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.asstot as char) order by y.accid separator "#") as grasssum from (select t.accid,sum(t.cre-t.deb) as asstot from transaction t where t.fromrpp=0 and t.bfm="" and t.gc="AG" and t.dat <="'+SQLdate(closingDate)+'" '+;
-			"and "+oMBal:cTransSelection+" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn} 
+		oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.asstot as char) order by y.accid separator "#") as grasssum from (select t.accid,sum(t.cre-t.deb) as asstot from transaction t where t.fromrpp=0 and t.bfm="" and t.gc="AG" and t.dat <="'+SQLdate(closingDate)+'" '+; 
+		+iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransid,-1)) +;
+			" and "+oMBal:cTransSelection+" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn} 
 		if oSel:Reccount>0
 			aAssTot:=AEvalA(Split(oSel:grasssum,'#'),{|x|x:=Split(x,',') })  // make array of sums of assessable amounts per account
 			// add to total assessable amount per member:
@@ -709,6 +753,7 @@ METHOD PrintReport() CLASS PMISsend
 			oSel:=SqlSelect{"select group_concat(cast(accid as char),'&&',cast(transid as char),'&&',cast(seqnr as char),'&&',coalesce(cast(t.persid as char),''),'&&',description,'&&',cast(deb as char),'&&',cast(cre as char),'&&',gc,'&&',"+;
 				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",''),'&&',cast(fromrpp as char) order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
 				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
+				iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransid,-1))+;
 				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}  
 			if oSel:Reccount>0
 				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
@@ -717,8 +762,9 @@ METHOD PrintReport() CLASS PMISsend
 		
 		if Len(aAccidRPP)>0
 			//	For all own members with remaining RPP distribution instruction: sum of all transactions fromRPP not yet sent to PMC
-			oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.rpptot as char) order by y.accid separator "#") as grrppsum from (select t.accid,sum(t.cre-t.deb) as rpptot from transaction t where t.fromrpp=1 and t.bfm="" and t.gc>"" and t.dat <="'+SQLdate(closingDate)+'" '+;
-				"and t.accid in ("+Implode(aAccidRPP,',',,,1)+") and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn}
+			oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.rpptot as char) order by y.accid separator "#") as grrppsum from (select t.accid,sum(t.cre-t.deb) as rpptot from transaction t where t.fromrpp=1 and t.bfm="" and t.gc>"" and t.dat <="'+SQLdate(closingDate)+'" '+; 
+			  +iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransId,-1))+;
+				" and t.accid in ("+Implode(aAccidRPP,',',,,1)+") and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn}
 			if oSel:Reccount>0
 				aAccRPP:=AEvalA(Split(oSel:grrppsum,'#'),{|x|x:=Split(x,',') })  // make array of sums of rpp amounts per account  
 				// add to RPP total per member:
@@ -1785,4 +1831,6 @@ STATIC DEFINE PMISSEND_AFSLDAG := 104
 STATIC DEFINE PMISSEND_AFSLDAGTEXT := 103 
 STATIC DEFINE PMISSEND_BALANCETEXT := 102 
 STATIC DEFINE PMISSEND_CANCELBUTTON := 101 
+STATIC DEFINE PMISSEND_MAXTRANSID := 105 
 STATIC DEFINE PMISSEND_OKBUTTON := 100 
+STATIC DEFINE PMISSEND_TRANSACTIONEXT := 106 
