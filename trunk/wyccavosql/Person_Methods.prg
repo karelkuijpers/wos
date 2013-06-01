@@ -126,73 +126,89 @@ METHOD Init() CLASS Destination
 
 
 Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:="" as string) as array
-LOCAL oHttp  as cHttp
-LOCAL nStart, nPos, nEnd as int
-local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
-LOCAL aWord as ARRAY
-if Empty(cAddress)
-	return {cPostcode,cAddress,cCity}
-endif
-street:=AllTrim(cAddress)
-zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
-cCity:=AllTrim(cCity)
-cCity:=StrTran(cCity,'Y','IJ')
-cityname:=cCity 
-
-housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
-
-// remove housenbr addition from address:
-aWord:=GetTokens(cAddress)
-nEnd:=Len(aWord)
-if nEnd>1
-	if Empty(aWord[nEnd-1,1])  // separation character?
-		nEnd-=2
-	elseif isnum(aWord[nEnd-1,1])
-		nEnd--
+	LOCAL oHttp  as cHttp
+	LOCAL nStart, nPos, nEnd as int
+	local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
+	LOCAL aWord as ARRAY
+	if Empty(cAddress)
+		return {cPostcode,cAddress,cCity}
 	endif
-	cAddress:=""
-	for i:=1 to nEnd
-		cAddress+=aWord[i,1]+iif(i==nEnd,"",aWord[i,2])
-	next
-	cAddress:=AllTrim(cAddress)
-endif
-housenr:=(GetStreetHousnbr(cAddress))[2]
-if !Empty(cPostcode) 
-	cSearch:=cPostcode+"%20"+housenr
-elseif !Empty(cCity)
-	aWord:=GetTokens(cCity)
-	cSearch:=cAddress+'%20'+aWord[1,1] 
-else
-	return {cPostcode,cAddress,cCity}	
-endif
-cSearch:=StrTran(cSearch,' ',"%20")
-oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
+	street:=AllTrim(cAddress)
+	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
+	cCity:=AllTrim(cCity)
+	cCity:=StrTran(cCity,'Y','IJ')
+	cityname:=cCity 
 
-nPos1:=At('<dt>Postcode</dt>',httpfile)
-if nPos1>0
-	// search unique string before response
-	nPos1:=At3('<dd><a href=',httpfile,nPos1+17)
-	if nPos1>0                                                
-		output:=SubStr(httpfile,nPos1+21,200) 
+	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
+
+	// remove housenbr addition from address:
+	aWord:=GetTokens(cAddress)
+	nEnd:=Len(aWord)
+	if nEnd>1
+		if Empty(aWord[nEnd-1,1])  // separation character?
+			nEnd-=2
+		elseif isnum(aWord[nEnd-1,1])
+			nEnd--
+		endif
+		cAddress:=""
+		for i:=1 to nEnd
+			cAddress+=aWord[i,1]+iif(i==nEnd,"",aWord[i,2])
+		next
+		cAddress:=AllTrim(cAddress)
+	endif
+	housenr:=(GetStreetHousnbr(cAddress))[2]
+	if !Empty(cPostcode) 
+		cSearch:=cPostcode+"%20"+housenr
+	elseif !Empty(cCity)
+		aWord:=GetTokens(cCity)
+		cSearch:=cAddress+'%20'+aWord[1,1] 
+	else
+		return {cPostcode,cAddress,cCity}	
+	endif
+	cSearch:=StrTran(cSearch,' ',"%20")
+	oHttp := CHttp{"WycOffSy HTP Agent",80,true}
+	httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
+
+	nPos1:=At('<section id="main" role="main">',httpfile)
+	if nPos1>0
+		// search unique string before response
+		nPos1:=At3('<h1>',httpfile,nPos1+31)
+		if nPos1>0                                                
+			output:=SubStr(httpfile,nPos1+4,200) 
+		elseif AtC('class="alert warning"',httpfile)=0 
+			// apparently website changed:
+			LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
+		endif 
 	elseif AtC('class="alert warning"',httpfile)=0 
 		// apparently website changed:
 		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
-	endif 
-elseif AtC('class="alert warning"',httpfile)=0 
-		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
-endif
-if !Empty(output)
-	zipcode:=StandardZip(SubStr(output,1,6))
-	nPos1:=At('<dd>',output)+4
-	if nPos1>1
-		nPos2:=At3("</dd>",output,nPos1+4)
-		street:=AllTrim(SubStr(output,nPos1,nPos2-nPos1))+" "+housenrOrg 
-		nPos1:=At3("<dt>Woonplaats</dt>",output,nPos2+4)+19
-		if nPos1>1
-			nPos1:=At3('<dd>',output,nPos1)+4
-			nPos2:=At3("</dd>",output,nPos1)
+	endif
+	if !Empty(output)
+		nPos2:=At3('<',output,5)
+		if nPos2>0
+			street:=AllTrim(SubStr(output,1,nPos2-1)) 
+			nPos1:=AtC('t/m',street)
+			if nPos1>0
+				// look for preceding number: 
+				for i:=nPos1-2 downto 2 step 1
+					if !IsDigit(SubStr(street,i,1))
+						nPos1:=i
+						exit
+					endif
+				next                                      
+				street:=AllTrim(SubStr(street,1,nPos1)) 
+			else
+				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-1)
+				if nPos1>0
+					street:=AllTrim(SubStr(street,1,nPos1-1))
+				endif
+			endif
+			street:=StrTran(StrTran(street,CRLF,''),TAB,'')
+			street+=" "+housenrOrg 
+			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...> 
+			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
+			nPos1:=At3(',',output,nPos1+1)+1
+			nPos2:=At3('<',output,nPos1)
 			cityname:=AllTrim(SubStr(output,nPos1,nPos2-nPos1)) 
 			if (cityname=="'S-GRAVENHAGE")
 				cityname:='DEN HAAG'
@@ -202,10 +218,9 @@ if !Empty(output)
 			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
 		endif
 	endif	
-endif
-oHttp:CloseRemote()
-oHttp:Axit() 
-RETURN {zipcode,street,cityname}
+	oHttp:CloseRemote()
+	oHttp:Axit() 
+	RETURN {zipcode,street,cityname}
 function GENDERDSCR(cGnd as int) as string
 	// Return Gender description of a person:
 	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
