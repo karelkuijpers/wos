@@ -393,7 +393,7 @@ method InitParms() class LogReport
 	self:oDCDateTimeTo:DateRange:=DateRange{OldestYear,Today()+1}
  	self:oDCDateTimeFrom:SelectedDate:=Max(LstYearClosed,Today()-160)
 
-	self:oDCCollectionBox:FillUsing({{"standard report","log"},{"error report","logerrors"}})
+	self:oDCCollectionBox:FillUsing({{"standard report","log"},{"error report","logerrors"},{"information report","loginfo"}})
 	self:oDCCollectionBox:Value:="log"
 	if !SuperUser
 		self:oDCCollectionText:Hide()
