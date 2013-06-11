@@ -135,6 +135,10 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	endif
 	street:=AllTrim(cAddress)
 	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
+	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2))
+		//illegal zipcode
+		zipcode:=''
+	endif 
 	cCity:=AllTrim(cCity)
 	cCity:=StrTran(cCity,'Y','IJ')
 	cityname:=cCity 
@@ -157,8 +161,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		cAddress:=AllTrim(cAddress)
 	endif
 	housenr:=(GetStreetHousnbr(cAddress))[2]
-	if !Empty(cPostcode) 
-		cSearch:=cPostcode+"%20"+housenr
+	if !Empty(zipcode) 
+		cSearch:=zipcode+"%20"+housenr
 	elseif !Empty(cCity)
 		aWord:=GetTokens(cCity)
 		cSearch:=cAddress+'%20'+aWord[1,1] 
@@ -168,20 +172,22 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	cSearch:=StrTran(cSearch,' ',"%20")
 	oHttp := CHttp{"WycOffSy HTP Agent",80,true}
 	httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
-
+	if AtC('class="alert warning"',httpfile)>0
+		return {cPostcode,cAddress,cCity}	
+	endif		
 	nPos1:=At('<section id="main" role="main">',httpfile)
 	if nPos1>0
 		// search unique string before response
 		nPos1:=At3('<h1>',httpfile,nPos1+31)
 		if nPos1>0                                                
 			output:=SubStr(httpfile,nPos1+4,200) 
-		elseif AtC('class="alert warning"',httpfile)=0 
+		elseif AtC('Value is not a number',httpfile)=0 
 			// apparently website changed:
-			LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
+			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 		endif 
-	elseif AtC('class="alert warning"',httpfile)=0 
+	else 
 		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cAddress+" "+cPostcode+" "+cCity+", user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
+		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
 	endif
 	if !Empty(output)
 		nPos2:=At3('<',output,5)
