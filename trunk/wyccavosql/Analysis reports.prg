@@ -3173,7 +3173,7 @@ METHOD OKButton( ) CLASS TotalsMembers
 		self:oLan:RGet("Charges",12,,"R")+cTab +self:oLan:RGet("Assmnt Off",12,,"R")+cTab +self:oLan:RGet("Assmnt Int/F",12,,"R"))
 
 	sqlStr:=UnionTrans("select ";
-		+ "t.cre-t.deb as balance,if(m.mbrid is null,t.accid,m.mbrid) as accid,"; 
+		+ "t.cre-t.deb as balance,t.transid,t.seqnr,if(m.mbrid is null,t.accid,m.mbrid) as accid,"; 
 		+ 'if(a.accid is null,7,if(m.co is null,6,if(m.homepp="'+sEntity+'",if(m.co="M",1,if(a.department='+Str(MainDeP,-1)+',2,3)),if(m.co="M",4,5)))) as category,'+; 
 		+ 'if(t.gc="AG",if(t.fromrpp=0,3,4),if(gc="MG",5,if(gc="PF",6,if(instr(t.description,"assessment")=0 or instr(t.description,"Transfer of PC")>0,7,if(instr(t.description,"office")>0,8,9))))) as type,'; 
 		+ 'if(a.accid is null,"unknown",if(a.department='+Str(MainDeP,-1)+',a.description,d.descriptn)) as descr ';
@@ -3185,7 +3185,7 @@ METHOD OKButton( ) CLASS TotalsMembers
 		+ "t.dat<='" + Str(self:ToYear,4) + "-" + StrZero(self:ToMonth,2) + "-" + StrZero(MonthEnd(self:ToMonth,self:ToYear),2) + "' and t.gc>''") //;
 
 	oTransH:=SqlSelect{'select z.accid,z.category,z.type,z.descr,sum(z.balance) as balance from ('+sqlStr+') as z group by z.accid,z.type', oConn} 
-	oTransH:Execute()
+	oTransH:Execute() 
 
 	do WHILE !oTransH:EoF
 		AccountId:=Str(oTransH:accid,-1) 
