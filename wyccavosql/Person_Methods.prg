@@ -129,6 +129,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	LOCAL oHttp  as cHttp
 	LOCAL nStart, nPos, nEnd as int
 	local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
+	local cBuffer as string
 	LOCAL aWord as ARRAY
 	if Empty(cAddress)
 		return {cPostcode,cAddress,cCity}
@@ -171,7 +172,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	endif
 	cSearch:=StrTran(cSearch,' ',"%20")
 	oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-	httpfile:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
+	cBuffer:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
+	httpfile:=(UTF2String{cBuffer}):Outbuf
 	if AtC('class="alert warning"',httpfile)>0
 		return {cPostcode,cAddress,cCity}	
 	endif		
@@ -4386,7 +4388,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if !empty(nTerm) .and. nterm<=12
 			// prenotification:
 // 			cDescr+=', '+self:oLan:RGet("mandate id")+':'+aDue[i,19]+', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
-			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
+			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm-1,12)+1])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
 		endif
 		oReport:PrintLine(@nRow,@nPage,;
 			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+"  "+cDescr,headinglines)  
