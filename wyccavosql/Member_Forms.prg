@@ -2596,7 +2596,7 @@ METHOD OkButton()  CLASS EditMember
 		for i:=1 to Len(self:aDistr)
 			// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;  
 			j:=0
-			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"',",;
+			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"', ",;
 				"update distributioninstruction set ")+;
 				"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
 				",destpp='"+ self:aDistr[i,DESTPP]+"'"+;                      
@@ -2621,7 +2621,7 @@ METHOD OkButton()  CLASS EditMember
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
-					cError:=oStmnt:ErrInfo:errormessage
+					cError:=oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
 					exit  
 				endif
 			endif
