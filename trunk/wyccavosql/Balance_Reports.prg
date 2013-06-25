@@ -2939,7 +2939,7 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 
 	// {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr,persidcontact2,emailcontact2,contactname2,persidcontact3,emailcontact3,contactname3},...}
 	//     1       2         3         4     5       6       7        8        9          10        11          12         13           14             15           16             17              18          19
-	AEval(Split(oSel:grMbr,'#%#'),{|x|AAdd(aMbr,Split(x,'#$#')) })
+	AEval(Split(oSel:grMbr,'#%#',,true),{|x|AAdd(aMbr,Split(x,'#$#',,true)) })
 	self:STATUSMESSAGE(cMess+='.')
 
 	SQLStatement{"DROP TABLE IF EXISTS accidmbr",oConn}:Execute() 
@@ -2973,7 +2973,7 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	if Empty(oSel:grAcc)
 		return false
 	endif
-	AEval(Split(oSel:grAcc,'#%#'),{|x|AAdd(aAccidMbr,Split(x,'#$#')) })
+	AEval(Split(oSel:grAcc,'#%#',,true),{|x|AAdd(aAccidMbr,Split(x,'#$#',,true)) })
 	for i:=1 to Len(aMbr)
 		if Empty(aMbr[i,5])
 			aMbr[i,1]:='a'+aMbr[i,1]
@@ -3187,7 +3187,7 @@ Method CollectAsssement(aAssMbr as array,cMess ref string) as logic Class GiftRe
 		return false
 	endif
 	if !(oSel:Reccount<1 .or.Empty(oSel:grAss))
-		AEval(Split(oSel:grAss,'#%#'),{|x|AAdd(aAssMbr,Split(x,'#$#')) })
+		AEval(Split(oSel:grAss,'#%#',,true),{|x|AAdd(aAssMbr,Split(x,'#$#',,true)) })
 	endif
 	self:STATUSMESSAGE(cMess+='.')
 return true
@@ -3269,7 +3269,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind 
 	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(a.kind<4 and (t.gc='CH' or left(a.mbrid,1)='a'),3,a.kind))) as kind from "+;
 		'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'+;
-		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)'
+		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)' 
 	cStatement:=UnionTrans(cStatement)  // temporary
 	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2),kind char(1), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
 		cStatement+' order by mbrid,kind,accid,dat,transid ',oConn}
@@ -3312,7 +3312,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 		// aPersdata: {{persid,fullname, fulladdress, email,gender},...	
 		//                  1       2         3        4       5
 		if oSel:Reccount>0 .and.!Empty(oSel:grPers)             
-			AEval(Split(oSel:grPers,'#%#'),{|x|AAdd(aPersData,Split(x,'#$#')) })
+			AEval(Split(oSel:grPers,'#%#',,true),{|x|AAdd(aPersData,Split(x,'#$#',,true)) })
 			// Html encode name and address:
 			for i:=1 to Len(aPersData)
 // 				aPersData[i,2]:=HtmlEncode(AllTrim(iif(sSalutation,Salutation(Val(aPersData[i,5]))+' ','')+aPersData[i,2]))
@@ -4132,7 +4132,7 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
 	cCurrMbrId:=self:aMbr[mPtr,1]
 	aTrans:={}
 	if !oTrans:EOF .and. oTrans:mbrid==cCurrMbrId 
-		aTrans:=AEvalA(Split(oTrans:grtr,'#%#'),{|x|Split(x,'#$#') })
+		aTrans:=AEvalA(Split(oTrans:grtr,'#%#',,true),{|x|Split(x,'#$#',,true) })
 		oTrans:Skip()
 	endif
 	cStartinMonth:=SQLdate(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01')) 
@@ -4265,7 +4265,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 				"attention,cast(datelastgift as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
 			oSelpers:oDB:Execute()
 			if !Empty(oSelpers:oDB:status)
-				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage,"logerrors")
+				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage+CRLF+oSelpers:DB:sqlstring,"logerrors")
 				ErrorBox{self, self:oLan:WGet("could not retrieve email data")}:Show()
 				return
 			endif
@@ -4755,7 +4755,7 @@ METHOD OKButton( ) CLASS GiftReport
 		oPPcd := SqlSelect{"select group_concat(ppcode,'#$#',ppname separator '#%#') as grPP from ppcodes order by ppcode",oConn}
 		oPPcd:Execute()
 		if oPPcd:Reccount>0 
-			self:aPPCode:=AEvalA(Split(oPPcd:grPP,'#%#'),{|x|x:=Split(x,'#$#') }) 
+			self:aPPCode:=AEvalA(Split(oPPcd:grPP,'#%#',,true),{|x|x:=Split(x,'#$#',,true) }) 
 		endif
 		if self:html_format
 			self:MemberStatementHtml(self:FromAccount,self:ToAccount,self:CalcYear,self:CalcMonthEnd)
