@@ -8,19 +8,19 @@ local olanT as SQLSelect
 if Empty(aLanM)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='M'",oConn}
 	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
-		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanM,Split(x,'#%#'))})
+		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanM,Split(x,'#%#',,true))})
 	endif
 endif
 if Empty(aLanW)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='W'",oConn}
 	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
-		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanW,Split(x,'#%#'))})
+		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanW,Split(x,'#%#',,true))})
 	endif
 endif
 if Empty(aLanR)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='R'",oConn}
 	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
-		AEval(Split(olanT:grlan,'#$#'),{|x|AAdd(aLanR,Split(x,'#%#'))})
+		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanR,Split(x,'#%#',,true))})
 	endif
 endif
 RETURN SELF
