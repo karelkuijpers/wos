@@ -1303,57 +1303,102 @@ function GetServername(fullpathname as string) as string
 	endif
 	return cServerName
 FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
-*	Determine Tokens in a string of text
-*	aSep: optionaly array with separators
-*	Returns array with Tokens {{Token,Seperator},...}
+	*	Determine Tokens in a string of text
+	*	aSep: optionaly array with separators
+	*	Returns array with Tokens {{Token,Seperator},...}
 
-LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING, nLength,i as int,EndOfWord as LOGIC 
-if Empty(aSep)
-	aSep:= {" ",",",".","&","/","-"}
-endif
-// Default(@aSep,{" ",",",".","&","/","-"})
+	LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING, nLength,i as int,EndOfWord as LOGIC 
+	if Empty(aSep)
+		aSep:= {" ",",",".","&","/","-"}
+	endif
+	// Default(@aSep,{" ",",",".","&","/","-"})
 
-chText:=Compress(cText)
-nLength:=Len(chText)
-FOR i:=1 to nLength
-	* bepaal volgende Tokens:
-	Token:=""
-	cSep:=""
-	EndOfWord:=FALSE
-	DO WHILE !EndOfWord .and.i<=nLength
-		cChar:=SubStr(chText,i,1)
-		IF AScanExact(aSep,cChar)>0
-			IF Empty(Token)
-				IF !Empty(cChar).and.i>1.and.!cChar==cSepPrev
-					* only non blank seperator:
+	chText:=Compress(cText)
+	nLength:=Len(chText)
+	FOR i:=1 to nLength
+		* bepaal volgende Tokens:
+		Token:=""
+		cSep:=""
+		EndOfWord:=FALSE
+		DO WHILE !EndOfWord .and.i<=nLength
+			cChar:=SubStr(chText,i,1)
+			IF AScanExact(aSep,cChar)>0
+				IF Empty(Token)
+					IF !Empty(cChar).and.i>1.and.!cChar==cSepPrev
+						* only non blank seperator:
+						EndOfWord:=true
+						cSep:=cChar
+						exit
+					ENDIF				
+				ELSE
 					EndOfWord:=true
 					cSep:=cChar
 					exit
-				ENDIF				
+				ENDIF
 			ELSE
-				EndOfWord:=true
-				cSep:=cChar
-				exit
+				IF !Empty(Token) .and. (IsDigit(psz(_cast,cChar)) .and. IsAlpha(psz(_cast,Token)) .or. IsDigit(psz(_cast,Token)) .and.IsAlpha(psz(_cast,cChar)))
+					* regard transition from alpha to numeric or numeric to alpha as separate word
+					EndOfWord:=true
+					cSep:=" "
+					--i
+					exit
+				ELSE				
+					Token:=Token+cChar
+				ENDIF
 			ENDIF
-		ELSE
-			IF !Empty(Token) .and. (IsDigit(psz(_cast,cChar)) .and. IsAlpha(psz(_cast,Token)) .or. IsDigit(psz(_cast,Token)) .and.IsAlpha(psz(_cast,cChar)))
-				* regard transition from alpha to numeric or numeric to alpha as separate word
-				EndOfWord:=true
-				cSep:=" "
-				--i
-				exit
-			ELSE				
-				Token:=Token+cChar
-			ENDIF
+			++i
+		ENDDO
+		IF !Empty(Token).or.!Empty(cSep)
+			AAdd(Tokens,{Token,cSep})
+			cSepPrev:=cSep
 		ENDIF
-		++i
-	ENDDO
-	IF !Empty(Token).or.!Empty(cSep)
-		AAdd(Tokens,{Token,cSep})
-		cSepPrev:=cSep
-	ENDIF
-NEXT
-RETURN Tokens
+	NEXT
+	RETURN Tokens
+FUNCTION GetTokensEx(cText as string,aSep as array,MinLenSep:=1 as int) as array
+	*	Extended Determination of Tokens in a string of text
+	*	aSep: array with strings of separators
+	*  minLenSep: minimum length of all separator strings within aSep (optional) to speed up processing
+	*	Returns array with Tokens {{Token,Seperator},...}
+
+	LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING
+	local cSepPrv as string 
+	local nLength,i,j as int
+	local nTokenStart as int 
+	// Default(@aSep,{" ",",",".","&","/","-"})
+
+	chText:=Compress(cText)
+	nLength:=Len(chText)+1-MinLenSep
+	Token:=""
+	cSep:=""
+	nTokenStart:=0
+	FOR i:=1 to nLength
+		DO WHILE i<=nLength
+			cChar:=SubStr(chText,i,MinLenSep)
+			j:=1
+			do while (j:=AScan(aSep,{|x|SubStr(x,1,MinLenSep)==cChar},j))>0
+				if SubStr(chText,i,Len(aSep[j]))==aSep[j] 
+					if nTokenStart>0 
+						Token:=SubStr(chText,nTokenStart,i-nTokenStart)
+						AAdd(Tokens,{Token,cSep})
+					endif
+					cSep:=aSep[j]
+					nTokenStart:=i+Len(cSep)
+					i:=nTokenStart-1
+					exit
+				ENDIF
+				j++
+				IF j>Len(aSep)
+					exit
+				endif
+			ENDDO
+			++i
+		ENDDO
+		IF !Empty(nTokenStart).and.!Empty(cSep)
+			Token:=SubStr(chText,nTokenStart)
+			AAdd(Tokens,{Token,cSep})
+		ENDIF
+	NEXT
+	RETURN Tokens
 FUNCTION Getvaliddate (pDay,pMonth,pYear)
 * Determination of valid date (if not valid return next valid date)
 LOCAL nwdat as date, i as int
@@ -2295,7 +2340,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity,;
-		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",message="+strText+",userid=" +LOGON_EMP_ID,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
 	endif
@@ -2330,7 +2375,7 @@ DO WHILE true
 		fileerror:=DosErrString(FError() )
 		oFileSpec:=FileSpec{cFileName}
 		MyFileName:=oFileSpec:FileName+oFileSpec:Extension
-		MyPath:=StrTran(oFileSpec:FullPath,MyFileName)
+		MyPath:=StrTran(oFileSpec:FullPath,MyFileName,'')
 		oTextBox:=TextBox{oOwner,cDescription,"Could not create file "+MyFileName+" at "+MyPath+CRLF+"; Error:"+fileerror,;
 		BUTTONRETRYCANCEL}
 		nReturn:=oTextBox:Show()
@@ -2858,12 +2903,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2871,6 +2910,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -2951,9 +2996,10 @@ LOCAL myDim as Dimension
 	myDim:Width:=w
 	self:Size:=myDim
  return
-FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as logic) as array
+FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as logic,lIgnoreQuote:=false as logic) as array
 	* Split string cTarget into array, seperated by cSep 
-	* Optionally the result is compressed
+	* Optionally the result is compressed 
+	* lIgnoreQuote: you can optionally ignore quotes around fields, eg. when seperator is: #$#
 	LOCAL nIncr as int
 	LOCAL aToken:={} as ARRAY
 	LOCAL cSearch,cQuote as STRING
@@ -2963,7 +3009,7 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 		nStart:=0
 		cSearch:=cSep
 		DO WHILE nStart<=nEnd
-			IF SubStr(cTarget,nStart+1,1)=='"'
+			IF !lIgnoreQuote .and.SubStr(cTarget,nStart+1,1)=='"'
 				cQuote:='"'
 				cSearch:=cQuote+cSep
 				nStart++
