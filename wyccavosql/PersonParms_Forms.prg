@@ -355,7 +355,7 @@ METHOD OKButton( ) CLASS EditPersProp
 	if !self:lnew .and. self:mType==DROPDOWN
 		aNewDropValues:=Split(self:mValues,",")
 		for i:=1 to Len(self:CurDropVal)
-			CurValue:=AllTrim(StrTran(CurDropVal[i],LF,''))
+			CurValue:=AllTrim(StrTran(StrTran(CurDropVal[i],CRLF,''),LF,''))
 			if !Empty(CurValue) .and.AScan(aNewDropValues,{|x|StrTran(x,LF,'')==CurValue})=0  
 				oProp:=SQLSelect{"select count(*) as total from person where deleted=0 and instr(propextr,'<V"+Str(self:mId,-1)+">"+CurValue+"</v"+Str(self:mId,-1)+">')>0",oConn}
 				if oProp:RecCount>0
