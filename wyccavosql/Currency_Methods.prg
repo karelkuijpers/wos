@@ -189,7 +189,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			endif
 		endif
 		if !lFound
-			LogEvent(self,"exchange rate can't be fetched from www.xe.com","logerrors")
+			LogEvent(self,"exchange rate "+CodeROE+" can't be fetched from www.xe.com"+iif(Empty(cPage),", timed out",CRLF+cPostData+CRLF+cPage),"logerrors")
 		endif
 	endif
 	if !lAsk
@@ -681,7 +681,7 @@ Method ReEvaluate() Class Reevaluation
 	if oAccnt:RecCount>0 .and.!Empty(oAccnt:grAcc)             
 		// aAccnt: {{accid,accnumber,currency,gainlsacc,description,mDiff},...}
 		//             1       2         3       4          5         6
-		AEval(Split(oAccnt:grAcc,'#%#'),{|x|AAdd(aAccnt,Split(x,'#$#')) }) 
+		AEval(Split(oAccnt:grAcc,'#%#',,true),{|x|AAdd(aAccnt,Split(x,'#$#',,true)) }) 
 	else
 		return
 	endif
@@ -691,8 +691,9 @@ Method ReEvaluate() Class Reevaluation
 	endif
 
 	// Check first consistency data
-	CheckConsistency(oMainWindow,true,false,@cFatalError)
 
+	CheckConsistency(oMainWindow,true,false,@cFatalError) 
+	InitGlobals() // soemtimes globals are lost
 	// get balances:
 	oMBal:=Balances{}
 	oMBal:AccSelection:="a.accid in ("+Implode(aAccnt,",",,,1)+")"
@@ -710,7 +711,7 @@ Method ReEvaluate() Class Reevaluation
 	if oBal:RecCount>0 .and.!Empty(oBal:grBal) 
 		// aBalAcc: {{accid,per_cre,per_deb,per_creF,per_debF},...}
 		//              1      2       3        4       5
-		AEval(Split(oBal:grBal,'#%#'),{|x|AAdd(aBalAcc,Split(x,'#$#')) })
+		AEval(Split(oBal:grBal,'#%#',,true),{|x|AAdd(aBalAcc,Split(x,'#$#',,true)) })
 	else
 		return
 	endif
