@@ -1305,7 +1305,8 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		(ErrorBox{,self:oLan:WGet("Could not open file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
-	cBuffer:=FReadStr(ptrHandle,4096000)
+	cBuffer:=FReadStr(ptrHandle,4096000) 
+	cBuffer:=(UTF2String{cBuffer}):Outbuf
 	cBuffer:=HtmlDecode(cBuffer)
 	IF ptrHandle = F_ERROR
 		(ErrorBox{,self:oLan:WGet("Could not read file")+": "+oFr:FullPath+"; "+self:oLan:WGet("Error")+":"+DosErrString(FError())}):show()
