@@ -130,6 +130,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	LOCAL nStart, nPos, nEnd as int
 	local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
 	local cBuffer as string
+	local cHeader as string
+	local lSuccess as logic                          
 	LOCAL aWord as ARRAY
 	if Empty(cAddress)
 		return {cPostcode,cAddress,cCity}
@@ -139,6 +141,10 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2))
 		//illegal zipcode
 		zipcode:=''
+		if !Empty(cPostcode)
+			// apparently non-dutch postal code:
+			return {cPostcode,cAddress,cCity}	
+		endif		
 	endif 
 	cCity:=AllTrim(cCity)
 	cCity:=StrTran(cCity,'Y','IJ')
@@ -163,18 +169,35 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	endif
 	housenr:=(GetStreetHousnbr(cAddress))[2]
 	if !Empty(zipcode) 
-		cSearch:=zipcode+"%20"+housenr
+		cSearch:=zipcode+' '+housenr
 	elseif !Empty(cCity)
-		aWord:=GetTokens(cCity)
-		cSearch:=cAddress+'%20'+aWord[1,1] 
+// 		aWord:=GetTokens(cCity)
+// 		cSearch:=cAddress+' '+aWord[1,1] 
+		cSearch:=cAddress+' '+cCity 
 	else
-		return {cPostcode,cAddress,cCity}	
+		return {cPostcode,cAddress,cCity}	                             
 	endif
-	cSearch:=StrTran(cSearch,' ',"%20")
-	oHttp := CHttp{"WycOffSy HTP Agent",80,true}
-	cBuffer:= oHttp:GetDocumentByURL("https://www.postcode.nl/search/"+cSearch)
+	cSearch:=StrTran(cSearch,' ','%20')
+	oHttp := CHttp{"WycOffSy",,true}
+// 	cHeader:="Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
+// 	cHeader:='Content-Type: application/x-www-form-urlencoded'+CRLF+'User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36'+CRLF+;
+//   'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
+//   'Accept-Language: en-us,en;q=0.5'+CRLF+;
+//   'Accept-Encoding: gzip,deflate'+CRLF+;
+//   'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7'+CRLF+;
+//   'Keep-Alive: 115'+CRLF+;
+//   'Connection: keep-alive'+CRLF
+
+		cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
+			"/search/"+cSearch,;
+			/*cSearch*/,;
+			/*cHeader*/,;
+			"POST",;
+			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
+			INTERNET_FLAG_SECURE)
+// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch)    
 	httpfile:=(UTF2String{cBuffer}):Outbuf
-	if AtC('class="alert warning"',httpfile)>0
+	if AtC('class="alert warning"',httpfile)>0 
 		return {cPostcode,cAddress,cCity}	
 	endif		
 	nPos1:=At('<section id="main" role="main">',httpfile)
@@ -185,11 +208,11 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 			output:=SubStr(httpfile,nPos1+4,200) 
 		elseif AtC('Value is not a number',httpfile)=0 
 			// apparently website changed:
-			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
+			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out",CRLF+httpfile),"LogErrors")
 		endif 
 	else 
 		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+CRLF+httpfile,"LogErrors")
+		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out",CRLF+httpfile)+CRLF+httpfile,"LogErrors")
 	endif
 	if !Empty(output)
 		nPos2:=At3('<',output,5)
@@ -211,13 +234,13 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 					street:=AllTrim(SubStr(street,1,nPos1-1))
 				endif
 			endif
-			street:=StrTran(StrTran(street,CRLF,''),TAB,'')
+			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
 			street+=" "+housenrOrg 
 			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...> 
 			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
 			nPos1:=At3(',',output,nPos1+1)+1
 			nPos2:=At3('<',output,nPos1)
-			cityname:=AllTrim(SubStr(output,nPos1,nPos2-nPos1)) 
+			cityname:=StrTran(AllTrim(SubStr(output,nPos1,nPos2-nPos1)),'&#039;',"'") 
 			if (cityname=="'S-GRAVENHAGE")
 				cityname:='DEN HAAG'
 			elseif (cityname=="'S-HERTOGENBOSCH")
@@ -1079,7 +1102,7 @@ METHOD SetState() CLASS NewPersonWindow
 		cDescr:="Bank/KID	"
 	ENDIF
 	if !Empty(self:oPerson:bankaccounts)
-		AEval(Split(self:oPerson:bankaccounts,","),{|x|AAdd(aBank,Split(x,'#$#'))})
+		AEval(Split(self:oPerson:bankaccounts,","),{|x|AAdd(aBank,Split(x,'#$#',,true))})
 		self:aBankAcc:=ArrayNew(Len(aBank),2) 
 		self:OrigaBank:=ArrayNew(Len(aBank),2) 
 		ACopy(aBank,self:aBankAcc)
@@ -1432,7 +1455,7 @@ SELF:EditButton(TRUE)
 
 	RETURN NIL
 METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Unique as logic, oPersCnt as PersonContainer) as logic CLASS PersonBrowser
-	LOCAL iEnd := At(",",cValue) as int
+	LOCAL iEnd  as int
 	// 	Default(@cValue,null_string)
 	self:oCaller := oExtCaller
 	self:oPersCnt:=oPersCnt
@@ -1442,6 +1465,9 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 			self:oCCUnionButton:Hide()
 		endif
 	ENDIF
+	if !Empty(cValue)
+		iEnd:= At(",",cValue)
+	endif
 	self:caption := "Select "+if(Empty(Itemname),"a person",Itemname)+": "
 	IF Empty(Unique)
 		self:lUnique := FALSE
@@ -4322,7 +4348,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	// Add to aDue:
 	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes,mandate id
 	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18            19
-	aeval(Split(oDue:grDue,'#%#'),{|x|aadd(aDue,split(x,'#$#'))}) 
+	AEval(Split(oDue:grDue,'#%#',,true),{|x|AAdd(aDue,Split(x,'#$#',,true))}) 
 	
 	//    LogEvent(self,oDue:SQLString,"logsql")
 	headinglines:={self:oLan:Rget("Overview of generated automatic collection (SEPA DD)"),self:oLan:Rget("Name",41)+self:oLan:Rget("Bankaccount",25)+self:oLan:Rget("Amount",12,,"R")+" "+self:oLan:Rget("Destination",12)+self:oLan:Rget("Due Date",11)+" "+self:oLan:Rget("Description",20),Replicate('-',134)}
