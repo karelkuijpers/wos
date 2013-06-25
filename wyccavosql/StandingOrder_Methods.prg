@@ -572,7 +572,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
 	local MultiFrom, lError as logic 
 	local deb,cre, DEBFORGN,CREFORGN as float
-	local CurStOrdrid as int
+	local CurStOrdrid,nTransLenOrg:=Len(self:aTrans),nBankLenOrg:=Len(self:aBank) as int
 	local oPersBank,oBal as SQLSelect 
 	// 	local oTrans,oBord,oStmnt as SQLStatement
 	local i as int
@@ -588,11 +588,13 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	do while !oStOrdL:EOF .and. oStOrdL:stordrid==CurStOrdrid
 		if !lError
 			if Empty(oStOrdL:ACCNUMBER)
-				* Check account:
+				* Check account: 
+				LogEvent(self,Str(oStOrdL:ACCOUNTID,-1)+": "+self:oLan:WGet("unknown account, skipped")+" in standing order: "+Str(CurStOrdrid,-1))
 				(WarningBox{,self:oLan:WGet("Periodic Records"),Str(oStOrdL:ACCOUNTID,-1)+": "+self:oLan:WGet("unknown account, skipped")+" in standing order: "+Str(CurStOrdrid,-1)}):Show()
 				lError:=true
 			elseif Empty(oStOrdL:active)
 				* Check account:
+				LogEvent(self,Str(oStOrdL:ACCNUMBER,-1)+": "+self:oLan:WGet("inactive account, skipped")+" in standing order: "+Str(CurStOrdrid,-1))
 				(WarningBox{,self:oLan:WGet("Periodic Records"),Str(oStOrdL:ACCNUMBER,-1)+": "+self:oLan:WGet("inactive account, skipped")+" in standing order: "+Str(CurStOrdrid,-1)}):Show()
 				lError :=true
 			endif 
@@ -606,7 +608,9 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 						mBank:=oStOrdL:BANKACCT
 					else 
 						if Empty(oStOrdL:banknumber)
+							LogEvent(self,"Bank account "+oStOrdL:BANKACCT+" does not belang to person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)")
 							(WarningBox{,self:oLan:WGet("Periodic Records"),"Bank account "+oStOrdL:BANKACCT+" does not belang to person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)"}):Show()
+							
 							lError:=true
 						else
 							oPersBank:=SQLSelect{"select banknumber,persid from personbank where persid='"+Str(oStOrdL:CREDITOR,-1)+"'",oConn}
@@ -615,6 +619,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 							endif
 						endif
 						if !lError .and.Empty(mBank)
+							LogEvent(self,"No bank account for person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)")
 							(WarningBox{,self:oLan:WGet("Periodic Records"),"No bank account for person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)"}):Show()
 							lError:=true
 						endif
@@ -658,6 +663,10 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	enddo
 	if !lError
 		nTrans++
+	else
+		// discard added entries:
+		ASize(self:aTrans,nTransLenOrg)
+		ASize(self:aBank,nBankLenOrg)
 	endif
 
 
@@ -727,11 +736,16 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		enddo
 	ENDDO
 	// perform recording if transactions (when everything is OK:
-	if !Empty(self:aTrans) 
+	if Len(self:aTrans)>1 
 		oBal:=Balances{}     
 	//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
 
-		SQLStatement{"start transaction",oConn}:execute()
+// 		SQLStatement{"start transaction",oConn}:execute()  
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:execute()
+		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write,`bankorder` write,`standingorder` write',oConn} 
+		oStmnt:execute()
+		
 		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+;
 			") values ('"+self:aTrans[1,1]+"','"+self:aTrans[1,2]+"','"+self:aTrans[1,3]+"','"+self:aTrans[1,4]+;
 			"','"+Str(self:aTrans[1,5],-1)+"','"+Str(self:aTrans[1,6],-1)+;
@@ -800,8 +814,12 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		// 		endif
 		if !lError
 			SQLStatement{"commit",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
 		else
 			SQLStatement{"rollback",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
 			LogEvent(self,self:oLan:WGet("standingordesr could not be executed:"+cError),"LogErrors")
 			ErrorBox{,self:oLan:WGet("standingorder could not be executed")}:Show()
 		endif	
