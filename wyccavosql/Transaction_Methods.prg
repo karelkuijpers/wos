@@ -2166,6 +2166,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			if oMyTele:Reccount<1
 				SQLStatement{"rollback",oConn}:execute()
 				SQLStatement{"unlock tables",oConn}:execute()
+				SQLStatement{"set autocommit=1",oConn}:execute()
 				self:mCLNGiver:=''
 				self:Pointer := Pointer{POINTERARROW}
 				ErrorBox{self,self:oLan:WGet("This telebank transaction has already been processed by someone else, thus skipped")}:show()
@@ -2176,6 +2177,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			if !self:oImpB:LockBatch()
 				SQLStatement{"rollback",oConn}:execute()
 				SQLStatement{"unlock tables",oConn}:execute()
+				SQLStatement{"set autocommit=1",oConn}:execute()
 				self:mCLNGiver:=''
 				return true
 			endif				
@@ -2326,6 +2328,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			if lError
 				SQLStatement{"rollback",oConn}:execute()
 				SQLStatement{"unlock tables",oConn}:execute()
+				SQLStatement{"set autocommit=1",oConn}:execute()
 				self:Pointer := Pointer{POINTERARROW}
 				LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
 				ErrorBox{self,"transaction could not be stored:"+cError}:show()
@@ -3808,7 +3811,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 		self:lMemberGiver := FALSE
 	ENDIF
 	if self:lTeleBank
-		if !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
+		if IsObject(self:oTmt) .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
 			// check if banknumber converted:
 			oSel:=SqlSelect{"select banknumber from personbank where persid="+self:mCLNGiver+" and right(banknumber,"+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +")="+ self:oTmt:m56_contra_bankaccnt,oConn}
 			if oSel:reccount>0
@@ -4022,7 +4025,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			curPntr := oHm:Recno
 			RETURN FALSE
 		endif
-		if sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
+		if self:lTeleBank .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
 			ErrorBox{self:owner, self:oTmt:m56_contra_bankaccnt+': '+self:oLan:WGet("not a sepa bank account; convert it via https://www.ibanbicservice.nl/SingleRequest.aspx")+CRLF+; 
 			" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF;
 				+self:oLan:wget("and add it to this giver before entering this gift")}:show()
