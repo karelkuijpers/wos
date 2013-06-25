@@ -550,7 +550,7 @@ METHOD PrintReport() CLASS PMISsend
 	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
 	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
 	//                   1       2       3      4        5      6      7         8      9         10       11
-	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#'),{|x|x:=Split(x,'#$#') })
+	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#',,true),{|x|x:=Split(x,'#$#',,true) })
 	// expand distribution instructions:
 	for i:=1 to Len(aMbr)
 		if !Empty(aMbr[i,27]) 
@@ -582,9 +582,9 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif 
 	// collect destination persons:
-	oSel:=SqlSelect{"select group_concat(d.destacc,'#$#',cast(b.persid as char),'#$#',"+SQLFullName(0,'p')+" separator '##') as grpers from distributioninstruction d, personbank b, person p where d.destpp='AAA' and d.destacc=b.banknumber and b.persid=p.persid group by 1=1",oConn}
+	oSel:=SqlSelect{"select group_concat(d.destacc,'#$#',cast(b.persid as char),'#$#',"+SQLFullName(0,'p')+" separator '#%#') as grpers from distributioninstruction d, personbank b, person p where d.destpp='AAA' and d.destacc=b.banknumber and b.persid=p.persid group by 1=1",oConn}
 	if oSel:Reccount>0
-		aPersDest:=AEvalA(Split(oSel:grpers,"##"),{|x|x:=Split(x,'#$#')}) 
+		aPersDest:=AEvalA(Split(oSel:grpers,"#%#",,true),{|x|x:=Split(x,'#$#',,true)}) 
 	endif  
 	// Check member data:
 	i:=AScan(aMbr,{|x|Empty(x[26])})  // scan for empty homeppname
@@ -602,9 +602,9 @@ METHOD PrintReport() CLASS PMISsend
 	endif
 	if Len(aAccDestOwn)>0
 		// collect own destination accounts
-		oSel:=SqlSelect{"select group_concat(cast(accid as char),'#$#',accnumber separator '##') as owndest from account where accnumber in ("+Implode(aAccDestOwn,'","',,,2)+") and active=1",oConn}
+		oSel:=SqlSelect{"select group_concat(cast(accid as char),'#$#',accnumber separator '#%#') as owndest from account where accnumber in ("+Implode(aAccDestOwn,'","',,,2)+") and active=1",oConn}
 		if oSel:Reccount>0
-			aAccDestOwn:=AEvalA(Split(oSel:owndest,'##'),{|x|x:=Split(x,'#$#')})
+			aAccDestOwn:=AEvalA(Split(oSel:owndest,'#%#',,true),{|x|x:=Split(x,'#$#',,true)})
 		else
 			aAccDestOwn:={}
 		endif
