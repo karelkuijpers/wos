@@ -65,11 +65,21 @@ METHOD GetDocumentByGetOrPost(cIP, cDocument, cData, cHeader, cMethod, nP, nFlag
 				//	incoming data is form encoded and then send the request.
 				IF cMethod == "POST"
 					IF Empty(cHeader)
-						cHeader := "Content-Type: application/x-www-form-urlencoded" + CrLf + HEADER_ACCEPT
+// 						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
+						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF+;
+						'Accept-Language: en-us,en;q=0.8,nl;q=0.6'+CRLF +;
+						'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF +;
+						'Connection: keep-alive'+CRLF
+// 						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF + ; 
+// 						'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
+// 					  'Accept-Language: en-us,en;q=0.8,nl;q=0.6'+CRLF+;
+// 					  'Accept-Encoding: gzip,deflate,sdch'+CRLF+;
+// 						"User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF +;
+// 						'Connection: keep-alive'+CRLF
 					ENDIF
 				ELSE
 					IF Empty(cHeader)
-						cHeader := HEADER_ACCEPT
+						cHeader := HEADER_ACCEPT + "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; SLCC1)"+CRLF
 					ENDIF
 				ENDIF
 
