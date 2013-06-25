@@ -372,7 +372,7 @@ METHOD Close( oEvent ) CLASS NewPersonWindow
 		self:oImport:Close()
 	ENDIF  
 
-	SELF:Destroy()
+// 	SELF:Destroy()
 	// force garbage collection
 	*CollectForced()
 
@@ -1147,13 +1147,15 @@ METHOD OkButton CLASS NewPersonWindow
 			cTit:=Str(self:mTitle,-1)  
 		ELSE
 			IF self:oDCmTitle:CurrentItemNo>0
-				cTit:=Str(self:oDCmTitle:GetItemValue(self:oDCmTitle:CurrentItemNo),-1)  
+				cTit:=Str(self:oDCmTitle:GetItemValue(self:oDCmTitle:CurrentItemNo),-1)
+			else
+				cTit:="1"
 			ENDIF
 		ENDIF
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
 			"lastname='"+AddSlashes(alltrim(self:oDCmlastname:TextValue))+"',nameext='"+AddSlashes(alltrim(self:oDCmNameExt:TextValue)))+"'"+;
 			",initials='"+AddSlashes(AllTrim(self:oDCmInitials:TextValue))+"'"+;
-			",title='"+AddSlashes(cTit)+"'"+;
+			",title='"+cTit+"'"+;
 			",attention='"+AddSlashes(AllTrim(self:oDCmAttention:TextValue))+"'"+;
 			",prefix='"+AddSlashes(AllTrim(self:oDCmPrefix:TextValue))+"'"+;
 			",firstname='"+AddSlashes(AllTrim(self:oDCmFirstName:TextValue))+"'"+;
@@ -1361,7 +1363,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,aExtra) CLASS NewPersonWindow
 				cTit:=self:oPersCnt:m51_title
 				pos:=AScan(Pers_Titles,{|x|x[1]=cTit})
 				if pos>0
-					self:oDCmTit:Value:=pers_titles[pos,2]
+					self:oDCmTitle:Value:=pers_titles[pos,2]
 				endif
 			endif
 		elseif "-" $ Upper(self:oPersCnt:m51_lastname)			
@@ -1754,13 +1756,14 @@ METHOD FindButton( ) CLASS PersonBrowser
 	LOCAL cMyFrom as STRING
 	local aKeyw:={} as array
 	local i,j,nCount as int
-	local lStart, lPersid as logic
+	local lStart, lPersid as logic 
+	local oSel as SQLSelect
 	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","country","attention","email","remarks","telbusiness","telhome","mobile","externid"} as array 
 	self:cWhere:=""
 	cMyFrom:="person as p"
 	if !Empty(self:SearchCLN)
-			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'" 
-			lPersid:=true
+		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'" 
+		lPersid:=true
 	elseif !Empty(self:SearchBank)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" b.banknumber = '"+AllTrim(self:SearchBank)+"' and p.persid=b.persid " 
 		cMyFrom+=",personbank as b"
@@ -1778,9 +1781,9 @@ METHOD FindButton( ) CLASS PersonBrowser
 					self:cWhere+=iif(lStart," or ","")+AFields[j]+" like '%"+aKeyw[i,1]+"%'" 
 					lStart:=true
 				next
-// 				if !IsAlphabetic(aKeyw[i,1])
-					self:cWhere+=iif(lStart," or ","")+"p.persid in (select b.persid from personbank as b where b.banknumber like '%"+aKeyw[i,1]+"')"
-// 				endif
+				// 				if !IsAlphabetic(aKeyw[i,1])
+				self:cWhere+=iif(lStart," or ","")+"p.persid in (select b.persid from personbank as b where b.banknumber like '%"+aKeyw[i,1]+"')"
+				// 				endif
 				self:cWhere+=")"
 			next
 		endif
@@ -1797,17 +1800,23 @@ METHOD FindButton( ) CLASS PersonBrowser
 	if !Empty(self:cFilter)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"("+self:cFilter+")"
 	endif
-	nCount:=ConI(SQLSelect{"select count(*) as ncount from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere),oConn}:nCount)
-	if nCount> 1000
-		if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
-		self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
-		return nil
+	oSel:=SQLSelect{"select count(*) as ncount from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere),oConn}
+	oSel:Execute()
+	if !Empty(oSel:status)
+		LogEvent(self,"Error:"+oSel:ErrInfo:ErrorMessage+CRLF+oSel:SQLString,"logerrors")
+	else	
+		nCount:=ConI(oSel:nCount)
+		if nCount> 1000
+			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
+					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+				return nil
+			endif
 		endif
 	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
 	self:oPers:Execute()
 
-	self:FOUND :=Str(nCount,-1) 
+	self:FOUND :=Str(self:oPers:Reccount,-1) 
 	if self:oPers:Reccount>0
 		self:oSFPersonSubForm:Browser:refresh()
 		self:oCCOKButton:Enable()
