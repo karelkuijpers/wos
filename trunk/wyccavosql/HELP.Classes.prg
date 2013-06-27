@@ -14,7 +14,7 @@ FONT	8, "MS Shell Dlg"
 BEGIN
 	CONTROL	"#101", HELPABOUT_THEFIXEDICON1, "Static", SS_ICON|WS_CHILD, 10, 11, 27, 24, WS_EX_STATICEDGE
 	CONTROL	"Wycliffe Office System", HELPABOUT_THEFIXEDTEXT1, "Static", SS_NOPREFIX|SS_LEFTNOWORDWRAP|WS_CHILD, 52, 11, 184, 12
-	CONTROL	"Version 2.5.0 dd 2008-03-28", HELPABOUT_VERSIONTEXT, "Static", SS_NOPREFIX|SS_LEFTNOWORDWRAP|WS_CHILD, 49, 22, 115, 13
+	CONTROL	"Version 2.5.0 dd 2008-03-28", HELPABOUT_VERSIONTEXT, "Static", SS_NOPREFIX|SS_LEFTNOWORDWRAP|WS_CHILD, 49, 22, 143, 13
 	CONTROL	"© 1987-2013 Wycliffe Global Alliance", HELPABOUT_THEFIXEDTEXT3, "Static", SS_NOPREFIX|SS_LEFTNOWORDWRAP|WS_CHILD, 51, 41, 150, 15
 	CONTROL	"OK", HELPABOUT_PUSHBUTTON1, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 98, 62, 53, 15
 END
@@ -50,7 +50,8 @@ return self
 method PostInit(oParent,uExtra) class HelpAbout
 	//Put your PostInit additions here 
 	self:SetTexts()
-	self:oDCVersionText:TextValue:="Version: "+Version+" d.d. "+DToC(SToD(Versiondate))
+// 	self:oDCVersionText:TextValue:="Version: "+Version+" d.d. "+DToC(SToD(Versiondate))
+	self:oDCVersionText:TextValue:="Version: "+Version+" d.d. "+DToC(SToD(SubStr(Versiondate,1,8)))+SubStr(Versiondate,9)
 	
 	return NIL
 method PushButton1() class HelpAbout
