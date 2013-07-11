@@ -31,13 +31,17 @@ class CheckUPGRADE
 
 Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic class CheckUPGRADE
 	// check if there is a new wosupgradeinstaller.exe
-	LOCAL oFTP  as cFtp
-	Local aInsRem as Array 
-	Local oFs as FileSpec, LocalDate as date , RemoteDate as date,LocalTime,Remotetime as string 
-	local aCurvers as array
-	local i as int 
+	local i,j as int 
 	local cDirname as string 
-	local lSuc as logic
+	local LocalTime,Remotetime as string 
+	local LocalDate, RemoteDate as date
+	local lSuc as logic 
+	local lAMPM as logic
+	local aCurvers as array
+	Local aInsRem as Array
+	local aDir,aSubDir as array 
+	Local oFs as FileSpec
+ 	LOCAL oFTP  as cFtp
 
 	oFTP := CFtp{"WycOffSy FTP Agent"} 
 	
@@ -63,13 +67,15 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+aInsRem[i,F_NAME]}
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?
-				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false)
+				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
+				INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 				if lSuc
 					SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] ) 
 				endif
 			endif					 
 		next
-		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"} 
+		lAMPM:=SetAmPm(false) 
+		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
 			LocalDate:=oFs:DateChanged
 			LocalTime:=oFs:TimeChanged  
@@ -78,13 +84,40 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 		if Len(aInsRem)>0
 			RemoteDate:=aInsRem[1,F_DATE]
 			Remotetime:=aInsRem[1,F_TIME]
-			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
+			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime )
+// 			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
 // 			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
 				// apparently new version:
-				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()
-				// load first latest version of install program:
-				
-				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_RELOAD )
+				LogEvent(self,"Installing new version: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,"loginfo")
+				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()  
+				// clear cache:
+				cDirname:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\Windows\Temporary Internet Files\Content.IE5\*.*" 
+				aDir:=Directory(cDirname,FA_DIRECTORY+FC_HIDDEN+FC_SYSTEM+FA_VOLUME)
+				for i:=1 to Len(ADir)
+					if !Empty(ADir[i,F_NAME]) .and. !ADir[i,F_NAME]='.' 
+						cDirname:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\Windows\Temporary Internet Files\Content.IE5\"+ADir[i,F_NAME]+"\wosupgradeinstaller*.exe" 
+						aSubDir:=Directory(cDirname,FA_DIRECTORY+FC_HIDDEN+FC_SYSTEM+FA_VOLUME)
+						if Len(aSubDir)>0
+							for j:=1 to Len(aSubDir)
+								if aSubDir[j,F_NAME]="wosupgradeinstaller"									
+									cDirname:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\Windows\Temporary Internet Files\Content.IE5\"+ADir[i,F_NAME]+"\"+aSubDir[j,F_NAME]
+									lSuc:=FErase(cDirname)
+									if File(cDirname) .or. !lSuc
+										FileSpec{cDirname}:DELETE()
+									endif
+								endif
+							next
+						endif
+					endif
+				next         
+
+// 				if File("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\windows\Temporary Internet Files\wosupgradeinstaller.exe") 
+// 					FErase("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft|windows\Temporary Internet Files\wosupgradeinstaller.exe")
+// 				endif
+				// load first latest version of install program: 
+// 				FileSpec{oFs:FullPath}:Rename("wosupgradeinstallerold.exe")
+				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD + ;
+					INTERNET_FLAG_NO_CACHE_WRITE )
 					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
 					// 							__RaiseFTPError(oFTP) 
 				else
@@ -93,18 +126,22 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 					if oFs:Find()
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"'
+						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
+// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
 					endif
 					*/
-					oFTP:CloseRemote()
+					oFTP:CloseRemote() 
+					SetAmPm(lAMPM)
 					return true 
 				ENDIF
 			endif
 		endif
+		SetAmPm(lAMPM)
 		oFs:=null_object
 		oFTP:CloseRemote() 
 	else
 		// 			__RaiseFTPError(oFTP) 
+		LogEvent(self,"No internet connection available to check for upgrades","logerrors")
 		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 	endif
 	return false
@@ -444,7 +481,7 @@ method ConVertOneTable(dbasename as string,keyname as string,sqlname as string,C
 						oStmt:= SQLStatement{cStatement,oConn} 
 						oStmt:Execute()
 						IF !IsNil( oStmt:Status )
-							LogEvent(self,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","LogErrors")
+							LogEvent(self,"Fout:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cStatement+")","loginfo")
 							// 					ShowError( oStmt:ERRINFO )
 // 							oStmt:FreeStmt(SQL_CLOSE)
 						endif
@@ -587,7 +624,7 @@ method init() class Initialize
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
 	local aDB:={} as array 
-	local cServer,cUIDPW as string
+	local cUIDPW as string
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
@@ -629,9 +666,9 @@ method init() class Initialize
 		ptrHandle:Close()
 	endif
 	if Empty(akeyval[3])
-		cServer:=GetServername(CurPath)
+		servername:=GetServername(CurPath)
 	else
-		cServer:=Lower(akeyval[3])
+		servername:=Lower(akeyval[3])
 	endif
 	if Empty(akeyval[1])
 		// Determine database:
@@ -649,13 +686,13 @@ method init() class Initialize
 		cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2]
 	endif 
 	SQLConnectErrorMsg(FALSE) 
-	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
+	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 	do while !lConnected
 		oConn:=SQLConnection{} 
 		if IsClass(#ADOCONNECTION)
-			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW)
+			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW)
 		else
-			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+cServer+cUIDPW) 
+			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
@@ -673,34 +710,34 @@ method init() class Initialize
 			endif
 			// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
 			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0 
-				if Lower(cServer)=='localhost' .or. cServer=='127.0.0.1'
+				if Lower(servername)=='localhost' .or. servername=='127.0.0.1'
 					// local Mysql:
 					ErrorBox{,"You have first to install MYSQL"}:Show() 
 				else
 					oTCPIP:=TCPIP{}
 					oTCPIP:timeout:=2000
-					oTCPIP:Ping(cServer)
+					oTCPIP:Ping(servername)
 					if AtC("timeout",oTCPIP:Response)>0
-						if cServer=="192.168.16.2"
+						if servername=="192.168.16.2"
 							// try VPN server:
 							oTCPIP:Ping("192.168.16.8")
 							if	AtC("timeout",oTCPIP:Response)>0
-								ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+								ErrorBox{,"You have first to make a (VPN)-connection with "+servername}:Show() 
 								break
 							endif
 						else
-							ErrorBox{,"You have first to make a (VPN)-connection with "+cServer}:Show() 
+							ErrorBox{,"You have first to make a (VPN)-connection with "+servername}:Show() 
 							break							
 						endif
 					endif 
-					ErrorBox{,"There is something wrong with the database manager on "+cServer+" or your connection is to slow"}:Show()
+					ErrorBox{,"There is something wrong with the database manager on "+servername+" or your connection is to slow"}:Show()
 				endif
 				break
 			endif
 			
 			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
-				ErrorBox{,"Let your administrator enter first the userid for the WOS database "+dbname+" in MYSQL"}:Show()
+				ErrorBox{,"Your wos.ini contains a wrong userid/password for accessing the WOS database "+dbname+" in MYSQL"}:Show()
 				break
 			endif
 			ShowError(oConn:ERRINFO)
@@ -859,7 +896,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			IF oDBFileSpec1:Size>20  // not empty? 
 				oSel:=SqlSelect{"show table status like 'currencylist'",oConn}
 				if oSel:RecCount=1
-					if ConI(oSel:rows) > 0
+					if ConI(oSel:rows) > 2
 						if  iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
 							lCopyCur:=true
 						endif					
@@ -917,8 +954,10 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			endif
 		endif
 	endif
-	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
-		LogEvent(self,"Initialize DB:"+iif(FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),''),"logsql")
+	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
+		if !self:lNewDb
+			LogEvent(self,"Initialize DB:"+iif(FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
+		endif
 		self:InitializeDB()
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
@@ -1169,21 +1208,23 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 
 method InitializeDB() as void Pascal  class Initialize
 	local aCurColumn:={}, aCurIndex:={} as array
-	local oSel as SQLSelect 
+	local oSel as SQLSelect
+	local oStmnt as SQLStatement 
 	local i,j,nTargetPos,nSourceStart,nSourceEnd,nTrCount,nLenTable as int, cRow, cTable,cTableCol as string
 	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array
-// 	local cCollation:='ascii_general_ci' as string
+	// 	local cCollation:='ascii_general_ci' as string
 	local cCollation:='utf8_unicode_ci' as string 
 	LOCAL nTbl as int
-	local cTableCollation as string
+	local cTableCollation as string 
+	local currentSQLMode as string
 
-	 
+	
 	local aTable:={;
 		{"log","InnoDB",cCollation},;	
-		{"account","InnoDB",cCollation},;
+	{"account","InnoDB",cCollation},;
 		{"accountbalanceyear","InnoDB",cCollation},;
 		{"article","InnoDB",cCollation},; 
-		{"assessmnttotal","InnoDB",cCollation},;
+	{"assessmnttotal","InnoDB",cCollation},;
 		{"authfunc","InnoDB","latin1_swedish_ci"},;
 		{"balanceitem","InnoDB",cCollation},;
 		{"balanceyear","InnoDB",cCollation},;
@@ -1198,12 +1239,12 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","InnoDB",cCollation},;
 		{"dueamount","InnoDB",cCollation},;
 		{"emplacc","InnoDB",cCollation},; 
-		{"employee","InnoDB","latin1_swedish_ci"},; 
-		{"importlock","InnoDB",cCollation},;
+	{"employee","InnoDB","latin1_swedish_ci"},; 
+	{"importlock","InnoDB",cCollation},;
 		{"importpattern","InnoDB",cCollation},;
 		{"importtrans","InnoDB",cCollation},;
 		{"ipcaccounts","InnoDB",cCollation},;  
-		{"language","InnoDB",cCollation},;
+	{"language","InnoDB",cCollation},;
 		{"mailaccount","InnoDB",cCollation},;
 		{"mbalance","InnoDB",cCollation},;
 		{"member","InnoDB",cCollation},;
@@ -1240,7 +1281,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// 	{"dueamount","paymethod","char(1)","NO","",""},;
 	// 	{"dueamount","category","char(1)","NO","",""},;
 
-  	// Table name, Field,Type,Null,Default,Extra 
+	// Table name, Field,Type,Null,Default,Extra 
 
 	local aColumn:={;
 		{"account","accid","int(11)","NO","NULL","auto_increment"},;
@@ -1262,7 +1303,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","qtymailing","int(10) unsigned","NO","0",""},;
 		{"account","monitor","tinyint(1)","NO","0",""},;
 		{"account","altertime","timestamp","NO","0000-00-00","ON UPDATE CURRENT_TIMESTAMP"},; 
-		{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
+	{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","svjd","decimal(20,2)","NO","0",""},;
@@ -1280,7 +1321,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","supplier","char(30)","NO","",""},;
 		{"article","accountstock","int(11)","NO","0",""},;
 		{"article","accountpurchase","int(11)","NO","0",""},;   
-		{"assessmnttotal","assid","int(11)","NO","NULL","auto_increment"},;
+	{"assessmnttotal","assid","int(11)","NO","NULL","auto_increment"},;
 		{"assessmnttotal","mbrid","int(11)","NO","NULL",""},;
 		{"assessmnttotal","calcdate","date","NO","0000-00-00",""},;
 		{"assessmnttotal","periodbegin","date","NO","0000-00-00",""},;
@@ -1335,7 +1376,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"currencylist","aed","char(3)","NO","",""},;
 		{"currencylist","united_ara","varchar(59)","NO","",""},;
 		{"currencyrate","rateid","int(11)","NO","NULL","auto_increment"},;           
-		{"currencyrate","aed","char(3)","NO","NULL",""},;
+	{"currencyrate","aed","char(3)","NO","NULL",""},;
 		{"currencyrate","daterate","date","NO","0000-00-00",""},;
 		{"currencyrate","roe","decimal(16,10)","NO","0",""},;
 		{"currencyrate","aedunit","char(3)","NO","",""},;
@@ -1366,8 +1407,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","dfir","char(9)","NO","",""},;
 		{"distributioninstruction","dfia","char(17)","NO","",""},;
 		{"distributioninstruction","checksave","char(1)","NO","",""},; 
-		{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
-		{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
+	{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
+	{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
 		{"dueamount","invoicedate","date","NO","0000-00-00",""},;
 		{"dueamount","seqnr","int(2)","NO","0",""},;
 		{"dueamount","amountinvoice","decimal(13,2)","NO","0",""},;
@@ -1387,7 +1428,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","pswprv3","varchar(64)","NO","",""},;
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
-		{"employee","lstreimb","date","NO","0000-00-00",""},;
+	{"employee","lstreimb","date","NO","0000-00-00",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
 		{"employee","lstnews","date","NO","0000-00-00",""},;
@@ -1397,7 +1438,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
 		{"importlock","lock_time","timestamp","NO","0000-00-00",""},; 
-		{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
+	{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
 		{"importpattern","descriptn","varchar(511)","NO","",""},;
 		{"importpattern","origin","char(11)","NO","",""},;
 		{"importpattern","assmntcd","char(2)","NO","",""},;
@@ -1426,9 +1467,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","currency","char(3)","NO","",""},;
 		{"importtrans","reference","varchar(127)","NO","",""},;
 		{"importtrans","seqnr","int(4)","NO","0",""},; 
-		{"importtrans","poststatus","int(1)","NO","0",""},; 
-		{"importtrans","ppdest","char(3)","NO","",""},; 
-		{"importtrans","lock_id","int(11)","NO","0",""},;
+	{"importtrans","poststatus","int(1)","NO","0",""},; 
+	{"importtrans","ppdest","char(3)","NO","",""},; 
+	{"importtrans","lock_id","int(11)","NO","0",""},;
 		{"importtrans","lock_time","timestamp","NO","0000-00-00",""},;
 		{"ipcaccounts","ipcaccount","int(7)","NO","NULL",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
@@ -1470,10 +1511,10 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","offcrate","char(1)","NO","m",""},;
 		{"member","contact","int(11)","NO","0",""},;
 		{"member","rptdest","int(2)","NO","0",""},; 
-		{"member","depid","int(11)","YES","NULL",""},;
+	{"member","depid","int(11)","YES","NULL",""},;
 		{"member","contact2","int(11)","NO","0",""},;
 		{"member","contact3","int(11)","NO","0",""},;
-	{"memberassacc","mbrid","int(11)","NO","NULL",""},;
+		{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
 		{"perscod","description","char(20)","YES","NULL",""},;
@@ -1510,8 +1551,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","gender","smallint(6)","NO","0",""},;
 		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
-		{"person","deleted","tinyint(1)","NO","0",""},; 
-		{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
+	{"person","deleted","tinyint(1)","NO","0",""},; 
+	{"person_properties","id","int(3)","NO","NULL","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
 		{"person_properties","type","int(1)","NO","0",""},;
 		{"person_properties","values","mediumtext","NO","",""},;
@@ -1532,7 +1573,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""},; 
-		{"standingorderline","stordrid","int(11)","NO","0",""},;
+	{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
 		{"standingorderline","deb","decimal(19,2)","NO","0",""},;
@@ -1631,16 +1672,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","checkemp","char(32)","NO","",""},;
 		{"sysparms","mailclient","tinyint(1)","NO","0",""},;
 		{"sysparms","posting","tinyint(1)","NO","0",""},; 
-		{"sysparms","toppacct","int(11)","NO","0",""},;
+	{"sysparms","toppacct","int(11)","NO","0",""},;
 		{"sysparms","lstcurrt","tinyint(1)","NO","0",""},; 
-		{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
-		{"sysparms","accpacls","date","NO","0000-00-00",""},; 
-		{"sysparms","assfldac","int(11)","NO","0",""},;
+	{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
+	{"sysparms","accpacls","date","NO","0000-00-00",""},; 
+	{"sysparms","assfldac","int(11)","NO","0",""},;
 		{"sysparms","sepaenabled","tinyint(1)","NO","0",""},; 
-		{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
+	{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
-		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
+	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(5)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
@@ -1692,7 +1733,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","ppdest","char(3)","NO","",""},;
 		{"transaction","lock_id","int(11)","NO","0",""},;
 		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
-	} as array  
+		} as array  
 	
 	// specify indexes per table:
 	// Table,Non_unique,Key_name,Seq_in_index,Column_name
@@ -1708,7 +1749,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"accountbalanceyear","0","PRIMARY","4","currency"},;
 		{"article","0","PRIMARY","1","articleid"},;
 		{"article","0","description","1","description"},;              
-		{"assessmnttotal","0","PRIMARY","1","assid"},;
+	{"assessmnttotal","0","PRIMARY","1","assid"},;
 		{"assessmnttotal","1","membrid","1","mbrid"},;
 		{"assessmnttotal","1","membrid","2","calcdate"},;
 		{"authfunc","0","PRIMARY","1","empid"},;
@@ -1751,8 +1792,8 @@ method InitializeDB() as void Pascal  class Initialize
 	{"emplacc","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","2","accid"},; 
 	{"importlock","0","IMPORTLOCK","1","importfile"},;
-	{"importpattern","0","PRIMARY","1","imppattrnid"},;
-	{"importtrans","0","PRIMARY","1","imptrid"},;
+		{"importpattern","0","PRIMARY","1","imppattrnid"},;
+		{"importtrans","0","PRIMARY","1","imptrid"},;
 		{"importtrans","1","transactnr","1","origin"},;
 		{"importtrans","1","transactnr","2","transactnr"},;
 		{"ipcaccounts","0","PRIMARY","1","ipcaccount"},;
@@ -1774,7 +1815,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"memberassacc","0","PRIMARY","1","mbrid"},;	
 	{"memberassacc","0","PRIMARY","2","accid"},;	
 	{"teletrans","0","PRIMARY","1","teletrID"},;
- 		{"teletrans","0","telecontent","1","bankaccntnbr"},;
+		{"teletrans","0","telecontent","1","bankaccntnbr"},;
 		{"teletrans","0","telecontent","2","bookingdate"},;
 		{"teletrans","0","telecontent","3","addsub"},;
 		{"teletrans","0","telecontent","4","amount"},;
@@ -1833,18 +1874,18 @@ method InitializeDB() as void Pascal  class Initialize
 	// 		{"transaction","1","amountdeb","1","deb"},;
 	// 		{"transaction","1","amountcre","1","cre"},;
 	// 		{"transaction","1","description","1","description"},;
- 
-//  		{"teletrans","0","telecontent","1","bankaccntnbr"},;
-// 		{"teletrans","0","telecontent","2","bookingdate"},;
-// 		{"teletrans","0","telecontent","3","addsub"},;
-// 		{"teletrans","0","telecontent","4","amount"},;
-// 		{"teletrans","0","telecontent","5","kind"},;
-// 		{"teletrans","0","telecontent","6","contra_bankaccnt"},;
-// 		{"teletrans","0","telecontent","7","contra_name"},;
-// 		{"teletrans","0","telecontent","8","budgetcd"},;
-// 		{"teletrans","0","telecontent","9","seqnr"},;
-// 		{"teletrans","0","telecontent","10","description (120)"},;
-  	local aMyCurTable:=self:aCurTable as array
+	
+	//  		{"teletrans","0","telecontent","1","bankaccntnbr"},;
+	// 		{"teletrans","0","telecontent","2","bookingdate"},;
+	// 		{"teletrans","0","telecontent","3","addsub"},;
+	// 		{"teletrans","0","telecontent","4","amount"},;
+	// 		{"teletrans","0","telecontent","5","kind"},;
+	// 		{"teletrans","0","telecontent","6","contra_bankaccnt"},;
+	// 		{"teletrans","0","telecontent","7","contra_name"},;
+	// 		{"teletrans","0","telecontent","8","budgetcd"},;
+	// 		{"teletrans","0","telecontent","9","seqnr"},;
+	// 		{"teletrans","0","telecontent","10","description (120)"},;
+	local aMyCurTable:=self:aCurTable as array
 
 
 	
@@ -1864,12 +1905,11 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	if oSel:RecCount>0	
 		AEval(Split(oSel:tablegroup,'##',true),{|x|AAdd(aMyCurTable,Split(x,','))}) 
-	endif 
-	
+	endif
 	//read current columns:
 	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,';', COLUMN_NAME,';', COLUMN_TYPE,';', IS_NULLABLE,';', COLUMN_DEFAULT,';', ExTRA,';', lower(COLLATION_NAME) separator '##') as columngroup "+;
-	"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,'NULL',cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
-	" if(COLLATION_NAME IS NULL,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS "+;
+		"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,'NULL',cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
+		" if(COLLATION_NAME IS NULL,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
@@ -1898,13 +1938,13 @@ method InitializeDB() as void Pascal  class Initialize
 	endif
 	// read current indexes:
 	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,',',NON_UNIQUE,',',INDEX_NAME,',',SEQ_IN_INDEX,',',COLUMN_NAME separator '##' ) as indexgroup "+;
-	"from (select TABLE_NAME,cast(NON_UNIQUE as char) as NON_UNIQUE,INDEX_NAME,cast(SEQ_IN_INDEX as char) as SEQ_IN_INDEX,concat(COLUMN_NAME,if(SUB_PART is null,'',concat(' (',cast(SUB_PART as char),')'))) as COLUMN_NAME "+;
-	"from information_schema.statistics where TABLE_SCHEMA='"+dbname+"') as gr group by 1=1",oConn}
+		"from (select TABLE_NAME,cast(NON_UNIQUE as char) as NON_UNIQUE,INDEX_NAME,cast(SEQ_IN_INDEX as char) as SEQ_IN_INDEX,concat(COLUMN_NAME,if(SUB_PART is null,'',concat(' (',cast(SUB_PART as char),')'))) as COLUMN_NAME "+;
+		"from information_schema.statistics where TABLE_SCHEMA='"+dbname+"') as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
 		break
 	endif
-	 
+	
 	if oSel:RecCount>0
 		AEval(Split(oSel:indexgroup,'##',true),{|x|AAdd(aCurIndex,Split(x,',',true))})
 	endif
@@ -2004,7 +2044,17 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	// fill tables from old database: 
 	if self:lNewDb
+		// reset strict mode for conversion:
+		oSel:=SqlSelect{"SELECT @@SESSION.sql_mode as currsqlmode",oConn}
+		if oSel:RecCount>0
+			currentSQLMode:=oSel:currsqlmode
+		endif
+		oStmnt:=SQLStatement{"SET SESSION sql_mode='NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'",oConn}
+		oStmnt:Execute() 
+		// convert:
 		self:ConvertDBFSQL(aColumn,aIndex)
+		oStmnt:=SQLStatement{"SET SESSION sql_mode='"+currentSQLMode+"'",oConn}
+		oStmnt:Execute()
 	endif
 	return
 Method Matchunequalgaps(aStatReq as array,aStatCur as array,aReqColumn as array,aCurColumn as array,nStartCurrent as int,nEndCurrent as int,nStartRequired as int,nEndRequired as int) as int class Initialize
