@@ -1183,20 +1183,20 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 
 	IF self:oTmt:m56_kind="GM"
 		self:mDAT:=CToD(SubStr(self:oTmt:m56_description,1,8))
-		IF self:mDAT > self:oTmt:m56_boekdatum .or. self:mDAT < (self:oTmt:m56_boekdatum - 20)
-			self:mDAT:=self:oTmt:m56_boekdatum
+		IF self:mDAT > self:oTmt:m56_bookingdate .or. self:mDAT < (self:oTmt:m56_bookingdate - 20)
+			self:mDAT:=self:oTmt:m56_bookingdate
 		ENDIF
 	ELSEIF self:oTmt:m56_kind="PK"
 		m53_maand:=AScan(maand,Lower(SubStr(self:oTmt:m56_description,4,3)))
 		m53_dag:=Val(SubStr(self:oTmt:m56_description,1,2))
 		IF m53_maand>0
-			m53_jaar:=Year(self:oTmt:m56_boekdatum)
-			IF m53_maand=12.and.Month(self:oTmt:m56_boekdatum)=1
+			m53_jaar:=Year(self:oTmt:m56_bookingdate)
+			IF m53_maand=12.and.Month(self:oTmt:m56_bookingdate)=1
 				m53_jaar:=m53_jaar-1
 			ENDIF
 			SELF:mDAT:=CToD(Str(m53_dag,2)+'-'+Str(m53_maand,2)+'-'+Str(m53_jaar,4))
-			IF self:mDAT > self:oTmt:m56_boekdatum .or. self:mDAT < (self:oTmt:m56_boekdatum - 20)
-				self:mDAT:=self:oTmt:m56_boekdatum
+			IF self:mDAT > self:oTmt:m56_bookingdate .or. self:mDAT < (self:oTmt:m56_bookingdate - 20)
+				self:mDAT:=self:oTmt:m56_bookingdate
 			ENDIF
 		ENDIF
 	ENDIF 
@@ -3778,7 +3778,11 @@ METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
 			oHm:aMirror[oHm:RECNO]:=;
 				{oHm:AccID,oHm:Original,oHm:Cre,oHm:GC,oHm:KIND,oHm:Recno,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY,false,0,'',oHm:DESCRIPTN,oHm:INCEXPFD}
 		ENDIF 
-		self:oSFPaymentDetails:AddCurr()
+		self:oSFPaymentDetails:AddCurr() 
+		IF self:lTeleBank
+			self:AssignTo()
+		ENDIF
+
 		self:Totalise(false,false)
 
 		self:oSFPaymentDetails:Browser:SetColumnFocus(#AccDesc)
