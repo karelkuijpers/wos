@@ -60,16 +60,18 @@ METHOD GetDocumentByGetOrPost(cIP, cDocument, cData, cHeader, cMethod, nP, nFlag
 				    self:__GetStatusContext())  // dwContext
 		
 			IF self:hRequest <> null_ptr
-	            self:__SetStatus(self:hRequest)
+	            self:__SetStatus(self:hRequest)                                          
 				//	We need to add a header to notify the web server that the
 				//	incoming data is form encoded and then send the request.
 				IF cMethod == "POST"
 					IF Empty(cHeader)
 // 						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
-						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF+;
-						'Accept-Language: en-us,en;q=0.8,nl;q=0.6'+CRLF +;
+// 						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF+;
+						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF +  "User-Agent: Mozilla/5.0 (Windows NT 6.2; rv:17.0) Gecko/20100101 Firefox/17.0"+CRLF+;
+						'Accept-Language: en-us,en;q=0.5'+CRLF +;   
 						'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF +;
-						'Connection: keep-alive'+CRLF
+						'Connection: keep-alive'+CRLF 
+						'Cache-Control: no-cache'+CRLF
 // 						cHeader := "Content-Type: application/x-www-form-urlencoded" + CRLF + ; 
 // 						'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
 // 					  'Accept-Language: en-us,en;q=0.8,nl;q=0.6'+CRLF+;
@@ -79,7 +81,7 @@ METHOD GetDocumentByGetOrPost(cIP, cDocument, cData, cHeader, cMethod, nP, nFlag
 					ENDIF
 				ELSE
 					IF Empty(cHeader)
-						cHeader := HEADER_ACCEPT + "User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; SLCC1)"+CRLF
+						cHeader := HEADER_ACCEPT + "User-Agent: Mozilla/5.0 (Windows NT 6.2; rv:17.0) Gecko/20100101 Firefox/17.0"+CRLF
 					ENDIF
 				ENDIF
 
