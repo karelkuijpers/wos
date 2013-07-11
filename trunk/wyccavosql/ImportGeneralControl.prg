@@ -1223,7 +1223,9 @@ do while action==0
 // 			self:oEdit:Close()
 			self:EndWindow()
 // 			self:Close()
-			RETURN 
+			RETURN
+		elseif Empty(cBuffer)
+			loop  // skip empty line
 		ENDIF
 	ELSE
 		Source->DBDELETE()  // not processed next time
