@@ -770,13 +770,13 @@ METHOD Import() CLASS ImportBatch
 // 					return
 				ENDIF
 			else 
-				SQLStatement{"start transaction",oConn}:Execute()
+// 				SQLStatement{"start transaction",oConn}:Execute()
 				if self:ImportBatch(oBF,dBatchDate,cOrigin)
 					++lv_aant_toe
 					AAdd(aFiles,oBF)
 					SQLStatement{"commit",oConn}:Execute()  
-				else
-					SQLStatement{"rollback",oConn}:Execute()
+// 				else
+// 					SQLStatement{"rollback",oConn}:Execute()
 // 					return
 				ENDIF
 			endif 
@@ -1027,18 +1027,20 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testformat:=false as logic) as logic CLASS ImportBatch
 	* Import of one batchfile with  transaction data into ImportTrans.dbf 
 	* Testformat: only test if this a file to be imported
-	LOCAL cSep AS STRING
+	LOCAL aPt:={} as ARRAY, maxPt , linenr:=0, nCnt:=0 as int
+	LOCAL ptDate, ptDoc, ptTrans, ptAcc, ptDesc, ptDeb, ptCre, ptDebF, ptCreF,ptCur, ptAss,ptAccName, ptPers,ptPPD, ptRef,ptSeq, ptPost as int
+	local deb,cre,debf,cref as float
+	LOCAL cSep as STRING
+	local CCurrency as string
 	LOCAL cDelim:=Listseparator AS STRING
 	LOCAL lv_geladen AS LOGIC
 	LOCAL CurTransNbr:="" AS STRING
 	LOCAL ptrHandle as MyFile
 	LOCAL cBuffer as STRING
-	LOCAL aStruct:={} AS ARRAY // array with fieldnames
-	LOCAL aFields:={} AS ARRAY // array with fieldvalues
-	LOCAL ptDate, ptDoc, ptTrans, ptAcc, ptDesc, ptDeb, ptCre, ptDebF, ptCreF,ptCur, ptAss,ptAccName, ptPers,ptPPD, ptRef,ptSeq, ptPost as int
-	LOCAL aPt:={} as ARRAY, maxPt , linenr:=0, nCnt:=0 as int
-	local osel as SQLSelect 
 	local cStatement as string
+	LOCAL aStruct:={} as ARRAY // array with fieldnames
+	LOCAL aFields:={} as ARRAY // array with fieldvalues
+	local osel as SQLSelect 
 	local oStmnt as SQLStatement
 	
 	ptrHandle:=MyFile{oFr}
@@ -1093,7 +1095,9 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
   				cSep:='.'
   			endif
 		endif
-	endif
+	endif 
+	SQLStatement{"start transaction",oConn}:Execute()
+
 	DO WHILE Len(AFields)>1
 		linenr++  
 
@@ -1107,31 +1111,59 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				lv_geladen:=true 
 			ENDIF
 		ENDIF
-		IF !lv_geladen .and.SToD(AFields[ptDate])>=mindate
+		IF !lv_geladen .and.SToD(AFields[ptDate])>=mindate 
+			deb:=0.00
+			cre:=0.00
+			debf:=0.00
+			cref:=0.00
+			if ptCur>0 .and.ptCur<= Len(AFields)
+				CCurrency:=AllTrim(AFields[ptCur])
+			else
+				CCurrency:=sCURR
+			endif
+			if ptDeb<= Len(AFields)
+				deb:= Val(AFields[ptDeb])
+				if CCurrency==sCURR
+					debf:=deb
+				endif
+			endif
+			if ptCre<= Len(AFields)
+				cre:=Val(AFields[ptCre])
+				if CCurrency==sCURR
+					cref:=cre
+				endif
+			endif
+			if !CCurrency==sCURR
+				if ptDebF>0 .and.ptDebF<= Len(AFields)
+					debf:=Val(AFields[ptDebF])
+				endif
+				if ptCreF>0 .and.ptCreF<= Len(AFields)
+					cref:=Val(AFields[ptCreF])
+				endif
+			endif	
 			cStatement:=;
 				iif(ptDate<= Len(AFields),",transdate='"+SQLdate(SToD(AFields[ptDate]))+"'","")+;
 				iif(ptDoc<= Len(AFields),",docid='"+AFields[ptDoc]+"'","")+; 
 			iif(ptTrans<= Len(AFields),",transactnr='"+AFields[ptTrans]+"'","")+;
 				",accountnr='"+AFields[ptAcc]+"'"+;
 				iif(ptDesc<= Len(AFields),",descriptn='"+AddSlashes(AFields[ptDesc])+"'","") +;
-				iif(ptDeb<= Len(AFields),",debitamnt="+AFields[ptDeb],"")+;
-				iif(ptCre<= Len(AFields),",creditamnt="+AFields[ptCre],"")+; 
-			",debforgn="+iif(ptDebF>0 .and.ptDebF<= Len(AFields),AFields[ptDebF],AFields[ptDeb])+;
-				",creforgn="+iif( ptCreF>0 .and. ptCreF<= Len(AFields),AFields[ptCreF],AFields[ptCre])+;
+				",debitamnt='"+Str(deb,-1)+"'"+",creditamnt='"+Str(cre,-1)+"'"+; 
+				",debforgn='"+Str(debf,-1)+"'"+",creforgn='"+Str(cref,-1)+"'"+;
 				",currency='"+iif(ptCur>0 .and.ptCur<= Len(AFields),AFields[ptCur],sCURR)+"'"+;
 				iif(ptAss<= Len(AFields),",assmntcd='"+AFields[ptAss]+"'","")+;
 				iif(ptAccName>0 .and. ptAccName<=Len(AFields),",accname='"+AddSlashes(AFields[ptAccName])+"'","")+;
 				iif(ptPers>0 .and. ptPers<=Len(AFields),iif(AllTrim(AFields[ptPers])==",","",",giver='"+AllTrim(AFields[ptPers])+"'"),"")+;
 				iif(ptPPD>0 .and. ptPPD<=Len(AFields),",ppdest='"+AFields[ptPPD]+"'","")+;
 				iif(ptRef>0 .and. ptRef<=Len(AFields),",reference='"+AddSlashes(AFields[ptRef])+"'","")+;
-				iif(ptSeq>0 .and. ptSeq<=Len(AFields)  .and. !IsNil(AFields[ptSeq]),",seqnr="+AFields[ptSeq],"")+;
-				",poststatus="+iif(ptPost>0 .and. ptPost<=Len(AFields).and. !IsNil(AFields[ptPost]),AFields[ptPost],"1")+;
+				iif(ptSeq>0 .and. ptSeq<=Len(AFields)  .and. !IsNil(AFields[ptSeq]),",seqnr='"+iif(Empty(AFields[ptSeq]),'0',AFields[ptSeq]),"")+"'"+;
+				",poststatus='"+iif(ptPost>0 .and. ptPost<=Len(AFields).and. !IsNil(AFields[ptPost]),AFields[ptPost],"1")+"'"+;
 				",origin='"+cOrigin+"'" 
 			oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 			oStmnt:Execute()
 			IF oStmnt:NumSuccessfulRows<1
+				SQLStatement{"rollback",oConn}:Execute()
 				ptrHandle:Close()
-				LogEvent(self,"error: "+oStmnt:SQLString,"LogErrors")
+				LogEvent(self,"error: "+oStmnt:ErrInfo:errormessage+CRLF+oStmnt:SQLString,"LogErrors")
 				ErrorBox{,self:oLan:WGet('Transaction could not be stored')+":"+oStmnt:status:Description}:show()
 				return false
 			endif
@@ -1141,6 +1173,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim,true)
 	ENDDO 
+	SQLStatement{"commit",oConn}:Execute()  
 
 	AAdd(self:amessages,"Imported batch file:"+oFr:FileName+" "+Str(nCnt,-1)+" imported of "+Str(linenr,-1)+" transactions")
 
@@ -1624,8 +1657,9 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	// Perform inserts:
 	if !Empty(aValues)
 		// check record allready loaded (first and last sufficient check): 
-		if SqlSelect{"select imptrid from importtrans where origin='"+aValues[1,7]+"' and transactnr='"+aValues[1,3]+"'"+;
-				iif(Len(aValues)>2," or origin='"+aValues[Len(aValues),7]+"' and transactnr='"+aValues[Len(aValues),3]+"'",''),oConn}:RecCount<1 
+		osel:=SqlSelect{"select imptrid from importtrans where origin='"+aValues[1,7]+"' and transactnr='"+aValues[1,3]+"'"+;
+				iif(Len(aValues)>2," or origin='"+aValues[Len(aValues),7]+"' and transactnr='"+aValues[Len(aValues),3]+"'",''),oConn}
+		if osel:RecCount<1 
 			// not yet loaded
 			// compose corresponding transactions which can be processed automatically: 
 			// aValues; transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
