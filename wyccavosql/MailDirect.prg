@@ -657,7 +657,8 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 	self:oOwner:=oWindow 
 	self:IsSystem:=lSystem
 	if lSystem
-		self:emailaddress:= "karel_kuijpers@wycliffe.net"
+// 		self:emailaddress:= "karel_kuijpers@wycliffe.net"
+		self:emailaddress:= "accounting_systems_europe@wycliffe.net"
 		self:username:="karel_kuijpers@wycliffe.org"
 		self:password:=GetWosmasterPwd()
 		self:outgoingserver:="mail.jaars.org"
