@@ -128,7 +128,9 @@ METHOD Init() CLASS Destination
 Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:="" as string) as array
 	LOCAL oHttp  as cHttp
 	LOCAL nStart, nPos, nEnd as int
-	local nPos1,nPos2, nPos3,i,j as int,street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
+	local nPos1,nPos2, nPos3,i,j as int
+	local time0,time1 as float
+	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
 	local cBuffer as string
 	local cHeader as string
 	local lSuccess as logic                          
@@ -138,7 +140,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	endif
 	street:=AllTrim(cAddress)
 	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
-	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2))
+	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2)) .or. IsPunctuationMark(SubStr(zipcode,5,2))
 		//illegal zipcode
 		zipcode:=''
 		if !Empty(cPostcode)
@@ -168,12 +170,19 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		cAddress:=AllTrim(cAddress)
 	endif
 	housenr:=(GetStreetHousnbr(cAddress))[2]
-	if !Empty(zipcode) 
+	if !Empty(zipcode) .and. !Empty(housenr)
 		cSearch:=zipcode+' '+housenr
-	elseif !Empty(cCity)
+	elseif !Empty(cCity) .and. !Empty(cAddress)
 // 		aWord:=GetTokens(cCity)
 // 		cSearch:=cAddress+' '+aWord[1,1] 
 		cSearch:=cAddress+' '+cCity 
+		// check strange address:
+		if IsPunctuationMark(cSearch)
+			return {cPostcode,cAddress,cCity}
+		endif
+		if Len(Split(cCity))>4
+			return {cPostcode,cAddress,cCity}
+		endif
 	else
 		return {cPostcode,cAddress,cCity}	                             
 	endif
@@ -187,7 +196,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 //   'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7'+CRLF+;
 //   'Keep-Alive: 115'+CRLF+;
 //   'Connection: keep-alive'+CRLF
-
+      time0:=Seconds()
 		cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
 			"/search/"+cSearch,;
 			/*cSearch*/,;
@@ -195,7 +204,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 			"POST",;
 			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
 			INTERNET_FLAG_SECURE)
-// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch)    
+// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch) 
+	time1:=Seconds()   
 	httpfile:=(UTF2String{cBuffer}):Outbuf
 	if AtC('class="alert warning"',httpfile)>0 
 		return {cPostcode,cAddress,cCity}	
@@ -208,11 +218,11 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 			output:=SubStr(httpfile,nPos1+4,200) 
 		elseif AtC('Value is not a number',httpfile)=0 
 			// apparently website changed:
-			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out",CRLF+httpfile),"LogErrors")
+			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
 		endif 
 	else 
 		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+" "+cPostcode+" "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out",CRLF+httpfile)+CRLF+httpfile,"LogErrors")
+		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
 	endif
 	if !Empty(output)
 		nPos2:=At3('<',output,5)
@@ -1646,6 +1656,7 @@ IF !lAddress
 //		IF IsDigit(aWord[l,1]).and.l>1.and.Empty(nNumPosition)
 			* Housenbr found:
 			nNumPosition:=l
+			aWord[l,1]:=ZeroTrim(aWord[l,1])  // remove leading zeroes in house number
 			// check housenbr addition:
 			if l<nStart
 				if Empty(aWord[l+1,1]) .and. (l+1)<nStart   // separation for addition: - / 
@@ -1928,6 +1939,9 @@ METHOD NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity) CL
 				IF !upper(aWord[i,1])=="EN" .and.!upper(aWord[i,1])=="EO".and.!upper(aWord[i,1])=="CJ".and.!(Upper(aWord[i,1])=='E'.and.aWord[i,2]=='/');
 					.and.!Upper(aWord[i,1])=="VOOR".and.!Upper(aWord[i,1])=="GIFT".and.!Upper(aWord[i,1])=="TGV".and.!IsDigit(Upper(aWord[i,1]))
 					self:m51_lastname:=self:m51_lastname+Upper(SubStr(aWord[i,1],1,1))+Lower(SubStr(aWord[i,1],2))+if(aWord[i,2]==","," ",aWord[i,2])
+					if Upper(aWord[i,1])=="STICHTING" .or. Upper(aWord[i,1])=="BV" .or. Upper(aWord[i,1])=="GEMEENTE"  
+						self:m51_gender:="non-person"
+					endif
 				ELSE
 					if Upper(aWord[i,1])=="EN" .or.Upper(aWord[i,1])=="EO".or.Upper(aWord[i,1])=="CJ" .or.(Upper(aWord[i,1])=='E'.and.aWord[i,2]=='/')
 						self:m51_gender:="couple"
@@ -4330,10 +4344,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	endif
 	
 
-	oDue:=SqlSelect{"select group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
+	oDue:=SqlSelect{"select cast(group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
 	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid separator '#%#') as grDue " +;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid separator '#%#') as char) as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s,personbank pb "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid and pb.banknumber=s.bankaccnt "+;
@@ -5132,7 +5146,7 @@ Function StandardZip(ZipCode:="" as string) as string
 	endif
 	ZipCode:=Upper(AllTrim(ZipCode))
 	IF Len(ZipCode)==6
-		IF isnum(SubStr(ZipCode,1,4)) .and. !isnum(SubStr(ZipCode,5,2))
+		IF isnum(SubStr(ZipCode,1,4)) .and. !isnum(SubStr(ZipCode,5,2)) .and. !IsPunctuationMark(SubStr(ZipCode,5,2))
 			RETURN SubStr(ZipCode,1,4)+" "+SubStr(ZipCode,5,2)
 		ENDIF
 	elseif Len(ZipCode)==5
