@@ -673,6 +673,11 @@ Method ReEvaluate() Class Reevaluation
 	UltimoYear:=stod(str(aBalYr[3],4,0)+strzero(aBalYr[4],2)+strzero(MonthEnd(aBalYr[3],aBalYr[4]),2))	
 	if oSys:lstreeval < UltimoYear .and. UltimoMonth> UltimoYear
 		UltimoMonth:=UltimoYear
+	else
+		if Day(Today()) < 9
+			self:Close()
+			Return
+		endif
 	endif
 	oCurr:=Currency{"Reevaluation"}
 	self:oCall:Pointer := Pointer{POINTERHOURGLASS}
