@@ -1841,7 +1841,6 @@ function InitGlobals()
 FUNCTION IsAlphabetic(m_str as string) as logic
 * Check if string m-str is alphabetic
 LOCAL p_str as STRING,p_num_tel as int 
-local lAlpha:=true as logic
 IF Empty(m_str)
    RETURN FALSE
 ENDIF
@@ -1995,6 +1994,19 @@ FOR p_num_tel:=1 to Len(p_str)
     ENDIF
 NEXT
 RETURN true
+FUNCTION IsPunctuationMark(m_str as string) as logic
+* Check if string m-str contains punctuation marks
+LOCAL p_str as STRING,p_num_tel as int 
+IF Empty(m_str)
+   RETURN false
+ENDIF
+p_str:=AllTrim(m_str) 
+FOR p_num_tel:=1 to Len(p_str)
+    IF !IsAlpha(psz(_cast,SubStr(p_str,p_num_tel,1)))
+       RETURN true
+    ENDIF
+NEXT
+RETURN false
 Function IsSEPA(Iban as string) as logic
 	// check if a banknumber is a valid sepa banknumber
 	local country as string
@@ -2339,7 +2351,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	if Lower(Logname)=="logerrors"
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
-		oMl:AddEmail("Wos error "+sEntity,;
+		oMl:AddEmail("Wos error "+sEntity+' - '+dbname,;
 		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
@@ -2903,6 +2915,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2910,12 +2928,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
