@@ -90,6 +90,7 @@ GLOBAL SDEB as STRING   //account receivable
 GLOBAL SDON as STRING
 GLOBAL SEntity as STRING
 global SepaEnabled as logic
+global servername as string
 GLOBAL SEXP as STRING
 GLOBAL SEXPHOME as STRING
 global SFGC as string
@@ -120,8 +121,8 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.167" as string
-global Versiondate:= __date__ as string
+global Version:="3.0.0.170" as string
+global Versiondate:= __date__+' '+ __time__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
 GLOBAL WycIniFS as IniFileSpec
