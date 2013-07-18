@@ -2897,7 +2897,7 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	******************************************************************************
 	*  Name      : AssignTo.PRG
 	*              With this module a received amount can be assigned to 
-	*              apossible destinations of a person
+	*              possible destinations of a person
 	*  Auteur    : K. Kuijpers
 	*  Datum     : 22 October 1993
 	******************************************************************************
