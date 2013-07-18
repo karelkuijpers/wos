@@ -1797,7 +1797,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	lSetAMPM:=SetAmPm(false)
 	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
 		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8"?>'+CRLF+;
-		'<Document xmlns= "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03" xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
+		'<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
 		'<CstmrCdtTrfInitn>'+CRLF+;
 		'<GrpHdr>'+CRLF+;
 		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
