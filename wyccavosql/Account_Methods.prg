@@ -596,7 +596,7 @@ METHOD ValidateAccount() CLASS EditAccount
 			ENDIF		
 		endif
 	ENDIF
-	if self:lMemberDep
+	if lValid .and.self:lMemberDep
 		// account should contain lastname of corresponding member 
 		cLastname:=SqlSelect{"select lastname from person p, member m where m.depid="+self:mDep+" and p.persid=m.persid",oConn}:lastname
 		if AtC(cLastname,self:oDCmDescription:TextValue) =0
