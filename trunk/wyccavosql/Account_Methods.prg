@@ -573,9 +573,32 @@ METHOD ValidateAccount() CLASS EditAccount
 		lValid := FALSE
 		cError := self:oLan:WGet("Description is mandatory")+"!"
 	ENDIF
+	* Check if account allready exists:
+	oSel:=SqlSelect{"select accid from account where accnumber='"+self:mAccNumber+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	if oSel:Reccount>0
+		cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
+		lValid:=FALSE
+	ENDIF
+	oSel:=SqlSelect{"select accid from account where description='"+AddSlashes(AllTrim(SubStr(self:mDescription,1,40)))+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
+	if oSel:Reccount>0
+		cError:=self:oLan:WGet('Account description')+'	"'+SubStr(AllTrim(self:mDescription),1,40)+'" '+self:oLan:WGet('allready exist')
+		lValid:=FALSE
+	ENDIF
+	IF!lNew .and.lValid
+		cError:=ValidateAccTransfer(self:mNumSave,self:mAccId)
+		IF !Empty(cError)
+			lValid:=FALSE
+		ENDIF
+		if lValid
+			cError:=ValidateDepTransfer(self:mDep,self:mAccId,ConI(self:mGIFTALWD))
+			IF !Empty(cError)
+				lValid:=FALSE
+			ENDIF		
+		endif
+	ENDIF
 	if self:lMemberDep
-		// account should contain lastname of corresponding member
-		cLastname:=SQLSelect{"select lastname from person where persid="+self:mCln,oConn}:lastname
+		// account should contain lastname of corresponding member 
+		cLastname:=SqlSelect{"select lastname from person p, member m where m.depid="+self:mDep+" and p.persid=m.persid",oConn}:lastname
 		if AtC(cLastname,self:oDCmDescription:TextValue) =0
 			cError:=self:oLan:WGet('Description should contain lastname of corresponding member')+': "'+AllTrim(cLastname)+'" '
 			lValid:=FALSE
@@ -621,29 +644,7 @@ METHOD ValidateAccount() CLASS EditAccount
 		endif
 	endif
 
-	* Check if account allready exists:
-	oSel:=SQLSelect{"select accid from account where accnumber='"+self:mAccNumber+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
-	if oSel:Reccount>0
-		cError:=self:oLan:WGet("Account number")+" "+AllTrim(self:mAccNumber)+" "+self:oLan:WGet("allready exist")
-		lValid:=FALSE
-	ENDIF
-	oSel:=SqlSelect{"select accid from account where description='"+AddSlashes(AllTrim(SubStr(self:mDescription,1,40)))+"'"+iif(lNew,''," and accid<>'"+self:mAccId+"'"),oConn}
-	if oSel:Reccount>0
-		cError:=self:oLan:WGet('Account description')+'	"'+SubStr(AllTrim(self:mDescription),1,40)+'" '+self:oLan:WGet('allready exist')
-		lValid:=FALSE
-	ENDIF
-	IF!lNew .and.lValid
-		cError:=ValidateAccTransfer(self:mNumSave,self:mAccId)
-		IF !Empty(cError)
-			lValid:=FALSE
-		ENDIF
-		if lValid
-			cError:=ValidateDepTransfer(self:mDep,self:mAccId,ConI(self:mGIFTALWD))
-			IF !Empty(cError)
-				lValid:=FALSE
-			ENDIF		
-		endif
-	ENDIF
+
 	
 	
 	// check if only Income account is Gifts receivable: 
@@ -857,7 +858,7 @@ Function ValidateAccTransfer (cParentId as string,mAccId as string) as string
 	// ENDIF
 	RETURN cError
 Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int) as string 
-	* Check if transfer of current account mAccId to another department with identifciation cDepartment is allowed
+	* Check if transfer of current account mAccId to another department with identification cDepartment is allowed
 	* Returns Error text if not allowed
 
 	LOCAL cError  as STRING
