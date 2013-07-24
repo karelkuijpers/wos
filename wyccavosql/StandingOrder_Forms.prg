@@ -312,8 +312,11 @@ METHOD OKButton( ) CLASS EditPeriodic
 // 				endif
 // 			endif 
 // 		endif
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:execute()
+		oStmnt:=SQLStatement{'lock tables `standingorder` write,`standingorderline` write',oConn} 
+		oStmnt:execute()
 		
-		SQLStatement{"start transaction",oConn}:Execute()
 		cStatement:=iif(self:lNew,"insert into","update")+" standingorder set "+;
 			"idat='"+SQLdate(self:oDCmIDAT:SelectedDate)+"'"+;
 			",edat='"+SQLdate(self:oDCmEDAT:SelectedDate)+"'"+;
@@ -353,16 +356,19 @@ METHOD OKButton( ) CLASS EditPeriodic
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status) .or. oStmnt:NumSuccessfulRows<1
 				lError:=true
-				exit
 			endif
 		endif
-		if lError
-			SQLStatement{"rollback",oConn}:Execute()
+		if !lError
+			SQLStatement{"commit",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
+			oCaller:ReFresh()
+		else
+			SQLStatement{"rollback",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
 			LogEvent(self,self:oLan:WGet("standingorder could not be saved")+":ID-"+self:curStordid,"LogErrors")
 			ErrorBox{self,self:oLan:WGet("standingorder could not be saved")}:Show()
-		else
-			SQLStatement{"commit",oConn}:Execute()
-			oCaller:ReFresh()
 		endif
 		self:EndWindow()
 	ELSE
