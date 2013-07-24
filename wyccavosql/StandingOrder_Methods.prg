@@ -571,7 +571,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	// LOCAL deb_ind AS LOGIC
 	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
 	local MultiFrom, lError as logic 
-	local deb,cre, DEBFORGN,CREFORGN as float
+	local deb,cre, DEBFORGN,CREFORGN,total as float
 	local CurStOrdrid,nTransLenOrg:=Len(self:aTrans),nBankLenOrg:=Len(self:aBank) as int
 	local oPersBank,oBal as SQLSelect 
 	// 	local oTrans,oBord,oStmnt as SQLStatement
@@ -637,6 +637,7 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 				deb:=Round((oCurr:GetROE(oStOrdL:Currency,datum))*deb,DecAantal)	
 				cre:=Round((oCurr:GetROE(oStOrdL:Currency,datum))*cre,DecAantal)	
 			endif
+			total:=round(total+cre-deb,decaantal)
 			TransCurr:=sCurr
 			if MultiFrom .or. CurrFrom == oStOrdL:Currency
 				TransCurr:=oStOrdL:Currency 
@@ -661,6 +662,11 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 		endif
 		oStOrdL:skip()
 	enddo
+	if !total==0.00
+		lError:=true
+		LogEvent(self,"Standing order: "+Str(CurStOrdrid,-1)+" not balanced (skipped)")
+		(WarningBox{,self:oLan:WGet("Standing orders"),"Standing order: "+Str(CurStOrdrid,-1)+" not balanced (skipped)"}):Show()
+	endif		
 	if !lError
 		nTrans++
 	else
@@ -820,8 +826,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			SQLStatement{"rollback",oConn}:execute()
 			SQLStatement{"unlock tables",oConn}:execute()
 			SQLStatement{"set autocommit=1",oConn}:execute()
-			LogEvent(self,self:oLan:WGet("standingordesr could not be executed:"+cError),"LogErrors")
-			ErrorBox{,self:oLan:WGet("standingorder could not be executed")}:Show()
+			LogEvent(self,self:oLan:WGet("standingorders could not be executed:"+cError),"LogErrors")
+			ErrorBox{,self:oLan:WGet("standingorders could not be executed")}:Show()
 		endif	
 	endif
 	oMainWindow:STATUSMESSAGE(Space(80))
