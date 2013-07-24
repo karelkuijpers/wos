@@ -2351,7 +2351,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	if Lower(Logname)=="logerrors"
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
-		oMl:AddEmail("Wos error "+sEntity+' - '+dbname,;
+		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
 		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
