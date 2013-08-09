@@ -392,7 +392,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 		persid as string,adrline:='' as string,country:='' as string,bic:="" as string ) as logic CLASS TeleMut 
 	if !Empty(amount)
 		IF self:TooOldTeleTrans(bankaccntnbr,bookingdate) 
-// 			LogEvent(self,"Skipped:"+ bankaccntnbr +' on '+DToC(bookingdate)+", contra_bankaccnt:"+contra_bankaccnt+", contra_name:"+contra_name+", amount:"+Str(amount,-1)+",description:"+description,"logsql")
+			// 			LogEvent(self,"Skipped:"+ bankaccntnbr +' on '+DToC(bookingdate)+", contra_bankaccnt:"+contra_bankaccnt+", contra_name:"+contra_name+", amount:"+Str(amount,-1)+",description:"+description,"logsql")
 		else
 			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
 				self:nSubSeqnr++
@@ -406,7 +406,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
 			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
 			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,''})
-// 			LogEvent(self,Str(Len(self:aValuesTrans),-1)+':'+contra_name+'('+ contra_bankaccnt+')',"logsql")
+			// 			LogEvent(self,Str(Len(self:aValuesTrans),-1)+':'+contra_name+'('+ contra_bankaccnt+')',"logsql")
 		endif 
 	endif
 
@@ -1535,7 +1535,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	local lv_bankAcntOwn,lv_description,lv_kind,lv_kindORG, lv_addsub,  lv_BankAcntContra,lv_NameContra,lv_AdrLine,lv_Country, lv_reference,lv_BIC, cText as string 
 	local lv_budget , Cur_enRoute,lv_persid,lv_bankid,lv_Oms as string
 	local cType86 as string  //type of tag 86: B=bank,
-	LOCAL BalFound,AmntFound,lDebit,lReversal,lResult as LOGIC 
+	LOCAL BalFound,AmntFound,lDebit,lReversal,lResult,lDetails as LOGIC 
 	local aBudg:={} as array
 	LOCAL ptrHandle as ptr
 	LOCAL oXMLParser as XMLParser
@@ -1664,7 +1664,8 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_BIC:='' 
 				lv_budget:=''
 				lv_addsub:='B' 
-				lv_persid:='' 
+				lv_persid:=''
+				lDetails:=false 
 				nSeqnr++
 				For j:=1 to oNtry:NbrOfSubElements
 					if (oSub:=oNtry:GetElementOnPosition(j))==null_object
@@ -1724,21 +1725,27 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							lv_kindORG:=lv_kind
 							if lv_kind=='123' ;     // bijschrijving acceptgiro equens
 								.or. lv_kind=='583' .or. lv_kind=='055' .or. lv_kind=='401'  // crediteuren betaling equens/rflp
-								lv_kind:='BGC' 
-							elseif lv_kind='100' .or. lv_kind='103' //ideal bijschrijving 
+								lv_kind:='BGC'
+							elseif lv_kind=='134'   // bijschrijving acceptgiro
+								lv_kind:='AC' 
+							elseif lv_kind=='100' .or. lv_kind=='103' //ideal bijschrijving 
 								lv_kind:='IDEAL' 
-							elseif lv_kind='640' // doorlopende machtiging     (eigen)
+							elseif lv_kind=='640' // doorlopende machtiging     (eigen)
 								lv_kind:='COL' 
-							elseif lv_kind='104' .or.lv_kind='106'.or.lv_kind='107' .or.lv_kind='108' ; // terugboeking euro-incasso
-								.or.lv_kind='631'.or.lv_kind='632'.or.lv_kind='633' ;                     // terugboeking euro-incasso
-								.or. lv_kind=='629'      // euro incasso core equens
+							elseif lv_kind=='104' .or.lv_kind=='106'.or.lv_kind=='107' .or.lv_kind=='108' .or.lv_kind=='110'.or.lv_kind=='111' ; // terugboeking euro-incasso
+								.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633' ;                     // terugboeking euro-incasso
+								.or. lv_kind=='629';      // euro incasso core equens
+								.or. lv_kind=='064' .or. lv_kind=='065'  //  euro-inkasso
 								lv_kind:='COL' 
 							endif 
 						endif
-					case oSub:Name==#NtryDtls .and.(lv_kindORG=='583' .or. lv_kindORG=='055' .or. lv_kindORG=='401')   // crediteuren betaling equens/rflp
+					case oSub:Name==#NtryDtls .and.(lv_kindORG=='583' .or. lv_kindORG=='055' .or. lv_kindORG=='401')   // crediteuren betaling equens/rflp 
+						// record only total batch:
 						lv_description:="Total batch credit transfer" 
+						lv_budget:=Cur_enRoute 
 					case oSub:Name==#NtryDtls .and.!(lv_kindORG=='583' .or. lv_kindORG=='055' .or. lv_kindORG=='401')   // no crediteuren betaling equens/rflp
-						nn:=0
+						nn:=0 
+						lDetails:=true
 						do while !(oTx:=oSub:ScanElement(#TxDtls,@nn))==null_object 
 							// transaction details:
 							nEl1:=0
@@ -1789,7 +1796,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 										elseif oIdent:Name==#othr
 											nEl3:=0
 											oElm3:= oIdent:ScanElement(#Id,@nEl3)
-											lv_BankAcntContra:=StrTran(oElm3:STRINGValue,'P','0')
+											lv_BankAcntContra:=StrTran(oElm3:STRINGValue,'P','0') 
 										endif 
 									endif
 								endif
@@ -1922,6 +1929,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 									endif
 								endif
 							endif
+							if lv_kind=='AC' .and.empty(lv_budget) .and. !empty(lv_reference)
+								self:GetPaymentPattern(lv_reference,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+							endif
 							lv_description:=Compress(lv_description+' '+lv_reference)
 							lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
 							self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
@@ -1930,6 +1940,11 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 						
 					endcase 
 				next
+				if !lDetails
+					lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
+					self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
+					lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(lv_description),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC)
+				endif
 			enddo
 			
 		endif
@@ -2901,6 +2916,11 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 
 	DO WHILE Len(AFields)>7
 		lv_bankAcntOwn:=ZeroTrim(StrTran(AFields[ptAcc],' ',''))
+		if sepaenabled .and. Len(lv_bankAcntOwn)<=7
+			// convert to sepa: 
+			lv_bankAcntOwn:=  "INGB000"+PadL(lv_bankAcntOwn,7,"0")
+			lv_bankAcntOwn:= 'NL'+StrZero(IbanChecksum("NL00"+lv_bankAcntOwn),2,0)+lv_bankAcntOwn	   	
+		endif
 		hl_boekdat:=AFields[ptDate]
 		IF Len(hl_boekdat)=8
 			ld_bookingdate:=SToD(hl_boekdat)
@@ -2908,12 +2928,13 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 			ld_bookingdate:=SToD(SubStr(hl_boekdat,7,4)+;
 				SubStr(hl_boekdat,4,2)+SubStr(hl_boekdat,1,2))
 		ENDIF
-// 		++nTrans
-// 		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
-// 			cBuffer:=ptrHandle:FReadLine()
-// 			aFields:=Split(cBuffer,cDelim)
-// 			loop
-// 		ENDIF
+		++nTrans
+		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+			cBuffer:=ptrHandle:FReadLine()
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_bankAcntOwn:= self:m57_BankAcc[self:CurTelePtr,1]  // translate to sepa if sepaenabaled 
 		lv_NameContra:=AllTrim(AFields[ptDesc])
 		lName:=Len(lv_NameContra)
 		lv_description:=AllTrim(AFields[ptMed])
@@ -2976,7 +2997,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'0',lv_BankAcntContra,;
 		lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
 		lv_description:="" 
-		nTrans++
+// 		nTrans++
 		cBuffer:=ptrHandle:FReadLine()
 		aFields:=Split(cBuffer,cDelim)
 	ENDDO
@@ -3905,7 +3926,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local cBankContrNotIBAN,cBankContr,cBankAcctContr as string 
 	local cStatement as string 
 	local	lAddressChanged,lProcAuto as logic
-	local aPersids:={}, aPersidsDb:={} as array 
+	local aPersids:={}, aPersidsDb:={} as array
+	local aSubPersids:={}, aSubscr:={} as array, aSubscrtn:={} as array, aSub:={} as array,aValueSubPtr:={}  // arrays for getting gifts patterns
 	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={} as array
 	local aBankContra:={},aBankContraNonIban:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
 	local avalueTrans:=self:aValuesTrans as array
@@ -3970,7 +3992,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					if AScanExact(aBankContraNonIban,cBankAcctContr)=0
 						AAdd(aBankContraNonIban, PadL(aValuesTrans[i,4],10,'0'))
 					endif
-// 					cBankContrNotIBAN+=iif(Empty(cBankContrNotIBAN),'',',')+'"'++'"'
+					// 					cBankContrNotIBAN+=iif(Empty(cBankContrNotIBAN),'',',')+'"'++'"'
 				endif
 				i++ 
 			enddo 
@@ -3993,8 +4015,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					endif			
 				endif
 				aBankContraNonIban:=null_array //clear
-			time1:=time0
-			//logevent(self,"non-Iban converted:"+Str((time0:=Seconds())-time1,-1),"logsql")
+				time1:=time0
+				//logevent(self,"non-Iban converted:"+Str((time0:=Seconds())-time1,-1),"logsql")
 			endif
 		endif
 		//
@@ -4093,10 +4115,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			next								
 		endif			
 	endif
-		time1:=time0
-		//logevent(self,"budgetcd is an accountnumber:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	time1:=time0
+	//logevent(self,"budgetcd is an accountnumber:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//
-	// complete budgetcodes from gifts to single destinations:  
+	// complete budgetcodes from gifts to single destinations and gifts patterns:  
 	//
 	i:=0
 	lv_description:=self:oLan:WGet('Gift') 
@@ -4109,16 +4131,70 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			cBankAcc:=avalueTrans[i,1] 
 			//m57_bankacc: banknumber, usedforgifts, datlaatst, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
 			//                 1            2           3          4         5          6      7      8           9		  10           11
-			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.x[9]>'0'})
-			if j>0							
-				avalueTrans[i,7]:=self:m57_bankacc[j,9]
+			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.(x[9]>'0'.or.x[4])})
+			if j>0
+				if self:m57_bankacc[j,9]>'0' 							
+					avalueTrans[i,7]:=self:m57_bankacc[j,9]
+				else
+					// save persid for analysing gifts pattern:
+					cPersid:=avalueTrans[i,11] 
+					AAdd(aValueSubPtr,i)  // save pntr into avalueTrans
+					if !Empty(cPersId) .and. AScanExact(aSubPersids,cPersId)=0
+						AAdd(aSubPersids,cPersid)
+					endif
+				endif
 			endif
 		else
 			exit
 		endif
-	enddo 
-		time1:=time0
-		//logevent(self,"single destinations:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	enddo
+	if Len(aSubPersids)>0
+		// Lookup gift patterns: 
+		oSel:=SqlSelect{"select group_concat(persid,'#$#',subsc separator '#%#') as subscrs from "+; 
+		"(select cast(personid as char) as persid,group_concat(a.accnumber,'&&',cast(amount as char)  separator '$$') as subsc from subscription s, account a "+;
+			"where category='G' and s.accid=a.accid and personid in ("+Implode(aSubPersids,',')+") group by personid order by personid) as sub",oConn}
+		// 		oSel:=SqlSelect{"select group_concat(cast(personid as char),'#$#',cast(accid as char),'#$#',cast(amount as char) order by personid separator '#%#') as subscrs from subscription where category='G' and personid in ("+Implode(aSubPersids,',')+")",oConn}
+		if oSel:Reccount>0 
+			AEval(Split(oSel:subscrs,'#%#'),{|x|AAdd(aSubscr,Split(x,'#$#')) }) 
+			for i:=1 to Len(aSubscr)
+				aSub:=aevala(Split(aSubscr[i,2],'$$'),{|x|split(x,'&&')})
+				AAdd(aSubscrtn,{aSubscr[i,1],aSub})
+			next
+			aSub:=null_array
+			aSubscr:=null_array
+			aSubPersids:=null_array	
+			// add destinations from gift patterns:
+			for i:=1 to Len(aValueSubPtr) 
+				// aValuesTrans:
+				// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
+				//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15  
+				k:= aValueSubPtr[i]
+				cPersid:=avalueTrans[k,11]
+				if (j:=AScan(aSubscrtn,{|x|x[1]==cPersid}))>0
+// 					if Len(aSubscrtn[j,2])=1 .and.avalueTrans[k,8]== Val(aSubscrtn[j,2,1,2])
+// 						// apply pattern in case of one destination:
+// 						avalueTrans[k,7]:=aSubscrtn[j,2,1,1]
+// 					else
+					if (l:=AScan(aSubscrtn[j,2],{|x|Val(x[2])== avalueTrans[k,8]}))>0
+						if l<Len(aSubscrtn[j,2])
+							// more left:
+							if AScan(aSubscrtn[j,2],{|x|Val(x[2])== avalueTrans[k,8]},l+1) = 0
+								// only one with same amount:
+								avalueTrans[k,7]:=aSubscrtn[j,2,l,1]
+							endif
+						else
+							// only one with same amount:
+							avalueTrans[k,7]:=aSubscrtn[j,2,l,1]							
+						endif
+					endif
+				endif
+			next
+			aSubscrtn:=null_array
+			aValueSubPtr:=null_array
+		endif
+	endif
+	time1:=time0
+	//logevent(self,"single destinations:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	// find accid for banknumbers in array with bank account balances aValuesBal
 	if !Empty(self:avaluesBal)
 		for i:=1 to Len(self:avaluesBal)
@@ -4134,9 +4210,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
-  		time1:=time0
-		//logevent(self,"banknumbers:"+Str((time0:=Seconds())-time1,-1),"logsql")
-// 	CollectForced() 
+	time1:=time0
+	//logevent(self,"banknumbers:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
 	// select bank transactions which can be processed automatically 
@@ -4166,8 +4242,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// prepare for add transactions for ministry income/expense:
 		oAddInc:=AddToIncExp{}
 	endif
-  		time1:=time0
-		//logevent(self,"gift budgets:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	time1:=time0
+	//logevent(self,"gift budgets:"+Str((time0:=Seconds())-time1,-1),"logsql")
 
 	// GIFTS:
 	if (k:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'}))>0  // gifts with known destination and giver?
@@ -4190,7 +4266,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		endif
 		i:=0
-  		time1:=time0
+		time1:=time0
 		//logevent(self,"gift zip:"+Str((time0:=Seconds())-time1,-1),"logsql")
 		do while i<Len(avalueTrans)
 			i:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},i+1)
@@ -4279,8 +4355,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		enddo
 	endif
 	aBankContra:=null_array  //clear
-  		time1:=time0
-		//logevent(self,"gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	time1:=time0
+	//logevent(self,"gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	// NON-GIFTS:
 	// aValuesTrans:
@@ -4385,8 +4461,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		endif
 	enddo
 	aBudgetcd:=null_array  //clear
-  		time1:=time0
-		//logevent(self,"non-gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	time1:=time0
+	//logevent(self,"non-gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
@@ -4581,8 +4657,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	endif
 	
 	SQLStatement{"unlock tables",oConn}:execute()
-  		time1:=time0
-		//logevent(self,"dbase:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	time1:=time0
+	//logevent(self,"dbase:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	self:aValuesTrans:={}
 	return true
 METHOD SkipMut()  CLASS TeleMut
