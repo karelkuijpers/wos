@@ -1773,7 +1773,8 @@ METHOD FindButton( ) CLASS PersonBrowser
 			for i:=1 to Len(aKeyw)
 				self:cWhere+=iif(i>1," and ("," (") 
 				lStart:=false 
-				aKeyw[i,1]:=StrTran(aKeyw[i,1],"'","\'")
+// 				aKeyw[i,1]:=StrTran(aKeyw[i,1],"'","\'") 
+				aKeyw[i,1]:=AddSlashes(aKeyw[i,1])
 				for j:=1 to Len(AFields)
 					// 				if isnum(aKeyw[i,1]) .and. j<12 .or.j>11 .and.IsAlphabetic(aKeyw[i,1])
 					// 					loop
