@@ -4308,8 +4308,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	aDescr[11]:=self:oLan:Rget("Periodic gift")
 	aDescr[12]:=self:oLan:Rget("Periodic gift")
 	aDescr[13]:=self:oLan:Rget("Yearly gift")
-	nChecksum:=IbanChecksum(SubStr(BANKNBRDEB,1,2)+'00'+Pad(CreditorID,Max(Len(CreditorID),Len(BANKNBRDEB)-7),'0'))
-	CreditorID:=SubStr(BANKNBRDEB,1,2)+StrZero(nChecksum,2,0)+'ZZZ'+Pad(CreditorID,Len(BANKNBRDEB)-7,'0')
+	nChecksum:=IbanChecksum(SubStr(BANKNBRDEB,1,2)+'00'+Pad(CreditorID,Max(Len(CreditorID),Len(BANKNBRDEB)-6),'0'))
+	CreditorID:=SubStr(BANKNBRDEB,1,2)+StrZero(nChecksum,2,0)+'ZZZ'+Pad(CreditorID,Len(BANKNBRDEB)-6,'0')
 	// Check if all bankaccounts are valid, belonging to the direct debited person:   
   	self:Pointer := Pointer{POINTERHOURGLASS}
 
@@ -4380,7 +4380,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 	NEXT
 	self:Pointer := Pointer{POINTERARROW}
-	oReport := PrintDialog{self,self:oLan:WGet("Producing of ")+"SEPA DD"+DToS(Today())+Str(nSeq,-1)+" file",,134}
+	oReport := PrintDialog{self,self:oLan:WGet('Producing of')+' SEPA DD'+DToS(Today())+Str(nSeq,-1)+" file",,134}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
