@@ -2280,13 +2280,13 @@ METHOD OkButton()  CLASS EditMember
 					cError:=oStmnt:ErrInfo:errormessage 
 				endif
 				// change importpatterns
-				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='C'" 
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and debcre='C'" 
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
 					cError:=oStmnt:ErrInfo:errormessage 
 				endif
-				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and addsub='D'" 
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+mAccidPrv + " and debcre='D'" 
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
@@ -2427,13 +2427,13 @@ METHOD OkButton()  CLASS EditMember
 					cError:=oStmnt:ErrInfo:errormessage 
 				endif
 				// change importpatterns
-				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv  +" and addsub='C'"
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cIncAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cIncAccPrv  +" and debcre='C'"
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
 					cError:=oStmnt:ErrInfo:errormessage 
 				endif
-				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and addsub='D'" 
+				oStmnt:SQLString:="update importpattern set "+sIdentChar+"accid"+sIdentChar+"="+cExpAcc+" where "+sIdentChar+"accid"+sIdentChar+"="+cExpAccPrv +" and debcre='D'" 
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
