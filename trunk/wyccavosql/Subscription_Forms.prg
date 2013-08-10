@@ -440,7 +440,7 @@ METHOD OKButton( ) CLASS EditSubscription
 		if self:mPayMethod="C" .and. SepaEnabled
 			// check mandate id is unique:
 			self:mInvoiceID:=AllTrim(self:mInvoiceID)
-			if	SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
+			if	SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"' and personid<>"+mCLN+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
 				(ErrorBox{,self:oLan:WGet("Mandate id allready exists") }):Show()
 				self:oDCmInvoiceID:SetFocus()
 				RETURN nil
