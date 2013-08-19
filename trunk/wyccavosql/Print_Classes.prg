@@ -2780,9 +2780,8 @@ METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS
 	IF self:MaxWidth > 0
 		self:oDialFont:Font:SetPointSize(Min(10,Round((900*WinScale)/self:MaxWidth,0)))
 	ENDIF
-
 	
-	RETURN SELF
+	RETURN self 
 METHOD InitRange(mRange) CLASS PrintDialog
 	IF !Empty(mRange)
 		oDCPageRange:Value := "Selection"
@@ -3200,6 +3199,7 @@ METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,Extension) CL
 		ENDIF
 	ENDIF
 	self:Font := Font{FONTMODERN,12,"Courier New"}
+	self:iPointSize:=12
 // 	self:Font := Font{,12,"Courier New"}
 // 	self:Font := Font{,12,"Cordia New"}
 	self:Font:PitchFixed := true
@@ -3217,6 +3217,7 @@ METHOD INIT(cJobname, oPrintingDev, lLabel, nMaxWidth,cDestination,Extension) CL
 	
 METHOD Initialize( nMaxWidth) CLASS Printjob
 	LOCAL oSize:=self:SizeText("X") as Dimension
+	local iPointSizeOrg:=self:iPointSize as int
 	LOCAL oKixSize as Dimension
 	LOCAL oSys as SQLSelect
 	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH as int
@@ -3226,13 +3227,13 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 		nTopM:=Round((WycIniFS:GetInt( "Runtime", "stckr_TopMargin")*nResolution)/25.4,0)
 		nLeft:=Round((WycIniFS:GetInt( "Runtime", "stckr_LeftMargin")*nResolution)/25.4,0)
 		iPointSize := WycIniFS:GetInt( "Runtime", "stckr_PointSize")
-		* Bepaal hoogte van regel met KIXkode in canvascoordinaten:
+		* Establish height of line woth KIXkode in canvas coordinates:
 		IF CountryCode="31"
-			* In Nederland Kix Barkode font bepalen (5 mm hoog, 6 chars/inch):
+			* Fot The Netherlands determine Kix Barkode font (5 mm Height, 6 chars/inch):
 			oKixSize := Dimension{Round(oSize:Width*20/12,0),;
 			Round((5*nResolution)/25.4,0)}
 			self:oKixFont := Font{,oKixSize,"KIX Barcode"}
-			* 2 mm extra reserveren voor boven barcode:
+			* reserve 2 mm extra above barcode:
 			self:nLblKIXHeight := oKixSize:Height+Round((2*nResolution)/25.4,0)
 		ENDIF
 	ELSE
@@ -3259,72 +3260,72 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 			nWidth:=self:CanvasArea:Width
 			nHeight:=self:CanvasArea:Height
 		ENDIF
-		* Maak pointsize passend bij MaxWidth:
-			* breedte in letters:
-			* (breedte in dots - marges links en rechts) / letterbreedte :
+		* Adjust pointsize to MaxWidth:
+			* width in characters:
+			* (width in dots - marges left and right) / character width :
 		nHelpW:=oSize:Width
 		IF Empty(nHelpW)
 			nHelpW:=20
 		ENDIF
 		self:PaperWidth:=Integer((nWidth-nLeft-nRightM)/nHelpW)
 		IF nMaxWidth > self:PaperWidth
-			iPointSize := Integer((self:PaperWidth  * 12) / nMaxWidth)
+			self:iPointSize := Integer((self:PaperWidth  * iPointSizeOrg) / nMaxWidth)
 		ENDIF
 	ENDIF
 
-	* Bepaal nieuwe dimensie, horend bij de PointSize:
-	oSize:Height := Round((iPointSize*oSize:Height/12)*1.07,0)
-	oSize:Width := Round(iPointSize*oSize:Width/12,0) 
+	* Calculate new dimension corresponding with PointSize:
+	oSize:Height := Round((self:iPointSize*oSize:Height/iPointSizeOrg)*1.07,0)
+	oSize:Width := Round(self:iPointSize*oSize:Width/iPointSizeOrg,0) 
 	if Empty(oSize:Height)
 		oSize:Height:=105
 	endif
 	if Empty(oSize:Width)
 		oSize:Width:=55
 	endif
-	* Stel font in op bepaalde Pointsize:
+	* Adjust font to new Pointsize:
 	self:Font := null_object
-	self:Font := Font{FONTMODERN,iPointSize,"Courier New"}
+	self:Font := Font{FONTMODERN,self:iPointSize,"Courier New"}
 	self:Font:PitchFixed := true
 	
-	* Bepaal uiteindelijke dimensie:
-*	oSize := SELF:SizeText("X")
-	* Bepaal regelhoogte in dots:
+	* Calculate final dimension:
+	* calculate row height in dots:
 	nHelpH:=oSize:Height
 	IF Empty(nHelpH)
 		nHelpH:=36
 	ENDIF
 	self:LineHeight := nHelpH
-	* Set toppositie voor start printen in dots:
+	* Determine printing top in dots:
 	IF self:Label
 		nTop := self:CanvasArea:Height - nTopM
-		* bepaal hoogte,breedte en marge sticker in canvas coordinaten:
+		* calculate  Height,width and margin label in canvas coordinates:
 		nLblHeight := Round((WycIniFS:GetInt( "Runtime", "stckr_height" )*nResolution)/25.4,0)
 		nLblWidth  := Round((WycIniFS:GetInt( "Runtime", "stckr_width" )*nResolution)/25.4,0)
-		* bepaal aantal rijen en kolommen:
+		* Calculate number of rows and columns:
 	    nLblVertical := Round((self:CanvasArea:Height-nTopM)/nLblHeight,0)
 	    nLblColCnt := Round((self:CanvasArea:Width-nLeft)/nLblWidth,0)
-	    * bepaal margins binnen label:
+	    * calculate margins within label:
 	    nLblBottom := Round((nLblVertical*nLblHeight)-(self:CanvasArea:Height-nTopM),0)
 	    nLblBottom := Max(nLblBottom,nResolution/25.4) && minimaal 1 mm ondermarge
 	    nLblMargin := Round((nLblColCnt*nLblWidth)-(self:CanvasArea:Width-nLeft),0)
 	    nLblMargin := Max(nLblMargin,nResolution/25.4) && minimaal 1 mm rechtermarge
-		* bepaal hoogte sticker in lines en breedte in chars:
+		* calculate Height labels in lines en width in chars:
 		nLblLines := Min(Integer((nLblHeight-nLblKIXHeight-nLblBottom) / self:LineHeight),6)
 		nLblChars := Integer((nLblWidth-nLblMargin) / oSize:Width)
 	ELSE
 		//nTop := SELF:CanvasArea:Height - nTopM
 		nTop := nHeight - nTopM
-		* hoogte in regels: (hoogte in dots - marge boven en onder)/regelhoogte :
+		* Height in rows: (Height in dots - upper and lower margin)/line Height :
 
 		self:PaperHeight := Integer((nHeight-nTopM-nBottom)/self:LineHeight)
-		* breedte in letters:
-		* (breedte in dots - marges links en rechts) / letterbreedte :
+		* width in chars:
+		* (width in dots - left and Right Margn) / charactar width :
 		IF !Empty(nMaxWidth)
 			self:PaperWidth := nMaxWidth
 		ELSE
 			self:PaperWidth  := Integer((nWidth-nLeft-nRightM) /oSize:Width)
 		ENDIF
-	ENDIF
+	ENDIF 
+
 return
 METHOD PrinterExpose(oExposeEvent) CLASS PrintJob
 	* Printing of buffer self:aFiFo with address-record-ids
