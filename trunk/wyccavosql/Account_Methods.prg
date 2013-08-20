@@ -598,7 +598,7 @@ METHOD ValidateAccount() CLASS EditAccount
 	ENDIF
 	if lValid .and.self:lMemberDep
 		// account should contain lastname of corresponding member 
-		cLastname:=SqlSelect{"select lastname from person p, member m where m.depid="+self:mDep+" and p.persid=m.persid",oConn}:lastname
+		cLastname:=ConS(SqlSelect{"select lastname from person p, member m where m.depid="+self:mDep+" and p.persid=m.persid",oConn}:lastname)
 		if AtC(cLastname,self:oDCmDescription:TextValue) =0
 			cError:=self:oLan:WGet('Description should contain lastname of corresponding member')+': "'+AllTrim(cLastname)+'" '
 			lValid:=FALSE
