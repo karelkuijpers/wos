@@ -1530,11 +1530,11 @@ METHOD PrintReport() CLASS PMISsend
 			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
 		ENDIF
 		
-		
+		                                                                    
 		// 		(time1:=Seconds())
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write,`bankorder` write,`sysparms` write,`distributioninstruction` write,`log` write, `assessmnttotal` write',oConn} 
+		oStmnt:=SQLStatement{'lock tables `assessmnttotal` write,`bankorder` write,`distributioninstruction` write,`log` write,`mbalance` write,`sysparms` write,`transaction` write ',oConn}     // alphabetic order
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			cError:=self:oLan:WGet('PMC transactions could not be recorded')+":"+oStmnt:ErrInfo:errormessage
