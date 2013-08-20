@@ -4499,7 +4499,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	endif	
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
-	oStmnt:=SQLStatement{'lock tables `teletrans` write'+iif(Len(aTrans)>0,'`transaction` write,`mbalance` write','')+iif(Len(avaluesPers)>0,',`person` write','')+iif(Len(self:avaluesBal)>0,',`bankbalance` write','')+iif(Empty(cFilename),'',',`log` write'),oConn} 
+	oStmnt:=SQLStatement{'lock tables '+iif(Len(self:avaluesBal)>0,'`bankbalance` write,','')+iif(Empty(cFilename),'','`log` write,')+iif(Len(avaluesPers)>0,'`person` write,','')+;
+	iif(Len(aTrans)>0,'`mbalance` write,','')+'`teletrans` write'+iif(Len(aTrans)>0,',`transaction` write',''),oConn}        // alphabetic order
 	oStmnt:execute()
 	maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
 	oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
