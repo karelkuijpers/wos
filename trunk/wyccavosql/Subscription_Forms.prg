@@ -492,7 +492,7 @@ METHOD OKButton( ) CLASS EditSubscription
 	// 		mCurRek:=oSub:accid 
 	// 		mCurCLN:=oSub:personid 
 	SetDecimalSep(Asc('.'))  // to be sure
-	SQLStatement{"start transaction",oConn}:execute()
+	// 	SQLStatement{"start transaction",oConn}:execute()
 	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
@@ -508,19 +508,23 @@ METHOD OKButton( ) CLASS EditSubscription
 		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 	",bankaccnt='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:Execute()
+	oStmnt:=SQLStatement{'lock tables `subscription` write',oConn} 
+	oStmnt:Execute()
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:status)
+		SQLStatement{"rollback",oConn}:Execute()
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
 		ErrorBox{self,self:oLan:WGet("Could not update subscription")}:show()
-		SQLStatement{"rollback",oConn}:execute()
 		LogEvent(self,"Could not update subscription"+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+cStatement,"logerrors")
 		return
 	endif
-	//		// change corresponding due amounts:
-	// 		if !self:lNew .and.(!self:mCurRek== self:mRek .or. !self:mCurCLN==self:mCLN) 
-	// 			SQLStatement{"update dueamount set accid="+self:mRek+",persid="+self:mCLN+" where accid="+self:mCurRek+" and persid="+self:mCurCLN+" and AmountInvoice>AmountRecvd",oConn}:Execute() 
-	// 		endif 
-	SQLStatement{"commit",oConn}:execute()
+	SQLStatement{"commit",oConn}:Execute()
+	SQLStatement{"unlock tables",oConn}:Execute() 
+	SQLStatement{"set autocommit=1",oConn}:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		self:oCaller:oSub:Execute()
 		if self:lNew
@@ -732,24 +736,23 @@ STATIC DEFINE EDITSUBSCRIPTION_SC_RLN := 100
 STATIC DEFINE EDITSUBSCRIPTION_SC_term := 104 
 STATIC DEFINE EDITSUBSCRIPTION_TYPETEXT := 123 
 Function ProlongateAll(oCall as Window ) as logic
+	local cValuesDue,cValuesSub as string  // values to insert into the database 
+	local cError, cErrorMessage as string 
 	LOCAL mSubid,SeqType as STRING, bed_toez as FLOAT
 	LOCAL DueCount as int
 	LOCAL rjaar,rmnd,rdag,nbrdue as int
 	LOCAL mSeqnr as int
+	local lError as logic
+	
 	LOCAL DueDate:=Today()+31, MinDate:=Today()-93 as date
+	local CurSubId as int, dDueDate as date 
+	local aValuesDue:={} as array // {{subscribid,invoicedate,seqnr,amountinvoice,SeqTp},..
 	LOCAL oSub as SQLSelect
 	local oStmnt as SQLStatement 
-	local CurSubId as int, dDueDate as date 
-	local cValuesDue,cValuesSub as string  // values to insert into the database  
-	local aValuesDue:={} as array // {{subscribid,invoicedate,seqnr,amountinvoice,SeqTp},..
 
 
 	* last end date should be after next due date
 	* only donations and subscriptions 
-	// 	oSub:=SQLSelect{"select s.*,max(d.seqnr) as maxseqnbr from subscription s left join dueamount d "+; 
-	// 	"on (s.subscribid=d.subscribid and d.invoicedate=s.duedate) "+;
-	// 		"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate " +;
-	// 		" group by s.subscribid,s.duedate",oConn}
 	oSub:=SqlSelect{"select s.*,count(dueid) as nbrdue from subscription s left join dueamount d on (s.subscribid=d.subscribid) "+; 
 	"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate group by s.subscribid",oConn}       
 	if oSub:RecCount<1
@@ -790,30 +793,53 @@ Function ProlongateAll(oCall as Window ) as logic
 		oSub:skip()
 	ENDDO
 	if !Empty(aValuesDue)
-		SQLStatement{"start transaction",oConn}:Execute()
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `dueamounts` write,`subscription` write',oConn} 
+		oStmnt:Execute()
+		// 		SQLStatement{"start transaction",oConn}:Execute()
 		// 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn}
 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice,seqtype) values "+Implode(aValuesDue,'","'),oConn}
 		oStmnt:Execute()
 		// 		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
-		if Empty(oStmnt:Status)
+		if !Empty(oStmnt:Status)
+			lError:=true
+			cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
+			cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+		endif
+		if !lError
 			* update date due with term within subscription:
 			oStmnt:=SQLStatement{"insert into subscription (subscribid) values "+Implode(aValuesDue,',',,,1,'),(')+;
 				" on DUPLICATE KEY UPDATE duedate=adddate(duedate,INTERVAL term MONTH)",oConn} 
 			oStmnt:Execute() 
 			if !Empty(oStmnt:Status)
-				SQLStatement{"rollback",oConn}:Execute()
-				LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
-				return false				
+				lError:=true
+				cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
 			endif
-		elseif !Empty(oStmnt:Status)
-			SQLStatement{"rollback",oConn}:Execute()
-			LogEvent(,"could no produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage,"LogErrors")
-			return false				
 		endif
-		* remove old due amounts:
-		oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
-		oStmnt:Execute()
-		SQLStatement{"commit",oConn}:Execute()
+		if !lError
+			* remove old due amounts:
+			oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			SQLStatement{"commit",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			LogEvent(,cErrorMessage,"LogErrors")
+			ErrorBox{,cError}:Show()
+			return false		
+		endif
 	endif
 
 	oCall:STATUSMESSAGE(Space(80))
