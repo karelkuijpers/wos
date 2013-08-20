@@ -1316,12 +1316,15 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	RETURN lValid
 METHOD DeleteButton CLASS PersonBrowser
 
-	LOCAL oTextBox as TextBox
 	LOCAL myCLN as STRING
-	local oSel as SQLSelect
-	local oSQL as SQLStatement
+	local cError,cErrorMessage 
+	local cOrd as string 
+	local lError as logic
 	local aOrd:={} as array
-	local cOrd as string
+	local oSel as SQLSelect
+	local oStmnt as SQLStatement
+	LOCAL oTextBox as TextBox
+	
 	IF self:Server:EOF.or.self:Server:BOF
 		(ErrorBox{,"Select a person first"}):Show()
 		RETURN
@@ -1401,50 +1404,130 @@ METHOD DeleteButton CLASS PersonBrowser
 			InfoBox { self, self:oLan:WGet("Delete Person"),;
 				self:oLan:WGet("Subscript/donation present! Delete them first")}:Show()
 			RETURN
-		ENDIF
-		oSQL:=SQLStatement{"update person set deleted=1,opc='"+LOGON_EMP_ID+"',alterdate=curdate() where persid="+myCLN,oConn}
-		oSQL:Execute()
-		if Empty(oSQL:Status)
+		ENDIF 
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `department` write,`member` write,`person` write,`personbank` write,`standingorder` write,`standingorderline` write,`subscription` write,`sysparms` write ',oConn} 
+		oStmnt:Execute()
+		
+		oStmnt:=SQLStatement{"update person set deleted=1,opc='"+LOGON_EMP_ID+"',alterdate=curdate() where persid="+myCLN,oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:Status)
+			lError:=true
+			cError:='Update person Error:'+oStmnt:ErrInfo:ErrorMessage
+			cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+		endif
+		if !lError
 			* Remove corresponding bankaccounts in PersonBank : 
-			oSQL:=SQLStatement{"delete from personbank where persid="+myCLN,oConn}
-			oSQL:Execute()
-			oSQL:=SQLStatement{"delete from subscription where personid="+myCLN,oConn}
-			oSQL:Execute()
+			oStmnt:=SQLStatement{"delete from personbank where persid="+myCLN,oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Delete personbank Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			oStmnt:=SQLStatement{"delete from subscription where personid="+myCLN,oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Delete subscription Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
 			oSel:=SqlSelect{"select stordrid from standingorderline where creditor="+myCLN,oConn}
 			if oSel:RecCount>0
 				aOrd:=oSel:GetLookupTable(1000,#stordrid,#stordrid)
 				cOrd:=Implode(aOrd,',',,,1)
-				oSQL:=SQLStatement{"delete from standingorder where stordrid in ("+cOrd+")",oConn}
-				oSQL:Execute()
-				oSQL:=SQLStatement{"delete from standingorderline where stordrid in ("+cOrd+")",oConn}
-				oSQL:Execute()
+				oStmnt:=SQLStatement{"delete from standingorder where stordrid in ("+cOrd+")",oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:='Delete standingorder Error:'+oStmnt:ErrInfo:ErrorMessage
+					cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+				endif
+				if	!lError
+					oStmnt:=SQLStatement{"delete from standingorderline where stordrid in ("+cOrd+")",oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:='Delete standingorderline Error:'+oStmnt:ErrInfo:ErrorMessage
+						cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+					endif
+				endif
 			endif
-			oSQL:=SQLStatement{"delete from standingorderline where stordrid in (select stordrid from standingorder where persid="+myCLN+")",oConn}
-			oSQL:Execute()
-			oSQL:=SQLStatement{"delete from standingorder where persid='"+myCLN+"'",oConn}
-			oSQL:Execute()
-			// remove as contact person from departments:
-			oSQL:=SQLStatement{"update department set persid=if(persid="+myCLN+",0,persid),persid2=if(persid2="+myCLN+",0,persid2) "+;
-				"where persid="+myCLN+" or persid2="+myCLN,oConn}
-			oSQL:Execute() 
-			// remove as contact person from member:
-			oSQL:=SQLStatement{"update member set contact=0 where contact="+myCLN,oConn}
-			oSQL:Execute() 
-			// remove as financial contact person from system parameters:
-			oSQL:=SQLStatement{"update sysparms set idcontact=0 where idcontact="+myCLN,oConn}
-			oSQL:Execute() 
-			self:SearchCLN:=''
-			self:FindButton()
-			self:gotop() 
-		else
-			LogEvent(self,'Delete person Error:'+oSQL:Status:Description+"; statement:"+oSQL:SQLString,"LogErrors")
-			(ErrorBox{self,self:oLan:WGet('Delete person Error')+':'+oSQL:Status:Description}):Show()
 		endif
+		if !lError
+			oStmnt:=SQLStatement{"delete from standingorderline where stordrid in (select stordrid from standingorder where persid="+myCLN+")",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Delete standingorderline Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			oStmnt:=SQLStatement{"delete from standingorder where persid='"+myCLN+"'",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Delete standingorder Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			// remove as contact person from departments:
+			oStmnt:=SQLStatement{"update department set persid=if(persid="+myCLN+",0,persid),persid2=if(persid2="+myCLN+",0,persid2) "+;
+				"where persid="+myCLN+" or persid2="+myCLN,oConn}
+			oStmnt:Execute() 
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Update department Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			// remove as contact person from member:
+			oStmnt:=SQLStatement{"update member set contact=0 where contact="+myCLN,oConn}
+			oStmnt:Execute() 
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Update member Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			// remove as financial contact person from system parameters:
+			oStmnt:=SQLStatement{"update sysparms set idcontact=0 where idcontact="+myCLN,oConn}
+			oStmnt:Execute() 
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:='Update sysparms Error:'+oStmnt:ErrInfo:ErrorMessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif
+		endif
+		if !lError
+			SQLStatement{"commit",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			LogEvent(self,cErrorMessage,"LogErrors")
+			ErrorBox{self,self:oLan:WGet('Delete person Error')+':'+cError}:Show()
+			return false		
+		endif
+		self:SearchCLN:=''
+		self:FindButton()
+		self:gotop() 
 
 	endif
 	// refresh owner: 
-// 	self:oPers:Execute() 
-// 	self:oSFPersonSubForm:Browser:refresh()
+	// 	self:oPers:Execute() 
+	// 	self:oSFPersonSubForm:Browser:refresh()
 
 	// 		oSFPersonSubForm:Browser:REFresh()
 	// 		oPeriod:Close()
@@ -4001,7 +4084,7 @@ Method MakeCliop03File(begin_due as date,end_due as date, process_date as date,a
 		
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
+		oStmnt:=SQLStatement{'lock tables `dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write','')+',`transaction` write',oConn} 
 		oStmnt:Execute()
 
 		// make transactions:
@@ -4657,7 +4740,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `transaction` write,`dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write',''),oConn} 
+	oStmnt:=SQLStatement{'lock tables `dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write','')+',`transaction` write',oConn}      // alphabetic order
 	oStmnt:Execute()
 
 	// make transactions:
