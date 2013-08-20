@@ -771,7 +771,7 @@ Method ReEvaluate() Class Reevaluation
 	lError:=false
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write, `sysparms` write',oConn} 
+	oStmnt:=SQLStatement{'lock tables `mbalance` write, `sysparms` write,`transaction` write',oConn}       // alphabetic order
 	oStmnt:Execute()
 	do while (na:=AScan(aAccnt,{|x|!x[6]==0.00},na+1))>0 .and. !lError
 		cCur:= aAccnt[na,3]
