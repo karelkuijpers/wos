@@ -261,7 +261,7 @@ METHOD MonthPrint(oAcc as SQLSelect,oTrans as SQLSelect,nFromYear as int,nFromMo
 	lForgnC:=(!self:cAccCurrency==sCURR)
 	if self:oReport:MaxWidth<57+self:DescrWidth+38 .and. lForgnC
 		self:oReport:MaxWidth:=57+self:DescrWidth+38
-		self:oReport:oPrintJob:Initialize(self:oReport:MaxWidth)
+		self:oReport:oPrintJob:Initialize(self:oReport:MaxWidth) 
 	elseif self:oReport:MaxWidth>=57+self:DescrWidth+35 .and. !lForgnC
 		self:oReport:MaxWidth:=57+self:DescrWidth
 		self:oReport:oPrintJob:Initialize(self:oReport:MaxWidth)
@@ -953,9 +953,9 @@ METHOD FilePrint() CLASS General_Journal
 	oReport:prstop()
 	RETURN nil
 METHOD FillBatch(pBst as string,pDat as date,cGiver as string,cDescription as string, cExId as string, nPostStatus:=0 as int) CLASS General_Journal
-Local lFound as logic 
-Local aWord as array,lenAW as int
-local oPersCnt:=PersonContainer{} as PersonContainer
+	Local lFound as logic 
+	Local aWord as array,lenAW as int
+	local oPersCnt:=PersonContainer{} as PersonContainer
 	mCLNGiver := ""
 	cGiverName := ""
 	mPerson := cGiver                                              
@@ -983,9 +983,9 @@ local oPersCnt:=PersonContainer{} as PersonContainer
 	IF !Empty(cGiver) .and.!lFound
 		SELF:cGiverName:=cGiver
 		PersonSelect(self,cGiver,true,,"Giver of imported transaction",oPersCnt)
-    ENDIF
+	ENDIF
 	*SELF:oDCmPerson:SetFocus()
-  	self:oDCmDat:Value := pDat
+	self:oDCmDat:Value := pDat
 	SELF:mBst := pBst
 	SELF:oDCmBST:disable()
 	SELF:oDCmDat:disable()
@@ -994,14 +994,19 @@ local oPersCnt:=PersonContainer{} as PersonContainer
 	oDCGiroText:TEXTValue:=AllTrim(cDescription) 
 	self:mPostStatus:=nPostStatus
 	
-//	SELF:Server:GOTOP() 
-// 	self:Totalise(false,false)
-*	DO WHILE !SELF:server:EoF
-		self:oSFGeneralJournal1:DebCreProc()
-*		SELF:Server:Skip()
-*	ENDDO
-*	SELF:Server:GoTop()
-RETURN
+	//	SELF:Server:GOTOP() 
+	// 	self:Totalise(false,false)
+	*	DO WHILE !SELF:server:EoF 
+	if self:oCurr==null_object
+		self:oCurr:=Currency{"Importing batch"}
+		self:oSFGeneralJournal1:oCurr:=self:oCurr
+	endif
+
+	self:oSFGeneralJournal1:DebCreProc()
+	*		SELF:Server:Skip()
+	*	ENDDO
+	*	SELF:Server:GoTop()
+	RETURN
 METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as string,mOrigDat as date,mOrigBst as string,cOrigUser as string,nOrigPost as int,oCaller as General_Journal,lLocked as logic) CLASS General_Journal
 	* Filling of windowfields with existing transaction for inquiry/update
 	LOCAL oHm as TempTrans
@@ -1222,40 +1227,40 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 	oHm:GoBottom()
 RETURN	
 METHOD ProcRecognised() CLASS General_Journal
-LOCAL oHm as TempTrans
-LOCAL cSearch as STRING 
-Local CurRate as Float 
-local oAcc as SQLSelect
-local cWhere:="a.balitemid=b.balitemid"
-local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid)" 
-local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"
-oHm := self:Server
-IF !Empty(self:oTmt:m56_accid)
-	cWhere+=" and a.accid = "+self:oTmt:m56_accid 
-ELSEif !Empty(self:oTmt:m56_accnumber) 
-	cWhere+=" and a.accnumber = '"+LTrimZero(self:oTmt:m56_accnumber)+"'" 
-ELSE
-	self:oTmt:m56_recognised:=FALSE
-	self:oTmt:m56_autmut:=FALSE
-	return
-ENDIF
-oAcc:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+cWhere,oConn}
-if oAcc:RecCount>0 
-	// Process foreign currency:
-	if !oAcc:CURRENCY==sCURR
-		if oCurr==null_object
-			oCurr:=Currency{"Importing telebanking"}
+	LOCAL oHm as TempTrans
+	LOCAL cSearch as STRING 
+	Local CurRate as Float 
+	local oAcc as SQLSelect
+	local cWhere:="a.balitemid=b.balitemid"
+	local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid)" 
+	local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"
+	oHm := self:Server
+	IF !Empty(self:oTmt:m56_accid)
+		cWhere+=" and a.accid = "+self:oTmt:m56_accid 
+	ELSEif !Empty(self:oTmt:m56_accnumber) 
+		cWhere+=" and a.accnumber = '"+LTrimZero(self:oTmt:m56_accnumber)+"'" 
+	ELSE
+		self:oTmt:m56_recognised:=FALSE
+		self:oTmt:m56_autmut:=FALSE
+		return
+	ENDIF
+	oAcc:=SQLSelect{"Select "+cFields+" from "+cFrom+" where "+cWhere,oConn}
+	if oAcc:RecCount>0 
+		// Process foreign currency:
+		if !oAcc:CURRENCY==sCURR
+			if oCurr==null_object
+				oCurr:=Currency{"Importing telebanking"}
+			endif
+			CurRate:=oCurr:GetROE(oAcc:CURRENCY,self:mDAT)
+			oHm:DEBFORGN:=Round(oHm:deb/CurRate,DecAantal)
+			oHm:CREFORGN:=Round(oHm:cre/CurRate,DecAantal)
 		endif
-		CurRate:=oCurr:GetROE(oAcc:CURRENCY,self:mDAT)
-		oHm:DEBFORGN:=Round(oHm:deb/CurRate,DecAantal)
-		oHm:CREFORGN:=Round(oHm:cre/CurRate,DecAantal)
-	endif
-	self:RegAccount(oAcc)
-ELSE
-	self:oTmt:m56_recognised:=FALSE
-	self:oTmt:m56_autmut:=FALSE
-ENDIF
-RETURN
+		self:RegAccount(oAcc)
+	ELSE
+		self:oTmt:m56_recognised:=FALSE
+		self:oTmt:m56_autmut:=FALSE
+	ENDIF
+	RETURN
 METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Journal
 	LOCAL oHm:=self:Server as TempTrans
 	LOCAL oAccount as SQLSelect
@@ -1575,7 +1580,7 @@ METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) 
 		",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
 		",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
 	",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
-		",persid='"+iif(lGiver,AllTrim(self:mCLNGiver),"0")+"'"+;
+		",persid='"+iif(lGiver,Str(val(AllTrim(self:mCLNGiver)),-1),"0")+"'"+;
 		iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
 	",seqnr="+Str(self:nLstSEqNr,-1),'')+;
 		",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
@@ -2126,31 +2131,25 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		next
 	endif 
 	self:Pointer := Pointer{POINTERHOURGLASS}
-
+	IF lInqUpd
+		* Save pointer to current transaction
+		if IsObject(oInqBrowse) .and. IsObject(oInqbrowse:owner) .and. IsObject(oInqBrowse:Owner:server)
+			nSavRec:=oInqBrowse:owner:server:RecNo 
+		endif
+	endif
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
-	oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write'+iif(self:lTeleBank,',`teletrans` write','')+iif(self:lImport,',`importtrans` write','')+iif(!Empty(self:mCLNGiver),',`person` write','')+iif(!Empty(cDueAccs).or.lInqUpd,',`dueamount` write,`subscription` read',''),oConn} 
+	oStmnt:=SQLStatement{'lock tables '+iif(!Empty(cDueAccs).or.lInqUpd,'`dueamount` write,','')+iif(self:lImport,'`importtrans` write,','')+'`mbalance` write,'+iif(!Empty(self:mCLNGiver),'`person` write,','')+;
+	iif(!Empty(cDueAccs).or.lInqUpd,'`subscription` read,','')+iif(self:lTeleBank,'`teletrans` write,','')+'`transaction` write',oConn}   // alphabetic order
 	oStmnt:execute()
-	//	lock mbalance records:
-	// 		oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+cAccs+")"+;
-	// 			" and	year="+Str(Year(self:mDAT),-1)+;
-	// 			" and	month="+Str(Month(self:mDAT),-1)+' order by mbalid for update',oConn}
-	// 		if	!Empty(oMBal:Status)
-	// 			self:Pointer := Pointer{POINTERARROW}
-	// 			ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:show()
-	// 			SQLStatement{"rollback",oConn}:Execute()
-	// 			self:mCLNGiver:=''
-	// 			return true
-	// 		endif	  
 
 	IF lInqUpd
 		* Update transaction
-		nSavRec:=oInqBrowse:Owner:server:Recno
 		oHm:SuspendNotification()	
 		cError:=self:UpdateTrans()
 		if !Empty(cError)
 			lError:=true
-			cError:=''
+// 			cError:=''
 		else
 			lError:=false
 		endif
@@ -2344,8 +2343,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		// 			ENDIF
 		// 			self:oDCGiroText:TextValue:="   "
 		// 			lSave:=FALSE
-		oHm:ResetNotification()	
 	ENDIF
+	oHm:ResetNotification()	
 	if !lError
 		// 			oStmnt:=SQLStatement{"commit",oConn}
 		// 			oStmnt:Execute() 
@@ -2396,7 +2395,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	endif 
 	// 	else
 	// 		ENDIF
-// 	ENDIF
+	// 	ENDIF
 	IF lError
 		SQLStatement{"rollback",oConn}:execute()
 		SQLStatement{"unlock tables",oConn}:execute()
@@ -2478,7 +2477,7 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
 			self:Owner:lwaitingForExchrate:=true 
-			ROE:=oCurr:GetROE(oHm:CURRENCY,self:Owner:mDat)
+			ROE:=self:oCurr:GetROE(oHm:CURRENCY,self:Owner:mDat)
 			self:Owner:lwaitingForExchrate:=false 
 			if oCurr:lStopped
 				self:Owner:EndWindow()
@@ -4146,9 +4145,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		// 			SQLStatement{"start transaction",oConn}:execute()  
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write'+iif(self:lTeleBank,',`teletrans` write','')+;
-			iif(!Empty(self:mCLNGiver),',`person` write, `personbank` write '+;
-			iif(AScan(oHm:aMIRROR,{|x|!Empty(x[12])})>0 ,',`dueamount` write,`subscription` write',''),''),oConn} 
+		oStmnt:=SQLStatement{'lock tables '+iif(AScan(oHm:Amirror,{|x|!Empty(x[12])})>0,'`dueamount` write,','')+'`mbalance` write'+iif(!Empty(self:mCLNGiver),',`person` write, `personbank` write','')+;
+			+iif(AScan(oHm:Amirror,{|x|!Empty(x[12])})>0,',`subscription` write','')+iif(self:lTeleBank,',`teletrans` write','')+',`transaction` write',oConn}     // alphabetic order
 		oStmnt:execute()
 		
 		nSeqnbr:=1 
