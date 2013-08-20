@@ -1085,14 +1085,16 @@ SELF:FieldPut(#mType, uValue)
 RETURN uValue
 
 METHOD OkButton CLASS NewPersonWindow
-	LOCAL oTextBox as TextBox
-	LOCAL oPers,oStmnt as SQLStatement
 	LOCAL i, nCLN, nCurRec as int
-	LOCAL cExtra, cTit as STRING, contvalue as usual
-	LOCAL oContr as Control
-	LOCAL myCombo as COMBOBOX
-	local lSuccess as logic
+	LOCAL cExtra, cTit,cError,cErrorMessage as STRING
+	local contvalue as usual
 	local cStmnt as string
+	local lSuccess as logic
+	local lError as logic
+	LOCAL oContr as Control
+	LOCAL oTextBox as TextBox
+	LOCAL myCombo as COMBOBOX
+	LOCAL oPers,oStmnt as SQLStatement
 	local oPersCnt as PersonContainer 
 
 	self:mCodInt := MakeCod({self:mCod1,self:mCod2,self:mCod3,self:mCod4,self:mCod5,self:mCod6,self:mCod7,self:mCod8,self:mCod9,self:mCod10})
@@ -1152,6 +1154,11 @@ METHOD OkButton CLASS NewPersonWindow
 				cTit:="1"
 			ENDIF
 		ENDIF
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `account` write,`person` write,`personbank` write',oConn}         // alphabetic order
+		oStmnt:Execute()
+
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
 			"lastname='"+AddSlashes(alltrim(self:oDCmlastname:TextValue))+"',nameext='"+AddSlashes(alltrim(self:oDCmNameExt:TextValue)))+"'"+;
 			",initials='"+AddSlashes(AllTrim(self:oDCmInitials:TextValue))+"'"+;
@@ -1182,19 +1189,30 @@ METHOD OkButton CLASS NewPersonWindow
 			iif(self:lNew,''," where persid='"+self:mPersId+"'")
 		oPers:=SQLStatement{cStmnt,oConn}
 		oPers:Execute() 
-		if !IsNil(oPers:Status)
-			LogEvent(self,'Add/update person Error:'+oPers:ErrInfo:ErrorMessage+"; statement:"+oPers:SQLString,"LogErrors")
-			(ErrorBox{self,'Add/update person Error:'+oPers:ErrInfo:ErrorMessage}):Show()
+		if !Empty(oPers:Status)
+			lError:=true
+			cError:='Add/update person Error:'+oPers:ErrInfo:ErrorMessage
+			cErrorMessage:=cError+CRLF+"statement:"+oPers:SQLString
 		endif
-		if self:lNew
-			self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-		elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
-			// in case of member update name of corresponding account:
-			oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+self:mPersId+")",oConn}
-			oStmnt:Execute()
-		ENDIF
-		// 		ENDIF
-		FOR i=1 to Len(self:aBankAcc)
+		if !lError
+			if self:lNew
+				self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
+				// in case of member update name of corresponding account:
+				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+self:mPersId+")",oConn}
+				oStmnt:Execute()
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:='Add/update account Error:'+oStmnt:ErrInfo:ErrorMessage
+					cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+				endif
+			ENDIF
+		endif
+
+		FOR i=1 to Len(self:aBankAcc) 
+			if lError
+				exit
+			endif
 			IF i<=Len(OrigaBank)
 				IF !self:aBankAcc[i,1] ==OrigaBank[i,1] .or.!self:aBankAcc[i,2] ==OrigaBank[i,2]  // change of value banknumber or bic? 
 					IF Empty(self:aBankAcc[i,1]) // removed?
@@ -1203,12 +1221,34 @@ METHOD OkButton CLASS NewPersonWindow
 						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+self:aBankAcc[i,1]+"',bic='"+GetBIC(self:aBankAcc[i,1],self:aBankAcc[i,2])+"' where banknumber='"+self:OrigaBank[i,1]+"'",oConn}
 					endif
 					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:='Delete/update personbank Error:'+oStmnt:ErrInfo:ErrorMessage
+						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+					endif
 				ENDIF
 			ELSEIF Len(self:aBankAcc[i,1])>1 
 				oStmnt:=SQLStatement{"Insert into personbank set persid="+self:mPersId+",banknumber='"+self:aBankAcc[i,1]+"',bic='"+GetBIC(self:aBankAcc[i,1],self:aBankAcc[i,2])+"'",oConn}
 				oStmnt:Execute() 
+				if !Empty(oStmnt:Status)
+					lError:=true
+					cError:='Insert personbank Error:'+oStmnt:ErrInfo:ErrorMessage
+					cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+				endif
 			ENDIF
 		NEXT
+		if !lError
+			SQLStatement{"commit",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+		else
+			SQLStatement{"rollback",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			LogEvent(self,cErrorMessage,"LogErrors")
+			ErrorBox{self,cError}:Show()
+			return false		
+		endif
 		self:ClearBankAccs() 
 		IF lAddressChanged
 			IF IsObject(oCaller)
@@ -1226,7 +1266,7 @@ METHOD OkButton CLASS NewPersonWindow
 		self:EndWindow()
 		// refresh owner: 
 		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser)
-// 			self:oCaller:SearchCLN:=self:mPersId
+			// 			self:oCaller:SearchCLN:=self:mPersId
 			self:oCaller:ReFind()
 			if self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
 				self:oCaller:SELECT()   // go direct to
