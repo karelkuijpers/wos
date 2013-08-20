@@ -565,13 +565,13 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	local oImpB,oImpTr1,oImpTr2,oSel as SQLSelect
 	local oLockSt as SQLStatement
 	local aPrn:={} as array  // {accid,automatic} 
-   self:m56_recognised:=false
+	self:m56_recognised:=false
 	SQLStatement{"start transaction",oConn}:execute() 
 	oImpTr1:=SQLSelect{"select transactnr,origin,transdate,docid from importtrans "+;
-	"where processed=0 "+;
-	+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < subdate(now(),interval 20 minute))"+;
-	iif(Empty(self:curimpid),''," and imptrid>"+Str(self:curimpid,-1))+;
-	" order by imptrid limit 1 for update",oConn}
+		"where processed=0 "+;
+		+"and (lock_id=0 or lock_id="+MYEMPID+" or lock_time < subdate(now(),interval 20 minute))"+;
+		iif(Empty(self:curimpid),''," and imptrid>"+Str(self:curimpid,-1))+;
+		" order by imptrid limit 1 for update",oConn}
 	if oImpTr1:reccount<1
 		lOK:=False
 		return false
@@ -583,10 +583,10 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	
 	//lock rest of same transaction:
 	oImpTr2:=SQLSelect{"select imptrid from importtrans "+;
-	"where processed=0 and transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid for update",oConn}
+		"where processed=0 and transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid for update",oConn}
 	// software lock importrans rows:
 	oLockSt:=SQLStatement{"update importtrans set lock_id="+MYEMPID+",lock_time=Now() where transactnr='"+CurBatchNbr+"' and origin='"+CurOrigin+;
-	"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"'",oConn}
+		"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"'",oConn}
 	oLockSt:execute()		
 	if oLockSt:NumSuccessfulRows < 1
 		SQLStatement{"rollback",oConn}:execute()
@@ -595,18 +595,18 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		SQLStatement{"commit",oConn}:execute()
 	endif                                                 
 	oImpB:=SQLSelect{"select a.description as accountname,a.accid,a.currency as acccurrency,a.multcurr,a.accnumber,a.department,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype,i.*"+;
-	" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
-	"where processed=0 and i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+;
-	"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid",oConn}
+		" from importtrans i left join (balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=a.department)) on (i.accountnr<>'' and a.accnumber=i.accountnr and b.balitemid=a.balitemid)"+;
+		"where processed=0 and i.transactnr='"+CurBatchNbr+"' and i.origin='"+CurOrigin+;
+		"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid",oConn}
 	if oImpB:reccount<1
-	   LogEvent(self,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
-	   lOK:=false
-	  	return false
+		LogEvent(self,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
+		lOK:=false
+		return false
 	endif
 	lOK:=true
 	CurDate:=oImpB:transdate
 	OrigBst:=oImpB:docid
-   nPostStatus:=oImpB:POSTSTATUS
+	nPostStatus:=oImpB:POSTSTATUS
 	IF !self:oHM:Used
 		RETURN FALSE
 	ENDIF
@@ -619,8 +619,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:AccNumber:=Space(11)
 		self:oHM:accdesc:=oImpB:accname
 		self:oHM:accid:=Space(11)
-     	self:oHM:kind := " "
-      self:oHM:Gc := ""
+		self:oHM:kind := " "
+		self:oHM:Gc := ""
 		self:oHM:currency := iif(Empty(oImpB:currency),sCurr,oImpB:currency) 
 		self:oHM:DepID:=ConI(oImpB:department)
 		cType:=Transform(oImpB:TYPE,"")
@@ -646,8 +646,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 				self:lOK:=FALSE
 			else
 				oSel:=sqlselect{"select accnumber,a.description,a.currency,a.department,b.category as type,"+SQLAccType()+" as accounttype "+;
-				" from account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid),balanceitem as b  "+ ;
-				" where a.balitemid=b.balitemid and a.accid="+aPrn[1],oConn}
+					" from account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (d.depid=m.depid),balanceitem as b  "+ ;
+					" where a.balitemid=b.balitemid and a.accid="+aPrn[1],oConn}
 				if oSel:reccount>0
 					self:oHM:accid:=aPrn[1]
 					self:oHM:accdesc := oSel:Description
@@ -685,8 +685,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 			cExId:=oImpB:EXTERNID
 		endif
 		* Add TO mirror: 
-// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
-//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
+		// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
+		//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 		
 		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,cType,'',oHM:DepID})
 		cDescription:=oImpB:descriptn
@@ -700,14 +700,16 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:cCurBatchNbr:=CurBatchNbr
 	self:cCurOrigin:=CurOrigin
 	self:dCurDate:=CurDate
-	self:oHM:Commit()
-*	self:oHM:ResetNotification()
-	oParent:FillBatch(OrigBst,CurDate,cGiverName,cDescription, cExId, nPostStatus)
-	oParent:AddCur()
-	self:oHM:ResetNotification()
-	self:oHM:GoTop()
-	self:oHM:Skip()
-RETURN true
+	self:oHM:Commit() 
+	if self:oHM:reccount>0
+		*	self:oHM:ResetNotification()
+		oParent:FillBatch(OrigBst,CurDate,cGiverName,cDescription, cExId, nPostStatus)
+		oParent:AddCur()
+		self:oHM:ResetNotification()
+		self:oHM:GoTop()
+		self:oHM:Skip()
+	endif
+	RETURN true
 METHOD Import() CLASS ImportBatch
 	* Import of batches of  transaction data into ImportTrans.dbf
 	LOCAL oBF AS FileSpec
@@ -1741,7 +1743,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			next
 			oStmnt:=SQLStatement{"set autocommit=0",oConn}
 			oStmnt:Execute()
-			oStmnt:=SQLStatement{'lock tables `transaction` write,`importtrans` write,`mbalance` write'+iif(Len(aValuesPers)>0,',`person` write',''),oConn} 
+			oStmnt:=SQLStatement{'lock tables `importtrans` write,`mbalance` write,'+iif(Len(aValuesPers)>0,'`person` write,','')+'`transaction` write',oConn}     // alphabetic order 
 			oStmnt:Execute()
 			oStmnt:=SQLStatement{'insert into importtrans '+;
 				'(`transdate`,`docid`,`transactnr`,`accountnr`,`assmntcd`,`externid`,`origin`,`fromrpp`,`creditamnt`,`debitamnt`,`creforgn`,`debforgn`,`currency`,`descriptn`,`poststatus`,`reference`,`processed`)'+;
@@ -1945,7 +1947,7 @@ METHOD SaveImport(nCnt ref int,nProc ref int) as logic CLASS ImportBatch
 		
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`importtrans` write,`mbalance` write'+iif(Len(aValuesPers)>0,',`person` write',''),oConn} 
+		oStmnt:=SQLStatement{'lock tables `importtrans` write,`mbalance` write'+iif(Len(aValuesPers)>0,',`person` write','')+',`transaction` write',oConn}      // alphabetic order
 		oStmnt:Execute()
 
 		oStmnt:=SQLStatement{"insert into importtrans ("+;
