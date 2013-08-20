@@ -1636,7 +1636,8 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	LOCAL cFilter as STRING
 	LOCAL oAcc as SQLSelect, oBank as SQLSelect, oMBal as SQLSelect, oTrans as SQLSelect
 	LOCAL ptrHandle
-	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead, cErrMsg as STRING 
+	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead, cErrMsg as STRING
+	local cError,cErrorMessage as string 
 	local cAmnt as string
 	LOCAL fSum:=0 as FLOAT, fAmnt as float
 	LOCAL lError,lSetAMPM as LOGIC
@@ -1689,7 +1690,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	ENDIF
 	// Check validity of recipient bankaccounts from standing orders:
 	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.stordrid,s.bankacct, group_concat(p.banknumber separator '#%#') as banknumbers from bankorder o "+;
-	"right join standingorderline s on(s.stordrid=o.stordrid and creditor>0) left join personbank p on (p.persid=s.creditor ) "+; 
+		"right join standingorderline s on(s.stordrid=o.stordrid and creditor>0) left join personbank p on (p.persid=s.creditor ) "+; 
 	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) group by s.creditor",oConn}
 	if oBord:Reccount>0
 		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
@@ -1706,11 +1707,11 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 				endif
 				if	oStmnt:NumSuccessfulRows<1	
 					cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-					self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+						self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
 				endif
 			else
 				cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-				self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
+					self:oLan:WGet("standing order")+Space(1)+Str(oBord:stordrid,-1)
 			endif
 			oBord:skip()
 		enddo
@@ -1722,16 +1723,16 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
 			cErrMsg+=CRLF+PadR(oBord:BANKNBRCRE,20)+Space(1)+self:oLan:WGet("from")+Space(1)+;
-			self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"
+				self:oLan:WGet("account")+" "+oBord:ACCNUMBER+"("+oBord:Description+")"
 			oBord:skip()
 		enddo
 	endif	
-   if !Empty(cErrMsg)
-   	cErrMsg:= self:oLan:WGet("The following bank accounts are not found in person data")+":"+cErrMsg
+	if !Empty(cErrMsg)
+		cErrMsg:= self:oLan:WGet("The following bank accounts are not found in person data")+":"+cErrMsg
 		ErrorBox{self,cErrMsg}:Show()
 		return false
-   endif	
-   
+	endif	
+	
 	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.accntfrom,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
 		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
@@ -1818,7 +1819,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
 		'<PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf>'+CRLF+ ;
 		'<ReqdExctnDt>'+SQLdate(process_date)+'</ReqdExctnDt>'+CRLF+; 
-		'<Dbtr>'+CRLF+;
+	'<Dbtr>'+CRLF+;
 		'<Nm>'+cOrgName+'</Nm>'+CRLF+;
 		'</Dbtr>'+CRLF+;
 		'<DbtrAcct>'+CRLF+;
@@ -1826,7 +1827,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		'<IBAN>'+BANKNBRCRE+'</IBAN>'+CRLF+;
 		'</Id>'+CRLF+;
 		'</DbtrAcct>'+CRLF+; 
-		'<DbtrAgt><FinInstnId><BIC>'+BICnbrCre+'</BIC></FinInstnId></DbtrAgt>'+CRLF+;
+	'<DbtrAgt><FinInstnId><BIC>'+BICnbrCre+'</BIC></FinInstnId></DbtrAgt>'+CRLF+;
 		'<ChrgBr>SLEV</ChrgBr>')
 	do while !oBord:EoF
 		FWriteLineUni(ptrHandle,'<CdtTrfTxInf>'+CRLF+;
@@ -1870,16 +1871,20 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	// add accounts for add to income
 	
-	SQLStatement{"start transaction",oConn}:execute()
+	// 	SQLStatement{"start transaction",oConn}:execute()
+	oStmnt:=SQLStatement{"set autocommit=0",oConn}
+	oStmnt:execute()
+	oStmnt:=SQLStatement{'lock tables `bankorder` write,`mbalance` write,`transaction` write',oConn}      // alphabetic order
+	oStmnt:execute()
 	// lock mbalance record for update:
-	oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+m56_Payahead+','+cAccFrom+")"+;
-		" and	year="+Str(Year(process_date),-1)+;
-		" and	month="+Str(Month(process_date),-1)+" order by mbalid for update",oConn}
-	if	!Empty(oMBal:Status)
-		ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:Show()
-		SQLStatement{"rollback",oConn}:execute()
-		return true
-	endif	  
+	// 	oMBal:=SqlSelect{"select mbalid from mbalance where accid in ("+m56_Payahead+','+cAccFrom+")"+;
+	// 		" and	year="+Str(Year(process_date),-1)+;
+	// 		" and	month="+Str(Month(process_date),-1)+" order by mbalid for update",oConn}
+	// 	if	!Empty(oMBal:Status)
+	// 		ErrorBox{self,self:oLan:WGet("balance records locked by someone else, thus	skipped")}:Show()
+	// 		SQLStatement{"rollback",oConn}:execute()
+	// 		return true
+	// 	endif	  
 	// Reconcile Bank Order:
 	oStmnt:=SQLStatement{"update bankorder set datepayed='"+SQLdate(process_date)+"' "+;
 		"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'",oConn}
@@ -1887,9 +1892,10 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	oPro:AdvancePro()
 	if !Empty(oStmnt:Status)
 		lError:=true
-		LogEvent(self,"error "+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
-	else
-
+		cError:="Error updating bankorder:"+oStmnt:ErrInfo:errormessage
+		cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+	endif
+	if !lError
 		// make transactions: 
 		for i:=1 to Len(aTrans) 
 			oPro:AdvancePro()
@@ -1901,7 +1907,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			
 			oStmnt:=SQLStatement{"insert into transaction set "+;
 				"dat='"+SQLdate(process_date)+"'"+;
-				",docid='BETOPD'"+;
+				",docid='SEPACT'"+;
 				",description ='"+cDescr +"'"+;
 				",accid ='"+m56_Payahead+"'"+;
 				",cre ='"+cAmnt+"'"+;
@@ -1910,7 +1916,8 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 			oStmnt:execute()
 			if oStmnt:NumSuccessfulRows<1
-				LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				cError:="Error inserting transaction:"+oStmnt:ErrInfo:errormessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
 				lError:=true
 				exit
 			endif
@@ -1919,7 +1926,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			oStmnt:=SQLStatement{"insert into transaction set "+;
 				"transid='"+cTransnr+"'"+;
 				",dat='"+SQLdate(process_date)+"'"+;
-				",docid='BETOPD'"+;
+				",docid='SEPACT'"+;
 				",description ='"+cDescr +"'"+;
 				",accid ='"+aTrans[i,3]+"'"+;
 				",deb ='"+cAmnt+"'"+;
@@ -1928,11 +1935,13 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 				",userid ='"+LOGON_EMP_ID+"',currency='"+sCurr+"'",oConn}
 			oStmnt:execute()
 			if oStmnt:NumSuccessfulRows<1
-				LogEvent(self,"error:"+oStmnt:Status:Description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				cError:="Error inserting transaction:"+oStmnt:ErrInfo:errormessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
 				lError:=true
 				exit
 			endif
 			if !ChgBalance(aTrans[i,3],process_date,fAmnt,0,fAmnt,0,sCURR)  //account payable deb
+				cError:="Error updating month balance"
 				lError:=true
 				exit
 			ENDIF
@@ -1941,7 +1950,8 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		if !lError
 			if !ChgBalance(m56_Payahead,process_date,0,fSum,0,fSum,sCURR) // payahead cre
 				lError:=true
-				exit
+				cError:="Error updating month balance"
+				lError:=true
 			endif
 			oPro:AdvancePro()				
 			oPro:AdvancePro()
@@ -1950,13 +1960,19 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	oPro:EndDialog()
 	oPro:Close()
 	self:Pointer := Pointer{POINTERARROW}
-	if lError
-		SQLStatement{"rollback",oConn}:execute()
-		LogEvent(self,self:oLan:WGet("could not record bank order transaction"),"LogErrors")
-		ErrorBox{self,self:oLan:WGet("could not record bank ordert transaction")}:Show()
-		RETURN false
-	else
+	if !lError
 		SQLStatement{"commit",oConn}:execute()
+		SQLStatement{"unlock tables",oConn}:execute() 
+		SQLStatement{"set autocommit=1",oConn}:execute()
+	else
+		SQLStatement{"rollback",oConn}:execute()
+		SQLStatement{"unlock tables",oConn}:execute() 
+		SQLStatement{"set autocommit=1",oConn}:execute()
+		if !Empty(cErrorMessage) 
+			LogEvent(self,cErrorMessage,"LogErrors")
+		endif
+		ErrorBox{self,self:oLan:WGet("could not record bank ordert transaction")+':'+cError}:Show()
+		return false		
 	endif
 	self:oCCCancelButton:Enable()
 	self:oCCOKButton:Enable()
