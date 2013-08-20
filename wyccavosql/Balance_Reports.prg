@@ -4274,7 +4274,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 				oRecip1:=null_object
 				oRecip2:=null_object 
 				cPers:=Str(oSelpers:oDB:persid,-1)
-				if (m:=AScan(self:aMailMember,{|x|x[4,1,1]==cPers}))>0
+				if (m:=AScan(self:aMailMember,{|x|!Empty(x[4]) .and.x[4,1,1]==cPers}))>0
 					oFileSpec:=FileSpec{self:aMailMember[m,3]} 
 					if oFileSpec:Find()   // don't mail when skipped
 						memberName:=self:aMailMember[m,2]
