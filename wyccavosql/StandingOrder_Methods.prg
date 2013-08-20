@@ -749,7 +749,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 // 		SQLStatement{"start transaction",oConn}:execute()  
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
-		oStmnt:=SQLStatement{'lock tables `transaction` write,`mbalance` write,`bankorder` write,`standingorder` write',oConn} 
+		oStmnt:=SQLStatement{'lock tables `bankorder` write,`mbalance` write,`standingorder` write,`transaction` write',oConn}       // alphabatic order
 		oStmnt:execute()
 		
 		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+;
