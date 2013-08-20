@@ -934,7 +934,7 @@ CLASS GeneralJournal1 INHERIT DataWindowExtra
 	PROTECT oDCAccDesc AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-	protect oCurr as Currency 
+	export oCurr as Currency 
 	export mXRate as float 
 	export oOwner as General_Journal
 	
