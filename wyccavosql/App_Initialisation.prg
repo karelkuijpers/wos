@@ -2578,7 +2578,7 @@ function unpersonalize()
 	oMainWindow:Pointer :=Pointer{POINTERHOURGLASS}
 	// find all addresses of non-member persons in some strange order: 
 	SQLStatement{"set autocommit=0",oConn}:Execute()
-	SQLStatement{'lock tables `person` write,`member` read,`account` write',oConn}:Execute()
+	SQLStatement{'lock tables `account` write,`member` read,`person` write',oConn}:Execute()     // alphabetic order
 	
 	oSel:=SqlSelect{"select persid,address from person where not exists (select persid from member where member.persid=person.persid) order by attention,lastname desc,title",oConn}
 	oSel:Execute()
