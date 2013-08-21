@@ -4560,7 +4560,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
 		// add to aDD for mailing DD file:
 		// aDD: {{AmountInvoice,mandateid,begindate,PersonName,BANKNBRCRE,description,invoiceid,SeqTp(FRST/RCUR,FNAL,OOFF)},...
-		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
+// 		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,Mod11(PadL(cPersId,5,'0')+DToS(invoicedate)+aDue[i,9]),SeqTp,cBic})
+		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,cPersId+'_'+DToS(invoicedate)+'_'+aDue[i,1],SeqTp,cBic})
 	next
 
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
