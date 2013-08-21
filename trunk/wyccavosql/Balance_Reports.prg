@@ -7236,12 +7236,12 @@ METHOD OKButton( ) CLASS YearClosing
 		(ErrorBox{self:OWNER,self:cError}):Show()
 		return
 	endif
-	oStmnt:=SQLStatement{"update sysparms set yearclosed="+Str(self:YearClose,-1)+",mindate=max(mindate,'"+SQLdate(self:BalanceEndDate+1)+"')",oConn}
+	oStmnt:=SQLStatement{"update sysparms set yearclosed="+Str(self:YearClose,-1)+',mindate=greatest(mindate,"'+SQLdate(self:BalanceEndDate+1)+'")',oConn}
 	oStmnt:Execute()	
 	if !Empty(oStmnt:Status)
 		self:cError:=self:oLan:WGet("could not change sysparms")+";Error:"+oStmnt:ErrInfo:ErrorMessage
-		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
 		SQLStatement{"rollback",oConn}:Execute()
+		LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
 		self:Pointer := Pointer{POINTERARROW}
 		(ErrorBox{self:OWNER,self:cError}):Show()
 		return
