@@ -1156,7 +1156,7 @@ METHOD OkButton CLASS NewPersonWindow
 		ENDIF
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `account` write,`person` write,`personbank` write',oConn}         // alphabetic order
+		oStmnt:=SQLStatement{'lock tables `account` write,`member` read,`person` write,`personbank` write',oConn}         // alphabetic order
 		oStmnt:Execute()
 
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
@@ -1199,7 +1199,7 @@ METHOD OkButton CLASS NewPersonWindow
 				self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
 				// in case of member update name of corresponding account:
-				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select m.accid from member as m where m.persid="+self:mPersId+")",oConn}
+				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select member.accid from member where member.persid="+self:mPersId+")",oConn}
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
