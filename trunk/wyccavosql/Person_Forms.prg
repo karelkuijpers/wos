@@ -1156,7 +1156,7 @@ METHOD OkButton CLASS NewPersonWindow
 		ENDIF
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `account` write,`member` read,`person` write,`personbank` write',oConn}         // alphabetic order
+		oStmnt:=SQLStatement{'lock tables `account` write,`bic` read,`member` read,`person` write,`personbank` write',oConn}         // alphabetic order
 		oStmnt:Execute()
 
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
