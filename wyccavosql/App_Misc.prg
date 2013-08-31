@@ -2707,7 +2707,9 @@ function PersonUnion(id1 as string, id2 as string)
 	local cError as string 
 	local aTrTable:={} as array
 	local i,nTrans as int
-
+   if !Val(id1)>0 .or. !Val(id2)>0
+   	return false
+   endif
 
 	// transactions:
 	// 	cStatement:=UnionTrans("select persid,transid,seqnr from transaction t where t.dat>='"+SQLdate(Today()+80)+"' and persid="+id2)
