@@ -11,7 +11,7 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 	IF !AutoGiro
 		IF self:mtype == "D" .or.self:mtype=="A"
 			if self:mPayMethod='C' .and. sepaenabled // direct debit
-				cInvoice:='WDD_A_'+self:mAccNumber+'_P_'+self:mcln
+				cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
 				self:mInvoiceID:=cInvoice
 				self:oDCmInvoiceID:Show() 
 				self:oDCInvoiceText:Show()	
