@@ -33,15 +33,6 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	PROTECT oDCFixedText11 AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-// 	instance mPerson 
-// 	instance mAccount 
-// 	instance mterm 
-// 	instance mamount 
-// 	instance mlstchange 
-// 	instance mtype 
-// 	instance mPayMethod 
-// 	instance mInvoiceID 
-// 	instance mBankAccnt 
 
     PROTECT cPersonName,cAccountName as STRING
 	PROTECT mCLN,msubid as STRING
@@ -52,6 +43,9 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	PROTECT mCod AS STRING
 	PROTECT nCurRec AS INT
 	PROTECT cType, cHeading as STRING
+	protect oSub as Sqlselect 
+	// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs
+
 RESOURCE EditSubscription DIALOGEX  37, 30, 323, 170
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -358,16 +352,11 @@ METHOD OKButton( ) CLASS EditSubscription
 	LOCAL i, nPrevRec,m,d,y,me as int 
 	local fLimit as float
 	local mCurRek, mCurCLN as string 
+	local cStatement as string 
+	local cLog as string
 	local oDue as SQLSelect
-	local cStatement as string
-	local oStmnt as SQLStatement 
-	// 	IF !lNew
-	// 		oSub:GoTo(nCurRec)
-	// 		oSub:Skip(-1)
-	// 		nPrevRec:=oSub:RecNo
-	// 		oSub:GoTo(nCurRec)
-	// 	ENDIF
-	// 	IF ValidateControls( self, self:AControls )
+	local oStmnt as SQLStatement
+
 	*Check obliged fields:
 	IF Empty(self:mRek)
 		(ErrorBox{,self:oLan:WGet("You have to enter an Account") }):Show()
@@ -489,10 +478,39 @@ METHOD OKButton( ) CLASS EditSubscription
 			RETURN nil
 		ENDIF
 	ENDIF
-	// 		mCurRek:=oSub:accid 
-	// 		mCurCLN:=oSub:personid 
+	if self:mtype=="D" .and. self:mPayMethod=="C"
+		if self:lNew
+			cLog:=self:oLan:RGet("Inserted donation")+':'+;
+				"personid="+ self:mCLN +;
+				", personname="+self:cPersonName+;
+				", account="+ self:mAccNumber+' '+self:cAccountName+;
+				", begindate="+ DToC(self:oDCmbegindate:SelectedDate)+;
+				", enddate="+ DToC(self:oDCmEndDate:SelectedDate)+;
+				", duedate="+ DToC(self:oDCmDueDate:SelectedDate)+;
+				", term="+ Str(self:mterm,-1)+;
+				", amount="+ Str(self:mamount,-1) +;
+				", "+iif(SepaEnabled,"mandateid","invoiceid")+"="+self:mInvoiceID+;
+				", bankaccount="+self:oDCmBankAccnt:CurrentItem
+		else
+			// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs 
+			cLog:=self:oLan:RGet("Updated donation")+':'+; 
+			"personid="+ self:mCLN+;
+				", personname="+self:cPersonName+;
+				", account="+ self:mAccNumber+' '+self:cAccountName+;
+				CRLF+"CHANGES:"+CRLF+;
+				iif(self:mCLN==self:mCurCLN,'','personid:'+self:mCurCLN+' '+self:oSub:personname +'-> '+self:mCLN+' '+self:cPersonName+CRLF)+;
+				iif(self:mAccNumber==self:oSub:ACCNUMBER,'','account:'+self:oSub:ACCNUMBER+' '+self:oSub:accountname+'-> '+self:mAccNumber+CRLF)+;
+				iif(self:oDCmbegindate:SelectedDate==self:oSub:begindate,'','begindate:'+dtoc(self:oSub:begindate)+'-> '+dtoc(self:oDCmbegindate:SelectedDate)+CRLF)+;
+				iif(self:oDCmenddate:SelectedDate==self:oSub:enddate,'','enddate:'+dtoc(self:oSub:enddate)+'-> '+dtoc(self:oDCmenddate:SelectedDate)+CRLF)+;
+				iif(self:oDCmduedate:SelectedDate==self:oSub:duedate,'','duedate:'+dtoc(self:oSub:duedate)+'-> '+dtoc(self:oDCmduedate:SelectedDate)+CRLF)+;
+				iif(self:mterm==self:oSub:term,'','term:'+ConS(self:oSub:term)+'-> '+Str(self:mterm,-1)+CRLF)+;
+				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
+				iif(self:mInvoiceID==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+self:mInvoiceID+CRLF)+;
+				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF)
+		endif
+	endif
 	SetDecimalSep(Asc('.'))  // to be sure
-	// 	SQLStatement{"start transaction",oConn}:execute()
+
 	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
@@ -510,7 +528,7 @@ METHOD OKButton( ) CLASS EditSubscription
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `subscription` write',oConn} 
+	oStmnt:=SQLStatement{'lock tables `log` write,`subscription` write',oConn} 
 	oStmnt:Execute()
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
@@ -521,6 +539,9 @@ METHOD OKButton( ) CLASS EditSubscription
 		ErrorBox{self,self:oLan:WGet("Could not update subscription")}:show()
 		LogEvent(self,"Could not update subscription"+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+cStatement,"logerrors")
 		return
+	endif
+	if !Empty(cLog)
+		LogEvent(self,cLog)
 	endif
 	SQLStatement{"commit",oConn}:Execute()
 	SQLStatement{"unlock tables",oConn}:Execute() 
@@ -554,14 +575,14 @@ PersonSelect(self,cValue,lUnique,,"Person for "+cType,oPers)
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	//Put your PostInit additions here
-	LOCAL oSub,oSel as SQLSelect
+	LOCAL oSel as Sqlselect
 	self:SetTexts()
 	self:lNew :=uExtra[1]
 	self:oCaller:=uExtra[2]
 	IF !self:lNew
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
-		oSub:=SQLSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,"+;
+		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,"+;
 			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
 			SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
 			"from subscription s, account a,person p "+; 
@@ -625,39 +646,39 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 			ENDIF			
 		ENDIF
 	ELSE
-		self:mRek := Str(oSub:accid,-1)                  
-		self:cAccountName := oSub:AccountName
+		self:mRek := Str(self:oSub:accid,-1)                  
+		self:cAccountName := self:oSub:AccountName
 		self:mAccount:= cAccountName
-		self:mAccNumber:=oSub:ACCNUMBER
-		self:mCLN:=Str(oSub:personid,-1) 
+		self:mAccNumber:=self:oSub:ACCNUMBER
+		self:mCLN:=Str(self:oSub:personid,-1) 
 		self:mCurRek:=self:mRek 
 		self:mCurCLN:=self:mCLN
-		self:cPersonName := oSub:PersonName
+		self:cPersonName := self:oSub:PersonName
 		self:mPerson:= cPersonName
 
-		self:oDCmbegindate:SelectedDate := oSub:begindate
-		IF Empty(oSub:DueDate)
+		self:oDCmbegindate:SelectedDate := self:oSub:begindate
+		IF Empty(self:oSub:DueDate)
 			self:oDCmDueDate:SelectedDate := Today()+40000
 		ELSE
-			self:oDCmduedate:SelectedDate := oSub:duedate
+			self:oDCmduedate:SelectedDate := self:oSub:duedate
 		ENDIF
-		self:oDCmEndDate:SelectedDate := iif(Empty(oSub:ENDDATE),Today()+365*100,oSub:ENDDATE)
+		self:oDCmEndDate:SelectedDate := iif(Empty(self:oSub:ENDDATE),Today()+365*100,self:oSub:ENDDATE)
 
-		self:mterm := ConI(oSub:term)
-		self:mamount := oSub:amount
-		self:mlstchange := oSub:lstchange                 
-		self:mtype := oSub:category
-		IF Empty(oSub:PAYMETHOD)
+		self:mterm := ConI(self:oSub:term)
+		self:mamount := self:oSub:amount
+		self:mlstchange := self:oSub:lstchange                 
+		self:mtype := self:oSub:category
+		IF Empty(self:oSub:PAYMETHOD)
 			self:oDCmPayMethod:Value:="G"
 		ELSE
-			self:oDCmPayMethod:Value:=oSub:PAYMETHOD
+			self:oDCmPayMethod:Value:=self:oSub:PAYMETHOD
 		ENDIF
-		self:mInvoiceID:=oSub:INVOICEID
-		self:mReference:=oSub:REFERENCE     
-		IF !Empty(oSub:BankAccs)
-			self:oDCmBankAccnt:FillUsing(Split(oSub:BankAccs,','))
-			if !Empty(oSub:BANKACCNT)
-				self:oDCmBankAccnt:CurrentItem:=oSub:BANKACCNT
+		self:mInvoiceID:=self:oSub:INVOICEID
+		self:mReference:=self:oSub:REFERENCE     
+		IF !Empty(self:oSub:BankAccs)
+			self:oDCmBankAccnt:FillUsing(Split(self:oSub:BankAccs,','))
+			if !Empty(self:oSub:BANKACCNT)
+				self:oDCmBankAccnt:CurrentItem:=self:oSub:BANKACCNT
 			endif
 		else
 			self:oDCmBankAccnt:CurrentItemNo:=1
@@ -924,7 +945,9 @@ RETURN NIL
 METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	LOCAL oTextBox AS TextBox
 	LOCAL mSubid, mtype as STRING
-	LOCAL posit AS INT
+	local cLog as string
+	LOCAL posit as int
+	local lError as logic
 	local oStmnt as SQLStatement
 	
 	IF self:oSub:EOF.or.self:oSub:BOF
@@ -933,30 +956,58 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	ENDIF
 	oTextBox := TextBox{ self, self:oLan:WGet("Delete")+Space(1)+self:cType,;
 		self:oLan:WGet("Delete")+Space(1)+self:cType+Space(1)+self:oLan:WGet("for account")+Space(1)+self:oSub:AccountName+;
-		+Space(1)+self:oLan:WGet("of person")+self:oSub:personname+"?"}	
+		+Space(1)+self:oLan:WGet("of person")+' '+self:oSub:personname+"?"}	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
 	IF ( oTextBox:Show() == BOXREPLYYES )
 
 		mSubid:=Str(self:oSub:subscribid,-1)
-		posit:=oSub:Recno 
-		mtype:=oSub:category
+		posit:=self:oSub:Recno 
+		mtype:=self:oSub:category
+		if mtype=="D" 
+			cLog:=self:oLan:RGet("Deleted donation")+':'+; 
+			"personid="+ ConS(self:oSub:personid)+;
+				", personname="+self:oSub:personname+;
+				", account="+ self:oSub:accountname
+		endif
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `dueamount` write,`subscription` write',oConn} 
+		oStmnt:Execute()
+
 		oStmnt:=SQLStatement{"delete from subscription where subscribid="+mSubid,oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0
-			self:oSub:Execute() 
-			if posit>1
-				self:GoTo(posit-1)
-			else
-				self:GoTop()
-			endif
-			oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
-
 			IF mtype = "D" .or. mtype = "A"
 				oStmnt:=SQLStatement{"delete from dueamount where subscribid="+mSubid,oConn}
 				oStmnt:Execute()
+				if !Empty(oStmnt:status) 
+					lError:=true
+				endif
 			ENDIF
+		else
+			lError:=true
 		endif
+
+		if lError
+			SQLStatement{"rollback",oConn}:Execute()
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			LogEvent(self,"Could not delete subscription"+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"logerrors")
+			ErrorBox{self,self:oLan:WGet("Could not delete")+' '+self:cType}:Show()
+			return nil
+		endif
+		SQLStatement{"commit",oConn}:Execute()
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute() 
+		LogEvent(self,cLog)
+		self:oSub:Execute()
+		if posit>1
+			self:GoTo(posit-1)
+		else
+			self:GoTop()
+		ENDIF
+		oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
 	ENDIF
 
 	RETURN NIL
