@@ -50,9 +50,9 @@ METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 			self:oDCmamount:Disable()
 			self:mterm   := 12
 		ELSE
-			//mtype := "G"
-			//oDCTypeText:Value:="Periodic Gift"
-			self:mterm   := 1
+			IF Empty(self:mterm)
+				self:mterm   := 1
+			ENDIF
 		ENDIF
 		IF self:mtype=="A"
 			self:oDCmamount:Disable()
