@@ -827,6 +827,15 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	// turn off strict mode:
 	//	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
+	if !self:lNewDb
+		if self:FirstOfDay .and.SqlSelect{"show tables like 'employee'",oConn}:RecCount>0 
+			// check if not some else has logged in parallel
+			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
+			if Empty(oSel:status).and. oSel:RecCount>0
+				self:FirstOfDay:=FALSE
+			endif
+		endif
+	endif
 	/*	if !self:lNewDb
 	if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
 	oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
@@ -858,7 +867,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			"Make sure you have the correct version of WycOffSy.exe"}):Show()
 		myApp:Quit()
 		break 
-	elseif !FirstOfDay .and.!lNewDb .and. PrgVers>DBVers
+	elseif !self:FirstOfDay .and.!self:lNewDb .and. PrgVers>DBVers
 		// check nobody online:
 		if SqlSelect{"select empid from employee where online=1 and lstlogin >=curdate()",oConn}:RecCount>0
 			(ErrorBox{,"Version of Wycliffe Office System is newer than version of the database."+CRLF+;
@@ -866,8 +875,14 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			myApp:Quit()
 			break 
 		endif	
-	endif 
-	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
+	endif
+	if self:FirstOfDay
+		// reset employee online:
+		oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
+		oStmnt:Execute()
+	endif  
+
+	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 		// check if new ppcodes, ipcaccounts or currencylist should be imported:
 		oDBFileSpec1:=FileSpec{cWorkdir+"\ppcodes.csv"}
 		lCopyPP:=false
@@ -954,35 +969,35 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			endif
 		endif
 	endif
-	if FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
+	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
 		if !self:lNewDb
-			LogEvent(self,"Initialize DB:"+iif(FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
+			LogEvent(self,"Initialize DB:"+iif(self:FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
 		endif
 		self:InitializeDB()
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
-// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
+			// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
 			ImportCSV(cWorkdir+"\ppcodes.csv","ppcodes",2) 
 		endif
 		if lCopyCur
 			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2) 
-// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
+			// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
 		endif 
 		if lCopyIPC
 			ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2) 
-// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
+			// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
 		endif
 		// load bic table
 		if lCopyBIC
-// 			FillBIC()
+			// 			FillBIC()
 			ImportCSV(cWorkdir+"\bic.csv","bic",1)
 		endif
 
-		if FirstOfDay
-			// reset employee online:
-			oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
-			oStmnt:Execute()
-		endif  
+		// 		if self:FirstOfDay
+		// 			// reset employee online:
+		// 			oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
+		// 			oStmnt:Execute()
+		// 		endif  
 	endif
 
 	// copy helpfile to c because it cannot read from a server: 
@@ -1203,7 +1218,13 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 	// Set default orientation to portrait:
 	WycIniFS:WriteInt( "Runtime", "PrintOrientation",DMORIENT_PORTRAIT)
 	oMainWindow:Pointer := Pointer{POINTERARROW}
-
+	if self:FirstOfDay 
+		// check again if not someone else has logged in in the mean time:
+		oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
+		if Empty(oSel:status).and. oSel:RecCount>0
+			self:FirstOfDay:=FALSE
+		endif
+	endif
 	return 
 
 method InitializeDB() as void Pascal  class Initialize
