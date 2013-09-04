@@ -126,6 +126,9 @@ else
 	AEval(fu_array,{|x|m_sum:=Round(m_sum+x[fu_col],DecAantal)},fu_start,m_count)
 endif
 RETURN(Round(m_sum,DecAantal))
+Function BeginOfMonth(DateInMonth as date) as date
+// get date at begin of month given by DateInMonth
+return Getvaliddate(1,Month(DateInMonth),Year(DateInMonth)) 
 DEFINE CHECKBX:=1
 function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=false as logic,cFatalError:='' ref string) as logic 
 	local nFromYear,i as dword
