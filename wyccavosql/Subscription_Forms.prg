@@ -42,7 +42,8 @@ CLASS EditSubscription INHERIT DataWindowExtra
 *  	PROTECT lNew AS LOGIC
 	PROTECT mCod AS STRING
 	PROTECT nCurRec AS INT
-	PROTECT cType, cHeading as STRING
+	PROTECT cType, cHeading as STRING 
+	protect dLastDDdate as date
 	protect oSub as Sqlselect 
 	// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs
 
@@ -61,8 +62,8 @@ BEGIN
 	CONTROL	"v", EDITSUBSCRIPTION_PERSONBUTTON, "Button", WS_CHILD, 96, 11, 13, 12
 	CONTROL	"", EDITSUBSCRIPTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 11, 92, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITSUBSCRIPTION_ACCBUTTON, "Button", WS_CHILD, 218, 11, 15, 13
-	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
-	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
+	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
+	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
 	CONTROL	"", EDITSUBSCRIPTION_MTERM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 73, 83, 11, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 88, 83, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 160, 103, 53, 12
@@ -79,7 +80,7 @@ BEGIN
 	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 147, 53, 13
 	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 147, 53, 13
 	CONTROL	"Reference:", EDITSUBSCRIPTION_SC_REF, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 119, 53, 12
-	CONTROL	"4-5-2013", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
+	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
 	CONTROL	"End:", EDITSUBSCRIPTION_FIXEDTEXT11, "Static", WS_CHILD, 156, 44, 20, 12
 END
 
@@ -352,10 +353,12 @@ METHOD OKButton( ) CLASS EditSubscription
 	LOCAL i, nPrevRec,m,d,y,me as int 
 	local fLimit as float
 	local mCurRek, mCurCLN as string 
-	local cStatement as string 
+	local cStatement,cDueDeleteWhere as string 
+	local cmessage,cError as string
+	local LastDDdate,dNewDuedate,dThisMonthBegin,dInvoiceBegin as date 
 	local cLog as string
 	local oDue as SQLSelect
-	local oStmnt as SQLStatement
+	local oStmnt,oStmntDue as SQLStatement
 
 	*Check obliged fields:
 	IF Empty(self:mRek)
@@ -382,8 +385,13 @@ METHOD OKButton( ) CLASS EditSubscription
 				self:oDCmDueDate:SetFocus()
 				RETURN nil
 			ENDIF
+			IF mindate>self:oDCmDueDate:SelectedDate
+				(ErrorBox{self:Owner,self:oLan:WGet("Enter a due date later than last closed month")}):Show()
+				self:oDCmDueDate:SetFocus()
+				RETURN nil
+			ENDIF
 			IF !Empty(self:oDCmbegindate:SelectedDate).and. self:oDCmbegindate:SelectedDate>self:oDCmEndDate:SelectedDate
-				(ErrorBox{self:Owner,"Enter a end date later than the startdate"}):Show()
+				(ErrorBox{self:Owner,"Enter an end date later than the startdate"}):Show()
 				self:oDCmEndDate:SetFocus()
 				RETURN nil
 			ENDIF
@@ -492,7 +500,59 @@ METHOD OKButton( ) CLASS EditSubscription
 				", "+iif(SepaEnabled,"mandateid","invoiceid")+"="+self:mInvoiceID+;
 				", bankaccount="+self:oDCmBankAccnt:CurrentItem
 		else
-			// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs 
+			// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs  
+
+			// check if dueamounts or next due date has to be updated: 
+			if !self:mterm==self:oSub:term .or. !self:oDCmDueDate:SelectedDate==self:oSub:duedate.or.!self:mamount==self:oSub:amount.or. !self:oSub:enddate==self:oDCmEndDate:SelectedDate
+				// term, nextduedate or amount changed:
+				// determine last collection date for this subscription:
+   			oDue:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d where subscribid='+self:msubid+' and amountrecvd>0.00 order by invoicedate desc limit 1',oConn}
+		   	oDue:Execute()
+   			if oDue:reccount=1
+	   			LastDDdate:=oDue:invoicedate
+   			endif
+   			if self:oDCmDueDate:SelectedDate<self:oSub:duedate
+   				if self:oDCmDueDate:SelectedDate <= EndOfMonth(LastDDdate)
+   					ErrorBox{self,self:oLan:WGet("Next due date should be after last direct debit date")+': '+maand[Month(LastDDdate)]+' '+Str(Year(LastDDdate),-1)}:Show()
+   					return
+   				endif
+   			endif
+				if !self:oSub:enddate==self:oDCmEndDate:SelectedDate
+   				if self:oDCmEndDate:SelectedDate <= EndOfMonth(LastDDdate)
+   					ErrorBox{self,self:oLan:WGet("End date should be after last direct debit date")+': '+maand[Month(LastDDdate)]+' '+Str(Year(LastDDdate),-1)}:Show()
+   					return
+   				endif
+					cDueDeleteWhere:='invoicedate >="'+SQLdate(BeginOfMonth(self:oDCmEndDate:SelectedDate))+'"'
+				endif
+   			if self:oDCmDueDate:SelectedDate==self:oSub:duedate 
+   				if !self:mterm==self:oSub:term
+   					// adapt next due date
+   					LastDDdate:= getvaliddate(day(LastDDdate),month(LastDDdate)+1,year(LastDDdate))
+   					self:oDCmDueDate:SelectedDate:=Max(stod(substr(dtos(Today()),1,6)+strzero(min(25,day(self:oDCmDueDate:SelectedDate)),2,0)),LastDDdate )
+   				elseif !self:mamount==self:oSub:amount // amount changed 
+   					dThisMonthBegin:=BeginOfMonth(Today())
+		   			oDue:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d where subscribid='+self:msubid+' and amountrecvd=0.00 '+;
+		   			'and invoicedate >= "'+SQLdate(dThisMonthBegin)+'" order by invoicedate asc limit 1',oConn}
+		   			if oDue:reccount>0 // open due amount in this month or later:
+   						// set next due date n term back:
+   						dInvoiceBegin:=BeginOfMonth(oDue:invoicedate)
+   						dNewDuedate:=self:oDCmDueDate:SelectedDate
+   						do while dNewDuedate>EndOfMonth(Today()) .and. dNewDuedate>EndOfMonth(dInvoiceBegin)
+   							dNewDuedate:=getvaliddate(day(dNewDuedate),month(dNewDuedate)- self:mterm,year(dNewDuedate))
+   							if dNewDuedate>=dThisMonthBegin .and. dNewDuedate>=dInvoiceBegin .and. (Empty(LastDDdate) .or. SubStr(DToS(dNewDuedate),1,6)>SubStr(DToS(LastDDdate),1,6) )
+   								self:oDCmDueDate:SelectedDate:=dNewDuedate
+   							endif
+   						enddo
+   					endif
+   				endif
+   				if !self:oDCmDueDate:SelectedDate==self:oSub:duedate
+   					cmessage:=self:oLan:WGet("Next due date adapted")
+   					cDueDeleteWhere+=iif(Empty(cDueDeleteWhere),'',' or ')+'invoicedate>="'+SQLdate(BeginOfMonth(self:oDCmDueDate:SelectedDate))+'"' 
+   				endif
+   			else
+  					cDueDeleteWhere+=iif(Empty(cDueDeleteWhere),'',' or ')+'invoicedate>="'+SQLdate(BeginOfMonth(self:oDCmDueDate:SelectedDate))+'"' 
+   			endif
+			endif
 			cLog:=self:oLan:RGet("Updated donation")+':'+; 
 			"personid="+ self:mCLN+;
 				", personname="+self:cPersonName+;
@@ -506,7 +566,8 @@ METHOD OKButton( ) CLASS EditSubscription
 				iif(self:mterm==self:oSub:term,'','term:'+ConS(self:oSub:term)+'-> '+Str(self:mterm,-1)+CRLF)+;
 				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
 				iif(self:mInvoiceID==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+self:mInvoiceID+CRLF)+;
-				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF)
+				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF) 
+				
 		endif
 	endif
 	SetDecimalSep(Asc('.'))  // to be sure
@@ -528,24 +589,42 @@ METHOD OKButton( ) CLASS EditSubscription
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `log` write,`subscription` write',oConn} 
+	oStmnt:=SQLStatement{'lock tables `dueamount` write,`subscription` write',oConn} 
 	oStmnt:Execute()
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
-	if !Empty(oStmnt:status)
+	if Empty(oStmnt:status) 
+		if !Empty(cDueDeleteWhere)
+			oStmntDue:=SQLStatement{"delete from dueamount where subscribid="+self:msubid+" and amountrecvd=0.00 and ("+cDueDeleteWhere+")",oConn}
+			oStmntDue:Execute()
+			if !Empty(oStmntDue:status)
+				cError:=oStmntDue:ErrInfo:errormessage+CRLF+"statement:"+oStmntDue:SQLString 
+			else
+				if oStmntDue:NumSuccessfulRows>0
+					cmessage+=iif(Empty(CMessage),'',' and ')+self:oLan:WGet("corresponding due amounts removed")
+				endif
+			endif	 
+		endif
+	else
+		cError:=oStmnt:ErrInfo:errormessage+CRLF+"statement:"+cStatement
+	endif
+	if !Empty(cError) 
 		SQLStatement{"rollback",oConn}:Execute()
 		SQLStatement{"unlock tables",oConn}:Execute() 
 		SQLStatement{"set autocommit=1",oConn}:Execute()
 		ErrorBox{self,self:oLan:WGet("Could not update subscription")}:show()
-		LogEvent(self,"Could not update subscription"+"; error:"+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+cStatement,"logerrors")
+		LogEvent(self,"Could not update subscription"+"; error:"+cError,"logerrors")
 		return
-	endif
-	if !Empty(cLog)
-		LogEvent(self,cLog)
 	endif
 	SQLStatement{"commit",oConn}:Execute()
 	SQLStatement{"unlock tables",oConn}:Execute() 
 	SQLStatement{"set autocommit=1",oConn}:Execute()
+	if !Empty(cLog)
+		LogEvent(self,cLog+iif(Empty(CMessage),'',CRLF+CMessage))
+	endif
+	if !Empty(CMessage)
+		 TextBox{self,self:oLan:WGet("Editing donation"),CMessage}:Show()
+	endif
 	if oStmnt:NumSuccessfulRows>0
 		self:oCaller:oSub:Execute()
 		if self:lNew
@@ -619,18 +698,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 			self:oDCInvoiceText:Show()
 			self:oDCmInvoiceID:Show()
 		endif
-	ELSE
+		self:dLastDDdate:=self:oCaller:dLastDDdate
 	ENDIF
 
 	IF self:lNew
 		self:cPersonName :=""
 		self:cAccountName :=""
-		self:oDCmbegindate:SelectedDate:=Today()
-		self:oDCmDueDate:SelectedDate:=Today()
-		if Day(Today())>28
-			self:oDCmDueDate:SelectedDate:=stod(substr(dtos(today()),1,6)+'28')
-		endif			
-		self:oDCmEndDate:SelectedDate:=Today()+365*100
+		self:oDCmbegindate:SelectedDate:=stod(substr(dtos(Today()),1,6)+'01')
+		IF self:mtype=="D" .and. (self:dLastDDdate-self:oDCmbegindate:SelectedDate)>=0  // allready collected?
+			self:oDCmbegindate:SelectedDate:=EndOfMonth(Today())+1  // next month
+		endif	
+		self:oDCmDueDate:SelectedDate:=stod(substr(dtos(self:oDCmbegindate:SelectedDate),1,6)+'25')
+		self:oDCmEndDate:SelectedDate:=self:oDCmDueDate:SelectedDate+365*100
 		self:mterm   := 1
 		self:mamount   := 0
 		IF !self:cType=="STANDARD GIFTS"
@@ -816,17 +895,24 @@ Function ProlongateAll(oCall as Window ) as logic
 	if !Empty(aValuesDue)
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `dueamounts` write,`subscription` write',oConn} 
+		oStmnt:=SQLStatement{'lock tables `dueamount` write,`subscription` write',oConn} 
 		oStmnt:Execute()
-		// 		SQLStatement{"start transaction",oConn}:Execute()
-		// 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn}
-		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice,seqtype) values "+Implode(aValuesDue,'","'),oConn}
-		oStmnt:Execute()
-		// 		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
 		if !Empty(oStmnt:Status)
 			lError:=true
 			cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
 			cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+		endif
+		// 		SQLStatement{"start transaction",oConn}:Execute()
+		// 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn} 
+		if !lError
+			oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice,seqtype) values "+Implode(aValuesDue,'","'),oConn}
+			oStmnt:Execute()
+			// 		if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
+			if !Empty(oStmnt:Status)
+				lError:=true
+				cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
+				cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
+			endif 
 		endif
 		if !lError
 			* update date due with term within subscription:
@@ -919,6 +1005,7 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	EXPORT mtype as STRING
 	export oSub as SQLSelect
 	export cFields,cFrom,cWhere,cOrder as string
+	export dLastDDdate as date 
 METHOD AccButton(lUnique ) CLASS SubscriptionBrowser
 	LOCAL cFilter AS STRING
 	Default(@lUnique,FALSE)
@@ -1200,19 +1287,26 @@ LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) AS STRING
 PersonSelect(SELF,cValue,FALSE)
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
-	//Put your PostInit additions here
+	//Put your PostInit additions here 
+	local oSel as SQLSelect
 self:SetTexts()
 	IF cType=="STANDARD GIFTS"
 		self:Caption:=self:oLan:WGet("Browse in Periodic Gifts") 
 	ELSEIF cType=="DONATIONS"
 		self:Caption:=self:oLan:WGet("Browse in Donations")
+   	// determine last incasso batch:
+   	oSel:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d, subscription s where s.subscribid=d.subscribid and s.category="D" and paymethod="C" and d.amountrecvd>0.00 order by d.invoicedate desc limit 1',oConn}
+   	oSel:Execute()
+   	if oSel:RecCount=1
+   		self:dLastDDdate:=oSel:invoicedate
+   	endif
 /*		SELF:oDCmAccount:Hide()
 		SELF:oDCSC_AR1:Hide()
 		SELF:oCCAccButton:Hide() */
 	ELSEIF cType=="SUBSCRIPTIONS"
 		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
 	ENDIF
-   self:oDCFound:TextValue:=Str(ConI(SQLSelect{"select count(*) as totcount from "+self:cFrom+" where "+self:cWhere,oConn}:totcount),-1)
+   self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from "+self:cFrom+" where "+self:cWhere,oConn}:totcount),-1)  
 
 //   	self:oDCFound:TextValue:=Str(self:oSub:RecCount,-1)
 
