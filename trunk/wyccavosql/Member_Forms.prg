@@ -1516,7 +1516,7 @@ CLASS EditMember INHERIT DataWindowExtra
 	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
 	export maxseq as int // next available sequence number within distribution instructions of this member
 	declare method FillDistribution, ValidateMember,AddButton,DeleteButton,MemberStates, OffRates 
-	declare method PersonButtonContact,PersonButtonContact2,PersonButtonContact3,ShowDistribution,ShowPensionHealth,ShowStmntDest
+	declare method ShowDistribution,ShowPensionHealth,ShowStmntDest
 RESOURCE EditMember DIALOGEX  34, 32, 433, 363
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -2684,43 +2684,49 @@ METHOD PersonButton(lUnique)   CLASS EditMember
 //  		PersonSelect(self,cValue,lUnique,'persid="'+Str(self:oMbr:persid,-1)+'" or p.persid not in (select m.persid from member m where m.persid=p.persid)',"Member",oPersCnt)
  		PersonSelect(self,cValue,lUnique,,"Member",oPersCnt)
 	endif
-METHOD PersonButtonContact(lUnique:=false as logic) as void pascal CLASS EditMember
+METHOD PersonButtonContact(lUnique)  CLASS EditMember
 	LOCAL cValue := AllTrim(self:oDCmPersonContact:TEXTValue ) as STRING
 	local fieldname:='Contact Person' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
 // 	Default(@lUnique,FALSE)
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+ConS(ConI(self:mCLNContact2))+','+ConS(ConI(self:mCLNContact3))+')'
+	Default(@lUnique,FALSE)
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
 	else
-		oPersCnt:current_PersonID:=self:oMbr:CONTACT
+// 		oPersCnt:current_PersonID:=self:oMbr:CONTACT
+		oPersCnt:persid:= ConS(self:oMbr:CONTACT)
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
 	return
-METHOD PersonButtonContact2(lUnique:=false ) as void pascal CLASS EditMember 
+METHOD PersonButtonContact2(lUnique )  CLASS EditMember 
 	LOCAL cValue := AllTrim(self:oDCmPersonContact2:TEXTValue ) as STRING 
 	local fieldname:='Contact Person2' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
+	Default(@lUnique,FALSE)
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+cons(coni(self:mCLNContact))+','+cons(coni(self:mCLNContact3))+')'
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
 	else
-		oPersCnt:current_PersonID:=self:oMbr:CONTACT2
+		oPersCnt:persid:= ConS(self:oMbr:CONTACT2)
+// 		oPersCnt:current_PersonID:=self:oMbr:CONTACT2
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
 RETURN 
-METHOD PersonButtonContact3( lUnique:=false) as void pascal CLASS EditMember 
+METHOD PersonButtonContact3( lUnique)  CLASS EditMember 
 	LOCAL cValue := AllTrim(self:oDCmPersonContact3:TEXTValue ) as STRING 
 	local fieldname:='Contact Person3' as string
 	local cFilter as string
 	local oPersCnt:=PersonContainer{} as PersonContainer
+	Default(@lUnique,FALSE)
 	cFilter:= 'p.persid not in ('+ConS(ConI(self:mCLN))+','+cons(coni(self:mCLNContact))+','+cons(coni(self:mCLNContact2))+')'
 	if self:lNewMember 
 		PersonSelect(self,cValue,lUnique,cFilter,FieldName)
 	else
-		oPersCnt:current_PersonID:=self:oMbr:CONTACT3
+		oPersCnt:persid:= ConS(self:oMbr:CONTACT3)
+// 		oPersCnt:current_PersonID:=self:oMbr:CONTACT3
  		PersonSelect(self,cValue,lUnique,cFilter,fieldname,oPersCnt)
 	endif
 RETURN 
