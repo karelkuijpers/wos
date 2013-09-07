@@ -1171,10 +1171,10 @@ METHOD OkButton CLASS NewPersonWindow
 			",postalcode='"+AddSlashes(AllTrim(self:mPostalcode))+"'"+;
 			",mailingcodes='"+AddSlashes(AllTrim(self:mCod))+"'"+;
 			",externid='"+ZeroTrim(self:mExternid)+"'"+;
-			",telbusiness='"+AllTrim(self:mtelbusiness)+"'"+;
-			",telhome='"+AllTrim(self:mTelhome)+"'"+;
-			",fax='"+AllTrim(self:mFAX)+"'"+;
-			",mobile='"+AllTrim(self:mMobile)+"'"+;
+			",telbusiness='"+AddSlashes(AllTrim(self:mtelbusiness))+"'"+;
+			",telhome='"+AddSlashes(AllTrim(self:mTelhome))+"'"+;
+			",fax='"+AddSlashes(AllTrim(self:mFAX))+"'"+;
+			",mobile='"+AddSlashes(AllTrim(self:mMobile))+"'"+;
 			",city='"+AddSlashes(iif(CITYUPC,Upper(AllTrim(self:mCity)),AllTrim(self:mCity)))+"'"+;
 			",email='"+AddSlashes(AllTrim(self:mEmail))+"'"+;
 			iif(!self:lNew.or.!Empty(self:mRemarks),",remarks='"+AddSlashes(self:mRemarks)+"'","")+;
