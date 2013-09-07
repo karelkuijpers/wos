@@ -225,7 +225,7 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 
 	NewIndex:=oNew:FileSpec:Drive+oNew:FileSpec:Path+oNew:FileSpec:FileName 
 	NewMut:=FileSpec{NewIndex}
-	NewMut:Extension:="CDX"
+// 	NewMut:Extension:="NTX"
 	lSucc:=oNew:CreateIndex(NewMut,"Strzero(RECNBR,8)+str(ACCOUNTID,-1)")
 	IF !lSucc
 		(ErrorBox{self:Owner,"Not able to make indexfile "+NewMut:FullPath+" for updates"}):show()
@@ -259,7 +259,7 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 		oStOrdL:Skip()
 	ENDDO
 	OrigSpec:=FileSpec{OrigMut}
-	OrigSpec:Extension:="CDX"
+// 	OrigSpec:Extension:="NTX"
 	lSucc:=oOrig:CreateIndex(OrigSpec,"Strzero(RECNBR,8)+str(ACCOUNTID,-1)")
 	oOrig:SetOrder(OrigSpec)
 	oOrig:GoTop()                 
