@@ -553,12 +553,7 @@ METHOD OKButton( ) CLASS EditSubscription
   					cDueDeleteWhere+=iif(Empty(cDueDeleteWhere),'',' or ')+'invoicedate>="'+SQLdate(BeginOfMonth(self:oDCmDueDate:SelectedDate))+'"' 
    			endif
 			endif
-			cLog:=self:oLan:RGet("Updated donation")+':'+; 
-			"personid="+ self:mCLN+;
-				", personname="+self:cPersonName+;
-				", account="+ self:mAccNumber+' '+self:cAccountName+;
-				CRLF+"CHANGES:"+CRLF+;
-				iif(self:mCLN==self:mCurCLN,'','personid:'+self:mCurCLN+' '+self:oSub:personname +'-> '+self:mCLN+' '+self:cPersonName+CRLF)+;
+			cLog:=iif(self:mCLN==self:mCurCLN,'','personid:'+self:mCurCLN+' '+self:oSub:personname +'-> '+self:mCLN+' '+self:cPersonName+CRLF)+;
 				iif(self:mAccNumber==self:oSub:ACCNUMBER,'','account:'+self:oSub:ACCNUMBER+' '+self:oSub:accountname+'-> '+self:mAccNumber+CRLF)+;
 				iif(self:oDCmbegindate:SelectedDate==self:oSub:begindate,'','begindate:'+dtoc(self:oSub:begindate)+'-> '+dtoc(self:oDCmbegindate:SelectedDate)+CRLF)+;
 				iif(self:oDCmenddate:SelectedDate==self:oSub:enddate,'','enddate:'+dtoc(self:oSub:enddate)+'-> '+dtoc(self:oDCmenddate:SelectedDate)+CRLF)+;
@@ -566,7 +561,17 @@ METHOD OKButton( ) CLASS EditSubscription
 				iif(self:mterm==self:oSub:term,'','term:'+ConS(self:oSub:term)+'-> '+Str(self:mterm,-1)+CRLF)+;
 				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
 				iif(self:mInvoiceID==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+self:mInvoiceID+CRLF)+;
-				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF) 
+				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF)
+			if Empty(cLog)
+				// nothing changed: 
+				self:EndWindow()
+				return
+			endif 
+			cLog:=self:oLan:RGet("Updated donation")+':'+; 
+			"personid="+ self:mCLN+;
+				", personname="+self:cPersonName+;
+				", account="+ self:mAccNumber+' '+self:cAccountName+;
+				CRLF+"CHANGES:"+CRLF+cLog;
 				
 		endif
 	endif
@@ -705,7 +710,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:cPersonName :=""
 		self:cAccountName :=""
 		self:oDCmbegindate:SelectedDate:=stod(substr(dtos(Today()),1,6)+'01')
-		IF self:mtype=="D" .and. (self:dLastDDdate-self:oDCmbegindate:SelectedDate)>=0  // allready collected?
+		IF self:mtype=="D" .and. self:dLastDDdate>=self:oDCmbegindate:SelectedDate  // allready collected?
 			self:oDCmbegindate:SelectedDate:=EndOfMonth(Today())+1  // next month
 		endif	
 		self:oDCmDueDate:SelectedDate:=stod(substr(dtos(self:oDCmbegindate:SelectedDate),1,6)+'25')
