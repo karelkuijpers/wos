@@ -694,6 +694,12 @@ Method ReEvaluate() Class Reevaluation
 		self:Close() 
 		return
 	endif
+	// check nobody has reevaluated in the mean time:  
+	if SqlSelect{"select cast(lstreeval as date) as lstreeval from sysparms",oConn}:lstreeval= UltimoMonth
+		WarningBox{self:oCall,self:olan:WGet("Reevaluation of foreign currency accounts"),self:olan:WGet("somebody else has reevaluated in the mean time")}:show()
+		self:Close()
+		return
+	endif
 
 	// Check first consistency data
 
@@ -766,7 +772,18 @@ Method ReEvaluate() Class Reevaluation
 		else
 			loop
 		endif
-	next 
+	next
+		// check nobody has reevaluated in the mean time: 
+	if SQLStatement{'lock tables `sysparms` write',oConn}:Execute() 
+		if SqlSelect{"select cast(lstreeval as date) as lstreeval from sysparms",oConn}:lstreeval== UltimoMonth 
+			SQLStatement{'unlock tables',oConn}:Execute()
+			WarningBox{self:oCall,self:oLan:WGet("Reevaluation of foreign currency accounts"),self:oLan:WGet("somebody else has reevaluated in the mean time")}:Show()
+			self:Close()
+			return
+		endif
+		SQLStatement{'unlock tables',oConn}:Execute()
+	endif
+
 	na:=0
 	lError:=false
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
