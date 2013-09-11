@@ -184,7 +184,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			aMenu:=InitMenu(oEmp:EmpId,UserType) 
 			// record login date and set user online: 
 			InitSystemMenu()
-			cDepmntIncl:=SetDepFilter(Val(oEmp:mDepId))
+			cDepmntIncl:=SetDepFilter(ConI(oEmp:mDepId))
 			oMainWindow:SetCaption()
 			cAccAlwd:=""
 			if !Empty(cDepmntIncl)
