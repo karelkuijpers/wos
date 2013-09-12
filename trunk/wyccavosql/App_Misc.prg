@@ -1357,31 +1357,34 @@ FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
 		ENDIF
 	NEXT
 	RETURN Tokens
-FUNCTION GetTokensEx(cText as string,aSep as array,MinLenSep:=1 as int) as array
+FUNCTION GetTokensEx(cText as string,aSep as array,MinLenSep:=1 as int,lCompress:=false as logic) as array
 	*	Extended Determination of Tokens in a string of text
 	*	aSep: array with strings of separators
-	*  minLenSep: minimum length of all separator strings within aSep (optional) to speed up processing
+	*  minLenSep: minimum length of all separator strings within aSep (optional) to speed up processing 
+	*  if lCompress=true then ctext is compressed before processing
 	*	Returns array with Tokens {{Token,Seperator},...}
 
-	LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING
+	LOCAL Tokens:={} as ARRAY, Token, cSep, cSepPrev:=null_string, cChar as STRING
 	local cSepPrv as string 
 	local nLength,i,j as int
 	local nTokenStart as int 
 	// Default(@aSep,{" ",",",".","&","/","-"})
 
-	chText:=Compress(cText)
-	nLength:=Len(chText)+1-MinLenSep
+	if lCompress
+		cText:=Compress(cText)
+	endif
+	nLength:=Len(cText)+1-MinLenSep
 	Token:=""
 	cSep:=""
 	nTokenStart:=0
 	FOR i:=1 to nLength
 		DO WHILE i<=nLength
-			cChar:=SubStr(chText,i,MinLenSep)
+			cChar:=SubStr(cText,i,MinLenSep)
 			j:=1
 			do while (j:=AScan(aSep,{|x|SubStr(x,1,MinLenSep)==cChar},j))>0
-				if SubStr(chText,i,Len(aSep[j]))==aSep[j] 
+				if SubStr(cText,i,Len(aSep[j]))==aSep[j] 
 					if nTokenStart>0 
-						Token:=SubStr(chText,nTokenStart,i-nTokenStart)
+						Token:=SubStr(cText,nTokenStart,i-nTokenStart)
 						AAdd(Tokens,{Token,cSep})
 					endif
 					cSep:=aSep[j]
@@ -1397,7 +1400,7 @@ FUNCTION GetTokensEx(cText as string,aSep as array,MinLenSep:=1 as int) as array
 			++i
 		ENDDO
 		IF !Empty(nTokenStart).and.!Empty(cSep)
-			Token:=SubStr(chText,nTokenStart)
+			Token:=SubStr(cText,nTokenStart)
 			AAdd(Tokens,{Token,cSep})
 		ENDIF
 	NEXT
