@@ -378,7 +378,7 @@ CLASS TeleMut
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
-		GetAddress,AllreadyImported,ImportSA2, ImportCAMT053,GetTeleSelect,ImportMT940Structured
+		GetAddress,AllreadyImported,ImportSA2, ImportCAMT053,GetTeleSelect,ImportMT940Structured,ImportMT940
 method AddTeleTrans(bankaccntnbr as string,;
 		bookingdate as date,; 
 	seqnr as string,;
@@ -899,7 +899,8 @@ METHOD Import() CLASS TeleMut
 		FOR nf:=1 to Len(aFileMT)
 			cFileName:=aFileMT[nf,F_NAME]
 			oBF := MyFileSpec{cFileName} 
-			if self:ImportMT940Structured(oBF)
+// 			if self:ImportMT940Structured(oBF)
+			if self:ImportMT940(oBF)
 				aadd(afiles,obf)
 			endif
 		NEXT
@@ -1535,7 +1536,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_Amount,lv_balance as FLOAT
 	LOCAL cBuffer as STRING
 	local lv_bankAcntOwn,lv_description,lv_kind,lv_kindORG, lv_addsub,  lv_BankAcntContra,lv_NameContra,lv_AdrLine,lv_Country, lv_reference,lv_BIC, cText as string 
-	local lv_budget , Cur_enRoute,lv_persid,lv_bankid,lv_Oms as string
+	local lv_budget , Cur_enRoute,lv_persid,lv_bankid,lv_Oms,lv_EndtoEnd as string
 	local cType86 as string  //type of tag 86: B=bank,
 	LOCAL BalFound,AmntFound,lDebit,lReversal,lResult,lDetails as LOGIC 
 	local aBudg:={} as array
@@ -1567,7 +1568,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	oXMLParser := XMLParser{}
 	oXMLParser:loadFile(oFm:Fullpath) 
 	time1:=time0
-	LogEvent(self,"load:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	LogEvent(self,"load:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	if !oXMLParser:RootElement:Name==#Document  .or. (oBkToCstmrStmt:=oXMLParser:RootElement:GetElementOnName(#BkToCstmrStmt))==null_object
 		(ErrorBox{,self:oLan:WGet('No correct CAMT053 file')+' '+AllTrim(oFm:FileName)}):show()
 		RETURN false
@@ -1667,8 +1668,8 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_budget:=''
 				lv_addsub:='B' 
 				lv_persid:=''
+				lv_EndtoEnd:=''
 				lDetails:=false 
-				nSeqnr++
 				For j:=1 to oNtry:NbrOfSubElements
 					if (oSub:=oNtry:GetElementOnPosition(j))==null_object
 						exit
@@ -1735,9 +1736,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							elseif lv_kind=='640' // doorlopende machtiging     (eigen)
 								lv_kind:='COL' 
 							elseif lv_kind=='104' .or.lv_kind=='106'.or.lv_kind=='107' .or.lv_kind=='108' .or.lv_kind=='110'.or.lv_kind=='111' ; // terugboeking euro-incasso
-								.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633' ;                     // terugboeking euro-incasso
+								.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633'.or.lv_kind=='166' ;                     // terugboeking euro-incasso
 								.or. lv_kind=='629';      // euro incasso core equens
-								.or. lv_kind=='064' .or. lv_kind=='065'  //  euro-inkasso
+								.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
 								lv_kind:='COL' 
 							endif 
 						endif
@@ -1754,6 +1755,16 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							if !Empty(oElm:=oTx:ScanElement(#Refs,@nEl1))
 								nEl2:=0 
 								if !Empty(oElm2:=oElm:ScanElement(#EndToEndId,@nEl2))
+									lv_reference:='EndtoEnd:'+oElm2:STRINGValue
+									lv_EndtoEnd:= oElm2:STRINGValue
+								endif
+								nEl2:=0 
+								if !Empty(oElm2:=oElm:ScanElement(#MndtId,@nEl2))
+									lv_reference+=' Mandateid:'+ oElm2:STRINGValue
+								endif
+								
+								nEl2:=0 
+								if !Empty(oElm2:=oElm:ScanElement(#PmtInfId,@nEl2))
 									lv_reference:=oElm2:STRINGValue
 								endif
 							endif 
@@ -1828,10 +1839,10 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 											cType86:='BGC'
 										endif
 										if isnum(lv_kind)
-											if Empty(Cur_enRoute)
-												(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):show()
-												return false 
-											endif
+// 											if Empty(Cur_enRoute)
+// 												(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted1"}):show()
+// 												return false 
+// 											endif
 											lv_budget:=Cur_enRoute
 											lv_kind:="BGC"
 										endif
@@ -1900,10 +1911,31 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								endif
 								
 							endif
+							nEl1:=0
+							nEl2:=0
+							if !Empty(oElm:=oTx:ScanElement(#RtrInf,@nEl1))
+								if	!Empty(oElm2:=oElm:ScanElement(#Rsn,@nEl2))
+									nEl3:=0 
+									if	!Empty(oElm3:=oElm2:ScanElement(#Cd,@nEl3))
+										lv_description+=' '+oElm3:STRINGValue
+									endif
+								endif
+								nEl2:=0
+								if	!Empty(oElm2:=oElm:ScanElement(#AddtlInf,@nEl2)) 
+									lv_description+=' '+oElm2:STRINGValue
+									if lv_kind=='COL'.and. Empty(lv_persid)
+										if Len(Split(lv_EndtoEnd,'-'))=3
+											lv_persid:=Split(lv_EndtoEnd,'-')[1]
+										endif
+									endif
+									
+								endif
+							endif 
+							
 							* save transaction: 
 							if lv_kind=='BGC' .or. lv_kind=='COL'
 								if Empty(Cur_enRoute)
-									(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):show()
+									(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted2"}):show()
 									return false 
 								endif
 								lv_budget:=Cur_enRoute
@@ -1945,8 +1977,10 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								lv_BIC:=GetBIC(lv_BankAcntContra)
 							endif
 
+							lv_NameContra:=AddSlashes(AllTrim(SubStr(HtmlDecode(lv_NameContra),1,32)))   //max length 32 in teletrans
+							nSeqnr++
 							self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
-								lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(lv_description),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC) 
+								lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(htmldecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC) 
 							lv_Amount:=0.00
 							lv_reference:=""
 							lv_NameContra:=""
@@ -1956,16 +1990,16 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							lv_description:=''
 							lv_BIC:='' 
 							lv_budget:=''
-							lv_addsub:='B' 
 							lv_persid:=''
-							nSeqnr++
+							lv_EndtoEnd:=''
 						enddo
 					endcase 
 				next
 				if !lDetails
-					lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
+					nSeqnr++
+					lv_NameContra:=AddSlashes(AllTrim(SubStr(HtmlDecode(lv_NameContra),1,32)))   //max length 32 in teletrans
 					self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
-						lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(lv_description),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC)
+						lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(HtmlDecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC)
 				endif
 			enddo
 			
@@ -1979,13 +2013,13 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	aBudg:=null_array // clear  
 	// 	CollectForced()  //garbagecollect()
 	time1:=time0
-	LogEvent(self,"interprete:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	LogEvent(self,"interprete:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//    LogEvent(self,"all transactions loaded","logsql")
 
 	// store read data into database:
 	lResult:= self:SaveTeleTrans(true,true,"CAMT.053 file "+oFm:FileName,nTrans)
 	time1:=time0
-	LogEvent(self,"save:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	LogEvent(self,"save:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	return lResult
 	
 METHOD ImportCliop(oFs as MyFileSpec) as logic CLASS TeleMut
@@ -2365,6 +2399,486 @@ METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 	AAdd(self:aMessages,"Imported KB file:"+oFb:FileName+" "+Str(nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions")
 
 	return true
+METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
+	*	Import of one MT940 telebnk transaction file
+	LOCAL i, nEndAmnt, nDC, nOffset, nTrans,nImp,nNumPos,nSepPos,nLenLine1,nProc,nBetKnm,nSeqnr as int
+	LOCAL lv_bankAcntOwn, lv_description, lv_Oms, lv_addsub, lv_AmountStr, lv_reference, lv_NameContra as STRING
+	local lv_BankAcntContra,lv_BIC, cText,lv_budget,lv_budgethlp,lv_kind,lv_persid,lv_bankid,lv_country as STRING 
+	local Cur_RekNrOwn, Cur_enRoute as string 
+	local lv_AdrLine,cSep as string
+	local cType86 as string  //type of tag 86: B=bank,
+	local cRefType as string // type of reference: EREF,MARF,PREF, NONREF 
+	local cBuffer as string
+	LOCAL lv_Amount,lv_balance as FLOAT
+	LOCAL lSuccess:=true as LOGIC 
+	LOCAL lv_loaded as LOGIC
+	local lMTExtended as logic
+	local lReverse as logic 
+	// 	local lMTStructured as logic
+	LOCAL ld_bookingdate as date
+	local oMyFile as MyFile 
+	local aBudg:={} as array
+	local aWord as array
+	local oBank as SQLSelect, oBord as SQLSelect 
+	LOCAL oHlp as Filespec
+	local oStmnt as SQLStatement
+
+	
+	// 	oHlM :=HLPMT940{HelpDir+"\HMT"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	// 	oHlM:Zap()
+	lMTExtended:=(AtC('ME940',oFm:FileName)>0) 
+
+	*Look for 25: record with accountname
+	*	Look for next line until line :25:
+	*		if 61: amount
+	*		if 86: corresponding description with counteraccount
+	*			add record to teletrans
+	*
+	oMyFile:=MyFile{oFm}
+	IF FError() >0
+		//	(ErrorBox{,"Could not open file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
+		RETURN FALSE
+	ENDIF
+	cBuffer:=oMyFile:FReadLine()
+	IF Empty(cBuffer)
+		oMyFile:Close()
+		oMyFile:=null_object 
+		(ErrorBox{,"Could not read file: "+oFm:Fullpath+"; Error:"+DosErrString(FError())}):show()
+		RETURN FALSE
+	ENDIF
+
+	if !SubStr(cBuffer,1,5)==':940:'
+		oMyFile:Close()
+		oMyFile:=null_object 
+		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a MT940 file"}:show()
+		Return false
+	endif
+	nTrans:=0
+	nImp:=0
+	self:aValuesTrans:={}
+	DO WHILE !oMyFile:FEof
+		* Search 20 or 25 record:
+		IF !SubStr(cBuffer,1,4)==":25:" .and. !SubStr(cBuffer,1,4)==":20:"
+			cBuffer:=oMyFile:FReadLine()
+			loop
+		ENDIF
+		if SubStr(cBuffer,1,4)==":20:"
+			ld_bookingdate:=SToD("20"+SubStr(cBuffer,9,6)) // booking date
+			cBuffer:=oMyFile:FReadLine()
+			nSeqnr:=0
+			loop
+		ENDIF
+		nSeqnr:=0
+		
+		lv_bankAcntOwn:=AllTrim(SubStr(cBuffer,5))
+		lv_bankAcntOwn:=StrTran(ZeroTrim(StrTran(lv_bankAcntOwn,".","")),"EUR","")
+		if	!lv_bankAcntOwn==	Cur_RekNrOwn
+			Cur_RekNrOwn:=lv_bankAcntOwn
+			Cur_enRoute:=""
+			oBank:=SqlSelect{"select b.payahead,a.accnumber from bankaccount b, account a where not b.payahead is null and a.accid=b.payahead and banknumber='"+lv_bankAcntOwn+"'",oConn}
+			if oBank:Reccount>0
+				Cur_enRoute:=oBank:ACCNUMBER
+			endif
+		endif
+		cBuffer:=oMyFile:FReadLine()
+		DO WHILE !oMyFile:FEof
+			* Search for :61: (amount,book date), :86: (account, name, description) combinations:
+			* Stop if new 25:
+			IF SubStr(cBuffer,1,4)==":25:"
+				exit
+			ENDIF
+			// 			IF SubStr(cBuffer,1,3)==":28"  // statement number + sequence number
+			// 				lv_reference:=AllTrim(SubStr(cBuffer,At3(':',cBuffer,3)+1))
+			// 			ENDIF 
+
+			IF !SubStr(cBuffer,1,4)==":61:"
+				cBuffer:=oMyFile:FReadLine()
+				loop
+			ENDIF
+			do while SubStr(cBuffer,1,4)==":61:" 
+				// go through lines with amount and description
+				lv_budget:=""
+				lv_kind:=""
+				lv_persid:=""
+				lv_bankid:=""
+				lv_reference:=""
+				//				ld_bookingdate:=SToD("20"+SubStr(cBuffer,5,6)) // valuta date   ????
+				lv_description:=""
+				
+				lv_addsub:= SubStr(cBuffer,11,2) 
+				lReverse:=false
+				IF lv_addsub='C' .or. lv_addsub=='RC'
+					lv_addsub:="B"
+				ELSE
+					lv_addsub:="A"
+				ENDIF
+				if lv_addsub='R'
+					lReverse:=true
+					nDC:=13
+				else
+					nDC:=12
+				endif 
+				lv_AmountStr:=StrTran(cBuffer,",",'.',,1)
+				nEndAmnt:= At3('.',lv_AmountStr,nDC)+3
+				lv_kind:=SubStr(cBuffer,nEndAmnt+1,3)  // transactioncode
+				// 				lv_AmountStr:=StrTran(SubStr(cBuffer,12,nEndAmnt-1),",",'.')
+				lv_AmountStr:=SubStr(lv_AmountStr,nDC,nEndAmnt-12)
+				if lv_kind=='123' ;     // bijschrijving acceptgiro equens
+					.or. lv_kind=='583' .or. lv_kind=='055' .or. lv_kind=='401'  // crediteuren betaling equens/rflp
+					lv_kind:='BGC'
+				elseif lv_kind=='134'   // bijschrijving acceptgiro
+					lv_kind:='AC' 
+				elseif lv_kind=='100' .or. lv_kind=='103' //ideal bijschrijving 
+					lv_kind:='IDEAL' 
+				elseif lv_kind=='640' // doorlopende machtiging     (eigen)
+					lv_kind:='COL' 
+				elseif lv_kind=='104' .or.lv_kind=='106'.or.lv_kind=='107' .or.lv_kind=='108' .or.lv_kind=='110'.or.lv_kind=='111' ; // terugboeking euro-incasso
+					.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633' ;                     // terugboeking euro-incasso
+					.or. lv_kind=='629';      // euro incasso core equens
+					.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
+					lv_kind:='COL' 
+				endif 
+				// 				lv_AmountStr:=StrTran(lv_AmountStr,".",DecSeparator)
+				lv_Amount:=Round(Val(lv_AmountStr),2)
+				lv_NameContra:=""
+				lv_BankAcntContra:=""
+				cText:=''
+				cRefType:=''
+				
+				* get reference type or contra bank account number:
+				IF Len(cBuffer)>nEndAmnt+3
+					cText:=AllTrim(SubStr(cBuffer,nEndAmnt+4,16))
+					if cText=="EREF" .or.cText=="MARF" .or. cText=="PREF" .or. cText=="NONREF"
+						cRefType:=cText
+					else 
+						cText:=StrTran(SubStr(cBuffer,nEndAmnt+4,16),"P","")
+						IF	isnum(cText)
+							lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))	
+							if sepaenabled .and. At('P',SubStr(cBuffer,nEndAmnt+4,16))>0
+								// Giro:
+								lv_BankAcntContra:=  "INGB"+PadL(lv_BankAcntContra,10,"0")
+								lv_BankAcntContra:= 'NL'+StrZero(IbanChecksum("NL00"+lv_BankAcntContra),2,0)+lv_BankAcntContra	   	
+							endif		
+						else
+							if	IsSEPA(cText)
+								lv_BankAcntContra:= cText
+							else
+								//	check	if	pseudo IBAN:
+								if	IsAlphabetic(SubStr(cText,3,4)) .and.isnum(SubStr(cText,1,2) )
+									if	isnum(SubStr(cText,7))
+										if sepaenabled
+											lv_BankAcntContra:= 'NL'+cText
+										else	   	
+											// 											lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+											lv_BankAcntContra:=SubStr(cText,7)
+										endif	
+									endif
+								endif
+							endif
+						ENDIF
+						* get	contra name:
+						IF	Len(cBuffer)>nEndAmnt+19
+							lv_NameContra:=ZeroTrim(SubStr(cBuffer,nEndAmnt+19))
+						ENDIF
+					endif
+				ENDIF
+				cBuffer:=oMyFile:FReadLine() 
+				if !SubStr(cBuffer,1,1)==":"
+					// apparently contra bank account:
+					cText:=AllTrim(cBuffer)
+					IF	isnum(SubStr(cText,2))
+						// 						lv_BankAcntContra:=ZeroTrim(StrTran(StrTran(cText,"."),'P',''))     
+						lv_BankAcntContra:=StrTran(StrTran(cText,"."),'P','')     
+						if sepaenabled .and. At('P',SubStr(cBuffer,1,16))>0
+							// Giro:
+							lv_BankAcntContra:=  "INGB"+PadL(lv_BankAcntContra,10,"0")
+							lv_BankAcntContra:= 'NL'+StrZero(IbanChecksum("NL00"+lv_BankAcntContra),2,0)+lv_BankAcntContra	   	
+						endif		
+					else
+						if	IsSEPA(cText)
+							if !sepaenabled .and. Left(cText,2)=='NL'
+								lv_BankAcntContra:=ZeroTrim(Right(cText,10))
+							else
+								lv_BankAcntContra:= cText
+							endif
+						else
+							//	check	if	pseudo IBAN:
+							if	IsAlphabetic(SubStr(cText,3,4)) .and.isnum(SubStr(cText,1,2) )
+								if	isnum(SubStr(cText,7))
+									if sepaenabled
+										// convert to sepa:
+										lv_BankAcntContra:= 'NL'+cText
+									else	   	
+										// 										lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+										lv_BankAcntContra:=SubStr(cText,7)
+									endif	
+								endif
+							endif
+						endif
+					ENDIF
+					cBuffer:=oMyFile:FReadLine() 
+				endif				 
+				lv_description:=""
+				lv_Oms:=''
+				lv_AdrLine:=''
+				lv_country:=''
+				lv_BIC:='' 
+				IF !oMyFile:FEof .and. SubStr(cBuffer,1,4)==":86:"
+					* description of transaction:
+					if !Empty(cRefType)
+						// 						lv_Oms+=AllTrim(SubStr(cBuffer,5,))
+						lv_Oms+=SubStr(cBuffer,5,)
+					else
+						lv_Oms:=AllTrim(SubStr(cBuffer,5,36)+' '+SubStr(cBuffer,41))
+						IF !lMTExtended
+							IF  Empty(lv_BankAcntContra) 
+								IF lv_Oms = "GIRO "
+									lv_BankAcntContra:= ZeroTrim(SubStr(lv_Oms,8,8))
+									if sepaEnabled .and. Val(lv_BankAcntContra)>0 
+										lv_BankAcntContra:=  "INGB"+PadL(lv_BankAcntContra,10,"0")
+										lv_BankAcntContra:= 'NL'+StrZero(IbanChecksum("NL00"+lv_BankAcntContra),2,0)+lv_BankAcntContra
+									endif	   	
+									lv_description := AllTrim(SubStr(lv_Oms,16))
+								ELSE
+									cText := SubStr(lv_Oms,1,13)
+									IF isnum(AllTrim(cText))
+										lv_BankAcntContra:=ZeroTrim(StrTran(cText,"."))
+										IF Val(lv_BankAcntContra)<100000000
+											lv_BankAcntContra:=""
+										ELSE
+											lv_Oms := AllTrim(SubStr(lv_Oms,14))
+										ENDIF
+									ELSE
+										lv_BankAcntContra:=""
+									ENDIF
+									IF Empty(lv_BankAcntContra)
+										// 									lv_description := lv_Oms
+									ENDIF
+								ENDIF
+							ENDIF
+							if Empty(lv_NameContra) .and.lv_addsub=="B" 
+								aWord:=GetTokens(lv_Oms)
+								lv_NameContra:=aWord[Len(aWord),1] 
+							endif 
+						endif
+						// 					Analyze first line: 
+						cType86:=''
+						nNumPos:=AtC('-nummer',lv_Oms)
+						if AtC('BETREFT ACCEPTGIRO',lv_Oms)>0  .or. AtC('VX-NUMMER',lv_Oms)>0.or. AtC('CREDITEURENBETALING',lv_Oms)>0
+							if AtC('VX-NUMMER',lv_Oms)>0
+								cType86:='VX'
+							else 
+								cType86:='BGC'
+							endif
+							// 							if Empty(Cur_enRoute)
+							// 								(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):Show()
+							// 								return false 
+							// 							endif
+							// 							lv_budget:=Cur_enRoute
+							lv_kind:="BGC"
+						elseif nNumPos>2
+							cType86:='Bank'
+						else
+							cType86:="ADRES" 
+							nLenLine1:=Len(lv_Oms)
+						endif
+						if nNumPos=0
+							lv_description:=lv_Oms
+						endif 
+					endif
+					if lv_kind=="BGC"
+						if Empty(Cur_enRoute)
+							(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted"}):show()
+							return false 
+						endif
+						lv_budget:=Cur_enRoute
+						
+					endif
+					cBuffer:=oMyFile:FReadLine()
+					// compose description:
+					DO WHILE !oMyFile:FEof .and. SubStr(cBuffer,1,4)==":86:"  // all :86: with description 
+						if !Empty(cRefType)
+							lv_Oms+=AllTrim(SubStr(cBuffer,5,))
+						else
+							lv_Oms:=AllTrim(SubStr(cBuffer,5,36)+' '+SubStr(cBuffer,41))
+							if !lv_Oms="TRANSACTIEDATUM"             // skip line with "TRANSACTIEDATUM"
+								self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+								lv_description+=" "+lv_Oms
+							endif
+						endif
+						cBuffer:=oMyFile:FReadLine()
+					ENDDO 
+					DO WHILE !oMyFile:FEof .and. !(Occurs(":",SubStr(cBuffer,1,6))=2)  // no TAG
+						if !Empty(cRefType)
+							// 							lv_Oms+=AllTrim(cBuffer)
+							lv_Oms+=cBuffer
+						else
+							lv_Oms:=AllTrim(cBuffer) 
+							if !lv_Oms="TRANSACTIEDATUM".and. AtC('-nummer',lv_Oms)=0 ;   // skip line with "TRANSACTIEDATUM" or number
+								.and. !(SubStr(lv_Oms,1,2)='BE' .and. IsDigit(SubStr(lv_Oms,3)))  // skip belgié nummers
+								self:GetPaymentPattern(lv_Oms,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+								lv_description+=" "+lv_Oms
+							endif
+						endif
+						cBuffer:=oMyFile:FReadLine()
+					ENDDO
+					if !Empty(cRefType)
+						// mt940 structured:
+						// 						aWord:=GetTokens(lv_Oms,{'/MARF/','/EREF/','/PREF/','/RTRN/','/ACCW/','/BENM/','/ORDP/','/NAME/','/ID/','/ADDR/','/REMI/','/CSID/','/ISDT/'})
+						nBetKnm:=AtC('CDTRREFTP//CD/SCOR/ISSR/ CUR/CDTRREF/',lv_Oms)
+						if nBetKnm>0
+							self:GetPaymentPattern(SubStr(lv_Oms,nBetKnm+37,16),lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
+							lv_Oms:=Stuff(lv_Oms,nBetKnm,37+16,'')
+						endif
+						aWord:=GetTokensEx(lv_Oms,;
+							{'/MARF/','/EREF/','/PREF/','/RTRN/','/ACCW/','/BENM/','/ORDP/','/NAME/','/ID/','/ADDR/','/REMI/','/CSID/','/ISDT/','/CDTRREF/'},4)
+						// analyse aWord:
+						for i:=1 to Len(aWord)
+							cSep:=aWord[i,2]
+							do case 
+							case cSep=='/MARF/'
+							case cSep=='/EREF/'
+								lv_reference:=AllTrim(aWord[i,1]) 
+							case cSep=='/PREF/'
+							case cSep=='/RTRN/'
+							case cSep=='/ACCW/'
+								if Empty(lv_BankAcntContra)
+									lv_BankAcntContra:=AllTrim(aWord[i,1]) 
+									if At(',',lv_BankAcntContra)>0
+										lv_BIC:=Split(lv_BankAcntContra,',')[2]
+										lv_BankAcntContra:=Split(lv_BankAcntContra,',')[1]
+									endif
+								elseif At(',',AllTrim(aWord[i,1]))>0
+									lv_BIC:=Split(AllTrim(aWord[i,1]),',')[2]
+								endif							
+							case cSep=='/BENM/' .or.cSep=='/ORDP/' 
+							case cSep=='/NAME/'
+								lv_NameContra:=AllTrim(aWord[i,1])
+							case cSep=='/ID/'
+							case cSep=='/ADDR/'
+								lv_AdrLine+=AllTrim(aWord[i,1])
+							case cSep=='/REMI/'
+								if nBetKnm=0
+									// 									lv_description+=AllTrim(aWord[i,1])
+									lv_description+=aWord[i,1]
+								endif
+							case cSep=='/CSID/'
+							case cSep=='/ISDT/'
+							case cSep=='/CDTRREF/'
+								lv_budgethlp:=''
+								self:GetPaymentPattern(AllTrim(aWord[i,1]),lv_addsub,@lv_budgethlp,@lv_persid,@lv_bankid,@lv_kind)
+								if !Empty(lv_budgethlp)
+									lv_budget:=lv_budgethlp
+									lv_description:=AllTrim(aWord[i,1])
+									lv_reference:=''  // entoendid
+								endif
+							endcase
+						next
+					endif
+					if cType86=="VX"
+						if (nNumPos:=AtC("BETALINGSKENM",lv_description))>0
+							if !isnum(AllTrim(SubStr(lv_description,nNumPos+16,16)) )
+								lv_budget:=''   // no really Cur-en-route
+							endif
+						endif
+					endif 
+					
+					// check on special messages: 
+					nSepPos:=0
+					if cType86='Bank'
+						if Empty(lv_kind)
+							nSepPos:=AtC('EUROBETALING SHA',lv_description)
+							if nSepPos>0
+								nSepPos+=Len('EUROBETALING SHA')-1
+								lv_BankAcntContra:=""   // ignore account in case of payment from other country in Euro 
+							else
+								if AtC('TOTAAL INCASSO',lv_description)>0 .or. AtC('DOORLOPENDE MACHTIGING ALGEMEEN',lv_description)>0
+									lv_budget:=Cur_enRoute 
+									lv_kind:="COL"
+								endif
+							endif
+						endif
+					elseif !cType86=='BGC'
+						// address:
+						nSepPos:=nLenLine1 // at end of first line with address
+					endif
+					if AtC('NAAM/NUMMER STEMMEN NIET OVEREEN',lv_description)>0 
+						nSepPos:=0 
+						//	look for	bankorder:
+						oBord:=SqlSelect{"select a.accnumber from	bankorder o, account	a where banknbrcre="+lv_BankAcntContra+;
+							" and	datepayed>'"+SQLdate(ld_bookingdate-10)+"'"+' and a.accid=o.accntfrom',	oConn} 
+						if	oBord:Reccount>0	 
+							lv_budget:=AllTrim(oBord:ACCNUMBER)
+						else
+							lv_budget:=""
+						endif
+					endif
+					if nSepPos>0 .and.lMTExtended.and.lv_addsub=='B' .and.AtC('AFROMEN',lv_description)=0
+						lv_description:=AllTrim(SubStr(lv_description,1,nSepPos))+'%%'+SubStr(lv_description,nSepPos+1,)
+					endif
+					lv_description:=Compress(lv_description)+' '+lv_reference
+				ENDIF 
+				if Empty(lv_budget)
+					// Look for budget code between * or [] or ()
+					if (nOffset:=At('*',lv_description))>0
+						if At3('*',lv_description,nOffset+1)>0  //2e * 
+							aBudg:=Split(SubStr(lv_description,nOffset+1),'*')
+							if	Len(aBudg)>0 .and. isnum(aBudg[1])
+								lv_budget:=aBudg[1]
+							endif
+						endif
+					endif
+					if Empty(lv_budget) .and. (nOffset:=At('[',lv_description))>0
+						aBudg:=Split(SubStr(lv_description,nOffset+1),']') 
+						if	Len(aBudg)>0 .and. isnum(aBudg[1])
+							lv_budget:=aBudg[1]
+						endif					
+					endif
+					if Empty(lv_budget) .and. (nOffset:=At('(',lv_description))>0
+						aBudg:=Split(SubStr(lv_description,nOffset+1),')') 
+						if	Len(aBudg)>0 .and. isnum(aBudg[1])
+							lv_budget:=aBudg[1]
+						endif
+					endif
+				else
+				endif
+				lv_description:=AddSlashes(AllTrim(lv_description))
+				lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))   //max length 32 in teletrans
+				* save transaction:
+				nTrans++ 
+				if IsAlpha(lv_BankAcntContra)
+					lv_country:=SubStr(lv_BankAcntContra,1,2)
+					if Empty(lv_BIC)
+						lv_BIC:=GetBIC(lv_BankAcntContra)
+					endif
+				endif
+				
+				// 				self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(Val(lv_reference),-1),lv_BankAcntContra,;
+				nSeqnr++
+				self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
+					lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid,AddSlashes(lv_AdrLine),lv_country,lv_BIC)
+				lv_Oms:=""
+			enddo     // end 61 /86 combinations 
+
+			IF SubStr(cBuffer,1,5)==":62F:"
+				// balance new:
+				lv_balance:=Val(iif(SubStr(cBuffer,6)='C','','-')+SubStr(cBuffer,16,15))
+				ld_bookingdate:=SToD("20"+SubStr(cBuffer,7,6)) // valuta date
+				AAdd(self:avaluesBal,{lv_bankAcntOwn,ld_bookingdate,lv_balance})
+			endif
+			// 
+			exit
+		ENDDO       // end :25 transaction
+	ENDDO
+	oMyFile:Close()
+	oMyFile:=null_object 
+	// store read data into database:
+	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName,nTrans)
+	if lSuccess
+		return true
+	else
+		return false
+	endif
 METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 	*	Import of one MT940 telebnk transaction file
 	LOCAL oHlM as HlpMT940
@@ -2528,9 +3042,10 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 								if	IsAlphabetic(SubStr(cText,3,4)) .and.isnum(SubStr(cText,1,2) )
 									if	isnum(SubStr(cText,7))
 										if sepaenabled
-											lv_BankAcntContra:= 'NL'+lv_BankAcntContra
+											lv_BankAcntContra:= 'NL'+cText
 										else	   	
-											lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+// 											lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+											lv_BankAcntContra:=SubStr(cText,7)
 										endif	
 									endif
 								endif
@@ -2547,7 +3062,8 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 					// apparently contra bank account:
 					cText:=AllTrim(oHlM:MTLINE)
 					IF	isnum(SubStr(cText,2))
-						lv_BankAcntContra:=ZeroTrim(StrTran(StrTran(cText,"."),'P',''))     
+// 						lv_BankAcntContra:=ZeroTrim(StrTran(StrTran(cText,"."),'P',''))     
+						lv_BankAcntContra:=StrTran(StrTran(cText,"."),'P','')     
 						if sepaenabled .and. At('P',SubStr(oHlM:MTLINE,1,16))>0
 							// Giro:
 							lv_BankAcntContra:=  "INGB000"+PadL(lv_BankAcntContra,7,"0")
@@ -2566,9 +3082,10 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 								if	isnum(SubStr(cText,7))
 									if sepaenabled
 										// convert to sepa:
-										lv_BankAcntContra:= 'NL'+lv_BankAcntContra
+										lv_BankAcntContra:= 'NL'+cText
 									else	   	
-										lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+// 										lv_BankAcntContra:=ZeroTrim(SubStr(cText,7))
+										lv_BankAcntContra:=SubStr(cText,7)
 									endif	
 								endif
 							endif
@@ -2584,7 +3101,8 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 				IF !oHlM:EOF .and. SubStr(oHlM:MTLINE,1,4)==":86:"
 					* description of transaction:
 					if !Empty(cRefType)
-						lv_Oms+=AllTrim(SubStr(oHlM:MTLINE,5,))
+// 						lv_Oms+=AllTrim(SubStr(oHlM:MTLINE,5,))
+						lv_Oms+=SubStr(oHlM:MTLINE,5,)
 					else
 						lv_Oms:=AllTrim(SubStr(oHlM:MTLINE,5,36)+' '+SubStr(oHlM:MTLINE,41))
 						IF !lMTExtended
@@ -2659,7 +3177,8 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 					ENDDO 
 					DO WHILE !oHlM:EOF .and. !(Occurs(":",SubStr(oHlM:MTLINE,1,6))=2)  // no TAG
 						if !Empty(cRefType)
-							lv_Oms+=AllTrim(oHlM:MTLINE)
+// 							lv_Oms+=AllTrim(oHlM:MTLINE)
+							lv_Oms+=oHlM:MTLINE
 						else
 							lv_Oms:=AllTrim(oHlM:MTLINE) 
 							if !lv_Oms="TRANSACTIEDATUM".and. AtC('-nummer',lv_Oms)=0 ;   // skip line with "TRANSACTIEDATUM" or number
@@ -2707,7 +3226,8 @@ METHOD ImportMT940Structured(oFm as MyFileSpec) as logic CLASS TeleMut
 								lv_AdrLine+=AllTrim(aWord[i,1])
 							case cSep=='/REMI/'
 								if nBetKnm=0
-									lv_description+=AllTrim(aWord[i,1])
+// 									lv_description+=AllTrim(aWord[i,1])
+									lv_description+=aWord[i,1]
 								endif
 							case cSep=='/CSID/'
 							case cSep=='/ISDT/'
@@ -4030,8 +4550,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				if Len((cBankAcctContr:=ZeroTrim(aValuesTrans[i,4])))<=7
 					// giro:
 					// convert to sepa: 
-					cBankAcctContr:=  "INGB000"+PadL(cBankAcctContr,7,"0")
-					aValuesTrans[i,4]:= 'NL'+StrZero(IbanChecksum("NL00"+cBankAcctContr),2,0)+cBankAcctContr	   	
+					if cBankAcctContr>'0' 
+						cBankAcctContr:=  "INGB"+PadL(cBankAcctContr,10,"0")
+						aValuesTrans[i,4]:= 'NL'+StrZero(IbanChecksum("NL00"+cBankAcctContr),2,0)+cBankAcctContr
+					endif	   	
 				else
 					cBankAcctContr:= PadL(aValuesTrans[i,4],10,'0')
 					if AScanExact(aBankContraNonIban,cBankAcctContr)=0
@@ -4216,10 +4738,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				k:= aValueSubPtr[i]
 				cPersid:=avalueTrans[k,11]
 				if (j:=AScan(aSubscrtn,{|x|x[1]==cPersid}))>0
-// 					if Len(aSubscrtn[j,2])=1 .and.avalueTrans[k,8]== Val(aSubscrtn[j,2,1,2])
-// 						// apply pattern in case of one destination:
-// 						avalueTrans[k,7]:=aSubscrtn[j,2,1,1]
-// 					else
+					// 					if Len(aSubscrtn[j,2])=1 .and.avalueTrans[k,8]== Val(aSubscrtn[j,2,1,2])
+					// 						// apply pattern in case of one destination:
+					// 						avalueTrans[k,7]:=aSubscrtn[j,2,1,1]
+					// 					else
 					if (l:=AScan(aSubscrtn[j,2],{|x|Val(x[2])== avalueTrans[k,8]}))>0
 						if l<Len(aSubscrtn[j,2])
 							// more left:
@@ -4461,7 +4983,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						lProcAuto:=true
 					endif
 				endif
-			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="OCR") .and.Empty(aValueTrans[i,4]).and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="COL" .or.aValueTrans[i,5]=="OCR") .and.val(aValueTrans[i,4])=0.and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
 				// in case of recording of automatic collections take payahead as contra account:
 				cDestAcc:=self:m57_bankacc[j,8]
 				lProcAuto:=true 
@@ -4496,11 +5018,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					fCreForgn:=avalueTrans[i,8]
 				endif 
 				nTransId++
-				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;                  // contra name as description
+				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,AllTrim(avalueTrans[i,6]+' '+avalueTrans[i,10]),;                  // contra name as description
 				aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','0','0','',str(nTransId,-1)} ) 
 				AAdd(aTransTele,{i,nTransId}) 
 				// second row: 
-				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,avalueTrans[i,6]+' '+avalueTrans[i,10],;
+				AAdd(aTrans,{cDestAcc,fCre,fCreForgn,fDeb,fDebForgn,sCurr,AllTrim(avalueTrans[i,6]+' '+avalueTrans[i,10]),;
 					aValueTrans[i,2],lv_gc,LOGON_EMP_ID,'2','2',aValueTrans[i,5]+aValueTrans[i,3],'',str(Val(lv_persid),-1),'0','',str(nTransId,-1)} )
 			endif
 		endif
@@ -4545,7 +5067,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
 	oStmnt:=SQLStatement{'lock tables '+iif(Len(self:avaluesBal)>0,'`bankbalance` write,','')+iif(Empty(cFilename),'','`log` write,')+iif(Len(avaluesPers)>0,'`person` write,','')+;
-	iif(Len(aTrans)>0,'`mbalance` write,','')+'`teletrans` write'+iif(Len(aTrans)>0,',`transaction` write',''),oConn}        // alphabetic order
+		iif(Len(aTrans)>0,'`mbalance` write,','')+'`teletrans` write'+iif(Len(aTrans)>0,',`transaction` write',''),oConn}        // alphabetic order
 	oStmnt:execute()
 	maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
 	oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
