@@ -1414,6 +1414,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"department","ipcproject","int(5)","NO","0",""},;
 		{"department","incomeacc","int(11)","NO","0",""},;
 		{"department","expenseacc","int(11)","NO","0",""},;
+		{"department","payableacc","int(11)","NO","0",""},;
+		{"department","receivableacc","int(11)","NO","0",""},;
 		{"distributioninstruction","mbrid","int(11)","NO","NULL",""},;
 		{"distributioninstruction","seqnbr","int(3)","NO","0",""},;
 		{"distributioninstruction","destacc","varchar(70)","NO","",""},;
@@ -2581,7 +2583,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 				LogEvent(self,"Could	not reformat table "+cTableName+CRLF+"statement:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 			else
 				SQLStatement{"commit",oConn}:execute()
-				LogEvent(self,'Table '+cTableName+"	reformated with:"+oStmnt:SQLString)
+				LogEvent(self,'Table '+cTableName+"	reformated with:"+oStmnt:SQLString,"loginfo")
 			endif	
 		endif
 		oMainWindow:STATUSMESSAGE(Space(80))
