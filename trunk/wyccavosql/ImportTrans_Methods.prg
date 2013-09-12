@@ -573,7 +573,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		iif(Empty(self:curimpid),''," and imptrid>"+Str(self:curimpid,-1))+;
 		" order by imptrid limit 1 for update",oConn}
 	if oImpTr1:reccount<1
-		lOK:=False
+		self:lOK:=False
 		return false
 	endif
 	CurBatchNbr:=oImpTr1:transactnr
@@ -600,10 +600,10 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		"' and docid='"+CurDocid+"' and transdate='"+SQLdate(CurDate)+"' order by imptrid",oConn}
 	if oImpB:reccount<1
 		LogEvent(self,oImpB:SQLString+"; error:"+oImpB:status:Description,"LogErrors")
-		lOK:=false
+		self:lOK:=false
 		return false
 	endif
-	lOK:=true
+	self:lOK:=true
 	CurDate:=oImpB:transdate
 	OrigBst:=oImpB:docid
 	nPostStatus:=oImpB:POSTSTATUS
@@ -635,9 +635,12 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 				if Empty(oImpB:Currency).and.!Empty(oImpB:AccCurrency) 
 					self:oHM:currency:=oImpB:AccCurrency
 				endif 
-				MultiCur:=iif(ConI(oImpB:MULTCURR)=1,true,false)
+				MultiCur:=iif(ConI(oImpB:MULTCURR)=1,true,false) 
+				if ConI(oImpB:FROMRPP)=1
+					self:lOK:=false    // no automatic processing of PMC import
+				endif
 			ELSE
-				lOK:=FALSE
+				self:lOK:=FALSE
 			ENDIF
 		ELSE
 			// try to find a import pattern:
@@ -656,9 +659,9 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 					self:oHM:currency:= iif(Empty(oSel:currency),sCurr,oSel:currency) 				 
 					self:oHM:DepID:=ConI(oSel:department)
 					cType:=oSel:TYPE
-					lOK:=aPrn[2] 					
+					self:lOK:=aPrn[2] 					
 				else
-					lOK:=false
+					self:lOK:=false
 				endif
 			endif
 		ENDIF
@@ -1292,37 +1295,39 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	* Import of one RPPfile with  transaction data from PMC into ImportTrans.dbf
 	LOCAL cBuffer as STRING
-	LOCAL ptrHandle
-	LOCAL PMISDocument as XMLDocument
-	LOCAL childfound, recordfound as LOGIC
 	LOCAL ChildName as STRING
-	LOCAL amount, USamountAbs, USDAmount, oppAmount,TotAmount,TotUSDAmount as FLOAT
+	Local cExId as string
 	LOCAL transdescription,description,oppdescr, docid, accnbr,accnbrdest,acciddest,origin,transtype,housecode,samnbr,shbnbr, reference as STRING
-	LOCAL transdate, oppdate,rppdate,cmsdate as date
-	LOCAL oAfl as UpdateHouseHoldID
-	LOCAL datelstafl as date
+	Local oInST as Insite, cAccCng,cDescription,cMsg,cError as string
+	local cStatement,cTrans as string
+	lOCAL cPmisCurrency as string
 	LOCAL nAnswer, nCnt,nTot,nMbr,nAcc,nPtr,i,nProc,nCnt,nSeqnbr,nPers,nLastGift,nCntTooOld as int
 	local nTransId as Dword 
-	lOCAL cPmisCurrency as string, lUSD as logic 
-	local oCurr as CURRENCY 
-	local RPP_date as date
-	LOCAL oExch as GetExchRate
-	Local oInST as Insite, cAccCng,cDescription,cMsg,cError as string
-	Local cExId as string
-	local osel as SQLSelect 
-	local cStatement,cTrans as string
+	LOCAL amount, USamountAbs, USDAmount, oppAmount,TotAmount,TotUSDAmount as FLOAT
 	local time1,time0 as float
-	local oMBal as Balances
-	local oStmnt as SQLStatement 
+	LOCAL childfound, recordfound as LOGIC
+	local lUSD as logic
+	local lPayable as logic 
+	LOCAL transdate, oppdate,rppdate,cmsdate as date
+	LOCAL datelstafl as date
 	local aValues:={} as array   // array with values to be inserted into importrans 
 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
-	local aAccMbr:={} as array   // array with accounts of members: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset},{...}... } 
-	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid},{..},..}
+	local aAccMbr:={} as array   // array with accounts of members: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset,accpayable,accidpayable},{...}... } 
+	local aAccDest:={} as array  // array with destination accounts: {{accnumber,accid,payable=true/false},{..},..}
 	local aPers:={}  // array with giver data: {{externid,persid},{..}...}
 	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
 	local aAccNbr:={} as array  // array with import accountnbrs
 	local aPersExt:={} as array // array with externids
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions 
+	LOCAL ptrHandle
+	local oCurr as CURRENCY 
+	local RPP_date as date
+	LOCAL oAfl as UpdateHouseHoldID
+	LOCAL oExch as GetExchRate
+	local osel as SQLSelect 
+	local oMBal as Balances
+	local oStmnt as SQLStatement 
+	LOCAL PMISDocument as XMLDocument
 	
 	local oAddInc as AddToIncExp 
 	if Empty(SEntity)
@@ -1405,7 +1410,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		return false
 	ENDIF
 	samnbr:=osel:ACCNUMBER
-	AAdd(aAccDest,{samnbr,sam})
+	AAdd(aAccDest,{samnbr,sam,false})
 	osel:=SQLSelect{"select accnumber,currency from account where accid="+SHB,oConn}
 	IF osel:RecCount<1
 		(errorbox{self:OWNER,self:oLan:WGet('Account for sending to PMC not found')}):Show()
@@ -1414,7 +1419,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	ENDIF
 	shbnbr:=osel:ACCNUMBER
 	cPmisCurrency:=osel:CURRENCY 
-	AAdd(aAccDest,{shbnbr,SHB})
+	AAdd(aAccDest,{shbnbr,SHB,false})
 	if cPmisCurrency=="USD"
 		lUSD:=true
 	elseif Empty(cPmisCurrency)
@@ -1559,7 +1564,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			if nAcc=0
 				osel:=SQLSelect{"select accnumber,accid from account where accnumber='"+accnbr+"'",oConn}
 				IF osel:RecCount>0
-					AAdd(aAccDest,{osel:ACCNUMBER,Str(osel:accid,-1)})
+					AAdd(aAccDest,{osel:ACCNUMBER,Str(osel:accid,-1),false})
 					nAcc:=Len(aAccDest)
 				ENDIF
 			endif
@@ -1576,23 +1581,36 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			accnbrdest:=samnbr
 			acciddest:=sam
 		ENDIF
-		IF !Empty(housecode) .and.Empty(accnbrdest)
+		lPayable:=false
+		IF !Empty(housecode) .and.Empty(accnbrdest) 
 			// search corresponding member:
 			nMbr:=AScan(aAccMbr,{|x|x[1]==housecode})
 			if nMbr=0
-				osel:=SqlSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense,an.accnumber as accnetasset,"+;
-					"m.accid as acciddirect,d.incomeacc,d.expenseacc,d.netasset "+;
+				osel:=SqlSelect{"select ad.accnumber as accdirect,ai.accnumber as accincome,ae.accnumber as accexpense,an.accnumber as accnetasset,ap.accnumber as accpayable,"+;
+					"m.accid as acciddirect,d.incomeacc,d.expenseacc,d.netasset,d.payableacc "+;
 					"from member m left join account ad on (ad.accid=m.accid) left join department d on (m.depid=d.depid) "+;
 					"left join account ai on (ai.accid=d.incomeacc) "+;
 					"left join account ae on (ae.accid=d.expenseacc) "+;
 					"left join account an on (an.accid=d.netasset) "+;
+					"left join account ap on (ap.accid=d.payableacc) "+;
 					"where m.householdid='"+housecode+"'",oConn}
 				if osel:RecCount>0
-					//				aAccMbr: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset},{...}... }
-					//                          1         2      3        4       5        6          7
-					AAdd(aAccMbr,iif(Empty(osel:accdirect),{housecode,osel:accincome,osel:accexpense,osel:accnetasset,Str(osel:incomeacc,-1),Str(osel:expenseacc,-1),Str(osel:netasset,-1)},;
-						{housecode,osel:accdirect,osel:accdirect,osel:accdirect,Str(osel:acciddirect,-1),Str(osel:acciddirect,-1),Str(osel:acciddirect,-1)}))
+					//				aAccMbr: {{housecode,accinc,accexp,netasset,accidinc,accidexp,accidnetasset,accpayable,accidpayable},{...}... }
+					//                        1         2      3       4       5        6          7            8            9
+					AAdd(aAccMbr,;
+					iif(Empty(osel:accdirect),;
+						iif(Empty(osel:accpayable),;
+							{housecode,osel:accincome,osel:accexpense,osel:accnetasset,Str(osel:incomeacc,-1),Str(osel:expenseacc,-1),Str(osel:netasset,-1),osel:accexpense,Str(osel:expenseacc,-1)};
+						,;
+							{housecode,osel:accincome,osel:accexpense,osel:accnetasset,Str(osel:incomeacc,-1),Str(osel:expenseacc,-1),Str(osel:netasset,-1),osel:accpayable,Str(osel:payableacc,-1)};
+						);
+					,;
+						{housecode,osel:accdirect,osel:accdirect,osel:accdirect,Str(osel:acciddirect,-1),Str(osel:acciddirect,-1),Str(osel:acciddirect,-1),osel:accdirect,Str(osel:acciddirect,-1)};
+					))
 					nMbr:=Len(aAccMbr)
+					if !Empty(osel:accpayable)
+						lPayable:=true
+					endif					
 				endif
 			endif
 			if nMbr>0
@@ -1603,13 +1621,13 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 					accnbrdest:=aAccMbr[nMbr,4]   //netasset
 					acciddest:=aAccMbr[nMbr,7]
 				else							
-					accnbrdest:=aAccMbr[nMbr,3]   //accexpense
-					acciddest:=aAccMbr[nMbr,6]
+					accnbrdest:=aAccMbr[nMbr,8]   //accpayable/accexpense
+					acciddest:=aAccMbr[nMbr,9]
 				endif
 			ENDIF
 		ENDIF
 		if !Empty(acciddest) 
-			AAdd(aAccDest,{accnbrdest,acciddest})
+			AAdd(aAccDest,{accnbrdest,acciddest,lPayable})
 		endif		
 		//     1       2       3         4           5       6       7       8        9         10        11      12      13         14        15          16       17
 		// transdate,docid,transactnr,accountnr,assmntcd,externid,origin,fromrpp,creditamnt,debitamnt,creforgn,debforgn,currency,descriptn,poststatus,reference,processed
@@ -1681,13 +1699,17 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				endif
 			endif
 			for nPtr:=1	to	Len(aValues) step 2 
-				if	!Empty(aValues[nPtr+1,4])  // account destination filled 
+				if	!Empty(aValues[nPtr+1,4])  // account destination filled
 					nPers:=0
 					if !Empty(aValues[nPtr+1,6])
 						nPers:=AScan(aPers,{|x|x[1]==aValues[nPtr+1,6]})  // person found?
 					endif
 					nAcc:=AScan(aAccDest,{|x| x[1]==aValues[nPtr+1,4]})     // aAccDest: {{accnumber,accid},{..},..}
 					if	nAcc>0    // destination account found:
+						// check if charge from account payable:
+						if aValues[nPtr+1,5]=='CH' .and. aAccDest[nAcc,3]==true
+							loop
+						endif
 						acciddest:=aAccDest[nAcc,2] 
 						//	first	from shb account:
 						//aValuesTrans: accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
