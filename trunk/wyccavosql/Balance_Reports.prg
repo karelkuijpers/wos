@@ -6556,14 +6556,15 @@ local pl_deb,pl_cre as float // profit loss previous year
 LOCAL Heading:={} as ARRAY, ad_banmsg, omztxt as STRING
 LOCAL PrvYearNotClosed as LOGIC
 LOCAL aDep:={} as ARRAY
-LOCAL cType,cSoort as STRING
+LOCAL cType,cSoort,cBalItem as STRING
 LOCAL nChildRec			as int
 LOCAL Gran as LOGIC
 LOCAL cTab:=CHR(9) as STRING  
 LOCAL aYearStartEnd:={} as ARRAY
 LOCAL aItem:={} as ARRAY
 local oMBal as balances
-local cStatement as string   // string with selection of accounts and their total values 
+local cStatement as string   // string with selection of accounts and their total values   
+local oBal as SQLSelect
 
 * Check input data:
 // IF !ValidateControls( self, self:AControls )
@@ -6654,14 +6655,16 @@ ENDIF
 self:Pointer := Pointer{POINTERHOURGLASS}
 self:STATUSMESSAGE(self:oLan:WGet("Collecting data, moment please"))
 
-AAdd(Heading,self:oLan:RGet('Account',43,"!")+cTab+self:oLan:RGet('Type',11,"!","C")+cTab+self:oLan:RGet('BEGIN Balnc',11,"!","R")+cTab+self:oLan:RGet('Debit',11,"!","R")+cTab+self:oLan:RGet('Credit',11,"!","R")+;
+AAdd(Heading,self:oLan:RGet('Account',43,"!")+cTab+self:oLan:RGet('Type',11,"!","C")+cTab+self:oLan:RGet('Number',11,"!","C")+cTab+self:oLan:RGet('BEGIN Balnc',11,"!","R")+cTab+self:oLan:RGet('Debit',11,"!","R")+cTab+self:oLan:RGet('Credit',11,"!","R")+;
 cTab+self:oLan:RGet('Balance',11,"!","R")+cTab+self:oLan:RGet('Budget',10,"!","R") )
 AAdd(Heading,self:oLan:RGet('year',,"!")+cTab+oDCYearTrial:TextValue+;
 '  '+maand[MonthStart]+' - '+maand[MonthEnd])
 AAdd(Heading,' ')
 DO WHILE !oAcc:EoF
 	cSoort:= oAcc:category
-  	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]
+  	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]  
+   oBal:= SqlSelect{"SELECT number FROM balanceitem WHERE balitemid ="+Str(oAcc:balitemid),oConn}
+  	cBalItem := oBal:number	
 	IF cSoort=="KO" .or. cSoort=="BA"
 		PerDeb:=oAcc:per_deb
 		PerCre:=oAcc:per_cre
@@ -6694,7 +6697,7 @@ DO WHILE !oAcc:EoF
       ENDIF
   	  IF lPrint
       	oReport:PrintLine(@nRow,@nPage,Pad(oAcc:ACCNUMBER+" "+oAcc:description,43)+;
-      	cTab+PadC(cType,11)+cTab+Str(oAcc:PrvPer_deb-oAcc:PrvPer_cre,11,DecAantal) +;
+      	cTab+PadC(cType,11)+cTab+Pad(cBalItem,11)+cTab+Str(oAcc:PrvPer_deb-oAcc:PrvPer_cre,11,DecAantal) +;
       	cTab+Str(PerDeb,11,decaantal)+cTab+Str(PerCre,11,decaantal)+;
       	cTab+Str(oAcc:PrvPer_deb-oAcc:prvper_cre+PerDeb-PerCre,11,DecAantal)+;
       	cTab+Str(Round(m_bud,DecAantal),10,DecAantal)+cTab+omztxt,Heading,0)
