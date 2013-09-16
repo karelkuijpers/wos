@@ -376,6 +376,10 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oCCIncButton AS PUSHBUTTON
 	PROTECT oDCmexpenseacc AS SINGLELINEEDIT
 	PROTECT oCCExpButton AS PUSHBUTTON
+	PROTECT oDCmpayableacc AS SINGLELINEEDIT
+	PROTECT oCCCreditorsButton AS PUSHBUTTON
+	PROTECT oDCmreceivableacc AS SINGLELINEEDIT
+	PROTECT oCCDebtorsButton AS PUSHBUTTON
 	PROTECT oDCGroupBox2 AS GROUPBOX
 	PROTECT oDCmAccount1 AS SINGLELINEEDIT
 	PROTECT oCCRek1Button AS PUSHBUTTON
@@ -393,6 +397,8 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oDCMemberText AS FIXEDTEXT
 	PROTECT oDCIPCProject AS SINGLELINEEDIT
 	PROTECT oDCIPCText AS FIXEDTEXT
+	PROTECT oDCSC_Debtors AS FIXEDTEXT
+	PROTECT oDCSC_Creditors AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartmntNbr 
@@ -404,8 +410,8 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	instance mAccount1 
 	instance mAccount2 
 	instance mAccount3 
-   PROTECT cCAPITALName,cIncName,cExpname as STRING
-	PROTECT NbrCAPITAL,NbrIncome,IdIncomeOrg,NbrExpense as STRING
+   PROTECT cCAPITALName,cIncName,cExpname,cPayableName,cReceivablename as STRING
+	PROTECT NbrCAPITAL,NbrIncome,IdIncomeOrg,NbrExpense,NbrPayable,NbrReceivable as STRING
   	PROTECT lNew AS LOGIC
 	PROTECT oCaller AS OBJECT
 	PROTECT OrgDescription AS STRING
@@ -423,7 +429,7 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	protect oDep as SQLSelect
                                  
 declare method RekButton                                 
-RESOURCE EditDepartment DIALOGEX  24, 22, 324, 212
+RESOURCE EditDepartment DIALOGEX  24, 22, 352, 240
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -433,32 +439,38 @@ BEGIN
 	CONTROL	"", EDITDEPARTMENT_MDESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 33, 174, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Parent department#:", EDITDEPARTMENT_FIXEDTEXT3, "Static", WS_CHILD, 8, 56, 67, 12
 	CONTROL	"", EDITDEPARTMENT_MPARENTDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 56, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 262, 7, 54, 12
-	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 262, 21, 54, 12
-	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 81, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 180, 81, 15, 12
-	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 63, 12
-	CONTROL	"", EDITDEPARTMENT_MINCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 96, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_INCBUTTON, "Button", WS_CHILD, 179, 96, 17, 12
-	CONTROL	"", EDITDEPARTMENT_MEXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 110, 104, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 180, 110, 16, 13
-	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 147, 314, 32
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 96, 158, 16, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 200, 158, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 220, 158, 86, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 304, 158, 15, 13
-	CONTROL	"Contact persons:", EDITDEPARTMENT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 181, 314, 25
-	CONTROL	"Account Income:", EDITDEPARTMENT_SC_INC, "Static", WS_CHILD, 8, 96, 63, 12
-	CONTROL	"Account Expense:", EDITDEPARTMENT_SC_EXP, "Static", WS_CHILD, 8, 110, 63, 13
-	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 12, 189, 86, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 96, 188, 15, 13
-	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 188, 86, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 200, 188, 16, 12
+	CONTROL	"OK", EDITDEPARTMENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 292, 7, 53, 12
+	CONTROL	"Cancel", EDITDEPARTMENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 292, 21, 53, 12
+	CONTROL	"", EDITDEPARTMENT_MCAPITAL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 81, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_CAPBUTTON, "Button", WS_CHILD, 216, 81, 15, 12
+	CONTROL	"Account Net Asset:", EDITDEPARTMENT_SC_SKAP, "Static", WS_CHILD, 8, 80, 96, 12
+	CONTROL	"", EDITDEPARTMENT_MINCOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 96, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_INCBUTTON, "Button", WS_CHILD, 215, 96, 17, 12
+	CONTROL	"", EDITDEPARTMENT_MEXPENSEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 110, 104, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_EXPBUTTON, "Button", WS_CHILD, 216, 110, 16, 13
+	CONTROL	"", EDITDEPARTMENT_MPAYABLEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 125, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_CREDITORSBUTTON, "Button", WS_CHILD, 216, 125, 16, 12
+	CONTROL	"", EDITDEPARTMENT_MRECEIVABLEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 112, 140, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_DEBTORSBUTTON, "Button", WS_CHILD, 216, 140, 16, 12
+	CONTROL	"Associated accounts for reporting:", EDITDEPARTMENT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 177, 313, 32
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 11, 188, 87, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK1BUTTON, "Button", WS_CHILD, 95, 188, 16, 12
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 115, 188, 87, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK2BUTTON, "Button", WS_CHILD, 199, 188, 15, 12
+	CONTROL	"", EDITDEPARTMENT_MACCOUNT3, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 219, 188, 87, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_REK3BUTTON, "Button", WS_CHILD, 303, 188, 15, 12
+	CONTROL	"Contact persons:", EDITDEPARTMENT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 211, 313, 25
+	CONTROL	"Account Income:", EDITDEPARTMENT_SC_INC, "Static", WS_CHILD, 8, 96, 96, 12
+	CONTROL	"Account Expense:", EDITDEPARTMENT_SC_EXP, "Static", WS_CHILD, 8, 110, 100, 13
+	CONTROL	"", EDITDEPARTMENT_MPERSON1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 11, 219, 87, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON1, "Button", WS_CHILD, 95, 217, 15, 14
+	CONTROL	"", EDITDEPARTMENT_MPERSON2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 115, 217, 87, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITDEPARTMENT_PERSONBUTTON2, "Button", WS_CHILD, 199, 217, 16, 13
 	CONTROL	"member department", EDITDEPARTMENT_MEMBERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 140, 11, 91, 12
-	CONTROL	"", EDITDEPARTMENT_IPCPROJECT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 268, 81, 49, 12, WS_EX_CLIENTEDGE
-	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 212, 81, 53, 12
+	CONTROL	"", EDITDEPARTMENT_IPCPROJECT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 296, 81, 49, 12, WS_EX_CLIENTEDGE
+	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 240, 81, 53, 12
+	CONTROL	"Account Receivable:", EDITDEPARTMENT_SC_DEBTORS, "Static", WS_CHILD, 8, 140, 100, 12
+	CONTROL	"Account Payable:", EDITDEPARTMENT_SC_CREDITORS, "Static", WS_CHILD, 8, 125, 100, 12
 END
 
 METHOD CancelButton( ) CLASS EditDepartment
@@ -474,6 +486,26 @@ METHOD CAPButton( lUnique) CLASS EditDepartment
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmCAPITAL:TextValue ),"Net Asset",lUnique,cfilter,self:owner,false)
 	endif
 	RETURN NIL
+METHOD CreditorsButton(lUnique ) CLASS EditDepartment 
+	LOCAL cfilter as string
+	Default(@lUnique,FALSE)
+	cfilter:=MakeFilter({self:NbrPayable},{liability},,,,{self:NbrCAPITAL})
+	if !self:lNew 
+		cfilter+= " and department="+self:mDepId
+		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmpayableacc:TextValue ),"Payable",lUnique,cfilter,self:owner,false)
+	endif
+
+RETURN NIL
+METHOD DebtorsButton(lUnique ) CLASS EditDepartment 
+	LOCAL cfilter as string
+	Default(@lUnique,FALSE)
+	cfilter:=MakeFilter({self:NbrReceivable},{asset},,,,)
+	if !self:lNew 
+		cfilter+= " and department="+self:mDepId
+		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmreceivableacc:TextValue ),"Receivable",lUnique,cfilter,self:owner,false)
+	endif
+
+RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
@@ -483,7 +515,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 	//Put your changes here
 	IF !lGotFocus.and.!IsNil(oControl:VALUE)
 		IF oControl:Name == "MPERSON1".and.!AllTrim(oControl:Value)==AllTrim(cContactName1)
-			IF Empty(oControl:Value) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				SELF:mCLN1 :=  ""
 				SELF:cContactName1 := ""
 				SELF:oDCmPerson1:TextValue := ""
@@ -492,7 +524,7 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 				SELF:PersonButton1(TRUE)
 			ENDIF
 		ELSEIF oControl:Name == "MPERSON2".and.!AllTrim(oControl:Value)==AllTrim(cContactName2)
-			IF Empty(oControl:Value) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				SELF:mCLN2 :=  ""
 				SELF:cContactName2 := ""
 				SELF:oDCmPerson2:TextValue := ""
@@ -501,25 +533,39 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 				SELF:PersonButton2(TRUE)
 			ENDIF
 		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:VALUE)==AllTrim(self:cCAPITALName)
-			IF Empty(oControl:Value) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				self:RegAccount(' ','Net Asset')
          ELSE
 				self:cCAPITALName:=AllTrim(oControl:VALUE)
 				SELF:CAPButton(TRUE)
 			ENDIF
 		ELSEIF oControl:Name == "MINCOMEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cIncName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				self:RegAccount(' ','Income')
          ELSE
 				self:cIncName:=AllTrim(oControl:VALUE)
 				self:IncButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MEXPENSEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cExpname)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+			IF Empty(oControl:VALUE) && emptied?
 				self:RegAccount(' ','Expense')
          ELSE
 				self:cExpname:=AllTrim(oControl:VALUE)
 				self:ExpButton(true)
+			ENDIF
+		ELSEIF oControl:Name == "MPAYABLEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cPayablename)
+			IF Empty(oControl:VALUE) && emptied?
+				self:RegAccount(' ','Payable')
+         ELSE
+				self:cPayablename:=AllTrim(oControl:VALUE)
+				self:CreditorsButton(true)
+			ENDIF
+		ELSEIF oControl:Name == "MRECEIVABLEACC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cReceivablename)
+			IF Empty(oControl:VALUE) && emptied?
+				self:RegAccount(' ','Receivable')
+         ELSE
+				self:cReceivablename:=AllTrim(oControl:VALUE)
+				self:DebtorsButton(true)
 			ENDIF
 		ELSEIF oControl:Name == "MACCOUNT1".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAccount1Name)
 			cAccount1Name:=AllTrim(oControl:Value)
@@ -589,7 +635,7 @@ oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL
 
 oDCmCAPITAL := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MCAPITAL,_GetInst()}}
 oDCmCAPITAL:HyperLabel := HyperLabel{#mCAPITAL,NULL_STRING,"Accountnumber for capital",NULL_STRING}
-oDCmCAPITAL:TooltipText := "Account the department closes to at yera end"
+oDCmCAPITAL:TooltipText := "Account the department closes to at years end"
 
 oCCCAPButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_CAPBUTTON,_GetInst()}}
 oCCCAPButton:HyperLabel := HyperLabel{#CAPButton,"v","Browse in accounts",NULL_STRING}
@@ -600,7 +646,7 @@ oDCSC_SKAP:HyperLabel := HyperLabel{#SC_SKAP,"Account Net Asset:",NULL_STRING,NU
 
 oDCmincomeacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MINCOMEACC,_GetInst()}}
 oDCmincomeacc:HyperLabel := HyperLabel{#mincomeacc,NULL_STRING,"Accountnumber for capital",NULL_STRING}
-oDCmincomeacc:TooltipText := "Account the department closes to at yera end"
+oDCmincomeacc:TooltipText := "Account on which income of the department is recorded"
 
 oCCIncButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_INCBUTTON,_GetInst()}}
 oCCIncButton:HyperLabel := HyperLabel{#IncButton,"v","Browse in accounts",NULL_STRING}
@@ -608,11 +654,27 @@ oCCIncButton:TooltipText := "Browse in accounts"
 
 oDCmexpenseacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MEXPENSEACC,_GetInst()}}
 oDCmexpenseacc:HyperLabel := HyperLabel{#mexpenseacc,NULL_STRING,"Accountnumber for capital",NULL_STRING}
-oDCmexpenseacc:TooltipText := "Account the department closes to at yera end"
+oDCmexpenseacc:TooltipText := "Account on which expenses of the department are recorded"
 
 oCCExpButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_EXPBUTTON,_GetInst()}}
 oCCExpButton:HyperLabel := HyperLabel{#ExpButton,"v","Browse in accounts",NULL_STRING}
 oCCExpButton:TooltipText := "Browse in accounts"
+
+oDCmpayableacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MPAYABLEACC,_GetInst()}}
+oDCmpayableacc:HyperLabel := HyperLabel{#mpayableacc,NULL_STRING,"Accountnumber for creditors",NULL_STRING}
+oDCmpayableacc:TooltipText := "Account on which are recorded expenses in the future to be payed "
+
+oCCCreditorsButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_CREDITORSBUTTON,_GetInst()}}
+oCCCreditorsButton:HyperLabel := HyperLabel{#CreditorsButton,"v","Browse in accounts",NULL_STRING}
+oCCCreditorsButton:TooltipText := "Browse in accounts"
+
+oDCmreceivableacc := SingleLineEdit{SELF,ResourceID{EDITDEPARTMENT_MRECEIVABLEACC,_GetInst()}}
+oDCmreceivableacc:HyperLabel := HyperLabel{#mreceivableacc,NULL_STRING,"Accountnumber for debtors",NULL_STRING}
+oDCmreceivableacc:TooltipText := "Account on which promised income of the department is recorded"
+
+oCCDebtorsButton := PushButton{SELF,ResourceID{EDITDEPARTMENT_DEBTORSBUTTON,_GetInst()}}
+oCCDebtorsButton:HyperLabel := HyperLabel{#DebtorsButton,"v","Browse in accounts",NULL_STRING}
+oCCDebtorsButton:TooltipText := "Browse in accounts"
 
 oDCGroupBox2 := GroupBox{SELF,ResourceID{EDITDEPARTMENT_GROUPBOX2,_GetInst()}}
 oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Associated accounts for reporting:",NULL_STRING,NULL_STRING}
@@ -683,6 +745,12 @@ oDCIPCProject:HyperLabel := HyperLabel{#IPCProject,NULL_STRING,NULL_STRING,NULL_
 
 oDCIPCText := FixedText{SELF,ResourceID{EDITDEPARTMENT_IPCTEXT,_GetInst()}}
 oDCIPCText:HyperLabel := HyperLabel{#IPCText,"IPC Project#:",NULL_STRING,NULL_STRING}
+
+oDCSC_Debtors := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_DEBTORS,_GetInst()}}
+oDCSC_Debtors:HyperLabel := HyperLabel{#SC_Debtors,"Account Receivable:",NULL_STRING,NULL_STRING}
+
+oDCSC_Creditors := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_CREDITORS,_GetInst()}}
+oDCSC_Creditors:HyperLabel := HyperLabel{#SC_Creditors,"Account Payable:",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Edit of Department"
 SELF:HyperLabel := HyperLabel{#EditDepartment,"Edit of Department",NULL_STRING,NULL_STRING}
@@ -767,6 +835,13 @@ ASSIGN mParentDep(uValue) CLASS EditDepartment
 SELF:FieldPut(#mParentDep, uValue)
 RETURN uValue
 
+ACCESS mpayableacc() CLASS EditDepartment
+RETURN SELF:FieldGet(#mpayableacc)
+
+ASSIGN mpayableacc(uValue) CLASS EditDepartment
+SELF:FieldPut(#mpayableacc, uValue)
+RETURN uValue
+
 ACCESS mPerson1() CLASS EditDepartment
 RETURN SELF:FieldGet(#mPerson1)
 
@@ -779,6 +854,13 @@ RETURN SELF:FieldGet(#mPerson2)
 
 ASSIGN mPerson2(uValue) CLASS EditDepartment
 SELF:FieldPut(#mPerson2, uValue)
+RETURN uValue
+
+ACCESS mreceivableacc() CLASS EditDepartment
+RETURN SELF:FieldGet(#mreceivableacc)
+
+ASSIGN mreceivableacc(uValue) CLASS EditDepartment
+SELF:FieldPut(#mreceivableacc, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditDepartment
@@ -869,6 +951,8 @@ METHOD OKButton( ) CLASS EditDepartment
 		"netasset='"+Str(Val(self:NbrCAPITAL),-1)+"',"+;
 		"incomeacc='"+Str(Val(self:NbrIncome),-1)+"',"+;
 		"expenseacc='"+Str(Val(self:NbrExpense),-1)+"',"+;
+		"payableacc='"+Str(Val(self:NbrPayable),-1)+"',"+;
+		"receivableacc='"+Str(Val(self:NbrReceivable),-1)+"',"+;
 		"assacc1 ='"+ Str(Val(self:mAcc1),-1)+"',"+;
 		"assacc2 ='"+ Str(Val(self:mAcc2),-1)+"',"+;
 		"assacc3 ='"+ Str(Val(self:mAcc3),-1)+"',"+;
@@ -931,6 +1015,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		self:cIncName :="" 
 		self:NbrExpense :=""
 		self:cExpname :=""
+		self:NbrPayable :=""
+		self:cPayableName :=""
+		self:NbrReceivable :=""
+		self:cReceivableName :=""
 		self:IPCPROJECT:="" 
 		IF cMainId=="0"
 			mParentDep:=0
@@ -947,7 +1035,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		endif
 	ELSE
 		self:mDepId:=AllTrim(uExtra[4]) 
-		self:oDep:=SQLSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ainc.description as incname,aexp.description as expname,"+;
+		self:oDep:=SqlSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ainc.description as incname,aexp.description as expname,"+; 
+			"apay.description as payablename,arec.description as receivablename,"+;
 			"ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,";
 			+SQLFullName(0,"p1")+" as person1," +;
 			SQLFullName(0,"p2")+" as person2,"+;
@@ -956,6 +1045,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			"left join account an on (an.accid=d.netasset) "+; 
 		"left join account ainc on (ainc.accid=d.incomeacc) "+; 
 		"left join account aexp on (aexp.accid=d.expenseacc) "+; 
+		"left join account apay on (apay.accid=d.payableacc) "+; 
+		"left join account arec on (arec.accid=d.receivableacc) "+; 
 		"left join department dp on (dp.depid=d.parentdep) "+; 
 		"left join person p1 on (p1.persid=d.persid) "+; 
 		"left join person p2 on (p2.persid=d.persid2) "+; 
@@ -979,6 +1070,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			self:NbrExpense :=  Str(self:oDep:expenseacc,-1)
 			self:oDCmexpenseacc:TEXTValue := Transform(self:oDep:expname,"")
 			self:cExpname := AllTrim(self:oDCmexpenseacc:TEXTValue)
+		ENDIF
+		IF !Empty(self:oDep:payableacc)
+			self:NbrPayable :=  Str(self:oDep:payableacc,-1)
+			self:oDCmpayableacc:TextValue := Transform(self:oDep:payablename,"")
+			self:cPayableName := AllTrim(self:oDCmpayableacc:TextValue)
+		ENDIF
+		IF !Empty(self:oDep:receivableacc)
+			self:NbrReceivable :=  Str(self:oDep:receivableacc,-1)
+			self:oDCmreceivableacc:TextValue := Transform(self:oDep:receivablename,"")
+			self:cReceivableName := AllTrim(self:oDCmreceivableacc:TextValue)
 		ENDIF
 		if !Empty(self:oDep:ASSACC1)
 			mAcc1 := Str(self:oDep:ASSACC1,-1)
@@ -1035,7 +1136,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		self:oDCmPerson2:Hide()
 		self:oCCPersonButton2:Hide()
 		self:oDCmPerson2:Hide()
-		self:oCCPersonButton2:Hide()
+		self:oCCPersonButton2:Hide() 
+		self:oDCSC_Debtors:Hide()
+		self:oDCmreceivableacc:Hide()
+		self:oCCDebtorsButton:Hide()
+		self:oDCSC_Creditors:TEXTValue:=self:oLan:WGet("Work expenses payable")
 	else
 		self:oDCMemberText:Hide()
 	endif
@@ -1055,6 +1160,14 @@ METHOD RegAccount(oAccA,ItemName) CLASS EditDepartment
 			self:NbrExpense :=  Str(oAccA:accid,-1)
 			self:oDCmexpenseacc:TextValue := AllTrim(oAccA:Description)
 			self:cExpname := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Payable"
+			self:NbrPayable :=  Str(oAccA:accid,-1)
+			self:oDCmpayableacc:TEXTValue := AllTrim(oAccA:Description)
+			self:cPayablename := AllTrim(oAccA:Description)
+		ELSEIF ItemName=="Receivable"
+			self:NbrReceivable :=  Str(oAccA:accid,-1)
+			self:oDCmreceivableacc:TEXTValue := AllTrim(oAccA:Description)
+			self:cReceivablename := AllTrim(oAccA:Description)
 		ELSEIF ItemName=="Associated Account 1"
 			self:mAcc1 :=  Str(oAccA:accid,-1)
 			self:oDCmAccount1:TEXTValue := AllTrim(oAccA:Description)
@@ -1161,37 +1274,43 @@ METHOD RekButton(lUnique:=false as logic,cValue as string,cName as string,myAcc1
 	RETURN 
 STATIC DEFINE EDITDEPARTMENT_CANCELBUTTON := 107 
 STATIC DEFINE EDITDEPARTMENT_CAPBUTTON := 109 
+STATIC DEFINE EDITDEPARTMENT_CREDITORSBUTTON := 116 
+STATIC DEFINE EDITDEPARTMENT_DEBTORSBUTTON := 118 
 STATIC DEFINE EDITDEPARTMENT_EXPBUTTON := 114 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT1 := 100 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT2 := 102 
 STATIC DEFINE EDITDEPARTMENT_FIXEDTEXT3 := 104 
-STATIC DEFINE EDITDEPARTMENT_GROUPBOX1 := 122 
-STATIC DEFINE EDITDEPARTMENT_GROUPBOX2 := 115 
+STATIC DEFINE EDITDEPARTMENT_GROUPBOX1 := 126 
+STATIC DEFINE EDITDEPARTMENT_GROUPBOX2 := 119 
 STATIC DEFINE EDITDEPARTMENT_INCBUTTON := 112 
-STATIC DEFINE EDITDEPARTMENT_IPCPROJECT := 130 
-STATIC DEFINE EDITDEPARTMENT_IPCTEXT := 131 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 116 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 118 
-STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 120 
+STATIC DEFINE EDITDEPARTMENT_IPCPROJECT := 134 
+STATIC DEFINE EDITDEPARTMENT_IPCTEXT := 135 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 120 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 122 
+STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 124 
 STATIC DEFINE EDITDEPARTMENT_MCAPITAL := 108 
 STATIC DEFINE EDITDEPARTMENT_MDEPARTMNTNBR := 101 
 STATIC DEFINE EDITDEPARTMENT_MDESCRIPTION := 103 
-STATIC DEFINE EDITDEPARTMENT_MEMBERTEXT := 129 
+STATIC DEFINE EDITDEPARTMENT_MEMBERTEXT := 133 
 STATIC DEFINE EDITDEPARTMENT_MEXPENSEACC := 113 
 STATIC DEFINE EDITDEPARTMENT_MINCOMEACC := 111 
 STATIC DEFINE EDITDEPARTMENT_MPARENTDEP := 105 
-STATIC DEFINE EDITDEPARTMENT_MPERSON1 := 125 
-STATIC DEFINE EDITDEPARTMENT_MPERSON2 := 127 
+STATIC DEFINE EDITDEPARTMENT_MPAYABLEACC := 115 
+STATIC DEFINE EDITDEPARTMENT_MPERSON1 := 129 
+STATIC DEFINE EDITDEPARTMENT_MPERSON2 := 131 
+STATIC DEFINE EDITDEPARTMENT_MRECEIVABLEACC := 117 
 STATIC DEFINE EDITDEPARTMENT_OKBUTTON := 106 
-STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON1 := 126 
-STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON2 := 128 
-STATIC DEFINE EDITDEPARTMENT_REK1BUTTON := 117 
-STATIC DEFINE EDITDEPARTMENT_REK2BUTTON := 119 
-STATIC DEFINE EDITDEPARTMENT_REK3BUTTON := 121 
+STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON1 := 130 
+STATIC DEFINE EDITDEPARTMENT_PERSONBUTTON2 := 132 
+STATIC DEFINE EDITDEPARTMENT_REK1BUTTON := 121 
+STATIC DEFINE EDITDEPARTMENT_REK2BUTTON := 123 
+STATIC DEFINE EDITDEPARTMENT_REK3BUTTON := 125 
 STATIC DEFINE EDITDEPARTMENT_SC_CLN := 115 
 STATIC DEFINE EDITDEPARTMENT_SC_CLN1 := 123 
-STATIC DEFINE EDITDEPARTMENT_SC_EXP := 124 
-STATIC DEFINE EDITDEPARTMENT_SC_INC := 123 
+STATIC DEFINE EDITDEPARTMENT_SC_CREDITORS := 137 
+STATIC DEFINE EDITDEPARTMENT_SC_DEBTORS := 136 
+STATIC DEFINE EDITDEPARTMENT_SC_EXP := 128 
+STATIC DEFINE EDITDEPARTMENT_SC_INC := 127 
 STATIC DEFINE EDITDEPARTMENT_SC_SKAP := 110 
 Function FindDep(cDep ref string) as logic
 *	Find a department with the given number/description
