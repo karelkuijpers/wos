@@ -1083,7 +1083,11 @@ ASize(pers_codes,Len(pers_codes)+1)
 AIns(pers_codes,1) 
 pers_codes[1]:={' ',''}
 oMailCd:GoTop()
-mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE)
+mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE) 
+ASize(mail_abrv,Len(pers_codes)+1)
+AIns(mail_abrv,1) 
+mail_abrv[1]:={' ',''}
+
 RETURN 
 FUNCTION FillPersGender() as void pascal
 * Fill global Arrays with gendertypes and salutations of a person 
