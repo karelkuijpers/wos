@@ -6564,7 +6564,7 @@ LOCAL aYearStartEnd:={} as ARRAY
 LOCAL aItem:={} as ARRAY
 local oMBal as balances
 local cStatement as string   // string with selection of accounts and their total values   
-local oBal as SQLSelect
+
 
 * Check input data:
 // IF !ValidateControls( self, self:AControls )
@@ -6663,8 +6663,7 @@ AAdd(Heading,' ')
 DO WHILE !oAcc:EoF
 	cSoort:= oAcc:category
   	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]  
-   oBal:= SqlSelect{"SELECT number FROM balanceitem WHERE balitemid ="+Str(oAcc:balitemid),oConn}
-  	cBalItem := oBal:number	
+  	cBalItem := oAcc:balancenumber
 	IF cSoort=="KO" .or. cSoort=="BA"
 		PerDeb:=oAcc:per_deb
 		PerCre:=oAcc:per_cre
