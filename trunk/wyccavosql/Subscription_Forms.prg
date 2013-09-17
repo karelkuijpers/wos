@@ -713,7 +713,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		IF self:mtype=="D" .and. self:dLastDDdate>=self:oDCmbegindate:SelectedDate  // allready collected?
 			self:oDCmbegindate:SelectedDate:=EndOfMonth(Today())+1  // next month
 		endif	
-		self:oDCmDueDate:SelectedDate:=stod(substr(dtos(self:oDCmbegindate:SelectedDate),1,6)+'25')
+		self:oDCmDueDate:SelectedDate:=SToD(SubStr(DToS(self:oDCmbegindate:SelectedDate),1,6)+'20')
 		self:oDCmEndDate:SelectedDate:=self:oDCmDueDate:SelectedDate+365*100
 		self:mterm   := 1
 		self:mamount   := 0
