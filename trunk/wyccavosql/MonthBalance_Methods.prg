@@ -278,7 +278,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	* lprvyrYtD		: if true also prvyrAfterytd_deb and prvyrAfterytd_cre are returned 
 	* lForeignCurr	: if true _debf and _creF values are also returned from the SQLSelect
 	* lBudget		; if true return also fields with budget values prvper_bud, per_bud, yr_bud from the SQLSelect
-	* lDetails		: if true return also account values accnumber and description from the SQLSelect
+	* lDetails		: if true return also account values accnumber and description and balancenumber (the balance item number) from the SQLSelect
 	* A extra selection to be used in the where clause to select accounts can be given by: Balances:cAccSelection:=<selection criteria>, 
 	*	e.g. a.department in(..,..,...) and a.balitemid in (..,..,..)  
    *
@@ -534,7 +534,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 		cStandardCurrCond:=""
 	endif  
 	// cSelectx: Center select on account a and accountbalanceyear ay
-	cSelectx:="select a.accid,a.balitemid,a.currency,a.department"+iif(lDetails,",a.accnumber,a.description","")+",b.category"+;
+	cSelectx:="select a.accid,a.balitemid,a.currency,a.department"+iif(lDetails,",a.accnumber,a.description,b.number","")+",b.category"+;
 	",sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr2,sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr2"+;
 	",sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr3,sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr3"+;
 	iif(lForeignCurr,;
@@ -567,7 +567,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	
 	// cSelectz: 3e level select on y and budget bu
    
-   cSelectz:="select y.accid,y.balitemid,y.currency,y.department"+iif(lDetails,",y.accnumber,y.description","")+",y.category"+; 
+   cSelectz:="select y.accid,y.balitemid,y.currency,y.department"+iif(lDetails,",y.accnumber,y.description,y.number as balancenumber","")+",y.category"+; 
    ",y.svjdyr3+y.prvyr_deby as prvyr_deb,y.svjcyr3+y.prvyr_crey as prvyr_cre"+;
    ",y.prvyrytd_deby+y.svjdyr2 as prvyrytd_deb,y.prvyrytd_crey+y.svjcyr2 as prvyrytd_cre,"+;
 	"y.prvper_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby,0) as prvper_deb,"+;
