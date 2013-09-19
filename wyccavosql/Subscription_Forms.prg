@@ -37,7 +37,8 @@ CLASS EditSubscription INHERIT DataWindowExtra
     PROTECT cPersonName,cAccountName as STRING
 	PROTECT mCLN,msubid as STRING
 	PROTECT mRek,mAccNumber as STRING 
-	protect mCurRek,mCurCLN as string 
+	protect mCurRek,mCurCLN as string
+	protect mBic,mCurBic as string 
 	protect oCaller as object
 *  	PROTECT lNew AS LOGIC
 	PROTECT mCod AS STRING
@@ -47,7 +48,7 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	protect oSub as Sqlselect 
 	// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs
 
-RESOURCE EditSubscription DIALOGEX  37, 30, 323, 170
+RESOURCE EditSubscription DIALOGEX  37, 30, 381, 167
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -62,25 +63,25 @@ BEGIN
 	CONTROL	"v", EDITSUBSCRIPTION_PERSONBUTTON, "Button", WS_CHILD, 96, 11, 13, 12
 	CONTROL	"", EDITSUBSCRIPTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 11, 92, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITSUBSCRIPTION_ACCBUTTON, "Button", WS_CHILD, 218, 11, 15, 13
-	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
-	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
+	CONTROL	"19-9-2013", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 40, 83, 14
+	CONTROL	"19-9-2013", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 55, 83, 13
 	CONTROL	"", EDITSUBSCRIPTION_MTERM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 73, 83, 11, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 88, 83, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 160, 103, 53, 12
 	CONTROL	"Giro Accept", EDITSUBSCRIPTION_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 224, 70, 53, 11
 	CONTROL	"Direct Debit", EDITSUBSCRIPTION_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 223, 86, 56, 11
-	CONTROL	"Type:", EDITSUBSCRIPTION_MTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 244, 7, 66, 25
-	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 216, 103, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Type:", EDITSUBSCRIPTION_MTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 308, 7, 66, 25
+	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 216, 103, 152, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MBANKACCNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 68, 103, 83, 72
 	CONTROL	"", EDITSUBSCRIPTION_MREFERENCE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 119, 84, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MLSTCHANGE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 44, 140, 50, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITSUBSCRIPTION_TYPETEXT, "Static", WS_CHILD, 248, 14, 53, 13
+	CONTROL	"", EDITSUBSCRIPTION_TYPETEXT, "Static", WS_CHILD, 312, 14, 53, 13
 	CONTROL	"Payment Method", EDITSUBSCRIPTION_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 216, 62, 66, 38
 	CONTROL	"Bank account:", EDITSUBSCRIPTION_BANKTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 104, 53, 12
-	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 147, 53, 13
-	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 268, 147, 53, 13
+	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 264, 147, 53, 13
+	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 320, 147, 53, 13
 	CONTROL	"Reference:", EDITSUBSCRIPTION_SC_REF, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 119, 53, 12
-	CONTROL	"4-9-2013", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
+	CONTROL	"19-9-2013", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 180, 40, 83, 14
 	CONTROL	"End:", EDITSUBSCRIPTION_FIXEDTEXT11, "Static", WS_CHILD, 156, 44, 20, 12
 END
 
@@ -356,7 +357,8 @@ METHOD OKButton( ) CLASS EditSubscription
 	local cStatement,cDueDeleteWhere as string 
 	local cmessage,cError as string
 	local LastDDdate,dNewDuedate,dThisMonthBegin,dInvoiceBegin as date 
-	local cLog as string
+	local cLog as string 
+	local aMndt as array
 	local oDue as SQLSelect
 	local oStmnt,oStmntDue as SQLStatement
 
@@ -486,6 +488,9 @@ METHOD OKButton( ) CLASS EditSubscription
 			RETURN nil
 		ENDIF
 	ENDIF
+	if SepaEnabled .and. !Empty(self:mBankAccnt)
+		self:mBic:=ConS(SqlSelect{'select bic from personbank where banknumber="'+self:mBankAccnt+'"',oConn}:Bic)
+	endif
 	if self:mtype=="D" .and. self:mPayMethod=="C"
 		if self:lNew
 			cLog:=self:oLan:RGet("Inserted donation")+':'+;
@@ -571,12 +576,24 @@ METHOD OKButton( ) CLASS EditSubscription
 			"personid="+ self:mCLN+;
 				", personname="+self:cPersonName+;
 				", account="+ self:mAccNumber+' '+self:cAccountName+;
-				CRLF+"CHANGES:"+CRLF+cLog;
+				CRLF+"CHANGES:"+CRLF+cLog
+			if SepaEnabled .and.!self:mBankAccnt==self:oSub:BANKACCNT
+				// bank account changed
+				if self:mBic==self:mCurBic .and. !Empty(self:oSub:firstinvoicedate)  // not first time
+					// same bank? new mandateid needed
+					aMndt:=Split(self:mInvoiceID,'-')
+					if Len(aMndt)<7
+						self:mInvoiceID+='-1'
+					else
+						self:mInvoiceID:=aMndt[1]+'-'+aMndt[2]+'-'+aMndt[3]+'-'+aMndt[4]+'-'+aMndt[5]+'-'+aMndt[6]+'-'+Str(Val(aMndt[7])+1,-1)
+					ENDIF
+				ENDIF
+			endif 
 				
 		endif
 	endif
 	SetDecimalSep(Asc('.'))  // to be sure
-
+   
 	cStatement:=iif(self:lNew,"insert into","update")+" subscription set "+;
 		"accid="+ self:mRek   +;
 		",personid="+ self:mCLN +;
@@ -590,7 +607,9 @@ METHOD OKButton( ) CLASS EditSubscription
 		",invoiceid='"+ iif(IsNil(self:mInvoiceID),"",AddSlashes(self:mInvoiceID))+"'"+;
 		",reference='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
 		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
-	",bankaccnt='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
+		",bankaccnt='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
+		",bic='"+self:mBic+"'"+;
+		iif(self:lNew .or.!self:mBankAccnt==self:oSub:BANKACCNT,',firstinvoicedate="0000-00-00"','')+;   // reset to first in case of bankaccount change
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
@@ -666,8 +685,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	IF !self:lNew
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
-		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,"+;
-			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
+		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,cast(s.firstinvoicedate as date) as firstinvoicedate,"+;
+			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.bic,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
 			SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber separator ',') as bankaccs "+;
 			"from subscription s, account a,person p "+; 
 		+" left join personbank b on (b.persid=p.persid) " +;
@@ -739,6 +758,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:mCurCLN:=self:mCLN
 		self:cPersonName := self:oSub:PersonName
 		self:mPerson:= cPersonName
+		self:mCurBic:=self:oSub:Bic
+		self:mBic:=self:mCurBic
 
 		self:oDCmbegindate:SelectedDate := self:oSub:begindate
 		IF Empty(self:oSub:DueDate)
@@ -858,7 +879,8 @@ Function ProlongateAll(oCall as Window ) as logic
 
 	* last end date should be after next due date
 	* only donations and subscriptions 
-	oSub:=SqlSelect{"select s.*,count(dueid) as nbrdue from subscription s left join dueamount d on (s.subscribid=d.subscribid) "+; 
+	oSub:=SqlSelect{"select s.subscribid,s.amount,cast(s.duedate as date) as duedate,s.term,cast(s.begindate as date) as begindate,cast(s.enddate as date) as enddate,"+;
+	"s.personid,count(dueid) as nbrdue from subscription s left join dueamount d on (s.subscribid=d.subscribid) "+; 
 	"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate group by s.subscribid",oConn}       
 	if oSub:RecCount<1
 		return false
