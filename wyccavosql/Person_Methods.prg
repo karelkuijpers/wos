@@ -4300,6 +4300,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local cNextDD:=self:oLan:Rget("next direct debit in") as string 
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
+	local nFirstSdd as int // year*100+month of sysparms:datefrstsdd
 	LOCAL lError,lSetAMPM as LOGIC
 	local dlg,invoicedate,dReqCol as date
 	LOCAL ptrHandle
@@ -4313,7 +4314,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	//                1    2     3      4      5      6            7      8   9  10      11         12    13     14       15      16    17   18
 	local aTransIncExp:={} as array // array like aTrans for ministry income/expense transactions   
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person
-	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre}   
+	local aMbalValues:={} as array // {accid,year,month,currency,deb,cre} 
+	local aSubvalues:={} as array  //{subscribid,firstinvoicedate}  
 	local aDD:={} as array // values voor CT-file: {{AmountInvoice,subscribid,begindate,PersonName,BANKNBRCRE,description,invoiceid},... 
 	local aSeqTp:={{'FRST',0,0.00},{'RCUR',0,0.00},{'FNAL',0,0.00},{'OOFF',0,0.00}} // array with total per sequencetype: {{name,total transactions, ctrl sum},...    
 	//                 1                2               3              4
@@ -4376,6 +4378,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		(ErrorBox{self,self:oLan:WGet("no maximum direct debit amounts for individual or batch specified in system data")}):Show() 
 		return false		
 	endif
+	nFirstSdd:=year(datefirstSEPAdd)*100+month(datefirstSEPAdd)
 	// file description array: 
 	
 	aDescr[1]:=oLan:Rget("Single gift")
@@ -4411,15 +4414,16 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		
 		// 		cErrMsg:=self:oLan:WGet("The following direct debit bank accounts don't belong to corresponding person")+":"
 		do while !oDue:EoF
-			if !Empty(oDue:bankaccounts)
-				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"' where subscribid="+Str(oDue:subscribid,-1),oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:status)
-					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")" 
-				endif
-			else
+// 			if !Empty(oDue:bankaccounts)
+// 				// replace bankaccount in subscription and reset it to frst:
+// 				oStmnt:=SQLStatement{"update subscription set bankaccnt='"+Split(oDue:bankaccounts,",")[1]+"',firstinvoicedate='0000-00-00' where subscribid="+Str(oDue:subscribid,-1),oConn}
+// 				oStmnt:Execute()
+// 				if !Empty(oStmnt:status)
+// 					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")" 
+// 				endif
+// 			else
 				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
-			endif
+// 			endif
 			oDue:skip()
 		enddo
 		if !Empty(cErrMsg)
@@ -4432,7 +4436,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oDue:=SqlSelect{"select cast(group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',"+;
 	"s.begindate,'#$#',du.seqtype,'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 	"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid separator '#%#') as char) as grDue " +;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid,'#$#',s.firstinvoicedate separator '#%#') as char) as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s,personbank pb "+;
 		"where s.subscribid=du.subscribid and s.paymethod='C' and b.balitemid=a.balitemid and pb.banknumber=s.bankaccnt "+;
@@ -4445,8 +4449,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN false
 	ENDIF
 	// Add to aDue:
-	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes,mandate id
-	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18            19
+	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes,mandate id , firstinvoicedate
+	//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18            19            20
 	AEval(Split(oDue:grDue,'#%#',,true),{|x|AAdd(aDue,Split(x,'#$#',,true))}) 
 	
 	//    LogEvent(self,oDue:SQLString,"logsql")
@@ -4493,6 +4497,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
 			loop
 		endif
+	// aDue:
 	// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname ,bic , mailingcodes,mandateid
 	//    1       2         3       4     5        6         7             8         9    10     11         12     13     14   15     16         17       18           19
 
@@ -4513,7 +4518,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if !empty(nTerm) .and. nterm<=12
 			// prenotification:
 // 			cDescr+=', '+self:oLan:RGet("mandate id")+':'+aDue[i,19]+', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
-			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm-1,12)+1])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
+			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm-1,12)+1])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm-1)/12),-1)
 		endif
 		oReport:PrintLine(@nRow,@nPage,;
 			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+"  "+cDescr,headinglines)  
@@ -4556,6 +4561,18 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				SeqTp:=2  // RECUR
 			endif
 		endif
+		if SeqTp<=2
+			// correct RCUR when first sepa dd: 
+			if aDue[i,20]=="0000-00-00"
+// 			if (Year(aDue[i,8])*100+Month(aDue[i,8])-aDue[i,10])< nFirstSdd
+				SeqTp:=1  // apparently first DD for SEPA 
+			else
+				SeqTp:=2
+			endif 
+		endif
+		if aDue[i,20]="0000-00-00"
+			AAdd(aSubvalues,{aDue[i,2],aDue[i,8]}) // save invoice as firstinvoicedate
+		endif 
 		aSeqTp[SeqTp,2]++
 		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
 		// add to aDD for mailing DD file:
@@ -4741,7 +4758,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write','')+',`transaction` write',oConn}      // alphabetic order
+	oStmnt:=SQLStatement{'lock tables `dueamount` write,`mbalance` write'+iif(Len(avaluesPers)>0,',`person` write','')+',`subscription` write,`transaction` write',oConn}      // alphabetic order
 	oStmnt:Execute()
 
 	// make transactions:
@@ -4820,6 +4837,20 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				ErrorBox{,self:oLan:WGet('persons could not be updated, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
+		endif 
+		if Len(aSubvalues)>0
+			// update subscription with first invoice date:
+			oStmnt:=SQLStatement{'insert into subscription (subscribid,firstinvoicedate) values '+Implode(aSubvalues,'","')+;
+			" on duplicate key update firstinvoicedate=values(firstinvoicedate)",oConn}
+			oStmnt:Execute()
+			if	!Empty(oStmnt:status)
+				SQLStatement{"rollback",oConn}:Execute() 
+				SQLStatement{"unlock tables",oConn}:Execute()
+				LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				ErrorBox{,self:oLan:WGet('subscription could not be updated, nothing recorded')+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
+				return false 
+			endif
+			
 		endif
 	endif
 	if !lError
