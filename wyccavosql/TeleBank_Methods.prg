@@ -1739,7 +1739,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633'.or.lv_kind=='166' ;                     // terugboeking euro-incasso
 								.or. lv_kind=='629';      // euro incasso core equens
 								.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
-								lv_kind:='COL' 
+								lv_kind:='COL'+iif(lv_kindORG='166',"REJ",'') 
 							endif 
 						endif
 					case oSub:Name==#NtryDtls .and.(lv_kindORG=='583' .or. lv_kindORG=='055' .or. lv_kindORG=='401')   // crediteuren betaling equens/rflp 
@@ -1923,7 +1923,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								nEl2:=0
 								if	!Empty(oElm2:=oElm:ScanElement(#AddtlInf,@nEl2)) 
 									lv_description+=' '+oElm2:STRINGValue
-									if lv_kind=='COL'.and. Empty(lv_persid)
+									if SubStr(lv_kind,1,3)=='COL'.and. Empty(lv_persid)
 										if Len(Split(lv_EndtoEnd,'-'))=3
 											lv_persid:=Split(lv_EndtoEnd,'-')[1]
 										endif
@@ -1933,7 +1933,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							endif 
 							
 							* save transaction: 
-							if lv_kind=='BGC' .or. lv_kind=='COL'
+							if lv_kind=='BGC' .or. SubStr(lv_kind,1,3)=='COL'
 								if Empty(Cur_enRoute)
 									(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted2"}):show()
 									return false 
@@ -4457,7 +4457,7 @@ METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 		IF .not.Empty(self:m56_budgetcd).and..not.IsAlpha(self:m56_budgetcd)
 			self:m56_accnumber:=self:m56_budgetcd
 			self:m56_recognised:=true
-			if (self:m56_kind=="CLL" .or.self:m56_kind=="COL") .and. self:m56_addsub=="A"   // storno:
+			if (self:m56_kind=="CLL" .or.self:m56_kind="COL") .and. self:m56_addsub=="A"   // storno:
 				self:m56_autmut:=false
 				IF self:m56_kind=="CLL"
 					self:m56_sgir:=self:m56_Payahead
@@ -4931,7 +4931,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
 	i:=0
 	do while i<Len(avalueTrans) 
-		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]=='COL')) .and.!x[15]='X'},i+1)   // non-gifts or person unknown and no storno's  
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]='COL')) .and.!x[15]='X'},i+1)   // non-gifts or person unknown and no storno's  
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
@@ -4983,7 +4983,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						lProcAuto:=true
 					endif
 				endif
-			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]=="COL" .or.aValueTrans[i,5]=="OCR") .and.val(aValueTrans[i,4])=0.and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]="COL" .or.aValueTrans[i,5]=="OCR") .and.val(aValueTrans[i,4])=0.and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
 				// in case of recording of automatic collections take payahead as contra account:
 				cDestAcc:=self:m57_bankacc[j,8]
 				lProcAuto:=true 
