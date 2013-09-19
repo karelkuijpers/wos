@@ -21,6 +21,7 @@ Global Collate as string // can be used for order by to conform local alphabet o
 GLOBAL CountryCode as string 
 Global CountryNames:={} as array
 GLOBAL CurPath as STRING
+global datefirstSEPAdd as date
 global dbname as string
 GLOBAL DecAantal:= 2 as SHORT
 global DecSeparator as string
@@ -121,7 +122,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.171" as string
+global Version:="3.0.0.173" as string
 global Versiondate:= __date__+' '+ __time__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
