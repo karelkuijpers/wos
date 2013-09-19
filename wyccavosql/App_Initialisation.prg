@@ -1621,6 +1621,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","invoiceid","varchar(35)","NO","",""},;
 		{"subscription","bankaccnt","varchar(64)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
+		{"subscription","firstinvoicedate","date","NO","0000-00-00",""},;
+		{"subscription","bic","varchar(11)","NO","",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
 		{"sysparms","lstreportmonth","int(6)","NO","0",""},;
 		{"sysparms","mindate","date","NO","0000-00-00",""},;
@@ -1705,7 +1707,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
 	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
-		{"telebankpatterns","kind","char(5)","NO","",""},;
+		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
 		{"telebankpatterns","addsub","char(1)","NO","",""},;
@@ -1718,7 +1720,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","bookingdate","date","NO","0000-00-00",""},;
 		{"teletrans","seqnr","int(10)","NO","0",""},;
 		{"teletrans","contra_bankaccnt","varchar(64)","NO","",""},;
-		{"teletrans","kind","char(4)","NO","",""},;
+		{"teletrans","kind","char(6)","NO","",""},;
 		{"teletrans","contra_name","varchar(64)","NO","",""},;
 		{"teletrans","budgetcd","char(20)","NO","",""},;
 		{"teletrans","amount","decimal(15,2)","NO","0",""},;
