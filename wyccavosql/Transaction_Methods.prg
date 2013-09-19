@@ -1122,7 +1122,7 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 		oDCGiroText:TEXTValue:=AllTrim(self:oTmt:m56_contra_name)+ ": "+AllTrim(self:oTmt:m56_description)
 	endif
 // 	if self:oTmt:m56_description="NAAM/NUMMER STEMMEN NIET OVEREEN" 
-	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A" .and. AtC("Geweigerd:",self:oTmt:m56_description)>0    // refused order
+	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A" .and. (AtC("Geweigerd:",self:oTmt:m56_description)>0.or.self:oTmt:m56_kind="COLREJ")   // refused order
 		oHm:AccID:=self:oTmt:m56_payahead 
 		self:oTmt:m56_autmut:=FALSE
 	endif
@@ -1962,22 +1962,26 @@ METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as log
 METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL nErrRec as int
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
-	LOCAL oBox as WarningBox
-	LOCAL oHm as TempTrans
-	LOCAL lError,lOK as LOGIC
-	LOCAL curRec as int
-	LOCAL i,j,nSeqnbr as int
-	LOCAL CurValue as ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
-	LOCAL ThisRec,nMir as int
-	LOCAL cError as STRING, ErrorLine:=1,nSavRec as int
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
-	local oStmnt as SQLStatement 
-	local oPers,oMyTele,oMyImp,oAccFld,oMBal,oDue as SQLSelect
+	LOCAL cError as STRING 
 	local cAccs as string   // accounts used in transaction 
 	local cDueAccs as string	// accounts for locking dueamounts 
+	local mandateid,endtoend as string
+	LOCAL curRec as int
+	LOCAL i,j,nSeqnbr as int
+	LOCAL ThisRec,nMir as int
+	local ErrorLine:=1,nSavRec as int 
+	local invoicedate as date
+	LOCAL lError,lOK as LOGIC
+	LOCAL CurValue as ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
 	local aMyBank:=self:abankacc as array
 	local aMyPayaHead:=self:aPayaHead as array
+	local oPers,oMyTele,oMyImp,oAccFld,oMBal,oDue as SQLSelect
+	local oStmnt as SQLStatement 
+	LOCAL oBox as WarningBox
+	LOCAL oHm as TempTrans
+	
 	oHm := self:server
 	self:mDAT:= self:oDCmDat:SelectedDate
 	IF !self:fTotal==0
@@ -2076,7 +2080,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				self:oDCmperson:SetFocus()
 				RETURN FALSE
 			ELSEIF m54_pers_sta=='O' 
-				if Empty(self:mBst) .or.!SubStr(self:mBst,1,3)=='COL' // skip storno's
+				if Empty(self:mBst) .or.!SubStr(self:mBst,1,3)='COL' // skip storno's
 					if !Empty(self:oDCmPerson:TEXTValue)
 						oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
 						oBox:Type := BUTTONYESNO
@@ -2140,7 +2144,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
 	oStmnt:=SQLStatement{'lock tables '+iif(!Empty(cDueAccs).or.lInqUpd,'`dueamount` write,','')+iif(self:lImport,'`importtrans` write,','')+'`mbalance` write,'+iif(!Empty(self:mCLNGiver),'`person` write,','')+;
-	iif(!Empty(cDueAccs).or.lInqUpd,'`subscription` read,','')+iif(self:lTeleBank,'`teletrans` write,','')+'`transaction` write',oConn}   // alphabetic order
+	iif(!Empty(cDueAccs).or.lInqUpd,'`subscription` write,','')+iif(self:lTeleBank,'`teletrans` write,','')+'`transaction` write',oConn}   // alphabetic order
 	oStmnt:execute()
 
 	IF lInqUpd
@@ -2319,7 +2323,25 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:aMirror[i,1]),oHm:aMirror[i,2],oHm:aMirror[i,3])
 						if !Empty(cError)
 							lError:=true
-							// 								exit
+						else
+							// check if rejection of first sepa DD:
+							if sepaenabled .and. self:mBst="COLREJ".and.oHm:Amirror[i,2] >	oHm:Amirror[i,3] 
+								if(j:=AtC('WDD-A-',oHm:Amirror[i,16]))>0
+									mandateid:=AllTrim(SubStr(oHm:Amirror[i,16],j))
+									if (j:=AtC('EndtoEnd:',oHm:Amirror[i,16]))>0
+										endtoend:=SubStr(oHm:Amirror[i,16],j+9,30)
+										if Len(Split(endtoend,'-'))>2
+											invoicedate:=SToD(Split(endtoend,'-')[2])
+											oStmnt:=SQLStatement{'update subscription set firstinvoicedate="0000-00-00" where personid="'+self:mCLNGiver+'" and invoiceid="'+mandateid+'" and firstinvoicedate="'+SQLdate(invoicedate)+'"',oConn}
+											oStmnt:execute()
+											if !Empty(oStmnt:Status)
+												lError:=true 
+												cError:=oStmnt:ErrInfo:errormessage
+											endif
+										endif
+									endif
+								endif
+							endif 
 						endif
 					ENDIF
 				endif
