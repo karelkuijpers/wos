@@ -379,6 +379,49 @@ if Empty(oStmnt:status)
 else
 	return false
 endif
+METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
+	LOCAL lValid := true as LOGIC
+	LOCAL cError as STRING      
+	LOCAL oTBQuestion as TextBox
+	Local dTempdate as date      
+	LOCAL oPer:=self:oStOrdr as sqlselect
+         
+	LOCAL fTotalcredit as float   
+	
+	dTempdate :=  oPer:LstRecording + 31
+	
+	// check startdate < today, enddate in the future and latestbooking longer then one month ago
+		IF  oDCmIDAT:SelectedDate< Today().and.odcmEdat:SelectedDate > Today().and.Today()  > dTempdate   
+		  
+	   lValid := FALSE 
+	      
+	   oStOrdLH:GoTop()
+	   
+	 	do	while	!oStOrdLH:EoF 
+	 		if oStOrdLH:DEB <> oStOrdLH:CRE       
+	 			 fTotalcredit +=  iif(Empty(oStOrdLH:CRE),0,oStOrdLH:CRE)     
+	 			
+	 		endif
+		
+		oStOrdLH:Skip()
+		enddo	   		
+		
+		cError := "Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToS(Max(self:odcmIdat:SelectedDate,MinDate))+ " till today " +self:mCurrency+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
+	
+	ENDIF
+                        
+ 	if !lValid
+ 		oTBQuestion := TextBox{self, "WARNING", cError}
+  	   oTBQuestion:TYPE :=  BOXICONQUESTIONMARK + BUTTONYESNO
+
+   	IF (oTBQuestion:Show() = BOXREPLYYES)
+     	 RETURN lValid := true
+  	 	ELSE
+   	  RETURN lValid := FALSE
+   	ENDIF
+ 	ENDIF
+ 	
+RETURN lValid
 method ValidateHelpLine(lNoMessage:=false as logic,ErrorLine ref int) as logic class EditPeriodic 
 	* lNoMessage: True: Do not show error message
 	LOCAL lValid := true as LOGIC
