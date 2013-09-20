@@ -77,7 +77,7 @@ CLASS EditPeriodic INHERIT DataWindowExtra
 	Export lMemberGiver as logic
 	export oStOrdr,oStOrdL as SQLSelect
 	
-	declare method UpdateStOrd,UpdStOrdLn,ValidateHelpLine
+	declare method UpdateStOrd,UpdStOrdLn,ValidateHelpLine, ValidateBooking
 	
 METHOD CancelButton( ) CLASS EditPeriodic
 SELF:ENDWindow()
@@ -276,7 +276,7 @@ METHOD OKButton( ) CLASS EditPeriodic
 	local aGCAcc:={} as array  // array with assessment codes and account id's of lines 
 	local cPersid as string
 // 	IF ValidateControls( self, self:AControls ) .and. self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
-	IF self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
+	IF self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) .and. self:ValidateBooking(oStOrdLH)
 		if Len(oStOrdLH:aMirror)=0 .or. AScan(oStOrdLH:aMirror,{|x|x[2]<>x[1]})=0
 			if !lNew
 				self:oCaller:DeleteButton()
