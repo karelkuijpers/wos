@@ -2017,7 +2017,7 @@ BEGIN
 	CONTROL	"", TAB_PARM3_MCREDITORS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 55, 173, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", TAB_PARM3_CREBUTTON, "Button", WS_CHILD, 272, 55, 15, 12
 	CONTROL	"Account Receivable", TAB_PARM3_SC_SDEB, "Static", WS_CHILD, 12, 36, 68, 13
-	CONTROL	"Id Contract direct debit/ Chamber of Commerce:", TAB_PARM3_FIXEDTEXT2, "Static", WS_CHILD, 12, 73, 84, 19
+	CONTROL	"Id Contract direct debit:", TAB_PARM3_FIXEDTEXT2, "Static", WS_CHILD, 12, 73, 84, 19
 	CONTROL	"", TAB_PARM3_CNTRNRCOLL, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 73, 135, 13, WS_EX_CLIENTEDGE
 	CONTROL	"Bank account direct debit:", TAB_PARM3_FIXEDTEXT3, "Static", WS_CHILD, 12, 92, 88, 18
 	CONTROL	"", TAB_PARM3_BANKNBRCOL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 100, 92, 188, 140
@@ -2168,7 +2168,7 @@ oDCSC_SDEB := FixedText{SELF,ResourceID{TAB_PARM3_SC_SDEB,_GetInst()}}
 oDCSC_SDEB:HyperLabel := HyperLabel{#SC_SDEB,"Account Receivable",NULL_STRING,NULL_STRING}
 
 oDCFixedText2 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Id Contract direct debit/ Chamber of Commerce:",NULL_STRING,NULL_STRING}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Id Contract direct debit:",NULL_STRING,NULL_STRING}
 
 oDCCNTRNRCOLL := SingleLineEdit{SELF,ResourceID{TAB_PARM3_CNTRNRCOLL,_GetInst()}}
 oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,NULL_STRING,"Contract number automatic collection (KID files) or Chamber of Commerce Id",NULL_STRING}
