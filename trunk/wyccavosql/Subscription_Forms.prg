@@ -489,7 +489,11 @@ METHOD OKButton( ) CLASS EditSubscription
 		ENDIF
 	ENDIF
 	if SepaEnabled .and. !Empty(self:mBankAccnt)
-		self:mBic:=ConS(SqlSelect{'select bic from personbank where banknumber="'+self:mBankAccnt+'"',oConn}:Bic)
+		self:mBic:=ConS(SqlSelect{'select bic from personbank where banknumber="'+self:mBankAccnt+'"',oConn}:Bic) 
+		if Empty(self:mBic)
+			(ErrorBox{,self:oLan:WGet('No Bic filled for this bankaccount')}):Show()
+			RETURN nil
+		ENDIF
 	endif
 	if self:mtype=="D" .and. self:mPayMethod=="C"
 		if self:lNew
