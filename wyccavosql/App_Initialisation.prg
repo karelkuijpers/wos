@@ -1202,8 +1202,6 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 		oStmnt:Execute()
 	endif
 
-
-	InitGlobals() 
 	oSel:=SqlSelect{"select accid from account where giftalwd=1 limit 2",oConn} 
 	if oSel:RecCount=2
 		MultiDest:=true
@@ -1225,8 +1223,9 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			self:FirstOfDay:=FALSE
 		endif
 	endif
-	return 
+	InitGlobals() 
 
+	return
 method InitializeDB() as void Pascal  class Initialize
 	local aCurColumn:={}, aCurIndex:={} as array
 	local oSel as SQLSelect
