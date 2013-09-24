@@ -4052,7 +4052,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		if self:lTeleBank .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA(self:oTmt:m56_contra_bankaccnt)
 			ErrorBox{self:owner, self:oTmt:m56_contra_bankaccnt+': '+self:oLan:WGet("not a sepa bank account; convert it via https://www.ibanbicservice.nl/SingleRequest.aspx")+CRLF+; 
-			" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF;
+			" or http://www.iban-rechner.de/iban_berechnen_bic.html"+CRLF +" or http://www.ibanbic.be"+CRLF;
 				+self:oLan:wget("and add it to this giver before entering this gift")}:show()
 			return false
 		endif
