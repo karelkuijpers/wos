@@ -3400,11 +3400,11 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
    	self:oCCRadioButtonCollection:Caption+="("+self:oLan:WGet("KID file")+")"
    endif
 	self:oDCeind_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2)) 
-	rmnd--
-	if rmnd<1
-		rjaar--
-		rmnd:=12
-	endif
+// 	rmnd--
+// 	if rmnd<1
+// 		rjaar--
+// 		rmnd:=12
+// 	endif
 	self:oDCbegin_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+'01') 
 	oDateR:=self:oDCdatedirectdebit:DateRange
 	oDateR:Min:=Today()
