@@ -727,6 +727,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 			self:oDCmInvoiceID:Show()
 		endif
 		self:dLastDDdate:=self:oCaller:dLastDDdate
+		self:mBankAccnt:=''
 	ENDIF
 
 	IF self:lNew
@@ -789,8 +790,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 			if !Empty(self:oSub:BANKACCNT)
 				self:oDCmBankAccnt:CurrentItem:=self:oSub:BANKACCNT
 			endif
-		else
-			self:oDCmBankAccnt:CurrentItemNo:=1
 		endif	
 	ENDIF
 	IF self:mtype=="D"
