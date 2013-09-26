@@ -944,15 +944,16 @@ METHOD NewButton CLASS EmployeeBrowser
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	//Put your PostInit additions here
 self:SetTexts()
-self:GoTop() 
+self:GoTop()
+ 
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	//Put your PreInit additions here 
 	local cEmpStmnt as string
 	cEmpStmnt:='select e.empid,'+SQLFullName(2)+' as fullname,';
-	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as datetime) as lstlogin,cast("+Crypt_Emp(false,"e.type") +" as char) as type"+;
-	' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,'e.persid')+") where 1 order by lastname"
-	self:oSelEmp:=SQLSelect{cEmpStmnt,oConn}
+	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as char) as lstlogin,cast("+Crypt_Emp(false,"e.type") +" as char) as type"+;
+	' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,'e.persid')+") where 1 order by online desc, lastname asc"
+	self:oSelEmp:=SqlSelect{cEmpStmnt,oConn}
 	self:oSelEmp:Execute()
 	RETURN nil 
 	
@@ -961,6 +962,12 @@ method Refresh() class EmployeeBrowser
 self:oSFEmployeeBrowser_DETAIL:Browser:Refresh()
 return
 STATIC DEFINE EMPLOYEEBROWSER_DELETEBUTTON := 103 
+RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBLOGINNAME as DataColumn
@@ -970,12 +977,6 @@ CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra
 	PROTECT oDBMONLINE as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1014,7 +1015,7 @@ oDBmType:BlockOwner := self:server
 oDBmType:Block := {|x| typedescr(x:type)}
 self:Browser:AddColumn(oDBMTYPE)
 
-oDBLSTLOGIN := DataColumn{Employee_LSTLOGIN{}}
+oDBLSTLOGIN := DataColumn{18}
 oDBLSTLOGIN:Width := 18
 oDBLSTLOGIN:HyperLabel := HyperLabel{#LSTLOGIN,"Last Login",NULL_STRING,NULL_STRING} 
 oDBLSTLOGIN:Caption := "Last Login"
