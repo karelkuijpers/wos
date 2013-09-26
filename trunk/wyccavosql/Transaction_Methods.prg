@@ -802,7 +802,11 @@ METHOD append() CLASS General_Journal
 	oHm:OPP:=cOPP
 	oHm:DESCRIPTN:=cOms
 	&& add empty row to mirror:
-	AAdd(oHm:aMirror,{'           ',oHm:deb,oHm:cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0})
+// aMirro: {AccID,Deb,cre,gc,category,RecNo,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,DEBFORGN,CREFORGN,PPDEST, description,persid,Type, INCEXPFD,depid}
+//            1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
+
+	AAdd(oHm:Amirror,{'           ',oHm:Deb,oHm:cre,'  ',' ',oHm:RecNo,0,' ','','',sCURR,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0}) 
+	//                       1         2      3      4    5      6     7 8   9  10  11    12        13         14        15      16       17 18     19      20 
 RETURN true
 METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
 * Update of corresponding due amounts:
@@ -2007,7 +2011,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			curRec:=oHm:aMIRROR[i,6]  // RECNO
 			* Check if giver is a member:
 			mbrRek:=oHm:aMIRROR[i,1]
-			mCLNGiverMbr := oHm:aMIRROR[i,17]
+			mCLNGiverMbr := cons(oHm:aMIRROR[i,17])
 			//	check	if	direct gift	report: 
 			lOK:=false
 			if	AScan(oHm:aMIRROR,{|x| x[4]="AG" .and. (x[1]==mbrRek .or.x[17]==mCLNGiverMbr)	})>0
@@ -4314,7 +4318,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* save bankaccntnbr:
 			if !Empty(self:mCLNGiver)
 				IF !self:Recognised          // it is possible that the bank account is not yet recorded
-					oStmnt:=SQLStatement{"insert ignore into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn}
+					oStmnt:=SQLStatement{"insert ignore into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"',bic='"=self:oTmt:m56_bic+"'",oConn}
 					oStmnt:execute()
 				ELSE
 					oStmnt:=SQLStatement{"update ignore personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn} 
