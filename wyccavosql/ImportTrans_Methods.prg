@@ -691,7 +691,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		// aMirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
 		//            1      2   3  4     5      6          7         8        9        10     11     12      13        14      15       16          17   18      19      20
 		
-		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,oImpB:persid,cType,'',oHM:DepID})
+		AAdd(self:oHM:aMirror,{self:oHM:accid,self:oHM:deb,self:oHM:cre,self:oHM:Gc,self:oHM:kind,self:oHM:RecNo,,self:oHM:AccNumber,'','',self:oHM:currency,MultiCur,self:oHM:debforgn,self:oHM:creforgn,self:oHM:REFERENCE,self:oHM:descriptn,ConS(oImpB:persid),cType,'',oHM:DepID})
 		cDescription:=oImpB:descriptn
 		self:m56_description:=cDescription 
 		self:m56_assmntcd:=oImpB:assmntcd
