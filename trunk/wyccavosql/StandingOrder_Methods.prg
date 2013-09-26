@@ -383,13 +383,13 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 	LOCAL lValid := true as LOGIC
 	LOCAL cError as STRING      
 	LOCAL oTBQuestion as TextBox
-	Local dTempdate as date      
+	Local dTempdate, dFirstBookdate as date      
 	LOCAL oPer:=self:oStOrdr as sqlselect
          
 	LOCAL fTotalcredit as float   
 	
-	dTempdate :=  oPer:LstRecording + (31 * self:mperiod)
-	
+	dTempdate :=  oPer:lstrecording + (30 * self:mperiod) + 1
+	  	  
 	// check startdate < today, enddate in the future and latestbooking longer then one month ago
 		IF  oDCmIDAT:SelectedDate< Today().and.odcmEdat:SelectedDate > Today().and.Today()  > dTempdate   
 		  
@@ -404,9 +404,11 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 	 		endif
 		
 		oStOrdLH:Skip()
-		enddo	   		
+	 	enddo	   		                     
+	 	
+	 	dFirstBookdate :=  Max(ConDate(Year(dTempdate),Month(dTempdate),self:mday),ConDate(Year(MinDate),Month(MinDate),self:mday))
 		
-		cError :="Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToS(Max(self:oDCmIDAT:SelectedDate,MinDate))+ " till today " +self:mCurrency+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
+		cError :="Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToC(dFirstBookdate)+ " till today " +self:mCurrency+" "+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
 	
 	ENDIF
                         
