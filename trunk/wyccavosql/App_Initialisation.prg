@@ -46,12 +46,13 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 	oFTP := CFtp{"WycOffSy FTP Agent"} 
 	
 	if oFTP:Open()                                                              
-		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 	endif
 	if !lSuc
 		// try again:
 		if oFTP:Open()
-			lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+			lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 			// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
 		endif
 	endif
