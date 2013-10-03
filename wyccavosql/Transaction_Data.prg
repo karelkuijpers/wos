@@ -613,6 +613,7 @@ CLASS TempTrans INHERIT DBSERVEREXTRA
 	//USER CODE STARTS HERE (do NOT remove this line)    
 	EXPORT oBrowse as Databrowser
 	EXPORT lInqUpd,lFilling,lExisting,lOnlyRead,lFromRPP as LOGIC
+	EXPORT cOpp as string
 	EXPORT aTeleAcc as ARRAY
 	EXPORT oDat as date
 	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
