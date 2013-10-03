@@ -1842,7 +1842,7 @@ function InitGlobals()
 		Departments:=true
 	endif
 
-	IF lRefreshMenu
+	IF lRefreshMenu .and. !Empty(MYEMPID)  // reason to refresh menu and already logged in?
 		oMainWindow:RefreshMenu()
 		oMainWindow:SetCaption(oSys:sysname)
 	ENDIF
