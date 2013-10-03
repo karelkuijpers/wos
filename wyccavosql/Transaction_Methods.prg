@@ -775,7 +775,7 @@ METHOD AccntProc(cAccValue) CLASS General_Journal
 	AccountSelect(self,AllTrim(cAccValue),"Account",true,cFilter)
 	RETURN nil
 METHOD append() CLASS General_Journal
-	LOCAL cOms,cOpp AS STRING
+	LOCAL cOms as STRING
 	LOCAL oHm:=self:server as TempTrans 
 	local lSuccess as logic
 	IF !oHm:eof
@@ -783,7 +783,6 @@ METHOD append() CLASS General_Journal
 			self:GoBottom()
 		endif
 		cOms:=oHm:DESCRIPTN
-		cOPP:=oHm:OPP
 	ENDIF
 // 	lSuccess:=self:StatusOK()	
 	lSuccess:=SUPER:append()
@@ -799,13 +798,13 @@ METHOD append() CLASS General_Journal
 	ENDIF
 	oHm:CURRENCY:=sCurr
 	oHm:FROMRPP:=oHm:lFromRPP  // duplicate fromrpp-indication
-	oHm:OPP:=cOPP
+	oHm:OPP:=oHm:cOpp
 	oHm:DESCRIPTN:=cOms
 	&& add empty row to mirror:
 // aMirro: {AccID,Deb,cre,gc,category,RecNo,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,DEBFORGN,CREFORGN,PPDEST, description,persid,Type, INCEXPFD,depid}
 //            1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
 
-	AAdd(oHm:Amirror,{'           ',oHm:Deb,oHm:cre,'  ',' ',oHm:RecNo,0,' ','','',sCURR,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0}) 
+	AAdd(oHm:aMirror,{'           ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0}) 
 	//                       1         2      3      4    5      6     7 8   9  10  11    12        13         14        15      16       17 18     19      20 
 RETURN true
 METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
@@ -1048,7 +1047,8 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	endif
 	oHm:SuspendNotification()
 	oHm:GoTop()
-	oHm:lFromRPP:=oHm:FROMRPP
+	oHm:lFromRPP:=oHm:FROMRPP 
+	oHm:cOpp:=oHm:OPP
 	self:Totalise(false,false)
 	oHm:ResetNotification()
 	// 	SELF:oSFGeneralJournal1:browser:refresh()
@@ -1581,7 +1581,8 @@ METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) 
 		",docid='"+AddSlashes(AllTrim(self:mBST))+"'"+;
 		",dat='"+SQLdate(self:mDAT)+"'"+;
 		",gc='"+AllTrim(oMutNew:GC)+"'"+;
-		",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+;
+		",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+; 
+		",opp='"+oMutNew:cOpp+"'"+;
 		",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
 	",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
 		",persid='"+iif(lGiver,Str(val(AllTrim(self:mCLNGiver)),-1),"0")+"'"+;
@@ -1675,6 +1676,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		oOrig:FROMRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
 		oOrig:lFromRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
 		oOrig:OPP:=oTransH:OPP
+		oOrig:cOpp:= oOrig:OPP
 		oOrig:PPDEST := oTransH:PPDEST
 		oOrig:REFERENCE:=oTransH:REFERENCE
 		oOrig:SEQNR := oTransH:SEQNR
@@ -2217,7 +2219,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					",gc='"+oHm:aMIRROR[i,4]+"'"+;
 					",userid='"+LOGON_EMP_ID +"'"+;
 					",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
-					",opp='"+oHm:OPP+"'"+;
+					",opp='"+oHm:cOpp+"'"+;
 					",ppdest='"+SubStr(AllTrim(oHm:aMIRROR[i,15]),15)+"'"+; 
 				",currency='"+AllTrim(oHm:aMIRROR[i,11]) +"'"+;
 					",debforgn="+Str(oHm:aMIRROR[i,13],-1)+;
@@ -2427,9 +2429,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		SQLStatement{"unlock tables",oConn}:execute()
 		SQLStatement{"set autocommit=1",oConn}:execute()
 		self:Pointer := Pointer{POINTERARROW}
-		if !Empty(cError)
-			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-		endif
+// 		if !Empty(cError)
+// 			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+// 		endif
 		ErrorBox{self,"transaction could not be stored:"+cError}:show()
 		self:mCLNGiver:=''
 		return false
@@ -4318,7 +4320,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			* save bankaccntnbr:
 			if !Empty(self:mCLNGiver)
 				IF !self:Recognised          // it is possible that the bank account is not yet recorded
-					oStmnt:=SQLStatement{"insert ignore into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"',bic='"=self:oTmt:m56_bic+"'",oConn}
+					oStmnt:=SQLStatement{"insert ignore into personbank set persid="+self:mCLNGiver+",banknumber='"+self:oTmt:m56_contra_bankaccnt+"',bic='"+self:oTmt:m56_bic+"'",oConn}
 					oStmnt:execute()
 				ELSE
 					oStmnt:=SQLStatement{"update ignore personbank set persid="+self:mCLNGiver+" where banknumber='"+self:oTmt:m56_contra_bankaccnt+"'",oConn} 
