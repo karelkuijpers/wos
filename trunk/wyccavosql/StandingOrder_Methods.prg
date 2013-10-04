@@ -387,10 +387,15 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 	LOCAL oPer:=self:oStOrdr as sqlselect
          
 	LOCAL fTotalcredit as float   
+	        
+	IF !IsNil(oPer)
+		dTempdate := Getvaliddate(self:mday,Month(oPer:lstrecording)+self:mperiod,Year(oPer:lstrecording))    
+	ELSE
+		dTempdate := Getvaliddate(self:mday,Month(oDCmIDAT:SelectedDate),Year(oDCmIDAT:SelectedDate))
+	END IF  	             
 	
-	dTempdate :=  oPer:lstrecording + (30 * self:mperiod) + 1
-	  	  
-	// check startdate < today, enddate in the future and latestbooking longer then one month ago
+	
+	// check startdate < today, enddate in the future and latestbooking longer then one period ago
 		IF  oDCmIDAT:SelectedDate< Today().and.odcmEdat:SelectedDate > Today().and.Today()  > dTempdate   
 		  
 	   lValid := FALSE 
@@ -406,7 +411,7 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 		oStOrdLH:Skip()
 	 	enddo	   		                     
 	 	
-	 	dFirstBookdate :=  Max(ConDate(Year(dTempdate),Month(dTempdate),self:mday),ConDate(Year(MinDate),Month(MinDate),self:mday))
+	 	dFirstBookdate :=  Max(dTempdate,Getvaliddate(self:mday,Month(MinDate),Year(MinDate)))
 		
 		cError :="Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToC(dFirstBookdate)+ " till today " +self:mCurrency+" "+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
 	
