@@ -383,20 +383,23 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 	LOCAL lValid := true as LOGIC
 	LOCAL cError as STRING      
 	LOCAL oTBQuestion as TextBox
-	Local dTempdate, dFirstBookdate as date      
+	Local dNextBookDate as date      
 	LOCAL oPer:=self:oStOrdr as sqlselect
          
 	LOCAL fTotalcredit as float   
 	        
-	IF !IsNil(oPer)
-		dTempdate := Getvaliddate(self:mday,Month(oPer:lstrecording)+self:mperiod,Year(oPer:lstrecording))    
-	ELSE
-		dTempdate := Getvaliddate(self:mday,Month(oDCmIDAT:SelectedDate),Year(oDCmIDAT:SelectedDate))
+	
+	dNextBookDate := Getvaliddate(self:mday,Month(oDCmIDAT:SelectedDate),Year(oDCmIDAT:SelectedDate))
+	//If there where earlier bookings, find out when the next booking is
+	IF !IsNil(oPer) 
+		IF IsObject(oPer:lstrecording)
+			dNextBookDate := Getvaliddate(self:mday,Month(oPer:lstrecording)+self:mperiod,Year(oPer:lstrecording)) 
+		END IF
 	END IF  	             
 	
 	
 	// check startdate < today, enddate in the future and latestbooking longer then one period ago
-		IF  oDCmIDAT:SelectedDate< Today().and.odcmEdat:SelectedDate > Today().and.Today()  > dTempdate   
+		IF  oDCmIDAT:SelectedDate< Today().and.odcmEdat:SelectedDate > Today().and.Today()  > dNextBookDate   
 		  
 	   lValid := FALSE 
 	      
@@ -411,9 +414,9 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
 		oStOrdLH:Skip()
 	 	enddo	   		                     
 	 	
-	 	dFirstBookdate :=  Max(dTempdate,Getvaliddate(self:mday,Month(MinDate),Year(MinDate)))
+	 	dNextBookDate :=  Max(dNextBookDate,Getvaliddate(self:mday,Month(MinDate),Year(MinDate)))
 		
-		cError :="Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToC(dFirstBookdate)+ " till today " +self:mCurrency+" "+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
+		cError :="Will you really record every " +Str(self:mperiod,-1)+ " month[s] from begin date " + DToC(dNextBookDate)+ " till today " +self:mCurrency+" "+ Str(iif(Empty(fTotalcredit),0,fTotalcredit),-1) + "? (Otherwise change begin date)"
 	
 	ENDIF
                         
