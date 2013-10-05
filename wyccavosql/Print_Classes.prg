@@ -3153,7 +3153,7 @@ CLASS Printjob INHERIT Printer
 	EXPORT nTop AS INT
 	EXPORT nBottom AS INT
 	EXPORT iPointSize := 12 as int  // character size in points (1/120 inch)
-	EXPORT Resolution AS INT // resolution in dots per innch (default 600)
+	EXPORT Resolution as int // resolution in dots per inch (default 600)
  	EXPORT aFIFO := {}
  	EXPORT nFifoPntr := 1 AS INT
 	EXPORT oKixFont AS Font
@@ -3221,7 +3221,7 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 	LOCAL oKixSize as Dimension
 	LOCAL oSys as SQLSelect
 	LOCAL nTopM, nRightM,nHeight,nWidth, nHelpW,nHelpH as int
-	LOCAL nResolution:=self:Resolution // dots per inch 
+	LOCAL nResolution:=self:Resolution as int // dots per inch 
 	
 	IF self:Label
 		nTopM:=Round((WycIniFS:GetInt( "Runtime", "stckr_TopMargin")*nResolution)/25.4,0)
