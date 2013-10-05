@@ -567,10 +567,10 @@ METHOD OKButton( ) CLASS EditSubscription
 				iif(self:oDCmbegindate:SelectedDate==self:oSub:begindate,'','begindate:'+dtoc(self:oSub:begindate)+'-> '+dtoc(self:oDCmbegindate:SelectedDate)+CRLF)+;
 				iif(self:oDCmenddate:SelectedDate==self:oSub:enddate,'','enddate:'+dtoc(self:oSub:enddate)+'-> '+dtoc(self:oDCmenddate:SelectedDate)+CRLF)+;
 				iif(self:oDCmduedate:SelectedDate==self:oSub:duedate,'','duedate:'+dtoc(self:oSub:duedate)+'-> '+dtoc(self:oDCmduedate:SelectedDate)+CRLF)+;
-				iif(self:mterm==self:oSub:term,'','term:'+ConS(self:oSub:term)+'-> '+Str(self:mterm,-1)+CRLF)+;
+				iif(ConS(self:mterm)==ConS(self:oSub:term),'','term:'+ConS(self:oSub:term)+'-> '+ConS(self:mterm)+CRLF)+;
 				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
-				iif(self:mInvoiceID==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+self:mInvoiceID+CRLF)+;
-				iif(self:mBankAccnt==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+self:mBankAccnt+CRLF)
+				iif(ConS(self:mInvoiceID)==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+ConS(self:mInvoiceID)+CRLF)+;
+				iif(cons(self:mBankAccnt)==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+cons(self:mBankAccnt)+CRLF)
 			if Empty(cLog)
 				// nothing changed: 
 				self:EndWindow()
@@ -612,8 +612,8 @@ METHOD OKButton( ) CLASS EditSubscription
 		",reference='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
 		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 		",bankaccnt='"+iif(IsNil(self:mBankAccnt),"",self:mBankAccnt)+"'"+;
-		",bic='"+self:mBic+"'"+;
-		iif(self:lNew .or.!self:mBankAccnt==self:oSub:BANKACCNT,',firstinvoicedate="0000-00-00"','')+;   // reset to first in case of bankaccount change
+		",bic='"+ConS(self:mBic)+"'"+;
+		iif(self:lNew .or.!ConS(self:mBankAccnt)==self:oSub:BANKACCNT,',firstinvoicedate="0000-00-00"','')+;   // reset to first in case of bankaccount change
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
