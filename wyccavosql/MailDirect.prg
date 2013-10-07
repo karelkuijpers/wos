@@ -782,8 +782,8 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		self:cError:=self:oLan:WGet("No internet connection")
 		return false
 	endif
-	// 	if	FileSpec{self:cbatchfile}:Find()	
-	nRet:=FileStart(self:cbatchfile,self:oOwner)
+// 	nRet:=FileStart(self:cbatchfile,self:oOwner)
+	nRet:=FileStart(self:cbatchfile,iif( IsObject(self:oOwner),self:oOwner,oMainWindow))
 	if nRet>0 .and. nRet<33
 		self:lError:=true 
 		self:cError:=self:oLan:WGet("Email send failed")+': '+Str(nRet,-1)			
