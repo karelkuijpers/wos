@@ -340,7 +340,7 @@ CLASS TeleMut
 		m56_addsub, m56_accnumber,m56_accid:="   ", m56_Payahead,m56_persid as STRING,;
 		m56_bookingdate as date,;
 		m56_amount as REAL,;
-		m56_seqnr:=0 as int 
+		m56_seqnr:=0,m56_dueid as int 
 	export m56_contra_bankaccnt, m56_bankaccntnbr as USUAL,;
 		m56_processed,m56_recognised, m56_autmut,m56_mode_aut:=true,m56_autom as LOGIC
 	export m56_address, m56_zip, m56_town, m56_country,m56_bic as string
@@ -370,7 +370,7 @@ CLASS TeleMut
 	protect CurDate as date, CurSeq, CurBank as string  // current values of bookingdate, sequencenumber and bankaccntnbr in import file
 	protect nSubSeqnr as int  // sub seqence nunber for same CurDate and CurSeq 
 	protect aValuesTrans:={} as array  // array with values to be stored into table teletrans:
-	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed},...}  
+	// { {bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed},...}  
 	protect avaluesBal:={} as array  // array with values to be stored in bankbalances: {{banknumber,SQLdate,value},...
 	export nTooOld as int // number of too old trasnactions
 	export nNonTele as int // number of transactions not on telebanking account  
@@ -389,7 +389,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 		amount as float,;
 		addsub:="" as string,;
 		description:="" as string,;
-		persid as string,adrline:='' as string,country:='' as string,bic:="" as string ) as logic CLASS TeleMut 
+		persid as string,adrline:='' as string,country:='' as string,bic:="" as string,dueid:="" as string ) as logic CLASS TeleMut 
 	if !Empty(amount)
 		bankaccntnbr:=AllTrim(bankaccntnbr)
 		IF self:TooOldTeleTrans(bankaccntnbr,bookingdate) 
@@ -404,9 +404,9 @@ method AddTeleTrans(bankaccntnbr as string,;
 				self:CurBank:=bankaccntnbr
 			endif
 			// aValuesTrans:
-			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
-			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),alltrim(contra_bankaccnt),kind,contra_name,alltrim(budgetcd),amount,addsub,description,persid,adrline,country,bic,''})
+			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14   15    16
+			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),AllTrim(contra_bankaccnt),kind,contra_name,AllTrim(budgetcd),amount,addsub,description,persid,adrline,country,bic,dueid,''})
 			// 			LogEvent(self,Str(Len(self:aValuesTrans),-1)+':'+contra_name+'('+ contra_bankaccnt+')',"logsql")
 		endif 
 	endif
@@ -597,7 +597,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		SQLStatement{"start transaction",oConn}:execute() 
 		// select next row not yet locked by somebody else:
 		self:oTelTr:= SqlSelect{"select t.teletrid,t.seqnr,t.amount,t.bankaccntnbr,cast(t.bookingdate as date) as bookingdate,t.kind,t.contra_bankaccnt,"+; 
-		"t.addsub,t.code_mut_r,t.budgetcd,t.description,t.persid,t.contra_name,t.bic,t.adrline,t.country,"+;
+		"t.addsub,t.code_mut_r,t.budgetcd,t.description,t.persid,t.contra_name,t.bic,t.adrline,t.country,t.dueid,"+;
 			"b.accid,b.payahead,cast(b.giftsall as unsigned) as giftsall,cast(b.openall as unsigned) as openall from teletrans t, bankaccount b where processed='' and "+;
 			"t.bankaccntnbr<>'' and t.bankaccntnbr=b.banknumber and b.telebankng=1 and "+;
 			+"(t.lock_id=0 or t.lock_id="+MYEMPID+" or t.lock_time < subdate(now(),interval 20 minute))"+;
@@ -634,6 +634,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 		self:m56_contra_name:=self:oTelTr:contra_name 
 		self:m56_country:=GetCountryName(self:oTelTr:country)
 		self:m56_bic:= self:oTelTr:bic
+		self:m56_dueid:=ConI(self:oTelTr:dueid)
 		// 		IF At(">",self:m56_contra_name)=Len(self:m56_contra_name).and.!Empty(self:m56_contra_name)
 		// 			self:m56_contra_name:=SubStr(self:m56_contra_name,1,Len(self:m56_contra_name)-1)
 		// 		ENDIF	
@@ -1536,7 +1537,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_Amount,lv_balance as FLOAT
 	LOCAL cBuffer as STRING
 	local lv_bankAcntOwn,lv_description,lv_kind,lv_kindORG, lv_addsub,  lv_BankAcntContra,lv_NameContra,lv_AdrLine,lv_Country, lv_reference,lv_BIC, cText as string 
-	local lv_budget , Cur_enRoute,lv_persid,lv_bankid,lv_Oms,lv_EndtoEnd as string
+	local lv_budget , Cur_enRoute,lv_persid,lv_bankid,lv_Oms,lv_EndtoEnd,lv_dueid as string
 	local cType86 as string  //type of tag 86: B=bank,
 	LOCAL BalFound,AmntFound,lDebit,lReversal,lResult,lDetails as LOGIC 
 	local aBudg:={} as array
@@ -1666,6 +1667,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_description:=''
 				lv_BIC:='' 
 				lv_budget:=''
+				lv_dueid:=''
 				lv_addsub:='B' 
 				lv_persid:=''
 				lv_EndtoEnd:=''
@@ -1923,17 +1925,17 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								nEl2:=0
 								if	!Empty(oElm2:=oElm:ScanElement(#AddtlInf,@nEl2)) 
 									lv_description+=' '+oElm2:STRINGValue
-									if SubStr(lv_kind,1,3)=='COL'.and. Empty(lv_persid)
-										if Len(Split(lv_EndtoEnd,'-'))=3
+									if SubStr(lv_kind,1,3)=='COL'
+										if Len(Split(lv_EndtoEnd,'-'))>=3
 											lv_persid:=Split(lv_EndtoEnd,'-')[1]
+											lv_dueid:=Split(lv_EndtoEnd,'-')[3] 
 										endif
 									endif
-									
 								endif
 							endif 
 							
 							* save transaction: 
-							if lv_kind=='BGC' .or. SubStr(lv_kind,1,3)=='COL'
+							if Empty(lv_budget) .and.(lv_kind=='BGC' .or. (SubStr(lv_kind,1,3)=='COL' .and.lv_addsub='B')) 
 								if Empty(Cur_enRoute)
 									(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted2"}):show()
 									return false 
@@ -1980,7 +1982,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							lv_NameContra:=AddSlashes(AllTrim(SubStr(HtmlDecode(lv_NameContra),1,32)))   //max length 32 in teletrans
 							nSeqnr++
 							self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
-								lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(htmldecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC) 
+								lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(HtmlDecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC,lv_dueid) 
 							lv_Amount:=0.00
 							lv_reference:=""
 							lv_NameContra:=""
@@ -1990,6 +1992,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							lv_description:=''
 							lv_BIC:='' 
 							lv_budget:=''
+							lv_dueid:=''
 							lv_persid:=''
 							lv_EndtoEnd:=''
 						enddo
@@ -1999,7 +2002,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 					nSeqnr++
 					lv_NameContra:=AddSlashes(AllTrim(SubStr(HtmlDecode(lv_NameContra),1,32)))   //max length 32 in teletrans
 					self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,Str(nSeqnr,-1),lv_BankAcntContra,;
-						lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(HtmlDecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC)
+						lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,AddSlashes(HtmlDecode(lv_description)),lv_persid,AddSlashes(lv_AdrLine),lv_Country,lv_BIC,lv_dueid)
 				endif
 			enddo
 			
@@ -4027,13 +4030,14 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	//  
 	local i,j,k,l,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local fDeb,fDebForgn,fCre,fCreForgn as float 
-	local cPersids,cPersid,cBudgetcds,cBudgetcd,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc,cTransid as string
+	local cPersids,cPersid,cBudgetcds,cBudgetcd,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc,cTransid as string 
+	local cDueids,cDueid as string
 	local cBankContrNotIBAN,cBankContr,cBankAcctContr as string 
 	local cStatement as string 
 	local	lAddressChanged,lProcAuto as logic
 	local aPersids:={}, aPersidsDb:={} as array
 	local aSubPersids:={}, aSubscr:={} as array, aSubscrtn:={} as array, aSub:={} as array,aValueSubPtr:={}  // arrays for getting gifts patterns
-	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={} as array
+	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={},aDueid:={} as array
 	local aBankContra:={},aBankContraNonIban:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
 	local avalueTrans:=self:aValuesTrans as array
 	local aAddr:={},aAddrDB:={} as array // address: {streetname,housenbr} 
@@ -4058,8 +4062,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// check if persid's belongs to persons
 		//
 		// aValuesTrans:
-		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
+		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 		cPersids:=Implode(avalueTrans,',',,,11)
 		if !Empty(cPersids)
 			oSel:=SqlSelect{"select group_concat(gr.grpersid) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
@@ -4220,7 +4224,36 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					enddo
 				endif
 			next								
-		endif			
+		endif
+		// use dueid to complement accnumber of corresponding destination:
+		if sepaEnabled
+			for i:=1 to Len(avalueTrans)
+				cDueid:=avalueTrans[i,15]
+				if !Empty(cDueid) .and. AScanExact(aDueid,cDueid)=0
+					AAdd(aDueid,cDueid)
+				endif
+			next
+			if Len(aDueid)>0
+				cDueids:=Implode(aDueid,'","')
+				aAccnbrDb:={}
+				oSel:=SqlSelect{"select group_concat(gr.accnumber,'#$#',gr.dueid separator '#%#') as graccnumber from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
+				if oSel:Reccount>0
+					AEval(Split(oSel:graccnumber,'#%#'),{|x|AAdd(aAccnbrDb,Split(x,'#$#')) }) 
+					if Len(aAccnbrDb)>0
+						// insert accnumber in storno's:
+						for i:=1 to Len(aAccnbrDb)
+							j:=0
+							do while (j:=AScan(avalueTrans,{|x|x[15]==aAccnbrDb[i,2]},j+1))>0
+								avalueTrans[j,7]:=aAccnbrDb[i,1]
+								if j>=Len(avalueTrans)
+									exit
+								endif
+							enddo
+						next
+					endif
+				endif
+			endif
+		endif
 	endif
 	time1:=time0
 	//logevent(self,"budgetcd is an accountnumber:"+Str((time0:=Seconds())-time1,-1),"logsql")
@@ -4231,8 +4264,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	lv_description:=self:oLan:WGet('Gift') 
 	do while i<Len(avalueTrans)
 		// aValuesTrans:
-		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
+		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 		i:=AScan(avalueTrans,{|x|Empty(x[7]) .and.x[9]='B'},i+1)
 		if i>0
 			cBankAcc:=avalueTrans[i,1] 
@@ -4273,8 +4306,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			// add destinations from gift patterns:
 			for i:=1 to Len(aValueSubPtr) 
 				// aValuesTrans:
-				// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-				//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15  
+				// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+				//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 				k:= aValueSubPtr[i]
 				cPersid:=avalueTrans[k,11]
 				if (j:=AScan(aSubscrtn,{|x|x[1]==cPersid}))>0
@@ -4385,8 +4418,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
 			//                 1            2           3          4         5          6      7      8          9          10        11
 			// aValuesTrans:
-			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
+			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0							
 				if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts?
@@ -4423,7 +4456,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 							if !lAddressChanged 
 								cBudgetcd:=avalueTrans[i,7]
 								if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
-									avalueTrans[i,15]:='X'   // record as processed 
+									avalueTrans[i,16]:='X'   // record as processed 
 									// transaction can be processed automatically:
 									nProc++ 
 									
@@ -4467,11 +4500,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	
 	// NON-GIFTS:
 	// aValuesTrans:
-	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-	//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
+	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+	//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15     16
 	i:=0
 	do while i<Len(avalueTrans) 
-		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]='COL')) .and.!x[15]='X'},i+1)   // non-gifts or person unknown and no storno's  
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]='COL')) .and.!x[16]='X'},i+1)   // non-gifts or person unknown and no storno's  
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
@@ -4533,7 +4566,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				lProcAuto:=true
 			endif
 			if lProcAuto
-				avalueTrans[i,15]:='X'   // record as processed 
+				avalueTrans[i,16]:='X'   // record as processed 
 				// transaction can be processed automatically:
 				nProc++ 
 				
@@ -4611,7 +4644,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	oStmnt:execute()
 	maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
 	oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
-		"(bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed) values "+;
+		"(bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed) values "+;
 		Implode(avalueTrans,'","'),oConn} 
 	oStmnt:execute()
 	if !Empty(oStmnt:Status)
@@ -4649,22 +4682,22 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		if oSel:Reccount>0
 			// compare with aValueTrans:
 			// aValuesTrans:
-			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,processed 
-			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15
+			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
+			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 			nProc:=oSel:Reccount         // recount automatic processed transactions
 			do while !oSel:EoF
 				// search imported avaluetrans:
-				if (i:=AScan(avalueTrans,{|x|x[15]=='X'.and.x[1]==oSel:bankaccntnbr.and.x[2]==SQLdate(oSel:bookingdate).and.x[3]==ConS(oSel:seqnr).and.;
+				if (i:=AScan(avalueTrans,{|x|x[16]=='X'.and.x[1]==oSel:bankaccntnbr.and.x[2]==SQLdate(oSel:bookingdate).and.x[3]==ConS(oSel:seqnr).and.;
 						x[4]==oSel:contra_bankaccnt.and.x[5]==oSel:kind.and.x[6]==AddSlashes(oSel:contra_name).and.;
 						ConS(x[8])==ConS(oSel:amount).and.x[9]==oSel:addsub.and.x[10]==AddSlashes(oSel:Description)}))>0 
 					// mark aValuesTrans as imported: 
-					avalueTrans[i,15]:='I'
+					avalueTrans[i,16]:='I'
 				endif 
 				oSel:Skip()
 			enddo
 			// remove corresponding aTrans of ignored teletrans:			  
 			k:=0
-			do while (k:=AScan(avalueTrans,{|x|x[15]=='X'},k+1))>0
+			do while (k:=AScan(avalueTrans,{|x|x[16]=='X'},k+1))>0
 				i:=AScan(aTransTele,{|x|x[1]==k})
 				if i>0    // corresponding aTrans? remove them
 					j:=1
