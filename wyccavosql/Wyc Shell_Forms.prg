@@ -215,7 +215,7 @@ METHOD RemoveChild( oChild ) CLASS StandardWycWindow
 METHOD SetCaption() CLASS StandardWycWindow 
 	local sysname as string
 	local oSys as SQLSelect
-	if IsObject(oConn) 
+	if IsObject(oConn) .and.!oConn== null_object 
 		if oConn:Connected
 			if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
 				oSys:=SqlSelect{"select sysname from sysparms",oConn}
