@@ -673,6 +673,7 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:FROMRPP:=iif(ConI(oImpB:FROMRPP)=1,true,false)
 		self:oHM:lFromRPP:=iif(ConI(oImpB:FROMRPP)=1,true,false)
 		self:oHM:OPP:=oImpB:Origin
+		self:oHM:cOpp:=oImpB:Origin
 		self:oHM:PPDEST:= oImpB:PPDEST 
 		self:oHM:REFERENCE:=oImpB:REFERENCE 
 		self:oHM:POSTSTATUS:=oImpB:POSTSTATUS
@@ -1782,9 +1783,16 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			endif
 			if !Empty(aValuesTrans) 
 				// insert first line:
-				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
-					" values ("+Implode(aValuesTrans[1],"','",1,16)+')',oConn}
+				oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp) "+;
+					" values ("+Implode(aValuesTrans[1],"','",1,17)+')',oConn}
 				oStmnt:Execute()
+				if oStmnt:NumSuccessfulRows<1
+					SQLStatement{"rollback",oConn}:Execute() 
+					SQLStatement{"unlock tables",oConn}:Execute()
+					LogEvent(self,"error:"+cStatement,"LogErrors")
+					ErrorBox{,self:oLan:WGet('Transactions could not be inserted')+":"+oStmnt:status:Description}:show()
+					return false
+				endif 
 				nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 				aValuesTrans[2,18]:=nTransId
 				for i:=3 to Len(aValuesTrans) step 2
