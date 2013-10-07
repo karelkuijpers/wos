@@ -672,7 +672,7 @@ FOR i=1 to Len(aMirror)
    ENDIF
 NEXT
 return payerstat
-function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as float) as string
+function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as float,p_DueIds:="" as string) as string
 	******************************************************************************
 	*  Name      : ChgDueAmnt
 	*              Assign received amount to due amounts of a donation or subscription
@@ -685,7 +685,8 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 	* p_cln   : pinternal id person
 	* p_rek   : account id
 	* p_deb   : debet change amount
-	* p_cre   : credit change amount
+	* p_cre   : credit change amount 
+	* pDueIds : optional: dueid,dueid,...  
 	*
 	LOCAL p_amount,open_amount,payed_amount as FLOAT  
 	local oDue,oSub as SQLSelect 
@@ -722,14 +723,22 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 			ENDDO
 		ENDIF
 	ELSE
+		if Val(p_DueIds)=0 
 		*  Look for last assigned due amount to reverse assignment of received amounts:
-// 		oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountrecvd from dueamount, subscription where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and dueamount.amountrecvd>0 order by dueamount.invoicedate desc,dueamount.seqnr desc for update",oConn}
-		oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountrecvd from dueamount, subscription "+;
-		"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and dueamount.amountrecvd>0 order by dueamount.invoicedate desc,dueamount.seqnr desc",oConn}
-		if !Empty(oDue:Status)
-			LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
-			return oDue:ErrInfo:errormessage					
-		elseIF oDue:RecCount>1
+			oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountrecvd from dueamount, subscription "+;
+			"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and dueamount.amountrecvd>0 order by dueamount.invoicedate desc,dueamount.seqnr desc",oConn}
+			if !Empty(oDue:Status)
+				LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
+				return oDue:ErrInfo:errormessage
+			endif
+		else
+			oDue:=SqlSelect{"select dueid,amountrecvd from dueamount where dueid in ("+p_DueIds+") and amountrecvd>0 order by invoicedate desc,seqnr desc",oConn}
+			if !Empty(oDue:Status)
+				LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
+				return oDue:ErrInfo:errormessage
+			endif
+		endif			
+		IF oDue:Reccount>0
 			p_amount:=-p_amount
 			do WHILE !oDue:EOF.and.p_amount>0
 				payed_amount:=oDue:AmountRecvd
@@ -1126,8 +1135,10 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 		oDCGiroText:TEXTValue:=AllTrim(self:oTmt:m56_contra_name)+ ": "+AllTrim(self:oTmt:m56_description)
 	endif
 // 	if self:oTmt:m56_description="NAAM/NUMMER STEMMEN NIET OVEREEN" 
-	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A" .and. (AtC("Geweigerd:",self:oTmt:m56_description)>0.or.self:oTmt:m56_kind="COLREJ")   // refused order
-		oHm:AccID:=self:oTmt:m56_payahead 
+	if self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub ="A" 
+		if !sepaenabled
+			oHm:AccID:=self:oTmt:m56_payahead
+		endif 
 		self:oTmt:m56_autmut:=FALSE
 	endif
 
@@ -2191,11 +2202,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				return true
 			endif				
 		endif
-		/*			// set locks for dueamounts:
-		IF	!Empty(cDueAccs)
-		oDue:=SqlSelect{"select d.dueid from dueamount d, subscription s where s.subscribid=d.subscribid and s.personid="+self:mCLNGiver+" and s.accid in ("+cDueAccs+' and amountrecvd<amountinvoice order by invoicedate,seqnr for update',oConn}
-		oDue;Execute()
-		endif   */
 		// add to gifts income: 
 		//             1    2   3  4    5       6         7         8          9       10     11      12      13       14      15        16        17    18      19
 		// mirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
@@ -2325,8 +2331,10 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				//	Update balances of subscriptions/due amounts/ donations:
 				// 					IF	!Empty(self:mCLNGiver)
 				IF	!Empty(cDueAccs)
-					IF	(oHm:aMIRROR[i,5]= 'D'	.or. oHm:aMIRROR[i,5]=	'A' .or.	oHm:aMIRROR[i,5]	= 'F'	.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' ))			 // storno also
-						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:aMirror[i,1]),oHm:aMirror[i,2],oHm:aMirror[i,3])
+					IF	oHm:Amirror[i,5]= 'D'	.or. oHm:Amirror[i,5]=	'A' .or.	oHm:Amirror[i,5]	= 'F'	;
+						.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
+						.or. (self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
+						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:Amirror[i,1]),oHm:Amirror[i,2],oHm:Amirror[i,3],iif(self:lTeleBank,ConS(self:oTmt:m56_dueid),""))
 						if !Empty(cError)
 							lError:=true
 						else
