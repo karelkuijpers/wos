@@ -442,6 +442,23 @@ METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMin
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
 return
+method IsSelectButton() class datawindow 
+// check if select button in datawindow is available
+	LOCAL oErr 		as USUAL
+	LOCAL bOldErr 	as CODEBLOCK
+	bOldErr := ErrorBlock({|oErr|_Break(oErr)})
+	begin sequence
+		if self:oCCOKButton:isvisible()
+			if self:oCCOKButton:IsEnabled()
+				return true
+			endif
+		endif
+	RECOVER USING oErr
+		return false
+	end sequence 
+	return false
+
+
 CLASS DataWindowExtra INHERIT DataWindow
 *	PROTECT uControlValue AS USUAL
 *	PROTECT cControlName AS STRING
@@ -2927,12 +2944,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -2940,6 +2951,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
