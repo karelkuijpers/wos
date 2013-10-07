@@ -967,14 +967,16 @@ method AddCurr() class GeneralJournal1
 			oBrowse:AddColumn(oDBCRE,self:oDBCREFORGN:VisualPos+1) 
 			oBrowse:AddColumn(oDBDEB,self:oDBCREFORGN:VisualPos+1) 
 			oBrowse:AddColumn(oDBCURRENCY,self:oDBCREFORGN:VisualPos+1) 
+			self:Owner:SetWidth(self:Owner:Size:Width+=8*(self:oDBCREFORGN:Width+self:oDBDEBFORGN:Width+self:oDBCURRENCY:Width))
 			if self:oCurr==null_object
 				self:oCurr:=Currency{}
-			endif
+			endif                                
 		endif
 	elseif !lAddC
 		oBrowse:RemoveColumn( oDBCRE)
 		oBrowse:RemoveColumn( oDBDEB)
 		oBrowse:RemoveColumn( oDBCURRENCY)
+		self:Owner:SetWidth(self:Owner:Size:Width-=8*(self:oDBCREFORGN:Width+self:oDBDEBFORGN:Width+self:oDBCURRENCY:Width))
 		self:Owner:lwaitingForExchrate:=false 
 	endif 
 	if !Empty(sToPP) .and. ADMIN=="WA"
@@ -982,21 +984,29 @@ method AddCurr() class GeneralJournal1
 		if oBrowse:GetColumn(#PPDEST)==nil 
 			if lAddPP 
 				oBrowse:AddColumn(self:oDBPPDEST,self:oDBREKOMS:VisualPos+1) 
+				self:Owner:SetWidth(self:Owner:Size:Width+=self:oDBPPDEST:Width)
 			endif
 		elseif !lAddPP
 			oBrowse:RemoveColumn( oDBPPDEST)
+			self:Owner:SetWidth(self:Owner:Size:Width-=self:oDBPPDEST:Width)
 		endif 
 	endif
-	if lAddC.or.lAddPP
-		if self:Owner:Size:Width <800
-			self:Owner:SetWidth(self:Owner:Size:Width+=164)
-			oBrowse:Refresh()
-		endif
-	else 
-		if self:Owner:Size:Width >=800
-			self:Owner:SetWidth(self:Owner:Size:Width-=164)
-			oBrowse:Refresh()
-		endif
+	if lAddC.or.lAddPP 
+		oBrowse:Refresh()
+
+// // 		if self:Owner:Size:Width <800
+// // 			self:Owner:SetWidth(self:Owner:Size:Width+=164)
+// 		if (self:Size:Width+40)> self:Owner:Size:Width
+// 			self:Owner:SetWidth(self:Owner:Size:Width:=self:Size:Width+40)
+// 			oBrowse:Refresh()
+// 		endif
+// 	else 
+// // 		if self:Owner:Size:Width >=800
+// // 			self:Owner:SetWidth(self:Owner:Size:Width-=164)
+// 		if (self:Size:Width+40)< self:Owner:Size:Width
+// 			self:Owner:SetWidth(self:Owner:Size:Width:=self:Size:Width+40)
+// 			oBrowse:Refresh()
+// 		endif
 	endif
 	oHm:RecNo:=nCurRec
 	return
