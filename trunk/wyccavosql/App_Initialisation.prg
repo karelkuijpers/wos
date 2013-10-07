@@ -11,22 +11,33 @@ IF nRet > 0
 ENDIF
 RETURN nRet
 class CheckUPGRADE
-	export DBVers, PrgVers as float  
+	export DBVers, PrgVers as float
+	export DBVersDate,PrgVersDate as date  
 	declare method LoadInstallerUpgrade 
-	method Init() class CheckUPGRADE
+method Init() class CheckUPGRADE
 	local oSys as SqlSelect
 	local DBVers, PrgVers as float
 	// determine program version as float:
 	AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	self:PrgVers:=PrgVers
 	// determine database version as float: 
-	if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
-		oSys:=SqlSelect{"select `version` from sysparms",oConn}
-		if oSys:RecCount>0
-			AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x})
+	if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0 
+		if SqlSelect{"show columns from `sysparms` like 'versiondate'",oConn}:RecCount>0
+			oSys:=SqlSelect{"select	`version`,cast(`versiondate` as char) as versiondate from sysparms",oConn}
+			if oSys:RecCount>0
+				AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x}) 
+				self:DBVersdate:= SQLDate2Date(oSys:versiondate)
+			endif
+		else
+			oSys:=SqlSelect{"select	`version` from sysparms",oConn}
+			if oSys:RecCount>0
+				AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x}) 
+				self:DBVersdate:=null_date
+			endif
 		endif
 	endif
 	self:DBVers:=DBVers
+	self:PrgVersDate:=SToD(SubStr(versiondate,1,8))
 	return self
 
 Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic class CheckUPGRADE
@@ -49,13 +60,16 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 // 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 	endif
-	if !lSuc
+	for i:=1 to 9   // try 3 seconds
+		if !lSuc
 		// try again:
-		if oFTP:Open()
+			Tone(30000,6) // wait 6/18 sec
 			lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 			// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
+		else
+			exit
 		endif
-	endif
+	next
 	if lSuc
 		// remove old version if still present:
 		oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
@@ -800,7 +814,7 @@ method init() class Initialize
 	ENDIF
 	// 	cLine:=SqlSelect{"select cast(sha1('dd kle 123 k mmmmmm wwwwww lllllll dddddd') as char) as hash",oConn }:hash
 	return self
-Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal class Initialize
+Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as date,PrgVersDate as date) as void Pascal class Initialize
 	// initialise constants: 
 	LOCAL i, NwHb as int
 	LOCAL nLastPers := 1 as int
@@ -1047,16 +1061,10 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float) as void Pascal 
 			"Make sure you have the correct version of WycOffSy.exe"}):Show()
 		myApp:Quit()
 		break 
-	elseif DBVers < PrgVers 			
-		SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-		// 			if !FirstOfDay
-		// 				if (TextBox{,"New version","Your program version is newer than of the database. Is this correct?",BUTTONYESNO}):Show()==BOXREPLYNO
-		// 					myApp:Quit() 
-		// 					break
-		// 				endif
-		// 				SQLStatement{"update sysparms set version='"+Version+"'",oConn}:Execute()
-		// 			endif
+	elseif DBVers < PrgVers .or. DBVersdate<PrgVersDate 			
+		SQLStatement{"update sysparms set version='"+Version+"',versiondate='"+SQLdate(PrgVersDate)+"'",oConn}:Execute()
 	endif
+	
 	SetDigit(18)
 
 
@@ -1706,6 +1714,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
+		{"sysparms","versiondate","date","NO","0000-00-00",""},; 
 	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
@@ -1734,6 +1743,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","bic","varchar(11)","NO","",""},;
 		{"teletrans","country","char(2)","NO","",""},;
 		{"teletrans","adrline","varchar(70)","NO","",""},;
+		{"teletrans","dueid","int(11)","YES","NULL",""},;
 		{"titles","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"titles","descrptn","char(12)","NO","",""},;
 		{"transaction","persid","int(11)","YES","NULL",""},;
