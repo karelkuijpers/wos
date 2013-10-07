@@ -313,12 +313,11 @@ METHOD Init(oOwner, xID, oPoint, oDimension, kStyle) CLASS JapSingleEdit
 	SELF:SetStyle(EDITLEFT,TRUE)
 	RETURN SELF
 METHOD KeyUp(oEvent) CLASS JapSingleEdit
-	//METHOD Dispatch(oEvent) CLASS JapSingleEdit
+	
 	LOCAL uRet as USUAL
 	LOCAL cOperator AS STRING
 	LOCAL oWindow AS OBJECT
-	*LOCAL lUpdate AS LOGIC
-	LOCAL myValue AS STRING
+	LOCAL myValue as STRING
 	uRet:=SUPER:KeyUp(oEvent)
 	IF ClassName(oEvent)==#KeyEvent
 		IF CHR(oEvent:AsciiChar) $ "+-*/".and.!CalcActive.and.self:Fieldspec:Valtype=="N"
@@ -331,35 +330,21 @@ METHOD KeyUp(oEvent) CLASS JapSingleEdit
 					SELF:value:=0
 					SELF:TextValue:=myValue
 				ENDIF
-				*			lUpdate:= Empty(Val(SELF:TEXTvalue))
-				*			IF !lUpdate
+				
 				IF IsAccess(SELF:Owner:Owner,#Server)
 					SELF:LinkDf(SELF:Owner:Owner:Server,;
 						SELF:Owner:Owner:Server:FieldPos(SELF:FieldSpec:HyperLabel:NameSym))
-				ENDIF
-				*			ENDIF
+				ENDIF            
+				
 				oWindow:=GetParentWindow(SELF)
 				(Calculator{oWindow,{self,cOperator,self:oBrowser,self:oColumn:NameSym}}):Show()
 				IF IsAccess(SELF:Owner:Owner,#Server)
 					SELF:oColumn:Value:=SELF:Value
-					*				IF !lUpdate.and.IsMethod(SELF:owner,#ColumnFocusChange)
-					IF IsMethod(SELF:owner,#ColumnFocusChange)
-						SELF:owner:ColumnFocusChange(SELF:oColumn, TRUE)
-					ENDIF
-					SELF:Owner:SetColumnFocus(SELF:Owner:GetColumn(SELF:owner:ColPos()+1))
+					self:Owner:SetColumnFocus(self:Owner:GetColumn(self:owner:ColPos()+1))
 				ENDIF
 				CalcActive:=FALSE
 			ENDIF
-// 		else
-// 			IF IsAccess(self:Owner:Owner,#Server)
-// 				self:oColumn:Value:=self:Value
-// 				IF oEvent:AsciiChar == 9
-// 					IF IsMethod(self:Owner,#ColumnFocusChange)
-// 						self:Owner:ColumnFocusChange(self:oColumn, true)
-// 					ENDIF
-// 					self:Owner:SetColumnFocus(self:Owner:GetColumn(self:Owner:ColPos()+1))
-// 				endif
-// 			ENDIF
+
 		ENDIF
 	ENDIF
 	RETURN uRet
