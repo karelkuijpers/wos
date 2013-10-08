@@ -26,7 +26,7 @@ METHOD GetDocumentByGetOrPost(cIP, cDocument, cData, cHeader, cMethod, nP, nFlag
 	ENDIF
 		
 	IF self:hSession == null_ptr
-        lResult := self:Open(nil, self:cProxy)
+        lResult := self:Open(nil)
     ELSE
 		lResult := .T.
     ENDIF
