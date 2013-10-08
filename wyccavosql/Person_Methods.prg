@@ -1536,7 +1536,7 @@ METHOD DeleteButton CLASS PersonBrowser
 	RETURN nil
 METHOD FilePrint CLASS PersonBrowser
 
-(Selpers{SELF,"MAILINGCODE"}):Show()
+(self:oSelpers:=Selpers{self,"MAILINGCODE"}):Show()
 RETURN
 METHOD GoBottom() CLASS PersonBrowser
 	RETURN SELF:oSFPersonSubForm:GoBottom()
@@ -2309,7 +2309,11 @@ CLASS Selpers INHERIT DataWindowExtra
 	export oDB as SQLSelect 
 	export cFrom:="person as p" as string // list with tables to read from
 	protect cFields as string  // fields to be retrieved from the database 
-	export cTel,cDay,cNight,cFax,cMobile,cAbrv,cMr,cMrs,cCouple as string  // texts for use in reports
+	export cTel,cDay,cNight,cFax,cMobile,cAbrv,cMr,cMrs,cCouple as string  // texts for use in reports 
+	protect oLblFrm as LabelFormat
+	protect oSpecPers as SelPersExport
+
+
 
 	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters,RemovePersons
 METHOD AnalyseTxt(template as string,DueRequired ref logic,GiftsRequired ref logic,AddressRequired ref logic,RepeatingPossible ref logic,selectionType as int,selx_accid:=0 as int) as void pascal CLASS Selpers
@@ -2429,10 +2433,17 @@ METHOD ChangeMailCodes(dummy as string) as logic CLASS Selpers
 	
 	RETURN true	
 
+Method Close() Class SelPers 
+	if !self:oLblFrm==null_object
+		self:oLblFrm:EndWindow()
+	endif
+	if !self:oSpecPers==null_object
+		self:oSpecPers:EndDialog()
+	endif
+ super:Close()
 METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	LOCAL i,j,k, n as int
 	LOCAL aMapping, aExpF:={}, aPerF as ARRAY
-	LOCAL oSpecPers as SelPersExport
 	LOCAL cCodOms, cCap as STRING
 	LOCAL aStreet:={},aCod:={} as ARRAY
 	LOCAL lAppend, lDistinct, lDestination, lPropXtr,lgrDat  as LOGIC
@@ -2506,8 +2517,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 		AAdd(aExpF,{String2Symbol(ID),"p.propextr",myField,})
 	NEXT	
 
-	oSpecPers := SelPersExport{self,{aExpF,cTitel}}
-	oSpecPers:Show()                                       
+	self:oSpecPers := SelPersExport{self,{aExpF,cTitel}}
+	self:oSpecPers:Show()                                       
 	IF Empty(self:myFields)
 		RETURN FALSE
 	ENDIF
@@ -2837,7 +2848,7 @@ oReport:oRange:=Range{1,aantal} // set range for actual printing of generated pa
 // ENDIF
 
 RETURN
-METHOD FillText(Template as string,selectionType as int,DueRequired as logic,GiftsRequired as logic,AddressRequired as logic,RepeatingPossible as logic,brfWidth as int) as string CLASS Selpers
+METHOD FillText(Template as string,selectionType as int,DueRequired as logic,GiftsRequired as logic,AddressRequired as logic,RepeatingPossible as logic,brfWidth as int) as string CLASS SelPers
 	* Filling of template with actual values from the database and returning of completed text
 	LOCAL Content:=Template,Line,Asscln,repltxt as STRING
 	LOCAL h2,h1,AddrPntr,i,j,tel as int
@@ -3183,7 +3194,6 @@ METHOD NAW_Extended(nRow ref int, nPage ref int ,Heading as array, oReport as Pr
 	RETURN 
 METHOD PrintLabels(oParent,nType,cTitel,cVoorw) CLASS Selpers
 
-LOCAL oLblFrm AS LabelFormat
 LOCAL lLabel := TRUE AS LOGIC
 LOCAL lReady AS LOGIC
 LOCAL oFromTo:=Range{1,1} as Range
@@ -3199,8 +3209,8 @@ if oPers:RECCOUNT=0
 	return false
 endif
 DO WHILE !lReady
-	(oLblFrm := LabelFormat{oParent}):Show()
-	IF oLblFrm:lCancel
+	(self:oLblFrm := LabelFormat{oParent}):Show()
+	IF self:oLblFrm:lCancel
 		RETURN FALSE
 	ENDIF
 	oReport := PrintDialog{oParent,cTitel,lLabel}
@@ -3325,7 +3335,7 @@ local oReport as PrintDialog
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
 	ENDIF
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	oParent:Pointer := Pointer{POINTERHOURGLASS}
 	kopregels := {self:oLan:Rget('PERSONS',,"@!")}
 	FOR i=1 to MLCount(cVoorw,79)
 		AAdd(kopregels,MemoLine(cVoorw,79,i))
@@ -3384,7 +3394,7 @@ METHOD PrintToOutput(oWindow,aTitle,TitleExtra) CLASS SelPers
 		lSucc:=self:RemovePersons("")
 	ENDCASE
 	// NEXT 
-	self:Pointer := Pointer{POINTERARROW}
+// 	self:Pointer := Pointer{POINTERARROW}
 
 	return lSucc
 METHOD RemovePersons(dummy as string) as logic CLASS Selpers
@@ -3454,18 +3464,18 @@ METHOD Show() CLASS SelPers
 			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid" 
 		ENDIF
 	ELSE
-		self:EndWindow()
+		self:Close()
 		RETURN
 	ENDIF
 	IF self:selx_Ok
-		(SelPersMailCd{self:oWindow,{self,cType}}):Show()
+		(SelPersMailCd{,{self,cType}}):Show()
 	ELSE
-		self:EndWindow()
+// 		self:EndWindow()
 		self:Close()
 		RETURN
 	ENDIF
 	IF !self:selx_Ok
-		self:EndWindow()
+// 		self:EndWindow()
 		RETURN
 	ENDIF
 	IF IsNil(self:cWhereOther)
@@ -3490,12 +3500,12 @@ METHOD Show() CLASS SelPers
 	endif
 
 	self:oDB:=SQLSelect{"",oConn}
-	self:oWindow:Pointer := Pointer{POINTERARROW}
+// 	self:oWindow:Pointer := Pointer{POINTERARROW}
 
 	self:oWindow:=GetParentWindow(self)
 
-	self:oWindow:Pointer := Pointer{POINTERHOURGLASS}
-	self:oWindow:STATUSMESSAGE("Producing reports, please wait...")
+// 	self:oWindow:Pointer := Pointer{POINTERHOURGLASS}
+// 	self:oWindow:STATUSMESSAGE("Producing reports, please wait...")
 
 	* Print the required report: 
 
@@ -3525,7 +3535,7 @@ METHOD Show() CLASS SelPers
 			ENDIF
 		ENDIF
 	ENDIF
-
+   self:Close()
 	RETURN
 Method ExtraPropCondition(aPropExValues as array) as void Pascal Class SelPersMailCd
 	// compose extra properties selection condition: 
@@ -4300,7 +4310,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local cNextDD:=self:oLan:Rget("next direct debit in") as string 
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
-	local nFirstSdd as int // year*100+month of sysparms:datefrstsdd
 	LOCAL lError,lSetAMPM as LOGIC
 	local dlg,invoicedate,dReqCol as date
 	LOCAL ptrHandle 
@@ -4379,7 +4388,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		(ErrorBox{self,self:oLan:WGet("no maximum direct debit amounts for individual or batch specified in system data")}):Show() 
 		return false		
 	endif
-	nFirstSdd:=year(datefirstSEPAdd)*100+month(datefirstSEPAdd)
 	// file description array: 
 	
 	aDescr[1]:=oLan:Rget("Single gift")
@@ -4568,7 +4576,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if SeqTp<=2
 			// correct RCUR when first sepa dd: 
 			if aDue[i,20]=="0000-00-00"
-				// 			if (Year(aDue[i,8])*100+Month(aDue[i,8])-aDue[i,10])< nFirstSdd
 				SeqTp:=1  // apparently first DD for SEPA 
 			else
 				SeqTp:=2
