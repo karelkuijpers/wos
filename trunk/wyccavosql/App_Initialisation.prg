@@ -74,8 +74,11 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 		// remove old version if still present:
 		oFs:=FileSpec{cWorkdir+"WosSQLOld.EXE"}
 		if oFs:Find()
-			FErase(oFs:FullPath)
-			oFs:Find()
+			oFs:DELETE()
+			if oFs:Find()
+				FErase(oFs:FullPath)
+				oFs:Find()
+			endif
 		endif
 		// check newer tables, etc: 
 		aInsRem:=oFTP:Directory("variable/*.*")
