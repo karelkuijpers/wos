@@ -213,7 +213,9 @@ CLASS NewPersonWindow INHERIT DataWindowExtra
 
   EXPORT aPropEx:={} as ARRAY 
   export oPersCnt as PersonContainer
-  protect aMailcds:=pers_codes as array
+  protect aMailcds:=pers_codes as array 
+  protect oTransInq as TransInquiry
+  protect oSubBrws as SubscriptionBrowser 
   
   
 RESOURCE NewPersonWindow DIALOGEX  125, 102, 501, 614
@@ -370,7 +372,13 @@ self:OrigaBank:={}
 METHOD Close( oEvent ) CLASS NewPersonWindow
 	IF self:lImport
 		self:oImport:Close()
-	ENDIF  
+	ENDIF
+	if !self:oTransInq==null_object 
+		self:oTransInq:Close()
+	endif
+	if !self:oSubBrws==null_object 
+		self:oSubBrws:Close()
+	endif
 
 // 	SELF:Destroy()
 	// force garbage collection
@@ -379,10 +387,9 @@ METHOD Close( oEvent ) CLASS NewPersonWindow
 	RETURN SUPER:Close(oEvent)
 METHOD DonationsButton( ) CLASS NewPersonWindow 
 // inquiry of donations of this person
-local oSubBrws as SubscriptionBrowser
-oSubBrws:=SubscriptionBrowser{self:owner,,,"p.persid="+self:mPersid+" and category='D'"}
-oSubBrws:cType:="DONATIONS"
-oSubBrws:Show()
+self:oSubBrws:=SubscriptionBrowser{self:owner,,,"p.persid="+self:mPersid+" and category='D'"}
+self:oSubBrws:cType:="DONATIONS"
+self:oSubBrws:Show()
 RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS NewPersonWindow
 	LOCAL oControl AS Control
@@ -437,9 +444,8 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS NewPersonWindow
 	RETURN NIL
 METHOD GiftsButton( ) CLASS NewPersonWindow 
 // inquiry of transactions of this person 
-local oTransInq as TransInquiry 
-oTransInq:=TransInquiry{self:Owner,,,"p.persid="+self:mPersid+" and t.dat>='"+SQLdate(Today()-365*2)+"'"} 
-oTransInq:Show()
+self:oTransInq:=TransInquiry{self:Owner,,,"p.persid="+self:mPersid+" and t.dat>='"+SQLdate(Today()-365*2)+"'"} 
+self:oTransInq:Show()
 RETURN NIL
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS NewPersonWindow 
 LOCAL DIM aFonts[1] AS OBJECT
@@ -1707,6 +1713,7 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	protect cSearch as USUAL
 	export cFields, cFrom,cWhere,cOrder, cFilter as string
 	export oPersCnt as PersonContainer  
+	export oSelpers as SelPers
 	
 	declare method PersonSelect 
 RESOURCE PersonBrowser DIALOGEX  16, 17, 516, 300
@@ -1755,6 +1762,10 @@ IF !SELF:oEditPersonWindow==NULL_OBJECT
 	SELF:oEditPersonWindow:Close()
 	SELF:oEditPersonWindow:Destroy()
 ENDIF
+
+if !self:oSelpers == null_object
+	self:oSelpers:Close()
+endif
 
 SELF:osfpersonsubform:Close()
 SELF:oSFPersonSubForm:Destroy()
@@ -2562,9 +2573,11 @@ self:EndDialog(0)
 	RETURN	
 METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	//Put your PostInit additions here
-	LOCAL afill:={} AS ARRAY
-	LOCAL cRoot := "WYC\Runtime", cFields AS STRING, aFields AS ARRAY
-	LOCAL i AS INT
+	LOCAL i as int
+	LOCAL cRoot := "WYC\Runtime" as string
+	Local cFields as STRING 
+	LOCAL afill:={} as ARRAY
+	Local aFields as ARRAY 
 	self:SetTexts()
 	cFields:=QueryRTRegString( cRoot, "ExpFields")
 	
@@ -2577,8 +2590,9 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 			SELF:oDCSubSet:SelectItem(i)		
 		NEXT
 	ELSE
-		aFields := MExec(MCompile("{" + cFields + "}"))
-		FOR i =1 TO Len(aFields)
+// 		aFields := MExec(MCompile("{" + cFields + "}"))
+		aFields := Evaluate("{" + cFields + "}")
+		FOR i =1 to Len(AFields)
 			SELF:oDCSubSet:SelectItem(aFields[i])	
 		NEXT
 	ENDIF
