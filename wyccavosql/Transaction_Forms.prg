@@ -3431,8 +3431,10 @@ METHOD CancelButton( ) CLASS TransactionMonth
 	RETURN NIL
 METHOD Close(oEvent) CLASS TransactionMonth
 *	SUPER:Close(oEvent)
-	//Put your changes here
-SELF:oAccStm:=NULL_OBJECT
+	//Put your changes here 
+	if !self:oAccStm == null_object
+		self:oAccStm:=null_object
+	endif
 SELF:Destroy()
 	// force garbage collection
 	*CollectForced()
@@ -3616,8 +3618,8 @@ METHOD OKButton( ) CLASS TransactionMonth
 		oReport:show()
 		IF oReport:lPrintOk
 			SetDecimalSep(Asc(DecSeparator))
-			IF oAccStm==null_object
-				oAccStm:=AccountStatements{,self:SkipInactive}
+			IF self:oAccStm==null_object
+				self:oAccStm:=AccountStatements{,self:SkipInactive}
 			ENDIF
 			self:oAccStm:BeginReport:=self:BeginReport
 			self:oAccStm:oReport:=oReport 
