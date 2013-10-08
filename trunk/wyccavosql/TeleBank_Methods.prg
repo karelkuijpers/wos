@@ -673,7 +673,10 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 			lv_kind='AC'
 			return
 		endif
-		cText	:=	SubStr(lv_Oms,1,16) 
+		cText	:=	SubStr(lv_Oms,1,16)
+		if Len(cText)<7
+			return
+		endif 
 		// 		IF	isnum(AllTrim(cText)) .and. Upper(SubStr(lv_Oms,17,2))=='AC'
 		IF	isnum(AllTrim(cText)) .and. IsMod11(cText) 
 			//	betalingskenmerk
@@ -724,7 +727,7 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 					lv_persid:=Str(Val(SubStr(cText,-5)),-1)
 				endif
 				lv_bankid:=SubStr(cText,2,6)
-				lv_budget:=SubStr(cText,2,Max(5,Len(cText)-6))
+				lv_budget:=SubStr(cText,2,Max(5,Len(cText)-6.00))
 				if	Val(SubStr(lv_budget,6))==0         // ???
 					lv_budget:=ZeroTrim(SubStr(lv_budget,1,5)) 
 				else
@@ -4066,8 +4069,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 		cPersids:=Implode(avalueTrans,',',,,11)
 		if !Empty(cPersids)
-			oSel:=SqlSelect{"select group_concat(gr.grpersid) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
+			oSel:=SqlSelect{"select cast(group_concat(gr.grpersid) as char) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
 			if oSel:Reccount>0
+				aPersidsDb:={}
 				aPersidsDb:=Split(oSel:grpersids,',')
 				AEval(aPersidsDb,{|x|AAdd(aZip,Split(x,','))})
 				aevala(aPersidsDb,{|x|split(x,',')[1]})
