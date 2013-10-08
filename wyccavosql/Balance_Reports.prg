@@ -3414,7 +3414,7 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	local fBalance,fAmntRPP as float
 	local cCurrOPP,cAmntRPP,cDateRPP,cDescr as string
 	local EndInMonth as date 
-	local aDesc:={} as array
+	local aDesc as array
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	// End of subkind processing (lowest level)
 	// subkinds:
