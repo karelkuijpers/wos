@@ -3831,8 +3831,10 @@ self:SetTexts()
 
 	RETURN NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class MemberBrowser
-	//Put your PreInit additions here 
-	self:cFields:= "m.mbrid,m.accid,m.depid,p.persid,a.description,a.accnumber,d.deptmntnbr,d.descriptn as depname,"+SQLFullName(0,'p')+" as membername,b.category as type,m.grade,m.householdid,m.homepp"
+	//Put your PreInit additions here
+	local cFullName as string
+	cFullName:=SQLFullName(0,"p") 
+	self:cFields:= "m.mbrid,m.accid,m.depid,p.persid,a.description,a.accnumber,d.deptmntnbr,d.descriptn as depname,"+cFullName+" as membername,b.category as type,m.grade,m.householdid,m.homepp"
 	self:cFrom:="person as p, member as m left join department as d on (m.depid=d.depid) left join account as a on (m.accid=a.accid) left join balanceitem as b on (b.balitemid=a.balitemid) " 
 	self:cWhere:="m.persid=p.persid "
 	self:cOrder:="membername"
