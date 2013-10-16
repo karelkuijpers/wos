@@ -1067,7 +1067,7 @@ METHOD SetState() CLASS NewPersonWindow
 	self:oDCmRemarks:Value := self:oPerson:remarks
 	self:oDCmAlterDate:Value := self:oPerson:alterdate
 	self:oDCmCreationDate:Value := self:oPerson:creationdate
-	self:oDCmOPC:Value := self:oPerson:OPC
+	self:oDCmOPC:Value := ConS(self:oPerson:OPC)
 	self:oDCmDateLastGift:Value := self:oPerson:datelastgift
 	self:oDCmExternid:Value:= ZeroTrim(self:oPerson:EXTERNID)
 	self:ODCmBirthDate:Value:=self:oPerson:birthdate
@@ -2093,7 +2093,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	LOCAL oPersBw as PersonBrowser
 	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
 	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
-	local oSel as SQLSelect 
+	local oSel as SQLSelectPagination
 	LOCAL iEnd := At(",",cValue) as int
 	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
@@ -2149,7 +2149,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		cWhere+= iif(Empty(cWhere),""," and ")+"p.deleted=0"
 	endif
 
-	oSel:=SqlSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
+	oSel:=SQLSelectPagination{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
 	IF lUnique .and. oSel:RecCount=1		
 		IF IsMethod(oCaller, #RegPerson)
 			oCaller:RegPerson(oSel,cItemname)
@@ -3577,7 +3577,7 @@ METHOD InitExtraProperties() CLASS SelPersMailCd
 	RETURN nil
 METHOD MakeAndCod() CLASS SelPersMailCd
 * Compose mailingcodes from parts andCod1 .. anandCod
-	LOCAL aCod := {}
+	LOCAL aCod := {} as array
 	LOCAL i AS INT
 	LOCAL cCod  AS STRING
 	LOCAL cTekst AS STRING
