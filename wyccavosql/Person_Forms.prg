@@ -1702,7 +1702,7 @@ CLASS PersonBrowser INHERIT DataWindowMine
 // 	PROTECT oAcc AS Account
 // 	PROTECT oTrans as SQLSelect
 // 	PROTECT oTransH as SQLSelect
-	EXPORT oPers as SQLSelect
+	EXPORT oPers as SQLSelectPagination
 	PROTECT m_namen,m_waarden,Ann,m_adressen AS ARRAY
 	PROTECT pKondp, pKondA AS _CODEBLOCK
 	PROTECT pKond AS _CODEBLOCK
@@ -1852,19 +1852,19 @@ METHOD FindButton( ) CLASS PersonBrowser
 	if !Empty(self:cFilter)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and ")+"("+self:cFilter+")"
 	endif
-	oSel:=SQLSelect{"select count(*) as ncount from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere),oConn}
-	oSel:Execute()
-	if !Empty(oSel:status)
-		LogEvent(self,"Error:"+oSel:ErrInfo:ErrorMessage+CRLF+oSel:SQLString,"logerrors")
-	else	
-		nCount:=ConI(oSel:nCount)
-		if nCount> 1000
-			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
-					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
-				return nil
-			endif
-		endif
-	endif
+// 	oSel:=SQLSelect{"select count(*) as ncount from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere),oConn}
+// 	oSel:Execute()
+// 	if !Empty(oSel:status)
+// 		LogEvent(self,"Error:"+oSel:ErrInfo:ErrorMessage+CRLF+oSel:SQLString,"logerrors")
+// 	else	
+// 		nCount:=ConI(oSel:nCount)
+// 		if nCount> 1000
+// 			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
+// 					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+// 				return nil
+// 			endif
+// 		endif
+// 	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
 	self:oPers:Execute()
 
@@ -2013,8 +2013,8 @@ self:SetTexts()
     	self:oCCDeleteButton:Hide()
     	self:oCCUnionButton:Hide()
     ENDIF
-//    self:FOUND:=Str(self:oPers:Reccount,-1)
-   self:FOUND:=Str(ConI(SqlSelect{"select count(*) as totcount from person",oConn}:totcount),-1) +" ("+self:oLan:WGet("only 100 shown")+")"
+   self:FOUND:=Str(self:oPers:Reccount,-1)
+//    self:FOUND:=Str(ConI(SqlSelect{"select count(*) as totcount from person",oConn}:totcount),-1) +" ("+self:oLan:WGet("only 100 shown")+")"
    if self:oPers:Reccount>0
    	self:oCCOKButton:Enable()
    else
@@ -2037,8 +2037,9 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	if !Empty(oServer)
 		self:oPers:=oServer
 	else
-		self:oPers:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate+" limit 100",oConn }
-	endif
+// 		self:oPers:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate+" limit 100",oConn }
+		self:oPers:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate,oConn }
+	endif 
  	self:oPersCnt:=PersonContainer{}
 	RETURN nil
 METHOD PrintButton( ) CLASS PersonBrowser
@@ -2577,7 +2578,7 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	LOCAL cRoot := "WYC\Runtime" as string
 	Local cFields as STRING 
 	LOCAL afill:={} as ARRAY
-	Local aFields as ARRAY 
+	Local aFields:={} as ARRAY 
 	self:SetTexts()
 	cFields:=QueryRTRegString( cRoot, "ExpFields")
 	
