@@ -1562,16 +1562,16 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	local lMTExtended as logic
 	local aWord as array
 	local oStment as SQLStatement
-	local time0,time1 as float
+// 	local time0,time1 as float
 
 	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
 	
 	// Proces records: 
 	// 	LogEvent(self,"start "+oFm:Fullpath,"logsql")
-	time0:=Seconds()
+// 	time0:=Seconds()
 	oXMLParser := XMLParser{}
 	oXMLParser:loadFile(oFm:Fullpath) 
-	time1:=time0
+// 	time1:=time0
 	// 	LogEvent(self,"load:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	if !oXMLParser:RootElement:Name==#Document  .or. (oBkToCstmrStmt:=oXMLParser:RootElement:GetElementOnName(#BkToCstmrStmt))==null_object
 		(ErrorBox{,self:oLan:WGet('No correct CAMT053 file')+' '+AllTrim(oFm:FileName)}):show()
@@ -2018,13 +2018,13 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	oSub:=null_object   // clear
 	aBudg:=null_array // clear  
 	// 	CollectForced()  //garbagecollect()
-	time1:=time0
+// 	time1:=time0
 	// 	LogEvent(self,"interprete:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//    LogEvent(self,"all transactions loaded","logsql")
 
 	// store read data into database:
 	lResult:= self:SaveTeleTrans(true,true,"CAMT.053 file "+oFm:FileName,nTrans)
-	time1:=time0
+// 	time1:=time0
 	// 	LogEvent(self,"save:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	return lResult
 	
@@ -4055,8 +4055,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oMBal as Balances
-	local time1,time0 as float
-	time0:=Seconds() 
 	if Len(avalueTrans)=0
 		return true
 	endif  
@@ -4069,12 +4067,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 		cPersids:=Implode(avalueTrans,',',,,11)
 		if !Empty(cPersids)
-			oSel:=SqlSelect{"select cast(group_concat(gr.grpersid) as char) as grpersids from (select cast(persid as char) as grpersid from person where persid in ("+cPersids+") and deleted=0) as gr group by 1=1",oConn}
-			if oSel:Reccount>0
-				aPersidsDb:={}
+			aPersidsDb:={}
+			oSel:=SqlSelect{"select group_concat(cast(persid as char)) as grpersids from person where deleted=0 and persid in ("+cPersids+")",oConn}
+			if oSel:Reccount>0 .and.!Empty(oSel:grpersids)
 				aPersidsDb:=Split(oSel:grpersids,',')
-				AEval(aPersidsDb,{|x|AAdd(aZip,Split(x,','))})
-				aevala(aPersidsDb,{|x|split(x,',')[1]})
 			endif
 			aPersids:=Split(cPersids,',')
 			// compare both arrays 
@@ -4111,8 +4107,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				endif
 				i++ 
 			enddo 
-			time1:=time0
-			//logevent(self,"giro converted:"+Str((time0:=Seconds())-time1,-1),"logsql")
 			if !Empty(aBankContraNonIban)
 				oSel:=SqlSelect{"select group_concat(banknumber separator '#') as grbanknbrs from personbank where right(banknumber,10) in ("+Implode(aBankContraNonIban,'","')+')',oConn}
 				if oSel:Reccount>0
@@ -4130,8 +4124,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					endif			
 				endif
 				aBankContraNonIban:=null_array //clear
-				time1:=time0
-				//logevent(self,"non-Iban converted:"+Str((time0:=Seconds())-time1,-1),"logsql")
 			endif
 		endif
 		//
@@ -4166,8 +4158,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				endif
 			endif
 		endif
-		time1:=time0
-		//logevent(self,"persid from contrabankaccount:"+Str((time0:=Seconds())-time1,-1),"logsql")
 
 	endif 
 	if lCheckAccount
@@ -4240,9 +4230,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			if Len(aDueid)>0
 				cDueids:=Implode(aDueid,'","')
 				aAccnbrDb:={}
-				oSel:=SqlSelect{"select group_concat(gr.accnumber,'#$#',gr.dueid separator '#%#') as graccnumber from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
-				if oSel:Reccount>0
-					AEval(Split(oSel:graccnumber,'#%#'),{|x|AAdd(aAccnbrDb,Split(x,'#$#')) }) 
+				oSel:=SqlSelect{"select cast(group_concat(gr.accnumber,'#$#',gr.dueid separator '#%#') as char) as graccnumbers from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
+				if oSel:Reccount>0 .and.!Empty(oSel:graccnumbers)
+					AEval(Split(oSel:graccnumbers,'#%#'),{|x|AAdd(aAccnbrDb,Split(x,'#$#')) }) 
 					if Len(aAccnbrDb)>0
 						// insert accnumber in storno's:
 						for i:=1 to Len(aAccnbrDb)
@@ -4259,8 +4249,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		endif
 	endif
-	time1:=time0
-	//logevent(self,"budgetcd is an accountnumber:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//
 	// complete budgetcodes from gifts to single destinations and gifts patterns:  
 	//
@@ -4337,8 +4325,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			aValueSubPtr:=null_array
 		endif
 	endif
-	time1:=time0
-	//logevent(self,"single destinations:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	// find accid for banknumbers in array with bank account balances aValuesBal
 	if !Empty(self:avaluesBal)
 		for i:=1 to Len(self:avaluesBal)
@@ -4354,8 +4340,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
-	time1:=time0
-	//logevent(self,"banknumbers:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	// 	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
@@ -4386,8 +4370,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// prepare for add transactions for ministry income/expense:
 		oAddInc:=AddToIncExp{}
 	endif
-	time1:=time0
-	//logevent(self,"gift budgets:"+Str((time0:=Seconds())-time1,-1),"logsql")
 
 	// GIFTS:
 	if (k:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'}))>0  // gifts with known destination and giver?
@@ -4410,8 +4392,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		endif
 		i:=0
-		time1:=time0
-		//logevent(self,"gift zip:"+Str((time0:=Seconds())-time1,-1),"logsql")
 		do while i<Len(avalueTrans)
 			i:=AScan(avalueTrans,{|x|!Empty(x[7]).and.Val(x[11])>0 .and.x[9]='B'},i+1)
 			if i=0
@@ -4499,8 +4479,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		enddo
 	endif
 	aBankContra:=null_array  //clear
-	time1:=time0
-	//logevent(self,"gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	// NON-GIFTS:
 	// aValuesTrans:
@@ -4605,8 +4583,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		endif
 	enddo
 	aBudgetcd:=null_array  //clear
-	time1:=time0
-	//logevent(self,"non-gift transactions:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
@@ -4802,8 +4778,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	endif
 	
 	SQLStatement{"unlock tables",oConn}:execute()
-	time1:=time0
-	//logevent(self,"dbase:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	self:aValuesTrans:={}
 	return true
 METHOD SkipMut()  CLASS TeleMut
