@@ -2985,7 +2985,7 @@ METHOD AccFil() CLASS GiftReport
 	LOCAL i AS INT
 	LOCAL SubLen AS INT
 	SELF:FromAccount:="0"
-	self:ToAccount:="zzzzzzzzz" 
+	self:oDCToAccount:TextValue:="zzzzzzzzz" 
 	self:oDCSubSet:cCurStart:=""
 	self:oDCSubSet:cCurEnd:=""
 	SELF:oDCSubSet:FillUsing(SELF:oDCSubSet:GetAccnts())
@@ -2995,13 +2995,12 @@ METHOD AccFil() CLASS GiftReport
 		SELF:oDCSubSet:SelectItem(i)
 	NEXT
 	self:oDCSelectedCnt:TEXTValue:=Str(SubLen,-1)+" selected"
-	SELF:FromAccount:= LTrimZero(SELF:oDCSubSet:GetItem(1,LENACCNBR))
+	self:odcFromAccount:TextValue:= LTrimZero(self:oDCSubSet:GetItem(1,LENACCNBR))
 	SELF:oDCFromAccount:TEXTValue := FromAccount
 	SELF:cFromAccName := FromAccount
 	SELF:oDCTextfrom:caption := AllTrim(SubStr(SELF:oDCSubSet:GetItem(1),LENACCNBR+1))
 	self:oDCSubSet:cAccStart:=self:FromAccount
-	self:ToAccount:= LTrimZero(self:oDCSubSet:GetItem(SubLen,LENACCNBR))
-	SELF:oDCToAccount:TEXTValue := ToAccount
+	self:oDCToAccount:TextValue:= LTrimZero(self:oDCSubSet:GetItem(SubLen,LENACCNBR))
 	SELF:cToAccName := ToAccount
 	self:oDCTextTill:caption := AllTrim(SubStr(self:oDCSubSet:GetItem(SubLen),LENACCNBR+1)) 
 	self:oDCSubSet:cAccEnd:=self:ToAccount
