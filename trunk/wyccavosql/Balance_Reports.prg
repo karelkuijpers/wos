@@ -4844,6 +4844,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	self:ReportYear:=Year(Today()-27)
 	self:StartJaar:=Year(LstYearClosed)
 	self:MaxJaar:=Year(Today())
+	if !Empty(GlBalYears)
+		self:MinJaar:=Year(GlBalYears[Len(GlBalYears),1]) 
+	else
+		self:MinJaar:=Year(MinDate)
+	endif                      
 	self:Country:=SQLSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
 
 	self:Footnotes:="Last"
