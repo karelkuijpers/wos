@@ -374,7 +374,8 @@ CLASS TeleMut
 	protect avaluesBal:={} as array  // array with values to be stored in bankbalances: {{banknumber,SQLdate,value},...
 	export nTooOld as int // number of too old trasnactions
 	export nNonTele as int // number of transactions not on telebanking account  
-	export nDuplicate as int // number of transactions skipped because of duplicates
+	export nDuplicate as int // number of transactions skipped because of duplicates 
+	export nReversals as int // numbers of transactions whic are reversals of direct debits
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportBRI,ImportPostbank,ImportVerwInfo,ImportBBSInnbetal,;
 		ImportCliop,ImportGiro,ImportKB,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
@@ -1056,7 +1057,7 @@ METHOD Import() CLASS TeleMut
 			iif(self:nDuplicate>0,Str(self:nDuplicate,-1) +" transactions skipped because duplicates of already imported transactions",""))	
 	endif
 	if lFilesFound
-		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
+		(InfoBox{,"Import of telebanking transactions",Str(self:lv_aant_toe,4)+" transactions imported"+iif(self:nReversals>0,+" including "+Str(self:nReversals,-1)+" REVERSALS OF DIRECT DEBIT","")+" (processed automatically "+Str(self:lv_processed,-1)+")"}):Show()
 		for i:=1 to Len(self:aMessages)
 			LogEvent(self,self:aMessages[i],"Log")
 		next
@@ -4034,13 +4035,14 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local i,j,k,l,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local fDeb,fDebForgn,fCre,fCreForgn as float 
 	local cPersids,cPersid,cBudgetcds,cBudgetcd,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc,cTransid as string 
-	local cDueids,cDueid as string
+	local cDueids,cDueid,endtoend as string
 	local cBankContrNotIBAN,cBankContr,cBankAcctContr as string 
-	local cStatement as string 
+	local cStatement as string
+	local invoicedate as date 
 	local	lAddressChanged,lProcAuto as logic
 	local aPersids:={}, aPersidsDb:={} as array
 	local aSubPersids:={}, aSubscr:={} as array, aSubscrtn:={} as array, aSub:={} as array,aValueSubPtr:={}  // arrays for getting gifts patterns
-	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={},aDueid:={} as array
+	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={},aDueid:={},aAccnbrDue:={} as array
 	local aBankContra:={},aBankContraNonIban:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
 	local avalueTrans:=self:aValuesTrans as array
 	local aAddr:={},aAddrDB:={} as array // address: {streetname,housenbr} 
@@ -4223,22 +4225,24 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		if sepaEnabled
 			for i:=1 to Len(avalueTrans)
 				cDueid:=avalueTrans[i,15]
-				if !Empty(cDueid) .and. AScanExact(aDueid,cDueid)=0
-					AAdd(aDueid,cDueid)
+				if !Empty(cDueid) 
+					if AScanExact(aDueid,cDueid)=0
+						AAdd(aDueid,cDueid)
+					endif
 				endif
 			next
 			if Len(aDueid)>0
 				cDueids:=Implode(aDueid,'","')
-				aAccnbrDb:={}
+				aAccnbrDue:={}
 				oSel:=SqlSelect{"select cast(group_concat(gr.accnumber,'#$#',gr.dueid separator '#%#') as char) as graccnumbers from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
 				if oSel:Reccount>0 .and.!Empty(oSel:graccnumbers)
-					AEval(Split(oSel:graccnumbers,'#%#'),{|x|AAdd(aAccnbrDb,Split(x,'#$#')) }) 
-					if Len(aAccnbrDb)>0
+					AEval(Split(oSel:graccnumbers,'#%#'),{|x|AAdd(aAccnbrDue,Split(x,'#$#')) }) 
+					if Len(aAccnbrDue)>0
 						// insert accnumber in storno's:
-						for i:=1 to Len(aAccnbrDb)
+						for i:=1 to Len(aAccnbrDue)
 							j:=0
-							do while (j:=AScan(avalueTrans,{|x|x[15]==aAccnbrDb[i,2]},j+1))>0
-								avalueTrans[j,7]:=aAccnbrDb[i,1]
+							do while (j:=AScan(avalueTrans,{|x|x[15]==aAccnbrDue[i,2]},j+1))>0
+								avalueTrans[j,7]:=aAccnbrDue[i,1]
 								if j>=Len(avalueTrans)
 									exit
 								endif
@@ -4483,10 +4487,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	// NON-GIFTS:
 	// aValuesTrans:
 	// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,processed 
-	//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15     16
+	//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15     16       
 	i:=0
 	do while i<Len(avalueTrans) 
-		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]='COL')) .and.!x[16]='X'},i+1)   // non-gifts or person unknown and no storno's  
+// 		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.(x[9]='A' .and.!x[5]='COL')) .and.!x[16]='X'},i+1)   // non-gifts or person unknown and no storno's  
+		i:=AScan(avalueTrans,{|x|(Val(x[11])=0 .or.x[9]='A')  .and.!x[16]='X'},i+1)   // non-gifts or person unknown and no storno's  
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
@@ -4520,6 +4525,16 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						lProcAuto:=true
 					endif
 				endif
+			elseif avalueTrans[i,5]='COL'.and.avalueTrans[i,9]=='A' .and.!Empty(avalueTrans[i,7]) .and.!Empty(avalueTrans[i,11]).and.!Empty(avalueTrans[i,15])
+				// reversal of direct debit:
+				cBudgetcd:=avalueTrans[i,7]
+				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+					cDestAcc:=aAccnbrDb[l,2]
+					if aAccnbrDb[l,3]='1'  // is member
+						lv_gc:='AG'
+					endif
+					lProcAuto:=true
+				endif
 			elseif !Empty(aValueTrans[i,7]).and.(self:m57_bankacc[j,8]>'0' .and.	aValueTrans[i,5]=='BGC';  // payahead filled for collective recording of acceptgiro's
 				.or.avalueTrans[i,9]=='A') //debit with known destination?
 				cBudgetcd:=avalueTrans[i,7]
@@ -4527,10 +4542,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					cDestAcc:=aAccnbrDb[l,2]
 					if aAccnbrDb[l,3]='1'  // is member
 						if !Empty(avalueTrans[i,11])  // giver connected?
-							// apparently reversal of direct debit
-							lv_gc:='AG'
-							// no automatic processing
-						else 
 							lv_gc:='CH'
 							lProcAuto:=true
 						endif
@@ -4571,9 +4582,13 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					fDebForgn:=0.00
 					fCre:=avalueTrans[i,8]
 					fCreForgn:=avalueTrans[i,8]
+					if avalueTrans[i,15]>'0'  // reversal of direct debit
+						lv_persid:=avalueTrans[i,11] 						
+					endif 
 				endif 
 				nTransId++
-				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,AllTrim(avalueTrans[i,6]+' '+avalueTrans[i,10]),;                  // contra name as description
+				AAdd(aTrans,{cBankAccOwn,fDeb,fDebForgn,fCre,fCreForgn,sCurr,AllTrim(avalueTrans[i,6]+;
+				iif(Empty(avalueTrans[i,4]).or.Len(aValuesTrans[i,4])>60,'',' ('+avalueTrans[i,4]+') ')+' '+avalueTrans[i,10]),;  // contra name + contra bank account as description
 				aValueTrans[i,2],'',LOGON_EMP_ID,'2','1',aValueTrans[i,5]+aValueTrans[i,3],'','0','0','',str(nTransId,-1)} ) 
 				AAdd(aTransTele,{i,nTransId}) 
 				// second row: 
@@ -4583,7 +4598,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		endif
 	enddo
 	aBudgetcd:=null_array  //clear
-	
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	// Execute database statements
@@ -4617,10 +4632,12 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		next
 		
 	endif	
+	cDueids:=Implode(aAccnbrDue,",",,,2)
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
-	oStmnt:=SQLStatement{'lock tables '+iif(Len(self:avaluesBal)>0,'`bankbalance` write,','')+iif(Empty(cFilename),'','`log` write,')+iif(Len(avaluesPers)>0,'`person` write,','')+;
-		iif(Len(aTrans)>0,'`mbalance` write,','')+'`teletrans` write'+iif(Len(aTrans)>0,',`transaction` write',''),oConn}        // alphabetic order
+	oStmnt:=SQLStatement{'lock tables '+iif(Len(self:avaluesBal)>0,'`bankbalance` write,','')+iif(Len(aAccnbrDue)>0,',`dueamount` write','')+;
+	iif(Empty(cFilename),'','`log` write,')+iif(Len(avaluesPers)>0,'`person` write,','')+;
+	iif(Len(aTrans)>0,'`mbalance` write,','')+iif(Len(aAccnbrDue)>0,',`subscription` write','')+'`teletrans` write'+iif(Len(aTrans)>0,',`transaction` write',''),oConn}        // alphabetic order
 	oStmnt:execute()
 	maxTeleId:=ConI(SqlSelect{"select max(teletrid) as maxtele from teletrans",oConn}:maxtele)
 	oStmnt:=SQLStatement{"insert IGNORE into teletrans "+;
@@ -4689,9 +4706,17 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						else
 							exit
 						endif   
-					enddo
+					enddo 
+					// remove also corresponding dueid from direct debit reversals:
+					if avalueTrans[k,15]>'0' .and. Len(aAccnbrDue)>0
+						if (j:=AScan(aAccnbrDue,{|x|x[2]==avalueTrans[k,15]}))>0
+							ADel(aAccnbrDue,j)
+							ASize(aAccnbrDue,Len(aAccnbrDue)-1)
+						endif
+					endif
 				endif 
-			enddo          
+			enddo
+			cDueids:=Implode(aAccnbrDue,",",,,2)
 			// setup again chgbalance:
 			oMBal:=Balances{}
 			for i:=1 to Len(aTrans) 
@@ -4751,17 +4776,47 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			if	!Empty(oStmnt:Status)
 				SQLStatement{"rollback",oConn}:execute() 
 				SQLStatement{"unlock tables",oConn}:execute()
-				LogEvent(self,"error:"+oMBal:cError,"LogErrors")
+				LogEvent(self,"error:"+oStmnt:cError,"LogErrors")
 				ErrorBox{,self:oLan:WGet('persons could not be updated')+":"+oStmnt:ErrInfo:ErrorMessage}:show()
 				self:aValuesTrans:={}
 				return false 
 			endif
 		endif
+		// update dueamounts because of direct debit reversals:
+		if !Empty(cDueids)
+			oStmnt:=SQLStatement{"update dueamount set amountrecvd:=0.00 where dueid in ("+cDueids+")",oConn}
+			oStmnt:execute()
+			if	!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute() 
+				SQLStatement{"unlock tables",oConn}:execute()
+				LogEvent(self,"error:"+oStmnt:cError,"LogErrors")
+				ErrorBox{,self:oLan:WGet("due amounts couldn't be updated")+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+				self:aValuesTrans:={}
+				return false 
+			endif
+			// update subscriptions:
+			oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+;
+				'and dueid in ('+cDueids+') and firstinvoicedate=dueamount.invoicedate',oConn}
+			oStmnt:execute()
+			if	!Empty(oStmnt:Status)
+				SQLStatement{"rollback",oConn}:execute() 
+				SQLStatement{"unlock tables",oConn}:execute()
+				LogEvent(self,"error:"+oStmnt:cError,"LogErrors")
+				ErrorBox{,self:oLan:WGet("donations couldn't be updated")+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+				self:aValuesTrans:={}
+				return false 
+			endif
+			 
+		endif
 		self:lv_processed+=nProc
 		// 		endif
-	endif		
+	endif
+	if nTele>0 .and.Len(aAccnbrDue)>0
+		self:nReversals+=Len(aAccnbrDue)
+	endif
 	if !Empty (cFilename)
-		LogEvent(self,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1),"")) 
+		LogEvent(self,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1)+;
+		iif(Len(aAccnbrDue)>0,' including '+Str(Len(aAccnbrDue),-1)+' direct debit reversals',''),"")) 
 		// 	else
 		// 		AAdd(self:aMessages,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1),""))
 	endif
