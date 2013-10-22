@@ -1127,7 +1127,7 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 	ELSE
 		m53_komma:=','
 	ENDIF
-	m53_oms1:=AllTrim(self:oTmt:m56_contra_name)+m53_komma+self:oTmt:m56_description
+	m53_oms1:=AllTrim(self:oTmt:m56_contra_name)+iif(Empty(self:oTmt:m56_contra_bankaccnt),''," ("+self:oTmt:m56_contra_bankaccnt+") ")+m53_komma+self:oTmt:m56_description
 	m53_oms2:=AllTrim(self:oTmt:m56_description)+m53_komma+self:oTmt:m56_contra_name
 	if Empty(self:oTmt:m56_contra_name) .and.!Empty(self:oTmt:m56_contra_bankaccnt)
 		oDCGiroText:TEXTValue:=AllTrim(self:oTmt:m56_description)+"("+self:oTmt:m56_contra_bankaccnt+")" 
@@ -2333,20 +2333,21 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				IF	!Empty(cDueAccs)
 					IF	oHm:Amirror[i,5]= 'D'	.or. oHm:Amirror[i,5]=	'A' .or.	oHm:Amirror[i,5]	= 'F'	;
 						.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
-						.or. (self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
+						.or. (self:lTeleBank .and. self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
 						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:Amirror[i,1]),oHm:Amirror[i,2],oHm:Amirror[i,3],iif(self:lTeleBank,ConS(self:oTmt:m56_dueid),""))
 						if !Empty(cError)
 							lError:=true
 						else
-							// check if rejection of first sepa DD:
-							if sepaenabled .and. self:mBst="COLREJ".and.oHm:Amirror[i,2] >	oHm:Amirror[i,3] 
+							// check if rejection of first sepa DD or invalid mandate id:
+							if sepaenabled .and. self:lTeleBank .and. self:mBst="COLREJ".and.oHm:Amirror[i,2] >	oHm:Amirror[i,3] 
 								if(j:=AtC('WDD-A-',oHm:Amirror[i,16]))>0
 									mandateid:=AllTrim(SubStr(oHm:Amirror[i,16],j))
 									if (j:=AtC('EndtoEnd:',oHm:Amirror[i,16]))>0
 										endtoend:=SubStr(oHm:Amirror[i,16],j+9,30)
 										if Len(Split(endtoend,'-'))>2
 											invoicedate:=SToD(Split(endtoend,'-')[2])
-											oStmnt:=SQLStatement{'update subscription set firstinvoicedate="0000-00-00" where personid="'+self:mCLNGiver+'" and invoiceid="'+mandateid+'" and firstinvoicedate="'+SQLdate(invoicedate)+'"',oConn}
+											oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+;
+											'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and firstinvoicedate="'+SQLdate(invoicedate)+'"',''),oConn}
 											oStmnt:execute()
 											if !Empty(oStmnt:Status)
 												lError:=true 
