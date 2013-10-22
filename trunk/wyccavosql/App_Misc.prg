@@ -20,23 +20,24 @@ for i:=1 to L1
 	endif
 next
 return cDif
-FUNCTION AskFileName(oWindow, cFileName,cMessage,aFilter, aFilterDesc,appendPossible )
+FUNCTION AskFileName(oWindow, pFileName,cMessage,aFilter, aFilterDesc,appendPossible )
 // ask for filename and return Filespec with fullpath (or null_object)
 // and appendPossible=false if not append
 // appendPossible must be passed by reference (@)
 //
+local cDefFolder as string
+local cFileName as string 
+LOCAL lAppend as LOGIC
 LOCAL oFileDialog as SaveAsDialog
 LOCAL ToFileFS as Filespec
 LOCAL oWarn as warningbox
-LOCAL lAppend as LOGIC
-local cDefFolder as string 
 Default(@aFilter,"*.*")
 Default(@aFilterDesc,"All files")
 Default(@cMessage,"Report to file")
 IF !IsLogic(appendPossible)
 	appendPossible:=FALSE
 ENDIF
-cFileName:=CleanFileName(StrTran(cFileName,'.',' '))  // make correct file name
+cFileName:=CleanFileName(StrTran(pFileName,'.',' '))  // make correct file name
 DO WHILE true
 	// Send up file dialog
 	oFileDialog := SaveAsDialog{ oWindow, cFileName  }
@@ -453,9 +454,9 @@ method IsSelectButton() class datawindow
 				return true
 			endif
 		endif
-	RECOVER USING oErr
 		return false
 	end sequence 
+	ErrorBlock(bOldErr)
 	return false
 
 
@@ -865,6 +866,10 @@ METHOD EditSELECT() CLASS Edit
 	ENDIF
 CLASS EditBrowser INHERIT DataBrowser
 METHOD CellDoubleClick() CLASS EditBrowser
+	if self:Owner:Owner:IsSelectButton()
+		self:Owner:Owner:OKButton()
+		return nil
+	endif
 	self:Owner:Owner:EditButton(FALSE)
 	RETURN nil
 Function EndOfMonth(DateInMonth as date) as date
@@ -1101,7 +1106,7 @@ AIns(pers_codes,1)
 pers_codes[1]:={' ',''}
 oMailCd:GoTop()
 mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE) 
-ASize(mail_abrv,Len(pers_codes)+1)
+ASize(mail_abrv,Len(mail_abrv)+1)
 AIns(mail_abrv,1) 
 mail_abrv[1]:={' ',''}
 
@@ -3090,6 +3095,125 @@ function SQLDate2Date(sqldat as string) as date
 return SToD(StrTran(sqldat,"-",""))
 Function SQLGetMyConnection()
 return oConn
+Class SQLSelectPagination inherit SQLSelect
+	// sqlselect with pagination for browsing through data in a datawindow
+	protect pRecno as dword
+	protect nOffset as dword
+	protect nLastRec as dword
+	protect nPageLen:=100 as dword   // length of a page fetched in one go from the database
+	protect cStatement as string // contains sqlstatement without limits
+	protect lpBof,lpEof as logic
+	access BoF class SQLSelectPagination
+	return self:lpBof
+	access Eof class SQLSelectPagination
+	return self:lpEof
+	  
+method Execute() class SQLSelectPagination
+self:SqlString:=self:cStatement
+return true	
+Method GoBottom() class SQLSelectPagination 
+	self:ReadNextBuffer(self:nLastRec)
+// 	LogEvent(self,"gobottom")
+	return true
+Method GoTo(nRecordNumber) class SQLSelectPagination 
+	local lRes:=true as logic
+	if nRecordNumber<=0 
+		self:lpBof:=true
+		self:pRecno:=1
+	elseif nRecordNumber>self:nLastRec
+		self:lpEof:=true
+		self:pRecno:=self:nLastRec
+	else
+		self:lpBof:=false
+		self:lpEof:=false
+		if nRecordNumber>self:nOffset 
+			lRes:=super:GoTo(nRecordNumber-self:nOffset)
+		endif
+		self:pRecno:=nRecordNumber 
+	endif
+	return lRes
+Method GoTop() class SQLSelectPagination
+// 	LogEvent(self,"gotop")
+return self:ReadNextBuffer(1)
+
+method Init(cStatement, oSQLConnection) class SQLSelectPagination
+	super:Init(, oSQLConnection)
+	self:SqlString:=cStatement
+	return self
+ACCESS PageLength CLASS SQLSelectPagination
+	RETURN self:nPageLen
+ASSIGN PageLength(uValue) CLASS SQLSelectPagination
+self:nPageLen:=uValue
+	RETURN uValue
+
+Method ReadNextBuffer(nRecordNumber) class SQLSelectPagination
+	// check if next buffer should be read:
+	local lRes:=true as logic
+	local time0,time1 as float
+	if nRecordNumber<=0 
+		self:lpBof:=true
+		self:pRecno:=1
+	elseif nRecordNumber>self:nLastRec
+		self:lpEof:=true
+		self:pRecno:=self:nLastRec
+	else
+		if nRecordNumber>self:nOffset+self:nPageLen .or.nRecordNumber<= self:nOffset
+			// read corresponding page:
+			if nRecordNumber<= self:nOffset
+				self:nOffset:=Floor((nRecordNumber-1)/self:nPageLen)*self:nPageLen
+			else	 
+				self:nOffset:=Min(Floor(nRecordNumber/self:nPageLen)*self:nPageLen,self:nLastRec)
+			endif
+			self:aClients[1]:Pointer := Pointer{POINTERHOURGLASS}
+			time0:=Seconds() 
+			super:SqlString:=self:cStatement+" limit "+str(self:nOffset,-1)+","+str(self:nPageLen,-1)
+			super:Execute()
+			time1:=time0
+// 			LogEvent(self,"read buffer ("+Str(nRecordNumber,-1)+") :"+Str((time0:=Seconds())-time1,-1),"loginfo")
+			self:aClients[1]:Pointer := Pointer{POINTERARROW}
+		endif
+		self:pRecno:=nRecordNumber 
+		lRes:=super:GoTo(nRecordNumber-self:nOffset)
+		self:lpBof:=false
+		self:lpEof:=false
+	endif
+	return lRes
+		
+
+	ACCESS RecCount class SQLSelectPagination
+	return self:nLastRec 
+ACCESS RecNo CLASS SQLSelectPagination
+	return self:pRecno
+ASSIGN RECNO(uValue) CLASS SQLSelectPagination
+	RETURN self:GoTo(uValue)
+Method Skip(nLines) class SQLSelectPagination
+	local lRes as logic
+	Default(@nLines,1) 
+	return self:ReadNextBuffer(self:pRecno+nLines) 
+
+ACCESS SqlString CLASS SQLSelectPagination
+	RETURN self:cStatement
+ASSIGN SqlString(uValue) CLASS SQLSelectPagination
+	local cCount as string
+	local oSel as SqlSelect
+	self:cStatement:=uValue
+	self:nOffset:=0
+	self:lpEof:=false
+	self:lpBof:=false
+	if !Empty(uValue) 
+		// determine max rec:
+		cCount:= "select count(*) as nlastrec"+Lower(SubStr(uValue,AtC(' from ',uValue))) 
+		cCount:=substr(cCount,1,rat(" order ",cCount)-1)
+		oSel:=SqlSelect{cCount,self:Connection}
+		oSel:Execute()
+		if oSel:RecCount>0 
+			self:nLastRec:=ConI(oSel:nLastRec)
+		endif
+		super:SqlString:=uValue+" limit 0,"+Str(self:nPageLen,-1)
+		super:Execute()
+		self:pRecno:=1
+	endif
+	RETURN uValue
 Method Locate(ForCondition) class SQLTable
 // implement locate method like for DBServer
 // position table on first occurrence which satisfies ForCondition  
