@@ -546,7 +546,7 @@ endif
 // aColumn: Table name, Field,Type,Null,Default,Extra
 // aIndex:  Table,Non_unique,Key_name,Seq_in_index,Column_name,Collation,Cardinality,Sub_part,Packed,Null,Index_type,Comment 
 do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
-	cCreate+=iif(Empty(cCreate),"CREATE TABLE "+sIdentChar+instance_name+sIdentChar+ " ( ",","+CRLF)+" "+sIdentChar+aColumn[i,2]+sIdentChar+" "+;
+	cCreate+=iif(Empty(cCreate),"CREATE TABLE "+sIdentChar+instance_name+sIdentChar+ " (",","+CRLF)+sIdentChar+aColumn[i,2]+sIdentChar+;
 	aColumn[i,3]+;
 	iif(aColumn[i,4]=="NO"," NOT NULL","")+;
 	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL"),iif(AtC("text",aColumn[i,3])>0,""," DEFAULT '"+aColumn[i,5]+"'"))+;
@@ -554,13 +554,10 @@ do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
 enddo
 cIndex:=" "
 i:=0 
-if table_name=='teletrans'
-	table_name:=table_name
-endif
 do while (i:=AScan(aIndex,{|x|x[1]==table_name},i+1))>0 
 	if Val(aIndex[i,4])=1
 		if !Empty(cIndex)
-			cCreate+=", "+CRLF+cIndex+") "
+			cCreate+=","+CRLF+cIndex+") "
 			cIndex:=" "
 		endif
 		if aIndex[i,3]=="PRIMARY"
@@ -586,7 +583,7 @@ BEGIN SEQUENCE
 	oStmt:=SQLStatement{cCreate,oConn}
 	oStmt:Execute(true)
 	IF !IsNil( oStmt:Status )
-		LogEvent(self,"Error:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+cCreate+")","LogErrors")
+		LogEvent(self,"Error:"+oStmt:ErrInfo:ErrorMessage+"(Statement:"+oStmt:SQLString+")","LogErrors")
 		ShowError( oStmt:ERRINFO )
 		oStmt:FreeStmt(SQL_CLOSE)
 		Break
