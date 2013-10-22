@@ -990,24 +990,24 @@ STATIC DEFINE PROLONGATION_GROUPBOX1 := 105
 STATIC DEFINE PROLONGATION_MACCOUNT := 100 
 STATIC DEFINE PROLONGATION_OKBUTTON := 104 
 STATIC DEFINE PROLONGATION_SC_accid := 101 
-RESOURCE SubscriptionBrowser DIALOGEX  22, 20, 499, 254
+RESOURCE SubscriptionBrowser DIALOGEX  17, 17, 374, 206
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 21, 69, 395, 172
-	CONTROL	"&Account:", SUBSCRIPTIONBROWSER_SC_AR1, "Static", WS_CHILD, 24, 31, 32, 12
-	CONTROL	"&Person:", SUBSCRIPTIONBROWSER_SC_OMS, "Static", WS_CHILD, 24, 14, 28, 13
-	CONTROL	"", SUBSCRIPTIONBROWSER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 14, 72, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", SUBSCRIPTIONBROWSER_PERSONBUTTON, "Button", WS_CHILD, 129, 15, 13, 12
-	CONTROL	"", SUBSCRIPTIONBROWSER_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 30, 73, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", SUBSCRIPTIONBROWSER_ACCBUTTON, "Button", WS_CHILD, 129, 30, 13, 13
-	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 425, 91, 53, 13
-	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 425, 130, 53, 12
-	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 424, 169, 53, 13
-	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 57, 478, 191
-	CONTROL	"Select subscriptions of:", SUBSCRIPTIONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 3, 142, 50
-	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 215, 14, 47, 13
-	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 180, 15, 27, 12
+	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 16, 56, 296, 140
+	CONTROL	"&Account:", SUBSCRIPTIONBROWSER_SC_AR1, "Static", WS_CHILD, 18, 25, 24, 10
+	CONTROL	"&Person:", SUBSCRIPTIONBROWSER_SC_OMS, "Static", WS_CHILD, 18, 12, 21, 10
+	CONTROL	"", SUBSCRIPTIONBROWSER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 42, 12, 54, 10, WS_EX_CLIENTEDGE
+	CONTROL	"v", SUBSCRIPTIONBROWSER_PERSONBUTTON, "Button", WS_CHILD, 97, 12, 10, 10
+	CONTROL	"", SUBSCRIPTIONBROWSER_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 42, 25, 55, 10, WS_EX_CLIENTEDGE
+	CONTROL	"v", SUBSCRIPTIONBROWSER_ACCBUTTON, "Button", WS_CHILD, 97, 25, 10, 10
+	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 319, 74, 40, 10
+	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 319, 106, 40, 10
+	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 318, 138, 40, 10
+	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 9, 47, 359, 155
+	CONTROL	"Select subscriptions of:", SUBSCRIPTIONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 9, 2, 106, 41
+	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 161, 12, 118, 10
+	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 135, 12, 20, 10
 END
 
 CLASS SubscriptionBrowser INHERIT DataWindowExtra 
@@ -1124,6 +1124,7 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 		else
 			self:GoTop()
 		ENDIF
+		LogEvent(self,"REFresh")
 		oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
 	ENDIF
 
@@ -1234,8 +1235,12 @@ oReport:prstart()
 oReport:prstop()
 RETURN SELF
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser 
-
+// 	local time0,time1,time3 as float 
+// time0:=Seconds() 
+// time3:=time0
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
+// time1:=time0
+// LogEvent(self,"preinit:"+Str((time0:=Seconds())-time1,-1)+iif(superuser,'; super',''),"loginfo")
 
 SUPER:Init(oWindow,ResourceID{"SubscriptionBrowser",_GetInst()},iCtlID)
 
@@ -1300,11 +1305,14 @@ SELF:EnableStatusBar(True)
 if !IsNil(oServer)
 	SELF:Use(oServer)
 ENDIF
+// time1:=time0
+// LogEvent(self,"use:"+Str((time0:=Seconds())-time1,-1)+iif(superuser,'; super',''),"loginfo")
 
 oSFSubscriptionBrowser_DETAIL := SubscriptionBrowser_DETAIL{SELF,SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL}
 oSFSubscriptionBrowser_DETAIL:show()
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
+// LogEvent(self,"total time:"+Str(Seconds()-time3,-1)+iif(superuser,'; super',''),"loginfo")
 
 return self
 
@@ -1336,7 +1344,8 @@ self:SetTexts()
 	ELSEIF cType=="SUBSCRIPTIONS"
 		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
 	ENDIF
-   self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from "+self:cFrom+" where "+self:cWhere,oConn}:totcount),-1)  
+//    self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from "+self:cFrom+" where "+self:cWhere,oConn}:totcount),-1)+' ('+self:oLan:WGet(" only 100 shown")+')'   
+   self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from subscription where category='"+self:mtype+"'",oConn}:totcount),-1)+' ('+self:oLan:WGet(" only 100 shown")+')'   
 
 //   	self:oDCFound:TextValue:=Str(self:oSub:RecCount,-1)
 
@@ -1364,8 +1373,9 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	self:cFrom:="person p, account a, subscription s" 
 	self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'" 
 	self:cOrder:="personname"
-	self:oSub:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cFilter),''," and "+cFilter)+;
-	" order by "+self:cOrder+" limit 200",oConn} 
+	self:oSub:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(cFilter),''," and "+cFilter)+" order by "+self:cOrder;
+	,oConn} 
+// 	+" limit 100",oConn} 
 	RETURN nil                 
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
@@ -1389,10 +1399,15 @@ BEGIN
 END
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser_DETAIL 
+local time0,time1,time3 as float
+// time0:=Seconds() 
+// time3:=time0
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"SubscriptionBrowser_DETAIL",_GetInst()},iCtlID)
+// time1:=time0
+// LogEvent(self,"preinit:"+Str((time0:=Seconds())-time1,-1)+iif(superuser,'; super',''),"loginfo")
 
 SELF:Caption := ""
 SELF:HyperLabel := HyperLabel{#SubscriptionBrowser_DETAIL,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -1450,8 +1465,11 @@ self:Browser:AddColumn(oDBCATDESC)
 
 
 SELF:ViewAs(#BrowseView)
+// time1:=time0
+// LogEvent(self,"init columns:"+Str((time0:=Seconds())-time1,-1)+iif(superuser,'; super',''),"loginfo")
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
+// LogEvent(self,"Total time detail:"+Str((time0:=Seconds())-time3,-1)+iif(superuser,'; super',''),"loginfo")
 
 return self
 
