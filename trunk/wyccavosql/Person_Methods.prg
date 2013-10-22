@@ -1615,7 +1615,7 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 	if self:oPers:RecCount>0
 		
 		self:oCCOKButton:Enable()
-	else
+	elseif !(Empty(self:SearchBank).and.Empty(self:SearchCLN).and.Empty(self:SearchSLE).and.Empty(self:SearchSZP).and.Empty(self:SearchUni))
 		self:FindButton()
 	endif
 
@@ -2093,7 +2093,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 	LOCAL oPersBw as PersonBrowser
 	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
 	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
-	local oSel as SQLSelectPagination
+	local oSel as SqlSelect
 	LOCAL iEnd := At(",",cValue) as int
 	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
@@ -2149,7 +2149,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 		cWhere+= iif(Empty(cWhere),""," and ")+"p.deleted=0"
 	endif
 
-	oSel:=SQLSelectPagination{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
+	oSel:=SqlSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
 	IF lUnique .and. oSel:RecCount=1		
 		IF IsMethod(oCaller, #RegPerson)
 			oCaller:RegPerson(oSel,cItemname)
@@ -4971,9 +4971,10 @@ Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string
 // Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
 //
 LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
-local i as int 
-if !Empty(aliasp)
-	mAlias:=aliasp+"."
+local i as int
+mAlias:=ConS(aliasp) 
+if !Empty(mAlias)
+	mAlias:=mAlias+"."
 endif
 
 IF sSalutation .and.(Purpose==1.or.Purpose==3) 
