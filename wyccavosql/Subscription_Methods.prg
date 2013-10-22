@@ -118,8 +118,8 @@ Local cFilter as string , lSuccess as logic
 self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'"+iif(Empty(self:mCLN),''," and personid="+self:mCLN)+iif(Empty(self:mRek),''," and s.accid="+self:mRek) 
 self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
 self:oSub:Execute()
+self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
 self:gotop()
-// self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
 self:oDCFound:TEXTValue:=Str(self:oSub:RecCount,-1)
                 
 RETURN TRUE
