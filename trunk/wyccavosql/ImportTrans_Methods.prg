@@ -1563,7 +1563,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		IF !Empty(accnbr)
 			nAcc:=AScan(aAccDest,{|x|x[1]==accnbr})
 			if nAcc=0
-				osel:=SQLSelect{"select accnumber,accid from account where accnumber='"+accnbr+"'",oConn}
+				osel:=SqlSelect{"select accnumber,accid from account where accnumber='"+AddSlashes(accnbr)+"'",oConn}
 				IF osel:RecCount>0
 					AAdd(aAccDest,{osel:ACCNUMBER,Str(osel:accid,-1),false})
 					nAcc:=Len(aAccDest)
