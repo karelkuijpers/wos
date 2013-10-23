@@ -3422,17 +3422,15 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 	//Put your PostInit additions here
 	LOCAL rjaar := Year(Today()) AS INT
 	LOCAL rmnd := Month(Today()) as int
+	local i as int 
+	local dLastDDdate,dReqCol as date
 	local oDateR as DateRange 
+	local oSel as SQLSelect
 	self:SetTexts()
    if CountryCode=="47"
    	self:oCCRadioButtonCollection:Caption+="("+self:oLan:WGet("KID file")+")"
    endif
 	self:oDCperiodend:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2)) 
-// 	rmnd--
-// 	if rmnd<1
-// 		rjaar--
-// 		rmnd:=12
-// 	endif
 	self:oDCPeriodstart:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+'01') 
 	oDateR:=self:oDCdatedirectdebit:DateRange
 	oDateR:Min:=Today()
@@ -3453,8 +3451,31 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 		self:oCCSelOpenButton2:Hide()
 		if sepaenabled
 			self:oDCFixedTextTo:TextValue:=self:oLan:WGet("Month")
-      	self:oDCInvoiceMonth:Show()
-      	self:oDCInvoiceMonth:DateRange:=DateRange{Max(mindate, Getvaliddate(1,Month(Today())-1,Year(Today()))),Getvaliddate(28,Month(Today())+1,Year(Today()))}
+      	self:oDCInvoiceMonth:Show() 
+      	self:oDCInvoiceMonth:DateRange:=DateRange{Max(mindate, Getvaliddate(1,Month(Today())-1,Year(Today()))),Getvaliddate(28,Month(Today())+1,Year(Today()))} 
+      	// determine last direct debited month:
+	   	oSel:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d, subscription s where s.subscribid=d.subscribid and s.category="D" and paymethod="C" and d.amountrecvd>0.00 order by d.invoicedate desc limit 1',oConn}
+   		oSel:Execute()
+   		if oSel:RecCount=1
+   			dLastDDdate:=oSel:invoicedate
+   			self:oDCInvoiceMonth:DateRange:= DateRange{dLastDDdate,Getvaliddate(28,Month(dLastDDdate)+1,Year(dLastDDdate))}
+   		endif
+   		// determine last direct debit date:
+   		oSel:=SqlSelect{'select message from log where collection="log" and source="SELPERSOPEN" and message like "SEPA Direct Debit file%" order by logtime desc limit 1',oConn}
+   		if oSel:RecCount=1
+   			if (i:=AtC('on:',oSel:message))>0
+   				dReqCol:=SQLDate2Date(substr(oSel:message,i+3,10))
+					self:oDCdatedirectdebit:SelectedDate:=Max(dReqCol+1,Today())
+					if DoW(self:oDCdatedirectdebit:SelectedDate)=1       // not on sunday
+						self:oDCdatedirectdebit:SelectedDate++
+					elseif DoW(self:oDCdatedirectdebit:SelectedDate)=7   // not on saturday
+						self:oDCdatedirectdebit:SelectedDate+=2
+					endif
+					oDateR:=self:oDCdatedirectdebit:DateRange
+					oDateR:Min:=self:oDCdatedirectdebit:SelectedDate
+   				self:oDCdatedirectdebit:DateRange:=oDateR
+				endif
+   		endif 
 			self:oDCPeriodstart:Hide()
 			self:oDCperiodend:Hide()
 			self:oDCFixedTextTo:Hide()
