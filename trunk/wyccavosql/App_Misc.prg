@@ -437,9 +437,9 @@ CLASS DataDialogMine inherit DataDialog
 	EXPORT aProjects:={} as ARRAY
 	Export oLan as Language 
 	
-	declare method FillMbrProjArray
+// 	declare method FillMbrProjArray
 
-METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataDialogMine 
+METHOD FillMbrProjArray() CLASS DataDialogMine 
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
 return
@@ -553,14 +553,14 @@ CLASS DataWindowMine INHERIT DataWindow
 	EXPORT aProjects:={} as ARRAY
 	Export oLan as Language 
 	
-	declare method FillMbrProjArray
+// 	declare method FillMbrProjArray
 // CLASS DataDialogMine INHERIT DataDialog
 // 	EXPORT aMemHome:={} as ARRAY
 // 	EXPORT aMemNonHome:={} as ARRAY
 // 	EXPORT aProjects:={} as ARRAY
 // 	Export oLan as Language 
 // 	declare method FillMbrProjArray
-METHOD FillMbrProjArray(dummy:=nil as string) as void pascal CLASS DataWindowMine  
+METHOD FillMbrProjArray() CLASS DataWindowMine  
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
 return
