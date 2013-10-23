@@ -4311,7 +4311,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
 	LOCAL lError,lSetAMPM as LOGIC
-	local dlg,invoicedate,dReqCol as date
+	local dlg,invoicedate,dReqCol,dMaxReqCol as date
 	LOCAL ptrHandle 
 	
 	local abank:={} as array // array with bank accounts of a person
@@ -4654,6 +4654,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 				dReqCol+=2     // on saturday: go to Monday
 			endif
 			dReqCol:=Max(dReqCol,process_date)
+			dMaxReqCol:=Max(dMaxReqCol,dReqCol)
 			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
 				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(SeqTp,-1)+'</PmtInfId>'+CRLF+; 
 			'<PmtMtd>DD</PmtMtd>'+CRLF+;
@@ -4870,7 +4871,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	self:oCCOKButton:Enable()
 	self:Pointer := Pointer{POINTERARROW}
 	(InfoBox{self,"Producing SEPADD file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" amounts("+sCurrName+Str(fSum,-1)+")"}):Show()
-	LogEvent(self, "SEPA Direct Debit file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(fSum,-1)+")")
+	LogEvent(self, "SEPA Direct Debit file "+cFilename+" generated for month:"+SubStr(DToS(begin_due),1,6)+" to be debited on:"+SQLdate(dMaxReqCol)+" with "+Str(Len(aTrans),-1)+" direct debits("+sCurrName+Str(fSum,-1)+")")
 
 	RETURN true
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
