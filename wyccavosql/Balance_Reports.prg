@@ -4914,7 +4914,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	//Put your PreInit additions here
-	self:FillMbrProjArray(null_string)
+	self:FillMbrProjArray()
 
 	RETURN NIL
 
