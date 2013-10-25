@@ -2138,9 +2138,16 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 				cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+StandardZip(cValue)+"%'" 
 				cOrder:="postalcode"
 			endif
-		elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
-			// search on name
-			cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
+		else
+			if sepaenabled .and. IsIban(cValue)
+				lParmUni:=true 
+				lUnique:=true
+				cFrom+=",personbank as b" 
+				cWhere+=iif(Empty(cWhere),""," and ")+"p.persid=b.persid and b.banknumber='"+cValue+"'"
+			elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
+				// search on name
+				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'"
+			endif 
 		endif
 	endif
 	if Empty(cWhere).and.Empty(cFilter)
@@ -2200,9 +2207,15 @@ FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUniqu
 					cWhere+=iif(Empty(cWhere),""," and ")+"postalcode like '"+StandardZip(cValue)+"%'" 
 					cOrder:="postalcode"
 				endif
-			elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
-				// search on name
-				cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'" 
+			else
+				if sepaenabled .and. IsIban(cValue)
+					lParmUni:=true
+					cFrom+=",personbank as b" 
+					cWhere+=iif(Empty(cWhere),""," and ")+"p.persid=b.persid and b.banknumber='"+cValue+"'"
+				elseif Empty(oPersCnt).or.Empty(oPersCnt:m51_lastname)
+					// search on name
+					cWhere+=iif(Empty(cWhere),""," and ")+"lastname like '"+AddSlashes(cValue)+"%'"
+				endif 
 			endif
 		endif			
 		if Empty(cWhere).and.Empty(cFilter)
