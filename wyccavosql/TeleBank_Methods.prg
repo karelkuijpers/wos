@@ -1891,9 +1891,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								if	lv_kind=='593' .or.;  // Terugboeking/afkeuring Eurobetaling
 									AtC('NAAM/NUMMER STEMMEN NIET	OVEREEN',lv_description)>0	
 									nSepPos:=0 
-									//	look for	bankorder:
-									oBord:=SqlSelect{"select a.accnumber from	bankorder o, account	a where banknbrcre="+lv_BankAcntContra+;
-										" and	datepayed>'"+SQLdate(ld_bookingdate-10)+"'"+' and a.accid=o.accntfrom',	oConn} 
+									//	look for	bankorder: 
+									oBord:=SqlSelect{'select a.accnumber,s.gc from	bankorder o, account	a, standingorderline s where banknbrcre="'+lv_BankAcntContra+'"'+;
+										' and datepayed>"'+SQLdate(ld_bookingdate-10)+'"'+' and s.stordrid=o.stordrid and s.deb>s.cre and a.accid=s.accountid',	oConn} 
 									if	oBord:Reccount>0	 
 										lv_budget:=AllTrim(oBord:ACCNUMBER)
 									else
@@ -4001,10 +4001,12 @@ METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 				endif
 			ENDIF
 		ENDIF
-		IF .not.Empty(self:m56_budgetcd).and..not.IsAlpha(self:m56_budgetcd)
+// 		IF .not.Empty(self:m56_budgetcd).and..not.IsAlpha(self:m56_budgetcd)
+		IF .not.Empty(self:m56_budgetcd)
 			self:m56_accnumber:=self:m56_budgetcd
 			self:m56_recognised:=true
-			if (self:m56_kind=="CLL" .or.self:m56_kind="COL") .and. self:m56_addsub=="A"   // storno:
+			if (self:m56_kind=="CLL" .or.self:m56_kind="COL") .and. self:m56_addsub=="A";   // storno:
+				.or. self:m56_kind=='593' // rejected bank order
 				self:m56_autmut:=false
 				IF self:m56_kind=="CLL"
 					self:m56_sgir:=self:m56_Payahead
