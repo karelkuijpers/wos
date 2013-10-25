@@ -87,16 +87,19 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	// nUp: optionally percentage to increase rate read from internet (decrease if negative); if <>0 get always rate from internet
 	// returns rate of exchange: 1 unit CurCode = ROE base currency
 	//
-	LOCAL oHttp			as cHttp
 	LOCAL cPage			as STRING
 	LOCAL cPostData	as STRING
-	Local iSt,iEnd as int
-	local table as string
-	LOCAL oXMLDoc as XMLDocument, lRow,lFound as logic, cAED as string
-	LOCAL oExch as GetExchRate 
+	local cAED as string
 	local cStatement,RateId as string
-	local oStmnt as SQLStatement 
+	Local iSt,iEnd as int
+	local time0,time1 as float
+	local table as string
+	local lRow,lFound as logic
 	local lnew as logic
+	LOCAL oExch as GetExchRate 
+	LOCAL oXMLDoc as XMLDocument 
+	LOCAL oHttp			as cHttp
+	local oStmnt as SQLStatement 
 	local oROE as SQLSelect
 	
 	// check if ROE allready in currency rates:
@@ -138,6 +141,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	endif
 	if lnew
 		// try to read from internet   http://www.xe.com/currencytables/?from=EUR&date=2013-03-08                                        
+      time0:=Seconds()
 		oHttp 	:= CHttp{"Wyccavo"}
 		cPostData	:= "from="+self:cBaseCur+"&date="+SQLdate(DateROE) 
 
@@ -148,6 +152,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			"POST",;
 			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
 			/*INTERNET_FLAG_SECURE*/)
+		time1:=Seconds()   
 		iSt:=At3('xetrade/?',cPage,10050)
 		if iSt>0
 			cPage:=SubStr(cPage,iSt) 
@@ -189,7 +194,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			endif
 		endif
 		if !lFound
-			LogEvent(self,"exchange rate "+CodeROE+" can't be fetched from www.xe.com"+iif(Empty(cPage),", timed out",CRLF+cPostData+CRLF+cPage),"logerrors")
+			LogEvent(self,"exchange rate "+CodeROE+" can't be fetched from www.xe.com"+iif(Empty(cPage),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+cPostData+CRLF+cPage),"logerrors")
 		endif
 	endif
 	if !lAsk
