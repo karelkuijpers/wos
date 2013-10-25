@@ -1835,6 +1835,9 @@ METHOD FindButton( ) CLASS PersonBrowser
 				// 				endif
 				self:cWhere+=")"
 			next
+			if Len(aKeyw)>1
+				self:cWhere:='('+self:cWhere+" or p.persid in (select b.persid from personbank as b where b.banknumber like '%"+AllTrim(self:SearchUni)+"'))"
+			endif
 		endif
 		if !Empty(self:SearchSLE)
 			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.lastname like '"+StrTran(AllTrim(self:SearchSLE),"'","\'")+"%'"
@@ -1863,6 +1866,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 		endif
 	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
+// 	LogEvent(self,"search uni:"+self:oPers:SQLString,"loginfo")
 	self:oPers:Execute()
 
 	self:FOUND :=Str(self:oPers:Reccount,-1) 
