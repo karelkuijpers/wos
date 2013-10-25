@@ -2,31 +2,34 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 	// Generate a invoice id (KID) number:
 	// zero+person#+accountnumer (first 6 numbers)+modulo 10 check digit
 	LOCAL cInvoice as STRING, cStartDate as String
-	IF !Empty(SELF:oDCmInvoiceID:TextValue)
-		RETURN
-	ENDIF
+// 	IF !Empty(SELF:oDCmInvoiceID:TextValue)
+// 		RETURN
+// 	ENDIF
 	IF Empty(SELF:mcln) .or. Empty(SELF:mAccNumber)
 		RETURN
 	ENDIF
 	IF !AutoGiro
 		IF self:mtype == "D" .or.self:mtype=="A"
-			if self:mPayMethod='C' .and. sepaenabled // direct debit
-				cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
-				self:mInvoiceID:=cInvoice
-				self:oDCmInvoiceID:Show() 
-				self:oDCInvoiceText:Show()	
-			else
+			if self:mPayMethod='C' .and. sepaenabled // direct debit 
+				if Empty(self:oDCmInvoiceID:TextValue) .or.(Left(self:oDCmInvoiceID:TextValue,6)=='WDD-A-'.and. Right(AllTrim(self:oDCmInvoiceID:TextValue),3+Len(self:mcln))=='-P-'+self:mcln)
+					// when new invoiceid (mandateid) .or. generated invoiceid change it in case of other account: 
+					cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
+					self:mInvoiceID:=cInvoice
+					self:oDCmInvoiceID:Show() 
+					self:oDCInvoiceText:Show()
+				endif	
+			endif
+		elseif Empty(self:oDCmInvoiceID:TextValue)
 				cInvoice:=PadL(self:mcln,6,"0")+PadL(self:mAccNumber,6,"0")
 				self:mInvoiceID:=cInvoice+Mod10(cInvoice)
-			endif
-		ENDIF
-	else
+		endif
+	elseif Empty(self:oDCmInvoiceID:TextValue)
 		cStartDate:=SubStr(DToS(if(Empty(self:oDCmbegindate:SelectedDate),Today(),self:oDCmbegindate:SelectedDate)),3,4)
 		cInvoice:=self:mCLN+cStartDate+PadL(self:mAccNumber,5,"0")
 		self:mInvoiceID:=cInvoice
 	ENDIF
 
-RETURN
+	RETURN
 METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 	IF oAcc==NULL_OBJECT
 		SELF:mRek:=" "
