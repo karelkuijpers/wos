@@ -1124,7 +1124,6 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 		else
 			self:GoTop()
 		ENDIF
-		LogEvent(self,"REFresh")
 		oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
 	ENDIF
 
