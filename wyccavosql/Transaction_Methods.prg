@@ -2097,7 +2097,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				self:oDCmperson:SetFocus()
 				RETURN FALSE
 			ELSEIF m54_pers_sta=='O' 
-				if Empty(self:mBst) .or.!SubStr(self:mBst,1,3)='COL' // skip storno's
+				if Empty(self:mBst) .or.(!SubStr(self:mBst,1,3)='COL'; // skip storno's
+					.and.!SubStr(self:mBst,1,3)='593')  // skip order rejections
 					if !Empty(self:oDCmPerson:TEXTValue)
 						oBox := WarningBox{self, self:oLan:WGet("Input of Transactions"),self:oLan:WGet('Payer really a person')+'?'}
 						oBox:Type := BUTTONYESNO
@@ -2212,7 +2213,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				nSeqNbr++ 
 				cStatement:="insert into transaction set "+;
 					iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
-					iif(oHm:aMIRROR[i,4]='PF'.or.oHm:aMIRROR[i,4] = 'AG' .or.oHm:aMIRROR[i,4] = 'MG';
+					iif(oHm:aMIRROR[i,4]='PF'.or.oHm:aMIRROR[i,4] = 'AG' .or.oHm:aMIRROR[i,4] = 'MG'.or.oHm:aMIRROR[i,4] = 'CH';
 					.or. (oHm:aMIRROR[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
 					.or. oHm:aMIRROR[i,5]= 'A' .or. oHm:aMIRROR[i,5] = 'F'.or. oHm:aMIRROR[i,5]="C","persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
 					"dat='"+SQLdate(self:mDAT)+"'"+;
