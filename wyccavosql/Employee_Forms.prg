@@ -952,7 +952,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	local cEmpStmnt as string
 	cEmpStmnt:='select e.empid,'+SQLFullName(2)+' as fullname,';
 	+"cast("+Crypt_Emp(false,"e.loginname")+" as char) as loginname,online,cast(lstlogin as char) as lstlogin,cast("+Crypt_Emp(false,"e.type") +" as char) as type"+;
-	' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,'e.persid')+") where 1 order by online desc, lastname asc"
+	' from employee as e left join person as p on (p.persid='+Crypt_Emp(false,'e.persid')+") where 1 order by online desc,lstlogin desc, lastname asc"
 	self:oSelEmp:=SqlSelect{cEmpStmnt,oConn}
 	self:oSelEmp:Execute()
 	RETURN nil 
