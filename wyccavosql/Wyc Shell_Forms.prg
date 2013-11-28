@@ -35,8 +35,17 @@ Method CheckFinancialData() CLASS StandardWycWindow
 	CheckConsistency(self,false,true,@cFatalError) 
 return
 method CheckNewVersion() class StandardWycWindow
-local  lStop as logic,oUpg as CheckUPGRADE, startfile as string, cWorkDir as string
+local startfile, cWorkDir as string
+local  lStop as logic
+local oUpg as CheckUPGRADE
+local oSel as SqlSelect
 cWorkDir:=WorkDir()
+// Check if nody else is online:
+oSel:=SqlSelect{"select empid from employee where online=1 and empid<>"+MYEMPID,oConn}
+if oSel:reccount>0
+	ErrorBox{self,"Others are still logged in, so new version can't be installed"}:show()
+	return
+endif
 oUpg:=CheckUPGRADE{}
 lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkDir)
 if lStop .and.!Empty(startfile)					
