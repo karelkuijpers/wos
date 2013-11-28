@@ -23,29 +23,29 @@ CLASS EditEmailAccount INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect lNew as logic
   export lSuccess as logic
-RESOURCE EditEmailAccount DIALOGEX  4, 3, 412, 181
+RESOURCE EditEmailAccount DIALOGEX  4, 3, 391, 167
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Email address:", EDITEMAILACCOUNT_FIXEDTEXT1, "Static", WS_CHILD, 12, 11, 54, 13
-	CONTROL	"", EDITEMAILACCOUNT_EMAILADDRESS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 11, 160, 13, WS_EX_CLIENTEDGE
-	CONTROL	"User name:", EDITEMAILACCOUNT_FIXEDTEXT3, "Static", WS_CHILD, 12, 48, 53, 12
-	CONTROL	"Logon Information mail server:", EDITEMAILACCOUNT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 30, 252, 54
-	CONTROL	"Password:", EDITEMAILACCOUNT_FIXEDTEXT2, "Static", WS_CHILD, 12, 62, 53, 13
-	CONTROL	"", EDITEMAILACCOUNT_USERNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 44, 160, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITEMAILACCOUNT_PASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 59, 160, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Outgoing server:", EDITEMAILACCOUNT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 92, 252, 66
-	CONTROL	"Server address:", EDITEMAILACCOUNT_FIXEDTEXT4, "Static", WS_CHILD, 12, 107, 64, 13
-	CONTROL	"", EDITEMAILACCOUNT_OUTGOINGSERVER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 103, 159, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Port number:", EDITEMAILACCOUNT_FIXEDTEXT5, "Static", WS_CHILD, 12, 122, 54, 12
-	CONTROL	"", EDITEMAILACCOUNT_PORT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 88, 118, 54, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Protocol:", EDITEMAILACCOUNT_FIXEDTEXT6, "Static", WS_CHILD, 12, 137, 54, 12
-	CONTROL	"", EDITEMAILACCOUNT_PROTOCOL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 88, 133, 54, 33
-	CONTROL	"OK", EDITEMAILACCOUNT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 340, 114, 53, 12
-	CONTROL	"Cancel", EDITEMAILACCOUNT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 132, 53, 13
-	CONTROL	"Test account settings", EDITEMAILACCOUNT_FIXEDTEXT7, "Static", WS_CHILD, 276, 7, 115, 12
-	CONTROL	"It is recommended to test your account by clicking the button below. (required internet connection)", EDITEMAILACCOUNT_FIXEDTEXT8, "Static", WS_CHILD, 276, 25, 127, 30
-	CONTROL	"Test Account Settings...", EDITEMAILACCOUNT_TESTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 272, 55, 91, 12
+	CONTROL	"Email address:", EDITEMAILACCOUNT_FIXEDTEXT1, "Static", WS_CHILD, 8, 8, 53, 12
+	CONTROL	"", EDITEMAILACCOUNT_EMAILADDRESS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 8, 159, 12, WS_EX_CLIENTEDGE
+	CONTROL	"User name:", EDITEMAILACCOUNT_FIXEDTEXT3, "Static", WS_CHILD, 7, 44, 53, 12
+	CONTROL	"Logon Information mail server:", EDITEMAILACCOUNT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 26, 251, 55
+	CONTROL	"Password:", EDITEMAILACCOUNT_FIXEDTEXT2, "Static", WS_CHILD, 7, 59, 53, 12
+	CONTROL	"", EDITEMAILACCOUNT_USERNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 41, 159, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITEMAILACCOUNT_PASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 56, 159, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Outgoing server:", EDITEMAILACCOUNT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 0, 89, 251, 66
+	CONTROL	"Server address:", EDITEMAILACCOUNT_FIXEDTEXT4, "Static", WS_CHILD, 8, 104, 63, 12
+	CONTROL	"", EDITEMAILACCOUNT_OUTGOINGSERVER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 83, 99, 159, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Port number:", EDITEMAILACCOUNT_FIXEDTEXT5, "Static", WS_CHILD, 8, 118, 53, 13
+	CONTROL	"", EDITEMAILACCOUNT_PORT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 115, 53, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Protocol:", EDITEMAILACCOUNT_FIXEDTEXT6, "Static", WS_CHILD, 8, 133, 53, 12
+	CONTROL	"", EDITEMAILACCOUNT_PROTOCOL, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 129, 53, 33
+	CONTROL	"OK", EDITEMAILACCOUNT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 335, 110, 53, 13
+	CONTROL	"Cancel", EDITEMAILACCOUNT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 335, 129, 53, 12
+	CONTROL	"Test account settings", EDITEMAILACCOUNT_FIXEDTEXT7, "Static", WS_CHILD, 263, 3, 115, 13
+	CONTROL	"It is recommended to test your account by clicking the button below. (required internet connection)", EDITEMAILACCOUNT_FIXEDTEXT8, "Static", WS_CHILD, 263, 22, 127, 29
+	CONTROL	"Test Account Settings...", EDITEMAILACCOUNT_TESTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 51, 91, 13
 END
 
 METHOD CancelButton( ) CLASS EditEmailAccount 
@@ -362,19 +362,23 @@ STATIC DEFINE EDITEMAILACCOUNT_PORT := 111
 STATIC DEFINE EDITEMAILACCOUNT_PROTOCOL := 113 
 STATIC DEFINE EDITEMAILACCOUNT_TESTBUTTON := 118 
 STATIC DEFINE EDITEMAILACCOUNT_USERNAME := 105 
-RESOURCE EmailConfirm DIALOGEX  8, 20, 391, 312
+RESOURCE EmailConfirm DIALOGEX  8, 20, 404, 314
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
 CAPTION	"Sending emails"
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Should all these emails be send? (uncheck the ones you want to skip)?", EMAILCONFIRM_FIXEDTEXT1, "Static", WS_CHILD, 6, 4, 306, 25
-	CONTROL	"OK", EMAILCONFIRM_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 3, 53, 13
-	CONTROL	"Cancel", EMAILCONFIRM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 332, 18, 53, 12
-	CONTROL	"", EMAILCONFIRM_EMAILLISTVIEW, "SysListView32", LVS_REPORT|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 4, 36, 378, 270
+	CONTROL	"(Un)check all", EMAILCONFIRM_CHECKALL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 4, 25, 81, 12
+	CONTROL	"Send copy to yourself of each email for archiving", EMAILCONFIRM_MCOPY, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 144, 25, 192, 12
+	CONTROL	"Should all these emails be send? (uncheck the ones you want to skip)?", EMAILCONFIRM_FIXEDTEXT1, "Static", WS_CHILD, 4, 3, 330, 19
+	CONTROL	"OK", EMAILCONFIRM_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 3, 53, 13
+	CONTROL	"Cancel", EMAILCONFIRM_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 18, 53, 12
+	CONTROL	"", EMAILCONFIRM_EMAILLISTVIEW, "SysListView32", LVS_REPORT|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 4, 40, 392, 270
 END
 
 CLASS EmailConfirm INHERIT DialogWinDowExtra 
 
+	PROTECT oDCCheckAll AS CHECKBOX
+	PROTECT oDCmCopy AS CHECKBOX
 	PROTECT oDCFixedText1 AS FIXEDTEXT
 	PROTECT oCCOKButton AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
@@ -384,6 +388,31 @@ CLASS EmailConfirm INHERIT DialogWinDowExtra
   protect oCaller as SendEmailsDirect
 protect sTo,sDesc as symbol 
 export lSend as logic
+method ButtonClick(oControlEvent) class EmailConfirm
+	Local i as int
+	local oControl as Control
+	local oListViewItem as ListViewItem 
+	local oListView:=self:oDCEmailListView as listview
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+	super:ButtonClick(oControlEvent)
+	//Put your changes here
+	if oControl:NameSym=#CheckAll
+		if oControl:Checked
+			for i:=1 to oListView:ItemCount
+				oListViewItem:=oListView:GetItemAttributes(i)
+				oListViewItem:Checked:=true
+				oListView:SetItemAttributes(oListViewItem)
+			next
+		else
+			for i:=1 to oListView:ItemCount
+				oListViewItem:=oListView:GetItemAttributes(i)
+				oListViewItem:Checked:=false
+				oListView:SetItemAttributes(oListViewItem)
+			next			
+		endif
+	endif
+	return NIL
+
 METHOD CancelButton( ) CLASS EmailConfirm 
 	self:EndDialog(false) 
 RETURN NIL
@@ -401,6 +430,12 @@ SUPER:Init(oParent,ResourceID{"EmailConfirm",_GetInst()},TRUE)
 
 aFonts[1] := Font{,9,"Microsoft Sans Serif"}
 aFonts[1]:Bold := TRUE
+
+oDCCheckAll := CheckBox{SELF,ResourceID{EMAILCONFIRM_CHECKALL,_GetInst()}}
+oDCCheckAll:HyperLabel := HyperLabel{#CheckAll,"(Un)check all",NULL_STRING,NULL_STRING}
+
+oDCmCopy := CheckBox{SELF,ResourceID{EMAILCONFIRM_MCOPY,_GetInst()}}
+oDCmCopy:HyperLabel := HyperLabel{#mCopy,"Send copy to yourself of each email for archiving",NULL_STRING,NULL_STRING}
 
 oDCFixedText1 := FixedText{SELF,ResourceID{EMAILCONFIRM_FIXEDTEXT1,_GetInst()}}
 oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Should all these emails be send? (uncheck the ones you want to skip)?",NULL_STRING,NULL_STRING}
@@ -434,11 +469,14 @@ METHOD OKButton( ) CLASS EmailConfirm
 	for i:=1 to Len(aItem)
 		oListviewItem:=aItem[i]
 		m:=oListviewItem:GetValue(self:sTo)
-		if m>0 .and. !oListviewItem:Checked
-			nPos:=AScan(self:oCaller:aEmail,{|x|x[5]==m})
-			if nPos>0
-				ADel(self:oCaller:aEmail,nPos) 
-				ASize(self:oCaller:aEmail,Len(self:oCaller:aEmail)-1)
+		if m>0
+			if (nPos:=AScan(self:oCaller:aEmail,{|x|x[5]==m}))>0
+				if !oListviewItem:Checked
+					ADel(self:oCaller:aEmail,nPos) 
+					ASize(self:oCaller:aEmail,Len(self:oCaller:aEmail)-1)
+				elseif self:oDCmCopy:Checked
+					self:oCaller:aEmail[nPos,1]+=','+AllTrim(self:oCaller:emailaddress)
+				endif
 			endif
 		endif
 	next
@@ -458,7 +496,8 @@ method PostInit(oParent,uExtra) class EmailConfirm
 	oListView:AddColumn(ListViewColumn{30,self:oLan:WGet("To")})
 	sTo:=String2Symbol(self:oLan:WGet("To"))
 	sDesc:=String2Symbol(self:oLan:WGet("Subject")) 
-		
+	self:oDCmCopy:Checked:=true
+	self:oDCCheckAll:Checked:=true
 	// fill columns: 
 	// emails: {{to,subject,mailbody,attachements,seqnr},...}
 	//            1     2      3           4        5
@@ -480,10 +519,12 @@ method PreInit(oParent,uExtra) class EmailConfirm
 	self:oCaller:=uExtra
 	return NIL
 
-STATIC DEFINE EMAILCONFIRM_CANCELBUTTON := 102 
-STATIC DEFINE EMAILCONFIRM_EMAILLISTVIEW := 103 
-STATIC DEFINE EMAILCONFIRM_FIXEDTEXT1 := 100 
-STATIC DEFINE EMAILCONFIRM_OKBUTTON := 101 
+STATIC DEFINE EMAILCONFIRM_CANCELBUTTON := 104 
+STATIC DEFINE EMAILCONFIRM_CHECKALL := 100 
+STATIC DEFINE EMAILCONFIRM_EMAILLISTVIEW := 105 
+STATIC DEFINE EMAILCONFIRM_FIXEDTEXT1 := 102 
+STATIC DEFINE EMAILCONFIRM_MCOPY := 101 
+STATIC DEFINE EMAILCONFIRM_OKBUTTON := 103 
 RESOURCE ResolveName DIALOGEX  4, 3, 322, 51
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -584,7 +625,7 @@ STATIC DEFINE RESOLVENAME_OKBUTTON := 102
 class SendEmailsDirect
 	// sending of emails directly via senditquite.exe  
 	// check cError to see if Init was successful
-	protect emailaddress as string
+	export emailaddress as string
 	protect username as string
 	protect password as string
 	protect outgoingserver as string
@@ -782,7 +823,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		self:cError:=self:oLan:WGet("No internet connection")
 		return false
 	endif
-// 	nRet:=FileStart(self:cbatchfile,self:oOwner)
+	// 	nRet:=FileStart(self:cbatchfile,self:oOwner)
 	nRet:=FileStart(self:cbatchfile,iif( IsObject(self:oOwner),self:oOwner,oMainWindow))
 	if nRet>0 .and. nRet<33
 		self:lError:=true 
