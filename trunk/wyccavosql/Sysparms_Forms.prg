@@ -3827,15 +3827,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
 
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TabSysParms
-	//Put your PreInit additions here 
-	self:oSys:=SqlSelect{"select yearclosed,lstreportmonth,cast(mindate as date) as mindate,projects,debtors,donors,cash,capital,crossaccnt,hb,am,"+;
+	//Put your PreInit additions here
+	local cStatement as string 
+	cStatement:="select yearclosed,lstreportmonth,cast(mindate as date) as mindate,projects,debtors,donors,cash,capital,crossaccnt,hb,am,"+;
 		"assmntfield,assmntoffc,entity,stocknbr,postage,purchase,countryown,currency,currname,cast(firstname as unsigned) as firstname,crlanguage,defaultcod,topmargin,leftmargin,rightmargn,"+;
 		"bottommarg,cityletter,ownmailacc,smtpserver,iesmailacc,exchrate,closemonth,admintype,pswrdlen,cast(pswalnum as unsigned) as pswalnum,pswdura,cast(decmgift as unsigned) as decmgift,expmailacc,cast(pmislstsnd as date) as pmislstsnd,"+;
 		"assmntint,cast(destgrps as char) as destgrps,cast(nosalut as unsigned) as nosalut,withldoffl,withldoffm,withldoffh,assproja,cast(owncntry as char) as owncntry,giftincac,giftexpac,cntrnrcoll,banknbrcol,idorg,idcontact,"+;
 		"cast(datlstafl as date) as datlstafl,cast(surnmfirst as unsigned) as surnmfirst,cast(strzipcity as unsigned) as strzipcity,sysname,homeincac,homeexpac,fgmlcodes,creditors,countrycod,banknbrcre,"+;
 		"cast(lstreeval as date) as lstreeval,cast(citynmupc as unsigned) as citynmupc,pmcmancln,version,cast(lstnmupc as unsigned) as lstnmupc,cast(titinadr as unsigned) as titinadr,cast(docpath as char) as docpath,checkemp,cast(mailclient as unsigned) as mailclient,posting,toppacct,cast(lstcurrt as unsigned) as lstcurrt,"+;
-		"cast(pmcupld as unsigned) as pmcupld,cast(accpacls as date) as accpacls,assfldac,cast(sepaenabled as unsigned) as sepaenabled,ddmaxindvdl,ddmaxbatch,cast(maildirect as unsigned) as maildirect from sysparms",oConn}
-		
+		"cast(pmcupld as unsigned) as pmcupld,cast(accpacls as date) as accpacls,assfldac,cast(sepaenabled as unsigned) as sepaenabled,ddmaxindvdl,ddmaxbatch,cast(maildirect as unsigned) as maildirect from sysparms"
+	self:oSys:=SqlSelect{cStatement,oConn}	
 	self:oSys:Execute()
 	RETURN nil
 METHOD RegAccount(oRek,ItemName) CLASS TabSysParms
