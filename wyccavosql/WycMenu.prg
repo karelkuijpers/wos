@@ -326,20 +326,21 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if SuperUser
 		AAdd(aMenu,{6,7, oLan:MGet("&Check consistency financial data"),"CheckFinancialData","",0,44,"F"})
 	endif
-	AAdd(aMenu,{6,8, oLan:MGet("&Show log"),"LogReport","",0,46,"AF"})
+	AAdd(aMenu,{6,8, oLan:MGet("Show &log"),"LogReport","",0,46,"AF"})
 	AAdd(aMenu,{6,8,,,,,})           // separator
-	AAdd(aMenu,{6,9, oLan:MGet("&Change Password")+"...","NewPasswordDialog",,0,49,"Z"})
-	if maildirect .and. SqlSelect{'select empid from mailaccount where empid='+MyEmpID,oConn}:Reccount>0
-		AAdd(aMenu,{6,9, oLan:MGet("&Change mail account")+"...","EditEmailAccount",,0,50,"Z"})
-	endif
+	AAdd(aMenu,{6,9, oLan:MGet("Change &Password")+"...","NewPasswordDialog",,0,49,"Z"})
+	AAdd(aMenu,{6,9, oLan:MGet("My &Email preferences")+"...","MyEmailClient",,0,53,"Z"})
+// 	if maildirect .and. SqlSelect{'select empid from mailaccount where empid='+MyEmpID,oConn}:Reccount>0
+// 		AAdd(aMenu,{6,9, oLan:MGet("Change &mail account")+"...","EditEmailAccount",,0,50,"Z"})
+// 	endif
 	IF lSystemAdmin
 		AAdd(aMenu,{6,10, oLan:MGet("&User_ids and passwords")+"...","EmployeeBrowser",,0,45,"A"})
 	ENDIF
 	AAdd(aMenu,{6,11,,,,,})           // separator
-	AAdd(aMenu,{6,12, oLan:MGet("&System Data"),,,,,})
-	AAdd(aMenu,{12,1, oLan:MGet("&System parameters")+"...","TabSysparms","",0,62,"AM"})
+	AAdd(aMenu,{6,12, oLan:MGet("System Da&ta"),,,,,})
+	AAdd(aMenu,{12,1, oLan:MGet("System p&arameters")+"...","TabSysparms","",0,62,"AM"})
 	IF !Admin="WA"
-		AAdd(aMenu,{12,2, oLan:MGet("&Person parameters")+"...","PersonParms",oLan:MGet("Registration of person parameters"),0,52,"PFM"})
+		AAdd(aMenu,{12,2, oLan:MGet("P&erson parameters")+"...","PersonParms",oLan:MGet("Registration of person parameters"),0,52,"PFM"})
 	endif
 	AAdd(aMenu,{12,4, oLan:MGet("Ban&kaccount registration")+"...","BankBrowser","",0,42,"A"})
 	IF !Admin=="HO"
