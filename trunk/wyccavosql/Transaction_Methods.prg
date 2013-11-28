@@ -848,7 +848,7 @@ IF action=="W".or.action=="T"
 ENDIF
 
 RETURN ""
- METHOD Delete() CLASS General_Journal
+METHOD DELETE() CLASS General_Journal
  * delete record of TempTrans:
 LOCAL ThisRec, CurRec AS INT
 LOCAL oHm as TempTrans
@@ -1150,11 +1150,11 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 		oHm:CREFORGN := self:oTmt:m56_amount
 	ENDIF
 	oHm:CURRENCY:=sCurr
-	IF self:oTmt:m56_kind="GT" .or.self:oTmt:m56_kind="GM".or.self:oTmt:m56_kind="COL"
+// 	IF self:oTmt:m56_kind="GT" .or.self:oTmt:m56_kind="GM".or.self:oTmt:m56_kind="COL"
 		oHm:DESCRIPTN := m53_oms1
-	ELSE
-		oHm:DESCRIPTN := m53_oms2
-	ENDIF
+// 	ELSE
+// 		oHm:DESCRIPTN := m53_oms2
+// 	ENDIF
 
 	IF !Empty(oHm:AccID)
 		cWhere+=" and a.accid = "+ZeroTrim(oHm:AccID) 
@@ -1185,11 +1185,11 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 		oHm:cre := 0.00
 	ENDIF 
 	oHm:CURRENCY:=sCurr
-	IF self:oTmt:m56_kind="GT" .or.self:oTmt:m56_kind="GM".or.self:oTmt:m56_kind="IC"
+// 	IF self:oTmt:m56_kind="GT" .or.self:oTmt:m56_kind="GM".or.self:oTmt:m56_kind="IC"
 		oHm:DESCRIPTN := m53_oms2
-	ELSE
-		oHm:DESCRIPTN := m53_oms1
-	ENDIF 
+// 	ELSE
+// 		oHm:DESCRIPTN := m53_oms1
+// 	ENDIF 
 	if self:oTmt:m56_description="NAAM/NUMMER STEMMEN NIET OVEREEN" 
 		oHm:AccID:=SCRE
 		IF !Empty(oHm:AccID)
@@ -1552,7 +1552,7 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 	
 	// Append eventually a new record:
 	IF !fTotal == 0 // totaal ongelijk nul?
-		IF !ldelete.and.AScan(oHm:aMirror,{|x| x[2]==0.and.x[3]==0})=0   // Geen lege transact en geen delete?
+		IF (!lDelete.or.Len(oHm:aMirror)>1).and.AScan(oHm:aMirror,{|x| x[2]==0.and.x[3]==0})=0   // Geen lege transact en geen delete?
 		// Append new record:
 			self:Append()
 			self:Commit()
@@ -1644,11 +1644,11 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		(ErrorBox{self:Owner,cError}):show()
 		RETURN cError
 	ENDIF
-	oNew:SetOrder(FileSpec{NewIndex})
-	oNew:GoTop()
 	GetHelpDir()
 	OrigMut:=HelpDir+"\OR"+StrTran(Time(),":")
 	oOrig:=TempTrans{OrigMut+'.dbf'}
+	OrigIndex:=oOrig:FileSpec:Drive+oOrig:FileSpec:Path+oOrig:FileSpec:FileName
+	lSucc:=oOrig:CreateIndex(FileSpec{OrigMut},"StrZero(SEQNR,6)+ACCID",{||StrZero(oOrig:SEQNR,6)+oOrig:AccID})
 	IF !oOrig:Used.or.!oNew:Used.or.!lSucc 
 		cError:=  'Not able to make helpfile for updates'
 		(ErrorBox{self:Owner,cError}):show()
@@ -1721,14 +1721,8 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 		oTransH:Skip()
 	ENDDO
 
-	lSucc:=oOrig:CreateIndex(FileSpec{OrigMut},"StrZero(SEQNR,6)+ACCID")
-	oOrig:SetOrder(FileSpec{OrigMut})
+	oNew:GoTop()
 	oOrig:GoTop()
-	IF !lSucc 
-		cError:= 'Not able to make indexfile for updates'
-		(ErrorBox{self:Owner,cError}):show()
-		RETURN cError
-	ENDIF
 
 	DO WHILE !oOrig:EOF 
 		DO CASE
@@ -1871,8 +1865,8 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	NewMut:Delete()
 	NewMut:Extension:="dbf"
 	NewMut:Delete()
-	NewMut:Extension:="fpt"
-	NewMut:Delete()
+// 	NewMut:Extension:="fpt"
+// 	NewMut:Delete()
 
 	OrigIndex:=oOrig:FileSpec:Path+oOrig:FileSpec:FileName
 	oOrig:ClearIndex(OrigIndex)
@@ -1882,7 +1876,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	oOrig:=null_object
 	FErase(OrigIndex)
 	FErase (Origmut+".dbf")
-	FErase (Origmut+".fpt")
+// 	FErase (Origmut+".fpt")
 	// 	if self:oOwner:lShowFind
 	// 		self:oOwner:FindButton()
 	// 	else
@@ -2373,14 +2367,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				return false
 			endif
 		next
-		// 			self:Pointer := Pointer{POINTERARROW}
-		// 			IF self:lTeleBank
-		// 				self:oTmt:CloseMut(oHm,lSave,self:Owner)   // includes commit
-		// 			elseif self:lImport
-		// 				self:oImpB:CloseBatch(lSave,self:Owner)  // includes commit
-		// 			ENDIF
-		// 			self:oDCGiroText:TextValue:="   "
-		// 			lSave:=FALSE
 	ENDIF
 	oHm:ResetNotification()	
 	if !lError
@@ -2449,10 +2435,14 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	SQLStatement{"commit",oConn}:execute()
 	SQLStatement{"unlock tables",oConn}:execute() 
 	SQLStatement{"set autocommit=1",oConn}:execute()
-	self:Pointer := Pointer{POINTERARROW}
-	if self:lImport
-		self:oImpB:CloseBatch(lSave,self:owner)  
-	ENDIF
+			self:Pointer := Pointer{POINTERARROW}
+			IF self:lTeleBank
+				self:oTmt:CloseMut(oHm,lSave,self:owner)   
+			elseif self:lImport
+				self:oImpB:CloseBatch(lSave,self:owner)  
+			ENDIF
+			self:oDCGiroText:TEXTValue:="   "
+			lSave:=FALSE
 	self:oDCGiroText:TextValue:="   "
 	lSave:=FALSE
 
@@ -2961,8 +2951,9 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 	local nMsgPos as int
 	local aWord:={} as array 
 	oHm := self:server
-	aApplied := {}
-	m51_abest := Len(oHm:aMirror) 
+	aApplied := {} 
+	AEval(oHm:aMirror,{|x|m51_abest+=(iif(Empty(x[1]),0,1))})
+// 	m51_abest := Len(oHm:aMirror) 
 	IF (self:m51_agift + self:m51_apost) = 0 .and. m51_abest = 0
 		IF !Empty(self:defbest) .or. self:mDebAmntF > 0
 			self:append()
@@ -3316,15 +3307,16 @@ oReport:prstop()
 RETURN NIL
 METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	* Filling of windowfields := giroteltransaction-values
-	LOCAL oHm:=self:server as TempGift
-	LOCAL lSuccess, lNameCheck,lAddressChanged as LOGIC
-	LOCAL oEditPersonWindow as NewPersonWindow
+	local nAddrEnd as int
 	local CurRate as float
+	local cBankDescription as string 
+	LOCAL lSuccess, lNameCheck,lAddressChanged as LOGIC
+	LOCAL oHm:=self:server as TempGift
+	LOCAL oEditPersonWindow as NewPersonWindow
 	local oPersCnt as PersonContainer
 	local myAcc as SQLSelect
 	local oPersBank,oSel as SQLSelect
 	local oPers as SQLSelect
-	local cBankDescription as string 
 
 	self:Reset()
 	self:AutoCollect:=FALSE 
@@ -3385,6 +3377,10 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	endif
 	//Acceptgiro:=FALSE  ???
 	IF self:oTmt:m56_addsub ="B"
+		IF !Empty(self:oTmt:m56_persid)
+			self:mCLNGiver := self:oTmt:m56_persid
+			self:Recognised:=true
+		endif 
 		self:mDebAmntF:= self:oTmt:m56_amount
 		IF CountryCode='31' .and.(Trim(self:oTmt:m56_kind)="AC" .or.SubStr(self:oTmt:m56_description,17,2)=="AC".and.isnum(SubStr(self:oTmt:m56_description,1,16)))
 			self:Acceptgiro:=true
@@ -3429,7 +3425,12 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	oPersCnt:m51_type:="individual"
 	oPersCnt:m51_gender:="unknown"
 	if Empty(oPersCnt:m51_ad1) .and. Empty(oPersCnt:m51_pos) .and. Empty(oPersCnt:m51_city)
-		oPersCnt:m51_ad1:=AllTrim(self:oTmt:m56_description) 
+		if (nAddrEnd:=At('%%',self:oTmt:m56_description))=0
+			if (nAddrEnd:=AtC('EndToEnd',self:oTmt:m56_description))=0
+				nAddrEnd:=Len(self:oTmt:m56_description)+1
+			endif
+		endif  
+		oPersCnt:m51_ad1:=AllTrim(SubStr(self:oTmt:m56_description,1,nAddrEnd-1))
 		oPersCnt:Naw_Analyse()
 		if Empty(oPersCnt:m51_lastname)
 			oPersCnt:m51_lastname:=AllTrim(self:oTmt:m56_description)
@@ -3494,11 +3495,11 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				self:oTmt:m56_contra_bankaccnt:=oPers:banknumber     // can be different when non-IBan
 				oPersCnt:m56_banknumber:= self:oTmt:m56_contra_bankaccnt
 				// 					m51_assrec:=self:oPers:Recno
-				IF Len(oPersCnt:m51_pos)>=7 
-					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode)
+				IF Len(oPersCnt:m51_pos)>=7 .and.!Empty(oPersCnt:m51_city)
+					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode) 
 						lAddressChanged:=true
 					ENDIF
-				elseif (!CountryCode=="31" .or. !Empty(oPersCnt:m51_country)) .and. Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)
+				elseif (!CountryCode=="31" .or. !Empty(oPersCnt:m51_country) .and.oPersCnt:m51_country<>'Nederland') .and. Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)  .and.!Empty(oPersCnt:m51_city) .and.!Empty(oPersCnt:m51_pos)
 					lAddressChanged:=true
 				endif
 				if lAddressChanged					
@@ -3834,7 +3835,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	local oSel as SQLSelect
 	Default(@cItemname,NULL_STRING)
 	Default(@lOK,FALSE)
-	IF Empty(oCLN) .or. (IsInstanceOf(oCLN,#SQLSELECT) .and. oCLN:RecCount<1)
+	IF Empty(oCLN) .or. (IsInstanceOf(oCLN,#SQLSELECT) .and. oCLN:RecCount<1) .or.Empty(oCLN:persid)
 		//	self:cGiverName:=self:cOrigName
 		self:oDCmPerson:Value:=self:cOrigName
 		RETURN
@@ -3842,7 +3843,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	IF Empty(SELF:mCLNGiver).and.!Empty(SELF:mDebAmnt)
 		lNewGift:=FALSE
 	ENDIF
-	self:mCLNGiver :=  iif(IsNumeric(oCLN:persid),Str(oCLN:persid,-1),oCLN:persid)
+	self:mCLNGiver :=  ConS(oCLN:persid)
 	self:cGiverName := GetFullName(self:mCLNGiver) 
 	self:cOrigName:=self:cGiverName
 	SELF:oDCmPerson:TEXTValue := SELF:cGiverName
@@ -3852,9 +3853,10 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 		self:lMemberGiver := FALSE
 	ENDIF
 	if self:lTeleBank
-		if IsObject(self:oTmt) .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt)
-			// check if banknumber converted:
-			oSel:=SqlSelect{"select banknumber from personbank where persid="+self:mCLNGiver+" and right(banknumber,"+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +")="+ self:oTmt:m56_contra_bankaccnt,oConn}
+		if IsObject(self:oTmt) .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt);
+			 .and.Val(self:mCLNGiver)>0 .and.!Empty(self:oTmt:m56_contra_bankaccnt)
+			// check if banknumber converted:                                                                                                             
+			oSel:=SqlSelect{'select banknumber from personbank where persid="'+self:mCLNGiver+'" and right(banknumber,'+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +')="'+ self:oTmt:m56_contra_bankaccnt+'"',oConn}
 			if oSel:reccount>0
 				self:oTmt:m56_contra_bankaccnt:=oSel:banknumber
 			endif
@@ -4854,7 +4856,7 @@ METHOD ShowSelection() CLASS TransInquiry
 		self:m54_selectTxt:=self:m54_selectTxt+" Reference="+self:ReferenceSelected
 	ENDIF
 	IF !Empty(self:DescrpSelected)
-		aKeyw:=GetTokens(AllTrim(self:DescrpSelected))
+		aKeyw:=GetTokens(AllTrim(self:DescrpSelected),,false)
 		for i:=1 to Len(aKeyw)
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.description like '%"+AddSlashes(aKeyw[i,1])+"%'"
 		next
