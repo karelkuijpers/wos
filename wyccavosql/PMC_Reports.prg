@@ -707,6 +707,7 @@ METHOD PrintReport() CLASS PMISsend
 	if	oAccBal:Reccount>0 
 		aDBBalValue:=AEvalA(Split(oAccBal:Balances,'#'),{|x|x:=Split(x,',') })
 		for i:=1 to Len(aDBBalValue)
+			
 			if	(k:=AScan(aAccidMbr,{|x|x[1]==aDBBalValue[i,1]}))>0
 				me_balance:=	Round(Val(aDBBalValue[i,3])- Val(aDBBalValue[i,2]),2) 
 				if PrvYearNotClosed .and. (aAccidMbr[k,3]==INCOME .or.aAccidMbr[k,3]==expense)
@@ -792,7 +793,7 @@ METHOD PrintReport() CLASS PMISsend
 		// aMbr:
 		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
 		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-		me_mbrid:=aMbr[nMbr,1] 
+		me_mbrid:=aMbr[nMbr,1]
 		me_accid:= iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,18],aMbr[nMbr,10])       // accid or accidexp
 		me_accnbr:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,19],aMbr[nMbr,11])       // accnumberexp or ACCNUMBER
 		me_currency:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,21],aMbr[nMbr,12])       // currencyexp or currency
