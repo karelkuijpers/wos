@@ -149,7 +149,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		return true
 	endif
    cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"persid")+" as char) as persid,cast(lstlogin as date) as lstlogin,"+;
-   "cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid from employee where "
+   "cast("+Crypt_Emp(false,"type") +" as char) as mtype,cast("+Crypt_Emp(false,"depid")+" as char) as mdepid,maildirect,mailclient from employee where "
 	if Empty(MYEMPID)
 		cEmpStmnt+= Crypt_Emp(false,"loginname")+'="'+cUser+'" and datediff(Now(),lstupdpw)<10000'
 	else
@@ -180,6 +180,12 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			UserType:=Transform(oEmp:mTYPE,"")
 			if Lower(LOGON_EMP_ID)=='karel'
 				SUPERUSER:=true
+			endif
+			if !IsNil(oEmp:maildirect)  // not null thus specified seperately per employee
+				maildirect:=ConL(oEmp:maildirect)
+				if Empty(maildirect).and.!IsNil(oEmp:mailclient)
+					requiredemailclient:=ConI(oEmp:mailclient)
+				endif
 			endif
 			aMenu:=InitMenu(oEmp:EmpId,UserType) 
 			// record login date and set user online: 
