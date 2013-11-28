@@ -1,32 +1,3 @@
-RESOURCE EditEmployeeWindow DIALOGEX  23, 33, 410, 247
-STYLE	WS_CHILD|WS_BORDER
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", EDITEMPLOYEEWINDOW_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 11, 99, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITEMPLOYEEWINDOW_PERSONBUTTON, "Button", WS_CHILD, 180, 11, 13, 12
-	CONTROL	"", EDITEMPLOYEEWINDOW_MTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 29, 112, 72
-	CONTROL	"Allowed menu functions", EDITEMPLOYEEWINDOW_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL, 212, 14, 125, 133, WS_EX_CLIENTEDGE
-	CONTROL	"User Id:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT2, "Static", WS_CHILD, 16, 90, 44, 12
-	CONTROL	"Login", EDITEMPLOYEEWINDOW_THEGROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 77, 176, 70
-	CONTROL	"Logon Name:", EDITEMPLOYEEWINDOW_MLOGON_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 88, 88, 12
-	CONTROL	"Password:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT1, "Static", WS_CHILD, 16, 108, 44, 13
-	CONTROL	"Password:", EDITEMPLOYEEWINDOW_MPASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 107, 88, 12
-	CONTROL	"Retype Password:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT3, "Static", WS_CHILD, 16, 128, 62, 12
-	CONTROL	"Password:", EDITEMPLOYEEWINDOW_MPASSWORD2, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 125, 88, 12
-	CONTROL	"OK", EDITEMPLOYEEWINDOW_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 348, 7, 53, 13
-	CONTROL	"Cancel", EDITEMPLOYEEWINDOW_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 348, 29, 53, 14
-	CONTROL	"Employee Name:", EDITEMPLOYEEWINDOW_FIXEDTEXT3, "Static", WS_CHILD, 8, 11, 56, 12
-	CONTROL	"Role:", EDITEMPLOYEEWINDOW_FIXEDTEXT4, "Static", WS_CHILD, 8, 29, 53, 12
-	CONTROL	"Permission for:", EDITEMPLOYEEWINDOW_FIXEDTEXT5, "Static", WS_CHILD, 212, 3, 129, 13
-	CONTROL	"v", EDITEMPLOYEEWINDOW_DEPBUTTON, "Button", WS_CHILD, 184, 51, 13, 13
-	CONTROL	"Allowed departments:", EDITEMPLOYEEWINDOW_ALLWDDEPTXT, "Static", WS_CHILD, 8, 51, 71, 13
-	CONTROL	"", EDITEMPLOYEEWINDOW_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 51, 100, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Allowed accounts from other departments:", EDITEMPLOYEEWINDOW_ALWDACC, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 8, 166, 328, 74
-	CONTROL	"Allowed accounts from other departments:", EDITEMPLOYEEWINDOW_TEXTALWDACC, "Static", WS_CHILD, 8, 153, 143, 12
-	CONTROL	"Add", EDITEMPLOYEEWINDOW_ADDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 169, 53, 13
-	CONTROL	"Remove", EDITEMPLOYEEWINDOW_REMOVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 217, 53, 13
-END
-
 CLASS EditEmployeeWindow INHERIT DataWindowExtra 
 
 	PROTECT oDBMLOGON_NAME as DataColumn
@@ -76,6 +47,35 @@ CLASS EditEmployeeWindow INHERIT DataWindowExtra
 	protect aAcAlwd:={} as array
 	protect oCaller as EmployeeBrowser 
   	protect mDEPID as string
+
+RESOURCE EditEmployeeWindow DIALOGEX  23, 33, 410, 247
+STYLE	WS_CHILD|WS_BORDER
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", EDITEMPLOYEEWINDOW_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 11, 99, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITEMPLOYEEWINDOW_PERSONBUTTON, "Button", WS_CHILD, 180, 11, 13, 12
+	CONTROL	"", EDITEMPLOYEEWINDOW_MTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 84, 29, 112, 72
+	CONTROL	"Allowed menu functions", EDITEMPLOYEEWINDOW_SUBSET, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_MULTIPLESEL|LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL, 212, 14, 125, 133, WS_EX_CLIENTEDGE
+	CONTROL	"User Id:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT2, "Static", WS_CHILD, 16, 90, 44, 12
+	CONTROL	"Login", EDITEMPLOYEEWINDOW_THEGROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 77, 176, 70
+	CONTROL	"Logon Name:", EDITEMPLOYEEWINDOW_MLOGON_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 88, 88, 12
+	CONTROL	"Password:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT1, "Static", WS_CHILD, 16, 108, 44, 13
+	CONTROL	"Password:", EDITEMPLOYEEWINDOW_MPASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 107, 88, 12
+	CONTROL	"Retype Password:", EDITEMPLOYEEWINDOW_THEFIXEDTEXT3, "Static", WS_CHILD, 16, 128, 62, 12
+	CONTROL	"Password:", EDITEMPLOYEEWINDOW_MPASSWORD2, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 125, 88, 12
+	CONTROL	"OK", EDITEMPLOYEEWINDOW_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 348, 7, 53, 13
+	CONTROL	"Cancel", EDITEMPLOYEEWINDOW_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 348, 29, 53, 14
+	CONTROL	"Employee Name:", EDITEMPLOYEEWINDOW_FIXEDTEXT3, "Static", WS_CHILD, 8, 11, 56, 12
+	CONTROL	"Role:", EDITEMPLOYEEWINDOW_FIXEDTEXT4, "Static", WS_CHILD, 8, 29, 53, 12
+	CONTROL	"Permission for:", EDITEMPLOYEEWINDOW_FIXEDTEXT5, "Static", WS_CHILD, 212, 3, 129, 13
+	CONTROL	"v", EDITEMPLOYEEWINDOW_DEPBUTTON, "Button", WS_CHILD, 184, 51, 13, 13
+	CONTROL	"Allowed departments:", EDITEMPLOYEEWINDOW_ALLWDDEPTXT, "Static", WS_CHILD, 8, 51, 71, 13
+	CONTROL	"", EDITEMPLOYEEWINDOW_MDEPARTMENT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 84, 51, 100, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Allowed accounts from other departments:", EDITEMPLOYEEWINDOW_ALWDACC, "SysListView32", LVS_REPORT|LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_SORTASCENDING|LVS_EDITLABELS|WS_CHILD|WS_BORDER, 8, 166, 328, 74
+	CONTROL	"Allowed accounts from other departments:", EDITEMPLOYEEWINDOW_TEXTALWDACC, "Static", WS_CHILD, 8, 153, 143, 12
+	CONTROL	"Add", EDITEMPLOYEEWINDOW_ADDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 169, 53, 13
+	CONTROL	"Remove", EDITEMPLOYEEWINDOW_REMOVEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 344, 217, 53, 13
+END
 
 METHOD AddButton( ) CLASS EditEmployeeWindow
 	LOCAL cSelect as STRING
@@ -798,15 +798,6 @@ METHOD Init() CLASS employee_LSTLOGIN
 super:Init(HyperLabel{"LSTLOGIN","Lstlogin","","employee_LSTLOGIN"},"C",19,0)
 
 RETURN SELF
-CLASS EmployeeBrowser INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oSFEmployeeBrowser_DETAIL AS EmployeeBrowser_DETAIL
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  export oSelEmp as SQLSelect 
 RESOURCE EmployeeBrowser DIALOGEX  18, 17, 398, 195
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -817,6 +808,15 @@ BEGIN
 	CONTROL	"&Delete", EMPLOYEEBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 109, 53, 12
 END
 
+CLASS EmployeeBrowser INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oSFEmployeeBrowser_DETAIL AS EmployeeBrowser_DETAIL
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  export oSelEmp as SQLSelect 
 METHOD Close( oE ) CLASS EmployeeBrowser
 SELF:oSFEmployeeBrowser_DETAIL:Close()
 SELF:oSFEmployeeBrowser_DETAIL:Destroy()
@@ -1931,6 +1931,161 @@ STATIC DEFINE LOGONDIALOG_OKBUTTON := 104
 STATIC DEFINE LOGONDIALOG_PASSWORD := 103 
 STATIC DEFINE LOGONDIALOG_THEFIXEDTEXT1 := 100 
 STATIC DEFINE LOGONDIALOG_THEFIXEDTEXT2 := 102 
+CLASS MyEmailClient INHERIT DataDialogMine 
+
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCMailClient AS COMBOBOX
+	PROTECT oDCEmailing AS RADIOBUTTONGROUP
+	PROTECT oCCDirectButton AS RADIOBUTTON
+	PROTECT oCCClientButton AS RADIOBUTTON
+	PROTECT oCCAccountButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
+  export oEmlAcc as EditEmailAccount
+RESOURCE MyEmailClient DIALOGEX  4, 3, 304, 104
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Save", MYEMAILCLIENT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 240, 11, 53, 13
+	CONTROL	"Cancel", MYEMAILCLIENT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 240, 30, 53, 13
+	CONTROL	"", MYEMAILCLIENT_MAILCLIENT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 108, 36, 107, 56
+	CONTROL	"Emailing", MYEMAILCLIENT_EMAILING, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 11, 216, 44
+	CONTROL	"Directly from WOS", MYEMAILCLIENT_DIRECTBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 14, 25, 198, 11
+	CONTROL	"Via email client:", MYEMAILCLIENT_CLIENTBUTTON, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 14, 36, 80, 12
+	CONTROL	"My E-mail account", MYEMAILCLIENT_ACCOUNTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 8, 62, 71, 13
+END
+
+METHOD AccountButton( ) CLASS MyEmailClient 
+(self:oEmlAcc:=EditEmailAccount{}):show() 
+RETURN NIL
+method ButtonClick(oControlEvent) class MyEmailClient
+	local oControl as Control
+	oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+	super:ButtonClick(oControlEvent)
+	//Put your changes here
+	if oControl:NameSym==#DirectButton
+			self:oDCMailClient:Hide()
+			self:oCCAccountButton:show()
+	elseif oControl:NameSym==#ClientButton
+		self:oDCMailClient:Show()
+		self:oCCAccountButton:Hide()
+	endif
+	return nil
+METHOD CancelButton( ) CLASS MyEmailClient 
+	self:EndWindow()
+	RETURN nil
+ACCESS Emailing() CLASS MyEmailClient
+RETURN SELF:FieldGet(#Emailing)
+
+ASSIGN Emailing(uValue) CLASS MyEmailClient
+SELF:FieldPut(#Emailing, uValue)
+RETURN uValue
+
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS MyEmailClient 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"MyEmailClient",_GetInst()},iCtlID)
+
+oCCOkButton := PushButton{SELF,ResourceID{MYEMAILCLIENT_OKBUTTON,_GetInst()}}
+oCCOkButton:HyperLabel := HyperLabel{#OkButton,"Save",NULL_STRING,NULL_STRING}
+
+oCCCancelButton := PushButton{SELF,ResourceID{MYEMAILCLIENT_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
+
+oDCMailClient := combobox{SELF,ResourceID{MYEMAILCLIENT_MAILCLIENT,_GetInst()}}
+oDCMailClient:TooltipText := "Email program used for emailing PMC file or Gift reports, etc."
+oDCMailClient:FillUsing({{"Windows Mail/ Outlook Express",0},{"Microsoft Outlook",1},{"Mozilla Thunderbird",2},{"Windows Live Mail",3},{"Mapi2Xml",4}})
+oDCMailClient:HyperLabel := HyperLabel{#MailClient,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oCCDirectButton := RadioButton{SELF,ResourceID{MYEMAILCLIENT_DIRECTBUTTON,_GetInst()}}
+oCCDirectButton:HyperLabel := HyperLabel{#DirectButton,"Directly from WOS",NULL_STRING,NULL_STRING}
+oCCDirectButton:TooltipText := "Send email directly via WOS-internal email client"
+
+oCCClientButton := RadioButton{SELF,ResourceID{MYEMAILCLIENT_CLIENTBUTTON,_GetInst()}}
+oCCClientButton:HyperLabel := HyperLabel{#ClientButton,"Via email client:",NULL_STRING,NULL_STRING}
+oCCClientButton:TooltipText := "Send email via external email client"
+
+oCCAccountButton := PushButton{SELF,ResourceID{MYEMAILCLIENT_ACCOUNTBUTTON,_GetInst()}}
+oCCAccountButton:HyperLabel := HyperLabel{#AccountButton,"My E-mail account",NULL_STRING,NULL_STRING}
+
+oDCEmailing := RadioButtonGroup{SELF,ResourceID{MYEMAILCLIENT_EMAILING,_GetInst()}}
+oDCEmailing:FillUsing({ ;
+						{oCCDirectButton,"1"}, ;
+						{oCCClientButton,"0"} ;
+						})
+oDCEmailing:HyperLabel := HyperLabel{#Emailing,"Emailing",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Specify my email preferences"
+SELF:HyperLabel := HyperLabel{#MyEmailClient,"Specify my email preferences",NULL_STRING,NULL_STRING}
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ENDIF
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS MailClient() CLASS MyEmailClient
+RETURN SELF:FieldGet(#MailClient)
+
+ASSIGN MailClient(uValue) CLASS MyEmailClient
+SELF:FieldPut(#MailClient, uValue)
+RETURN uValue
+
+METHOD OkButton( ) CLASS MyEmailClient 
+   Local oStmnt as SQLStatement
+	maildirect:=ConL(self:emailing)
+	requiredemailclient:=ConI(self:mailclient) 
+   oStmnt:=SQLStatement{"update employee set maildirect="+Str(ConI(maildirect),-1)+",mailclient="+ConS(requiredemailclient)+" where empid="+MYEmpId,oConn}
+   oStmnt:Execute()
+   if !Empty(oStmnt:Status)
+   	errorbox{self,self:oLan:WGet("Could not update email client")+CRLF+oStmnt:ErrInfo:errormessage}:show()
+   	return
+   endif
+	if SqlSelect{'select emailaddress from mailaccount where empid='+MYEmpId,oConn}:RecCount<1
+		EditEmailAccount{}:show()
+	endif
+	self:EndWindow()
+
+	RETURN NIL
+method PostInit(oParent,uExtra) class MyEmailClient
+	//Put your PostInit additions here
+	self:SetTexts()
+	// check if email specified per employee:
+// 	self:oEmp:=SqlSelect{"select maildirect,mailcient from employee where empid="+MYEMPID,oConn}
+// 	if self:oEmp:RecCount=1
+// 		if	!IsNil(self:oEmp:maildirect)	 // not null thus	specified seperately	per employee
+// 			maildirect:=ConL(self:oEmp:maildirect)
+// 			if	Empty(maildirect).and.!IsNil(self:oEmp:MailClient)
+// 				requiredemailclient:=ConI(self:oEmp:MailClient)
+// 			endif
+// 		endif
+// 	endif                                  
+
+	self:Emailing:=ConI(maildirect)
+	self:MailClient:=requiredemailclient 
+	if self:Emailing=1
+		self:oDCMailClient:Hide()
+		self:oCCAccountButton:show()
+	endif
+	return nil
+
+STATIC DEFINE MYEMAILCLIENT_ACCOUNTBUTTON := 106 
+STATIC DEFINE MYEMAILCLIENT_CANCELBUTTON := 101 
+STATIC DEFINE MYEMAILCLIENT_CLIENTBUTTON := 105 
+STATIC DEFINE MYEMAILCLIENT_DIRECTBUTTON := 104 
+STATIC DEFINE MYEMAILCLIENT_EMAILING := 103 
+STATIC DEFINE MYEMAILCLIENT_MAILCLIENT := 102 
+STATIC DEFINE MYEMAILCLIENT_OKBUTTON := 100 
+STATIC DEFINE MYEMAILCLIENTOLD_CANCELBUTTON := 101 
+STATIC DEFINE MYEMAILCLIENTOLD_CLIENTBUTTON := 105 
+STATIC DEFINE MYEMAILCLIENTOLD_DIRECTBUTTON := 104 
+STATIC DEFINE MYEMAILCLIENTOLD_EMAILING := 103 
+STATIC DEFINE MYEMAILCLIENTOLD_MAILCLIENT := 102 
+STATIC DEFINE MYEMAILCLIENTOLD_OKBUTTON := 100 
 STATIC DEFINE NEWEMPLOYEEWINDOW_CANCELBUTTON := 111 
 STATIC DEFINE NEWEMPLOYEEWINDOW_MFIRST_NAME := 102 
 STATIC DEFINE NEWEMPLOYEEWINDOW_MLAST_NAME := 104 
