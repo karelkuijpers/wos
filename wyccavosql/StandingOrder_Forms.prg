@@ -542,7 +542,7 @@ CLASS PeriodicBrowser INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT cAccFilter,cAccountNameFrom,cAccountNameTo as STRING
 	EXPORT oAcc, oAccDest, oAccSearch as SQLSelect
-	export oStOrd as SQLSelect
+	export oStOrd as SQLSelectPagination
 	export cWhere,cOrder,cFields,cFrom as string 
 	protect cAccId as string 
 	protect aFields:={} as array
@@ -818,14 +818,13 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
 	local lSuccess as logic 
 	self:cWhere:=""
 	self:cOrder:="l.stordrid,l.seqnr" 
-// 	self:cFields:="s.stordrid,s.`day`,s.`period`,s.idat,s.edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
-// 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber" 
 	self:cFields:="s.stordrid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
 	 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber"
 	self:aFields:={"s.stordrid","s.day","s.period","s.idat","s.edat","s.lstrecording","s.docid",""+;
 		"l.accountid","l.deb","l.cre","l.descriptn","l.accountid","a.description","a.accnumber"}
 	self:cFrom:="standingorder s, standingorderline l left join account a on (a.accid=l.accountid)"
-	self:oStOrd:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder,oConn}
+// 	self:oStOrd:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder,oConn}
+	self:oStOrd:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid order by "+self:cOrder,oConn}
 	self:oStOrd:Execute()
 	
 
