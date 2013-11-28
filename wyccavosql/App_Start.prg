@@ -111,8 +111,7 @@ method Start() class App
 				IF oLogonDialog:logonOk
 					LOGON_EMP_ID := AllTrim(oLogonDialog:logonID)
 					IF oLogonDialog:ChangePsw
-						oNew:=NewPasswordDialog{oMainWindow}
-						oNew:Show()
+						(oNew:=NewPasswordDialog{oMainWindow}):show()
 						IF !oNew:ChangePsw
 							// Exit program
 							self:Quit()
