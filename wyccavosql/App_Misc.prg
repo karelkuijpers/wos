@@ -376,13 +376,15 @@ function ConL(uValue as usual) as logic
 // convert usual from tiniint to logic
 return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
 function ConS(uValue as usual) as string
-// convert usual from count total to string 
-local cRet as string
-cRet:= AllTrim(Transform(uValue,""))
-if SubStr(cRet,-3)=='.00'
-	cRet:=substr(cRet,1,len(cRet)-3)    // make integer
-endif
-return cRet
+	// convert usual from count total to string 
+	local cRet as string
+	if !Empty(uValue) .and.!IsArray(uValue) .and.!IsObject(uValue) .and. IsCodeBlock(uValue)
+		cRet:= AllTrim(Transform(uValue,""))
+		if SubStr(cRet,-3)=='.00'
+			cRet:=substr(cRet,1,len(cRet)-3)    // make integer
+		endif
+	endif
+	return cRet
 Function Correspondence(Str1 as string, Str2 as string) as int
 // determine percentage correspondence of Str2 to Str1 
 Local i, Len1, Len2, MinL, Score, Divdr as int
@@ -622,7 +624,7 @@ enddo
 ptrHandle:Close() 
 return true
 METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBServerExtra
-* Creeren van een Dbf-file tijdens pre-init dbserver, indien dbf-file nog niet bestaat
+* Create a Dbf-file during pre-init dbserver when dbf-file not yet exists
     LOCAL aFieldDesc  as ARRAY
     LOCAL oMyFileSpec   as FILESPEC, oDBFileSpec as DBFileSpec
 	LOCAL aStruct as ARRAY
@@ -1054,7 +1056,7 @@ function FillIbanregistry()
 		{"AE","AE2!n19!n",23,0},;  
 	{"GB","GB2!n4!a6!n8!n",22,1},;
 		{"VG","VG2!n4!a16!n",24,0} } 
-Function FillMbrProjArray(aProjects as array,aMemHome as array,aMemNonHome as array)
+Function FillMbrProjArray(aProjects as array,aMemHome as array,aMemNonHome as array) as void pascal
 LOCAL oSQL as SQLSelect
 
 // Fill 3 arrays: home members, non home members, projects
@@ -1069,7 +1071,7 @@ DO WHILE !oSQL:EOF
 	oSQL:Skip()
 ENDDO                                                                                               
 // select home members: 
-oSQL:=SqlSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp='"+SEntity+"' and a.accid is not null",oConn}
+oSQL:=SqlSelect{"select ifnull(m.co,'') as co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp='"+SEntity+"' and a.accid is not null",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
@@ -1081,7 +1083,7 @@ DO WHILE !oSQL:EOF
 	oSQL:Skip()
 ENDDO
 //select nonhome members: 
-oSQL:=SqlSelect{"select m.co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp<>'"+SEntity+"' and a.accid is not null",oConn}
+oSQL:=SqlSelect{"select ifnull(m.co,'') as co,a.accnumber, a.description, a.accid,a.balitemid,a.department from member as m left join department d ON (m.depid=d.depid) left join account as a ON (a.active=1 and (m.accid=a.accid or a.accid=d.incomeacc)) where m.homepp<>'"+SEntity+"' and a.accid is not null",oConn}
 oSQL:Execute()
 DO WHILE !oSQL:EOF
 	IF oSQL:CO=="M"
@@ -1092,6 +1094,7 @@ DO WHILE !oSQL:EOF
 	ENDIF
 	oSQL:Skip()
 ENDDO
+return
 
 FUNCTION FillPersCode ()
 * Fill Array with description + code + abrv of Pers-codes
@@ -1331,9 +1334,10 @@ function GetServername(fullpathname as string) as string
 		endif
 	endif
 	return cServerName
-FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
+FUNCTION GetTokens(cText as string,aSep:=null_array as array,AlphaDigitSep:=true as logic) as array
 	*	Determine Tokens in a string of text
-	*	aSep: optionaly array with separators
+	*	aSep: optionaly array with separators 
+	*	AlphaDigitSep: true: separate between alphabetic and digital characters (default)
 	*	Returns array with Tokens {{Token,Seperator},...}
 
 	LOCAL Tokens:={} as ARRAY, chText, Token, cSep, cSepPrev:=null_string, cChar as STRING, nLength,i as int,EndOfWord as LOGIC 
@@ -1345,7 +1349,7 @@ FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
 	chText:=Compress(cText)
 	nLength:=Len(chText)
 	FOR i:=1 to nLength
-		* bepaal volgende Tokens:
+		* Find next Tokens:
 		Token:=""
 		cSep:=""
 		EndOfWord:=FALSE
@@ -1365,7 +1369,7 @@ FUNCTION GetTokens(cText as string,aSep:=null_array as array) as array
 					exit
 				ENDIF
 			ELSE
-				IF !Empty(Token) .and. (IsDigit(psz(_cast,cChar)) .and. IsAlpha(psz(_cast,Token)) .or. IsDigit(psz(_cast,Token)) .and.IsAlpha(psz(_cast,cChar)))
+				IF AlphaDigitSep .and.!Empty(Token) .and. (IsDigit(psz(_cast,cChar)) .and. IsAlpha(psz(_cast,Token)) .or. IsDigit(psz(_cast,Token)) .and.IsAlpha(psz(_cast,cChar)))
 					* regard transition from alpha to numeric or numeric to alpha as separate word
 					EndOfWord:=true
 					cSep:=" "
@@ -1631,7 +1635,7 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 		ENDIF 
 	endif
 	RETURN iif(lMulti,cPartLv4,cQuote+cPartLv4+cQuote)
-Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int) as logic 
+Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int,aStructReq:={} as array) as logic 
 	// import of a CSV or tab-seperated file SourceFile into table Desttable with first nNbrCol columns
 	local NbrCol as int 
 	local cDelim as string 
@@ -1658,8 +1662,11 @@ Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int) a
 	if !GetDelimiter(cBuffer,@aStruct,@cDelim,nNbrCol,20)
 		return false
 	endif
-	// replace space in name by underscore:
 	NbrCol:=Len(aStruct)
+	if !Empty(aStructReq) .and.Len(aStructReq)==nNbrCol
+		aStruct:=AClone(aStructReq)
+	endif
+	// replace space in name by underscore:
 	cBuffer:=ptrHandle:FReadLine()
 	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol
 		if Len(AFields)>nNbrCol 
@@ -1764,8 +1771,6 @@ function InitGlobals()
 			ENDIF
 			Admin:=oSys:ADMINTYPE
 		ENDIF
-		requiredemailclient:=ConI(oSys:MAILCLIENT)
-		maildirect:=ConL(oSys:maildirect)                                 
 		sFirstNmInAdr := ConL(oSys:FirstName)
 		sLand	:= AllTrim(oSys:CountryOwn)
 		OwnCountryNames:=Split(AllTrim(oSys:OWNCNTRY),",")
@@ -1789,7 +1794,20 @@ function InitGlobals()
 		else
 			Collate:=''
 		endif
-
+ 		requiredemailclient:=ConI(oSys:MAILCLIENT)
+		maildirect:=ConL(oSys:maildirect)
+		if !Empty(MYEMPID)
+			// check if email specified per employee:
+			oSel:=SqlSelect{"select maildirect,mailclient from employee where empid="+MYEMPID,oConn}
+			if oSel:RecCount=1
+				if	!IsNil(oSel:maildirect)	 // not null thus	specified seperately	per employee                 
+					maildirect:=ConL(oSel:maildirect)
+					if	Empty(maildirect).and.!IsNil(oSel:MAILCLIENT)
+						requiredemailclient:=ConI(oSel:MAILCLIENT)
+					endif
+				endif
+			endif                                  
+		endif
 		if !Empty(BANKNBRCRE) .and. SEntity="NED"
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
 			oSel:=SQLSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
@@ -3070,14 +3088,12 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 					nPos:=nEnd +1 
 				else
 					nPos:=nEnd 
-// 				elseif (nPos:=At3(cQuote, cTarget,nStart))=0 
-// 					nPos:=nEnd +1
 				endif
 			ENDIF
 			if lCompress
 				AAdd(aToken,Compress(StrTran(SubStr(cTarget,nStart+1,nPos-nStart-1),CHR(160),Space(1))))      // replace non-breaking space by space
 			else
-					AAdd(aToken,SubStr(cTarget,nStart+1,nPos-nStart-1))
+				AAdd(aToken,SubStr(cTarget,nStart+1,nPos-nStart-1))
 			endif
 			nStart:=nPos+nIncr
 		ENDDO
@@ -3194,6 +3210,7 @@ Method Skip(nLines) class SQLSelectPagination
 ACCESS SqlString CLASS SQLSelectPagination
 	RETURN self:cStatement
 ASSIGN SqlString(uValue) CLASS SQLSelectPagination
+	Local nOrder as int
 	local cCount as string
 	local oSel as SqlSelect
 	self:cStatement:=uValue
@@ -3203,7 +3220,10 @@ ASSIGN SqlString(uValue) CLASS SQLSelectPagination
 	if !Empty(uValue) 
 		// determine max rec:
 		cCount:= "select count(*) as nlastrec"+Lower(SubStr(uValue,AtC(' from ',uValue))) 
-		cCount:=substr(cCount,1,rat(" order ",cCount)-1)
+		nOrder:=RAt(" order ",cCount)
+		if nOrder>1
+			cCount:=SubStr(cCount,1,nOrder-1)
+		endif
 		oSel:=SqlSelect{cCount,self:Connection}
 		oSel:Execute()
 		if oSel:RecCount>0 
