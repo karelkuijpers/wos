@@ -201,35 +201,37 @@ IF !self:lStop.and.!self:lTeleBank.and.AScanExact(self:Server:Amirror,{|x| !x[3]
 RETURN NIL	
 METHOD Close(oEvent) CLASS General_Journal
 	LOCAL oServer AS FileSpec
-
-IF !SELF:Server==NULL_OBJECT
-	oServer:=Filespec{SELF:Server:FileSpec:FullPath}
-	IF SELF:Server:Used
-		SELF:Server:Close()
-	ENDIF
-	//FErase(cServer)
-	if !oServer:DELETE()
-		FErase(oServer:FullPath)
-	ENDIF
-	oServer:Extension:="fpt"
-	IF oServer:Find()
-		if !oServer:DELETE() 
-			FErase(oServer:FullPath)
+   IPCITEMNOTFOUND
+	IF !self:oHlpMut==null_object .and. IsObject(self:oHlpMut)
+		oServer:=FileSpec{self:oHlpMut:FileSpec:FullPath} 
+		if oServer:Find()
+			IF self:oHlpMut:Used
+				self:oHlpMut:Close()
+			ENDIF
+			//FErase(cServer)
+			if !oServer:DELETE()
+				FErase(oServer:FullPath)
+			ENDIF
+// 			oServer:Extension:="fpt"
+// 			IF oServer:Find()
+// 				if !oServer:DELETE() 
+// 					FErase(oServer:FullPath)
+// 				endif
+// 			ENDIF
 		endif
 	ENDIF
-ENDIF
-IF self:lImport .and.!self:oImpb==null_object
-	self:lImport:=FALSE
-	self:oImpb:Close()
-ENDIF
+	IF self:lImport .and.!self:oImpb==null_object
+		self:lImport:=FALSE
+		self:oImpb:Close()
+	ENDIF
 
-IF !self:lTeleBank .and.!self:oTmt==null_object
-	self:oTmt:Close()
-	self;oTmt:=null_object
-ENDIF
-SELF:oSFGeneralJournal1:Close()
-SELF:oSFGeneralJournal1:Destroy()
-SELF:Destroy()
+	IF !self:lTeleBank .and.!self:oTmt==null_object
+		self:oTmt:Close()
+		self;oTmt:=null_object
+	ENDIF
+	SELF:oSFGeneralJournal1:Close()
+	SELF:oSFGeneralJournal1:Destroy()
+	self:Destroy()
 	// force garbage collection
 	*CollectForced()
 
@@ -984,11 +986,11 @@ method AddCurr() class GeneralJournal1
 		if oBrowse:GetColumn(#PPDEST)==nil 
 			if lAddPP 
 				oBrowse:AddColumn(self:oDBPPDEST,self:oDBREKOMS:VisualPos+1) 
-				self:Owner:SetWidth(self:Owner:Size:Width+=self:oDBPPDEST:Width)
+				self:Owner:SetWidth(self:Owner:Size:Width+=8*self:oDBPPDEST:Width)
 			endif
 		elseif !lAddPP
 			oBrowse:RemoveColumn( oDBPPDEST)
-			self:Owner:SetWidth(self:Owner:Size:Width-=self:oDBPPDEST:Width)
+			self:Owner:SetWidth(self:Owner:Size:Width-=8*self:oDBPPDEST:Width)
 		endif 
 	endif
 	if lAddC.or.lAddPP 
@@ -1251,10 +1253,10 @@ self:SetTexts()
 
 	oDBCRE:Caption += " "+sCURR
 	oDBCRE:SetStandardStyle(gbsReadOnly) 
-	oBrowse:RemoveColumn(oDBCURRENCY)
+	oBrowse:RemoveColumn(self:oDBCURRENCY)
 	oBrowse:RemoveColumn(self:oDBPPDEST)
-	oBrowse:RemoveColumn(oDBDEB)
-	oBrowse:RemoveColumn(oDBCRE)
+	oBrowse:RemoveColumn(self:oDBDEB)
+	oBrowse:RemoveColumn(self:oDBCRE)
 	
 	RETURN NIL
 ACCESS PPDEST() CLASS GeneralJournal1
@@ -1350,8 +1352,8 @@ BEGIN
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
 	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
-	CONTROL	"zaterdag 4 mei 2013", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
-	CONTROL	"zaterdag 4 mei 2013", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
+	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
+	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
 	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
 	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
 	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
@@ -1439,16 +1441,6 @@ CLASS InquirySelection INHERIT DataWindowExtra
 	PROTECT oDCmAccnumberTo AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	INSTANCE mAccount
-  	INSTANCE mAccountTo
-	INSTANCE FromTransnr
-	INSTANCE ToTransnr
-	INSTANCE FromAmount
-	INSTANCE ToAmount
-	INSTANCE DocID
-	INSTANCE mPerson
-	INSTANCE AmountType
-	INSTANCE Description
 // 	protect oDep as Department
 // 	Export oAcc as Account
 //   	EXPORT oPers AS Person
@@ -1853,10 +1845,21 @@ RETURN uValue
 
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS InquirySelection
 	//Put your PostInit additions here 
-	local OldestYear as date
+	local OldestYear as date 
+	local aBal as array
 	self:SetTexts()
 	self:oOwner:=uExtra[1]
 	self:odcfromdate:SelectedDate:=MinDate
+	if Today()-MinDate > 400
+		aBal:=getbalYear(Year(Today()),month(Today()))
+		if Len(aBal)>0
+			self:odcfromdate:SelectedDate:=SToD(Str(aBal[1],4,0)+StrZero(aBal[2],2,0)+'01')
+			if self:odcfromdate:SelectedDate<MinDate
+				self:odcfromdate:SelectedDate:=MinDate
+			endif
+		endif
+	endif
+
 // 	FillBalYears()
 	if !Empty(GlBalYears)
 		OldestYear:=GlBalYears[Len(GlBalYears),1] 
@@ -2210,30 +2213,27 @@ SELF:FieldPut(#AccNumber, uValue)
 RETURN uValue
 
 method AddCurr() class PaymentDetails
-// add/remove  columns for multicurrency:
-LOCAL oBrowse:=self:Browser as GeneralBrowser
-LOCAL oHm:= self:Owner:Server as TempGift 
-local lAdd as logic
-AEval(oHm:aMirror,{|x|lAdd:=iif(x[10]==sCurr.or.Empty(x[10]),iif(x[11],true,lAdd),true) })
-if oBrowse:GetColumn(#Currency)==nil 
-	if lAdd 
-		oBrowse:AddColumn({oDBCURRENCY,oDBCRE},oDBGC) 
-		if self:Owner:Size:Width <700
-			self:Owner:SetWidth(self:Owner:Size:Width+=100)
+	// add/remove  columns for multicurrency:
+	LOCAL oBrowse:=self:Browser as GeneralBrowser
+	LOCAL oHm:= self:Owner:Server as TempGift 
+	local lAdd as logic
+	AEval(oHm:aMirror,{|x|lAdd:=iif(x[10]==sCurr.or.Empty(x[10]),iif(x[11],true,lAdd),true) })
+	if oBrowse:GetColumn(#Currency)==nil 
+		if lAdd 
+			oBrowse:AddColumn({oDBCURRENCY,oDBCRE},oDBGC) 
+			self:Owner:SetWidth(self:Owner:Size:Width+=7*(self:oDBCRE:Width+self:oDBCURRENCY:Width)) 
+			if self:oCurr==null_object 
+				self:oCurr:=Currency{}
+			endif
+			oBrowse:Refresh() 
 		endif
-		oBrowse:Refresh() 
-		if self:oCurr==null_object
-			self:oCurr:=Currency{}
+	elseif !lAdd
+		if !oBrowse:RemoveColumn( oDBCRE)==null_object
+			oBrowse:RemoveColumn( oDBCURRENCY)
+			self:Owner:SetWidth(self:Owner:Size:Width-=7*(self:oDBCRE:Width+self:oDBCURRENCY:Width))
+			oBrowse:Refresh()
 		endif
 	endif
-elseif !lAdd
-	oBrowse:RemoveColumn( oDBCRE)
-	oBrowse:RemoveColumn( oDBCURRENCY)
-	if self:Owner:Size:Width >=700
-		self:Owner:SetWidth(self:Owner:Size:Width-=100)
-	endif
-	oBrowse:Refresh()
-endif
 ACCESS CRE() CLASS PaymentDetails
 RETURN SELF:FieldGet(#CRE)
 
@@ -2419,7 +2419,7 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentDetails
 	//Put your PostInit additions here
 	LOCAL oCol as JapDataColumn
-	LOCAL oBrowse:=self:Browser as GeneralBrowser 
+	LOCAL oBrowse:=self:Browser as PaymentBrowser 
 self:SetTexts()
 	self:server:oBrowse := oBrowse
 	IF !(ADMIN=="WO".or.ADMIN=="HO")
@@ -2428,10 +2428,9 @@ self:SetTexts()
 	ENDIF
 	oDBCRE:Caption := "Credit "+sCURR
 	oDBCRE:SetStandardStyle(gbsReadOnly) 
-	oBrowse:RemoveColumn(oDBCURRENCY)
-	oBrowse:RemoveColumn(oDBCRE)
-
-	RETURN NIL
+	oBrowse:RemoveColumn(self:oDBCURRENCY)
+	oBrowse:RemoveColumn(self:oDBCRE)
+	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class PaymentDetails
 	//Put your PreInit additions here
 	oWindow:use(oWindow:oHlpMut)
@@ -2526,40 +2525,40 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 	export oHlpMut as TempGift 
 	export oAddInEx as AddToIncExp
 	declare method FillTeleBanking, InitGifts,AccntProc,AssignTo,Totalise, ValStore,ValidateTempGift
-RESOURCE PaymentJournal DIALOGEX  36, 36, 329, 231
+RESOURCE PaymentJournal DIALOGEX  48, 44, 458, 337
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Person:", PAYMENTJOURNAL_SC_CLN, "Static", WS_CHILD, 203, 15, 20, 10
-	CONTROL	"Document id:", PAYMENTJOURNAL_SC_BST, "Static", WS_CHILD, 4, 2, 35, 10
-	CONTROL	"Date:", PAYMENTJOURNAL_SC_DAT, "Static", WS_CHILD, 75, 2, 15, 10
-	CONTROL	"Amount left for recording:", PAYMENTJOURNAL_SC_TOTAL, "Static", WS_CHILD, 5, 219, 63, 10
-	CONTROL	"with balance:", PAYMENTJOURNAL_FIXEDTEXT8, "Static", WS_CHILD, 4, 29, 34, 10
-	CONTROL	"", PAYMENTJOURNAL_CURTEXT1, "Static", WS_CHILD, 93, 29, 13, 10
-	CONTROL	"", PAYMENTJOURNAL_CURTEXT2, "Static", WS_CHILD, 296, 29, 13, 10
-	CONTROL	"", PAYMENTJOURNAL_DEBBALANCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 41, 29, 47, 10, WS_EX_CLIENTEDGE
-	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 249, 3, 42, 10
-	CONTROL	"", PAYMENTJOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 42, 2, 29, 10
-	CONTROL	"woensdag 9 oktober 2013", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 90, 1, 93, 11
-	CONTROL	"", PAYMENTJOURNAL_DEBITACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 42, 15, 79, 59
-	CONTROL	"", PAYMENTJOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 15, 90, 10, WS_EX_CLIENTEDGE
-	CONTROL	"v", PAYMENTJOURNAL_PERSONBUTTON, "Button", WS_CHILD, 315, 16, 10, 10
-	CONTROL	"", PAYMENTJOURNAL_MDEBAMNTF, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 226, 29, 67, 10, WS_EX_CLIENTEDGE
-	CONTROL	"", PAYMENTJOURNAL_PAYMENTDETAILS, "static", WS_TABSTOP|WS_CHILD|WS_BORDER, 3, 59, 321, 146
-	CONTROL	"OK", PAYMENTJOURNAL_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 285, 218, 40, 10
-	CONTROL	"Cancel", PAYMENTJOURNAL_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 237, 218, 40, 10
-	CONTROL	"Telebanking...", PAYMENTJOURNAL_TELEBANKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 237, 207, 40, 10
-	CONTROL	"No Earmark...", PAYMENTJOURNAL_NONEARMARKED, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 285, 207, 40, 10
-	CONTROL	"", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_CHILD|WS_BORDER, 294, 3, 31, 9
-	CONTROL	"", PAYMENTJOURNAL_DEBITCREDITTEXT, "Static", WS_CHILD|WS_BORDER, 67, 219, 55, 10, WS_EX_CLIENTEDGE
-	CONTROL	"Debit account:", PAYMENTJOURNAL_FIXEDTEXT6, "Static", WS_CHILD, 4, 16, 37, 10
-	CONTROL	"Amount received:", PAYMENTJOURNAL_FIXEDTEXT7, "Static", WS_CHILD, 180, 29, 45, 10
-	CONTROL	"", PAYMENTJOURNAL_CGIROTELTEXT, "Static", WS_CHILD, 4, 42, 320, 15
+	CONTROL	"Person:", PAYMENTJOURNAL_SC_CLN, "Static", WS_CHILD, 274, 18, 28, 12
+	CONTROL	"Document id:", PAYMENTJOURNAL_SC_BST, "Static", WS_CHILD, 5, 3, 47, 12
+	CONTROL	"Date:", PAYMENTJOURNAL_SC_DAT, "Static", WS_CHILD, 100, 2, 20, 12
+	CONTROL	"Amount left for recording:", PAYMENTJOURNAL_SC_TOTAL, "Static", WS_CHILD, 4, 314, 83, 12
+	CONTROL	"with balance:", PAYMENTJOURNAL_FIXEDTEXT8, "Static", WS_CHILD, 6, 36, 44, 12
+	CONTROL	"", PAYMENTJOURNAL_CURTEXT1, "Static", WS_CHILD, 124, 35, 18, 13
+	CONTROL	"", PAYMENTJOURNAL_CURTEXT2, "Static", WS_CHILD, 399, 36, 17, 12
+	CONTROL	"", PAYMENTJOURNAL_DEBBALANCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 55, 35, 62, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 336, 3, 56, 13
+	CONTROL	"", PAYMENTJOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 2, 39, 12
+	CONTROL	"woensdag 6 november 2013", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 120, 1, 124, 14
+	CONTROL	"", PAYMENTJOURNAL_DEBITACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 56, 19, 105, 72
+	CONTROL	"", PAYMENTJOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 19, 119, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", PAYMENTJOURNAL_PERSONBUTTON, "Button", WS_CHILD, 424, 19, 14, 13
+	CONTROL	"", PAYMENTJOURNAL_MDEBAMNTF, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 35, 88, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", PAYMENTJOURNAL_PAYMENTDETAILS, "static", WS_TABSTOP|WS_CHILD|WS_BORDER, 6, 72, 433, 221
+	CONTROL	"OK", PAYMENTJOURNAL_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 382, 315, 60, 13
+	CONTROL	"Cancel", PAYMENTJOURNAL_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 315, 60, 13
+	CONTROL	"Telebanking...", PAYMENTJOURNAL_TELEBANKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 299, 60, 12
+	CONTROL	"No Earmark...", PAYMENTJOURNAL_NONEARMARKED, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 382, 299, 60, 12
+	CONTROL	"", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_CHILD|WS_BORDER, 396, 3, 41, 11
+	CONTROL	"", PAYMENTJOURNAL_DEBITCREDITTEXT, "Static", WS_CHILD|WS_BORDER, 86, 314, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Debit account:", PAYMENTJOURNAL_FIXEDTEXT6, "Static", WS_CHILD, 5, 20, 49, 12
+	CONTROL	"Amount received:", PAYMENTJOURNAL_FIXEDTEXT7, "Static", WS_CHILD, 244, 35, 60, 13
+	CONTROL	"", PAYMENTJOURNAL_CGIROTELTEXT, "Static", WS_CHILD, 6, 51, 433, 19
 END
 
-method AddCur(0 class PaymentJournal
-self:oSFPaymentDetails:AddCurr()
-return
+method AddCur() class PaymentJournal
+	self:oSFPaymentDetails:AddCurr()
+	return
 Method bankanalyze() class PaymentJournal
 	// analyze bankaccount belonging to current debaccount 
 	local oSel as SQLSelect
@@ -2846,6 +2845,7 @@ aBrushes[1] := Brush{Color{COLORWHITE}}
 
 oDCSC_CLN := FixedText{SELF,ResourceID{PAYMENTJOURNAL_SC_CLN,_GetInst()}}
 oDCSC_CLN:HyperLabel := HyperLabel{#SC_CLN,"Person:",NULL_STRING,NULL_STRING}
+oDCSC_CLN:OwnerAlignment := OA_X
 
 oDCSC_BST := FixedText{SELF,ResourceID{PAYMENTJOURNAL_SC_BST,_GetInst()}}
 oDCSC_BST:HyperLabel := HyperLabel{#SC_BST,"Document id:",NULL_STRING,NULL_STRING}
@@ -2865,6 +2865,7 @@ oDCCurText1:HyperLabel := HyperLabel{#CurText1,NULL_STRING,NULL_STRING,NULL_STRI
 
 oDCCurText2 := FixedText{SELF,ResourceID{PAYMENTJOURNAL_CURTEXT2,_GetInst()}}
 oDCCurText2:HyperLabel := HyperLabel{#CurText2,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCCurText2:OwnerAlignment := OA_X
 
 oDCDebbalance := SingleLineEdit{SELF,ResourceID{PAYMENTJOURNAL_DEBBALANCE,_GetInst()}}
 oDCDebbalance:HyperLabel := HyperLabel{#Debbalance,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -2872,6 +2873,7 @@ oDCDebbalance:FieldSpec := MBalance_DEB{}
 
 oDCSC_TRANSAKTNR := FixedText{SELF,ResourceID{PAYMENTJOURNAL_SC_TRANSAKTNR,_GetInst()}}
 oDCSC_TRANSAKTNR:HyperLabel := HyperLabel{#SC_TRANSAKTNR,"Prior transaction:",NULL_STRING,NULL_STRING}
+oDCSC_TRANSAKTNR:OwnerAlignment := OA_X
 
 oDCmBST := SingleLineEdit{SELF,ResourceID{PAYMENTJOURNAL_MBST,_GetInst()}}
 oDCmBST:FieldSpec := Transaction_BST{}
@@ -2888,36 +2890,40 @@ oDCmPerson := SingleLineEdit{SELF,ResourceID{PAYMENTJOURNAL_MPERSON,_GetInst()}}
 oDCmPerson:HyperLabel := HyperLabel{#mPerson,NULL_STRING,"Person paying the amount","HELP_CLN"}
 oDCmPerson:Picture := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 oDCmPerson:TooltipText := "Name, Zip or Bank#"
+oDCmPerson:OwnerAlignment := OA_X
 
 oCCPersonButton := PushButton{SELF,ResourceID{PAYMENTJOURNAL_PERSONBUTTON,_GetInst()}}
 oCCPersonButton:HyperLabel := HyperLabel{#PersonButton,"v","Browse in persons",NULL_STRING}
 oCCPersonButton:TooltipText := "Browse in Persons"
+oCCPersonButton:OwnerAlignment := OA_X
 
 oDCmDebAmntF := mySingleEdit{SELF,ResourceID{PAYMENTJOURNAL_MDEBAMNTF,_GetInst()}}
 oDCmDebAmntF:FieldSpec := TRANSACTION_DEB{}
 oDCmDebAmntF:HyperLabel := HyperLabel{#mDebAmntF,NULL_STRING,"Amount received",NULL_STRING}
 oDCmDebAmntF:UseHLforToolTip := True
+oDCmDebAmntF:OwnerAlignment := OA_X
 
 oCCOKButton := PushButton{SELF,ResourceID{PAYMENTJOURNAL_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
-oCCOKButton:OwnerAlignment := OA_Y
+oCCOKButton:OwnerAlignment := OA_X_Y
 
 oCCCancelButton := PushButton{SELF,ResourceID{PAYMENTJOURNAL_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
-oCCCancelButton:OwnerAlignment := OA_Y
+oCCCancelButton:OwnerAlignment := OA_X_Y
 
 oCCTelebankButton := PushButton{SELF,ResourceID{PAYMENTJOURNAL_TELEBANKBUTTON,_GetInst()}}
 oCCTelebankButton:HyperLabel := HyperLabel{#TelebankButton,"Telebanking...","Processing of telebanking transactions",NULL_STRING}
 oCCTelebankButton:TooltipText := "Proces Telebanking transactions"
-oCCTelebankButton:OwnerAlignment := OA_Y
+oCCTelebankButton:OwnerAlignment := OA_X_Y
 
 oCCNonEarmarked := PushButton{SELF,ResourceID{PAYMENTJOURNAL_NONEARMARKED,_GetInst()}}
 oCCNonEarmarked:HyperLabel := HyperLabel{#NonEarmarked,"No Earmark...",NULL_STRING,NULL_STRING}
 oCCNonEarmarked:TooltipText := "Allotting of non-earmarked gifts"
-oCCNonEarmarked:OwnerAlignment := OA_Y
+oCCNonEarmarked:OwnerAlignment := OA_X_Y
 
 oDCmTRANSAKTNR := SingleLineEdit{SELF,ResourceID{PAYMENTJOURNAL_MTRANSAKTNR,_GetInst()}}
 oDCmTRANSAKTNR:HyperLabel := HyperLabel{#mTRANSAKTNR,NULL_STRING,NULL_STRING,"Transaction_TRANSAKTNR"}
+oDCmTRANSAKTNR:OwnerAlignment := OA_X
 
 oDCDebitCreditText := FixedText{SELF,ResourceID{PAYMENTJOURNAL_DEBITCREDITTEXT,_GetInst()}}
 oDCDebitCreditText:HyperLabel := HyperLabel{#DebitCreditText,NULL_STRING,NULL_STRING,NULL_STRING}
@@ -2930,9 +2936,11 @@ oDCFixedText6:HyperLabel := HyperLabel{#FixedText6,"Debit account:",NULL_STRING,
 
 oDCFixedText7 := FixedText{SELF,ResourceID{PAYMENTJOURNAL_FIXEDTEXT7,_GetInst()}}
 oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Amount received:",NULL_STRING,NULL_STRING}
+oDCFixedText7:OwnerAlignment := OA_X
 
 oDCcGirotelText := FixedText{SELF,ResourceID{PAYMENTJOURNAL_CGIROTELTEXT,_GetInst()}}
 oDCcGirotelText:HyperLabel := HyperLabel{#cGirotelText,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCcGirotelText:OwnerAlignment := OA_PWIDTH
 
 SELF:Caption := "Gifts/Payments bookkeeping"
 SELF:HyperLabel := HyperLabel{#PaymentJournal,"Gifts/Payments bookkeeping",NULL_STRING,NULL_STRING}
@@ -3162,7 +3170,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	oCurr:=Currency{}  
 	self:Server:oLan:=self:oLan
 	self:Server:oBrowse := self:oSFPaymentDetails:Browser
-// 	self:oDCDebitAccount:SetFocus()
+	// 	self:oDCDebitAccount:SetFocus()
 	self:oDCDebitAccount:CurrentItemNo := self:oDCDebitAccount:FindItem(self:cBankPreSet,FALSE)
 	self:mDebAmntF:=0
 	self:mDebAmnt:=0 
@@ -3172,7 +3180,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		self:bankanalyze()
 	else
 		* Check in case of home front system if there is only one destination:
-		oSel:=SQLSelect{"select a.accid,a.description,a.accnumber,a.CURRENCY,a.multcurr,b.category as acctype,m.persid from balanceitem b, account a left join member on (a.accid=m.accid) "+;
+		oSel:=SQLSelect{"select a.accid,a.description,a.accnumber,a.CURRENCY,a.multcurr,b.category as acctype,m.persid from balanceitem b, account a left join member m on (a.accid=m.accid) "+;
 			" where a.giftalwd=1 and a.balitemid=b.balitemid and a.active=1",oConn}
 		if oSel:reccount=1
 			self:DefBest := Str(oSel:AccID,-1)
@@ -3231,7 +3239,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 	else
 		self:cDestFilter:="a.active=1"
 	endif
-// 	self:cDestFilter+=" and (a.giftalwd=1"+iif(empty(sdeb),""," or a.accid="+sdeb)+")"
+	// 	self:cDestFilter+=" and (a.giftalwd=1"+iif(empty(sdeb),""," or a.accid="+sdeb)+")"
 	
 	IF !Empty(SPROJ)
 		* check if there are non earmarked gifts: 
@@ -3243,7 +3251,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 		self:oCCOKButton:Hide() 
 		self:oCCTeleBankButton:Hide()
 	ENDIF
-
+//    self:AddCur()
 
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class PaymentJournal
@@ -3354,7 +3362,8 @@ STATIC DEFINE PAYMENTJOURNALNW_SC_DAT := 104
 STATIC DEFINE PAYMENTJOURNALNW_SC_TOTAL := 105 
 STATIC DEFINE PAYMENTJOURNALNW_SC_TRANSAKTNR := 106 
 method _PaymentJournal(iCtlID) CLASS StandardWycWindow
-local oServer as DBSERVEREXTRA 
+local oServer as DBSERVEREXTRA
+GetHelpDir() 
 oServer:= TempGift{HelpDir+"\HP"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
 (PaymentJournal{self,iCtlID,oServer}):show()
 return 
@@ -4189,10 +4198,21 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TransInquiry
 	//Put your PostInit additions here
 	local OldestYear as date
 	LOCAL i,j as int 
+	local aBal:={} as array
 	local	oBank as SQLSelect
 
 self:SetTexts()
 	self:StartDate:=LstYearClosed
+	if Today()-LstYearClosed > 400
+		aBal:=getbalYear(Year(Today()),month(Today()))
+		if Len(aBal)>0
+			self:StartDate:=SToD(Str(aBal[1],4,0)+StrZero(aBal[2],2,0)+'01')
+			if self:StartDate<LstYearClosed
+				self:StartDate:=LstYearClosed
+			endif
+		endif
+	endif
+		
 	self:EndDate:=Today()+31
 	self:TransTypeSelected:="A"
 	self:NoUpdate:=FALSE	
