@@ -68,7 +68,7 @@ Method GetDiffernces(Reportdate as date) as array class AlertBankbalance
 		i:=0
 		do while true
 			i++  
-			if i>Len(aTeleBal) .or.!dCurDate==aTeleBal[i,5]
+			if IsDate(dCurDate) .and.(i>Len(aTeleBal) .or.!dCurDate==aTeleBal[i,5])
 				// end of current date:
 				oMBal:cAccSelection:="a.accid in ("+Implode(aTeleBal,",",nSelStart,i-nSelStart,1)+")"
 				oMBal:cTransSelection:="t.accid in ("+Implode(aTeleBal,",",nSelStart,i-nSelStart,1)+")"
