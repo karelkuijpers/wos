@@ -63,7 +63,8 @@ CLASS AccountBrowser INHERIT DataWindowExtra
 	export cAccFilter as string
 	export cSearch:="", cWhere,cFrom,cOrder,cFields as string
 	export oAccCnt as AccountContainer 
-	export oAcc as SQLSelect
+	export oAcc as SQLSelectPagination
+// 	export oAcc as SqlSelectPagination
 	protect cCurDep,WhoFrom as string 
 	protect cCurBal,WhatFrom as string 
 	
@@ -264,6 +265,8 @@ RETURN uValue
 
 RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser 
+	local time0,time1 as float 
+time0:=Seconds() 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
@@ -369,6 +372,8 @@ oSFAccountBrowser_DETAIL := AccountBrowser_DETAIL{SELF,ACCOUNTBROWSER_ACCOUNTBRO
 oSFAccountBrowser_DETAIL:show()
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
+time1:=time0
+// LogEvent(self,"total time:"+Str((time0:=Seconds())-time1,-1),"loginfo")
 
 return self
 
@@ -399,8 +404,10 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class AccountBrowser
 		self:oCCDeleteButton:Hide()
 		self:oCCNewButton:Hide()
 	ENDIF
-	self:GoTop() 
-  	self:FOUND :=Str(self:oAcc:Reccount,-1) 
+// 	self:GoTop() 
+// 	LogEvent(self," PostInit before reccount") 
+  	self:FOUND :=Str(self:oAcc:Reccount,-1)
+//   	self:FOUND:=Str(self:oAcc:nLastRec) 
   	if self:oAcc:Reccount>0
   		self:oCCOKButton:Enable()
   	else
@@ -416,7 +423,8 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class AccountBrowser
    self:RegBalance(self:cCurBal)
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
-	//Put your PreInit additions here 
+	//Put your PreInit additions here
+	local time0,time1 as float 
 
 	if IsArray(uExtra)
 		self:oCaller := uExtra[1]
@@ -437,8 +445,10 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		self:cAccFilter:=iif(Empty(cDepmntIncl),"","a.department IN ("+cDepmntIncl+")")
 		self:oAccCnt:=AccountContainer{}
 	endif
-	self:oAcc:=SqlSelect{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cWhere),''," and")+" a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
-//	LogEvent(self,"error:"+self:oAcc:errinfo:errormessage+"; statement:"+self:oAcc:SQLString,"logerrors")
+	time0:=Seconds()
+	self:oAcc:=SQLSelectPagination{"Select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+iif(Empty(self:cWhere),''," and")+" a.active=1"+iif(Empty(self:cAccFilter),""," and "+cAccFilter)+" order by "+cOrder+Collate,oConn}
+		time1:=time0
+// 		LogEvent(self,"init sqlselect:"+Str((time0:=Seconds())-time1,-1)+' sec: '+self:oAcc:sqlstring,"loginfo")
 	RETURN nil
 METHOD Refresh() CLASS AccountBrowser 
 	self:oAcc:Execute() 
@@ -477,8 +487,8 @@ CLASS AccountBrowser_DETAIL INHERIT DataWindowExtra
 	PROTECT oDBACTIVEDESCR as DataColumn
 	PROTECT oDBDESCRIPTION as DataColumn
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE AccountBrowser_DETAIL DIALOGEX  2, 2, 270, 140
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
+RESOURCE AccountBrowser_DETAIL DIALOGEX  2, 2, 261, 114
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -498,7 +508,9 @@ self:FIELDPUT(#description, uValue)
 RETURN uValue
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser_DETAIL 
-
+local time0,time1,time3 as float
+time0:=Seconds() 
+time3:=time0
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"AccountBrowser_DETAIL",_GetInst()},iCtlID)
@@ -534,11 +546,16 @@ oDBDESCRIPTION:Width := 54
 oDBDESCRIPTION:HyperLabel := HyperLabel{#description,"Description",NULL_STRING,NULL_STRING} 
 oDBDESCRIPTION:Caption := "Description"
 self:Browser:AddColumn(oDBDESCRIPTION)
+time1:=time0
+// LogEvent(self,"init columns:"+Str((time0:=Seconds())-time1,-1),"loginfo")
 
 
 SELF:ViewAs(#BrowseView)
+time1:=time0
+// LogEvent(self,"browse view:"+Str((time0:=Seconds())-time1,-1),"loginfo")
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
+// LogEvent(self,"Total time detail:"+Str((time0:=Seconds())-time3,-1),"loginfo")
 
 return self
 
@@ -551,7 +568,8 @@ self:SetTexts()
 	return nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class AccountBrowser_DETAIL
 	//Put your PreInit additions here
-	if Empty(oWindow:Server) 
+	if Empty(oWindow:Server)
+// 		LogEvent(self," PreInit before use") 
 	 	oWindow:Use(oWindow:oAcc)
 	endif
 	return nil
