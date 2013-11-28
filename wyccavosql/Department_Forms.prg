@@ -413,7 +413,7 @@ CLASS EditDepartment INHERIT DataWindowExtra
    PROTECT cCAPITALName,cIncName,cExpname,cPayableName,cReceivablename as STRING
 	PROTECT NbrCAPITAL,NbrIncome,IdIncomeOrg,NbrExpense,NbrPayable,NbrReceivable as STRING
   	PROTECT lNew AS LOGIC
-	PROTECT oCaller AS OBJECT
+	PROTECT oCaller as DepartmentExplorer
 	PROTECT OrgDescription AS STRING
 	PROTECT OrgParent AS STRING
 	PROTECT OrgDepNbr AS STRING
@@ -971,14 +971,14 @@ METHOD OKButton( ) CLASS EditDepartment
 		Departments:=true
 		IF !lNew
 			IF !OrgDescription==mDescription.or.!OrgParent==mParentDep.or.!OrgDepNbr=mDepartmntNbr
-				oCaller:RefreshTree()
+				self:oCaller:RefreshTree()
 			ENDIF
 		else
 			self:mDepId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-			oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
-			AAdd(oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
+			self:oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
+			AAdd(self:oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
-		oCaller:Refresh() 
+		self:oCaller:Refresh() 
 	elseif !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:errorMessage}:Show()
 	endif
