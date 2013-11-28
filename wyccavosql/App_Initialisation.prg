@@ -550,7 +550,7 @@ do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
 	aColumn[i,3]+;
 	iif(aColumn[i,4]=="NO"," NOT NULL","")+;
 	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL"),iif(AtC("text",aColumn[i,3])>0,""," DEFAULT '"+aColumn[i,5]+"'"))+;
-	+" "+aColumn[i,6] 
+	" "+aColumn[i,6]+iif(Len(aColumn[i])>6," COMMENT '"+aColumn[i,7]+"'","") 
 enddo
 cIndex:=" "
 i:=0 
@@ -992,20 +992,20 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
 			// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
-			ImportCSV(cWorkdir+"\ppcodes.csv","ppcodes",2) 
+			ImportCSV(cWorkdir+"\ppcodes.csv","ppcodes",2,{"ppcode","ppname"}) 
 		endif
 		if lCopyCur
-			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2) 
+			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2,{}) 
 			// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
 		endif 
 		if lCopyIPC
-			ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2) 
+			ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2,{}) 
 			// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
 		endif
 		// load bic table
 		if lCopyBIC
 			// 			FillBIC()
-			ImportCSV(cWorkdir+"\bic.csv","bic",1)
+			ImportCSV(cWorkdir+"\bic.csv","bic",1,{})
 		endif
 
 		// 		if self:FirstOfDay
@@ -1252,6 +1252,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"log","InnoDB",cCollation},;	
 	{"account","InnoDB",cCollation},;
 		{"accountbalanceyear","InnoDB",cCollation},;
+		{"amendment","InnoDB",cCollation},; 
 		{"article","InnoDB",cCollation},; 
 	{"assessmnttotal","InnoDB",cCollation},;
 		{"authfunc","InnoDB","latin1_swedish_ci"},;
@@ -1310,7 +1311,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// 	{"dueamount","paymethod","char(1)","NO","",""},;
 	// 	{"dueamount","category","char(1)","NO","",""},;
 
-	// Table name, Field,Type,Null,Default,Extra 
+	// Table name, Field,Type,Null,Default,Extra[,Comment] 
 
 	local aColumn:={;
 		{"account","accid","int(11)","NO","NULL","auto_increment"},;
@@ -1338,6 +1339,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"accountbalanceyear","svjd","decimal(20,2)","NO","0",""},;
 		{"accountbalanceyear","svjc","decimal(20,2)","NO","0",""},;
 		{"accountbalanceyear","currency","char(3)","NO","",""},;
+		{"amendment","subscribid","int(11)","NO","NULL",""},;
+		{"amendment","banknumber","varchar(64)","NO","","","previous bank number"},;
+		{"amendment","bic","varchar(11)","NO","","","previous bic"},;
 		{"article","articleid","int(11)","NO","NULL","auto_increment"},;
 		{"article","description","char(30)","YES","NULL",""},;
 		{"article","purchaseqty","int(7)","NO","0",""},;
@@ -1459,17 +1463,19 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","pswprv3","varchar(64)","NO","",""},;
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
-	{"employee","lstreimb","date","NO","0000-00-00",""},;
+		{"employee","lstreimb","date","NO","0000-00-00",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
 		{"employee","lstnews","date","NO","0000-00-00",""},;
+		{"employee","maildirect","tinyint(1)","YES","NULL",""},; 
+		{"employee","mailclient","tinyint(1)","YES","NULL","","0=Express/Windows Mail,1=Microsoft Outlook,2=Thunderbird,3=Windows Live Mail,4=Mapi2Xml"},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
 		{"emplacc","accid","int(11)","NO","NULL",""},;
 		{"emplacc","type","tinyint(1)","NO","0",""},;
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
 		{"importlock","lock_time","timestamp","NO","0000-00-00",""},; 
-	{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
+		{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
 		{"importpattern","descriptn","varchar(511)","NO","",""},;
 		{"importpattern","origin","char(11)","NO","",""},;
 		{"importpattern","assmntcd","char(2)","NO","",""},;
@@ -1614,7 +1620,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorderline","reference","varchar(127)","NO","",""},;
 		{"standingorderline","bankacct","varchar(64)","NO","",""},;
 		{"standingorderline","creditor","int(11)","NO","0",""},;
-		{"subscription","SUBSCRIBID","int(11)","NO","NULL","auto_increment"},;
+		{"subscription","subscribid","int(11)","NO","NULL","auto_increment"},;
 		{"subscription","personid","int(11)","YES","NULL",""},;
 		{"subscription","accid","int(11)","YES","NULL",""},;
 		{"subscription","begindate","date","NO","0000-00-00",""},;
@@ -2302,26 +2308,29 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	// aReqColumn: required columns
 	// aCurColumn: current columns
 	// cTableName: name of the table
-	local lSkip,lError as logic
 	local nPosReq,nPosCur,i,j,nLenReq,nLenCur as int
+	local nPosCurbefore as int // position of corresponding current item before this required one
+	local nPosCurAfter  as int // position of corresponding current item after this required one 
+	local nNrParReq,nNrParCur as int
+	local cReqname,cIndex as string 
+	local lSkip,lError as logic
+	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1),cvalues as string 
 	local aStatReq,aStatCur as array      // to keep track of comparisons; 
 	//													aStatReq: {{status (c:changed spec/ r:renamed/=: equal), ordinal position in current table}, ...}
 	//													aStatCur: { status (x: processed), ..}  
-	local nPosCurbefore as int // position of corresponding current item before this required one
-	local nPosCurAfter  as int // position of corresponding current item after this required one
-	local cReqname,cIndex as string 
-	local cStatement,cDropIndex,cAddIndex,c,Sp:=Space(1),cvalues as string 
 	local aColName:={} as array
 	local oStmnt as SQLStatement
-	local oSel as SQLSelect                 // for correcting teletrans
 	local CurDate as date, CurSeqnr,SubSeqnr as int  // for correcting teletrans
 	local avalues:={} as array  // array for converting values : {{fieldname,new value},...}
+	local oSel as SQLSelect                 // for correcting teletrans
 	nLenReq:=ALen(aReqColumn)
 	nLenCur:=ALen(aCurColumn)
 	aStatReq:=AReplicate({'',0},nLenReq)
 	aStatCur:=AReplicate('',nLenCur) 
 	// first search for columns with changed specifications:  
-
+   if cTableName='employee'
+   	cTableName:=cTableName
+   endif
 	for nPosReq:=1 to nLenReq
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
 		nPosCur:=AScan(aCurColumn,{|x|Lower(x[2])==cReqname})
@@ -2346,6 +2355,9 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 					exit
 				endif
 			next
+			if Empty(aStatReq[nPosReq]) .and.!((nNrParReq:=Len(aReqColumn[nPosReq]))==(nNrParCur:=Len(aCurColumn[nPosCur])) .or.nNrParReq>6 .and.!aReqColumn[nPosReq,7]==aCurColumn[nPosCur,7] )
+				aStatReq[nPosReq]:={"c",nPosCur} // specifications changed						
+			endif
 			if Empty(aStatReq[nPosReq,1])
 				aStatReq[nPosReq]:={"=",nPosCur}   // equal to current
 			endif
@@ -2405,7 +2417,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		// Table name, Field,Type,Null,Default,Extra 
 		cStatement+=sIdentChar+aReqColumn[nPosReq,2]+sIdentChar+' '+aReqColumn[nPosReq,3]+' '+iif(Upper(aReqColumn[nPosReq,4])=="NO","NOT NULL","NULL")+;
 			iif(AtC('text',aReqColumn[nPosReq,3])>0,'',iif(Upper(aReqColumn[nPosReq,5])=="NULL",iif(Upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'"))+;
-			" "+aReqColumn[nPosReq,6]+;
+			" "+aReqColumn[nPosReq,6]+iif(Len(aReqColumn[nPosReq])>6," COMMENT '"+aReqColumn[nPosReq,7]+"'","")+;
 			iif(aStatReq[nPosReq,1]="a"," "+iif(nPosReq=1,"FIRST","AFTER "+aReqColumn[nPosReq-1,2]),"")
 	next
 	//
