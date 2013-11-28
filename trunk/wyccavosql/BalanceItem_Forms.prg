@@ -669,7 +669,7 @@ METHOD DELETE() CLASS CustomExplorer
 
 RETURN nil
 METHOD DeleteListViewItems() CLASS CustomExplorer
-	RETURN SELF:ListView:DeleteAll()
+	RETURN self:ListView:DeleteAll()
 METHOD DeleteTreeViewItems() CLASS CustomExplorer
 	RETURN SELF:TreeView:DeleteAll()
 
