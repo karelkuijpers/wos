@@ -642,15 +642,15 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 			cGiverName := ""
 			mPerson := ""
 			mBst:= " "
-			IF oImpB:GetNextBatch()
-				IF !oImpB:lOK .or.!self:ValStore()
+			IF self:oImpB:GetNextBatch()
+				IF !self:oImpB:lOK .or.!self:ValStore()
 					RETURN nil
 				ENDIF
 			ELSE
 				self:oDCmBST:Enable()
 				self:oDCmDat:Enable()
 				self:lImport:=FALSE
-				oImpB:Close()
+				self:oImpB:Close()
 				self:ReSet()
 				self:append()
 				exit
@@ -3907,7 +3907,7 @@ METHOD EditButton( ) CLASS TransInquiry
 		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd,depid}
 		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19      20
 		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),;
-		Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),self:oHm:DESCRIPTN,;
+		Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),AllTrim(self:oHm:DESCRIPTN),;
 		iif(Empty(self:oMyTrans:persidmbr),iif(Empty(self:oMyTrans:persid),"",Str(self:oMyTrans:persid,-1)),Str(self:oMyTrans:persidmbr,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 // 		iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 		self:oMyTrans:Skip()
