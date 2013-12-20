@@ -3649,12 +3649,12 @@ METHOD OKButton( ) CLASS TabSysParms
 			",capital='"+self:oTPTAB_PARM1:NbrCAPITAL+"'"+;
 			",idorg='"+self:oTPTAB_PARM1:mCLNOrg+"'"+;
 			",idcontact='"+self:oTPTAB_PARM1:mCLNContact+"'"+;
-			",closemonth='"+Transform(self:oTPTAB_PARM1:closemonth,"")+"'"+; 
+			",closemonth='"+AllTrim(Transform(self:oTPTAB_PARM1:closemonth,""))+"'"+; 
 		",entity='"+iif( self:oTPTAB_PARM1:mAdminType="WO".and.!IsNil(self:oTPTAB_PARM2:Entity),self:oTPTAB_PARM2:Entity,self:oTPTAB_PARM1:Entity)+"'"+;
 			",currency='"+self:oTPTAB_PARM1:Currency+"'"+; 
 		",countryown='"+ConS(self:oTPTAB_PARM1:HBLAND)+"'"+; 
 		",currname='"+ConS(self:oTPTAB_PARM1:CURRNAME)+"'"+; 
-		",sysname='"+ConS(self:oTPTAB_PARM1:SYSNAME)+"'"+; 
+		",sysname='"+AddSlashes(ConS(self:oTPTAB_PARM1:SYSNAME))+"'"+; 
 		",admintype='"+self:oTPTAB_PARM1:mAdminType+"'"+;
 			",posting="+iif(self:oTPTAB_PARM1:posting,'1','0')+;
 			iif( self:oTPTAB_PARM2==null_object,'',;  
@@ -3685,7 +3685,7 @@ METHOD OKButton( ) CLASS TabSysParms
 			",banknbrcre='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCRE),'0',self:oTPTAB_PARM3:BANKNBRCRE)+"'"+;
 			",sepaenabled="+iif(self:oTPTAB_PARM3:sepaenabled,'1','0')+;
 	 		",ddmaxindvdl="+Str(self:oTPTAB_PARM3:ddmaxindvdl,-1)+;
-			",ddmaxbatch="+Str(self:oTPTAB_PARM3:ddmaxbatch,-1))+; 
+			",ddmaxbatch="+Str(self:oTPTAB_PARM3:ddmaxbatch,-1)) +; 
 			iif(self:oTPTAB_PARM4==null_object,'',;
 			",donors='"+self:oTPTAB_PARM4:NbrDONORS+"'"+;
 			",projects='"+self:oTPTAB_PARM4:NbrPROJECTS+"'"+;
@@ -3696,13 +3696,13 @@ METHOD OKButton( ) CLASS TabSysParms
 		",firstname="+iif(self:oTPTAB_PARM5:FIRSTNAME,'1','0')+; 
 		",nosalut="+iif(self:oTPTAB_PARM5:SALUTADDR,'0','1') +;
 			",cityletter='"+self:oTPTAB_PARM5:CITYLETTER+"'"+; 
-		",owncntry='"+AllTrim(self:oTPTAB_PARM5:mOwnCntry)+"'"+; 
+		",owncntry='"+AddSlashes(AllTrim(self:oTPTAB_PARM5:mOwnCntry))+"'"+; 
 		",surnmfirst="+iif(self:oTPTAB_PARM5:SURNMFIRST,'1','0')+; 
 		",strzipcity="+Str(self:oTPTAB_PARM5:STRZIPCITY,-1)+;
 			",citynmupc="+iif(self:oTPTAB_PARM5:CITYNMUPC,'1','0')+;
 			",lstnmupc="+iif(self:oTPTAB_PARM5:LSTNMUPC,'1','0')+; 
 		",titinadr="+iif(self:oTPTAB_PARM5:TITINADR,'1','0')+; 
-		",maildirect="+ConS(self:oTPTAB_PARM5:emailing)+; 
+		",maildirect='"+ConS(ConI(self:oTPTAB_PARM5:emailing))+"'"+; 
 		",mailclient='"+Str(self:oTPTAB_PARM5:MailClient,-1)+"'"+;
 			",topmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:TOPMARGIN,""))+"'"+;
 			",leftmargin='"+AllTrim(Transform(self:oTPTAB_PARM6:leftMARGIN,""))+"'"+;           
@@ -3715,7 +3715,7 @@ METHOD OKButton( ) CLASS TabSysParms
 			",crlanguage='"+self:oTPTabParm_Page8:CRLANGUAGE+"'")+;
 			iif(self:oTPTABPARM_PAGE9==null_object,'',;      
 		",toppacct='"+iif(IsNil(self:oTPTABParm_Page9:NbrToPP),"",self:oTPTABParm_Page9:NbrToPP)+"'")
-	endif
+	endif 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	IF empty(oStmnt:status)
