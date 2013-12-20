@@ -526,31 +526,71 @@ local oBal as SQLSelect
 			ENDIF
 		ENDIF
 		self:mBalitemid:=self:cCurBal
-		self:oDCmBalitemid:TextValue:=self:cCurBal 
+		self:oDCmBalitemid:TextValue:=self:cCurBal
+		if !self:lMember
+			if self:mSoort==Income .or. self:mSoort==Liability.or.(!lNew .and.self:oAcc:incomeacc==self:oAcc:accid) 
+				// if not netasset:
+				if self:lNew .or.!ConS(self:oAcc:accid)==SKAP .or. SqlSelect{"select depid from department where netasset='"+ConS(self:oAcc:accid)+"'",oConn}:Reccount>0
+					self:oDCmGIFTALWD:Show()
+				endif
+			else
+				self:oDCmGIFTALWD:Hide()
+				self:mGIFTALWD=false
+			endif
+		endif
 	ENDIF
 RETURN
 		
 METHOD RegDepartment(myNum,myItemName) CLASS EditAccount
 	local oDep as SQLSelect
+	local cError as string
 	Default(@myItemName,null_string)
 	Default(@myNum,null_string) 
 	
 	IF !myNum==self:mDep
+		if !Empty(self:mAccId)
+			if !Empty(cError:=ValidateDepTransfer(ConS(ConI(myNum)),self:mAccId))
+				ErrorBox{self,cError}:show()
+				return
+			endif
+		endif
 		self:mDep:=myNum
-		IF Empty(self:mDep)
+		IF Empty(Val(self:mDep))
 			self:cCurDep:="0:"+sEntity+" "+sLand
 			self:mDepartment:=self:cCurDep
 			self:oDCmDepartment:TextValue:=self:cCurDep
+			self:lMember:=false
+			self:odcmembertext:TextValue:=""
+			self:lMemberDep:=false
 		ELSE
-			oDep:=SQLSelect{"select deptmntnbr,descriptn from department where depid='"+self:mDep+"'",oConn} 
-			IF oDep:Reccount>0
+			oDep:=SqlSelect{"select d.deptmntnbr,d.descriptn,d.incomeacc,d.expenseacc,d.netasset,m.persid from department d left join member m on (m.depid=d.depid) where d.depid='"+self:mDep+"'",oConn} 
+			IF oDep:Reccount>0 
 				self:cCurDep:=AllTrim(oDep:DEPTMNTNBR)+":"+oDep:DESCRIPTN
 				self:mDepartment:=self:cCurDep
 				self:oDCmDepartment:TextValue:=self:cCurDep
+				IF !Empty(oDep:persid)
+					// member-department:
+					* No update	of	description	allowed: 
+					self:mCln:=ConS(oDep:persid)
+					self:lMember:=true
+// 					if	Empty(oDep:incomeacc)
+// 						// 						self:oDCmDescription:Disable()
+// 						self:lMemberDep:=false
+// 						self:odcmembertext:textValue :='member	account'
+// 					else
+						self:lMemberDep:=true
+						self:odcmembertext:textValue :='department member'
+// 					endif
+				ELSE
+					self:lMember:=false
+					self:odcmembertext:TextValue:=""
+					self:lMemberDep:=false
+					// 					self:oDCmDescription:SetFocus()
+				ENDIF
 			ENDIF
 		ENDIF
 	ENDIF
-RETURN
+	RETURN
 METHOD ValidateAccount() CLASS EditAccount
 	LOCAL lValid := true as LOGIC
 	LOCAL cError,cLastname as STRING   
@@ -596,7 +636,7 @@ METHOD ValidateAccount() CLASS EditAccount
 			ENDIF		
 		endif
 	ENDIF
-	if lValid .and.self:lMemberDep
+	if lValid .and.self:lMemberDep .and. !Empty(cLastname)
 		// account should contain lastname of corresponding member 
 		cLastname:=ConS(SqlSelect{"select lastname from person p, member m where m.depid="+self:mDep+" and p.persid=m.persid",oConn}:lastname)
 		if AtC(cLastname,self:oDCmDescription:TextValue) =0
@@ -870,24 +910,36 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=
 		oLan:=Language{}
 		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(AllTrim(Transform(oAcc:netasset,""))==mAccId,;
 			oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
-	endif 
-	// check if only Income account is Gifts receivable:  
-	oAcc:=SqlSelect{"SELECT `accid` FROM `member` WHERE `accid` is null and `depid`=" +cDepartment,oConn} 
-	if oAcc:Reccount >0 
-		
-		if mGIFTALWD==2 
-			oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
-			if oAcc:Reccount>0 
-				mGIFTALWD:= ConI(oAcc:giftalwd)
-			endif
+	endif
+	if Empty(cError)
+		// check if account belongs to single-account member:
+		if (oSel:=SqlSelect{"select m.`mbrid` from member m where m.accid="+mAccId,oConn}):Reccount>0
+			if (oAcc:=SqlSelect{"select mbrid from member where depid="+cDepartment,oConn}):Reccount>0
+				// not allowed change of member:
+				oLan:=Language{}
+				cError:=oLan:WGet("account can not be assigned to another member")
+			endif 
 		endif
-		if mGIFTALWD=1
-			oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
-			if oSel:Reccount>0 
-				IF !ConS(oSel:incomeacc) == mAccId 
-					oLan:=Language{}
-					cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
-				endif 
+	endif
+	if Empty(cError) .and. !Empty(Val(cDepartment))
+		// check if only Income account is Gifts receivable:  
+		oAcc:=SqlSelect{"SELECT `accid` FROM `member` WHERE `accid` is null and `depid`=" +cDepartment,oConn} 
+		if oAcc:Reccount >0 
+			
+			if mGIFTALWD==2 
+				oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
+				if oAcc:Reccount>0 
+					mGIFTALWD:= ConI(oAcc:giftalwd)
+				endif
+			endif
+			if mGIFTALWD=1
+				oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
+				if oSel:Reccount>0 
+					IF !ConS(oSel:incomeacc) == mAccId 
+						oLan:=Language{}
+						cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
+					endif 
+				endif
 			endif
 		endif
 	endif
