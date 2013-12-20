@@ -470,7 +470,7 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	
 	PROTECT hImageList AS PTR
 	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCaller AS OBJECT
+	Export oCaller as OBJECT
 	Export cType as STRING // type of record to be selected: "Balance Item", "Department","Department member"
 	PROTECT cNum AS STRING // identifier of current item when cType is filled
 	export cSearch as STRING // searchstring of required item when cType is filled
@@ -1765,7 +1765,7 @@ RESOURCE ExplorerClick DIALOGEX  9, 8, 263, 28
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"Select", EXPLORERCLICK_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 168, 9, 53, 12
+	CONTROL	"Select", EXPLORERCLICK_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 168, 9, 53, 12
 	CONTROL	"Select item and click Select", EXPLORERCLICK_FIXEDTEXT1, "Static", WS_CHILD, 42, 8, 102, 13
 END
 
@@ -1809,7 +1809,7 @@ BEGIN
 	CONTROL	"Show accounts", EXPLOREROPTIONS_ACCOUNTSINTREE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 10, 3, 106, 11
 	CONTROL	"Explode Total Tree", EXPLOREROPTIONS_EXPLODEALL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 10, 14, 93, 11
 	CONTROL	"", EXPLOREROPTIONS_SEARCHTREE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 130, 4, 81, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Search", EXPLOREROPTIONS_SEARCHBUTTON, "Button", WS_TABSTOP|WS_CHILD, 212, 4, 54, 12
+	CONTROL	"Search", EXPLOREROPTIONS_SEARCHBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 212, 4, 54, 12
 	CONTROL	"", EXPLOREROPTIONS_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, -1, 106, 28
 END
 
@@ -1883,7 +1883,11 @@ self:SetTexts()
 		oDCAccountsInTree:Value:=uExtra[1]
 		oDCExplodeAll:Value:=uExtra[2]
 		oDCSearchTree:Value:=uExtra[3]
-	ENDIF		
+		if !Empty(uExtra[3])
+			self:oDCSearchTree:SetStyle(BS_DEFPUSHBUTTON,true)
+		endif
+	ENDIF
+	self:oDCSearchTree:SetFocus()
 	RETURN NIL
 METHOD SearchButton(Shown) CLASS ExplorerOptions
 LOCAL lFirst AS LOGIC
@@ -1924,6 +1928,7 @@ if oBal:RecCount=1
 	cBalItem:=Str(oBal:balitemid,-1)
 ENDIF
 RETURN lUnique
+
 Function ValidateBalanceChilds(NewType as string,CurType as string,CurBalId as string)  
 * Check correspondence in classification of current balance item with its child records
 *
