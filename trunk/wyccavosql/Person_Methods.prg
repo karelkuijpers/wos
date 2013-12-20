@@ -135,7 +135,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	local cHeader as string
 	local lSuccess as logic                          
 	LOCAL aWord as ARRAY
-	if Empty(cAddress)
+	if Empty(cAddress) .or. Empty(cPostcode).and.Empty(cCity)
 		return {cPostcode,cAddress,cCity}
 	endif
 	street:=AllTrim(cAddress)
@@ -239,7 +239,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 				next                                      
 				street:=AllTrim(SubStr(street,1,nPos1)) 
 			else
-				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-1)
+				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
 				if nPos1>0
 					street:=AllTrim(SubStr(street,1,nPos1-1))
 				endif
@@ -267,15 +267,14 @@ function GENDERDSCR(cGnd as int) as string
 	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
 
 function GetBankAccnts(mPersid as string) as array 
-local aBankAcc:={} as array
+local aBankaccs:={} as array
 local oSel as SQLSelect 
 	* Fill aBankAcc: 
-oSel:=SQLSelect{"select group_concat(banknumber separator ',') as bankaccs from personbank where persid="+mPersid+" group by persid" ,oConn}
+oSel:=SqlSelect{"select group_concat(banknumber,'#%#',bic separator ',') as bankaccs from personbank where persid="+mPersid+" group by persid" ,oConn}
 if oSel:RecCount>0
-	return Split(oSel:bankaccs,',')
-else
-	return {}
+	AEval(Split(oSel:bankaccs,','),{|x|AAdd(aBankaccs,Split(x,'#%#'))})
 endif
+return aBankaccs
 Function GetFullName(PersNbr:="" as string ,Purpose:=0 as int) as string 
 // composition of full name of a person
 // PersNbr: Optional ID of person 
@@ -1032,7 +1031,7 @@ METHOD SetState() CLASS NewPersonWindow
 		"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
 		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
 		"externid,gender,opc,propextr,p.`deleted` as removed,"+;
-		"m.mbrid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
+		"m.mbrid,m.accid,m.depid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
 		"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
 		"where "+iif(!Empty(self:oDCmPersid:TextValue),"p.persid="+self:oDCmPersid:TextValue,"p.externid='"+self:oDCmExternid:TextValue+"'")+" group by p.persid",oConn}
 	self:oPerson:Execute()
@@ -1131,7 +1130,7 @@ METHOD StateExtra() CLASS NewPersonWindow
 	LOCAL i,j:=0 as int
 	LOCAL mCodH as string, aCod:={} as array
 	if !self==null_object .and.!IsNil(self:mCodInt).and.!Empty(self:mCodInt).and. IsString(self:mCodInt)
-		aCod:=Split(self:mCodInt)
+		aCod:=Split(self:mCodInt,Space(1))
 		FOR i:=1 to 10 
 			mCodH:=""
 			if i<=Len(aCod)
@@ -1216,6 +1215,10 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 				lValid := FALSE
 			ENDIF
 		ENDIF
+		if lValid .and. !self:lNew .and. !Empty(self:oPerson:mbrid) .and.!AllTrim(self:mLastName) = ConS(self:oPerson:lastname)
+			// check if new accountname already assigned;
+			
+		endif
 		IF lValid .and.!Empty(ConS(self:mExternid))
 			// check if no duplicate external id:
 			oSel:SQLString:="select persid from person where deleted=0 and externid='"+ZeroTrim(ConS(self:mExternid))+"'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'")
@@ -2088,11 +2091,11 @@ FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String)
 		ENDIF	
 	ENDIF
 	RETURN (oPers:RecCount>0)
-FUNCTION PersonSelect(oCaller:=null_object as window,cValue:="" as string,lUnique:=false as logic,cFilter:="" as string,;
+FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUnique:=false as logic,cFilter:="" as string,;
 		cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 	LOCAL oPersBw as PersonBrowser
 	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
-	local cWhere,cFrom:="person as p", cOrder:="lastname" as string
+	local cWhere,cFrom:="person as p", cOrder:="lastname",cValue:=pValue as string
 	local oSel as SqlSelect
 	LOCAL iEnd := At(",",cValue) as int
 	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
@@ -4323,9 +4326,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local cNextDD:=self:oLan:Rget("next direct debit in") as string 
 	local mInvoiceID as string
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
-	LOCAL oReport as PrintDialog, headinglines as ARRAY , nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp  as int
+	LOCAL oReport as PrintDialog, headinglines as ARRAY 
+	local nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp,nGrpnbr  as int
 	LOCAL lError,lSetAMPM as LOGIC
-	local dlg,invoicedate,dReqCol,dMaxReqCol,dSenddate as date
+	local dlg,invoicedate,dReqCol,dSenddate as date
 	LOCAL ptrHandle 
 	
 	Local aDir as array
@@ -4343,8 +4347,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local aDD:={} as array // values voor DD-file: {{AmountInvoice,mandateid,begindate,PersonName,banknbrcre,description,invoiceid,seqtp,Bic,Iban previous,Bic previous},...
 	local aMndmnt:={} as array // array with subscribids of amendments to be removed: {subscribid,...}   
 
-	local aSeqTp:={{'FRST',0,0.00},{'RCUR',0,0.00},{'FNAL',0,0.00},{'OOFF',0,0.00}} // array with total per sequencetype: {{name,total transactions, ctrl sum},...    
-	//                 1                2               3              4
+	local aSeqTp:={{'FRST',null_date},{'RCUR',null_date},{'FNAL',null_date},{'OOFF',null_date}} // array with total per sequencetype: {{sqtype,reqcolldate},...    
+	//                 1                2               3              4                                                                    1      2   
+	local aGrp:={} // array with total per group: {{sqtype,PmtInfId,reqcolldate,total transactions, ctrl sum},...    
 	local aDescr:=ArrayNew(13) as array
 	local DrctDbtTxInf:={} as array  // array with output per DrctDbtTxInf
 	Local oWarn as TextBox
@@ -4556,8 +4561,38 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	ENDIF
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	* Datafile aanmaken:
-	cFilename := CurPath + "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml'
-	cErrMsg:=''
+	cFilename := CurPath + "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml' 
+	// calculate date to send and requested collection dates:
+	cErrMsg:='' 
+	dSenddate:=Today()
+	if DoW(dSenddate)=1
+		dSenddate+1
+	elseif DoW(dSenddate)=7
+		dSenddate+2
+	endif
+	if Month(dSenddate)=12.and.Day(dSenddate)=25
+		dSenddate++  // skip christmas
+	elseif Month(dSenddate)=1.and.Day(dSenddate)=1
+		dSenddate++  // skip new year
+	endif
+	for SeqTp:=1 to Len(aSeqTp)
+		// determine requested collection date:
+		// for first and single 4 work days ahead, otherwise 2 work days
+		dReqCol:=dSenddate+iif(SeqTp=1.or.SeqTp=4,4,2)  
+		if DoW(dReqCol)=1
+			dReqCol+=1     // on Sunday go to Monday
+		elseif DoW(dReqCol)=7
+			dReqCol+=2     // on saturday: go to Monday
+		endif
+		if Month(dReqCol)=12.and.Day(dReqCol)=25
+			dReqCol++  // skip christmas
+		elseif Month(dReqCol)=1.and.Day(dReqCol)=1
+			dReqCol++  // skip new year
+		endif
+		dReqCol:=Max(dReqCol,process_date)
+// 		dMaxReqCol:=Max(dMaxReqCol,dReqCol)
+		aSeqTp[SeqTp,2]:=dReqCol
+	next
 	for i:=1 to Len(aDue)
 		cBank:=aDue[i,11] 
 		cBic:=aDue[i,17]
@@ -4644,13 +4679,17 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 		if aDue[i,20]="0000-00-00" .or.SeqTp=1
 			AAdd(aSubvalues,{aDue[i,2],aDue[i,8]}) // save invoice as firstinvoicedate
-		endif 
-		aSeqTp[SeqTp,2]++
-		aSeqTp[SeqTp,3]:=Round(aSeqTp[SeqTp,3]+AmountInvoice,DecAantal)
+		endif
+		if (nGrpNbr:=AScan(aGrp,{|x|x[1]==aSeqTp[SeqTp,1] .and.x[4]<1000}))==0
+			nGrpNbr:=Len(aGrp)+1
+			AAdd(aGrp,{aSeqTp[SeqTp,1],'wosDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(nGrpnbr,-1),aSeqTp[SeqTp,2],0,0.00}) //{type,groupid,reqcolldate,total transactions, ctrl sum}
+		endif
+		aGrp[nGrpNbr,4]++
+		aGrp[nGrpNbr,5]:=Round(aGrp[nGrpNbr,5]+AmountInvoice,DecAantal)
 		// add to aDD for mailing DD file:
-		// aDD: {{AmountInvoice,mandateidid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous},...
-		//               1         2           3         4           5      6            7      8    9    10             11
-		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,cPersId+'-'+DToS(invoicedate)+'-'+aDue[i,1],SeqTp,cBic,aDue[i,21],aDue[i,22]})
+		// aDD: {{AmountInvoice,mandateidid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous,nGrpNbr},...
+		//               1         2           3         4           5      6            7      8    9    10             11            12
+		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,cPersId+'-'+DToS(invoicedate)+'-'+aDue[i,1],SeqTp,cBic,aDue[i,21],aDue[i,22],nGrpNbr})
 	next
 
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
@@ -4688,7 +4727,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		'<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
 		'<CstmrDrctDbtInitn>'+CRLF+;
 		'<GrpHdr>'+CRLF+;
-		'<MsgId>wycliffe'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
+		'<MsgId>wos'+sEntity+DToS(Today())+Str(nSeq,-1)+'</MsgId>'+CRLF+;
 		'<CreDtTm>'+SQLdate(Today())+'T'+Time()+'</CreDtTm>'+CRLF+;
 		'<NbOfTxs>'+Str(Len(aTrans),-1)+'</NbOfTxs>'+CRLF+;
 		'<CtrlSum>'+Str(fSum,-1,2)+'</CtrlSum>'+CRLF+;
@@ -4698,50 +4737,29 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	'</GrpHdr>')
 	SetAmPm(lSetAMPM)	//	reset	AMPM 
 	// write transactions from aDD:
-	// aDD: {{AmountInvoice,mandateid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous},...
-	//               1         2           3         4           5      6            7      8    9    10             11
-	ASort(aDD,,,{|x,y|x[8]<=y[8]})
-	SeqTp:=0 
-	dSenddate:=Today()
-	if DoW(dSenddate)=1
-		dSenddate+1
-	elseif DoW(dSenddate)=7
-		dSenddate+2
-	endif
-	if Month(dSenddate)=12.and.Day(dSenddate)=25
-		dSenddate++  // skip christmas
-	elseif Month(dSenddate)=1.and.Day(dSenddate)=1
-		dSenddate++  // skip new year
-	endif
+	// aDD: {{AmountInvoice,mandateid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous,nGrpnbr},...
+	//               1         2           3         4           5      6            7      8    9    10             11          12
+	ASort(aDD,,,{|x,y|x[12]<=y[12]})         // sort by groupnbr
+// 	ASort(aDD,,,{|x,y|x[8]<y[8] .or. x[8]==y[8].and.x[12]<=y[12]})
+	SeqTp:=0
+	nGrpnbr:=0 
 	for i:=1 to Len(aDD)
-		if !SeqTp==aDD[i,8]
+		if !nGrpnbr==aDD[i,12]
+// 		if !SeqTp==aDD[i,8]
 			//new seqtp thus new PmtInf
-			SeqTp:=aDD[i,8] 
-			// determine requested collection date:
-			// for first and single 4 work days ahead, otherwise 2 work days
-			dReqCol:=dSenddate+iif(SeqTp=1.or.SeqTp=4,4,2)  
-			if DoW(dReqCol)=1
-				dReqCol+=1     // on Sunday go to Monday
-			elseif DoW(dReqCol)=7
-				dReqCol+=2     // on saturday: go to Monday
-			endif
-			if Month(dReqCol)=12.and.Day(dReqCol)=25
-				dReqCol++  // skip christmas
-			elseif Month(dReqCol)=1.and.Day(dReqCol)=1
-				dReqCol++  // skip new year
-			endif
-			dReqCol:=Max(dReqCol,process_date)
-			dMaxReqCol:=Max(dMaxReqCol,dReqCol)
+			SeqTp:=aDD[i,8]
+			nGrpnbr:=aDD[i,12] 
+			dReqCol:=aGrp[nGrpnbr,3]            //aGrp: {type,PmtInfId,reqdcoll,total transactions, ctrl sum}
 			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
-				'<PmtInfId>wycliffeDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(SeqTp,-1)+'</PmtInfId>'+CRLF+; 
+				'<PmtInfId>'+aGrp[nGrpnbr,2]+'</PmtInfId>'+CRLF+; 
 			'<PmtMtd>DD</PmtMtd>'+CRLF+;
 				'<BtchBookg>true</BtchBookg>'+CRLF+;
-				'<NbOfTxs>'+Str(aSeqTp[SeqTp,2],-1)+'</NbOfTxs>'+CRLF+;
-				'<CtrlSum>'+Str(aSeqTp[SeqTp,3],-1,2)+'</CtrlSum>'+CRLF+; 
+				'<NbOfTxs>'+Str(aGrp[nGrpnbr,4],-1)+'</NbOfTxs>'+CRLF+;
+				'<CtrlSum>'+Str(aGrp[nGrpnbr,5],-1,2)+'</CtrlSum>'+CRLF+; 
 			'<PmtTpInf>'+CRLF+;
 				'<SvcLvl><Cd>SEPA</Cd></SvcLvl>'+CRLF+;
 				'<LclInstrm><Cd>CORE</Cd></LclInstrm>'+CRLF+;
-				'<SeqTp>'+aSeqTp[aDD[i,8],1]+'</SeqTp>'+CRLF+;
+				'<SeqTp>'+aGrp[nGrpnbr,1]+'</SeqTp>'+CRLF+;
 				'</PmtTpInf>' +CRLF+;
 				'<ReqdColltnDt>'+SQLdate(dReqCol)+'</ReqdColltnDt>'+CRLF+;       
 			'<Cdtr>'+CRLF+;
@@ -4966,8 +4984,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	self:oCCOKButton:Enable()
 	self:Pointer := Pointer{POINTERARROW}
 	(InfoBox{self,"Producing SEPADD file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" amounts("+sCurrName+Str(fSum,-1)+")"}):Show()
-	LogEvent(self, "SEPA Direct Debit file "+cFilename+" generated for month:"+SubStr(DToS(begin_due),1,6)+" to be debited on:"+SQLdate(dMaxReqCol)+" with "+Str(Len(aTrans),-1)+;
-		" direct debits("+sCurrName+Str(fSum,-1)+")"+CRLF+Implode(aSeqTp))
+	LogEvent(self, "SEPA Direct Debit file "+cFilename+" generated for month:"+SubStr(DToS(begin_due),1,6)+" with "+Str(Len(aTrans),-1)+;
+		" direct debits("+sCurrName+Str(fSum,-1)+")"+CRLF+"Payment Information Segments:"+CRLF+Implode(aGrp,', ',,,,')'+CRLF+'('))
 
 	RETURN true
 METHOD RegAccount(oAcc as SQLSelect,ItemName as string) as logic CLASS SelPersPayments
