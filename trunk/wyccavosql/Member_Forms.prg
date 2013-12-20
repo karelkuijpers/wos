@@ -2139,14 +2139,14 @@ METHOD OkButton()  CLASS EditMember
 	local cIncAccNbr,cExpAccNbr,cNetAccNbr,cIncAccPrvNbr,cExpAccPrvNbr,cNetAccPrvNbr,cAccPrvNbr as string
 	LOCAL oLVI	as ListViewItem, x as int, cAss, mCLNPrv, mAccidPrv,mCOPrv,mDepPrv as STRING
 	local cFatalError as string
-	local cError,cErrMessage as string
+	local cError,cErrMessage,cPrvname as string
 	local cStatement as string
 	LOCAL lResetBFM:=false as LOGIC 
 	local lError as logic
 	local lCheckCons as logic
 	local aAss:={} as array
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg,aContact:={'0','0','0'} as array 
-	local oDep as SQLSelect
+	local oDep,oSel,oSel2 as SQLSelect
 	local oStmnt as SQLStatement
 	
 	SetDecimalSep(Asc('.'))
@@ -2183,8 +2183,8 @@ METHOD OkButton()  CLASS EditMember
 			i++
 			aContact[i]:=ConS(self:mCLNContact3)
 		endif
-	oStmnt:=SQLStatement{"start transaction",oConn}
-	oStmnt:Execute()
+		oStmnt:=SQLStatement{"start transaction",oConn}
+		oStmnt:Execute()
 		cStatement:=iif(self:lNewMember,"insert into member ","update member ")+;
 			"set accid="+iif( self:AccDepSelect=='account',self:mREK,'DEFAULT')+",depid="+iif( self:AccDepSelect=='department',self:mDepId,'DEFAULT')+;
 			",persid="+self:mCLN+;
@@ -2228,7 +2228,7 @@ METHOD OkButton()  CLASS EditMember
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 			oStmnt:SQLString:="update person set type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 				iif(self:mGrade='Entity',",gender=4",",gender=(if(gender=4,0,gender))") +;
-				iif(lNewMember .or.! mCLNPrv == mCLN,",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'","")+;
+				iif(lNewMember .or.! mCLNPrv == self:mCLN,",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'","")+;
 				" where persid="+self:mCLN 
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
@@ -2513,11 +2513,11 @@ METHOD OkButton()  CLASS EditMember
 			endif
 		ENDIF
 		IF self:AccDepSelect=='account'
-			if self:lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == mCLN
+			if self:lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == self:mCLN
 				* New Account or new description?
 				* Connect new Account:
 				// 			oStmnt:SQLString:="update account set persid="+self:mCLN+",GIFTALWD=1,description='"+cMemberName+"' where accid="+self:mREK
-				oStmnt:SQLString:="update account set giftalwd=1,description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
+				oStmnt:SQLString:="update account set giftalwd=1,description='"+AddSlashes(self:cMemberName)+"' where accid="+self:mREK
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
@@ -2525,7 +2525,7 @@ METHOD OkButton()  CLASS EditMember
 				endif
 			ELSEIF !AllTrim(self:cAccountName)==AllTrim(self:cMemberName)
 				* Name changed of member:
-				oStmnt:SQLString:="update account set description='"+StrTran(self:cMemberName,"'","\'")+"' where accid="+self:mREK
+				oStmnt:SQLString:="update account set description='"+AddSlashes(self:cMemberName)+"' where accid="+self:mREK
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
@@ -2533,7 +2533,7 @@ METHOD OkButton()  CLASS EditMember
 				endif
 			ENDIF
 		else
-			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == mCLN
+			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == self:mCLN
 				* New Department 
 				* Connect new Department:
 				oStmnt:SQLString:="update account set giftalwd=1 where accid in (select incomeacc from department where depid="+self:mDepId+")"
@@ -2542,11 +2542,30 @@ METHOD OkButton()  CLASS EditMember
 					lError:=true
 					cError:=oStmnt:ErrInfo:errormessage 
 				endif
-				oStmnt:SQLString:="update department set descriptn='"+StrTran(self:cMemberName,"'","\'")+"' where depid="+self:mDepId
+				oStmnt:SQLString:="update department set descriptn='"+AddSlashes(self:cMemberName)+"' where depid="+self:mDepId
 				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
 					cError:=oStmnt:ErrInfo:errormessage 
+				endif
+				if !lError .and.!mCLNPrv == self:mCLN
+					// adapt name of accounts of department: 
+					if (oSel2:=SqlSelect{"select lastname from person where persid="+self:mCLN,oConn}):reccount>0
+						cPrvname:=""
+						if self:lNewMember
+							cPrvname:=oSel2:lastname
+						else
+							if (oSel:=SqlSelect{"select lastname from person where persid='"+mCLNPrv+"'",oConn}):reccount>0
+								cPrvname:=oSel:lastname
+							endif
+						endif	
+						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(ConS(oSel2:lastname))+'"," ",replace(description,"'+AddSlashes(cPrvname)+'","")) where department='+self:mDepId,oConn}
+						oStmnt:Execute()
+						if !Empty(oStmnt:Status)
+							lError:=true
+							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
+						endif
+					endif
 				endif
 			endif
 		endif
@@ -2668,8 +2687,7 @@ METHOD OkButton()  CLASS EditMember
 		endif
 		self:Pointer := Pointer{POINTERARROW}
 		self:EndWindow()
-		
-	ENDIF
+	endif
 	
 	RETURN 
 METHOD PersonButton(lUnique)   CLASS EditMember
@@ -3169,13 +3187,15 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			endif 
 		endif
 		if lValid .and. self:AccDepSelect=='department'
-			// department: check if name of department contains lastname of member:
-			cLastname:=SQLSelect{"select lastname from person where persid="+self:mCLN,oConn}:lastname
-			if AtC(cLastname,self:cDepartmentName)=0
-				cError:=self:oLan:WGet('Department description should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
-				lValid:=FALSE
-				self:oDCmAccDept:SetFocus()
-			endif 
+			// 			if self:lNewMember
+			// 				// department: check if name of department contains lastname of member:
+			// 				cLastname:=SQLSelect{"select lastname from person where persid="+self:mCLN,oConn}:lastname
+			// 				if AtC(cLastname,self:cDepartmentName)=0
+			// 					cError:=self:oLan:WGet('Department description should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
+			// 					lValid:=FALSE
+			// 					self:oDCmAccDept:SetFocus()
+			// 				endif
+			// 			endif
 			if lValid
 				oDep:=SQLSelect{"select d.incomeacc,d.expenseacc,ai.description as incname,ae.description as expname from department d "+;
 					"left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where d.depid="+self:mDepId,oConn}
@@ -3184,18 +3204,18 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 						cError:=self:oLan:WGet('Account income obliged for department member')
 						lValid:=FALSE
 						self:oDCmAccDept:SetFocus()
-					ELSEif AtC(cLastname,oDep:incname)=0
-						cError:=self:oLan:WGet('Description of Account Income  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
-						lValid:=FALSE
-						self:oDCmAccDept:SetFocus() 
+						// 					ELSEif self:lNewMember.and.AtC(cLastname,oDep:incname)=0 
+						// 						cError:=self:oLan:WGet('Description of Account Income  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
+						// 						lValid:=FALSE
+						// 						self:oDCmAccDept:SetFocus() 
 					elseif Empty(oDep:expenseacc)
 						cError:=self:oLan:WGet('Account expense obliged for department member')
 						lValid:=FALSE
 						self:oDCmAccDept:SetFocus()
-					ELSEif AtC(cLastname,oDep:expname)=0
-						cError:=self:oLan:WGet('Description of Account Expense  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
-						lValid:=FALSE
-						self:oDCmAccDept:SetFocus() 
+						// 					ELSEif self:lNewMember.and.AtC(cLastname,oDep:expname)=0
+						// 						cError:=self:oLan:WGet('Description of Account Expense  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
+						// 						lValid:=FALSE
+						// 						self:oDCmAccDept:SetFocus() 
 					ENDIF
 					if lValid 
 						// check if only Income account is Gifts receivable:
