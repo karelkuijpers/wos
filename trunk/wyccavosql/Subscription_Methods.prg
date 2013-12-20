@@ -94,7 +94,8 @@ METHOD RegPerson(oCLN) CLASS EditSubscription
 		// 	SELF:mCod:=oPers:Cod
 		self:GenerateInvoiceID()
 		IF self:mtype == "D" .or. self:mtype=="A"
-			self:oDCmBankAccnt:FillUsing(GetBankAccnts(self:mCLN)) 
+			self:aBankaccs:=GetBankAccnts(self:mCLN)
+			self:oDCmBankAccnt:FillUsing(Split(Implode(self:aBankaccs,',',,,1),',') )
 			self:oDCmBankAccnt:CurrentItemNo:=1
 		endif	
 
