@@ -23,6 +23,26 @@ CLASS _PrintDialog INHERIT DialogWinDowExtra
   	PROTECT oDialFont AS myDialFontDialog
 	EXPORT lPrintOk AS LOGIC
 	EXPORT MaxWidth := 79 as int
+	EXPORT ToFileFS as FileSpec
+	EXPORT oPrinter	as PrintingDevice
+	EXPORT oPrintJob as PrintJob
+	EXPORT Heading as STRING
+	EXPORT Label as LOGIC
+	EXPORT Destination as STRING
+	EXPORT oRange, oOrigRange as Range
+	EXPORT Pagetext as STRING
+	PROTECT _Beginreport:=FALSE as LOGIC
+	PROTECT row:=0 as int
+	EXPORT Extension as STRING 
+	Protect ptrHandle
+	Protect LanguageDefault as string
+	Protect LanguageRus as string
+	Protect LanguageJap as string
+	Protect LanguageCZ as string
+	Protect LanguageTHD as string
+	Protect cRTFHeader as STRING
+	Protect RTFFormat as string
+	Export lRTF,lXls as logic
 RESOURCE _PrintDialog DIALOGEX  16, 31, 346, 133
 STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Report"
@@ -198,8 +218,20 @@ METHOD PostInit() CLASS _PrintDialog
 	scrFont:PitchFixed := TRUE
 	oDialFont:SetFont(scrFont)
 	self:oDCFileType:FillUsing({{self:oCCfiletype1,"txt"},{self:oCCfiletype2,"xls"}}) 
-	self:oDCDestination:FillUsing({{self:oCCPrinterRadioButton,"Printer"},{self:oCCScreenRadioButton,"Screen"},{self:oCCToFileRadioButton,"File"}})
+	self:oDCDestination:FillUsing({{self:oCCPrinterRadioButton,"Printer"},{self:oCCScreenRadioButton,"Screen"},{self:oCCToFileRadioButton,"File"}}) 
+
 	RETURN NIL
+method PreInit(oParent,uExtra) class _PrintDialog
+	//Put your PreInit additions here 
+	self:LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
+	self:LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
+	self:LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
+	self:LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
+	self:LanguageTHD:="{\rtf1\ansi\deff0{\fonttbl{\f0\fnil\fprq2\fcharset0 Courier New;}{\f1\fmodern\fprq1\fcharset222 Courier New;}}"
+	self:RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;\red175\green238\blue238;}\widowctrl\viewkind1\viewzk1\uc1\pard\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
+	
+	return nil
+
 STATIC DEFINE _PRINTDIALOG_ALLBUTTON := 109 
 STATIC DEFINE _PRINTDIALOG_CANCELBUTTON := 114 
 STATIC DEFINE _PRINTDIALOG_DESTINATION := 101 
@@ -226,20 +258,6 @@ STATIC DEFINE _PRINTERDIALOG_SETUPBUTTON := 106
 STATIC DEFINE _PRINTERDIALOG_THEFIXEDTEXT1 := 100
 STATIC DEFINE _PRINTERDIALOG_THEGROUPBOX1 := 102 
 DEFINE ACCEPT_START := "#22#"
-RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
-	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
-	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
-	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
-	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
-	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
-	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
-	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
-END
-
 class AcceptFormat inherit DataDialogMine 
 
 	protect oCCNewButton as PUSHBUTTON
@@ -257,6 +275,20 @@ class AcceptFormat inherit DataDialogMine
   EXPORT lCancel AS LOGIC
   EXPORT brief AS STRING
   EXPORT Lettername AS STRING
+RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
+	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
+	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
+	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
+	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
+	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
+	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
+	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
+END
+
 access Brieven() class AcceptFormat
 return self:FieldGet(#Brieven)
 
@@ -799,18 +831,6 @@ METHOD Init() CLASS brfWidth
 
 
 DEFINE CRLF := _Chr(ASC_CR) + _Chr(ASC_LF)
-RESOURCE eMailFormat DIALOGEX  8, 7, 265, 88
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Cancel", EMAILFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 28, 53, 12
-	CONTROL	"OK", EMAILFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 204, 11, 53, 12
-	CONTROL	"eMail Content text", EMAILFORMAT_GROUPBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 184, 53
-	CONTROL	"New", EMAILFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 11, 53, 12
-	CONTROL	"Edit", EMAILFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 30, 53, 13
-	CONTROL	"", EMAILFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 16, 11, 100, 72
-END
-
 CLASS eMailFormat INHERIT DataDialogMine 
 
 	PROTECT oCCCancelButton AS PUSHBUTTON
@@ -824,6 +844,18 @@ CLASS eMailFormat INHERIT DataDialogMine
     EXPORT lCancel:=true as LOGIC
     EXPORT Template as STRING
     EXPORT Templatename as STRING
+RESOURCE eMailFormat DIALOGEX  8, 7, 265, 88
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Cancel", EMAILFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 28, 53, 12
+	CONTROL	"OK", EMAILFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 204, 11, 53, 12
+	CONTROL	"eMail Content text", EMAILFORMAT_GROUPBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 184, 53
+	CONTROL	"New", EMAILFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 11, 53, 12
+	CONTROL	"Edit", EMAILFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 124, 30, 53, 13
+	CONTROL	"", EMAILFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 16, 11, 100, 72
+END
+
 ACCESS Brieven() CLASS eMailFormat
 RETURN SELF:FieldGet(#Brieven)
 
@@ -1218,29 +1250,6 @@ METHOD Init() CLASS LabelColCnt
 
 
 
-CLASS LabelFormat INHERIT DataDialogMine 
-
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCstckr_height AS SINGLELINEEDIT
-	PROTECT oDCstckr_width AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCstckr_TopMargin AS SINGLELINEEDIT
-	PROTECT oDCFixedText6 AS FIXEDTEXT
-	PROTECT oDCstckr_LeftMargin AS SINGLELINEEDIT
-	PROTECT oDCFixedText7 AS FIXEDTEXT
-	PROTECT oDCstckr_PointSize AS COMBOBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCFixedText8 AS FIXEDTEXT
-	PROTECT oDCFixedText9 AS FIXEDTEXT
-	PROTECT oDCFixedText10 AS FIXEDTEXT
-	PROTECT oDCFixedText12 AS FIXEDTEXT
-	PROTECT oDCFixedText13 AS FIXEDTEXT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT Pretesting AS LOGIC
-  EXPORT lCancel AS LOGIC
 RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1264,6 +1273,29 @@ BEGIN
 	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
 END
 
+CLASS LabelFormat INHERIT DataDialogMine 
+
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCstckr_height AS SINGLELINEEDIT
+	PROTECT oDCstckr_width AS SINGLELINEEDIT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCstckr_TopMargin AS SINGLELINEEDIT
+	PROTECT oDCFixedText6 AS FIXEDTEXT
+	PROTECT oDCstckr_LeftMargin AS SINGLELINEEDIT
+	PROTECT oDCFixedText7 AS FIXEDTEXT
+	PROTECT oDCstckr_PointSize AS COMBOBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFixedText8 AS FIXEDTEXT
+	PROTECT oDCFixedText9 AS FIXEDTEXT
+	PROTECT oDCFixedText10 AS FIXEDTEXT
+	PROTECT oDCFixedText12 AS FIXEDTEXT
+	PROTECT oDCFixedText13 AS FIXEDTEXT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT Pretesting AS LOGIC
+  EXPORT lCancel AS LOGIC
 METHOD CancelButton( ) CLASS LabelFormat
 	SELF:EndWindow()
 	lCancel := TRUE
@@ -2687,28 +2719,7 @@ METHOD Init() CLASS PointsSize
 
 DEFINE PRINT_END := "#21#"
 CLASS PrintDialog INHERIT _PrintDialog
-	EXPORT ToFileFS AS FileSpec
-	EXPORT oPrinter	AS PrintingDevice
-	EXPORT oPrintJob AS PrintJob
-	EXPORT Heading AS STRING
-	EXPORT Label AS LOGIC
-	EXPORT Destination AS STRING
-	EXPORT oRange, oOrigRange AS Range
-	EXPORT Pagetext AS STRING
-	PROTECT _Beginreport:=FALSE AS LOGIC
-	PROTECT row:=0 AS INT
-	EXPORT Extension as STRING 
-	Protect ptrHandle
-	Protect LanguageDefault:="{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}{\f1\fmodern\fprq1\fcharset0 Courier New;}}"
-	Protect LanguageRus:="{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
-		"{\f1\fmodern\fprq1\fcharset204{\*\fname Courier New;}Courier New CYR;}}"
-	Protect LanguageJap:="{\rtf1\ansi\ansicpg932\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}"+;
-		"{\f1\fmodern\fprq1\fcharset128 \'82\'6c\'82\'72 \'83\'53\'83\'56\'83\'62\'83\'4e;}}"
-	Protect LanguageCZ:="{\rtf1\ansi\deff0{\fonttbl{\f1\fnil\fcharset238{\*\fname Courier New;}Courier New CE;}}"
-	protect LanguageTHD:="{\rtf1\ansi\deff0{\fonttbl{\f0\fnil\fprq2\fcharset0 Courier New;}{\f1\fmodern\fprq1\fcharset222 Courier New;}}"
-	Protect cRTFHeader as STRING
-	Protect RTFFormat:= "{\colortbl ;\red255\green0\blue0;\red255\green255\blue0;\red0\green255\blue0;\red175\green238\blue238;}\widowctrl\viewkind1\viewzk1\uc1\pard\paperw16838\paperh11906\lndscpsxn\margl1400\margr1200\margt600\margb600\f1\fs"
-	Export lRTF,lXls as logic
+
 
 	
 	declare method prstart,ReInitPrint,RemovePrFile
@@ -2843,7 +2854,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 		ENDIF
 		if	self:Extension=='doc'
 			self:lRTF:=true
-			IF sEntity=="RUS"
+			IF sEntity=="RUS" 
 				self:cRTFHeader:=self:LanguageRus+self:RTFFormat
 			ELSEIF sEntity=="JPN"
 				self:cRTFHeader:=self:LanguageJap+self:RTFFormat
@@ -3472,6 +3483,12 @@ ENDIF
 RETURN
 
 STATIC DEFINE PRINTSCREEN_LISTPRINT := 100 
+CLASS PRINTSHOW INHERIT DIALOGWINDOW 
+
+	PROTECT oDCListPrint AS LISTBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  protect oOwner as Window
 RESOURCE PRINTSHOW DIALOGEX  14, 22, 528, 350
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
 CAPTION	"Preview Print"
@@ -3480,11 +3497,11 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 0, 538, 345
 END
 
-CLASS PRINTSHOW INHERIT DIALOGWINDOW 
+CLASS PrintShow2 INHERIT DATAWINDOW 
 
 	PROTECT oDCListPrint AS LISTBOX
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   protect oOwner as Window
 RESOURCE PrintShow2 DIALOGEX  4, 3, 537, 373
 STYLE	WS_CHILD
@@ -3493,12 +3510,6 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW2_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 11, 538, 345
 END
 
-CLASS PrintShow2 INHERIT DATAWINDOW 
-
-	PROTECT oDCListPrint AS LISTBOX
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  protect oOwner as Window
 METHOD Close(oEvent) CLASS PRINTSHOW2
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -3608,11 +3619,6 @@ ELSE
 	RETURN "Unknown"
 ENDIF
 
-class Wait_for_printer inherit DialogWinDowExtra 
-
-	protect oCCCancelButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Wait_for_printer DIALOGEX  38, 28, 262, 39
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION
 CAPTION	"Printing"
@@ -3621,6 +3627,11 @@ BEGIN
 	CONTROL	"Cancel", WAIT_FOR_PRINTER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 13
 END
 
+class Wait_for_printer inherit DialogWinDowExtra 
+
+	protect oCCCancelButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS Wait_for_printer
 	SELF:owner:oPrintjob:Abort()
 	ASize(SELF:owner:oPrintjob:aFiFO,0)
