@@ -813,8 +813,8 @@ METHOD append() CLASS General_Journal
 // aMirro: {AccID,Deb,cre,gc,category,RecNo,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,DEBFORGN,CREFORGN,PPDEST, description,persid,Type, INCEXPFD,depid}
 //            1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
 
-	AAdd(oHm:aMirror,{'           ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",oHm:DESCRIPTN,"","",oHm:INCEXPFD,0}) 
-	//                       1         2      3      4    5      6     7 8   9  10  11    12        13         14        15      16       17 18     19      20 
+	AAdd(oHm:Amirror,{'     ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",alltrim(oHm:DESCRIPTN),"","",oHm:INCEXPFD,0}) 
+	//                   1         2      3      4    5      6     7 8   9  10  11    12        13         14        15      16       17 18     19      20 
 RETURN true
 METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
 * Update of corresponding due amounts:
@@ -1280,7 +1280,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 	LOCAL oHm:=self:Server as TempTrans
 	LOCAL oAccount as SQLSelect
 	LOCAL crek,cNum,cPersId,cType as STRING
-	LOCAL ThisRec:=oHm:RECNO,recnr as int
+	LOCAL ThisRec,recnr as int
 	LOCAL CurGC as STRING
 	local MultiCur:=false as logic
 	local fDebSav,fCreSav as float 
@@ -1292,7 +1292,8 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 		self:lStop:=false
 	endif
 	//"a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"
-	CurGC:=oHm:GC
+	CurGC:=oHm:GC 
+	ThisRec:=oHm:RECNO
 	IF Empty(omAcc).or.omAcc==null_object .or.omAcc:Reccount<1
 		crek:=Space(11)
 		oHm:AccID:=crek
@@ -1975,7 +1976,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
-	LOCAL cError as STRING 
+	LOCAL cError,cFatalError,cOrig as STRING 
 	local cAccs as string   // accounts used in transaction 
 	local cDueAccs as string	// accounts for locking dueamounts 
 	local mandateid,endtoend as string
@@ -2156,7 +2157,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:execute()
 	oStmnt:=SQLStatement{'lock tables '+iif(!Empty(cDueAccs).or.lInqUpd,'`dueamount` write,','')+iif(self:lImport,'`importtrans` write,','')+'`mbalance` write,'+iif(!Empty(self:mCLNGiver),'`person` write,','')+;
-	iif(!Empty(cDueAccs).or.lInqUpd,'`subscription` write,','')+iif(self:lTeleBank,'`teletrans` write,','')+'`transaction` write',oConn}   // alphabetic order
+		iif(!Empty(cDueAccs).or.lInqUpd,'`subscription` write,','')+iif(self:lTeleBank,'`teletrans` write,','')+'`transaction` write',oConn}   // alphabetic order
 	oStmnt:execute()
 
 	IF lInqUpd
@@ -2165,7 +2166,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		cError:=self:UpdateTrans()
 		if !Empty(cError)
 			lError:=true
-// 			cError:=''
+			// 			cError:=''
 		else
 			lError:=false
 		endif
@@ -2267,7 +2268,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 											cStatement:="insert into transaction set "+;
 												"transid="+cTransnr+;
 												",dat='"+SQLdate(self:mDAT)+"'"+;
-												",docid='"+self:mBst+"'"+;
+												",docid='"+AddSlashes(self:mBst)+"'"+;
 												",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense for assessment field&int')))+"'"+; 
 											",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 												",accid='"+SEXP+"'"+;
@@ -2285,7 +2286,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 													cStatement:="insert into transaction set "+;
 														"transid="+cTransnr+;
 														",dat='"+SQLdate(self:mDAT)+"'"+;
-														",docid='"+self:mBst+"'"+;
+														",docid='"+AddSlashes(self:mBst)+"'"+;
 														",description='"+AddSlashes(AllTrim(self:oLan:RGet('Reversal Expense	for assessment	field&int')))+"'"+; 
 													",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 														",accid='"+samFld+"'"+;
@@ -2327,7 +2328,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				// 					IF	!Empty(self:mCLNGiver)
 				IF	!Empty(cDueAccs)
 					IF	oHm:Amirror[i,5]= 'D'	.or. oHm:Amirror[i,5]=	'A' .or.	oHm:Amirror[i,5]	= 'F'	;
-						.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
+							.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
 						.or. (self:lTeleBank .and. self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
 						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:Amirror[i,1]),oHm:Amirror[i,2],oHm:Amirror[i,3],iif(self:lTeleBank,ConS(self:oTmt:m56_dueid),""))
 						if !Empty(cError)
@@ -2342,7 +2343,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 										if Len(Split(endtoend,'-'))>2
 											invoicedate:=SToD(Split(endtoend,'-')[2])
 											oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+;
-											'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and firstinvoicedate="'+SQLdate(invoicedate)+'"',''),oConn}
+												'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and firstinvoicedate="'+SQLdate(invoicedate)+'"',''),oConn}
 											oStmnt:execute()
 											if !Empty(oStmnt:Status)
 												lError:=true 
@@ -2413,7 +2414,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				cError:=oStmnt:ErrInfo:errorstatus
 			endif
 		endif
-		if !lError
+		if !lError .and. !self:lInqUpd
 			self:oDCmTRANSAKTNR:TEXTValue := cTransnr
 		endif
 	endif 
@@ -2425,28 +2426,41 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		SQLStatement{"unlock tables",oConn}:execute()
 		SQLStatement{"set autocommit=1",oConn}:execute()
 		self:Pointer := Pointer{POINTERARROW}
-// 		if !Empty(cError)
-// 			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-// 		endif
+		// 		if !Empty(cError)
+		// 			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+		// 		endif
 		ErrorBox{self,"transaction could not be stored:"+cError}:show()
 		self:mCLNGiver:=''
 		return false
 	endif 
 	SQLStatement{"commit",oConn}:execute()
 	SQLStatement{"unlock tables",oConn}:execute() 
-	SQLStatement{"set autocommit=1",oConn}:execute()
-			self:Pointer := Pointer{POINTERARROW}
-			IF self:lTeleBank
-				self:oTmt:CloseMut(oHm,lSave,self:owner)   
-			elseif self:lImport
-				self:oImpB:CloseBatch(lSave,self:owner)  
-			ENDIF
-			self:oDCGiroText:TEXTValue:="   "
-			lSave:=FALSE
+	SQLStatement{"set autocommit=1",oConn}:execute() 
+	if CountryCode=='7'
+		// log for russia: 
+		if !CheckConsistency(self,true,false,@cFatalError)
+			if self:lInqUpd
+				self:oOwner:oMyTrans:GoTop()
+				do while !self:oOwner:oMyTrans:EOF
+					cOrig+='acc='+ self:oOwner:oMyTrans:ACCNUMBER+', deb='+Str(self:oOwner:oMyTrans:Deb,-1)+',cre='+ Str(self:oOwner:oMyTrans:cre,-1)+CRLF
+					self:oOwner:oMyTrans:Skip()
+				enddo
+			endif 
+			LogEvent(self,iif(self:lInqUpd,"Update trans "+self:oDCmTRANSAKTNR:TEXTValue+'('+cOrig+')',"insert "+cTransnr)+' new: '+Implode(oHm:Amirror,',',,,,')'+CRLF+'('),"logdebug")
+		endif
+	endif
+	self:Pointer := Pointer{POINTERARROW}
+	IF self:lTeleBank
+		self:oTmt:CloseMut(oHm,lSave,self:owner)   
+	elseif self:lImport
+		self:oImpB:CloseBatch(lSave,self:owner)  
+	ENDIF
+	self:oDCGiroText:TEXTValue:="   "
+	lSave:=FALSE
 	self:oDCGiroText:TextValue:="   "
 	lSave:=FALSE
 
-	IF lInqUpd
+	IF self:lInqUpd
 		if self:oOwner:lShowFind
 			self:oOwner:FindButton()
 		else
@@ -2917,7 +2931,7 @@ METHOD append() CLASS PaymentJournal
 		//{accid,orig,cre,gc,category,recno,accid,accnumber,creforgn,currency,multcur,dueid,acctype,description,incexpfd}
 		//   1    2    3   4    5      6      7      8        9        10      11      12      13      14
 
-		AAdd(self:Server:aMirror,{'           ',0,0,'  ',' ',self:Server:Recno,"   "," ",0,sCurr,false,"","","",""})
+		AAdd(self:Server:aMirror,{'    ',0,0,'  ',' ',self:Server:Recno,"   "," ",0,sCurr,false,"","","",""})
 	ENDIF
 RETURN lSuc
 METHOD AssignTo() as void pascal CLASS PaymentJournal
@@ -3853,8 +3867,7 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 		self:lMemberGiver := FALSE
 	ENDIF
 	if self:lTeleBank
-		if IsObject(self:oTmt) .and. !Empty(self:oTmt:m56_contra_bankaccnt) .and. sepaenabled .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt);
-			 .and.Val(self:mCLNGiver)>0 .and.!Empty(self:oTmt:m56_contra_bankaccnt)
+		if Val(self:mCLNGiver)>0 .and. sepaenabled .and. IsObject(self:oTmt) .and. !Empty(self:oTmt:m56_contra_bankaccnt)  .and. !IsSEPA( self:oTmt:m56_contra_bankaccnt);
 			// check if banknumber converted:                                                                                                             
 			oSel:=SqlSelect{'select banknumber from personbank where persid="'+self:mCLNGiver+'" and right(banknumber,'+Str(Len(self:oTmt:m56_contra_bankaccnt),-1) +')="'+ self:oTmt:m56_contra_bankaccnt+'"',oConn}
 			if oSel:reccount>0
@@ -4225,7 +4238,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		cTransnr:='' 
 		oStmnt:=SQLStatement{"insert into transaction set "+;
 			"dat='"+SQLdate(self:mDAT)+"'"+;
-			",docid='"+self:oDCmBST:Value+"'"+;
+			",docid='"+AddSlashes(self:oDCmBST:VALUE)+"'"+;
 			",description='"+AddSlashes(AllTrim(oHm:DESCRIPTN)+iif(Empty(self:odccGirotelText:TextValue),'',' ('+AllTrim(self:odccGirotelText:TextValue)+')')) +"'"+;
 			",accid="+self:DebAccId+;
 			",deb="+Str(self:mDebAmnt,-1)+;
@@ -4246,7 +4259,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						",seqnr="+Str(nSeqnbr,-1)+;
 						",persid='"+Str(Val(self:mCLNGiver),-1)+"'"+;
 						",dat='"+SQLdate(self:mDAT)+"'"+;
-						",docid='"+self:oDCmBST:Value+"'"+;
+						",docid='"+AddSlashes(self:oDCmBST:VALUE)+"'"+;
 						",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 						",description='"+AddSlashes( AllTrim(oHm:DESCRIPTN)) +"'"+;
 						",accid='"+oHm:AccID+"'"+;
