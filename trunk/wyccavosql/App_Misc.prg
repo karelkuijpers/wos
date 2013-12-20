@@ -306,9 +306,9 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if lShow
 				oMainWindow:Pointer := Pointer{POINTERARROW} 
 			endif
-			if !lFatal
-				return true    // after correction correct
-			endif
+// 			if !lFatal
+// 				return true    // after correction correct
+// 			endif
 		endif
 		oMainWindow:STATUSMESSAGE(Space(100))
 	endif
@@ -378,7 +378,7 @@ return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
 function ConS(uValue as usual) as string
 	// convert usual from count total to string 
 	local cRet as string
-	if !Empty(uValue) .and.!IsArray(uValue) .and.!IsObject(uValue) .and. IsCodeBlock(uValue)
+	if !IsNil(uValue) .and.!IsArray(uValue) .and.!IsObject(uValue) .and. !IsCodeBlock(uValue)
 		cRet:= AllTrim(Transform(uValue,""))
 		if SubStr(cRet,-3)=='.00'
 			cRet:=substr(cRet,1,len(cRet)-3)    // make integer
@@ -1446,7 +1446,7 @@ IF pMonth > 12
    pMonth := pMonth%12
 ELSEIF pMonth<=0
 	pYear:=pYear+Round((pMonth-12)/12,0)
-	pMonth:=pMonth%12
+	pMonth:=Mod(pMonth-1,12)+1
 ENDIF
 FOR i=0 to 3  && correct shorted month
     nwdat:=SToD(Str(pYear,4,0)+StrZero(pMonth,2,0)+StrZero(pDay-i,2,0))
@@ -1552,7 +1552,7 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 	// Implode array aText to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
 	// Optionally in case of a 2-dimenional array you can specify separator between rows (default: '),(' but none when empty nCol ) 
-	// Optionally yoy can specify a codeblock Filter to select certain rows from aText
+	// Optionally you can specify a codeblock Filter to select certain rows from aText
 	LOCAL i, l:=Len(aText) as int 
 	local cQuote as STRING    // string quote text around separators (CSV)
 	local cLine  as STRING    // one line of concatinated text 
@@ -1787,13 +1787,6 @@ function InitGlobals()
 		endif
 
 		CountryCode:=AllTrim(oSys:COUNTRYCOD)
-		if CountryCode='41'
-			Collate:=" COLLATE utf8_danish_ci"
-		elseif CountryCode='46'
-			Collate:=" COLLATE utf8_swedish_ci" 
-		else
-			Collate:=''
-		endif
  		requiredemailclient:=ConI(oSys:MAILCLIENT)
 		maildirect:=ConL(oSys:maildirect)
 		if !Empty(MYEMPID)
@@ -1875,6 +1868,7 @@ function InitGlobals()
 	FillPersProp()
 	FillIbanregistry() 
 	FillCountryNames()
+	SetCollate()
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
@@ -3035,6 +3029,15 @@ FUNCTION RandSpace(cString as STRING) as STRING
 		ENDIF
 	ENDIF
 RETURN cString
+	Function SetCollate() 
+		if CountryCode='41'
+			Collate:=" COLLATE utf8_danish_ci"
+		elseif CountryCode='46'
+			Collate:=" COLLATE utf8_swedish_ci" 
+		else
+			Collate:=''
+		endif
+	return
 FUNC ShowError( oSQLErrorInfo as USUAL)    as void PASCAL
 
 	LOCAL cMsg as STRING
@@ -3143,10 +3146,13 @@ Method GoTo(nRecordNumber) class SQLSelectPagination
 		self:lpBof:=false
 		self:lpEof:=false
 		if nRecordNumber>self:nOffset 
-			lRes:=super:GoTo(nRecordNumber-self:nOffset)
+         lRes:=self:ReadNextBuffer(nRecordNumber)
+		elseif nRecordNumber<= self:nOffset
+         lRes:=self:ReadNextBuffer(nRecordNumber)
 		endif
 		self:pRecno:=nRecordNumber 
 	endif
+// 	LogEvent(self,"goto ("+Str(nRecordNumber,-1)+") : id="+ConS(self:FIELDGET(1))+", offset="+Str(self:nOffset,-1)+", precno="+Str(self:pRecno,-1)+",nLastrec="+Str(self:nLastRec,-1),"loginfo")
 	return lRes
 Method GoTop() class SQLSelectPagination
 // 	LogEvent(self,"gotop")
@@ -3165,7 +3171,7 @@ self:nPageLen:=uValue
 Method ReadNextBuffer(nRecordNumber) class SQLSelectPagination
 	// check if next buffer should be read:
 	local lRes:=true as logic
-	local time0,time1 as float
+// 	local time0,time1 as float
 	if nRecordNumber<=0 
 		self:lpBof:=true
 		self:pRecno:=1
@@ -3181,10 +3187,10 @@ Method ReadNextBuffer(nRecordNumber) class SQLSelectPagination
 				self:nOffset:=Min(Floor(nRecordNumber/self:nPageLen)*self:nPageLen,self:nLastRec)
 			endif
 			self:aClients[1]:Pointer := Pointer{POINTERHOURGLASS}
-			time0:=Seconds() 
+// 			time0:=Seconds() 
 			super:SqlString:=self:cStatement+" limit "+str(self:nOffset,-1)+","+str(self:nPageLen,-1)
 			super:Execute()
-			time1:=time0
+// 			time1:=time0
 // 			LogEvent(self,"read buffer ("+Str(nRecordNumber,-1)+") :"+Str((time0:=Seconds())-time1,-1),"loginfo")
 			self:aClients[1]:Pointer := Pointer{POINTERARROW}
 		endif
@@ -3193,6 +3199,7 @@ Method ReadNextBuffer(nRecordNumber) class SQLSelectPagination
 		self:lpBof:=false
 		self:lpEof:=false
 	endif
+// 	LogEvent(self,"ReadNextBuffer ("+Str(nRecordNumber,-1)+") : id="+ConS(self:FIELDGET(1))+", offset="+Str(self:nOffset,-1)+", precno="+Str(self:pRecno,-1)+",nLastrec="+Str(self:nLastRec,-1),"loginfo")
 	return lRes
 		
 
