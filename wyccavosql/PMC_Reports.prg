@@ -650,11 +650,13 @@ METHOD PrintReport() CLASS PMISsend
 	endif 
 	// Check consistency data
 	self:STATUSMESSAGE(self:oLan:WGet("Checking data, please wait")+"...")
-	if !CheckConsistency(self,true,false,@cFatalError)
-		ErrorBox{self,cFatalError}:Show()
-		// 		self:ENDWindow()
-		self:Pointer := Pointer{POINTERARROW}
-		return 
+	if !CheckConsistency(self,true,false,@cFatalError) 
+		if !Empty(cFatalError)
+			ErrorBox{self,cFatalError}:Show()
+			// 		self:ENDWindow()
+			self:Pointer := Pointer{POINTERARROW}
+			return
+		endif 
 	endif
 	oReport := PrintDialog{self,self:oLan:RGet("Sending transactions to PMC"),,160,DMORIENT_LANDSCAPE}
 	oReport:Show()
