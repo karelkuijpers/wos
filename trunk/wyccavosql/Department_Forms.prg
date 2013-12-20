@@ -209,7 +209,10 @@ METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=f
 	LOCAL nNum as string
 	LOCAL nMain as STRING
 	LOCAL cError as STRING
-	local oStmnt as SQLStatement
+	local Depname as string
+	local cStatement as string
+	local oStmnt as SQLStatement 
+	local oSel,oSel2 as SQLSelect
 
 //	Default(@lDBUpdate,FALSE)
 
@@ -224,9 +227,21 @@ METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=f
 		*		IF oItemDrag:ImageIndex==3 //Account?
 		IF self:IsAccountSymbol(aItemDrag[1])
 			cError:=ValidateDepTransfer(nMain,nNum)
-			IF Empty(cError) 
+			IF Empty(cError)
+				// check if member department:
+				if (oSel:=SqlSelect{"select p.lastname from member m, person p where m.depid="+nMain+" and m.persid=p.persid",oConn}):reccount>0
+					// new department is member department:
+					// Check old department was member department:
+					if (oSel2:=SqlSelect{"select p.lastname from account a, member m,person p where a.accid="+nNum+" and m.depid=a.department and m.persid=p.persid",oConn}):reccount>0
+						// old department was member > replace lastname: 
+						cStatement:=',description=concat("'+AddSlashes(oSel:lastname)+'"," ",replace(description,"'+AddSlashes(oSel2:lastname)+'",""))' 
+					else
+						// old no member:
+						cStatement:=',description=concat("'+AddSlashes(oSel:lastname)+'"," ",description)'
+					endif
+				endif
 				* update account: 
-				oStmnt:=SQLStatement{"update account set department='"+nMain+"' where accid='"+nNum+"'",oConn}
+				oStmnt:=SQLStatement{"update account set department='"+nMain+"'"+cStatement+" where accid='"+nNum+"'",oConn}
 				oStmnt:execute() 
 				if !Empty(oStmnt:Status)
 					cError:="Could not transfer account:"+oStmnt:ErrInfo:ErrorMessage
