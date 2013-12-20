@@ -359,7 +359,7 @@ METHOD OKButton( ) CLASS EditSubscription
 	local cmessage,cError as string
 	local LastDDdate,dNewDuedate,dThisMonthBegin,dInvoiceBegin as date 
 	local cLog as string
-	local lAmendmentdel,lAmendmentIns as logic 
+	local lAmendmentdel,lAmendmentIns,lProlongate as logic 
 	local aMndt as array
 	local oDue,oSel as SQLSelect
 	local oStmnt,oStmntDue as SQLStatement
@@ -404,7 +404,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				self:oDCmterm:SetFocus()
 				RETURN nil
 			ENDIF
-			If AScanExact({1,3,6,12},self:mterm)=0
+			If AScanExact({1,3,6,12,999},self:mterm)=0
 				(ErrorBox{,self:oLan:WGet("Term should be")+': 1,3,6,12,999' }):Show()
 				self:oDCmterm:SetFocus()
 				RETURN nil
@@ -436,14 +436,14 @@ METHOD OKButton( ) CLASS EditSubscription
 			self:oDCmInvoiceID:SetFocus()
 			RETURN nil		
 		endif
-		IF self:lNew
+		IF self:lNew .and. self:mterm<=12
 			* check if subscription allready exists: 
 			if (oSel:=SqlSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'"+;
-					iif(self:mterm>=999,"",;
-					" and term <999 and extract(year_month from adddate(curdate(),interval term month))<extract(year_month from enddate)"),oConn}):reccount>0 
+					" and term <=12 and extract(year_month from adddate(curdate(),interval term month))<extract(year_month from enddate)",oConn}):reccount>0 
 				LogEvent(self,oSel:SQLString,"loginfo")
-				(ErrorBox{,self:oLan:WGet(iif(self:mtype='D',"Donation","Subscription")+' of person already exists for this account')}):Show()
-				RETURN nil
+				if (TextBox{self,self:oLan:WGet("Donations"),self:oLan:WGet(iif(self:mtype='D',"Donation","Subscription")+' of person already exists for this account'),BUTTONOKAYCANCEL+BOXICONHAND}):Show()==BOXREPLYCANCEL
+					RETURN nil
+				endif
 			ENDIF
 		ENDIF
 		IF Empty(self:mBankAccnt)
@@ -517,7 +517,6 @@ METHOD OKButton( ) CLASS EditSubscription
 				", "+iif(SepaEnabled,"mandateid","invoiceid")+"="+self:mInvoiceID+;
 				", bankaccount="+self:oDCmBankAccnt:CurrentItem
 		else
-			// oSub: accid,personid,begindate,duedate,enddate,paymethod,bankaccnt,term,amount,lstchange,category,invoiceid,reference,personname,accountname,accnumber,bankaccs  
 
 			// check if dueamounts or next due date has to be updated: 
 			if !self:mterm==self:oSub:term .or. !self:oDCmDueDate:SelectedDate==self:oSub:duedate.or.!self:mamount==self:oSub:amount.or. !self:oSub:enddate==self:oDCmEndDate:SelectedDate
@@ -562,8 +561,9 @@ METHOD OKButton( ) CLASS EditSubscription
 							enddo
 						endif
 					endif
-					if !self:oDCmDueDate:SelectedDate==self:oSub:duedate
-						cmessage:=self:oLan:WGet("Next due date adapted")
+					if !self:oDCmDueDate:SelectedDate==self:oSub:duedate 
+						lProlongate:=true
+// 						cmessage:=self:oLan:WGet("Next due date adapted")
 						cDueDeleteWhere+=iif(Empty(cDueDeleteWhere),'',' or ')+'invoicedate>="'+SQLdate(BeginOfMonth(self:oDCmDueDate:SelectedDate))+'"' 
 					endif
 				else
@@ -646,7 +646,8 @@ METHOD OKButton( ) CLASS EditSubscription
 				cError:=oStmntDue:ErrInfo:errormessage+CRLF+"statement:"+oStmntDue:SQLString 
 			else
 				if oStmntDue:NumSuccessfulRows>0
-					cmessage+=iif(Empty(CMessage),'',' and ')+self:oLan:WGet("corresponding due amounts removed")
+					lProlongate:=true
+// 					cmessage+=iif(Empty(CMessage),'',' and ')+self:oLan:WGet("corresponding due amounts removed")
 				endif
 			endif	 
 		endif
@@ -679,9 +680,13 @@ METHOD OKButton( ) CLASS EditSubscription
 	SQLStatement{"commit",oConn}:Execute()
 	SQLStatement{"unlock tables",oConn}:Execute() 
 	SQLStatement{"set autocommit=1",oConn}:Execute()
+	if lProlongate
+		ProlongateAll(self)
+		cmessage+=iif(Empty(CMessage),'',' '+self:oLan:WGet('and')+' ')+self:oLan:WGet("corresponding due amounts adapted")
+	endif
 	if !Empty(cLog)
 		LogEvent(self,cLog+iif(Empty(CMessage),'',CRLF+CMessage))
-	endif
+	endif 
 	if !Empty(CMessage)
 		TextBox{self,self:oLan:WGet("Editing donation"),CMessage}:Show()
 	endif
