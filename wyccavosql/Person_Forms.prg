@@ -91,7 +91,7 @@ METHOD Init() CLASS memberaccount
 
 
 
-RESOURCE NewPersonWindow DIALOGEX  125, 102, 501, 614
+RESOURCE NewPersonWindow DIALOGEX  125, 102, 510, 614
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -594,7 +594,7 @@ oCCBankButton:TooltipText := "Browse in Bankaccounts"
 
 oDCmBic := SingleLineEdit{SELF,ResourceID{NEWPERSONWINDOW_MBIC,_GetInst()}}
 oDCmBic:HyperLabel := HyperLabel{#mBic,NULL_STRING,NULL_STRING,NULL_STRING}
-oDCmBic:Picture := "@! NNNNNNNNNNN"
+oDCmBic:Picture := "@! AAAAAANNNNN"
 
 oDCBankBox := ListBox{SELF,ResourceID{NEWPERSONWINDOW_BANKBOX,_GetInst()}}
 oDCBankBox:TooltipText := "Select required bank account"
@@ -1164,7 +1164,7 @@ METHOD OkButton CLASS NewPersonWindow
 		ENDIF
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
-		oStmnt:=SQLStatement{'lock tables `account` write,`bic` read,`member` read,`person` write,`personbank` write',oConn}         // alphabetic order
+		oStmnt:=SQLStatement{'lock tables `account` write,`bic` read,`department` write,`member` read,`person` write,`personbank` write',oConn}         // alphabetic order
 		oStmnt:Execute()
 
 		cStmnt+=iif(LSTNUPC,"lastname='"+Upper(AddSlashes(AllTrim(self:oDCmlastname:VALUE)))+"',nameext='"+Upper(AddSlashes(AllTrim(self:oDCmNameExt:VALUE)))+"'",;
@@ -1205,14 +1205,37 @@ METHOD OkButton CLASS NewPersonWindow
 		if !lError
 			if self:lNew
 				self:mPersId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
-			elseif !(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
-				// in case of member update name of corresponding account:
-				oStmnt:=SQLStatement{"update account set description='"+StrTran(GetFullName(self:mPersId),"'","\'")+"' where accid in (select member.accid from member where member.persid="+self:mPersId+")",oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					lError:=true
-					cError:='Add/update account Error:'+oStmnt:ErrInfo:ErrorMessage
-					cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+			elseif !Empty(self:oPerson:mbrid).and.;
+					!(alltrim(self:curlastname)==alltrim(self:mlastname).and.alltrim(self:curNa2)==alltrim(self:mInitials).and.alltrim(self:curHisn)==alltrim(self:mPrefix))
+				if !Empty(self:oPerson:accid)
+					// in case of single account member update name of corresponding account:
+					// 				oStmnt:=SQLStatement{"update account set description='"+AddSlashes(GetFullName(self:mPersId))+"' where accid in (select member.accid from member where member.persid="+self:mPersId+")",oConn}
+					oStmnt:=SQLStatement{"update account set description='"+AddSlashes(GetFullName(self:mPersId))+"' where accid="+ConS(self:oPerson:accid),oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description '+GetFullName(self:mPersId)+' already exists',oStmnt:ErrInfo:ErrorMessage)
+// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+					endif
+				elseif !Empty(self:oPerson:depid)
+					// change member department name:
+					oStmnt:=SQLStatement{"update department set descriptn='"+AddSlashes(GetFullName(self:mPersId))+"' where depid="+ConS(self:oPerson:depid),oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:='Update department Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'name '+GetFullName(self:mPersId)+' already exists',oStmnt:ErrInfo:ErrorMessage)
+// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+					endif
+					if !lError
+						// change names of connected department accounts:
+						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
+						oStmnt:Execute()
+						if !Empty(oStmnt:Status)
+							lError:=true
+							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
+// 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						endif
+					endif
 				endif
 			ENDIF
 		endif
@@ -1540,8 +1563,11 @@ local oStmnt as SQLStatement
 RETURN NIL
 Method UpdBankAcc(cBankAcc,cBic) Class NewPersonWindow
 // add a bank account to person:
-local aToken as Array, i,nPos as int , cI as string
-LOCAL cDescr:="Bank# " 
+local i,nPos as int 
+local cI as string
+LOCAL cDescr:="Bank# " as string
+local lIban as logic 
+local aToken as Array
 aToken:=Split(self:oDCSC_BankNumber:TextValue)
 IbanFormat(@cBankAcc)
 if Len(cBankAcc)>14 .and.Len(cBankAcc)<=31 .and. IsAlphabetic(SubStr(cBankAcc,1,2)) .and. isnum(SubStr(cBankAcc,3,2)) 
@@ -1549,6 +1575,7 @@ if Len(cBankAcc)>14 .and.Len(cBankAcc)<=31 .and. IsAlphabetic(SubStr(cBankAcc,1,
 		ErrorBox{self,cBankAcc +' '+self:oLan:WGet("is not a valid IBAN bank account number")}:show()
 		return
 	endif
+	lIban:=true
 endif 
 IF CountryCode=="47"
 	cDescr:="Bank/KID "
@@ -1588,6 +1615,12 @@ ELSE
 		self:oDCBicText:TextValue:="BIC 1" 
 		self:oDCmBanknumber:VALUE:=cBankAcc
 	endif
+endif
+// check format BIC:
+if !empty(self:mBic).and. lIban .and. (len(alltrim(self:mBic))<8 .or. !substr(self:mBic,5,2)==substr(cBankAcc,1,2))
+	self:mBic:=cBic
+	ErrorBox{self,cBic +' '+self:oLan:WGet("is not a valid IBAN BIC")}:show()
+	return
 endif
 return
 STATIC DEFINE NEWPERSONWINDOW_BANKBOX := 133 
@@ -1831,7 +1864,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 					// 				if isnum(aKeyw[i,1]) .and. j<12 .or.j>11 .and.IsAlphabetic(aKeyw[i,1])
 					// 					loop
 					// 				endif 
-					self:cWhere+=iif(lStart," or ","")+AFields[j]+" like '%"+aKeyw[i,1]+"%'" 
+					self:cWhere+=iif(lStart," or ","")+AFields[j]+" like '%"+AddSlashes(aKeyw[i,1])+"%'" 
 					lStart:=true
 				next
 				// 				if !IsAlphabetic(aKeyw[i,1])
@@ -1840,7 +1873,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 				self:cWhere+=")"
 			next
 			if Len(aKeyw)>1
-				self:cWhere:='('+self:cWhere+" or p.persid in (select b.persid from personbank as b where b.banknumber like '%"+AllTrim(self:SearchUni)+"'))"
+				self:cWhere:='('+self:cWhere+" or p.persid in (select b.persid from personbank as b where b.banknumber like '%"+AddSlashes(AllTrim(self:SearchUni))+"'))"
 			endif
 		endif
 		if !Empty(self:SearchSLE)
@@ -2034,15 +2067,16 @@ self:SetTexts()
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PreInit additions here
 // 	SELF:oExtServer:=oServer && save external server 
-	self:cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
-	self:cFrom:="person as p"
+	self:cFields:= 'p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country'
+	self:cFrom:='person as p'
 	self:cOrder:="lastname,firstname,city"
 	self:cWhere:='p.deleted=0' 
-	self:oCaller := uExtra 
+	self:oCaller := uExtra
+	SetCollate()  // to be sure that global value is not lost 
 	if !Empty(oServer)
 		self:oPers:=oServer
 	else
-		self:oPers:=SqlSelect{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate+" limit 100",oConn }
+		self:oPers:=SqlSelect{'select '+self:cFields+' from '+self:cFrom+' where '+self:cWhere+' order by '+self:cOrder+Collate+' limit 100',oConn }
 // 		self:oPers:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate,oConn }
 	endif 
  	self:oPersCnt:=PersonContainer{}
