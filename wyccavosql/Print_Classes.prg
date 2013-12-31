@@ -395,6 +395,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS AcceptFormat
 	//Put your PostInit additions here
 *    SELF:oDCBrieven:ListFiles("*.brf")
 	self:SetTexts()
+	SaveUse(self)
 	m12_bd := if(WycIniFS:GetInt( "Runtime", "AccAmount" )==1,true,FALSE)
 	Brieven := WycIniFS:Getstring("Runtime", "AccBrief" )
 	IF Empty(Brieven)
@@ -414,15 +415,6 @@ STATIC DEFINE ACCEPTFORMAT_GROUPBOX3 := 102
 STATIC DEFINE ACCEPTFORMAT_M12_BD := 107 
 STATIC DEFINE ACCEPTFORMAT_NEWBUTTON := 100 
 STATIC DEFINE ACCEPTFORMAT_OKBUTTON := 103 
-class AskLetterName inherit DialogWinDowExtra 
-
-	protect oDCLettername as SINGLELINEEDIT
-	protect oDCFixedText1 as FIXEDTEXT
-	protect oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT cName AS STRING
-  PROTECT cExt AS STRING
 RESOURCE AskLetterName DIALOGEX  19, 50, 263, 33
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Give name of textformat to save"
@@ -433,6 +425,15 @@ BEGIN
 	CONTROL	"OK", ASKLETTERNAME_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 11, 53, 13
 END
 
+class AskLetterName inherit DialogWinDowExtra 
+
+	protect oDCLettername as SINGLELINEEDIT
+	protect oDCFixedText1 as FIXEDTEXT
+	protect oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT cName AS STRING
+  PROTECT cExt AS STRING
 METHOD Close(oEvent) CLASS AskLetterName
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -947,6 +948,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS eMailFormat
 	//Put your PostInit additions here
 *    SELF:oDCBrieven:ListFiles("*.eMl")
 	self:SetTexts()
+	SaveUse(self)
 	self:Templates := WycIniFS:Getstring("Runtime", "eMlContent" )
 	IF Empty(self:Templates)
 	    self:oDCTemplates:CurrentItemNo:=1
@@ -971,53 +973,6 @@ STATIC DEFINE EMAILFORMAT_GROUPBOX := 102
 STATIC DEFINE EMAILFORMAT_NEWBUTTON := 103 
 STATIC DEFINE EMAILFORMAT_OKBUTTON := 101 
 STATIC DEFINE EMAILFORMAT_TEMPLATES := 105 
-FUNCTION GenKeyword()
-* Soort(3e elemetnt:
-* n: NAW
-* c: Compleet NAW
-* g: gift
-* b: Bestemming (=g,d)
-* o: Openpost 
-* d: department
-* 
-/*
-{"Bank account","%BANKACCOUNT","o"},;
-{"Amount due","%AMOUNTDUE","o"},;
-{"Date amount due","%DUEDATE","o"},;
-{"Identifier amount due","%DUEIDENTIFIER","o"},;
-{"Invoice id/KID","%INVOICEID","o"},;
-{"Firstname member destination","%FRSTNAMEDESTINATION","g"},;
-{"Lastname member destination","%LSTNAMEDESTINATION","g"},;
-{"Salutation member destination","%SALUTDESTINATION","g"},;
-{"Department name","%DEPRMNTNAME","d"},;
-
-*/
-
-RETURN {;
-{"Salutation","%SALUTATION","n"},;
-{"Title","%TITLE","n"},;
-{"Initials","%INITIALS","n"},;
-{"Prefix","%PREFIX","n"},;
-{"Lastname","%LASTNAME","n"},;
-{"Firstnames","%FIRSTNAME","n"},;
-{"Name extension","%NAMEEXTENSION","n"},;
-{"Address","%ADDRESS","n"},;
-{"Zipcode","%ZIPCODE","n"},;
-{"City","%CITYNAME","n"},;
-{"Country","%COUNTRY","n"},;
-{"Attention","%ATTENTION","n"},;
-{"Date last gift","%DATELSTGIFT","g"},;
-{"Date gift","%DATEGIFT","g"},;
-{"Transaction ID","%TRANSID","g"},;
-{"Document ID","%DOCID","b"},;
-{"Reference","%REFERENCE","b"},;
-{"Amount gift","%AMOUNTGIFT","g"},;
-{"Total gift/payments","%TOTALAMOUNT","b"},;
-{"Destination gift/ due amounts","%DESTINATION","b"},;
-{"Complete name and address (6 lines)","%NAMEADDRESS","c"},; 
-{"Report month","%REPORTMONTH","b"},;
-{"Page skip","%PAGESKIP","b"}}
-
 CLASS LabelBottom INHERIT FIELDSPEC
 
 
@@ -1427,6 +1382,7 @@ RETURN {8,9,10,11,12}
 METHOD PostInit() CLASS LabelFormat
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	self:stckr_height := WycIniFS:GetInt( "Runtime", "stckr_height" )
 	self:stckr_width := WycIniFS:GetInt( "Runtime", "stckr_width" )
 	self:stckr_TopMargin := WycIniFS:GetInt( "Runtime", "stckr_TopMargin" )
@@ -1844,6 +1800,34 @@ METHOD Init() CLASS LabelWidth
 
 
 
+RESOURCE LetterFormat DIALOGEX  10, 9, 247, 251
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", LETTERFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 81, 72
+	CONTROL	"Name/address on top", LETTERFORMAT_BRFNAW, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 73, 92, 11
+	CONTROL	"City and date", LETTERFORMAT_BRFDAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 14, 92, 80, 11
+	CONTROL	"Heading", LETTERFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 60, 164, 53
+	CONTROL	"Width of letter:", LETTERFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 12, 131, 53, 13
+	CONTROL	"Name/address starts at column:", LETTERFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 12, 148, 102, 13
+	CONTROL	"Text starts at column:", LETTERFORMAT_FIXEDTEXT4, "Static", WS_CHILD, 12, 182, 82, 13
+	CONTROL	"City and date starts at column:", LETTERFORMAT_FIXEDTEXT5, "Static", WS_CHILD, 12, 199, 104, 12
+	CONTROL	"City and date starts at row:", LETTERFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 12, 216, 95, 12
+	CONTROL	"", LETTERFORMAT_BRFWIDTH, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 131, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOL, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 148, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 166, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 182, 37, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFCOLA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 199, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LETTERFORMAT_BRFREGA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 216, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Name/address starts at row:", LETTERFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 12, 166, 104, 12
+	CONTROL	"Positions", LETTERFORMAT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 120, 164, 119
+	CONTROL	"OK", LETTERFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 180, 208, 54, 12
+	CONTROL	"Cancel", LETTERFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 180, 227, 54, 12
+	CONTROL	"New", LETTERFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 12
+	CONTROL	"Edit", LETTERFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 31, 53, 12
+	CONTROL	"Letter", LETTERFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 164, 53
+END
+
 CLASS LetterFormat INHERIT DataDialogMine 
 
 	PROTECT oDCTemplates AS COMBOBOX
@@ -1875,34 +1859,6 @@ CLASS LetterFormat INHERIT DataDialogMine
   EXPORT Lettername AS STRING
   EXPORT lAcceptNorway AS LOGIC
   EXPORT Templatename as STRING
-RESOURCE LetterFormat DIALOGEX  10, 9, 247, 251
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", LETTERFORMAT_TEMPLATES, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 81, 72
-	CONTROL	"Name/address on top", LETTERFORMAT_BRFNAW, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 13, 73, 92, 11
-	CONTROL	"City and date", LETTERFORMAT_BRFDAT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 14, 92, 80, 11
-	CONTROL	"Heading", LETTERFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 60, 164, 53
-	CONTROL	"Width of letter:", LETTERFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 12, 131, 53, 13
-	CONTROL	"Name/address starts at column:", LETTERFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 12, 148, 102, 13
-	CONTROL	"Text starts at column:", LETTERFORMAT_FIXEDTEXT4, "Static", WS_CHILD, 12, 182, 82, 13
-	CONTROL	"City and date starts at column:", LETTERFORMAT_FIXEDTEXT5, "Static", WS_CHILD, 12, 199, 104, 12
-	CONTROL	"City and date starts at row:", LETTERFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 12, 216, 95, 12
-	CONTROL	"", LETTERFORMAT_BRFWIDTH, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 131, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOL, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 148, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFREGN, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 166, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOLT, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 182, 37, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFCOLA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 199, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LETTERFORMAT_BRFREGA, "Edit", ES_AUTOHSCROLL|ES_NUMBER|WS_TABSTOP|WS_CHILD|WS_BORDER, 116, 216, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Name/address starts at row:", LETTERFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 12, 166, 104, 12
-	CONTROL	"Positions", LETTERFORMAT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 120, 164, 119
-	CONTROL	"OK", LETTERFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 180, 208, 54, 12
-	CONTROL	"Cancel", LETTERFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 180, 227, 54, 12
-	CONTROL	"New", LETTERFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 12, 54, 12
-	CONTROL	"Edit", LETTERFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 104, 31, 53, 12
-	CONTROL	"Letter", LETTERFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 164, 53
-END
-
 ACCESS brfCol() CLASS LetterFormat
 RETURN SELF:FieldGet(#brfCol)
 
@@ -2159,6 +2115,7 @@ METHOD OKButton( ) CLASS LetterFormat
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LetterFormat
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	self:brfNAW := if(WycIniFS:GetInt( "Runtime", "brfNAW" )==1,true,FALSE)
 	self:brfDAT := if(WycIniFS:GetInt( "Runtime", "brfDAT" )==1,true,FALSE)
 	self:brfWidth := WycIniFS:GetInt( "Runtime", "brfWidth" )
@@ -2324,6 +2281,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class MarkupGiftsGroup
 	//Put your PostInit additions here
 	LOCAL Ptrhandle as USUAL, cContents as STRING
 	self:SetTexts()
+	SaveUse(self)
 	Ptrhandle:=FOpen(CurPath+"\GiftsGroup.grp")
 	FRead(Ptrhandle,@cContents,32768)
 	FClose(ptrhandle) 
@@ -2417,6 +2375,7 @@ METHOD PostInit(oParent,uExtra) CLASS MarkupLetter
 	LOCAL Ptrhandle AS USUAL, cContents AS STRING
 	LOCAL cType AS STRING
 	self:SetTexts()
+	SaveUse(self)
 	if !Empty(uExtra)
 		IF uExtra="."
 			* Only extension for new letter:
