@@ -229,6 +229,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditEmailAccount
 	local nPos as int
 	local cMailaddress as string 
 	self:SetTexts() 
+	SaveUse(self)
 	oSel:=SqlSelect{'select emailaddress,username,cast('+Crypt_Emp(false,"password")+' as char) as password,protocol,outgoingserver,port from mailaccount where empid='+MyEmpID,oConn}
 	if oSel:RecCount>0
 		// existing mail account:
@@ -491,6 +492,7 @@ method PostInit(oParent,uExtra) class EmailConfirm
 	local oListViewItem as ListViewItem 
 	local oListView:=self:oDCEmailListView as listview
 	self:SetTexts()
+	SaveUse(self)
 	oListView:DeleteAllColumns() 
 	oListView:AddColumn(ListViewColumn{30,self:oLan:WGet("Subject")})  
 	oListView:AddColumn(ListViewColumn{30,self:oLan:WGet("To")})
