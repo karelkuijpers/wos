@@ -559,6 +559,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LanguageWindow
 	LOCAL cFilter:=self:cLocation as STRING
 	local lSuccess as logic 
 	self:SetTexts()
+	SaveUse(self)
 	self:Caption:=self:oLan:WGet(self:Caption) 
 	If self:cLocation=="M"
 		self:Caption+=self:oLan:WGet("Menus")
