@@ -193,6 +193,7 @@ RETURN uValue
 method PostInit(oWindow,iCtlID,oServer,uExtra) class IPCReport
 	//Put your PostInit additions here  
 	self:SetTexts()
+	SaveUse(self)
 	self:PeriodYear:=Year(Today()-27)
 	self:PeriodMonth:=Month(Today()-27)
 	return NIL
