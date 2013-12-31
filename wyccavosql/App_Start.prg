@@ -168,7 +168,3 @@ method Start() class App
 			//   	ShowError( oError )
 		endif
 	end SEQUENCE
-
-	// ErrorBlock(cbError)
-	
-
