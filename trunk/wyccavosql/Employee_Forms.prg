@@ -553,6 +553,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 	local oSel as SQLSelect
 	local cEmpStmnt as string
 	self:SetTexts()
+	SaveUse(self)
 	
 	mDepartment:="0:"+sEntity+" "+sLand 
 	self:oDCmDepartment:TextValue:=mDepartment
@@ -944,6 +945,7 @@ METHOD NewButton CLASS EmployeeBrowser
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser
 	//Put your PostInit additions here
 self:SetTexts()
+	SaveUse(self)
 self:GoTop()
  
 	RETURN nil
@@ -2054,6 +2056,7 @@ METHOD OkButton( ) CLASS MyEmailClient
 method PostInit(oParent,uExtra) class MyEmailClient
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	// check if email specified per employee:
 // 	self:oEmp:=SqlSelect{"select maildirect,mailcient from employee where empid="+MYEMPID,oConn}
 // 	if self:oEmp:RecCount=1
@@ -2201,6 +2204,7 @@ ErrorBox{ self, cError }:Show()
 RETURN
 METHOD PostInit() CLASS NewPasswordDialog
 self:SetTexts() 
+	SaveUse(self)
 
 	RETURN SELF
 STATIC DEFINE NEWPASSWORDDIALOG_CANCELBUTTON := 105 
