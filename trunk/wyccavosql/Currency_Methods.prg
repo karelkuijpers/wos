@@ -297,6 +297,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class CurrencySpec
 	//Put your PostInit additions here 
 	local oSys as SQLSElect
 self:SetTexts() 
+	SaveUse(self)
 if IsString(uExtra)
 	self:Currency:=uExtra
 else
@@ -505,6 +506,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class CurrRateEditor
 // 	self:Server:aMirror:={{" "," ",0.00}}
 	self:oSFSub_Rates:lFilling:=false
 	self:LastCurRate:=LstCurRate 
+	SaveUse(self)
 	self:SetTexts()
 	
 	return NIL
@@ -620,6 +622,7 @@ RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GetExchRate
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	self:Pointer := Pointer{POINTERARROW}
    oDCCurName:TextValue:=uExtra[1]
    if Len(uExtra)>1
