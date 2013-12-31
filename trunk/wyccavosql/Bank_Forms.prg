@@ -218,6 +218,7 @@ RETURN NIL
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS BankBrowser
 	//Put your PostInit additions here
 	self:SetTexts()
+// 	SaveUse(self)
 	self:oSFBankSub_Form:Browser:SetStandardStyle( gbsReadOnly )
 	self:GoTop() 
   	self:oDCFound:TextValue :=Str(self:oBank:Reccount,-1)
@@ -966,6 +967,7 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBank
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 
 	IF lNew
 		self:oDCmBANKNUMBER:SetFocus()
@@ -1609,6 +1611,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class SelBankOrder
 
 	
 	self:SetTexts()
+	SaveUse(self)
 	oDCbegin_verv:SelectedDate := Today()-35
 	//	oDCeind_verv:SelectedDate := SToD(Str(rjaar,4)+StrZero(rmnd,2)+Str(MonthEnd(rmnd,rjaar),2))
 	oDCeind_verv:SelectedDate := Today()+15
