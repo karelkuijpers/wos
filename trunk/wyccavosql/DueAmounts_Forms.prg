@@ -237,6 +237,7 @@ PersonSelect(self,cValue,lUnique,,"debtor")
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DueAmountBrowser
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	self:oDCFound:TextValue:=Str(self:oDue:RecCount,-1)
 	RETURN NIL
 method PreInit(oWindow,iCtlID,oServer,uExtra) class DueAmountBrowser
