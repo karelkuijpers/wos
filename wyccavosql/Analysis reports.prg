@@ -730,6 +730,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorFollowingReport
 	LOCAL OldestYear as date
 	  
 	self:SetTexts()
+	SaveUse(self)
 
 	self:oDCHomeBox:Caption:=self:oLan:WGet("Members of")+" "+sLand
 	self:oDCNonHomeBox:Caption:=self:oLan:WGet("Members not of")+" "+sLand
@@ -2522,6 +2523,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	LOCAL StartDate as date 
 	
 	self:SetTexts()
+	SaveUse(self)
 	myDim:=self:Size
 	myDim:Height-=2000
 	self:Size:=myDim
@@ -3254,16 +3256,17 @@ METHOD OKButton( ) CLASS TotalsMembers
 	RETURN
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PostInit additions here
-		LOCAL aYearStartEnd:={} as ARRAY
+	LOCAL aYearStartEnd:={} as ARRAY
 	self:SetTexts() 
 	
 	Default(@uExtra,true)
-self:SetTexts()
-		aYearStartEnd := GetBalYear(Year(Today())-1,Month(Today()))
-		self:FromYear := aYearStartEnd[1]
-		self:FromMonth:=aYearStartEnd[2]
-		self:ToYear := aYearStartEnd[3]
-		self:ToMonth:=aYearStartEnd[4]
+	self:SetTexts()
+	SaveUse(self)
+	aYearStartEnd := GetBalYear(Year(Today())-1,Month(Today()))
+	self:FromYear := aYearStartEnd[1]
+	self:FromMonth:=aYearStartEnd[2]
+	self:ToYear := aYearStartEnd[3]
+	self:ToMonth:=aYearStartEnd[4]
 	RETURN nil
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS TotalsMembers
 	//Put your PreInit additions here
