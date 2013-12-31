@@ -736,6 +736,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	ENDIF 
 
 	self:cType:=iCtlID
+	SaveUse("EDIT"+self:cType)
 	IF self:cType=="STANDARD GIFTS"
 		self:mtype:="G"
 		self:oDCInvoiceText:hide()
@@ -1364,7 +1365,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	//Put your PostInit additions here 
 	local oSel as SQLSelect
 self:SetTexts()
-	IF cType=="STANDARD GIFTS"
+// 	SaveUse(self:cType+"BROWSER")
+	IF self:cType=="STANDARD GIFTS"
 		self:Caption:=self:oLan:WGet("Browse in Periodic Gifts") 
 	ELSEIF cType=="DONATIONS"
 		self:Caption:=self:oLan:WGet("Browse in Donations")
@@ -1377,7 +1379,7 @@ self:SetTexts()
 /*		SELF:oDCmAccount:Hide()
 		SELF:oDCSC_AR1:Hide()
 		SELF:oCCAccButton:Hide() */
-	ELSEIF cType=="SUBSCRIPTIONS"
+	ELSEIF self:cType=="SUBSCRIPTIONS"
 		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
 	ENDIF
 //    self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from subscription where category='"+self:mtype+"'",oConn}:totcount),-1)+' ('+self:oLan:WGet(" only 100 shown")+')'   
