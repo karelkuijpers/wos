@@ -41,21 +41,6 @@ Default(@InvoiceID,null_string)
 	oReport:PrintLine(@nRow,@nPage,cCodeline)
 		
 	RETURN
-function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
-	// add new mailing NewCodes to current string of mailing codes cCod
-	LOCAL aPCod,aNCod as ARRAY, iStart as int
-	if Empty(NewCodes)
-		return cCod
-	endif
-	aPCod:=Split(AllTrim(cCod)," ")
-	aNCod:=Split(AllTrim(NewCodes)," ")
-	iStart:=Len(aPCod)
-	
-	ASize(aPCod,iStart+Len(aNCod))
-	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
-	cCod:=MakeCod(aPCod)
-	return cCod
-	
 CLASS AmountGift INHERIT FIELDSPEC
 
 
@@ -125,633 +110,7 @@ METHOD Init() CLASS Destination
 
 
 
-Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:="" as string) as array
-	LOCAL oHttp  as cHttp
-	LOCAL nStart, nPos, nEnd as int
-	local nPos1,nPos2, nPos3,i,j as int
-	local time0,time1 as float
-	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
-	local cBuffer as string
-	local cHeader as string
-	local lSuccess as logic                          
-	LOCAL aWord as ARRAY
-	if Empty(cAddress) .or. Empty(cPostcode).and.Empty(cCity)
-		return {cPostcode,cAddress,cCity}
-	endif
-	street:=AllTrim(cAddress)
-	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
-	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2)) .or. IsPunctuationMark(SubStr(zipcode,5,2))
-		//illegal zipcode
-		zipcode:=''
-		if !Empty(cPostcode)
-			// apparently non-dutch postal code:
-			return {cPostcode,cAddress,cCity}	
-		endif		
-	endif 
-	cCity:=AllTrim(cCity)
-	cCity:=StrTran(cCity,'Y','IJ')
-	cityname:=cCity 
-
-	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
-
-	// remove housenbr addition from address:
-	aWord:=GetTokens(cAddress)
-	nEnd:=Len(aWord)
-	if nEnd>1
-		if Empty(aWord[nEnd-1,1])  // separation character?
-			nEnd-=2
-		elseif isnum(aWord[nEnd-1,1])
-			nEnd--
-		endif
-		cAddress:=""
-		for i:=1 to nEnd
-			cAddress+=aWord[i,1]+iif(i==nEnd,"",aWord[i,2])
-		next
-		cAddress:=AllTrim(cAddress)
-	endif
-	housenr:=(GetStreetHousnbr(cAddress))[2]
-	if !Empty(zipcode) .and. !Empty(housenr)
-		cSearch:=zipcode+' '+housenr
-	elseif !Empty(cCity) .and. !Empty(cAddress)
-// 		aWord:=GetTokens(cCity)
-// 		cSearch:=cAddress+' '+aWord[1,1] 
-		cSearch:=cAddress+' '+cCity 
-		// check strange address:
-		if IsPunctuationMark(cSearch)
-			return {cPostcode,cAddress,cCity}
-		endif
-		if Len(Split(cCity))>4
-			return {cPostcode,cAddress,cCity}
-		endif
-	else
-		return {cPostcode,cAddress,cCity}	                             
-	endif
-	cSearch:=StrTran(cSearch,' ','%20')
-	oHttp := CHttp{"WycOffSy",,true}
-// 	cHeader:="Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
-// 	cHeader:='Content-Type: application/x-www-form-urlencoded'+CRLF+'User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36'+CRLF+;
-//   'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
-//   'Accept-Language: en-us,en;q=0.5'+CRLF+;
-//   'Accept-Encoding: gzip,deflate'+CRLF+;
-//   'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7'+CRLF+;
-//   'Keep-Alive: 115'+CRLF+;
-//   'Connection: keep-alive'+CRLF
-      time0:=Seconds()
-		cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
-			"/search/"+cSearch,;
-			/*cSearch*/,;
-			/*cHeader*/,;
-			"POST",;
-			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
-			INTERNET_FLAG_SECURE)
-// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch) 
-	time1:=Seconds()   
-	httpfile:=(UTF2String{cBuffer}):Outbuf
-	if AtC('class="alert warning"',httpfile)>0 
-		return {cPostcode,cAddress,cCity}	
-	endif		
-	nPos1:=At('<section id="main" role="main">',httpfile)
-	if nPos1>0
-		// search unique string before response
-		nPos1:=At3('<h1>',httpfile,nPos1+31)
-		if nPos1>0                                                
-			output:=SubStr(httpfile,nPos1+4,200) 
-		elseif AtC('Value is not a number',httpfile)=0 
-			// apparently website changed:
-			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
-		endif 
-	else 
-		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
-	endif
-	if !Empty(output)
-		nPos2:=At3('<',output,5)
-		if nPos2>0
-			street:=AllTrim(SubStr(output,1,nPos2-1)) 
-			nPos1:=AtC('t/m',street)
-			if nPos1>0
-				// look for preceding number: 
-				for i:=nPos1-2 downto 2 step 1
-					if !IsDigit(SubStr(street,i,1))
-						nPos1:=i
-						exit
-					endif
-				next                                      
-				street:=AllTrim(SubStr(street,1,nPos1)) 
-			else
-				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
-				if nPos1>0
-					street:=AllTrim(SubStr(street,1,nPos1-1))
-				endif
-			endif
-			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
-			street+=" "+housenrOrg 
-			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...> 
-			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
-			nPos1:=At3(',',output,nPos1+1)+1
-			nPos2:=At3('<',output,nPos1)
-			cityname:=StrTran(AllTrim(SubStr(output,nPos1,nPos2-nPos1)),'&#039;',"'") 
-			if (cityname=="'S-GRAVENHAGE")
-				cityname:='DEN HAAG'
-			elseif (cityname=="'S-HERTOGENBOSCH")
-				cityname:="DEN BOSCH" 
-			endif
-			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
-		endif
-	endif	
-	oHttp:CloseRemote()
-	oHttp:Axit() 
-	RETURN {zipcode,street,cityname}
-function GENDERDSCR(cGnd as int) as string
-	// Return Gender description of a person:
-	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
-
-function GetBankAccnts(mPersid as string) as array 
-local aBankaccs:={} as array
-local oSel as SQLSelect 
-	* Fill aBankAcc: 
-oSel:=SqlSelect{"select group_concat(banknumber,'#%#',bic separator ',') as bankaccs from personbank where persid="+mPersid+" group by persid" ,oConn}
-if oSel:RecCount>0
-	AEval(Split(oSel:bankaccs,','),{|x|AAdd(aBankaccs,Split(x,'#%#'))})
-endif
-return aBankaccs
-Function GetFullName(PersNbr:="" as string ,Purpose:=0 as int) as string 
-// composition of full name of a person
-// PersNbr: Optional ID of person 
-// Purpose: optional indicator that the name is used for:
-// 	0: addresslist: with surname "," firstname prefix (without salutation) 
-//		1: fullname conform address specification
-//		2: name for identification: lastname, firstname prefix 
-//		3: like 1 but always with firstname 
-LOCAL frstnm,naam1, Title,prefix as STRING
-local oPers as SQLSelect
-if Empty(PersNbr)
-	return ""
-endif
-oPers:=SQLSelect{"select lastname,prefix,title,firstname,initials,gender from person where persid="+PersNbr,oConn}
-
-IF !oPers:RecCount==1
-	RETURN ""
-ENDIF
-IF sSalutation .and.(Purpose==1.or.Purpose==3) 
-	Title := Salutation(oPers:GENDER)
-	IF !Empty(Title)
-		Title+=" "
-	ENDIF
-ENDIF
-IF TITELINADR.and.!Empty(Title(oPers:Title)) .and.(Purpose==1.or.Purpose==3) 
-	Title += Title(oPers:Title)+' '
-ENDIF
-IF .not. Empty(oPers:FIELDGET(#prefix))
-   prefix :=AllTrim(oPers:FIELDGET(#prefix)) +" "
-ENDIF
-IF .not. Empty(oPers:FIELDGET(#lastname))
-   naam1 := AllTrim(oPers:FIELDGET(#lastname))+" "
-ENDIF
-IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
-	IF !Empty(oPers:FIELDGET(#firstname) )
-		frstnm += AllTrim(oPers:FIELDGET(#firstname))+' '
-	ELSEIF .not. Empty(oPers:FIELDGET(#initials))  && use otherwise initials
-		frstnm += AllTrim(oPers:FIELDGET(#initials))+' '
-	ENDIF
-ELSEIF .not. Empty(oPers:FIELDGET(#initials))  && use otherwise initials
-	frstnm += AllTrim(oPers:FIELDGET(#initials))+' '
-ENDIF
-do CASE
-CASE Purpose==0
-	//addresslist:
-	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
-CASE Purpose==1.or.Purpose==3
-	// address conform address specifications:
-	IF sSurnameFirst
-   	naam1 := naam1+Title+frstnm + prefix
-	else
-		naam1:=Title+frstnm+prefix+naam1
-	ENDIF	
-CASE Purpose==2
-	// identification:
-	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
-endcase
-naam1:=AllTrim(naam1)
-return StrTran(naam1,',','',len(naam1),1)
-Function GetFullNAW(PersNbr as string,country:="" as string,Purpose:=1 as int) as string 
-* Compose name and address
-* country: default country (optional)
-LOCAL f_row:="" as STRING
-local oPers as SQLSelect
-
-IF Empty(PersNbr) 
-	return null_string
-ENDIF
-f_row:=GetFullName(PersNbr,Purpose)
-oPers:=SQLSelect{"select address,postalcode,city,country from person where persid="+PersNbr,oConn} 
-if oPers:RecCount<1
-	return null_string
-endif
-
-f_row:=f_row+', '
-IF .not.Empty(oPers:address)
-   f_row+=AllTrim(oPers:address)+" "
-ENDIF
-IF .not.Empty(oPers:postalcode)
-   f_row+=Trim(oPers:postalcode)+" "
-ENDIF
-IF .not.Empty(oPers:city)
-   f_row+=Trim(oPers:city)+" "
-ENDIF
-IF .not.Empty(oPers:country) 
-   f_row+=Trim(oPers:country) 
-ELSEIF .not.Empty(country)
-   f_row+=country
-ENDIF
-RETURN AllTrim(f_row)
-Function GetStreetHousnbr(Address as string) as array
-	* return array {streetname, housnbr} from input Address
-	LOCAL aWord as ARRAY
-	LOCAL l,j as int
-	LOCAL nEnd, nNumPosition as int
-	LOCAL StreetName:=null_string, Housenbr:=" " as STRING
-
-	IF !Empty(Address)
-		aWord:=GetTokens(Address)
-		nEnd := Len(aWord)
-		if nEnd==1 .and. IsDigit(aWord[1,1])
-			return {"",aWord[1,1]}
-		endif
-		* Search streetname:
-		* Search backwards till housenbr:
-		FOR l:=nEnd to 1 step -1
-			//		IF IsDigit(aWord[l,1]).and.l>1
-			IF IsDigit(aWord[l,1])
-				* Housenbr found:
-				nNumPosition:=l
-				IF l > 1
-					* two numbers?
-					IF IsDigit(aWord[l-1,1])
-						nNumPosition:=l - 1
-					ELSEIF l>3 .and.Len(aWord[l-1,1])< 4 .and.IsDigit(aWord[l-2,1])
-						* number, short alpha, number?			
-						nNumPosition:=l - 2
-					ENDIF
-				ENDIF
-				if nNumPosition=1
-					// number at begin
-					Housenbr := aWord[1,1] + aWord[1,2]
-					FOR j=2 to nEnd
-						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
-					NEXT
-				else
-					FOR j=1 to nNumPosition-1
-						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
-					NEXT
-					FOR j = nNumPosition to nEnd
-						Housenbr := Housenbr +aWord[j,1] + aWord[j,2]
-					NEXT 
-				endif
-				IF Len(AllTrim(Housenbr)) > 9
-					* Large deviation: all in streetname:
-					StreetName := Address
-					Housenbr := ""
-				ENDIF
-				exit
-			ENDIF
-		NEXT
-		IF Empty(nNumPosition) // no house# found?
-			StreetName:= Address
-		ENDIF
-	ENDIF
-	RETURN {AllTrim(StreetName), AllTrim(Housenbr)}
-CLASS GFTNDGRP INHERIT FIELDSPEC
-
-
-	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS GFTNDGRP
-    LOCAL   cPict                   AS STRING
-
-    SUPER:Init( HyperLabel{#GiftsNoDestGroup, "GiftsNoDest Group", "Group of gifts without destination name", "" },  "M", 10, 0 )
-    cPict       := ""
-    IF SLen(cPict) > 0
-        SELF:Picture := cPict
-    ENDIF
-
-    RETURN SELF
-
-
-CLASS Gifts_group INHERIT FIELDSPEC
-
-
-	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS Gifts_group
-    LOCAL   cPict                   AS STRING
-
-    SUPER:Init( HyperLabel{#Giftsgroup, "Gifts group", "Gifts Group", "" },  "M", 10, 0 )
-    cPict       := ""
-    IF SLen(cPict) > 0
-        SELF:Picture := cPict
-    ENDIF
-
-    RETURN SELF
-
-
-CLASS GiftsNoDest_Group INHERIT FIELDSPEC
-
-
-	//USER CODE STARTS HERE (do NOT remove this line)
-METHOD Init() CLASS GiftsNoDest_Group
-    LOCAL   cPict                   AS STRING
-
-    SUPER:Init( HyperLabel{#GiftsNoDestGroup, "GiftsNoDest Group", "Group of gifts without destination name", "" },  "M", 10, 0 )
-    cPict       := ""
-    IF SLen(cPict) > 0
-        SELF:Picture := cPict
-    ENDIF
-
-    RETURN SELF
-
-
-FUNCTION MakeAbrvCod(cCodes as STRING)
-* Translates string with mailing code abbravations (separated by space)  to array of mailing code identifiers
-LOCAL aAbCodes as ARRAY
-LOCAL i,j as int
-LOCAL aCode:={} as ARRAY
-aAbCodes:=Split(Upper(Compress(cCodes))," ")
-FOR i=1 to Len(aAbCodes)
-	if (j:=AScan(mail_abrv,{|x|x[1]== aAbCodes[i]}))>0
-		AAdd(aCode,mail_abrv[j,2])
-	ENDIF
-NEXT
-RETURN aCode
-FUNCTION MakeCod(mCodes as ARRAY)
-	* Compose mailingcodes from array with fields mCod1 .. mCodn
-	LOCAL aCode := {}
-	LOCAL i as int
-	LOCAL cCod := "" as STRING
-	
-	FOR i = 1 to Len(mCodes)
-		IF !IsNil(mCodes[i])
-			IF Len(AllTrim(mCodes[i]))=2
-				IF AScan(aCode,mCodes[i])=0
-					AAdd(aCode,mCodes[i])
-				ENDIF
-			ENDIF
-		ENDIF
-	NEXT
-	return Implode(aCode," ")
-FUNCTION MakeCodes(Codes as ARRAY)
-* Compose clean array from array with code-objects
-	LOCAL aCod as ARRAY
-	LOCAL i as int
-	aCod := {}
-	FOR i = 1 to Len(Codes)
-		IF !Empty(Codes[i])
-			IF AScan(aCod,Codes[i])=0
-				AAdd(aCod,Trim(Codes[i]))
-			ENDIF
-		ENDIF
-	NEXT
-RETURN aCod
-FUNCTION MarkUpAddress(oPers as SQLSelect,p_recnr:=0 as int,p_width:=0 as int,p_lines:=0 as int) as array
-******************************************************************************
-*  Name      : MarkUpAddress
-*              Composition of full name and address of a person
-*  Author    : K. Kuijpers
-*  Date      : 01-01-1991
-******************************************************************************
-
-************** PARAMETERS and DECLARATION OF VARIABELES ***********************
-* p_recnr    : recordnumber recipient in Person; default current
-*              person-record
-* p_width    : width address lines, default as long as needed for the data
-* p_lines	 : required number of lines, default 6
-* Global variable sFirstNmInAdr, determined in system parameters:
-*            : .t.=use first name within address lines
-*              .f.=use initials in address lines (default)
-* Global variable sSalutation, specified in systemparams:
-*            : .t.=show salutation in Address (default)
-*              .f.=no salutation in address 
-* Global variable sSTRZIPCITY, specified in system params:
-*				0: address, zip, city, country  
-*				1: postalcode,city, address, country 
-*				2: country, postalcode city, address,  (Russia)
-*				3: address, city, zip, country   (USA, Canada)
-* Global CITYUPC: true: City name in uppercase, false: only first character uppercase 
-* Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
-* Returns: ARRAY met adressen + IN nederland 1 extra row met Kixkode
-LOCAL arraynr:=0 as int,naam1:='',titel:='',naam2:='', lstnm as STRING
-LOCAL i,j,aant as int
-LOCAL m_AdressLines := {} as ARRAY
-LOCAL stoppen := true
-LOCAL regel as STRING
-LOCAL cKixcd := "" as STRING
-LOCAL cHuisnr:="",cToev as STRING
-LOCAL nToevPos as int
-LOCAL cCity as STRING
-LOCAL frstnm as STRING 
-// Local oPers:= oMyPers as SQLSelectPerson
-local nSTRZIPCITY:=sSTRZIPCITY as int
-local cAD1 as string, nLFPos as int, aAd1, aAd2 as array 
-IF .not.Empty(p_recnr)
-	oPers:Goto(p_recnr)
-ENDIF
-IF oPers:EOF
-	RETURN nil
-ENDIF
-IF Empty(p_width)
-	p_width := 99
-ENDIF
-IF Empty(p_lines)
-	p_lines := 6
-ENDIF
-arraynr :=  p_lines + if(CountryCode="31",1,0)
-ASize(m_AdressLines, arraynr)
-AFill(m_AdressLines," ")
-if .not. Empty(oPers:country)
-	IF Upper(oPers:country)="USA" .or.Upper(oPers:country)="UNITED STATES".or.Upper(oPers:country)="CANADA".or.Upper(oPers:country)="U.S.A."
-		nSTRZIPCITY:=3
-	ELSEIF Upper(oPers:country)="RUSSIA"
-		nSTRZIPCITY:=2
-	ENDIF
-endif
-/* Filling address lines in following sequence:
-1: Kixkode in extra line (for dutch addresses)
-2: Country in last line (optional)
-3: Zip code and City in previous line
-4: Street and housenbr in previous lines
-5: Attention in previous line
-6: Last name and name extenion in first lines
-*/
-* Determine Kix Barkode:
-IF CountryCode="31"
-	IF Empty(oPers:country) .or. Upper(oPers:country) == "NEDERLAND"
-		* Determine housenbr:
-		nLFPos:=At(CRLF,oPers:address)
-		if nLFPos>0
-			cAD1:=AllTrim(SubStr(oPers:address,1,nLFPos-1))
-		else
-			cAD1:=oPers:address
-		endif
-		FOR i = Len(cAD1) to 2 step -1
-			IF IsDigit(psz(_cast,SubStr(cAD1,i,1)))
-				IF Empty(cHuisnr)
-					nToevPos := i+1
-				ENDIF
-				cHuisnr := SubStr(cAD1,i,1)+cHuisnr
-			ELSE
-				IF !Empty(cHuisnr)
-					exit
-				ENDIF
-			ENDIF
-		NEXT
-		IF nToevPos >0 .and. nToevPos <= Len(cAD1)
-			cToev := SubStr(cAD1,nToevPos,6)
-		ENDIF
-		cKixcd := oPers:postalcode+ cHuisnr+if(!Empty(cToev),"X"+cToev,"")
-	ENDIF
-	m_AdressLines[arraynr] := cKixcd
-	--arraynr
-ENDIF
-IF .not. Empty(oPers:country).and. nSTRZIPCITY#2 .and.arraynr>0
-	IF AScan(OwnCountryNames,{|x| Upper(AllTrim(x))=Upper(AllTrim(oPers:country))})=0
-		m_AdressLines[arraynr] := SubStr(AllTrim(oPers:country),1,p_width)
-	   --arraynr
-	ENDIF
-ENDIF
-cCity := oPers:city
-if CITYUPC
-	cCity:=Upper(cCity)
-endif
-IF nSTRZIPCITY==3
-	cCity:= AllTrim(cCity+ " "+oPers:postalcode)
-ELSE
-	cCity := AllTrim(oPers:postalcode+' '+cCity)
-ENDIF
-
-IF .not. Empty(cCity).and. nSTRZIPCITY#2.and.nSTRZIPCITY#1 .and.arraynr>0
-   m_AdressLines[arraynr] := SubStr(AllTrim(cCity),1,p_width)
-   --arraynr
-ENDIF
-aAd2:={}
-IF .not. Empty(oPers:address) .and.arraynr>1
-	// fill intermediate array aAd2
-	aAd1:=Split(oPers:address,CRLF)
-	For j:=1 to Len(aAd1)
-   	FOR i=1 to MLCount(aAd1[j],p_width)
-			regel	:=	MemoLine(aAd1[j],p_width,i)
-			IF	Empty(regel) 
-				loop
-			ENDIF
-			AAdd(aAd2,regel)
-   	Next
-	NEXT
-	if Len(aAd2) >= arraynr.and. arraynr>1
-		ASize(aAd2,arraynr-1)
-	endif
-	for i:=Len(aAd2) to 1 step -1
-		m_AdressLines[arraynr] := AllTrim(aAd2[i])
-		--arraynr
-	next
-ENDIF
-IF  (nSTRZIPCITY==2 .or. nSTRZIPCITY==1) .and.!Empty(cCity) .and.arraynr>0
-   m_AdressLines[arraynr] := SubStr(AllTrim(cCity),1,p_width)
-   --arraynr
-ENDIF
-IF .not. Empty(oPers:country).and. nSTRZIPCITY==2 .and.arraynr>0
-	IF AScan(OwnCountryNames,{|x| Upper(AllTrim(x))=Upper(oPers:country)})=0
-		m_AdressLines[arraynr] := SubStr(oPers:country,1,p_width)
-	   --arraynr
-	ENDIF
-ENDIF
-
-
-IF .not. Empty(oPers:attention).and. arraynr >0
-	m_AdressLines[arraynr] := oPers:attention
-   --arraynr
-ENDIF
-IF arraynr > 0
-	aant := arraynr
-	IF sSalutation
-		titel := Salutation(oPers:gender)
-	ENDIF
-	IF.not.Empty(titel)
-	   titel := titel+' '
-	ENDIF
-	IF TITELINADR .and.!Empty( oPers:Title )
-		titel += Title(oPers:Title)+' '
-	ENDIF
-	IF .not. Empty(oPers:prefix)
-	   naam1 += oPers:prefix+' '
-	ENDIF
-	IF .not. Empty(oPers:lastname)
-		lstnm:=oPers:lastname
-		if LSTNUPC
-			lstnm:=Upper(lstnm)
-// 		else
-// 			lstnm:=Upper(SubStr(lstnm,1,1))+Lower(SubStr(lstnm,2))
-		endif
-	   naam1 += lstnm+' '
-	ENDIF
-
-	IF sFirstNmInAdr
-		IF !Empty(oPers:firstname)
-  			frstnm += oPers:firstname+' '
-		ELSEIF .not. Empty(oPers:initials)  && anders voorletters gebruiken
-  			frstnm += oPers:initials+' '
-		ENDIF
-	ELSEIF .not. Empty(oPers:initials)  && anders voorletters gebruiken
-  		frstnm += oPers:initials+' '
-	ENDIF		
-	IF sSurnameFirst
-    	naam1 += frstnm
-    ELSE
-    	naam1 := frstnm+naam1
-    ENDIF
-	naam2 := oPers:nameext
-	IF .not.Empty(titel)
-	   IF Len(titel)+Len(naam1)+Len(naam2) > p_width
-    	  IF aant == 1.or.p_width<25
-	      *  Bij weinig ruimte titel verkorten:
-    	     titel := AllTrim(SubStr(titel,1,4))+' '
-	      ENDIF
-	   ENDIF
-	ENDIF
-	naam1 := titel+naam1
-	IF aant == 1
-	   * Nog maar 1 regel beschikbaar: samenvoegen en afkappen:
-	   naam1 := SubStr(AllTrim(naam1)+' '+naam2,1,p_width)
-	   naam2 := ''
-	ELSE  && meer regels:
-	   IF Len(naam2)>p_width.or.Len(naam1)>p_width
-    	  * problemen met breedte, ook samenvoegen:
-	      naam1 := naam1+if(Empty(naam2),'',' '+naam2)
-    	  naam2 := ''
-	   ENDIF
-	ENDIF
-*	arraynr := 0  && naam aan het begin
-	stoppen := FALSE
-	IF MLCount(naam1,p_width) < aant .and. !Empty(naam2)
-		 m_AdressLines[arraynr] := AllTrim(naam2)
-		 --arraynr
-	ENDIF
-	FOR i=Min(aant,MLCount(naam1,p_width)) to 1 step -1
-	   regel := MemoLine(naam1,p_width,i) && verdelen over meerdere regels
-    	m_AdressLines[arraynr] := AllTrim(regel)
-    	--arraynr
-	NEXT
-ENDIF
-RETURN m_AdressLines
-Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
-	LOCAL aPCod,aNCod as ARRAY, iStart as int
-	if Empty(NewCodes)
-		return CurCodes
-	endif
-	aPCod:=Split(AllTrim(CurCodes)," ")
-	aNCod:=Split(AllTrim(NewCodes)," ")
-	iStart:=Len(aPCod)
-	
-	ASize(aPCod,iStart+Len(aNCod))
-	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
-	return MakeCod(aPCod)	
-	method FillBankNbr(aBankNbr,cDescr,i) class NewPersonWindow 
+	method FillBankNbr(aBankNbr,cDescr,i) class EditPerson  
 	if AScan(self:aBankAcc,{|x|x[1]==aBankNbr[1]})==0  // not yet stored?
 		IF Empty(self:oDCmbankNumber:VALUE)
 			self:oDCmbankNumber:VALUE:=aBankNbr[1]
@@ -771,7 +130,7 @@ Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
 	ENDIF
 	return i
 	
-METHOD Import(apMapping,Checked)  CLASS NewPersonWindow
+METHOD Import(apMapping,Checked)  CLASS EditPerson
 	* analyse mapping:
 	lLastName:=(AScan(apMapping,{|x| x[1] == #mLastname})>0)		// Last name?
 	lInitials:=(AScan(apMapping,{|x| x[1] == #mInitials})>0) //  initial field?
@@ -788,7 +147,7 @@ METHOD Import(apMapping,Checked)  CLASS NewPersonWindow
 	ENDIF
 	self:oImport:Import(self)
 	
-METHOD InitExtraProperties() CLASS NewPersonWindow
+METHOD InitExtraProperties() CLASS EditPerson
 	// Initialize extra properties
 	LOCAL count AS INT
 	LOCAL left:=true as LOGIC
@@ -802,7 +161,7 @@ METHOD InitExtraProperties() CLASS NewPersonWindow
 		left:=!left
 	NEXT
 RETURN NIL
-METHOD MatchImport(synctype) CLASS NewPersonWindow
+METHOD MatchImport(synctype) CLASS EditPerson 
 	* Import of a person from import file with match existing person in database
 	* synctype:
 	* 	1=replace current values with values from import
@@ -908,7 +267,7 @@ METHOD MatchImport(synctype) CLASS NewPersonWindow
 // add person:
 RETURN FALSE
 
-METHOD SetPropExtra( count, Left) CLASS NewPersonWindow
+METHOD SetPropExtra( count, Left) CLASS EditPerson 
 	LOCAL oSingle as SingleLineEdit
 	LOCAL oCheck as CheckBox
 	LOCAL oDropDown as COMBOBOX
@@ -1019,7 +378,7 @@ METHOD SetPropExtra( count, Left) CLASS NewPersonWindow
 		oFix:show()
 	ENDIF
 	RETURN nil
-METHOD SetState() CLASS NewPersonWindow
+METHOD SetState() CLASS EditPerson 
 	LOCAL i:=1,j, pos,posC as int
 	LOCAL oPersBank as SQLSelect
 	LOCAL oXMLDoc as XMLDocument
@@ -1126,7 +485,7 @@ METHOD SetState() CLASS NewPersonWindow
 	self:StateExtra() 
 	
 	RETURN nil
-METHOD StateExtra() CLASS NewPersonWindow
+METHOD StateExtra() CLASS EditPerson
 	LOCAL i,j:=0 as int
 	LOCAL mCodH as string, aCod:={} as array
 	if !self==null_object .and.!IsNil(self:mCodInt).and.!Empty(self:mCodInt).and. IsString(self:mCodInt)
@@ -1146,7 +505,7 @@ METHOD StateExtra() CLASS NewPersonWindow
 	endif
 	
 	RETURN
-METHOD Sync(oPerson,oPersBank,oReport,oAddrs,type,kopregels,nRow,nPage,nver) CLASS NewPersonWindow
+METHOD Sync(oPerson,oPersBank,oReport,oAddrs,type,kopregels,nRow,nPage,nver) CLASS EditPerson
 // save kidnbr as bank account and telephone#, email, remarks and mailing codes
 LOCAL cEml,cFax,cMob,cType, cTelex as STRING
 LOCAL  oPers:=oPerson as SQLSelect
@@ -1175,7 +534,7 @@ LOCAL  oPers:=oPerson as SQLSelect
 	ENDIF
 	oPers:alterdate:=Today()
 	RETURN
-METHOD ValidatePerson() CLASS NewPersonWindow
+METHOD ValidatePerson() CLASS EditPerson
  	LOCAL lValid := true, lUnique as LOGIC
 	LOCAL cError, cSelBank as STRING
 	LOCAL i, nAnswer as int
@@ -1317,6 +676,195 @@ METHOD ValidatePerson() CLASS NewPersonWindow
 	ENDIF
 
 	RETURN lValid
+Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:="" as string) as array
+	LOCAL oHttp  as cHttp
+	LOCAL nStart, nPos, nEnd as int
+	local nPos1,nPos2, nPos3,i,j as int
+	local time0,time1 as float
+	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
+	local cBuffer as string
+	local cHeader as string
+	local lSuccess as logic                          
+	LOCAL aWord as ARRAY
+	if Empty(cAddress) .or. Empty(cPostcode).and.Empty(cCity)
+		return {cPostcode,cAddress,cCity}
+	endif
+	street:=AllTrim(cAddress)
+	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
+	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2)) .or. IsPunctuationMark(SubStr(zipcode,5,2))
+		//illegal zipcode
+		zipcode:=''
+		if !Empty(cPostcode)
+			// apparently non-dutch postal code:
+			return {cPostcode,cAddress,cCity}	
+		endif		
+	endif 
+	cCity:=AllTrim(cCity)
+	cCity:=StrTran(cCity,'Y','IJ')
+	cityname:=cCity 
+
+	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
+
+	// remove housenbr addition from address:
+	aWord:=GetTokens(cAddress)
+	nEnd:=Len(aWord)
+	if nEnd>1
+		if Empty(aWord[nEnd-1,1])  // separation character?
+			nEnd-=2
+		elseif isnum(aWord[nEnd-1,1])
+			nEnd--
+		endif
+		cAddress:=""
+		for i:=1 to nEnd
+			cAddress+=aWord[i,1]+iif(i==nEnd,"",aWord[i,2])
+		next
+		cAddress:=AllTrim(cAddress)
+	endif
+	housenr:=(GetStreetHousnbr(cAddress))[2]
+	if !Empty(zipcode) .and. !Empty(housenr)
+		cSearch:=zipcode+' '+housenr
+	elseif !Empty(cCity) .and. !Empty(cAddress)
+// 		aWord:=GetTokens(cCity)
+// 		cSearch:=cAddress+' '+aWord[1,1] 
+		cSearch:=cAddress+' '+cCity 
+		// check strange address:
+		if IsPunctuationMark(cSearch)
+			return {cPostcode,cAddress,cCity}
+		endif
+		if Len(Split(cCity))>4
+			return {cPostcode,cAddress,cCity}
+		endif
+	else
+		return {cPostcode,cAddress,cCity}	                             
+	endif
+	cSearch:=StrTran(cSearch,' ','%20')
+	oHttp := CHttp{"WycOffSy",,true}
+// 	cHeader:="Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
+// 	cHeader:='Content-Type: application/x-www-form-urlencoded'+CRLF+'User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36'+CRLF+;
+//   'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
+//   'Accept-Language: en-us,en;q=0.5'+CRLF+;
+//   'Accept-Encoding: gzip,deflate'+CRLF+;
+//   'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7'+CRLF+;
+//   'Keep-Alive: 115'+CRLF+;
+//   'Connection: keep-alive'+CRLF
+      time0:=Seconds()
+		cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
+			"/search/"+cSearch,;
+			/*cSearch*/,;
+			/*cHeader*/,;
+			"POST",;
+			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
+			INTERNET_FLAG_SECURE)
+// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch) 
+	time1:=Seconds()   
+	httpfile:=(UTF2String{cBuffer}):Outbuf
+	if AtC('class="alert warning"',httpfile)>0 
+		return {cPostcode,cAddress,cCity}	
+	endif		
+	nPos1:=At('<section id="main" role="main">',httpfile)
+	if nPos1>0
+		// search unique string before response
+		nPos1:=At3('<h1>',httpfile,nPos1+31)
+		if nPos1>0                                                
+			output:=SubStr(httpfile,nPos1+4,200) 
+		elseif AtC('Value is not a number',httpfile)=0 
+			// apparently website changed:
+			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
+		endif 
+	else 
+		// apparently website changed:
+		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
+	endif
+	if !Empty(output)
+		nPos2:=At3('<',output,5)
+		if nPos2>0
+			street:=AllTrim(SubStr(output,1,nPos2-1)) 
+			nPos1:=AtC('t/m',street)
+			if nPos1>0
+				// look for preceding number: 
+				for i:=nPos1-2 downto 2 step 1
+					if !IsDigit(SubStr(street,i,1))
+						nPos1:=i
+						exit
+					endif
+				next                                      
+				street:=AllTrim(SubStr(street,1,nPos1)) 
+			else
+				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
+				if nPos1>0
+					street:=AllTrim(SubStr(street,1,nPos1-1))
+				endif
+			endif
+			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
+			street+=" "+housenrOrg 
+			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...> 
+			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
+			nPos1:=At3(',',output,nPos1+1)+1
+			nPos2:=At3('<',output,nPos1)
+			cityname:=StrTran(AllTrim(SubStr(output,nPos1,nPos2-nPos1)),'&#039;',"'") 
+			if (cityname=="'S-GRAVENHAGE")
+				cityname:='DEN HAAG'
+			elseif (cityname=="'S-HERTOGENBOSCH")
+				cityname:="DEN BOSCH" 
+			endif
+			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
+		endif
+	endif	
+	oHttp:CloseRemote()
+	oHttp:Axit() 
+	RETURN {zipcode,street,cityname}
+function GENDERDSCR(cGnd as int) as string
+	// Return Gender description of a person:
+	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
+
+CLASS GFTNDGRP INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS GFTNDGRP
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#GiftsNoDestGroup, "GiftsNoDest Group", "Group of gifts without destination name", "" },  "M", 10, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+CLASS Gifts_group INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS Gifts_group
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#Giftsgroup, "Gifts group", "Gifts Group", "" },  "M", 10, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+CLASS GiftsNoDest_Group INHERIT FIELDSPEC
+
+
+	//USER CODE STARTS HERE (do NOT remove this line)
+METHOD Init() CLASS GiftsNoDest_Group
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#GiftsNoDestGroup, "GiftsNoDest Group", "Group of gifts without destination name", "" },  "M", 10, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
 METHOD DeleteButton CLASS PersonBrowser
 
 	LOCAL myCLN as STRING
@@ -2078,19 +1626,6 @@ aWord:=GetTokens(m51_AD1,{" ",",",".","&","/"})
 nLength:=self:Adres_Analyse(aWord,,@lZipCode,@lCity,@lAddress,false)-1
 self:NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity)
 RETURN
-FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String) as logic
-// Find a person by means of its external id
-	LOCAL oPers as SQLSelect
-	if Empty(cValue)
-		return false
-	endif
-	oPers:=SQLSelect{"select persid from person where deleted=0 and externid='"+cValue+"'",oConn}
-	if oPers:RecCount>0 
-		IF IsMethod(oCaller, #RegPerson)
-			oCaller:RegPerson(oPers,cItemname)
-		ENDIF	
-	ENDIF
-	RETURN (oPers:RecCount>0)
 FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUnique:=false as logic,cFilter:="" as string,;
 		cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 	LOCAL oPersBw as PersonBrowser
@@ -2263,10 +1798,6 @@ METHOD Init() CLASS PropExtra_Date
 
 
 
-function Salutation(GENDER as int) as string
-	// Return salutation of a person:	
-	return pers_salut[iif(Empty(GENDER),5,GENDER),1]
-
 CLASS Selpers INHERIT DataWindowExtra
 	EXPORT cWhereOther:="" as STRING	&& met selektiekonditie
 	EXPORT cWherep:="" as STRING	&& where condition for person
@@ -2312,7 +1843,7 @@ CLASS Selpers INHERIT DataWindowExtra
 	PROTECT pKond AS _CODEBLOCK
 	PROTECT splaats AS STRING
 	PROTECT oExtServer AS OBJECT
-	PROTECT oEditPersonWindow AS NewPersonWindow
+	PROTECT oEditPersonWindow as 
 	PROTECT m12_bd AS LOGIC
 	PROTECT oWindow AS OBJECT
 	PROTECT cType AS USUAL
@@ -5031,109 +4562,6 @@ STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON2 := 102
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON3 := 103 
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON4 := 104 
 STATIC DEFINE SELPERSPRIMARY_SELX_KEUZE1 := 100 
-Function SQLAddress(country:="" as string,alias:="" as string,cSep:=',' as string) as string 
-// composition of SQL code for getting address of a person
-// -	country: default country (optional) 
-// -	alias  : table alias used for table person: e.g. " p."  (optional)
-// -	cSep	 :	separator text between address lines; e.g. for html: "<br>"
-//				
-// Global variable sSTRZIPCITY, specified in system params:
-//				0: address, zip, city, country  
-//				1: postalcode,city, address, country 
-//				2: country, postalcode city, address,  (Russia)
-//				3: address, city, zip, country    (USA, Canada)
-// Global CITYUPC: true: City name in uppercase, false: only first character uppercase
-// 
-LOCAL fRow:="" as string 
-local mAlias:=iif(Empty(ALIAS),"",alias+".") as string
-local cAddress:="if("+mAlias+'address<>"" and ' +mAlias+'address<>"X",'+mAlias+'address,"")' as string
-local cZip:='if(' +mAlias+'postalcode<>"" and ' +mAlias+'postalcode<>"X",'+mAlias+'postalcode,"")'  as string
-local cCity:='if(' +mAlias+'city<>"" and ' +mAlias+'city<>"X" and ' +mAlias+'city<>"??",'+if(CITYUPC,'upper(','')+mAlias+'city'+if(CITYUPC,')','')+',"")' as string
-local ccountry:='if('+mAlias+'country<>""'+iif(Empty(OwnCountryNames),'',' and not '+mAlias+'country in('+Implode(OwnCountryNames,'","')+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string
-local cUSA:='if('+mAlias+'country="USA" or '+mAlias+'country="UNITED STATES" or '+mAlias+'country="CANADA" or '+mAlias+'country="U.S.A.",'
-local cCityZip as string
-local mySep:=',"'+cSep+' ",' as string
-
-
-cCityZip:=iif(sSTRZIPCITY==3,'concat('+cCity+'," ",'+cZip+')',cUSA+'concat('+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+'))')  
-if sSTRZIPCITY==0.or. sSTRZIPCITY==3
-	fRow:=cAddress+mySep+cCityZip+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
-elseif sSTRZIPCITY==1
-	fRow:=cCityZip+mySep+cAddress+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
-elseif sSTRZIPCITY==2
-	fRow:=cCountry+mySep+cUSA+'concat('+cAddress+mySep+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+mySep+cAddress+'))'
-endif	
-
-RETURN 'concat('+fRow+')'
-Function SQLFullNAC(Purpose:=1 as int,country:="" as string,alias:="" as string) as string 
-// composition of SQL code for getting full name and address of a person
-// Purpose: see SQLFullName
-// country: default country (optional)
-LOCAL f_row as STRING
-
-f_row:=SQLFullName(Purpose,ALIAS)
-
-f_row:=SubStr(f_row,1,Len(f_row)-2)+',", ",'+;   // eliminate ) for trim and concat
-SQLAddress(country,ALIAS)+"))"  // add  )) for trim and concat
-RETURN AllTrim(f_row)
-Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string 
-// composition of SQL code for getting full name of a person
-// Purpose: optional indicator that the name is used for:
-// 	0: addresslist: with surname "," firstname prefix (without salutation) 
-//		1: fullname conform address specification
-//		2: name for identification: lastname, firstname prefix 
-//		3: like 1 but always with firstname 
-// Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
-//
-LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
-local i as int
-mAlias:=ConS(aliasp) 
-if !Empty(mAlias)
-	mAlias:=mAlias+"."
-endif
-
-IF sSalutation .and.(Purpose==1.or.Purpose==3) 
-	title:="case "
-	for i:=1 to 3
-		 title+=" when "+mAlias+"gender="+Str(pers_salut[i,2],-1)+" then '"+pers_salut[i,1]+"'" 
-	next
-	title+="ELSE '' END"
-ENDIF
-IF titelINADR.and.!Empty(pers_titles) .and.(Purpose==1.or.Purpose==3)
-	if !Empty(Title) 
-		title := "concat(("+title+"),"
-	endif	
-	title+="(case"
-	for i:=1 to Len(pers_titles)
-		title+=" when "+mAlias+"title="+Str(pers_titles[i,2],-1)+" then '"+pers_titles[i,1]+"'" 
-	next
-	title+=" END)"+iif(sSalutation .and.(Purpose==1.or.Purpose==3),")","")
-ENDIF
-prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
-fullname :=iif(LSTNUPC,'upper(','')+ mAlias+"lastname"+iif(LSTNUPC,')','')
-IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
-	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
-ELSE
-	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0.or.Purpose=2,'", ",','')+mAlias+'initials," ")'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",",""))',"")
-ENDIF
-do CASE
-CASE Purpose==0
-	//addresslist:
-	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
-CASE Purpose==1.or.Purpose==3
-	// address conform address specifications:
-	IF sSurnameFirst
-   	fullname := 'concat('+fullname+'," ",'+iif(!Empty(Title),title+'," ",',"")+frstnm+',' + prefix +')'
-	else
-// 		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
-		fullname:='concat('+iif(!Empty(title),title+'," ",',"")+frstnm+','+prefix+','+fullname+')'
-	ENDIF	
-CASE Purpose==2
-	// identification:
-// 	fullname:='trim(concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+'))'
-	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
-endcase
-return 'trim('+fullname +')'  
 function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSortOrder:="" as string, cMarkupText:="" as string,fMinAmnt:=0 as float,fMaxAmnt:=0 as float,fMinIndVidAmnt:=0 as float) as string 
 // Generation of SQLString to select persons with all their fields 
 // 
@@ -5373,39 +4801,6 @@ ACCESS  Salutation  CLASS SQLSelectPerson
 	endif
 	return pers_salut[iG,1]  
 
-Function SQLUpdMailCode(lGiver:=true as logic) as string
-// compose SQL Code for updating column mailingcodes of table person with new code cAddCode  
-//  + code FI for a giver if lGiver=true
-//
-Return "concat(mailingcodes,"+iif(lGiver,"if(instr(mailingcodes,'FI')>0,'',' FI')","")+",' ',values(mailingcodes))"
-
-Function StandardZip(ZipCode:="" as string) as string 
-	* Standardise Ducth Zip-code format: 9999 XX 
-	local myZipCode:=ZipCode as string
-	if Empty(myZipCode) 
-		return null_string
-	endif
-	myZipCode:=Upper(AllTrim(myZipCode))
-	IF Len(myZipCode)==6
-		IF isnum(SubStr(myZipCode,1,4)) .and. !isnum(SubStr(myZipCode,5,2)) .and. !IsPunctuationMark(SubStr(myZipCode,5,2))
-			RETURN SubStr(myZipCode,1,4)+" "+SubStr(myZipCode,5,2)
-		ENDIF
-	elseif Len(myZipCode)==5
-		IF countrycode='46' .and. isnum(myZipCode)  
-			RETURN SubStr(myZipCode,1,3)+" "+SubStr(myZipCode,4,2)
-		ENDIF
-	ENDIF
-RETURN myZipCode
-Function Title(nTit as int) as string 
-	// Return Title of a person:
-	LOCAL nPtr as int
-	if nTit>0
-		nPtr:=AScan(pers_titles,{|x|x[2]==nTit})
-		if nPtr >0 
-			return pers_titles[nPtr,1]
-		endif
-	endif
-	return null_string
 Function TYPEDSCR(nTp as int) as string
 	// Return Gender description of a person:
 	RETURN pers_types[AScan(pers_types,{|x|x[2]==nTp}),1]
