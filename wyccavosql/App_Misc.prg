@@ -1,3 +1,18 @@
+function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
+	// add new mailing NewCodes to current string of mailing codes cCod
+	LOCAL aPCod,aNCod as ARRAY, iStart as int
+	if Empty(NewCodes)
+		return cCod
+	endif
+	aPCod:=Split(AllTrim(cCod)," ")
+	aNCod:=Split(AllTrim(NewCodes)," ")
+	iStart:=Len(aPCod)
+	
+	ASize(aPCod,iStart+Len(aNCod))
+	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
+	cCod:=MakeCod(aPCod)
+	return cCod
+	
 Function AddSlashes(cString as string) as string
 // add backslashes for special characters ',",\,%,_
 return StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"')
@@ -313,6 +328,52 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		oMainWindow:STATUSMESSAGE(Space(100))
 	endif
 	return false
+Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string)  as logic
+	******************************************************************************
+	*              Update of month balance values per account
+	*					Should be used between Start transaction and commit and  
+	*              record to be changed should be locked for update beforehand                                        
+	*  Auteur    : K. Kuijpers
+	*  Date      : 21-09-2011
+	******************************************************************************
+	*
+	local cValues as string 
+	local oStmnt as SQLStatement
+	local oMBal,oAcc as SQLSelect
+	local lError as logic 
+	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
+		// insert new one/update existing 
+		if !Currency==sCurr
+			if Empty(currency) .or. len(currency)<>3 
+				Currency:=sCurr
+			else
+				SEval(Currency,{|c|lError:=iif(c<65 .or. c>90,true,lError)})
+				if lError
+					Currency:=sCurr
+				endif
+			endif
+		endif
+		if !(pDebAmnt==0.00.and.pCreAmnt==0.00)
+			cValues:="("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+sCurr+"',"+Str(pDebAmnt,-1)+","+Str(pCreAmnt,-1)+")"
+		endif 
+		if !Currency==sCurr
+			if !(pDebFORGN==pDebAmnt.and. pCreFORGN==pCreAmnt)
+				if !(pDebFORGN==0.00.and.pCreFORGN=0.00)
+					cValues+=iif(Empty(cValues),'',",")+"("+pAccount+","+Str(Year(pRecordDate),-1)+","+Str(Month(pRecordDate),-1)+",'"+Currency+"',"+Str(pDebFORGN,-1)+","+Str(pCreFORGN,-1)+")"
+				endif
+			endif
+		endif
+		if !Empty(cValues)
+			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+cValues+;
+				" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:status)
+				LogEvent(,"ChgBalance error:"+oStmnt:Status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
+				return false
+			endif
+		endif
+	endif
+	RETURN true
 Function CleanFileName(cFileName as string) as string
 // removes illegal characters from cFileName to return a for Windows acceptable file name:
 LOCAL oFileSpec as Filespec
@@ -1151,6 +1212,13 @@ Pers_Types:= oPersTp:GetLookupTable(500,#DESCRPTN,#ID)
 oPersTp:GoTop()
 pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
 return
+function FillPP() as array
+	local oPP as SQLSelect
+oPP:=SqlSelect{"select concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))) as ppname ,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
+// oPP:SetFilter({||!oPP:PPCODE=="AAA".and. !oPP:PPCODE=="ACH" .and.!Empty(oPP:PPCODE)})
+// oPP:GoTop()
+return oPP:GetLookupTable(500,#PPNAME,#PPCODE)
+
 FUNCTION FillPropTypes()
 * Fill Array with person property types
 prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
@@ -1186,9 +1254,180 @@ ELSE
 	Return FWrite(pFile,Mem2String(oUni:BSTR,oUni:Len))
 endif
 //Return FWriteLine(pFile,c) 
+FUNCTION GenKeyword()
+* Soort(3e elemetnt:
+* n: NAW
+* c: Compleet NAW
+* g: gift
+* b: Bestemming (=g,d)
+* o: Openpost 
+* d: department
+* 
+/*
+{"Bank account","%BANKACCOUNT","o"},;
+{"Amount due","%AMOUNTDUE","o"},;
+{"Date amount due","%DUEDATE","o"},;
+{"Identifier amount due","%DUEIDENTIFIER","o"},;
+{"Invoice id/KID","%INVOICEID","o"},;
+{"Firstname member destination","%FRSTNAMEDESTINATION","g"},;
+{"Lastname member destination","%LSTNAMEDESTINATION","g"},;
+{"Salutation member destination","%SALUTDESTINATION","g"},;
+{"Department name","%DEPRMNTNAME","d"},;
+
+*/
+
+RETURN {;
+{"Salutation","%SALUTATION","n"},;
+{"Title","%TITLE","n"},;
+{"Initials","%INITIALS","n"},;
+{"Prefix","%PREFIX","n"},;
+{"Lastname","%LASTNAME","n"},;
+{"Firstnames","%FIRSTNAME","n"},;
+{"Name extension","%NAMEEXTENSION","n"},;
+{"Address","%ADDRESS","n"},;
+{"Zipcode","%ZIPCODE","n"},;
+{"City","%CITYNAME","n"},;
+{"Country","%COUNTRY","n"},;
+{"Attention","%ATTENTION","n"},;
+{"Date last gift","%DATELSTGIFT","g"},;
+{"Date gift","%DATEGIFT","g"},;
+{"Transaction ID","%TRANSID","g"},;
+{"Document ID","%DOCID","b"},;
+{"Reference","%REFERENCE","b"},;
+{"Amount gift","%AMOUNTGIFT","g"},;
+{"Total gift/payments","%TOTALAMOUNT","b"},;
+{"Destination gift/ due amounts","%DESTINATION","b"},;
+{"Complete name and address (6 lines)","%NAMEADDRESS","c"},; 
+{"Report month","%REPORTMONTH","b"},;
+{"Page skip","%PAGESKIP","b"}}
+
 FUNCTION GetBalType(cSoort)
 * Translate baltype code to text
 RETURN aBalType[AScan(aBalType,{|x| x[1]==cSoort}),2]
+Function GetBalYear(pStartYear as int,pStartMonth as int) as array 
+	/* Give parameters of balance year, in which given year and month occurs
+	Returns array with the values:
+	-YEARSTART: 	Start Year of found balance year
+	-MonthStart:	Start Month of found balance year
+	-YEAREND: 		End Year of found balance year
+	-MONTHEND:		End Month of found balance year
+	*/
+	LOCAL nDateMonth, nMinStart, nSecondStart, nNewStart, nEnd,i as int
+	Local Startdate:=SToD(Str(pStartYear,4,0)+StrZero(pStartMonth,2,0)+"01"),enddate as date 
+	local YEARSTART,MONTHSTART,YEAREND,MonthEnd as int
+	
+	nDateMonth:=Round(pStartYear*12+pStartMonth,0)
+	nMinStart:=Round(Year(LstYearClosed)*12+Month(LstYearClosed),0)
+	IF nDateMonth >=nMinStart
+		* In Non closed year
+		* Calculate start of next balance year:
+		IF Month(LstYearClosed) < ClosingMonth
+			nSecondStart:=Round(Year(LstYearClosed)*12+ClosingMonth+1,0)
+		ELSE
+			nSecondStart:=Round(Year(LstYearClosed)*12+ClosingMonth+13,0)
+		ENDIF
+		
+		IF nDateMonth < nSecondStart // before second balance year?
+			YEARSTART:=Year(LstYearClosed)
+			MONTHSTART:=Month(LstYearClosed)
+			YEAREND:=Integer((nSecondStart-2)/12)
+		ELSE
+			nNewStart:=nSecondStart+Integer(((nDateMonth - nSecondStart)/12)*12)
+			YEARSTART:=Integer(nNewStart/12)
+			MONTHSTART:=nNewStart%12
+			YEAREND:=Integer((nNewStart+10)/12)
+		ENDIF
+		MonthEnd:=ClosingMonth
+		RETURN {YEARSTART,MONTHSTART,YEAREND,MonthEnd}
+	ENDIF
+	IF Empty(GlBalYears)
+		* empty closed balanceyears:
+		RETURN {YEARSTART,MONTHSTART,YEAREND,MonthEnd}
+	ENDIF
+	for i:=1 to Len(GlBalYears)
+		IF GlBalYears[i,1]<=Startdate // start before given date?
+			YEARSTART:=Year(GlBalYears[i,1])
+			MONTHSTART:=Month(GlBalYears[i,1])
+			if i==1 
+				enddate:=SToD(Str(YEARSTART+1,4)+StrZero(MONTHSTART,2)+"01")-1
+			else
+				enddate:=GlBalYears[i-1,1]-1
+			endif
+			YEAREND:=Year(enddate)
+			MonthEnd:=Month(enddate)
+			RETURN {YEARSTART,MONTHSTART,YEAREND,MonthEnd}
+		ENDIF
+	Next
+	* per default oldest year:
+	i--
+	YEARSTART:=Year(GlBalYears[i,1])
+	MONTHSTART:=Month(GlBalYears[i,1])
+	if	i==1 
+		enddate:=SToD(Str(YEARSTART+1,4)+StrZero(MONTHSTART,2)+"01")-1
+	else
+		enddate:=GlBalYears[i,1]-1
+	endif
+	YEAREND:=Year(enddate)
+	MonthEnd:=Month(enddate)
+	RETURN {YEARSTART,MONTHSTART,YEAREND,MonthEnd}
+function GetBalYears(NbrFutureYears:=0 as int) as array
+	// get array with balance years
+	LOCAL aMyYear:={} as ARRAY  // {text of balance year, jjjjmm of start of balance year}
+	LOCAL oBalY as SQLSelect
+	LOCAL nEnd,MONTHEND,YEAREND as int 
+	local aYearStartEnd:={} as array
+
+	
+	oBalY:=SQLSelect{"select yearstart,monthstart,yearlength from balanceyear order by yearstart desc,monthstart desc",oConn}
+	oBalY:Execute()	                       
+	
+	DO WHILE !oBalY:EoF
+		IF !Empty(oBalY:YEARSTART)
+			nEnd:=Round(oBalY:YEARSTART*12+oBalY:MONTHSTART+oBalY:YEARLENGTH-2,0)
+			MONTHEND:=nEnd%12+1
+			YEAREND:=Integer(nEnd/12)
+			AAdd(aMyYear,{Str(oBalY:YEARSTART,4,0)+":"+StrZero(oBalY:MONTHSTART,2,0)+" - "+;
+				Str(YEAREND,4,0)+":"+StrZero(MONTHEND,2,0),Str(oBalY:YEARSTART,4,0)+StrZero(oBalY:MONTHSTART,2,0)})
+		ENDIF
+		oBalY:Skip()
+	ENDDO
+	*	Add non closed years:
+
+	
+// 	aYearStartEnd:=GetBalYear(Year(LstYearClosed),ClosingMonth)
+	aYearStartEnd:=GetBalYear(Year(LstYearClosed),Month(LstYearClosed))
+	AAdd(aMyYear,{Str(aYearStartEnd[1],4,0)+":"+StrZero(aYearStartEnd[2],2,0)+" - "+;
+	Str(aYearStartEnd[3],4,0)+":"+StrZero(aYearStartEnd[4],2,0),Str(aYearStartEnd[1],4,0)+StrZero(aYearStartEnd[2],2,0)})
+	MONTHEND:=aYearStartEnd[4]
+	YEAREND:=aYearStartEnd[3]
+	DO WHILE true
+		++MONTHEND
+		IF MONTHEND>12
+			MONTHEND:=1
+			++YEAREND
+		ENDIF
+		IF Round(YEAREND*12+MONTHEND,0)>Round(Year(Today())*12+Month(Today())+NbrFutureYears*12,0)
+			*	last year determined:
+			exit
+		ENDIF
+		aYearStartEnd:=GetBalYear(YEAREND,MonthEnd)
+		AAdd(aMyYear,{Str(aYearStartEnd[1],4,0)+":"+StrZero(aYearStartEnd[2],2,0)+" - "+;
+			Str(aYearStartEnd[3],4,0)+":"+StrZero(aYearStartEnd[4],2,0),Str(aYearStartEnd[1],4,0)+StrZero(aYearStartEnd[2],2,0)})
+		MONTHEND:=aYearStartEnd[4]
+		YEAREND:=aYearStartEnd[3]
+	ENDDO
+	ASort(aMyYear,,,{|x,y| x[2]>=y[2]})
+	RETURN aMyYear
+
+function GetBankAccnts(mPersid as string) as array 
+local aBankaccs:={} as array
+local oSel as SQLSelect 
+	* Fill aBankAcc: 
+oSel:=SqlSelect{"select group_concat(banknumber,'#%#',bic separator ',') as bankaccs from personbank where persid="+mPersid+" group by persid" ,oConn}
+if oSel:RecCount>0
+	AEval(Split(oSel:bankaccs,','),{|x|AAdd(aBankaccs,Split(x,'#%#'))})
+endif
+return aBankaccs
 Function GetBIC(cIBAN as string, cBIC:='' as string) as string
 	// determine BIC from IBAN if possible:
 	// cIBAN: bankaccount nummber
@@ -1272,6 +1511,96 @@ do while !oSel:Eof
 	oSel:Skip()
 enddo 
 return cText
+Function GetFullName(PersNbr:="" as string ,Purpose:=0 as int) as string 
+// composition of full name of a person
+// PersNbr: Optional ID of person 
+// Purpose: optional indicator that the name is used for:
+// 	0: addresslist: with surname "," firstname prefix (without salutation) 
+//		1: fullname conform address specification
+//		2: name for identification: lastname, firstname prefix 
+//		3: like 1 but always with firstname 
+LOCAL frstnm,naam1, Title,prefix as STRING
+local oPers as SQLSelect
+if Empty(PersNbr)
+	return ""
+endif
+oPers:=SQLSelect{"select lastname,prefix,title,firstname,initials,gender from person where persid="+PersNbr,oConn}
+
+IF !oPers:RecCount==1
+	RETURN ""
+ENDIF
+IF sSalutation .and.(Purpose==1.or.Purpose==3) 
+	Title := Salutation(oPers:GENDER)
+	IF !Empty(Title)
+		Title+=" "
+	ENDIF
+ENDIF
+IF TITELINADR.and.!Empty(Title(oPers:Title)) .and.(Purpose==1.or.Purpose==3) 
+	Title += Title(oPers:Title)+' '
+ENDIF
+IF .not. Empty(oPers:FIELDGET(#prefix))
+   prefix :=AllTrim(oPers:FIELDGET(#prefix)) +" "
+ENDIF
+IF .not. Empty(oPers:FIELDGET(#lastname))
+   naam1 := AllTrim(oPers:FIELDGET(#lastname))+" "
+ENDIF
+IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
+	IF !Empty(oPers:FIELDGET(#firstname) )
+		frstnm += AllTrim(oPers:FIELDGET(#firstname))+' '
+	ELSEIF .not. Empty(oPers:FIELDGET(#initials))  && use otherwise initials
+		frstnm += AllTrim(oPers:FIELDGET(#initials))+' '
+	ENDIF
+ELSEIF .not. Empty(oPers:FIELDGET(#initials))  && use otherwise initials
+	frstnm += AllTrim(oPers:FIELDGET(#initials))+' '
+ENDIF
+do CASE
+CASE Purpose==0
+	//addresslist:
+	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
+CASE Purpose==1.or.Purpose==3
+	// address conform address specifications:
+	IF sSurnameFirst
+   	naam1 := naam1+Title+frstnm + prefix
+	else
+		naam1:=Title+frstnm+prefix+naam1
+	ENDIF	
+CASE Purpose==2
+	// identification:
+	naam1:=AllTrim(naam1)+iif(!sSurnameFirst.and.!(Empty(frstnm).and.Empty(prefix)),", "," ")+frstnm+prefix
+endcase
+naam1:=AllTrim(naam1)
+return StrTran(naam1,',','',len(naam1),1)
+Function GetFullNAW(PersNbr as string,country:="" as string,Purpose:=1 as int) as string 
+* Compose name and address
+* country: default country (optional)
+LOCAL f_row:="" as STRING
+local oPers as SQLSelect
+
+IF Empty(PersNbr) 
+	return null_string
+ENDIF
+f_row:=GetFullName(PersNbr,Purpose)
+oPers:=SQLSelect{"select address,postalcode,city,country from person where persid="+PersNbr,oConn} 
+if oPers:RecCount<1
+	return null_string
+endif
+
+f_row:=f_row+', '
+IF .not.Empty(oPers:address)
+   f_row+=AllTrim(oPers:address)+" "
+ENDIF
+IF .not.Empty(oPers:postalcode)
+   f_row+=Trim(oPers:postalcode)+" "
+ENDIF
+IF .not.Empty(oPers:city)
+   f_row+=Trim(oPers:city)+" "
+ENDIF
+IF .not.Empty(oPers:country) 
+   f_row+=Trim(oPers:country) 
+ELSEIF .not.Empty(country)
+   f_row+=country
+ENDIF
+RETURN AllTrim(f_row)
 function GetHelpDir()
 
 if Len(Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0
@@ -1334,6 +1663,62 @@ function GetServername(fullpathname as string) as string
 		endif
 	endif
 	return cServerName
+Function GetStreetHousnbr(Address as string) as array
+	* return array {streetname, housnbr} from input Address
+	LOCAL aWord as ARRAY
+	LOCAL l,j as int
+	LOCAL nEnd, nNumPosition as int
+	LOCAL StreetName:=null_string, Housenbr:=" " as STRING
+
+	IF !Empty(Address)
+		aWord:=GetTokens(Address)
+		nEnd := Len(aWord)
+		if nEnd==1 .and. IsDigit(aWord[1,1])
+			return {"",aWord[1,1]}
+		endif
+		* Search streetname:
+		* Search backwards till housenbr:
+		FOR l:=nEnd to 1 step -1
+			//		IF IsDigit(aWord[l,1]).and.l>1
+			IF IsDigit(aWord[l,1])
+				* Housenbr found:
+				nNumPosition:=l
+				IF l > 1
+					* two numbers?
+					IF IsDigit(aWord[l-1,1])
+						nNumPosition:=l - 1
+					ELSEIF l>3 .and.Len(aWord[l-1,1])< 4 .and.IsDigit(aWord[l-2,1])
+						* number, short alpha, number?			
+						nNumPosition:=l - 2
+					ENDIF
+				ENDIF
+				if nNumPosition=1
+					// number at begin
+					Housenbr := aWord[1,1] + aWord[1,2]
+					FOR j=2 to nEnd
+						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
+					NEXT
+				else
+					FOR j=1 to nNumPosition-1
+						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
+					NEXT
+					FOR j = nNumPosition to nEnd
+						Housenbr := Housenbr +aWord[j,1] + aWord[j,2]
+					NEXT 
+				endif
+				IF Len(AllTrim(Housenbr)) > 9
+					* Large deviation: all in streetname:
+					StreetName := Address
+					Housenbr := ""
+				ENDIF
+				exit
+			ENDIF
+		NEXT
+		IF Empty(nNumPosition) // no house# found?
+			StreetName:= Address
+		ENDIF
+	ENDIF
+	RETURN {AllTrim(StreetName), AllTrim(Housenbr)}
 FUNCTION GetTokens(cText as string,aSep:=null_array as array,AlphaDigitSep:=true as logic) as array
 	*	Determine Tokens in a string of text
 	*	aSep: optionaly array with separators 
@@ -2414,6 +2799,47 @@ FOR i:=1 to Len(cString)
 	ENDIF
 NEXT
 RETURN cString		
+FUNCTION MakeAbrvCod(cCodes as STRING)
+* Translates string with mailing code abbravations (separated by space)  to array of mailing code identifiers
+LOCAL aAbCodes as ARRAY
+LOCAL i,j as int
+LOCAL aCode:={} as ARRAY
+aAbCodes:=Split(Upper(Compress(cCodes))," ")
+FOR i=1 to Len(aAbCodes)
+	if (j:=AScan(mail_abrv,{|x|x[1]== aAbCodes[i]}))>0
+		AAdd(aCode,mail_abrv[j,2])
+	ENDIF
+NEXT
+RETURN aCode
+FUNCTION MakeCod(mCodes as ARRAY)
+	* Compose mailingcodes from array with fields mCod1 .. mCodn
+	LOCAL aCode := {}
+	LOCAL i as int
+	LOCAL cCod := "" as STRING
+	
+	FOR i = 1 to Len(mCodes)
+		IF !IsNil(mCodes[i])
+			IF Len(AllTrim(mCodes[i]))=2
+				IF AScan(aCode,mCodes[i])=0
+					AAdd(aCode,mCodes[i])
+				ENDIF
+			ENDIF
+		ENDIF
+	NEXT
+	return Implode(aCode," ")
+FUNCTION MakeCodes(Codes as ARRAY)
+* Compose clean array from array with code-objects
+	LOCAL aCod as ARRAY
+	LOCAL i as int
+	aCod := {}
+	FOR i = 1 to Len(Codes)
+		IF !Empty(Codes[i])
+			IF AScan(aCod,Codes[i])=0
+				AAdd(aCod,Trim(Codes[i]))
+			ENDIF
+		ENDIF
+	NEXT
+RETURN aCod
 FUNCTION MakeFile(oOwner:=null_object as window,cFileName ref string,cDescription as string) as ptr
 * Create a file Filename and return handler; in case of error return doserror, in case of cancel returns nil
 LOCAL ptrHandle as ptr
@@ -2452,7 +2878,312 @@ DO WHILE true
 	ENDIF
 ENDDO
 RETURN ptrHandle
+Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
+SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
+// make filter condition for account
+// select from ARRAY AAccNot WITH accounts TO be excluded
+// IsMember: M: member, N: not member, B: both (default), E: entity member(project)
+// giftalwd: 1=true / 0=false/2: don't care
+// SubscriptionAllowed: true/false
+// aAccIncl: accounts to be included (id as string)
+// aAccExcl: extra accounts to be excluded (id as string) 
+// returns array with filter expression text
+LOCAL cFilter, cType, cAcc, cIncl as STRING, i,j as int
+// LOCAL bFilter as _CODEBLOCK
+LOCAL aType:={"AK","PA","BA","KO"} as ARRAY
+LOCAL aTypeAcc:={{SDEB,SKAS,SKruis},{SHB,SKAP,SPROJ},{SAM,SAMProj,SDON,SINC,SPROJ},{SEXP,SPOSTZ}} as ARRAY 
+// if Empty(aTypeAllwd)
+// 	aTypeAllwd:={"AK","PA","BA","KO"}
+// endif
+IF !Empty(aTypeAllwd)
+	FOR i:=1 to Len(aTypeAllwd)
+		j:=AScan(aType,aTypeAllwd[i])
+		IF j>0 
+			cType+=' or b.category="'+aType[j]+'"'        // function rejected in VO28
+			AEval(aTypeAcc[j],{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
+		ENDIF
+	NEXT
+	IF !Empty(cType)
+		cFilter+=' and ('+SubStr(cType,5)+')'
+//		self:ForBlock:=SubStr(cType,5)
+	ENDIF
+// ELSE
+// 	AEval(aAccExcl,{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
+ENDIF
+AEval(aAccExcl,{|x|cAcc+=iif(Val(x)=0,'',iif(AScanExact(aAccIncl,x)>0,'',','+x))})
+IF !Empty(cAcc)
+	cFilter+=iif(Empty(cFilter),'',' and ')+"a.accid not in ("+SubStr(cAcc,2)+")"
+ENDIF
+
+IF !Empty(aAccIncl)
+	AEval(aAccIncl,{|x|cIncl+=iif(Val(x)=0,'',iif(Empty(cIncl),"",' or ')+'a.accid='+x)})
+ENDIF	
+IF IsMember=="M"
+	cFilter+=' and (a.accid in (select accid from member where accid IS NOT NULL) or a.department in (select depid from member where depid IS NOT NULL))'
+ELSEIF IsMember=="N"
+	cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL) and a.department not in (select depid from member where depid IS NOT NULL)'
+ENDIF
+IF giftalwd=0
+	cFilter+=' and a.giftalwd<>1'
+elseif giftalwd=1	
+	cFilter+=' and a.giftalwd=1'
+ENDIF
+IF !SubscriptionAllowed
+	cFilter+=' and a.subscriptionprice=0'
+ENDIF	
+IF SubStr(cFilter,1,5)==' and '
+	cFilter:=SubStr(cFilter,6)
+ENDIF
+IF !Empty(cIncl)
+	cFilter+=' or '+cIncl 
+ENDIF
+if !Empty(cFilter) 
+	Return "("+cFilter +")"
+else
+	Return ''
+endif
+FUNCTION MarkUpAddress(oPers as SQLSelect,p_recnr:=0 as int,p_width:=0 as int,p_lines:=0 as int) as array
+******************************************************************************
+*  Name      : MarkUpAddress
+*              Composition of full name and address of a person
+*  Author    : K. Kuijpers
+*  Date      : 01-01-1991
+******************************************************************************
+
+************** PARAMETERS and DECLARATION OF VARIABELES ***********************
+* p_recnr    : recordnumber recipient in Person; default current
+*              person-record
+* p_width    : width address lines, default as long as needed for the data
+* p_lines	 : required number of lines, default 6
+* Global variable sFirstNmInAdr, determined in system parameters:
+*            : .t.=use first name within address lines
+*              .f.=use initials in address lines (default)
+* Global variable sSalutation, specified in systemparams:
+*            : .t.=show salutation in Address (default)
+*              .f.=no salutation in address 
+* Global variable sSTRZIPCITY, specified in system params:
+*				0: address, zip, city, country  
+*				1: postalcode,city, address, country 
+*				2: country, postalcode city, address,  (Russia)
+*				3: address, city, zip, country   (USA, Canada)
+* Global CITYUPC: true: City name in uppercase, false: only first character uppercase 
+* Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
+* Returns: ARRAY met adressen + IN nederland 1 extra row met Kixkode
+LOCAL arraynr:=0 as int,naam1:='',titel:='',naam2:='', lstnm as STRING
+LOCAL i,j,aant as int
+LOCAL m_AdressLines := {} as ARRAY
+LOCAL stoppen := true
+LOCAL regel as STRING
+LOCAL cKixcd := "" as STRING
+LOCAL cHuisnr:="",cToev as STRING
+LOCAL nToevPos as int
+LOCAL cCity as STRING
+LOCAL frstnm as STRING 
+// Local oPers:= oMyPers as SQLSelectPerson
+local nSTRZIPCITY:=sSTRZIPCITY as int
+local cAD1 as string, nLFPos as int, aAd1, aAd2 as array 
+IF .not.Empty(p_recnr)
+	oPers:Goto(p_recnr)
+ENDIF
+IF oPers:EOF
+	RETURN nil
+ENDIF
+IF Empty(p_width)
+	p_width := 99
+ENDIF
+IF Empty(p_lines)
+	p_lines := 6
+ENDIF
+arraynr :=  p_lines + if(CountryCode="31",1,0)
+ASize(m_AdressLines, arraynr)
+AFill(m_AdressLines," ")
+if .not. Empty(oPers:country)
+	IF Upper(oPers:country)="USA" .or.Upper(oPers:country)="UNITED STATES".or.Upper(oPers:country)="CANADA".or.Upper(oPers:country)="U.S.A."
+		nSTRZIPCITY:=3
+	ELSEIF Upper(oPers:country)="RUSSIA"
+		nSTRZIPCITY:=2
+	ENDIF
+endif
+/* Filling address lines in following sequence:
+1: Kixkode in extra line (for dutch addresses)
+2: Country in last line (optional)
+3: Zip code and City in previous line
+4: Street and housenbr in previous lines
+5: Attention in previous line
+6: Last name and name extenion in first lines
+*/
+* Determine Kix Barkode:
+IF CountryCode="31"
+	IF Empty(oPers:country) .or. Upper(oPers:country) == "NEDERLAND"
+		* Determine housenbr:
+		nLFPos:=At(CRLF,oPers:address)
+		if nLFPos>0
+			cAD1:=AllTrim(SubStr(oPers:address,1,nLFPos-1))
+		else
+			cAD1:=oPers:address
+		endif
+		FOR i = Len(cAD1) to 2 step -1
+			IF IsDigit(psz(_cast,SubStr(cAD1,i,1)))
+				IF Empty(cHuisnr)
+					nToevPos := i+1
+				ENDIF
+				cHuisnr := SubStr(cAD1,i,1)+cHuisnr
+			ELSE
+				IF !Empty(cHuisnr)
+					exit
+				ENDIF
+			ENDIF
+		NEXT
+		IF nToevPos >0 .and. nToevPos <= Len(cAD1)
+			cToev := SubStr(cAD1,nToevPos,6)
+		ENDIF
+		cKixcd := oPers:postalcode+ cHuisnr+if(!Empty(cToev),"X"+cToev,"")
+	ENDIF
+	m_AdressLines[arraynr] := cKixcd
+	--arraynr
+ENDIF
+IF .not. Empty(oPers:country).and. nSTRZIPCITY#2 .and.arraynr>0
+	IF AScan(OwnCountryNames,{|x| Upper(AllTrim(x))=Upper(AllTrim(oPers:country))})=0
+		m_AdressLines[arraynr] := SubStr(AllTrim(oPers:country),1,p_width)
+	   --arraynr
+	ENDIF
+ENDIF
+cCity := oPers:city
+if CITYUPC
+	cCity:=Upper(cCity)
+endif
+IF nSTRZIPCITY==3
+	cCity:= AllTrim(cCity+ " "+oPers:postalcode)
+ELSE
+	cCity := AllTrim(oPers:postalcode+' '+cCity)
+ENDIF
+
+IF .not. Empty(cCity).and. nSTRZIPCITY#2.and.nSTRZIPCITY#1 .and.arraynr>0
+   m_AdressLines[arraynr] := SubStr(AllTrim(cCity),1,p_width)
+   --arraynr
+ENDIF
+aAd2:={}
+IF .not. Empty(oPers:address) .and.arraynr>1
+	// fill intermediate array aAd2
+	aAd1:=Split(oPers:address,CRLF)
+	For j:=1 to Len(aAd1)
+   	FOR i=1 to MLCount(aAd1[j],p_width)
+			regel	:=	MemoLine(aAd1[j],p_width,i)
+			IF	Empty(regel) 
+				loop
+			ENDIF
+			AAdd(aAd2,regel)
+   	Next
+	NEXT
+	if Len(aAd2) >= arraynr.and. arraynr>1
+		ASize(aAd2,arraynr-1)
+	endif
+	for i:=Len(aAd2) to 1 step -1
+		m_AdressLines[arraynr] := AllTrim(aAd2[i])
+		--arraynr
+	next
+ENDIF
+IF  (nSTRZIPCITY==2 .or. nSTRZIPCITY==1) .and.!Empty(cCity) .and.arraynr>0
+   m_AdressLines[arraynr] := SubStr(AllTrim(cCity),1,p_width)
+   --arraynr
+ENDIF
+IF .not. Empty(oPers:country).and. nSTRZIPCITY==2 .and.arraynr>0
+	IF AScan(OwnCountryNames,{|x| Upper(AllTrim(x))=Upper(oPers:country)})=0
+		m_AdressLines[arraynr] := SubStr(oPers:country,1,p_width)
+	   --arraynr
+	ENDIF
+ENDIF
+
+
+IF .not. Empty(oPers:attention).and. arraynr >0
+	m_AdressLines[arraynr] := oPers:attention
+   --arraynr
+ENDIF
+IF arraynr > 0
+	aant := arraynr
+	IF sSalutation
+		titel := Salutation(oPers:gender)
+	ENDIF
+	IF.not.Empty(titel)
+	   titel := titel+' '
+	ENDIF
+	IF TITELINADR .and.!Empty( oPers:Title )
+		titel += Title(oPers:Title)+' '
+	ENDIF
+	IF .not. Empty(oPers:prefix)
+	   naam1 += oPers:prefix+' '
+	ENDIF
+	IF .not. Empty(oPers:lastname)
+		lstnm:=oPers:lastname
+		if LSTNUPC
+			lstnm:=Upper(lstnm)
+// 		else
+// 			lstnm:=Upper(SubStr(lstnm,1,1))+Lower(SubStr(lstnm,2))
+		endif
+	   naam1 += lstnm+' '
+	ENDIF
+
+	IF sFirstNmInAdr
+		IF !Empty(oPers:firstname)
+  			frstnm += oPers:firstname+' '
+		ELSEIF .not. Empty(oPers:initials)  && anders voorletters gebruiken
+  			frstnm += oPers:initials+' '
+		ENDIF
+	ELSEIF .not. Empty(oPers:initials)  && anders voorletters gebruiken
+  		frstnm += oPers:initials+' '
+	ENDIF		
+	IF sSurnameFirst
+    	naam1 += frstnm
+    ELSE
+    	naam1 := frstnm+naam1
+    ENDIF
+	naam2 := oPers:nameext
+	IF .not.Empty(titel)
+	   IF Len(titel)+Len(naam1)+Len(naam2) > p_width
+    	  IF aant == 1.or.p_width<25
+	      *  Bij weinig ruimte titel verkorten:
+    	     titel := AllTrim(SubStr(titel,1,4))+' '
+	      ENDIF
+	   ENDIF
+	ENDIF
+	naam1 := titel+naam1
+	IF aant == 1
+	   * Nog maar 1 regel beschikbaar: samenvoegen en afkappen:
+	   naam1 := SubStr(AllTrim(naam1)+' '+naam2,1,p_width)
+	   naam2 := ''
+	ELSE  && meer regels:
+	   IF Len(naam2)>p_width.or.Len(naam1)>p_width
+    	  * problemen met breedte, ook samenvoegen:
+	      naam1 := naam1+if(Empty(naam2),'',' '+naam2)
+    	  naam2 := ''
+	   ENDIF
+	ENDIF
+*	arraynr := 0  && naam aan het begin
+	stoppen := FALSE
+	IF MLCount(naam1,p_width) < aant .and. !Empty(naam2)
+		 m_AdressLines[arraynr] := AllTrim(naam2)
+		 --arraynr
+	ENDIF
+	FOR i=Min(aant,MLCount(naam1,p_width)) to 1 step -1
+	   regel := MemoLine(naam1,p_width,i) && verdelen over meerdere regels
+    	m_AdressLines[arraynr] := AllTrim(regel)
+    	--arraynr
+	NEXT
+ENDIF
+RETURN m_AdressLines
 DEFINE MASCULIN := 2
+Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
+	LOCAL aPCod,aNCod as ARRAY, iStart as int
+	if Empty(NewCodes)
+		return CurCodes
+	endif
+	aPCod:=Split(AllTrim(CurCodes)," ")
+	aNCod:=Split(AllTrim(NewCodes)," ")
+	iStart:=Len(aPCod)
+	
+	ASize(aPCod,iStart+Len(aNCod))
+	ACopy(aNCod,aPCod,1,Len(aNCod),iStart+1) 
+	return MakeCod(aPCod)	
 Function MLine4(cBuffer as string, ptrN ref DWORD ) as string
 /******************************************************************************
 // Extract a line of text from a string, specifying a required offset argument. 
@@ -2733,6 +3464,19 @@ METHOD CellDoubleClick() CLASS OptionBrowser
 	self:Owner:ViewForm()
 	RETURN nil
 DEFINE ORGANISATION := 4
+FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String) as logic
+// Find a person by means of its external id
+	LOCAL oPers as SQLSelect
+	if Empty(cValue)
+		return false
+	endif
+	oPers:=SQLSelect{"select persid from person where deleted=0 and externid='"+cValue+"'",oConn}
+	if oPers:RecCount>0 
+		IF IsMethod(oCaller, #RegPerson)
+			oCaller:RegPerson(oPers,cItemname)
+		ENDIF	
+	ENDIF
+	RETURN (oPers:RecCount>0)
 function PersonUnion(id1 as string, id2 as string)
 	/* unify two persons id1 and id2 to one id1
 	this means:
@@ -3029,12 +3773,32 @@ FUNCTION RandSpace(cString as STRING) as STRING
 		ENDIF
 	ENDIF
 RETURN cString
+function Salutation(GENDER as int) as string
+	// Return salutation of a person:	
+	return pers_salut[iif(Empty(GENDER),5,GENDER),1]
+
 function SaveUse(functionid:=null_object as usual) 
 local oStmnt as SQLStatement
 oStmnt:=SQLStatement{"insert into functionusage (functionid,userid,usedate,frequency) values ('"+iif(IsObject(functionid),Symbol2String(ClassName(functionid)),iif(IsString(functionid),functionid,""))+"','"+ LOGON_EMP_ID + "',current_date,1)"+;
 " on duplicate key update frequency=frequency+1",oConn}
 oStmnt:Execute()
 return
+function SetAccFilter(WhatFrom as int) as string 
+	// compose filter for balance items branch from given WhatFrom balitemid 
+	LOCAL i,j			as int
+	local a_bal:={},aBalIncl:={} as array
+	local oBal as SQLSelect
+	
+	IF !Empty(WhatFrom)
+		oBal:=SQLSelect{"select balitemid,balitemidparent from balanceitem order by balitemidparent,balitemid",oConn}
+		if oBal:RecCount>0
+			aBalIncl:={WhatFrom} 
+			a_bal:=oBal:getlookuptable(1000) 
+			do WHILE (i:=AddSubBal(a_bal,WhatFrom,i,@aBalIncl))>0
+			ENDDO 
+		endif
+	endif
+	return Implode(aBalIncl,",")
 	Function SetCollate() 
 		if CountryCode='41'
 			Collate:=" COLLATE utf8_danish_ci"
@@ -3044,6 +3808,22 @@ return
 			Collate:=''
 		endif
 	return
+function SetDepFilter(WhoFrom as int) as string 
+	// compose filter for department branch from given WhoFrom depid 
+	LOCAL i,j			as int
+	local d_dep:={},aDepIncl:={} as array
+	local oDep as SQLSelect
+	
+	IF !Empty(WhoFrom)
+		oDep:=SQLSelect{"select depid,parentdep from department order by parentdep,depid",oConn}
+		if oDep:RecCount>0
+			aDepIncl:={WhoFrom} 
+			d_dep:=oDep:getlookuptable(1000) 
+			do WHILE (i:=AddSubDep(d_dep,WhoFrom,i,@aDepIncl))>0
+			ENDDO 
+		endif
+	endif
+	return Implode(aDepIncl,",")
 FUNC ShowError( oSQLErrorInfo as USUAL)    as void PASCAL
 
 	LOCAL cMsg as STRING
@@ -3069,6 +3849,55 @@ LOCAL myDim as Dimension
 	myDim:Width:=w
 	self:Size:=myDim
  return
+function SpecialMessage(message_tele as string,Destname:='' as string,cSpecialmessage:='' ref string) as logic 
+	// returns special message cSpecialmessage within message_tele from telebank message 
+	// returns true if manually processing needed
+	local nMsgPos,nEndToEnd,nSpace as int 
+	local cSpecMessage as string
+	local lSpecmessage,lManually as logic
+	local aNospecmess:={'donatie','steun','bijdr','maand','mnd','kw','algeme','werk','onderh','comit','komit','com.','onderst','wycliff','betalingskenm',;
+	'support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend','zegen','transactiedatum'}  as array
+	local aSpecmess:={'pensioen','lijfrente','nalaten','extra','jubil','collecte','kollekte','opbr','cadeau','kado','contant','eenmalig','project'} as array 
+	// determine extra messsage in description of transaction: 
+	nMsgPos:=At('%%',message_tele)
+	nMsgPos:=iif(nMsgPos>0,nMsgPos+2,1)
+// 	if nMsgPos>0 
+		cSpecMessage:=AllTrim(StrTran(StrTran(Lower(SubStr(message_tele,nMsgPos)),'giften'),'gift'))
+		if (nEndToEnd:=AtC('endtoend:',cSpecMessage))>0
+			nSpace:=At3(Space(1),cSpecMessage,nEndToEnd+9)
+			if nSpace=0
+				nSpace:=Len(cSpecMessage)
+			endif
+			cSpecMessage:=Stuff(cSpecMessage,nEndToEnd,nSpace+1-nEndToEnd,'') 
+		endif
+		if !Empty(cSpecMessage) 
+			lSpecmessage:=false 
+			AEval(aSpecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,true,lSpecmessage)})
+			if !lSpecmessage
+				lSpecmessage:=true
+				if !Empty(Destname)
+					if AtC(Destname,SubStr(message_tele,nMsgPos))>0      // skip with name of destination
+						lSpecmessage:=false 
+					endif
+				endif
+				if lSpecmessage
+					AEval(aNospecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})
+				endif
+				if lSpecmessage
+					// check month name in message:
+					AEval(Maand,{|x|lSpecmessage:=iif(AtC(SubStr(x,1,4),cSpecMessage)>0,false,lSpecmessage)})    // skip with month name
+				endif
+			else 
+				lManually:=true
+			endif
+		endif
+// 	endif
+	if lSpecmessage
+		cSpecialmessage:=cSpecMessage
+	else
+		cSpecialmessage:=null_string
+	endif
+	return lManually
 FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as logic,lIgnoreQuote:=false as logic) as array
 	* Split string cTarget into array, seperated by cSep 
 	* Optionally the result is compressed 
@@ -3108,6 +3937,65 @@ FUNCTION Split(cTarget:="" as string,cSep:=' ' as string,lCompress:=false as log
 		ENDDO
 	endif
 	RETURN aToken
+function SQLAccType() as string
+// compose sql code for determining account type: of account a, member m:
+// A=subscription
+// F=invoice
+// C=bankorder
+// M=member
+// G=project
+// D=donation
+// K=member department
+	return ;
+		"upper(if(a.subscriptionprice>0,'A',"+;                          // subscribtion
+			"if(a.accid='"+SDEB+"','F',"+;              //invoice
+				"if(a.accid='"+scre+"','C',"+;           // bankorder
+					"if(a.giftalwd=1 and m.depid IS NULL,"+;
+						"if(m.co IS NOT NULL and m.co<>'','M','G')"+;        // member, else project
+					","+; // else
+						"if(a.accid='"+SDON+"','D'"+;  // donation, 
+						","+;		//else 
+							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M',if(d.expenseacc=a.accid or d.netasset=a.accid,'K','')),'')"+;  // income account: member, else member department
+						")"+;
+					")"+;
+				")"+;
+			")"+;
+		"))"
+
+Function SQLAddress(country:="" as string,alias:="" as string,cSep:=',' as string) as string 
+// composition of SQL code for getting address of a person
+// -	country: default country (optional) 
+// -	alias  : table alias used for table person: e.g. " p."  (optional)
+// -	cSep	 :	separator text between address lines; e.g. for html: "<br>"
+//				
+// Global variable sSTRZIPCITY, specified in system params:
+//				0: address, zip, city, country  
+//				1: postalcode,city, address, country 
+//				2: country, postalcode city, address,  (Russia)
+//				3: address, city, zip, country    (USA, Canada)
+// Global CITYUPC: true: City name in uppercase, false: only first character uppercase
+// 
+LOCAL fRow:="" as string 
+local mAlias:=iif(Empty(ALIAS),"",alias+".") as string
+local cAddress:="if("+mAlias+'address<>"" and ' +mAlias+'address<>"X",'+mAlias+'address,"")' as string
+local cZip:='if(' +mAlias+'postalcode<>"" and ' +mAlias+'postalcode<>"X",'+mAlias+'postalcode,"")'  as string
+local cCity:='if(' +mAlias+'city<>"" and ' +mAlias+'city<>"X" and ' +mAlias+'city<>"??",'+if(CITYUPC,'upper(','')+mAlias+'city'+if(CITYUPC,')','')+',"")' as string
+local ccountry:='if('+mAlias+'country<>""'+iif(Empty(OwnCountryNames),'',' and not '+mAlias+'country in('+Implode(OwnCountryNames,'","')+')')+','+mAlias+'country,'+iif(Empty(country),'""','"'+country+'"')+')' as string
+local cUSA:='if('+mAlias+'country="USA" or '+mAlias+'country="UNITED STATES" or '+mAlias+'country="CANADA" or '+mAlias+'country="U.S.A.",'
+local cCityZip as string
+local mySep:=',"'+cSep+' ",' as string
+
+
+cCityZip:=iif(sSTRZIPCITY==3,'concat('+cCity+'," ",'+cZip+')',cUSA+'concat('+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+'))')  
+if sSTRZIPCITY==0.or. sSTRZIPCITY==3
+	fRow:=cAddress+mySep+cCityZip+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
+elseif sSTRZIPCITY==1
+	fRow:=cCityZip+mySep+cAddress+",if("+ccountry+'<>"",concat("'+cSep+' ",' +ccountry+'),"")'
+elseif sSTRZIPCITY==2
+	fRow:=cCountry+mySep+cUSA+'concat('+cAddress+mySep+cCity+'," ",'+cZip+'),concat('+cZip+'," ",'+cCity+mySep+cAddress+'))'
+endif	
+
+RETURN 'concat('+fRow+')'
 function SQLdate(dat as date) as string
 // convert date to sql string format:
 local Rdat:=DToS(dat) as string 
@@ -3118,8 +4006,81 @@ return substr(Rdat,1,4)+"-"+substr(Rdat,5,2)+"-"+substr(Rdat,7,2)
 function SQLDate2Date(sqldat as string) as date
 // convert mysql date to VO-date
 return SToD(StrTran(sqldat,"-",""))
+Function SQLFullNAC(Purpose:=1 as int,country:="" as string,alias:="" as string) as string 
+// composition of SQL code for getting full name and address of a person
+// Purpose: see SQLFullName
+// country: default country (optional)
+LOCAL f_row as STRING
+
+f_row:=SQLFullName(Purpose,ALIAS)
+
+f_row:=SubStr(f_row,1,Len(f_row)-2)+',", ",'+;   // eliminate ) for trim and concat
+SQLAddress(country,ALIAS)+"))"  // add  )) for trim and concat
+RETURN AllTrim(f_row)
+Function SQLFullName(Purpose:=0 as int,aliasp:="" as string) as string 
+// composition of SQL code for getting full name of a person
+// Purpose: optional indicator that the name is used for:
+// 	0: addresslist: with surname "," firstname prefix (without salutation) 
+//		1: fullname conform address specification
+//		2: name for identification: lastname, firstname prefix 
+//		3: like 1 but always with firstname 
+// Global LSTNUPC: true: last name in uppercase, false: only first character uppercase 
+//
+LOCAL frstnm,fullname, title,prefix,mAlias as STRING 
+local i as int
+mAlias:=ConS(aliasp) 
+if !Empty(mAlias)
+	mAlias:=mAlias+"."
+endif
+
+IF sSalutation .and.(Purpose==1.or.Purpose==3) 
+	title:="case "
+	for i:=1 to 3
+		 title+=" when "+mAlias+"gender="+Str(pers_salut[i,2],-1)+" then '"+pers_salut[i,1]+"'" 
+	next
+	title+="ELSE '' END"
+ENDIF
+IF titelINADR.and.!Empty(pers_titles) .and.(Purpose==1.or.Purpose==3)
+	if !Empty(Title) 
+		title := "concat(("+title+"),"
+	endif	
+	title+="(case"
+	for i:=1 to Len(pers_titles)
+		title+=" when "+mAlias+"title="+Str(pers_titles[i,2],-1)+" then '"+pers_titles[i,1]+"'" 
+	next
+	title+=" END)"+iif(sSalutation .and.(Purpose==1.or.Purpose==3),")","")
+ENDIF
+prefix :="if("+mAlias+'prefix<>"",concat('+mAlias+'prefix," "),"")'
+fullname :=iif(LSTNUPC,'upper(','')+ mAlias+"lastname"+iif(LSTNUPC,')','')
+IF sFirstNmInAdr .or. (Purpose==2.or.Purpose==3)
+	frstnm := 'if('+mAlias+'firstname<>"",concat('+iif(Purpose==2.or.Purpose=0,iif(sSurnameFirst,'" "','", "')+',','')+mAlias+'firstname," "),if('+mAlias+'initials<>"",concat('+iif(Purpose==2.or.Purpose=0,'", ",','')+mAlias+'initials," "),""))'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",","")',"")
+ELSE
+	frstnm := 'if('+mAlias+'initials<>"",concat('+iif(Purpose==0.or.Purpose=2,'", ",','')+mAlias+'initials," ")'+iif(Purpose==0.or.Purpose=2,",if("+mAlias+'prefix<>"",",",""))',"")
+ENDIF
+do CASE
+CASE Purpose==0
+	//addresslist:
+	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
+CASE Purpose==1.or.Purpose==3
+	// address conform address specifications:
+	IF sSurnameFirst
+   	fullname := 'concat('+fullname+'," ",'+iif(!Empty(Title),title+'," ",',"")+frstnm+',' + prefix +')'
+	else
+// 		fullname:='concat('+title+'," ",'+frstnm+','+prefix+','+fullname+')'
+		fullname:='concat('+iif(!Empty(title),title+'," ",',"")+frstnm+','+prefix+','+fullname+')'
+	ENDIF	
+CASE Purpose==2
+	// identification:
+// 	fullname:='trim(concat('+fullname+','+iif(sSurnameFirst,'" "','", "')+','+frstnm+','+prefix+'))'
+	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
+endcase
+return 'trim('+fullname +')'  
 Function SQLGetMyConnection()
 return oConn
+function SQLIncExpFd() as string
+// compose sql code for determining type of account of member department: of department d, account a:
+	return "upper(if(d.netasset=a.accid,'F',if(d.incomeacc=a.accid,'I',if(d.expenseacc=a.accid,'E',''))))"
+	
 Class SQLSelectPagination inherit SQLSelect
 	// sqlselect with pagination for browsing through data in a datawindow
 	protect pRecno as dword
@@ -3273,7 +4234,183 @@ if Empty(cFilterText)
 endif
 self:Where(cFilterText) 
 return true
+Function StandardZip(ZipCode:="" as string) as string 
+	* Standardise Ducth Zip-code format: 9999 XX 
+	local myZipCode:=ZipCode as string
+	if Empty(myZipCode) 
+		return null_string
+	endif
+	myZipCode:=Upper(AllTrim(myZipCode))
+	IF Len(myZipCode)==6
+		IF isnum(SubStr(myZipCode,1,4)) .and. !isnum(SubStr(myZipCode,5,2)) .and. !IsPunctuationMark(SubStr(myZipCode,5,2))
+			RETURN SubStr(myZipCode,1,4)+" "+SubStr(myZipCode,5,2)
+		ENDIF
+	elseif Len(myZipCode)==5
+		IF countrycode='46' .and. isnum(myZipCode)  
+			RETURN SubStr(myZipCode,1,3)+" "+SubStr(myZipCode,4,2)
+		ENDIF
+	ENDIF
+RETURN myZipCode
 DEFINE TEXTBX:=0
+Function Title(nTit as int) as string 
+	// Return Title of a person:
+	LOCAL nPtr as int
+	if nTit>0
+		nPtr:=AScan(pers_titles,{|x|x[2]==nTit})
+		if nPtr >0 
+			return pers_titles[nPtr,1]
+		endif
+	endif
+	return null_string
+function UnionTrans(cStatement as string) as string
+	// combine select statemenst on transaction with unions on historic trnsaction tables
+	* 
+	* cStatement should be in terms of Transaction table as t  
+	* date conditions should be specified as: t.dat>='yyy-mm-dd' or t.dat<='yyy-mm-dd' or t.dat='yyyy-mm-dd'
+	*
+	Local nDat1, nDat2,i as int
+	Local BegDat, EndDat, Maxdat as date
+	local cDat, cCompStmnt as String
+	*/  
+
+	// determine required dates in cStatement: 
+	cStatement:=Lower(cStatement) 
+	if At("transaction",cStatement)=0
+		return cStatement
+	endif
+	// nWhere:=At("where",cStatement) 
+
+	// if nWhere>0
+	cDat:=GetDateFormat()
+	SetDateFormat("YYYY-MM-DD")
+	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat<'),'t.dat >','t.dat>'),'t.dat =','t.dat=')    // remove spaces
+	nDat1:=At3("t.dat=",cStatement,5)
+	if nDat1>0
+		BegDat:=CToD(SubStr(cStatement,nDat1+7,10))
+		EndDat:=BegDat	
+	else
+		nDat1:=At3("t.dat>=",cStatement,5)
+		if nDat1>0
+			BegDat:=CToD(SubStr(cStatement,nDat1+8,10))
+		endif	
+		nDat2:=At3("t.dat<=",cStatement,5) 
+		if nDat2>0 
+			EndDat:=CToD(SubStr(cStatement,nDat2+8,10))	
+		endif
+	endif
+	SetDateFormat(cDat)
+	
+	// endif	
+	Maxdat:=Today()+60
+	if Empty(EndDat)
+		EndDat:=Maxdat
+	endif
+
+// 	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+	if BegDat>=LstYearClosed .or. Empty(GlBalYears)    
+		return cStatement
+	else
+		// compose Statement: 
+		// actual period:
+		If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
+			cCompStmnt:="("+cStatement+")"
+		endif
+		if Empty(BegDat)
+			BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
+		endif
+// 		FillBalYears()
+		for i:=2 to Len(GlBalYears)
+			if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
+				cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+			endif
+		next
+	endif 
+	return cCompStmnt
+	
+function UnionTrans2(cStatement as string, BegDat:=null_date as date, EndDat:=null_date as date) as string
+// combine select statemenst on transaction with unions on historic trnsaction tables
+* 
+* cStatement should be in terms of Transaction table as t  
+*
+Local i as int
+Local Maxdat as date
+local cCompStmnt as String
+
+// determine required dates in cStatement: 
+cStatement:=Lower(cStatement) 
+if At("transaction",cStatement)=0
+	return cStatement
+endif
+
+
+Maxdat:=Today()+60
+if Empty(EndDat)
+	EndDat:=Maxdat
+endif
+
+if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
+	return cStatement
+else
+	// compose Statement: 
+	// actual period:
+	If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
+		cCompStmnt:="("+cStatement+")"
+	endif
+	if Empty(BegDat)
+		BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
+	endif
+	for i:=2 to Len(GlBalYears)
+		if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
+			cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+		endif
+	next
+endif 
+return cCompStmnt
+ 
+Function ValidateAccTransfer (cParentId as string,mAccId as string) as string 
+	* Check if transfer of current account mAccId to another balance item with identifciation cParentid is allowed
+	* Returns Error text if not allowed
+
+	LOCAL oRB as SQLSelect
+	LOCAL cNewClass, cError  as STRING
+	LOCAL lValid:=true,lSucc as LOGIC
+	LOCAL oAcc as SQLSelect, oMbr as SQLSelect  
+	local oAccB as SQLSelect
+	local oLan as Language 
+	IF Empty(cParentId)
+		oLan:=Language{}
+		RETURN oLan:WGet("Root not allowed as parent of an account")
+	ENDIF	
+
+	* Member account .or. transactions for this account:
+	* No change of balancegroupclassification allowed
+	oRB:=SQLSelect{"select category from balanceitem where balitemid='"+cParentId+"'",oConn} 
+	if oRB:RecCount=1	
+		cNewClass:= oRB:category 
+		oAcc:=SQLSelect{"select accnumber,b.balitemid,co,homepp,b.category from balanceitem as b, account as a left join member as m on (a.accid=m.accid) where a.accid='"+mAccId+"' and b.balitemid=a.balitemid",oConn}
+		if oAcc:RecCount=1	
+			IF	!oAcc:category== cNewClass
+				IF	!(cNewClass	$ expense+income	.and.	oAcc:category $ expense+income .or. cNewClass $ asset+liability .and. oAcc:category $ asset+liability)
+					oAccB:=SQLSelect{"select accid from accountbalanceyear where accid='"+mAccId+"' and (svjc-svjd)<>0.00",oConn}
+					IF oAccB:RecCount>0
+						if oLan==null_object 
+							oLan:=Language{}
+						endif
+						cError:=oLan:WGet("Balancegroup of account")+" "+AllTrim(oAcc:ACCNUMBER)+" "+oLan:WGet('cannot be changed to different category after year closing')
+						lValid:=FALSE
+					ENDIF 
+				ENDIF
+			ENDIF
+			IF	lValid .and.!Empty(oAcc:CO)	//	Member?
+				cError:=ValidateMemberType( oAcc:CO,oAcc:HOMEPP,cNewClass)
+				IF	!Empty(cError)
+					lValid:=FALSE 
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+	// ENDIF
+	RETURN cError
 FUNCTION ValidateControls( oDW, aControls )
 
 	LOCAL i as word
@@ -3291,6 +4428,72 @@ FUNCTION ValidateControls( oDW, aControls )
 	NEXT	
 
 	RETURN i > Len( aControls )
+Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int) as string 
+	* Check if transfer of current account mAccId to another department with identification cDepartment is allowed
+	* Returns Error text if not allowed
+
+	LOCAL cError  as STRING
+	LOCAL oAcc,oSel as SQLSelect  
+	local oLan as Language 
+
+	oAcc:=SqlSelect{"select d.deptmntnbr,d.depid,d.descriptn,d.netasset,d.incomeacc,d.expenseacc from department d where d.incomeacc="+mAccId+" or d.expenseacc="+mAccId+" or d.netasset="+mAccId,oConn}
+	if oAcc:Reccount>0 .and. Str(oAcc:depid,-1)<>cDepartment
+		oLan:=Language{}
+		cError:=oLan:WGet("Account is assigned to department")+': '+oAcc:deptmntnbr+' '+oAcc:descriptn+' '+oLan:WGet("as")+' '+iif(AllTrim(Transform(oAcc:netasset,""))==mAccId,;
+			oLan:WGet("netasset account"),iif(AllTrim(Transform(oAcc:incomeacc,""))==mAccId,oLan:WGet("income account"),oLan:WGet("expense account"))) 
+	endif
+	if Empty(cError)
+		// check if account belongs to single-account member:
+		if (oSel:=SqlSelect{"select m.`mbrid` from member m where m.accid="+mAccId,oConn}):Reccount>0
+			if (oAcc:=SqlSelect{"select mbrid from member where depid="+cDepartment,oConn}):Reccount>0
+				// not allowed change of member:
+				oLan:=Language{}
+				cError:=oLan:WGet("account can not be assigned to another member")
+			endif 
+		endif
+	endif
+	if Empty(cError) .and. !Empty(Val(cDepartment))
+		// check if only Income account is Gifts receivable:  
+		oAcc:=SqlSelect{"SELECT `accid` FROM `member` WHERE `accid` is null and `depid`=" +cDepartment,oConn} 
+		if oAcc:Reccount >0 
+			
+			if mGIFTALWD==2 
+				oAcc:=SqlSelect{"select giftalwd from account where accid="+mAccId,oConn}
+				if oAcc:Reccount>0 
+					mGIFTALWD:= ConI(oAcc:giftalwd)
+				endif
+			endif
+			if mGIFTALWD=1
+				oSel:=SqlSelect{"SELECT `incomeacc`,descriptn FROM `department` WHERE `depid`=" +cDepartment,oConn}
+				if oSel:Reccount>0 
+					IF !ConS(oSel:incomeacc) == mAccId 
+						oLan:=Language{}
+						cError:=oLan:WGet("Only 1 account gift receivable allowed for deparment")+': '+oSel:descriptn
+					endif 
+				endif
+			endif
+		endif
+	endif
+
+	return cError
+function ValidateMemberType(CO as string,HomePP as string, Type as string ) as string
+	// check if member has account with correct type
+	// returns errormesage if not correct
+	local cError as string
+	if CO=="M"  // member
+		IF HomePP # Sentity .and. Type #"PA"
+			cError := "Type of corresponding account of this not own member should be liability/fund"
+		elseif Type #"PA" .and.Type #"BA"
+			cError := "Type of corresponding account of this (non project)member should be liability/fund or income"
+		endif
+	else    // PP
+		if !HomePP == Sentity .and.(Type #"PA" .and.Type #"AK") 
+			cError := "Type of corresponding account of this not own entity should be liability/fund or asset"
+		elseif HomePP = Sentity 
+			// everything allowed
+		endif
+	endif
+return cError
 Method Reset() class Window 
 	Local aChilds as array, i as int, cName as symbol , oContr as Control, cCaption as string
 	aChilds:=self:GetAllChildren() 
