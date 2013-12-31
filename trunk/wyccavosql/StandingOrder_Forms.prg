@@ -1,34 +1,61 @@
-RESOURCE EditPeriodic DIALOGEX  41, 37, 399, 234
+STATIC DEFINE EDITPERIODIC_CANCELBUTTON := 109 
+STATIC DEFINE EDITPERIODIC_DATLTSBOEK := 121 
+STATIC DEFINE EDITPERIODIC_FIXEDTEXT10 := 120 
+STATIC DEFINE EDITPERIODIC_FIXEDTEXT11 := 122 
+STATIC DEFINE EDITPERIODIC_FIXEDTEXT13 := 119 
+STATIC DEFINE EDITPERIODIC_FIXEDTEXT7 := 113 
+STATIC DEFINE EDITPERIODIC_GIVERTEXT := 114 
+STATIC DEFINE EDITPERIODIC_LstRecording := 121 
+STATIC DEFINE EDITPERIODIC_MCURRENCY := 104 
+STATIC DEFINE EDITPERIODIC_MDAY := 102 
+STATIC DEFINE EDITPERIODIC_MDOCID := 105 
+STATIC DEFINE EDITPERIODIC_MEDAT := 101 
+STATIC DEFINE EDITPERIODIC_MIDAT := 100 
+STATIC DEFINE EDITPERIODIC_MPERIOD := 103 
+STATIC DEFINE EDITPERIODIC_MPERSON := 106 
+STATIC DEFINE EDITPERIODIC_OKBUTTON := 108 
+STATIC DEFINE EDITPERIODIC_PERSONBUTTON := 107 
+STATIC DEFINE EDITPERIODIC_SC_BOEKDAG := 112 
+STATIC DEFINE EDITPERIODIC_SC_BST := 115 
+STATIC DEFINE EDITPERIODIC_SC_day := 112 
+STATIC DEFINE EDITPERIODIC_SC_docid := 115 
+STATIC DEFINE EDITPERIODIC_SC_EDAT := 111 
+STATIC DEFINE EDITPERIODIC_SC_IDAT := 110 
+STATIC DEFINE EDITPERIODIC_SC_TOTAL := 117 
+STATIC DEFINE EDITPERIODIC_STORDERLINES := 116 
+STATIC DEFINE EDITPERIODIC_STORDRID := 123 
+STATIC DEFINE EDITPERIODIC_TOTALTEXT := 118 
+RESOURCE EditStandingOrder DIALOGEX  41, 37, 399, 234
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"15-1-2011", EDITPERIODIC_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
-	CONTROL	"15-1-2011", EDITPERIODIC_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
-	CONTROL	"", EDITPERIODIC_MDAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 44, 36, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Period", EDITPERIODIC_MPERIOD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 36, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITPERIODIC_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 264, 81, 96, 111
-	CONTROL	"", EDITPERIODIC_MDOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITPERIODIC_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 99, 94, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITPERIODIC_PERSONBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 172, 99, 13, 13
-	CONTROL	"OK", EDITPERIODIC_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 284, 214, 53, 12
-	CONTROL	"Cancel", EDITPERIODIC_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 214, 53, 12
-	CONTROL	"Starting Date", EDITPERIODIC_SC_IDAT, "Static", WS_CHILD, 12, 11, 49, 12
-	CONTROL	"Ending date:", EDITPERIODIC_SC_EDAT, "Static", WS_CHILD, 12, 25, 52, 13
-	CONTROL	"Record day in month:", EDITPERIODIC_SC_BOEKDAG, "Static", WS_CHILD, 12, 44, 68, 12
-	CONTROL	"Period (months):", EDITPERIODIC_FIXEDTEXT7, "Static", WS_CHILD, 12, 59, 64, 12
-	CONTROL	"Giver:", EDITPERIODIC_GIVERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 99, 53, 13
-	CONTROL	"Document id:", EDITPERIODIC_SC_BST, "Static", WS_CHILD, 12, 81, 43, 12
-	CONTROL	"", EDITPERIODIC_STORDERLINES, "static", WS_CHILD|WS_BORDER, 4, 118, 388, 86
-	CONTROL	"Total:", EDITPERIODIC_SC_TOTAL, "Static", WS_CHILD, 4, 211, 22, 12
-	CONTROL	"", EDITPERIODIC_TOTALTEXT, "Static", WS_CHILD|WS_BORDER, 36, 210, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Currency:", EDITPERIODIC_FIXEDTEXT13, "Static", WS_CHILD, 216, 81, 43, 12
-	CONTROL	"Last booked:", EDITPERIODIC_FIXEDTEXT10, "Static", WS_CHILD, 296, 22, 53, 12
-	CONTROL	"", EDITPERIODIC_DATLTSBOEK, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 22, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Order#:", EDITPERIODIC_FIXEDTEXT11, "Static", WS_CHILD, 296, 7, 53, 12
-	CONTROL	"", EDITPERIODIC_STORDRID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 7, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"30-12-2013", EDITSTANDINGORDER_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
+	CONTROL	"30-12-2013", EDITSTANDINGORDER_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
+	CONTROL	"", EDITSTANDINGORDER_MDAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 44, 36, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Period", EDITSTANDINGORDER_MPERIOD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 36, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSTANDINGORDER_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 264, 81, 96, 111
+	CONTROL	"", EDITSTANDINGORDER_MDOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSTANDINGORDER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 99, 94, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITSTANDINGORDER_PERSONBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 172, 99, 13, 13
+	CONTROL	"OK", EDITSTANDINGORDER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 284, 214, 53, 12
+	CONTROL	"Cancel", EDITSTANDINGORDER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 214, 53, 12
+	CONTROL	"Starting Date", EDITSTANDINGORDER_SC_IDAT, "Static", WS_CHILD, 12, 11, 49, 12
+	CONTROL	"Ending date:", EDITSTANDINGORDER_SC_EDAT, "Static", WS_CHILD, 12, 25, 52, 13
+	CONTROL	"Record day in month:", EDITSTANDINGORDER_SC_BOEKDAG, "Static", WS_CHILD, 12, 44, 68, 12
+	CONTROL	"Period (months):", EDITSTANDINGORDER_FIXEDTEXT7, "Static", WS_CHILD, 12, 59, 64, 12
+	CONTROL	"Giver:", EDITSTANDINGORDER_GIVERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 99, 53, 13
+	CONTROL	"Document id:", EDITSTANDINGORDER_SC_BST, "Static", WS_CHILD, 12, 81, 43, 12
+	CONTROL	"", EDITSTANDINGORDER_STORDERLINES, "static", WS_CHILD|WS_BORDER, 4, 118, 388, 86
+	CONTROL	"Total:", EDITSTANDINGORDER_SC_TOTAL, "Static", WS_CHILD, 4, 211, 22, 12
+	CONTROL	"", EDITSTANDINGORDER_TOTALTEXT, "Static", WS_CHILD|WS_BORDER, 36, 210, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Currency:", EDITSTANDINGORDER_FIXEDTEXT13, "Static", WS_CHILD, 216, 81, 43, 12
+	CONTROL	"Last booked:", EDITSTANDINGORDER_FIXEDTEXT10, "Static", WS_CHILD, 296, 22, 53, 12
+	CONTROL	"", EDITSTANDINGORDER_DATLTSBOEK, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 22, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Order#:", EDITSTANDINGORDER_FIXEDTEXT11, "Static", WS_CHILD, 296, 7, 53, 12
+	CONTROL	"", EDITSTANDINGORDER_STORDRID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 7, 40, 12, WS_EX_CLIENTEDGE
 END
 
-CLASS EditPeriodic INHERIT DataWindowExtra 
+CLASS EditStandingOrder INHERIT DataWindowExtra 
 
 	PROTECT oDCmIDAT AS DATETIMEPICKER
 	PROTECT oDCmEDAT AS DATETIMEPICKER
@@ -79,10 +106,10 @@ CLASS EditPeriodic INHERIT DataWindowExtra
 	
 	declare method UpdateStOrd,UpdStOrdLn,ValidateHelpLine, ValidateBooking
 	
-METHOD CancelButton( ) CLASS EditPeriodic
+METHOD CancelButton( ) CLASS EditStandingOrder
 SELF:ENDWindow()
 RETURN NIL
-METHOD Close(oEvent) CLASS EditPeriodic
+METHOD Close(oEvent) CLASS EditStandingOrder
 if !Empty(self:Server) .and. self:Server:used 
 	self:Server:Close()
 endif
@@ -91,14 +118,14 @@ endif
 
 	SELF:Destroy()
 	RETURN NIL
-ACCESS DATLTSBOEK() CLASS EditPeriodic
+ACCESS DATLTSBOEK() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#DATLTSBOEK)
 
-ASSIGN DATLTSBOEK(uValue) CLASS EditPeriodic
+ASSIGN DATLTSBOEK(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#DATLTSBOEK, uValue)
 RETURN uValue
 
-METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditPeriodic
+METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditStandingOrder
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
 	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
@@ -113,102 +140,102 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditPeriodic
 		ENDIF
 	ENDIF
 	RETURN NIL
-METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditStandingOrder 
 LOCAL DIM aBrushes[1] AS OBJECT
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-SUPER:Init(oWindow,ResourceID{"EditPeriodic",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"EditStandingOrder",_GetInst()},iCtlID)
 
 aBrushes[1] := Brush{Color{COLORWHITE}}
 
-oDCmIDAT := DateTimePicker{SELF,ResourceID{EDITPERIODIC_MIDAT,_GetInst()}}
+oDCmIDAT := DateTimePicker{SELF,ResourceID{EDITSTANDINGORDER_MIDAT,_GetInst()}}
 oDCmIDAT:HyperLabel := HyperLabel{#mIDAT,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCmEDAT := DateTimePicker{SELF,ResourceID{EDITPERIODIC_MEDAT,_GetInst()}}
+oDCmEDAT := DateTimePicker{SELF,ResourceID{EDITSTANDINGORDER_MEDAT,_GetInst()}}
 oDCmEDAT:HyperLabel := HyperLabel{#mEDAT,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCmDAY := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_MDAY,_GetInst()}}
+oDCmDAY := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_MDAY,_GetInst()}}
 oDCmDAY:HyperLabel := HyperLabel{#mDAY,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmDAY:Picture := "99"
 
-oDCmPeriod := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_MPERIOD,_GetInst()}}
+oDCmPeriod := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_MPERIOD,_GetInst()}}
 oDCmPeriod:HyperLabel := HyperLabel{#mPeriod,"Period",NULL_STRING,NULL_STRING}
 oDCmPeriod:TooltipText := "Period in month after which the record will be repeated"
 oDCmPeriod:Picture := "9999"
 
-oDCmCurrency := combobox{SELF,ResourceID{EDITPERIODIC_MCURRENCY,_GetInst()}}
+oDCmCurrency := combobox{SELF,ResourceID{EDITSTANDINGORDER_MCURRENCY,_GetInst()}}
 oDCmCurrency:HyperLabel := HyperLabel{#mCurrency,NULL_STRING,"Currency of the amount",NULL_STRING}
 oDCmCurrency:FillUsing(SQLSelect{"select united_ara,aed from currencylist",oConn}:getLookupTable(300,#UNITED_ARA,#AED))
 oDCmCurrency:TooltipText := "Apply this currency to the debit and credit amounts below."
 
-oDCmDOCID := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_MDOCID,_GetInst()}}
+oDCmDOCID := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_MDOCID,_GetInst()}}
 oDCmDOCID:HyperLabel := HyperLabel{#mDOCID,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCmDOCID:FieldSpec := transaction_BST{}
 
-oDCmPerson := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_MPERSON,_GetInst()}}
+oDCmPerson := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_MPERSON,_GetInst()}}
 oDCmPerson:HyperLabel := HyperLabel{#mPerson,NULL_STRING,"The person, who is the member","HELP_CLN"}
 oDCmPerson:FocusSelect := FSEL_HOME
 oDCmPerson:FieldSpec := Person_NA1{}
 
-oCCPersonButton := PushButton{SELF,ResourceID{EDITPERIODIC_PERSONBUTTON,_GetInst()}}
+oCCPersonButton := PushButton{SELF,ResourceID{EDITSTANDINGORDER_PERSONBUTTON,_GetInst()}}
 oCCPersonButton:HyperLabel := HyperLabel{#PersonButton,"v","Browse in persons",NULL_STRING}
 oCCPersonButton:TooltipText := "Browse in Persons"
 
-oCCOKButton := PushButton{SELF,ResourceID{EDITPERIODIC_OKBUTTON,_GetInst()}}
+oCCOKButton := PushButton{SELF,ResourceID{EDITSTANDINGORDER_OKBUTTON,_GetInst()}}
 oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 oCCOKButton:OwnerAlignment := OA_PX_Y
 
-oCCCancelButton := PushButton{SELF,ResourceID{EDITPERIODIC_CANCELBUTTON,_GetInst()}}
+oCCCancelButton := PushButton{SELF,ResourceID{EDITSTANDINGORDER_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 oCCCancelButton:OwnerAlignment := OA_PX_Y
 
-oDCSC_IDAT := FixedText{SELF,ResourceID{EDITPERIODIC_SC_IDAT,_GetInst()}}
+oDCSC_IDAT := FixedText{SELF,ResourceID{EDITSTANDINGORDER_SC_IDAT,_GetInst()}}
 oDCSC_IDAT:HyperLabel := HyperLabel{#SC_IDAT,"Starting Date",NULL_STRING,NULL_STRING}
 
-oDCSC_EDAT := FixedText{SELF,ResourceID{EDITPERIODIC_SC_EDAT,_GetInst()}}
+oDCSC_EDAT := FixedText{SELF,ResourceID{EDITSTANDINGORDER_SC_EDAT,_GetInst()}}
 oDCSC_EDAT:HyperLabel := HyperLabel{#SC_EDAT,"Ending date:",NULL_STRING,NULL_STRING}
 
-oDCSC_BOEKDAG := FixedText{SELF,ResourceID{EDITPERIODIC_SC_BOEKDAG,_GetInst()}}
+oDCSC_BOEKDAG := FixedText{SELF,ResourceID{EDITSTANDINGORDER_SC_BOEKDAG,_GetInst()}}
 oDCSC_BOEKDAG:HyperLabel := HyperLabel{#SC_BOEKDAG,"Record day in month:",NULL_STRING,NULL_STRING}
 
-oDCFixedText7 := FixedText{SELF,ResourceID{EDITPERIODIC_FIXEDTEXT7,_GetInst()}}
+oDCFixedText7 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT7,_GetInst()}}
 oDCFixedText7:HyperLabel := HyperLabel{#FixedText7,"Period (months):",NULL_STRING,NULL_STRING}
 
-oDCGiverText := FixedText{SELF,ResourceID{EDITPERIODIC_GIVERTEXT,_GetInst()}}
+oDCGiverText := FixedText{SELF,ResourceID{EDITSTANDINGORDER_GIVERTEXT,_GetInst()}}
 oDCGiverText:HyperLabel := HyperLabel{#GiverText,"Giver:",NULL_STRING,NULL_STRING}
 
-oDCSC_BST := FixedText{SELF,ResourceID{EDITPERIODIC_SC_BST,_GetInst()}}
+oDCSC_BST := FixedText{SELF,ResourceID{EDITSTANDINGORDER_SC_BST,_GetInst()}}
 oDCSC_BST:HyperLabel := HyperLabel{#SC_BST,"Document id:",NULL_STRING,NULL_STRING}
 
-oDCSC_Total := FixedText{SELF,ResourceID{EDITPERIODIC_SC_TOTAL,_GetInst()}}
+oDCSC_Total := FixedText{SELF,ResourceID{EDITSTANDINGORDER_SC_TOTAL,_GetInst()}}
 oDCSC_Total:HyperLabel := HyperLabel{#SC_Total,"Total:",NULL_STRING,NULL_STRING}
 oDCSC_Total:OwnerAlignment := OA_Y
 
-oDCTotalText := FixedText{SELF,ResourceID{EDITPERIODIC_TOTALTEXT,_GetInst()}}
+oDCTotalText := FixedText{SELF,ResourceID{EDITSTANDINGORDER_TOTALTEXT,_GetInst()}}
 oDCTotalText:HyperLabel := HyperLabel{#TotalText,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCTotalText:TextColor := Color{COLORBLUE}
 oDCTotalText:BackGround := aBrushes[1]
 oDCTotalText:OwnerAlignment := OA_Y
 
-oDCFixedText13 := FixedText{SELF,ResourceID{EDITPERIODIC_FIXEDTEXT13,_GetInst()}}
+oDCFixedText13 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT13,_GetInst()}}
 oDCFixedText13:HyperLabel := HyperLabel{#FixedText13,"Currency:",NULL_STRING,NULL_STRING}
 
-oDCFixedText10 := FixedText{SELF,ResourceID{EDITPERIODIC_FIXEDTEXT10,_GetInst()}}
+oDCFixedText10 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT10,_GetInst()}}
 oDCFixedText10:HyperLabel := HyperLabel{#FixedText10,"Last booked:",NULL_STRING,NULL_STRING}
 
-oDCDATLTSBOEK := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_DATLTSBOEK,_GetInst()}}
+oDCDATLTSBOEK := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_DATLTSBOEK,_GetInst()}}
 oDCDATLTSBOEK:HyperLabel := HyperLabel{#DATLTSBOEK,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCFixedText11 := FixedText{SELF,ResourceID{EDITPERIODIC_FIXEDTEXT11,_GetInst()}}
+oDCFixedText11 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT11,_GetInst()}}
 oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"Order#:",NULL_STRING,NULL_STRING}
 
-oDCSTORDRID := SingleLineEdit{SELF,ResourceID{EDITPERIODIC_STORDRID,_GetInst()}}
+oDCSTORDRID := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_STORDRID,_GetInst()}}
 oDCSTORDRID:FieldSpec := PeriodicRec_STORDRID{}
 oDCSTORDRID:HyperLabel := HyperLabel{#STORDRID,NULL_STRING,NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Edit Standing Order"
-SELF:HyperLabel := HyperLabel{#EditPeriodic,"Edit Standing Order",NULL_STRING,NULL_STRING}
+SELF:HyperLabel := HyperLabel{#EditStandingOrder,"Edit Standing Order",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
 SELF:Menu := WOBrowserMENU{}
 SELF:AllowServerClose := False
@@ -218,56 +245,56 @@ if !IsNil(oServer)
 ENDIF
 SELF:ViewAs(#FormView)
 
-oSFStOrderLines := StOrderLines{SELF,EDITPERIODIC_STORDERLINES}
+oSFStOrderLines := StOrderLines{SELF,EDITSTANDINGORDER_STORDERLINES}
 oSFStOrderLines:show()
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-ACCESS LstRecording() CLASS EditPeriodic
+ACCESS lstrecording() CLASS EditStandingOrder
 RETURN self:FIELDGET(#LstRecording)
 
-ASSIGN LstRecording(uValue) CLASS EditPeriodic
+ASSIGN lstrecording(uValue) CLASS EditStandingOrder
 self:FIELDPUT(#LstRecording, uValue)
 RETURN uValue
 
-ACCESS mCurrency() CLASS EditPeriodic
+ACCESS mCurrency() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#mCurrency)
 
-ASSIGN mCurrency(uValue) CLASS EditPeriodic
+ASSIGN mCurrency(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#mCurrency, uValue)
 RETURN uValue
 
-ACCESS mDAY() CLASS EditPeriodic
+ACCESS mDAY() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#mDAY)
 
-ASSIGN mDAY(uValue) CLASS EditPeriodic
+ASSIGN mDAY(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#mDAY, uValue)
 RETURN uValue
 
-ACCESS mDOCID() CLASS EditPeriodic
+ACCESS mDOCID() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#mDOCID)
 
-ASSIGN mDOCID(uValue) CLASS EditPeriodic
+ASSIGN mDOCID(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#mDOCID, uValue)
 RETURN uValue
 
-ACCESS mPeriod() CLASS EditPeriodic
+ACCESS mPeriod() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#mPeriod)
 
-ASSIGN mPeriod(uValue) CLASS EditPeriodic
+ASSIGN mPeriod(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#mPeriod, uValue)
 RETURN uValue
 
-ACCESS mPerson() CLASS EditPeriodic
+ACCESS mPerson() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#mPerson)
 
-ASSIGN mPerson(uValue) CLASS EditPeriodic
+ASSIGN mPerson(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#mPerson, uValue)
 RETURN uValue
 
-METHOD OKButton( ) CLASS EditPeriodic
+METHOD OKButton( ) CLASS EditStandingOrder
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp 
 	Local nSeq:=1,nErr,nCH,nAG,nPF,nMG as int
 	local cStatement,cSep as string
@@ -376,17 +403,18 @@ METHOD OKButton( ) CLASS EditPeriodic
 	ENDIF
 	
 	
-METHOD PersonButton(lUnique ) CLASS EditPeriodic
+METHOD PersonButton(lUnique ) CLASS EditStandingOrder
 	LOCAL cValue := AllTrim(oDCmPerson:TEXTValue ) as STRING
 	Default(@lUnique,FALSE)
 //	PersonSelect(self,cValue,lUnique,'persid=="'+mCLN+'".or.Empty(accid)',"Giver")
 	PersonSelect(self,cValue,lUnique,'',"Giver")
-METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditStandingOrder
 	//Put your PostInit additions here
 	LOCAL oPer:=self:oStOrdr as SQLSelect
 	local oOrdLnH:=self:Server as StOrdLineHelp 
 
 	self:SetTexts()
+	SaveUse(self)
 	IF Empty(uExtra)
 		lNew :=FALSE
 	ELSE
@@ -454,7 +482,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPeriodic
 		self:oDCmIDAT:SetFocus() 
 	ENDIF
 	RETURN NIL	
-method PreInit(oWindow,iCtlID,oServer,uExtra) class EditPeriodic
+method PreInit(oWindow,iCtlID,oServer,uExtra) class EditStandingOrder
 	//Put your PreInit additions here
    self:lNew:=uExtra
 	if !self:lNew 
@@ -463,63 +491,81 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditPeriodic
 		self:oStOrdr:Execute()
 	endif
 	return nil
-ACCESS STORDRID() CLASS EditPeriodic
+ACCESS STORDRID() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#STORDRID)
 
-ASSIGN STORDRID(uValue) CLASS EditPeriodic
+ASSIGN STORDRID(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#STORDRID, uValue)
 RETURN uValue
 
-STATIC DEFINE EDITPERIODIC_CANCELBUTTON := 109 
-STATIC DEFINE EDITPERIODIC_DATLTSBOEK := 121 
-STATIC DEFINE EDITPERIODIC_FIXEDTEXT10 := 120 
-STATIC DEFINE EDITPERIODIC_FIXEDTEXT11 := 122 
-STATIC DEFINE EDITPERIODIC_FIXEDTEXT13 := 119 
-STATIC DEFINE EDITPERIODIC_FIXEDTEXT7 := 113 
-STATIC DEFINE EDITPERIODIC_GIVERTEXT := 114 
-STATIC DEFINE EDITPERIODIC_LstRecording := 121 
-STATIC DEFINE EDITPERIODIC_MCURRENCY := 104 
-STATIC DEFINE EDITPERIODIC_MDAY := 102 
-STATIC DEFINE EDITPERIODIC_MDOCID := 105 
-STATIC DEFINE EDITPERIODIC_MEDAT := 101 
-STATIC DEFINE EDITPERIODIC_MIDAT := 100 
-STATIC DEFINE EDITPERIODIC_MPERIOD := 103 
-STATIC DEFINE EDITPERIODIC_MPERSON := 106 
-STATIC DEFINE EDITPERIODIC_OKBUTTON := 108 
-STATIC DEFINE EDITPERIODIC_PERSONBUTTON := 107 
-STATIC DEFINE EDITPERIODIC_SC_BOEKDAG := 112 
-STATIC DEFINE EDITPERIODIC_SC_BST := 115 
-STATIC DEFINE EDITPERIODIC_SC_day := 112 
-STATIC DEFINE EDITPERIODIC_SC_docid := 115 
-STATIC DEFINE EDITPERIODIC_SC_EDAT := 111 
-STATIC DEFINE EDITPERIODIC_SC_IDAT := 110 
-STATIC DEFINE EDITPERIODIC_SC_TOTAL := 117 
-STATIC DEFINE EDITPERIODIC_STORDERLINES := 116 
-STATIC DEFINE EDITPERIODIC_STORDRID := 123 
-STATIC DEFINE EDITPERIODIC_TOTALTEXT := 118 
-RESOURCE PeriodicBrowser DIALOGEX  10, 11, 561, 262
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", PERIODICBROWSER_PERIODICBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 12, 51, 461, 197
-	CONTROL	"Edit", PERIODICBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 488, 70, 53, 12
-	CONTROL	"New", PERIODICBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 108, 53, 13
-	CONTROL	"Delete", PERIODICBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 147, 53, 12
-	CONTROL	"Cancel", PERIODICBROWSER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 185, 52, 13
-	CONTROL	"Account:", PERIODICBROWSER_SC_REK, "Static", WS_CHILD, 12, 8, 40, 12
-	CONTROL	"Periodic amounts", PERIODICBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 40, 544, 217
-	CONTROL	"", PERIODICBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 7, 72, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", PERIODICBROWSER_ACCBUTTONFROM, "Button", WS_CHILD, 132, 7, 16, 12
-	CONTROL	"lines", PERIODICBROWSER_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 328, 3, 53, 13
-	CONTROL	"", PERIODICBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 3, 36, 13
-	CONTROL	"Found:", PERIODICBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 3, 27, 13
-	CONTROL	"Find", PERIODICBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 192, 3, 53, 13
-	CONTROL	"", PERIODICBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 22, 116, 12
-	CONTROL	"Universal:", PERIODICBROWSER_FIXEDTEXT5, "Static", WS_CHILD, 12, 22, 44, 12
-	CONTROL	"Search", PERIODICBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 184, 40
-END
-
-CLASS PeriodicBrowser INHERIT DataWindowExtra 
+STATIC DEFINE EDITSTANDINGORDER_CANCELBUTTON := 109 
+STATIC DEFINE EDITSTANDINGORDER_DATLTSBOEK := 121 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT10 := 120 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT11 := 122 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT13 := 119 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT7 := 113 
+STATIC DEFINE EDITSTANDINGORDER_GIVERTEXT := 114 
+STATIC DEFINE EDITSTANDINGORDER_MCURRENCY := 104 
+STATIC DEFINE EDITSTANDINGORDER_MDAY := 102 
+STATIC DEFINE EDITSTANDINGORDER_MDOCID := 105 
+STATIC DEFINE EDITSTANDINGORDER_MEDAT := 101 
+STATIC DEFINE EDITSTANDINGORDER_MIDAT := 100 
+STATIC DEFINE EDITSTANDINGORDER_MPERIOD := 103 
+STATIC DEFINE EDITSTANDINGORDER_MPERSON := 106 
+STATIC DEFINE EDITSTANDINGORDER_OKBUTTON := 108 
+STATIC DEFINE EDITSTANDINGORDER_PERSONBUTTON := 107 
+STATIC DEFINE EDITSTANDINGORDER_SC_BOEKDAG := 112 
+STATIC DEFINE EDITSTANDINGORDER_SC_BST := 115 
+STATIC DEFINE EDITSTANDINGORDER_SC_EDAT := 111 
+STATIC DEFINE EDITSTANDINGORDER_SC_IDAT := 110 
+STATIC DEFINE EDITSTANDINGORDER_SC_TOTAL := 117 
+STATIC DEFINE EDITSTANDINGORDER_STORDERLINES := 116 
+STATIC DEFINE EDITSTANDINGORDER_STORDRID := 123 
+STATIC DEFINE EDITSTANDINGORDER_TOTALTEXT := 118 
+STATIC DEFINE PERIODICBROWSER_ACCBUTTONFROM := 109 
+STATIC DEFINE PERIODICBROWSER_CANCELBUTTON := 104 
+STATIC DEFINE PERIODICBROWSER_CANCELBUTTON5 := 102 
+STATIC DEFINE PERIODICBROWSER_DELETEBUTTON := 103 
+STATIC DEFINE PERIODICBROWSER_DELETEBUTTON5 := 101 
+STATIC DEFINE PERIODICBROWSER_DETAIL_ACCOUNTNAME := 105 
+STATIC DEFINE PERIODICBROWSER_DETAIL_BESTEMMINGSACC := 106 
+STATIC DEFINE PERIODICBROWSER_DETAIL_CRE := 114 
+STATIC DEFINE PERIODICBROWSER_DETAIL_DAY := 109 
+STATIC DEFINE PERIODICBROWSER_DETAIL_DEB := 113 
+STATIC DEFINE PERIODICBROWSER_DETAIL_DESCRIPTN := 110 
+STATIC DEFINE PERIODICBROWSER_DETAIL_DOCID := 116 
+STATIC DEFINE PERIODICBROWSER_DETAIL_EDAT := 108 
+STATIC DEFINE PERIODICBROWSER_DETAIL_FROMACCOUNT := 105 
+STATIC DEFINE PERIODICBROWSER_DETAIL_IDAT := 107 
+STATIC DEFINE PERIODICBROWSER_DETAIL_LSTRECORDING := 111 
+STATIC DEFINE PERIODICBROWSER_DETAIL_PERIOD := 112 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_BESTEMMING := 101 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_BOEKDAG := 104 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_day := 104 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_EDAT := 103 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_IDAT := 102 
+STATIC DEFINE PERIODICBROWSER_DETAIL_SC_REK := 100 
+STATIC DEFINE PERIODICBROWSER_DETAIL_STORDRID := 115 
+STATIC DEFINE PERIODICBROWSER_EDITBUTTON := 101 
+STATIC DEFINE PERIODICBROWSER_FINDBUTTON := 113 
+STATIC DEFINE PERIODICBROWSER_FIXEDTEXT4 := 110 
+STATIC DEFINE PERIODICBROWSER_FIXEDTEXT5 := 115 
+STATIC DEFINE PERIODICBROWSER_FOUND := 111 
+STATIC DEFINE PERIODICBROWSER_FOUNDTEXT := 112 
+STATIC DEFINE PERIODICBROWSER_GROUPBOX1 := 107 
+STATIC DEFINE PERIODICBROWSER_GROUPBOX2 := 116 
+STATIC DEFINE PERIODICBROWSER_NEWBUTTON := 102 
+STATIC DEFINE PERIODICBROWSER_NEWBUTTON5 := 100 
+STATIC DEFINE PERIODICBROWSER_PERIODICBROWSER_DETAIL := 100 
+STATIC DEFINE PERIODICBROWSER_SC_REK := 105 
+STATIC DEFINE PERIODICBROWSER_SC_REK5 := 103 
+STATIC DEFINE PERIODICBROWSER_SEARCHREK := 108 
+STATIC DEFINE PERIODICBROWSER_SEARCHREK6 := 104 
+STATIC DEFINE PERIODICBROWSER_SEARCHREKOLD := 106 
+STATIC DEFINE PERIODICBROWSER_SEARCHUNI := 114 
+STATIC DEFINE PROGRESSPER_CANCELBUTTON := 100 
+STATIC DEFINE PROGRESSPER_PROGRESSBAR := 101 
+CLASS StandingOrderBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDBSEARCHREKOLD as DataColumn
 	PROTECT oCCEditButton AS PUSHBUTTON
@@ -537,7 +583,7 @@ CLASS PeriodicBrowser INHERIT DataWindowExtra
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
 	PROTECT oDCFixedText5 AS FIXEDTEXT
 	PROTECT oDCGroupBox2 AS GROUPBOX
-	PROTECT oSFPeriodicBrowser_DETAIL AS PeriodicBrowser_DETAIL
+	PROTECT oSFPeriodicBrowser_DETAIL as StandingOrderBrowser_Detail
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT cAccFilter,cAccountNameFrom,cAccountNameTo as STRING
@@ -546,27 +592,49 @@ CLASS PeriodicBrowser INHERIT DataWindowExtra
 	export cWhere,cOrder,cFields,cFrom as string 
 	protect cAccId as string 
 	protect aFields:={} as array
-METHOD AccButtonFrom(lUnique ) CLASS PeriodicBrowser 
+RESOURCE StandingOrderBrowser DIALOGEX  10, 11, 561, 262
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", STANDINGORDERBROWSER_PERIODICBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 12, 51, 461, 197
+	CONTROL	"Edit", STANDINGORDERBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 488, 70, 53, 12
+	CONTROL	"New", STANDINGORDERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 108, 53, 13
+	CONTROL	"Delete", STANDINGORDERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 147, 53, 12
+	CONTROL	"Cancel", STANDINGORDERBROWSER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 185, 52, 13
+	CONTROL	"Account:", STANDINGORDERBROWSER_SC_REK, "Static", WS_CHILD, 12, 8, 40, 12
+	CONTROL	"Periodic amounts", STANDINGORDERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 40, 544, 217
+	CONTROL	"", STANDINGORDERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 7, 72, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", STANDINGORDERBROWSER_ACCBUTTONFROM, "Button", WS_CHILD, 132, 7, 16, 12
+	CONTROL	"lines", STANDINGORDERBROWSER_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 328, 3, 53, 13
+	CONTROL	"", STANDINGORDERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 3, 36, 13
+	CONTROL	"Found:", STANDINGORDERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 3, 27, 13
+	CONTROL	"Find", STANDINGORDERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 192, 3, 53, 13
+	CONTROL	"", STANDINGORDERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 22, 116, 12
+	CONTROL	"Universal:", STANDINGORDERBROWSER_FIXEDTEXT5, "Static", WS_CHILD, 12, 22, 44, 12
+	CONTROL	"Search", STANDINGORDERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 184, 40
+END
+
+METHOD AccButtonFrom(lUnique ) CLASS StandingOrderBrowser 
 	Default(@lUnique,FALSE)	
 	AccountSelect(self,AllTrim(self:oDCSearchRek:TEXTValue ),"Account from",lUnique,"a.active=1")
 
 RETURN NIL
-METHOD AccButtonTo(lUnique ) CLASS PeriodicBrowser 
+METHOD AccButtonTo(lUnique ) CLASS StandingOrderBrowser 
 	Default(@lUnique,FALSE)	
 	AccountSelect(self,AllTrim(self:oDCSearchRekTo:TEXTValue ),"Account to",lUnique,"a.active=1")
 
 RETURN NIL
-METHOD CancelButton( ) CLASS PeriodicBrowser
+METHOD CancelButton( ) CLASS StandingOrderBrowser
 SELF:ENDwindow()
 RETURN NIL
-METHOD Close(oEvent) CLASS PeriodicBrowser
+METHOD Close(oEvent) CLASS StandingOrderBrowser
 *	SUPER:Close(oEvent)
 	//Put your changes here
 SELF:oSFPeriodicBrowser_DETAIL:Close()
 SELF:oSFPeriodicBrowser_DETAIL:Destroy()
 SELF:destroy()
 RETURN NIL
-METHOD DeleteButton( ) CLASS PeriodicBrowser
+METHOD DeleteButton( ) CLASS StandingOrderBrowser
 	LOCAL oTextBox as TextBox 
 	local curStorId as string
 	local oStmnt as SQLStatement
@@ -597,22 +665,22 @@ METHOD DeleteButton( ) CLASS PeriodicBrowser
 	ENDIF
 
 	RETURN NIL
-METHOD EditButton(lNew) CLASS PeriodicBrowser
-	LOCAL oEditPeriodicWindow AS EditPeriodic
+METHOD EditButton(lNew) CLASS StandingOrderBrowser
+	LOCAL oEditPeriodicWindow as EditStandingOrder
 	Default(@lNew,FALSE)
 	IF !lNew.and.(SELF:Server:EOF.or.SELF:Server:BOF)
 		(ErrorBox{,"Select a standing order first"}):Show()
 		RETURN
 	ENDIF
 	
-	oEditPeriodicWindow := EditPeriodic{ self:Owner,,self:oStOrd,lNew  }
+	oEditPeriodicWindow := EditStandingOrder{ self:Owner,,self:oStOrd,lNew  }
 	oEditPeriodicWindow:cAccFilter:=self:cAccFilter
 // 	oEditPeriodicWindow:oCaller:=self:oSFPeriodicBrowser_DETAIL:Browser
 	oEditPeriodicWindow:oCaller:=self
 	oEditPeriodicWindow:Show()
 
 	RETURN NIL
-method EditFocusChange(oEditFocusChangeEvent) class PeriodicBrowser
+method EditFocusChange(oEditFocusChangeEvent) class StandingOrderBrowser
 	local oControl as Control
 	local lGotFocus as logic
 	oControl := IIf(oEditFocusChangeEvent == NULL_OBJECT, NULL_OBJECT, oEditFocusChangeEvent:Control)
@@ -634,7 +702,7 @@ method EditFocusChange(oEditFocusChangeEvent) class PeriodicBrowser
 
 	RETURN nil
 	return NIL
-METHOD FilePrint() CLASS  PeriodicBrowser
+METHOD FilePrint() CLASS  StandingOrderBrowser
 LOCAL aHeading as ARRAY
 LOCAL nRij AS INT
 LOCAL nBlad AS INT
@@ -670,7 +738,7 @@ oReport:prstart()
 oReport:prstop()
 self:oStOrd:ResetNotification()
 RETURN NIL
-METHOD FindButton( ) CLASS PeriodicBrowser
+METHOD FindButton( ) CLASS StandingOrderBrowser
 local i,j as int 
 	local aKeyw:={} as array 
 	if !Empty(self:cAccId)
@@ -693,73 +761,73 @@ local i,j as int
 	self:Refresh()
 
 RETURN NIL
-METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-SUPER:Init(oWindow,ResourceID{"PeriodicBrowser",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"StandingOrderBrowser",_GetInst()},iCtlID)
 
-oCCEditButton := PushButton{SELF,ResourceID{PERIODICBROWSER_EDITBUTTON,_GetInst()}}
+oCCEditButton := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_EDITBUTTON,_GetInst()}}
 oCCEditButton:HyperLabel := HyperLabel{#EditButton,"Edit",NULL_STRING,NULL_STRING}
 oCCEditButton:OwnerAlignment := OA_PY
 
-oCCNewButton := PushButton{SELF,ResourceID{PERIODICBROWSER_NEWBUTTON,_GetInst()}}
+oCCNewButton := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_NEWBUTTON,_GetInst()}}
 oCCNewButton:HyperLabel := HyperLabel{#NewButton,"New",NULL_STRING,NULL_STRING}
 oCCNewButton:OwnerAlignment := OA_PY
 
-oCCDeleteButton := PushButton{SELF,ResourceID{PERIODICBROWSER_DELETEBUTTON,_GetInst()}}
+oCCDeleteButton := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_DELETEBUTTON,_GetInst()}}
 oCCDeleteButton:HyperLabel := HyperLabel{#DeleteButton,"Delete",NULL_STRING,NULL_STRING}
 oCCDeleteButton:OwnerAlignment := OA_PY
 
-oCCCancelButton := PushButton{SELF,ResourceID{PERIODICBROWSER_CANCELBUTTON,_GetInst()}}
+oCCCancelButton := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 oCCCancelButton:OwnerAlignment := OA_PY
 
-oDCSC_REK := FixedText{SELF,ResourceID{PERIODICBROWSER_SC_REK,_GetInst()}}
+oDCSC_REK := FixedText{SELF,ResourceID{STANDINGORDERBROWSER_SC_REK,_GetInst()}}
 oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account:",NULL_STRING,NULL_STRING}
 
-oDCGroupBox1 := GroupBox{SELF,ResourceID{PERIODICBROWSER_GROUPBOX1,_GetInst()}}
+oDCGroupBox1 := GroupBox{SELF,ResourceID{STANDINGORDERBROWSER_GROUPBOX1,_GetInst()}}
 oDCGroupBox1:HyperLabel := HyperLabel{#GroupBox1,"Periodic amounts",NULL_STRING,NULL_STRING}
 oDCGroupBox1:OwnerAlignment := OA_HEIGHT
 
-oDCSearchRek := SingleLineEdit{SELF,ResourceID{PERIODICBROWSER_SEARCHREK,_GetInst()}}
+oDCSearchRek := SingleLineEdit{SELF,ResourceID{STANDINGORDERBROWSER_SEARCHREK,_GetInst()}}
 oDCSearchRek:HyperLabel := HyperLabel{#SearchRek,NULL_STRING,"The account from which to record",NULL_STRING}
 oDCSearchRek:FieldSpec := MEMBERACCOUNT{}
 oDCSearchRek:FocusSelect := FSEL_HOME
 oDCSearchRek:TooltipText := "The person, who is a subscriber"
 oDCSearchRek:UseHLforToolTip := True
 
-oCCAccButtonFrom := PushButton{SELF,ResourceID{PERIODICBROWSER_ACCBUTTONFROM,_GetInst()}}
+oCCAccButtonFrom := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_ACCBUTTONFROM,_GetInst()}}
 oCCAccButtonFrom:HyperLabel := HyperLabel{#AccButtonFrom,"v","Browse in from accounts",NULL_STRING}
 oCCAccButtonFrom:TooltipText := "Browse in accounts"
 oCCAccButtonFrom:UseHLforToolTip := True
 
-oDCFixedText4 := FixedText{SELF,ResourceID{PERIODICBROWSER_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4 := FixedText{SELF,ResourceID{STANDINGORDERBROWSER_FIXEDTEXT4,_GetInst()}}
 oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"lines",NULL_STRING,NULL_STRING}
 
-oDCFound := FixedText{SELF,ResourceID{PERIODICBROWSER_FOUND,_GetInst()}}
+oDCFound := FixedText{SELF,ResourceID{STANDINGORDERBROWSER_FOUND,_GetInst()}}
 oDCFound:HyperLabel := HyperLabel{#Found,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCFoundtext := FixedText{SELF,ResourceID{PERIODICBROWSER_FOUNDTEXT,_GetInst()}}
+oDCFoundtext := FixedText{SELF,ResourceID{STANDINGORDERBROWSER_FOUNDTEXT,_GetInst()}}
 oDCFoundtext:HyperLabel := HyperLabel{#Foundtext,"Found:",NULL_STRING,NULL_STRING}
 
-oCCFindButton := PushButton{SELF,ResourceID{PERIODICBROWSER_FINDBUTTON,_GetInst()}}
+oCCFindButton := PushButton{SELF,ResourceID{STANDINGORDERBROWSER_FINDBUTTON,_GetInst()}}
 oCCFindButton:HyperLabel := HyperLabel{#FindButton,"Find",NULL_STRING,NULL_STRING}
 
-oDCSearchUni := SingleLineEdit{SELF,ResourceID{PERIODICBROWSER_SEARCHUNI,_GetInst()}}
+oDCSearchUni := SingleLineEdit{SELF,ResourceID{STANDINGORDERBROWSER_SEARCHUNI,_GetInst()}}
 oDCSearchUni:HyperLabel := HyperLabel{#SearchUni,NULL_STRING,NULL_STRING,NULL_STRING}
 oDCSearchUni:FocusSelect := FSEL_TRIM
 oDCSearchUni:TooltipText := "Enter one or more (part of) key values "
 oDCSearchUni:UseHLforToolTip := True
 
-oDCFixedText5 := FixedText{SELF,ResourceID{PERIODICBROWSER_FIXEDTEXT5,_GetInst()}}
+oDCFixedText5 := FixedText{SELF,ResourceID{STANDINGORDERBROWSER_FIXEDTEXT5,_GetInst()}}
 oDCFixedText5:HyperLabel := HyperLabel{#FixedText5,"Universal:",NULL_STRING,NULL_STRING}
 
-oDCGroupBox2 := GroupBox{SELF,ResourceID{PERIODICBROWSER_GROUPBOX2,_GetInst()}}
+oDCGroupBox2 := GroupBox{SELF,ResourceID{STANDINGORDERBROWSER_GROUPBOX2,_GetInst()}}
 oDCGroupBox2:HyperLabel := HyperLabel{#GroupBox2,"Search",NULL_STRING,NULL_STRING}
 
 SELF:Caption := "Standing Orders"
-SELF:HyperLabel := HyperLabel{#PeriodicBrowser,"Standing Orders",NULL_STRING,NULL_STRING}
+SELF:HyperLabel := HyperLabel{#StandingOrderBrowser,"Standing Orders",NULL_STRING,NULL_STRING}
 SELF:Menu := WOMenu{}
 SELF:PreventAutoLayout := True
 SELF:AllowServerClose := True
@@ -779,21 +847,22 @@ self:Browser:AddColumn(oDBSEARCHREKOLD)
 
 SELF:ViewAs(#FormView)
 
-oSFPeriodicBrowser_DETAIL := PeriodicBrowser_DETAIL{SELF,PERIODICBROWSER_PERIODICBROWSER_DETAIL}
+oSFPeriodicBrowser_DETAIL := StandingOrderBrowser_Detail{self,STANDINGORDERBROWSER_PERIODICBROWSER_DETAIL}
 oSFPeriodicBrowser_DETAIL:show()
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-METHOD NewButton( ) CLASS PeriodicBrowser
+METHOD NewButton( ) CLASS StandingOrderBrowser
 	SELF:EditButton(TRUE)
 RETURN NIL
-METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
+METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser
 	//Put your PostInit additions here
 	LOCAL oBank as SQLSelect
 	LOCAL lSuccess AS LOGIC
 self:SetTexts()
+// 	SaveUse(self)
 // 	*Determine accountfilter for use in From and To-account:
 // 	IF !Empty(SKAP)
 // 		cAccFilter:='accid<>'+SKAP
@@ -813,7 +882,7 @@ self:SetTexts()
 
 	SELF:oDCSearchREK:SetFocus()
 	RETURN NIL
-METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
+METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser
 	//Put your PreInit additions here
 	local lSuccess as logic 
 	self:cWhere:=""
@@ -829,47 +898,45 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser
 	
 
 	RETURN NIL
-Method Refresh() class PeriodicBrowser
+Method Refresh() class StandingOrderBrowser
 	self:Server:sqlstring:="select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder
 	self:Server:Execute() 
 	self:oSFPeriodicBrowser_DETAIL:Browser:Refresh()
   	self:oDCFound:TextValue :=Str(self:oStOrd:RecCount,-1)
 
 	return
-ACCESS SearchRek() CLASS PeriodicBrowser
+ACCESS SearchRek() CLASS StandingOrderBrowser
 RETURN SELF:FieldGet(#SearchRek)
 
-ASSIGN SearchRek(uValue) CLASS PeriodicBrowser
+ASSIGN SearchRek(uValue) CLASS StandingOrderBrowser
 SELF:FieldPut(#SearchRek, uValue)
 RETURN uValue
 
-ACCESS SearchREKold() CLASS PeriodicBrowser
+ACCESS SearchREKold() CLASS StandingOrderBrowser
 RETURN SELF:FieldGet(#SearchREKold)
 
-ASSIGN SearchREKold(uValue) CLASS PeriodicBrowser
+ASSIGN SearchREKold(uValue) CLASS StandingOrderBrowser
 SELF:FieldPut(#SearchREKold, uValue)
 RETURN uValue
 
-ACCESS SearchRekTo() CLASS PeriodicBrowser
+ACCESS SearchRekTo() CLASS StandingOrderBrowser
 RETURN SELF:FieldGet(#SearchRekTo)
 
-ASSIGN SearchRekTo(uValue) CLASS PeriodicBrowser
+ASSIGN SearchRekTo(uValue) CLASS StandingOrderBrowser
 SELF:FieldPut(#SearchRekTo, uValue)
 RETURN uValue
 
-ACCESS SearchUni() CLASS PeriodicBrowser
+ACCESS SearchUni() CLASS StandingOrderBrowser
 RETURN SELF:FieldGet(#SearchUni)
 
-ASSIGN SearchUni(uValue) CLASS PeriodicBrowser
+ASSIGN SearchUni(uValue) CLASS StandingOrderBrowser
 SELF:FieldPut(#SearchUni, uValue)
 RETURN uValue
 
-STATIC DEFINE PERIODICBROWSER_ACCBUTTONFROM := 109 
-STATIC DEFINE PERIODICBROWSER_CANCELBUTTON := 104 
-STATIC DEFINE PERIODICBROWSER_CANCELBUTTON5 := 102 
-STATIC DEFINE PERIODICBROWSER_DELETEBUTTON := 103 
-STATIC DEFINE PERIODICBROWSER_DELETEBUTTON5 := 101 
-CLASS PeriodicBrowser_DETAIL INHERIT DataWindowMine 
+STATIC DEFINE STANDINGORDERBROWSER_ACCBUTTONFROM := 109 
+STATIC DEFINE STANDINGORDERBROWSER_CANCELBUTTON := 104 
+STATIC DEFINE STANDINGORDERBROWSER_DELETEBUTTON := 103 
+CLASS StandingOrderBrowser_Detail INHERIT DataWindowMine 
 
 	PROTECT oDBSTORDRID as DataColumn
 	PROTECT oDBACCOUNTNAME as DataColumn
@@ -894,7 +961,7 @@ CLASS PeriodicBrowser_DETAIL INHERIT DataWindowMine
 	PROTECT oDClstrecording AS SINGLELINEEDIT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE PeriodicBrowser_DETAIL DIALOGEX  26, 24, 458, 196
+resource StandingOrderBrowser_Detail DIALOGEX  26, 24, 458, 196
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -912,81 +979,81 @@ BEGIN
 	CONTROL	"Latest Rec", PERIODICBROWSER_DETAIL_LSTRECORDING, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 118, 80, 12, WS_EX_CLIENTEDGE
 END
 
-ACCESS AccountName() CLASS PeriodicBrowser_DETAIL
+ACCESS AccountName() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#AccountName)
 
-ASSIGN AccountName(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN AccountName(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#AccountName, uValue)
 RETURN uValue
 
-ACCESS BESTEMMINGSACC() CLASS PeriodicBrowser_DETAIL
+ACCESS BESTEMMINGSACC() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#BESTEMMINGSACC)
 
-ASSIGN BESTEMMINGSACC(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN BESTEMMINGSACC(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#BESTEMMINGSACC, uValue)
 RETURN uValue
 
-ACCESS CRE() CLASS PeriodicBrowser_DETAIL
+ACCESS CRE() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#CRE)
 
-ASSIGN CRE(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN CRE(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#CRE, uValue)
 RETURN uValue
 
-ACCESS DAY() CLASS PeriodicBrowser_DETAIL
+ACCESS Day() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#DAY)
 
-ASSIGN DAY(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN Day(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#DAY, uValue)
 RETURN uValue
 
-ACCESS DEB() CLASS PeriodicBrowser_DETAIL
+ACCESS DEB() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#DEB)
 
-ASSIGN DEB(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN DEB(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#DEB, uValue)
 RETURN uValue
 
-ACCESS descriptn() CLASS PeriodicBrowser_DETAIL
+ACCESS descriptn() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#descriptn)
 
-ASSIGN descriptn(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN descriptn(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#descriptn, uValue)
 RETURN uValue
 
-ACCESS docid() CLASS PeriodicBrowser_DETAIL
+ACCESS DOCID() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#docid)
 
-ASSIGN docid(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN DOCID(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#docid, uValue)
 RETURN uValue
 
-ACCESS Edat() CLASS PeriodicBrowser_DETAIL
+ACCESS Edat() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#Edat)
 
-ASSIGN Edat(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN Edat(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#Edat, uValue)
 RETURN uValue
 
-ACCESS FromAccount() CLASS PeriodicBrowser_DETAIL
+ACCESS FromAccount() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#FromAccount)
 
-ASSIGN FromAccount(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN FromAccount(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#FromAccount, uValue)
 RETURN uValue
 
-ACCESS IDAT() CLASS PeriodicBrowser_DETAIL
+ACCESS IDAT() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#IDAT)
 
-ASSIGN IDAT(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN IDAT(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#IDAT, uValue)
 RETURN uValue
 
-METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser_DETAIL 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser_Detail 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-SUPER:Init(oWindow,ResourceID{"PeriodicBrowser_DETAIL",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"StandingOrderBrowser_Detail",_GetInst()},iCtlID)
 
 oDCSC_REK := FixedText{SELF,ResourceID{PERIODICBROWSER_DETAIL_SC_REK,_GetInst()}}
 oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account number",NULL_STRING,NULL_STRING}
@@ -1111,76 +1178,325 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-ACCESS lstrecording() CLASS PeriodicBrowser_DETAIL
+ACCESS lstrecording() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#lstrecording)
 
-ASSIGN lstrecording(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN lstrecording(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#lstrecording, uValue)
 RETURN uValue
 
-ACCESS Period() CLASS PeriodicBrowser_DETAIL
+ACCESS Period() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#Period)
 
-ASSIGN Period(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN Period(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#Period, uValue)
 RETURN uValue
 
-method PostInit(oWindow,iCtlID,oServer,uExtra) class PeriodicBrowser_DETAIL
+method PostInit(oWindow,iCtlID,oServer,uExtra) class StandingOrderBrowser_Detail
 	//Put your PostInit additions here 
 	self:Browser:SetStandardStyle( gbsReadOnly )
 	return NIL
 
-METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PeriodicBrowser_DETAIL
+METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser_Detail
 	//Put your PreInit additions here 
 	local lSuccess as logic
 // 	oWindow:Server:SetRelation(oWindow:oAcc,"accid")		
 	oWindow:use(oWindow:oStOrd)
 	RETURN nil
-ACCESS stordrid() CLASS PeriodicBrowser_DETAIL
+ACCESS stordrid() CLASS StandingOrderBrowser_Detail
 RETURN SELF:FieldGet(#stordrid)
 
-ASSIGN stordrid(uValue) CLASS PeriodicBrowser_DETAIL
+ASSIGN stordrid(uValue) CLASS StandingOrderBrowser_Detail
 SELF:FieldPut(#stordrid, uValue)
 RETURN uValue
 
-STATIC DEFINE PERIODICBROWSER_DETAIL_ACCOUNTNAME := 105 
-STATIC DEFINE PERIODICBROWSER_DETAIL_BESTEMMINGSACC := 106 
-STATIC DEFINE PERIODICBROWSER_DETAIL_CRE := 114 
-STATIC DEFINE PERIODICBROWSER_DETAIL_DAY := 109 
-STATIC DEFINE PERIODICBROWSER_DETAIL_DEB := 113 
-STATIC DEFINE PERIODICBROWSER_DETAIL_DESCRIPTN := 110 
-STATIC DEFINE PERIODICBROWSER_DETAIL_DOCID := 116 
-STATIC DEFINE PERIODICBROWSER_DETAIL_EDAT := 108 
-STATIC DEFINE PERIODICBROWSER_DETAIL_FROMACCOUNT := 105 
-STATIC DEFINE PERIODICBROWSER_DETAIL_IDAT := 107 
-STATIC DEFINE PERIODICBROWSER_DETAIL_LSTRECORDING := 111 
-STATIC DEFINE PERIODICBROWSER_DETAIL_PERIOD := 112 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_BESTEMMING := 101 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_BOEKDAG := 104 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_day := 104 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_EDAT := 103 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_IDAT := 102 
-STATIC DEFINE PERIODICBROWSER_DETAIL_SC_REK := 100 
-STATIC DEFINE PERIODICBROWSER_DETAIL_STORDRID := 115 
-STATIC DEFINE PERIODICBROWSER_EDITBUTTON := 101 
-STATIC DEFINE PERIODICBROWSER_FINDBUTTON := 113 
-STATIC DEFINE PERIODICBROWSER_FIXEDTEXT4 := 110 
-STATIC DEFINE PERIODICBROWSER_FIXEDTEXT5 := 115 
-STATIC DEFINE PERIODICBROWSER_FOUND := 111 
-STATIC DEFINE PERIODICBROWSER_FOUNDTEXT := 112 
-STATIC DEFINE PERIODICBROWSER_GROUPBOX1 := 107 
-STATIC DEFINE PERIODICBROWSER_GROUPBOX2 := 116 
-STATIC DEFINE PERIODICBROWSER_NEWBUTTON := 102 
-STATIC DEFINE PERIODICBROWSER_NEWBUTTON5 := 100 
-STATIC DEFINE PERIODICBROWSER_PERIODICBROWSER_DETAIL := 100 
-STATIC DEFINE PERIODICBROWSER_SC_REK := 105 
-STATIC DEFINE PERIODICBROWSER_SC_REK5 := 103 
-STATIC DEFINE PERIODICBROWSER_SEARCHREK := 108 
-STATIC DEFINE PERIODICBROWSER_SEARCHREK6 := 104 
-STATIC DEFINE PERIODICBROWSER_SEARCHREKOLD := 106 
-STATIC DEFINE PERIODICBROWSER_SEARCHUNI := 114 
-STATIC DEFINE PROGRESSPER_CANCELBUTTON := 100 
-STATIC DEFINE PROGRESSPER_PROGRESSBAR := 101 
+STATIC DEFINE STANDINGORDERBROWSER_EDITBUTTON := 101 
+STATIC DEFINE STANDINGORDERBROWSER_FINDBUTTON := 113 
+STATIC DEFINE STANDINGORDERBROWSER_FIXEDTEXT4 := 110 
+STATIC DEFINE STANDINGORDERBROWSER_FIXEDTEXT5 := 115 
+STATIC DEFINE STANDINGORDERBROWSER_FOUND := 111 
+STATIC DEFINE STANDINGORDERBROWSER_FOUNDTEXT := 112 
+STATIC DEFINE STANDINGORDERBROWSER_GROUPBOX1 := 107 
+STATIC DEFINE STANDINGORDERBROWSER_GROUPBOX2 := 116 
+STATIC DEFINE STANDINGORDERBROWSER_NEWBUTTON := 102 
+STATIC DEFINE STANDINGORDERBROWSER_PERIODICBROWSER_DETAIL := 100 
+STATIC DEFINE STANDINGORDERBROWSER_SC_REK := 105 
+STATIC DEFINE STANDINGORDERBROWSER_SEARCHREK := 108 
+STATIC DEFINE STANDINGORDERBROWSER_SEARCHREKOLD := 106 
+STATIC DEFINE STANDINGORDERBROWSER_SEARCHUNI := 114 
+RESOURCE StnadingOrderBrowser_DETAIL DIALOGEX  26, 24, 458, 196
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Account number", STNADINGORDERBROWSER_DETAIL_SC_REK, "Static", WS_CHILD, 13, 14, 54, 13
+	CONTROL	"Bestemming", STNADINGORDERBROWSER_DETAIL_SC_BESTEMMING, "Static", WS_CHILD, 13, 29, 40, 12
+	CONTROL	"Idat", STNADINGORDERBROWSER_DETAIL_SC_IDAT, "Static", WS_CHILD, 13, 44, 14, 12
+	CONTROL	"Edat", STNADINGORDERBROWSER_DETAIL_SC_EDAT, "Static", WS_CHILD, 13, 59, 17, 12
+	CONTROL	"Boekdag", STNADINGORDERBROWSER_DETAIL_SC_BOEKDAG, "Static", WS_CHILD, 13, 73, 31, 13
+	CONTROL	"Account", STNADINGORDERBROWSER_DETAIL_ACCOUNTNAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 14, 100, 13, WS_EX_CLIENTEDGE
+	CONTROL	"To", STNADINGORDERBROWSER_DETAIL_BESTEMMINGSACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 29, 100, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Start", STNADINGORDERBROWSER_DETAIL_IDAT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 44, 80, 12, WS_EX_CLIENTEDGE
+	CONTROL	"End", STNADINGORDERBROWSER_DETAIL_EDAT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 59, 80, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Day#", STNADINGORDERBROWSER_DETAIL_DAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 78, 73, 36, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Description", STNADINGORDERBROWSER_DETAIL_DESCRIPTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 6, 103, 432, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Latest Rec", STNADINGORDERBROWSER_DETAIL_LSTRECORDING, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 76, 118, 80, 12, WS_EX_CLIENTEDGE
+END
+
+CLASS StnadingOrderBrowser_DETAIL INHERIT DataWindowMine 
+
+	PROTECT oDBSTORDRID as DataColumn
+	PROTECT oDBACCOUNTNAME as DataColumn
+	PROTECT oDBDAY as DataColumn
+	PROTECT oDBPERIOD as DataColumn
+	PROTECT oDBDESCRIPTN as DataColumn
+	PROTECT oDBDOCID as DataColumn
+	PROTECT oDBDEB as DataColumn
+	PROTECT oDBCRE as DataColumn
+	PROTECT oDBLSTRECORDING as DataColumn
+	PROTECT oDCSC_REK AS FIXEDTEXT
+	PROTECT oDCSC_BESTEMMING AS FIXEDTEXT
+	PROTECT oDCSC_IDAT AS FIXEDTEXT
+	PROTECT oDCSC_EDAT AS FIXEDTEXT
+	PROTECT oDCSC_BOEKDAG AS FIXEDTEXT
+	PROTECT oDCAccountName AS SINGLELINEEDIT
+	PROTECT oDCBESTEMMINGSACC AS SINGLELINEEDIT
+	PROTECT oDCIDAT AS SINGLELINEEDIT
+	PROTECT oDCEdat AS SINGLELINEEDIT
+	PROTECT oDCDAY AS SINGLELINEEDIT
+	PROTECT oDCdescriptn AS SINGLELINEEDIT
+	PROTECT oDClstrecording AS SINGLELINEEDIT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+ACCESS AccountName() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#AccountName)
+
+ASSIGN AccountName(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#AccountName, uValue)
+RETURN uValue
+
+ACCESS BESTEMMINGSACC() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#BESTEMMINGSACC)
+
+ASSIGN BESTEMMINGSACC(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#BESTEMMINGSACC, uValue)
+RETURN uValue
+
+ACCESS CRE() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#CRE)
+
+ASSIGN CRE(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#CRE, uValue)
+RETURN uValue
+
+ACCESS DAY() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#DAY)
+
+ASSIGN DAY(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#DAY, uValue)
+RETURN uValue
+
+ACCESS DEB() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#DEB)
+
+ASSIGN DEB(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#DEB, uValue)
+RETURN uValue
+
+ACCESS descriptn() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#descriptn)
+
+ASSIGN descriptn(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#descriptn, uValue)
+RETURN uValue
+
+ACCESS docid() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#docid)
+
+ASSIGN docid(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#docid, uValue)
+RETURN uValue
+
+ACCESS Edat() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#Edat)
+
+ASSIGN Edat(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#Edat, uValue)
+RETURN uValue
+
+ACCESS IDAT() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#IDAT)
+
+ASSIGN IDAT(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#IDAT, uValue)
+RETURN uValue
+
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS StnadingOrderBrowser_DETAIL 
+
+self:PreInit(oWindow,iCtlID,oServer,uExtra)
+
+SUPER:Init(oWindow,ResourceID{"StnadingOrderBrowser_DETAIL",_GetInst()},iCtlID)
+
+oDCSC_REK := FixedText{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_SC_REK,_GetInst()}}
+oDCSC_REK:HyperLabel := HyperLabel{#SC_REK,"Account number",NULL_STRING,NULL_STRING}
+
+oDCSC_BESTEMMING := FixedText{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_SC_BESTEMMING,_GetInst()}}
+oDCSC_BESTEMMING:HyperLabel := HyperLabel{#SC_BESTEMMING,"Bestemming",NULL_STRING,NULL_STRING}
+
+oDCSC_IDAT := FixedText{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_SC_IDAT,_GetInst()}}
+oDCSC_IDAT:HyperLabel := HyperLabel{#SC_IDAT,"Idat",NULL_STRING,NULL_STRING}
+
+oDCSC_EDAT := FixedText{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_SC_EDAT,_GetInst()}}
+oDCSC_EDAT:HyperLabel := HyperLabel{#SC_EDAT,"Edat",NULL_STRING,NULL_STRING}
+
+oDCSC_BOEKDAG := FixedText{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_SC_BOEKDAG,_GetInst()}}
+oDCSC_BOEKDAG:HyperLabel := HyperLabel{#SC_BOEKDAG,"Boekdag",NULL_STRING,NULL_STRING}
+
+oDCAccountName := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_ACCOUNTNAME,_GetInst()}}
+oDCAccountName:FieldSpec := account_OMS{}
+oDCAccountName:HyperLabel := HyperLabel{#AccountName,"Account","Number of an Account",NULL_STRING}
+oDCAccountName:TooltipText := "Account from/to transfer a periodic amount"
+
+oDCBESTEMMINGSACC := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_BESTEMMINGSACC,_GetInst()}}
+oDCBESTEMMINGSACC:FieldSpec := Account_AccNumber{}
+oDCBESTEMMINGSACC:HyperLabel := HyperLabel{#BESTEMMINGSACC,"To",NULL_STRING,"Rek_REK"}
+oDCBESTEMMINGSACC:TooltipText := "Account to which to transfer a periodic amount"
+
+oDCIDAT := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_IDAT,_GetInst()}}
+oDCIDAT:FieldSpec := PeriodicRec_IDAT{}
+oDCIDAT:HyperLabel := HyperLabel{#IDAT,"Start",NULL_STRING,"PeriodicRec_IDAT"}
+oDCIDAT:TooltipText := "Date to start with first periodic transfer"
+
+oDCEdat := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_EDAT,_GetInst()}}
+oDCEdat:FieldSpec := PeriodicRec_EDAT{}
+oDCEdat:HyperLabel := HyperLabel{#Edat,"End",NULL_STRING,"PeriodicRec_EDAT"}
+oDCEdat:TooltipText := "Date to stop with periodic transfer of the amount"
+
+oDCDAY := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_DAY,_GetInst()}}
+oDCDAY:FieldSpec := standingorder_day{}
+oDCDAY:HyperLabel := HyperLabel{#DAY,"Day#",NULL_STRING,NULL_STRING}
+oDCDAY:TooltipText := "Day in month transfer has to take place"
+
+oDCdescriptn := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_DESCRIPTN,_GetInst()}}
+oDCdescriptn:FieldSpec := StandingOrderLine_DESCRIPTN{}
+oDCdescriptn:HyperLabel := HyperLabel{#descriptn,"Description",NULL_STRING,NULL_STRING}
+oDCdescriptn:TooltipText := "Description to add to each periodic transaction"
+
+oDClstrecording := SingleLineEdit{SELF,ResourceID{STNADINGORDERBROWSER_DETAIL_LSTRECORDING,_GetInst()}}
+oDClstrecording:FieldSpec := standingorder_lstrecording{}
+oDClstrecording:HyperLabel := HyperLabel{#lstrecording,"Latest Rec",NULL_STRING,NULL_STRING}
+oDClstrecording:TooltipText := "Date of latest actual transfer"
+
+SELF:Caption := ""
+SELF:HyperLabel := HyperLabel{#StnadingOrderBrowser_DETAIL,NULL_STRING,NULL_STRING,NULL_STRING}
+SELF:PreventAutoLayout := True
+SELF:OwnerAlignment := OA_PWIDTH_PHEIGHT
+
+if !IsNil(oServer)
+	SELF:Use(oServer)
+ELSE
+	SELF:Use(SELF:Owner:Server)
+ENDIF
+self:Browser := EditBrowser{self}
+
+oDBSTORDRID := DataColumn{PeriodicRec_STORDRID{}}
+oDBSTORDRID:Width := 12
+oDBSTORDRID:HyperLabel := HyperLabel{#stordrid,"Order#",NULL_STRING,NULL_STRING} 
+oDBSTORDRID:Caption := "Order#"
+self:Browser:AddColumn(oDBSTORDRID)
+
+oDBACCOUNTNAME := DataColumn{account_OMS{}}
+oDBACCOUNTNAME:Width := 19
+oDBACCOUNTNAME:HyperLabel := oDCACCOUNTNAME:HyperLabel 
+oDBACCOUNTNAME:Caption := "Account"
+self:Browser:AddColumn(oDBACCOUNTNAME)
+
+oDBDAY := DataColumn{standingorder_day{}}
+oDBDAY:Width := 6
+oDBDAY:HyperLabel := oDCDAY:HyperLabel 
+oDBDAY:Caption := "Day#"
+self:Browser:AddColumn(oDBDAY)
+
+oDBPERIOD := DataColumn{standingorder_period{}}
+oDBPERIOD:Width := 7
+oDBPERIOD:HyperLabel := HyperLabel{#Period,"Period",NULL_STRING,NULL_STRING} 
+oDBPERIOD:Caption := "Period"
+self:Browser:AddColumn(oDBPERIOD)
+
+oDBDESCRIPTN := DataColumn{StandingOrderLine_DESCRIPTN{}}
+oDBDESCRIPTN:Width := 25
+oDBDESCRIPTN:HyperLabel := oDCDESCRIPTN:HyperLabel 
+oDBDESCRIPTN:Caption := "Description"
+self:Browser:AddColumn(oDBDESCRIPTN)
+
+oDBDOCID := DataColumn{11}
+oDBDOCID:Width := 11
+oDBDOCID:HyperLabel := HyperLabel{#docid,"DocmntID",NULL_STRING,NULL_STRING} 
+oDBDOCID:Caption := "DocmntID"
+self:Browser:AddColumn(oDBDOCID)
+
+oDBDEB := DataColumn{StandingOrderLine_DEB{}}
+oDBDEB:Width := 10
+oDBDEB:HyperLabel := HyperLabel{#DEB,"Debit",NULL_STRING,NULL_STRING} 
+oDBDEB:Caption := "Debit"
+self:Browser:AddColumn(oDBDEB)
+
+oDBCRE := DataColumn{StandingOrderLine_CRE{}}
+oDBCRE:Width := 10
+oDBCRE:HyperLabel := HyperLabel{#CRE,"Credit",NULL_STRING,NULL_STRING} 
+oDBCRE:Caption := "Credit"
+self:Browser:AddColumn(oDBCRE)
+
+oDBLSTRECORDING := DataColumn{standingorder_lstrecording{}}
+oDBLSTRECORDING:Width := 11
+oDBLSTRECORDING:HyperLabel := oDCLSTRECORDING:HyperLabel 
+oDBLSTRECORDING:Caption := "Latest Rec"
+self:Browser:AddColumn(oDBLSTRECORDING)
+
+
+SELF:ViewAs(#BrowseView)
+
+self:PostInit(oWindow,iCtlID,oServer,uExtra)
+
+return self
+
+ACCESS lstrecording() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#lstrecording)
+
+ASSIGN lstrecording(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#lstrecording, uValue)
+RETURN uValue
+
+ACCESS Period() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#Period)
+
+ASSIGN Period(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#Period, uValue)
+RETURN uValue
+
+ACCESS stordrid() CLASS StnadingOrderBrowser_DETAIL
+RETURN SELF:FieldGet(#stordrid)
+
+ASSIGN stordrid(uValue) CLASS StnadingOrderBrowser_DETAIL
+SELF:FieldPut(#stordrid, uValue)
+RETURN uValue
+
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_ACCOUNTNAME := 105 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_BESTEMMINGSACC := 106 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_CRE := 114 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_DAY := 109 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_DEB := 113 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_DESCRIPTN := 110 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_DOCID := 116 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_EDAT := 108 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_IDAT := 107 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_LSTRECORDING := 111 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_PERIOD := 112 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_SC_BESTEMMING := 101 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_SC_BOEKDAG := 104 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_SC_EDAT := 103 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_SC_IDAT := 102 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_SC_REK := 100 
+STATIC DEFINE STNADINGORDERBROWSER_DETAIL_STORDRID := 115 
 RESOURCE StOrderLines DIALOGEX  2, 2, 496, 123
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
