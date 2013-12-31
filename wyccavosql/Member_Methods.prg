@@ -276,21 +276,3 @@ METHOD SkipNext() CLASS MemberBrowser
 METHOD SkipPrevious() CLASS MemberBrowser
 	RETURN SELF:oSFMemberBrowser_Detail:SkipPrevious()
 
-function ValidateMemberType(CO as string,HomePP as string, Type as string ) as string
-	// check if member has account with correct type
-	// returns errormesage if not correct
-	local cError as string
-	if CO=="M"  // member
-		IF HomePP # Sentity .and. Type #"PA"
-			cError := "Type of corresponding account of this not own member should be liability/fund"
-		elseif Type #"PA" .and.Type #"BA"
-			cError := "Type of corresponding account of this (non project)member should be liability/fund or income"
-		endif
-	else    // PP
-		if !HomePP == Sentity .and.(Type #"PA" .and.Type #"AK") 
-			cError := "Type of corresponding account of this not own entity should be liability/fund or asset"
-		elseif HomePP = Sentity 
-			// everything allowed
-		endif
-	endif
-return cError
