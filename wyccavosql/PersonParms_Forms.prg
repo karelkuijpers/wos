@@ -16,18 +16,6 @@ IF nNbr<0
 	nNbr:=0
 ENDIF
 RETURN nNbr
-RESOURCE EditMailCd DIALOGEX  13, 12, 288, 57
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Description:", EDITMAILCD_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
-	CONTROL	"Description:", EDITMAILCD_MOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Abbrevation", EDITMAILCD_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 64, 33, 37, 12, WS_EX_CLIENTEDGE
-	CONTROL	"OK", EDITMAILCD_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
-	CONTROL	"Cancel", EDITMAILCD_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
-	CONTROL	"Abbreviation:", EDITMAILCD_FIXEDTEXT1, "Static", WS_CHILD, 13, 35, 47, 12
-END
-
 CLASS EditMailCd INHERIT DataWindowExtra 
 
 	PROTECT oDCSC_OMS AS FIXEDTEXT
@@ -41,6 +29,18 @@ CLASS EditMailCd INHERIT DataWindowExtra
 PROTECT  nCurRec AS INT
 EXPORT oCaller AS OBJECT
 PROTECT mCod AS STRING
+RESOURCE EditMailCd DIALOGEX  13, 12, 288, 57
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Description:", EDITMAILCD_SC_OMS, "Static", WS_CHILD, 13, 14, 39, 13
+	CONTROL	"Description:", EDITMAILCD_MOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 63, 14, 146, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Abbrevation", EDITMAILCD_MABBRVTN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 64, 33, 37, 12, WS_EX_CLIENTEDGE
+	CONTROL	"OK", EDITMAILCD_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 225, 7, 53, 12
+	CONTROL	"Cancel", EDITMAILCD_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 225, 27, 53, 12
+	CONTROL	"Abbreviation:", EDITMAILCD_FIXEDTEXT1, "Static", WS_CHILD, 13, 35, 47, 12
+END
+
 METHOD CancelButton( ) CLASS EditMailCd
 	SELF:EndWindow()
 	RETURN
@@ -161,6 +161,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMailCd
 	//Put your PostInit additions here
 	LOCAL oMcd:=self:server as SQLSelect
 	self:SetTexts()
+	SaveUse(self)
 	oCaller:=oWindow
 	IF Empty(uExtra)
 		lNew :=FALSE
@@ -399,6 +400,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersProp
 	//Put your PostInit additions here
 	LOCAL oProp as SQLSelect
 	self:SetTexts()
+	SaveUse(self)
 	oProp:=self:Server
 	oCaller:=oWindow
 	IF Empty(uExtra)
@@ -536,6 +538,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersTitle
 	//Put your PostInit additions here
 	LOCAL oTit as SQLSelect
 	self:SetTexts()
+	SaveUse(self)
 	oTit:=self:Server
 	oCaller:=oWindow
 	IF Empty(uExtra)
@@ -679,6 +682,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditPersType
 	//Put your PostInit additions here
 	LOCAL oPtp as SQLSelect 
 	self:SetTexts()
+	SaveUse(self)
 	oPtp:=self:Server
 	oCaller:=oWindow
 	IF Empty(uExtra)
@@ -798,20 +802,18 @@ STATIC DEFINE PERSTYPEREG_DELETEBUTTON := 103
 STATIC DEFINE PERSTYPEREG_EDITBUTTON := 101 
 STATIC DEFINE PERSTYPEREG_NEWBUTTON := 102 
 STATIC DEFINE PERSTYPEREG_SUB_PERSTYPEREG := 100 
-function PropTypeDesc(type as int) as string
-return prop_types[ascan(prop_types,{|x|x[2]==type}),1]
-CLASS Sub_MailCdReg INHERIT DataWindowMine 
-
-	PROTECT oDBDESCRIPTION as DataColumn
-	PROTECT oDBABBRVTN as DataColumn
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Sub_MailCdReg DIALOGEX  16, 14, 226, 187
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
+CLASS Sub_MailCdReg INHERIT DataWindowMine 
+
+	PROTECT oDBDESCRIPTION as DataColumn
+	PROTECT oDBABBRVTN as DataColumn
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS Sub_MailCdReg 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -934,18 +936,18 @@ RETURN uValue
 
 STATIC DEFINE SUB_PERSPROPREG_NAME := 100 
 STATIC DEFINE SUB_PERSPROPREG_TYPEDESCR := 101 
-class Sub_PersTitleReg inherit DataWindowMine 
-
-	PROTECT oDBDESCRPTN as DataColumn
-	instance DESCRPTN 
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE Sub_PersTitleReg DIALOGEX  8, 7, 226, 186
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
 END
 
+class Sub_PersTitleReg inherit DataWindowMine 
+
+	PROTECT oDBDESCRPTN as DataColumn
+	instance DESCRPTN 
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 access DESCRPTN() class Sub_PersTitleReg
 return self:FieldGet(#DESCRPTN)
 
@@ -994,6 +996,12 @@ oWindow:use(oWindow:oTit)
 
 	RETURN nil
 STATIC DEFINE SUB_PERSTITLEREG_DESCRPTN := 100 
+RESOURCE Sub_PersTypeReg DIALOGEX  13, 12, 226, 186
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 class Sub_PersTypeReg inherit DataWindowMine 
 
 	PROTECT oDBDESCRPTN as DataColumn
@@ -1002,12 +1010,6 @@ class Sub_PersTypeReg inherit DataWindowMine
 	instance abbrvtn 
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE Sub_PersTypeReg DIALOGEX  13, 12, 226, 186
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 access abbrvtn() class Sub_PersTypeReg
 return self:FieldGet(#Abbrvtn)
 
@@ -1070,17 +1072,6 @@ oWindow:use(oWindow:oType)
 
 STATIC DEFINE SUB_PERSTYPEREG_ABBRVTN := 101 
 STATIC DEFINE SUB_PERSTYPEREG_DESCRPTN := 100 
-CLASS TABMAIL_PAGE INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oSFSub_MailCdReg AS Sub_MailCdReg
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT oCaller as OBJECT 
-  export oPerscd as SQLSelect
 RESOURCE TABMAIL_PAGE DIALOGEX  17, 16, 373, 222
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1092,6 +1083,17 @@ BEGIN
 	CONTROL	"Mailing Codes can be used to select people for mailing, printing lists, address labels, mail merge, thank-you letters, etc.", TABMAIL_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 352, 20
 END
 
+CLASS TABMAIL_PAGE INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oSFSub_MailCdReg AS Sub_MailCdReg
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT oCaller as OBJECT 
+  export oPerscd as SQLSelect
 METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 	LOCAL mCod,mOms as STRING 
 	local oStmnt as SQLStatement
@@ -1227,17 +1229,6 @@ STATIC DEFINE TABMAIL_PAGE_EDITBUTTON := 101
 STATIC DEFINE TABMAIL_PAGE_FIXEDTEXT1 := 104 
 STATIC DEFINE TABMAIL_PAGE_NEWBUTTON := 102 
 STATIC DEFINE TABMAIL_PAGE_SUB_MAILCDREG := 100 
-RESOURCE TabProp_Page DIALOGEX  16, 14, 372, 222
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TABPROP_PAGE_SUB_PERSPROPREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
-	CONTROL	"Edit", TABPROP_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 289, 68, 53, 13
-	CONTROL	"New", TABPROP_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
-	CONTROL	"Delete", TABPROP_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
-	CONTROL	"Self defined properties like 'recruited by', 'recruitement occasion', etc for analysing purposes.", TABPROP_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 15, 5, 351, 14
-END
-
 CLASS TabProp_Page INHERIT DataWindowExtra 
 
 	PROTECT oCCEditButton AS PUSHBUTTON
@@ -1249,6 +1240,17 @@ CLASS TabProp_Page INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
         PROTECT oCaller as OBJECT 
    export oProp as SQLSelect 
+RESOURCE TabProp_Page DIALOGEX  16, 14, 372, 222
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TABPROP_PAGE_SUB_PERSPROPREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
+	CONTROL	"Edit", TABPROP_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 289, 68, 53, 13
+	CONTROL	"New", TABPROP_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
+	CONTROL	"Delete", TABPROP_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
+	CONTROL	"Self defined properties like 'recruited by', 'recruitement occasion', etc for analysing purposes.", TABPROP_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 15, 5, 351, 14
+END
+
 METHOD AddButton( ) CLASS TabProp_Page 
 METHOD DeleteButton( ) CLASS TABPROP_PAGE
 	LOCAL  mOms as STRING
@@ -1373,17 +1375,6 @@ STATIC DEFINE TABPROP_PAGE_EDITBUTTON := 101
 STATIC DEFINE TABPROP_PAGE_FIXEDTEXT1 := 104 
 STATIC DEFINE TABPROP_PAGE_NEWBUTTON := 102 
 STATIC DEFINE TABPROP_PAGE_SUB_PERSPROPREG := 100 
-RESOURCE TABTITLE_PAGE DIALOGEX  14, 13, 373, 222
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TABTITLE_PAGE_SUB_PERSTITLEREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
-	CONTROL	"Edit", TABTITLE_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 288, 68, 54, 13
-	CONTROL	"New", TABTITLE_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
-	CONTROL	"Delete", TABTITLE_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
-	CONTROL	"Special title of person like  Rev., Prof., etc.", TABTITLE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 350, 13
-END
-
 CLASS TABTITLE_PAGE INHERIT DataWindowExtra 
 
 	PROTECT oCCEditButton AS PUSHBUTTON
@@ -1395,6 +1386,17 @@ CLASS TABTITLE_PAGE INHERIT DataWindowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
       PROTECT oCaller as OBJECT 
       export oTit as SQLSelect
+RESOURCE TABTITLE_PAGE DIALOGEX  14, 13, 373, 222
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TABTITLE_PAGE_SUB_PERSTITLEREG, "static", WS_CHILD|WS_BORDER, 14, 27, 240, 187
+	CONTROL	"Edit", TABTITLE_PAGE_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 288, 68, 54, 13
+	CONTROL	"New", TABTITLE_PAGE_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 107, 53, 13
+	CONTROL	"Delete", TABTITLE_PAGE_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 289, 145, 53, 13
+	CONTROL	"Special title of person like  Rev., Prof., etc.", TABTITLE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 350, 13
+END
+
 METHOD DeleteButton( ) CLASS TABTITLE_PAGE
 	LOCAL  mOms as STRING
 	LOCAL mCod as STRING
@@ -1502,17 +1504,6 @@ STATIC DEFINE TABTITLE_PAGE_EDITBUTTON := 101
 STATIC DEFINE TABTITLE_PAGE_FIXEDTEXT1 := 104 
 STATIC DEFINE TABTITLE_PAGE_NEWBUTTON := 102 
 STATIC DEFINE TABTITLE_PAGE_SUB_PERSTITLEREG := 100 
-CLASS TABTYPE_PAGE INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oSFSub_PersTypeReg AS Sub_PersTypeReg
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT oCaller as OBJECT 
-  export oType as SQLSelect
 RESOURCE TABTYPE_PAGE DIALOGEX  14, 13, 373, 222
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1524,6 +1515,17 @@ BEGIN
 	CONTROL	"Type of person: individual, company, member, direct income, ...", TABTYPE_PAGE_FIXEDTEXT1, "Static", WS_CHILD, 14, 3, 338, 13
 END
 
+CLASS TABTYPE_PAGE INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oSFSub_PersTypeReg AS Sub_PersTypeReg
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT oCaller as OBJECT 
+  export oType as SQLSelect
   METHOD DeleteButton( ) CLASS TABTYPE_PAGE
 	LOCAL oPers as SQLSelect
 	LOCAL  mOms as STRING
