@@ -161,6 +161,7 @@ METHOD Init(oOwner,myType,myNum,myCaller,mySearch) CLASS BalanceItemExplorer
 *	SELF:Toolbar:InsertItem(IDT_INDENT,IDM_BalanceSubmenu_Account_ID,11)
 *	SELF:Toolbar:AddTipText(IDT_INDENT,IDM_BalanceSubmenu_Account_ID,"Insert Account")
 *    SELF:Toolbar:DeleteItem(IDM_BrowserEdit_Edit_Insert_Record_ID)
+	SaveUse(self)
 
    	SELF:ListView:ContextMenu := BalListViewMenu{}
     IF Empty(self:cType)
@@ -1700,6 +1701,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditBalanceItem
 	//Put your PostInit additions here
 	LOCAL nRecnr AS INT
 	self:SetTexts()
+	SaveUse(self)
 	oBal:=self:Server
 	lNew:=uExtra[1]
 	IF lNew
