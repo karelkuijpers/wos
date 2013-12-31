@@ -1,4 +1,4 @@
-CLASS EditLog INHERIT DATAWINDOW 
+CLASS EditLog INHERIT DataWindowMine 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
 	PROTECT oDCSource AS SINGLELINEEDIT
@@ -85,14 +85,16 @@ ACCESS mMessage() CLASS EditLog
 RETURN SELF:FieldGet(#mMessage)
 
 ASSIGN mMessage(uValue) CLASS EditLog
-	SELF:FieldPut(#mMessage, uValue)
-	RETURN uValue
+SELF:FieldPut(#mMessage, uValue)
+RETURN uValue
 
 method PostInit(oWindow,iCtlID,oServer,uExtra) class EditLog
 	//Put your PostInit additions here 
 	local oLog as SqlSelect 
 	
 	local cFields:= "`logid`,"+sIdentChar+"source"+sIdentChar+",cast("+sIdentChar+"logtime"+sIdentChar+" as datetime) as logtime,"+sIdentChar+"message"+sIdentChar+","+sIdentChar+"userid"+sIdentChar as string
+	self:SetTexts()
+	SaveUse(self)
 	AdoDateTimeAsDate ( false )
 	oLog:=SqlSelect{"select "+cFields+" from log where logid="+uExtra,oConn}
 	if oLog:Reccount>0
@@ -419,7 +421,8 @@ method ListBoxSelect(oControlEvent) class LogReport
 method PostInit(oWindow,iCtlID,oServer,uExtra) class LogReport
 	//Put your PostInit additions here  
 	self:SetTexts()
-	return NIL
+	SaveUse(self)
+	return nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class LogReport
 	//Put your PreInit additions here 
 	self:cFields:= "`logid`,"+sIdentChar+"source"+sIdentChar+",cast("+sIdentChar+"logtime"+sIdentChar+" as datetime) as logtime,"+sIdentChar+"message"+sIdentChar+","+sIdentChar+"userid"+sIdentChar
@@ -975,7 +978,8 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TAB_PARM1
 	//Put your PostInit additions here
 	LOCAL oAcc,oSel as SQLSelect
-	self:SetTexts() 
+	self:SetTexts()
+	SaveUse(self) 
 	self:NbrCASH := '0'
 	oAcc:=SqlSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:cash,-1),oConn}
 	IF !Empty(self:oSys:cash)
@@ -1761,6 +1765,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm2
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 	self:SetTexts()
+	SaveUse(self)
 	self:NbrAM :=  '0'
 	IF !Empty(self:oSys:AM)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:AM,-1),oConn}
@@ -2284,6 +2289,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm3
 	//Put your PostInit additions here
 	LOCAL oSel as SQLSelect
 	self:SetTexts()
+	SaveUse(self)
 	self:NbrPostage := '0'
 	IF !Empty(self:oSys:Postage)
 		oSel:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:Postage,-1),oConn}
@@ -2509,6 +2515,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS Tab_Parm4
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
+	SaveUse(self)
 self:NbrDONORS := '0'
 IF !Empty(self:oSys:DONORS)
 	oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid="+Str(self:oSys:DONORS,-1),oConn}
@@ -3054,6 +3061,8 @@ RETURN uValue
 
 method PostInit(oWindow,iCtlID,oServer,uExtra) class TAB_PARM6
 	//Put your PostInit additions here
+	self:SetTexts()
+	SaveUse(self)
 	self:TOPMARGIN:=ConI(self:oSys:TOPMARGIN)
 	self:leftmargin:=ConI(self:oSys:leftmargin)           
 	self:rightmargn:=ConI(self:oSys:rightmargn)
@@ -3191,6 +3200,7 @@ RETURN uValue
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS TABPARM_PAGE7
 	//Put your PostInit additions here
 self:SetTexts()
+	SaveUse(self)
 	self:mPSWDURA:=self:oSys:PSWDURA
 	IF Empty(self:mPSWDURA)
 		self:mPSWDURA:=9999
@@ -3272,6 +3282,8 @@ return self
 
 method PostInit(oWindow,iCtlID,oServer,uExtra) class TabParm_Page8
 	//Put your PostInit additions here
+	self:SetTexts()
+	SaveUse(self)
 	self:CRLANGUAGE:=self:oSys:CRLANGUAGE
 	return nil
 
@@ -3367,6 +3379,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class TabParm_Page9
 	//Put your PostInit additions here
 	LOCAL oAcc as SQLSelect
 self:SetTexts()
+	SaveUse(self)
 self:NbrToPP := '0'
 	IF !Empty(self:oSys:ToPPAcct)
 		oAcc:=SQLSelect{"select a.accid,a.description,b.category as type from account a, balanceitem b where a.balitemid=b.balitemid and a.accid='"+self:oSys:ToPPAcct+"'",oConn}
