@@ -1341,7 +1341,7 @@ ENDIF
 DefaultCOD := MakeCod({SELF:oDCmCod1:Value,SELF:oDCmCod2:Value,SELF:oDCmCod3:Value,SELF:oDCmCod4:Value,SELF:oDCmCod5:Value,SELF:oDCmCod6:Value})
 
 IF TargetDB=="Person"
-	self:oEdit:=NewPersonWindow{self:Owner,,,true} 
+	self:oEdit:=EditPerson{self:Owner,,,true} 
 	self:oEdit:ReplaceDuplicates:=self:ReplaceDuplicates 
 	self:aValues:={} 
 	self:aPers:={} 
@@ -1361,6 +1361,7 @@ return
 METHOD PostInit(oParent,uExtra) CLASS ImportMapping
 LOCAL cRoot := "WYC\Runtime", cRepDup as STRING
 self:SetTexts()
+	SaveUse(self)
 self:oDCTargetDB:FillUsing({{"Persons","Person"},{"Accounts","Account"}})
 SELF:oDCTargetDB:TextValue:="Person"
 self:TargetDB:="Person"
