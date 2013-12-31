@@ -245,6 +245,7 @@ RETURN uValue
 method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	*	IF !Empty(uExtra).and.!IsNil(uExtra).and.!empty[uExtra[1])
 	IF ClassName(uExtra)==#TeleMut
 		lNew := true
@@ -555,6 +556,7 @@ return self
 method PostInit(oWindow,iCtlID,oServer,uExtra) class TelePatternBrowser
 	//Put your PostInit additions here 
 	self:SetTexts()
+	SaveUse(self)
   	self:oDCFound:TextValue :=Str(self:oTelPat:Reccount,-1)
 	return nil
 
