@@ -361,6 +361,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PMISsend
 	//Put your PostInit additions here 
 	local aBalPrv:={}, aBalNow:={} as array
 self:SetTexts()                                   
+	SaveUse(self)
 self:oSys := SQLSelect{"select assmntfield,assmntoffc,withldoffl,withldoffm,withldoffh,assmntint,"+;
 "exchrate,cast(pmislstsnd as date) as pmislstsnd,cast(datlstafl as date) as datlstafl,pmcupld,pmcmancln,iesmailacc,ownmailacc from sysparms",oConn}
 IF self:oSys:Reccount <1
