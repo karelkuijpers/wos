@@ -188,6 +188,7 @@ self:EndDialog()
 *SELF:EndWindow()
 METHOD PostInit(oParent,uExtra) CLASS Calculator
 	//Put your PostInit additions here
+	SaveUse(self)
 	IF IsArray(uExtra)
 		self:oEdit:=uExtra[1]
 		self:CurText:= AllTrim(self:oEdit:CurrentText)
