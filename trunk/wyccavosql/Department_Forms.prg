@@ -140,6 +140,7 @@ METHOD Init(oOwner, myType,myNum,myCaller,mySearch,myItemname) CLASS DepartmentE
 	SUPER:Init(oOwner, #DepartmentTreeView, #BalanceListView)
 	// initialize menu and caption
 	SELF:Menu:=WODepartmentSubMenu{}
+	SaveUse(self)
 
    self:ListView:ContextMenu := DepartmentListViewMenu{}
 	IF Empty(self:cType)
@@ -1018,6 +1019,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 	LOCAL cMainId as STRING
 	local oSel as SQLSelect 
 	self:SetTexts()
+	SaveUse(self)
 	self:lNew:=uExtra[1]
 	self:oCaller:=uExtra[5]
 
