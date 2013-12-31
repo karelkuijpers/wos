@@ -3326,7 +3326,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	local cBankDescription as string 
 	LOCAL lSuccess, lNameCheck,lAddressChanged as LOGIC
 	LOCAL oHm:=self:server as TempGift
-	LOCAL oEditPersonWindow as NewPersonWindow
+	LOCAL oEditPersonWindow as EditPerson
 	local oPersCnt as PersonContainer
 	local myAcc as SQLSelect
 	local oPersBank,oSel as SQLSelect
@@ -3519,7 +3519,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				if lAddressChanged					
 					* address changed: 
 					oPersCnt:persid:=Str(oPers:persid,-1)
-					oEditPersonWindow := NewPersonWindow{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
+					oEditPersonWindow := EditPerson{ self:owner,,oPers,{lNew,true,self,oPersCnt }}
 					oEditPersonWindow:Caption:="Address changed of: "+AllTrim( GetFullNAW(oPersCnt:persid))
 					oEditPersonWindow:show()
 					AutoRec:=FALSE
@@ -4503,10 +4503,6 @@ if !Empty(AccMlCod)
 	ADDMLCodes(AccMlCod,@cCod)	
 endif
 RETURN 
-function SQLIncExpFd() as string
-// compose sql code for determining type of account of member department: of department d, account a:
-	return "upper(if(d.netasset=a.accid,'F',if(d.incomeacc=a.accid,'I',if(d.expenseacc=a.accid,'E',''))))"
-	
 METHOD CheckUpdates() CLASS TempGift
 RETURN TRUE
 METHOD GetCategory(cType:='' as string,cExtraText:='' as string) as void pascal CLASS TempGift
@@ -4976,108 +4972,3 @@ METHOD ShowSelection() CLASS TransInquiry
 
 
 	RETURN true
-function UnionTrans(cStatement as string) as string
-	// combine select statemenst on transaction with unions on historic trnsaction tables
-	* 
-	* cStatement should be in terms of Transaction table as t  
-	* date conditions should be specified as: t.dat>='yyy-mm-dd' or t.dat<='yyy-mm-dd' or t.dat='yyyy-mm-dd'
-	*
-	Local nDat1, nDat2,i as int
-	Local BegDat, EndDat, Maxdat as date
-	local cDat, cCompStmnt as String
-	*/  
-
-	// determine required dates in cStatement: 
-	cStatement:=Lower(cStatement) 
-	if At("transaction",cStatement)=0
-		return cStatement
-	endif
-	// nWhere:=At("where",cStatement) 
-
-	// if nWhere>0
-	cDat:=GetDateFormat()
-	SetDateFormat("YYYY-MM-DD")
-	StrTran(StrTran(StrTran(cStatement,'t.dat <','t.dat<'),'t.dat >','t.dat>'),'t.dat =','t.dat=')    // remove spaces
-	nDat1:=At3("t.dat=",cStatement,5)
-	if nDat1>0
-		BegDat:=CToD(SubStr(cStatement,nDat1+7,10))
-		EndDat:=BegDat	
-	else
-		nDat1:=At3("t.dat>=",cStatement,5)
-		if nDat1>0
-			BegDat:=CToD(SubStr(cStatement,nDat1+8,10))
-		endif	
-		nDat2:=At3("t.dat<=",cStatement,5) 
-		if nDat2>0 
-			EndDat:=CToD(SubStr(cStatement,nDat2+8,10))	
-		endif
-	endif
-	SetDateFormat(cDat)
-	
-	// endif	
-	Maxdat:=Today()+60
-	if Empty(EndDat)
-		EndDat:=Maxdat
-	endif
-
-// 	if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
-	if BegDat>=LstYearClosed .or. Empty(GlBalYears)    
-		return cStatement
-	else
-		// compose Statement: 
-		// actual period:
-		If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
-			cCompStmnt:="("+cStatement+")"
-		endif
-		if Empty(BegDat)
-			BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
-		endif
-// 		FillBalYears()
-		for i:=2 to Len(GlBalYears)
-			if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
-				cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
-			endif
-		next
-	endif 
-	return cCompStmnt
-	
-function UnionTrans2(cStatement as string, BegDat:=null_date as date, EndDat:=null_date as date) as string
-// combine select statemenst on transaction with unions on historic trnsaction tables
-* 
-* cStatement should be in terms of Transaction table as t  
-*
-Local i as int
-Local Maxdat as date
-local cCompStmnt as String
-
-// determine required dates in cStatement: 
-cStatement:=Lower(cStatement) 
-if At("transaction",cStatement)=0
-	return cStatement
-endif
-
-
-Maxdat:=Today()+60
-if Empty(EndDat)
-	EndDat:=Maxdat
-endif
-
-if Empty(BegDat) .and. EndDat>=LstYearClosed .or.BegDat>=LstYearClosed    
-	return cStatement
-else
-	// compose Statement: 
-	// actual period:
-	If (Empty(BegDat) .or. BegDat<=Maxdat).and.EndDat>=LstYearClosed
-		cCompStmnt:="("+cStatement+")"
-	endif
-	if Empty(BegDat)
-		BegDat:=GlBalYears[Len(GlBalYears),1] // oldest date
-	endif
-	for i:=2 to Len(GlBalYears)
-		if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
-			cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
-		endif
-	next
-endif 
-return cCompStmnt
- 
