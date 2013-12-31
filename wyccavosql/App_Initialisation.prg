@@ -1270,6 +1270,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"dueamount","InnoDB",cCollation},;
 		{"emplacc","InnoDB",cCollation},; 
 	{"employee","InnoDB","latin1_swedish_ci"},; 
+	{"functionusage","InnoDB",cCollation},;
 	{"importlock","InnoDB",cCollation},;
 		{"importpattern","InnoDB",cCollation},;
 		{"importtrans","InnoDB",cCollation},;
@@ -1471,7 +1472,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","mailclient","tinyint(1)","YES","NULL","","0=Express/Windows Mail,1=Microsoft Outlook,2=Thunderbird,3=Windows Live Mail,4=Mapi2Xml"},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
 		{"emplacc","accid","int(11)","NO","NULL",""},;
-		{"emplacc","type","tinyint(1)","NO","0",""},;
+		{"emplacc","type","tinyint(1)","NO","0",""},; 
+		{"functionusage","functionid","varchar(32)","NO","",""},;
+		{"functionusage","userid","varchar(64)","NO","",""},;
+		{"functionusage","usedate","date","NO","0000-00-00",""},;
+		{"functionusage","frequency","int(11)","NO","0",""},; 
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
 		{"importlock","lock_time","timestamp","NO","0000-00-00",""},; 
@@ -1832,6 +1837,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","1","empid"},; 
 	{"emplacc","0","PRIMARY","2","accid"},; 
+	{"functionusage","0","PRIMARY","1","functionid"},; 
+	{"functionusage","0","PRIMARY","2","userid"},; 
+	{"functionusage","0","PRIMARY","3","usedate"},; 
 	{"importlock","0","IMPORTLOCK","1","importfile"},;
 		{"importpattern","0","PRIMARY","1","imppattrnid"},;
 		{"importtrans","0","PRIMARY","1","imptrid"},;
