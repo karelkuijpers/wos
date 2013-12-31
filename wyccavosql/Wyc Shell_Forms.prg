@@ -21,11 +21,12 @@ DEFINE IDS_SAVE := 65522
 STATIC DEFINE MAILDLG_PBCANCEL := 101 
 STATIC DEFINE MAILDLG_PBSEND := 102 
 STATIC DEFINE MAILDLG_RICHEDIT1 := 100 
-CLASS StandardWycWindow INHERIT ShellWindow
-	PROTECT aChildWindows AS ARRAY
-	PROTECT oPrinter      AS PrintingDevice
-// 	EXPORT oPersbw AS PersonBrowser
-// 	EXPORT oAccBw AS AccountBrowser 
+CLASS StandardWycWindow INHERIT SHELLWINDOW 
+	PROTECT aChildWindows as ARRAY
+	PROTECT oPrinter      as PrintingDevice
+
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
@@ -68,7 +69,7 @@ METHOD Close(oCloseEvent) CLASS StandardWycWindow
 	SUPER:Close(oCloseEvent)
 METHOD CloseAll() CLASS StandardWycWindow
 	
-	DO WHILE ALen(aChildWindows) > 0
+	DO WHILE ALen(self:aChildWindows) > 0
 		IF IsObject( aChildWindows[1]).and.!aChildWindows[1]==NULL_OBJECT
 			aChildWindows[1]:Close()
 			CollectForced()
@@ -83,6 +84,7 @@ METHOD DonationsMail() CLASS StandardWycWindow
 	// first see if there are new donations which should generate a dueamount:
 	do while ProlongateAll(oMainWindow)
 	enddo		
+	SaveUse("DonationsMail")
 	(Selpers{self,"DONATIONS"}):Show()
 	RETURN
 METHOD FileExit() CLASS StandardWycWindow
@@ -97,7 +99,8 @@ METHOD FilePrinterSetup() CLASS StandardWycWindow
 	self:oPrinter:Setup()
 	
 METHOD FirstGivers() CLASS StandardWycWindow
-	(SelPers{self,"FIRSTGIVERS"}):Show()
+	SaveUse("FIRSTGIVERS")
+	(Selpers{self,"FIRSTGIVERS"}):Show()
 	RETURN
 METHOD FirstNonEarmarked() CLASS StandardWycWindow
 	(SelPers{self,"FIRSTNONEAR"}):Show()
@@ -130,57 +133,73 @@ METHOD HelpIndex CLASS StandardWycWindow
 
 
 	RETURN SELF
-METHOD INIT( oOwnerApp ) CLASS StandardWycWindow
-	LOCAL oSB AS StatusBar
-	
-	SUPER: INIT( oOwnerApp )
-	
-	aChildWindows := {}
+METHOD Init(oParent,uExtra) CLASS StandardWycWindow 
 
-	SetDeleted(TRUE)
-	
-	IF IsMethod(SELF,#EnableDragDropClient)
-		SELF: EnableDragDropClient()
-	ENDIF
+self:PreInit(oParent,uExtra)
 
-	oSB := SELF:EnableStatusBar()
-	oSB:DisplayTime()
-	oSB:DisplayKeyboard()
+super:Init(oParent,uExtra)
 
-	SELF:Icon 	:= Icon{ResourceID{IDI_STANDARDICON, _GetInst()}}
-	SELF:IconSm := Icon{ResourceID{IDI_STANDARDICON, _GetInst()}}
-	
-	SELF:SetCaption()
-	
-	self:oPrinter := PrintingDevice{}
-	SELF:Pointer := Pointer{POINTERARROW}
-// 	if AtC('test',CurPath)>0
-// 		self:background:=Brush{Color{164,255,164}} 
+SELF:Caption := "Wycliffe Office System"
+SELF:HyperLabel := HyperLabel{#StandardWycWindow,"Wycliffe Office System",NULL_STRING,NULL_STRING}
+SELF:IconSm := SSAICON{}
+SELF:Icon := SSAICON{}
+SELF:Origin := Point{13, 447}
+SELF:Size := Dimension{743, 597}
 
-// 	endif
+self:PostInit(oParent,uExtra)
 
-	
-	RETURN SELF
+return self
+
 METHOD MailViaCode() CLASS StandardWycWindow
 	(SelPers{self,"MAILINGCODE"}):Show()
 	RETURN
+method MenuCommand(oMenuCommandEvent )  class StandardWycWindow
+	local oMyCommandEvent:=oMenuCommandEvent as MenuCommandEvent
+	local oMenu:=oMyCommandEvent:Menu as Menu 
+	local cName,cCaption as string
+	// 	LogEvent(self,"menu executed"+ oMyCommandEvent:AsString(),"logmenu")
+	super:MenuCommand(oMenuCommandEvent)
+	//Put your changes here
+	cName:=oMyCommandEvent:Menu:Name(oMyCommandEvent:ItemID) 
+	cCaption:=oMyCommandEvent:AsString()
+	if !Empty(cCaption) 
+		LogEvent(self,"menu executed "+cCaption+'; '+oMyCommandEvent:HyperLabel:Name+"; menu name:"+ cName,"logmenu") 
+	endif
+	return 	
+   method MenuSelectOld(oMenuSelectEvent) class StandardWycWindow 
+   local oMySelectEvent:=oMenuSelectEvent as MenuSelectEvent 
+   local oMenu:=oMySelectEvent:Menu as Menu 
+   local cName,cCaption as string 
+	super:MenuSelect(oMySelectEvent)
+	//Put your changes here \
+	cName:=oMySelectEvent:Menu:Name(oMySelectEvent:ItemID) 
+	cCaption:=oMySelectEvent:AsString()
+	if !Empty(cCaption) 
+// 		LogEvent(self,"menu selected "+oMySelectEvent:AsString()+'; '+oMySelectEvent:HyperLabel:Name+"; menu name:"+ cName,"logmenu") 
+	endif
+	return nil
+	// ErrorBlock(cbError)
+	
+
+
+
 METHOD PeriodicGift() CLASS StandardWycWindow
-	(SubscriptionBrowser{SELF,,,"STANDARD GIFTS"}):Show()
+	(SubscriptionBrowser{self,,,"STANDARD GIFTS"}):Show()
 	RETURN
-// METHOD Donations() CLASS StandardWycWindow
-// 	(SubscriptionBrowser{SELF,,,"DONATIONS"}):Show()
-// 	RETURN
-// METHOD RefreshMenu() CLASS StandardWycWindow
-// 	GetUserMenu(LOGON_EMP_ID)
-// 	SELF:Menu:=WOMenu{}
-// 	SELF:Menu:ToolBar:Hide()
-// RETURN
-// METHOD StandardGiversMail() CLASS StandardWycWindow
-// 	(Selpers{SELF,"STANDARD GIVERS"}):Show()
-// 	RETURN
-// METHOD MailViaCode() CLASS StandardWycWindow
-// 	(Selpers{SELF,"MAILINGCODE"}):Show()
-// 	RETURN
+	// METHOD Donations() CLASS StandardWycWindow
+	// 	(SubscriptionBrowser{SELF,,,"DONATIONS"}):Show()
+	// 	RETURN
+	// METHOD RefreshMenu() CLASS StandardWycWindow
+	// 	GetUserMenu(LOGON_EMP_ID)
+	// 	SELF:Menu:=WOMenu{}
+	// 	SELF:Menu:ToolBar:Hide()
+	// RETURN
+	// METHOD StandardGiversMail() CLASS StandardWycWindow
+	// 	(Selpers{SELF,"STANDARD GIVERS"}):Show()
+	// 	RETURN
+	// METHOD MailViaCode() CLASS StandardWycWindow
+	// 	(Selpers{SELF,"MAILINGCODE"}):Show()
+	// 	RETURN
 ACCESS Printer CLASS StandardWycWindow
 	
 	return oPrinter
@@ -261,10 +280,12 @@ METHOD SubScriptionsMail() CLASS StandardWycWindow
 	// first see if there are new subscriptions which should generate a dueamount:
 	do while ProlongateAll(oMainWindow)
 	enddo		
+	SaveUse("SubScriptionsMail")
 	(Selpers{self,"SUBSCRIPTIONS"}):Show()
 	RETURN
 METHOD ThankYouLetters() CLASS StandardWycWindow
-	(SelPers{self,"THANKYOU"}):Show()
+	SaveUse("THANKYOU")
+	(Selpers{self,"THANKYOU"}):Show()
 	RETURN
 METHOD WhatIsNew CLASS StandardWycWindow
 	LOCAL nResult as DWORD  
