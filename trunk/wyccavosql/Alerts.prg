@@ -339,6 +339,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class CheckBankBalance
 	local startdate as date
 	local oSel as SQLSelect
 	self:SetTexts() 
+	SaveUse(self)
 	oSel:=SqlSelect{"select cast(min(datebalance) as date) as mindatebalance from bankbalance",oConn} 
 	if oSel:RecCount>0 .and. !Empty(oSel:mindatebalance) .and.oSel:mindatebalance>null_date
 		self:oDCReportdate:DateRange:=DateRange{oSel:mindatebalance,Today()} 
@@ -612,6 +613,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class CheckSuspense
 	//Put your PostInit additions here 
 	local startdate as date
 	self:SetTexts()
+	SaveUse(self)
 	if !Empty(GlBalYears)
 		startdate:=GlBalYears[Len(GlBalYears),1] 
 	else
