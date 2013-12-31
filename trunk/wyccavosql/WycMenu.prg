@@ -223,10 +223,10 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	endif	
 	AAdd(aMenu,{0,2, oLan:MGet("&Journal"),,"Entering records and gifts",0,0,"F"})
 	IF !Admin=="GE" .and.!Admin=="WA"
-		AAdd(aMenu,{2,1,   oLan:MGet("&Gifts/Payments entering")+"...","_PaymentJournal","",0,35,"F"})
+		AAdd(aMenu,{2,1,   oLan:MGet("&Gifts/Payments entering")+"...","PaymentJournal","",0,35,"F"})
 		AAdd(aMenu,{2,2,   oLan:MGet("&Standard Gifts Pattern Inquiry/Update")+"..." ,"PeriodicGift","",0,56,"F"})
 	ELSE
-		AAdd(aMenu,{2,1,   oLan:MGet("&Payments entering")+"...","_PaymentJournal","",0,35,"F"})
+		AAdd(aMenu,{2,1,   oLan:MGet("&Payments entering")+"...","PaymentJournal","",0,35,"F"})
 	ENDIF
 	AAdd(aMenu,{2,3,,,,,})           // separator
 	IF Admin=="HO"
@@ -240,7 +240,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 		if ConI(SqlSelect{"select cast(count(*) as unsigned) as tot from importpattern",oConn}:tot)>0 
 			AAdd(aMenu,{2,6,   oLan:MGet("&Import Pattern")+"..." ,"ImportPatternBrowser","",0,17,"F"})
 		endif
-		AAdd(aMenu,{2,7,   oLan:MGet("Standing &Orders")+"..." ,"PeriodicBrowser","",0,36,"F"})
+		AAdd(aMenu,{2,7,   oLan:MGet("Standing &Orders")+"..." ,"StandingOrderBrowser","",0,36,"F"})
 	ENDIF
 // 	if SuperUser
 	AAdd(aMenu,{2,8,,,,,})           // separator
@@ -371,7 +371,7 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 			if (j:=AScan( aMenu,{|x|x[4]=="TransactionEdit"}))>0
 				AAdd(aFunc,j) 
 			endif
-			if (j:=AScan( aMenu,{|x|x[4]=="PeriodicBrowser"}))>0
+			if (j:=AScan( aMenu,{|x|x[4]=="StandingOrderBrowser"}))>0
 				AAdd(aFunc,j)
 			endif
 			if (j:=AScan( aMenu,{|x|x[4]=="MemberEdit"}))>0
