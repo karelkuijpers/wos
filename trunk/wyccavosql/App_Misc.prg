@@ -3029,6 +3029,12 @@ FUNCTION RandSpace(cString as STRING) as STRING
 		ENDIF
 	ENDIF
 RETURN cString
+function SaveUse(functionid:=null_object as usual) 
+local oStmnt as SQLStatement
+oStmnt:=SQLStatement{"insert into functionusage (functionid,userid,usedate,frequency) values ('"+iif(IsObject(functionid),Symbol2String(ClassName(functionid)),iif(IsString(functionid),functionid,""))+"','"+ LOGON_EMP_ID + "',current_date,1)"+;
+" on duplicate key update frequency=frequency+1",oConn}
+oStmnt:Execute()
+return
 	Function SetCollate() 
 		if CountryCode='41'
 			Collate:=" COLLATE utf8_danish_ci"
