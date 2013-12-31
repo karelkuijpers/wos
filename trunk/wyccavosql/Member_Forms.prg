@@ -638,6 +638,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class ConvertMembers
 	local nW as int 
 	local aWord:={} as array
 	self:SetTexts() 
+	SaveUse(self)
 	self:oCaller:=uExtra 
 	self:cWhere:=self:oCaller:cWhere+" and co='M' and m.accid IS NOT NULL"
 	// search for existing member department: 
@@ -1170,7 +1171,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDistribution
 	local oPP as SQLSelect
 	LOCAL it AS INT
 self:SetTexts()
-	SELF:oDCMemberText:TextValue:=oCaller:cMemberName
+	SaveUse(self)
+	self:oDCMemberText:TextValue:=oCaller:cMemberName
 	if !self:OwnPPCode==SEntity
 		oPP:= SqlSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
 		self:oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
@@ -2759,6 +2761,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	local oDis as SQLSelect
 	local oLast as SQLSelect 
 	self:SetTexts()
+	SaveUse(self)
 	// initialize listview with ass.accounst:
 	oColREk:=ListViewColumn{11,self:oLan:WGet("Account")+'#'}
 	oColREk:NameSym:=#Number
@@ -3466,15 +3469,33 @@ METHOD Init() CLASS Employee_Grade
 
 
 
-function FillPP() as array
-	local oPP as SQLSelect
-oPP:=SqlSelect{"select concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))) as ppname ,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
-// oPP:SetFilter({||!oPP:PPCODE=="AAA".and. !oPP:PPCODE=="ACH" .and.!Empty(oPP:PPCODE)})
-// oPP:GoTop()
-return oPP:GetLookupTable(500,#PPNAME,#PPCODE)
-
 static define LSTDATE:=7
 static define mbrid:=1
+RESOURCE MemberBrowser DIALOGEX  21, 19, 431, 341
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", MEMBERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 18, 116, 12
+	CONTROL	"&Number:", MEMBERBROWSER_SC_REK, "Static", WS_CHILD, 16, 33, 30, 12
+	CONTROL	"N&ame", MEMBERBROWSER_SC_OMS, "Static", WS_CHILD, 16, 49, 24, 12
+	CONTROL	"", MEMBERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 116, 12
+	CONTROL	"", MEMBERBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 116, 12
+	CONTROL	"Find", MEMBERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 18, 53, 12
+	CONTROL	"", MEMBERBROWSER_MEMBERBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 8, 118, 350, 210
+	CONTROL	"&Edit", MEMBERBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 53, 12
+	CONTROL	"&New", MEMBERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 176, 53, 12
+	CONTROL	"&Delete", MEMBERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 227, 53, 12
+	CONTROL	"Members", MEMBERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 107, 420, 225
+	CONTROL	"Search member with:", MEMBERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 8, 208, 91
+	CONTROL	"Universal like google:", MEMBERBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 18, 72, 12
+	CONTROL	"", MEMBERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 259, 44, 47, 12
+	CONTROL	"Found:", MEMBERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 44, 27, 13
+	CONTROL	"Projects", MEMBERBROWSER_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 84, 80, 12
+	CONTROL	"Members not of", MEMBERBROWSER_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 73, 200, 11
+	CONTROL	"Members of", MEMBERBROWSER_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 62, 200, 11
+	CONTROL	"Convert", MEMBERBROWSER_CONVERTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 18, 53, 12
+END
+
 CLASS MemberBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
@@ -3502,31 +3523,6 @@ CLASS MemberBrowser INHERIT DataWindowExtra
   export cFrom,cOrder,cFields,cWhere as string 
   
   declare method DeleteButton,FindButton
-RESOURCE MemberBrowser DIALOGEX  21, 19, 431, 341
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", MEMBERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 18, 116, 12
-	CONTROL	"&Number:", MEMBERBROWSER_SC_REK, "Static", WS_CHILD, 16, 33, 30, 12
-	CONTROL	"N&ame", MEMBERBROWSER_SC_OMS, "Static", WS_CHILD, 16, 49, 24, 12
-	CONTROL	"", MEMBERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 33, 116, 12
-	CONTROL	"", MEMBERBROWSER_SEARCHOMS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 48, 116, 12
-	CONTROL	"Find", MEMBERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 224, 18, 53, 12
-	CONTROL	"", MEMBERBROWSER_MEMBERBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 8, 118, 350, 210
-	CONTROL	"&Edit", MEMBERBROWSER_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 125, 53, 12
-	CONTROL	"&New", MEMBERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 176, 53, 12
-	CONTROL	"&Delete", MEMBERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 227, 53, 12
-	CONTROL	"Members", MEMBERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 107, 420, 225
-	CONTROL	"Search member with:", MEMBERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 8, 208, 91
-	CONTROL	"Universal like google:", MEMBERBROWSER_FIXEDTEXT4, "Static", WS_CHILD, 16, 18, 72, 12
-	CONTROL	"", MEMBERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 259, 44, 47, 12
-	CONTROL	"Found:", MEMBERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 224, 44, 27, 13
-	CONTROL	"Projects", MEMBERBROWSER_PROJECTSBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 84, 80, 12
-	CONTROL	"Members not of", MEMBERBROWSER_NONHOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 73, 200, 11
-	CONTROL	"Members of", MEMBERBROWSER_HOMEBOX, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 16, 62, 200, 11
-	CONTROL	"Convert", MEMBERBROWSER_CONVERTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 284, 18, 53, 12
-END
-
 method ButtonClick(oControlEvent) class MemberBrowser
 	local oControl as Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -3827,6 +3823,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS MemberBrowser
 	//Put your PostInit additions here 
 	local oSel as SQLSelect
 self:SetTexts()
+// 	SaveUse(self)
 *	SELF:SetupMenu()
 	if AScan(aMenu,{|x|x[4]=="MemberEdit"})=0
 		self:oCCNewButton:Hide()
@@ -4176,14 +4173,6 @@ METHOD Init() CLASS MemberPerson
 
 
 
-class ReportDateMember inherit DialogWinDowExtra 
-
-	protect oDCFixedText as FIXEDTEXT
-	protect oDCReportDate as DATETIMEPICKER
-	protect oCCCancelButton as PUSHBUTTON
-	protect oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 RESOURCE ReportDateMember DIALOGEX  9, 24, 256, 49
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Editing of a member"
@@ -4195,6 +4184,14 @@ BEGIN
 	CONTROL	"OK", REPORTDATEMEMBER_OKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 189, 28, 53, 13
 END
 
+class ReportDateMember inherit DialogWinDowExtra 
+
+	protect oDCFixedText as FIXEDTEXT
+	protect oDCReportDate as DATETIMEPICKER
+	protect oCCCancelButton as PUSHBUTTON
+	protect oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 METHOD CancelButton( ) CLASS ReportDateMember
 	SELF:EndDialog(0)
 	RETURN NIL
