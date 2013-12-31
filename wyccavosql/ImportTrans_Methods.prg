@@ -197,6 +197,7 @@ RETURN uValue
 method PostInit(oWindow,iCtlID,oServer,uExtra) class EditImportPattern
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
 	IF ClassName(uExtra)==#ImportBatch
 		self:lNew := true
 // 		self:oDCmOrigin:Disable()
@@ -894,6 +895,7 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 		ptrHandle:Close()
 		RETURN FALSE 
 	endif
+	SaveUse("ImportAustria")
 
 	ptDate:=AScan(aStruct,{|x| "SPENDENDATUM" $ x})
 	ptDoc:=AScan(aStruct,{|x| "LISTNAME" $ x})
@@ -1064,6 +1066,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 		ptrHandle:Close()
 		RETURN FALSE 
 	endif
+	SaveUse("ImportBatch")
 	ptDate:=AScan(aStruct,{|x| "DATE" $ x})
 	ptDoc:=AScan(aStruct,{|x| "DOC" $ x})
 	ptTrans:=AScan(aStruct,{|x| "TRANSACT" $ x})
@@ -1356,6 +1359,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 	self:oParent:Pointer := Pointer{POINTERHOURGLASS} 
 	oAfl:=UpdateHouseHoldID{}
 	oAfl:Importaffiliated_person_account_list()
+	SaveUse("ImportPMC")
 
 	// 	datelstafl:=SQLSelect{"select datlstafl from sysparms",oConn}:DATLSTAFL 
 	// 	if datelstafl<Today()  
@@ -2152,6 +2156,7 @@ return self
 method PostInit(oWindow,iCtlID,oServer,uExtra) class ImportPatternBrowser
 	//Put your PostInit additions here
 	self:SetTexts()
+	SaveUse(self)
   	self:oDCFound:TextValue :=Str(self:oImpPat:Reccount,-1)
 	return nil
 
