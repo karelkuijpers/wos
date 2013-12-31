@@ -1,7 +1,7 @@
-METHOD ACCOUNTProc(cAccValue) CLASS EditPeriodic
+METHOD ACCOUNTProc(cAccValue) CLASS EditStandingOrder
 	AccountSelect(self,AllTrim(cAccValue),"Account",true,"a.active=1")
 	RETURN nil 
-METHOD append() CLASS EditPeriodic
+METHOD append() CLASS EditStandingOrder
 	LOCAL cDesc,cOpp as STRING
 	LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
 	IF !oStOrdLH:eof
@@ -22,9 +22,9 @@ METHOD append() CLASS EditPeriodic
 	AAdd(oStOrdLH:Amirror,{oStOrdLH:Deb,oStOrdLH:Cre,' ',' ',0,oStOrdLH:Recno,"","","","","",0})    
 	oStOrdLH:DESCRIPTN:=cDesc
 	RETURN FALSE
-Method CreditorProc(cPersValue) class EditPeriodic
+Method CreditorProc(cPersValue) class EditStandingOrder
 	PersonSelect(self,AllTrim(cPersValue),true,,"Creditor")
-METHOD DELETE() CLASS EditPeriodic
+METHOD DELETE() CLASS EditStandingOrder
  * delete record of TempTrans:
 LOCAL ThisRec, CurRec as int
 LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
@@ -49,7 +49,7 @@ IF !Empty(CurRec) .and.!(oStOrdLH:eof.and.oStOrdLH:BOF)
 	self:oSFStOrderLines:Browser:REFresh()
 ENDIF
 RETURN true
-METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
+METHOD RegAccount(omAcc, cItemname) CLASS EditStandingOrder
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp
 	LOCAL oAccount as sqlselect
 	LOCAL ThisRec:=oStOrdLH:RecNo,recnr as int
@@ -108,7 +108,7 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditPeriodic
 		self:oSFStOrderLines:Browser:SetColumnFocus(#ACCOUNTNAM)
 	ENDIF
 	RETURN nil
-METHOD RegPerson(oCLN,ItemName) CLASS EditPeriodic 
+METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder 
 local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
 LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
 LOCAL ThisRec:=oStOrdLH:RecNo as int 
@@ -152,7 +152,7 @@ else
 	endif
 ENDIF
 RETURN true
-method ShowAssGift() class EditPeriodic 
+method ShowAssGift() class EditStandingOrder 
 	LOCAL oPer:=self:oStOrdr as SQLSelect
 	local oOrdLnH:=self:oSFStOrderLines:Server as StOrdLineHelp 
    // aMirror: {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid, [11]category}}
@@ -182,7 +182,7 @@ method ShowAssGift() class EditPeriodic
 		self:oCCPersonButton:Hide()
 		self:mCLN:=""
 	endif
-METHOD Totalise(lDelete) CLASS EditPeriodic
+METHOD Totalise(lDelete) CLASS EditStandingOrder
 	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp
 	LOCAL fSum:=0 as FLOAT 
 	LOCAL nCurRec,i as int
@@ -212,7 +212,7 @@ METHOD Totalise(lDelete) CLASS EditPeriodic
 	ENDIF
 
 	RETURN
-METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
+METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditStandingOrder
 	* Update order lines of an existing Standing Order with the modified data in StOrdLineHelp:
 	LOCAL oOrig,oNew:=self:oSFStOrderLines:server as StOrdLineHelp
 
@@ -359,7 +359,7 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditPeriodic
 		RETURN true
 	endif
 	
-Method UpdStOrdLn(oNew as StOrdLineHelp, oOrig as StOrdLineHelp) as Logic class EditPeriodic 
+Method UpdStOrdLn(oNew as StOrdLineHelp, oOrig as StOrdLineHelp) as Logic class EditStandingOrder 
 local cStatement as string, oStmnt as SQLStatement
 cStatement:=iif(Empty(oNew:RecNbr),"insert into","update")+" standingorderline set "+;
 "accountid="+Str(oNew:ACCOUNTID,-1)+;
@@ -379,7 +379,7 @@ if Empty(oStmnt:status)
 else
 	return false
 endif
-METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
+METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditStandingOrder
 	LOCAL lValid := true as LOGIC
 	LOCAL cError as STRING      
 	LOCAL oTBQuestion as TextBox
@@ -432,7 +432,7 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditPeriodic
  	ENDIF
  	
 RETURN lValid
-method ValidateHelpLine(lNoMessage:=false as logic,ErrorLine ref int) as logic class EditPeriodic 
+method ValidateHelpLine(lNoMessage:=false as logic,ErrorLine ref int) as logic class EditStandingOrder 
 	* lNoMessage: True: Do not show error message
 	LOCAL lValid := true as LOGIC
 	LOCAL cError as STRING
@@ -485,9 +485,9 @@ method ValidateHelpLine(lNoMessage:=false as logic,ErrorLine ref int) as logic c
 	ENDIF
 	RETURN lValid
 	
-METHOD ValidatePeriodic() CLASS EditPeriodic
-	LOCAL lValid := TRUE AS LOGIC
-	LOCAL cError AS STRING
+METHOD ValidatePeriodic() CLASS EditStandingOrder
+	LOCAL lValid := true as LOGIC
+	LOCAL cError as STRING
 	LOCAL oPer:=self:oStOrdr as sqlselect
 	LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp  
 	local iPtr,i,curRec as int
@@ -504,14 +504,14 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 		lValid := FALSE
 		cError :=  "You must enter a period"
 		self:oDCmperiod:SetFocus()
- 	ELSEIF Empty(SELF:oDCmIDAT:SelectedDate)
+ 	ELSEIF Empty(self:oDCmIDAT:SelectedDate)
 		lValid := FALSE
 		cError :=  "You must enter a Start date"
-		SELF:oDCmIdat:SetFocus()		
-   	ELSEIF !Empty(SELF:odcmEdat:SelectedDate).and.SELF:odcmIdat:SelectedDate>SELF:odcmEdat:SelectedDate
+		self:oDCmIdat:SetFocus()		
+   	ELSEIF !Empty(self:odcmEdat:SelectedDate).and.self:odcmIdat:SelectedDate>self:odcmEdat:SelectedDate
 		lValid := FALSE
 		cError :=  "Enter a Enddate after the startdate"                        
-		SELF:oDCmIdat:SetFocus()
+		self:oDCmIdat:SetFocus()
 // 	ELSEIF !lNew.and..not.Empty(oPer:LstRecording).and.(self:odcmIdat:SelectedDate<oPer:LstRecording .or.self:odcmIdat:SelectedDate< MinDate)
 // 		lValid := FALSE
 // 		cError :=  "Standing Order already recorded, do not shift back Startdate"
@@ -520,7 +520,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 		self:odcmEdat:SelectedDate<oPer:LstRecording
 		lValid := FALSE
 		cError :=  "Enddate should be after last transaction date "+DToC(oPer:LstRecording)
-		SELF:oDCmEdat:SetFocus()
+		self:oDCmEdat:SetFocus()
 	elseif (iPtr:=AScan(oStOrdLH:Amirror,{|x|Empty(x[5]).and.x[2]<>x[1]}))>0 
 		lValid := FALSE
 		cError :=  "Select an account"
@@ -580,7 +580,7 @@ METHOD ValidatePeriodic() CLASS EditPeriodic
 	ENDIF
 
 	RETURN lValid
-METHOD RegAccount(omAcc,ItemName) CLASS PeriodicBrowser
+METHOD RegAccount(omAcc,ItemName) CLASS StandingOrderBrowser
 	LOCAL oAcc as SQLSelect
 	local mRekFrom  as string
 	if ItemName="Account from"
@@ -599,8 +599,6 @@ METHOD RegAccount(omAcc,ItemName) CLASS PeriodicBrowser
 // 		self:Refresh()
 	endif 
 RETURN true
-STATIC DEFINE PROGRESSPER_CANCELBUTTON := 100 
-STATIC DEFINE PROGRESSPER_PROGRESSBAR := 101 
 CLASS StandingOrderJournal 
 	protect oCurr as Currency 
 	export mxrate as float
@@ -614,7 +612,7 @@ CLASS StandingOrderJournal
 Method Init() class StandingOrderJournal
 	// self:oLan:=SQLSelect{"select * from language",oConn}
 	return self
-method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  class StandingOrderJournal
+method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  class StandingOrderJournal
 	*****************************************************************
 	* Recording of standing order as transaction
 	*
@@ -624,9 +622,9 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 	// LOCAL deb_ind AS LOGIC
 	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
 	local MultiFrom, lError as logic 
-	local deb,cre, DEBFORGN,CREFORGN,total as float
+	local Deb,cre, DEBFORGN,CREFORGN,total as float
 	local CurStOrdrid,nTransLenOrg:=Len(self:aTrans),nBankLenOrg:=Len(self:aBank) as int
-	local oPersBank,oBal as SQLSelect 
+	local oPersBank,oBal as sqlselect 
 	// 	local oTrans,oBord,oStmnt as SQLStatement
 	local i as int
 	*Check validity of standing order:
@@ -666,8 +664,8 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 							
 							lError:=true
 						else
-							oPersBank:=SQLSelect{"select banknumber,persid from personbank where persid='"+Str(oStOrdL:CREDITOR,-1)+"'",oConn}
-							if oPersBank:RECCOUNT>0
+							oPersBank:=SqlSelect{"select banknumber,persid from personbank where persid='"+Str(oStOrdL:CREDITOR,-1)+"'",oConn}
+							if oPersBank:reccount>0
 								mBank:=oPersBank:banknumber 
 							endif
 						endif
@@ -687,26 +685,26 @@ method journal(datum as date, oStOrdL as SQLSelect,nTrans ref DWORD) as logic  c
 			deb:=oStOrdL:deb 
 			cre:=oStOrdL:cre
 			if !Empty(oStOrdL:Currency) .and. !oStOrdL:Currency==sCurr
-				deb:=Round((oCurr:GetROE(oStOrdL:Currency,datum))*deb,DecAantal)	
+				Deb:=Round((oCurr:GetROE(oStOrdL:Currency,datum))*Deb,DecAantal)	
 				cre:=Round((oCurr:GetROE(oStOrdL:Currency,datum))*cre,DecAantal)	
 			endif
 			total:=round(total+cre-deb,decaantal)
 			TransCurr:=sCurr
 			if MultiFrom .or. CurrFrom == oStOrdL:Currency
 				TransCurr:=oStOrdL:Currency 
-				DEBFORGN:=deb
+				DEBFORGN:=Deb
 				CREFORGN:=cre
 			elseif !CurrFrom==sCurr
 				// recalculate to foreign currency:
-				DEBFORGN:=Round(deb/(self:oCurr:GetROE(CurrFrom,datum)),DecAantal)
+				DEBFORGN:=Round(Deb/(self:oCurr:GetROE(CurrFrom,datum)),DecAantal)
 				CREFORGN:=Round(cre/(self:oCurr:GetROE(CurrFrom,datum)),DecAantal)
 				TransCurr:=CurrFrom
 			endif	
 			// save in aTrans: 
 			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
-			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),deb,cre,DEBFORGN,CREFORGN,;
-				TransCurr,oStOrdL:GC,;
-				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
+			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),Deb,cre,DEBFORGN,CREFORGN,;
+				TransCurr,oStOrdL:gc,;
+				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>Deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
 				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,nTrans} ) 
 			if !Empty(mBank)
 				// save banknumber
@@ -736,7 +734,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	LOCAL nwdat, checkdate,idat,edat,curdat as date, tel:=0 as int, first:=true,lError as LOGIC
 	LOCAL iPeriod,nCurRec,nAdv,nDay,i,j,CurStOrdrid as int
 	local nTrans as DWord 
-	local oStOrdL as SQLSelect
+	local oStOrdL as sqlselect
 	// 	local CurStOrdrid:='',cTrans as string 
 	local oBal as balances 
 	local cValuesBankOrd,cValuesStOrd,cValuesTrans as string 
@@ -747,7 +745,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	if self:oCurr==null_object
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
-	oStOrdL:=SQLSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
+	oStOrdL:=SqlSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
 		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,b.banknumber,l.reference,l.seqnr,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
@@ -758,7 +756,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
 		"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
 		" order by s.stordrid,l.seqnr",oConn} 
-	if oStOrdL:RECCOUNT <1 
+	if oStOrdL:reccount <1 
 		return false
 	endif 
 	self:oLan:=Language{}
@@ -780,14 +778,14 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 
 		*Checking validity standing order and executing it:
 		oMainWindow:STATUSMESSAGE("Busy with standing orders:")
-		nCurRec:=oStOrdL:Recno 
+		nCurRec:=oStOrdL:RecNo 
 		curdat:=null_date
 		CurStOrdrid:=oStOrdL:stordrid
 		do while self:journal(nwdat,oStOrdL,@nTrans)
 			curdat:=nwdat  
 			nwdat:=Getvaliddate(nDay,Month(nwdat)+iPeriod,Year(nwdat)) 
 			IF (Empty(edat).or.nwdat <=edat) .and.nwdat <=checkdate // more transactions to made?
-				oStOrdL:GoTo(nCurRec) // reset orderlines
+				oStOrdL:Goto(nCurRec) // reset orderlines
 			else
 				AAdd(self:aStOrd,{Str(CurStOrdrid,-1),SQLdate(curdat) })
 				exit
@@ -812,7 +810,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"')",oConn}
 		oTrans:execute()
 		if oTrans:NumSuccessfulRows<1
-			cError:= "stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:description
+			cError:= "stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:Description
 			lError:=true
 		else
 			nTrans:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
@@ -894,32 +892,32 @@ METHOD DebCreProc() CLASS StOrderLines
 	LOCAL oStOrdLH:=self:server as StOrdLineHelp
 	LOCAL lFound as LOGIC
 	LOCAL i as int
-	LOCAL nCurRec, CurRec, ThisRec as int
+	LOCAL nCurRec, curRec, ThisRec as int
 	LOCAL nAccId,nDepId as int
 
 	CurRec := oStOrdLH:Recno
 	//CurRec:=AScan(oStOrdLH:aMirror,{|x|x[6]==nCurRec}) 
 	// {{ [1]deb,[2[]cre, [3]category, [4]gc, [5]accountid, [6]recno, [7]account#,[8]creditor,[9]bankacct,[10]persid,[11]INCEXPFD},[12]depid}
 	oStOrdLH:Amirror[CurRec,1]:=oStOrdLH:deb
-	oStOrdLH:Amirror[CurRec,2]:=oStOrdLH:cre
+	oStOrdLH:aMirror[CurRec,2]:=oStOrdLH:cre
 	oStOrdLH:Amirror[CurRec,3]:=oStOrdLH:CATEGORY
-	oStOrdLH:Amirror[CurRec,5]:=oStOrdLH:ACCOUNTID 
+	oStOrdLH:aMirror[curRec,5]:=oStOrdLH:ACCOUNTID 
 	oStOrdLH:Amirror[CurRec,6]:=oStOrdLH:Recno 
-	oStOrdLH:Amirror[CurRec,7]:=oStOrdLH:ACCOUNTNBR
-	oStOrdLH:Amirror[CurRec,12]:=oStOrdLH:DEPID 
+	oStOrdLH:aMirror[curRec,7]:=oStOrdLH:ACCOUNTNBR
+	oStOrdLH:aMirror[CurRec,12]:=oStOrdLH:DEPID 
 	
 	self:Browser:SuspendUpdate()
-	IF oStOrdLH:CATEGORY == 'M'		
-		IF oStOrdLH:deb > oStOrdLH:cre
+	IF oStOrdLH:category == 'M'		
+		IF oStOrdLH:Deb > oStOrdLH:cre
 			oStOrdLH:gc := 'CH' 
-		ELSEIF oStOrdLH:deb = oStOrdLH:cre
+		ELSEIF oStOrdLH:Deb = oStOrdLH:cre
 			oStOrdLH:gc := '  '
 		ELSE
 			IF !oStOrdLH:gc == 'PF' 
 				oStOrdLH:gc := 'AG'
 			endif
 		ENDIF
-	elseif oStOrdLH:CATEGORY == 'K'   //member department
+	elseif oStOrdLH:category == 'K'   //member department
 		if oStOrdLH:INCEXPFD='F'
 			oStOrdLH:gc := 'PF'
 		ELSEIF oStOrdLH:INCEXPFD='E'
@@ -930,40 +928,40 @@ METHOD DebCreProc() CLASS StOrderLines
 	else
 		if oStOrdLH:gc == 'CH' .and.!self:Owner:lMemberGiver
 			recnr := 0
-			do WHILE (recnr:=AScan(oStOrdLH:Amirror,{|x| x[4] =='MG'},recnr+1))>0
+			do WHILE (recnr:=AScan(oStOrdLH:aMirror,{|x| x[4] =='MG'},recnr+1))>0
 				oStOrdLH:Goto(recnr)
 				oStOrdLH:gc := 'AG'
-				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc  && save in mirror
+				oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc  && save in mirror
 			ENDDO
-			oStOrdLH:Goto(CurRec)
+			oStOrdLH:Goto(curRec)
 		ENDIF
 		oStOrdLH:gc := '  ' 
 	ENDIF
-	oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
+	oStOrdLH:aMirror[curRec,4]:=oStOrdLH:gc  && save in mirror
 	IF oStOrdLH:CATEGORY == 'M' .or.oStOrdLH:CATEGORY == 'K'   //member (department)
 		nAccId:=oStOrdLH:ACCOUNTID
 		nDepId:=oStOrdLH:DEPID
 		if	oStOrdLH:gc == 'CH'
 			//	change AG to MG if needed:
 			recnr	:=	0
-			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='AG'.and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
+			do	WHILE	(recnr:=AScan(oStOrdLH:aMirror,{|x|	x[4] =='AG'.and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oStOrdLH:Goto(recnr)
 				oStOrdLH:gc	:=	'MG'
-				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
+				oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
 			ENDDO
 			//	change MG to AG if needed:
 			recnr	:=	0
-			do	WHILE	(recnr:=AScan(oStOrdLH:Amirror,{|x|	x[4] =='MG'.and.(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
+			do	WHILE	(recnr:=AScan(oStOrdLH:aMirror,{|x|	x[4] =='MG'.and.(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)},recnr+1))>0
 				oStOrdLH:Goto(recnr)
 				oStOrdLH:gc	:=	'AG'
-				oStOrdLH:Amirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
+				oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc	 && save	in	mirror
 			ENDDO
-			oStOrdLH:Goto(CurRec)
+			oStOrdLH:Goto(curRec)
 		elseif	oStOrdLH:gc == 'AG' 
 			// change to MG if needed
-			IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:Amirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)})>0
+			IF self:Owner:lMemberGiver .or.AScan(oStOrdLH:aMirror,{|x|x[4]=="CH".and.x[2]<x[1].and.!(x[5]==nAccId.and.!nAccId=0.or.x[12]==nDepId.and.!nDepId=0)})>0
 				oStOrdLH:gc := 'MG'
-				oStOrdLH:Amirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
+				oStOrdLH:aMirror[CurRec,4]:=oStOrdLH:gc  && save in mirror
 			ENDIF
 		endif
 	endif		
@@ -974,7 +972,7 @@ METHOD DebCreProc() CLASS StOrderLines
 	RETURN
 CLASS StOrdLnBrowser INHERIT DatabrowserExtra
 method ColumnFocusChange(oColumn, lHasFocus)   CLASS StOrdLnBrowser
-	LOCAL oStOrdLH:=self:Owner:Server as StOrdLineHelp
+	LOCAL oStOrdLH:=self:Owner:server as StOrdLineHelp
 	LOCAL ThisRec, nErr as int 
 	Local myValue as float
 	LOCAL myColumn:=oColumn as DataColumn
@@ -984,42 +982,42 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS StOrdLnBrowser
 	ENDIF
 	ThisRec:=oStOrdLH:RecNo
 	IF myColumn:NameSym == #ACCOUNTNBR
-		IF !AllTrim(myColumn:TextValue) == ;
+		IF !AllTrim(myColumn:TEXTValue) == ;
 				AllTrim(oStOrdLH:aMirror[ThisRec,7]) && value changed?
-			oStOrdLH:aMirror[ThisRec,7]:= AllTrim(myColumn:TextValue) 
+			oStOrdLH:aMirror[ThisRec,7]:= AllTrim(myColumn:TEXTValue) 
 			self:Owner:Owner:ACCOUNTProc(myColumn:VALUE)
 		ENDIF
 	ELSEIF myColumn:NameSym == #DEB
-		IF !Round(myColumn:VALUE,2) == Round(oStOrdLH:aMirror[ThisRec,1],2)
+		IF !Round(myColumn:Value,2) == Round(oStOrdLH:aMirror[ThisRec,1],2)
 			self:Owner:DebCreProc()
 			self:Owner:Owner:Totalise()
 		ENDIF
 	ELSEIF myColumn:NameSym == #CRE 
-		IF !Round(myColumn:VALUE,2) == Round(oStOrdLH:aMirror[ThisRec,2],2)
+		IF !Round(myColumn:Value,2) == Round(oStOrdLH:aMirror[ThisRec,2],2)
 			self:Owner:DebCreProc()
 			self:Owner:Owner:Totalise()
 		ENDIF
 	ELSEIF myColumn:NameSym == #GC
 		IF !AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,4])
 			oStOrdLH:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:Value
-			oStOrdLH:gc:=myColumn:VALUE
+			myColumn:TEXTValue:= myColumn:Value
+			oStOrdLH:gc:=myColumn:Value
 			oStOrdLH:aMirror[ThisRec,4]:=oStOrdLH:gc  && save in mirror
 			self:Owner:Owner:ValidateHelpLine(false,@nErr)
 		ENDIF
 	ELSEIF myColumn:NameSym== #ACCOUNTNAM .and. lHasFocus
 		self:SetColumnFocus(#DESCRIPTN)
 	ELSEif myColumn:NameSym == #CREDTRNAM 
-		IF oStOrdLH:aMirror[ThisRec,5]==Val(sCRE) .and. !AllTrim(myColumn:TextValue) == ;
+		IF oStOrdLH:aMirror[ThisRec,5]==Val(sCRE) .and. !AllTrim(myColumn:TEXTValue) == ;
 				AllTrim(oStOrdLH:aMirror[ThisRec,8]) && value changed?
-			oStOrdLH:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
+			oStOrdLH:aMirror[ThisRec,8]:= AllTrim(myColumn:TEXTValue) 
 			self:Owner:Owner:CreditorProc(myColumn:VALUE)
 		ENDIF
 	ELSEIF myColumn:NameSym == #BANKACCT
 		IF !AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,9])
 			oStOrdLH:aMirror[ThisRec,9]:=AllTrim(myColumn:VALUE)
 			myColumn:TextValue:= myColumn:VALUE
-			oStOrdLH:BANKACCT:=myColumn:VALUE
+			oStOrdLH:BANKACCT:=myColumn:Value
 			oStOrdLH:aMirror[ThisRec,9]:=oStOrdLH:BANKACCT  && save in mirror
 		ENDIF
 
