@@ -64,7 +64,7 @@ CLASS MAPISession
 	PROTECT oMessage AS MAPIMsg
 	PROTECT oClick AS CLICKYES
 
-	DECLARE METHOD SendDocument, SendDocumentNew, Resolvename,ResolveNameOld
+	DECLARE METHOD SendDocument, Resolvename,ResolveNameOld
 method Axit() class MAPISession
 	MemFree( self:pszMessageID )
 	MemFree( self:pszSeed )
@@ -653,116 +653,5 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		MemFree( aFiles[1].lpszFileName )
 		MemFree( aFiles[1] )
 	endif
-	RETURN ( nResult == SUCCESS_SUCCESS )
-METHOD SendDocumentNew( cFile as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIRecip, cSubject, cNoteText ) as LOGIC PASCAL CLASS MAPISession
-
-
-	LOCAL nResult as DWORD
-
-	LOCAL sMessage as MAPIMessage
-	LOCAL pszSubject as psz
-	LOCAL dim aRecip[ 2 ] is MAPIRecipDesc 
-	LOCAL dim aFiles[ 1 ] as MAPIFileDesc
-	LOCAL sRecip as MAPIRecipDesc
-	LOCAL l:=1 as int
-	LOCAL oMsg as MapiMsg 
-	//Local cAddress as string
-	Local PtrRecip as ptr 
-
- 	IF !Empty(oRecip2) .and.! IsNil(oRecip2)
- 		l:=2
- 	ENDIF
-	Default(@cSubject,null_string)
-	Default(@cNoteText,null_string)
-
-	sMessage := MemAlloc( _sizeof( MapiMessage ) )
-	MemSet( sMessage , 0 , _sizeof( MapiMessage ) )	
-	
-	pszSubject     := StringAlloc( cSubject )
-  // cAddress:= AllTrim(oRecip1:Address)+iif(l>1,", "+AllTrim(oRecip2:Address),"" )
-	sMessage.ulReserved			:= 0
-	sMessage.lpszSubject		:= pszSubject
-	sMessage.lpszNoteText		:= cNoteText+" "
-*	sMessage.lpszMessageType	:= "IPM.NoteText"
-	sMessage.lpszMessageType	:= ""
-	sMessage.lpszDateReceived	:= ""
-	sMessage.lpszConversationID	:= ""
-	sMessage.flFlags			:= 0 
-
-	//aRecip := MemAlloc( 2 * _sizeof( MapiRecipDesc ) )
-//	MemSet( aRecip, 68, 2 * _sizeof( MapiRecipDesc ) )
-//	MemSet(  aRecip[1],0, _sizeof( MapiRecipDesc ) )  
-//	MemSet( aRecip, 0, 2 * _sizeof( MapiRecipDesc ) )
-	aRecip[1].ulReserved	:= 0
-	aRecip[1].ulRecipClass	:= MAPI_TO
-	aRecip[1].lpszName		:= psz( _cast , StringAlloc( oRecip1:Name ) )
-	aRecip[1].lpszAddress	:= psz( _cast ,StringAlloc( oRecip1:Address ) )
-	aRecip[1].ulEIDSize	:= 0
-	aRecip[1].lpEntryID	:= null_ptr
-
- 	IF l>1
- //		PtrRecip := MemByte(aRecip, 68,2*  _sizeof( MapiMessage )) 
- //		aRecip[2]			:= DWORD( _cast ,PtrRecip)  
-//		MemSet(  aRecip[2],0, _sizeof( MapiRecipDesc ) )
-		aRecip[2].ulReserved	:= 0
-		aRecip[2].ulRecipClass	:= MAPI_CC
-		aRecip[2].lpszName		:= psz( _cast , StringAlloc( oRecip2:Name ) )
-		aRecip[2].lpszAddress	:= psz( _cast ,StringAlloc( oRecip2:Address ) )
-		aRecip[2].ulEIDSize	:= 0
-		aRecip[2].lpEntryID	:= null_ptr
-	ENDIF    
-	aFiles[1]				:= MemAlloc( _sizeof( MapiFileDesc ) )
-	aFiles[1].ulReserved	:= 0
-	aFiles[1].flFlags		:= 0
-	aFiles[1].nPosition		:= 0
-	aFiles[1].lpszPathName	:= StringAlloc( cFile:FullPath )
-	aFiles[1].lpszFileName	:= StringAlloc( cFile:FileName+cFile:Extension)
-	aFiles[1].lpFileType	:= null_ptr
-	
-//	sMessage.lpRecips		:= PTR( _CAST ,aRecip) 
-	sMessage.lpRecips		:=  ptr( _cast ,aRecip)
-	sMessage.nRecipCount	:= l
-	sMessage.lpOriginator	:= null_ptr
-
-	sMessage.nFileCount		:= 1
-	sMessage.lpFiles		:= aFiles
-    self:oClick:Resume()
-	nResult := MAPISendMail( ;
-					self:hSession , ;
-					0 , ;
-					sMessage , ;
-					0 , ;
-					0 )
-/*	IF !Empty(oRecip2) .and.! IsNil(oRecip2)
-		sMessage.lpRecips		:= ptr( _cast ,aRecip[2])
-		
-		nResult := MAPISendMail( ;
-					self:hSession , ;
-					0 , ;
-					sMessage , ;
-					0 , ;
-					0 )
-	ENDIF  */
-//	sMessage.lpRecips		:= ptr( _cast , DWORD( _cast ,aRecip))
-/*	sMessage.nRecipCount	:= 2
-	oMsg:=MapiMsg{}
-	oMsg:Struc2Obj(sMessage)*/
-	self:oClick:Suspend()
-	MemFree( sMessage )
-	MemFree( pszSubject )
-
-	MemFree( aRecip[1].lpszName )	
-	MemFree( aRecip[1].lpszAddress )
-//	MemFree( aRecip[1] )
-
-	IF sMessage.nRecipCount	= 2
-		MemFree( aRecip[2].lpszName )	
-		MemFree( aRecip[2].lpszAddress )
-//		MemFree( aRecip[2] )
-	ENDIF	
-	MemFree( aFiles[1].lpszPathName )
-	MemFree( aFiles[1].lpszFileName )
-	MemFree( aFiles[1] )
-
 	RETURN ( nResult == SUCCESS_SUCCESS )
 DEFINE SUCCESS_SUCCESS						:= 0
