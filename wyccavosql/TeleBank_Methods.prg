@@ -97,19 +97,6 @@ method Init() class AddToIncExp
 		endif
 	endif
 
-CLASS SelBankAcc INHERIT DataDialogMine 
-
-	PROTECT oDCListBoxBank AS LISTBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCFound AS FIXEDTEXT
-	PROTECT oDCFoundtext AS FIXEDTEXT
-	PROTECT oCCFindButton AS PUSHBUTTON
-	PROTECT oDCSearchUni AS SINGLELINEEDIT
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export oCaller as TeleMut 
-  declare method FillBank
 RESOURCE SelBankAcc DIALOGEX  4, 3, 218, 293
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -123,6 +110,19 @@ BEGIN
 	CONTROL	"", SELBANKACC_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 4, 3, 68, 13
 END
 
+CLASS SelBankAcc INHERIT DataDialogMine 
+
+	PROTECT oDCListBoxBank AS LISTBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFound AS FIXEDTEXT
+	PROTECT oDCFoundtext AS FIXEDTEXT
+	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCSearchUni AS SINGLELINEEDIT
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export oCaller as TeleMut 
+  declare method FillBank
 METHOD CancelButton( ) CLASS SelBankAcc 
    self:EndWindow(1)
 RETURN NIL
@@ -291,55 +291,6 @@ STATIC DEFINE SELBANKACC_FOUNDTEXT := 104
 STATIC DEFINE SELBANKACC_LISTBOXBANK := 100 
 STATIC DEFINE SELBANKACC_OKBUTTON := 101 
 STATIC DEFINE SELBANKACC_SEARCHUNI := 106 
-function SpecialMessage(message_tele as string,Destname:='' as string,cSpecialmessage:='' ref string) as logic 
-	// returns special message cSpecialmessage within message_tele from telebank message 
-	// returns true if manually processing needed
-	local nMsgPos,nEndToEnd,nSpace as int 
-	local cSpecMessage as string
-	local lSpecmessage,lManually as logic
-	local aNospecmess:={'donatie','steun','bijdr','maand','mnd','kw','algeme','werk','onderh','comit','komit','com.','onderst','wycliff','betalingskenm',;
-	'support','gave','period','spons','fam','overb','eur','behoev','hgr','woord','nodig','vriend','zegen','transactiedatum'}  as array
-	local aSpecmess:={'pensioen','lijfrente','nalaten','extra','jubil','collecte','kollekte','opbr','cadeau','kado','contant','eenmalig','project'} as array 
-	// determine extra messsage in description of transaction: 
-	nMsgPos:=At('%%',message_tele)
-	nMsgPos:=iif(nMsgPos>0,nMsgPos+2,1)
-// 	if nMsgPos>0 
-		cSpecMessage:=AllTrim(StrTran(StrTran(Lower(SubStr(message_tele,nMsgPos)),'giften'),'gift'))
-		if (nEndToEnd:=AtC('endtoend:',cSpecMessage))>0
-			nSpace:=At3(Space(1),cSpecMessage,nEndToEnd+9)
-			if nSpace=0
-				nSpace:=Len(cSpecMessage)
-			endif
-			cSpecMessage:=Stuff(cSpecMessage,nEndToEnd,nSpace+1-nEndToEnd,'') 
-		endif
-		if !Empty(cSpecMessage) 
-			lSpecmessage:=false 
-			AEval(aSpecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,true,lSpecmessage)})
-			if !lSpecmessage
-				lSpecmessage:=true
-				if !Empty(Destname)
-					if AtC(Destname,SubStr(message_tele,nMsgPos))>0      // skip with name of destination
-						lSpecmessage:=false 
-					endif
-				endif
-				if lSpecmessage
-					AEval(aNospecmess,{|x|lSpecmessage:=iif(AtC(x,cSpecMessage)>0,false,lSpecmessage)})
-				endif
-				if lSpecmessage
-					// check month name in message:
-					AEval(Maand,{|x|lSpecmessage:=iif(AtC(SubStr(x,1,4),cSpecMessage)>0,false,lSpecmessage)})    // skip with month name
-				endif
-			else 
-				lManually:=true
-			endif
-		endif
-// 	endif
-	if lSpecmessage
-		cSpecialmessage:=cSpecMessage
-	else
-		cSpecialmessage:=null_string
-	endif
-	return lManually
 CLASS TeleMut
 
 	PROTECT m56_recnr as int
@@ -1141,7 +1092,7 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 	aFields:=Split(cBuffer,cDelim)
 	nImp:=0
 	nTrans:=0
-
+	SaveUse("ImportBBS")
 	DO WHILE Len(AFields)>3
 		ld_bookingdate:=CToD(AFields[ptDate])
 		IF ld_bookingdate >=Today() .or. self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
@@ -1222,6 +1173,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 		(WarningBox{,"Import of Innbetal transactions","Specify first within system parameters account for donations as default destination"}):Show()
 		RETURN FALSE
 	ENDIF	
+	SaveUse("ImportBBSInnbetal")
 	oSel:=SqlSelect{"select accnumber from account where accid="+SDON,oConn}
 	if oSel:Reccount>0
 		AccSDON:=oSel:ACCNUMBER
@@ -1603,6 +1555,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	// 	do while (nStmnt:=oBkToCstmrStmt:XMLScan(#Stmt,nStmnt))>0
 	// 		oStmt:=oBkToCstmrStmt:GetElementOnPosition(nStmnt) 
 	nStmnt:=0
+	SaveUse("ImportCAMT053")
 	do while !(oStmt:=oBkToCstmrStmt:ScanElement(#Stmt,@nStmnt))==null_object
 		BalFound:=false 
 		lv_bankAcntOwn:=''
@@ -2086,6 +2039,7 @@ METHOD ImportCliop(oFs as MyFileSpec) as logic CLASS TeleMut
 		oHLC:=NULL_OBJECT
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportCliop")
 	DO WHILE .not.oHlC:EOF
 		IF oHlC:INFOCODE=="0001"  //bestandsvoorloopinfo
 			ld_bookingdate:=SToD("20"+SubStr(oHlC:bedrag,1,2)+;
@@ -2224,6 +2178,7 @@ METHOD ImportGiro(oFs as MyFileSpec) as logic CLASS TeleMut
 	// lSuccess:=oFs:FileLock()       
 	lSuccess:=oHlG:AppendSDF(oFs)
 	if lSuccess	 
+		SaveUse("ImportGiro")
 		oHlG:Gotop()
 		DO WHILE .not.oHlG:EOF
 			lv_bankAcntOwn:=Str(Val(oHlG:HL_GIRONUM),-1) 
@@ -2375,7 +2330,7 @@ METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from KB Bank")+": "+oFs:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		RETURN FALSE
 	ENDIF
-
+	SaveUse("ImportKB")
 	cBuffer:=ptrHandle:FReadLine()   // skip first line
 	// skip balance line:
 	aFields:=Split(cBuffer,cDelim)
@@ -2491,6 +2446,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a MT940 file"}:show()
 		Return false
 	endif
+	SaveUse("ImportMT940")
 	nTrans:=0
 	nImp:=0
 	self:aValuesTrans:={}
@@ -2931,7 +2887,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	endif
 METHOD ImportMT940ING(oFm as MyFileSpec) as logic CLASS TeleMut
 	*	Import of one Mijn ING Zakelijk MT940 telebnk transaction file
-	LOCAL i, nEndAmnt, nOffset, nTrans,nImp,nNumPos,nSepPos,nLenLine1,nProc,nBetKnm,nSeqnr as int
+	LOCAL i,iSt, nEndAmnt, nOffset, nTrans,nImp,nNumPos,nSepPos,nLenLine1,nProc,nBetKnm,nSeqnr as int
 	LOCAL lv_bankAcntOwn, lv_description, lv_Oms, lv_addsub, lv_AmountStr, lv_reference, lv_NameContra as STRING
 	local lv_BankAcntContra,lv_BIC, cText,lv_budget,lv_budgethlp,lv_kind,lv_persid,lv_bankid,lv_country as STRING 
 	local Cur_RekNrOwn, Cur_enRoute as string 
@@ -2975,6 +2931,7 @@ METHOD ImportMT940ING(oFm as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,"Could not read file: "+oFm:Fullpath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportMT940ING")
 
 	nTrans:=0
 	nImp:=0
@@ -3092,13 +3049,26 @@ METHOD ImportMT940ING(oFm as MyFileSpec) as logic CLASS TeleMut
 						lv_budget:=Cur_enRoute 
 					case cRefType=='EREF'
 						if !(lv_kind=='VZ' .or. lv_kind=='DV')
-							if sepaenabled .and. Len(aWord)>2
-								lv_BankAcntContra:=aWord[2,1]
-								lv_BIC:=aWord[3,1]
+							if sepaenabled .and. Len(aWord)>=2
+								if IsSEPA(aWord[1,1])
+									lv_BankAcntContra:=aWord[1,1]
+									lv_BIC:=aWord[2,1]
+									iSt:=3
+								elseif IsSEPA(aWord[2,1])
+									lv_BankAcntContra:=aWord[2,1]
+									if Len(aWord)>2
+										lv_BIC:=aWord[3,1]
+										iSt:=4
+									endif
+								else
+									lv_BankAcntContra:=ZeroTrim(aWord[1,1])
+									iSt:=2
+								endif
 							else
 								lv_BankAcntContra:=ZeroTrim(aWord[1,1])
+								iSt:=2
 							endif
-							for i:=4 to Len(aWord)
+							for i:=iSt to Len(aWord)
 								if aWord[i,1]=='NOTPROVIDED'
 									// end of name
 									i++
@@ -3278,6 +3248,7 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 		oHlM:=null_object
 		RETURN false
 	ENDIF
+	SaveUse("ImportPGAutoGiro")
 	lv_bankAcntOwn:=ZeroTrim(SubStr(oHlM:MTLINE,69,10))
 	oHlM:skip()
 	DO WHILE .not.oHlM:EoF
@@ -3364,6 +3335,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 		(ErrorBox{,"Could not read file: "+oFs:FullPath+"; Error:"+DosErrString(FError())}):show()
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportPostbank")
 	//cDelim:=','
 	aStruct:=Split(Upper(cBuffer),cDelim)
 	IF Len(aStruct)<9
@@ -3524,6 +3496,7 @@ METHOD ImportRO(oFb) CLASS TeleMut
 		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from Transilvania Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportRO")
 
 	cBuffer:=ptrHandle:FReadLine()   // skip first line
 	// skip balance line: 
@@ -3646,6 +3619,7 @@ METHOD ImportSA(oFb as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,"Wrong fileformat of importfile from Standard Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportSA")
 	cBuffer:=ptrHandle:FReadLine()   // skip first line
 	cBuffer:=ptrHandle:FReadLine()
 	aFields:=Split(cBuffer,cDelim)
@@ -3755,6 +3729,7 @@ METHOD ImportSA2(oFb as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,"Wrong fileformat of importfile from Standard Bank: "+oFs:FullPath+"(See help)"}):show()
 		RETURN FALSE
 	ENDIF
+	SaveUse("ImportSA2")
 	cBuffer:=ptrHandle:FReadLine()   // read next line
 	aFields:=Split(cBuffer,cDelim)
 	lv_bankAcntOwn:=ZeroTrim(AFields[ptDate])
@@ -3845,6 +3820,7 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	*
 	lSuccess:=oHlM:AppendSDF(oFm)
 	oHlM:Gotop()
+	SaveUse("ImportTL1")
 	DO WHILE .not.oHlM:EOF
 		* Search 10 Start record Account record:
 		if !oHlM:EOF .and. !(SubStr(oHlM:MTLINE,1,2)=="20" .or.SubStr(oHlM:MTLINE,1,2)=="25" .or.SubStr(oHlM:MTLINE,1,2)=="10")
@@ -3982,7 +3958,8 @@ METHOD ImportUA(oFr as MyFileSpec) as logic CLASS TeleMut
 	// Proces records:
 	UADocument:=XMLDocument{cBuffer}
 	recordfound:= UADocument:GetElement("tr")
-
+	SaveUse("ImportUA")
+	
 	DO WHILE recordfound
 		childfound:=UADocument:GetFirstChild()
 		docId:=""
@@ -4116,6 +4093,7 @@ METHOD ImportVerwInfo(oFm as MyFileSpec) as logic CLASS TeleMut
 	*			add record to teletrans
 	*
 	lSuccess:=oHlM:AppendSDF(oFm)
+	SaveUse("ImportVerwInfo")
 	oHlM:Gotop()
 	oHlM:Skip() 
 	// second record type of batch:
