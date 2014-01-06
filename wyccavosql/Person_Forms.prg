@@ -1066,7 +1066,6 @@ METHOD OkButton CLASS EditPerson
 	local oPersCnt as PersonContainer 
 
 	self:mCodInt := MakeCod({self:mCod1,self:mCod2,self:mCod3,self:mCod4,self:mCod5,self:mCod6,self:mCod7,self:mCod8,self:mCod9,self:mCod10})
-	//	IF ValidateControls( SELF, SELF:AControls ) .and. ;
 	IF self:ValidatePerson()
 		IF self:lNew 
 			cStmnt:="insert into person set "
