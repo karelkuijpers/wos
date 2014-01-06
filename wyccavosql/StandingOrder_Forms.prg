@@ -302,7 +302,6 @@ METHOD OKButton( ) CLASS EditStandingOrder
 	local lError as logic
 	local aGCAcc:={} as array  // array with assessment codes and account id's of lines 
 	local cPersid as string
-// 	IF ValidateControls( self, self:AControls ) .and. self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) 
 	IF self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) .and. self:ValidateBooking(oStOrdLH)
 		if Len(oStOrdLH:aMirror)=0 .or. AScan(oStOrdLH:aMirror,{|x|x[2]<>x[1]})=0
 			if !lNew
@@ -311,34 +310,11 @@ METHOD OKButton( ) CLASS EditStandingOrder
 			self:EndWindow()
 			return
 		endif
-// 		if !Empty(self:mCLNFrom) .or. !Empty(self:mCLN)
-// 			oStOrdLH:GoTop() 
-// 			aGCAcc:=oStOrdLH:GetLookupTable(500,#GC,#ACCOUNTID)
-// 			nCh:=AScan(aGCAcc,{|x|x[1]=='CH'})
-// 			nAG:=AScan(aGCAcc,{|x|x[1]=='AG'})
-// 			nPF:=AScan(aGCAcc,{|x|x[1]=='PF'})
-// 			nMG:=AScan(aGCAcc,{|x|x[1]=='MG'}) 
-// 			if nAG>0 .or. nMG>0 .or. nPF>0
-// 				if nCh>0 
-// 					if !Empty(self:mCLN) .or. !Empty(self:mCLNFrom)
-// 						if nAG>0 .and. !aGCAcc[nCh,2]==aGCAcc[nAG,2] ;
-// 								.or.nMG>0 .and. !aGCAcc[nCh,2]==aGCAcc[nMG,2];
-// 								.or.nPF>0 .and. !aGCAcc[nCH,2]==aGCAcc[nPF,2]
-// 							cPersid:=self:mCLNFrom
-// 							if Empty(cPersid) 
-// 								cPersid:=self:mCLNFrom
-// 							endif
-// 						endif
-// 					endif
-// 				else
-					if !Empty(self:mCLNFrom)
-						cPersid:=self:mCLNFrom
-					else
-						cPersid:=self:mCLN
-					endif
-// 				endif
-// 			endif 
-// 		endif
+		if !Empty(self:mCLNFrom)
+			cPersid:=self:mCLNFrom
+		else
+			cPersid:=self:mCLN
+		endif
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
 		oStmnt:=SQLStatement{'lock tables `standingorder` write,`standingorderline` write',oConn} 
