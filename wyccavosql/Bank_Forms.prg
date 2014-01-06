@@ -1665,7 +1665,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		RETURN FALSE
 	else
 		m56_Payahead:=Str(oBank:payahead,-1) 
-		if Empty(m56_Payahead)
+		if Empty(Val(m56_Payahead))
 			(ErrorBox{self,self:oLan:WGet("For bank account number")+space(1)+BANKNBRCRE+space(1)+;
 				self:oLan:WGet("no account for Payments en route specified in system data")}):Show()
 			RETURN FALSE
