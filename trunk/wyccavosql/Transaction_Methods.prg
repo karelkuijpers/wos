@@ -2387,11 +2387,11 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					ENDDO
 					if !AllTrim(cCodNew)==oPers:mailingcodes .or. oPers:datelastgift<self:mDAT
 						&& fill date last gift:
-						oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+cCodNew+"' where persid="+self:mCLNGiver,oConn}
+						oStmnt:=SQLStatement{"update person set datelastgift='"+SQLdate(self:mDAT)+"',mailingcodes='"+AddSlashes(cCodNew)+"' where persid="+self:mCLNGiver,oConn}
 						oStmnt:execute() 
 						if !Empty(oStmnt:Status)
 							lError:=true 
-							cError:=oStmnt:ErrInfo:errorstatus
+							cError:=oStmnt:ErrInfo:errormessage
 						endif
 					endif
 				endif
@@ -2403,7 +2403,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			oStmnt:execute()
 			if !Empty(oStmnt:Status)
 				lError:=true 
-				cError:=oStmnt:ErrInfo:errorstatus
+				cError:=oStmnt:ErrInfo:errormessage
 			endif 
 		endif
 		if !lError .and. self:lTeleBank 
@@ -2411,7 +2411,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			oStmnt:execute()
 			if !Empty(oStmnt:status)
 				lError:=true 
-				cError:=oStmnt:ErrInfo:errorstatus
+				cError:=oStmnt:ErrInfo:errormessage
 			endif
 		endif
 		if !lError .and. !self:lInqUpd
@@ -2426,9 +2426,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 		SQLStatement{"unlock tables",oConn}:execute()
 		SQLStatement{"set autocommit=1",oConn}:execute()
 		self:Pointer := Pointer{POINTERARROW}
-		// 		if !Empty(cError)
-		// 			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
-		// 		endif
+		if !Empty(cError)
+			LogEvent(self,"Error:"+cError+"; stmnt:"+cStatement,"LogErrors")
+		endif
 		ErrorBox{self,"transaction could not be stored:"+cError}:show()
 		self:mCLNGiver:=''
 		return false
@@ -3683,7 +3683,6 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 						&& sum credit amounts as default for debit
 					ENDIF
 					oHm:AccID := Str(oDue:AccID,-1)
-					//	       oHm:ID:=Mod11(mCLNGiver+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2,0))
 					oHm:ID:=DToS(oDue:invoicedate)+Str(oDue:seqnr,-1) 
 					if oHm:CURRENCY==sCurr
 						oHm:CREFORGN:=oHm:Cre 
@@ -4361,7 +4360,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				oStmnt:execute()
 				if !Empty(oStmnt:status)
 					lError:=true 
-					cError:=oStmnt:ErrInfo:errorstatus
+					cError:=oStmnt:ErrInfo:errormessage
 				endif
 			endif
 
