@@ -3597,7 +3597,6 @@ METHOD OKButton( ) CLASS TransactionMonth
 	local oAcc,oTrans as SQLSelect 
 	local startdate, enddate as date
 
-	// 	IF ValidateControls( SELF, SELF:AControls )
 	self:FromYear:=oDCFromYear:Value
 	self:FromMonth:=oDCFromMonth:Value
 	self:ToYear:=oDCToYear:Value
