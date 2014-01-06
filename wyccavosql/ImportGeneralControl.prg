@@ -1954,7 +1954,7 @@ local aCod:={} as array
 			aCod:=Split(AllTrim(DefaultCod)," ",true)
 			cUpdateStatement+=",mailingcodes=concat(concat(mailingcodes,' ')"
 			FOR j:=1 to Len(aCod)
-				cUpdateStatement+=",if(instr(mailingcodes,'"+aCod[j]+"')>0,'','"+aCod[j]+" ')"	
+				cUpdateStatement+=",if(instr(mailingcodes,'"+AddSlashes(aCod[j])+"')>0,'','"+addslashes(aCod[j])+" ')"	
 			next
 			cUpdateStatement+=")"
 		endif
