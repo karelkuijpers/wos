@@ -325,9 +325,6 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	ENDIF
 
 	// Check input data:
-	// 	IF !ValidateControls( SELF, SELF:AControls )
-	// 		RETURN
-	// 	END
 	aBalYr:=GetBalYear(Val(SubStr(self:BalYears,1,4)),Val(SubStr(self:BalYears,5,2)))
 	self:YEARSTART:=aBalYr[1]
 	BalYear:=self:YEARSTART
@@ -1160,13 +1157,7 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS BalanceReport
 * Check input data:
-// IF !ValidateControls( SELF, SELF:AControls )
-// 	RETURN
-// END
 
-
-*oReport := PrintDialog{oParent,"Balance Report",,118}
-//oReport := PrintDialog{oParent,"Balance Report",,118,DMORIENT_LANDSCAPE,"xls"}
 oReport := PrintDialog{oParent,self:oLan:RGet("Balance Report"),,118,DMORIENT_LANDSCAPE,"xls"}
 oReport:Show()
 IF .not.oReport:lPrintOk
@@ -1180,9 +1171,6 @@ else
 	self:lXls:=false
 endif
 
-// IF oReport:Destination=="File"
-// 	SELF:TAB:=CHR(9)
-// ENDIF
 self:BalancePrint()
 
 SELF:Pointer := Pointer{POINTERARROW}
@@ -2030,7 +2018,6 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 	IF !filename="SEPARATEFILE" .and. filename #"PRINTALL"
 		RETURN
 	ENDIF
-	// 	IF ValidateControls( SELF, SELF:AControls )
 	IF filename == "SEPARATEFILEMAIL"
 		IF !IsMAPIAvailable()
 			(ErrorBox{self:Owner,"No email client available or no interface to it"}):show()
@@ -4680,7 +4667,6 @@ METHOD OKButton( ) CLASS GiftReport
 	local oPPcd as SqlSelect
 
 
-	// 	IF ValidateControls( self, self:AControls )
 	IF SendingMethod=="SeperateFileMail"
 		IF !IsMAPIAvailable()
 			(ErrorBox{self:Owner,self:oLan:WGet("No email client available")}):show()
@@ -6128,9 +6114,6 @@ LOCAL sqlStr as STRING
 
 * Check values:
 * Check input data:
-// IF !ValidateControls( self, self:AControls )
-// 	RETURN
-// END
 TaxYear:=Val(self:YearTax)
 nThreshold:=self:Threshold
 cFileName := "GRUNNLAG"+Str(TaxYear,-1)
@@ -6545,9 +6528,6 @@ local cStatement as string   // string with selection of accounts and their tota
 
 
 * Check input data:
-// IF !ValidateControls( self, self:AControls )
-// 	RETURN
-// END
                                 
 aYearStartEnd := GetBalYear(Val(SubStr(YearTrial,1,4)),Val(SubStr(YearTrial,5,2)))                              
 
