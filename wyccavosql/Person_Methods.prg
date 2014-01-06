@@ -1933,20 +1933,20 @@ METHOD ChangeMailCodes(dummy as string) as logic CLASS Selpers
 	endif
 	(SelPersChangeMailCodes{self}):Show() 
 	if !self:selx_Ok
-		return false
+		return false                                         
 	endif
 	if !Empty(self:DelMailCds)
 		// remove mail codes:
-		cStatmnt:= "Replace(concat(mailingcodes,' '),'"+self:DelMailCds[1]+" ','')"	
+		cStatmnt:= "Replace(concat(mailingcodes,' '),'"+AddSlashes(self:DelMailCds[1])+" ','')"	
 		FOR j:=2 to Len(self:DelMailCds)
-			cStatmnt:= "Replace("+cStatmnt+",'"+self:DelMailCds[j]+" ','')"
+			cStatmnt:= "Replace("+cStatmnt+",'"+AddSlashes(self:DelMailCds[j])+" ','')"
 		next
 	endif
 	if !Empty(self:AddMailCds) 
 		// add mail codes
 		cStatmnt:="concat("+iif(Empty(cStatmnt),"concat(mailingcodes,' ')",cStatmnt)
 		FOR j:=1 to Len(self:AddMailCds)
-			cStatmnt+=",if(instr(mailingcodes,'"+self:AddMailCds[j]+"')>0,'','"+self:AddMailCds[j]+" ')"	
+			cStatmnt+=",if(instr(mailingcodes,'"+addslashes(self:AddMailCds[j])+"')>0,'','"+addslashes(self:AddMailCds[j])+" ')"	
 		next
 		cStatmnt+=")"
 	endif
@@ -2481,72 +2481,10 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 					ENDDO
 					self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TOTALAMOUNT"})]:=Str(self:oDB:totamnt,-1)
 				ENDIF
-// 			ELSEIF selectionType=2
-// 				IF DueRequired
-// 					oDue:seek(asscln)
-// 					DO WHILE !oDue:EOF.and.oDue:persid=Asscln
-// 						IF oDue:Eval(pKond,,,1) && &oSelfPers:cWhereOther
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
-// 							TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oDB:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
-// 							oAcc:seek(oDue:accid)
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
-// 							oSub:Seek(oDue:persid+oDue:accid)
-// 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%INVOICEID"})]:=AllTrim(oSub:INVOICEID)
-// 							repeatSection:=repeatTxt
-// 							repeatSection:=StrTran(repeatSection,"%AMOUNTDUE",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})])
-// 							repeatSection:=StrTran(repeatSection,"%DUEDATE",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})])
-// 							repeatSection:=StrTran(repeatSection,"%DUEIDENTIFIER",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})])
-// 							repeatSection:=StrTran(repeatSection,"%DESTINATION",oAcc:Description)
-// 							repeatSection:=StrTran(repeatSection,"%INVOICEID",AllTrim(oSub:INVOICEID))
-// 							repeatSection:=StrTran(repeatSection,"%PAGESKIP",PAGE_ENd)
-// 							repeatGroup := repeatGroup + repeatSection
-// 						ENDIF
-// 						oDue:skip()
-// 					ENDDO
-// 				ENDIF
 			ENDIF
 			Content:=Stuff(Content,h1,h2-h1+1,repeatGroup)
 		ENDDO
 	ELSE
-// 		IF selectionType=2
-// 			IF DueRequired
-// 				oDue:seek( asscln)
-// 				DO WHILE !oDue:EOF.and. oDue:persid==Asscln
-// 					IF oDue:Eval(pKond,,,1) && &oSelPers:cWhereOther
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oDue:amountinvoice-oDue:amountrecvd,10,DecAantal))
-// 						TotalAmnt+=oDue:amountinvoice-oDue:amountrecvd
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oDue:invoicedate))
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEIDENTIFIER"})]:=Mod11(self:oDB:persid+DToS(oDue:invoicedate)+StrZero(Val(oDue:seqnr),2))
-// 						oAcc:seek(oDue:accid)
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
-// 						oSub:Seek(oDue:persid+oDue:accid)
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%INVOICEID"})]:=AllTrim(oSub:INVOICEID)
-// 					ENDIF
-// 					oDue:skip()
-// 				ENDDO
-// 			ENDIF
-// 		ENDIF
-// 		IF selectionType=3   && selectie op periodiek betaling
-// 			IF GiftsRequired
-// 				oSub:seek( asscln)
-// 				DO WHILE !oSub:Eof.and.oSub:personid==Asscln
-// 					IF oSub:Eval(pKond,,,1) && &oSelPers:cWhereOther
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTDUE"})]:=AllTrim(Str(oSub:amount))
-// 						TotalAmnt+=oSub:amount
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DUEDATE"})]:=AllTrim(DToC(oSub:duedate))
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(oSub:duedate))
-// 						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=AllTrim(Str(oSub:amount))
-// 						*				oAcc:seek(oSub:accid)
-// 						*				self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:description)
-// 						*				SELF:MarkUpDestination(oAcc:persid)
-// 						EXIT
-// 					ENDIF
-// 					oSub:skip()
-// 				ENDDO
-// 			ENDIF
-// 		ENDIF
 		IF selectionType=4.or.selectionType=5   && selectie op gift aan bestemming
 			* cWhereOther: string met selektiekonditie
 			* selx_accid: gewenste bestemming
@@ -3923,7 +3861,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN FALSE
 	else
 		m56_Payahead:=Str(oSel:PAYAHEAD,-1)
-		if Empty(m56_Payahead)
+		if Empty(Val(m56_Payahead))
 			(ErrorBox{self,self:oLan:WGet("For bank account number")+Space(1)+BANKNBRDEB+Space(1)+;
 				self:oLan:WGet("no account for Payments en route specified in system data")}):Show() 
 			return false
