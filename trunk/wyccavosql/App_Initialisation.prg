@@ -899,7 +899,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 
 	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 		// check if new ppcodes, ipcaccounts or currencylist should be imported:
-		oDBFileSpec1:=FileSpec{cWorkdir+"\ppcodes.csv"}
+		oDBFileSpec1:=FileSpec{cWorkdir+"\pptable.csv"}
 		lCopyPP:=false
 		IF oDBFileSpec1:Find()
 			IF oDBFileSpec1:Size>20  // not empty? 
@@ -992,7 +992,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 		// fill eventually dropped tables with new values:
 		if lCopyPP 
 			// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
-			ImportCSV(cWorkdir+"\ppcodes.csv","ppcodes",2,{"ppcode","ppname"}) 
+			ImportCSV(cWorkdir+"\pptable.csv","ppcodes",2,{"ppcode","ppname"}) 
 		endif
 		if lCopyCur
 			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2,{}) 
