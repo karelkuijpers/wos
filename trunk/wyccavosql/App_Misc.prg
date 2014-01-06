@@ -431,13 +431,13 @@ DO WHILE At("  ",f_tekst)>0
 ENDDO
 RETURN AllTrim(f_tekst)
 function ConI(uValue as usual) as int
-// convert usual from tyniint to int
+// convert usual to int
 return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )
 function ConL(uValue as usual) as logic
-// convert usual from tiniint to logic
+// convert usual to logic
 return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
 function ConS(uValue as usual) as string
-	// convert usual from count total to string 
+	// convert usual to string 
 	local cRet as string
 	if !IsNil(uValue) .and.!IsArray(uValue) .and.!IsObject(uValue) .and. !IsCodeBlock(uValue)
 		cRet:= AllTrim(Transform(uValue,""))
@@ -470,9 +470,8 @@ DEFINE COUPLE := 3
 DEFINE CR                   := _chr(12) 
 FUNCTION dat_controle(m_date as date, m_no_message:=false as logic)
 * This functie check if give date  is valid
-* m_no_message: leeg: er wordt een foutboodschap op scherm getoond en
-*                       een .t. of .f. waarde teruggegeven
-*                 true : er wordt alleen een foutboodschap teruggegeven
+* m_no_message: true: no error message shown but returned returned
+*               false: error message shown and true/false returned
 LOCAL dat_message:="" as STRING
 IF m_date < MinDate
     dat_message := 'Entering of records in closed year not allowed'
@@ -667,7 +666,7 @@ IF FError() >0
 ENDIF
 cBuffer:=ptrHandle:FReadLine()
 IF Empty(cBuffer)
-	(ErrorBox{,"Could not read file: "+oMyFileSpec:FullPath+"; Error:"+DosErrString(FError())}):show()
+	(ErrorBox{,"Could not read file: "+oMyFileSpec:Fullpath+"; Error:"+DosErrString(FError())}):Show()
 	RETURN FALSE
 ENDIF
 totlen:=asum(aStruct,,,DBS_LEN)
@@ -711,9 +710,9 @@ METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBSer
 
     IF !oMyFileSpec:Find()
 		// create a DBF/DBV file
-		lSuccess	:=	(DbFileSpec{}):Create( oMyFileSpec:FullPath,aStruct,xDriver,true)
+		lSuccess	:=	(DbFileSpec{}):Create( oMyFileSpec:Fullpath,aStruct,xDriver,true)
 		if !lSuccess 
-			LogEvent(self,"Could not create: "+oMyFileSpec:FullPath,"logerrors")
+			LogEvent(self,"Could not create: "+oMyFileSpec:Fullpath,"logerrors")
 			(ErrorBox{,"You have no write permission for "+AllTrim(oMyFileSpec:Path)}):Show()
 			return false
 		endif
@@ -722,28 +721,28 @@ METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBSer
     		return true
     	endif
 		* Check if structure has been altered? 
-     	lSuccess := DBUSEAREA(true, xDriver, oMyFileSpec:FullPath,,FALSE,true)
+     	lSuccess := DBUSEAREA(true, xDriver, oMyFileSpec:Fullpath,,FALSE,true)
      	IF !lSuccess
 			RETURN FALSE    // apparently in exclusive use 
      	else
      		DBCLOSEAREA()
 		ENDIF
-		oDBFileSpec:=DbFileSpec{oMyFileSpec:FullPath,xDriver}
+		oDBFileSpec:=DbFileSpec{oMyFileSpec:Fullpath,xDriver}
 		IF .not. Comparr(oDBFileSpec:DBStruct,aStruct)
 			*create new structure:
-			oMyFileSpec:FileName:="hlpdbfst"
+			oMyFileSpec:Filename:="hlpdbfst"
 			oMyFileSpec:DELETE() // delete to be save
-			lSuccess := (DbFileSpec{}):Create( oMyFileSpec:FullPath,aStruct,xDriver,true)
+			lSuccess := (DbFileSpec{}):Create( oMyFileSpec:Fullpath,aStruct,xDriver,true)
 	      IF !lSuccess
 				RETURN FALSE
 			ENDIF
-      	lSuccess := DBUSEAREA(true, xDriver, oMyFileSpec:FullPath,"hlpdbfst",FALSE,FALSE)
+      	lSuccess := DBUSEAREA(true, xDriver, oMyFileSpec:Fullpath,"hlpdbfst",FALSE,FALSE)
 	     	IF !lSuccess
 				RETURN FALSE
 			ENDIF
 			* append current dbffile
 			DbZap()
-			oMyFileSpec:FileName:=cFileName
+			oMyFileSpec:Filename:=cFileName
 			toSym:=Alias0Sym()
 			lSuccess := self:DbfApp(oMyFileSpec:FullPath,toSym,(DbFileSpec{oMyFileSpec:FullPath,xDriver}):DBStruct,aStruct,xDriver)
 	      IF !lSuccess
@@ -752,18 +751,18 @@ METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBSer
 			(toSym)->DBCOMMIT()
 			(toSym)->DBCLOSEAREA()
             * Remove old file 
-			(DbFileSpec{oMyFileSpec:FullPath,xDriver}):DELETE()
+			(DbFileSpec{oMyFileSpec:Fullpath,xDriver}):DELETE()
 			DO WHILE oMyFileSpec:Find()
 				Tone(30000,1) // wait 1/18 sec
 			ENDDO
 			* Rename new file
-			oMyFileSpec:FileName:="hlpdbfst"
-			lSuccess := (DbFileSpec{oMyFileSpec:FullPath,xDriver}):Rename( cFileName) 
+			oMyFileSpec:Filename:="hlpdbfst"
+			lSuccess := (DbFileSpec{oMyFileSpec:Fullpath,xDriver}):Rename( cFileName) 
 			oMyFileSpec:Extension:=".fpt"
 			if oMyFileSpec:Find()            // error in rename
 				oMyFileSpec:Rename(cFileName+".fpt")
 			endif
-			oMyFileSpec:FileName:=cFileName
+			oMyFileSpec:Filename:=cFileName
 			oMyFileSpec:Extension:=".dbf"
 			* reindex:
 *			SELF:oFileSpec:=oMyFileSpec
@@ -773,7 +772,7 @@ METHOD CreateDbf(oFileSp as FILESPEC,xDriver:='' as STRING) as LOGIC CLASS DBSer
 
     ENDIF	
     RETURN lSuccess
-METHOD DbfApp(Filename,ToSym,FromStruc,ToStruc,xDriver)  CLASS DBServerExtra
+METHOD DbfApp(Filename,toSym,FromStruc,ToStruc,xDriver)  CLASS DBServerExtra
 	// Append file Filename to current workarea FToSym with conversion of equal named fields
 	// FromStruc: DBStruc of Filename
 	// ToStruc: DBstruc of workarea
@@ -784,7 +783,7 @@ METHOD DbfApp(Filename,ToSym,FromStruc,ToStruc,xDriver)  CLASS DBServerExtra
 	LOCAL aTrans:={} as ARRAY // translate from to set: 0= copy, 1: val, 2: str, 3:stom, 4:mtoc
 	LOCAL sTO, sFrom as SYMBOL //workarea alias
 
-	sTO:=ToSym	
+	sTO:=toSym	
 	// Determine match and conversion
 	FOR i=1 to Len(ToStruc)
 		cFieldName:=ToStruc[i,DBS_NAME]
@@ -814,24 +813,24 @@ METHOD DbfApp(Filename,ToSym,FromStruc,ToStruc,xDriver)  CLASS DBServerExtra
 		ENDIF
 	NEXT
 	// append file:
-	IF DBUSEAREA(true, xDriver, FileName,"From",FALSE,FALSE)
-		toLen:=Len(aSetFld)
+	IF DBUSEAREA(true, xDriver, Filename,"From",FALSE,FALSE)
+		ToLen:=Len(aSetFld)
 		sFrom:=Alias0Sym()
-		SELECT(sTo)
+		SELECT(sTO)
 		DO WHILE !((sFrom)->EOF())
-			(sTo)->DBAPPEND()
-			FOR i:=1 to toLen
+			(sTO)->DBAPPEND()
+			FOR i:=1 to ToLen
 				f:=aTrans[i]
 				p:=aSetFld[i]
 				j:=aGetFld[i]
 				DO CASE
 					CASE f==0
-						(sTo)->FIELDPUT(p,(sFrom)->FIELDGET(j))
+						(sTO)->FIELDPUT(p,(sFrom)->FIELDGET(j))
 					CASE f==1
-						(sTo)->FIELDPUT(p,Val((sFrom)->FIELDGET(j)))
+						(sTO)->FIELDPUT(p,Val((sFrom)->FIELDGET(j)))
 					CASE f==2
 						IF !Empty((sFrom)->FIELDGET(j))
-							(sTo)->FIELDPUT(p,Str((sFrom)->FIELDGET(j),-1))
+							(sTO)->FIELDPUT(p,Str((sFrom)->FIELDGET(j),-1))
 						ENDIF
 				ENDCASE
 			NEXT
@@ -880,20 +879,6 @@ METHOD INIT() CLASS Description
     ENDIF
 
     RETURN self
-FUNCTION DetermineUlt(nMonth, nYear)
-* Determine date of last day in the given month
-LOCAL nDay := 31 as int
-IF nMonth == 4 .or. nMonth == 6 .or. nMonth == 9 .or. nMonth == 11
-   nDay := 30
-ENDIF
-IF nMonth == 2
-   IF (nYear % 4) == 0
-      nDay := 29
-   ELSE
-      nDay := 28
-   ENDIF
-ENDIF
-RETURN SToD(Str(nYear,4)+StrZero(nMonth,2)+StrZero(nDay,2))
 Class DialogWinDowExtra inherit DialogWindow 
 Export oLan as Language
 method SetWidth(w) class DialogWinDowExtra
@@ -965,8 +950,8 @@ function FileStart(cFilename as string, OwnerWindow as Window ) as dword
 	END				
 
 	RETURN lpExitCode
-Function FillBalYears()
-// determine available balance years:
+Function FillBalYears() as array
+// Returns available balance years:
 local oSel as SQLSelect
 local cYearMonth as string 
 GlBalYears:={} 
@@ -980,34 +965,6 @@ if oSel:RecCount>0
 	enddo
 endif
 return GlBalYears
-FUNCTION FillBankAccount( cFilter:="" as string) as array
- 
-return SQLSelect{"select concat(b.banknumber,' ',a.description) as description,b.banknumber from bankaccount b, account a where a.accid=b.accid"+iif(Empty(cFilter),""," and ("+cFilter+")"),oConn}:GetLookupTable(500,#description,#banknumber)
-
-	
-function FillBIC()
-	local cLine as string
-	local ptrHandle as ptr 
-	local aBic:={} as array
-	local oMyFileSpec1 as FileSpec
-	local oStmnt as SQLStatement
-	// Read BIC codes from file into global:
-	oMyFileSpec1:=FileSpec{WorkDir()+"\BIC.csv"}
-	IF !oMyFileSpec1:Find()
-		return
-	endif
-	ptrHandle:=FOpen(oMyFileSpec1:FullPath,FO_READ+FO_SHARED)  
-	if !ptrHandle== F_ERROR
-		cLine:=FReadLine(ptrHandle,8) 
-		do while !Empty(cLine)
-			AAdd(aBic,cLine)
-			cLine:=FReadLine(ptrHandle,8) 
-		enddo		
-		SQLStatement{"truncate table `bic`",oConn}:Execute()
-		(oStmnt:=SQLStatement{"insert ignore into `bic` (`bic`) values ("+Implode(aBic,"'),('")+")",oConn})
-		oStmnt:Execute() 
-	endif
-	return
 Function FillCountryNames() 
 local oLan:=Language{} as Language
 CountryNames:={{"AT",oLan:wget("Austria")},;
@@ -1233,7 +1190,7 @@ FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as strin
 	ENDIF
 	RETURN
 FUNCTION FullName( cFirstName as STRING, cLastName as STRING ) as STRING
-
+// show full name from given first and lastname
 	LOCAL cFullName as STRING
 	
 	cFullName := AllTrim( cFirstName ) + " " + AllTrim( cLastName )
@@ -1301,9 +1258,9 @@ RETURN {;
 {"Report month","%REPORTMONTH","b"},;
 {"Page skip","%PAGESKIP","b"}}
 
-FUNCTION GetBalType(cSoort)
+FUNCTION GetBalType(cCode as string) as string
 * Translate baltype code to text
-RETURN aBalType[AScan(aBalType,{|x| x[1]==cSoort}),2]
+RETURN aBalType[AScan(aBalType,{|x| x[1]==cCode}),2]
 Function GetBalYear(pStartYear as int,pStartMonth as int) as array 
 	/* Give parameters of balance year, in which given year and month occurs
 	Returns array with the values:
@@ -1420,6 +1377,7 @@ function GetBalYears(NbrFutureYears:=0 as int) as array
 	RETURN aMyYear
 
 function GetBankAccnts(mPersid as string) as array 
+// Get the bank accounts of person with id mPersonId
 local aBankaccs:={} as array
 local oSel as SQLSelect 
 	* Fill aBankAcc: 
@@ -1480,7 +1438,7 @@ Function GetDelimiter(cBuffer as string, aStruct ref array, cLim:="" ref string,
 		endif
 	endif 
 	return true
-FUNC GetError    (oSELF as OBJECT, cDescription as STRING)  as ERROR     PASCAL
+FUNCTION GetError    (oSELF as OBJECT, cDescription as STRING)  as ERROR     PASCAL
     LOCAL oError as ERROR
 
 	oError := ErrorNew()
@@ -1615,7 +1573,7 @@ ELSE
 	HelpDir:="C:\TEMP"
 ENDIF 
 Function GetMailAbrv(cCode as string) as string
-	* Return abbrivation corresponding with given pers_code
+	* Return abbrevation corresponding with given pers_code
 	LOCAL nPtr as int
 	nPtr:=AScan(mail_abrv,{|x|x[2]==cCode})
 	if nPtr>0
@@ -1889,7 +1847,7 @@ function HtmlDecode(cText as string) as string
 	Return cText  
 function HtmlEncode(cText as string) as string
 	/*
-	Decode html encoded characters:
+	Encode html encoded characters:
 	'&' (ampersand) becomes '&amp;'
 	'"' (double quote) becomes '&quot;' when ENT_NOQUOTES is not set.
 	''' (single quote) becomes '&#039;' only when ENT_QUOTES is set.
@@ -2053,7 +2011,10 @@ Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int,aS
 	endif
 	// replace space in name by underscore:
 	cBuffer:=ptrHandle:FReadLine()
-	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol
+	do WHILE Len(aFields:=Split(cBuffer,cDelim,true))=NbrCol 
+		if Len(avalues)>68
+			cBuffer:=cBuffer
+		endif
 		if Len(AFields)>nNbrCol 
 			aSubFields:=ArrayCreate(nNbrCol)
 			ACopy(aFields,aSubFields,1,nNbrCol,1)
@@ -2280,24 +2241,6 @@ FOR p_num_tel:=1 to Len(p_str)
     ENDIF
 NEXT
 RETURN true
-FUNCTION isalphanumeric (m_str)
-* Check if string m-str is alphanumeric
-LOCAL type:=ValType(m_str),p_str as STRING,p_num_tel as int
-IF Empty(m_str)
-   RETURN FALSE
-ENDIF
-IF IsNumeric(m_str)
-   RETURN true
-ELSEIF !IsString(m_str)
-   RETURN FALSE
-ENDIF
-p_str:=AllTrim(m_str)
-FOR p_num_tel:=1 to Len(p_str)
-    IF !IsAlpha(psz(_cast,SubStr(p_str,p_num_tel,1))) .and.!IsDigit( psz(_cast,SubStr(p_str,p_num_tel,1)))
-       RETURN FALSE
-    ENDIF
-NEXT
-RETURN true
 FUNCTION IsDutchBanknbr(cGetal)
 	* check if bankaccount# of a ducth bank is "11-proef"
 	LOCAL nL,i, nCheck as int
@@ -2369,27 +2312,27 @@ Function IsIban(Iban as string) as logic
 
 	// Otherwise it 'could' exist
 	return true
-FUNCTION IsMod10(cGetal)
-// test if cGetal (string of a mod10 number) satisfies mod10 criteria (Luhn algoritme)
-LOCAL sum,i,length:=Len(cGetal),temp as int
+FUNCTION IsMod10(cAmount as string) as logic
+// test if cAmount (string of a mod10 number) satisfies mod10 criteria (Luhn algoritme)
+LOCAL sum,i,length:=Len(cAmount),temp as int
 LOCAL alt:=FALSE as LOGIC
 
 	FOR i:=length DOWNTO 1 step 1
 		IF alt
-			temp := Val(SubStr(cGetal,i,1))*2
+			temp := Val(SubStr(cAmount,i,1))*2
 			IF temp > 9
 				temp:= temp - 9
 			ENDIF
 		ELSE
-			temp:=Val(SubStr(cGetal,i,1))
+			temp:=Val(SubStr(cAmount,i,1))
 		ENDIF
 		sum += temp
 		alt := !alt
 	NEXT
 	RETURN ((sum % 10) == 0)
-Function IsMod11(cGetal as string) as logic
-local nL:=Len(cGetal) as int
-// check if cGetal is  modulo 11 for dutch betalingskenmerk
+Function IsMod11(cAmount as string) as logic
+local nL:=Len(cAmount) as int
+// check if cAmount is  modulo 11 for dutch betalingskenmerk
 if nL=7       // 7 is fixed length without check digit
 	return true
 endif
@@ -2397,17 +2340,19 @@ if nL<7
 	return false
 endif
 if nL=8 .or.nL>=16
-	return (cGetal==Mod11(SubStr(cGetal,2))) 
+	return (cAmount==Mod11(SubStr(cAmount,2))) 
 else
-	return (cGetal==Mod11(SubStr(cGetal,2))) 	
+	return (cAmount==Mod11(SubStr(cAmount,2))) 	
 endif
-Function IsModulus11(cGetal as string) as logic
+
+	
+Function IsModulus11(cNumber as string) as logic
 local lres as usual
-lres:=Modulus11(SubStr(cGetal,1,Len(cGetal)-2))
+lres:=Modulus11(SubStr(cNumber,1,Len(cNumber)-2))
 if IsLogic(lres)
 	return false
 else
-	return (lres==SubStr(cGetal,Len(cGetal)-1,2))
+	return (lres==SubStr(cNumber,Len(cNumber)-1,2))
 endif
 
 FUNCTION isnum (m_str as string ) as logic
@@ -2448,7 +2393,7 @@ Function IsSEPA(Iban as string) as logic
 	return IsIban(Iban)
 DEFINE LF                   := _chr(10)
 CLASS ListboxBal INHERIT ListBox
-* Special version of listbox to support multiple selction of Departments
+* Special version of listbox to support multiple selection of Departments
 PROTECT cDepStart, cDepStartName as STRING  // range of Departmentnumbers
 PROTECT cCurStart as STRING // Current values used in list
 protect aItem:={} as array  // container for departments 
@@ -2571,7 +2516,7 @@ IF !cDepStart==cCurStart
 ENDIF
 RETURN nil
 CLASS ListBoxExtra INHERIT ListBox
-	* Special version of listbox to support multiple selction of accounts
+	* Special version of listbox to support multiple selection of accounts
 	export cAccStart, cAccEnd as STRING  // range of accountnumbers
 	export cCurStart,cCurEnd as STRING // Current values used in list 
 	PROTECT oAccount as SQLSelect  
@@ -2799,7 +2744,7 @@ FOR i:=1 to Len(cString)
 	ENDIF
 NEXT
 RETURN cString		
-FUNCTION MakeAbrvCod(cCodes as STRING)
+FUNCTION MakeAbrvCod(cCodes as STRING) as array
 * Translates string with mailing code abbravations (separated by space)  to array of mailing code identifiers
 LOCAL aAbCodes as ARRAY
 LOCAL i,j as int
@@ -2811,7 +2756,7 @@ FOR i=1 to Len(aAbCodes)
 	ENDIF
 NEXT
 RETURN aCode
-FUNCTION MakeCod(mCodes as ARRAY)
+FUNCTION MakeCod(mCodes as ARRAY) as string
 	* Compose mailingcodes from array with fields mCod1 .. mCodn
 	LOCAL aCode := {}
 	LOCAL i as int
@@ -2881,7 +2826,7 @@ RETURN ptrHandle
 Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
 SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
 // make filter condition for account
-// select from ARRAY AAccNot WITH accounts TO be excluded
+// aTypeAllwd: arrays with allowed balance catagories: Income, expense, asset, liability
 // IsMember: M: member, N: not member, B: both (default), E: entity member(project)
 // giftalwd: 1=true / 0=false/2: don't care
 // SubscriptionAllowed: true/false
@@ -3173,6 +3118,7 @@ ENDIF
 RETURN m_AdressLines
 DEFINE MASCULIN := 2
 Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
+// Merge mailing codes in string NewCodes into string CurCodes
 	LOCAL aPCod,aNCod as ARRAY, iStart as int
 	if Empty(NewCodes)
 		return CurCodes
@@ -3187,7 +3133,7 @@ Function MergeMLCodes(CurCodes as string,NewCodes as string) as string
 Function MLine4(cBuffer as string, ptrN ref DWORD ) as string
 /******************************************************************************
 // Extract a line of text from a string, specifying a required offset argument. 
-// Identical to MLine3 except that LF is sufficient to seprate lines
+// Identical to MLine3 except that LF is sufficient to separate lines
 /******************************************************************************/
 Local cLine as string 
 Local iEnd as int
@@ -3308,13 +3254,13 @@ LOCAL cMessage as STRING
 		elseif NoErrorMsg
 			Return false
 		else
-			(TextBox{,oError:SubCodeText,oError:FileName+" in use by another window or user",BOXICONEXCLAMATION}):Show()
+			(TextBox{,oError:SubCodeText,oError:Filename+" in use by another window or user",BOXICONEXCLAMATION}):Show()
 			Break			
 		ENDIF
 	ELSE
 		cMessage:="Error: "+ErrString(oError:GenCode)
-		IF !Empty(oError:SubCode)
-			cMessage += DosErrString(oError:SubCode)
+		IF !Empty(oError:Subcode)
+			cMessage += DosErrString(oError:Subcode)
 		ENDIF
 		IF oError:ArgTypeReq <> 0 .and. oError:ArgTypeReq <> oError:ArgType
 	        cMessage += ", Variabletype: "+TypeString(oError:ArgType)+ " requested type:" +TypeString(oError:ArgTypeReq)
@@ -3458,11 +3404,6 @@ function NetGetConnection(fullpathname as string) as string
 	endif
 	RETURN UNCName
 	
-CLASS OptionBrowser INHERIT DataBrowser
-		
-METHOD CellDoubleClick() CLASS OptionBrowser
-	self:Owner:ViewForm()
-	RETURN nil
 DEFINE ORGANISATION := 4
 FUNCTION PersonGetByExID(oCaller as Object,cValue as string,cItemname as String) as logic
 // Find a person by means of its external id
@@ -3705,6 +3646,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -3712,12 +3659,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -3760,24 +3701,12 @@ METHOD SetUnit(nUnit) CLASS ProgressPer
 self:oDCProgressBar:UnitSize:=1
 RETURN true
 STATIC DEFINE PROGRESSPER_PROGRESSBAR := 100 
-FUNCTION RandSpace(cString as STRING) as STRING
-	* Insert random number of leading spaces to a string:
-	LOCAL cConv as STRING
-	LOCAL nI as int
-
-	cConv:=AllTrim(cString)
-	IF (nI:=(Len(cString)-Len(cConv)))>0
-		nI:=Round(Rand(0)*nI,0)
-		IF nI>0
-			cString:=Pad(Space(nI)+cConv,Len(cString))
-		ENDIF
-	ENDIF
-RETURN cString
 function Salutation(GENDER as int) as string
-	// Return salutation of a person:	
+	// Return salutation corresponding with the given Gender of person:	
 	return pers_salut[iif(Empty(GENDER),5,GENDER),1]
 
-function SaveUse(functionid:=null_object as usual) 
+function SaveUse(functionid:=null_object as usual)
+// save use of a function into statistical data 
 local oStmnt as SQLStatement
 oStmnt:=SQLStatement{"insert into functionusage (functionid,userid,usedate,frequency) values ('"+iif(IsObject(functionid),Symbol2String(ClassName(functionid)),iif(IsString(functionid),functionid,""))+"','"+ LOGON_EMP_ID + "',current_date,1)"+;
 " on duplicate key update frequency=frequency+1",oConn}
@@ -3824,7 +3753,7 @@ function SetDepFilter(WhoFrom as int) as string
 		endif
 	endif
 	return Implode(aDepIncl,",")
-FUNC ShowError( oSQLErrorInfo as USUAL)    as void PASCAL
+FUNCTION ShowError( oSQLErrorInfo as USUAL)    as void PASCAL
 
 	LOCAL cMsg as STRING
 
@@ -3843,12 +3772,6 @@ FUNC ShowError( oSQLErrorInfo as USUAL)    as void PASCAL
     ENDIF
 
 RETURN
-method SetWidth(w) class SingleLineEdit
-LOCAL myDim as Dimension
-	myDim:=self:Size
-	myDim:Width:=w
-	self:Size:=myDim
- return
 function SpecialMessage(message_tele as string,Destname:='' as string,cSpecialmessage:='' ref string) as logic 
 	// returns special message cSpecialmessage within message_tele from telebank message 
 	// returns true if manually processing needed
@@ -4075,8 +3998,6 @@ CASE Purpose==2
 	fullname:='concat('+fullname+','+frstnm+','+prefix+')'
 endcase
 return 'trim('+fullname +')'  
-Function SQLGetMyConnection()
-return oConn
 function SQLIncExpFd() as string
 // compose sql code for determining type of account of member department: of department d, account a:
 	return "upper(if(d.netasset=a.accid,'F',if(d.incomeacc=a.accid,'I',if(d.expenseacc=a.accid,'E',''))))"
@@ -4208,32 +4129,6 @@ ASSIGN SqlString(uValue) CLASS SQLSelectPagination
 		self:pRecno:=1
 	endif
 	RETURN uValue
-Method Locate(ForCondition) class SQLTable
-// implement locate method like for DBServer
-// position table on first occurrence which satisfies ForCondition  
-self:GoTop()
-Do while !self:EoF .and.!Eval(CODEBLOCK(_cast,ForCondition))
-	self:Skip()
-enddo
-return !self:EoF
-METHOD RefreshClients() CLASS SQLTable
-LOCAL i as int
-FOR i:=1 to self:nClients
-	IF IsMethod(self:aClients[i],#refresh)
-		self:aClients[i]:refresh()
-	ENDIF
-NEXT
-method SetFilter(cbFilterBlock ,cFilterText ) class SQLTable
-local cFilter as string
-Default(@cbFilterBlock,null_codeblock) 
-Default(@cFilterText,null_string) 
-if Empty(cFilterText)
-	if IsString(cbFilterBlock)
-		cFilterText:=cbFilterBlock
-	endif
-endif
-self:Where(cFilterText) 
-return true
 Function StandardZip(ZipCode:="" as string) as string 
 	* Standardise Ducth Zip-code format: 9999 XX 
 	local myZipCode:=ZipCode as string
@@ -4411,23 +4306,6 @@ Function ValidateAccTransfer (cParentId as string,mAccId as string) as string
 	ENDIF
 	// ENDIF
 	RETURN cError
-FUNCTION ValidateControls( oDW, aControls )
-
-	LOCAL i as word
-	LOCAL oCurrentControl as Control
-	
-	FOR i := 1 to Len( aControls )
-
-		oCurrentControl := aControls[ i ]	
-		IF !oCurrentControl:PerformValidations()
-			(ErrorBox{,oCurrentControl:Name+": "+Transform(oCurrentControl:Status,"")}):Show()			
-			// Set focus to invalid control
-			oCurrentControl:SetFocus()
-			exit
-		ENDIF
-	NEXT	
-
-	RETURN i > Len( aControls )
 Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int) as string 
 	* Check if transfer of current account mAccId to another department with identification cDepartment is allowed
 	* Returns Error text if not allowed
