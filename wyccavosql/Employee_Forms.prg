@@ -1522,9 +1522,6 @@ METHOD OkButton( ) CLASS FirstUser
 	LOCAL MyName as STRING 
 	Local oStmnt as SQLStatement, cUpdate as string
 	
-	// 	IF !ValidateControls( SELF, SELF:AControls )
-	// 		RETURN
-	// 	ENDIF
 	IF IsNil(self:mNA1).or.Empty(self:mNA1)
 		ErrorBox{ self, " Fill Your Last Name" }:Show()
 		RETURN
