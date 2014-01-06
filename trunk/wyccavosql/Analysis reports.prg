@@ -3131,13 +3131,6 @@ METHOD OKButton( ) CLASS TotalsMembers
 
 	* Check values:
 	* Check input data:
-// 	IF !ValidateControls( self, self:AControls )
-// 		RETURN
-// 	END
-	// self:FromYear:=oDCFromYear:Value
-	// self:FromMonth:=oDCFromMonth:Value
-	// ToYear:=oDCToYear:Value
-	// ToMonth:=oDCToMonth:Value
 	IF self:FromYear*100+self:FromMonth > self:ToYear*100+self:ToMonth
 		(ErrorBox{self,self:oLan:WGet("To Month must be behind From month")}):show()
 		RETURN
