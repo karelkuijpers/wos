@@ -2230,7 +2230,7 @@ METHOD OkButton()  CLASS EditMember
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 			oStmnt:SQLString:="update person set type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 				iif(self:mGrade='Entity',",gender=4",",gender=(if(gender=4,0,gender))") +;
-				iif(lNewMember .or.! mCLNPrv == self:mCLN,",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'","")+;
+				iif(lNewMember .or.! mCLNPrv == self:mCLN,",mailingcodes='"+AddSlashes(MergeMLCodes(self:mCod,"MW"))+"'","")+;
 				" where persid="+self:mCLN 
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
@@ -2506,7 +2506,7 @@ METHOD OkButton()  CLASS EditMember
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 			oStmnt:SQLString:="update person set type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
 				iif(self:mGrade='Entity',",gender=4","") +;
-				",mailingcodes='"+MergeMLCodes(self:mCod,"MW")+"'"+;
+				",mailingcodes='"+AddSlashes(MergeMLCodes(self:mCod,"MW"))+"'"+;
 				" where persid="+self:mCLN 
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
