@@ -1116,7 +1116,7 @@ METHOD DeleteButton( ) CLASS TABMAIL_PAGE
 		oSFSub_MailCdReg:Browser:REFresh()
 		self:StatusMessage(self:oLan:WGet("Removing")+space(1)+mOms+space(1)+self:oLan:WGet("from all persons, moment please"))
 		self:Pointer := Pointer{POINTERHOURGLASS}
-		oStmnt:=SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'"+mCod+" ',''),'"+mCod+"','') where instr(mailingcodes,'"+mCod+"')>0",oConn}
+		oStmnt:=SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'"+addslashes(mCod)+" ',''),'"+addslashes(mCod)+"','') where instr(mailingcodes,'"+addslashes(mCod)+"')>0",oConn}
 		oStmnt:execute()
 		self:Pointer := Pointer{POINTERARROW} 
 		TextBox{,self:oLan:WGet("Removal mailing code"),Str(oStmnt:NumSuccessfulRows,-1)+" "+self:oLan:WGet("persons updated")}:Show()
