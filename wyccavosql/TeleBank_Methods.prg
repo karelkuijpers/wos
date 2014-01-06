@@ -135,7 +135,6 @@ method Close(oEvent) class SelBankAcc
 	return NIL
 
 METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc
-// 	RETURN FillBankAccount('b.Telebankng=1')
 	local cStatement as string 
 	local cSelect as string
 	local oSel as SQLSelect 
