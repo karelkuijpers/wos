@@ -419,7 +419,7 @@ FUNCTION Comparr(aStruct1 as array,aStruct2 as array) as logic
 		return false
 	ENDIF
 	RETURN true
-FUNCTION Compress (f_tekst)
+FUNCTION Compress(f_tekst as string) as string
 ** Compress redundant spaces
 ****
 IF Empty(f_tekst)
@@ -914,7 +914,7 @@ METHOD EditSELECT() CLASS Edit
 	ENDIF
 CLASS EditBrowser INHERIT DataBrowser
 METHOD CellDoubleClick() CLASS EditBrowser
-	if self:Owner:Owner:IsSelectButton()
+	if self:Owner:Owner:IsSelectButton() 
 		self:Owner:Owner:OKButton()
 		return nil
 	endif
@@ -1196,7 +1196,7 @@ FUNCTION FullName( cFirstName as STRING, cLastName as STRING ) as STRING
 	cFullName := AllTrim( cFirstName ) + " " + AllTrim( cLastName )
 	
 	RETURN cFullName
-FUNCTION FWriteLineUni(pFile, c) 
+FUNCTION FWriteLineUni(pFile as ptr, c as string) as int
 // write line c to pFile converted to Unicode
 LOCAL oUni as Unicode
 //local Start:=_chr(0xFF)+_chr(0xFE) as psz 
@@ -1778,7 +1778,7 @@ FUNCTION GetTokensEx(cText as string,aSep as array,MinLenSep:=1 as int,lCompress
 		ENDIF
 	NEXT
 	RETURN Tokens
-FUNCTION Getvaliddate (pDay,pMonth,pYear)
+FUNCTION Getvaliddate (pDay as int,pMonth as int,pYear as int) as date
 * Determination of valid date (if not valid return next valid date)
 LOCAL nwdat as date, i as int
 IF pDay > 31
@@ -2028,7 +2028,7 @@ Function ImportCSV(SourceFile as string,Desttable as string,nNbrCol:=2 as int,aS
 	oStmnt:Execute()
 	ptrHandle:Close()
 	return Empty((oStmnt:Status))
-function InitGlobals() 
+function InitGlobals(lRefreshAllowed:=true as logic) 
 	LOCAL oLan as Language
 	// 	Local oPP as PPCodes
 	LOCAL nMindate as int
@@ -2222,7 +2222,7 @@ function InitGlobals()
 		Departments:=true
 	endif
 
-	IF lRefreshMenu .and. !Empty(MYEMPID)  // reason to refresh menu and already logged in?
+	IF lRefreshAllowed .and. lRefreshMenu .and. !Empty(MYEMPID)  // reason to refresh menu and already logged in?
 		oMainWindow:RefreshMenu()
 		oMainWindow:SetCaption(oSys:sysname)
 	ENDIF
@@ -2733,17 +2733,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	RETURN true
 FUNCTION LTrimZero(cString as STRING) as STRING
 * Left trim leading zeroes in string
-LOCAL i as int
-cString:=AllTrim(cString)
-FOR i:=1 to Len(cString)
-	IF !SubStr(cString,i,1)="0"
-		IF i>1
-			cString:=SubStr(cString,i)
-		ENDIF
-		exit
-	ENDIF
-NEXT
-RETURN cString		
+RETURN ZeroTrim(cString)		
 FUNCTION MakeAbrvCod(cCodes as STRING) as array
 * Translates string with mailing code abbravations (separated by space)  to array of mailing code identifiers
 LOCAL aAbCodes as ARRAY
@@ -3146,7 +3136,7 @@ else
 	ptrN:=iEnd
 endif	
 return cLine 
-FUNCTION Mod10(cGetal)
+FUNCTION Mod10(cGetal as string) as string
 // Calculate modulo 10 (Luhn algoritme) check digit for cGetal and return it
 LOCAL alt:=true as LOGIC
 LOCAL i, length:=Len(cGetal),modulo,sum,temp as int
@@ -4262,6 +4252,38 @@ else
 endif 
 return cCompStmnt
  
+Function	UpdatemandateId(mAccNumber	as	string,mcln	as	string,msubid:='' as string) as string
+	// Check if mandate based on mAccNumber and mcln already exists and in that case returns new one with sequence number added 
+	// parameters:
+	// mAccNumber: account number destination of donation
+	// mcln: internal id of person who is the giver
+	// msubid: in case of existing donation fill it with the subscribid of the corresponding subscription
+	//         if you want to force the system to generate a mandate id with a next sequence number: leave it empty
+	//
+	// return the mandate id
+	   
+	LOCAL cInvoice as STRING, cStartDate as String
+	local aMndt:={} as array 
+	local oSel as SqlSelect
+	
+	cInvoice:='WDD-A-'+mAccNumber+'-P-'+mcln
+	// check if already present:
+	oSel:=SqlSelect{"select subscribid,invoiceid from subscription where personid="+mcln+;
+		' and substr(invoiceid,1,'+Str(Len(cInvoice),-1)+')="'+cInvoice+'"'+iif(Empty(msubid),'',' and subscribid<>'+msubid)+' order by invoiceid desc limit 1',oConn}
+	if oSel:RecCount=1
+		aMndt:=Split(oSel:invoiceid,'-P-')
+		if Len(aMndt)=2
+			aMndt:=Split(aMndt[2],'-')
+			if Len(aMndt)=1
+				cInvoice+='-2'
+			else
+				cInvoice+='-'+Str(Val(aMndt[2])+1,-1) 
+			endif
+		else
+			cInvoice+='-1'
+		ENDIF
+	endif
+	return cInvoice
 Function ValidateAccTransfer (cParentId as string,mAccId as string) as string 
 	* Check if transfer of current account mAccId to another balance item with identifciation cParentid is allowed
 	* Returns Error text if not allowed
