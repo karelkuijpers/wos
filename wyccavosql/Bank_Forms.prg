@@ -951,7 +951,7 @@ local nCurrec as int
 				self:oCaller:goto(nCurrec)
 			endif
 		endif
-		InitGlobals()
+		InitGlobals(false)
 		SELF:EndWindow()
 		
 	ELSE
@@ -1677,7 +1677,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			self:oLan:WGet("for Payments is not correct SEPA bank account")}):Show()
 		RETURN FALSE
 	ENDIF
-	IF Empty(sIDORG)
+	IF Empty(Val(sIDORG))
 		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF 
