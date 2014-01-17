@@ -12,32 +12,33 @@ ENDIF
 RETURN UserName
 
 method Start() class App
-	LOCAL aDir as ARRAY
+	local nErr as Dword 
 	local cUser  as string
+	local startfile,cWorkdir as STRING
+	local cFatalError as string
 	LOCAL lFirstuser as LOGIC
+	local lStop as logic
+	local FirstOfDay as logic
+	LOCAL aDir as ARRAY
+	LOCAL oError      as USUAL
+	LOCAL cbError     as CODEBLOCK
 	LOCAL mainsize as Dimension
 	LOCAL oInit as Initialize 
 	Local oLogonDialog as LogonDialog
 	local oNew as NewPasswordDialog 
-	LOCAL oError      as USUAL
-	LOCAL cbError     as CODEBLOCK
-	local FirstOfDay as logic
 	local oStJournal as StandingOrderJournal
-	local startfile,cWorkdir as STRING
 	local oUpg as CheckUPGRADE
-	local lStop as logic
-	local nErr as Dword 
-	local cFatalError as string
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
 		Enable3dControls() 
-		SetMaxDynSize(268435456)   //256MB max dynamic memory
+		DynSize(256) // (not more possible)
+		SetMaxDynSize(402653184)   //256MB max dynamic memory  
 		SetWipeDynSpace(false)
-		SetKidStackSize(1048576)
+		SetKidStackSize(134217728)    // 128 mb
 		SetMaxRegisteredKids(131072)
-		SetMaxThreadDynSize(67108864)  //64 MB Thread memory 
-		SetMaxRegisteredAxitMethods(65536)
+		SetMaxThreadDynSize(402653184)  //256 MB Thread memory 
+		SetMaxRegisteredAxitMethods(131072)  
 		SetExclusive( FALSE )
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 		SetDefault(CurPath)
@@ -89,9 +90,11 @@ method Start() class App
 				oMainWindow:Show(SHOWCENTERED)
 				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
 			ENDIF
-			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate)
+			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
+			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay
-			oInit:=null_object
+			oInit:=null_object 
+			CollectForced()
 			SetDeleted( true )
 			
 			#IFNDEF __debug__
@@ -161,7 +164,6 @@ method Start() class App
 				AlertNew{}:ShowNew()
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
-			
 			self:Exec()
 			// RECOVER USING oError	 
 			//   	GetError(self, "Error in Wycliffe Office System")
