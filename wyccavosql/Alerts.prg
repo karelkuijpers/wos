@@ -132,17 +132,22 @@ class AlertSuspense
 	declare method CollectSuspense,CollectSuspense
 Method Alert() class AlertSuspense
 	// alert when suspense accounts unbalances last days
+	local i,j,nBalPtr as int 
+	local cAccount,cStatement,minpl as string
+	local cReport as string 
+	local UltimoMonth as date 
 	local aSuspense:={} as array // array with suspense accounts: { accid, accnumber, description,type},...       type=a:acceptgiro,p:payments,C:cross bank,n:non-designated  
 	local aBal:={} as array // array with {accid,{{date,balance},...}},...  
-	local oSel as SQLSelect 
-	local i,j,nBalPtr as int 
-	local cAccount as string
-	local cReport as string
+	local aBalAcc1:={} as array  // intermediate array for balances
 	local oLan as language 
+	local oSel,oBal as SQLSelect
+	local oMBal as balances 
+
 	aSuspense:=self:CollectSuspense(true) 
 	if Len(aSuspense)<1
 		return
 	endif
+	
 	// get transaction balances per account per day:
 	oSel:=SqlSelect{"select gr.accid,group_concat(cast(gr.dat as char),',',cast(gr.daytot as char) order by gr.dat separator '#%' ) as daytots "+;
 		"from (select t.accid,t.dat,sum(cre-deb) as daytot from transaction t where  t.accid in ("+Implode(aSuspense,',',,,1)+") and t.dat between subdate(CurDate(),9) "+;
@@ -150,14 +155,33 @@ Method Alert() class AlertSuspense
 	oSel:Execute() 
 	if oSel:RecCount<1
 		return
+	endif 
+	// get current balances of accounts into array aBalAcc1:
+	UltimoMonth:=EndOfMonth( EndOfMonth(Today()) +1) // end next month
+	oMBal:=Balances{}
+	oMBal:cAccSelection:='a.accid in ('+Implode(aSuspense,',',,,1)+")"
+	cStatement:= oMBal:SQLGetBalance(,Year(UltimoMonth)*100+Month(UltimoMonth))
+	minpl:="if(z.category='"+EXPENSE+"' or z.category='"+ASSET+"',-1,1)"  
+	cStatement:="select group_concat(cast(z.accid as char),'#$#',cast((z.per_cre-z.per_deb)*"+minpl+" as char) order by accid separator '#%#') as grBal from ("+cStatement+") as z" 
+	oBal:=SqlSelect{cStatement,oConn}
+	oBal:Execute()
+	if oBal:RecCount<1
+		return 
 	endif
+	AEval(Split(oBal:grBal,'#%#'),{|x|AAdd(aBalAcc1,Split(x,'#$#'))})
 	do WHILE !oSel:EOF
-		AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#%'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
-		i:=Len(aBal)
-		// convert dates and values
-		AEvalA(aBal[i,2],{|x|x:={SQLDate2Date(x[1]),Val(x[2])}})
+		i:=ascan(aBalAcc1,{|x|x[1]==str(oSel:accid,-1)})
+		if i>0 .and. Abs(Val(aBalAcc1[i,2]))>50.00    // is current balance not about zero:
+			AAdd(aBal,{oSel:accid,AEvalA(Split(oSel:daytots,'#%'),{|x|x:=Split(x,',')})})   // aBal: {{date,value},...
+			i:=Len(aBal)
+			// convert dates and values
+			AEvalA(aBal[i,2],{|x|x:={SQLDate2Date(x[1]),Val(x[2])}})
+		endif
 		oSel:skip()
-	enddo 
+	enddo
+	if Len(aBal)<1
+		return
+	endif
 	oLan:=Language{}
 
 	cReport:=oLan:WGet("The following suspense accounts are unbalanced")+':'
