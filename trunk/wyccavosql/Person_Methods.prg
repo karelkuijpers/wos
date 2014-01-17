@@ -3021,6 +3021,8 @@ METHOD Show() CLASS SelPers
 		ENDIF
 	ENDIF
    self:Close()
+	self:Destroy()
+	CollectForced()
 	RETURN
 Method ExtraPropCondition(aPropExValues as array) as void Pascal Class SelPersMailCd
 	// compose extra properties selection condition: 
@@ -3838,7 +3840,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			self:oLan:WGet("for Payments is not correct SEPA bank account")}):Show()
 		RETURN FALSE
 	ENDIF
-	IF Empty(sIDORG)
+	IF Empty(Val(sIDORG))
 		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN FALSE
 	ENDIF
@@ -3848,7 +3850,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		cOrgName:=oSel:OrgName
 		cOrgAddress:=oSel:orgaddress
 	endif
-	cOrgName:=GetFullName(sIDORG,2)
+// 	cOrgName:=GetFullName(sIDORG,2)
 	if Empty(cOrgName)
 		(ErrorBox{self,self:oLan:WGet("No own organisation specified in System Parameters")}):Show()
 		RETURN false
@@ -4104,8 +4106,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			// 			cDescr+=', '+self:oLan:RGet("mandate id")+':'+aDue[i,19]+', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm,12)])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm)/12),-1)
 			cDescr+=', '+cNextDD+': '+Lower(maand[Mod(Month(invoicedate)+nTerm-1,12)+1])+' '+Str(Year(invoicedate)+Floor((Month(invoicedate)+nTerm-1)/12),-1)
 		endif
-		oReport:PrintLine(@nRow,@nPage,;
-			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+'  '+aSeqTp[Val(aDue[i,6]),1]+"  "+cDescr,headinglines)  
+// 		oReport:PrintLine(@nRow,@nPage,;
+// 			Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+'  '+aSeqTp[Val(aDue[i,6]),1]+"  "+cDescr,headinglines)  
 		fSum:=Round(fSum+AmountInvoice,DecAantal) 
 		// add to aTrans:
 		AAdd(aTrans,{cAccID,cPersId,cAmnt,cDescr,cType,aDue[i,13],aDue[i,14],aDue[i,1]})
@@ -4139,15 +4141,20 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			SeqTp:=2  // no FNAL for flexibility to change it later
 			if !Empty(aDue[i,21]) .and. !Empty(aDue[i,22])
 				// amendment present:
-				AAdd(aMndmnt,aDue[i,2])
+				AAdd(aMndmnt,aDue[i,2]) 
 				if !aDue[i,11]==aDue[i,21] .and.!Empty(aDue[i,17]).and.!aDue[i,17]==aDue[i,22]
 					// bank account changed to new bank: set in FRST group
 					SeqTp:=1
-				endif
+					// generate new mandate id because error in RABO::
+// 					aDue[i,19]:=UpdatemandateId(aDue[i,12],aDue[i,3])    // Rabo has promised to accept same mandateid
+				endif 
 			endif
+			aDue[i,6]:=Str(SeqTp,-1)
 		endif
+		oReport:PrintLine(@nRow,@nPage,;
+		Pad(aDue[i,16],40)+" "+Pad(cBank,25)+Str(AmountInvoice,12,2)+' '+Pad(aDue[i,12],12)+DToC(invoicedate)+'  '+aSeqTp[Val(aDue[i,6]),1]+"  "+cDescr,headinglines)  
 		if aDue[i,20]="0000-00-00" .or.SeqTp=1
-			AAdd(aSubvalues,{aDue[i,2],aDue[i,8]}) // save invoice as firstinvoicedate
+			AAdd(aSubvalues,{aDue[i,2],aDue[i,8],aDue[i,19]}) // save invoice as firstinvoicedate : subscripid,invoicedate,mandateid
 		endif
 		if (nGrpNbr:=AScan(aGrp,{|x|x[1]==aSeqTp[SeqTp,1] .and.x[4]<1000}))==0
 			nGrpNbr:=Len(aGrp)+1
@@ -4218,7 +4225,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			//new seqtp thus new PmtInf
 			SeqTp:=aDD[i,8]
 			nGrpnbr:=aDD[i,12] 
-			dReqCol:=aGrp[nGrpnbr,3]            //aGrp: {type,PmtInfId,reqdcoll,total transactions, ctrl sum}
+			dReqCol:=aGrp[nGrpnbr,3]            //aGrp: {type,PmtInfId,reqdcoll,total transactions, ctrl sum}  
+			if aDD[i,10]=='NL16RABO0127266968'
+				i:=i
+			endif
 			AAdd(DrctDbtTxInf,iif(i=1,'','</PmtInf>'+CRLF)+'<PmtInf>'+CRLF+;
 				'<PmtInfId>'+aGrp[nGrpnbr,2]+'</PmtInfId>'+CRLF+; 
 			'<PmtMtd>DD</PmtMtd>'+CRLF+;
@@ -4272,6 +4282,29 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
 		'</RmtInf>'+CRLF+;
 			'</DrctDbtTxInf>')
+// 		AAdd(DrctDbtTxInf,'<DrctDbtTxInf>'+CRLF+;
+// 			'<PmtId>'+CRLF+; 
+// 		'<EndToEndId>'+aDD[i,7]+'</EndToEndId>'+CRLF+;     // invoiceid
+// 		'</PmtId>'+CRLF+;
+// 			'<InstdAmt  Ccy="EUR">'+aDD[i,1]+'</InstdAmt>'+CRLF+;    //  AmountInvoice
+// 		'<DrctDbtTx><MndtRltdInf><MndtId>'+aDD[i,2]+'</MndtId><DtOfSgntr>'+aDD[i,3]+'</DtOfSgntr>'+; 
+// 		iif(!Empty(aDD[i,10]) .and. !Empty(aDD[i,11]) .and.!aDD[i,5]==aDD[i,10].and.aDD[i,9]==aDD[i,11],; // amendment present for same bank:
+// 		'<AmdmntInd>true</AmdmntInd>'+CRLF+'<AmdmntInfDtls>'+CRLF+;      
+// 			'<OrgnlDbtrAcct><Id><IBAN>'+aDD[i,10]+'</IBAN></Id></OrgnlDbtrAcct>'+CRLF+'</AmdmntInfDtls>'+CRLF,'')+;
+// 			'</MndtRltdInf></DrctDbtTx>'+CRLF+; 
+// 		'<DbtrAgt><FinInstnId>'+iif(!Empty(aDD[i,9]),'<BIC>'+aDD[i,9]+'</BIC>','')+'</FinInstnId></DbtrAgt>'+CRLF+;
+// 			'<Dbtr>'+CRLF+;
+// 			'<Nm>'+HtmlEncode(aDD[i,4])+'</Nm>'+CRLF+;
+// 			'</Dbtr>'+CRLF+;
+// 			'<DbtrAcct>'+CRLF+;
+// 			'<Id>'+CRLF+;
+// 			'<IBAN>'+aDD[i,5]+'</IBAN>'+CRLF+;
+// 			'</Id>'+CRLF+;
+// 			'</DbtrAcct>'+CRLF+;
+// 			'<RmtInf>'+CRLF+;
+// 			'<Ustrd>'+HtmlEncode(aDD[i,6])+'</Ustrd>'+CRLF+;   // description
+// 		'</RmtInf>'+CRLF+;
+// 			'</DrctDbtTxInf>')
 		if Len(DrctDbtTxInf)>= 100
 			FWriteLineUni(ptrHandle,Implode(DrctDbtTxInf,CRLF))		 // write per 100 transactions to reduce I/O
 			DrctDbtTxInf:={}
@@ -4418,9 +4451,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			endif
 		endif 
 		if Len(aSubvalues)>0
-			// update subscription with first invoice date:
-			oStmnt:=SQLStatement{'insert into subscription (subscribid,firstinvoicedate) values '+Implode(aSubvalues,'","')+;
-				" on duplicate key update firstinvoicedate=values(firstinvoicedate)",oConn}
+			// update subscription with first invoice date and new mandate id:
+			oStmnt:=SQLStatement{'insert into subscription (subscribid,firstinvoicedate,invoiceid) values '+Implode(aSubvalues,'","')+;
+				" on duplicate key update firstinvoicedate=values(firstinvoicedate),invoiceid=values(invoiceid)",oConn}
 			oStmnt:Execute()
 			if	!Empty(oStmnt:status)
 				SQLStatement{"rollback",oConn}:Execute() 
