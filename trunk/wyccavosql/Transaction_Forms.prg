@@ -1,3 +1,5 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
 CLASS BedragStr INHERIT FIELDSPEC
 
 
@@ -131,7 +133,7 @@ CLASS General_Journal INHERIT DataWindowExtra
 	declare method FindNext, FindPrevious
   	declare method Totalise,ValidateTempTrans,FillTeleBanking, FillRecord, ShowBankBalance, ValStore, ;
   	UpdateLine,FillBatch,RegAccount,FindNext,FindPrevious,ChgDueAmnts,UpdateTrans
-method AddCur(0 class General_Journal
+method AddCur() class General_Journal
 self:oSFGeneralJournal1:AddCurr()
 return
 ACCESS BankBalance() CLASS General_Journal
@@ -233,7 +235,7 @@ METHOD Close(oEvent) CLASS General_Journal
 	SELF:oSFGeneralJournal1:Destroy()
 	self:Destroy()
 	// force garbage collection
-	*CollectForced()
+	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 method DateTimeSelectionChanged(oDateTimeSelectionEvent) class General_Journal
@@ -967,18 +969,18 @@ method AddCurr() class GeneralJournal1
 	if oBrowse:GetColumn(#Currency)==nil 
 		if lAddC
 			oBrowse:GetColumn(#CREFORGN)
-			oBrowse:AddColumn(oDBCRE,self:oDBCREFORGN:VisualPos+1) 
-			oBrowse:AddColumn(oDBDEB,self:oDBCREFORGN:VisualPos+1) 
-			oBrowse:AddColumn(oDBCURRENCY,self:oDBCREFORGN:VisualPos+1) 
+			oBrowse:AddColumn(self:oDBCRE,self:oDBCREFORGN:VisualPos+1) 
+			oBrowse:AddColumn(self:oDBDEB,self:oDBCREFORGN:VisualPos+1) 
+			oBrowse:AddColumn(self:oDBCURRENCY,self:oDBCREFORGN:VisualPos+1) 
 			self:Owner:SetWidth(self:Owner:Size:Width+=8*(self:oDBCREFORGN:Width+self:oDBDEBFORGN:Width+self:oDBCURRENCY:Width))
 			if self:oCurr==null_object
 				self:oCurr:=Currency{}
 			endif                                
 		endif
 	elseif !lAddC
-		oBrowse:RemoveColumn( oDBCRE)
-		oBrowse:RemoveColumn( oDBDEB)
-		oBrowse:RemoveColumn( oDBCURRENCY)
+		oBrowse:RemoveColumn( self:oDBCRE)
+		oBrowse:RemoveColumn( self:oDBDEB)
+		oBrowse:RemoveColumn( self:oDBCURRENCY)
 		self:Owner:SetWidth(self:Owner:Size:Width-=8*(self:oDBCREFORGN:Width+self:oDBDEBFORGN:Width+self:oDBCURRENCY:Width))
 		self:Owner:lwaitingForExchrate:=false 
 	endif 
@@ -1104,7 +1106,7 @@ oDCSC_REKOMS := FixedText{SELF,ResourceID{GENERALJOURNAL1_SC_REKOMS,_GetInst()}}
 oDCSC_REKOMS:HyperLabel := HyperLabel{#SC_REKOMS,"Accountname:",NULL_STRING,NULL_STRING}
 
 oDCAccNumber := SingleLineEdit{SELF,ResourceID{GENERALJOURNAL1_ACCNUMBER,_GetInst()}}
-oDCAccNumber:FieldSpec := Account_AccNumber{}
+oDCAccNumber:FieldSpec := account_OMS{}
 oDCAccNumber:HyperLabel := HyperLabel{#AccNumber,"Account","Account of transaction",NULL_STRING}
 
 oDCDESCRIPTN := SingleLineEdit{SELF,ResourceID{GENERALJOURNAL1_DESCRIPTN,_GetInst()}}
@@ -1151,7 +1153,7 @@ ELSE
 ENDIF
 self:Browser := JournalBrowser{self}
 
-oDBACCNUMBER := JapDataColumn{Account_AccNumber{}}
+oDBACCNUMBER := JapDataColumn{account_OMS{}}
 oDBACCNUMBER:Width := 11
 oDBACCNUMBER:HyperLabel := oDCACCNUMBER:HyperLabel 
 oDBACCNUMBER:Caption := "Account"
@@ -1344,56 +1346,6 @@ STATIC DEFINE INQUIRYSELECT_SC_BST1 := 119
 STATIC DEFINE INQUIRYSELECT_TOBST := 118 
 STATIC DEFINE INQUIRYSELECT_TODATE := 106 
 STATIC DEFINE INQUIRYSELECT_TOTRANSNR := 110 
-RESOURCE InquirySelection DIALOGEX  28, 25, 377, 195
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"From Accountnbr:", INQUIRYSELECTION_FIXEDTEXT1, "Static", WS_CHILD, 12, 14, 68, 13
-	CONTROL	"", INQUIRYSELECTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 14, 105, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
-	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
-	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
-	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
-	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
-	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
-	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", INQUIRYSELECTION_TOTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 247, 60, 67, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Minimal Amount", INQUIRYSELECTION_FROMAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 66, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Maximum Amount", INQUIRYSELECTION_TOAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 81, 66, 12, WS_EX_CLIENTEDGE
-	CONTROL	" Type", INQUIRYSELECTION_AMOUNTTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 328, 66, 40, 38
-	CONTROL	"All", INQUIRYSELECTION_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 73, 24, 11
-	CONTROL	"Debit", INQUIRYSELECTION_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 83, 32, 11
-	CONTROL	"Credit", INQUIRYSELECTION_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 92, 34, 11
-	CONTROL	"Doc id:", INQUIRYSELECTION_DOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 107, 66, 12
-	CONTROL	"Description", INQUIRYSELECTION_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 107, 120, 12
-	CONTROL	"", INQUIRYSELECTION_REFERENCE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 125, 66, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", INQUIRYSELECTION_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 144, 105, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", INQUIRYSELECTION_PERSONBUTTON, "Button", WS_CHILD, 184, 144, 13, 12
-	CONTROL	"From Transactionnbr:", INQUIRYSELECTION_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 68, 12
-	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT6, "Static", WS_CHILD, 208, 60, 23, 13
-	CONTROL	"Person:", INQUIRYSELECTION_FIXEDTEXT7, "Static", WS_CHILD, 12, 144, 53, 12
-	CONTROL	"OK", INQUIRYSELECTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 316, 180, 53, 13
-	CONTROL	"Reset", INQUIRYSELECTION_RESETBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 180, 53, 13
-	CONTROL	"Cancel", INQUIRYSELECTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 260, 180, 53, 13
-	CONTROL	"Document id:", INQUIRYSELECTION_SC_BST, "Static", WS_CHILD, 12, 107, 50, 12
-	CONTROL	"Amount Minimum:", INQUIRYSELECTION_SC_FROM, "Static", WS_CHILD, 12, 81, 61, 12
-	CONTROL	"Maximum:", INQUIRYSELECTION_FIXEDTEXT8, "Static", WS_CHILD, 208, 81, 32, 13
-	CONTROL	"Description:", INQUIRYSELECTION_FIXEDTEXT9, "Static", WS_CHILD, 208, 107, 38, 12
-	CONTROL	"Reference", INQUIRYSELECTION_SC_REF, "Static", WS_CHILD, 12, 125, 53, 12
-	CONTROL	"Till", INQUIRYSELECTION_FIXEDTEXT2, "Static", WS_CHILD, 208, 14, 16, 13
-	CONTROL	"Posting Status", INQUIRYSELECTION_POSTINGSTATUS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 248, 121, 66, 50
-	CONTROL	"All", INQUIRYSELECTION_RADIOPOST1, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 129, 55, 11
-	CONTROL	"Ready to Post", INQUIRYSELECTION_RADIOPOST2, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 139, 59, 11
-	CONTROL	"Not Posted", INQUIRYSELECTION_RADIOPOST3, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 149, 56, 11
-	CONTROL	"Posted", INQUIRYSELECTION_RADIOPOST4, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 158, 55, 11
-	CONTROL	"Department From:", INQUIRYSELECTION_SC_DEP, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 162, 67, 12
-	CONTROL	"v", INQUIRYSELECTION_FROMDEPBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 184, 162, 13, 12
-	CONTROL	"", INQUIRYSELECTION_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 162, 105, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", INQUIRYSELECTION_MACCNUMBER, "Static", SS_CENTERIMAGE|WS_CHILD, 80, 0, 63, 12
-	CONTROL	"", INQUIRYSELECTION_MACCNUMBERTO, "Static", SS_CENTERIMAGE|WS_CHILD, 248, 0, 63, 12
-END
-
 CLASS InquirySelection INHERIT DataWindowExtra 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -1455,6 +1407,56 @@ CLASS InquirySelection INHERIT DataWindowExtra
 	PROTECT cCurDep as STRING
 	PROTECT cDepTo, cSoortTo, cCurrTo as STRING  
 	
+RESOURCE InquirySelection DIALOGEX  28, 25, 377, 195
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"From Accountnbr:", INQUIRYSELECTION_FIXEDTEXT1, "Static", WS_CHILD, 12, 14, 68, 13
+	CONTROL	"", INQUIRYSELECTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 14, 105, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", INQUIRYSELECTION_ACCBUTTON, "Button", WS_CHILD, 184, 14, 13, 13
+	CONTROL	"", INQUIRYSELECTION_MTOACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 14, 109, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", INQUIRYSELECTION_ACCBUTTONTO, "Button", WS_CHILD, 356, 14, 13, 13
+	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 80, 36, 118, 14
+	CONTROL	"dinsdag 12 november 2013", INQUIRYSELECTION_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 248, 38, 120, 14
+	CONTROL	"From Date:", INQUIRYSELECTION_FIXEDTEXT3, "Static", WS_CHILD, 12, 36, 53, 13
+	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT4, "Static", WS_CHILD, 208, 38, 17, 13
+	CONTROL	"", INQUIRYSELECTION_FROMTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 66, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", INQUIRYSELECTION_TOTRANSNR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 247, 60, 67, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Minimal Amount", INQUIRYSELECTION_FROMAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 66, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Maximum Amount", INQUIRYSELECTION_TOAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 81, 66, 12, WS_EX_CLIENTEDGE
+	CONTROL	" Type", INQUIRYSELECTION_AMOUNTTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 328, 66, 40, 38
+	CONTROL	"All", INQUIRYSELECTION_RADIOBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 73, 24, 11
+	CONTROL	"Debit", INQUIRYSELECTION_RADIOBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 83, 32, 11
+	CONTROL	"Credit", INQUIRYSELECTION_RADIOBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 332, 92, 34, 11
+	CONTROL	"Doc id:", INQUIRYSELECTION_DOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 107, 66, 12
+	CONTROL	"Description", INQUIRYSELECTION_DESCRIPTION, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 248, 107, 120, 12
+	CONTROL	"", INQUIRYSELECTION_REFERENCE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 125, 66, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", INQUIRYSELECTION_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 144, 105, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", INQUIRYSELECTION_PERSONBUTTON, "Button", WS_CHILD, 184, 144, 13, 12
+	CONTROL	"From Transactionnbr:", INQUIRYSELECTION_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 68, 12
+	CONTROL	"Till:", INQUIRYSELECTION_FIXEDTEXT6, "Static", WS_CHILD, 208, 60, 23, 13
+	CONTROL	"Person:", INQUIRYSELECTION_FIXEDTEXT7, "Static", WS_CHILD, 12, 144, 53, 12
+	CONTROL	"OK", INQUIRYSELECTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 316, 180, 53, 13
+	CONTROL	"Reset", INQUIRYSELECTION_RESETBUTTON, "Button", WS_TABSTOP|WS_CHILD, 204, 180, 53, 13
+	CONTROL	"Cancel", INQUIRYSELECTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 260, 180, 53, 13
+	CONTROL	"Document id:", INQUIRYSELECTION_SC_BST, "Static", WS_CHILD, 12, 107, 50, 12
+	CONTROL	"Amount Minimum:", INQUIRYSELECTION_SC_FROM, "Static", WS_CHILD, 12, 81, 61, 12
+	CONTROL	"Maximum:", INQUIRYSELECTION_FIXEDTEXT8, "Static", WS_CHILD, 208, 81, 32, 13
+	CONTROL	"Description:", INQUIRYSELECTION_FIXEDTEXT9, "Static", WS_CHILD, 208, 107, 38, 12
+	CONTROL	"Reference", INQUIRYSELECTION_SC_REF, "Static", WS_CHILD, 12, 125, 53, 12
+	CONTROL	"Till", INQUIRYSELECTION_FIXEDTEXT2, "Static", WS_CHILD, 208, 14, 16, 13
+	CONTROL	"Posting Status", INQUIRYSELECTION_POSTINGSTATUS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 248, 121, 66, 50
+	CONTROL	"All", INQUIRYSELECTION_RADIOPOST1, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 129, 55, 11
+	CONTROL	"Ready to Post", INQUIRYSELECTION_RADIOPOST2, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 139, 59, 11
+	CONTROL	"Not Posted", INQUIRYSELECTION_RADIOPOST3, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 149, 56, 11
+	CONTROL	"Posted", INQUIRYSELECTION_RADIOPOST4, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 252, 158, 55, 11
+	CONTROL	"Department From:", INQUIRYSELECTION_SC_DEP, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 162, 67, 12
+	CONTROL	"v", INQUIRYSELECTION_FROMDEPBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 184, 162, 13, 12
+	CONTROL	"", INQUIRYSELECTION_FROMDEP, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 162, 105, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", INQUIRYSELECTION_MACCNUMBER, "Static", SS_CENTERIMAGE|WS_CHILD, 80, 0, 63, 12
+	CONTROL	"", INQUIRYSELECTION_MACCNUMBERTO, "Static", SS_CENTERIMAGE|WS_CHILD, 248, 0, 63, 12
+END
+
 METHOD AccButton(lUnique )  CLASS InquirySelection
 Default(@lUnique,false)
 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"AccountFrom",lUnique,,,,)
@@ -1478,7 +1480,7 @@ METHOD Close(oEvent) CLASS InquirySelection
 	//Put your changes here
 SELF:Destroy()
 	// force garbage collection
-	*CollectForced()
+	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 *RETURN NIL
@@ -2469,37 +2471,6 @@ STATIC DEFINE PAYMENTDETAILS_SC_OMS := 101
 STATIC DEFINE PAYMENTDETAILS_SC_ORIGINAL := 102 
 STATIC DEFINE PAYMENTDETAILS_SC_REK := 100 
 STATIC DEFINE PAYMENTDETAILS_SC_REKOMS := 105 
-RESOURCE PaymentJournal DIALOGEX  48, 44, 458, 337
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Person:", PAYMENTJOURNAL_SC_CLN, "Static", WS_CHILD, 274, 18, 28, 12
-	CONTROL	"Document id:", PAYMENTJOURNAL_SC_BST, "Static", WS_CHILD, 5, 3, 47, 12
-	CONTROL	"Date:", PAYMENTJOURNAL_SC_DAT, "Static", WS_CHILD, 100, 2, 20, 12
-	CONTROL	"Amount left for recording:", PAYMENTJOURNAL_SC_TOTAL, "Static", WS_CHILD, 4, 314, 83, 12
-	CONTROL	"with balance:", PAYMENTJOURNAL_FIXEDTEXT8, "Static", WS_CHILD, 6, 36, 44, 12
-	CONTROL	"", PAYMENTJOURNAL_CURTEXT1, "Static", WS_CHILD, 124, 35, 18, 13
-	CONTROL	"", PAYMENTJOURNAL_CURTEXT2, "Static", WS_CHILD, 399, 36, 17, 12
-	CONTROL	"", PAYMENTJOURNAL_DEBBALANCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 55, 35, 62, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 336, 3, 56, 13
-	CONTROL	"", PAYMENTJOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 2, 39, 12
-	CONTROL	"woensdag 6 november 2013", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 120, 1, 124, 14
-	CONTROL	"", PAYMENTJOURNAL_DEBITACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 56, 19, 105, 72
-	CONTROL	"", PAYMENTJOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 19, 119, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", PAYMENTJOURNAL_PERSONBUTTON, "Button", WS_CHILD, 424, 19, 14, 13
-	CONTROL	"", PAYMENTJOURNAL_MDEBAMNTF, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 35, 88, 13, WS_EX_CLIENTEDGE
-	CONTROL	"", PAYMENTJOURNAL_PAYMENTDETAILS, "static", WS_TABSTOP|WS_CHILD|WS_BORDER, 6, 72, 433, 221
-	CONTROL	"OK", PAYMENTJOURNAL_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 382, 315, 60, 13
-	CONTROL	"Cancel", PAYMENTJOURNAL_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 315, 60, 13
-	CONTROL	"Telebanking...", PAYMENTJOURNAL_TELEBANKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 299, 60, 12
-	CONTROL	"No Earmark...", PAYMENTJOURNAL_NONEARMARKED, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 382, 299, 60, 12
-	CONTROL	"", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_CHILD|WS_BORDER, 396, 3, 41, 11
-	CONTROL	"", PAYMENTJOURNAL_DEBITCREDITTEXT, "Static", WS_CHILD|WS_BORDER, 86, 314, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Debit account:", PAYMENTJOURNAL_FIXEDTEXT6, "Static", WS_CHILD, 5, 20, 49, 12
-	CONTROL	"Amount received:", PAYMENTJOURNAL_FIXEDTEXT7, "Static", WS_CHILD, 244, 35, 60, 13
-	CONTROL	"", PAYMENTJOURNAL_CGIROTELTEXT, "Static", WS_CHILD, 6, 51, 433, 19
-END
-
 CLASS PaymentJournal INHERIT DataWindowExtra 
 
 	PROTECT oDCSC_CLN AS FIXEDTEXT
@@ -2558,6 +2529,37 @@ CLASS PaymentJournal INHERIT DataWindowExtra
 	export oHlpMut as TempGift 
 	export oAddInEx as AddToIncExp
 	declare method FillTeleBanking, InitGifts,AccntProc,AssignTo,Totalise, ValStore,ValidateTempGift
+RESOURCE PaymentJournal DIALOGEX  48, 44, 458, 337
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Person:", PAYMENTJOURNAL_SC_CLN, "Static", WS_CHILD, 274, 18, 28, 12
+	CONTROL	"Document id:", PAYMENTJOURNAL_SC_BST, "Static", WS_CHILD, 5, 3, 47, 12
+	CONTROL	"Date:", PAYMENTJOURNAL_SC_DAT, "Static", WS_CHILD, 100, 2, 20, 12
+	CONTROL	"Amount left for recording:", PAYMENTJOURNAL_SC_TOTAL, "Static", WS_CHILD, 4, 314, 83, 12
+	CONTROL	"with balance:", PAYMENTJOURNAL_FIXEDTEXT8, "Static", WS_CHILD, 6, 36, 44, 12
+	CONTROL	"", PAYMENTJOURNAL_CURTEXT1, "Static", WS_CHILD, 124, 35, 18, 13
+	CONTROL	"", PAYMENTJOURNAL_CURTEXT2, "Static", WS_CHILD, 399, 36, 17, 12
+	CONTROL	"", PAYMENTJOURNAL_DEBBALANCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_CHILD|WS_DISABLED|WS_BORDER, 55, 35, 62, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Prior transaction:", PAYMENTJOURNAL_SC_TRANSAKTNR, "Static", WS_CHILD, 336, 3, 56, 13
+	CONTROL	"", PAYMENTJOURNAL_MBST, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 56, 2, 39, 12
+	CONTROL	"woensdag 6 november 2013", PAYMENTJOURNAL_MDAT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 120, 1, 124, 14
+	CONTROL	"", PAYMENTJOURNAL_DEBITACCOUNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 56, 19, 105, 72
+	CONTROL	"", PAYMENTJOURNAL_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 19, 119, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", PAYMENTJOURNAL_PERSONBUTTON, "Button", WS_CHILD, 424, 19, 14, 13
+	CONTROL	"", PAYMENTJOURNAL_MDEBAMNTF, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 306, 35, 88, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", PAYMENTJOURNAL_PAYMENTDETAILS, "static", WS_TABSTOP|WS_CHILD|WS_BORDER, 6, 72, 433, 221
+	CONTROL	"OK", PAYMENTJOURNAL_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 382, 315, 60, 13
+	CONTROL	"Cancel", PAYMENTJOURNAL_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 315, 60, 13
+	CONTROL	"Telebanking...", PAYMENTJOURNAL_TELEBANKBUTTON, "Button", WS_TABSTOP|WS_CHILD, 316, 299, 60, 12
+	CONTROL	"No Earmark...", PAYMENTJOURNAL_NONEARMARKED, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 382, 299, 60, 12
+	CONTROL	"", PAYMENTJOURNAL_MTRANSAKTNR, "Edit", ES_READONLY|ES_AUTOHSCROLL|ES_NUMBER|WS_CHILD|WS_BORDER, 396, 3, 41, 11
+	CONTROL	"", PAYMENTJOURNAL_DEBITCREDITTEXT, "Static", WS_CHILD|WS_BORDER, 86, 314, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Debit account:", PAYMENTJOURNAL_FIXEDTEXT6, "Static", WS_CHILD, 5, 20, 49, 12
+	CONTROL	"Amount received:", PAYMENTJOURNAL_FIXEDTEXT7, "Static", WS_CHILD, 244, 35, 60, 13
+	CONTROL	"", PAYMENTJOURNAL_CGIROTELTEXT, "Static", WS_CHILD, 6, 51, 433, 19
+END
+
 method AddCur() class PaymentJournal
 	self:oSFPaymentDetails:AddCurr()
 	return
@@ -3268,7 +3270,7 @@ METHOD ShowDebBal() CLASS PaymentJournal
 	if Empty(self:DebAccId)
 		return
 	endif
-	oSel:=SqlSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid='"+self:DebAccId+"' and b.balitemid=a.balitemid",oConn}
+	oSel:=SqlSelect{"select accnumber,accid,currency,b.category from account a, balanceitem b where accid='"+self:DebAccId+"' and b.balitemid=a.balitemid limit 1",oConn}
 	if oSel:reccount>0
 // 		self:DebAccNbr:=oSel:ACCNUMBER 
 		self:DebCurrency:=oSel:CURRENCY
@@ -3735,26 +3737,6 @@ STATIC DEFINE TRANSACTMONTH_OKBUTTON := 109
 STATIC DEFINE TRANSACTMONTH_TOACCOUNT := 104 
 STATIC DEFINE TRANSACTMONTH_TOMONTH := 108 
 STATIC DEFINE TRANSACTMONTH_TOYEAR := 106 
-RESOURCE TransInquiry DIALOGEX  25, 34, 523, 302
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", TRANSINQUIRY_TRANSINQUIRY_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 22, 509, 262
-	CONTROL	"Advanced Find", TRANSINQUIRY_SELECTIONBUTTON, "Button", WS_TABSTOP|WS_CHILD, 448, 3, 65, 13
-	CONTROL	"Details", TRANSINQUIRY_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 462, 288, 54, 12
-	CONTROL	"Ready Batch", TRANSINQUIRY_READYBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
-	CONTROL	"Post Batch", TRANSINQUIRY_POSTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
-	CONTROL	"Transfer", TRANSINQUIRY_TRANSFERBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 62, 288, 53, 12
-	CONTROL	"Export", TRANSINQUIRY_EXPORTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 6, 288, 54, 12
-	CONTROL	"Last ", TRANSINQUIRY_LSTTXT1, "Static", SS_CENTERIMAGE|WS_CHILD, 4, 3, 24, 13
-	CONTROL	"", TRANSINQUIRY_NBRTRANS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 28, 3, 36, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Show", TRANSINQUIRY_FINDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 120, 3, 53, 13
-	CONTROL	"Found:", TRANSINQUIRY_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 204, 3, 27, 13
-	CONTROL	"", TRANSINQUIRY_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 3, 36, 13
-	CONTROL	"transactions", TRANSINQUIRY_LSTTXT2, "Static", SS_CENTERIMAGE|WS_CHILD, 68, 3, 53, 13
-	CONTROL	"lines", TRANSINQUIRY_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 272, 3, 53, 13
-END
-
 CLASS TransInquiry INHERIT DataWindowExtra 
 
 	PROTECT oCCSelectionButton AS PUSHBUTTON
@@ -3796,6 +3778,26 @@ CLASS TransInquiry INHERIT DataWindowExtra
    protect lsttrnr as int
    export lShowFind:=true as logic
 
+RESOURCE TransInquiry DIALOGEX  25, 34, 523, 302
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", TRANSINQUIRY_TRANSINQUIRY_DETAIL, "static", WS_CHILD|WS_BORDER, 4, 22, 509, 262
+	CONTROL	"Advanced Find", TRANSINQUIRY_SELECTIONBUTTON, "Button", WS_TABSTOP|WS_CHILD, 448, 3, 65, 13
+	CONTROL	"Details", TRANSINQUIRY_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 462, 288, 54, 12
+	CONTROL	"Ready Batch", TRANSINQUIRY_READYBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
+	CONTROL	"Post Batch", TRANSINQUIRY_POSTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 400, 288, 53, 12
+	CONTROL	"Transfer", TRANSINQUIRY_TRANSFERBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 62, 288, 53, 12
+	CONTROL	"Export", TRANSINQUIRY_EXPORTBUTTON, "Button", WS_TABSTOP|WS_CHILD, 6, 288, 54, 12
+	CONTROL	"Last ", TRANSINQUIRY_LSTTXT1, "Static", SS_CENTERIMAGE|WS_CHILD, 4, 3, 24, 13
+	CONTROL	"", TRANSINQUIRY_NBRTRANS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 28, 3, 36, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Show", TRANSINQUIRY_FINDBUTTON, "Button", WS_TABSTOP|WS_CHILD, 120, 3, 53, 13
+	CONTROL	"Found:", TRANSINQUIRY_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 204, 3, 27, 13
+	CONTROL	"", TRANSINQUIRY_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 232, 3, 36, 13
+	CONTROL	"transactions", TRANSINQUIRY_LSTTXT2, "Static", SS_CENTERIMAGE|WS_CHILD, 68, 3, 53, 13
+	CONTROL	"lines", TRANSINQUIRY_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 272, 3, 53, 13
+END
+
 METHOD Close(oEvent) CLASS TransInquiry
 IF !oHm==NULL_OBJECT
 	IF oHm:Used
@@ -3813,7 +3815,7 @@ SELF:oSFTransInquiry_DETAIL:Close()
 SELF:oSFTransInquiry_DETAIL:Destroy()
 SELF:Destroy()
 	// force garbage collection
-	*CollectForced()
+	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 *	RETURN NIL
@@ -3846,7 +3848,7 @@ METHOD EditButton( ) CLASS TransInquiry
 	// 	self:oMyTrans:=SQLSelect{UnionTrans("select t.*,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 	// 	SQLAccType()+" as accounttype from balanceitem b,account a left join member m on (m.accid=a.accid)  , transaction t left join person p on (p.persid=t.persid) "+;
 	// 	" where a.accid=t.accid and b.balitemid=a.balitemid and t.transid="+cTransnr+" and t.dat='"+SQLdate(Origdat)+"'"),oConn}
-	self:oMyTrans:=SQLSelect{UnionTrans2("select t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,"+;
+	self:oMyTrans:=SqlSelect{UnionTrans2("select t.transid,t.seqnr,cast(t.dat as date) as dat,t.docid,t.reference,t.description,t.deb,t.cre,t.gc,"+;
 	"cast(t.poststatus as signed) as poststatus,t.accid,t.currency,t.debforgn,t.creforgn,t.bfm,t.ppdest,t.fromrpp,t.persid,t.opp,"+;
 	"if(t.lock_id=0 or t.lock_time < subdate(now(),interval 60 minute),0,1) as locked,a.description as accdesc,a.accnumber,a.balitemid,a.multcurr,b.category as type,m.persid as persidmbr,"+;
 		SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,a.department from "+;
@@ -3896,17 +3898,21 @@ METHOD EditButton( ) CLASS TransInquiry
 		IF !Empty(self:oMyTrans:persid)
 			OrigPerson := Str(self:oMyTrans:persid,-1)
 		ENDIF 
-		self:oHm:PostStatus:=ConI(self:oMyTrans:PostStatus)
+		self:oHm:PostStatus:=ConI(self:oMyTrans:PostStatus) 
+		self:oHm:PoststatusOrig:= self:oHm:PostStatus
 
 		* Add to mirror:
-		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type,icexpfd,depid}
-		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18    19      20
+		&& mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:SeqNbr,accnumber,Rekoms,balitemid,curr,multicur,debforgn,creforgn,reference,description,persid,type,icexpfd,depid}
+		//                                          1    2   3  4    5       6        7           8        9        10     11      12      13        14     15        16          17     18    19      20
 		AAdd(self:oHm:aMirror,{AllTrim(self:oHm:AccID),self:oHm:deb,self:oHm:cre,self:oHm:GC,self:oHm:KIND,self:oHm:RecNo,self:oHm:SEQNR,AllTrim(self:oHm:ACCNUMBER),AllTrim(self:oHm:AccDesc),;
 		Str(self:oMyTrans:balitemid,-1),self:oHm:Currency,iif(ConI(self:oMyTrans:MULTCURR)=1,true,false),self:oHm:debforgn,self:oHm:creforgn,AllTrim(self:oHm:REFERENCE),AllTrim(self:oHm:DESCRIPTN),;
 		iif(Empty(self:oMyTrans:persidmbr),iif(Empty(self:oMyTrans:persid),"",Str(self:oMyTrans:persid,-1)),Str(self:oMyTrans:persidmbr,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 // 		iif(Empty(self:oMyTrans:persid),iif(Empty(self:oMyTrans:persidmbr),"",Str(self:oMyTrans:persidmbr,-1)),Str(self:oMyTrans:persid,-1)),self:oMyTrans:TYPE,oHm:INCEXPFD,self:oHm:DEPID})
 		self:oMyTrans:Skip()
-	ENDDO
+	ENDDO 
+	// save aMirror:
+	self:oHm:aMirrorOrig :=AClone( self:oHm:aMirror ) 
+	
 	oGen:= General_Journal{self:Owner,,self:oHm,true}
 	oGen:FillRecord(cTransnr,self:oSFTransInquiry_DETAIL:Browser,OrigPerson,Origdat,OrigBst,OrigUser,OrigPost,self,lLocked)
 	oGen:AddCur()
@@ -3980,15 +3986,15 @@ METHOD ExportButton( ) CLASS TransInquiry
 			* detail records with complete transactions: 
 			cSelectSt:=UnionTrans("select "+self:cFields+" from "+self:cFrom+" where "+self:cWhereBase+" and transid in (" +;
 			"select distinct t.transid from "+self:cFrom+" where "+self:cWhereBase+" and "+self:cWhereSpec+" order by t.transId) order by transid,seqnr")
-			oTrans2:=SqlSelect{cSelectSt,oConn}
+			oTrans2:=SqlSelect{cSelectSt,oConn}                     
 			if oTrans2:RecCount>0
 				do WHILE !oTrans2:EoF
 					FWriteLine(ptrHandle,;
 						'"'+DToS(oTrans2:Dat)+'"'+cDelim+'"'+oTrans2:docid+'"'+cDelim+'"'+Str(oTrans2:TransId,-1)+'"'+cDelim+'"'+AllTrim(oTrans2:ACCNUMBER)+'"'+cDelim+'"'+;
-						AllTrim(oTrans2:accountname)+'"'+cDelim+'"'+AllTrim(oTrans2:Description)+'"'+cDelim;
+						AllTrim(oTrans2:accountname)+'"'+cDelim+'"'+StrTran(AllTrim(oTrans2:Description),'"','""')+'"'+cDelim;
 						+'"'+Str(oTrans2:deb,-1)+'"'+cDelim+'"'+Str(oTrans2:cre,-1)+'"'+cDelim+;
 						+'"'+Str(oTrans2:DEBFORGN,-1)+'"'+cDelim+'"'+Str(oTrans2:CREFORGN,-1)+'"'+cDelim+'"'+oTrans2:CURRENCY+'"'+cDelim+;
-						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+oTrans2:REFERENCE+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+Str(ConI(oTrans2:poststatus),-1)+'"')
+						'"'+oTrans2:GC+'"'+cDelim+'"'+Transform(oTrans2:personname,"")+'"'+cDelim+'"'+Transform(oTrans2:PPDEST,"")+'"'+cDelim+'"'+StrTran(AllTrim(oTrans2:REFERENCE),'"','""')+'"'+cDelim+'"'+Str(oTrans2:SEQNR,-1)+'"'+cDelim+'"'+Str(ConI(oTrans2:poststatus),-1)+'"')
 					oTrans2:Skip()
 				ENDDO
 			endif
@@ -4436,12 +4442,6 @@ AccountSelect(self,"","Account to transfer to",FALSE,cFilter)
 RETURN
 
 	
-RESOURCE TransInquiry_DETAIL DIALOGEX  32, 33, 547, 258
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS TransInquiry_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBTRANSID as DataColumn
@@ -4459,6 +4459,12 @@ CLASS TransInquiry_DETAIL INHERIT DataWindowExtra
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
  	Export cOrgFilter as string 
+RESOURCE TransInquiry_DETAIL DIALOGEX  32, 33, 547, 258
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TransInquiry_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
