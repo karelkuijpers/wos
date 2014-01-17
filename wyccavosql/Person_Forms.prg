@@ -340,9 +340,9 @@ METHOD Close( oEvent ) CLASS EditPerson
 		self:oSubBrws:Close()
 	endif
 
-// 	SELF:Destroy()
+	self:Destroy()
 	// force garbage collection
-	*CollectForced()
+	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 METHOD DonationsButton( ) CLASS EditPerson 
@@ -1802,7 +1802,7 @@ SELF:osfpersonsubform:Close()
 SELF:oSFPersonSubForm:Destroy()
 SELF:Destroy()	
 	// force garbage collection
-	*CollectForced()
+	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 METHOD EditButton(lNew) CLASS PersonBrowser
@@ -2136,6 +2136,7 @@ METHOD SELECT() CLASS PersonBrowser
 		ENDIF
 	ENDIF
 	self:EndWindow()
+//	self:Close()
 	
 	RETURN nil
 METHOD UnionButton( ) CLASS PersonBrowser 
