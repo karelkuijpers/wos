@@ -816,38 +816,51 @@ METHOD append() CLASS General_Journal
 	AAdd(oHm:Amirror,{'     ',oHm:Deb,oHm:Cre,'  ',' ',oHm:RECNO,0,' ','','',sCurr,false,oHm:DEBFORGN,oHm:CREFORGN,"",alltrim(oHm:DESCRIPTN),"","",oHm:INCEXPFD,0}) 
 	//                   1         2      3      4    5      6     7 8   9  10  11    12        13         14        15      16       17 18     19      20 
 RETURN true
-METHOD ChgDueAmnts(action as string,oOrig as TempTrans,oNew as TempTrans) as string CLASS General_Journal
-* Update of corresponding due amounts:
-* Action W : update of account/person
-*        WB: update amount only
-*        T : add of transaction line
-*        D : delete of transaction line
-* 
-local cError as string
-IF (oOrig:KIND=="D".or.oOrig:KIND=="A".or.oOrig:KIND=="F".or.oOrig:KIND=="M".or.oOrig:KIND=="G");
-.and..not.Empty(self:OrigPerson)
-   IF action=="WB"
-      * Update amount received of due amount:
-      return ChgDueAmnt(self:OrigPerson,oNew:AccID,oNew:deb - oOrig:deb,;
-      oNew:cre - oOrig:cre)
-   ELSEIF action=="W".or.action=="D"
-      * Reverse amount received:
-      cError:= ChgDueAmnt(self:OrigPerson,oOrig:AccID,-oOrig:Deb,-oOrig:Cre)
-      if !Empty(cError)
-      	return cError
-      endif
-   ENDIF
-ENDIF
+METHOD ChgDueAmnts(action as string,nOrig as int,nNew as int,oNew as TempTrans) as string CLASS General_Journal
+	* Update of corresponding due amounts:
+	* Action W : update of account/person
+	*        WB: update amount only
+	*        T : add of transaction line
+	*        D : delete of transaction line
+	* oNew: dbserver with new transaction vales and aMirror and aMirrorOrig
+	* nOrig: pointer to row in oNew:aMirrorOrig with original transaction values
+	* nNew : pointer to row in oNew:aMirror with new transaction values 
+	*
+	local cError as string 
+	local aOrig,aNew as array
+	if nNew<=Len(oNew:aMirror)
+		aNew:=oNew:aMirror[nNew]
+	else
+		return "No new values"
+	endif
+	if nOrig<=Len(oNew:aMirrorOrig)
+		aOrig:= oNew:aMirrorOrig[nOrig]
+		// aOrig {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+		//           1    2   3  4    5       6        7           8        9        10     11      12      13       14         15      16          17     18      19     20
+		IF (aOrig[5]=="D".or.aOrig[5]=="A".or.aOrig[5]=="F".or.aOrig[5]=="M".or.aOrig[5]=="G");
+				.and..not.Empty(self:OrigPerson)
+			IF action=="WB"
+				* Update amount received of due amount:
+				return ChgDueAmnt(self:OrigPerson,aNew[1],aNew[2] - aOrig[2],;
+					oNew:cre - aOrig[3])
+			ELSEIF action=="W".or.action=="D"
+				* Reverse amount received:
+				cError:= ChgDueAmnt(self:OrigPerson,aOrig[1],-aOrig[2],-aOrig[3])
+				if !Empty(cError)
+					return cError
+				endif
+			ENDIF
+		ENDIF
+	endif
+	IF action=="W".or.action=="T"
+		* record new amount received:
+		IF (aNew[5]=="D".or.aNew[5]=="A".or.aNew[5]=="F".or.aNew[5]=="M".or.aNew[5]=="G");
+				.and..not.Empty(self:mCLNGiver)
+			return ChgDueAmnt(self:mCLNGiver,aNew[1],aNew[2],aNew[3])
+		ENDIF
+	ENDIF
 
-IF action=="W".or.action=="T"
-   * record new amount received:
-   IF (oNew:KIND=="D".or.oNew:KIND=="A".or.oNew:KIND=="F".or.oNew:KIND=="M".or.oNew:KIND=="G");
-   .and..not.Empty(self:mCLNGiver)
-      return ChgDueAmnt(self:mCLNGiver,oNew:AccID,oNew:deb,oNew:cre)
-   ENDIF
-ENDIF
-
-RETURN ""
+	RETURN ""
 METHOD DELETE() CLASS General_Journal
  * delete record of TempTrans:
 LOCAL ThisRec, CurRec AS INT
@@ -1495,10 +1508,12 @@ METHOD ReSet() CLASS General_Journal
 		self:lMemberGiver:=FALSE 
 		self:lwaitingForExchrate:=false
 		self:oDCGiroText:TextValue:= ""
+		CollectForced()  // shrink memory
 		RETURN
 	else
-		self:EndWindow()
+		self:EndWindow() 
 		self:Close()
+		self:Destroy()
 	endif
 	
 METHOD ShowBankBalance() as void pascal CLASS General_Journal
@@ -1573,199 +1588,163 @@ METHOD Totalise(lDelete:=false as logic,lDummy:=false as logic) as logic CLASS G
 	ENDIF
 
 RETURN TRUE
-METHOD UpdateLine(oMutNew as TempTrans, oOrigMut as TempTrans,lGiver ref logic) as string CLASS General_Journal
-	* Update values of a transaction line using values within oMutNew
+METHOD UpdateLine(oMutNew as TempTrans,nOrig as int,nNew as int,lGiver ref logic) as string CLASS General_Journal
+	* Update values of a transaction line using old and new values:
+	* - oMutNew : dbserver with new values and mirror-arrays of original and new values
+	* - norig : pointer to row within oMutNew:aMirrorOrg (with original values)
+	* - nNew : pointer to row within oMutNew:aMirror (with new values) 
+	* - lGiver: retuns true if a giver is possible for this transaction
+	*
 	local cStatement as string
-	local oStmnt as SQLStatement 
-	lGiver:=(oMutNew:GC='PF'.or.oMutNew:GC = 'AG' .or. oMutNew:GC = 'MG';
-		.or. oMutNew:KIND= 'G'.or. oMutNew:KIND= 'D';
-		.or. oMutNew:KIND= 'A' .or. oMutNew:KIND = 'F' .or. oMutNew:KIND = 'C') 
-	if Empty(oMutNew:SEQNR)
+	Local aOrig as array //  array with row of original values (from aMirrorOrig)
+	local aNew as array  // array with row of new values (from aMirror)
+	local oStmnt as SQLStatement
+	if nNew <= Len(oMutNew:aMirror)
+		aNew:=oMutNew:aMirror[nNew]
+	else
+		return "No new values"
+	endif
+	if nOrig <= Len(oMutNew:aMirrorOrig)
+		aOrig:=oMutNew:aMirrorOrig[nOrig]
+	endif
+	lGiver:=(aNew[4]='PF'.or.aNew[4] = 'AG' .or. aNew[4] = 'MG';
+		.or. aNew[5]= 'G'.or. aNew[5]= 'D';
+		.or. aNew[5]= 'A' .or. aNew[5] = 'F' .or. aNew[5] = 'C') 
+	if Empty(aNew[7])
 		self:nLstSEqNr++
 	endif
-	cStatement:=iif(Empty(oMutNew:SEQNR),"insert into","update")+" transaction set "+;
-		"accid="+oMutNew:AccID+;
-		",deb="+Str(oMutNew:Deb,-1)+;
-		",cre="+Str(oMutNew:cre,-1)+;
-		",debforgn="+Str(oMutNew:debforgn,-1)+;
-		",creforgn="+Str(oMutNew:CREFORGN,-1)+;
-		",currency='"+oMutNew:Currency+"'"+;
+	cStatement:=iif(Empty(aNew[7]),"insert into","update")+" transaction set "+;
+		"accid="+aNew[1]+;
+		",deb="+Str(aNew[2],-1)+;
+		",cre="+Str(aNew[3],-1)+;
+		",debforgn="+Str(aNew[13],-1)+;
+		",creforgn="+Str(aNew[14],-1)+;
+		",currency='"+aNew[11]+"'"+;
 		",docid='"+AddSlashes(AllTrim(self:mBST))+"'"+;
 		",dat='"+SQLdate(self:mDAT)+"'"+;
-		",gc='"+AllTrim(oMutNew:GC)+"'"+;
-		",fromrpp="+ iif(oMutNew:FROMRPP,'1','0')+; 
+		",gc='"+AllTrim(aNew[4])+"'"+;
+		",fromrpp="+ iif(oMutNew:lFromRPP,'1','0')+; 
 		",opp='"+oMutNew:cOpp+"'"+;
 		",userid='"+AddSlashes(LOGON_EMP_ID)+"'"+; 
-	",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
 		",persid='"+iif(lGiver,Str(val(AllTrim(self:mCLNGiver)),-1),"0")+"'"+;
-		iif(Empty(oMutNew:SEQNR),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
-	",seqnr="+Str(self:nLstSEqNr,-1),'')+;
-		",description='"+AddSlashes(AllTrim(oMutNew:DESCRIPTN))+"'"+;
-		",reference='"+AddSlashes(AllTrim(oMutNew:REFERENCE))+"'"+; 
+		iif(Empty(aNew[7]),",transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+; 
+		",seqnr="+Str(self:nLstSEqNr,-1),'')+;
+		",description='"+AddSlashes(AllTrim(aNew[16]))+"'"+;
+		",reference='"+AddSlashes(AllTrim(aNew[15]))+"'"+; 
 	",lock_id=0"+;
 		iif(Posting,",poststatus="+ ConS(self:mPostStatus),"")+;
-		iif(sproj=oMutNew:AccID .and.(oMutNew:cre-oMutNew:Deb)>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
-		iif(!Empty(oMutNew:SEQNR).and. sproj= oOrigMut:AccID,",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
-	iif(Empty(oMutNew:SEQNR),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(oMutNew:SEQNR,-1))
+		iif(sproj=aNew[1] .and.(aNew[3]-aNew[2])>0 .and..not.Empty(self:mCLNGiver),",bfm='O'",;
+		iif(!Empty(aNew[7]).and. sproj== aOrig[1],",bfm=''",""))+;  // change from earmarked gift to non-earmarked 
+	iif(Empty(aNew[7]),""," where transid="+AllTrim(Transform(self:mTRANSAKTNR,""))+" and seqnr="+Str(aNew[7],-1))
+// 		",ppdest='"+AllTrim(oMutNew:PPDEST)+"'"+;
 
 	oStmnt:=SQLStatement{cStatement,oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:Status)
 		return oStmnt:ErrInfo:errormessage
 	else
+// amirror {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+//            1    2   3  4    5       6        7           8        9        10     11      12      13        14        15      16          17     18      19      20
 		// update balance:
-		if !Empty(oMutNew:SEQNR)
+		if !Empty(aNew[7])
 			// update balance with old content:
-			IF !ChgBalance(oOrigMut:AccID,self:OrigDat,-oOrigMut:Deb,-oOrigMut:cre,-oOrigMut:debforgn,-oOrigMut:CREFORGN,oOrigMut:Currency)
+			IF !ChgBalance(aOrig[1],self:OrigDat,-aOrig[2],-aOrig[3],-aOrig[13],-aOrig[14],aOrig[11])
 				return "balance not changed"
 			endif
 		endif
-		if !ChgBalance(oMutNew:AccID,self:mDAT,oMutNew:Deb,oMutNew:cre,oMutNew:debforgn,oMutNew:CREFORGN,oMutNew:Currency)
+		if !ChgBalance(aNew[1],self:mDAT,aNew[2],aNew[3],aNew[13],aNew[14],aNew[11])
 			return "balance not changed"
 		endif
 	endif
 	return ""
 METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	* Update of an existing transaction with the modified data in TempTrans:
-	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost as STRING, NewMut as Filespec
-	LOCAL oOrig, oNew as TempTrans
-	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int, lSucc as LOGIC
+	local nSavRec as int
+	LOCAL pnt as int
+	local i,m,nOrig,nNew as int 
+	local cError,cFatalError as string
+	LOCAL cSavFilter, cSavOrder as STRING
+	LOCAL NewIndex, OrigIndex, OrigMut, AktiePost as STRING
+	local lSucc as LOGIC
+	Local lNewPers,lGiver  as logic
 	LOCAL pFilter as _CODEBLOCK
-	LOCAL pnt as int 
-	Local lNewPers,lGiver  as logic 
+	local NewMut as Filespec
+	LOCAL oNew:=self:Server as TempTrans
+	local aOrig:=oNew:aMirrorOrig,aNew:=oNew:aMirror as array 
 	local oTransH:=self:oOwner:oMyTrans as SQLSelect
 	local oStmnt as SQLStatement
-	local cError as string
+// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
 
-	oNew:=self:server
-	NewIndex:=oNew:FileSpec:Drive+oNew:FileSpec:Path+oNew:FileSpec:FileName
-	lSucc:=oNew:CreateIndex(FileSpec{NewIndex},"StrZero(SEQNR,6)+ACCID",{||StrZero(oNew:SEQNR,6)+oNew:AccID})
-	IF !lSucc 
-		cError:='Not able to make indexfile for updates'
-		(ErrorBox{self:Owner,cError}):show()
-		RETURN cError
-	ENDIF
-	GetHelpDir()
-	OrigMut:=HelpDir+"\OR"+StrTran(Time(),":")
-	oOrig:=TempTrans{OrigMut+'.dbf'}
-	OrigIndex:=oOrig:FileSpec:Drive+oOrig:FileSpec:Path+oOrig:FileSpec:FileName
-	lSucc:=oOrig:CreateIndex(FileSpec{OrigMut},"StrZero(SEQNR,6)+ACCID",{||StrZero(oOrig:SEQNR,6)+oOrig:AccID})
-	IF !oOrig:Used.or.!oNew:Used.or.!lSucc 
-		cError:=  'Not able to make helpfile for updates'
-		(ErrorBox{self:Owner,cError}):show()
-		RETURN cError
-	ENDIF
-
-	// 	nSavRec:=self:oInqBrowse:Owner:server:Recno
 	
-	oOrig:lInqUpd:=true
-	oTransH:GoTop()
-	self:nLstSeqNr:=0
-	self:cOrgAccs:='' 
-	DO WHILE !oTransH:EOF
-		oOrig:append()
-		oOrig:AccID := Str(oTransH:AccID,-1)
-		self:cOrgAccs+=iif(empty(self:cOrgAccs),',','')+alltrim(oOrig:ACCID)
-		oOrig:AccDesc:=oTransH:AccDesc
-		oOrig:DESCRIPTN := AllTrim(oTransH:Description)
-		oOrig:ACCNUMBER := oTransH:ACCNUMBER
-		oOrig:Deb := oTransH:Deb
-		oOrig:cre :=  oTransH:cre
-		if Empty( oTransH:Currency)
-			oOrig:Currency:=sCurr
-		else 
-			oOrig:CURRENCY:= oTransH:CURRENCY
-		endif
-		if oOrig:Currency==sCurr
-			oOrig:debforgn := oTransH:Deb
-			oOrig:CREFORGN :=  oTransH:cre
-		else
-			oOrig:DEBFORGN := oTransH:DEBFORGN
-			oOrig:CREFORGN :=  oTransH:CREFORGN
-		endif
-		oOrig:GC := oTransH:GC
-		oOrig:BFM:= oTransH:BFM
-		oOrig:FROMRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
-		oOrig:lFromRPP:=iif(ConI(oTransH:FROMRPP)==1,true,false)
-		oOrig:OPP:=oTransH:OPP
-		oOrig:cOpp:= oOrig:OPP
-		oOrig:PPDEST := oTransH:PPDEST
-		oOrig:REFERENCE:=oTransH:REFERENCE
-		oOrig:SEQNR := oTransH:SEQNR
-		if oOrig:SEQNR> self:nLstSeqNr
-			self:nLstSeqNr:=oOrig:SEQNR
-		endif
-		oOrig:KIND := oTransH:accounttype
-		IF !Empty(oTransH:persid)
-			OrigPerson := Str(oTransH:persid,-1)
-		ENDIF
-		oOrig:POSTSTATUS:=ConI(oTransH:POSTSTATUS)
-		* After getting locks check again if all conditions are satisfied (could e.g be changed in the meanwhile by
-		* allotting non-earmarked gift):
-		IF (pnt:=AScan(oNew:aMIRROR,{|x|x[7]==oOrig:SEQNR}))==0 .or.; // deleted?
-			!AllTrim(oNew:aMIRROR[pnt,1])==AllTrim(oOrig:AccID).or.; //account changed?
-			!(oNew:aMIRROR[pnt,2]-oNew:aMIRROR[pnt,3])==(oOrig:DEB-oOrig:CRE) .or.; //amount changed?
-			!AllTrim(oNew:aMIRROR[pnt,4])==AllTrim(oOrig:GC)  //ass.code changed? 
-			cError:= oOrig:CheckUpdates()
-			IF !Empty(cError)
-				oOrig:Close()
-				oOrig:=null_object
-				FErase (OrigMut+".dbf")
-				FErase (OrigMut+".fpt")
-				// 				oTransH:Unlock()
-				oNew:ClearIndex(NewIndex)
-				NewIndex:= NewIndex+oNew:INdexExt
-				FErase(NewIndex)
-				RETURN cError
-			ENDIF
-		ENDIF
-		oTransH:Skip()
-	ENDDO
+	AEval(aOrig,{|x|m:=Max(m,x[7])})
+	self:nLstSEqNr:=m
+	self:cOrgAccs:=Implode(aOrig,',',,,1) 
+	if (i:=AScan(aOrig,{|x|!Empty(x[17])})) >0
+		OrigPerson:=aOrig[i,17]
+	endif
 
-	oNew:GoTop()
-	oOrig:GoTop()
-
-	DO WHILE !oOrig:EOF 
+	nOrig:=1
+	nNew:=1
+	Do while nOrig<= Len(aOrig) 
+// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
 		DO CASE
-		CASE oOrig:SEQNR== oNew:SEQNR .and. !oNew:Deb==oNew:cre
+		CASE nNew>Len(aNew).or. aOrig[nOrig,7]< aNew[nNew,7] .or. ;
+				(aOrig[nOrig,7]== aNew[nNew,7] .and. aNew[nNew,2]== aNew[nNew,3] )
+			* Line removed:
+			* Delete line corresponding with origmut:
+			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(aOrig[nOrig,7],-1),oConn}
+			oStmnt:Execute()
+			if !Empty(oStmnt:Status)
+				return oStmnt:ErrInfo:errormessage
+			endif
+			* Update balance:
+			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11])
+				return "balance not changed"
+			endif
+			cError:= self:ChgDueAmnts("D",nOrig,nNew, oNew)
+			if !Empty(cError)
+				return cError
+			endif
+			nOrig++
+		CASE aOrig[nOrig,7]== aNew[nNew,7] .and. !aNew[nNew,2]==aNew[nNew,3]   //seqnr==  and !new deb=vre
 			* Transaction line updates??:
-			IF mCLNGiver#OrigPerson
+			IF !self:mCLNGiver == OrigPerson
 				AktiePost:="W"
 			ELSE
 				AktiePost:=""
 			ENDIF
 			* When accid changed reverse old account record and add record for new account:
-			IF oOrig:AccID # oNew:AccID
+			IF !aOrig[nOrig,1] == aNew[nNew,1]   //accid <>
 				AktiePost:="W"
 			ENDIF
 			* When amounts changed update balances:
-			IF oOrig:DEB # oNew:DEB .or.oOrig:CRE # oNew:CRE
+			IF !aOrig[nOrig,2]== aNew[nNew,2] .or.!aOrig[nOrig,3]== aNew[nNew,3]    // deb or cre <>
 				IF Empty(AktiePost)
 					AktiePost:="WB"     &&aleen bedrag gewijzigd
 				ENDIF
 			ENDIF
-			* When date, accid or amounts have been updated change rerecord to new:
-			IF self:mDAT # self:OrigDat.or.;
-					oOrig:AccID # oNew:AccID .or.;
-					oOrig:deb # oNew:deb .or.;
-					oOrig:cre # oNew:cre
+			* When date, accid or amounts have been updated change record to new:
+			IF self:mDAT # self:OrigDat.or.; 
+				!aOrig[nOrig,1]== aNew[nNew,1] .or.;  //accid <>
+				!aOrig[nOrig,2]== aNew[nNew,2] .or.!aOrig[nOrig,3]== aNew[nNew,3]    // deb or cre <>
 				* Update fields of the transaction line:
-				cError:=self:UpdateLine(oNew,oOrig,@lGiver)
+				cError:=self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 				if !Empty(cError)
 					return cError
 				endif
 			ELSE
 				* Update fields of the transaction line:
-				IF	OrigBst # mBst .or.;
-						oOrig:GC # oNew:GC.or.;
-						oOrig:DESCRIPTN # oNew:DESCRIPTN.or.;
-						oOrig:REFERENCE # oNew:REFERENCE.or.;
-						oOrig:KIND # oNew:KIND.or.;
-						oOrig:Currency # oNew:CURRENCY.or.;
+				IF	OrigBst # mBST .or.;
+						!aOrig[nOrig,4]== aNew[nNew,4].or.;   //GC
+						!aOrig[nOrig,16]== aNew[nNew,16].or.;  //DESCRIPTN <>
+						!aOrig[nOrig,15]==aNew[nNew,15] .or.; // REFERENCE <>
+						!aOrig[nOrig,5]== aNew[nNew,5].or.;  //KIND <>
+						!aOrig[nOrig,11]== aNew[nNew,11].or.;//CURRENCY <>
 						mCLNGiver # OrigPerson .or. ;
-						oOrig:PPDEST # oNew:PPDEST .or.;
-						(Posting .and.oOrig:POSTSTATUS # self:mPostStatus)
-					cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+						(Posting .and. oNew:PoststatusOrig # self:mPostStatus)
+					cError:= self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 					if !Empty(cError)
 						return cError
 					endif
@@ -1775,115 +1754,81 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 				ENDIF
 			ENDIF
 			IF.not.Empty(AktiePost)
-				cError:= self:ChgDueAmnts(AktiePost,oOrig,oNew)
+				cError:= self:ChgDueAmnts(AktiePost,nOrig,nNew,oNew)
 				if !Empty(cError)
 					return cError
 				endif
 			ENDIF
-			oNew:Skip()
-			oOrig:Skip()
-		CASE oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre
+			nNew++
+			nOrig++
+		CASE aOrig[nOrig,7]== aNew[nNew,7] .and. aNew[nNew,2]==aNew[nNew,3] //SEQNR == .and. oNew:Deb==oNew:cre
 			* Remove dummy transaction line:
 			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
-			oStmnt:execute()
+			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(aOrig[nOrig,7],-1),oConn}
+			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
 				return oStmnt:ErrInfo:errormessage
 			endif
 			lDeleted:=true
 			* Update balance:
-			if !ChgBalance(oOrig:AccID,self:OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
+			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11])
 				return "balance not changed"
 			endif
-			cError:= self:ChgDueAmnts("D",oOrig, oNew)
+			cError:= self:ChgDueAmnts("D",nOrig,nNew, oNew)
 			if !Empty(cError)
 				return cError
 			endif
-			oNew:skip()
-			oOrig:skip()
+			nNew++
+			nOrig++
 			*    CASE Val(SubStr(Str(oOrig:RecNbr,9,0),3,7)) < Val(SubStr(Str(oNew:RecNbr,9,0),3,7)) .or. oNew:EOF.or.;
-		CASE oNew:EOF.or.oOrig:SEQNR < oNew:SEQNR .or. ;
-				(oOrig:SEQNR == oNew:SEQNR .and. oNew:Deb==oNew:cre)
-			* Line removed:
-			* Delete line corresponding with origmut:
-			oStmnt:=SQLStatement{"delete from transaction where transid="+AllTrim(self:oDCmTRANSAKTNR:TextValue)+" and seqnr="+Str(oOrig:SEQNR,-1),oConn}
-			oStmnt:execute()
-			if !Empty(oStmnt:Status)
-				return oStmnt:ErrInfo:errormessage
-			endif
-			* Update balance:
-			if !ChgBalance(oOrig:AccID,self:OrigDat,-oOrig:Deb,-oOrig:cre,-oOrig:debforgn,-oOrig:CREFORGN,oOrig:Currency)
-				return "balance not changed"
-			endif
-			cError:= self:ChgDueAmnts("D",oOrig, oNew)
-			if !Empty(cError)
-				return cError
-			endif
-			oOrig:skip()
-		CASE oNew:SEQNR = 0
+		CASE aNew[nNew,7] = 0
 			* Transaction line added:
-			IF !oNew:Deb==oNew:Cre // Ignore dummy transaction line
+			IF !aNew[nNew,2]== aNew[nNew,3] // Ignore dummy transaction line
 				* Append line from TempTrans
-				cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+				oNew:GoTo(aNew[nNew,6])   // position server at current row
+				cError:= self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 				if !Empty(cError)
 					return cError
 				endif
 				// 				* Update balance:
-				cError:= self:ChgDueAmnts("T", oOrig, oNew)
+				cError:= self:ChgDueAmnts("T", nOrig,nNew, oNew)
 				if !Empty(cError)
 					return cError
 				endif
 			ENDIF
-			oNew:Skip()
+			nNew++
 		ENDCASE
-	ENDDO
+	enddo
 	// process new records:
-	do while !oNew:EOF
+	do while nNew<=Len(aNew)
 		* Transaction line added:
-		IF !oNew:Deb==oNew:cre // Ignore dummy transaction line
+		IF !aNew[nNew,2]== aNew[nNew,3] // Ignore dummy transaction line
 			* Append line from TempTrans
-			cError:= self:UpdateLine(oNew,oOrig,@lGiver)
+			cError:= self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 			if !Empty(cError)
 				return cError
 			endif
-			cError:= self:ChgDueAmnts("T", oOrig, oNew)
+			cError:= self:ChgDueAmnts("T", nOrig,nNew, oNew)
 			if !Empty(cError)
 				return cError
 			endif
 		ENDIF
 		
-		oNew:Skip()
+		nNew++
 	enddo
-	// 	if !mCLNGiver==OrigPerson .and. !lNewPers
-	// 		(WarningBox{,"Saving Transaction","Person not updated because no applicable transaction line"}):show()
-	// 	endif
+ 	aNew:=null_array
+	aOrig:=null_array
 
 	oNew:ClearIndex(NewIndex)
-	Newmut:=FileSpec{NewIndex}
+	NewMut:=FileSpec{NewIndex}
 	NewMut:Extension:=oNew:INdexExt
 	oNew:Close()
-	oNew:=null_object
-	NewMut:Delete()
+	NewMut:DELETE()
 	NewMut:Extension:="dbf"
-	NewMut:Delete()
-// 	NewMut:Extension:="fpt"
-// 	NewMut:Delete()
+	NewMut:DELETE()
+	NewMut:Extension:="fpt"
+	NewMut:DELETE()
 
-	OrigIndex:=oOrig:FileSpec:Path+oOrig:FileSpec:FileName
-	oOrig:ClearIndex(OrigIndex)
-	OrigIndex:=OrigIndex+oOrig:INdexExt
-	oOrig:close()
-	//oNew:close()
-	oOrig:=null_object
-	FErase(OrigIndex)
-	FErase (Origmut+".dbf")
-// 	FErase (Origmut+".fpt")
-	// 	if self:oOwner:lShowFind
-	// 		self:oOwner:FindButton()
-	// 	else
-	// 		self:oOwner:ShowSelection()
-	// 	endif
-	// 	oInqBrowse:Owner:GoTo(nSavRec)
 	RETURN ""
 METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as logic CLASS General_Journal
 	* lNoMessage: True: Do not show error message
@@ -2199,9 +2144,9 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			endif				
 		endif
 		// add to gifts income: 
-		//             1    2   3  4    5       6         7         8          9       10     11      12      13       14      15        16        17    18      19
-		// mirror: {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd}
-		For i:=1 to Len(oHm:aMIRROR)
+		// amirror {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+		//            1    2   3  4    5       6        7           8        9        10     11      12      13        14        15      16          17     18      19      20
+		For i:=1 to Len(oHm:Amirror)
 			oHm:GoTo(i)
 			if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
 				// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
@@ -2222,7 +2167,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					",userid='"+LOGON_EMP_ID +"'"+;
 					",fromrpp="+iif(oHm:FROMRPP,"1","0")+;
 					",opp='"+oHm:cOpp+"'"+;
-					",ppdest='"+SubStr(AllTrim(oHm:aMIRROR[i,15]),15)+"'"+; 
+					",ppdest='"+AllTrim(oHm:PPDest)+"'"+; 
 				",currency='"+AllTrim(oHm:aMIRROR[i,11]) +"'"+;
 					",debforgn="+Str(oHm:aMIRROR[i,13],-1)+;
 					",creforgn="+Str(oHm:aMIRROR[i,14],-1)+;
@@ -2230,6 +2175,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
 				",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
 					iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:cre>oHm:Deb,",bfm='O'","")
+//					",ppdest='"+SubStr(AllTrim(oHm:Amirror[i,15]),15)+"'"+; 
 				oStmnt:=SQLStatement{cStatement,oConn}
 				oStmnt:Execute()
 				if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
@@ -2371,9 +2317,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	ENDIF
 	oHm:ResetNotification()	
 	if !lError
-		// 			oStmnt:=SQLStatement{"commit",oConn}
-		// 			oStmnt:Execute() 
-		// 			if Empty(oStmnt:Status) 
 		IF !Empty(self:mCLNGiver)
 			*  update data of giver:
 			i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
@@ -2418,9 +2361,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			self:oDCmTRANSAKTNR:TEXTValue := cTransnr
 		endif
 	endif 
-	// 	else
-	// 		ENDIF
-	// 	ENDIF
 	IF lError
 		SQLStatement{"rollback",oConn}:execute()
 		SQLStatement{"unlock tables",oConn}:execute()
@@ -2438,15 +2378,10 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	SQLStatement{"set autocommit=1",oConn}:execute() 
 	if CountryCode=='7'
 		// log for russia: 
-		if !CheckConsistency(self,true,false,@cFatalError)
-			if self:lInqUpd
-				self:oOwner:oMyTrans:GoTop()
-				do while !self:oOwner:oMyTrans:EOF
-					cOrig+='acc='+ self:oOwner:oMyTrans:ACCNUMBER+', deb='+Str(self:oOwner:oMyTrans:Deb,-1)+',cre='+ Str(self:oOwner:oMyTrans:cre,-1)+CRLF
-					self:oOwner:oMyTrans:Skip()
-				enddo
-			endif 
-			LogEvent(self,iif(self:lInqUpd,"Update trans "+self:oDCmTRANSAKTNR:TEXTValue+'('+cOrig+')',"insert "+cTransnr)+' new: '+Implode(oHm:Amirror,',',,,,')'+CRLF+'('),"logdebug")
+		if !CheckConsistency(self,true,false,@cFatalError) 
+			LogEvent(self,"Update trans "+self:oDCmTRANSAKTNR:TEXTValue+' old:'+CRLF+;
+			Implode( oHm:aMIRROROrig ,',',,,,')'+CRLF+'(')+CRLF+;
+			' new: '+CRLF+Implode(oHm:Amirror,',',,,,')'+CRLF+'('),"logdebug")
 		endif
 	endif
 	self:Pointer := Pointer{POINTERARROW}
@@ -2739,61 +2674,67 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 	ENDIF
 	myColumn:= oColumn
 	ThisRec:=oHm:RECNO
-	IF myColumn:NameSym == #AccNumber
-		IF !AllTrim(myColumn:TextValue) == ;
-				AllTrim(oHm:aMirror[ThisRec,8]) && new value?
-			oHm:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
-			myOwnerOwner:AccntProc(AllTrim(myColumn:VALUE))
-		ENDIF
-	ELSEIF myColumn:NameSym == #DEBFORGN 
-		IF !Round(myColumn:VALUE,2) == Round(oHm:aMirror[ThisRec,13],2)
-			myOwner:DebCreProc(false)
-			myOwnerOwner:Totalise(false,false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #CREFORGN 
-		myValue:=Round(oHm:aMirror[ThisRec,14],2)
-		IF !Round(myColumn:VALUE,2) == myValue
-			myOwner:DebCreProc(false)
-			myOwnerOwner:Totalise(false,false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #CURRENCY
-		IF !AllTrim(myColumn:VALUE) == oHm:aMirror[ThisRec,11]
-			oHm:aMirror[ThisRec,11]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:VALUE
-			oHm:CURRENCY:=myColumn:VALUE
-			myOwner:DebCreProc(false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #PPDEST .and.oHm:aMirror[ThisRec,1]==sToPP .and.!Empty(sToPP)
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,15])
-			oHm:aMirror[ThisRec,15]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:VALUE
-			oHm:PPDEST:=AllTrim(myColumn:VALUE)
-		ENDIF
-	ELSEIF myColumn:NameSym == #GC
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,4])
-			oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:VALUE
-			oHm:gc:=myColumn:VALUE
-			IF !Empty(oHm:CheckUpdates())
-				* restore old value:
-				oHm:gc:=oHm:aMirror[ThisRec,4] 
-				RETURN
-			ELSE
-				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
-				if !oHm:lFilling
-					myOwnerOwner:lStop:=false
-				endif
-				myOwnerOwner:ValidateTempTrans(false,@j)
+	if Len(oHm:aMirror)>=ThisRec 
+		IF myColumn:NameSym == #AccNumber 
+			IF Len(oHm:aMirror[ThisRec])>=8 .and.!AllTrim(myColumn:TextValue) == ;
+					AllTrim(oHm:aMirror[ThisRec,8]) && new value?
+				oHm:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
+				myOwnerOwner:AccntProc(AllTrim(myColumn:VALUE))
 			ENDIF
+		ELSEIF myColumn:NameSym == #DEBFORGN 
+			IF Len(oHm:aMirror[ThisRec])>=13 .and.!Round(myColumn:VALUE,2) == Round(oHm:aMirror[ThisRec,13],2)
+				myOwner:DebCreProc(false)
+				myOwnerOwner:Totalise(false,false)
+			ENDIF
+		ELSEIF myColumn:NameSym == #CREFORGN 
+			if Len(oHm:aMirror[ThisRec])>=14
+				myValue:=Round(oHm:aMirror[ThisRec,14],2)
+				IF !Round(myColumn:VALUE,2) == myValue
+					myOwner:DebCreProc(false)
+					myOwnerOwner:Totalise(false,false)
+				ENDIF
+			endif
+		ELSEIF myColumn:NameSym == #CURRENCY
+			IF Len(oHm:aMirror[ThisRec])>=11 .and.!AllTrim(myColumn:VALUE) == oHm:aMirror[ThisRec,11]
+				oHm:aMirror[ThisRec,11]:=AllTrim(myColumn:VALUE)
+				myColumn:TextValue:= myColumn:VALUE
+				oHm:CURRENCY:=myColumn:VALUE
+				myOwner:DebCreProc(false)
+			ENDIF
+		ELSEIF myColumn:NameSym == #REFERENCE .and.!AllTrim(myColumn:VALUE) == oHm:aMirror[ThisRec,15]
+			IF Len(oHm:aMirror[ThisRec])>=15 .and.!AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,15])
+				oHm:aMirror[ThisRec,15]:=AllTrim(myColumn:VALUE)
+				myColumn:TextValue:= myColumn:VALUE
+				oHm:REFERENCE:=AllTrim(myColumn:VALUE)
+			ENDIF
+		ELSEIF myColumn:NameSym == #GC
+			IF Len(oHm:aMirror[ThisRec])>=4 .and.!AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,4])
+				oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
+				myColumn:TextValue:= myColumn:VALUE
+				oHm:gc:=myColumn:VALUE
+				IF !Empty(oHm:CheckUpdates())
+					* restore old value:
+					oHm:gc:=oHm:aMirror[ThisRec,4] 
+					RETURN
+				ELSE
+					oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
+					if !oHm:lFilling
+						myOwnerOwner:lStop:=false
+					endif
+					myOwnerOwner:ValidateTempTrans(false,@j)
+				ENDIF
+			ENDIF
+		elseif myColumn:NameSym == #DESCRIPTN
+			if !oHm:lFilling
+				myOwnerOwner:lStop:=false
+			endif
+			if Len(oHm:aMirror[ThisRec])>=16 
+				oHm:aMirror[ThisRec,16]:=alltrim(myColumn:Value)
+			endif
+		ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
+			self:SetColumnFocus(#DESCRIPTN)
 		ENDIF
-	elseif myColumn:NameSym == #DESCRIPTN
-		if !oHm:lFilling
-			myOwnerOwner:lStop:=false
-		endif
-		oHm:aMirror[ThisRec,16]:=alltrim(myColumn:Value)
-	ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
-		self:SetColumnFocus(#DESCRIPTN)
-	ENDIF
+	endif
 	RETURN 
 CLASS PaymentBrowser INHERIT GeneralBrowser
 METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
@@ -3898,11 +3839,13 @@ METHOD ReSet() CLASS PaymentJournal
 	if IsObject(oHm) .and.!oHm==null_object
 		oHm:Zap()
 		oHm:aMirror:={}
-		self:AutoRec:=FALSE
+		self:AutoRec:=FALSE 
+		CollectForced()    // shrink memory
 		RETURN
 	else
 		self:EndWindow()
 		self:Close()
+		self:Destroy()
 	endif
 Method SpecialMessage() class PaymentJournal
 	LOCAL oHm:=self:server as TempGift
@@ -4611,8 +4554,8 @@ METHOD CheckUpdates(oTransH:=nil as SQLSelect) as string CLASS TempTrans
 	ENDIF
 	// 	ThisRec:=AScan(amMirror,{|x|x[6]=mRecno})
 	ThisRec:=mRecno
-	if !Empty(aMirror) .and. ThisRec>0
-		if !Empty(aMirror[ThisRec,7]) .and. !empty(oTransH) //seqnr
+	if ThisRec>0 .and. Len(aMIRROR)>= ThisRec 
+		if !empty(oTransH) .and.!Empty(aMirror[ThisRec,7])  //seqnr
 			mSeqnr:=aMIRROR[ThisRec,7]
 			oTransH:GoTop()
 			do while !oTransH:SEQNR==mSeqnr
