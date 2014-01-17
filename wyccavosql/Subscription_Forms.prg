@@ -1101,7 +1101,7 @@ METHOD Close(oEvent) CLASS SubscriptionBrowser
 SELF:oSFSubscriptionBrowser_DETAIL:Close()
 SELF:oSFSubscriptionBrowser_DETAIL:Destroy()
 SELF:Destroy()
-
+CollectForced()
 RETURN NIL
 
 METHOD DeleteButton( ) CLASS SubscriptionBrowser
