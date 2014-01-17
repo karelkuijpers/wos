@@ -15,23 +15,24 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 			if self:mPayMethod='C' .and. sepaenabled // direct debit 
 				if Empty(self:oDCmInvoiceID:TextValue) .or.(Left(self:oDCmInvoiceID:TextValue,6)=='WDD-A-'.and. Right(AllTrim(self:oDCmInvoiceID:TextValue),3+Len(self:mcln))=='-P-'+self:mcln)
 					// when new invoiceid (mandateid) .or. generated invoiceid change it in case of other account: 
-					cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
-					// check if already present:
-					oSel:=SqlSelect{"select subscribid,invoiceid from subscription where personid="+self:mcln+;
-					' and substr(invoiceid,1,'+Str(Len(cInvoice),-1)+')="'+cInvoice+'"'+iif(Empty(self:msubid),'',' and subscribid<>'+self:msubid)+' order by invoiceid desc limit 1',oConn}
-					if oSel:RecCount=1
-						aMndt:=Split(oSel:invoiceid,'-P-')
-						if Len(aMndt)=2
-							aMndt:=Split(aMndt[2],'-')
-							if Len(aMndt)=1
-								cInvoice+='-2'
-							else
-								cInvoice+='-'+Str(Val(aMndt[2])+1,-1) 
-							endif
-						else
-							cInvoice+='-1'
-						ENDIF
-					endif 
+// 					cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
+// 					// check if already present:
+// 					oSel:=SqlSelect{"select subscribid,invoiceid from subscription where personid="+self:mcln+;
+// 					' and substr(invoiceid,1,'+Str(Len(cInvoice),-1)+')="'+cInvoice+'"'+iif(Empty(self:msubid),'',' and subscribid<>'+self:msubid)+' order by invoiceid desc limit 1',oConn}
+// 					if oSel:RecCount=1
+// 						aMndt:=Split(oSel:invoiceid,'-P-')
+// 						if Len(aMndt)=2
+// 							aMndt:=Split(aMndt[2],'-')
+// 							if Len(aMndt)=1
+// 								cInvoice+='-2'
+// 							else
+// 								cInvoice+='-'+Str(Val(aMndt[2])+1,-1) 
+// 							endif
+// 						else
+// 							cInvoice+='-1'
+// 						ENDIF
+// 					endif
+					cInvoice:=UpdatemandateId(self:mAccNumber,self:mcln,self:msubid) 
 					self:mInvoiceID:=cInvoice
 					self:oDCmInvoiceID:Show() 
 					self:oDCInvoiceText:Show()
@@ -47,7 +48,7 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 		self:mInvoiceID:=cInvoice
 	ENDIF
 
-	RETURN
+	RETURN 
 METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 	IF oAcc==NULL_OBJECT
 		SELF:mRek:=" "
