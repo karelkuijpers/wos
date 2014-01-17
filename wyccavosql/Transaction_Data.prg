@@ -613,12 +613,13 @@ CLASS TempTrans INHERIT DBSERVEREXTRA
 	//USER CODE STARTS HERE (do NOT remove this line)    
 	EXPORT oBrowse as Databrowser
 	EXPORT lInqUpd,lFilling,lExisting,lOnlyRead,lFromRPP as LOGIC
+	EXPORT PoststatusOrig as int
 	EXPORT cOpp as string
 	EXPORT aTeleAcc as ARRAY
 	EXPORT oDat as date
-	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,PPDEST, description,persid,type, incexpfd,depid}
-//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15      16          17     18      19       20
-   
+	EXPORT aMIRROR:={} as ARRAY && mirror-array of TempTrans with values {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference,description,persid,type, incexpfd,depid}
+//                                                                         1    2   3  4    5       6        7           8        9        10     11      12      13        14     15         16          17     18      19       20
+   EXPORT aMirrorOrig:={} as array // copy of original aMirror
    declare method CheckUpdates
 
 ACCESS  ACCDESC  CLASS TempTrans
