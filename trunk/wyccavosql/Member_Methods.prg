@@ -108,13 +108,18 @@ METHOD RegDepartment(myNum,myItemName) CLASS EditMember
 	ENDIF
 	RETURN
 METHOD RegPerson(oCLN,ItemName) CLASS EditMember
+local oSel as SQLSelect
 IF !Empty(oCLN) .and. !IsNil(oCLN).and.!oCLN:EoF
 	IF ItemName=="Member"
 		self:mCLN :=  Str(oCLN:persid,-1)
 		self:cMemberName := GetFullName(self:mCLN,0)
 		self:oDCmPerson:TEXTValue := self:cMemberName
-		
-		self:mCod:=SQLSelect{"select mailingcodes from person where persid="+self:mCLN,oConn}:mailingcodes
+		oSel:= SqlSelect{"select mailingcodes from person where persid='"+self:mCLN+"'",oConn} 
+		if oSel:RecCount>0
+			self:mCod:=oSel:mailingcodes
+		else
+			self:mCod:=""
+		endif
 	ELSEIF ItemName=='Contact Person'   // contact person:
 		self:mCLNContact :=  Str(oCLN:persid,-1)
 		self:cContactName := GetFullName(self:mCLNContact,0)
