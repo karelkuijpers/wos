@@ -16,6 +16,36 @@ function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
 Function AddSlashes(cString as string) as string
 // add backslashes for special characters ',",\,%,_
 return StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"')
+Function AddSubBal(a_bal as array,ParentNum as int, nCurrentRec as int,aBalIncl ref array) as int
+	* Find subdepartments and add to arrays with balance items
+	local nSubRec as int
+	local lFirst:=true as logic
+	// reposition the customer server to the searched record
+	nCurrentRec:=AScan(a_bal,{|x|x[2]==ParentNum},nCurrentRec+1)
+	IF Empty(nCurrentRec)
+		return nCurrentRec
+	ENDIF
+	AAdd(aBalIncl,a_bal[nCurrentRec,1])
+	do WHILE nSubRec > 0 .or. lFirst
+		lFirst:=false
+		nSubRec:=AddSubBal(a_bal,a_bal[nCurrentRec,1],nSubRec,@aBalIncl)
+	ENDDO	
+	RETURN nCurrentRec
+Function AddSubDep(d_dep as array,ParentNum as int, nCurrentRec as int,aDepIncl ref array) as int
+	* Find subdepartments and add to arrays with departments
+	local nSubRec as int
+	local lFirst:=true as logic
+	// reposition the customer server to the searched record
+	nCurrentRec:=AScan(d_dep,{|x|x[2]==ParentNum},nCurrentRec+1)
+	IF Empty(nCurrentRec)
+		return nCurrentRec
+	ENDIF
+	AAdd(aDepIncl,d_dep[nCurrentRec,1])
+	do WHILE nSubRec > 0 .or. lFirst
+		lFirst:=false
+		nSubRec:=AddSubDep(d_dep,d_dep[nCurrentRec,1],nSubRec,@aDepIncl)
+	ENDDO	
+	RETURN nCurrentRec
 Function aDiff(aArr1 as array,aArr2 as Array) as string
 // determine difference between two arrays
 Local i,j, L1:=Len(aArr1), L2:=Len(aArr2) as int 
@@ -500,6 +530,14 @@ CLASS DataDialogMine inherit DataDialog
 	Export oLan as Language 
 	
 // 	declare method FillMbrProjArray
+METHOD Close(oEvent)  CLASS DataDialogMine
+// force garbage collection
+	self:Destroy()
+	CollectForced()
+	IF !_DynCheck()
+		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
+	ENDIF   
+RETURN SUPER:Close(oEvent)
 
 METHOD FillMbrProjArray() CLASS DataDialogMine 
 // Fill 3 arrays: home members, non home members, projects
@@ -529,7 +567,6 @@ EXPORT lImport,lExists as LOGIC
 PROTECT lNew as LOGIC
 PROTECT lImportAutomatic:=true as LOGIC // In case of General Import: no asking for confirmation per record
 EXPORT lImportFile as LOGIC
-EXPORT oImport as ImportMapping
 Export oLan as Language
 protect nFindRec as int, aKeyW as array 
 protect cFindText as string
@@ -543,10 +580,12 @@ METHOD Close(oEvent)  CLASS DataWindowExtra
        	self:lImport:=FALSE
        	self:Pointer := Pointer{POINTERARROW}
 	ENDIF
-/*	CollectForced()
+	self:Destroy()
+// force garbage collection
+	CollectForced()
 	IF !_DynCheck()
 		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
-	ENDIF    */
+	ENDIF   
 
 RETURN SUPER:Close(oEvent)
 method CompareKeyWords(aValue as array) as logic class DataWindowExtra 
@@ -950,7 +989,7 @@ function FileStart(cFilename as string, OwnerWindow as Window ) as dword
 	END				
 
 	RETURN lpExitCode
-Function FillBalYears() as array
+Function FillBalYears() 
 // Returns available balance years:
 local oSel as SQLSelect
 local cYearMonth as string 
@@ -964,7 +1003,9 @@ if oSel:RecCount>0
 		oSel:Skip()
 	enddo
 endif
-return GlBalYears
+GlBalYears:=DynToOldSpaceArray(GlBalYears)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+
+return
 Function FillCountryNames() 
 local oLan:=Language{} as Language
 CountryNames:={{"AT",oLan:wget("Austria")},;
@@ -1005,7 +1046,9 @@ CountryNames:={{"AT",oLan:wget("Austria")},;
 {"BL",oLan:wget("Saint Barth‚lemy")},;
 {"MF",oLan:wget("Saint Martin (French part)")},;
 {"PM",oLan:wget("Saint Pierre and Miquelon")},;
-{"SK",oLan:wget("Slovakia")}}
+{"SK",oLan:wget("Slovakia")}} 
+CountryNames:=DynToOldSpaceArray(CountryNames)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+
 
  
 
@@ -1073,7 +1116,9 @@ function FillIbanregistry()
 		{"TR","TR2!n5!n1!c16!c",26,0},;
 		{"AE","AE2!n19!n",23,0},;  
 	{"GB","GB2!n4!a6!n8!n",22,1},;
-		{"VG","VG2!n4!a16!n",24,0} } 
+		{"VG","VG2!n4!a16!n",24,0} }
+	iban_registry:=DynToOldSpaceArray(iban_registry)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+ 
 Function FillMbrProjArray(aProjects as array,aMemHome as array,aMemNonHome as array) as void pascal
 LOCAL oSQL as SQLSelect
 
@@ -1130,6 +1175,8 @@ mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE)
 ASize(mail_abrv,Len(mail_abrv)+1)
 AIns(mail_abrv,1) 
 mail_abrv[1]:={' ',''}
+pers_codes:=DynToOldSpaceArray(pers_codes)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+mail_abrv:=DynToOldSpaceArray(mail_abrv)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 
 RETURN 
 FUNCTION FillPersGender() as void pascal
@@ -1154,6 +1201,8 @@ FUNCTION FillPersProp ()
 			AAdd(pers_propextra,{oPersProp:name, oPersProp:ID,oPersProp:type,Lower(oPersProp:VALUES)})
 			oPersProp:Skip()
 		ENDDO 
+		pers_propextra:=DynToOldSpaceArray(pers_propextra)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+
 	endif
 	RETURN 
 
@@ -1169,16 +1218,20 @@ Pers_Types:= oPersTp:GetLookupTable(500,#DESCRPTN,#ID)
 oPersTp:GoTop()
 pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
 return
-function FillPP() as array
+function FillPP(lDistribution:=false as logic) as array
 	local oPP as SQLSelect
-oPP:=SqlSelect{"select concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))) as ppname ,ppcode from ppcodes where ppcode<>'AAA' and ppcode<>'ACH'",oConn}
-// oPP:SetFilter({||!oPP:PPCODE=="AAA".and. !oPP:PPCODE=="ACH" .and.!Empty(oPP:PPCODE)})
-// oPP:GoTop()
-return oPP:GetLookupTable(500,#PPNAME,#PPCODE)
+	local aPP:={} as array
+oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where ppcode<>'AAA' and ppcode<>'ACH'"),oConn}
+if oPP:RecCount>0
+	AEval(Split(oPP:ppgroup,'#$#'),{|x|AAdd(aPP,Split(x,'#%#'))})
+endif
+return aPP
 
 FUNCTION FillPropTypes()
 * Fill Array with person property types
 prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
+prop_types:=DynToOldSpaceArray(prop_types)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+
 return
 FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as string,aBalIncl:=null_array as array,aDepIncl:=null_array as array) as void
 	// add conditinally accstr to aAcc
@@ -1561,17 +1614,22 @@ ENDIF
 RETURN AllTrim(f_row)
 function GetHelpDir()
 
-if Len(Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0
-//if nLen>0 
-	HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
-elseIF Len(Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
-	HelpDir:="C:\Windows\Temp"
-ELSEIF Len(Directory("C:\TEMP",FA_DIRECTORY))>0
-	HelpDir:="C:\TEMP"
-ELSE 
-	DirMake("C:\TEMP")
-	HelpDir:="C:\TEMP"
-ENDIF 
+	if Len(Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0
+		//if nLen>0 
+		HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
+	elseIF Len(Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
+		HelpDir:="C:\Windows\Temp"
+	ELSEIF Len(Directory("C:\TEMP",FA_DIRECTORY))>0
+		HelpDir:="C:\TEMP"
+	ELSE 
+		DirMake("C:\TEMP")
+		HelpDir:="C:\TEMP"
+	ENDIF
+	if IsOldSpace(HelpDir)
+		OldSpaceFree(HelpDir)
+	endif
+	HelpDir:=DynToOldSpaceString(HelpDir)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+	return
 Function GetMailAbrv(cCode as string) as string
 	* Return abbrevation corresponding with given pers_code
 	LOCAL nPtr as int
@@ -2127,12 +2185,14 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		sSTRZIPCITY := ConI(oSys:STRZIPCITY)
 		ClosingMonth:=oSys:CLOSEMONTH
 		Alg_Taal := oSys:CrLanguage
+		Alg_Taal := DynToOldSpaceString(Alg_Taal)  // save in static memory outside garbage collector
 		Mindate:=oSys:Mindate 
 		if Empty(LstYearClosed)
 			LstYearClosed:=Mindate
 		endif
 
 		CountryCode:=AllTrim(oSys:COUNTRYCOD)
+  		CountryCode:=DynToOldSpaceString(CountryCode)  // save in static memory outside garbage collector
  		requiredemailclient:=ConI(oSys:MAILCLIENT)
 		maildirect:=ConL(oSys:maildirect)
 		if !Empty(MYEMPID)
@@ -2162,7 +2222,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		endif
 	ENDIF 
 	// determine available balance years: 
-	GlBalYears:=FillBalYears() 
+	FillBalYears() 
 	// determine local date format for retrieval with mysql:
 	LocalDateFormat:=StrTran(StrTran(StrTran(DToC(SToD("19991230")),"1999","%Y"),"30","%d"),"12","%m")
 
@@ -2193,7 +2253,9 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		DO WHILE !oSel:EOF
 			AAdd(BankAccs,Str(oSel:accid,-1))
 			oSel:Skip()
-		ENDDO
+		ENDDO 
+		BankAccs:=DynToOldSpaceArray(BankAccs)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+
 		oSel:=SQLSelect{"select count(*) from bankaccount where telebankng>0 and accid",oConn}
 		IF oSel:RecCount>0
 			TeleBanking:=true
@@ -2420,7 +2482,7 @@ METHOD AddSubDep(aDep as array,ParentNum:=0 as int, nCurrentRec:=0 as int) as in
 	if aItem[nCurrentRec,5]>0 // accounts under it? 
 		AAdd(aDep,{aItem[nCurrentRec,4]+Space(1)+aItem[nCurrentRec,3],nCurNum})
 	endif
-   
+	
 	// add all child departments:
 	DO WHILE true
 		nChildRec:=self:AddSubDep(aDep,nCurNum, nChildRec)
@@ -3718,15 +3780,19 @@ function SetAccFilter(WhatFrom as int) as string
 		endif
 	endif
 	return Implode(aBalIncl,",")
-	Function SetCollate() 
-		if CountryCode='41'
-			Collate:=" COLLATE utf8_danish_ci"
-		elseif CountryCode='46'
-			Collate:=" COLLATE utf8_swedish_ci" 
-		else
-			Collate:=''
-		endif
+Function SetCollate() 
+	if CountryCode='41'
+		Collate:=" COLLATE utf8_danish_ci"
+	elseif CountryCode='46'
+		Collate:=" COLLATE utf8_swedish_ci" 
+	else
+		Collate:=''
+	endif
 	return
+	if IsOldSpace(Collate)
+		OldSpaceFree(Collate)
+	endif
+	Collate:=DynToOldSpaceString(Collate)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 function SetDepFilter(WhoFrom as int) as string 
 	// compose filter for department branch from given WhoFrom depid 
 	LOCAL i,j			as int
