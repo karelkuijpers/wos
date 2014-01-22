@@ -1198,7 +1198,7 @@ IF !Empty(oCLN) .and. IsObject(self:Server)
 	endif
 
 ENDIF
-RETURN true
+RETURN 
 METHOD SkipNext() CLASS PersonBrowser
 
 	SELF:oSFPersonSubForm:Browser:SuspendUpdate()
@@ -3021,8 +3021,6 @@ METHOD Show() CLASS SelPers
 		ENDIF
 	ENDIF
    self:Close()
-	self:Destroy()
-	CollectForced()
 	RETURN
 Method ExtraPropCondition(aPropExValues as array) as void Pascal Class SelPersMailCd
 	// compose extra properties selection condition: 
@@ -3799,7 +3797,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	LOCAL fSum:=0,fMbal as FLOAT, GrandTotal:=0,AmountInvoice,fLimitInd,fLimitBatch as float
 	LOCAL oReport as PrintDialog, headinglines as ARRAY 
 	local nRow, nPage,i,j,nTerm, nSeq,nSeqnbr,nTransId,nChecksum,SeqTp,nGrpnbr  as int
-	LOCAL lError,lSetAMPM as LOGIC
+	LOCAL lError,lSetAMPM,lAppend:=false as LOGIC
 	local dlg,invoicedate,dReqCol,dSenddate as date
 	LOCAL ptrHandle 
 	
@@ -3822,7 +3820,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	//                 1                2               3              4                                                                    1      2   
 	local aGrp:={} // array with total per group: {{sqtype,PmtInfId,reqcolldate,total transactions, ctrl sum},...    
 	local aDescr:=ArrayNew(13) as array
-	local DrctDbtTxInf:={} as array  // array with output per DrctDbtTxInf
+	local DrctDbtTxInf:={} as array  // array with output per DrctDbtTxInf 
+	local ToFileFS as FileSpec
 	Local oWarn as TextBox
 	local oMBal as Balances
 	local oSel as SQLSelect
@@ -4031,8 +4030,6 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		RETURN FALSE
 	ENDIF
 	self:Pointer := Pointer{POINTERHOURGLASS}
-	* Datafile aanmaken:
-	cFilename := CurPath + "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml' 
 	// calculate date to send and requested collection dates:
 	cErrMsg:='' 
 	dSenddate:=Today()
@@ -4181,7 +4178,9 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if TextBox{self,self:oLan:WGet("Direct Debit"),self:oLan:WGet("Total direct debit amount")+' '+Str(fSum,-1)+' '+self:oLan:WGet("is above limit")+'! ('+Str(fLimitBatch,-1)+sCurr+')'+CRLF+self:oLan:WGet("Continue")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}:Show()==BOXREPLYNO
 			return false
 		endif
-	endif
+	endif 
+		* Datafile aanmaken:
+	cFilename := "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml' 
 	oWarn:=TextBox{self,self:oLan:WGet("Direct Debit"),;
 		self:oLan:WGet("Printing O.K.")+'? '+self:oLan:WGet("Can file")+;
 		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+' transactions('+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
@@ -4191,6 +4190,12 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oMainWindow:STATUSMESSAGE("Producing SEPA Direct Debit file, moment please")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	* Prepare Datafile:
+	cFilename:=cFilename := "\SEPADD"+DToS(Today())+Str(nSeq,-1) 
+	ToFileFS:=AskFileName(self,@cFilename,"Creating SEPA_DD-file","*.XML","XML Data",@lAppend) 
+	if Empty(ToFileFS)
+		return false
+	endif
+	cFilename:=ToFileFS:FullPath 
 	ptrHandle := MakeFile(self,@cFilename,"Creating SEPA_DD-file")
 	IF ptrHandle = F_ERROR .or. ptrHandle==nil
 		self:Pointer := Pointer{POINTERARROW}
