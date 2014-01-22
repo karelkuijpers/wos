@@ -245,23 +245,21 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	**********************************************************************************************
 	*
 	LOCAL aant_gev,rektel, i,j,BalStrt  as int
-	LOCAL mType,m_cat:="",cHeading,CurHeading,m_accid,m_balId, cBalName as STRING
-	LOCAL Totalize as LOGIC
 	LOCAL BalYear,BalMonth,CurBalId as int
-	LOCAL PrvYr_YtD as FLOAT
-	LOCAL TopWhatPtr, TopWhoPtr AS INT
 	LOCAL nCurRec, Bal_Ptr,Dep_Ptr,net_ptr,nCurAcc,nRecno as int
-	LOCAL d_sort:={},b_sort:={},accnts:={}, d_PrfLssPrYr:={} as ARRAY
-	LOCAL lSaveWho, lSaveWhat AS LOGIC
-	LOCAL YearGranularity as LOGIC 
+	LOCAL TopWhatPtr, TopWhoPtr as int
 	Local iLine:=self:iLine, iPage:=self:iPage as int 
-	local aBalYr:={} as array 
-	Local oAcc,oBal,oDep as SQLSelect
-	local oMbal as balances
+	LOCAL PrvYr_YtD as FLOAT
 	local fPrvYr_bal,fPrvYr_YtD,fPrvPer_bal,fper_bal,fYr_Bud,fPer_Bud,fYTDbud as float   // totals per department for details per department 
+	LOCAL mType,m_cat:="",cHeading,CurHeading,m_accid,m_balId, cBalName as STRING
+	local cStatement as string   // string with selection of accounts and their total values 
+	LOCAL Totalize as LOGIC
+	LOCAL lSaveWho, lSaveWhat as LOGIC
+	LOCAL YearGranularity as LOGIC 
+	LOCAL d_sort:={},b_sort:={},accnts:={}, d_PrfLssPrYr:={} as ARRAY
+	local aBalYr:={} as array 
 	local aSQL:={} as array   // array with cFields,cFrom,cWhere and cGroup to retreive accounts with theier balances
 	local aItem:={} as array  // temporary array with all department or balance items
-	local cStatement as string   // string with selection of accounts and their total values 
 	// 	local aAcc:={} as array   // array with detail values of accounts
 	* 	Arrays for balance items:
 	LOCAL r_balid:={},;
@@ -297,9 +295,11 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	rd_BalPer:={},;  // idem
 	rd_bud:={},;  // idem
 	rd_budper:={},;  // idem
-	rd_budytd:={} as array // idem
-	// LOCAL BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff as STRING
-	// 	IF self:SendToMail
+	rd_budytd:={} as array // idem 
+	Local oAcc,oBal,oDep as SQLSelect
+	local oMbal as balances
+
+
 	if self:oReport:lRTF 
 		BoldOn:="{\b "
 		BoldOff:="}" 
@@ -889,14 +889,12 @@ METHOD ButtonClick(oControlEvent) CLASS BalanceReport
 
 METHOD CancelButton( ) CLASS BalanceReport
 	SELF:EndWindow()
-	RETURN NIL
+	RETURN 
 METHOD Close(oEvent) CLASS BalanceReport
 	LOCAL stt,eindt AS STRING
 	SUPER:Close(oEvent)
 	//Put your changes here
-//CollectForced()
 
-SELF:Destroy()
 	RETURN
 
 METHOD DepButton( ) CLASS BalanceReport
@@ -1098,7 +1096,7 @@ METHOD ListBoxSelect(oControlEvent) CLASS BalanceReport
 	//Put your changes here
 	IF oControlEvent:NameSym==#BalYears
 		uValue:=oControlEvent:Control:Value 
-		GlBalYears:=FillBalYears()
+		//FillBalYears()
 		aBal:=GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
 		self:MONTHSTART:=aBal[2]
 		self:MONTHEND:=aBal[4]
@@ -2058,7 +2056,7 @@ METHOD ButtonClick(oControlEvent) CLASS DeptReport
 	RETURN
 METHOD CancelButton( ) CLASS DeptReport
 	SELF:EndWindow()
-RETURN TRUE
+RETURN 
 
 METHOD Close(oEvent) CLASS DeptReport
 	SUPER:Close(oEvent)
@@ -2067,14 +2065,10 @@ IF  !oBalReport==NULL_OBJECT
 	oBalReport:Close()
 	oBalReport:=NULL_OBJECT
 ENDIF
-// CollectForced()
 IF !oTransMonth == NULL_OBJECT
 	//oTransMonth:Close()
 	oTransMonth:=NULL_OBJECT
 ENDIF
-// CollectForced()
-
-SELF:destroy()
 	RETURN NIL
 
 METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as logic CLASS DeptReport 
@@ -2605,7 +2599,7 @@ method ListBoxSelect(oControlEvent) class DeptReport
 	//Put your changes here
 	IF oControlEvent:NameSym==#BalYears
 		uValue:=oControlEvent:Control:Value
-		FillBalYears()
+// 		FillBalYears()
 		aBal:=GetBalYear(Val(SubStr(uValue,1,4)),Val(SubStr(uValue,5,2)))
 		MONTHSTART:=aBal[2]
 		MONTHEND:=aBal[4]
@@ -3115,11 +3109,7 @@ METHOD Close(oEvent) CLASS GiftReport
 // ENDIF
 
 self:oGftRpt:=null_object
-// force garbage collection
-// CollectForced()
 	SUPER:Close(oEvent)
-// CollectForced()
-self:destroy()
 	
 RETURN
 Method CollectAsssement(aAssMbr as array,cMess ref string) as logic Class GiftReport
@@ -4384,11 +4374,14 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	//
 	// Producing of memberstatement for members to html-file
 	//
+	local m,i,nIncr as int
+	local cFileMember as string
+	LOCAL myLang:=Alg_taal as STRING 
+	local cMess as string
 	local aAccidMbr:={} as array  // array with accounts of all members : 
 	// {mbrid,accid,kind(1=income,2=net,3=expense,4=other own department,5=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb}},...   
-	local aAccidIncFu:={} as array // array with all accids of income and fund accounts
 	local aAssMbr:={} as array  // array with assessment data: {mbrid,periodbegin,periodend,amountassessed,assessment amount, perc},...	
-	local aTrans:={},aTransRPP,aTransMG:={} as array   // {{accid,dat,transid,seqnr,persid,deb,cre,description,docid,opp,gc,fromrpp},...   
+	local aTrans:={} as array   // {{accid,dat,transid,seqnr,persid,deb,cre,description,docid,opp,gc,fromrpp},...   
 	local aPersData:={} as array  // {{persid,fullname, fulladdress, email},...	
 	//      1       2         3        4       
 	local aGiftdata:={} as array // contains all gifts 
@@ -4397,10 +4390,6 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	local aGiftsTotals:={} as array // with totals per GC and month : total,AG,PF,MG
 	local aOutput:={} as array // array with output parts per member									 
 
-	local cFileMember as string
-	LOCAL myLang:=Alg_taal as STRING 
-	local cMess as string
-	local m,i,nIncr as int
 	Local oTrans as SqlSelect
 	local oFileSpec as FileSpec 
 	local ptrHandle as ptr
@@ -4533,7 +4522,17 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 			self:STATUSMESSAGE(cMess+='.')
 		endif
 		
-	next
+	next 
+	// Reset array:
+	aAccidMbr:=null_array 
+	aAssMbr:=null_array
+	aTrans:=null_array
+	aPersData:=null_array
+	aGiftdata:=null_array
+	aGiftsTotals:=null_array 
+	aOutput:=null_array 
+	oTrans:=null_object
+	
 //  	time1:=time0
 // 	LogEvent(self,"Printing report:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	SQLStatement{"DROP TABLE IF EXISTS accidmbr",oConn}:Execute()
