@@ -1513,7 +1513,6 @@ METHOD ReSet() CLASS General_Journal
 	else
 		self:EndWindow() 
 		self:Close()
-		self:Destroy()
 	endif
 	
 METHOD ShowBankBalance() as void pascal CLASS General_Journal
@@ -3845,7 +3844,6 @@ METHOD ReSet() CLASS PaymentJournal
 	else
 		self:EndWindow()
 		self:Close()
-		self:Destroy()
 	endif
 Method SpecialMessage() class PaymentJournal
 	LOCAL oHm:=self:server as TempGift
@@ -4377,6 +4375,11 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			next
 		ENDIF 
 	endif
+	IF lError
+		// 		oHm:Recno := curPntr
+		// 		oDet:Browser:Refresh()
+		RETURN FALSE 
+	endif
 	oHm:ClearFilter()
 	self:ReSet() 
 	oHm:=self:server
@@ -4391,27 +4394,21 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	// 		ELSE
 	// 			lError := true
 	// 	self:mCLNGiver:=''
-	IF lError
-		oHm:Recno := curPntr
-		oDet:Browser:Refresh()
-		RETURN FALSE
-	ELSE 
-		self:mCLNGiver:=""
-		if !self:lTeleBank
-			// 			self:mCLNGiver:=""
-			self:cGiverName:=""
-			self:oDCmPerson:Value:=""
-			self:oDCmDebAmntF:TEXTValue:=""
-			self:mDebAmntF:=""
-			self:odccGirotelText:TextValue:=" " 
-			if countrycode='33'
-				self:oDCmDat:SetFocus()
-			else
-				self:oDCmPerson:SetFocus()
-			endif
-			oDet:Browser:Refresh()
+	self:mCLNGiver:=""
+	if !self:lTeleBank
+		// 			self:mCLNGiver:=""
+		self:cGiverName:=""
+		self:oDCmPerson:Value:=""
+		self:oDCmDebAmntF:TEXTValue:=""
+		self:mDebAmntF:=""
+		self:odccGirotelText:TextValue:=" " 
+		if countrycode='33'
+			self:oDCmDat:SetFocus()
+		else
+			self:oDCmPerson:SetFocus()
 		endif
-	ENDIF
+		oDet:Browser:Refresh()
+	endif
 	
 	RETURN true
 	
