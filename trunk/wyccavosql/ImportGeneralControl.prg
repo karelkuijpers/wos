@@ -181,9 +181,6 @@ method Close(oEvent) class ImportMapping
    	endif
    endif
    DbSetRestoreWorkarea (false) 
-// 	self:Destroy()
-// 	// force garbage collection
-// 	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 
