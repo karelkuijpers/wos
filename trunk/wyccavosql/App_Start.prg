@@ -31,13 +31,13 @@ method Start() class App
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
-		Enable3dControls() 
+		Enable3dControls()
 		DynSize(256) // (not more possible)
-		SetMaxDynSize(402653184)   //256MB max dynamic memory  
+		SetMaxDynSize(268435456)   //256MB max dynamic memory  
 		SetWipeDynSpace(false)
 		SetKidStackSize(134217728)    // 128 mb
 		SetMaxRegisteredKids(131072)
-		SetMaxThreadDynSize(402653184)  //256 MB Thread memory 
+		SetMaxThreadDynSize(268435456)  //256 MB Thread memory 
 		SetMaxRegisteredAxitMethods(131072)  
 		SetExclusive( FALSE )
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
@@ -164,6 +164,7 @@ method Start() class App
 				AlertNew{}:ShowNew()
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
+			CollectForced()
 			self:Exec()
 			// RECOVER USING oError	 
 			//   	GetError(self, "Error in Wycliffe Office System")
