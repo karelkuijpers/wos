@@ -714,8 +714,8 @@ Method GetTeleSelect(dummy:=nil as logic) as string class TeleMut
 	return cSelect
 METHOD Import() CLASS TeleMut
 	* Import of telebanking data into table teletrans
-	LOCAL i as int
-	local cFileName as STRING, nf,i as int
+	LOCAL i, nf as int
+	local cFileName as STRING 
 	local nOld:=12 as int   // after Nold months imported transactions are removed
 	LOCAL lv_eind as date
 	LOCAL lSuccess,lFilesFound as LOGIC
@@ -968,7 +968,10 @@ METHOD Import() CLASS TeleMut
 			ENDIF
 			if	lSuccess
 				AAdd(aFiles,oPF)
-			endif				
+			endif
+			// force garbage collection
+			CollectForced()
+			
 		NEXT
 
 
@@ -1999,7 +2002,6 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	oNtry:=null_object 
 	oSub:=null_object   // clear
 	aBudg:=null_array // clear  
-	// 	CollectForced()  //garbagecollect()
 	// 	time1:=time0
 	// 	LogEvent(self,"interprete:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	//    LogEvent(self,"all transactions loaded","logsql")
@@ -3301,23 +3303,25 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 
 METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	* Import of postgiro data into teletrans
-	LOCAL m57_laatste := {} as ARRAY
-	LOCAL i, lName as int
-	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()),nImp,nTrans,nProc as int
-	LOCAL lv_loaded as LOGIC,  hlpbank as USUAL
-	LOCAL lv_addsub,lv_addsub,cCurrency,lv_description, lv_kind, lv_NameContra,lv_budget,lv_persid as STRING
-	LOCAL lv_bankAcntOwn as STRING, lv_BankAcntContra as STRING, lv_Amount as FLOAT
-	LOCAL lSuccess:=true as LOGIC
+	LOCAL i, lName, nRead,nOms as int
 	LOCAL cSep as int
+	LOCAL ptDate, ptAcc, ptDesc, ptTeg, ptCode, ptAfBij,ptBedr, ptSoort,ptMed as int
+	LOCAL lv_mm := Month(Today()), lv_jj := Year(Today()),nImp,nTrans,nProc as int
+	Local lv_Amount as FLOAT
+	LOCAL lv_addsub,lv_addsub,cCurrency,lv_description, lv_kind, lv_NameContra,lv_budget,lv_persid as STRING
+	LOCAL lv_bankAcntOwn, lv_BankAcntContra,lv_Bic,lv_Country as STRING
 	LOCAL cDelim:="," as STRING
 	LOCAL hl_boekdat as STRING
-	LOCAL ptrHandle as MyFile
-	LOCAL cBuffer as STRING, nRead as int
+	LOCAL pbType as STRING
+	LOCAL cBuffer as STRING 
+	LOCAL lSuccess:=true as LOGIC
+	LOCAL lv_loaded as LOGIC
+	LOCAL ld_bookingdate as date 
+	Local hlpbank as USUAL
+	LOCAL m57_laatste := {} as ARRAY
 	LOCAL aStruct:={} as ARRAY // array with fieldnames
 	LOCAL aFields:={} as ARRAY // array with fieldvalues
-	LOCAL ptDate, ptAcc, ptDesc, ptTeg, ptCode, ptAfBij,ptBedr, ptSoort,ptMed as int
-	LOCAL pbType as STRING
-	LOCAL ld_bookingdate as date 
+	LOCAL ptrHandle as MyFile
 	local oStmnt as SQLStatement
 
 // 	cSep:=SetDecimalSep(Asc(","))
@@ -3381,9 +3385,6 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 		lv_NameContra:=AllTrim(AFields[ptDesc])
 		lName:=Len(lv_NameContra)
 		lv_description:=AllTrim(AFields[ptMed])
-		IF Instr("CREDIT",lv_description)
-			lv_description=lv_description
-		ENDIF
 		//lv_description := SubStr(lv_description,1,32)+' '+SubStr(lv_description,33,32)+' '+SubStr(lv_description,65,32)+' '+SubStr(lv_description,97)
 		IF lv_NameContra==SubStr(lv_description,1,lName)
 			* haal naam eruit:
@@ -3413,7 +3414,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 				loop
 			ENDIF
 		ENDIF
-		lv_BankAcntContra:=Str(Val(AFields[ptTeg]),-1)
+		lv_BankAcntContra:=ZeroTrim(AFields[ptTeg])
 		lv_Amount:=Val(StrTran(AFields[ptBedr],',','.',,1))
 		IF Empty(lv_Amount)  && geen lege mutaties laden
 			cBuffer:=ptrHandle:FReadLine()
@@ -3433,12 +3434,30 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 		IF hlpbank>0  && Zoja, dat als tegennummer opnemen:
 			lv_BankAcntContra := Str(Val(SubStr(lv_NameContra,1,10)),-1)
 			lv_NameContra := SubStr(lv_NameContra,11)
-		ENDIF 
+		ENDIF
+		
+		if (i:=AtC('BIC:',lv_description))>0
+			// standard format:
+			lv_Bic:=Split(AllTrim(SubStr(lv_description,i+4)))[1]
+			lv_Country:=SubStr(lv_BankAcntContra,1,2)
+			if (nOms:=AtC('Omschrijving:',lv_description))>0
+				lv_description:=AllTrim(SubStr(lv_description,nOms+13)) 
+			else
+				lv_description:=''
+			endif
+		else
+			lv_Bic:=''
+			if IsIban(lv_BankAcntContra)
+				lv_Country:=SubStr(lv_BankAcntContra,1,2)
+			else				
+				lv_Country:=''
+			endif
+		endif
 	  	lv_description:=AddSlashes(AllTrim(lv_description))
   		lv_NameContra:=AddSlashes(AllTrim(SubStr(lv_NameContra,1,32)))
 	  	lv_BankAcntContra:=ZeroTrim(lv_BankAcntContra)
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,'0',lv_BankAcntContra,;
-		lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+		lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid,,lv_Country,lv_Bic)
 		lv_description:="" 
 // 		nTrans++
 		cBuffer:=ptrHandle:FReadLine()
@@ -4688,7 +4707,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
-	// 	CollectForced() 
+	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
 	// select bank transactions which can be processed automatically 
@@ -4836,7 +4855,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		enddo
 	endif
-	aBankContra:=null_array  //clear
+	aBankContra:=null_array  //clear 
+	aZip:=null_array
 	
 	// NON-GIFTS:
 	// aValuesTrans:
@@ -4951,7 +4971,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		endif
 	enddo
-	aBudgetcd:=null_array  //clear
+	aBudgetcd:=null_array  //clear   
+	aAccnbrDb:=null_array
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//
@@ -5194,6 +5215,10 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// 	else
 		// 		AAdd(self:aMessages,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1),""))
 	endif
+	avalueTrans:=null_array
+	aAccnbrDue:=null_array
+	aTrans:=null_array
+	avaluesPers:=null_array
 	self:lv_aant_toe+=nTele
 	oStmnt:=SQLStatement{"commit",oConn}
 	oStmnt:execute()
