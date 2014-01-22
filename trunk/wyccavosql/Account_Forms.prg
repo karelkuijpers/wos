@@ -708,7 +708,8 @@ CLASS EditAccount INHERIT DataWindowExtra
 	export oAccCnt as AccountContainer
 	protect aBudget:={} as array  // year,month,amount
 	protect lBudgetClosed as logic // shown budget of closed year? 
-	
+	EXPORT oImport as ImportMapping
+
 	declare method PropValueShow,FillBudget
 RESOURCE EditAccount DIALOGEX  4, 3, 408, 408
 STYLE	WS_CHILD
