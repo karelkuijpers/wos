@@ -216,36 +216,6 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 	oAccBw:AccountSelect(oCaller,BrwsValue,ItemName,lUnique)
 	
 	RETURN FALSE // false means not directly found
-Function AddSubBal(a_bal as array,ParentNum as int, nCurrentRec as int,aBalIncl ref array) as int
-	* Find subdepartments and add to arrays with balance items
-	local nSubRec as int
-	local lFirst:=true as logic
-	// reposition the customer server to the searched record
-	nCurrentRec:=AScan(a_bal,{|x|x[2]==ParentNum},nCurrentRec+1)
-	IF Empty(nCurrentRec)
-		return nCurrentRec
-	ENDIF
-	AAdd(aBalIncl,a_bal[nCurrentRec,1])
-	do WHILE nSubRec > 0 .or. lFirst
-		lFirst:=false
-		nSubRec:=AddSubBal(a_bal,a_bal[nCurrentRec,1],nSubRec,@aBalIncl)
-	ENDDO	
-	RETURN nCurrentRec
-Function AddSubDep(d_dep as array,ParentNum as int, nCurrentRec as int,aDepIncl ref array) as int
-	* Find subdepartments and add to arrays with departments
-	local nSubRec as int
-	local lFirst:=true as logic
-	// reposition the customer server to the searched record
-	nCurrentRec:=AScan(d_dep,{|x|x[2]==ParentNum},nCurrentRec+1)
-	IF Empty(nCurrentRec)
-		return nCurrentRec
-	ENDIF
-	AAdd(aDepIncl,d_dep[nCurrentRec,1])
-	do WHILE nSubRec > 0 .or. lFirst
-		lFirst:=false
-		nSubRec:=AddSubDep(d_dep,d_dep[nCurrentRec,1],nSubRec,@aDepIncl)
-	ENDDO	
-	RETURN nCurrentRec
 Function DeleteAccount(cAccId:="" as string ) as logic 
 	* Delete a account occurrence
 	LOCAL oTrans as SQLSelect
