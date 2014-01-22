@@ -1099,9 +1099,6 @@ METHOD Close(oEvent) CLASS SubscriptionBrowser
 *	SUPER:Close(oEvent)
 	//Put your changes here
 SELF:oSFSubscriptionBrowser_DETAIL:Close()
-SELF:oSFSubscriptionBrowser_DETAIL:Destroy()
-SELF:Destroy()
-CollectForced()
 RETURN NIL
 
 METHOD DeleteButton( ) CLASS SubscriptionBrowser
