@@ -176,7 +176,8 @@ CLASS EditPerson INHERIT DataWindowExtra
   protect aMailcds:=pers_codes as array 
   protect oTransInq as TransInquiry
   protect oSubBrws as SubscriptionBrowser 
-  
+  EXPORT oImport as ImportMapping
+
   
 RESOURCE EditPerson DIALOGEX  125, 102, 510, 614
 STYLE	WS_CHILD
@@ -340,9 +341,6 @@ METHOD Close( oEvent ) CLASS EditPerson
 		self:oSubBrws:Close()
 	endif
 
-	self:Destroy()
-	// force garbage collection
-	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 METHOD DonationsButton( ) CLASS EditPerson 
@@ -1799,10 +1797,6 @@ if !self:oSelpers == null_object
 endif
 
 SELF:osfpersonsubform:Close()
-SELF:oSFPersonSubForm:Destroy()
-SELF:Destroy()	
-	// force garbage collection
-	CollectForced()
 
 	RETURN SUPER:Close(oEvent)
 METHOD EditButton(lNew) CLASS PersonBrowser
