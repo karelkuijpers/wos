@@ -389,60 +389,47 @@ self:oDCBalanceText:TextValue :='Sending of member transactions to PMC. Last sen
 
 RETURN nil
 METHOD PrintReport() CLASS PMISsend
+	LOCAL DecSep as int
+	local nAnswer as int 
+	LOCAL CurMonth:=Year(self:closingDate)*100+Month(self:closingDate) as int
+	local nTransLock as Dword,nTransSample as int
+	local nRow, nPage as int
+	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,nTransnrDT,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
 	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,AssFldInt,AssFldIntHome,me_balance,me_balanceF,OfficeRate,TotAssrate as FLOAT
 	local AssInc,AssIncHome as float  // to be reversed assement income totals
-	local separatorline as STRING
-	local heading as ARRAY
-	local oCurr as CURRENCY 
-	LOCAL aMemberTrans:={} as ARRAY
-	LOCAL destinstr:={} as ARRAY 
-	local aDistr:={} as array 
-	local oReport as PrintDialog
-	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,nTransnrDT,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
-	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
-	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
 	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
-	LOCAL me_has as LOGIC
-	LOCAL me_accid,currentaccid,me_mbrid, me_gc,PMCco,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
-	LOCAL cTransnr,cTransnrDT,mHomeAcc, cDestPersonId,me_householdid, me_destAcc,me_destPP,me_currency,cSeqnr,cToday,cPeriodBegin,cPeriodEnd as STRING
-	LOCAL ptrHandle
-	LOCAL cFilename, datestr as STRING
-	LOCAL DecSep as int
-	LOCAL oMapi as MAPISession
-	LOCAL oRecip,oRecip2 as MAPIRecip
-	LOCAL cPMISMail as STRING 
-	local oSendMail as SendEmailsDirect
-	local aRecip:={} as array // {{name,email,persid},...}
-	LOCAL lSent as LOGIC
-	LOCAL uRet as USUAL
-	LOCAL oWindow as OBJECT
-	// 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
-	LOCAL CurMonth:=Year(self:closingDate)*100+Month(self:closingDate) as int
-	// 	LOCAL noIES as LOGIC
-	LOCAL DestAmnt as FLOAT
-	LOCAL oAfl as UpdateHouseHoldID
-	LOCAL datelstafl as date
-	LOCAL cDestAcc,cNoteText,cError,cErrorLog,cStmsg,cAccs,cCurAcc as STRING 
-	local nRow, nPage as int
-	Local cAccCng as string,  nAnswer as int 
-	local oAsk as AskSend 
-	local oAskUp as AskUpld 
-	local cErrMsg as string 
-	LOCAL PrvYearNotClosed as LOGIC
 	local fExChRate as float
-	local lStop:=true,PMCUpload as logic
-	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
-	local oMBal as Balances
-	local oStmnt,oStmntDistr as SQLStatement
-	local aTransLock:={},aDisLock:={},aYearStartEnd as array                        
-	local nTransLock as Dword,nTransSample as int
-	local cDistr as string
+	LOCAL DestAmnt as FLOAT
 	local time1,time0 as float
+	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
+	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM  as FLOAT
+	local separatorline as STRING
+	LOCAL cFilename, datestr as STRING
+	Local cAccCng as string
+	local cErrMsg as string 
+	LOCAL cPMISMail as STRING 
+	LOCAL cDestAcc,cNoteText,cError,cErrorLog,cStmsg,cAccs,cCurAcc as STRING 
+	local cDistr as string
 	local cFatalError as string 
 	local Country as string 
 	local cStmnt,cClosingdate,cDueDate as string 
 	local cTransStmnt,cTransDTStmnt,cBankStmnt as string  
 	local cMbrSelect,cMbrSelectArr as string
+	LOCAL me_accid,currentaccid,me_mbrid, me_gc,PMCco,  me_stat, me_co, me_type, me_accnbr, me_pers,me_homePP,me_desc,destAcc,me_rate as STRING
+	LOCAL cTransnr,cTransnrDT,mHomeAcc, cDestPersonId,me_householdid, me_destAcc,me_destPP,me_currency,cSeqnr,cToday,cPeriodBegin,cPeriodEnd as STRING
+	LOCAL me_has as LOGIC
+	LOCAL lSent as LOGIC
+	LOCAL PrvYearNotClosed as LOGIC
+	local lStop:=true,PMCUpload as logic
+	LOCAL datelstafl as date
+	LOCAL uRet as USUAL
+	local heading as ARRAY
+	local oCurr as CURRENCY 
+	LOCAL aMemberTrans:={} as ARRAY
+	LOCAL destinstr:={} as ARRAY 
+	local aDistr:={} as array 
+	local aRecip:={} as array // {{name,email,persid},...}
+	local aDisLock:={},aYearStartEnd as array                        
 	local aMbr:={} as array   // array with all data of all members   :
 	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
 	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
@@ -460,12 +447,26 @@ METHOD PrintReport() CLASS PMISsend
 	local aAccRPP:={} as array   // array with total RPP amount per accid    {{accid,rpptot},...}
 	local aRPPMbr:={} as array   // array with total RPP amount per mbrid    {{mbrid,rpptot},...}
 	local aTransF:={} as array  // array with transactions of all non-own members not yet sent to PMC:  accid,transid,seqnr,persid,description,deb,cre,gc,reference,dat,givername,fromRPP  
-	local aAccDestOwn:={} as array  // array with destination acounts within own system: {{accid,accnumber},...}
+	local aAccDestOwn:={} as array  // array with destination accounts within own system: {{accid,accnumber},...}
 	local aTransMT:={} as array  // array with values to be inserted into table transaction for PMC transactions
 	local aTransDT:={} as array  // array with values to be inserted into table transaction for direct transactions
 	//aTransMT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 	//            1    2     3      4      5      6            7      8   9  10   11         12    13     14      15  
 	local aBankOrder:={} as array  // 
+	LOCAL ptrHandle 
+	local oReport as PrintDialog
+	LOCAL oWindow as OBJECT
+	LOCAL oMapi as MAPISession
+	LOCAL oRecip,oRecip2 as MAPIRecip
+	local oSendMail as SendEmailsDirect
+	// 	LOCAL CurMonth:=Year(Today())*100+Month(Today()) as int
+	// 	LOCAL noIES as LOGIC
+	LOCAL oAfl as UpdateHouseHoldID
+	local oAsk as AskSend 
+	local oAskUp as AskUpld 
+	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
+	local oMBal as Balances
+	local oStmnt,oStmntDistr as SQLStatement
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -701,7 +702,7 @@ METHOD PrintReport() CLASS PMISsend
 	// determine if previous year is closed for balances:
 	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
 	PrvYearNotClosed:=((aYearStartEnd[1]*12+aYearStartEnd[2])>(Year(LstYearClosed)*12+Month(LstYearClosed)))
-
+   aYearStartEnd:=null_array
 	// read balance of all members:
 	oMBal:cAccSelection:="a.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
 	oMBal:cTransSelection:="t.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
@@ -785,8 +786,12 @@ METHOD PrintReport() CLASS PMISsend
 			endif
 		endif
 	endif
-
-
+	// reset arrays:
+   aAccidRPP:=null_array
+   aDBBalValue:=null_array
+	aAssTot:=null_array 
+	aAccRPP:=null_array
+	
 	// collect distribution instructions:	
 	nMbrAss:=1
 	nMbrRPP:=1
@@ -878,6 +883,9 @@ METHOD PrintReport() CLASS PMISsend
 		ELSE
 			me_householdid:=""
 		ENDIF
+		// aMbr:
+		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
+		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
 		me_homePP:=aMbr[nMbr,3]   // homepp
 		store 0 to AmntTrans
 		mbrfield:= 0
@@ -887,10 +895,6 @@ METHOD PrintReport() CLASS PMISsend
 		AmntFromRPP:=0.00
 		me_asshome:=0.00 
 		me_assblAmount:=0.00
-		// aMbr:
-		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-
 		// find assessable amount of this member:
 		do while nMbrAss<Len(aAssMbr) .and.aAssMbr[nMbrAss,1]<me_mbrid  
 			nMbrAss++
@@ -996,10 +1000,6 @@ METHOD PrintReport() CLASS PMISsend
 
 		// Transfer balance conform distribution instructions:
 		if me_homePP!=SEntity  .or. (me_homePP==SEntity .or. me_co="M").and.Len(destinstr)>0
-			// aMbr:
-			// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-			//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
-			
 			// determine limit for sending money:
 			// find balance amount of this member: 
 			BalanceSend:=0.00
@@ -1136,7 +1136,18 @@ METHOD PrintReport() CLASS PMISsend
 				ENDIF
 			ENDIF
 		endif
-	Next
+	Next 
+	// Reset arrays:
+	destinstr:=null_array
+	aDistr:=null_array 
+	aMbr:=null_array
+	aBalMbr:=null_array
+	aAccidMbrF:=null_array 
+	aPersDest:=null_array 
+	aRPPMbr:=null_array
+	aTransF:=null_array
+	aAccDestOwn:=null_array 
+	
 	if !Empty(cError)
 		(ErrorBox{self,cError}):Show()
 		self:ResetLocks()
@@ -1588,7 +1599,12 @@ METHOD PrintReport() CLASS PMISsend
 				cErrorLog:=cError+': '+oStmntDistr:ErrInfo:errormessage+CRLF+"Statement:"+oStmntDistr:SQLString
 			endif
 		endif
+		// reset arrays:
+		aDisLock:=null_array
 		cTransStmnt:=''
+		aAccidMbr:=null_array
+		aAssMbr:=null_array
+		
 		if Empty(cError)
 			cTransnr:=''
 			cTransnrDT:=''
@@ -1631,7 +1647,12 @@ METHOD PrintReport() CLASS PMISsend
 			endif
 
 
-		endif
+		endif 
+		// Reset arrays:
+		aMemberTrans:=null_array
+		aTransMT:=null_array
+		aTransDT:=null_array 
+		
 		if Empty(cError)
 			if !oMBal:ChgBalanceExecute()
 				cError:=oMBal:cError
@@ -1645,7 +1666,10 @@ METHOD PrintReport() CLASS PMISsend
 				cError:=self:oLan:WGet('could not record bankorder for members')
 				cErrorLog:=cError+': '+oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
 			ENDIF
-		endif
+		endif 
+		// Reset arrays:
+		aBankOrder:=null_array
+
 		if Empty(cError)
 			oStmnt:=SQLStatement{"update sysparms set pmislstsnd='"+SQLdate(self:closingDate)+"',exchrate='"+Str(fExChRate,-1)+"'",oConn}
 			oStmnt:Execute()
@@ -1751,7 +1775,7 @@ METHOD PrintReport() CLASS PMISsend
 		endif
 	ENDIF
 	SetDecimalSep(Asc('.') )
-
+   aRecip:=null_array
 	if !PMCUpload .and.!lStop .and.!maildirect
 		oMapi:Close()
 	endif
