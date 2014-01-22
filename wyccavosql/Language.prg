@@ -3,27 +3,35 @@ Define IDM_Language_USERID := "parous…ºw@™Ðw"
 CLASS Language 
 declare method RGet,MGet,WGet,MarkUpLanItem
 METHOD Init( ) CLASS Language
-local olanT as SQLSelect 
-
+local olanT as SQLSelect
 if Empty(aLanM)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='M'",oConn}
 	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
 		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanM,Split(x,'#%#',,true))})
+		aLanM:=DynToOldSpaceArray(aLanM) // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 	endif
 endif
 if Empty(aLanW)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='W'",oConn}
 	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
 		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanW,Split(x,'#%#',,true))})
+		aLanW:=DynToOldSpaceArray(aLanW)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 	endif
 endif
 if Empty(aLanR)
 	olanT:=SqlSelect{"select group_concat(sentenceen,'#%#',sentencemy separator '#$#') as grlan from language where `location`='R'",oConn}
-	if olanT:RecCount>0 .and.!Empty(olanT:grlan) 
-		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanR,Split(x,'#%#',,true))})
+	if olanT:RecCount>0 .and.!Empty(olanT:grlan)
+// 		if IsOldSpace(aLanR)
+// 			OldSpaceFree(aLanR)
+// 		endif
+// 		aLanR:={}
+		AEval(Split(olanT:grlan,'#$#',,true),{|x|AAdd(aLanR,Split(x,'#%#',,true))}) 
+		aLanR:=DynToOldSpaceArray(aLanR)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 	endif
 endif
-RETURN SELF
+olanT:=null_object
+CollectForced()
+RETURN self
  
 ACCESS LENGTH CLASS Language
  RETURN self:FieldGet(3)
@@ -63,7 +71,8 @@ METHOD MGet(cSentenceEnglish as string,nLength:=0 as int,cPicture:="" as string,
 *	cPad:				R:Adjust right, L: left, C: center; default left
 
 LOCAL cText as STRING
-local iPos as int 
+local iPos as int
+local aLan:={} as array 
 // local oLan as SQLSelect
 local oStmnt as SQLStatement                                                                                                                                       
 IF Empty(cSentenceEnglish)
@@ -77,8 +86,15 @@ IF !Alg_taal="E"
 			cText:=aLanM[iPos,2]
 		ENDIF
 	ELSE
-		SQLStatement{"insert into language set location='M',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
-		AAdd(aLanM,{cText,''})
+		SQLStatement{"insert into language set location='M',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute() 
+		aLan:=AClone(aLanM)
+		if IsOldSpace(aLanM)
+			OldSpaceFree(aLanM)
+		endif
+      AAdd(aLan,{cText,''})
+		aLanM:=DynToOldSpace(aLan)
+		aLan:=null_array
+// 		AAdd(aLanM,{cText,''})
 	ENDIF
 ENDIF 
 return self:MarkUpLanItem(cText,cPicture,cPad,nLength)
@@ -92,7 +108,7 @@ METHOD RGet(cSentenceEnglish as string,nLength:=0 as int,cPicture:="" as string,
 
 LOCAL cText as STRING
 local iPos as int 
-// local oLan as SQLSelect
+local aLan:={} as array 
 local oStmnt as SQLStatement                                                                                                                                       
 IF Empty(cSentenceEnglish)
 	RETURN ""
@@ -105,7 +121,13 @@ IF !Alg_taal="E"
 		ENDIF
 	ELSE
 		SQLStatement{"insert into language set location='R',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
-		AAdd(aLanR,{cText,''})
+		aLan:=AClone(aLanR)
+		if IsOldSpace(aLanR)
+			OldSpaceFree(aLanR)
+		endif
+      AAdd(aLan,{cText,''})
+		aLanR:=DynToOldSpace(aLan)
+		aLan:=null_array
 	ENDIF
 ENDIF 
 return self:MarkUpLanItem(cText,cPicture,cPad,nLength)
@@ -127,7 +149,7 @@ METHOD WGet(cSentenceEnglish as string,nLength:=0 as int,cPicture:="" as string,
 
 LOCAL cText as STRING
 local iPos as int 
-// local oLan as SQLSelect
+local aLan:={} as array 
 local oStmnt as SQLStatement                                                                                                                                       
 IF Empty(cSentenceEnglish)
 	RETURN ""
@@ -139,8 +161,15 @@ IF !Alg_taal="E"
 			cText:=aLanW[iPos,2]
 		ENDIF
 	ELSE
-		SQLStatement{"insert into language set location='W',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
-		AAdd(aLanW,{cText,''})
+		SQLStatement{"insert into language set location='W',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute() 
+		// add to old space aLanW
+		aLan:=AClone(aLanW)
+		if IsOldSpace(aLanW)
+			OldSpaceFree(aLanW)
+		endif
+      AAdd(aLan,{cText,''})
+		aLanW:=DynToOldSpace(aLan)
+		aLan:=null_array
 	ENDIF
 ENDIF 
 return self:MarkUpLanItem(cText,cPicture,cPad,nLength)
