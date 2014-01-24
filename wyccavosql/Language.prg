@@ -88,9 +88,9 @@ IF !Alg_taal="E"
 	ELSE
 		SQLStatement{"insert into language set location='M',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute() 
 		aLan:=AClone(aLanM)
-		if IsOldSpace(aLanM)
-			OldSpaceFree(aLanM)
-		endif
+// 		if IsOldSpace(aLanM)
+// 			OldSpaceFree(aLanM)
+// 		endif
       AAdd(aLan,{cText,''})
 		aLanM:=DynToOldSpace(aLan)
 		aLan:=null_array
@@ -122,9 +122,9 @@ IF !Alg_taal="E"
 	ELSE
 		SQLStatement{"insert into language set location='R',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute()
 		aLan:=AClone(aLanR)
-		if IsOldSpace(aLanR)
-			OldSpaceFree(aLanR)
-		endif
+// 		if IsOldSpace(aLanR)
+// 			OldSpaceFree(aLanR)
+// 		endif
       AAdd(aLan,{cText,''})
 		aLanR:=DynToOldSpace(aLan)
 		aLan:=null_array
@@ -164,9 +164,9 @@ IF !Alg_taal="E"
 		SQLStatement{"insert into language set location='W',sentenceen='"+cText+"',length="+Str(nLength,-1),oConn}:execute() 
 		// add to old space aLanW
 		aLan:=AClone(aLanW)
-		if IsOldSpace(aLanW)
-			OldSpaceFree(aLanW)
-		endif
+// 		if IsOldSpace(aLanW)
+// 			OldSpaceFree(aLanW)
+// 		endif
       AAdd(aLan,{cText,''})
 		aLanW:=DynToOldSpace(aLan)
 		aLan:=null_array
@@ -399,7 +399,7 @@ CLASS LanguageWindow INHERIT DataWindowExtra
 METHOD Close(oEvent) CLASS LanguageWindow
 	//GetUserMenu(LOGON_EMP_ID)
 	//SELF:Server:refreshclients()
-	SUPER:Close(oEvent)
+	
 	aLanM := {}
 	aLanW := {}
 	aLanR := {}
@@ -408,9 +408,8 @@ METHOD Close(oEvent) CLASS LanguageWindow
 	oMainWindow:Menu:ToolBar:Hide()
 
 	//Put your changes here
-	SELF:Destroy()
 
-	RETURN NIL
+	RETURN SUPER:Close(oEvent)
 
 method EditChange(oControlEvent) class LanguageWindow
 	local oControl as Control
