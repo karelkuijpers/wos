@@ -73,11 +73,6 @@ METHOD AccButton(lUnique ) CLASS EditTeleBankPattern
 METHOD CancelButton( ) CLASS EditteleBankPattern
 	self:EndWindow()
 	RETURN nil
-method Close(oEvent) class EditTeleBankPattern
-self:Destroy()
-	RETURN SUPER:Close(oEvent)
-	//Put your changes here
-	return NIL
 method EditFocusChange(oEditFocusChangeEvent) class EditTeleBankPattern
 	local oControl as Control
 	local lGotFocus as logic
@@ -410,12 +405,10 @@ BEGIN
 END
 
 METHOD Close(oEvent) CLASS TelePatternBrowser
-*	SUPER:Close(oEvent)
+*	
 	//Put your changes here
 	SELF:oSFTelePatternBrowser_DETAIL:Close()
-	SELF:oSFTelePatternBrowser_DETAIL:Destroy()
-	SELF:destroy()
-	RETURN NIL
+	RETURN SUPER:Close(oEvent)
 METHOD DeleteButton( ) CLASS TelePatternBrowser 
 local oStmnt as SQLStatement
 	IF self:Server:EOF.or.self:Server:reccount<1
