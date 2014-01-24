@@ -1731,7 +1731,7 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	EXPORT cItemName	AS STRING
 	EXPORT oReport AS PrintDialog
 	EXPORT lUnique, lFoundUnique AS LOGIC
-	EXPORT oPers as SQLSelect
+	EXPORT oPers as SQLSelectPagination
 	PROTECT m_namen,m_waarden,Ann,m_adressen AS ARRAY
 	PROTECT pKondp, pKondA AS _CODEBLOCK
 	PROTECT pKond AS _CODEBLOCK
@@ -1884,14 +1884,14 @@ METHOD FindButton( ) CLASS PersonBrowser
 	oSel:Execute()
 	if !Empty(oSel:status)
 		LogEvent(self,"Error:"+oSel:ErrInfo:ErrorMessage+CRLF+oSel:SQLString,"logerrors")
-	else	
-		nCount:=ConI(oSel:nCount)
-		if nCount> 1000
-			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
-					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
-				return nil
-			endif
-		endif
+// 	else	
+// 		nCount:=ConI(oSel:nCount)
+// 		if nCount> 1000
+// 			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
+// 					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+// 				return nil
+// 			endif
+// 		endif
 	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
 // 	LogEvent(self,"search uni:"+self:oPers:SQLString,"loginfo")
@@ -2043,8 +2043,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
     	self:oCCDeleteButton:Hide()
     	self:oCCUnionButton:Hide()
     ENDIF
-//    self:FOUND:=Str(self:oPers:Reccount,-1)
-   self:FOUND:=Str(ConI(SqlSelect{"select count(*) as totcount from person where deleted=0",oConn}:totcount),-1) +" ("+self:oLan:WGet("only 100 shown")+")"
+   self:FOUND:=Str(self:oPers:Reccount,-1)
+//    self:FOUND:=Str(ConI(SqlSelect{"select count(*) as totcount from person where deleted=0",oConn}:totcount),-1) +" ("+self:oLan:WGet("only 100 shown")+")"
    if self:oPers:Reccount>0
    	self:oCCOKButton:Enable()
    else
@@ -2068,8 +2068,8 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	if !Empty(oServer)
 		self:oPers:=oServer
 	else
-		self:oPers:=SqlSelect{'select '+self:cFields+' from '+self:cFrom+' where '+self:cWhere+' order by '+self:cOrder+Collate+' limit 100',oConn }
-// 		self:oPers:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate,oConn }
+// 		self:oPers:=SqlSelect{'select '+self:cFields+' from '+self:cFrom+' where '+self:cWhere+' order by '+self:cOrder+Collate+' limit 100',oConn }
+		self:oPers:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+' where '+self:cWhere+" order by "+self:cOrder+Collate,oConn }
 	endif 
  	self:oPersCnt:=PersonContainer{}
 	RETURN nil
@@ -2172,7 +2172,8 @@ class PersonContainer
 	EXPORT m51_initials, m51_lastname, m51_firstname, m51_title, m51_prefix, m51_pos, m51_ad1,m51_city, m56_banknumber,m51_bic as STRING
 	export persid, m51_exid, m51_country, m51_gender, m51_type as STRING
 	EXPORT md_address1, md_address2, md_address3, md_address4 as STRING 
-	export current_PersonID as int 
+	export current_PersonID as int
+	export recognized as logic  // is person already recognized by telebanking 
 	
 	declare method Adres_Analyse
 
@@ -2373,6 +2374,26 @@ STATIC DEFINE PERSONSUBFORM_PREFIX := 106
 STATIC DEFINE SELPERSABON_CANCELBUTTON := 102 
 STATIC DEFINE SELPERSABON_OKBUTTON := 101 
 STATIC DEFINE SELPERSABON_SELX_REK := 100 
+CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
+
+	PROTECT oDCmCodAdd5 AS COMBOBOX
+	PROTECT oDCmCodAdd4 AS COMBOBOX
+	PROTECT oDCmCodAdd3 AS COMBOBOX
+	PROTECT oDCmCodAdd2 AS COMBOBOX
+	PROTECT oDCmCodAdd1 AS COMBOBOX
+	PROTECT oDCCodeBox AS GROUPBOX
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCmCodDel5 AS COMBOBOX
+	PROTECT oDCmCodDel4 AS COMBOBOX
+	PROTECT oDCmCodDel3 AS COMBOBOX
+	PROTECT oDCmCodDel2 AS COMBOBOX
+	PROTECT oDCmCodDel1 AS COMBOBOX
+	PROTECT oDCCodeBox1 AS GROUPBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  PROTECT oCaller AS OBJECT
 RESOURCE SelPersChangeMailCodes DIALOGEX  8, 22, 404, 142
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Add/Remove Mailing Codes"
@@ -2395,26 +2416,6 @@ BEGIN
 	CONTROL	"Cancel", SELPERSCHANGEMAILCODES_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 277, 116, 53, 12
 END
 
-CLASS SelPersChangeMailCodes INHERIT DialogWinDowExtra 
-
-	PROTECT oDCmCodAdd5 AS COMBOBOX
-	PROTECT oDCmCodAdd4 AS COMBOBOX
-	PROTECT oDCmCodAdd3 AS COMBOBOX
-	PROTECT oDCmCodAdd2 AS COMBOBOX
-	PROTECT oDCmCodAdd1 AS COMBOBOX
-	PROTECT oDCCodeBox AS GROUPBOX
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmCodDel5 AS COMBOBOX
-	PROTECT oDCmCodDel4 AS COMBOBOX
-	PROTECT oDCmCodDel3 AS COMBOBOX
-	PROTECT oDCmCodDel2 AS COMBOBOX
-	PROTECT oDCmCodDel1 AS COMBOBOX
-	PROTECT oDCCodeBox1 AS GROUPBOX
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT oCaller AS OBJECT
 METHOD CancelButton( ) CLASS SelPersChangeMailCodes
 	oCaller:selx_OK := FALSE
 	self:EndDialog()
@@ -2785,11 +2786,6 @@ END
 METHOD CancelButton( ) CLASS SelPersMailCd
 	self:EndDialog(0)
 	
-	RETURN NIL
-METHOD Close(oEvent) CLASS SelPersMailCd
-	SUPER:Close(oEvent)
-	//Put your changes here 
-	SELF:Destroy()
 	RETURN NIL
 METHOD Init(oParent,uExtra) CLASS SelPersMailCd 
 LOCAL DIM aFonts[1] AS OBJECT
@@ -3225,32 +3221,6 @@ STATIC DEFINE SELPERSMAILCD_SORTBUTTON1 := 109
 STATIC DEFINE SELPERSMAILCD_SORTBUTTON2 := 110 
 STATIC DEFINE SELPERSMAILCD_SORTORDER := 108 
 STATIC DEFINE SELPERSMAILCD_TYPES := 132 
-RESOURCE SelPersOpen DIALOGEX  18, 34, 201, 156
-STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
-CAPTION	"Select Persons with Unpaid Items"
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Which type", SELPERSOPEN_KEUS21, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 54, 190, 55
-	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_PERIODSTART, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 59, 18, 89, 11
-	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_PERIODEND, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 59, 31, 89, 11
-	CONTROL	"subscriptions", SELPERSOPEN_SELOPENBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 10, 65, 44, 9
-	CONTROL	"", SELPERSOPEN_SELX_REK, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 101, 59, 89, 88
-	CONTROL	"donors", SELPERSOPEN_SELOPENBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 11, 80, 38, 9
-	CONTROL	"invoices", SELPERSOPEN_SELOPENBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 11, 94, 41, 9
-	CONTROL	"Payment Method", SELPERSOPEN_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 4, 110, 79, 31
-	CONTROL	"Giro Accept Forms", SELPERSOPEN_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 11, 117, 62, 9
-	CONTROL	"Direct Debit", SELPERSOPEN_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 11, 128, 69, 9
-	CONTROL	"Up to and including:", SELPERSOPEN_FIXEDTEXTTO, "Static", WS_CHILD, 9, 32, 52, 10
-	CONTROL	"From:", SELPERSOPEN_FIXEDTEXTFROM, "Static", WS_CHILD, 9, 18, 37, 10
-	CONTROL	"Date of invoice of Due Amount is :", SELPERSOPEN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 5, 153, 42
-	CONTROL	"OK", SELPERSOPEN_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 142, 131, 40, 10
-	CONTROL	"Cancel", SELPERSOPEN_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 142, 115, 40, 10
-	CONTROL	"Account:", SELPERSOPEN_ACCOUNTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 59, 62, 25, 10
-	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_DATEDIRECTDEBIT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 101, 80, 89, 11
-	CONTROL	"Date direct debit:", SELPERSOPEN_DATEDIRECTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 59, 80, 42, 10
-	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_INVOICEMONTH, "SysDateTimePick32", DTS_UPDOWN|DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 59, 18, 89, 11
-END
-
 CLASS SelPersOpen INHERIT DialogWinDowExtra 
 
 	PROTECT oDCkeus21 AS RADIOBUTTONGROUP
@@ -3277,6 +3247,32 @@ CLASS SelPersOpen INHERIT DialogWinDowExtra
   PROTECT oCaller AS SelPers
   PROTECT cType as STRING 
   declare method Abon_Con,MakeCliop03File,MakeKIDFile,SEPADirectDebit
+RESOURCE SelPersOpen DIALOGEX  18, 34, 201, 156
+STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Select Persons with Unpaid Items"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Which type", SELPERSOPEN_KEUS21, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 54, 190, 55
+	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_PERIODSTART, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 59, 18, 89, 11
+	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_PERIODEND, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 59, 31, 89, 11
+	CONTROL	"subscriptions", SELPERSOPEN_SELOPENBUTTON2, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 10, 65, 44, 9
+	CONTROL	"", SELPERSOPEN_SELX_REK, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 101, 59, 89, 88
+	CONTROL	"donors", SELPERSOPEN_SELOPENBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 11, 80, 38, 9
+	CONTROL	"invoices", SELPERSOPEN_SELOPENBUTTON3, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 11, 94, 41, 9
+	CONTROL	"Payment Method", SELPERSOPEN_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 4, 110, 79, 31
+	CONTROL	"Giro Accept Forms", SELPERSOPEN_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 11, 117, 62, 9
+	CONTROL	"Direct Debit", SELPERSOPEN_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD|NOT WS_VISIBLE, 11, 128, 69, 9
+	CONTROL	"Up to and including:", SELPERSOPEN_FIXEDTEXTTO, "Static", WS_CHILD, 9, 32, 52, 10
+	CONTROL	"From:", SELPERSOPEN_FIXEDTEXTFROM, "Static", WS_CHILD, 9, 18, 37, 10
+	CONTROL	"Date of invoice of Due Amount is :", SELPERSOPEN_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, 5, 153, 42
+	CONTROL	"OK", SELPERSOPEN_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 142, 131, 40, 10
+	CONTROL	"Cancel", SELPERSOPEN_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 142, 115, 40, 10
+	CONTROL	"Account:", SELPERSOPEN_ACCOUNTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 59, 62, 25, 10
+	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_DATEDIRECTDEBIT, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 101, 80, 89, 11
+	CONTROL	"Date direct debit:", SELPERSOPEN_DATEDIRECTTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 59, 80, 42, 10
+	CONTROL	"dinsdag 22 oktober 2013", SELPERSOPEN_INVOICEMONTH, "SysDateTimePick32", DTS_UPDOWN|DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 59, 18, 89, 11
+END
+
 METHOD ButtonClick(oControlEvent) CLASS SelPersOpen
 	LOCAL oControl AS Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -3306,11 +3302,6 @@ METHOD CancelButton( ) CLASS SelPersOpen
 	SELF:EndDialog()
 	oCaller:selx_OK := FALSE
 	RETURN SELF
-METHOD Close(oEvent) CLASS SelPersOpen
-	SUPER:Close(oEvent)
-	//Put your changes here
-	SELF:Destroy()
-	RETURN NIL
 METHOD Init(oParent,uExtra) CLASS SelPersOpen 
 
 self:PreInit(oParent,uExtra)
@@ -3704,11 +3695,6 @@ METHOD ButtonClick(oControlEvent) CLASS SelPersPayments
 METHOD CancelButton( ) CLASS SelPersPayments
 	SELF:EndWindow()
 	RETURN
-METHOD Close(oEvent) CLASS SelPersPayments
-	SUPER:Close(oEvent)
-	//Put your changes here
-SELF:Destroy()
-RETURN NIL
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS SelPersPayments
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
@@ -4051,18 +4037,6 @@ STATIC DEFINE SELPERSPAYMENTSOUD_SELX_END := 112
 STATIC DEFINE SELPERSPAYMENTSOUD_SELX_REK := 104 
 STATIC DEFINE SELPERSPAYMENTSOUD_SELX_REKEND := 106 
 STATIC DEFINE SELPERSPAYMENTSOUD_SUBSET := 108 
-RESOURCE SelPersPrimary DIALOGEX  15, 22, 324, 123
-STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
-CAPTION	"Selection items for persons"
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Selection on", SELPERSPRIMARY_SELX_KEUZE1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 10, 228, 67
-	CONTROL	"person parameters only (e.g. mailing code, gender, ..)", SELPERSPRIMARY_SELPERSPRBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 24, 22, 198, 11
-	CONTROL	"givers/payers in certain period", SELPERSPRIMARY_SELPERSPRBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 24, 48, 156, 11
-	CONTROL	"OK", SELPERSPRIMARY_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 259, 14, 53, 12
-	CONTROL	"Cancel", SELPERSPRIMARY_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 34, 53, 12
-END
-
 CLASS SelPersPrimary INHERIT DialogWinDowExtra 
 
 	PROTECT oDCSelx_keuze1 AS RADIOBUTTONGROUP
@@ -4077,16 +4051,23 @@ CLASS SelPersPrimary INHERIT DialogWinDowExtra
 	PROTECT mREKEnd AS STRING
 // 	PROTECT oAcc AS Account
 	PROTECT oCaller AS OBJECT
+RESOURCE SelPersPrimary DIALOGEX  15, 22, 324, 123
+STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
+CAPTION	"Selection items for persons"
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Selection on", SELPERSPRIMARY_SELX_KEUZE1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 10, 228, 67
+	CONTROL	"person parameters only (e.g. mailing code, gender, ..)", SELPERSPRIMARY_SELPERSPRBUTTON1, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 24, 22, 198, 11
+	CONTROL	"givers/payers in certain period", SELPERSPRIMARY_SELPERSPRBUTTON4, "Button", BS_AUTORADIOBUTTON|WS_TABSTOP|WS_CHILD, 24, 48, 156, 11
+	CONTROL	"OK", SELPERSPRIMARY_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 259, 14, 53, 12
+	CONTROL	"Cancel", SELPERSPRIMARY_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 34, 53, 12
+END
+
 METHOD CancelButton( ) CLASS SelPersPrimary
 	SELF:EndDialog()
 	oCaller:selx_OK := FALSE
 	
 	RETURN SELF
-METHOD Close(oEvent) CLASS SelPersPrimary
-	SUPER:Close(oEvent)
-	//Put your changes here
-	SELF:Destroy()
-	RETURN NIL
 METHOD Init(oParent,uExtra) CLASS SelPersPrimary 
 
 self:PreInit(oParent,uExtra)
