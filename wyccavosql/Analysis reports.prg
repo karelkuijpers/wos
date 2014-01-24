@@ -238,11 +238,6 @@ METHOD ButtonClick(oControlEvent) CLASS DonorFollowingReport
 METHOD CancelButton( ) CLASS DonorFollowingReport
 	self:EndWindow()
 	RETURN nil
-METHOD Close(oEvent) CLASS DonorFollowingReport
-	SUPER:Close(oEvent)
-	//Put your changes here
-	self:EndWindow()
-	RETURN nil
 ACCESS DiffBox() CLASS DonorFollowingReport
 RETURN SELF:FieldGet(#DiffBox)
 
@@ -2165,6 +2160,21 @@ method PostInit(oParent,uExtra) class DonorFolwngSelClasses
 STATIC DEFINE DONORFOLWNGSELCLASSES_CLASSESBOX := 101 
 STATIC DEFINE DONORFOLWNGSELCLASSES_FIXEDTEXT1 := 100 
 STATIC DEFINE DONORFOLWNGSELCLASSES_OKBUTTON := 102 
+RESOURCE DonorProject DIALOGEX  34, 31, 435, 1308
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"dinsdag 18 oktober 2011", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
+	CONTROL	"dinsdag 18 oktober 2011", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
+	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
+	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
+	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 372, 7, 53, 12
+	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 372, 22, 53, 12
+	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
+	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
+	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
+END
+
 CLASS DonorProject INHERIT DataWindowExtra 
 
 	EXPORT oDCFromdate AS DATESTANDARD
@@ -2187,21 +2197,6 @@ CLASS DonorProject INHERIT DataWindowExtra
 	PROTECT nID as int
 	PROTECT pwvs as WindowVerticalScrollBar 
 	declare method SetSelected,DeselectAccount    
-
-RESOURCE DonorProject DIALOGEX  34, 31, 435, 1308
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"dinsdag 18 oktober 2011", DONORPROJECT_FROMDATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 48, 21, 120, 14
-	CONTROL	"dinsdag 18 oktober 2011", DONORPROJECT_TODATE, "SysDateTimePick32", DTS_LONGDATEFORMAT|WS_TABSTOP|WS_CHILD, 194, 21, 120, 14
-	CONTROL	"Compose groups of projects", DONORPROJECT_DESTINATIONS, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 40, 417, 24, WS_EX_TRANSPARENT
-	CONTROL	"Click to (de)select corresponding accounts:", DONORPROJECT_FIXEDTEXT3, "Static", WS_CHILD, 200, 48, 165, 12
-	CONTROL	"OK", DONORPROJECT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 372, 7, 53, 12
-	CONTROL	"Cancel", DONORPROJECT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 372, 22, 53, 12
-	CONTROL	"From Date:", DONORPROJECT_FIXEDTEXT6, "Static", WS_CHILD, 7, 21, 38, 12
-	CONTROL	"Till:", DONORPROJECT_FIXEDTEXT7, "Static", WS_CHILD, 175, 21, 16, 12
-	CONTROL	"Give insight who has given to which destination during a certain period of time", DONORPROJECT_FIXEDTEXT5, "Static", WS_CHILD, 8, 6, 361, 13
-END
 
 method ButtonClick(oControlEvent) class DonorProject
 	local oControl as Control
@@ -2232,12 +2227,6 @@ method ButtonClick(oControlEvent) class DonorProject
 METHOD CancelButton( ) CLASS DonorProject
 	self:EndWindow()
 	RETURN nil
-METHOD Close(oEvent) CLASS DonorProject
-	SUPER:Close(oEvent)
-	//Put your changes here
-	self:EndWindow()
-	RETURN nil
-
 METHOD DeselectAccount(nCur ref int,nPos as int) as void pascal CLASS DonorProject
 	// remove deselected account as nPos from group nCur
 	LOCAL myDim as Dimension
@@ -3000,21 +2989,6 @@ IF lProjects
 	AEval(aProjects,{|x| FilterAcc(aAcc,x,cStart,cEnd,aBalIncl,aDepIncl)})
 ENDIF
 RETURN aAcc
-resource TotalsMembers DIALOGEX  12, 11, 225, 99
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"OK", TOTALSMEMBERS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 160, 77, 54, 12
-	CONTROL	"Cancel", TOTALSMEMBERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 96, 77, 54, 12
-	CONTROL	"From month:", TOTALSMEMBERS_FIXEDTEXT3, "Static", WS_CHILD, 12, 40, 54, 12
-	CONTROL	"Till month:", TOTALSMEMBERS_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 54, 12
-	CONTROL	"", TOTALSMEMBERS_FROMYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 36, 34, 11, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_FROMMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 134, 37, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_TOYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 56, 34, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", TOTALSMEMBERS_TOMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 55, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
-END
-
 CLASS TotalsMembers INHERIT DataWindowMine 
 
 	PROTECT oCCOKButton as PUSHBUTTON
@@ -3030,15 +3004,24 @@ CLASS TotalsMembers INHERIT DataWindowMine
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	PROTECT oReport as PrintDialog
 	
+resource TotalsMembers DIALOGEX  12, 11, 225, 99
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"OK", TOTALSMEMBERS_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 160, 77, 54, 12
+	CONTROL	"Cancel", TOTALSMEMBERS_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 96, 77, 54, 12
+	CONTROL	"From month:", TOTALSMEMBERS_FIXEDTEXT3, "Static", WS_CHILD, 12, 40, 54, 12
+	CONTROL	"Till month:", TOTALSMEMBERS_FIXEDTEXT5, "Static", WS_CHILD, 12, 59, 54, 12
+	CONTROL	"", TOTALSMEMBERS_FROMYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 36, 34, 11, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_FROMMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 134, 37, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_TOYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 92, 56, 34, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", TOTALSMEMBERS_TOMONTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 136, 55, 19, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Give the total amounts of assessable gifts, personal funds and charges", TOTALSMEMBERS_FIXEDTEXT2, "Static", WS_CHILD, 7, 4, 212, 22
+END
+
 METHOD CancelButton( ) CLASS TotalsMembers
 		self:EndWindow()
 RETURN nil
-METHOD Close(oEvent) CLASS TotalsMembers
-	SUPER:Close(oEvent)
-	//Put your changes here
-	self:Destroy()
-	RETURN nil
-
 ACCESS FromMonth() CLASS TotalsMembers
 RETURN self:FieldGet(#FromMonth)
 
