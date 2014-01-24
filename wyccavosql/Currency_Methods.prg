@@ -393,11 +393,6 @@ method ButtonClick(oControlEvent) class CurrRateEditor
 			
 
 	return NIL
-method Close(oEvent) class CurrRateEditor
-	super:Close(oEvent)
-	//Put your changes here
-	return NIL
-
 ACCESS CurrencySelect() CLASS CurrRateEditor
 RETURN SELF:FieldGet(#CurrencySelect)
 
@@ -562,12 +557,12 @@ BEGIN
 END
 
 method Close(oEvent) class GetExchRate
-	super:Close(oEvent)
+	
 	//Put your changes here 
 	IF Empty(mExchRate)
 		self:OWNER:mxrate:=0
 	endif
-	return 
+	return super:Close(oEvent) 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS GetExchRate 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -796,7 +791,7 @@ Method ReEvaluate() Class Reevaluation
 	lError:=false
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
 	oStmnt:Execute()
-	oStmnt:=SQLStatement{'lock tables `mbalance` write, `sysparms` write,`transaction` write',oConn}       // alphabetic order
+	oStmnt:=SQLStatement{'lock tables `log` write, `mbalance` write, `sysparms` write,`transaction` write',oConn}       // alphabetic order
 	oStmnt:Execute()
 	do while (na:=AScan(aAccnt,{|x|!x[6]==0.00},na+1))>0 .and. !lError
 		cCur:= aAccnt[na,3]
@@ -809,6 +804,7 @@ Method ReEvaluate() Class Reevaluation
 				",deb='"+Str(mDiff,-1)+"'"+;
 				",currency='"+sCURR+"'"+;
 				",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
+				",userid='"+LOGON_EMP_ID +"'"+;
 				",seqnr=1"+;
 				",bfm='C'"   // regard as allready sent to CMS/AccPac
 			oTrans:=SQLStatement{cStatement,oConn}
@@ -823,6 +819,7 @@ Method ReEvaluate() Class Reevaluation
 				",cre='"+Str(mDiff,-1)+"'"+;
 					",currency='"+cCur+"'"+;
 					",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
+					",userid='"+LOGON_EMP_ID +"'"+;
 					",bfm='C'"   // regard as allready sent to CMS/AccPac
 				oTrans:=SQLStatement{cStatement,oConn}
 				oTrans:Execute()
@@ -843,8 +840,10 @@ Method ReEvaluate() Class Reevaluation
 				cErrorMessage:="reevaluation transaction for account "+aAccnt[na,2]+"could not be stored"
 				exit
 			endif
+			LogEvent(self,"Reevaluation per "+DToC(UltimoMonth)+" of account "+aAccnt[na,2]+', difference: '+Str(mDiff,-1)+' '+sCURR)
 		endif						
-		oCall:STATUSMESSAGE(cSm+=".")
+		oCall:STATUSMESSAGE(cSm+=".") 
+
 		if na>=Len(aAccnt)
 			exit
 		endif
@@ -861,7 +860,7 @@ Method ReEvaluate() Class Reevaluation
 	if !lError
 		SQLStatement{"commit",oConn}:Execute()
 		SQLStatement{"unlock tables",oConn}:Execute() 
-		SQLStatement{"set autocommit=1",oConn}:Execute()
+		SQLStatement{"set autocommit=1",oConn}:Execute() 
 	else
 		SQLStatement{"rollback",oConn}:Execute()
 		SQLStatement{"unlock tables",oConn}:Execute() 
