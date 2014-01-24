@@ -1159,12 +1159,16 @@ METHOD PersonSelect(oExtCaller as object,cValue as string,Itemname as string,Uni
 	else
 		self:GoTop()		
 	ENDIF
-
+   if self:oPersCnt:recognized
+		self:oDCSearchCLN:Disable()     // recognized by telebanking so not possible to change person
+		self:oCCFindButton:Disable()
+	endif
+   	
+   	
 	self:Show()
 	self:Found:=Str(self:oPers:RecCount,-1)
 
 	if self:oPers:RecCount>0
-		
 		self:oCCOKButton:Enable()
 	elseif !(Empty(self:SearchBank).and.Empty(self:SearchCLN).and.Empty(self:SearchSLE).and.Empty(self:SearchSZP).and.Empty(self:SearchUni))
 		self:FindButton()
@@ -1631,7 +1635,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUniqu
 	LOCAL oPersBw as PersonBrowser
 	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
 	local cWhere,cFrom:="person as p", cOrder:="lastname",cValue:=pValue as string
-	local oSel as SqlSelect
+	local oSel as SqlSelectPagination
 	LOCAL iEnd := At(",",cValue) as int
 	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
@@ -1694,7 +1698,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUniqu
 		cWhere+= iif(Empty(cWhere),""," and ")+"p.deleted=0"
 	endif
 
-	oSel:=SqlSelect{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
+	oSel:=SQLSelectPagination{"select "+cFields+" from "+cFrom+" where "+cWhere+iif(Empty(cFilter),"",iif(Empty(cWhere),""," and ")+"("+cFilter+")")+" order by "+cOrder+Collate,oConn}
 	IF lUnique .and. oSel:RecCount=1		
 		IF IsMethod(oCaller, #RegPerson)
 			oCaller:RegPerson(oSel,cItemname)
