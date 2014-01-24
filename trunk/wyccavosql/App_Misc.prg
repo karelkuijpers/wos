@@ -533,12 +533,7 @@ CLASS DataDialogMine inherit DataDialog
 METHOD Close(oEvent)  CLASS DataDialogMine
 // force garbage collection
 	self:Destroy()
-	CollectForced()
-	IF !_DynCheck()
-		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
-	ENDIF   
 RETURN SUPER:Close(oEvent)
-
 METHOD FillMbrProjArray() CLASS DataDialogMine 
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
@@ -661,6 +656,15 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	EXPORT aProjects:={} as ARRAY
 // 	Export oLan as Language 
 // 	declare method FillMbrProjArray
+METHOD Close(oEvent)  CLASS DataWindowMine
+// force garbage collection
+	self:Destroy()
+	CollectForced()
+	IF !_DynCheck()
+		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
+	ENDIF   
+RETURN SUPER:Close(oEvent)
+
 METHOD FillMbrProjArray() CLASS DataWindowMine  
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
@@ -920,6 +924,10 @@ METHOD INIT() CLASS Description
     RETURN self
 Class DialogWinDowExtra inherit DialogWindow 
 Export oLan as Language
+METHOD Close(oEvent)  CLASS DialogWinDowExtra
+// force garbage collection
+	self:Destroy()
+RETURN SUPER:Close(oEvent)
 method SetWidth(w) class DialogWinDowExtra
 LOCAL myDim as Dimension
 	myDim:=self:Size
