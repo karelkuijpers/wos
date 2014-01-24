@@ -3424,7 +3424,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 			// 				m51_assrec:=self:oPers:Recno
 			if self:Acceptgiro
 				self:oDCmPerson:Disable()
-				self:oCCPersonButton:Disable()
+// 				self:oCCPersonButton:Disable()
 			endif
 		ELSE
 			lNameCheck:=true
@@ -3467,7 +3467,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 					self:Regperson(oPers)
 				ENDIF
 				self:oDCmPerson:Disable()
-				self:oCCPersonButton:Disable() 
+// 				self:oCCPersonButton:Disable() 
 			ENDIF
 		ENDIF
 		IF !self:Recognised
