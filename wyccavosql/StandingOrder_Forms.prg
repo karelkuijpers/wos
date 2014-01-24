@@ -113,11 +113,10 @@ METHOD Close(oEvent) CLASS EditStandingOrder
 if !Empty(self:Server) .and. self:Server:used 
 	self:Server:Close()
 endif
-	SUPER:Close(oEvent)
+	
 	//Put your changes here
 
-	SELF:Destroy()
-	RETURN NIL
+	RETURN SUPER:Close(oEvent)
 ACCESS DATLTSBOEK() CLASS EditStandingOrder
 RETURN SELF:FieldGet(#DATLTSBOEK)
 
@@ -606,8 +605,6 @@ METHOD Close(oEvent) CLASS StandingOrderBrowser
 *	SUPER:Close(oEvent)
 	//Put your changes here
 SELF:oSFPeriodicBrowser_DETAIL:Close()
-SELF:oSFPeriodicBrowser_DETAIL:Destroy()
-SELF:destroy()
 RETURN NIL
 METHOD DeleteButton( ) CLASS StandingOrderBrowser
 	LOCAL oTextBox as TextBox 
@@ -1294,9 +1291,9 @@ IF !self:Server==null_object
 		FErase(oServer:FullPath)
 	ENDIF 
 endif
-	super:Close(oEvent)
+	
 	//Put your changes here
-	return nil 
+	return super:Close(oEvent) 
 ACCESS CRE() CLASS StOrderLines
 RETURN SELF:FieldGet(#CRE)
 
