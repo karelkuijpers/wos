@@ -30,14 +30,14 @@ BEGIN
 END
 
 METHOD Close(oEvent) CLASS BankBrowser
-	SUPER:Close(oEvent)
+	
 	//Put your changes here
 InitGlobals()	
 SELF:oSFBankSub_Form:Close()
 SELF:oSFBankSub_Form:Destroy()
 SELF:Destroy()
 
-	RETURN NIL
+	RETURN SUPER:Close(oEvent)
 
 METHOD DeleteButton( ) CLASS BankBrowser
 	LOCAL oTextBox AS TextBox
@@ -560,12 +560,6 @@ METHOD ButtonClick(oControlEvent) CLASS EditBank
 METHOD CancelButton( ) CLASS EditBank
 SELF:EndWindow()
 RETURN
-METHOD Close(oEvent) CLASS EditBank
-	SUPER:Close(oEvent)
-	//Put your changes here
-	SELF:Destroy()
-	RETURN NIL
-
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditBank
 	LOCAL oControl AS Control
 	LOCAL lGotFocus as LOGIC 
