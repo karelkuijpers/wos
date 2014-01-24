@@ -61,14 +61,12 @@ METHOD CancelButton( ) CLASS DueAmountBrowser
 	SELF:EndWindow()
 	RETURN
 METHOD Close(oEvent) CLASS DueAmountBrowser
-*SUPER:Close(oEvent)
+*
 	//Put your changes here
 
 SELF:oSFDueAmountBrowser_DETAIL:Close()
-SELF:oSFDueAmountBrowser_DETAIL:Destroy()
-SELF:Destroy()
 
-	RETURN NIL
+	RETURN SUPER:Close(oEvent)
 METHOD DeleteButton( ) CLASS DueAmountBrowser
 	LOCAL oTextBox AS TextBox
 	
@@ -293,11 +291,6 @@ RETURN SELF:FieldGet(#AmountRecvd)
 ASSIGN AmountRecvd(uValue) CLASS DueAmountBrowser_DETAIL
 SELF:FieldPut(#AmountRecvd, uValue)
 RETURN uValue
-
-METHOD Close(oEvent) CLASS DueAmountBrowser_DETAIL
-*	SUPER:Close(oEvent)
-	//Put your changes here
-RETURN NIL
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS DueAmountBrowser_DETAIL 
 
