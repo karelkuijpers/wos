@@ -417,11 +417,6 @@ method ButtonClick(oControlEvent) class EmailConfirm
 METHOD CancelButton( ) CLASS EmailConfirm 
 	self:EndDialog(false) 
 RETURN NIL
-method Close(oEvent) class EmailConfirm
-	super:Close(oEvent)
-	//Put your changes here 
-	return NIL
-
 METHOD Init(oParent,uExtra) CLASS EmailConfirm 
 LOCAL DIM aFonts[1] AS OBJECT
 
@@ -527,6 +522,15 @@ STATIC DEFINE EMAILCONFIRM_EMAILLISTVIEW := 105
 STATIC DEFINE EMAILCONFIRM_FIXEDTEXT1 := 102 
 STATIC DEFINE EMAILCONFIRM_MCOPY := 101 
 STATIC DEFINE EMAILCONFIRM_OKBUTTON := 103 
+CLASS ResolveName INHERIT DataDialogMine 
+
+	PROTECT oDCNameText AS FIXEDTEXT
+	PROTECT oDCemailaddress AS SINGLELINEEDIT
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
+  export recipemail as string
 RESOURCE ResolveName DIALOGEX  4, 3, 322, 51
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -537,15 +541,6 @@ BEGIN
 	CONTROL	"Cancel", RESOLVENAME_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 259, 22, 53, 12
 END
 
-CLASS ResolveName INHERIT DataDialogMine 
-
-	PROTECT oDCNameText AS FIXEDTEXT
-	PROTECT oDCemailaddress AS SINGLELINEEDIT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  export recipemail as string
 STATIC DEFINE RESOLVENAME1_CANCELBUTTON := 103 
 STATIC DEFINE RESOLVENAME1_EMAILADDRESS := 101 
 STATIC DEFINE RESOLVENAME1_NAMETEXT := 100 
@@ -553,11 +548,6 @@ STATIC DEFINE RESOLVENAME1_OKBUTTON := 102
 METHOD CancelButton( ) CLASS ResolveName 
 	self:EndWindow(false)
 RETURN NIL
-method Close(oEvent) class ResolveName
-	super:Close(oEvent)
-	//Put your changes here
-	return NIL
-
 ACCESS emailaddress() CLASS ResolveName
 RETURN SELF:FieldGet(#emailaddress)
 
