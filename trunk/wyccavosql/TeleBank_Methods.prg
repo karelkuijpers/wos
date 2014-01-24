@@ -127,12 +127,12 @@ METHOD CancelButton( ) CLASS SelBankAcc
    self:EndWindow(1)
 RETURN NIL
 method Close(oEvent) class SelBankAcc
-	super:Close(oEvent)
+	
 	//Put your changes here
 	if !self:oCaller:lOK
 		self:oCaller:m57_BankAcc:={}
 	endif 
-	return NIL
+	return super:Close(oEvent)
 
 METHOD FillBank(dummy:=false as logic) as array CLASS SelBankAcc
 	local cStatement as string 
