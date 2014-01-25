@@ -5013,22 +5013,22 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 			endif
 			if !Empty(aTrans[nTrans,9])
 				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate
+				if Len(aTransRPP)=1 // Force new group
+					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
+				endif
 				loop 
 			elseif aTrans[nTrans,10]=='MG'
 				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate
+				if Len(aTransMG)=1 // Force new group
+					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
+				endif
 				loop 
 			endif
 		elseif !Empty(aTrans[nTrans,2]) .and. aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 			loop
 		endif
 
-		
-		// if kind 1 not present force first begin processing for MG and RPP		                       
-		if empty(cCurrKind).and.aTrans[nTrans,12]>'1'.and.(!empty(aTransMG).or.!empty(aTransRPP))  
-			// force processing of kind 1
-			self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
-		endif
-		
+				
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 		// End processing
 		//
