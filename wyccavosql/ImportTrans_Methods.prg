@@ -1169,7 +1169,7 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				",origin='"+cOrigin+"'" 
 			oStmnt:=SQLStatement{"insert into importtrans set "+SubStr(cStatement,2),oConn}
 			oStmnt:Execute()
-			IF oStmnt:NumSuccessfulRows<1
+			IF !Empty(oStmnt:status)  //  NumSuccessfulRows<1
 				SQLStatement{"rollback",oConn}:Execute()
 				ptrHandle:Close()
 				LogEvent(self,"error: "+oStmnt:ErrInfo:errormessage+CRLF+oStmnt:SQLString,"LogErrors")
@@ -1177,10 +1177,10 @@ METHOD ImportBatch(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 				return false
 			endif
 			self:lv_imported++ 
-			nCnt++
+			nCnt++ 
 		ENDIF
 		cBuffer:=ptrHandle:FReadLine()
-		aFields:=Split(cBuffer,cDelim,true)
+		aFields:=Split(cBuffer,cDelim,true) 
 	ENDDO 
 	SQLStatement{"commit",oConn}:Execute()  
 

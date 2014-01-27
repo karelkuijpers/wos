@@ -761,7 +761,7 @@ method init() class Initialize
 	enddo
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset 
-
+   oConn:=DynToOldSpaceObject(oConn)     // save in static memory to protect againts removal by garbage collector
 	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)
@@ -1499,7 +1499,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","assmntcd","char(2)","NO","",""},;
 		{"importtrans","processed","tinyint(1)","NO","0",""},;
 		{"importtrans","origin","char(11)","NO","",""},;
-		{"importtrans","accname","char(25)","NO","",""},;
+		{"importtrans","accname","char(40)","NO","",""},;
 		{"importtrans","giver","varchar(127)","NO","",""},;
 		{"importtrans","transtyp","char(2)","NO","",""},;
 		{"importtrans","fromrpp","tinyint(1)","NO","0",""},;

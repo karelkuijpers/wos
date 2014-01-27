@@ -830,8 +830,6 @@ METHOD ChgDueAmnts(action as string,nOrig as int,nNew as int,oNew as TempTrans) 
 	local aOrig,aNew as array
 	if nNew<=Len(oNew:aMirror)
 		aNew:=oNew:aMirror[nNew]
-	else
-		return "No new values"
 	endif
 	if nOrig<=Len(oNew:aMirrorOrig)
 		aOrig:= oNew:aMirrorOrig[nOrig]
@@ -839,7 +837,7 @@ METHOD ChgDueAmnts(action as string,nOrig as int,nNew as int,oNew as TempTrans) 
 		//           1    2   3  4    5       6        7           8        9        10     11      12      13       14         15      16          17     18      19     20
 		IF (aOrig[5]=="D".or.aOrig[5]=="A".or.aOrig[5]=="F".or.aOrig[5]=="M".or.aOrig[5]=="G");
 				.and..not.Empty(self:OrigPerson)
-			IF action=="WB"
+			IF action=="WB" .and. !Empty(aNew)
 				* Update amount received of due amount:
 				return ChgDueAmnt(self:OrigPerson,aNew[1],aNew[2] - aOrig[2],;
 					oNew:cre - aOrig[3])
@@ -852,7 +850,7 @@ METHOD ChgDueAmnts(action as string,nOrig as int,nNew as int,oNew as TempTrans) 
 			ENDIF
 		ENDIF
 	endif
-	IF action=="W".or.action=="T"
+	IF action=="W".or.action=="T" .and. !Empty(aNew)
 		* record new amount received:
 		IF (aNew[5]=="D".or.aNew[5]=="A".or.aNew[5]=="F".or.aNew[5]=="M".or.aNew[5]=="G");
 				.and..not.Empty(self:mCLNGiver)

@@ -2742,7 +2742,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	LOCAL cFileName, selftext as STRING
 	LOCAL ptrHandle 
 	local oStmnt as SQLStatement
-	local lDBError as logic 
+	local lDBError, lFile as logic 
 	local oMl as sendemailsdirect
 
 	*	Logging of info to table log 
@@ -2755,6 +2755,8 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 // 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
+	elseif Logname=='LogFile'
+		lFile:=true  // forced to log to File
 	else
 		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
 		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
@@ -2763,7 +2765,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 			lDBError:=true
 		endif
 	endif
-	if lDBError
+	if lDBError .or. lFile
 		// write to file
 		ToFileFS:=FileSpec{Logname}
 		ToFileFS:Extension:="TXT"

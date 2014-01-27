@@ -289,8 +289,8 @@ METHOD SortByDescription(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetValue(self:sListDescription)
-    uValue2 := oListViewItem2:GetValue(self:sListDescription)
+    uValue1 := oListViewItem1:GetValue(self:Owner:sListDescription)
+    uValue2 := oListViewItem2:GetValue(self:Owner:sListDescription)
 
     IF uValue1 > uValue2
     	RETURN 1
@@ -304,8 +304,8 @@ METHOD SortByIdentifier(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetText(self:sListIdentify)
-    uValue2 := oListViewItem2:GetText(self:sListIdentify)
+    uValue1 := oListViewItem1:GetText(self:Owner:sListIdentify)
+    uValue2 := oListViewItem2:GetText( self:Owner:sListIdentify)
 
     IF uValue1 > uValue2
     	RETURN 1
@@ -319,8 +319,8 @@ METHOD SortByType(oListViewItem1, oListViewItem2) CLASS BalanceListView
 	LOCAL uValue1	AS USUAL
 	LOCAL uValue2	AS USUAL
 
-    uValue1 := oListViewItem1:GetValue( self:sListType )
-    uValue2 := oListViewItem2:GetValue(self:sListType)
+    uValue1 := oListViewItem1:GetValue( self:Owner:sListType )
+    uValue2 := oListViewItem2:GetValue(self:Owner:sListType)
 
     IF uValue1 > uValue2
     	RETURN 1

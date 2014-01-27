@@ -603,7 +603,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 		endif
 		self:mCln := Transform(oEmp:mCln,"")
 		self:mCLNOrg:=self:mCln 
-		mDEPID:=oEmp:DEPID
+		mDEPID:=ConS(oEmp:DEPID)
 		self:mPerson := Transform(oEmp:mEMPLNAME,"")
 		self:cMemberName := mPerson
 		IF AllTrim(self:mLOGON_NAME)==LOGON_EMP_ID .and. self:mTYPE=="A"  // of user him self?
