@@ -4142,14 +4142,13 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 	// sending of statments mentioned in self:aMailMember 
 	local oFileSpec as FileSpec
 	local i,j,m,mCnt as int
-	// mailing variables:
+	LOCAL mailcontent,memberName,cPers,cPeriod,cMess,cClient as STRING 
 	LOCAL oSelpers as Selpers
 	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
+	local aOneMember:={}, aPers:={} as ARRAY
 	LOCAL oMapi as MAPISession
 	LOCAL oRecip1, oRecip2 as MAPIRecip
-	local aOneMember:={}, aPers:={} as ARRAY
 	LOCAL oEMLFrm as eMailFormat
-	LOCAL mailcontent,memberName,cPers,cPeriod,cMess as STRING 
 	LOCAL oPro as ProgressPer
 
 	if self:SendingMethod=="SeperateFileMail" .and. !Empty(self:aMailMember)
@@ -4164,6 +4163,9 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		IF oEMLFrm:lCancel
 			RETURN 
 		ENDIF
+		if (i:=AScan(FillMailClient(),{|x|x[2]=requiredemailclient}))>0
+			cClient:=FillMailClient()[i,1]
+		endif
 		cPeriod:="   "+Str(ReportYear,4)+'  '+iif(self:CalcMonthEnd>self:CalcMonthStart,Upper(oLan:RGet(MonthEn[self:CalcMonthStart],,"!"))+' - ','')+Upper(oLan:RGet(MonthEn[self:CalcMonthEnd],,"!"))
 
 		oSelpers:=Selpers{self,,}
@@ -4251,7 +4253,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 
 		TextBox{self,self:oLan:WGet("Member statements"),Str(mCnt,-1)+' '+self:oLan:WGet("messsages placed in the outbox")}:Show()
 		if mCnt>0
-			LogEvent(self,Str(mCnt,-1)+' '+self:oLan:RGet("member statements sent by email"))
+			LogEvent(self,Str(mCnt,-1)+' '+self:oLan:RGet("member statement"+iif(mCnt>1,'s','')+" sent by email")+' '+cClient)
 		endif  
 	ENDIF
 	return
@@ -4341,7 +4343,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
          oSendMail:SendEmails(true)
          oSendMail:Close()
          if !oSendMail:lError .and. Len(oSendMail:aEmail)>0
-				LogEvent(self,Str(Len(oSendMail:aEmail),-1)+' '+self:oLan:RGet("member statements sent by email"))         	
+				LogEvent(self,Str(Len(oSendMail:aEmail),-1)+' '+self:oLan:RGet("member statement"+iif(mCnt>1,'s','')+"s sent by direct email"))         	
          endif
 		endif
 		self:Pointer := Pointer{POINTERARROW}
