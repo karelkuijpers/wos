@@ -1127,6 +1127,9 @@ function FillIbanregistry()
 		{"VG","VG2!n4!a16!n",24,0} }
 	iban_registry:=DynToOldSpaceArray(iban_registry)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
  
+Function FillMailClient() as array
+// return array with possible mail clients
+return {{"Windows Mail/ Outlook Express",0},{"Microsoft Outlook",1},{"Mozilla Thunderbird",2},{"Windows Live Mail",3},{"Mapi2Xml",4}}
 Function FillMbrProjArray(aProjects as array,aMemHome as array,aMemNonHome as array) as void pascal
 LOCAL oSQL as SQLSelect
 
@@ -1234,7 +1237,6 @@ if oPP:RecCount>0
 	AEval(Split(oPP:ppgroup,'#$#'),{|x|AAdd(aPP,Split(x,'#%#'))})
 endif
 return aPP
-
 FUNCTION FillPropTypes()
 * Fill Array with person property types
 prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
@@ -3708,12 +3710,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -3721,6 +3717,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.

@@ -761,7 +761,6 @@ method init() class Initialize
 	enddo
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset 
-   oConn:=DynToOldSpaceObject(oConn)     // save in static memory to protect againts removal by garbage collector
 	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)

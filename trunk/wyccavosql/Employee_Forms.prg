@@ -964,12 +964,6 @@ method Refresh() class EmployeeBrowser
 self:oSFEmployeeBrowser_DETAIL:Browser:Refresh()
 return
 STATIC DEFINE EMPLOYEEBROWSER_DELETEBUTTON := 103 
-RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBLOGINNAME as DataColumn
@@ -979,6 +973,12 @@ CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra
 	PROTECT oDBMONLINE as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1755,19 +1755,6 @@ STATIC DEFINE FIRSTUSER_THEFIXEDTEXT1 := 101
 STATIC DEFINE FIRSTUSER_THEFIXEDTEXT2 := 100 
 STATIC DEFINE FIRSTUSER_THEFIXEDTEXT3 := 102 
 STATIC DEFINE FIRSTUSER_THEGROUPBOX1 := 117 
-CLASS LogonDialog INHERIT DialogWinDowExtra 
-
-	PROTECT oDCtheFixedText1 AS FIXEDTEXT
-	PROTECT oDCName AS SINGLELINEEDIT
-	PROTECT oDCtheFixedText2 AS FIXEDTEXT
-	PROTECT oDCPassword AS SINGLELINEEDIT
-	PROTECT oCCOkButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   EXPORT  logonOk, ChangePsw as LOGIC
-  EXPORT  logonID as STRING
-  PROTECT wLogonCount as word
 RESOURCE LogonDialog DIALOGEX  5, 17, 227, 51
 STYLE	DS_3DLOOK|DS_MODALFRAME|DS_CENTER|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Login"
@@ -1781,6 +1768,19 @@ BEGIN
 	CONTROL	"Cancel", LOGONDIALOG_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 164, 27, 53, 13
 END
 
+CLASS LogonDialog INHERIT DialogWinDowExtra 
+
+	PROTECT oDCtheFixedText1 AS FIXEDTEXT
+	PROTECT oDCName AS SINGLELINEEDIT
+	PROTECT oDCtheFixedText2 AS FIXEDTEXT
+	PROTECT oDCPassword AS SINGLELINEEDIT
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   EXPORT  logonOk, ChangePsw as LOGIC
+  EXPORT  logonID as STRING
+  PROTECT wLogonCount as word
 METHOD CancelButton() CLASS LogonDialog
 
 	logonOk := FALSE
@@ -1981,6 +1981,8 @@ ASSIGN Emailing(uValue) CLASS MyEmailClient
 SELF:FieldPut(#Emailing, uValue)
 RETURN uValue
 
+Method FillMailClient() class MyEmailClient
+return FillMailClient()
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS MyEmailClient 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1995,7 +1997,7 @@ oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL
 
 oDCMailClient := combobox{SELF,ResourceID{MYEMAILCLIENT_MAILCLIENT,_GetInst()}}
 oDCMailClient:TooltipText := "Email program used for emailing PMC file or Gift reports, etc."
-oDCMailClient:FillUsing({{"Windows Mail/ Outlook Express",0},{"Microsoft Outlook",1},{"Mozilla Thunderbird",2},{"Windows Live Mail",3},{"Mapi2Xml",4}})
+oDCMailClient:FillUsing(Self:FillMailClient( ))
 oDCMailClient:HyperLabel := HyperLabel{#MailClient,NULL_STRING,NULL_STRING,NULL_STRING}
 
 oCCDirectButton := RadioButton{SELF,ResourceID{MYEMAILCLIENT_DIRECTBUTTON,_GetInst()}}
@@ -2098,6 +2100,17 @@ STATIC DEFINE NEWEMPLOYEEWINDOW_THEFIXEDTEXT8 := 103
 STATIC DEFINE NEWEMPLOYEEWINDOW_THEFIXEDTEXT9 := 101 
 STATIC DEFINE NEWEMPLOYEEWINDOW_THEGROUPBOX1 := 105 
 STATIC DEFINE NEWEMPLOYEEWINDOW_THEGROUPBOX3 := 100 
+CLASS NewPasswordDialog INHERIT DialogWinDowExtra 
+
+	PROTECT oDCtheFixedText2 AS FIXEDTEXT
+	PROTECT oDCNewPasswordSLE AS SINGLELINEEDIT
+	PROTECT oDCtheFixedText3 AS FIXEDTEXT
+	PROTECT oDCRetypePasswordSLE AS SINGLELINEEDIT
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT ChangePsw AS LOGIC
 RESOURCE NewPasswordDialog DIALOGEX  8, 24, 294, 62
 STYLE	DS_MODALFRAME|DS_CENTER|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Change Password"
@@ -2111,17 +2124,6 @@ BEGIN
 	CONTROL	"Cancel", NEWPASSWORDDIALOG_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 230, 33, 54, 14
 END
 
-CLASS NewPasswordDialog INHERIT DialogWinDowExtra 
-
-	PROTECT oDCtheFixedText2 AS FIXEDTEXT
-	PROTECT oDCNewPasswordSLE AS SINGLELINEEDIT
-	PROTECT oDCtheFixedText3 AS FIXEDTEXT
-	PROTECT oDCRetypePasswordSLE AS SINGLELINEEDIT
-	PROTECT oCCOkButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT ChangePsw AS LOGIC
 METHOD CancelButton CLASS NewPasswordDialog
 
 	SELF:EndDialog()

@@ -1054,6 +1054,7 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 	self:mPostStatus:=nOrigPost
 	oHm:lFilling:=true
 	self:OrigPerson := mOrigPers
+	self:mCLNGiver := mOrigPers
 	*	IF oHm:Locate({|| oHm:BFM=="H".or.oHm:bfm=="T"}) .or.!Empty(dat_controle(OrigDat,TRUE))
 	IF !Empty(mOrigDat).and.!Empty(dat_controle(mOrigDat,TRUE))
 		SELF:oSFGeneralJournal1:BlockColumns()
@@ -1677,9 +1678,9 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 	AEval(aOrig,{|x|m:=Max(m,x[7])})
 	self:nLstSEqNr:=m
 	self:cOrgAccs:=Implode(aOrig,',',,,1) 
-	if (i:=AScan(aOrig,{|x|!Empty(x[17])})) >0
-		OrigPerson:=aOrig[i,17]
-	endif
+// 	if (i:=AScan(aOrig,{|x|!Empty(x[17])})) >0
+// 		self:OrigPerson:=aOrig[i,17]
+// 	endif
 
 	nOrig:=1
 	nNew:=1
@@ -1704,10 +1705,13 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 			if !Empty(cError)
 				return cError
 			endif
+			if nNew<=Len(aNew) .and.aOrig[nOrig,7]== aNew[nNew,7]
+				nNew++
+			endif
 			nOrig++
 		CASE aOrig[nOrig,7]== aNew[nNew,7] .and. !aNew[nNew,2]==aNew[nNew,3]   //seqnr==  and !new deb=vre
 			* Transaction line updates??:
-			IF !self:mCLNGiver == OrigPerson
+			IF !self:mCLNGiver == self:OrigPerson
 				AktiePost:="W"
 			ELSE
 				AktiePost:=""
@@ -1739,7 +1743,7 @@ METHOD UpdateTrans(dummy:=nil as logic) as string CLASS General_Journal
 						!aOrig[nOrig,15]==aNew[nNew,15] .or.; // REFERENCE <>
 						!aOrig[nOrig,5]== aNew[nNew,5].or.;  //KIND <>
 						!aOrig[nOrig,11]== aNew[nNew,11].or.;//CURRENCY <>
-						mCLNGiver # OrigPerson .or. ;
+						self:mCLNGiver # self:OrigPerson .or. ;
 						(Posting .and. oNew:PoststatusOrig # self:mPostStatus)
 					cError:= self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 					if !Empty(cError)
