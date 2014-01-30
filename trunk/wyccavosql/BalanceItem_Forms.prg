@@ -1629,7 +1629,7 @@ METHOD OKButton( ) CLASS EditBalanceItem
 	LOCAL cError as STRING 
 	local cSQLStatement as string
 	local oStmnt as SQLStatement
-	local mType:=self:mSoort,mParent:=self:cMainId as string 
+	local mType:=cons(self:mSoort),mParent:=cons(self:cMainId) as string 
 	local nPos,nBalid as int
 	local oSel as SQLSelect
 
@@ -1685,7 +1685,7 @@ METHOD OKButton( ) CLASS EditBalanceItem
 				oCaller:RefreshTree()
 			ENDIF
 		endif
-	else
+	elseif !Empty(oStmnt:status)
 		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:ErrorMessage}:Show()
 	endif
 	self:EndWindow()
