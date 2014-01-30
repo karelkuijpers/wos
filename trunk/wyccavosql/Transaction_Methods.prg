@@ -2158,7 +2158,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					.or. (oHm:aMIRROR[i,5]= 'G').or. oHm:aMirror[i,5]= 'D';
 					.or. oHm:aMIRROR[i,5]= 'A' .or. oHm:aMIRROR[i,5] = 'F'.or. oHm:aMIRROR[i,5]="C","persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
 					"dat='"+SQLdate(self:mDAT)+"'"+;
-					",docid='"+Transform(self:mBst,"")+"'"+;
+					",docid='"+AddSlashes(self:mBst)+"'"+;
 					",description='"+AddSlashes(AllTrim(oHm:aMIRROR[i,16]))+"'"+; 
 				",reference='"+AddSlashes(AllTrim(oHm:REFERENCE))+"'"+;
 					",accid='"+AllTrim(oHm:aMIRROR[i,1])+"'"+;
