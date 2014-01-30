@@ -325,7 +325,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
    * - currency,
    * - department 
 	* if lDetails true:
-	* accnumber and description  of account   
+	* accnumber and description  of account, balancenumber and balancename   
 	* All these values have the following meaning:
 	* in case of Cost/profit       : sum of transactions during the specifief period,
 	* in case of liabilities/assets: actual balance value at end of the specified period)   
@@ -534,7 +534,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 		cStandardCurrCond:=""
 	endif  
 	// cSelectx: Center select on account a and accountbalanceyear ay
-	cSelectx:="select a.accid,a.balitemid,a.currency,a.department"+iif(lDetails,",a.accnumber,a.description,b.number","")+",b.category"+;
+	cSelectx:="select a.accid,a.balitemid,a.currency,a.department"+iif(lDetails,",a.accnumber,a.description,b.number,b.heading","")+",b.category"+;
 	",sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr2,sum(IF("+cAccBalYrYtDCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr2"+;
 	",sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjd,0)) as svjdyr3,sum(IF("+cAccBalYrCondition+cStandardCurrCond+",ay.svjc,0)) as svjcyr3"+;
 	iif(lForeignCurr,;
@@ -567,7 +567,7 @@ Method SQLGetBalance( dPeriodStart:=0 as int ,dPeriodEnd:=0 as int,lprvyrYtD:=fa
 	
 	// cSelectz: 3e level select on y and budget bu
    
-   cSelectz:="select y.accid,y.balitemid,y.currency,y.department"+iif(lDetails,",y.accnumber,y.description,y.number as balancenumber","")+",y.category"+; 
+   cSelectz:="select y.accid,y.balitemid,y.currency,y.department"+iif(lDetails,",y.accnumber,y.description,y.number as balancenumber,y.heading as balancename","")+",y.category"+; 
    ",y.svjdyr3+y.prvyr_deby as prvyr_deb,y.svjcyr3+y.prvyr_crey as prvyr_cre"+;
    ",y.prvyrytd_deby+y.svjdyr2 as prvyrytd_deb,y.prvyrytd_crey+y.svjcyr2 as prvyrytd_cre,"+;
 	"y.prvper_deby+if(category='"+LIABILITY+"' or category='"+asset+"',y.svjdyr3+y.prvyr_deby,0) as prvper_deb,"+;
