@@ -6486,19 +6486,20 @@ METHOD OKButton( ) CLASS TrialBalance
 LOCAL perlengte,YEARSTART,YEAREND, TrialYear,BalMonth as int
 LOCAL nRow, nPage as int
 LOCAL CurSt, CurEnd,BalSt, BalEnd, TrialEnd as int
+LOCAL nChildRec			as int
 LOCAL omzetdeel, totdeb,totcre, m_bud, omzet, totBegin, totBeginCostProfit,PerDeb,PerCre as FLOAT 
 local pl_deb,pl_cre as float // profit loss previous year
-LOCAL Heading:={} as ARRAY, ad_banmsg, omztxt as STRING
+LOCAL ad_banmsg, omztxt as STRING
+local cStatement as string   // string with selection of accounts and their total values   
+LOCAL cTab:=CHR(9) as STRING  
+LOCAL cType,cSoort,cBalItem,cBalName as STRING
 LOCAL PrvYearNotClosed as LOGIC
 LOCAL aDep:={} as ARRAY
-LOCAL cType,cSoort,cBalItem as STRING
-LOCAL nChildRec			as int
+Local Heading:={} as ARRAY
 LOCAL Gran as LOGIC
-LOCAL cTab:=CHR(9) as STRING  
 LOCAL aYearStartEnd:={} as ARRAY
 LOCAL aItem:={} as ARRAY
 local oMBal as balances
-local cStatement as string   // string with selection of accounts and their total values   
 
 
 * Check input data:
@@ -6573,7 +6574,7 @@ oAcc:GoTop()
 * Create name report file
 * store 1 TO blad,r
 IF lPrint
-	oReport := PrintDialog{oParent,self:oLan:RGet('Trial Balance'),,121,,"xls"}
+	oReport := PrintDialog{oParent,self:oLan:RGet('Trial Balance'),,147,,"xls"}
 	oReport:Show()
 	IF .not.oReport:lPrintOk
 		RETURN FALSE
@@ -6587,7 +6588,7 @@ ENDIF
 self:Pointer := Pointer{POINTERHOURGLASS}
 self:STATUSMESSAGE(self:oLan:WGet("Collecting data, moment please"))
 
-AAdd(Heading,self:oLan:RGet('Account',43,"!")+cTab+self:oLan:RGet('Type',11,"!","C")+cTab+self:oLan:RGet('Number',11,"!","C")+cTab+self:oLan:RGet('BEGIN Balnc',11,"!","R")+cTab+self:oLan:RGet('Debit',11,"!","R")+cTab+self:oLan:RGet('Credit',11,"!","R")+;
+AAdd(Heading,self:oLan:RGet('Account',43,"!")+cTab+self:oLan:RGet('Type',11,"!","C")+cTab+self:oLan:RGet('Number',11,"!","C")+cTab+self:oLan:RGet('Balance name',25,"!","C")+cTab+self:oLan:RGet('BEGIN Balnc',11,"!","R")+cTab+self:oLan:RGet('Debit',11,"!","R")+cTab+self:oLan:RGet('Credit',11,"!","R")+;
 cTab+self:oLan:RGet('Balance',11,"!","R")+cTab+self:oLan:RGet('Budget',10,"!","R") )
 AAdd(Heading,self:oLan:RGet('year',,"!")+cTab+oDCYearTrial:TextValue+;
 '  '+maand[MonthStart]+' - '+maand[MonthEnd])
@@ -6596,6 +6597,7 @@ DO WHILE !oAcc:EoF
 	cSoort:= oAcc:category
   	cType:=aBalType[AScan(aBalType,{|x|x[1]=cSoort}),2]  
   	cBalItem := oAcc:balancenumber
+  	cBalName := oAcc:balancename
 	IF cSoort=="KO" .or. cSoort=="BA"
 		PerDeb:=oAcc:per_deb
 		PerCre:=oAcc:per_cre
@@ -6628,7 +6630,7 @@ DO WHILE !oAcc:EoF
       ENDIF
   	  IF lPrint
       	oReport:PrintLine(@nRow,@nPage,Pad(oAcc:ACCNUMBER+" "+oAcc:description,43)+;
-      	cTab+PadC(cType,11)+cTab+Pad(cBalItem,11)+cTab+Str(oAcc:PrvPer_deb-oAcc:PrvPer_cre,11,DecAantal) +;
+      	cTab+PadC(cType,11)+cTab+Pad(cBalItem,11)+cTab+Pad(cBalName,25)+cTab+Str(oAcc:PrvPer_deb-oAcc:PrvPer_cre,11,DecAantal) +;
       	cTab+Str(PerDeb,11,decaantal)+cTab+Str(PerCre,11,decaantal)+;
       	cTab+Str(oAcc:PrvPer_deb-oAcc:prvper_cre+PerDeb-PerCre,11,DecAantal)+;
       	cTab+Str(Round(m_bud,DecAantal),10,DecAantal)+cTab+omztxt,Heading,0)
@@ -6643,9 +6645,9 @@ ENDDO
 IF PrvYearNotClosed .and. (pl_deb#0.or.pl_cre#0) 
 	// in case previous year not yet closed add total cost/profit to total as increase of netasset:
 	IF lPrint
-	   oReport:PrintLine(@nRow,@nPage,oLan:RGet('Balance income and expense prev.year',64,"!");
-	   +Replicate(cTab,4)+Str(pl_deb,11,DecAantal)+cTab+Str(pl_cre,11,DecAantal)+;
-	   cTab+Str(pl_deb-pl_cre,11,DecAantal),Heading,0)
+	   oReport:PrintLine(@nRow,@nPage,oLan:RGet('Balance income and expense prev.year',43,"!")+cTab+Space(11)+cTab+Space(11)+cTab+Space(25);
+	   +cTab+Str(pl_deb,11,DecAantal)+cTab+Str(pl_cre,11,DecAantal)+;
+	   cTab+Str(pl_deb-pl_cre,11,DecAantal)+cTab+cTab,Heading,0)
 	ENDIF
     totdeb:=totdeb+Round(pl_deb,DecAantal)
     totcre:=totcre+Round(pl_cre,DecAantal)
@@ -6655,8 +6657,8 @@ totcre:=Round(totcre,DecAantal)
 totBegin=Round(totBegin,DecAantal)
 IF lPrint
 	oReport:PrintLine(@nRow,@nPage,' ',Heading,1)
-	oReport:PrintLine(@nRow,@nPage,Space(43)+cTab+Space(11)+cTab+Str(totBegin,11,DecAantal)+cTab+Str(totdeb,11,DecAantal)+;
-	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal),null_array,0)
+	oReport:PrintLine(@nRow,@nPage,Space(43)+cTab+Space(11)+cTab+Space(11)+cTab+Space(25)+cTab+Str(totBegin,11,DecAantal)+cTab+Str(totdeb,11,DecAantal)+;
+	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal)+cTab+cTab,null_array,0)
 ENDIF
 self:Pointer := Pointer{POINTERARROW}
 IF lPrint
