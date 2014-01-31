@@ -970,7 +970,7 @@ METHOD Import() CLASS TeleMut
 				AAdd(aFiles,oPF)
 			endif
 			// force garbage collection
-			CollectForced()
+// 			CollectForced()
 			
 		NEXT
 
@@ -4707,7 +4707,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
-	CollectForced() 
+// 	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
 	// select bank transactions which can be processed automatically 

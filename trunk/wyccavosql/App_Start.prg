@@ -32,9 +32,9 @@ method Start() class App
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
 		Enable3dControls()
-		DynSize(256) // (not more possible)
+		DynSize(256) // (not more possible = 16MB)
 		SetMaxDynSize(268435456)   //256MB max dynamic memory  
-		SetWipeDynSpace(false)
+		SetWipeDynSpace(true)
 		SetKidStackSize(134217728)    // 128 mb
 		SetMaxRegisteredKids(131072)
 		SetMaxThreadDynSize(268435456)  //256 MB Thread memory 
@@ -43,16 +43,8 @@ method Start() class App
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 		SetDefault(CurPath)
 		SetPath(CurPath)
-		myApp:=self
-		IF Len(aDir:=Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
-			HelpDir:='C:\Windows\Temp'
-		elseif Len(aDir:=Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0 
-			HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
-		ELSEIF Len(aDir:=Directory("C:\TEMP",FA_DIRECTORY))>0
-			HelpDir:="C:\TEMP"
-		ELSE
-			HelpDir:="C:"
-		ENDIF
+		myApp:=self 
+		HelpDir:=GetEnv("Temp")
 		
 		cWorkdir:=WorkDir() 
 		oMainWindow := StandardWycWindow{self}
@@ -94,7 +86,7 @@ method Start() class App
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay
 			oInit:=null_object 
-			CollectForced()
+// 			CollectForced()
 			SetDeleted( true )
 			
 			#IFNDEF __debug__

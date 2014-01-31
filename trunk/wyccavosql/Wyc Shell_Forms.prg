@@ -94,8 +94,10 @@ METHOD FileExit() CLASS StandardWycWindow
 METHOD FilePrint() CLASS StandardWycWindow
 	SELF:Print()
 	RETURN
-METHOD FilePrinterSetup() CLASS StandardWycWindow
-
+METHOD FilePrinterSetup() CLASS StandardWycWindow 
+	if Empty(self:oPrinter)
+		self:oPrinter	:= PrintingDevice{}
+	endif
 	self:oPrinter:Setup()
 	
 METHOD FirstGivers() CLASS StandardWycWindow
@@ -135,20 +137,20 @@ METHOD HelpIndex CLASS StandardWycWindow
 	RETURN SELF
 METHOD Init(oParent,uExtra) CLASS StandardWycWindow 
 
-self:PreInit(oParent,uExtra)
+	self:PreInit(oParent,uExtra)
 
-super:Init(oParent,uExtra)
+	super:Init(oParent,uExtra)
 
-SELF:Caption := "Wycliffe Office System"
-SELF:HyperLabel := HyperLabel{#StandardWycWindow,"Wycliffe Office System",NULL_STRING,NULL_STRING}
-SELF:IconSm := SSAICON{}
-SELF:Icon := SSAICON{}
-SELF:Origin := Point{13, 447}
-SELF:Size := Dimension{743, 597}
+	SELF:Caption := "Wycliffe Office System"
+	SELF:HyperLabel := HyperLabel{#StandardWycWindow,"Wycliffe Office System",NULL_STRING,NULL_STRING}
+	SELF:IconSm := SSAICON{}
+	SELF:Icon := SSAICON{}
+	SELF:Origin := Point{13, 447}
+	SELF:Size := Dimension{743, 597}
 
-self:PostInit(oParent,uExtra)
+	self:PostInit(oParent,uExtra)
 
-return self
+	return self
 
 METHOD MailViaCode() CLASS StandardWycWindow
 	(SelPers{self,"MAILINGCODE"}):Show()
