@@ -893,12 +893,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		if !lNew
 			self:oDCmInvoiceID:Show() 
 			self:oDCInvoiceText:Show()
-// 			if SqlSelect{"select dueid from dueamount where subscribid="+self:msubid+" and (`seqtype`='RCUR' or `amountrecvd`>0.00)",oConn}:reccount>0  ;
-			if SqlSelect{"select firstinvoicedate from subscription where subscribid="+self:msubid+" and firstinvoicedate>'0000-00-00'",oConn}:reccount>0  
-// 					.or. (self:oDCmduedate:SelectedDate - coni(self:mterm)*30) < (today() - 240)   // too old, allready removed
-				self:oDCmInvoiceID:Disable() 
-				self:oDCSingleUse:Disable()
-				if self:mterm >=999
+			if (oSel:=SqlSelect{"select cast(firstinvoicedate as char) as firstinvoicedate from subscription where subscribid="+self:msubid,oConn}):reccount>0  
+				if oSel:firstinvoicedate>'0000-00-00'
+					self:oDCmInvoiceID:Disable() 
+					self:oDCSingleUse:Disable()
+					if self:mterm >=999
+						self:oCCOKButton:hide()
+					endif
+				elseif self:mterm>=999 .and. ( self:oDCmDueDate:SelectedDate - self:oDCmbegindate:SelectedDate)>400       // already debited
 					self:oCCOKButton:hide()
 				endif
 			endif
