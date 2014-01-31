@@ -1329,18 +1329,18 @@ METHOD FindButton( ) CLASS SubscriptionBrowser
 
 	local MyWhere as string
 
-	MyWhere:=self:cWhere
+	MyWhere:=""
 
 	if !Empty(self:SearchUni) 
 		aKeyw:=GetTokens(AllTrim(self:SearchUni))
 		for i:=1 to Len(aKeyw)
-			MyWhere+=iif(Empty(MyWhere),""," and ")+" (p.lastname like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
+			MyWhere+=iif(Empty(self:cWhere),""," and ")+" (p.lastname like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
 		next
 	endif
    	
-	self:cWhere:=MyWhere         
+	//self:cWhere:=MyWhere         
 	
-	self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
+	self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+ MyWhere +" order by "+self:cOrder 
 
 	self:oSub:Execute()
 	self:oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
