@@ -1632,12 +1632,13 @@ self:NameAnalyse(lAddress,lInitials,lSalutation,lMiddleName,lZipCode,lCity)
 RETURN
 FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUnique:=false as logic,cFilter:="" as string,;
 		cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
-	LOCAL oPersBw as PersonBrowser
-	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
+	LOCAL iEnd := At(",",pValue) as int
 	local cWhere,cFrom:="person as p", cOrder:="lastname",cValue:=pValue as string
+	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country" as string  
+	local oMyWindow as window
+	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
+	LOCAL oPersBw as PersonBrowser
 	local oSel as SqlSelectPagination
-	LOCAL iEnd := At(",",cValue) as int
-	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country"
 	
 	// 	IF lUnique 
 	if !Empty(oPersCnt)
@@ -1705,7 +1706,11 @@ FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUniqu
 		ENDIF	
 		RETURN
 	ENDIF
-	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller} 
+	if !ocaller==null_object .and. IsInstanceOf(ocaller,#window)   
+		oMyWindow:=oCaller:Owner
+	endif
+	oPersBw := PersonBrowser{oMyWindow,,oSel,oCaller} 
+// 	oPersBw := PersonBrowser{oCaller:Owner,,oSel,oCaller} 
 	oPersBw:cWhere:= cWhere
 	oPersBw:cFrom:=cFrom
 	oPersBw:cOrder:=cOrder

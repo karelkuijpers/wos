@@ -1507,7 +1507,7 @@ METHOD ReSet() CLASS General_Journal
 		self:lMemberGiver:=FALSE 
 		self:lwaitingForExchrate:=false
 		self:oDCGiroText:TextValue:= ""
-		CollectForced()  // shrink memory
+// 		CollectForced()  // shrink memory
 		RETURN
 	else
 		self:EndWindow() 
@@ -3841,7 +3841,7 @@ METHOD ReSet() CLASS PaymentJournal
 		oHm:Zap()
 		oHm:aMirror:={}
 		self:AutoRec:=FALSE 
-		CollectForced()    // shrink memory
+// 		CollectForced()    // shrink memory
 		RETURN
 	else
 		self:EndWindow()

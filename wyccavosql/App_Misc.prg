@@ -3804,7 +3804,8 @@ Function SetCollate()
 	if IsOldSpace(Collate)
 		OldSpaceFree(Collate)
 	endif
-	Collate:=DynToOldSpaceString(Collate)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
+	Collate:=DynToOldSpaceString(Collate)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory   
+	return
 function SetDepFilter(WhoFrom as int) as string 
 	// compose filter for department branch from given WhoFrom depid 
 	LOCAL i,j			as int
@@ -4180,7 +4181,7 @@ ASSIGN SqlString(uValue) CLASS SQLSelectPagination
 	self:nOffset:=0
 	self:lpEof:=false
 	self:lpBof:=false
-	if !Empty(uValue) 
+	if !Empty(uValue) .and. IsString(uValue)  
 		// determine max rec:
 		cCount:= "select count(*) as nlastrec"+Lower(SubStr(uValue,AtC(' from ',uValue))) 
 		nOrder:=RAt(" order ",cCount)

@@ -3472,8 +3472,8 @@ END
 METHOD Close(oEvent) CLASS PRINTSHOW2
 	SUPER:Close(oEvent)
 	//Put your changes here
-	CollectForced()
-	//SELF:Destroy()
+// 	CollectForced()
+self:Destroy()
 	RETURN nil
 
 METHOD FillPrint() CLASS PRINTSHOW2
@@ -3529,9 +3529,10 @@ STATIC DEFINE PRINTSHOW2_LISTPRINT := 100
 METHOD Close(oEvent) CLASS PRINTSHOW
 	SUPER:Close(oEvent)
 	//Put your changes here
-	CollectForced()
-	//SELF:Destroy()
-	RETURN NIL
+// 	CollectForced()
+	
+	self:Destroy()
+	RETURN 
 
 METHOD FillPrint() CLASS PrintShow
 	RETURN self:oOwner:oPrintJob:aFIFO

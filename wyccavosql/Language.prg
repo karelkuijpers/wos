@@ -30,7 +30,7 @@ if Empty(aLanR)
 	endif
 endif
 olanT:=null_object
-CollectForced()
+// CollectForced()
 RETURN self
  
 ACCESS LENGTH CLASS Language
