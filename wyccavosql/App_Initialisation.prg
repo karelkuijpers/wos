@@ -1898,8 +1898,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"ppcodes","0","PRIMARY","1","ppcode"},;
 		{"ppcodes","0","PPNAME","1","ppname"},;
 		{"subscription","0","PRIMARY","1","subscribid"},;
-		{"subscription","1","personid","1","personid"},;
-		{"subscription","1","personid","2","accid"},;
+		{"subscription","1","personid","1","category"},;
+		{"subscription","1","personid","2","personid"},;
+		{"subscription","1","personid","3","accid"},;
 		{"subscription","1","accid","1","accid"},;
 		{"subscription","1","INVOICEID","1","invoiceid"},;
 		{"telebankpatterns","0","PRIMARY","1","telpatID"},;
