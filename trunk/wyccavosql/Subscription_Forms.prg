@@ -1327,20 +1327,26 @@ RETURN SELF
 METHOD FindButton( ) CLASS SubscriptionBrowser        
 
 	local aKeyw:={} as array
-	local i as int                                           
+	local AFields:={"a.accnumber","a.description","p.lastname","p.postalcode","s.bankaccnt","s.invoiceid"} as array
+	local i,j as int                                            
 
 	local MyWhere as string
 
 	MyWhere:=""
 
-	if !Empty(self:SearchUni) 
-		aKeyw:=GetTokens(AllTrim(self:SearchUni))
+	
+	if !Empty(self:SearchUni)
+		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
+		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
-			MyWhere+=iif(Empty(self:cWhere),""," and ")+" (p.lastname like '%"+AddSlashes(aKeyw[i,1])+"%' or a.description like '%"+AddSlashes(aKeyw[i,1])+"%')"
+			MyWhere+=" and ("
+			for j:=1 to Len(AFields)
+				MyWhere+=iif(j=1,""," or ")+AFields[j]+" like '%"+StrTran(aKeyw[i,1],"'","\'")+"%'"
+			next
+			
+			MyWhere+=")"
 		next
-	endif
-   	
-	//self:cWhere:=MyWhere         
+	endif   
 	
 	self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+ MyWhere +" order by "+self:cOrder 
 
