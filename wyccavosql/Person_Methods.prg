@@ -4189,7 +4189,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 	endif 
 		* Datafile aanmaken:
-	cFilename := "\SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml' 
+	cFilename := "SEPADD"+DToS(Today())+Str(nSeq,-1)+'.xml' 
 	oWarn:=TextBox{self,self:oLan:WGet("Direct Debit"),;
 		self:oLan:WGet("Printing O.K.")+'? '+self:oLan:WGet("Can file")+;
 		Space(1)+cFilename+' '+CRLF+self:oLan:WGet("with shown")+' '+Str(Len(aTrans),-1)+' '+' transactions('+sCurrName+Str(fSum,-1)+') '+self:oLan:WGet("be imported into telebanking")+'?',BOXICONQUESTIONMARK + BUTTONYESNO}
@@ -4199,7 +4199,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	oMainWindow:STATUSMESSAGE("Producing SEPA Direct Debit file, moment please")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	* Prepare Datafile:
-	cFilename:=cFilename := "\SEPADD"+DToS(Today())+Str(nSeq,-1) 
+	cFilename:=cFilename := "SEPADD"+DToS(Today())+Str(nSeq,-1) 
 	ToFileFS:=AskFileName(self,@cFilename,"Creating SEPA_DD-file","*.XML","XML Data",@lAppend) 
 	if Empty(ToFileFS)
 		return false
