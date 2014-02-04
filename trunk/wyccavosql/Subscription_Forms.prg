@@ -1336,7 +1336,7 @@ METHOD FindButton( ) CLASS SubscriptionBrowser
 
 	
 	if !Empty(self:SearchUni)
-		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
+// 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
 		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
 			MyWhere+=" and ("
