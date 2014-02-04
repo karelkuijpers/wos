@@ -3650,7 +3650,7 @@ METHOD FindButton( ) as void pascal CLASS MemberBrowser
 	
 	if !Empty(self:SearchUni)
 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
-		aKeyw:=GetTokens(self:SearchUni)
+// 		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
 			self:cWhere+=" and ("
 			for j:=1 to Len(AFields)
