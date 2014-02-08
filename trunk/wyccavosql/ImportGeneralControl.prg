@@ -31,8 +31,8 @@ resource FOLDERCLOSE Icon C:\CAVO28\FOLDRS01.ICO
 CLASS FOLDERCLOSE INHERIT Icon
 METHOD Init() CLASS FOLDERCLOSE
    super:init(ResourceID{"FOLDERCLOSE", _GetInst()})
-CLASS FOLDEROPEN INHERIT Icon
 resource FOLDEROPEN Icon C:\CAVO28\FOLDRS02.ICO
+CLASS FOLDEROPEN INHERIT Icon
 METHOD Init() CLASS FOLDEROPEN
    super:init(ResourceID{"FOLDEROPEN", _GetInst()})
 STATIC GLOBAL hEdit AS PTR
@@ -187,64 +187,6 @@ method Close(oEvent) class ImportMapping
 Method ComposeImportName(cImpFirstname as string,cImpPfx as string,cImpLastname as string,cImpAd1 as string,cImpPos as string,cImpCity as string,cImpCnr as string,cInitials as string) as string class ImportMapping
 return AllTrim(cImpLastname+iif(sSurnameFirst,' ',', ')+iif(Empty(cImpFirstname),iif(Empty(cInitials),'',cInitials+' '),cImpFirstname+' ')+;
 iif(Empty(cImpPfx),'',cImpPfx+' ')+", "+iif(Empty(cImpAd1),'',cImpAd1+' ')+iif(Empty(cImpPos),'',cImpPos+' ')+iif(Empty(cImpCity),'',cImpCity+' ')+cImpCnr) 
-Method ComposeSelect() class ImportMapping
-	// compose statement for retrieval of existing person for synchronising with imported person
-	LOCAL i, j, titPtr, typPtr as int  
-	Local ID as string,IDs as Symbol
-	local cFrom:=" from person as p", CFields,cGroup,cWhere:=" where deleted=0 and p.?" as string, lExtra,lBank,lCod as logic 
-	local Fieldname as string
-	FOR i:=1 to Len(self:aMapping)
-		ID:=Symbol2String(self:aMapping[i,1])
-		Fieldname:=Lower(SubStr(ID,2))
-		IDs:=String2Symbol(SubStr(ID,2))
-		IF SubStr(ID,1,1)=="V"     // extra propertY?
-			lExtra:=true
-		elseif IDs=#banknumber  // banknumber?
-			lBank:=true
-		elseIF IDs=#Cod
-			lCod:=true
-		elseif Lower(SubStr(ID,2))<>'persid' 
-			// 			CFields+=iif(Empty(CFields),'',',')+'p.'+SubStr(ID,2) 
-			j:=AScan(self:aTargetDB,{|x|x[1]==FieldName})
-			if j>0 .and. AtC('date',self:aTargetDB[j,2])>0
-				CFields+=iif(Empty(CFields),'',',')+'cast('+Fieldname+' as date) as '+Fieldname
-			else
-				CFields+=iif(Empty(CFields),'',',')+Fieldname
-			endif
-		endif
-	next
-	if lExtra
-		CFields+=iif(Empty(CFields),'',',')+'propextr'
-	endif
-	if lCod.or.!Empty(DefaultCod)
-		CFields+=iif(Empty(CFields),'',',')+'mailingcodes'
-	endif
-	if lBank
-		CFields+=iif(Empty(CFields),'',',')+"group_concat(b.banknumber separator ',') as bankaccounts"
-		cFrom+=" left join personbank b on (p.persid=b.persid)"
-		cGroup:=" group by p.persid"
-	endif
-	if AtC('persid',CFields)=0   // always retrieve identifier persid
-		CFields+=iif(Empty(CFields),'',',')+'p.persid'
-	endif
-	if AtC('datelastgift',CFields)=0   // always retrieve identifier datelastgift
-		CFields+=iif(Empty(CFields),'',',')+'cast(datelastgift as date) as datelastgift'
-	endif
-	if AtC('firstname',CFields)=0   // always retrieve identifier firstname for congruence score
-		CFields+=iif(Empty(CFields),'',',')+'firstname'
-	endif
-	if AtC('initials',CFields)=0   // always retrieve identifier initials for  congruence score
-		CFields+=iif(Empty(CFields),'',',')+'initials'
-	endif
-	if AtC('creationdate',CFields)=0   // always retrieve identifier creationdate
-		CFields+=iif(Empty(CFields),'',',')+'cast(creationdate as date) as creationdate' +sIdentchar
-	endif
-	if AtC('alterdate',CFields)=0   // always retrieve identifier alterdate
-		CFields+=iif(Empty(CFields),'',',')+'cast(alterdate as date) as alterdate'
-	endif
-	self:cSelectStatement:="select "+Lower(CFields)+cFrom+cWhere+cGroup 
-	return
-
 ACCESS ConfirmBox() CLASS ImportMapping
 RETURN SELF:FieldGet(#ConfirmBox)
 
@@ -733,7 +675,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 		// Check if person already exist with given external or internal id: 
 		exidptr:=AScan(self:aMapping,{|x|x[1]==#mExternid})
 		self:PersidPtr:=AScan(self:aMapping,{|x|x[1]==#mPersId})
-		self:lMailingCode:=(AScan(self:aMapping,{|x|x[1]==#mCod})>0)  
+		self:lMailingCode:=(AScan(self:aMapping,{|x|x[1]==#mMailingcodes})>0)  
 		self:lDlg:=(AScan(self:aMapping,{|x|x[1]==#mDlg})>0)  
 		self:lBdat:=(AScan(self:aMapping,{|x|x[1]==#mBdat})>0)  
 		self:lMdat:=(AScan(self:aMapping,{|x|x[1]==#mMUTD})>0)  
@@ -921,7 +863,8 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 		endif			
 	endif
 	// 	logevent(self,"kids after postinit "+str(self:ImportCount,-1)+":"+str(Memory(MEMORY_REGISTERKID),-1),"logdebug")
-	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#NewPersonWindow .and. (self:lOverwrite.or.!self:lExists)  // do not add mailing code when not overwrite
+// 	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#EditPerson .and. (self:lOverwrite.or.!self:lExists)  // do not add mailing code when not overwrite
+	IF !self:lMailingCode .and. IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#EditPerson  // do not add mailing code when not overwrite
 		// add default codes even when mCod not mapped:
 		cMlCod:=self:oEdit:mCod
 		aCod:=Split(AllTrim(cMlCod)+" "+AllTrim(DefaultCod)," ",true)
@@ -969,7 +912,7 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 					endif
 				ELSEIF IDs=#mMailingcodes
 					cMlCod:=self:oEdit:mCod
-					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(AllTrim(cTargetStr)))+" "+AllTrim(DefaultCod)," ",true)
+					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(StrTran(cTargetStr,',',' ')))+" "+AllTrim(DefaultCod)," ",true)
 					if !lMember     
 						// remove member mailing code from
 						if AScan(aCod,'MW')>0
@@ -1094,9 +1037,9 @@ METHOD MapItems(dummy:=nil as logic) as int CLASS ImportMapping
 			ENDIF				
 		ENDIF
 	NEXT
-	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#NewPersonWindow
+	IF IsMethod(self:oEdit,#StateExtra) .and. ClassName(self:oEdit)=#EditPerson
 		// add default codes even when mCod not mapped:
-		self:oEdit:StateExtra(aMapping)
+		self:oEdit:StateExtra()
 		if "FI"$cCodes .and. Empty(self:oEdit:FIELDGET(#mDateLastGift))
 			self:oEdit:mDateLastGift:=Today()-4000
 		ENDIF
@@ -1335,7 +1278,7 @@ IF Empty(aMapping)
 	SetRTRegString(cRoot,"ReplaceDuplicates", Transform(self:oDCReplaceDuplicates:Checked,"@L"))
 	
 ENDIF
-DefaultCOD := MakeCod({SELF:oDCmCod1:Value,SELF:oDCmCod2:Value,SELF:oDCmCod3:Value,SELF:oDCmCod4:Value,SELF:oDCmCod5:Value,SELF:oDCmCod6:Value})
+self:DefaultCOD := MakeCod({self:oDCmCod1:value,self:oDCmCod2:value,self:oDCmCod3:value,self:oDCmCod4:value,self:oDCmCod5:value,self:oDCmCod6:VALUE})
 
 IF TargetDB=="Person"
 	self:oEdit:=EditPerson{self:Owner,,,true} 
@@ -1345,7 +1288,7 @@ IF TargetDB=="Person"
 	self:aFields:={} 
 	self:avaluesbank:={} 
 	self:lMailingCode:=false
-	self:ComposeSelect()  // compose select statement for synchronisation
+// 	self:ComposeSelect()  // compose select statement for synchronisation
 ELSEIF TargetDB=="Account"
 	oEdit:=EditAccount{SELF:Owner,,,TRUE}
 ENDIF
@@ -1533,19 +1476,20 @@ endif
 Name:=Implode(aWord," ")
 return Name
 Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class ImportMapping
-	LOCAL i, j, titPtr, typPtr as int
-	LOCAL uSrcValue as USUAL
-	LOCAL cTargetStr,ID,Fieldname, cFT,cCity,cCod,cPersid as STRING, IDs as symbol, nID as int
-	LOCAL aBank,aBankExist,aCod as ARRAY
-	LOCAL myBDAT, myMUTD as date 
-	local lExists:=false, lOverwrite:=true, lStop:=false as logic
-	LOCAL oXMLDoc as XMLDocument
-	LOCAL aNonImport:={#CLN,#OPC,#REK,#CLC,#PROPEXTR,#PROPXTRA} as ARRAY 
+	LOCAL i, j, titPtr, typPtr, nID as int 
 	local cStatement as String
+	LOCAL cTargetStr,ID,Fieldname, cFT,cCity,cCod,cPersid,cMlCod as STRING
+	local lExists:=false, lOverwrite:=true, lStop:=false as logic
+	local lFillFields:=iif(Empty(self:AFields),true,false) as logic
+	LOCAL myBDAT, myMUTD as date 
+	LOCAL uSrcValue as USUAL
+	local IDs as symbol
+	LOCAL aBank,aBankExist,aCod as ARRAY
+	local aValueRow:={} as array
+	LOCAL aNonImport:={#CLN,#OPC,#REK,#CLC,#PROPEXTR,#PROPXTRA} as ARRAY 
+	LOCAL oXMLDoc as XMLDocument
 	local oStmnt as SQLStatement 
 	local oPersExist as SQLSelect 
-	local lFillFields:=iif(Empty(self:AFields),true,false) as logic
-	local aValueRow:={} as array
 	// 	pers_propextra:{AllTrim(oPersProp:NAME), oPersProp:ID,oPersProp:TYPE,Lower(oPersProp:VALUES)} 
 	// type: 0:textbox,1:checkbox;3:drop down list
 	//	In case of extra properties and mailingcodes the existing person has to be retrieved
@@ -1553,7 +1497,8 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 
 	if !Empty(oPersCnt:PERSID) .and. (self:lExtra .or. self:lMailingCode )
 		// select existing person 
-		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn}
+// 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn} 
+		oPersExist:=SqlSelect{"select persid"+iif(self:lExtra,",propextr","")+iif(self:lMailingCode,",mailingcodes","")+" from person where deleted=0 and persid="+oPersCnt:PERSID,oConn}		
 		oPersExist:Execute()
 		if	!Empty(oPersExist:Status) .or. oPersExist:RecCount<1
 			return false
@@ -1561,6 +1506,9 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 		// Contains mapping extra property?
 		if self:lExtra
 			oXMLDoc:=XMLDocument{oPersExist:PROPEXTR}
+		endif
+		if self:lMailingCode
+			cMlCod:=oPersExist:mailingcodes
 		endif
 	endif 
 	cPersid:=oPersCnt:PERSID
@@ -1577,8 +1525,11 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 		ID:=Symbol2String(aMapping[i,1])
 		Fieldname:=Lower(SubStr(ID,2))
 		IDs:=String2Symbol(FieldName)	
+		if lFillFields
+			AAdd(self:AFields,FieldName)
+		endif
 		cTargetStr:=AddSlashes(self:GetImportvalue(aWord,i))
-		if !self:lExtra.and. !self:lMailingCode .or. !Empty(cTargetStr)
+// 		if !self:lExtra.and. !self:lMailingCode .or. !Empty(cTargetStr)
 			IF SubStr(ID,1,1)=="V" .and.!Empty(cTargetStr)
 				nID:=Val(FieldName)
 				// extra property Str(pers_propextra[count,2],-1)
@@ -1613,20 +1564,20 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					else
 						uSrcValue:=Val(cTargetStr)
 					endif
-					if lFillFields
-						AAdd(self:aFields,'gender')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'gender')
+// 					endif
 					AAdd(aValueRow,AllTrim(Transform(uSrcValue,"")))
-				ELSEIF IDs=#Cod
-					if lFillFields
-						AAdd(self:aFields,'mailingcodes')
-					endif
-					aCod:=MakeAbrvCod(cTargetStr)
-					AAdd(aValueRow,MakeCod(Split(iif(Empty(aCod),'',MakeCod(aCod)+' ')+iif(Empty(DefaultCod),'',AllTrim(DefaultCod)),,true)))
-				ELSEIF IDs=#Titel
-					if lFillFields
-						AAdd(self:aFields,'title')
-					endif
+				ELSEIF IDs=#Mailingcodes
+// 					if lFillFields
+// 						AAdd(self:aFields,'mailingcodes')
+// 					endif
+					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(StrTran(cTargetStr,',',' ')))+" "+AllTrim(DefaultCod))
+					AAdd(aValueRow,AddSlashes(MakeCod(aCod)))
+				ELSEIF IDs=#Title
+// 					if lFillFields
+// 						AAdd(self:aFields,'title')
+// 					endif
 					titPtr:=1
 					if isnum(cTargetStr)
 						titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
@@ -1636,9 +1587,9 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					endif
 					AAdd(aValueRow,Str(pers_titles[titPtr,2],-1))
 				ELSEIF IDs=#type
-					if lFillFields
-						AAdd(self:aFields,'type')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'type')
+// 					endif
 					typPtr:=0
 					if isnum(cTargetStr)
 						typPtr:=AScan(pers_types,{|x|x[2]==Val(cTargetStr)})
@@ -1648,27 +1599,27 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					endif
 					AAdd(aValueRow,Str(iif(typPtr>0,pers_types[typPtr,2],0),-1))
 				ELSEIF IDs=#lastname
-					if lFillFields
-						AAdd(self:aFields,'lastname')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'lastname')
+// 					endif
 					AAdd(aValueRow,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
 				ELSEIF IDs=#city
-					if lFillFields
-						AAdd(self:aFields,'city')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'city')
+// 					endif
 					if Empty(cTargetStr) .and. self:lMailingCode 
 						cTargetStr:='??'
 					endif
 					AAdd(aValueRow,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
 				ELSEIF IDs=#REMARKS
-					if lFillFields
-						AAdd(self:aFields,'remarks')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'remarks')
+// 					endif
 					AAdd(aValueRow,cTargetStr)
 				ELSEIF IDs=#EXTERNID
-					if lFillFields
-						AAdd(self:aFields,'externid')
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,'externid')
+// 					endif
 					AAdd(aValueRow,ZeroTrim(cTargetStr))
 				ELSEIF IDs=#banknumber 
 					aBank:=Split(cTargetStr,,true)
@@ -1676,9 +1627,9 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 						AAdd(self:avaluesbank,{cPersid,aBank[j],GetBIC(aBank[j])})
 					next
 				ELSE 
-					if lFillFields
-						AAdd(self:aFields,FieldName)
-					endif
+// 					if lFillFields
+// 						AAdd(self:aFields,FieldName)
+// 					endif
 					j:=AScan(self:aTargetDB,{|x|x[1]==FieldName})
 					if j>0
 						cFT:=self:aTargetDB[j,2]
@@ -1701,7 +1652,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 					endif	
 				ENDIF
 			endif
-		ENDIF
+// 		ENDIF
 	NEXT
 
 	if	self:lExtra
@@ -1926,18 +1877,17 @@ method UpdateBatch(dummy:=nil as logic) as logic class ImportMapping
 local oStmnt as SQLStatement
 local cUpdateStatement as String
 local i,j as int 
-local time0,time1 as DWORD
 local aCod:={} as array
 
 
 	if !Empty(self:AFields) .and.!Empty(self:aValues) 
-		time0:=Seconds()
 		// compose update logic:
 		for i:=1 to len(self:aFields)
 			do case
 			case self:AFields[i]=='persid'
 // 			case self:AFields[i]=='mailingcodes'
 // 				cUpdateStatement+=',mailingcodes=if(values(mailingcodes)<>"",concat(values(mailingcodes)," ",mailingcodes),mailingcodes)'+iif(AScanExact(self:AFields,'city')=0,',city=if(city="","??",city)','')	
+// 				SELECT SUBSTRING_INDEX( SUBSTRING_INDEX( 'a|b|c|d|e|f|g|h', '|', index), '|', -1 );
 			case self:AFields[i]=='type'
 				cUpdateStatement+=',type=if(type=2 or type=3 or values(type)="",type,values(type))'	
 			case self:AFields[i]=='remarks'
@@ -1946,7 +1896,7 @@ local aCod:={} as array
 				cUpdateStatement+=','+self:AFields[i]+'=if(values('+self:AFields[i]+')<>"",values('+self:AFields[i]+'),'+self:AFields[i]+')'
 			endcase
 		NEXT
-		if !self:lMailingCode .and.!Empty( self:DefaultCOD)
+		if !self:lMailingCode .and.!Empty( self:DefaultCod)
 			// add code for adding default codes
 			aCod:=Split(AllTrim(DefaultCod)," ",true)
 			cUpdateStatement+=",mailingcodes=concat(concat(mailingcodes,' ')"
@@ -1962,8 +1912,6 @@ local aCod:={} as array
 			LogEvent(self,"error:"+oStmnt:Status:description+" in update persons statement"+CRLF+"Stmnt:"+oStmnt:sqlstring,"LogErrors")
 			return false
 		endif
-		time1:=time0 
-// 		LogEvent(self,"time batch update:"+Str((time0:=Seconds())-time1,-1)+' sec',"logsql")
 	endif
 	if !Empty(self:avaluesbank)
 		oStmnt:=SQLStatement{'insert ignore into personbank (persid,banknumber,bic) values '+Implode(self:avaluesbank,"','"),oConn}
