@@ -32,6 +32,7 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	PROTECT oDCmEndDate AS DATETIMEPICKER
 	PROTECT oDCFixedText11 AS FIXEDTEXT
 	PROTECT oDCSingleUse AS CHECKBOX
+	PROTECT oDCmBlocked AS CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 
@@ -66,27 +67,28 @@ BEGIN
 	CONTROL	"v", EDITSUBSCRIPTION_PERSONBUTTON, "Button", WS_CHILD, 96, 11, 13, 12
 	CONTROL	"", EDITSUBSCRIPTION_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 11, 92, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITSUBSCRIPTION_ACCBUTTON, "Button", WS_CHILD, 218, 11, 15, 13
-	CONTROL	"28-1-2014", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 48, 83, 13
-	CONTROL	"28-1-2014", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 62, 83, 14
+	CONTROL	"8-2-2014", EDITSUBSCRIPTION_MBEGINDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 48, 83, 13
+	CONTROL	"8-2-2014", EDITSUBSCRIPTION_MDUEDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 68, 62, 83, 14
 	CONTROL	"", EDITSUBSCRIPTION_MTERM, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 81, 83, 11, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MAMOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 96, 83, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 204, 110, 53, 13
-	CONTROL	"Giro Accept", EDITSUBSCRIPTION_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 268, 77, 53, 11
-	CONTROL	"Direct Debit", EDITSUBSCRIPTION_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 267, 93, 56, 11
+	CONTROL	"Invoice ID (KID):", EDITSUBSCRIPTION_INVOICETEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 204, 125, 53, 12
+	CONTROL	"Giro Accept", EDITSUBSCRIPTION_RADIOBUTTONGIRO, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 268, 92, 53, 11
+	CONTROL	"Direct Debit", EDITSUBSCRIPTION_RADIOBUTTONCOLLECTION, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 268, 103, 56, 11
 	CONTROL	"Type:", EDITSUBSCRIPTION_MTYPE, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 344, 7, 66, 25
-	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 110, 152, 13, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSUBSCRIPTION_MINVOICEID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 125, 152, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MBANKACCNT, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_VSCROLL, 68, 110, 126, 72
 	CONTROL	"", EDITSUBSCRIPTION_MREFERENCE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 126, 126, 13, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_MLSTCHANGE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 147, 83, 13, WS_EX_CLIENTEDGE
 	CONTROL	"", EDITSUBSCRIPTION_TYPETEXT, "Static", WS_CHILD, 348, 14, 53, 13
-	CONTROL	"Payment Method", EDITSUBSCRIPTION_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 260, 70, 66, 38
+	CONTROL	"Payment Method", EDITSUBSCRIPTION_MPAYMETHOD, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 260, 81, 66, 38
 	CONTROL	"Bank account:", EDITSUBSCRIPTION_BANKTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 112, 53, 12
 	CONTROL	"Cancel", EDITSUBSCRIPTION_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 304, 155, 53, 12
 	CONTROL	"OK", EDITSUBSCRIPTION_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 360, 155, 53, 12
 	CONTROL	"Reference:", EDITSUBSCRIPTION_SC_REF, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 126, 53, 13
-	CONTROL	"28-1-2014", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 260, 48, 83, 13
+	CONTROL	"8-2-2014", EDITSUBSCRIPTION_MENDDATE, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 260, 48, 83, 13
 	CONTROL	"End date:", EDITSUBSCRIPTION_FIXEDTEXT11, "Static", WS_CHILD, 204, 51, 44, 13
 	CONTROL	"Single use", EDITSUBSCRIPTION_SINGLEUSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 8, 29, 80, 11
+	CONTROL	"Blocked temporary for debiting", EDITSUBSCRIPTION_MBLOCKED, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 204, 66, 140, 11
 END
 
 METHOD AccButton(lUnique ) CLASS EditSubscription
@@ -134,7 +136,14 @@ METHOD ButtonClick(oControlEvent) CLASS EditSubscription
 			self:oDCmEndDate:Show()
 			self:oDCFixedText11:Show()
 			self:oDCSC_P07:Show()
+		endif  
+	elseif oControl:Name=="MBLOCKED"
+		if oControl:Value==FALSE
+			self:oDCmBlocked:TextColor:=Color{COLORBLACK}
+		else
+			self:oDCmBlocked:TextColor:=Color{COLORRED}
 		endif
+	
 	ENDIF
 
 	RETURN NIL
@@ -274,6 +283,9 @@ oDCFixedText11:HyperLabel := HyperLabel{#FixedText11,"End date:",NULL_STRING,NUL
 oDCSingleUse := CheckBox{SELF,ResourceID{EDITSUBSCRIPTION_SINGLEUSE,_GetInst()}}
 oDCSingleUse:HyperLabel := HyperLabel{#SingleUse,"Single use",NULL_STRING,NULL_STRING}
 
+oDCmBlocked := CheckBox{SELF,ResourceID{EDITSUBSCRIPTION_MBLOCKED,_GetInst()}}
+oDCmBlocked:HyperLabel := HyperLabel{#mBlocked,"Blocked temporary for debiting",NULL_STRING,NULL_STRING}
+
 oDCmType := RadioButtonGroup{SELF,ResourceID{EDITSUBSCRIPTION_MTYPE,_GetInst()}}
 oDCmType:HyperLabel := HyperLabel{#mType,"Type:",NULL_STRING,NULL_STRING}
 
@@ -317,6 +329,13 @@ RETURN SELF:FieldGet(#mBankAccnt)
 
 ASSIGN mBankAccnt(uValue) CLASS EditSubscription
 SELF:FieldPut(#mBankAccnt, uValue)
+RETURN uValue
+
+ACCESS mBlocked() CLASS EditSubscription
+RETURN SELF:FieldGet(#mBlocked)
+
+ASSIGN mBlocked(uValue) CLASS EditSubscription
+SELF:FieldPut(#mBlocked, uValue)
 RETURN uValue
 
 ACCESS mInvoiceID() CLASS EditSubscription
@@ -532,7 +551,8 @@ METHOD OKButton( ) CLASS EditSubscription
 				", term="+ Str(self:mterm,-1)+;
 				", amount="+ Str(self:mamount,-1) +;
 				", "+iif(SepaEnabled,"mandateid","invoiceid")+"="+self:mInvoiceID+;
-				", bankaccount="+self:oDCmBankAccnt:CurrentItem
+				", bankaccount="+self:oDCmBankAccnt:CurrentItem+;
+				", blocked="+iif(self:mblocked,"true","false")
 		else
 
 			// check if dueamounts or next due date has to be updated: 
@@ -616,7 +636,9 @@ METHOD OKButton( ) CLASS EditSubscription
 				iif(ConS(self:mterm)==ConS(self:oSub:term),'','term:'+ConS(self:oSub:term)+'-> '+ConS(self:mterm)+CRLF)+;
 				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
 				iif(ConS(self:mInvoiceID)==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+ConS(self:mInvoiceID)+CRLF)+;
-				iif(ConS(self:mBankAccnt)==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+ConS(self:oDCmBankAccnt:TextValue)+CRLF)
+				iif(ConS(self:mBankAccnt)==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+ConS(self:oDCmBankAccnt:TextValue)+CRLF)+;   
+				iif(iif(self:mblocked,"1","0")==self:oSub:blocked,'','blocked:'+;
+				iif(ConI(self:oSub:blocked)=1,"true","false")+'-> '+ iif(self:mblocked,"true","false")+CRLF)
 			if Empty(cLog)
 				// nothing changed: 
 				self:EndWindow()
@@ -646,7 +668,8 @@ METHOD OKButton( ) CLASS EditSubscription
 		",reference='"+iif(IsNil(self:mReference),"",AddSlashes(self:mReference))+"'"+;
 		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 	",bankaccnt='"+iif(IsNil(self:oDCmBankAccnt:TextValue),"",self:oDCmBankAccnt:TextValue)+"'"+;
-		",bic='"+ConS(self:mBic)+"'"+;
+		",bic='"+ConS(self:mBic)+"'"+;  
+		",blocked="+iif(self:mblocked,"1","0")+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	// 		iif(self:lNew .or.!ConS(self:mBankAccnt)==self:oSub:BANKACCNT,',firstinvoicedate="0000-00-00"','')+;   // reset to first in case of bankaccount change
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
@@ -745,7 +768,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
 		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,cast(s.firstinvoicedate as date) as firstinvoicedate,"+;
-			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.bic,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,"+;
+			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.bic,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,s.blocked,"+;
 			SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber,'#%#',b.bic separator ',') as bankaccs "+;
 			"from subscription s, account a,person p "+; 
 		+" left join personbank b on (b.persid=p.persid) " +;
@@ -769,14 +792,16 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:oDCSC_P07:hide()
 		self:oDCmReference:Show()
 		self:oDCSC_REF:Show()
-		self:oDCSingleUse:hide() 
+		self:oDCSingleUse:hide()  
+		self:oDCmBlocked:hide()
 	ELSEIF cType=="SUBSCRIPTIONS"
 		self:mtype:="A"
 		if sEntity == "NOR"
 			self:oDCInvoiceText:Show()
 			self:oDCmInvoiceID:Show()
 		endif
-		self:oDCSingleUse:hide() 
+		self:oDCSingleUse:hide()   
+		self:oDCmBlocked:hide()
 	ELSEIF cType=="DONATIONS"
 		self:mtype:="D"
 		if CountryCode=="47"
@@ -797,7 +822,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:oDCmDueDate:SelectedDate:=SToD(SubStr(DToS(self:oDCmbegindate:SelectedDate),1,6)+'20')
 		self:oDCmEndDate:SelectedDate:=self:oDCmDueDate:SelectedDate+365*100
 		self:mterm   := 1
-		self:mamount   := 0
+		self:mamount   := 0  
+		self:mBlocked:= false
 		IF !self:cType=="STANDARD GIFTS"
 			self:oDCmPayMethod:Value:="C"
 		endif
@@ -821,7 +847,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:cPersonName := self:oSub:personname
 		self:mPerson:= cPersonName
 		self:mCurBic:=self:oSub:Bic
-		self:mBic:=self:mCurBic
+		self:mBic:=self:mCurBic  
+		self:mBlocked:=iif(ConI(self:oSub:blocked)=1,true,false)      
+		// self:oDCmBlocked:TextCo
 
 		self:oDCmbegindate:SelectedDate := self:oSub:begindate
 		IF Empty(self:oSub:duedate)
@@ -898,14 +926,22 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 					self:oDCmInvoiceID:Disable() 
 					self:oDCSingleUse:Disable()
 					if self:mterm >=999
-						self:oCCOKButton:hide()
+						self:oCCOKButton:hide() 
+						self:oDCmBlocked:hide()
 					endif
 				elseif self:mterm>=999 .and. ( self:oDCmDueDate:SelectedDate - self:oDCmbegindate:SelectedDate)>400       // already debited
-					self:oCCOKButton:hide()
+					self:oCCOKButton:hide()     
+					self:oDCmBlocked:hide()
 				endif
 			endif
 		endif
-	endif
+	endif   
+	
+	if self:mBlocked
+		self:oDCmBlocked:TextColor:=Color{COLORRED}		
+	else
+		self:oDCmBlocked:TextColor:=Color{COLORBLACK}
+	endif	
 
 	RETURN nil
 ACCESS SingleUse() CLASS EditSubscription
@@ -924,6 +960,7 @@ STATIC DEFINE EDITSUBSCRIPTION_MACCOUNT := 109
 STATIC DEFINE EDITSUBSCRIPTION_MAMOUNT := 114 
 STATIC DEFINE EDITSUBSCRIPTION_MBANKACCNT := 120 
 STATIC DEFINE EDITSUBSCRIPTION_MBEGINDATE := 111 
+STATIC DEFINE EDITSUBSCRIPTION_MBLOCKED := 132 
 STATIC DEFINE EDITSUBSCRIPTION_MDUEDATE := 112 
 STATIC DEFINE EDITSUBSCRIPTION_MENDDATE := 129 
 STATIC DEFINE EDITSUBSCRIPTION_MINVOICEID := 119 
@@ -1078,29 +1115,6 @@ STATIC DEFINE PROLONGATION_GROUPBOX1 := 105
 STATIC DEFINE PROLONGATION_MACCOUNT := 100 
 STATIC DEFINE PROLONGATION_OKBUTTON := 104 
 STATIC DEFINE PROLONGATION_SC_accid := 101 
-RESOURCE SubscriptionBrowser DIALOGEX  22, 20, 499, 280
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 24, 96, 398, 172
-	CONTROL	"&Account:", SUBSCRIPTIONBROWSER_SC_AR1, "Static", WS_CHILD, 24, 51, 32, 13
-	CONTROL	"&Person:", SUBSCRIPTIONBROWSER_SC_OMS, "Static", WS_CHILD, 24, 36, 28, 13
-	CONTROL	"", SUBSCRIPTIONBROWSER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 36, 120, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", SUBSCRIPTIONBROWSER_PERSONBUTTON, "Button", WS_CHILD, 220, 36, 13, 13
-	CONTROL	"", SUBSCRIPTIONBROWSER_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 51, 120, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", SUBSCRIPTIONBROWSER_ACCBUTTON, "Button", WS_CHILD, 220, 51, 13, 13
-	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 428, 107, 53, 12
-	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 151, 53, 12
-	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 195, 53, 13
-	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 84, 478, 190
-	CONTROL	"Select subscriptions of:", SUBSCRIPTIONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 3, 224, 70
-	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 316, 33, 156, 12
-	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 256, 33, 27, 12
-	CONTROL	"Universal like google:", SUBSCRIPTIONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 24, 22, 72, 12
-	CONTROL	"", SUBSCRIPTIONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 120, 12
-	CONTROL	"Find", SUBSCRIPTIONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 244, 11, 53, 12
-END
-
 CLASS SubscriptionBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDCSC_AR1 AS FIXEDTEXT
@@ -1130,6 +1144,29 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	export oSub as SQLSelectPagination
 	export cFields,cFrom,cWhere,cOrder as string
 	export dLastDDdate as date 
+RESOURCE SubscriptionBrowser DIALOGEX  22, 20, 499, 280
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 24, 96, 398, 172
+	CONTROL	"&Account:", SUBSCRIPTIONBROWSER_SC_AR1, "Static", WS_CHILD, 24, 51, 32, 13
+	CONTROL	"&Person:", SUBSCRIPTIONBROWSER_SC_OMS, "Static", WS_CHILD, 24, 36, 28, 13
+	CONTROL	"", SUBSCRIPTIONBROWSER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 36, 120, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", SUBSCRIPTIONBROWSER_PERSONBUTTON, "Button", WS_CHILD, 220, 36, 13, 13
+	CONTROL	"", SUBSCRIPTIONBROWSER_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 51, 120, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", SUBSCRIPTIONBROWSER_ACCBUTTON, "Button", WS_CHILD, 220, 51, 13, 13
+	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 428, 107, 53, 12
+	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 151, 53, 12
+	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 195, 53, 13
+	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 84, 478, 190
+	CONTROL	"Select subscriptions of:", SUBSCRIPTIONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 3, 224, 70
+	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 316, 33, 156, 12
+	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 256, 33, 27, 12
+	CONTROL	"Universal like google:", SUBSCRIPTIONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 24, 22, 72, 12
+	CONTROL	"", SUBSCRIPTIONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 120, 12
+	CONTROL	"Find", SUBSCRIPTIONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 244, 11, 53, 12
+END
+
 METHOD AccButton(lUnique ) CLASS SubscriptionBrowser
 	LOCAL cFilter AS STRING
 	Default(@lUnique,FALSE)
