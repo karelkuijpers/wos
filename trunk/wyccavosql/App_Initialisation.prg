@@ -1641,7 +1641,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","bankaccnt","varchar(64)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
 		{"subscription","firstinvoicedate","date","NO","0000-00-00",""},;
-		{"subscription","bic","varchar(11)","NO","",""},;
+		{"subscription","bic","varchar(11)","NO","",""},;   
+		{"subscription","blocked","tinyint(1)","NO","0",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
 		{"sysparms","lstreportmonth","int(6)","NO","0",""},;
 		{"sysparms","mindate","date","NO","0000-00-00",""},;
