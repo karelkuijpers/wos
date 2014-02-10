@@ -4054,10 +4054,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	endif
 	for SeqTp:=1 to Len(aSeqTp)
 		// determine requested collection date:
-		// for first and single 4 work days ahead, otherwise 2 work days
-		dReqCol:=dSenddate+iif(SeqTp=1.or.SeqTp=4,4,2)  
+		// for first and single 5 work days ahead(= 1 week), otherwise 2 work days
+		dReqCol:=dSenddate+iif(SeqTp=1.or.SeqTp=4,7,2)  
 		if DoW(dReqCol)=1
-			dReqCol+=1     // on Sunday go to Monday
+			dReqCol+=2     // on Sunday go to Tuesday
 		elseif DoW(dReqCol)=7
 			dReqCol+=2     // on saturday: go to Monday
 		endif
