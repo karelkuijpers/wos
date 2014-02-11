@@ -658,11 +658,11 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	declare method FillMbrProjArray
 METHOD Close(oEvent)  CLASS DataWindowMine
 // force garbage collection
-// 	self:Destroy()
-// 	CollectForced()
-// 	IF !_DynCheck()
-// 		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
-// 	ENDIF   
+	self:Destroy()
+	CollectForced()
+	IF !_DynCheck()
+		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
+	ENDIF   
 RETURN SUPER:Close(oEvent)
 
 METHOD FillMbrProjArray() CLASS DataWindowMine  
