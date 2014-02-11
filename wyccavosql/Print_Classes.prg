@@ -870,11 +870,11 @@ METHOD CancelButton( ) CLASS eMailFormat
 	RETURN SELF
 
 METHOD EditButton( ) CLASS eMailFormat
-LOCAL oMark AS MarkupLetter
-oMark:= MarkupLetter{self,self:Templates}
-oMark:Show()
+	LOCAL oMark AS MarkupLetter
+	oMark:= MarkupLetter{self,self:Templates}
+	oMark:Show()
 	
-RETURN
+	RETURN
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS eMailFormat 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -914,11 +914,14 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListFiles(mExt) CLASS eMailFormat
-LOCAL brieven:={{"<None>", ""}} AS ARRAY
-Default(@mExt,"eMl")
-AEval(Directory(CurPath+"\*."+mExt),{|x| AAdd(brieven,{SubStr(x[F_NAME],1,RAt(".",x[F_NAME])-1),x[F_NAME]})})
+	LOCAL brieven:={{"<None>", ""}} AS ARRAY
+	Default(@mExt,"eMl")
+	AEval(Directory(CurPath+"\*."+mExt),{|x| AAdd(brieven,{SubStr(x[F_NAME],1,RAt(".",x[F_NAME])-1),x[F_NAME]})})
+	if CountryCode=='47' // debug for Oddrun in Norway
+		LogEvent(self,"email directory:"+CurPath+"\*."+mExt+CRLF+Implode(brieven,",",,,,")"+CRLF+"("),"loginfo")
+	endif
 	
-RETURN brieven
+	RETURN brieven
 METHOD NewButton( ) CLASS eMailFormat
 LOCAL oMark AS MarkupLetter
 oMark:= MarkupLetter{SELF,".eMl"}
@@ -946,16 +949,20 @@ METHOD OKButton( ) CLASS eMailFormat
 RETURN NIL
 METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS eMailFormat
 	//Put your PostInit additions here
-*    SELF:oDCBrieven:ListFiles("*.eMl")
+	*    SELF:oDCBrieven:ListFiles("*.eMl")
 	self:SetTexts()
 	SaveUse(self)
-	self:Templates := WycIniFS:Getstring("Runtime", "eMlContent" )
+	self:Templates := WycIniFS:Getstring("Runtime", "eMlContent" ) 
+	if CountryCode=='47' // debug for Oddrun in Norway
+		LogEvent(self,"email template:"+self:Templates,"loginfo")
+	endif
+
 	IF Empty(self:Templates)
-	    self:oDCTemplates:CurrentItemNo:=1
+		self:oDCTemplates:CurrentItemNo:=1
 	ELSE
-	   self:oDCTemplates:TextValue:=self:Templates
+		self:oDCTemplates:TextValue:=self:Templates
 		IF self:oDCTemplates:CurrentItemNo==0
-		    self:oDCTemplates:CurrentItemNo:=1
+			self:oDCTemplates:CurrentItemNo:=1
 		ENDIF
 	ENDIF
 
