@@ -68,26 +68,26 @@ CLASS ImportMapping INHERIT DataWindowExtra
 	PROTECT oDCImportCount AS FIXEDTEXT
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-	Instance ReplaceDuplicates as logic
-	PROTECT oTVItemDrag AS TreeViewItem
-	PROTECT oTVItemDrop AS TreeViewItem
-	PROTECT lDragging AS LOGIC
-	PROTECT hImageList AS PTR
-	PROTECT SourceFile, TargetDB, cDelim, cBuffer, DefaultCOD AS STRING
-	PROTECT aTargetDB:={} as array //{itemname,type,extra},...
-	PROTECT SourceFSpec AS filespec
-	PROTECT lDbf, lTAB, lCSV,lImportFile,lIdentical,lExists:=false, lOverwrite:=true as LOGIC
 	PROTECT NbrCol,ImportCount,ErrCount,ExistCount,InsertCount,PersidPtr as int
-	PROTECT ptrHandle
-	PROTECT aMapping:={} AS ARRAY // mapping info (Target Fieldnbr, {Source fieldsnbr1, Source field Nbr 2, ...}}
-	EXPORT lImportAutomatic:=true,lExtra as LOGIC // In case of General Import: no asking for confirmation per record
-	PROTECT oEdit as DataWindowExtra 
+	PROTECT SourceFile, TargetDB, cDelim, cBuffer, DefaultCOD as STRING
 	protect cSelectStatement as string // selection of existing person 
+	Instance ReplaceDuplicates as logic
+	PROTECT lDragging as LOGIC
+	PROTECT lDbf, lTAB, lCSV,lImportFile,lIdentical,lExists:=false, lOverwrite:=true as LOGIC
+	EXPORT lImportAutomatic:=true,lExtra as LOGIC // In case of General Import: no asking for confirmation per record
+	protect lMailingCode,lDlg,lBdat,lMdat as logic
+	PROTECT hImageList as ptr
+	PROTECT ptrHandle
+	PROTECT aTargetDB:={} as array //{itemname,type,extra},...
+	PROTECT aMapping:={} as ARRAY // mapping info (Target Fieldnbr, {Source fieldsnbr1, Source field Nbr 2, ...}}
 	protect aValues:={} as array   // array with new values to be applied to existing persons
 	protect aPers:={} as array  // array with {{persid,externid},{..},...}  
 	protect aFields:={} as array   // array with the fields of a person to be updated 
 	protect avaluesbank:={} as array  // array with bankaccounts to be stored {{persi,bankaccount,bic},{..},...}  
-	protect lMailingCode,lDlg,lBdat,lMdat as logic
+	PROTECT oEdit as DataWindowExtra 
+	PROTECT oTVItemDrag as TreeViewItem
+	PROTECT oTVItemDrop as TreeViewItem
+	PROTECT SourceFSpec as filespec
 	// 	protect oPersExist as SQLSelect
 	
 	declare method CongruenceScore , SplitSurName,SyncPerson,NextImport,MapItems,SearchCorrespondingPersons,Import,ComposeImportName,UpdateBatch
@@ -1497,7 +1497,7 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 
 	if !Empty(oPersCnt:PERSID) .and. (self:lExtra .or. self:lMailingCode )
 		// select existing person 
-// 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn} 
+		// 		oPersExist:=SqlSelect{StrTran(self:cSelectStatement,'p.?',"p.persid="+oPersCnt:PERSID),oConn} 
 		oPersExist:=SqlSelect{"select persid"+iif(self:lExtra,",propextr","")+iif(self:lMailingCode,",mailingcodes","")+" from person where deleted=0 and persid="+oPersCnt:PERSID,oConn}		
 		oPersExist:Execute()
 		if	!Empty(oPersExist:Status) .or. oPersExist:RecCount<1
@@ -1525,12 +1525,13 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 		ID:=Symbol2String(aMapping[i,1])
 		Fieldname:=Lower(SubStr(ID,2))
 		IDs:=String2Symbol(FieldName)	
-		if lFillFields
-			AAdd(self:AFields,FieldName)
+		cTargetStr:=self:GetImportvalue(aWord,i)
+		if !IDs==#Mailingcodes
+			cTargetStr:=AddSlashes(cTargetStr)
 		endif
-		cTargetStr:=AddSlashes(self:GetImportvalue(aWord,i))
-// 		if !self:lExtra.and. !self:lMailingCode .or. !Empty(cTargetStr)
-			IF SubStr(ID,1,1)=="V" .and.!Empty(cTargetStr)
+		// 		if !self:lExtra.and. !self:lMailingCode .or. !Empty(cTargetStr)
+		IF SubStr(ID,1,1)=="V"
+			if !Empty(cTargetStr)
 				nID:=Val(FieldName)
 				// extra property Str(pers_propextra[count,2],-1)
 				j:=AScan(pers_propextra,{|x|x[2]==nID})	
@@ -1545,114 +1546,97 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 							oXMLDoc:AddElement(ID,Lower(cTargetStr),"velden")
 						endif
 					ENDIF
-				ENDIF				
-			ELSE
-				IF IDs=#Gender 
-					if !IsDigit(psz(_cast,cTargetStr))
-						// translate male/female codes to digits:
-						IF Lower(cTargetStr)="fa" .or.Lower(cTargetStr)="c" .or. Lower(cTargetStr)="e"
-							uSrcValue:=3 // couple
-						ELSEIF Lower(cTargetStr)="f" .or.Lower(cTargetStr)="v"
-							uSrcValue:=1 // female
-						ELSEIF Lower(cTargetStr)="m"
-							uSrcValue:=2 // male
-						ELSEIF Lower(cTargetStr)="or" .or. Lower(cTargetStr)="n"
-							uSrcValue:=4 // non-person
-						ELSE					
-							uSrcValue:=0 // unknown
-						ENDIF
-					else
-						uSrcValue:=Val(cTargetStr)
-					endif
-// 					if lFillFields
-// 						AAdd(self:aFields,'gender')
-// 					endif
-					AAdd(aValueRow,AllTrim(Transform(uSrcValue,"")))
-				ELSEIF IDs=#Mailingcodes
-// 					if lFillFields
-// 						AAdd(self:aFields,'mailingcodes')
-// 					endif
-					aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(StrTran(cTargetStr,',',' ')))+" "+AllTrim(DefaultCod))
-					AAdd(aValueRow,AddSlashes(MakeCod(aCod)))
-				ELSEIF IDs=#Title
-// 					if lFillFields
-// 						AAdd(self:aFields,'title')
-// 					endif
-					titPtr:=1
-					if isnum(cTargetStr)
-						titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
-					else
-						cTargetStr:=Lower(cTargetStr)
-						titPtr:=AScan(pers_titles,{|x|x[1]==cTargetStr})
-					endif
-					AAdd(aValueRow,Str(pers_titles[titPtr,2],-1))
-				ELSEIF IDs=#type
-// 					if lFillFields
-// 						AAdd(self:aFields,'type')
-// 					endif
-					typPtr:=0
-					if isnum(cTargetStr)
-						typPtr:=AScan(pers_types,{|x|x[2]==Val(cTargetStr)})
-					else
-						cTargetStr:=Lower(cTargetStr)
-						typPtr:=AScan(pers_types,{|x|x[1]==Lower(cTargetStr)})
-					endif
-					AAdd(aValueRow,Str(iif(typPtr>0,pers_types[typPtr,2],0),-1))
-				ELSEIF IDs=#lastname
-// 					if lFillFields
-// 						AAdd(self:aFields,'lastname')
-// 					endif
-					AAdd(aValueRow,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
-				ELSEIF IDs=#city
-// 					if lFillFields
-// 						AAdd(self:aFields,'city')
-// 					endif
-					if Empty(cTargetStr) .and. self:lMailingCode 
-						cTargetStr:='??'
-					endif
-					AAdd(aValueRow,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
-				ELSEIF IDs=#REMARKS
-// 					if lFillFields
-// 						AAdd(self:aFields,'remarks')
-// 					endif
-					AAdd(aValueRow,cTargetStr)
-				ELSEIF IDs=#EXTERNID
-// 					if lFillFields
-// 						AAdd(self:aFields,'externid')
-// 					endif
-					AAdd(aValueRow,ZeroTrim(cTargetStr))
-				ELSEIF IDs=#banknumber 
-					aBank:=Split(cTargetStr,,true)
-					for j:=1 to Len(aBank)
-						AAdd(self:avaluesbank,{cPersid,aBank[j],GetBIC(aBank[j])})
-					next
-				ELSE 
-// 					if lFillFields
-// 						AAdd(self:aFields,FieldName)
-// 					endif
-					j:=AScan(self:aTargetDB,{|x|x[1]==FieldName})
-					if j>0
-						cFT:=self:aTargetDB[j,2]
-						DO CASE
-						case AtC('tinyint(1)',cFT)>0
-							AAdd(aValueRow,iif(cTargetStr="1".or.Upper(cTargetStr)='.T','1','0'))
-						case AtC('int',cFT)>0 .or.AtC('int',cFT)>0
-							AAdd(aValueRow,cTargetStr)
-						case AtC('date',cFT)>0
-							if Val(cTargetStr)>10000000
-								AAdd(aValueRow,SQLdate(SToD(cTargetStr)))				
-							elseif IsDigit(psz(_cast,cTargetStr))
-								AAdd(aValueRow,SQLdate(CToD(cTargetStr)))
-							else				
-								AAdd(aValueRow,cTargetStr)
-							endif
-						OTHERWISE  // character
-							AAdd(aValueRow,cTargetStr)
-						endcase
-					endif	
 				ENDIF
 			endif
-// 		ENDIF
+		ELSEIF IDs=#banknumber 
+			aBank:=Split(StrTran(cTargetStr,',',' '),,true)
+			for j:=1 to Len(aBank)
+				AAdd(self:avaluesbank,{cPersid,aBank[j],GetBIC(aBank[j])})
+			next
+		ELSE
+			if lFillFields
+				AAdd(self:AFields,FieldName)
+			endif
+			IF IDs=#Gender 
+				if !IsDigit(psz(_cast,cTargetStr))
+					// translate male/female codes to digits:
+					IF Lower(cTargetStr)="fa" .or.Lower(cTargetStr)="c" .or. Lower(cTargetStr)="e"
+						uSrcValue:=3 // couple
+					ELSEIF Lower(cTargetStr)="f" .or.Lower(cTargetStr)="v"
+						uSrcValue:=1 // female
+					ELSEIF Lower(cTargetStr)="m"
+						uSrcValue:=2 // male
+					ELSEIF Lower(cTargetStr)="or" .or. Lower(cTargetStr)="n"
+						uSrcValue:=4 // non-person
+					ELSE					
+						uSrcValue:=0 // unknown
+					ENDIF
+				else
+					uSrcValue:=Val(cTargetStr)
+				endif
+				AAdd(aValueRow,AllTrim(Transform(uSrcValue,"")))
+			ELSEIF IDs=#Mailingcodes
+				aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(StrTran(cTargetStr,',',' ')))+" "+AllTrim(DefaultCod))
+				AAdd(aValueRow,AddSlashes(MakeCod(aCod)))
+			ELSEIF IDs=#Title
+				titPtr:=1
+				if isnum(cTargetStr)
+					titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
+				else
+					cTargetStr:=Lower(cTargetStr)
+					titPtr:=AScan(pers_titles,{|x|x[1]==cTargetStr})
+				endif
+				titPtr:=Max(1,titPtr)
+				AAdd(aValueRow,Str(pers_titles[titPtr,2],-1))
+			ELSEIF IDs=#type
+				typPtr:=0
+				if isnum(cTargetStr)
+					typPtr:=AScan(pers_types,{|x|x[2]==Val(cTargetStr)})
+				else
+					cTargetStr:=Lower(cTargetStr)
+					typPtr:=AScan(pers_types,{|x|x[1]==Lower(cTargetStr)})
+				endif
+				AAdd(aValueRow,Str(iif(typPtr>0,pers_types[typPtr,2],0),-1))
+			ELSEIF IDs=#lastname
+				AAdd(aValueRow,iif(LSTNUPC,Upper(cTargetStr),cTargetStr))
+			ELSEIF IDs=#city
+				if Empty(cTargetStr) .and. self:lMailingCode 
+					cTargetStr:='??'
+				endif
+				AAdd(aValueRow,iif(CITYUPC,Upper(cTargetStr),cTargetStr))
+			ELSEIF IDs=#REMARKS
+				AAdd(aValueRow,cTargetStr)
+			ELSEIF IDs=#EXTERNID
+				AAdd(aValueRow,ZeroTrim(cTargetStr))
+// 			ELSEIF IDs=#banknumber 
+// 				aBank:=Split(cTargetStr,,true)
+// 				for j:=1 to Len(aBank)
+// 					AAdd(self:avaluesbank,{cPersid,aBank[j],GetBIC(aBank[j])})
+// 				next
+			ELSE 
+				j:=AScan(self:aTargetDB,{|x|x[1]==FieldName})
+				if j>0
+					cFT:=self:aTargetDB[j,2]
+					DO CASE
+					case AtC('tinyint(1)',cFT)>0
+						AAdd(aValueRow,iif(cTargetStr="1".or.Upper(cTargetStr)='.T','1','0'))
+					case AtC('int',cFT)>0 .or.AtC('int',cFT)>0
+						AAdd(aValueRow,cTargetStr)
+					case AtC('date',cFT)>0
+						if Val(cTargetStr)>10000000
+							AAdd(aValueRow,SQLdate(SToD(cTargetStr)))				
+						elseif IsDigit(psz(_cast,cTargetStr))
+							AAdd(aValueRow,SQLdate(CToD(cTargetStr)))
+						else				
+							AAdd(aValueRow,cTargetStr)
+						endif
+					OTHERWISE  // character
+						AAdd(aValueRow,cTargetStr)
+					endcase
+				endif	
+			ENDIF
+		endif
+		// 		ENDIF
 	NEXT
 
 	if	self:lExtra
@@ -1661,12 +1645,6 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 		endif
 		AAdd(aValueRow,oXMLDoc:GetBuffer())
 	endif
-// 	if !self:lMailingCode .and.!Empty(self:DefaultCod)
-// 		if lFillFields
-// 			AAdd(self:AFields,'mailingcodes')
-// 		endif
-// 		AAdd(aValueRow,makecod(split(iif(empty(oPersExist:mailingcodes),'',oPersExist:mailingcodes+" ")+self:DefaultCod)))
-// 	endif
 	AAdd(self:aValues,aValueRow)
 	return true
 ACCESS TargetDB() CLASS ImportMapping
@@ -1873,11 +1851,11 @@ METHOD TreeViewDragMove( X , Y ) CLASS ImportMapping
 
 
 method UpdateBatch(dummy:=nil as logic) as logic class ImportMapping
-// perform batch update of persons
-local oStmnt as SQLStatement
-local cUpdateStatement as String
-local i,j as int 
-local aCod:={} as array
+	// perform batch update of persons
+	local oStmnt as SQLStatement
+	local cUpdateStatement as String
+	local i,j as int 
+	local aCod:={} as array
 
 
 	if !Empty(self:AFields) .and.!Empty(self:aValues) 
@@ -1885,9 +1863,9 @@ local aCod:={} as array
 		for i:=1 to len(self:aFields)
 			do case
 			case self:AFields[i]=='persid'
-// 			case self:AFields[i]=='mailingcodes'
-// 				cUpdateStatement+=',mailingcodes=if(values(mailingcodes)<>"",concat(values(mailingcodes)," ",mailingcodes),mailingcodes)'+iif(AScanExact(self:AFields,'city')=0,',city=if(city="","??",city)','')	
-// 				SELECT SUBSTRING_INDEX( SUBSTRING_INDEX( 'a|b|c|d|e|f|g|h', '|', index), '|', -1 );
+				// 			case self:AFields[i]=='mailingcodes'
+				// 				cUpdateStatement+=',mailingcodes=if(values(mailingcodes)<>"",concat(values(mailingcodes)," ",mailingcodes),mailingcodes)'+iif(AScanExact(self:AFields,'city')=0,',city=if(city="","??",city)','')	
+				// 				SELECT SUBSTRING_INDEX( SUBSTRING_INDEX( 'a|b|c|d|e|f|g|h', '|', index), '|', -1 );
 			case self:AFields[i]=='type'
 				cUpdateStatement+=',type=if(type=2 or type=3 or values(type)="",type,values(type))'	
 			case self:AFields[i]=='remarks'
@@ -1906,7 +1884,7 @@ local aCod:={} as array
 			cUpdateStatement+=")"
 		endif
 		oStmnt:=SQLStatement{"INSERT INTO person ("+Implode(self:AFields,',')+") values "+Implode(self:aValues,"','")+;
-		" ON DUPLICATE KEY UPDATE "+SubStr(cUpdateStatement,2),oConn}
+			" ON DUPLICATE KEY UPDATE "+SubStr(cUpdateStatement,2),oConn}
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			LogEvent(self,"error:"+oStmnt:Status:description+" in update persons statement"+CRLF+"Stmnt:"+oStmnt:sqlstring,"LogErrors")
@@ -1921,8 +1899,8 @@ local aCod:={} as array
 			return false
 		endif
 	endif
-return true
- 
+	return true
+	
 STATIC DEFINE IMPORTMAPPING_ACCEPTPROPOSED := 120 
 STATIC DEFINE IMPORTMAPPING_CODEBOX := 113 
 STATIC DEFINE IMPORTMAPPING_CONFIRMBOX := 114 
