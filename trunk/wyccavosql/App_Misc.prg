@@ -531,9 +531,9 @@ CLASS DataDialogMine inherit DataDialog
 	
 // 	declare method FillMbrProjArray
 METHOD Close(oEvent)  CLASS DataDialogMine
-// force garbage collection
+	// force garbage collection
 	self:Destroy()
-RETURN SUPER:Close(oEvent)
+	RETURN SUPER:Close(oEvent)
 METHOD FillMbrProjArray() CLASS DataDialogMine 
 // Fill 3 arrays: home members, non home members, projects
 FillMbrProjArray(self:aProjects,self:aMemHome,self:aMemNonHome)
@@ -572,17 +572,18 @@ METHOD Close(oEvent)  CLASS DataWindowExtra
 		IF Used()
 			DBCLOSEAREA()
 		ENDIF
-       	self:lImport:=FALSE
-       	self:Pointer := Pointer{POINTERARROW}
+		self:lImport:=FALSE
+		self:Pointer := Pointer{POINTERARROW}
 	ENDIF
 	self:Destroy()
-// force garbage collection
-	CollectForced()
-	IF !_DynCheck()
-		(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
-	ENDIF   
-
-RETURN SUPER:Close(oEvent)
+	if DynInfoFree() <  1048576 // 1MB
+		// force garbage collection
+		CollectForced()
+		IF !_DynCheck()
+			(errorbox{,"memory error:"+Str(DynCheckError())+" in window:"+SELF:Caption}):show()
+		ENDIF   
+	endif
+	RETURN SUPER:Close(oEvent)
 method CompareKeyWords(aValue as array) as logic class DataWindowExtra 
 // compare if each of given keywords in aKeyW is contained in array aValue
 Local i,j, lK:=Len(self:aKeyW), lV:=Len(aValue) as int
@@ -657,13 +658,15 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	Export oLan as Language 
 // 	declare method FillMbrProjArray
 METHOD Close(oEvent)  CLASS DataWindowMine
-// force garbage collection
-	self:Destroy()
-	CollectForced()
-	IF !_DynCheck()
-		(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
-	ENDIF   
-RETURN SUPER:Close(oEvent)
+	self:Destroy() 
+	if DynInfoFree() <  1048576 // 1MB
+		// force garbage collection
+		CollectForced()
+		IF !_DynCheck()
+			(ErrorBox{,"memory error:"+Str(DynCheckError())+" in window:"+self:Caption}):show()
+		ENDIF
+	endif
+	RETURN SUPER:Close(oEvent)
 
 METHOD FillMbrProjArray() CLASS DataWindowMine  
 // Fill 3 arrays: home members, non home members, projects
@@ -925,9 +928,9 @@ METHOD INIT() CLASS Description
 Class DialogWinDowExtra inherit DialogWindow 
 Export oLan as Language
 METHOD Close(oEvent)  CLASS DialogWinDowExtra
-// force garbage collection
+	// force garbage collection
 	self:Destroy()
-RETURN SUPER:Close(oEvent)
+	RETURN SUPER:Close(oEvent)
 method SetWidth(w) class DialogWinDowExtra
 LOCAL myDim as Dimension
 	myDim:=self:Size
