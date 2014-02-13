@@ -4957,7 +4957,11 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	// Produce overview from aTrans:
 	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
 	//              1   2     3      4      5     6         7       8      9  10    11     12
-	// atrans in order of kind,accid,dat 
+	// atrans in order of kind,accid,dat
+	// kind: 1: income
+	//			2=fund
+	//       3=expense
+	//			4=other accounts 
 	//
 	// accounts in aAccidMbr in order of mbrid,kind,accid:
 	// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
