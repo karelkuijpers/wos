@@ -1133,6 +1133,7 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	PROTECT oDCFixedText2 AS FIXEDTEXT
 	PROTECT oDCSearchUni AS SINGLELINEEDIT
 	PROTECT oCCFindButton AS PUSHBUTTON
+	PROTECT oDCmBlocked AS CHECKBOX
 	PROTECT oSFSubscriptionBrowser_DETAIL AS SubscriptionBrowser_DETAIL
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -1142,29 +1143,31 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	EXPORT cType AS STRING
 	EXPORT mtype as STRING
 	export oSub as SQLSelectPagination
-	export cFields,cFrom,cWhere,cOrder as string
+	export cFields,cFrom,cWhere,cOrder, cFilterWhere as string
 	export dLastDDdate as date 
-RESOURCE SubscriptionBrowser DIALOGEX  22, 20, 499, 280
+                                               
+RESOURCE SubscriptionBrowser DIALOGEX  22, 20, 550, 293
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
-	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 24, 96, 398, 172
+	CONTROL	"", SUBSCRIPTIONBROWSER_SUBSCRIPTIONBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 24, 96, 432, 172
 	CONTROL	"&Account:", SUBSCRIPTIONBROWSER_SC_AR1, "Static", WS_CHILD, 24, 51, 32, 13
 	CONTROL	"&Person:", SUBSCRIPTIONBROWSER_SC_OMS, "Static", WS_CHILD, 24, 36, 28, 13
 	CONTROL	"", SUBSCRIPTIONBROWSER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 36, 120, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", SUBSCRIPTIONBROWSER_PERSONBUTTON, "Button", WS_CHILD, 220, 36, 13, 13
 	CONTROL	"", SUBSCRIPTIONBROWSER_MACCOUNT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 51, 120, 13, WS_EX_CLIENTEDGE
 	CONTROL	"v", SUBSCRIPTIONBROWSER_ACCBUTTON, "Button", WS_CHILD, 220, 51, 13, 13
-	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 428, 107, 53, 12
-	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 151, 53, 12
-	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 428, 195, 53, 13
-	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 84, 478, 190
+	CONTROL	"Edit", SUBSCRIPTIONBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 476, 107, 53, 12
+	CONTROL	"New", SUBSCRIPTIONBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 476, 151, 53, 12
+	CONTROL	"Delete", SUBSCRIPTIONBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 476, 195, 53, 13
+	CONTROL	"Subscriptions", SUBSCRIPTIONBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 84, 532, 190
 	CONTROL	"Select subscriptions of:", SUBSCRIPTIONBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 3, 224, 70
-	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 316, 33, 156, 12
-	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 256, 33, 27, 12
+	CONTROL	"", SUBSCRIPTIONBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 280, 59, 156, 12
+	CONTROL	"Found:", SUBSCRIPTIONBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 248, 59, 27, 12
 	CONTROL	"Universal like google:", SUBSCRIPTIONBROWSER_FIXEDTEXT2, "Static", WS_CHILD, 24, 22, 72, 12
 	CONTROL	"", SUBSCRIPTIONBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 120, 12
 	CONTROL	"Find", SUBSCRIPTIONBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 244, 11, 53, 12
+	CONTROL	"Filter Blocked Donations", SUBSCRIPTIONBROWSER_MBLOCKED, "Button", BS_LEFTTEXT|BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 248, 36, 96, 12
 END
 
 METHOD AccButton(lUnique ) CLASS SubscriptionBrowser
@@ -1329,7 +1332,8 @@ AAdd(aDescription,self:oLan:RGet("subscription",,"!"))
 AAdd(aDescription,self:oLan:RGet("donation",,"!"))
 AAdd(aDescription,self:oLan:RGet("gift",,"!"))
 cFields+=",invoiceid,bankaccnt"
-oSel:=SQLSelect{"select "+cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder,oConn} 
+oSel:= SqlSelect{"select "+cFields+" from "+self:cFrom+" where "+self:cWhere+ cFilterWhere +" order by "+self:cOrder,oConn}   
+
 
 IF oReport:Extension#"xls"
 	cTab:=Space(1)
@@ -1338,15 +1342,17 @@ ELSE
 	aHeading :={}
 ENDIF
 
+
 AAdd(aHeading, ;
-self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
-+cTab+self:oLan:RGet("Period",6,"@!")+cTab+self:oLan:RGet("due date",12,"@!")+cTab+self:oLan:RGet("type",12,"@!") )
+self:oLan:RGet("account",18,"@!")+cTab+self:oLan:RGet("PERSON",25,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
++cTab+self:oLan:RGet("Period",6,"@!")+cTab+self:oLan:RGet("due date",12,"@!")+cTab+self:oLan:RGet("type",12,"@!")+cTab+self:oLan:RGet("blocked",7,"@!"))
 do WHILE !oSel:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
+	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,18)+cTab+Pad(oSel:PersonName,25)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
 	cTab+Str(oSel:amount,12,DecAantal)+cTab+PadR(Str(oSel:term,-1),6)+cTab+;
 	PadC(DToC(iif(Empty(oSel:DueDate),null_date,oSel:DueDate)),12," ")+cTab+;
 	iif(oSel:category=="A",aDescription[1],;
-	iif(oSel:category=="D",aDescription[2],aDescription[3])),aHeading) 
+	iif(oSel:category=="D",aDescription[2],aDescription[3]))+cTab+;
+	PadC(oSel:blockeddescr,7),aHeading) 
 	fsum+= oSel:amount
 	oSel:skip()
 ENDDO
@@ -1367,25 +1373,28 @@ METHOD FindButton( ) CLASS SubscriptionBrowser
 	local AFields:={"a.accnumber","a.description","p.lastname","p.postalcode","s.bankaccnt","s.invoiceid"} as array
 	local i,j as int                                            
 
-	local MyWhere as string
-
-	MyWhere:=""
+	cFilterWhere:=""
 
 	
 	if !Empty(self:SearchUni)
 // 		self:SearchUni:=Lower(AllTrim(self:SearchUni)) 
 		aKeyw:=GetTokens(self:SearchUni)
 		for i:=1 to Len(aKeyw)
-			MyWhere+=" and ("
+			cFilterWhere+=" and ("
 			for j:=1 to Len(AFields)
-				MyWhere+=iif(j=1,""," or ")+AFields[j]+" like '%"+StrTran(aKeyw[i,1],"'","\'")+"%'"
+				cFilterWhere+=iif(j=1,""," or ")+AFields[j]+" like '%"+StrTran(aKeyw[i,1],"'","\'")+"%'"
 			next
 			
-			MyWhere+=")"
+			cFilterWhere+=")"
 		next
-	endif   
+	endif               
 	
-	self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+ MyWhere +" order by "+self:cOrder 
+	if self:mBlocked
+		cFilterWhere +=" and s.blocked = 1"  
+	end if
+	
+	
+	self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+ cFilterWhere +" order by "+self:cOrder 
 
 	self:oSub:Execute()
 	self:oSFSubscriptionBrowser_DETAIL:Browser:REFresh()
@@ -1468,8 +1477,11 @@ oDCSearchUni:UseHLforToolTip := True
 oCCFindButton := PushButton{SELF,ResourceID{SUBSCRIPTIONBROWSER_FINDBUTTON,_GetInst()}}
 oCCFindButton:HyperLabel := HyperLabel{#FindButton,"Find",NULL_STRING,NULL_STRING}
 
-SELF:Caption := "Subscriptions, Donations and Standard Gifts"
-SELF:HyperLabel := HyperLabel{#SubscriptionBrowser,"Subscriptions, Donations and Standard Gifts",NULL_STRING,NULL_STRING}
+oDCmBlocked := CheckBox{SELF,ResourceID{SUBSCRIPTIONBROWSER_MBLOCKED,_GetInst()}}
+oDCmBlocked:HyperLabel := HyperLabel{#mBlocked,"Filter Blocked Donations",NULL_STRING,NULL_STRING}
+
+SELF:Caption := "Filter Blocked Donations"
+SELF:HyperLabel := HyperLabel{#SubscriptionBrowser,"Filter Blocked Donations",NULL_STRING,NULL_STRING}
 SELF:Menu := WOMenu{}
 SELF:PreventAutoLayout := True
 SELF:AllowServerClose := True
@@ -1486,6 +1498,13 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
+ACCESS mBlocked() CLASS SubscriptionBrowser
+RETURN self:FIELDGET(#mBlocked)
+
+ASSIGN mBlocked(uValue) CLASS SubscriptionBrowser
+self:FIELDPUT(#mBlocked, uValue)
+RETURN uValue
+                                               
 METHOD NewButton( ) CLASS SubscriptionBrowser
 	SELF:EditButton(TRUE)
 	RETURN
@@ -1500,7 +1519,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 self:SetTexts()
 // 	SaveUse(self:cType+"BROWSER")
 	IF self:cType=="STANDARD GIFTS"
-		self:Caption:=self:oLan:WGet("Browse in Periodic Gifts") 
+		self:Caption:=self:oLan:WGet("Browse in Periodic Gifts")  
+		self:oDCmBlocked:hide()
 	ELSEIF cType=="DONATIONS"
 		self:Caption:=self:oLan:WGet("Browse in Donations")
    	// determine last incasso batch:
@@ -1513,7 +1533,8 @@ self:SetTexts()
 		SELF:oDCSC_AR1:Hide()
 		SELF:oCCAccButton:Hide() */
 	ELSEIF self:cType=="SUBSCRIPTIONS"
-		self:Caption:=self:oLan:WGet("Browse in Subscriptions")
+		self:Caption:=self:oLan:WGet("Browse in Subscriptions") 
+		self:oDCmBlocked:hide()
 	ENDIF
 //    self:oDCFound:TextValue:=Str(ConI(SqlSelect{"select count(*) as totcount from subscription where category='"+self:mtype+"'",oConn}:totcount),-1)+' ('+self:oLan:WGet(" only 100 shown")+')'   
 
@@ -1541,7 +1562,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	
 	self:cFields:=SQLFullName(0,"p")+" as personname,a.description as accountname,cast(s.begindate as date) as begindate,"+;
 		"if(s.category='G','Periodic Gift',if(s.category='A','Subscription','Donation')) as catdesc,"+;
-		"cast(s.duedate as date) as duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid"
+		"cast(s.duedate as date) as duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid, if(s.blocked=0,' ','X') as blockeddescr,invoiceid,bankaccnt"
 	self:cFrom:="person p, account a, subscription s" 
 	self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'" 
 	self:cOrder:="personname"
@@ -1558,6 +1579,12 @@ RETURN uValue
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DELETEBUTTON := 109 
+RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  50, 27, 404, 195
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBPERSONNAME as DataColumn
@@ -1567,23 +1594,20 @@ CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine
 	PROTECT oDBTERM as DataColumn
 	PROTECT oDBAMOUNT as DataColumn
 	PROTECT oDBCATDESC as DataColumn
+	PROTECT oDBBLOCKEDDESCR as DataColumn
+	PROTECT oDBSINGLELINEEDIT8 as DataColumn
+	PROTECT oDBSINGLELINEEDIT9 as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as SubscriptionBrowser
-RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  29, 27, 387, 195
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
 SUPER:Init(oWindow,ResourceID{"SubscriptionBrowser_DETAIL",_GetInst()},iCtlID)
 
-SELF:Caption := ""
-SELF:HyperLabel := HyperLabel{#SubscriptionBrowser_DETAIL,NULL_STRING,NULL_STRING,NULL_STRING}
+SELF:Caption := "Blocked"
+SELF:HyperLabel := HyperLabel{#SubscriptionBrowser_DETAIL,"Blocked",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
 SELF:OwnerAlignment := OA_HEIGHT
 
@@ -1600,8 +1624,8 @@ oDBPERSONNAME:HyperLabel := HyperLabel{#PersonName,"Person","Person",NULL_STRING
 oDBPERSONNAME:Caption := "Person"
 self:Browser:AddColumn(oDBPERSONNAME)
 
-oDBACCOUNTNAME := DataColumn{24}
-oDBACCOUNTNAME:Width := 24
+oDBACCOUNTNAME := DataColumn{20}
+oDBACCOUNTNAME:Width := 20
 oDBACCOUNTNAME:HyperLabel := HyperLabel{#AccountName,"Account","Number of an Account",NULL_STRING} 
 oDBACCOUNTNAME:Caption := "Account"
 self:Browser:AddColumn(oDBACCOUNTNAME)
@@ -1636,6 +1660,15 @@ oDBCATDESC:HyperLabel := HyperLabel{#catdesc,"Type",NULL_STRING,NULL_STRING}
 oDBCATDESC:Caption := "Type"
 self:Browser:AddColumn(oDBCATDESC)
 
+oDBBLOCKEDDESCR := DataColumn{10}
+oDBBLOCKEDDESCR:Width := 10
+oDBBLOCKEDDESCR:HyperLabel := HyperLabel{#blockeddescr,"Blocked",NULL_STRING,NULL_STRING} 
+oDBBLOCKEDDESCR:Caption := "Blocked"
+oDBblockeddescr:TextColor := Color{255,0,0}
+self:Browser:AddColumn(oDBBLOCKEDDESCR)
+
+
+
 
 SELF:ViewAs(#BrowseView)
 
@@ -1666,6 +1699,7 @@ STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_ACCOUNTNAME := 101
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_ACCOUNTNUMBER := 109 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_AMOUNT := 105 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_BEGINDATE := 102 
+STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_BLOCKEDDESCR := 107 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_CATDESC := 106 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_DUEDATE := 103 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_lstchange := 114 
@@ -1680,6 +1714,8 @@ STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_P06 := 103
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_personid := 100 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_term := 104 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_type := 107 
+STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SINGLELINEEDIT8 := 108 
+STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SINGLELINEEDIT9 := 109 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_TERM := 104 
 STATIC DEFINE SUBSCRIPTIONBROWSER_EDITBUTTON := 107 
 STATIC DEFINE SUBSCRIPTIONBROWSER_FINDBUTTON := 116 
@@ -1689,6 +1725,7 @@ STATIC DEFINE SUBSCRIPTIONBROWSER_FOUNDTEXT := 113
 STATIC DEFINE SUBSCRIPTIONBROWSER_GROUPBOX1 := 110 
 STATIC DEFINE SUBSCRIPTIONBROWSER_GROUPBOX2 := 111 
 STATIC DEFINE SUBSCRIPTIONBROWSER_MACCOUNT := 105 
+STATIC DEFINE SUBSCRIPTIONBROWSER_MBLOCKED := 117 
 STATIC DEFINE SUBSCRIPTIONBROWSER_MPERSON := 103 
 STATIC DEFINE SUBSCRIPTIONBROWSER_NEWBUTTON := 108 
 STATIC DEFINE SUBSCRIPTIONBROWSER_PERSONBUTTON := 104 
