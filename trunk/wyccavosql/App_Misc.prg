@@ -576,7 +576,7 @@ METHOD Close(oEvent)  CLASS DataWindowExtra
 		self:Pointer := Pointer{POINTERARROW}
 	ENDIF
 	self:Destroy()
-	if DynInfoFree() <  1048576 // 1MB
+	if DynInfoFree() <  134217728 // 128 MB
 		// force garbage collection
 		CollectForced()
 		IF !_DynCheck()
@@ -659,7 +659,7 @@ CLASS DataWindowMine INHERIT DataWindow
 // 	declare method FillMbrProjArray
 METHOD Close(oEvent)  CLASS DataWindowMine
 	self:Destroy() 
-	if DynInfoFree() <  1048576 // 1MB
+	if DynInfoFree() <  134217728 // 128MB
 		// force garbage collection
 		CollectForced()
 		IF !_DynCheck()
