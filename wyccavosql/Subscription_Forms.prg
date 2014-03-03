@@ -551,8 +551,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				", term="+ Str(self:mterm,-1)+;
 				", amount="+ Str(self:mamount,-1) +;
 				", "+iif(SepaEnabled,"mandateid","invoiceid")+"="+self:mInvoiceID+;
-				", bankaccount="+self:oDCmBankAccnt:CurrentItem+;
-				", blocked="+iif(self:mblocked,"true","false")
+				", bankaccount="+self:oDCmBankAccnt:CurrentItem
 		else
 
 			// check if dueamounts or next due date has to be updated: 
@@ -809,7 +808,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 			self:oDCmInvoiceID:Show()
 		endif
 		self:dLastDDdate:=self:oCaller:dLastDDdate
-		self:mBankAccnt:='' 
+		self:mBankAccnt:=''  
 	ENDIF
 
 	IF self:lNew
@@ -823,7 +822,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		self:oDCmEndDate:SelectedDate:=self:oDCmDueDate:SelectedDate+365*100
 		self:mterm   := 1
 		self:mamount   := 0  
-		self:mBlocked:= false
+		self:mBlocked:= false  
+		self:oDCmBlocked:hide()
 		IF !self:cType=="STANDARD GIFTS"
 			self:oDCmPayMethod:Value:="C"
 		endif
@@ -1184,6 +1184,23 @@ METHOD AccButton(lUnique ) CLASS SubscriptionBrowser
 	ENDIF	
 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"Account for "+cType,lUnique,cFilter)
 	RETURN nil
+ method ButtonClick(oControlEvent) class SubscriptionBrowser
+
+     local oControl as Control
+
+     oControl := iif(oControlEvent == null_object, null_object, oControlEvent:Control)
+
+     super:ButtonClick(oControlEvent)
+
+     //Put your changes here
+
+      IF oControl:Name=="MBLOCKED"
+
+              self:FindButton()
+
+       endif
+
+ return nil
 METHOD Close(oEvent) CLASS SubscriptionBrowser
 *	
 	//Put your changes here
@@ -1579,12 +1596,6 @@ RETURN uValue
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DELETEBUTTON := 109 
-RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  50, 27, 414, 195
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine 
 
 	PROTECT oDBPERSONNAME as DataColumn
@@ -1598,6 +1609,12 @@ CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as SubscriptionBrowser
+RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  50, 27, 414, 195
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
