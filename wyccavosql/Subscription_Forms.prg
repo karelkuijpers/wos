@@ -1321,7 +1321,7 @@ ELSEIF self:cType=="DONATIONS"
 ELSEIF self:cType=="SUBSCRIPTIONS"
 	oms3:=oLan:RGet("Subscriptions",,"!")
 endif
-oReport := PrintDialog{self,oms3,,111,,"xls"}
+oReport := PrintDialog{self,oms3,,118,,"xls"}
 oReport:Show()
 IF .not.oReport:lPrintOk
 	RETURN FALSE
@@ -1344,10 +1344,10 @@ ENDIF
 
 
 AAdd(aHeading, ;
-self:oLan:RGet("account",18,"@!")+cTab+self:oLan:RGet("PERSON",25,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
+self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
 +cTab+self:oLan:RGet("Period",6,"@!")+cTab+self:oLan:RGet("due date",12,"@!")+cTab+self:oLan:RGet("type",12,"@!")+cTab+self:oLan:RGet("blocked",7,"@!"))
 do WHILE !oSel:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,18)+cTab+Pad(oSel:PersonName,25)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
+	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
 	cTab+Str(oSel:amount,12,DecAantal)+cTab+PadR(Str(oSel:term,-1),6)+cTab+;
 	PadC(DToC(iif(Empty(oSel:DueDate),null_date,oSel:DueDate)),12," ")+cTab+;
 	iif(oSel:category=="A",aDescription[1],;
@@ -1579,7 +1579,7 @@ RETURN uValue
 
 STATIC DEFINE SUBSCRIPTIONBROWSER_ACCBUTTON := 106 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DELETEBUTTON := 109 
-RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  50, 27, 404, 195
+RESOURCE SubscriptionBrowser_DETAIL DIALOGEX  50, 27, 414, 195
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -1595,8 +1595,6 @@ CLASS SubscriptionBrowser_DETAIL INHERIT DataWindowMine
 	PROTECT oDBAMOUNT as DataColumn
 	PROTECT oDBCATDESC as DataColumn
 	PROTECT oDBBLOCKEDDESCR as DataColumn
-	PROTECT oDBSINGLELINEEDIT8 as DataColumn
-	PROTECT oDBSINGLELINEEDIT9 as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as SubscriptionBrowser
@@ -1660,14 +1658,12 @@ oDBCATDESC:HyperLabel := HyperLabel{#catdesc,"Type",NULL_STRING,NULL_STRING}
 oDBCATDESC:Caption := "Type"
 self:Browser:AddColumn(oDBCATDESC)
 
-oDBBLOCKEDDESCR := DataColumn{10}
-oDBBLOCKEDDESCR:Width := 10
+oDBBLOCKEDDESCR := DataColumn{12}
+oDBBLOCKEDDESCR:Width := 12
 oDBBLOCKEDDESCR:HyperLabel := HyperLabel{#blockeddescr,"Blocked",NULL_STRING,NULL_STRING} 
 oDBBLOCKEDDESCR:Caption := "Blocked"
 oDBblockeddescr:TextColor := Color{255,0,0}
 self:Browser:AddColumn(oDBBLOCKEDDESCR)
-
-
 
 
 SELF:ViewAs(#BrowseView)
@@ -1714,8 +1710,6 @@ STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_P06 := 103
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_personid := 100 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_term := 104 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SC_type := 107 
-STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SINGLELINEEDIT8 := 108 
-STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_SINGLELINEEDIT9 := 109 
 STATIC DEFINE SUBSCRIPTIONBROWSER_DETAIL_TERM := 104 
 STATIC DEFINE SUBSCRIPTIONBROWSER_EDITBUTTON := 107 
 STATIC DEFINE SUBSCRIPTIONBROWSER_FINDBUTTON := 116 
