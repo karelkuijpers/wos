@@ -4141,7 +4141,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
 		oStmnt:=SQLStatement{'lock tables '+iif(AScan(oHm:Amirror,{|x|!Empty(x[12])})>0,'`dueamount` write,','')+'`mbalance` write'+iif(!Empty(self:mCLNGiver),',`person` write, `personbank` write','')+;
-			+iif(AScan(oHm:Amirror,{|x|!Empty(x[12])})>0,',`subscription` write','')+iif(self:lTeleBank,',`teletrans` write','')+',`transaction` write',oConn}     // alphabetic order
+			+iif(self:lTeleBank,',`teletrans` write','')+',`transaction` write',oConn}     // alphabetic order
+// 			+iif(AScan(oHm:Amirror,{|x|!Empty(x[12])})>0,',`subscription` write','')+iif(self:lTeleBank,',`teletrans` write','')+',`transaction` write',oConn}     // alphabetic order
 		oStmnt:execute()
 		
 		nSeqnbr:=1 
@@ -4307,7 +4308,8 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				endif
 			endif
 
-		ENDIF  
+		ENDIF
+
 		if lError
 			SQLStatement{"rollback",oConn}:execute()
 			SQLStatement{"unlock tables",oConn}:execute()
@@ -4334,7 +4336,6 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		// 					SQLStatement{"commit",oConn}:execute()
 		// 				endif
 		self:ShowDebBal()	   
-		
 		if !Empty(self:mCLNGiver)
 			// After all updates update regular gifts:
 			FOR i=1 to Len(oHm:Amirror)
@@ -4345,7 +4346,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				ENDIF
 				* Update regular gifts:
 				* Check if already present within Subscription: 
-				oSub:=SqlSelect{"select amount,reference,subscribid from subscription where personid='"+self:mCLNGiver+"' and accid="+oHm:Amirror[i,7],oConn}
+				oSub:=SqlSelect{"select amount,reference,subscribid from subscription where category='G' and personid='"+self:mCLNGiver+"' and accid="+oHm:Amirror[i,7],oConn}
 				IF oSub:reccount>0
 					if !oSub:amount==oHm:Amirror[i,3].or.!oSub:REFERENCE==AllTrim(oHm:REFERENCE)
 						* update regular gift:
