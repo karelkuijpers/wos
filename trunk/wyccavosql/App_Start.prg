@@ -34,7 +34,7 @@ method Start() class App
 		Enable3dControls()
 		DynSize(256) // (not more possible = 16MB)
 		SetMaxDynSize(268435456)   //256MB max dynamic memory  
-		SetWipeDynSpace(true)
+		SetWipeDynSpace(false)
 		SetKidStackSize(134217728)    // 128 mb
 		SetMaxRegisteredKids(131072)
 		SetMaxThreadDynSize(268435456)  //256 MB Thread memory 
