@@ -4877,7 +4877,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		enddo
 	endif
-	aBankContra:=null_array  //clear 
+	aBankContra:=null_array  //clear
+	aAccnbrDbFund:=null_array  //clear 
 	aZip:=null_array
 	
 	// NON-GIFTS:
