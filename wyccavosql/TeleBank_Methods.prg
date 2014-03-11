@@ -4390,7 +4390,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	// cFilename: filename of importfile for messages 
 	// nTot: total transaction within cFilename for messages 
 	//  
-	local i,j,k,l,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
+	local i,j,k,l,m,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local nAddrEnd as int
 	local fDeb,fDebForgn,fCre,fCreForgn as float 
 	local cPersids,cPersid,cBudgetcds,cBudgetcd,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc,cTransid as string 
@@ -4401,7 +4401,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local	lAddressChanged,lProcAuto as logic
 	local aPersids:={}, aPersidsDb:={} as array
 	local aSubPersids:={}, aSubscr:={} as array, aSubscrtn:={} as array, aSub:={} as array,aValueSubPtr:={}  // arrays for getting gifts patterns
-	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={},aDueid:={}
+	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={}, aAccnbrDbFund:={},aDueid:={}
 	local aAccnbrDue:={} as array  // accnumber, dueid, yes/no invalid mandateid 
 	local aBankContra:={},aBankContraNonIban:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
 	local avalueTrans:=self:aValuesTrans as array
@@ -4722,8 +4722,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	next
 	if Len(aBudgetcd)>0
 		cBudgetcds:=Implode(aBudgetcd,'","')	
-		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember separator '#') as graccnumber "+;
-			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember "+;
+		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember,',',gr.grpersid separator '#') as graccnumber "+;
+			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember,cast(COALESCE(m.persid,0) as char) as grpersid "+;
 			"from account a left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid and (d.incomeacc=a.accid or d.expenseacc=a.accid or d.netasset=a.accid)) "+; 
 		" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
@@ -4731,6 +4731,14 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			aAccnbrDb:={}  
 			AEval(Split(oSel:graccnumber,'#'),{|x|AAdd(aAccnbrDb,Split(x,','))})
 		endif 
+		// determine fund accounts of members for PF transactions:
+		oSel:=SqlSelect{"select group_concat(gr.graccid,',',gr.grpersid separator '#') as graccnumber "+;
+			"from (select cast(d.netasset as char) as graccid,cast(m.persid as char) as grpersid "+;
+			"from member as m, department d "+;
+			" where m.depid=d.depid  ) as gr group by 1=1",oConn}
+		if oSel:Reccount>0
+			AEval(Split(oSel:graccnumber,'#'),{|x|AAdd(aAccnbrDbFund,Split(x,','))})   //aAccnbrDbFund: {{accid, persid}...}
+		endif
 		aBudgetcd:=null_array  // clear
 	endif
 	if !Empty(SINCHOME) .or.!Empty(SINC)
@@ -4752,7 +4760,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				endif
 			enddo
 			// 				oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
-			oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator	'#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
+			oSel:=SqlSelect{"select	group_concat(gr.grpersid,',',postalcode,',',address separator '#') as grpersids	from (select cast(persid as char) as grpersid,postalcode,address from person	where	persid in ("+SubStr(cPersids,2)+") and deleted=0) as gr group by 1=1",oConn}
 			if	oSel:Reccount>0 
 				aZip:={}
 				AEval(Split(oSel:grpersids,'#'),{|x|AAdd(aZip, Split(x,','))})
@@ -4815,9 +4823,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 								endif
 							endif
 							if !lAddressChanged 
-								cBudgetcd:=avalueTrans[i,7]
+								cBudgetcd:=avalueTrans[i,7] 
+								// aAccnbrDb: {{accnumber, accid, ismember, member persid)
 								if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
 									avalueTrans[i,16]:='X'   // record as processed 
+									lv_accid:=aAccnbrDb[l,2]
 									// transaction can be processed automatically:
 									nProc++ 
 									
@@ -4829,21 +4839,33 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 									if self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')  // acceptgiro
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
-									nTransId++
-									AAdd(aTrans,{cBankAccOwn,avalueTrans[i,8],aValueTrans[i,8],0.00,0.00,sCurr,lv_description+' ('+aValuesTrans[i,6]+ iif(Len(aValuesTrans[i,4])>60,' ',' ('+aValuesTrans[i,4]+') ')+;
-										+aValuesTrans[i,10]+', '+aValuesTrans[i,12]+')',;
-										avalueTrans[i,2],'',LOGON_EMP_ID,'2','1',avalueTrans[i,5]+avalueTrans[i,3],'','0','0','',Str(nTransId,-1)} )
-									AAdd(aTransTele,{i,nTransId}) 
-									// second row: 
 									if aAccnbrDb[l,3]='1'  //destination member?
-										lv_gc:='AG'
-										if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member?
-											lv_gc:='MG'
+										lv_gc:='AG' 
+										//aBankContra: {{bankacc,persid,ismember},...}
+										if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member? 
+											// gift from member self?:
+											if aAccnbrDb[l,4]==lv_persid
+												// personal fund:
+												lv_gc:='PF'
+												// replace destination by fund account: 
+												//aAccnbrDbFund: {{ accid, persid}...}
+												if (m:=AScan(aAccnbrDbFund,{|x|x[2]==lv_persid}))>0 
+													lv_accid:=aAccnbrDbFund[m,1]
+												endif
+											else
+												lv_gc:='MG'
+											endif
 										endif
 									else
 										lv_gc:=''
 									endif
-									AAdd(aTrans,{aAccnbrDb[l,2],0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,lv_description+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
+									nTransId++
+									AAdd(aTrans,{cBankAccOwn,avalueTrans[i,8],avalueTrans[i,8],0.00,0.00,sCurr,iif(!lv_gc=='PF',lv_description,'')+' ('+aValuesTrans[i,6]+ iif(Len(aValuesTrans[i,4])>60,' ',' ('+aValuesTrans[i,4]+') ')+;
+										+aValuesTrans[i,10]+', '+aValuesTrans[i,12]+')',;
+										avalueTrans[i,2],'',LOGON_EMP_ID,'2','1',avalueTrans[i,5]+avalueTrans[i,3],'','0','0','',Str(nTransId,-1)} )
+									AAdd(aTransTele,{i,nTransId}) 
+									// second row: 
+									AAdd(aTrans,{lv_accid,0.00,0.00,aValueTrans[i,8],aValueTrans[i,8],sCurr,iif(!lv_gc=='PF',lv_description,'')+iif(aValueTrans[i,5]="AC",'',' '+lv_specmessage),;
 										avalueTrans[i,2],lv_gc,LOGON_EMP_ID,'2','2',avalueTrans[i,5]+avalueTrans[i,3],'',Str(Val(avalueTrans[i,11]),-1),'0','',Str(nTransId,-1)} )
 									// person data:
 									AAdd(avaluesPers,{lv_persid,avalueTrans[i,2]}) 
