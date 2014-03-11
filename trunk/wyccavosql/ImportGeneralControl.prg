@@ -1282,7 +1282,7 @@ self:DefaultCOD := MakeCod({self:oDCmCod1:value,self:oDCmCod2:value,self:oDCmCod
 
 IF TargetDB=="Person"
 	self:oEdit:=EditPerson{self:Owner,,,true} 
-	self:oEdit:ReplaceDuplicates:=self:ReplaceDuplicates 
+	self:oEdit:ReplaceDuplicates:=ConL(self:ReplaceDuplicates) 
 	self:aValues:={} 
 	self:aPers:={} 
 	self:aFields:={} 
