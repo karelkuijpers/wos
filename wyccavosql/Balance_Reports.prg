@@ -3124,10 +3124,12 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 	// - end of month 
 	// - including budget
 	// : accid, mbrid, date, amount (deb:-), kind, budget in selected year period  
-	local nCurrMonth,i,nAcc as int 
+	local nCurrMonth,i,nAcc as int
+	local fProfitLoss as float 
 	local cStatement,minpl as string 
 	local aBalAcc1:={},aBalAcc2:={} as array  // intermediate arrays for balances
 	local oMBal as Balances
+	local oNetBal as BalanceNetasset
 	local oSel as SqlSelect
 	
 	oMBal:=Balances{}
@@ -3165,10 +3167,18 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 				else
 					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud // should contain last value					
 				endif
-				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Val(aBalAcc2[5]),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])}) 
-// 				if nAcc==Len(aAccidMbr)
-// 					exit
-// 				endif
+				if aAccidMbr[nAcc,3]=="5"  // other account
+					fProfitLoss:=0.00 
+					if aAccidMbr[nAcc,7]== Liability 
+						// check if netasset of department: 
+						if oNetBal == null_object
+							oNetBal:=BalanceNetasset{}
+						endif
+						fProfitLoss:=oNetBal:GetProfitLoss(Val(aAccidMbr[nAcc,2]),self:CalcYear*100+nCurrMonth)
+					endif
+				endif					
+
+				AAdd(aAccidMbr[nAcc,10],{nCurrMonth,Round(Val(aBalAcc2[5])+fProfitLoss,DecAantal),Val(aBalAcc2[6]),Val(aBalAcc2[7]),Val(aBalAcc2[8])}) 
 				nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]},nAcc+1)  // accid 
 			enddo
 		next
@@ -3348,7 +3358,7 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	// - mg gifts				 	(handled at end of kind 1)
 	// - account of "another account" 
 	// 
-	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthStart,2,0)+'01'))
+	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))
 
 	if !Empty(cCurrSubKind) .and. !cCurrSubKind==newAcc
 		// print closing line previous account: 
