@@ -1,4 +1,102 @@
 define asset:="AK"
+Class BalanceNetasset
+	// determine netasset balance consolidating profot/loss last year
+	PROTECT d_netasset:={},;
+		d_dep:={},;
+		d_parentdep:={},;
+		d_PLcre:={}	   as ARRAY 
+	protect BalanceEndDate as dword
+
+	declare method SubDepartment,GetProfitLoss
+
+Method GetProfitLoss(netasset as dword, reportmonth as dword) as float class BalanceNetasset 
+// get profit loss of last non closed year in case of net asset for reportmonth= current year*100+current month:
+local p_depptr as dword
+if self:BalanceEndDate < reportmonth 
+	// there is a non closed previous year:
+	if (p_depptr:=AScanExact(self:d_netasset,netasset))>0 
+		// net asset of a department:
+		return self:d_PLcre[p_depptr]
+	endif
+endif
+return 0.00
+
+Method Init() class BalanceNetasset
+	local YearStart,MonthStart,YearClose,MonthClose,Dep_Ptr as dword 
+	local aYear:={} as array 
+	local oBal as Balances
+	local oDep,oMBal as SqlSelect 
+	
+	self:d_dep:={0}
+	self:d_netasset:={Val(SKAP)}
+	self:d_parentdep:={nil}
+// 	self:d_PLdeb:={0.00}
+	self:d_PLcre:={0.00}
+	// determine end date last balance year:
+	aYear:=GetBalYear(Year(LstYearClosed),Month(LstYearClosed))
+	YearStart:=aYear[1]
+	MonthStart:=aYear[2]
+	YearClose :=aYear[3]
+	MonthClose:=aYear[4]
+// 	self:BalanceEndDate:=SToD(Str(YearClose,4)+StrZero(MonthClose,2)+StrZero(MonthEnd(MonthClose,YearClose),2))
+	self:BalanceEndDate:=YearClose*100+MonthClose 
+		
+	* Read departments into arrays:
+	oDep:=SqlSelect{"select d.parentdep,d.depid,d.netasset from department d "+;
+		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}   
+// 	oDep:=SqlSelect{"select group_concat(cast(d.parentdep as char),'#$#',cast(d.depid as char),'#$#',cast(d.netasset as char) separator '#%#') as grdeps from from department d "+;
+// 		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}	
+	if oDep:reccount>0
+// 		AEval(Split(oDep:grdeps,'#%#'),{|x|AAdd(d_dep,Split(x,'#%#'))})
+
+		DO WHILE !oDep:EOF
+			AAdd(self:d_dep,oDep:DepId)
+			AAdd(self:d_netasset,oDep:netasset)
+			AAdd(self:d_parentdep,oDep:ParentDep)
+			AAdd(self:d_PLcre,0.00)
+			oDep:skip()
+		ENDDO 
+	endif 
+	
+	
+	// calculate profit loss per department:
+	oBal:=Balances{}
+	oMBal:=SqlSelect{oBal:SQLGetBalance(YearStart*100+MonthStart,YearClose*100+MonthClose,false,true,,true),oConn}
+	oMBal:Gotop()
+	DO WHILE !oMBal:EOF 
+		* balance of year to be closed = balance of previous versus following year:
+		* balances of expense and income accounts have to be added to corresponding netassets and zero balanced:
+		IF oMBal:category == Expense .or. oMBal:category == Income
+			Dep_Ptr:=AScan(self:d_dep,oMBal:Department)
+			IF Dep_Ptr>0
+				self:d_PLcre[Dep_Ptr]:=Round(self:d_PLcre[Dep_Ptr]+oMBal:per_cre-oMBal:per_deb,DecAantal) 
+			endif
+		ENDIF
+		oMBal:skip()
+	ENDDO 
+	// consolidate subordinate departments without own net asset: 
+	self:SubDepartment(1)
+return self
+METHOD SubDepartment(p_depptr as int) as logic pascal CLASS BalanceNetasset
+	* Recursive processing of a department with its subdeparments
+	*
+	LOCAL subDepPtr as int
+
+	subDepPtr:=0
+	do WHILE true
+		subDepPtr:=AScan(self:d_parentdep,self:d_dep[p_depptr],subDepPtr+1)
+		IF Empty(subDepPtr)
+			exit
+		ELSE
+			if self:SubDepartment(subDepPtr)
+				* consolidate values of subdepartment into itself:
+				self:d_PLcre[p_depptr]:=Round(self:d_PLcre[p_depptr]+self:d_PLcre[subDepPtr],DecAantal)
+			else
+				return false
+			endif
+		ENDIF
+	ENDDO
+	RETURN true
 class Balances
 	* Result from getbalance are returned here
 	EXPORT per_deb as FLOAT  //calculated debit balance over period
@@ -9,7 +107,7 @@ class Balances
 	EXPORT vorig_cre as FLOAT //calculated credit balance previous period in yearstart
 	EXPORT prvyr_deb as FLOAT   //calculated debit balance previous year
 	EXPORT prvyr_cre  as FLOAT  //calculated credit balance previous year
-//	Idem for foreign currency
+	//	Idem for foreign currency
 	EXPORT per_debF as FLOAT  //calculated debit balance over period
 	EXPORT per_creF as FLOAT   //calculated credit balance over period
 	EXPORT begin_debF as FLOAT  //calculated begin  debit balance
