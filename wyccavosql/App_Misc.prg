@@ -465,6 +465,9 @@ function ConI(uValue as usual) as int
 return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )
 function ConL(uValue as usual) as logic
 // convert usual to logic
+if IsLogic(uValue)
+	return uValue
+endif
 return iif(uValue==iif(IsNumeric(uValue),1,'1'),true,false)
 function ConS(uValue as usual) as string
 	// convert usual to string 
