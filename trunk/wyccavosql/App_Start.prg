@@ -68,7 +68,11 @@ method Start() class App
 				endif
 			endif
 		endif
-		if !lStop
+		if lStop
+			// Exit program
+			self:Quit() 
+			break
+		else
 			// Open main shell window
 
 			WycIniFS := IniFileSpec{ "WYC" }
@@ -109,7 +113,8 @@ method Start() class App
 						(oNew:=NewPasswordDialog{oMainWindow}):show()
 						IF !oNew:ChangePsw
 							// Exit program
-							self:Quit()
+							self:Quit() 
+							break
 						ENDIF
 						oNew:=null_object
 					ENDIF
@@ -163,3 +168,4 @@ method Start() class App
 			//   	ShowError( oError )
 		endif
 	end SEQUENCE
+	self:Quit()
