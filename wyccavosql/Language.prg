@@ -399,7 +399,8 @@ CLASS LanguageWindow INHERIT DataWindowExtra
 METHOD Close(oEvent) CLASS LanguageWindow
 	//GetUserMenu(LOGON_EMP_ID)
 	//SELF:Server:refreshclients()
-	
+	self:oSFLanguageSubWindow:Skip()
+	self:oSFLanguageSubWindow:Skip(-1)
 	aLanM := {}
 	aLanW := {}
 	aLanR := {}
