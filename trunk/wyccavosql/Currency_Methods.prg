@@ -393,6 +393,13 @@ method ButtonClick(oControlEvent) class CurrRateEditor
 			
 
 	return NIL
+method Close(oEvent) class CurrRateEditor
+	self:oSFSub_Rates:Skip()
+	self:oSFSub_Rates:Skip(-1)
+	super:Close(oEvent)
+	//Put your changes here
+	return NIL
+
 ACCESS CurrencySelect() CLASS CurrRateEditor
 RETURN SELF:FieldGet(#CurrencySelect)
 
