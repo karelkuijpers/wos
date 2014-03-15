@@ -412,6 +412,30 @@ METHOD Close(oEvent) CLASS LanguageWindow
 
 	RETURN SUPER:Close(oEvent)
 
+METHOD DELETE() CLASS LanguageWindow
+	* delete record of TempTrans:
+	LOCAL ThisRec, CurRec as int
+	LOCAL oLang:=self:Server as SQLSelect
+	LOCAL Success as LOGIC 
+	local oStmnt as SQLStatement
+
+	CurRec:=oLang:Recno
+	if oLang:RecCount<1  && nothing to delete?
+		return
+	endif
+
+	IF !Empty(CurRec)
+		oStmnt:=SQLStatement{"delete from language where location='"+self:cLocation+"' and sentenceen='"+AllTrim(oLang:sentenceen)+"'",Oconn}
+		oStmnt:Execute()
+		if oStmnt:NumSuccessfulRows>0
+			oLang:Execute()  
+			self:oSFLanguageSubWindow:Browser:refresh()
+			if CurRec>oLang:RecCount
+				CurRec--
+			endif
+			self:GoTo(CurRec) 
+		endif
+	ENDIF
 method EditChange(oControlEvent) class LanguageWindow
 	local oControl as Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -598,6 +622,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS LanguageWindow
 		self:Caption+=self:oLan:WGet("Windows")
 	endif 
   	self:oDCFound:TextValue :=Str(self:oLanguage:Reccount,-1) 
+   self:Menu:DeleteItem(WOMENU_Insert_Record_ID)
 
 	RETURN nil
 method PreInit(oWindow,iCtlID,oServer,uExtra) class LanguageWindow
