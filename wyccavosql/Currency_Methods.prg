@@ -11,36 +11,35 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS CurRateBrowser
 	IF self:OWNER:lFilling  && ingore change column during filling screen
 		RETURN
 	ENDIF
+// 	if lHasFocus
+// 		return
+// 	endif
 	ThisRec:=oCurRt:RecNo 
 	rateid:=oCurRt:rateid
 	IF myColumn:NameSym == #AED 
 		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AED,""))
 			oCurRt:AED:=myColumn:VALUE
 			SQLStatement{'update currencyrate set aed="'+myColumn:VALUE+'" where rateid='+Str(rateid,-1),oConn}:execute() 
-			myColumn:TextValue:= myColumn:VALUE
-			self:Refresh() 
-			self:OWNER:goto(ThisRec)
 		endif
 	ELSEIF myColumn:NameSym == #AEDUNIT
 		IF !AllTrim(myColumn:VALUE) == AllTrim(Transform(oCurRt:AEDUNIT,""))
 			oCurRt:AEDUNIT:=myColumn:VALUE
 			SQLStatement{'update currencyrate set aedunit="'+myColumn:VALUE+'" where rateid='+Str(rateid,-1),oConn}:execute()
-			myColumn:TextValue:= myColumn:VALUE
-			self:Refresh() 
-			self:OWNER:goto(ThisRec)
+			self:Refresh()
+ 			oCurRt:execute()
+			self:OWNER:gotop() 			
 		endif
 	elseif myColumn:NameSym == #DATERATE
 		IF !myColumn:VALUE == oCurRt:daterate
 			oCurRt:daterate:=myColumn:VALUE
 			SQLStatement{'update currencyrate set daterate="'+sqldate(myColumn:VALUE)+'" where rateid='+str(rateid,-1),oConn}:execute()
- 			myColumn:TextValue:= DToC(myColumn:VALUE)
- 			self:OWNER:daterate:=myColumn:VALUE 
+ 			oCurRt:execute()
+ 			self:OWNER:goto(ThisRec)
 		endif
 	elseif myColumn:NameSym == #ROE
 		IF !myColumn:VALUE == oCurRt:roe
 			oCurRt:roe:=myColumn:VALUE
 			SQLStatement{'update currencyrate set roe="'+Str(myColumn:VALUE,-1,-1)+'" where rateid='+Str(rateid,-1),oConn}:execute() 
-			myColumn:TextValue:= Str(myColumn:VALUE,-1,-1)
 		endif
 		
 	ENDIF
@@ -879,6 +878,12 @@ Method ReEvaluate() Class Reevaluation
 
 
 	return 
+RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS Sub_Rates INHERIT DataWindowMine 
 
 	PROTECT oDBAED as JapDataColumn
@@ -888,12 +893,6 @@ CLASS Sub_Rates INHERIT DataWindowMine
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   export lFilling:=true as logic 
-RESOURCE Sub_Rates DIALOGEX  2, 2, 277, 183
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 ACCESS AED() CLASS Sub_Rates
 RETURN SELF:FieldGet(#AED)
 
