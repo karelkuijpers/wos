@@ -217,7 +217,7 @@ CLASS LogReport INHERIT DataWindowExtra
 	PROTECT oSFSub_LogReport AS Sub_LogReport
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-	export oLog as SQLSelect
+	export oLog as SQLSelectPagination
 	export cWhere,cWhereExtra,cFields,cOrder as string  
 ACCESS CollectionBox() CLASS LogReport
 RETURN SELF:FieldGet(#CollectionBox)
@@ -397,7 +397,7 @@ method InitParms() class LogReport
 	endif
 	self:oDCDateTimeFrom:DateRange:=DateRange{OldestYear,Today()}
 	self:oDCDateTimeTo:DateRange:=DateRange{OldestYear,Today()+1}
- 	self:oDCDateTimeFrom:SelectedDate:=Max(LstYearClosed,Today()-160)
+ 	self:oDCDateTimeFrom:SelectedDate:=Max(LstYearClosed,Today()-60)
 
 	self:oDCCollectionBox:FillUsing({{"standard report","log"},{"error report","logerrors"},{"information report","loginfo"}})
 	self:oDCCollectionBox:Value:="log"
@@ -549,7 +549,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class Sub_LogReport
 	local lSucc as logic
 	oLogRep:InitParms()
 // 	oLogRep:oLog:=SQLSelect{"select "+oLogRep:cFields+" from log "+oLogRep:cOrder,oConn} 
-	oLogRep:oLog:=SqlSelect{"",oConn} 
+	oLogRep:oLog:=SQLSelectPagination{"",oConn} 
 	oLogRep:GetLog()
 	lSucc:=oLogRep:use(oLogRep:oLog)
 	return NIL
