@@ -298,6 +298,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	rd_budytd:={} as array // idem 
 	Local oAcc,oBal,oDep as SQLSelect
 	local oMbal as balances
+	local OMBalNet as BalanceNetasset
 
 
 	if self:oReport:lRTF 
@@ -1603,7 +1604,8 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 		IF !IsNil(r_balpryrtot[Bal_Ptr]).and.!Empty(r_balpryrtot[Bal_Ptr])
 			AAdd(aTotprv,{m_soort,level,r_balpryrtot[Bal_Ptr]})
 		ENDIF
-		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
+// 		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
+		IF level==0 .and. (!Empty(self:WhatFrom).or.m_soort==Income .or. m_soort==Expense ) && second time "down"in tree: surplus income or liabilities
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			clbalvj:=0
 			clbal:=0
@@ -1948,7 +1950,7 @@ PROTECT mDepartment AS STRING
 	export mailsubject as string   // subject of emailmessage 
 	export lNoBalance as logic   // skip balancesheet 
 	export WhatDetails:=true as logic 
-	export showopeningclosingfund:=true as logic
+	export showopeningclosingfund:=false as logic
 
 
 	declare method RegDepartment,DepartmentStmntPrint
@@ -2631,7 +2633,6 @@ SELF:BeginReport:=TRUE
 self:Footnotes:="Last" 
 self:oDCSimpleDepStmnt:Checked:=true
 self:Country:=SQLSelect{"select countryown from sysparms",oConn}:FIELDGET(1)
-
 RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DeptReport
 	//Put your PreInit additions here
