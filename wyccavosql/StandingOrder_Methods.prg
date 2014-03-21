@@ -982,23 +982,23 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS StOrdLnBrowser
 	ENDIF
 	ThisRec:=oStOrdLH:RecNo
 	IF myColumn:NameSym == #ACCOUNTNBR
-		IF !AllTrim(myColumn:TEXTValue) == ;
+		IF Len(oStOrdLH:aMirror[ThisRec])>=7 .and.!AllTrim(myColumn:TEXTValue) == ;
 				AllTrim(oStOrdLH:aMirror[ThisRec,7]) && value changed?
 			oStOrdLH:aMirror[ThisRec,7]:= AllTrim(myColumn:TEXTValue) 
 			self:Owner:Owner:ACCOUNTProc(myColumn:VALUE)
 		ENDIF
 	ELSEIF myColumn:NameSym == #DEB
-		IF !Round(myColumn:Value,2) == Round(oStOrdLH:aMirror[ThisRec,1],2)
+		IF Len(oStOrdLH:aMirror[ThisRec])>=1 .and.!Round(myColumn:VALUE,2) == Round(oStOrdLH:aMirror[ThisRec,1],2)
 			self:Owner:DebCreProc()
 			self:Owner:Owner:Totalise()
 		ENDIF
 	ELSEIF myColumn:NameSym == #CRE 
-		IF !Round(myColumn:Value,2) == Round(oStOrdLH:aMirror[ThisRec,2],2)
+		IF Len(oStOrdLH:aMirror[ThisRec])>=2 .and.!Round(myColumn:VALUE,2) == Round(oStOrdLH:aMirror[ThisRec,2],2)
 			self:Owner:DebCreProc()
 			self:Owner:Owner:Totalise()
 		ENDIF
 	ELSEIF myColumn:NameSym == #GC
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,4])
+		IF Len(oStOrdLH:aMirror[ThisRec])>=4 .and.!AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,4])
 			oStOrdLH:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
 			myColumn:TEXTValue:= myColumn:Value
 			oStOrdLH:gc:=myColumn:Value
@@ -1008,13 +1008,13 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS StOrdLnBrowser
 	ELSEIF myColumn:NameSym== #ACCOUNTNAM .and. lHasFocus
 		self:SetColumnFocus(#DESCRIPTN)
 	ELSEif myColumn:NameSym == #CREDTRNAM 
-		IF oStOrdLH:aMirror[ThisRec,5]==Val(sCRE) .and. !AllTrim(myColumn:TEXTValue) == ;
+		IF Len(oStOrdLH:aMirror[ThisRec])>=8 .and.oStOrdLH:aMirror[ThisRec,5]==Val(sCRE) .and. !AllTrim(myColumn:TEXTValue) == ;
 				AllTrim(oStOrdLH:aMirror[ThisRec,8]) && value changed?
 			oStOrdLH:aMirror[ThisRec,8]:= AllTrim(myColumn:TEXTValue) 
 			self:Owner:Owner:CreditorProc(myColumn:VALUE)
 		ENDIF
 	ELSEIF myColumn:NameSym == #BANKACCT
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,9])
+		IF Len(oStOrdLH:aMirror[ThisRec])>=9 .and.!AllTrim(myColumn:VALUE) == AllTrim(oStOrdLH:aMirror[ThisRec,9])
 			oStOrdLH:aMirror[ThisRec,9]:=AllTrim(myColumn:VALUE)
 			myColumn:TextValue:= myColumn:VALUE
 			oStOrdLH:BANKACCT:=myColumn:Value
