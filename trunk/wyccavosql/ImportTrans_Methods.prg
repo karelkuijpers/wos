@@ -853,23 +853,24 @@ METHOD Import() CLASS ImportBatch
 METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testformat:=false as logic) as logic CLASS ImportBatch
 	* Import of one batchfile with  transaction data into ImportTrans.dbf 
 	* Testformat: only test if this a file to be imported
+	LOCAL ptDate, ptDoc, ptTrans, ptDesc, ptCre, ptAccName, ptPers as int
+	local maxPt , nCnt:=0,nProc:=0,nTot,nAcc,nPers,i,nTransId,nLastGift as int
+	local Amount as float 
 	LOCAL cSep as STRING
 	LOCAL cDelim:=Listseparator as STRING
-	LOCAL lv_loaded as LOGIC
-	LOCAL CurTransNbr:="" as STRING
-	LOCAL ptrHandle as MyFile
+	LOCAL cBank,cBankName,cBankaccId as string 
 	LOCAL cBuffer as STRING
+	LOCAL CurTransNbr:="" as STRING
+	local cAcc,cAccNumber,cAccName,cAssmnt,cAccId,cdat as string
+	local cStatement,cError,cAmount,cDecDelim,cThousandDelim as string
+	local cErrorMessage as string 
+	local impDat as date
+	lOCAL lv_loaded, lUnique as LOGIC
+	local lError,lSuccess as logic
 	LOCAL aStruct:={} as ARRAY // array with fieldnames
 	LOCAL aFields:={} as ARRAY // array with fieldvalues
-	LOCAL ptDate, ptDoc, ptTrans, ptDesc, ptCre, ptAccName, ptPers as int
-	LOCAL aPt:={} as ARRAY, maxPt , nCnt:=0,nProc:=0,nTot,nAcc,nPers,i,nTransId,nLastGift as int
-	LOCAL cBank,cBankName,cBankaccId as string 
-	local aDat as array, impDat as date, cAcc,cAccNumber,cAccName,cAssmnt,cAccId,cdat as string , lUnique as logic
-	local oStmnt as SQLStatement
-	local oSel,oImpTr,oAcc as SQLSelect
-	local cStatement,cError,cAmount,cDecDelim,cThousandDelim as string 
-	local lError,lSuccess as logic
-	local Amount as float 
+	LOCAL aPt:={} as ARRAY
+	local aDat as array
 	local aValues:=self:aValues as array   // array with values to be inserted into importrans 
 	// 	local aValuesTrans:={} as array   // array with values to be automatically inserted into transaction 
 	// 	local aValuesPers:={} as array   // array with person values to be automatically updated {{persid,datelastgift},{..},...} 
@@ -877,7 +878,10 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 	local aMbrAcc:={} as array  // array with member accounts
 	local aPers:={}  as array // array with giver data: {{externid,persid},{..}...} 
 	local aPersExt:={} as array // array with import externids
+	LOCAL ptrHandle as MyFile
 	local oMBal as Balances 
+	local oStmnt as SQLStatement
+	local oSel,oImpTr,oAcc as SQLSelect
 	//    Default(@Testformat,False)
 	
 	ptrHandle:=MyFile{oFr}
@@ -1020,6 +1024,15 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 			// not yet loaded 
 			lSuccess:=self:SaveImport(@nCnt,@nProc)
 			if !lSuccess
+				lError:=true
+			endif
+		else
+			nTot:=ConI(oSel:tot)/2
+			oSel:=SqlSelect{"select group_concat(distinct transactnr order by transactnr separator ',') as duptrans from importtrans where `origin`='"+cOrigin+"' and `transactnr` in ("+Implode(aValues,',',,,3)+")",oConn} 
+			if oSel:RecCount>0 
+				cErrorMessage:= "Imported Austria file:"+oFr:FileName+": nothing imported because "+Str(nTot,-1)+" already imported:"+CRLF+oSel:duptrans
+				AAdd(self:aMessages,cErrorMessage)
+				ErrorBox{,cErrorMessage}:show() 
 				lError:=true
 			endif
 		endif
