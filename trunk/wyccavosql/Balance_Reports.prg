@@ -3159,6 +3159,7 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 			aBalAcc2:=Split(aBalAcc1[i],'#$#')
 			nAcc:=AScan(aAccidMbr,{|x|x[2]==aBalAcc2[1]})  // accid 
 			do while nAcc>0
+				fProfitLoss:=0.00 
 				if Len(aAccidMbr[nAcc]) <10
 					ASize(aAccidMbr[nAcc],10)
 					aAccidMbr[nAcc,10]:={}
@@ -3169,7 +3170,6 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 					aAccidMbr[nAcc,9]:=Val(aBalAcc2[4])  //yTD_bud // should contain last value					
 				endif
 				if aAccidMbr[nAcc,3]=="5"  // other account
-					fProfitLoss:=0.00 
 					if aAccidMbr[nAcc,7]== Liability 
 						// check if netasset of department: 
 						if oNetBal == null_object
@@ -4526,8 +4526,8 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	aOutput:=null_array 
 	oTrans:=null_object
 	
-//  	time1:=time0
-// 	LogEvent(self,"Printing report:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
+	//  	time1:=time0
+	// 	LogEvent(self,"Printing report:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	SQLStatement{"DROP TABLE IF EXISTS accidmbr",oConn}:Execute()
 	SQLStatement{"DROP TABLE IF EXISTS transmbr",oConn}:Execute()
 	IF Empty(self:SendingMethod) 
@@ -4963,7 +4963,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	local cCurrSubKind,cCurrKind,cCurrKindGrp,cCurrAcc,cCurrOPP as string
 	local lFirstIncome,lColumnHeading,lColumnHeading as logic 
 	local aTransRPP:={},aDesc:={},aTransMG:={} as array 
-	local lMember:=!SubStr(mbrid,1,1)='a' as logic
+	local lMember:=!SubStr(mbrid,1,1)='a' as logic 
 	
 	// Produce overview from aTrans:
 	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
@@ -4992,6 +4992,9 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	AAdd(aTrans,{,,,,,,,,,,,'9'})  // kind 6 as stop to print remaining totals
 	for nTrans:=1 to Len(aTrans) 
 		// preprocess gifts and collect gifts for later printing: 
+		if nTrans==35
+			nTrans:=nTrans
+		endif
 		if aTrans[nTrans,12]<='2'   //gift or own money 
 			if aTrans[nTrans,5]>'0'  // giver present?
 				// add to aGiftData:
@@ -5030,7 +5033,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 			endif
 			if !Empty(aTrans[nTrans,9])
 				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate
-				if Len(aTransRPP)=1 // Force new group
+				if Len(aTransRPP)=1 .and. nGift=0 // Force new group
 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
 				endif
 				loop 
@@ -5039,17 +5042,17 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 				if Len(aTransMG)=1 // Force new group
 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
 				endif
-				loop 
+				loop
 			endif
 		elseif !Empty(aTrans[nTrans,2]) .and. aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 			loop
 		endif
 
-				
+		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 		// End processing
 		//
-      self:EndOfTransGroupKind(mbrid,aTrans[nTrans,12],ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,aTransRPP,aTransMG,aPersData,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,@cCurrAcc,@fKindGrp,@fKind,@fSubKind)
+		self:EndOfTransGroupKind(mbrid,aTrans[nTrans,12],ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,aTransRPP,aTransMG,aPersData,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,@cCurrAcc,@fKindGrp,@fKind,@fSubKind)
 
 		
 		if aTrans[nTrans,12]='9' 
@@ -5093,7 +5096,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 			AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
 				'<td colspan="3" style="width:70%">'+HtmlEncode(aTrans[nTrans,7])+'</td><td class="amount">'+Str(aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),12,DecAantal)+'</td><td colspan="2"></td></tr>')
 			fSubKind:=Round(fSubKind+aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),DecAantal) 						
-		endif
+		endif 
 	next
 	AAdd(aOutput,"</table></td></tr></table>")
 	return
