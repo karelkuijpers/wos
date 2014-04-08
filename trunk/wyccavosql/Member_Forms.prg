@@ -3149,7 +3149,6 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 				lValid := FALSE
 				cError := oLan:WGet("Household id allready assigned to member")+" "+GetFullName(Str(oMem:persid,-1))
 				self:oDCmHBN:SetFocus()
-				exit
 			ENDIF
 		ENDIF
 		IF lValid .and.self:mGRADE # "Entity" .and. self:mPPCode # Sentity
