@@ -3361,9 +3361,9 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	// 
 	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))
 
-	if !Empty(cCurrSubKind) .and. !cCurrSubKind==newAcc
+	if cCurrKind>'3'
+		if !Empty(cCurrSubKind) .and. !cCurrSubKind==newAcc
 		// print closing line previous account: 
-		if cCurrKind>'3'
 			//	determine closing	balance:	
 			nCurrMonth:=self:CalcMonthEnd	
 			fBalance:=0.00
@@ -5031,19 +5031,19 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 			if aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 				loop
 			endif
-			if !Empty(aTrans[nTrans,9])
-				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate
-				if Len(aTransRPP)=1 .and. nGift=0 // Force new group
-					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
-				endif
-				loop 
-			elseif aTrans[nTrans,10]=='MG'
-				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate
-				if Len(aTransMG)=1 // Force new group
-					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
-				endif
-				loop
-			endif
+// 			if !Empty(aTrans[nTrans,9])
+// 				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate
+// 				if Len(aTransRPP)=1 .and. nGift=0 // Force new group
+// 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
+// 				endif
+// 				loop 
+// 			elseif aTrans[nTrans,10]=='MG'
+// 				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate
+// 				if Len(aTransMG)=1 // Force new group
+// 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
+// 				endif
+// 				loop
+// 			endif
 		elseif !Empty(aTrans[nTrans,2]) .and. aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 			loop
 		endif
