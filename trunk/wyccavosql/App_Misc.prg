@@ -2448,13 +2448,15 @@ NEXT
 RETURN true
 FUNCTION IsPunctuationMark(m_str as string) as logic
 * Check if string m-str contains punctuation marks
-LOCAL p_str as STRING,p_num_tel as int 
+LOCAL p_str as STRING,p_num_tel as int
+local mchar as psz 
 IF Empty(m_str)
    RETURN false
 ENDIF
 p_str:=AllTrim(m_str) 
 FOR p_num_tel:=1 to Len(p_str)
-    IF !IsAlpha(psz(_cast,SubStr(p_str,p_num_tel,1)))
+	mchar:= psz(_cast,SubStr(p_str,p_num_tel,1))
+    IF !Empty(mchar) .and. !IsAlpha(mchar) .and. !IsDigit(mchar)	
        RETURN true
     ENDIF
 NEXT
