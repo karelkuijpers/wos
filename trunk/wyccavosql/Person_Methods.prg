@@ -797,7 +797,16 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 			endif
 			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
 			street+=" "+housenrOrg 
-			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...> 
+			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
+			if SubStr(output,nPos1+1,1)=='('
+				// look for second <small..>:
+				if (nPos2:=At3('<small',output,nPos1+9))>0
+					nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
+				endif
+			endif
+			if nPos1=0
+				return {cPostcode,cAddress,cCity}
+			endif	
 			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
 			nPos1:=At3(',',output,nPos1+1)+1
 			nPos2:=At3('<',output,nPos1)
