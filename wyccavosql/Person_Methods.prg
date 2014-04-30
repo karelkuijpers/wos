@@ -3716,7 +3716,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 		" from person p, dueamount d,subscription s "+;
 		"where s.subscribid=d.subscribid and s.paymethod='C' "+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
-		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid order by lastname",oConn}
+		" and '"+SQLdate(end_due)+"' and amountrecvd<amountinvoice and p.persid=s.personid and s.blocked=0 order by lastname",oConn}
 	IF oDue:RecCount<1
 		(WarningBox{self,"Producing KID file","No due amounts to be auto collected!"}):Show()
 		RETURN false
