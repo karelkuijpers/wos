@@ -1790,7 +1790,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 										elseif oIdent:Name==#othr
 											nEl3:=0
 											oElm3:= oIdent:ScanElement(#Id,@nEl3)
-											lv_BankAcntContra:=StrTran(oElm3:STRINGValue,'P','0') 
+											if !lv_kindORG=='199'     // internal bank account for bank cost etc
+												lv_BankAcntContra:=StrTran(oElm3:STRINGValue,'P','0')
+											endif 
 										endif 
 									endif
 								endif
@@ -1810,9 +1812,6 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							if !Empty(oElm:=oTx:ScanElement(#RmtInf,@nEl1)) 
 								// 								if !Empty(oElm2:=oElm:ScanElement(#Ustrd,@nEl2))
 								cType86:='' 
-								if lv_BankAcntContra=='NL69ABNA0536564809'
-									lv_BankAcntContra:=lv_BankAcntContra
-								endif
 								do while !Empty(oElm2:=oElm:ScanElement(#Ustrd,@nEl2)) 
 									lv_Oms:=oElm2:STRINGValue 
 									nNumPos:=AtC('-nummer',lv_Oms)
