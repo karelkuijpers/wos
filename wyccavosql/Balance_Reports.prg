@@ -4232,8 +4232,8 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 							endif    
 							IF	oRecip1 != null_object .and. (Mod(i,2)=0 .or.i=Len(self:aMailMember[m,4]))
 								if	!oMapi:SendDocument(	oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
-									LogEvent(self,"Could	not mail	Giftreport "+cPeriod+" to "+memberName,"logerrors")
-									ErrorBox{self,"Could	not mail	Giftreport "+cPeriod+" to "+memberName}:Show() 
+									LogEvent(self,'Could not mail Giftreport '+cPeriod+' to '+memberName,"logerrors")
+									ErrorBox{self,'Could not mail Giftreport '+cPeriod+' to '+memberName}:Show() 
 								elseif i<=3
 									mCnt++
 								endif
