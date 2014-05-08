@@ -4706,7 +4706,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
-// 	CollectForced() 
+	// 	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
 	// select bank transactions which can be processed automatically 
@@ -4721,13 +4721,15 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	next
 	if Len(aBudgetcd)>0
 		cBudgetcds:=Implode(aBudgetcd,'","')	
-		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember,',',gr.grpersid separator '#') as graccnumber "+;
-			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember,cast(COALESCE(m.persid,0) as char) as grpersid "+;
+		oSel:=SqlSelect{"select group_concat(gr.accnumber,',',gr.graccid,',',gr.ismember,',',gr.grpersid,',',gr.incomeacc,',',gr.expenseacc,',',gr.netasset separator '#') as graccnumber "+;
+			"from (select a.accnumber,cast(a.accid as char) as graccid,if(m.mbrid IS NULL,'0','1') as ismember,cast(COALESCE(m.persid,0) as char) as grpersid, "+;
+			"cast(COALESCE(d.incomeacc,0) as char) as incomeacc,cast(COALESCE(d.expenseacc,0) as char) as expenseacc,cast(COALESCE(d.netasset,0) as char) as netasset "+;
 			"from account a left join department d on (d.depid=a.department) "+;
 			"left join member as m on (a.accid=m.accid or m.depid=d.depid and (d.incomeacc=a.accid or d.expenseacc=a.accid or d.netasset=a.accid)) "+; 
-		" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
+			" where accnumber in ("+cBudgetcds+") ) as gr group by 1=1",oConn}
 		if oSel:Reccount>0
 			aAccnbrDb:={}  
+			// aAccnbrDb: {{accnumber, accid, ismember, member persid, incomeacc,expenseacc,netasset)
 			AEval(Split(oSel:graccnumber,'#'),{|x|AAdd(aAccnbrDb,Split(x,','))})
 		endif 
 		// determine fund accounts of members for PF transactions:
@@ -4823,7 +4825,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 							endif
 							if !lAddressChanged 
 								cBudgetcd:=avalueTrans[i,7] 
-								// aAccnbrDb: {{accnumber, accid, ismember, member persid)
+								// aAccnbrDb: {{accnumber, accid, ismember, member persid, incomeacc,expenseacc,netasset) 
+								//                 1          2       3         4              5          6         7
 								if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
 									avalueTrans[i,16]:='X'   // record as processed 
 									lv_accid:=aAccnbrDb[l,2]
@@ -4839,20 +4842,26 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 										cBankAccOwn:=self:m57_bankacc[j,8]
 									endif
 									if aAccnbrDb[l,3]='1'  //destination member?
-										lv_gc:='AG' 
-										//aBankContra: {{bankacc,persid,ismember},...}
-										if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member? 
-											// gift from member self?:
-											if aAccnbrDb[l,4]==lv_persid
-												// personal fund:
-												lv_gc:='PF'
-												// replace destination by fund account: 
-												//aAccnbrDbFund: {{ accid, persid}...}
-												if (m:=AScan(aAccnbrDbFund,{|x|x[2]==lv_persid}))>0 
-													lv_accid:=aAccnbrDbFund[m,1]
+										lv_gc:='AG'
+										if lv_accid==aAccnbrDb[l,6]   // expense account?
+											lv_gc:='CH'
+										elseif lv_accid==aAccnbrDb[l,7]  // net asset account?
+											lv_gc:='PF'
+										else											
+											//aBankContra: {{bankacc,persid,ismember},...}
+											if AScan(aBankContra,{|x|x[2]==lv_persid .and.x[3]='1'})>0    // giver member? 
+												// gift from member self?:
+												if aAccnbrDb[l,4]==lv_persid
+													// personal fund:
+													lv_gc:='PF'
+													// replace destination by fund account: 
+													//aAccnbrDbFund: {{ accid, persid}...}
+													if (m:=AScan(aAccnbrDbFund,{|x|x[2]==lv_persid}))>0 
+														lv_accid:=aAccnbrDbFund[m,1]
+													endif
+												else
+													lv_gc:='MG'
 												endif
-											else
-												lv_gc:='MG'
 											endif
 										endif
 									else
@@ -4939,6 +4948,11 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					if aAccnbrDb[l,3]='1'  // is member
 						if !Empty(avalueTrans[i,11])  // giver connected?
 							lv_gc:='CH'
+							if lv_accid==aAccnbrDb[i,5]   // income account?
+								lv_gc:='AG'
+							elseif lv_accid==aAccnbrDb[i,7]  // net asset account?
+								lv_gc:='PF'
+							endif											
 							lProcAuto:=true
 						endif
 					else
