@@ -632,7 +632,8 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		0 )
 	self:oClick:Suspend() 
 	if !nResult == SUCCESS_SUCCESS
-			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION )
+			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION ) 
+			LogEvent(self,"Error when emailing, Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult),"logerror")
 			RETURN false
 		
 	endif
