@@ -691,10 +691,13 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 	self:IsSystem:=lSystem
 	if lSystem
 // 		self:emailaddress:= "karel_kuijpers@wycliffe.net"
-		self:emailaddress:= "accounting_systems_europe@wycliffe.net"
-		self:username:="karel_kuijpers@wycliffe.org"
+// 		self:emailaddress:= "accounting_systems_europe@wycliffe.net"
+// 		self:username:="karel_kuijpers@wycliffe.org"
+//		self:outgoingserver:="mail.jaars.org"
+		self:emailaddress:= "wos-notify_weu@wycliffe.net"
+		self:username:="wos-notify_weu@wycliffe.net"
 		self:password:=GetWosmasterPwd()
-		self:outgoingserver:="mail.jaars.org"
+		self:outgoingserver:="smtp.gmail.com"
 		self:port:="587"
 		self:protocol:="ssl" 
 	else		
