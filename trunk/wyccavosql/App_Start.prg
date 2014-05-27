@@ -49,7 +49,7 @@ method Start() class App
 		cWorkdir:=WorkDir() 
 		oMainWindow := StandardWycWindow{self}
 		LOGON_EMP_ID:=self:GetUser()   // prelimninary
-		oInit:=Initialize{}  // make connection with mysql and database
+		oInit:=Initialize{}  // make connection with mysql and database   
 		oUpg:=CheckUPGRADE{}
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
@@ -161,6 +161,8 @@ method Start() class App
 				AlertNew{}:ShowNew()
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
+			// Backup if needed:
+			BackupDatabase{oMainWindow}:MakeBackup()
 			CollectForced()
 			self:Exec()
 			// RECOVER USING oError	 
