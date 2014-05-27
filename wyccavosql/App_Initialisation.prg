@@ -170,7 +170,9 @@ class Initialize
 protect sIdentChar as string 
 export lNewDb:=false as logic
 protect aCurTable:={} as array
-export FirstOfDay as logic
+export FirstOfDay as logic 
+export cUIDPW as string
+
  
 declare method create_table, ConvertDBFSQL, ConVertOneTable, InitializeDB,RenameField,Initialize,SyncColumns,Matchunequalgaps
 
@@ -639,7 +641,6 @@ method init() class Initialize
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
 	local aDB:={} as array 
-	local cUIDPW as string
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
@@ -696,18 +697,28 @@ method init() class Initialize
 	endif
 	dbname:=Lower(dbname)
 	if Empty(akeyval[4]) .or.Empty(akeyval[2])
-		cUIDPW:=GetSQLUIDPW()
+		self:cUIDPW:=GetSQLUIDPW()
+		aWord:=Split(self:cUIDPW,'=')
+		if Len(aWord)>2
+			sqluid:=aWord[2]
+			i:=AtC(';PWD',sqluid)
+			sqluid:=SubStr(sqluid,1,i-1)
+			sqlpwd:=aWord[3]
+			sqlpwd:=strtran(sqlpwd,';',,len(sqlpwd),1)
+		endif
 	else
-		cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2]
+		self:cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2] 
+		sqluid:=Lower(akeyval[4])
+		sqlpwd:=akeyval[2]
 	endif 
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 	do while !lConnected
 		oConn:=SQLConnection{} 
 		if IsClass(#ADOCONNECTION)
-			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW)
+			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+self:cUIDPW)
 		else
-			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
+			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+self:cUIDPW) 
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
