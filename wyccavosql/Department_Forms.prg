@@ -963,7 +963,7 @@ METHOD OKButton( ) CLASS EditDepartment
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
 		"descriptn='"+AddSlashes(AllTrim(self:mDescription))+"',"+;
-		"parentdep='"+cMainId+"',"+;
+		"parentdep='"+Str(Val(cMainId),-1)+"',"+;
 		"netasset='"+Str(Val(self:NbrCAPITAL),-1)+"',"+;
 		"incomeacc='"+Str(Val(self:NbrIncome),-1)+"',"+;
 		"expenseacc='"+Str(Val(self:NbrExpense),-1)+"',"+;
