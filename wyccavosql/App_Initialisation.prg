@@ -644,11 +644,12 @@ method init() class Initialize
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
-	local cLine as string
+	local cLine as string 
+	local port:='3306' as string
 	local aWord:={} as array
 	local i,j as int
-	local aIniKey:={'database','password','server','username'} as array
-	local dim akeyval[4] as string
+	local aIniKey:={'database','password','server','username','port'} as array
+	local dim akeyval[5] as string
 	local lConnected as logic
 	local time0,time1 as float
 	local oTCPIP as TCPIP
@@ -686,6 +687,9 @@ method init() class Initialize
 	else
 		servername:=Lower(akeyval[3])
 	endif
+	if !Empty(akeyval[5])
+		port:=akeyval[5]
+	endif
 	if Empty(akeyval[1])
 		// Determine database:
 		dbname:=CurDir(CurDrive())
@@ -716,9 +720,9 @@ method init() class Initialize
 	do while !lConnected
 		oConn:=SQLConnection{} 
 		if IsClass(#ADOCONNECTION)
-			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+self:cUIDPW)
+			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+';Port='+port+self:cUIDPW)
 		else
-			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+self:cUIDPW) 
+			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+';Port='+port+self:cUIDPW) 
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
