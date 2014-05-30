@@ -89,6 +89,10 @@ method Start() class App
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay
+			IF FirstOfDay
+				// Backup if needed:
+				BackupDatabase{oMainWindow}:MakeBackup()
+			endif
 			oInit:=null_object 
 // 			CollectForced()
 			SetDeleted( true )
@@ -161,8 +165,6 @@ method Start() class App
 				AlertNew{}:ShowNew()
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
-			// Backup if needed:
-			BackupDatabase{oMainWindow}:MakeBackup()
 			CollectForced()
 			self:Exec()
 			// RECOVER USING oError	 
