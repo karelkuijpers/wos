@@ -184,10 +184,7 @@ method Init(oWindow) class BackupDatabase
 	local lAmPM as logic
 	local oFileSpec as FileSpec 
 	Local aDir as array
-	// 	if SEntity =='HUN' .and. (servername=="localhost" .or. servername=="127.0.0.1") 
-	if (servername=="localhost" .or. servername=="127.0.0.1") 
-		// 	if Empty(GetEnv('ProgramFiles(x86)'))
-		// 32 bits
+	if SEntity =='HUN' .and. (servername=="localhost" .or. servername=="127.0.0.1") 
 		oFileSpec:=FileSpec{}
 		oFileSpec:FileName:="mysqldump"
 		oFileSpec:Extension:="exe" 
