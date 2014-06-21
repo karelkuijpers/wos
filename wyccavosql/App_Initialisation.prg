@@ -53,18 +53,18 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 	Local aInsRem as Array
 	local aDir,aSubDir as array
 	Local oFs as FileSpec
- 	LOCAL oFTP  as cFtp
- 	local oSel as SQLStatement
+	LOCAL oFTP  as cFtp
+	local oSel as SQLStatement
 
 	oFTP := CFtp{"WycOffSy FTP Agent"} 
 	
 	if oFTP:Open()                                                              
-// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+		// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 	endif
 	for i:=1 to 9   // try 3 seconds
 		if !lSuc
-		// try again:
+			// try again:
 			Tone(30000,6) // wait 6/18 sec
 			lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 			// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
@@ -85,17 +85,19 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 		// check newer tables, etc: 
 		aInsRem:=oFTP:Directory("variable/*.*")
 		for i:=1 to Len(aInsRem)
-			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])}
-			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?
-				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
-				INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
-				if lSuc
-					SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] )
-					if oFs:Extension=='.csv'
-						if oFs:Size>10 // !empty
-							// drop corresponding table to force it to be loaded again with new data: 
-							oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
-							oSel:Execute()
+			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
+			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
+				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
+					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
+						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
+					if lSuc
+						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] )
+						if oFs:Extension=='.csv'
+							if oFs:Size>10 // !empty
+								// drop corresponding table to force it to be loaded again with new data: 
+								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
+								oSel:Execute()
+							endif
 						endif
 					endif
 				endif
@@ -112,8 +114,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 			RemoteDate:=aInsRem[1,F_DATE]
 			Remotetime:=aInsRem[1,F_TIME]
 			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime )
-// 			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
-// 			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
+				// 			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
+				// 			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
 				// apparently new version:
 				LogEvent(self,"Installing new version: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,"loginfo")
 				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()  
@@ -138,13 +140,13 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 					endif
 				next         
 
-// 				if File("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\windows\Temporary Internet Files\wosupgradeinstaller.exe") 
-// 					FErase("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft|windows\Temporary Internet Files\wosupgradeinstaller.exe")
-// 				endif
+				// 				if File("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\windows\Temporary Internet Files\wosupgradeinstaller.exe") 
+				// 					FErase("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft|windows\Temporary Internet Files\wosupgradeinstaller.exe")
+				// 				endif
 				// load first latest version of install program: 
-// 				FileSpec{oFs:FullPath}:Rename("wosupgradeinstallerold.exe")
+				// 				FileSpec{oFs:FullPath}:Rename("wosupgradeinstallerold.exe")
 				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD + ;
-					INTERNET_FLAG_NO_CACHE_WRITE )
+						INTERNET_FLAG_NO_CACHE_WRITE )
 					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
 					// 							__RaiseFTPError(oFTP) 
 				else
@@ -154,7 +156,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
 						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
-// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
+						// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
 					endif
 					*/
 					oFTP:CloseRemote() 
