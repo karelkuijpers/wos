@@ -177,7 +177,7 @@ class BackupDatabase
 	protect mysqldPath as string
 	protect backupfilename as string 
 	protect nPeriod:=1 as int // period in days for making backup
-method Init(oWindow) class BackupDatabase
+method Init(oWindow,cWorkdir) class BackupDatabase
 	// look for local mysql
 	local i as int 
 	local nTimeSep:=GetTimeSep() as dword 
@@ -185,29 +185,41 @@ method Init(oWindow) class BackupDatabase
 	local oFileSpec as FileSpec 
 	Local aDir as array
 	if SEntity =='HUN' .and. (servername=="localhost" .or. servername=="127.0.0.1") 
+		// 	if (servername=="localhost" .or. servername=="127.0.0.1") 
 		oFileSpec:=FileSpec{}
 		oFileSpec:FileName:="mysqldump"
 		oFileSpec:Extension:="exe" 
-		aDir:=Directory("C:\Program Files\Mysql\Mysql *","D")
-		if Len(ADir)>0
-			for i:=1 to Len(ADir)
-				oFileSpec:Path:="C:\Program Files\Mysql\"+ADir[1][F_NAME]		
-				if oFileSpec:Find()
-					self:mysqldPath:=oFileSpec:fullpath
-					exit
-				else
-					oFileSpec:Path+='bin'		
+		if Empty(self:mysqldPath)
+			// In wossql?
+			oFileSpec:Path:=cWorkdir	
+			if oFileSpec:Find()
+				self:mysqldPath:=oFileSpec:fullpath
+			endif
+		endif
+		
+		if Empty(self:mysqldPath)
+			// in program files? 
+			aDir:=Directory("C:\Program Files\Mysql\Mysql*","D")
+			if Len(ADir)>0
+				for i:=1 to Len(ADir)
+					oFileSpec:Path:="C:\Program Files\Mysql\"+ADir[1][F_NAME]		
 					if oFileSpec:Find()
 						self:mysqldPath:=oFileSpec:fullpath
 						exit
+					else
+						oFileSpec:Path+='bin'		
+						if oFileSpec:Find()
+							self:mysqldPath:=oFileSpec:fullpath
+							exit
+						endif
 					endif
-				endif
-			next
+				next
+			endif
 		endif
 		if Empty(self:mysqldPath)
 			if !Empty(GetEnv('ProgramFiles(x86)'))
 				// 64 bits
-				aDir:=Directory("C:\ProgramFiles(x86)\Mysql\Mysql *","D")
+				aDir:=Directory("C:\ProgramFiles(x86)\Mysql\Mysql*","D")
 				if Len(ADir)>0
 					for i:=1 to Len(ADir)
 						oFileSpec:Path:="C:\ProgramFiles(x86)\Mysql\"+ADir[1][F_NAME]		
@@ -231,7 +243,8 @@ method Init(oWindow) class BackupDatabase
 			if oFileSpec:Find()
 				self:mysqldPath:=oFileSpec:fullpath
 			endif
-		endif
+		endif  */
+		
 		if !Empty(self:mysqldPath)
 			// remove old backup files: 
 			AEval(Directory(HelpDir+'\'+dbname+'*.gz'), {|aFile| FErase(HelpDir+'\'+aFile[F_NAME])}) 
@@ -239,9 +252,11 @@ method Init(oWindow) class BackupDatabase
 			nTimeSep:=SetTimeSep(Asc('_'))
 			lAmPM:=SetAmPm(false)
 			GetHelpDir()
-			self:backupfilename:=HelpDir+'\'+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.gz'
+			self:backupfilename:=HelpDir+'\'+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql.gz'
 			SetTimeSep(nTimeSep)
-			SetAmPm(lAmPM) 
+			SetAmPm(lAmPM)
+		else
+			LogEvent(self,"no mysqldump found in :"+oFileSpec:fullpath,"logerrors")
 		endif 
 	endif
 	return self
@@ -257,27 +272,19 @@ Method MakeBackup() class BackupDatabase
 	if Empty(self:backupfilename)
 		return
 	endif
-	// test internet available:
+	// test backup site available:
 	oTCPIP:=TCPIP{}
 	oTCPIP:timeout:=2000
-	oTCPIP:Ping('www.google.com')
+//	oTCPIP:Ping('www.google.com')
+	oTCPIP:Ping('www.mdvit.net')
 	if AtC("timeout",oTCPIP:Response)>0
 		return false
 	endif
 	// make batchfile
 	GetHelpDir()
 	cbatchfile:=HelpDir+'\'+"batchbackup.vbs"  
-	// Check if period since last backup has been passed:
-// 	oFileSpec:=FileSpec{cbatchfile}
-// 	if oFileSpec:Find() .and. (Today() - oFileSpec:DateChanged)<=self:nPeriod 
-// 		return false
-// 	endif
 	cCmdfile:=HelpDir+'\'+"cmdbackup.cmd"
 	cFtpfile:=HelpDir+'\'+"ftpput.txt"
-	// 	cLogFile:=HelpDir+'\'+"logfile.txt"
-	// 	cCloseFile:=HelpDir+'\'+"closefile.cmd" 
-	// 	FileSpec{cLogFile}:DELETE()    // remove old logfile
-	//	FileSpec{cLogFile}:DELETE()    // remove old logfile
 	ptrHandleCmd := MakeFile(self,@cCmdfile,"Creating cmd file for backup")
 	IF ptrHandleCmd = F_ERROR .or. Empty(ptrHandleCmd)
 		return false 
@@ -295,66 +302,25 @@ Method MakeBackup() class BackupDatabase
 	FWriteLine(ptrHandleFtp,aBackup[2])
 	FWriteLine(ptrHandleFtp,aBackup[3])
 	FWriteLine(ptrHandleFtp,"cd weu")
-	FWriteLine(ptrHandleFtp,"delete "+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_05_00.gz')    // backedup by mysqldumper) this morning
+	FWriteLine(ptrHandleFtp,"delete "+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_05_00.sql.gz')    // backed up by mysqldumper) this morning
 	FWriteLine(ptrHandleFtp,"type binary")
 	FWriteLine(ptrHandleFtp,"put "+self:backupfilename)
 	FWriteLine(ptrHandleFtp,"quit")
 	FClose(ptrHandleFtp) 
 	
-	
-	// 	ptrHandleClose := MakeFile(self,@cCloseFile,"Creating closing batch file for backup")
-	// 	IF ptrHandleClose = F_ERROR .or. Empty(ptrHandleClose)
-	// 		return false 
-	// 	ENDIF
-	// make cmd file:
-	// 	FWriteLine(ptrHandleCmd,'"'+mysqldPath+'" -u '+sqluid+' -p'+sqlpwd+' "'+dbname+'" | "'+WorkDir()+'gzip.exe" > "'+self:backupfilename+'"')   
-	// 	FWriteLine(ptrHandleCmd,'"'+HelpDir+'\senditquiet.exe" -s smtp.gmail.com  -port 587 -u wos-notify_weu@wycliffe.net -protocol ssl -p '+GetWosmasterPwd()+' -f wos-notify_weu@wycliffe.net '; 
-	// 	+' -t karel_kuijpers@wycliffe.net -subject "Backup '+dbname+'" -body backup -files "'+self:backupfilename+'" > "'+cLogFile+'"')
-	// 	FWriteLine(ptrHandleCmd,'Echo par1: %1 par2: %2 par3: %3 par4: %4 par5: %5 ')
 	FWriteLine(ptrHandleCmd,'"'+mysqldPath+'" -u %1 -p%2 "'+dbname+'" | "'+WorkDir()+'gzip.exe" > "'+self:backupfilename+'"')
 	FWriteLine(ptrHandleCmd,'ftp -s:'+cFtpfile+' %6')   
 	FWriteLine(ptrHandleCmd,'del '+cFtpfile)
 	FWriteLine(ptrHandleCmd,'del '+self:backupfilename)
  	FWriteLine(ptrHandleCmd,'exit')   
-
-	// 	FWriteLine(ptrHandleCmd,'"'+HelpDir+'\senditquiet.exe" -s smtp.gmail.com  -port 587 -u %3 -protocol ssl -p %4 -f %3 '; 
-	// 	+' -t %5 -subject "Backup '+dbname+'" -body backup -files "'+self:backupfilename+'"')  
-	//	FWriteLine(ptrHandleCmd,'del /Q "'+self:backupfilename+'"') 
-	//	FWriteLine(ptrHandleCmd,'TYPE nul > "'+self:backupfilename+'"')  
-	// make closing file: 
-	// 	FWriteLine(ptrHandleClose,':checkexist' )       // check if logfile already added
-	// 	FWriteLine(ptrHandleClose,'if exist "'+cLogFile+'" GOTO:checkclosed' )       
-	// 	FWriteLine(ptrHandleClose,'ping 192.0.2.2 -n 1 -w 3000 > nul')   
-	// 	FWriteLine(ptrHandleClose,'GOTO:checkexist' )
-	// 	FWriteLine(ptrHandleClose,':checkclosed')                                // check if logfile already closed
-	// 	FWriteLine(ptrHandleClose,'( (call ) >>"'+cLogFile+'" ) 2>nul && (')   
-	// 	FWriteLine(ptrHandleClose,'goto:closefiles' )
-	// 	FWriteLine(ptrHandleClose,') || ( ')
-	// 	FWriteLine(ptrHandleClose,'Ping 192.0.2.2 -n 1 -w 5000 > nul')   
-	// 	FWriteLine(ptrHandleClose,'goto:checkclosed' )
-	// 	FWriteLine(ptrHandleClose,')' )
-	// 	FWriteLine(ptrHandleClose,':closefiles' )
-	// 	FWriteLine(ptrHandleClose,'DEL /Q "'+cCmdfile+'"' )
-	// 	FWriteLine(ptrHandleClose,'DEL /Q "'+cLogFile+'"' )
-	// 	FWriteLine(ptrHandleClose,'DEL /Q "'+self:backupfilename+'"' )
-	//    FClose(ptrHandleClose)
 	
 	FClose(ptrHandleCmd) 
 	oFilespecB:=FileSpec{cCmdfile} 
 	if oFilespecB:Find()             
 		// make batch file:
 		FWriteLine(ptrHandleBatch,'Set WshShell = CreateObject("WScript.Shell")')
-		// 		FWriteLine(ptrHandleBatch,'sqluid = WScript.Arguments.Item(0)')
-		// 		FWriteLine(ptrHandleBatch,'sqlpwd = WScript.Arguments.Item(1)')
-		// 		FWriteLine(ptrHandleBatch,'mailuid = WScript.Arguments.Item(2)')
-		// 		FWriteLine(ptrHandleBatch,'mailpwd = WScript.Arguments.Item(3)')
 		FWriteLine(ptrHandleBatch,'cmd = "cmd.exe /K ""'+cCmdfile+' " & WScript.Arguments.Item(0) & " " & WScript.Arguments.Item(1) & " " & WScript.Arguments.Item(2) & " " & WScript.Arguments.Item(3) & " " & WScript.Arguments.Item(4) & " " & WScript.Arguments.Item(5) & """"')
 		FWriteLine(ptrHandleBatch,'return = WshShell.Run(cmd,0,false)')
-		//   		FWriteLine(ptrHandleBatch,'return = WshShell.Run("cmd.exe /k '+cCmdfile+'",1,true)')
-
-		// 		FWriteLine(ptrHandleBatch,'return = WshShell.Run("'+StrTran('cmd.exe /k "'+cCmdfile+'"','"','""')+'" & sqluid & sqlpwd & mailuid & mailpwd,1,true)')
-		// 		FWriteLine(ptrHandleBatch,'"'+WorkDir()+'chp.exe" cmd.exe /k "'+cCmdfile+'"')
-		// 		FWriteLine(ptrHandleBatch,'"'+WorkDir()+'chp.exe" cmd.exe /c "'+cCloseFile+'"')
 		FWriteLine(ptrHandleBatch,'Set WshShell = Nothing')
 		FWriteLine(ptrHandleBatch,'WScript.Quit()')
 		FClose(ptrHandleBatch) 
