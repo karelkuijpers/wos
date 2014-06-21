@@ -91,7 +91,7 @@ method Start() class App
 			FirstOfDay:=oInit:FirstOfDay
 			IF FirstOfDay
 				// Backup if needed:
-				BackupDatabase{oMainWindow}:MakeBackup()
+				BackupDatabase{oMainWindow,cWorkdir}:MakeBackup()
 			endif
 			oInit:=null_object 
 // 			CollectForced()
