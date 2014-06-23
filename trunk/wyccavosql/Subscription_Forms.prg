@@ -477,7 +477,8 @@ METHOD OKButton( ) CLASS EditSubscription
 			if (oSel:=SqlSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'"+;
 					" and term <=12 and extract(year_month from adddate(curdate(),interval term month))<extract(year_month from enddate)",oConn}):reccount>0 
 				LogEvent(self,oSel:SQLString,"loginfo")
-				if (TextBox{self,self:oLan:WGet("Donations"),self:oLan:WGet(iif(self:mtype='D',"Donation","Subscription")+' of person already exists for this account'),BUTTONOKAYCANCEL+BOXICONHAND}):Show()==BOXREPLYCANCEL
+				if (TextBox{self,self:oLan:WGet("Donations"),self:oLan:WGet("Warning")+': '+self:oLan:WGet(iif(self:mtype='D',"Donation","Subscription")+' of person already exists for this account')+;
+					'. '+self:oLan:WGet("Continue")+'?',BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
 					RETURN nil
 				endif
 			ENDIF
