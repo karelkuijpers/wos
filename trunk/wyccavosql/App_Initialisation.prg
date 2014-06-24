@@ -40,7 +40,7 @@ method Init() class CheckUPGRADE
 	self:PrgVersDate:=SToD(SubStr(versiondate,1,8))
 	return self
 
-Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic class CheckUPGRADE
+Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay:=false as logic) as logic class CheckUPGRADE
 	// check if there is a new wosupgradeinstaller.exe
 	local i,j as int 
 	local cDirname as string 
@@ -92,7 +92,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 					if lSuc
 						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] )
-						if oFs:Extension=='.csv'
+						if oFs:Extension=='.csv' .and.lFirstOfDay 
 							if oFs:Size>10 // !empty
 								// drop corresponding table to force it to be loaded again with new data: 
 								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
@@ -147,7 +147,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string) as logic cl
 				// 				FileSpec{oFs:FullPath}:Rename("wosupgradeinstallerold.exe")
 				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD + ;
 						INTERNET_FLAG_NO_CACHE_WRITE )
-					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out."}:Show()
+					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out or you don't have write access to "+cWorkdir}:Show()
 					// 							__RaiseFTPError(oFTP) 
 				else
 					oFs:Find()
@@ -906,89 +906,75 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 		oStmnt:Execute()
 	endif  
 
-	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
-		// check if new ppcodes, ipcaccounts, currencylist or bic should be imported: 
-		// (in that case the table has been dropped during import of corresponding csv file)
-		oDBFileSpec1:=FileSpec{cWorkdir+"\pptable.csv"}
-		lCopyPP:=false
-		IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-			if (oSel:=SqlSelect{"show tables like 'ppcodes'",oConn}):RecCount=0
-				lCopyPP:=true
+	//	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
+	// check if new ppcodes, ipcaccounts, currencylist or bic should be imported: 
+	// (in that case the table has been dropped during import of corresponding csv file)
+	oDBFileSpec1:=FileSpec{cWorkdir+"\pptable.csv"}
+	lCopyPP:=false
+	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
+		if (oSel:=SqlSelect{"show tables like 'ppcodes'",oConn}):RecCount=0
+			lCopyPP:=true
+		else
+			if (oSel:=SqlSelect{"select count(*) as cnt from `ppcodes`",oConn}):cnt=0
+				lCopyPP:=true  // copy also when empty table
 			endif
 		endif
-		oDBFileSpec1:=FileSpec{cWorkdir+"\currencylist.csv"}
-		lCopyCur:=false
-		IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-			if (oSel:=SqlSelect{"show tables like 'currencylist'",oConn}):RecCount=0
-				lCopyCur:=true
-			endif
-		endif
-		oDBFileSpec1:=FileSpec{cWorkdir+"\ipcaccounts.csv"}
-		lCopyIPC:=false
-		IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-			if (oSel:=SqlSelect{"show tables like 'ipcaccounts'",oConn}):RecCount=0
-				lCopyIPC:=true
-			endif
-		endif
-		oMyFileSpec1:=FileSpec{cWorkdir+"\bic.csv"}
-		lCopyBIC:=false
-		IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-			if (oSel:=SqlSelect{"show tables like 'bic'",oConn}):RecCount=0
-				lCopyBIC:=true
-			endif
-		endif
-/*		oDBFileSpec1:=FileSpec{cWorkdir+"\pptable.csv"}
-		lCopyPP:=false
-		IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-			IF oDBFileSpec1:Size>20  // not empty? 
-				oSel:=SqlSelect{"show table status like 'ppcodes'",oConn}
-				if oSel:RecCount=1
-					if ConI(oSel:rows) > 2
-						if iif(IsDate(oSel:Create_time),oSel:Create_time,SToD(StrTran(oSel:Create_time,"-",""))) < oDBFileSpec1:DateChanged
-							lCopyPP:=true
-						endif					
-					else
-						lCopyPP:=true
-					endif
-					if	lCopyPP
-						SQLStatement{"drop table ppcodes",oConn}:Execute()
-					endif
-				else
-					lCopyPP:=true
-				endif
-			endif
-		endif */ 
 	endif
+	oDBFileSpec1:=FileSpec{cWorkdir+"\currencylist.csv"}
+	lCopyCur:=false
+	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
+		if (oSel:=SqlSelect{"show tables like 'currencylist'",oConn}):RecCount=0
+			lCopyCur:=true
+		else
+			if (oSel:=SqlSelect{"select count(*) as cnt from `currencylist`",oConn}):cnt=0
+				lCopyCur:=true  // copy also when empty table
+			endif
+		endif
+	endif
+	oDBFileSpec1:=FileSpec{cWorkdir+"\ipcaccounts.csv"}
+	lCopyIPC:=false
+	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
+		if (oSel:=SqlSelect{"show tables like 'ipcaccounts'",oConn}):RecCount=0
+			lCopyIPC:=true
+		endif
+	endif
+	oMyFileSpec1:=FileSpec{cWorkdir+"\bic.csv"}
+	lCopyBIC:=false
+	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
+		if (oSel:=SqlSelect{"show tables like 'bic'",oConn}):RecCount=0
+			lCopyBIC:=true
+		else
+			if (oSel:=SqlSelect{"select count(*) as cnt from `bic`",oConn}):cnt=0
+				lCopyBIC:=true  // copy also when empty table
+			endif
+		endif
+	endif
+	//	endif
 	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
 		if !self:lNewDb
 			LogEvent(self,"Initialize DB:"+iif(self:FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
 		endif
 		self:InitializeDB()
-		// fill eventually dropped tables with new values:
-		if lCopyPP 
-			// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
-			ImportCSV(cWorkdir+"\pptable.csv","ppcodes",2,{"ppcode","ppname"}) 
-		endif
-		if lCopyCur
-			ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2,{}) 
-			// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
-		endif 
-		if lCopyIPC
-			ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2,{}) 
-			// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
-		endif
-		// load bic table
-		if lCopyBIC
-			// 			FillBIC()
-			ImportCSV(cWorkdir+"\bic.csv","bic",1,{})
-		endif
-
-		// 		if self:FirstOfDay
-		// 			// reset employee online:
-		// 			oStmnt:=SQLStatement{"update employee set online=0 where lstlogin < curdate()",oConn}
-		// 			oStmnt:Execute()
-		// 		endif  
 	endif
+	// fill eventually dropped tables with new values:
+	if lCopyPP 
+		// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
+		ImportCSV(cWorkdir+"\pptable.csv","ppcodes",2,{"ppcode","ppname"}) 
+	endif
+	if lCopyCur
+		ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2,{}) 
+		// 			self:ConVertOneTable("currencylist","curcode","currencylist",cWorkdir,{})
+	endif 
+	if lCopyIPC
+		ImportCSV(cWorkdir+"\ipcaccounts.csv","ipcaccounts",2,{}) 
+		// 			self:ConVertOneTable("ipcaccounts","","ipcaccounts",cWorkdir,{})			
+	endif
+	// load bic table
+	if lCopyBIC
+		// 			FillBIC()
+		ImportCSV(cWorkdir+"\bic.csv","bic",1,{})
+	endif
+	//	endif
 
 	// copy helpfile to c because it cannot read from a server: 
 	GetHelpDir()
@@ -1048,7 +1034,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	mdw := CDoW(Today())
 	cdate := AllTrim(Str(Day(Today())))+' '+mmj+' '+Str(Year(Today()),4)
 
-	oSys := SQLSelect{"select `version`,`hb`,`lstreportmonth`,`pswrdlen`,`pswdura`,`assmntint`,`admintype`,`closemonth`,`mindate`,`yearclosed`,`countrycod`,`sysname` from sysparms",oConn}
+	oSys := SQLSelect{"select version,hb,lstreportmonth,pswrdlen,pswdura,assmntint,admintype,closemonth,mindate,yearclosed,countrycod,sysname from sysparms",oConn}
 
 	oSys:Execute()
 
