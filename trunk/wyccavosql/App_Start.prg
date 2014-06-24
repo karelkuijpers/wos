@@ -53,7 +53,7 @@ method Start() class App
 		oUpg:=CheckUPGRADE{}
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
-			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir)
+			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 		endif 
 		if lStop .and.!Empty(startfile)
 			if Empty(startfile)
