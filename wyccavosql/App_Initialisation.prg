@@ -84,6 +84,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		endif
 		// check newer tables, etc: 
 		aInsRem:=oFTP:Directory("variable/*.*")
+		lAMPM:=SetAmPm(false) 
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
@@ -91,7 +92,9 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 					if lSuc
-						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],aInsRem[i,F_DATE] ,aInsRem[i,F_TIME] )
+						RemoteDate:=aInsRem[1,F_DATE]
+						Remotetime:=aInsRem[1,F_TIME]
+						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
 						if oFs:Extension=='.csv' .and.lFirstOfDay 
 							if oFs:Size>10 // !empty
 								// drop corresponding table to force it to be loaded again with new data: 
@@ -103,7 +106,6 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 				endif
 			endif					 
 		next
-		lAMPM:=SetAmPm(false) 
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
 			LocalDate:=oFs:DateChanged
