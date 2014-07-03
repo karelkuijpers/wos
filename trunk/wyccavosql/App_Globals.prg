@@ -112,6 +112,8 @@ GLOBAL SKruis as STRING
 GLOBAL SLAND as STRING
 GLOBAL SPOSTZ as STRING
 GLOBAL SPROJ as STRING
+global sqlpwd as string
+global sqluid as string
 GLOBAL sSalutation as LOGIC
 GLOBAL sSTRZIPCITY as int
 GLOBAL sSurnameFirst as LOGIC
@@ -121,7 +123,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.179" as string
+global Version:="3.0.0.179" as string 
 global Versiondate:= __date__+' '+ __time__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
