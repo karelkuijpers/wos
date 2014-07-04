@@ -2193,18 +2193,20 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 						endif	
 						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep,,,nCol)+iif(i==nCount,Left(cSepRow,1),'')
 					else
-						if IsString(aText[nStart+i-1][nCol])
-							cLine:=AllTrim(aText[nStart+i-1][nCol])
-						else
-							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
-						endif
-						if !Empty(cLine)
-							if lStart
-								lStart:=false
+						if !Empty(aText[nStart+i-1][nCol])
+							if IsString(aText[nStart+i-1][nCol])
+								cLine:=AllTrim(aText[nStart+i-1][nCol])
 							else
-								cLine:=cSep+cLine
+								cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
+							endif 
+							if !Empty(cLine)
+								if lStart
+									lStart:=false
+								else
+									cLine:=cSep+cLine
+								endif
+								cPartLv1+=cLine
 							endif
-							cPartLv1+=cLine
 						endif
 					endif
 				elseif Empty(nCol) .or. nCol==i
@@ -2213,7 +2215,9 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 					else
 						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
 					endif
-					cPartLv1+=iif(i=1,"",cSep)+cLine
+					if !Empty(cLine)
+						cPartLv1+=iif(i=1,"",cSep)+cLine
+					endif
 				else
 					loop
 				endif
@@ -3547,13 +3551,13 @@ PROTECT cBuffer as STRING
 // Protect cDelim as STRING
 // PROTECT nStart:=0, nIncr:=0 as int
 PROTECT nStart:=0 as int
-PROTECT ptrHandle
+PROTECT ptrHandle as ptr
 protect Eof as logic 
 protect CP as int 
-declare method FReadLine,Close,Init 
+declare method FReadLine,Close 
 METHOD Close(dummy:=nil as logic) as void pascal CLASS MyFile
-	FClose(ptrHandle)
-	ptrHandle:=null_object
+	FClose(self:ptrHandle)
+	self:ptrHandle:=null_ptr
 	self:cBuffer:=null_string
 RETURN
 Access FEof() class MyFile
@@ -3591,7 +3595,7 @@ METHOD FReadLine(dummy:=nil as logic) as string CLASS MyFile
 	self:nStart:=nPos
 	RETURN SubStr(self:cBuffer,nSt,nLen) 
 	
-METHOD Init(oFr as FileSpec) CLASS MyFile
+METHOD Init(oFr) CLASS MyFile
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
 	self:ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
