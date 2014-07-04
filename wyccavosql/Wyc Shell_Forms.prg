@@ -22,8 +22,6 @@ STATIC DEFINE MAILDLG_PBCANCEL := 101
 STATIC DEFINE MAILDLG_PBSEND := 102 
 STATIC DEFINE MAILDLG_RICHEDIT1 := 100 
 CLASS StandardWycWindow INHERIT SHELLWINDOW 
-	PROTECT aChildWindows as ARRAY
-	PROTECT oPrinter      as PrintingDevice
 
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -70,11 +68,11 @@ METHOD Close(oCloseEvent) CLASS StandardWycWindow
 METHOD CloseAll() CLASS StandardWycWindow
 	
 	DO WHILE ALen(self:aChildWindows) > 0
-		IF IsObject( aChildWindows[1]).and.!aChildWindows[1]==NULL_OBJECT
-			aChildWindows[1]:Close()
+		IF IsObject( self:aChildWindows[1]).and.! self:aChildWindows[1]==null_object
+			self:aChildWindows[1]:Close()
 			CollectForced()
 		ELSE
-			ADel(aChildWindows,1)
+			ADel(self:aChildWindows,1)
 		ENDIF
 	ENDDO
 METHOD Donations() CLASS StandardWycWindow
@@ -137,20 +135,20 @@ METHOD HelpIndex CLASS StandardWycWindow
 	RETURN SELF
 METHOD Init(oParent,uExtra) CLASS StandardWycWindow 
 
-	self:PreInit(oParent,uExtra)
+self:PreInit(oParent,uExtra)
 
-	super:Init(oParent,uExtra)
+super:Init(oParent,uExtra)
 
-	SELF:Caption := "Wycliffe Office System"
-	SELF:HyperLabel := HyperLabel{#StandardWycWindow,"Wycliffe Office System",NULL_STRING,NULL_STRING}
-	SELF:IconSm := SSAICON{}
-	SELF:Icon := SSAICON{}
-	SELF:Origin := Point{13, 447}
-	SELF:Size := Dimension{743, 597}
+SELF:Caption := "Wycliffe Office System"
+SELF:HyperLabel := HyperLabel{#StandardWycWindow,"Wycliffe Office System",NULL_STRING,NULL_STRING}
+SELF:IconSm := SSAICON{}
+SELF:Icon := SSAICON{}
+SELF:Origin := Point{13, 447}
+SELF:Size := Dimension{743, 597}
 
-	self:PostInit(oParent,uExtra)
+self:PostInit(oParent,uExtra)
 
-	return self
+return self
 
 METHOD MailViaCode() CLASS StandardWycWindow
 	(SelPers{self,"MAILINGCODE"}):Show()
@@ -204,7 +202,7 @@ METHOD PeriodicGift() CLASS StandardWycWindow
 	// 	RETURN
 ACCESS Printer CLASS StandardWycWindow
 	
-	return oPrinter
+	return self:oPrinter
 METHOD QueryClose( oEvent ) CLASS StandardWycWindow
 	LOCAL cRoot := "WYC\Runtime" AS STRING
 	SUPER:QueryClose( oEvent)
@@ -236,11 +234,11 @@ RETURN
 METHOD RemoveChild( oChild ) CLASS StandardWycWindow
 	LOCAL nChild AS WORD
 	
-	nChild := AScan( aChildWindows, oChild )
+	nChild := AScan( self:aChildWindows, oChild )
 	
 	IF nChild > 0
-		ADel(aChildWindows, nChild)
-		ASize(aChildWindows, ALen(aChildWindows) - 1)
+		ADel(self:aChildWindows, nChild)
+		ASize(self:aChildWindows, ALen(self:aChildWindows) - 1)
 	ENDIF
 METHOD SetCaption() CLASS StandardWycWindow 
 	local sysname as string
