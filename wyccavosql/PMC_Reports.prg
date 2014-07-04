@@ -825,7 +825,7 @@ METHOD PrintReport() CLASS PMISsend
 				cDestPersonId:=""
 				IF aDistr[i,3]=="ACH"  //destpp
 					cDestAcc:=AllTrim(aDistr[i,4]) 			
-					if !Empty(cDestAcc) .and.(!cDestAcc=='1'.or.cDestAcc=='2')
+					if !Empty(cDestAcc) .and.!(cDestAcc=='1'.or.cDestAcc=='2')
 						cError:=self:oLan:WGet("Member")+" "+me_pers+" "+self:oLan:WGet("contains an illegal distribution instruction")
 						exit
 					endif				
