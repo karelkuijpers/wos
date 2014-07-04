@@ -4401,7 +4401,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local aPersids:={}, aPersidsDb:={} as array
 	local aSubPersids:={}, aSubscr:={} as array, aSubscrtn:={} as array, aSub:={} as array,aValueSubPtr:={}  // arrays for getting gifts patterns
 	local aBudgetcd:={}, aAccnbrDb:={}, aAccnbrDbExp:={}, aAccnbrDbInc:={}, aAccnbrDbFund:={},aDueid:={}
-	local aAccnbrDue:={} as array  // accnumber, dueid, yes/no invalid mandateid 
+	local aAccnbrDue:={} as array  // accnumber, dueid, yes/no invalid mandateid, yes/no to be blocked 
 	local aBankContra:={},aBankContraNonIban:={},aBankCont:={} as array  // {{bankacc,persid,ismember},...}
 	local avalueTrans:=self:aValuesTrans as array
 	local aAddr:={},aAddrDB:={} as array // address: {streetname,housenbr} 
@@ -4412,6 +4412,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local avaluesPers:={} as array // {persid,dategift},...  array with values to be updated into table person 
 	local aZip:={} as array // {persid,postalcode},...   array with postalcode per person 
 	local aTransTele:={} as array  // {{rownr aValuesTrans,nTransid},...}  : cross reference between aValuesTrans and corresponding generated aTrans
+	local aStornoCodes:={"AC04","AC06","AG01","AG02","MD01","MS02","MD06","RC01","RR01"} as array   //Known SEPA storno codes
 	local oAddInc as AddToIncExp
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
@@ -4593,7 +4594,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			if Len(aDueid)>0
 				cDueids:=Implode(aDueid,'","')
 				aAccnbrDue:={}
-				oSel:=SqlSelect{"select cast(group_concat(gr.accnumber,'#$#',gr.dueid,'#$#','0' separator '#%#') as char) as graccnumbers from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
+				oSel:=SqlSelect{"select cast(group_concat(gr.accnumber,'#$#',gr.dueid,'#$#','0','#$#','0' separator '#%#') as char) as graccnumbers from (select accnumber,dueid from account a,subscription s,dueamount d where d.subscribid=s.subscribid and a.accid=s.accid and d.dueid in ("+cDueids+") ) as gr group by 1=1",oConn}
 				if oSel:Reccount>0 .and.!Empty(oSel:graccnumbers)
 					AEval(Split(oSel:graccnumbers,'#%#'),{|x|AAdd(aAccnbrDue,Split(x,'#$#')) }) 
 					if Len(aAccnbrDue)>0
@@ -4604,6 +4605,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 								avalueTrans[j,7]:=aAccnbrDue[i,1]
 								if AtC('MD01',avalueTrans[j,10])>0
 									aAccnbrDue[i,3]:='1'  // mark as mandate invalid
+								endif   
+								if FindKeyString(aStornoCodes,avalueTrans[j,10])
+									aAccnbrDue[i,4]:='1'  // mark subscription as blocked
 								endif
 								if j>=Len(avalueTrans)
 									exit
@@ -5236,7 +5240,27 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					self:aValuesTrans:={}
 					return false 
 				endif
+			endif  
+			
+			cDueids:=''
+			cDueidsInv:=''
+			AEval(aAccnbrDue,{|x|iif(x[4]='0',cDueids+=','+x[2],cDueidsInv+=','+x[2]) })
+			if !Empty(cDueidsInv)     
+				// set all invalid mandate to blocked
+				oStmnt:=SQLStatement{'update subscription,dueamount  set blocked=1 where  subscription.subscribid=dueamount.subscribid '+;
+				 'and dueid in ('+SubStr(cDueidsInv,2)+') ',oConn}
+				oStmnt:execute()
+				if	!Empty(oStmnt:Status)
+					SQLStatement{"rollback",oConn}:execute() 
+					SQLStatement{"unlock tables",oConn}:execute()
+					LogEvent(self,"error:"+oStmnt:cError,"LogErrors")
+					ErrorBox{,self:oLan:WGet("donations couldn't be updated")+":"+oStmnt:ErrInfo:ErrorMessage}:show()
+					self:aValuesTrans:={}
+					return false 
+				endif
 			endif
+			
+			
 			
 		endif
 		self:lv_processed+=nProc

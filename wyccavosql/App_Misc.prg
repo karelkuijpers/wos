@@ -591,7 +591,7 @@ Function CompareKeyString(aKeyW as array, cValue as string ) as logic
 			return false
 		endif
 	next
-	return true
+	return true      
 FUNCTION Comparr(aStruct1 as array,aStruct2 as array) as logic
 	// compare equality of two arrays
 	LOCAL nLen2:=ALen(aStruct2),nLen1:=ALen(aStruct1),i as int
@@ -1425,6 +1425,23 @@ FUNCTION FilterAcc(aAcc as array ,accarr as array,cStart as string,cEnd as strin
 		endif
 	ENDIF
 	RETURN
+	Function FindKeyString(aKeyW as array, cValue as string ) as logic  
+	// compare if one or more given keywords in aKey is contained in string cValue
+	Local i, lK  as int
+	local lKeyFound as logic
+	  
+	lKeyFound:=false
+	lK:=Len(aKeyW)
+	for i:=1 to lK 
+		if AtC(aKeyW[i],cValue)>0
+			lKeyFound:=true
+		endif
+	next    
+	if !lKeyFound
+		return false
+	endif
+	return true
+	
 FUNCTION FullName( cFirstName as STRING, cLastName as STRING ) as STRING
 // show full name from given first and lastname
 	LOCAL cFullName as STRING
@@ -3885,6 +3902,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -3892,12 +3915,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
