@@ -2193,20 +2193,18 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 						endif	
 						cPartLv1+=iif(i==1,Right(cSepRow,1),cSepRow)+Implode(aText[nStart+i-1],cSep,,,nCol)+iif(i==nCount,Left(cSepRow,1),'')
 					else
-						if !Empty(aText[nStart+i-1][nCol])
-							if IsString(aText[nStart+i-1][nCol])
-								cLine:=AllTrim(aText[nStart+i-1][nCol])
+						if IsString(aText[nStart+i-1][nCol])
+							cLine:=AllTrim(aText[nStart+i-1][nCol])
+						else
+							cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
+						endif
+						if !Empty(cLine)
+							if lStart
+								lStart:=false
 							else
-								cLine:=AllTrim(Transform(aText[nStart+i-1][nCol],""))
-							endif 
-							if !Empty(cLine)
-								if lStart
-									lStart:=false
-								else
-									cLine:=cSep+cLine
-								endif
-								cPartLv1+=cLine
+								cLine:=cSep+cLine
 							endif
+							cPartLv1+=cLine
 						endif
 					endif
 				elseif Empty(nCol) .or. nCol==i
@@ -2215,9 +2213,7 @@ FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 a
 					else
 						cLine:=AllTrim(Transform(aText[nStart+i-1],""))
 					endif
-					if !Empty(cLine)
-						cPartLv1+=iif(i=1,"",cSep)+cLine
-					endif
+					cPartLv1+=iif(i=1,"",cSep)+cLine
 				else
 					loop
 				endif
