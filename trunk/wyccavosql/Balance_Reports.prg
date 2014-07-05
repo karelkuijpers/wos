@@ -4301,7 +4301,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		//                    1        2        3         4:1       4:2      4:3       
 		for i:=1 to Len(self:aMailMember)
 			for j:=1 to Len(self:aMailMember[i,4])
-				if	!Empty(self:aMailMember[i,4,j])		//	persid
+				if	!Empty(self:aMailMember[i,4,j,1])		//	persid
 					AAdd(aPers,self:aMailMember[i,4,j,1]) 
 					exit
 				endif
