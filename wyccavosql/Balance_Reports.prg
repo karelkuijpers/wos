@@ -4192,10 +4192,18 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		self:Pointer := Pointer{POINTERHOURGLASS}
 		// aMailMember:	aMailMember:	{{mbrid,membername,FileName,{{persid,email,name},...}} 
 		//                                  1        2        3         4:1    4:2   4:3   
+// 		for i:=1 to Len(self:aMailMember)
+// 			if !Empty(self:aMailMember[i,4])      // member/contact
+// 				AAdd(aPers,self:aMailMember[i,4,1,1])
+// 			endif
+// 		next
 		for i:=1 to Len(self:aMailMember)
-			if !Empty(self:aMailMember[i,4])      // member/contact
-				AAdd(aPers,self:aMailMember[i,4,1,1])
-			endif
+			for j:=1 to Len(self:aMailMember[i,4])   // member/contact
+				if	!Empty(self:aMailMember[i,4,j,1])		//	persid
+					AAdd(aPers,self:aMailMember[i,4,j,1]) 
+					exit
+				endif
+			next
 		next
 		if !Empty(aPers) 
 			cMess:=self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")
