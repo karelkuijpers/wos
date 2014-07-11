@@ -221,6 +221,10 @@ FUNCTION InitMenu(EmployeeId as int,myType:=null_string as string) as array
 	if CountryCode='31' .and. SqlSelect{"show databases like 'parousia_typo3'",oConn}:Reccount>0
 		AAdd(aMenu,{1,9, oLan:MGet("&Synchronize")+"...","Synchronize","",0,30,"A"})
 	endif	
+	AAdd(aMenu,{1,10,,,,,})           // separator
+	AAdd(aMenu,{1,11, oLan:MGet("&Backup now")+"...","BackupNow","",0,37,"PFM"})
+	AAdd(aMenu,{1,12, oLan:MGet("&Restore database")+"...","Restore","",0,38,"A"})
+	
 	AAdd(aMenu,{0,2, oLan:MGet("&Journal"),,"Entering records and gifts",0,0,"F"})
 	IF !Admin=="GE" .and.!Admin=="WA"
 		AAdd(aMenu,{2,1,   oLan:MGet("&Gifts/Payments entering")+"...","PaymentJournal","",0,35,"F"})
