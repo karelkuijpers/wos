@@ -4220,6 +4220,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			do while !oSelpers:oDB:EOF .and. !Empty(aMailMember) 
 				oRecip1:=null_object
 				oRecip2:=null_object 
+				mailcontent:=""
 				cPers:=Str(oSelpers:oDB:persid,-1)
 				if (m:=AScan(self:aMailMember,{|x|!Empty(x[4]) .and.x[4,1,1]==cPers}))>0
 					oFileSpec:=FileSpec{self:aMailMember[m,3]} 
@@ -4232,8 +4233,6 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 								oRecip1 := oMapi:ResolveName(iif(i==1,oSelpers:oDB:lastname,self:aMailMember[m,4,i,3]),Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
 								IF	!Empty(oEMLFrm:Template) .and. i=1
 									mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
-								ELSE
-									mailcontent:=""
 								ENDIF 
 							else
 								oRecip2 := oMapi:ResolveName(self:aMailMember[m,4,i,3],Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
@@ -4242,8 +4241,11 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 								if	!oMapi:SendDocument(	oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
 									LogEvent(self,'Could not mail Giftreport '+cPeriod+' to '+memberName,"logerrors")
 									ErrorBox{self,'Could not mail Giftreport '+cPeriod+' to '+memberName}:Show() 
-								elseif i<=3
+// 								elseif i<=3
+								else
 									mCnt++
+									oRecip1:=null_object
+									oRecip2:=null_object 									
 								endif
 							ENDIF 
 						next
