@@ -88,7 +88,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
-				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
+// 				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 					if lSuc
@@ -103,7 +103,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 							endif
 						endif
 					endif
-				endif
+// 				endif
 			endif					 
 		next
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
@@ -1690,6 +1690,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
 		{"sysparms","versiondate","date","NO","0000-00-00",""},; 
+		{"sysparms","localbackup","tinyint(1)","NO","0",""},; 
+		{"sysparms","backuppath","varchar(150)","NO","",""},;
 	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
