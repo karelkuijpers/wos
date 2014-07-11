@@ -475,7 +475,8 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD OKButton( ) CLASS Restore 
-	local i as int
+	local i as int 
+	local fMaxSize=0.0 as float
 	local cbatchfile,cCmdfile,cFtpfile,cCloseFile,cLogFile,cRestoreFile as string  
 	loca aBackup:={} as array
 	local ptrHandleBatch,ptrHandleCmd,ptrHandleFtp,ptrHandleClose as ptr
@@ -511,6 +512,14 @@ if (Today()-oBackSpec:DateChanged)>40
 	ErrorBox{self,oBackSpec:filename+' '+self:oLan:WGet("is too old")}:show()
 	return false
 endif
+aBackup:=Directory(oBackSpec:Drive+oBackSpec:Path)
+// determine max size of backup files:
+AEval(aBackup,{|x|fMaxSize:=iif(AtC(dbname,x[F_NAME])>0,Max(fMaxSize,x[F_SIZE]),fMaxSize)})
+if oBackSpec:size<0.95*fMaxSize
+	ErrorBox{self,oBackSpec:filename+' '+self:oLan:WGet("is probably not a complete file")}:show()
+	return false
+endif
+	
 if Empty(self:mysqlPath)
 	ErrorBox{self,self:oLan:WGet("mysql.exe not found in")+' '+WorkDir()}:show()
 	return false
