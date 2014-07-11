@@ -88,10 +88,13 @@ method Start() class App
 			ENDIF
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
-			FirstOfDay:=oInit:FirstOfDay
+			FirstOfDay:=oInit:FirstOfDay 
 			IF FirstOfDay
 				// Backup if needed:
-				BackupDatabase{oMainWindow,cWorkdir}:MakeBackup()
+				BackupDatabase{oMainWindow}:MakeBackup() 
+				if BackupToLocal
+					BackupDatabase{oMainWindow}:MakeBackupToLocal(false) 
+				endif
 			endif
 			oInit:=null_object 
 // 			CollectForced()
