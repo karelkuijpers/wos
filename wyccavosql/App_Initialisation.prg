@@ -89,6 +89,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
 // 				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
+					oMainwindow:STATUSMESSAGE("loading new files")
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 					if lSuc
@@ -106,6 +107,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 // 				endif
 			endif					 
 		next
+		oMainwindow:STATUSMESSAGE("                 ")
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
 			LocalDate:=oFs:DateChanged
@@ -119,8 +121,10 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 				// 			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime .and. self:DBVers>self:PrgVers)
 				// 			if LocalDate < RemoteDate .or. self:DBVers>self:PrgVers
 				// apparently new version:
-				LogEvent(self,"Installing new version: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,"loginfo")
 				(TextBox{,"New version of Wycliffe Office System available!","It will be installed now"}):Show()  
+				LogEvent(self,"Installing new version: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,"loginfo")   
+				oMainwindow:STATUSMESSAGE("loading new version")
+
 				// clear cache:
 				cDirname:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\Windows\Temporary Internet Files\Content.IE5\*.*" 
 				aDir:=Directory(cDirname,FA_DIRECTORY+FC_HIDDEN+FC_SYSTEM+FA_VOLUME)
@@ -152,6 +156,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out or you don't have write access to "+cWorkdir}:Show()
 					// 							__RaiseFTPError(oFTP) 
 				else
+					oMainwindow:STATUSMESSAGE("                 ")
 					oFs:Find()
 					CollectForced()  // to force some wait
 					if oFs:Find()
