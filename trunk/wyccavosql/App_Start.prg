@@ -48,9 +48,11 @@ method Start() class App
 		
 		cWorkdir:=WorkDir() 
 		oMainWindow := StandardWycWindow{self}
+		oMainWindow:Show(SHOWZOOMED )
 		LOGON_EMP_ID:=self:GetUser()   // prelimninary
 		oInit:=Initialize{}  // make connection with mysql and database   
 		oUpg:=CheckUPGRADE{}
+		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
@@ -59,6 +61,7 @@ method Start() class App
 			if Empty(startfile)
 				lStop:=false
 			else
+				oMainWindow:STATUSMESSAGE("installing new version")
 				if oConn:Connected
 					oConn:Disconnect()
 				endif					
@@ -76,16 +79,15 @@ method Start() class App
 			// Open main shell window
 
 			WycIniFS := IniFileSpec{ "WYC" }
-			if oMainWindow==null_object
-				oMainWindow := StandardWycWindow{self}
-			endif
-			oMainWindow:Show( SHOWZOOMED )
+// 			if oMainWindow==null_object
+// 				oMainWindow := StandardWycWindow{self}
+// 			endif
 			mainsize:=oMainWindow:Size
 			WinScale:=mainsize:Width/808.00
-			IF (WycIniFS:GetInt( "Runtime", "Maximized" ) # 1 )
-				oMainWindow:Show(SHOWCENTERED)
-				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
-			ENDIF
+// 			IF (WycIniFS:GetInt( "Runtime", "Maximized" ) # 1 )
+// 				oMainWindow:Show(SHOWCENTERED)
+// 				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
+// 			ENDIF
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay 
@@ -103,6 +105,7 @@ method Start() class App
 			#IFNDEF __debug__
 				// 		(SplashScreen{self}):Show()
 			#ENDIF		 
+ 			oMainWindow:Pointer := Pointer{POINTERARROW}
 
 			If IsFirstUse( (cUser:=self:GetUser()))
 				( FirstUser{ oMainWindow ,,, cUser } ):Show()
