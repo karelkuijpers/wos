@@ -6,6 +6,7 @@ global aLanR:={} as array    // language table of report items
 global aLanW:={} as array    // language table of window items
 GLOBAL Alg_Taal as STRING
 GLOBAL AutoGiro as LOGIC
+GLOBAL BackupToLocal as logic
 GLOBAL BankAccs:={} as ARRAY
 GLOBAL BANKNBRCRE as STRING
 GLOBAL BANKNBRDEB as STRING
@@ -123,7 +124,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.179" as string 
+global Version:="3.0.0.180" as string 
 global Versiondate:= __date__+' '+ __time__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
