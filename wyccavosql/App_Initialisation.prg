@@ -93,9 +93,9 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 					if lSuc
-						RemoteDate:=aInsRem[1,F_DATE]
-						Remotetime:=aInsRem[1,F_TIME]
-						SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
+						RemoteDate:=aInsRem[i,F_DATE]
+						Remotetime:=aInsRem[i,F_TIME]
+						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
 						if oFs:Extension=='.csv' .and.lFirstOfDay 
 							if oFs:Size>10 // !empty
 								// drop corresponding table to force it to be loaded again with new data: 
@@ -162,7 +162,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					if oFs:Find()
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
+// 						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
+						startfile:='"'+oFs:FullPath+'" /STARTUP="'+CurPath+'"' 
 						// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
 					endif
 					*/
