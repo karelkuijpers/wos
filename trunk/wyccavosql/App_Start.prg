@@ -57,7 +57,8 @@ method Start() class App
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
-		endif 
+		endif
+
 		if lStop .and.!Empty(startfile)
 			if Empty(startfile)
 				lStop:=false
@@ -65,7 +66,7 @@ method Start() class App
 				oMainWindow:STATUSMESSAGE("installing new version")
 				if oConn:Connected
 					oConn:Disconnect()
-				endif					
+				endif
 				if	(nErr:=self:Run(startfile))<33
 					(ErrorBox{,"Could not start installation program "+startfile+" (error:"+Str(nErr,-1)+"; "+DosErrString(nErr)+")"}):Show()
 					lStop:=False
@@ -92,7 +93,6 @@ method Start() class App
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay 
-// 			CollectForced()
 			IF FirstOfDay
 				// Backup if needed:
 				BackupDatabase{oMainWindow}:MakeBackup() 
@@ -171,7 +171,6 @@ method Start() class App
 				AlertNew{}:ShowNew()
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
-			CollectForced()
 			self:Exec()
 			// RECOVER USING oError	 
 			//   	GetError(self, "Error in Wycliffe Office System")
