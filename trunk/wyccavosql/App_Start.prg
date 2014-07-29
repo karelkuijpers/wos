@@ -53,6 +53,7 @@ method Start() class App
 		oInit:=Initialize{}  // make connection with mysql and database   
 		oUpg:=CheckUPGRADE{}
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
+		oUpg:LoadNewTables(cWorkdir,oInit:FirstOfDay)
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
@@ -91,6 +92,7 @@ method Start() class App
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay 
+// 			CollectForced()
 			IF FirstOfDay
 				// Backup if needed:
 				BackupDatabase{oMainWindow}:MakeBackup() 
@@ -99,7 +101,6 @@ method Start() class App
 				endif
 			endif
 			oInit:=null_object 
-// 			CollectForced()
 			SetDeleted( true )
 			
 			#IFNDEF __debug__
@@ -136,7 +137,6 @@ method Start() class App
 					break
 				ENDIF
 			ENDIF
-			
 			* reinit and reassign menu:
 			oMainWindow:Menu:=WOMenu{}
 			oMainWindow:Menu:ToolBar:Hide()
