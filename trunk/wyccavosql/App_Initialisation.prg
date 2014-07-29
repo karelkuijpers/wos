@@ -105,7 +105,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					endif
 			endif					 
 		next     */
-		oMainwindow:STATUSMESSAGE("                 ")
+// 		oMainwindow:STATUSMESSAGE("                 ")
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
 			LocalDate:=oFs:DateChanged
@@ -156,7 +156,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 				else
 					oMainwindow:STATUSMESSAGE("                 ")
 					oFs:Find()
-					CollectForced()  // to force some wait
+					//CollectForced()  // to force some wait
 					if oFs:Find()
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
@@ -220,7 +220,6 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
-// 				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
 					oMainwindow:STATUSMESSAGE("loading new files")
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
