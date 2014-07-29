@@ -13,7 +13,7 @@ RETURN nRet
 class CheckUPGRADE
 	export DBVers, PrgVers as float
 	export DBVersDate,PrgVersDate as date  
-	declare method LoadInstallerUpgrade 
+	declare method LoadInstallerUpgrade,LoadNewTables 
 method Init() class CheckUPGRADE
 	local oSys as SqlSelect
 	local DBVers, PrgVers as float
@@ -37,7 +37,7 @@ method Init() class CheckUPGRADE
 		endif
 	endif
 	self:DBVers:=DBVers
-	self:PrgVersDate:=SToD(SubStr(versiondate,1,8))
+	self:PrgVersDate:=SToD(SubStr(versiondate,1,8)) 
 	return self
 
 Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay:=false as logic) as logic class CheckUPGRADE
@@ -82,13 +82,12 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 				oFs:Find()
 			endif
 		endif
-		// check newer tables, etc: 
-		aInsRem:=oFTP:Directory("variable/*.*")
 		lAMPM:=SetAmPm(false) 
+/*		// check newer tables, etc: 
+		aInsRem:=oFTP:Directory("variable/*.*")
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
-// 				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
 					oMainwindow:STATUSMESSAGE("loading new files")
 					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
@@ -104,9 +103,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 							endif
 						endif
 					endif
-// 				endif
 			endif					 
-		next
+		next     */
 		oMainwindow:STATUSMESSAGE("                 ")
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
@@ -182,6 +180,76 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 	endif
 	return false
+
+Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic class CheckUPGRADE
+	// check if there are new tables or files
+	local i,j as int 
+	local cDirname as string 
+	local LocalTime,Remotetime as string
+	local cTable as string 
+	local LocalDate, RemoteDate as date
+	local lSuc as logic 
+	local lAMPM as logic
+//	local aCurvers as array
+	Local aInsRem as Array
+//	local aDir,aSubDir as array
+	Local oFs as FileSpec
+	LOCAL oFTP  as cFtp
+	local oSel as SQLStatement
+
+	oFTP := CFtp{"WycOffSy FTP Agent"} 
+	
+	if oFTP:Open()                                                              
+		// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
+		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
+	endif
+	for i:=1 to 9   // try 3 seconds
+		if !lSuc
+			// try again:
+			Tone(30000,6) // wait 6/18 sec
+			lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
+			// 				lSuc:=oFTP:ConnectRemote('eu.wycliffe.net','anonymous',"any")
+		else
+			exit
+		endif
+	next
+	if lSuc
+		// check newer tables, etc: 
+		aInsRem:=oFTP:Directory("variable/*.*")
+		lAMPM:=SetAmPm(false) 
+		for i:=1 to Len(aInsRem)
+			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
+			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
+// 				if !Lower(aInsRem[i,F_NAME])=="mysqldump.exe" .or. (servername=="localhost" .or. servername=="127.0.0.1")     // load mysqldumper only for localhost
+					oMainwindow:STATUSMESSAGE("loading new files")
+					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
+						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
+					if lSuc
+						RemoteDate:=aInsRem[i,F_DATE]
+						Remotetime:=aInsRem[i,F_TIME]
+						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
+						if oFs:Extension=='.csv' .and.lFirstOfDay 
+							if oFs:Size>10 // !empty
+								// drop corresponding table to force it to be loaded again with new data: 
+								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
+								oSel:Execute()
+							endif
+						endif
+					endif
+// 				endif
+			endif					 
+		next
+		oMainwindow:STATUSMESSAGE("                 ")
+		oFTP:CloseRemote() 
+		SetAmPm(lAMPM)
+		oFs:=null_object
+	else
+		// 			__RaiseFTPError(oFTP) 
+		LogEvent(self,"No internet connection available to check for upgrades","logerrors")
+		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
+	endif
+	return false
+
 
 
 class Initialize
