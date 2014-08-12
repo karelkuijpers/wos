@@ -1266,7 +1266,9 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 		SQLStatement{"commit",oConn}:Execute()
 		SQLStatement{"unlock tables",oConn}:Execute() 
 		SQLStatement{"set autocommit=1",oConn}:Execute() 
-		LogEvent(self,cLog)
+		if !Empty(cLog)
+			LogEvent(self,cLog)
+		endif
 		self:oSub:Execute()
 		if posit>1
 			self:GoTo(posit-1)
