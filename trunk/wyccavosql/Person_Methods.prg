@@ -700,10 +700,11 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		endif		
 	endif 
 	cCity:=AllTrim(cCity)
-	cCity:=StrTran(cCity,'Y','IJ')
+	//cCity:=StrTran(cCity,'Y','IJ')
 	cityname:=cCity 
 
-	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
+//	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
+	housenrOrg:=AllTrim(GetStreetHousnbr(cAddress)[2])
 
 	// remove housenbr addition from address:
 	aWord:=GetTokens(cAddress)
