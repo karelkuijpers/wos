@@ -234,6 +234,9 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 								oSel:Execute()
 							endif
 						endif
+						LogEvent(self,"File "+aInsRem[i,F_NAME]+" successfull loaded from internet",'loginfo') 
+					else
+						 LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internet",'logerrors')
 					endif
 // 				endif
 			endif					 
@@ -1794,6 +1797,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","country","char(2)","NO","",""},;
 		{"teletrans","adrline","varchar(70)","NO","",""},;
 		{"teletrans","dueid","int(11)","YES","NULL",""},;
+		{"teletrans","rtrn","char(4)","NO","","","return reason"},;
+		{"teletrans","eref","varchar(35)","NO","","","end to end reference"},;
+		{"teletrans","marf","varchar(35)","NO","","","mandate reference"},;
 		{"titles","id","smallint(6)","NO","NULL","auto_increment"},;
 		{"titles","descrptn","char(12)","NO","",""},;
 		{"transaction","persid","int(11)","YES","NULL",""},;
