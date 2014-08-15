@@ -295,7 +295,7 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 	cStatement:=iif(lNew,"insert into","update")+" telebankpatterns set "+;
 		"contra_bankaccnt='"+self:mcontra_bankaccnt+"'"+;
 		",accid ="+maccid+;
-		",description='"+iif(Empty(self:mdescription),'',self:mdescription)+"'"+;
+		",description='"+iif(Empty(self:mdescription),'',Compress(self:mdescription))+"'"+;
 		",kind ='"+AllTrim(self:mkind)+"'"+;
 		",contra_name ='"+self:mcontra_name+"'"+;
 		",addsub ='"+self:mAddSub+"'"+;
