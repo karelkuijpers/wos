@@ -421,7 +421,7 @@ Function CompareKeyString(aKeyW as array, cValue as string ) as logic
 	local lKeyFound as logic
 	lK:=Len(aKeyW)
 	for i:=1 to lK 
-		if AtC(aKeyW[i],cValue)=0
+		if !Empty(aKeyW[i]) .and.AtC(aKeyW[i],cValue)=0
 			return false
 		endif
 	next
