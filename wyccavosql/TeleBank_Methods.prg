@@ -771,7 +771,8 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory("*.SWI"),{|x|AAdd(aFileMT,x)}) 
 	AEval(Directory("*_ME940file20*.txt"),{|x|AAdd(aFileMT,x)})          // e.g.: 3001715206_ME940file20110117     MT940 extended
 	AEval(Directory("*_MST940file20*.txt"),{|x|AAdd(aFileMT,x)})          // e.g.: 3001715206_MST940file20110117   MT940 structured
-	AEval(Directory("*.940"),{|x|iif(At('IBAN',x[F_NAME])=0,AAdd(aFileMTING,x),AAdd(aFileMTIBANING,x))})          // e.g.: 6547100_01-10-2013_06-11-2013   MT940 postbank
+// 	AEval(Directory("*.940"),{|x|iif(At('IBAN',x[F_NAME])=0,AAdd(aFileMTING,x),AAdd(aFileMTIBANING,x))})          // e.g.: 6547100_01-10-2013_06-11-2013   MT940 postbank
+	AEval(Directory("*.940"),{|x|AAdd(aFileMTIBANING,x)})          // e.g.: 6547100_01-10-2013_06-11-2013   MT940 postbank
 	AEval(Directory("*CAMT*053*.xml"),{|x|AAdd(aFileCamT,x)})          // CamT053 file
 	aFilePB:=Directory(CurPath+"\*-20??.CSV")
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
@@ -790,7 +791,8 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory(CurPath+"\*-20??.ASC"),{|x|AAdd(aFilePB,x)})
 	AEval(Directory(CurPath+"\*-20??.TXT"),{|x|AAdd(aFilePB,x)})
 	self:aValuesTrans:={}
-	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFileMTING).or.!Empty(aFileMTIBANING);
+// 	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFileMTING).or.!Empty(aFileMTIBANING);
+	IF oFs:Find() .or. oFC:Find() .or.!Empty(aFileRabo).or.!Empty(aFileMT).or.!Empty(aFileMTIBANING);
 		.or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileSA2).or.!Empty(aFileKB).or.;
 		!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG).or.!Empty(aFileVWI);
 		.or.!Empty(aFileTL).or.!Empty(aFileRO) .or. !Empty(aFileCamT)
@@ -886,6 +888,8 @@ METHOD Import() CLASS TeleMut
 			cFileName:=aFileMTIBANING[nf,F_NAME]
 			oBF := MyFileSpec{cFileName} 
 			if self:ImportMT940IBANING(oBF)
+				AAdd(aFiles,oBF)
+			elseif self:ImportMT940ING(oBF)    // apparently no IBAN 
 				AAdd(aFiles,oBF)
 			endif
 		NEXT
@@ -2460,7 +2464,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 
 	if !lMT940 .and.!SubStr(cBuffer,1,5)==':940:'
 		oMyFile:=null_object 
-		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a MT940 file"}:show()
+		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a MT940 (IBAN) file"}:show()
 		Return false
 	endif
 	SaveUse("ImportMT940")
@@ -2950,11 +2954,11 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 		(ErrorBox{,"Could not read file: "+oFm:Fullpath+"; Error:"+DosErrString(FError())}):Show()
 		RETURN FALSE
 	ENDIF
-	SaveUse("ImportMT940ING")
+	SaveUse("ImportMT940IBANING")
 	if !Substr(cBuffer,1,3)=='{1:' .and.!Substr(cBuffer,1,3)=='{2:'
 		oMyFile:Close()
 		oMyFile:=null_object 
-		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a Mijn ING Zakelijk MT940 file"}:Show()
+// 		ErrorBox{,"file "+Transform(oFm:Fullpath,"")+" is not a Mijn ING Zakelijk MT940 IBAN file"}:Show()
 		Return false
 	endif
 	nTrans:=0
