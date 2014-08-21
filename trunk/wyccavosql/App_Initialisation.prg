@@ -83,29 +83,6 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 			endif
 		endif
 		lAMPM:=SetAmPm(false) 
-/*		// check newer tables, etc: 
-		aInsRem:=oFTP:Directory("variable/*.*")
-		for i:=1 to Len(aInsRem)
-			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
-			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
-					oMainwindow:STATUSMESSAGE("loading new files")
-					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
-						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
-					if lSuc
-						RemoteDate:=aInsRem[i,F_DATE]
-						Remotetime:=aInsRem[i,F_TIME]
-						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
-						if oFs:Extension=='.csv' .and.lFirstOfDay 
-							if oFs:Size>10 // !empty
-								// drop corresponding table to force it to be loaded again with new data: 
-								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
-								oSel:Execute()
-							endif
-						endif
-					endif
-			endif					 
-		next     */
-// 		oMainwindow:STATUSMESSAGE("                 ")
 		oFs:=FileSpec{cWorkdir+"wosupgradeinstaller.exe"}
 		if oFs:Find()
 			LocalDate:=oFs:DateChanged
@@ -160,7 +137,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					if oFs:Find()
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-// 						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
+						// 						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
 						startfile:='"'+oFs:FullPath+'" /STARTUP="'+CurPath+'"' 
 						// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
 					endif
@@ -190,9 +167,9 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 	local LocalDate, RemoteDate as date
 	local lSuc as logic 
 	local lAMPM as logic
-//	local aCurvers as array
+	//	local aCurvers as array
 	Local aInsRem as Array
-//	local aDir,aSubDir as array
+	//	local aDir,aSubDir as array
 	Local oFs as FileSpec
 	LOCAL oFTP  as cFtp
 	local oSel as SQLStatement
@@ -219,26 +196,39 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 		lAMPM:=SetAmPm(false) 
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
-			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged =aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
-					oMainwindow:STATUSMESSAGE("loading new files")
-					lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
-						INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
-					if lSuc
-						RemoteDate:=aInsRem[i,F_DATE]
-						Remotetime:=aInsRem[i,F_TIME]
-						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate ,Remotetime )
-						if oFs:Extension=='.csv' .and.lFirstOfDay 
-							if oFs:Size>10 // !empty
-								// drop corresponding table to force it to be loaded again with new data: 
+			RemoteDate:=aInsRem[i,F_DATE]
+			Remotetime:=aInsRem[i,F_TIME]
+			if oFs:Find()
+				LocalDate:=oFs:DateChanged
+				LocalTime:=oFs:TimeChanged
+			else
+				LocalDate:=null_date
+				LocalTime:=null_string
+			endif
+			if LocalDate < RemoteDate .or. (LocalDate = RemoteDate .and. LocalTime<Remotetime )  // newer?
+				// 			if !oFs:Find() .or. (oFs:DateChanged <aInsRem[i,F_DATE] .or.oFs:DateChanged==aInsRem[i,F_DATE] .and.oFs:TimeChanged<aInsRem[i,F_TIME] )  // newer?   
+				oMainwindow:STATUSMESSAGE("loading new files")
+				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
+					INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
+				if	lSuc
+					oFs:Find()
+					//CollectForced()	 // to force some	wait
+					if	oFs:Find()
+						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate	,Remotetime	)
+						if	oFs:Extension=='.csv' .and.lFirstOfDay	
+							if	oFs:Size>10	//	!empty
+								//	drop corresponding table to force it to be loaded again with new data: 
 								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
 								oSel:Execute()
 							endif
 						endif
-						LogEvent(self,"File "+aInsRem[i,F_NAME]+" successfull loaded from internet",'loginfo') 
+						LogEvent(self,"File "+oFs:FullPath+"	successfull	loaded from	internet; local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'loginfo')	
 					else
-						 LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internet",'logerrors')
+						LogEvent(self,"File "+oFs:FullPath+"	could	not be loaded from internetlocal date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 					endif
-// 				endif
+				else
+					LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internetlocal date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+				endif
 			endif					 
 		next
 		oMainwindow:STATUSMESSAGE("                 ")
