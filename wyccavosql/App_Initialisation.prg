@@ -192,8 +192,8 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 	next
 	if lSuc
 		// check newer tables, etc: 
-		aInsRem:=oFTP:Directory("variable/*.*")
 		lAMPM:=SetAmPm(false) 
+		aInsRem:=oFTP:Directory("variable/*.*")
 		for i:=1 to Len(aInsRem)
 			oFs:=FileSpec{cWorkdir+Lower(aInsRem[i,F_NAME])} 
 			RemoteDate:=aInsRem[i,F_DATE]
