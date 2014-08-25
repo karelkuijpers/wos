@@ -1215,8 +1215,9 @@ METHOD ImportCzech(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testform
 	local FromAcc, ToAcc, Description, ExtId, Firma,FromDesc,ToDescr, AsmtCode1:="",AsmtCode2:="AG", cOrigin, cTransnr, docid as string, Amount as float, impDat as date 
 	local cSearchDesc as string  // how to check duplicates with description
 	
-	oImpCZR:=DbFileSpec{oFr:FullPath,"DBFCDX"}
+	oImpCZR:=DbFileSpec{,"DBFCDX"}
 	oImpCZR:Path:=CurPath
+	oImpCZR:FileName:=oFr:FullPath                 
 	oImpTr:=oImpB
 	self:aValues:={}
 	IF oImpCZR:Find() 
