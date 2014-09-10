@@ -1458,6 +1458,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"department","expenseacc","int(11)","NO","0",""},;
 		{"department","payableacc","int(11)","NO","0",""},;
 		{"department","receivableacc","int(11)","NO","0",""},;
+		{"department","active","tinyint(1)","NO","1",""},;
 		{"distributioninstruction","mbrid","int(11)","NO","NULL",""},;
 		{"distributioninstruction","seqnbr","int(3)","NO","0",""},;
 		{"distributioninstruction","destacc","varchar(70)","NO","",""},;
