@@ -513,8 +513,8 @@ METHOD OKButton( ) CLASS CheckSuspense
 			fBal:=Round(oBalncs:per_cre-oBalncs:per_deb,DecAantal)		
 			oReport:PrintLine(@nRow,@nPage,Pad(aSuspense[i,2],15)+cTab+Pad(aSuspense[i,3],30)+cTab+Str(fBal,12,2),aHeading)
 		next
-		oReport:PrintLine(@nRow,@nPage,' ') 
-		oReport:PrintLine(@nRow,@nPage,' ') 
+		oReport:PrintLine(@nRow,@nPage,' ',aHeading) 
+		oReport:PrintLine(@nRow,@nPage,' ',aHeading) 
 		
 		i:=AScan(aSuspense,{|x|x[4]=='a'})
 		if i>0
