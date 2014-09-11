@@ -2685,10 +2685,8 @@ METHOD Init() CLASS PointsSize
 
 DEFINE PRINT_END := "#21#"
 CLASS PrintDialog INHERIT _PrintDialog
-
-
 	
-	declare method prstart,ReInitPrint,RemovePrFile
+	declare method prstart,ReInitPrint,RemovePrFile,PrintLine
 ACCESS Beginreport() CLASS PrintDialog
 RETURN SELF:FIELDGET(#_Beginreport)
 
@@ -2862,7 +2860,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	SELF:EndDialog()
 	
 	RETURN
-METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS PrintDialog
+METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingLines:={} as array,skipcount:=0 as int,lDelay:=false as logic) as logic CLASS PrintDialog
 	* Output to printer or window of LineContent
 	*
 	* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
@@ -2883,7 +2881,8 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 	LOCAL skippage:=FALSE AS LOGIC
 	LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
 	LOCAL cFileName as STRING
-	Default(@skipcount,0)
+	local aFIFO:=self:oPrintJob:aFIFO as array
+//	Default(@skipcount,0)
 	IF Destination == "File" .and.Empty(self:ptrHandle)
 		cFileName:= self:ToFileFS:FullPath
 		self:ptrHandle:=MakeFile(,@cFileName,"Printing to file")
@@ -2900,10 +2899,12 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 	if !Empty(LineNbr).and.LineNbr==(self:row-1)
 		self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
 		LineNbr++
-		return
-	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0
-		// print prepared line
-		FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[1])=0,"\par",''))
+		return true
+	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0 .and.!lDelay 
+		// print prepared lines
+		for i:=1 to Len(aFIFO)
+			FWriteLine(self:ptrHandle, aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',aFIFO[i])=0,"\par",'')) 
+		next
 		self:oPrintJob:aFIFO:={} // reset fifo
 	endif
 	IF self:_Beginreport
@@ -2913,11 +2914,15 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 			IF self:Destination == "Printer"
 				AAdd(self:oPrintJob:aFIFO,PAGE_END)
 			elseif self:Destination == "File"
-				IF self:lRTF
-					FWriteLine(self:ptrHandle,"\page")
-				ELSE						
-					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
-				ENDIF
+				AAdd(aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
+				if !lDelay
+					FWriteLine(self:ptrHandle,aFIFO[Len(aFIFO)])
+				endif
+// 				IF self:lRTF
+// 					FWriteLine(self:ptrHandle,"\page")
+// 				ELSE						
+// 					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
+// 				ENDIF
 			ENDIF
 		ENDIF
 		LineNbr:=self:row // reset to original value
@@ -2927,11 +2932,15 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 			if self:Destination == "Printer"
 				AAdd(self:oPrintJob:aFIFO,PAGE_ENd)
 			elseif self:Destination == "File"
-				IF self:lRTF
-					FWriteLine(self:ptrHandle,"\page")
-				ELSE						
-					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
-				ENDIF
+				AAdd(aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
+				if !lDelay
+					FWriteLine(self:ptrHandle,aFIFO[Len(aFIFO)])
+				endif
+// 				IF self:lRTF
+// 					FWriteLine(self:ptrHandle,"\page")
+// 				ELSE						
+// 					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
+// 				ENDIF
 			endif
 		ENDIF
 	ENDIF
@@ -2942,8 +2951,13 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 		ELSEIF LineNbr>0
 			// add two space lines:
 			if self:Destination == "File"
-				FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
-				FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
+				if lDelay
+					AAdd(aFIFO,iif(self:lRTF,'\par',''))
+					AAdd(aFIFO,iif(self:lRTF,'\par',''))
+				else
+					FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
+					FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
+				endif
 			else
 				AAdd(self:oPrintJob:aFIFO," ")
 				AAdd(self:oPrintJob:aFIFO," ")
@@ -2959,14 +2973,21 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 						kopdate:="  "+DToC(DATE())+' '+PageText+' '+;
 							LTrim(Str(PageNbr,4))
 						if self:Destination=="File"
-							FWriteLine(self:ptrHandle, Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
+							if lDelay
+								AAdd(aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
+							else
+								FWriteLine(self:ptrHandle, Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
+							endif
 						else
 							AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate)
 						endif
 					ELSE
 						if self:Destination=="File"
-// 							FWriteLine(self:ptrHandle, SubStr(HeadingLines[i],1,Widthpage)+iif(self:lRTF,"\par",''))
-							FWriteLine(self:ptrHandle, HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
+							if lDelay
+								AAdd(aFIFO,HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
+							else
+								FWriteLine(self:ptrHandle, HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
+							endif
 						else
 							AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))
 						endif	
@@ -2986,13 +3007,14 @@ METHOD PrintLine (LineNbr,PageNbr,LineContent,HeadingLines,skipcount)  CLASS Pri
 		++LineNbr
 	ENDIF
 	self:row:=LineNbr
-	RETURN
+	RETURN true
 METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
-	* lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
+	* self:lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
 	* cRTFHeading: start rtf-text for specifying format
 	LOCAL oPrintShow as Window
 	LOCAL i AS INT
 	LOCAL MyFileName, RetFileName,cFileName as STRING
+	local aFIFO:=self:oPrintJob:aFIFO as array
 	LOCAL scrFont as myFont
 	local mySize as dimension 
 	/*	LOCAL cRTFHeader:= "{\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fmodern\fprq1\fcharset0 Courier New;}}"+;
@@ -3035,16 +3057,14 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 		*		write to file
 		if !Empty(self:ptrHandle)
 			IF Len(self:oPrintJob:aFIFO)>0
-				// print last line: 
-				IF self:lRTF
-					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1]+"\par")
-				else
-					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[1])
-				endif
+				// print last lines: 
+				for i:=1 to Len(aFIFO)
+					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[i])=0,"\par",'')) 
+				next
 				self:oPrintJob:aFIFO:={} // reset fifo
 			endif
 			if self:lRTF
-				FWriteLine(self:ptrHandle,"\par }")
+				FWriteLine(self:ptrHandle,"\par }")   // extra eol
 			endif
 			FClose(self:ptrHandle) 
 			self:ptrHandle:=null_ptr
