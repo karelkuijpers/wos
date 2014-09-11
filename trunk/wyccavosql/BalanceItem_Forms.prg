@@ -332,7 +332,7 @@ METHOD SortByType(oListViewItem1, oListViewItem2) CLASS BalanceListView
 
 CLASS BalanceTreeView INHERIT TreeView  
 declare method AddSubItem, AddTreeItem,ExpandTree,GetChildItem 
-METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int) as int CLASS BalanceTreeView
+METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int,lInclInactive:=false as logic) as int CLASS BalanceTreeView
 	LOCAL nChildRec			as int
 	LOCAL cCurNum			as int
 	local nCurAcc as int
@@ -387,7 +387,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	do WHILE true	
 		// create child tree view items for all
 		// child records that satisfy the relation
-		nChildRec:=self:AddSubItem(cCurNum,lShowAccount,aItem,aAccnts,nChildRec)
+		nChildRec:=self:AddSubItem(cCurNum,lShowAccount,aItem,aAccnts,nChildRec,lInclInactive)
 		IF Empty(nChildRec)
 			exit
 		ENDIF
@@ -476,7 +476,8 @@ CLASS CustomExplorer INHERIT ExplorerWindow
 	PROTECT cNum AS STRING // identifier of current item when cType is filled
 	export cSearch as STRING // searchstring of required item when cType is filled
 	Export cItemname as STRING // name of required item when cType is filled
-	EXPORT lShowAccount:=TRUE AS LOGIC
+	EXPORT lShowAccount:=true as LOGIC
+	Export lInclInactive:=false as logic
 	PROTECT ListParent as int
 	EXPORT oTreeOptions AS ExplorerOptions
 	EXPORT nMaxLevel:=1 as int
@@ -531,7 +532,7 @@ METHOD BuildTreeViewItems() as void pascal CLASS CustomExplorer
 	self:aItem:={}
 	self:aAccnts:={} 
 	do WHILE true
-		nCurrRec:=oTreeView:AddSubItem(self:cRootValue,self:lShowAccount,self:aItem,self:aAccnts,nCurrRec)
+		nCurrRec:=oTreeView:AddSubItem(self:cRootValue,self:lShowAccount,self:aItem,self:aAccnts,nCurrRec,self:lInclInactive)
 		IF Empty(nCurrRec)
 			exit
 		ENDIF
@@ -798,7 +799,7 @@ METHOD Init(oOwner,SymTree,SymList) CLASS CustomExplorer
 	// the specified view control subclasses
 *	SUPER:Init(oOwner, !Empty(cType),SymTree,SymList)
 self:SetTexts()
-	SUPER:Init(oOwner, TRUE,SymTree,SymList)
+	SUPER:Init(oOwner, true,SymTree,SymList) 
 	IF Empty(self:cType)
 		self:lShowAccount:=true
 
@@ -844,17 +845,17 @@ self:SetTexts()
 	// initialize pane sizes
 	lShowAccount:=Empty(cType)
 	oTreeOptions:=ExplorerOptions{SELF,{lShowAccount,FALSE,cSearch}}
-	IF Empty(cType)
+	oDimension := self:GetPaneSize(1)
+	oDimension:Height := oTreeOptions:Size:Height
+	self:SetPaneSize(oDimension, 1)
+	oDimension:Width := oDimension:Width * 3 / 2
+	self:SetPaneSize(oDimension, 2) 
+	IF Empty(self:cType)
 		SELF:SetPaneClient(oTreeOptions,1)
 	ELSE
 		SELF:SetPaneClient(ExplorerClick{SELF},1)
 		SELF:SetPaneClient(oTreeOptions,2)
 	ENDIF
-	oDimension := SELF:GetPaneSize(1)
-	oDimension:Height := 52
-	SELF:SetPaneSize(oDimension, 1)
-	oDimension:Width := oDimension:Width * 3 / 2
-	self:SetPaneSize(oDimension, 2) 
 	
 	// initialize listview column symbols:
 	self:sListIdentify:=String2Symbol(self:oLan:WGet("Identifier"))
@@ -1797,7 +1798,7 @@ BEGIN
 	CONTROL	"Explode Total Tree", EXPLOREROPTIONS_EXPLODEALL, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 10, 14, 93, 11
 	CONTROL	"", EXPLOREROPTIONS_SEARCHTREE, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 130, 4, 81, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Search", EXPLOREROPTIONS_SEARCHBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 212, 4, 54, 12
-	CONTROL	"", EXPLOREROPTIONS_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, -1, 106, 28
+	CONTROL	"", EXPLOREROPTIONS_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 6, -1, 120, 28
 END
 
 CLASS ExplorerOptions INHERIT DialogWinDowExtra 
@@ -1827,7 +1828,14 @@ METHOD ButtonClick(oControlEvent) CLASS ExplorerOptions
 		ELSE
 			self:Owner:nMaxLevel:=1
 		ENDIF
-		SELF:Owner:RefreshTree()
+		self:Owner:RefreshTree() 
+	ELSEIF oControl:NameSym == #InclInactiveDep
+		IF oControl:Value==true
+			self:Owner:lInclInactive:=true
+		ELSE
+			self:Owner:lInclInactive:=FALSE
+		ENDIF
+		self:Owner:RefreshTree()
 	ENDIF
 	RETURN NIL
 METHOD EditChange(oControlEvent) CLASS ExplorerOptions
@@ -1873,14 +1881,40 @@ self:PostInit(oParent,uExtra)
 return self
 
 METHOD PostInit(oParent,uExtra) CLASS ExplorerOptions
-	//Put your PostInit additions here
-self:SetTexts()
+	//Put your PostInit additions here 
+	LOCAL EditX:=152, FixX:=17 as int
+	LOCAL myDim,oDimension as Dimension
+	LOCAL myOrg as Point
+	LOCAL oCheck as CheckBox
+
+	self:SetTexts()
 	IF IsArray(uExtra)
-		oDCAccountsInTree:Value:=uExtra[1]
-		oDCExplodeAll:Value:=uExtra[2]
-		oDCSearchTree:Value:=uExtra[3]
+		self:oDCAccountsInTree:Value:=uExtra[1]
+		self:oDCExplodeAll:Value:=uExtra[2]
+		self:oDCSearchTree:Value:=uExtra[3]
 		if !Empty(uExtra[3])
 			self:oDCSearchTree:SetStyle(BS_DEFPUSHBUTTON,true)
+		endif
+		if IsInstanceOf(oParent,#DepartmentExplorer)
+			// enlarge window
+			myDim:=self:Size
+			myDim:Height+=18
+			self:Size:=myDim
+			myOrg:=self:Origin
+			myOrg:y-=18
+			self:Origin:=myOrg
+			// enlarge groupbox: 
+			myDim:=self:oDCGroupBox1:Size
+			myDim:Height+=18
+			myOrg:=self:oDCGroupBox1:Origin
+			myOrg:y-=18
+			self:oDCGroupBox1:Origin:=myOrg
+			self:oDCGroupBox1:Size:=myDim
+			myOrg:=oDCExplodeAll:Origin
+			// insert checkbox:
+			oCheck:=CheckBox{self,190,Point{myOrg:X,myOrg:y-18},Dimension{160,18},"InclInactiveDep"}
+			oCheck:HyperLabel := HyperLabel{#InclInactiveDep,"Include inactive departments",}
+			oCheck:show()
 		endif
 	ENDIF
 	self:oDCSearchTree:SetFocus()
