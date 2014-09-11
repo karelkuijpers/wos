@@ -440,7 +440,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 // 		self:cFields:="a.accid,a.accnumber,a.description,a.balitemid,a.currency,a.active, if(active=0,'NO','') as activedescr,a.department,b.category as type"
 // 		self:cFrom:="balanceitem as b,account as a "
 // 		self:cWhere:="a.balitemid=b.balitemid"
-		self:cFields:="a.accid,a.accnumber,a.description, if(active=0,'NO','') as activedescr "
+		self:cFields:="a.accid,a.accnumber,a.description, if(a.active=0,'NO','') as activedescr "
 		self:cFrom:="account as a "
 		self:cWhere:=""
 		self:cAccFilter:=iif(Empty(cDepmntIncl),"","a.department IN ("+cDepmntIncl+")")
@@ -1822,6 +1822,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 			ENDIF
 		ENDIF
 		self:mactive:=true
+		self:oDCmActive:Hide()
 		if empty(self:mDescription) .and.!empty(self:oAccCnt:m51_description)
 			self:mDescription:=self:oAccCnt:m51_description
 		endif
