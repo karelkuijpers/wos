@@ -311,7 +311,7 @@ Method ValidateTransition(cNewParentId:="0" ref string,cNewParentNbr:="0" as str
 	RETURN cError
 CLASS DepartmentTreeView inherit BalanceTreeView 
 declare method AddSubItem
-METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int) as int CLASS DepartmentTreeView
+METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccnts as array, nCurrentRec:=0 as int,lInclInactive:=false as logic) as int CLASS DepartmentTreeView
 	local oDep as SQLSelect
 	local oAcc as SQLSelect
 	LOCAL nChildRec			as int
@@ -319,7 +319,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	local nCurAcc as int
 	if Empty(aItem)
 		oDep:=SQLSelect{"SELECT depid as itemid,parentdep as parentid,descriptn as description,deptmntnbr as number "+;
-		"FROM `department` order by parentdep,deptmntnbr",oConn}
+		"FROM `department`"+iif(lInclInactive,''," where active=1")+" order by parentdep,deptmntnbr",oConn}
 		if oDep:RecCount>0
 			do while !oDep:EoF
 				AAdd(aItem,{oDep:itemid,oDep:parentid,oDep:description,oDep:number})
@@ -367,7 +367,7 @@ METHOD AddSubItem(ParentNum:=0 as int,lShowAccount as logic,aItem as array,aAccn
 	do WHILE true	
 		// create child tree view items for all
 		// child records that satisfy the relation
-		nChildRec:=self:AddSubItem(cCurNum,lShowAccount,aItem,aAccnts,nChildRec)
+		nChildRec:=self:AddSubItem(cCurNum,lShowAccount,aItem,aAccnts,nChildRec,lInclInactive)
  		IF Empty(nChildRec)
 			exit
 		ENDIF
@@ -415,6 +415,7 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oDCIPCText AS FIXEDTEXT
 	PROTECT oDCSC_Debtors AS FIXEDTEXT
 	PROTECT oDCSC_Creditors AS FIXEDTEXT
+	PROTECT oDCmActive AS CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartmntNbr 
@@ -432,7 +433,8 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	PROTECT oCaller as DepartmentExplorer
 	PROTECT OrgDescription AS STRING
 	PROTECT OrgParent AS STRING
-	PROTECT OrgDepNbr AS STRING
+	PROTECT OrgDepNbr as STRING
+	protect OrgActive as logic
 	PROTECT nCurRec AS INT
 	PROTECT mDepId AS STRING
 	PROTECT cContactName1,mCLN1,cContactName2,mCLN2 AS STRING
@@ -487,7 +489,22 @@ BEGIN
 	CONTROL	"IPC Project#:", EDITDEPARTMENT_IPCTEXT, "Static", WS_CHILD, 240, 81, 53, 12
 	CONTROL	"Account Receivable:", EDITDEPARTMENT_SC_DEBTORS, "Static", WS_CHILD, 8, 140, 100, 12
 	CONTROL	"Account Payable:", EDITDEPARTMENT_SC_CREDITORS, "Static", WS_CHILD, 8, 125, 100, 12
+	CONTROL	"Active", EDITDEPARTMENT_MACTIVE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 248, 11, 36, 11
 END
+
+method ButtonClick(oControlEvent) class EditDepartment
+	local oControl as Control
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	super:ButtonClick(oControlEvent)
+	//Put your changes here
+	if oControl:Name=="MACTIVE"
+		if oControl:Value==FALSE
+			self:oDCmActive:TextColor:=Color{COLORRED}
+		else
+			self:oDCmActive:TextColor:=Color{COLORBLACK}
+		endif
+	endif
+	return nil
 
 METHOD CancelButton( ) CLASS EditDepartment
 	SELF:EndWindow()
@@ -768,6 +785,10 @@ oDCSC_Debtors:HyperLabel := HyperLabel{#SC_Debtors,"Account Receivable:",NULL_ST
 oDCSC_Creditors := FixedText{SELF,ResourceID{EDITDEPARTMENT_SC_CREDITORS,_GetInst()}}
 oDCSC_Creditors:HyperLabel := HyperLabel{#SC_Creditors,"Account Payable:",NULL_STRING,NULL_STRING}
 
+oDCmActive := CheckBox{SELF,ResourceID{EDITDEPARTMENT_MACTIVE,_GetInst()}}
+oDCmActive:HyperLabel := HyperLabel{#mActive,"Active",NULL_STRING,NULL_STRING}
+oDCmActive:TooltipText := "Can this department be used for recording financial transactions?"
+
 SELF:Caption := "Edit of Department"
 SELF:HyperLabel := HyperLabel{#EditDepartment,"Edit of Department",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
@@ -807,6 +828,13 @@ RETURN SELF:FieldGet(#mAccount3)
 
 ASSIGN mAccount3(uValue) CLASS EditDepartment
 SELF:FieldPut(#mAccount3, uValue)
+RETURN uValue
+
+ACCESS mActive() CLASS EditDepartment
+RETURN SELF:FieldGet(#mActive)
+
+ASSIGN mActive(uValue) CLASS EditDepartment
+SELF:FieldPut(#mActive, uValue)
 RETURN uValue
 
 ACCESS mCAPITAL() CLASS EditDepartment
@@ -910,8 +938,17 @@ METHOD OKButton( ) CLASS EditDepartment
 	IF !Empty(cError)
 		(ErrorBox{,cError}):Show()
 		RETURN
-	ENDIF
-	if !lNew .and. !Empty(self:oDep:mpersid) 
+	ENDIF 
+	if !self:lNew .and. !self:mactive==self:OrgActive .and. !self:mactive
+		// making department inactive
+		* Check presence of childitems:
+		oSel:=SqlSelect{"select	count(*) as ChildCount from department where parentdep='"+self:mDepId+"'",oConn}
+		if	oSel:Reccount>0 .and. ConI(oSel:childcount)>0
+			(ErrorBox{,self:oLan:WGet('Make child departments inactive first')}):Show()
+			RETURN
+		endif
+	endif
+	if !self:lNew .and. !Empty(self:oDep:mpersid) 
 		// member department
 		cLastname:=SQLSelect{"select lastname from person where persid="+Str(self:oDep:mpersid,-1),oConn}:lastname
 		if AtC(cLastname,self:mDescription)=0
@@ -934,7 +971,7 @@ METHOD OKButton( ) CLASS EditDepartment
 		// check if only Income account is Gifts receivable: 
 		IF ConI(self:NbrIncome) >0
 			cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+;
-			" and giftalwd=1 and accid<>"+self:NbrIncome+iif(!Empty(self:idIncomeOrg),' and accid<>'+self:idIncomeOrg,''),oConn}:giftsaccs)
+				" and giftalwd=1 and accid<>"+self:NbrIncome+iif(!Empty(self:idIncomeOrg),' and accid<>'+self:idIncomeOrg,''),oConn}:giftsaccs)
 			if !Empty(cGiftsAccs)
 				(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
 				RETURN			
@@ -975,15 +1012,20 @@ METHOD OKButton( ) CLASS EditDepartment
 		"persid ='"+ Str(Val(self:mCLN1),-1)+"',"+;
 		"persid2 ='"+ Str(Val(self:mCLN2),-1)+"',"+; 
 	"ipcproject='"+Str(Val(self:IPCPROJECT),-1)+"'"+;
+		",active="+iif(self:mactive,"1","0")+;
 		iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
+		if !self:lNew .and. !self:mactive==self:OrgActive
+			// adapt active of corresponding account also:
+			SQLStatement{"update account set active="+iif(self:mactive,"1","0")+" where department='"+self:mDepId+"'",oConn}:Execute() 			
+		endif
 		if !self:NbrIncome==self:idIncomeOrg .and. !Empty(self:idIncomeOrg) .and.!Empty(self:NbrIncome)
 			SQLStatement{"update account set giftalwd=0 where accid="+self:idIncomeOrg,oConn}:Execute() 
 			SQLStatement{"update account set giftalwd=1 where accid="+self:NbrIncome,oConn}:Execute() 
 		endif
-			
+		
 		Departments:=true
 		IF !lNew
 			IF !OrgDescription==mDescription.or.!OrgParent==mParentDep.or.!OrgDepNbr=mDepartmntNbr
@@ -1022,6 +1064,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 	SaveUse(self)
 	self:lNew:=uExtra[1]
 	self:oCaller:=uExtra[5]
+	self:mactive:=true
 
 	IF lNew
 		SELF:oDCmDepartmntNbr:SetFocus()
@@ -1050,6 +1093,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		if UsualType(self:oCaller:cSearch) = STRING
 			self:mDescription:=self:oCaller:cSearch
 		endif
+		self:mactive:=true
+		self:oDCmActive:Hide()
 	ELSE
 		self:mDepId:=AllTrim(uExtra[4]) 
 		self:oDep:=SqlSelect{"select d.*,dp.deptmntnbr as deptmntnbrparent,an.description as captital,ainc.description as incname,aexp.description as expname,"+; 
@@ -1113,6 +1158,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mAccount3 := AllTrim(self:oDep:ass3)
 			cAccount3Name := mAccount3
 		endif
+		self:mactive:=ConL(self:oDep:active)
 		mDepartmntNbr:=self:oDep:deptmntnbr
 		OrgDepNbr:=AllTrim(mDepartmntNbr)
 		self:IPCPROJECT:=ConS(ConI(oDep:IPCPROJECT))
@@ -1138,6 +1184,12 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			cContactName2 := mPerson2
 		endif
 	ENDIF
+	if self:mactive
+		self:oDCmActive:TextColor:=Color{COLORBLACK}		
+	else
+		self:oDCmActive:TextColor:=Color{COLORRED}
+	endif		
+   self:OrgActive:= self:mactive // save original value of active
 	if (!Empty(self:oCaller:cTYPE).and. AtC("member",self:oCaller:cTYPE)>0) .or.(!lNew .and. !Empty(self:oDep:mbrid))
 		self:oDCMemberText:Show()
 		self:odcGroupBox2:Hide()
@@ -1305,6 +1357,7 @@ STATIC DEFINE EDITDEPARTMENT_IPCTEXT := 135
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT1 := 120 
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT2 := 122 
 STATIC DEFINE EDITDEPARTMENT_MACCOUNT3 := 124 
+STATIC DEFINE EDITDEPARTMENT_MACTIVE := 138 
 STATIC DEFINE EDITDEPARTMENT_MCAPITAL := 108 
 STATIC DEFINE EDITDEPARTMENT_MDEPARTMNTNBR := 101 
 STATIC DEFINE EDITDEPARTMENT_MDESCRIPTION := 103 
