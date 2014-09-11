@@ -32,7 +32,7 @@ METHOD FilePrint CLASS AccountBrowser
 	LOCAL cRootName:=AllTrim(SEntity)+" "+sLand as STRING
 	LOCAL cTab:=CHR(9) as STRING
 	LOCAL YrSt,MnSt as int
-	LOCAL Gran as LOGIC
+	LOCAL Gran,lXls as LOGIC
 	local cFrom as string 
 	local cWhere as string
 	local cFields as string 
@@ -50,7 +50,9 @@ METHOD FilePrint CLASS AccountBrowser
 	ENDIF
 	IF Lower(oReport:Extension) #"xls"
 		cTab:=Space(1)
-		cHeading :={oLan:RGet('Accounts',,"@!"),' '}
+		cHeading :={oLan:RGet('Accounts',,"@!"),' '} 
+	else
+		lXls:=true
 	ENDIF
 
 	AAdd(cHeading, ;
@@ -74,9 +76,9 @@ METHOD FilePrint CLASS AccountBrowser
 	oDB:=SqlSelect{SQLString,oConn}
 	if oDB:RecCount>0
 		do WHILE .not. oDB:EOF
-			oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+Pad(oDB:description,25)+cTab+Pad(oDB:Heading,20)+cTab+;
+			oReport:PrintLine(@nRow,@nPage,Pad(oDB:ACCNUMBER,LENACCNBR)+cTab+iif(lXls,oDB:description,Pad(oDB:description,25))+cTab+iif(lXls,oDB:Heading,Pad(oDB:Heading,20))+cTab+;
 				iif(ConI(oDB:giftalwd)=1,"X"," ")+Space(5)+cTab+Str(iif(Empty(oDB:Budgt),0,oDB:Budgt),11,0)+cTab;
-				+Str(oDB:subscriptionprice,9,DecAantal)+cTab+Pad(ConS(oDB:qtymailing),11," ")+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:currency,8)+cTab+PadC( iif(ConI(oDB:multcurr)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:reevaluate)=1,"X"," "),5)+cTab+Pad(iif(Departments,oDB:depname,cRootName),20),cHeading)
+				+Str(oDB:subscriptionprice,9,DecAantal)+cTab+Pad(ConS(oDB:qtymailing),11," ")+cTab+PadC(oDB:clc,6)+cTab+PadC(oDB:currency,8)+cTab+PadC( iif(ConI(oDB:multcurr)=1,"X"," "),5)+cTab+PadC( iif(ConI(oDB:reevaluate)=1,"X"," "),5)+cTab+iif(lXls,iif(Departments,oDB:depname,cRootName),Pad(iif(Departments,oDB:depname,cRootName),20)),cHeading)
 			oDB:skip()
 		ENDDO
 	endif
@@ -154,7 +156,7 @@ FUNCTION AccountSelect(oCaller as object,BrwsValue as string,ItemName as string,
 
 // 	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,b.category as type" as string
 // 	local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" as accounttype"  as string
-	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(active=0,'NO','') as activedescr,a.subscriptionprice,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"  as string
+	local cFields:="a.accid,a.accnumber,a.description,a.department,a.balitemid,a.currency,a.multcurr,a.active, if(a.active=0,'NO','') as activedescr,a.subscriptionprice,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+" as incexpfd,"+SQLAccType()+" as accounttype"  as string
 
 	
 	IF lUnique.and.Empty(BrwsValue)
