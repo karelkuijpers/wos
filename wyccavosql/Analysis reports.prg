@@ -2559,7 +2559,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS DonorProject
 	// initialize array with gift accounts (non member)
 	oAcc:=SQLSelect{"select account.accid,CO,description,accnumber,homepp FROM account";
 		+ " left join member on (member.accid=account.accid or member.depid=account.department)";
-		+ " where giftalwd=1 and active=1 order by account.accid",oConn}
+		+ " where giftalwd=1 and a.active=1 order by account.accid",oConn}
 	if oAcc:RecCount<1
 		oAcc:=null_object
 		RETURN nil
