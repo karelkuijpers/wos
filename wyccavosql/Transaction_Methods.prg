@@ -945,7 +945,7 @@ METHOD FilePrint() CLASS General_Journal
 		oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Person",,"!")+":",aHeader)
 		oReport:PrintLine(@nRow,@nPage,self:cGiverName,aHeader)
 	ENDIF
-	oReport:PrintLine(@nRow,@nPage," ")  //empty line
+	oReport:PrintLine(@nRow,@nPage," ",{})  //empty line
 
 	oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Transaction lines",nWidth,"@!","C"),aHeader)
 	if !lXls
@@ -3227,10 +3227,10 @@ Pad(oLan:RGet("transaction number",,"!")+":",20)+Transform(self:mTRANSAKTNR,"")+
 oReport:PrintLine(@nRow,@nPage," ",koparr)  //skip one line
 oReport:PrintLine(@nRow,@nPage,;
 Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),koparr)
-oReport:PrintLine(@nRow,@nPage," ")  //skip one line
+oReport:PrintLine(@nRow,@nPage," ",koparr)  //skip one line
 oReport:PrintLine(@nRow,@nPage,;
 Pad(oLan:RGet("document id",,"!")+":",20)+self:mBST,koparr)
-oReport:PrintLine(@nRow,@nPage," ")  //skip one line
+oReport:PrintLine(@nRow,@nPage," ",koparr)  //skip one line
 IF !Empty(self:mCLNGiver)
 *	oPers:Seek(AllTrim(mCLNGiver))
    oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Person",,"!")+":",koparr)
