@@ -55,34 +55,32 @@ CLASS BalanceReport INHERIT DataWindowMine
 	INSTANCE ind_explanation
 	INSTANCE lCondense
 	INSTANCE ind_accstmnt */
-	PROTECT balsoort, cCurBal, cCurDep as STRING
-	PROTECT BalCount, DepCount AS INT
-	PROTECT oTransMonth AS AccountStatements
-
-	PROTECT mainheading:={},;
-		HeadingCache:={} as ARRAY 
-	export addheading as string
-	PROTECT TAB:=" " as STRING, lXls as logic
-	PROTECT mbud  AS FLOAT
-	EXPORT oReport AS PrintDialog
-	EXPORT iLine,iPage AS INT
-	EXPORT BeginReport:=FALSE AS LOGIC
-	EXPORT YEARSTART,YEAREND AS INT
-	PROTECT BalSt, BalEnd, CurSt, CurEnd AS INT
-	* Options for report type:
-	//EXPORT WhatFrom:=Space(11), WhoFrom:=Space(11) AS STRING
+	PROTECT BalCount, DepCount as int
+	EXPORT iLine,iPage as int
+	EXPORT YEARSTART,YEAREND as int
+	PROTECT BalSt, BalEnd, CurSt, CurEnd as int
 	EXPORT WhatFrom, WhoFrom as int
-	PROTECT BalColWidth, TotalWidth, maxlevel as int
-	EXPORT SendToMail AS LOGIC
 	EXPORT  netassBalId as int
-	EXPORT showopeningclosingfund:=FALSE as LOGIC 
+	PROTECT BalColWidth, TotalWidth, MaxLevel as int
+	PROTECT mbud  as FLOAT
+	PROTECT balsoort, cCurBal, cCurDep as STRING
+	export addheading as string
+	PROTECT TAB:=" " as STRING
 	Protect BoldOn, BoldOff, YellowOn, YellowOff, GreenOn, GreenOff, RedOn,RedOff,RedCharOn,RedCharOff as STRING 
-	Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
-	export SimpleDepStmnt as logic
-	// Fiexed texts to print:
+	// Fixed texts to print:
 	protect cSummary,cDirectText,cDirectOn,cIncome,cIncomeL,cExpense,cExpenseL,cLiability,cAsset,cDetailed,cInscriptionInEx,cInscriptionAsLi,cInscriptionDep as string 
 	protect cFrom,cTo,cYear,cFullyear,cDescription,cPrvYrYTD,cCurPeriod,cYtD,cSurPlus,cClsBal,cClosingBal,cAmount,cBudget,cOpeningBal as string 
-	protect cNegative,cPositive as string 
+	protect cNegative,cPositive as string
+	Protect lXls as logic
+	EXPORT BeginReport:=FALSE as LOGIC
+	EXPORT SendToMail as LOGIC
+	EXPORT showopeningclosingfund:=FALSE as LOGIC 
+	Protect PrvYearNotClosed, YearBeforePrvNotClosed  as LOGIC 
+	export SimpleDepStmnt as logic
+	PROTECT mainheading:={},;
+		HeadingCache:={} as ARRAY 
+	PROTECT oTransMonth as AccountStatements
+	EXPORT oReport as PrintDialog
 
 
 	declare method SubDepartment, ProcessDepBal,SUBBALITEM,BalancePrint,AddSubDep,AddSubBal,SubNetDepartment,prheading,BalFishTot
@@ -104,7 +102,7 @@ BEGIN
 	CONTROL	"With details of subdepartments?", BALANCEREPORT_WHODETAILS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 202, 116, 120, 12
 	CONTROL	"With Numbers of all items", BALANCEREPORT_NUMBERS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 148, 97, 12
 	CONTROL	"With explanation", BALANCEREPORT_IND_EXPLANATION, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 85, 166, 80, 11
-	CONTROL	"Condense", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 80, 11
+	CONTROL	"Skip unused accounts", BALANCEREPORT_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 183, 95, 11
 	CONTROL	"With account statements", BALANCEREPORT_IND_ACCSTMNT, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 85, 200, 99, 11
 	CONTROL	"OK", BALANCEREPORT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 348, 7, 53, 12
 	CONTROL	"Cancel", BALANCEREPORT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 348, 31, 54, 12
@@ -177,7 +175,7 @@ METHOD AddSubBal(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array, lev
 		ENDIF
 	ENDDO
 RETURN nCurrentRec
-METHOD AddSubDep(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array,d_dep ref array,d_parentdep ref array,d_indmaindep ref array,d_depname ref array,d_acc ref array,d_netasset ref array,d_netnum ref array) as int CLASS BalanceReport
+METHOD AddSubDep(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array,d_dep ref array,d_parentdep ref array,d_indmaindep ref array,d_depname ref array,d_acc ref array,d_netasset ref array,d_netnum ref array,d_active ref array) as int CLASS BalanceReport
 	* Find subdepartments and add to arrays with departments
 	local oDep as SQLSelect
 	LOCAL nChildRec	as int
@@ -185,12 +183,12 @@ METHOD AddSubDep(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array,d_de
 	local lFirst		as logic
 	
 	if Empty(aItem)
-		oDep:=SQLSelect{"SELECT d.depid as itemid,d.parentdep as parentid,d.descriptn as description,d.deptmntnbr as number,d.netasset,an.balitemid "+;
+		oDep:=SQLSelect{"SELECT d.depid as itemid,d.parentdep as parentid,d.descriptn as description,d.deptmntnbr as number,d.netasset,cast(d.active as unsigned) as active,an.balitemid "+;
 		"FROM `department` d left join account an on(an.accid=d.netasset) order by d.deptmntnbr",oConn}
 		if oDep:reccount>0
 			do while !oDep:EoF
-				AAdd(aItem,{oDep:itemid,oDep:parentid,oDep:description,oDep:number,oDep:NETASSET,oDep:balitemid}) 
-				//           1                 2           3                4             5              6         
+				AAdd(aItem,{oDep:itemid,oDep:parentid,oDep:description,oDep:number,oDep:NETASSET,oDep:balitemid,ConL(oDep:active)}) 
+				//           1                 2           3                4             5              6                  7
 				oDep:Skip()
 			enddo
 		endif
@@ -216,9 +214,10 @@ METHOD AddSubDep(ParentNum:=0 as int, nCurrentRec:=0 as int,aItem ref array,d_de
 	AAdd(d_acc,{})
 	AAdd(d_netasset,aItem[nCurrentRec,5])
 	AAdd(d_netnum,aItem[nCurrentRec,6])
+	AAdd(d_active,aItem[nCurrentRec,7])
 	do WHILE true	
 		// add child records of this sub department:
-		nChildRec:=self:AddSubDep(nCurNum,nChildRec,@aItem,@d_dep,@d_parentdep,@d_indmaindep,@d_depname,@d_acc,@d_netasset,@d_netnum)
+		nChildRec:=self:AddSubDep(nCurNum,nChildRec,@aItem,@d_dep,@d_parentdep,@d_indmaindep,@d_depname,@d_acc,@d_netasset,@d_netnum,@d_active)
 		IF Empty(nChildRec)
 			exit
 		ENDIF
@@ -286,8 +285,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		d_PLcre:={},;
 		d_acc:={},;
 		d_netasset:={},;
+		d_active:={},;
 		d_netnum:={} as array
-
 	* Arrays for values per department per balance item:
 	LOCAL rd_BalPrvYr:={},;  // two dimenional array: X: department, Y: balance item
 	rd_BalPrvYrYtD:={},;  // idem
@@ -398,9 +397,10 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		AAdd(d_depname,if(self:Numbers,"0"+self:TAB,"")+sEntity+" "+AllTrim(SLAND))
 		AAdd(d_acc,{})
 		AAdd(d_netasset,Val(SKAP))
+		AAdd(d_active,true)
 		AAdd(d_netnum,self:netassBalId)
 	ELSE
-		oDep:=SQLSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,a.balitemid from department d left join account a on (a.accid=d.netasset) where depid='"+Str(self:WhoFrom,-1)+"'",oConn}
+		oDep:=SqlSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,a.balitemid,cast(d.active as unsigned) as active from department d left join account a on (a.accid=d.netasset) where depid='"+Str(self:WhoFrom,-1)+"'",oConn}
 		if oDep:reccount>0
 			AAdd(d_dep,oDep:DepId)
 			AAdd(d_parentdep,oDep:ParentDep)
@@ -408,6 +408,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 			AAdd(d_depname,if(self:Numbers,AllTrim(oDep:DEPTMNTNBR)+self:TAB,"")+AllTrim(oDep:Descriptn))
 			AAdd(d_acc,{})
 			AAdd(d_netasset,oDep:NETASSET)
+			AAdd(d_active,ConL(oDep:active))
 			AAdd(d_netnum,oDep:balitemid)
 		endif
 	ENDIF
@@ -415,7 +416,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	* Add all subdepartments down from self:WhoFrom:  
 	aItem:={}
 	DO WHILE TRUE
-		nCurRec:=self:AddSubDep(self:WhoFrom,nCurRec,@aItem,@d_dep,@d_parentdep,@d_indmaindep,@d_depname,@d_acc,@d_netasset,@d_netnum)
+		nCurRec:=self:AddSubDep(self:WhoFrom,nCurRec,@aItem,@d_dep,@d_parentdep,@d_indmaindep,@d_depname,@d_acc,@d_netasset,@d_netnum,@d_active)
 		IF Empty(nCurrec)
 			EXIT
 		ENDIF
@@ -424,7 +425,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	DepCount:=Len(d_dep)
 	d_PLdeb:=AReplicate(0,DepCount)
 	d_PLcre:=AReplicate(0,DepCount)
-	d_PrfLssPrYr:=AReplicate(0,DepCount)
+	d_PrfLssPrYr:=AReplicate(0,DepCount) 
 
 	* Fill all requested balance items:
 	IF !Empty(self:WhatFrom) 
@@ -608,7 +609,7 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	SELF:SubDepartment(1,0,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 		r_cat,@r_balpryrtot,@r_balPrYrYtD,@r_balPrvPer,@r_balPer,r_indmain,r_parentid,;
 		r_heading,r_footer,r_balnbr,r_balid,@r_bud,@r_budper,@r_budytd,;
-		rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,rd_BalPer,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+		rd_BalPrvYr,rd_BalPrvYrYtD,rd_BalPrvPer,rd_BalPer,rd_bud,rd_budper,rd_budytd,@iLine,@iPage,d_active)
 
 	* Printing explanation details per account:      
 	IF self:ind_explanation .and. (self:WhatDetails .or. self:WhoDetails)
@@ -635,6 +636,9 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 		ENDIF
 		FOR i:= 1 to self:DepCount
 			Dep_Ptr:=d_sort[i,2]
+			if !d_active[Dep_Ptr]
+				loop         // skip inactive and unused account
+			endif
 			accnts:=d_acc[Dep_Ptr]    //accounts from d_acc: {balsoort+Pad(cBalName,25)+Str(oAcc:balitemid,11,0)+Str(oAcc:recno,11,0)+"P")
 			ASort(accnts)
 			m_balId:=Space(11)
@@ -743,7 +747,8 @@ METHOD BalancePrint(FileInit:="" as string) as void pascal CLASS BalanceReport
 	d_PLcre:= null_array
 	d_PrfLssPrYr:= null_array
 	d_acc:= null_array
-	d_netasset:= null_array
+	d_netasset:= null_array 
+	d_active:=null_array
 	d_netnum:= null_array
 	rd_BalPrvYr:= null_array
 	rd_BalPrvYrYtD:= null_array
@@ -1018,8 +1023,8 @@ oDCind_explanation := CheckBox{SELF,ResourceID{BALANCEREPORT_IND_EXPLANATION,_Ge
 oDCind_explanation:HyperLabel := HyperLabel{#ind_explanation,"With explanation",NULL_STRING,NULL_STRING}
 
 oDClCondense := CheckBox{SELF,ResourceID{BALANCEREPORT_LCONDENSE,_GetInst()}}
-oDClCondense:HyperLabel := HyperLabel{#lCondense,"Condense",NULL_STRING,NULL_STRING}
-oDClCondense:TooltipText := "Suppress zero balanced accounts"
+oDClCondense:HyperLabel := HyperLabel{#lCondense,"Skip unused accounts",NULL_STRING,NULL_STRING}
+oDClCondense:TooltipText := "Suppress zero balanced accounts in explanation"
 
 oDCind_accstmnt := CheckBox{SELF,ResourceID{BALANCEREPORT_IND_ACCSTMNT,_GetInst()}}
 oDCind_accstmnt:HyperLabel := HyperLabel{#ind_accstmnt,"With account statements",NULL_STRING,NULL_STRING}
@@ -1211,7 +1216,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 	LOCAL regel as STRING
 	LOCAL mvjsaltot,mvrgsal,msal,mbalprvyrYtD,vjtm_perc as FLOAT
 	LOCAL mtmsal,vrbr_perc,per_perc,tm_perc as FLOAT
-	LOCAL i,Hlevel,bal_ptr,levelrest as int
+	LOCAL i,Hlevel,Bal_Ptr,levelrest,nHeadlen:=Len(self:HeadingCache) as int
 	Default(@pr_inc,0)
 	Default(@pr_exp,0)
 
@@ -1230,7 +1235,7 @@ METHOD prAmounts(pr_cat,pr_salvjtot,pr_balprvyrYtD,pr_salvrg,pr_sal,;
 
 	* Print first preceding headings:
 	// test skip page for complete heading: 
-	self:oReport:PrintLine(@iLine,@iPage,nil,self:mainheading,Len(self:HeadingCache))
+	self:oReport:PrintLine(@iLine,@iPage,'',self:mainheading,nHeadlen)
 	FOR i:=1 to Len(self:HeadingCache)
 		Hlevel:=self:HeadingCache[i,1]
 		Bal_Ptr:=self:HeadingCache[i,2]
@@ -1391,7 +1396,7 @@ endif
 RETURN(Heading)
 METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as array,d_depname as array,d_parentdep as array,d_dep as array,;
 		r_cat as array,r_balpryrtot ref array,r_balPrYrYtD ref array,r_balPrvPer ref array,r_balPer ref array,r_indmain as array,r_parentid as array,r_heading as array,r_footer as array,r_bud ref array,r_budper ref array,r_budytd ref array,r_balid as array,;
-		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int) as void pascal CLASS BalanceReport
+		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int,DepUnused ref logic,d_active as array) as void pascal CLASS BalanceReport
 	* Process all balance items FOR given department: p_depptr
 	LOCAL TopWhatPtr AS INT
 	LOCAL aTot:={},aTotprv:={} AS ARRAY  // arrays with: type, level, amount for !Whatdetails .and. WhoDetails
@@ -1435,7 +1440,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 				self:oReport:Beginreport:=self:Beginreport
 			ENDIF
 			TopWhatPtr:=self:SUBBALITEM(TopWhatPtr,0,p_depptr,lDirect,dLevel,r_parentid,r_indmain,r_heading,r_footer,@r_balpryrtot,;
-				@r_balPrYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage)
+				@r_balPrYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage,@DepUnused,d_active)
 		ENDDO
 	ELSE
 		self:mainheading:=self:prheading(self:cSummary,r_cat[1],p_depptr,,d_dep,d_parentdep,d_depname,;
@@ -1446,7 +1451,7 @@ METHOD ProcessDepBal(p_depptr as int,lDirect as logic, dLevel as int,d_netnum as
 			oReport:Beginreport:=SELF:BeginReport
 		ENDIF
 		self:SUBBALITEM(1,0,p_depptr,lDirect,dLevel,r_parentid,r_indmain,r_heading,r_footer,@r_balpryrtot,;
-			@r_balPrYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage)
+			@r_balPrYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage,@DepUnused,d_active)
 	ENDIF
 	RETURN
 METHOD prtotaal(tot_soort,iLine,iPage) CLASS BalanceReport
@@ -1496,7 +1501,7 @@ METHOD RegDepartment(myNum,myItemName) CLASS BalanceReport
 METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dLevel as int,r_parentid as array,r_indmain as array,r_heading as array,;
 		r_footer as array,r_balpryrtot ref array,r_balPrvYrYtD ref array,r_balPrvPer ref array,r_balPer ref array,r_bud ref array,r_budper ref array,;
 		r_budytd ref array,r_cat as array,r_balid as array,d_netnum as array,d_depname as array,aTot ref array,aTotprv ref array,;
-		iLine ref int,iPage ref int) as int CLASS BalanceReport
+		iLine ref int,iPage ref int,DepUnused ref logic,d_active as array) as int CLASS BalanceReport
 	* Recursive processing of a balance item with its subbalance items
 	*
 	LOCAL TotalFound,SubBalPtr, CachePtr,kap_num AS INT
@@ -1547,7 +1552,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 				EXIT
 			ELSE
 				SubBalPtr:=self:SUBBALITEM(SubBalPtr,level+1,Dep_Ptr,lDirect,dLevel,r_parentid,r_indmain,r_heading,r_footer,@r_balpryrtot,;
-					@r_balPrvYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage)
+					@r_balPrvYrYtD,@r_balPrvPer,@r_balPer,@r_bud,@r_budper,@r_budytd,r_cat,r_balid,d_netnum,d_depname,@aTot,@aTotprv,@iLine,@iPage,@DepUnused,d_active)
 				IF !IsNil(r_balPer[SubBalPtr])
 					TotalFound:=TotalFound+1
 					r_balpryrtot[bal_ptr]:=if(Empty(r_balpryrtot[bal_ptr]),0.00,r_balpryrtot[bal_ptr])+r_balpryrtot[SubBalPtr]
@@ -1595,7 +1600,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 			ENDIF
 		ENDIF
 	ENDIF
-	IF self:showopeningclosingfund .or.!self:WhatDetails
+	IF self:showopeningclosingfund .or.!self:WhatDetails .or. self:WhoDetails
 		// add for summary lines for BTA: opening fund balance, end closing balance :
 		m_soort:=Upper(r_cat[Bal_Ptr])
 		IF !IsNil(r_balPer[Bal_Ptr]).and.!Empty(r_balPer[Bal_Ptr])
@@ -1604,7 +1609,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 		IF !IsNil(r_balpryrtot[Bal_Ptr]).and.!Empty(r_balpryrtot[Bal_Ptr])
 			AAdd(aTotprv,{m_soort,level,r_balpryrtot[Bal_Ptr]})
 		ENDIF
-// 		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
+		// 		IF level==0 .and. (!Empty(self:WhatFrom).or.Bal_Ptr>1) && second time "down"in tree: surplus income or liabilities
 		IF level==0 .and. (!Empty(self:WhatFrom).or.m_soort==Income .or. m_soort==Expense ) && second time "down"in tree: surplus income or liabilities
 			kap_num:=AScan(r_balid, d_netnum[Dep_Ptr])
 			clbalvj:=0
@@ -1654,7 +1659,7 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 						oReport:PrintLine(@iLine,@iPage,self:BoldOn+iif(clbal<0,RedOn,GreenOn)+Pad(iif(clbal<0,self:cNegative,self:cPositive)+Space(1)+self:cClosingBal,BalColWidth+iif(self:SimpleDepStmnt,2,46))+Str(clbal,11,DecAantal)+iif(clbal<0,RedOff,GreenOff)+BoldOff,self:mainheading,0)
 					ENDIF
 				ENDIF
-				IF !SELF:showopeningclosingfund
+				IF !self:showopeningclosingfund 
 					// determine highest level Income and expenses:
 					fAmnt:=SELF:BalFishTot("I",aTot)
 					fInc:=fAmnt[1]
@@ -1666,10 +1671,15 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 						clbal:=Round(fAmnt[1] - fAmnt[2] + surplus, DecAantal)
 						fAmnt:=self:BalFishTot("B",aTotprv)
 						clbalvj:=Round(fAmnt[1] - fAmnt[2] + iif( self:PrvYearNotClosed,surplusvj,0),DecAantal)
+					endif 
+					if !self:WhatDetails
+						pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,self:cDirectOn+" ","")+d_depname[Dep_Ptr] 
+						self:prAmounts("SD",clbalvj,surplusvj,;
+							surplus,clbal,r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
+					endif 
+					if Dep_Ptr>0 .and.self:WhoDetails .and. clbal=0 .and. fInc=0 .and. fExp=0 .and.!d_active[Dep_Ptr] 
+						DepUnused:=true
 					endif
-					pr_oms:=if(dLevel=0,"",Space(dLevel*2))+if(lDirect,self:cDirectOn+" ","")+d_depname[Dep_Ptr] 
-					self:prAmounts("SD",clbalvj,surplusvj,;
-						surplus,clbal,r_bud[Bal_Ptr],r_budper[Bal_Ptr],r_budytd[Bal_Ptr],level,pr_oms,r_heading,fInc,fExp,@iLine,@iPage)
 				ENDIF
 			ENDIF
 		ENDIF
@@ -1678,11 +1688,17 @@ METHOD SUBBALITEM(Bal_Ptr as int,level as int,Dep_Ptr as int,lDirect as logic,dL
 METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep as array,d_depname as array,d_parentdep as array,d_dep as array,;
 		r_cat as array,r_balpryrtot ref array,r_balPrYrYtD ref array,r_balPrvPer ref array,r_balPer ref array,r_indmain as array,r_parentid as array,;
 		r_heading as array,r_footer as array,r_balnbr as array,r_balid as array,r_bud ref array,r_budper ref array,r_budytd ref array,;
-		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int) as int CLASS BalanceReport
+		rd_salvjtot as array,rd_BalPrvYrYtD as array,rd_salvrg as array,rd_salper as array,rd_bud as array,rd_budper as array,rd_budytd as array,iLine ref int,iPage ref int,d_active as array) as int CLASS BalanceReport
 	* Recursive processing of a department with its subdeparments
 	*
 	LOCAL TotalFound,subDepPtr AS INT
-	LOCAL TopWhatPtr AS INT
+	LOCAL TopWhatPtr as int
+	local nBeginDep:=Len(self:oReport:oPrintJob:aFIFO) as int // start of print aFiFo at beginning of department 
+	local DepUnused:=false as logic 
+
+	if self:WhoDetails
+		self:oReport:lSuspend:=true  // suspend output to file
+	endif			
 	IF d_indmaindep[p_depptr]
 		IF self:WhoDetails .and. (Empty(self:maxwholevel) .or. Val(self:maxwholevel)>level)
 			IF !self:WhatDetails
@@ -1696,7 +1712,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 				* Process directly recorded amounts:
 				SELF:ProcessDepBal(p_depptr,TRUE,level+1,d_netnum,d_depname,d_parentDep,d_dep,;
 					r_cat,@r_balpryrtot,@r_balPrYrYtD,@r_balPrvPer,@r_balPer,r_indmain,r_parentid,r_heading,r_footer,@r_bud,@r_budper,@r_budytd,r_balid,;
-					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage,@DepUnused,d_active)
 				IF !self:WhatDetails
 					TotalFound:=1
 				ENDIF
@@ -1717,7 +1733,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 				subDepPtr:=SELF:SubDepartment(subDepPtr,level+1,d_netnum,d_indmaindep,d_depname,d_parentDep,d_dep,;
 					r_cat,@r_balpryrtot,@r_balPrYrYtD,@r_balPrvPer,@r_balPer,r_indmain,r_parentid,;
 					r_heading,r_footer,r_balnbr,r_balid,@r_bud,@r_budper,@r_budytd,;
-					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage,d_active)
 				* consolidate values of subdepartment into itself:
 				FOR TopWhatPtr:= 1 to self:BalCount
 					IF !IsNil(rd_salvjtot[subDepPtr,TopWhatPtr])
@@ -1771,7 +1787,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 		ENDDO
 	ENDIF
 	IF self:WhoDetails .and. (Empty(self:maxwholevel) .or. Val(self:maxwholevel)>level) .or.p_depptr==1
-// 		IF self:WhoDetails .and. !self:WhatDetails
+		// 		IF self:WhoDetails .and. !self:WhatDetails
 		IF !self:WhatDetails
 			IF d_indmaindep[p_depptr].and. TotalFound>1
 				IF level=0
@@ -1782,7 +1798,7 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 			IF (!d_indmaindep[p_depptr] .or. TotalFound>1)
 				SELF:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
 					r_cat,@r_balpryrtot,@r_balPrYrYtD,@r_balPrvPer,@r_balPer,r_indmain,r_parentid,r_heading,r_footer,@r_bud,@r_budper,@r_budytd,r_balid,;
-					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+					rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage,@DepUnused,d_active)
 			ENDIF
 			IF TotalFound>1 && extra space after total
 				oReport:PrintLine(@iLine,@iPage,' ',self:mainheading,0)
@@ -1790,8 +1806,17 @@ METHOD SubDepartment(p_depptr as int,level as int,d_netnum as array,d_indmaindep
 		ELSE
 			SELF:ProcessDepBal(p_depptr,FALSE,level,d_netnum,d_depname,d_parentDep,d_dep,;
 				r_cat,@r_balpryrtot,@r_balPrYrYtD,@r_balPrvPer,@r_balPer,r_indmain,r_parentid,r_heading,r_footer,@r_bud,@r_budper,@r_budytd,r_balid,;
-				rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage)
+				rd_salvjtot,rd_BalPrvYrYtD,rd_salvrg,rd_salper,rd_bud,rd_budper,rd_budytd,@iLine,@iPage,@DepUnused,d_active)
 		ENDIF
+		if DepUnused
+			ASize(self:oReport:oPrintJob:aFIFO,nBeginDep)
+		else
+			// make department active:
+			d_active[p_depptr]:=true  // for explanation
+			// print suspended lines:
+			self:oReport:lSuspend:=false  // no longer suspend output to file
+			self:oReport:PrintLine(@iLine,@iPage,null_string,{},0)
+		endif
 	ENDIF
 	RETURN(p_depptr)
 METHOD SubNetDepartment(p_depptr as int,d_parentdep as array,d_dep as array,d_PLdeb ref array,d_PLcre ref array,d_netnum as array,;
@@ -2645,7 +2670,7 @@ METHOD RegDepartment(MyNum:='' as string,ItemName:="" as string) as void pascal 
 		depnr:=0
 		deptxt:=sEntity+" "+sLand
 	ELSE
-		oDep:=SQLSelect{"select deptmntnbr,depid,descriptn from department where depid="+MyNum,oConn}
+		oDep:=SQLSelect{"select deptmntnbr,depid,descriptn from department where active=1 and depid="+MyNum,oConn}
 		IF oDep:Reccount>0
 			depnr:=oDep:DEPID
 			deptxt:=AllTrim(oDep:deptmntnbr)+":"+oDep:DESCRIPTN 
@@ -5559,7 +5584,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 	*	Footnotes for special messages:
 	IF NoteNumber > 0
 		RowSav:=nRow
-		oReport:PrintLine(@nRow,@nPage,,aHeading,if(NoteNumber>10,12,NoteNumber+2))
+		oReport:PrintLine(@nRow,@nPage,'',aHeading,long(_cast,if(NoteNumber>10,12,NoteNumber+2)))
 		IF nRow=RowSav
 			oReport:PrintLine(@nRow,@nPage,' ',aHeading)
 			oReport:PrintLine(@nRow,@nPage,' ',aHeading)
@@ -5571,7 +5596,7 @@ METHOD GiftsOverview(ReportYear as int,ReportMonth as int,Footnotes as string, a
 		NEXT
 	ENDIF
 	RowSav:=nRow
-	oReport:PrintLine(@nRow,@nPage,,aHeading,7)
+	oReport:PrintLine(@nRow,@nPage,'',aHeading,7)
 	IF nRow=RowSav
 		oReport:PrintLine(@nRow,@nPage,' ',aHeading)
 		oReport:PrintLine(@nRow,@nPage,' ',aHeading)
@@ -6272,7 +6297,7 @@ STATIC DEFINE TAXREPORT_FIXEDTEXT2 := 104
 STATIC DEFINE TAXREPORT_OKBUTTON := 102 
 STATIC DEFINE TAXREPORT_THRESHOLD := 105 
 STATIC DEFINE TAXREPORT_YEARTAX := 100 
-resource TrialBalance DIALOGEX  20, 18, 266, 153
+RESOURCE TrialBalance DIALOGEX  21, 19, 267, 153
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
 BEGIN
@@ -6281,7 +6306,7 @@ BEGIN
 	CONTROL	"", TRIALBALANCE_YEARTRIAL, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 72, 44, 88, 72
 	CONTROL	"", TRIALBALANCE_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 72, 64, 53, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", TRIALBALANCE_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 182, 64, 54, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Condense", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
+	CONTROL	"Skip unused accounts", TRIALBALANCE_LCONDENSE, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 72, 83, 80, 11
 	CONTROL	"OK", TRIALBALANCE_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 184, 96, 54, 12
 	CONTROL	"Cancel", TRIALBALANCE_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 184, 116, 53, 12
 	CONTROL	"Financial year", TRIALBALANCE_FIXEDTEXT1, "Static", WS_CHILD, 16, 44, 53, 12
@@ -6290,20 +6315,20 @@ BEGIN
 	CONTROL	"Department:", TRIALBALANCE_FIXEDTEXT4, "Static", WS_CHILD, 16, 22, 43, 13
 END
 
-class TrialBalance inherit DataWindowMine 
+CLASS TrialBalance INHERIT DataWindowMine 
 
-	protect oDCmDepartment as SINGLELINEEDIT
-	protect oCCDepButton as PUSHBUTTON
-	protect oDCYearTrial as COMBOBOX
-	protect oDCMonthStart as SINGLELINEEDIT
-	protect oDCMonthEnd as SINGLELINEEDIT
-	protect oDClCondense as CHECKBOX
-	protect oCCOKButton as PUSHBUTTON
-	protect oCCCancelButton as PUSHBUTTON
-	protect oDCFixedText1 as FIXEDTEXT
-	protect oDCFixedText2 as FIXEDTEXT
-	protect oDCFixedText3 as FIXEDTEXT
-	protect oDCFixedText4 as FIXEDTEXT
+	PROTECT oDCmDepartment AS SINGLELINEEDIT
+	PROTECT oCCDepButton AS PUSHBUTTON
+	PROTECT oDCYearTrial AS COMBOBOX
+	PROTECT oDCMonthStart AS SINGLELINEEDIT
+	PROTECT oDCMonthEnd AS SINGLELINEEDIT
+	PROTECT oDClCondense AS CHECKBOX
+	PROTECT oCCOKButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCFixedText1 AS FIXEDTEXT
+	PROTECT oDCFixedText2 AS FIXEDTEXT
+	PROTECT oDCFixedText3 AS FIXEDTEXT
+	PROTECT oDCFixedText4 AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartment 
@@ -6407,72 +6432,73 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TrialBalance
 METHOD GetBalYears() CLASS TrialBalance
 	// get array with balance years
 	RETURN GetBalYears()
-method Init(oWindow,iCtlID,oServer,uExtra) class TrialBalance 
+METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS TrialBalance 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
 
-super:Init(oWindow,ResourceID{"TrialBalance",_GetInst()},iCtlID)
+SUPER:Init(oWindow,ResourceID{"TrialBalance",_GetInst()},iCtlID)
 
-oDCmDepartment := SingleLineEdit{self,ResourceID{TRIALBALANCE_MDEPARTMENT,_GetInst()}}
-oDCmDepartment:HyperLabel := HyperLabel{#mDepartment,null_string,"From Who is it: Department",null_string}
+oDCmDepartment := SingleLineEdit{SELF,ResourceID{TRIALBALANCE_MDEPARTMENT,_GetInst()}}
+oDCmDepartment:HyperLabel := HyperLabel{#mDepartment,NULL_STRING,"From Who is it: Department",NULL_STRING}
 oDCmDepartment:TooltipText := "Enter number or name of required Top of department structure"
 
-oCCDepButton := PushButton{self,ResourceID{TRIALBALANCE_DEPBUTTON,_GetInst()}}
-oCCDepButton:HyperLabel := HyperLabel{#DepButton,"v","Browse in Departments",null_string}
+oCCDepButton := PushButton{SELF,ResourceID{TRIALBALANCE_DEPBUTTON,_GetInst()}}
+oCCDepButton:HyperLabel := HyperLabel{#DepButton,"v","Browse in Departments",NULL_STRING}
 oCCDepButton:TooltipText := "Browse in Departments"
 
-oDCYearTrial := ComboBox{self,ResourceID{TRIALBALANCE_YEARTRIAL,_GetInst()}}
-oDCYearTrial:FillUsing(self:GetBalYears( ))
-oDCYearTrial:HyperLabel := HyperLabel{#YearTrial,null_string,null_string,null_string}
+oDCYearTrial := combobox{SELF,ResourceID{TRIALBALANCE_YEARTRIAL,_GetInst()}}
+oDCYearTrial:FillUsing(Self:GetBalYears( ))
+oDCYearTrial:HyperLabel := HyperLabel{#YearTrial,NULL_STRING,NULL_STRING,NULL_STRING}
 
-oDCMonthStart := SingleLineEdit{self,ResourceID{TRIALBALANCE_MONTHSTART,_GetInst()}}
-oDCMonthStart:HyperLabel := HyperLabel{#MonthStart,null_string,null_string,null_string}
-oDCMonthStart:FieldSpec := MonthW{}
+oDCMonthStart := SingleLineEdit{SELF,ResourceID{TRIALBALANCE_MONTHSTART,_GetInst()}}
+oDCMonthStart:HyperLabel := HyperLabel{#MonthStart,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCMonthStart:FieldSpec := MONTHW{}
 
-oDCMonthEnd := SingleLineEdit{self,ResourceID{TRIALBALANCE_MONTHEND,_GetInst()}}
-oDCMonthEnd:HyperLabel := HyperLabel{#MonthEnd,null_string,null_string,null_string}
-oDCMonthEnd:FieldSpec := MonthW{}
+oDCMonthEnd := SingleLineEdit{SELF,ResourceID{TRIALBALANCE_MONTHEND,_GetInst()}}
+oDCMonthEnd:HyperLabel := HyperLabel{#MonthEnd,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCMonthEnd:FieldSpec := MONTHW{}
 
-oDClCondense := CheckBox{self,ResourceID{TRIALBALANCE_LCONDENSE,_GetInst()}}
-oDClCondense:HyperLabel := HyperLabel{#lCondense,"Condense",null_string,null_string}
+oDClCondense := CheckBox{SELF,ResourceID{TRIALBALANCE_LCONDENSE,_GetInst()}}
+oDClCondense:HyperLabel := HyperLabel{#lCondense,"Skip unused accounts",NULL_STRING,NULL_STRING}
+oDClCondense:TooltipText := "ignore accounts with no transactions and no balance in the financial year"
 
-oCCOKButton := PushButton{self,ResourceID{TRIALBALANCE_OKBUTTON,_GetInst()}}
-oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",null_string,null_string}
+oCCOKButton := PushButton{SELF,ResourceID{TRIALBALANCE_OKBUTTON,_GetInst()}}
+oCCOKButton:HyperLabel := HyperLabel{#OKButton,"OK",NULL_STRING,NULL_STRING}
 
-oCCCancelButton := PushButton{self,ResourceID{TRIALBALANCE_CANCELBUTTON,_GetInst()}}
-oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",null_string,null_string}
+oCCCancelButton := PushButton{SELF,ResourceID{TRIALBALANCE_CANCELBUTTON,_GetInst()}}
+oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 
-oDCFixedText1 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT1,_GetInst()}}
-oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Financial year",null_string,null_string}
+oDCFixedText1 := FixedText{SELF,ResourceID{TRIALBALANCE_FIXEDTEXT1,_GetInst()}}
+oDCFixedText1:HyperLabel := HyperLabel{#FixedText1,"Financial year",NULL_STRING,NULL_STRING}
 
-oDCFixedText2 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT2,_GetInst()}}
-oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"From month:",null_string,null_string}
+oDCFixedText2 := FixedText{SELF,ResourceID{TRIALBALANCE_FIXEDTEXT2,_GetInst()}}
+oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"From month:",NULL_STRING,NULL_STRING}
 
-oDCFixedText3 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT3,_GetInst()}}
-oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"To month:",null_string,null_string}
+oDCFixedText3 := FixedText{SELF,ResourceID{TRIALBALANCE_FIXEDTEXT3,_GetInst()}}
+oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"To month:",NULL_STRING,NULL_STRING}
 
-oDCFixedText4 := FixedText{self,ResourceID{TRIALBALANCE_FIXEDTEXT4,_GetInst()}}
-oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Department:",null_string,null_string}
+oDCFixedText4 := FixedText{SELF,ResourceID{TRIALBALANCE_FIXEDTEXT4,_GetInst()}}
+oDCFixedText4:HyperLabel := HyperLabel{#FixedText4,"Department:",NULL_STRING,NULL_STRING}
 
-self:Caption := "Trial Balance"
-self:HyperLabel := HyperLabel{#TrialBalance,"Trial Balance",null_string,null_string}
-self:EnableStatusBar(true)
-self:PreventAutoLayout := true
+SELF:Caption := "Trial Balance"
+SELF:HyperLabel := HyperLabel{#TrialBalance,"Trial Balance",NULL_STRING,NULL_STRING}
+SELF:EnableStatusBar(True)
+SELF:PreventAutoLayout := True
 
 if !IsNil(oServer)
-	self:Use(oServer)
-endif
+	SELF:Use(oServer)
+ENDIF
 
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
 
-access lCondense() class TrialBalance
-return self:FIELDGET(#lCondense)
+ACCESS lCondense() CLASS TrialBalance
+RETURN SELF:FieldGet(#lCondense)
 
-assign lCondense(uValue) class TrialBalance
-self:FIELDPUT(#lCondense, uValue)
-return lCondense := uValue
+ASSIGN lCondense(uValue) CLASS TrialBalance
+SELF:FieldPut(#lCondense, uValue)
+RETURN uValue
 
 METHOD ListBoxSelect(oControlEvent) CLASS TrialBalance
 	LOCAL oControl as CONTROL
@@ -6489,26 +6515,26 @@ METHOD ListBoxSelect(oControlEvent) CLASS TrialBalance
 	ENDIF
 	RETURN nil
 
-access mDepartment() class TrialBalance
-return self:FIELDGET(#mDepartment)
+ACCESS mDepartment() CLASS TrialBalance
+RETURN SELF:FieldGet(#mDepartment)
 
-assign mDepartment(uValue) class TrialBalance
-self:FIELDPUT(#mDepartment, uValue)
-return mDepartment := uValue
+ASSIGN mDepartment(uValue) CLASS TrialBalance
+SELF:FieldPut(#mDepartment, uValue)
+RETURN uValue
 
-access MonthEnd() class TrialBalance
-return self:FIELDGET(#MonthEnd)
+ACCESS MonthEnd() CLASS TrialBalance
+RETURN SELF:FieldGet(#MonthEnd)
 
-assign MonthEnd(uValue) class TrialBalance
-self:FIELDPUT(#MonthEnd, uValue)
-return MonthEnd := uValue
+ASSIGN MonthEnd(uValue) CLASS TrialBalance
+SELF:FieldPut(#MonthEnd, uValue)
+RETURN uValue
 
-access MonthStart() class TrialBalance
-return self:FIELDGET(#MonthStart)
+ACCESS MonthStart() CLASS TrialBalance
+RETURN SELF:FieldGet(#MonthStart)
 
-assign MonthStart(uValue) class TrialBalance
-self:FIELDPUT(#MonthStart, uValue)
-return MonthStart := uValue
+ASSIGN MonthStart(uValue) CLASS TrialBalance
+SELF:FieldPut(#MonthStart, uValue)
+RETURN uValue
 
 METHOD OKButton( ) CLASS TrialBalance
 LOCAL perlengte,YEARSTART,YEAREND, TrialYear,BalMonth as int
@@ -6712,10 +6738,10 @@ self:SetTexts()
 		MonthStart := Month(Today())
 		MonthEnd := Month(Today())
 	ENDIF	
-	lCondense:=FALSE
 	mDepartment:="0:"+sEntity+" "+sLand
-	cCurDep:=mDepartment
-	WhoFrom:=Space(11)
+	self:cCurDep:=mDepartment
+	self:WhoFrom:=Space(11)
+	self:lCondense:=true
 	IF !Departments
 		oDCFixedText4:Hide()
 		oCCDepButton:Hide()
@@ -6748,12 +6774,12 @@ METHOD RegDepartment(myNum,myItemName) CLASS TrialBalance
 	ENDIF
 RETURN
 
-access YearTrial() class TrialBalance
-return self:FIELDGET(#YearTrial)
+ACCESS YearTrial() CLASS TrialBalance
+RETURN SELF:FieldGet(#YearTrial)
 
-assign YearTrial(uValue) class TrialBalance
-self:FIELDPUT(#YearTrial, uValue)
-return YearTrial := uValue
+ASSIGN YearTrial(uValue) CLASS TrialBalance
+SELF:FieldPut(#YearTrial, uValue)
+RETURN uValue
 
 STATIC DEFINE TRIALBALANCE_CANCELBUTTON := 107 
 STATIC DEFINE TRIALBALANCE_DEPBUTTON := 101 
