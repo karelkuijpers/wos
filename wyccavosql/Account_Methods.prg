@@ -516,12 +516,13 @@ RETURN
 METHOD RegDepartment(myNum,myItemName) CLASS EditAccount
 	local oDep as SQLSelect
 	local cError as string
+	local lActive:=self:mActive as logic
 	Default(@myItemName,null_string)
 	Default(@myNum,null_string) 
 	
 	IF !myNum==self:mDep
 		if !Empty(self:mAccId)
-			if !Empty(cError:=ValidateDepTransfer(ConS(ConI(myNum)),self:mAccId))
+			if !Empty(cError:=ValidateDepTransfer(ConS(ConI(myNum)),self:mAccId,,@lActive))
 				ErrorBox{self,cError}:show()
 				return
 			endif
@@ -567,6 +568,7 @@ METHOD ValidateAccount() CLASS EditAccount
 	LOCAL lValid := true as LOGIC
 	LOCAL cError,cLastname as STRING   
 	local cGiftsAccs as string
+	local lActive:=self:mActive as logic
 	local oSel as SQLSelect
 	self:mAccNumber:=AllTrim(self:mAccNumber)
 	IF Empty(self:mAccNumber)
@@ -602,10 +604,11 @@ METHOD ValidateAccount() CLASS EditAccount
 			lValid:=FALSE
 		ENDIF
 		if lValid
-			cError:=ValidateDepTransfer(self:mDep,self:mAccId,ConI(self:mGIFTALWD))
+			cError:=ValidateDepTransfer(self:mDep,self:mAccId,ConI(self:mGIFTALWD),@lActive)
 			IF !Empty(cError)
 				lValid:=FALSE
-			ENDIF		
+			ENDIF
+			self:mActive:=lActive
 		endif
 	ENDIF
 	if lValid .and.self:lMemberDep .and. !Empty(cLastname)
