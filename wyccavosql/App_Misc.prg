@@ -4434,7 +4434,7 @@ Function ValidateAccTransfer (cParentId as string,mAccId as string) as string
 	ENDIF
 	// ENDIF
 	RETURN cError
-Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int) as string 
+Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=2 as int,lActive ref logic) as string 
 	* Check if transfer of current account mAccId to another department with identification cDepartment is allowed
 	* Returns Error text if not allowed
 
@@ -4480,7 +4480,17 @@ Function ValidateDepTransfer (cDepartment as string,mAccId as string,mGIFTALWD:=
 			endif
 		endif
 	endif
-
+   // check if department is not active:
+	if Empty(cError) .and. !Empty(Val(cDepartment))
+	   if lActive
+	   	oSel:=SqlSelect{"select active from department where depid='"+cDepartment+"'",oConn}
+	   	if oSel:Reccount>0
+	   		if !ConL(oSel:active)
+	   			lActive:=false
+	   		endif
+	   	endif
+	   endif	
+   endif
 	return cError
 function ValidateMemberType(CO as string,HomePP as string, Type as string ) as string
 	// check if member has account with correct type
