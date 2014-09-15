@@ -1970,6 +1970,28 @@ function HtmlEncode(cText as string) as string
 
 
 
+Class Ibanconv
+PROTECT  IbanChar:={{"À", "A"}, {"Á", "A"},{"Â", "A"},{"Ã", "A"},{"Ä", "A"},{"Å", "A"},{"Æ", "A"},{"Ç", "C"},{"È", "E"},{"É", "E"},{"Ê", "E"},{"Ë", "E"},{"Ì", "I"},{"Í", "I"},{"Î", "I"},{"Ï", "I"},{"Ğ", "D"},{"Ñ", "N"},{"Ò", "O"},{"Ó", "O"},{"Ô", "O"},{"Õ", "O"},{"Ö", "O"},{"Ø", "O"},{"Ù", "U"},{"Ú", "U"},{"Û", "U"},{"Ü", "U"},{"İ", "Y"},{"Ş", "T"},{"ß", "s"},{"à", "a"},{"á", "a"},{"â", "a"},{"ã", "a"},{"ä", "a"},{"å", "a"},{"æ", "a"},{"ç", "c"},{"è", "e"},{"é", "e"},{"ê", "e"},{"ë", "e"},{"ì", "i"},{"í", "i"},{"î", "i"},{"ï", "i"},{"ğ", "d"},{"ñ", "n"},{"ò", "o"},{"ó", "o"},{"ô", "o"},{"õ", "o"},{"ö", "o"},{"ø", "o"},{"ù", "u"},{"ú", "u"},{"û", "u"},{"ü", "u"},{"ı", "y"},{"ş", "t"},{"ÿ", "y"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"D", "D"},{"d", "d"},{"Ğ", "D"},{"d", "d"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"H", "H"},{"h", "h"},{"H", "H"},{"h", "h"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"?", "I"},{"?", "i"},{"J", "J"},{"j", "j"},{"K", "K"},{"k", "k"},{"L", "L"},{"l", "l"},{"L", "L"},{"l", "l"},{"?", "L"},{"?", "l"},{"L", "L"},{"l", "l"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"O", "O"},{"o", "o"},{"Œ", "O"},{"œ", "o"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"Š", "S"},{"š", "s"},{"T", "T"},{"t", "t"},{"T", "T"},{"t", "t"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"W", "W"},{"w", "w"},{"Y", "Y"},{"y", "y"},{"Ÿ", "Y"},{"Z", "Z"},{"z", "z"},{"Z", "Z"},{"z", "z"},{"", "Z"},{"", "z"},{"&","+"},{">","&&gt;"},{"<","&&lt;"},{"@","(at)"},{"_","-"}} ;
+ as array
+DECLARE Method FindIbanChar           
+
+METHOD FindIbanChar (cValue as string) as string  CLASS Ibanconv    
+
+	local i as int	
+
+	i:= AScan(IbanChar,{|x|x[1]==cValue})
+	if i>0
+ 		return IbanChar[i,2]
+	else
+ 		 return cValue
+	endif 
+ 
+return cValue	
+Method INIT() CLASS Ibanconv
+//  IbanChar:={{"À", "A"}, {"Á", "A"},{"Â", "A"},{"Ã", "A"},{"Ä", "A"},{"Å", "A"},{"Æ", "A"},{"Ç", "C"},{"È", "E"},{"É", "E"},{"Ê", "E"},{"Ë", "E"},{"Ì", "I"},{"Í", "I"},{"Î", "I"},{"Ï", "I"},{"Ğ", "D"},{"Ñ", "N"},{"Ò", "O"},{"Ó", "O"},{"Ô", "O"},{"Õ", "O"},{"Ö", "O"},{"Ø", "O"},{"Ù", "U"},{"Ú", "U"},{"Û", "U"},{"Ü", "U"},{"İ", "Y"},{"Ş", "T"},{"ß", "s"},{"à", "a"},{"á", "a"},{"â", "a"},{"ã", "a"},{"ä", "a"},{"å", "a"},{"æ", "a"},{"ç", "c"},{"è", "e"},{"é", "e"},{"ê", "e"},{"ë", "e"},{"ì", "i"},{"í", "i"},{"î", "i"},{"ï", "i"},{"ğ", "d"},{"ñ", "n"},{"ò", "o"},{"ó", "o"},{"ô", "o"},{"õ", "o"},{"ö", "o"},{"ø", "o"},{"ù", "u"},{"ú", "u"},{"û", "u"},{"ü", "u"},{"ı", "y"},{"ş", "t"},{"ÿ", "y"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"D", "D"},{"d", "d"},{"Ğ", "D"},{"d", "d"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"H", "H"},{"h", "h"},{"H", "H"},{"h", "h"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"?", "I"},{"?", "i"},{"J", "J"},{"j", "j"},{"K", "K"},{"k", "k"},{"L", "L"},{"l", "l"},{"L", "L"},{"l", "l"},{"?", "L"},{"?", "l"},{"L", "L"},{"l", "l"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"O", "O"},{"o", "o"},{"Œ", "O"},{"œ", "o"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"Š", "S"},{"š", "s"},{"T", "T"},{"t", "t"},{"T", "T"},{"t", "t"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"W", "W"},{"w", "w"},{"Y", "Y"},{"y", "y"},{"Ÿ", "Y"},{"Z", "Z"},{"z", "z"},{"Z", "Z"},{"z", "z"},{"", "Z"},{"", "z"},{"&","+"},{">","&&gt;"},{"<","&&lt;"},{"@","(at)"},{"_","-"}}
+  
+Return self
+
 Function IbanFormat(Iban ref string) 
 	// standardize fromat of a Iban Bank account number
 	local IBanTemp as string
@@ -1983,6 +2005,18 @@ Function IbanFormat(Iban ref string)
 	SEval(Iban,{|c|IBanTemp+=iif(IsDigit(CHR(c)).or.IsAlpha(CHR(c)),CHR(c),null_string)})
 	Iban:=IBanTemp    // machine format
 	return
+Function IbanFormatText(Iban as string) 
+	// Convert a string to SEPA accepted characters
+	local IBanTemp as string                     
+	local lcIbanConv as IbanConv
+	
+	lcIbanConv := IbanConv{}
+   IBanTemp := ""
+	
+    	
+   SEval(Iban,{|c|IBanTemp+= lcIbanConv:FindIbanChar(CHR(c))}) 
+
+return IBanTemp
 FUNCTION Implode(aText as array,cSep:=" " as string,nStart:=1 as int,nCount:=0 as int,nCol:=0 as int,cSepRow:='' as string,Filter:=nil as usual ) as string
 	// Implode array aText to string seperated by cSep 
 	// Optionaly you can indicate a column to implode in case of 2-dimenional array 
