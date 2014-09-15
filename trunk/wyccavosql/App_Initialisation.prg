@@ -224,10 +224,10 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 						endif
 						LogEvent(self,"File "+oFs:FullPath+"	successfull	loaded from	internet; local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'loginfo')	
 					else
-						LogEvent(self,"File "+oFs:FullPath+"	could	not be loaded from internetlocal date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+						LogEvent(self,"File "+oFs:FullPath+"	could	not be loaded from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 					endif
 				else
-					LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internetlocal date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+					LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 				endif
 			endif					 
 		next
