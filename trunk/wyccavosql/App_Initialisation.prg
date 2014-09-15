@@ -211,7 +211,9 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 				lSuc:=oFTP:GetFile("variable/"+aInsRem[i,F_NAME],cWorkdir+aInsRem[i,F_NAME],false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD+ ;
 					INTERNET_FLAG_RESYNCHRONIZE+INTERNET_FLAG_NO_CACHE_WRITE )
 				if	lSuc
-					oFs:Find()
+					if !oFs:Find()
+						Tone(30000,6) // wait 6/18 sec
+					endif
 					//CollectForced()	 // to force some	wait
 					if	oFs:Find()
 						lSuc:=SetFDateTime(cWorkdir+aInsRem[i,F_NAME],RemoteDate	,Remotetime	)
@@ -224,7 +226,7 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 						endif
 						LogEvent(self,"File "+oFs:FullPath+"	successfull	loaded from	internet; local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'loginfo')	
 					else
-						LogEvent(self,"File "+oFs:FullPath+"	could	not be loaded from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+						LogEvent(self,"File "+oFs:FullPath+"	could	not be find after loading from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 					endif
 				else
 					LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
