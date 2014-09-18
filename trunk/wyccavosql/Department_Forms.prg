@@ -212,13 +212,14 @@ METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=f
 	LOCAL cError as STRING
 	local Depname as string
 	local cStatement as string
+	local lAccActive:=true as logic
 	local oStmnt as SQLStatement 
 	local oSel,oSel2 as SQLSelect
 
 //	Default(@lDBUpdate,FALSE)
 
 	* determine new main identifier:
-	nMain:=SELF:GetIdFromSymbol(oItemDrop:NameSym)
+	nMain:=self:GetIdFromSymbol(oItemDrop:NameSym)
 
 	IF lDBUpdate
 		* Update database first:
@@ -227,7 +228,7 @@ METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=f
 
 		*		IF oItemDrag:ImageIndex==3 //Account?
 		IF self:IsAccountSymbol(aItemDrag[1])
-			cError:=ValidateDepTransfer(nMain,nNum)
+			cError:=ValidateDepTransfer(nMain,nNum,,@lAccActive)
 			IF Empty(cError)
 				// check if member department:
 				if (oSel:=SqlSelect{"select p.lastname from member m, person p where m.depid="+nMain+" and m.persid=p.persid",oConn}):reccount>0
@@ -242,7 +243,7 @@ METHOD TransferItem(aItemDrag as array , oItemDrop as TreeViewItem, lDBUpdate:=f
 					endif
 				endif
 				* update account: 
-				oStmnt:=SQLStatement{"update account set department='"+nMain+"'"+cStatement+" where accid='"+nNum+"'",oConn}
+				oStmnt:=SQLStatement{"update account set department='"+nMain+"'"+cStatement+iif(!lAccActive,",active=0","")+" where accid='"+nNum+"'",oConn}
 				oStmnt:execute() 
 				if !Empty(oStmnt:Status)
 					cError:="Could not transfer account:"+oStmnt:ErrInfo:ErrorMessage
