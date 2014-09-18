@@ -1299,7 +1299,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS BalanceReport
 	//Put your PreInit additions here
 	RETURN NIL
 METHOD prheading(heading_type as string,heading_category as string,dep_ptr as int,cDirect:="" as string,d_dep as array,d_parentDep as array,d_depname as array,;
-r_balid as array,r_heading as array,r_footer as array,r_parentid  as array) CLASS BalanceReport 
+r_balid as array,r_heading as array,r_footer as array,r_parentid  as array) as array CLASS BalanceReport 
 //////////////////////////////////////////////////////////
 // Compose Heading
 // headingtype: string with name of type: summary, details
@@ -6670,7 +6670,7 @@ DO WHILE !oAcc:EoF
 	ENDIF
    IF !self:lCondense .or. !PerDeb == PerCre .or. !oAcc:PrvPer_deb == oAcc:PrvPer_cre
 
-      && calcaulate total percentage of everything up till now
+      && calculate total percentage of everything up till now
       omzet:= PerDeb-PerCre
       IF omzet<> 0
          IF oAcc:category = "BA"
@@ -6718,7 +6718,7 @@ totBegin=Round(totBegin,DecAantal)
 IF lPrint
 	oReport:PrintLine(@nRow,@nPage,' ',Heading,1)
 	oReport:PrintLine(@nRow,@nPage,Space(43)+cTab+Space(11)+cTab+Space(11)+cTab+Space(25)+cTab+Str(totBegin,11,DecAantal)+cTab+Str(totdeb,11,DecAantal)+;
-	cTab+Str(totcre,11,decaantal)+cTab+Str(Round(totBegin+totdeb-totcre,decaantal),11,decaantal)+cTab+cTab,null_array,0)
+	cTab+Str(totcre,11,DecAantal)+cTab+Str(Round(totBegin+totdeb-totcre,DecAantal),11,DecAantal)+cTab+cTab,null_array,0)
 ENDIF
 self:Pointer := Pointer{POINTERARROW}
 IF lPrint
