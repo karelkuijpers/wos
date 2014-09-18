@@ -2998,12 +2998,8 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 		ENDIF
 	ENDIF
 	self:_Beginreport:=FALSE
-	IF !IsNil(LineContent)
-// 		IF self:lXls
+	IF Len(LineContent)>0
 			AAdd(self:oPrintJob:aFIFO,LineContent)
-// 		ELSE	
-// 			AAdd(self:oPrintJob:aFIFO,SubStr(LineContent,1,Widthpage))
-// 		ENDIF
 		++LineNbr
 	ENDIF
 	self:row:=LineNbr
