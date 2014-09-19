@@ -1,27 +1,27 @@
 CLASS _PrintDialog INHERIT DialogWinDowExtra 
 
-	PROTECT oDCPrinterText AS FIXEDTEXT
-	PROTECT oDCDestination AS RADIOBUTTONGROUP
-	PROTECT oCCPrinterRadioButton AS RADIOBUTTON
-	PROTECT oCCScreenRadioButton AS RADIOBUTTON
-	PROTECT oCCToFileRadioButton AS RADIOBUTTON
-	PROTECT oDCFileType AS RADIOBUTTONGROUP
-	PROTECT oCCfiletype1 AS RADIOBUTTON
-	PROTECT oCCfiletype2 AS RADIOBUTTON
-	PROTECT oDCPageRange AS RADIOBUTTONGROUP
-	PROTECT oCCAllButton AS RADIOBUTTON
-	PROTECT oCCSelectionButton AS RADIOBUTTON
-	PROTECT oDCFromPage AS SINGLELINEEDIT
-	PROTECT oDCToPage AS SINGLELINEEDIT
-	PROTECT oCCOkButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oCCSetupButton AS PUSHBUTTON
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oCCFontDialogButton AS PUSHBUTTON
+	PROTECT oDCPrinterText as FIXEDTEXT
+	PROTECT oDCDestination as RADIOBUTTONGROUP
+	PROTECT oCCPrinterRadioButton as RADIOBUTTON
+	PROTECT oCCScreenRadioButton as RADIOBUTTON
+	PROTECT oCCToFileRadioButton as RADIOBUTTON
+	PROTECT oDCFileType as RADIOBUTTONGROUP
+	PROTECT oCCfiletype1 as RADIOBUTTON
+	PROTECT oCCfiletype2 as RADIOBUTTON
+	PROTECT oDCPageRange as RADIOBUTTONGROUP
+	PROTECT oCCAllButton as RADIOBUTTON
+	PROTECT oCCSelectionButton as RADIOBUTTON
+	PROTECT oDCFromPage as SINGLELINEEDIT
+	PROTECT oDCToPage as SINGLELINEEDIT
+	PROTECT oCCOkButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oCCSetupButton as PUSHBUTTON
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oCCFontDialogButton as PUSHBUTTON
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT oDialFont AS myDialFontDialog
-	EXPORT lPrintOk AS LOGIC
+  	PROTECT oDialFont as myDialFontDialog
+	EXPORT lPrintOk as LOGIC
 	EXPORT MaxWidth := 79 as int
 	EXPORT ToFileFS as FileSpec
 	EXPORT oPrinter	as PrintingDevice
@@ -42,7 +42,7 @@ CLASS _PrintDialog INHERIT DialogWinDowExtra
 	Protect LanguageTHD as string
 	Protect cRTFHeader as STRING
 	Protect RTFFormat as string
-	Export lRTF,lXls as logic
+	Export lRTF,lXls,lSuspend as logic
 RESOURCE _PrintDialog DIALOGEX  16, 31, 346, 133
 STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Report"
@@ -2860,7 +2860,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	SELF:EndDialog()
 	
 	RETURN
-METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingLines:={} as array,skipcount:=0 as int,lDelay:=false as logic) as logic CLASS PrintDialog
+METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingLines as array,skipcount:=0 as int) as logic CLASS PrintDialog
 	* Output to printer or window of LineContent
 	*
 	* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
@@ -2874,15 +2874,15 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 	* Beginreport: optionele indication of report start which forces printing of the heading lines independent of a page skip; 
 	*				Setting of this values: PrintDialog:Beginreport:=true 
 	* Used export variabels:
-	* - self:PaperHeight
+	* - self:PaperHeight 
+	* - lSuspend: if true write to file will be suspended untill end of printing or lSuspend = false
 	*
 
-	LOCAL i AS INT,kopdate AS STRING
-	LOCAL skippage:=FALSE AS LOGIC
-	LOCAL Widthpage:=SELF:oPrintJob:PaperWidth AS INT
+	LOCAL i as int,kopdate as STRING
+	LOCAL skippage:=FALSE as LOGIC 
+	local lSuspend:=self:lSuspend as logic
+	LOCAL Widthpage:=self:oPrintJob:PaperWidth as int
 	LOCAL cFileName as STRING
-	local aFIFO:=self:oPrintJob:aFIFO as array
-//	Default(@skipcount,0)
 	IF Destination == "File" .and.Empty(self:ptrHandle)
 		cFileName:= self:ToFileFS:FullPath
 		self:ptrHandle:=MakeFile(,@cFileName,"Printing to file")
@@ -2892,55 +2892,39 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 			RETURN true
 		endif
 		if self:lRTF
-			FWriteLine(self:ptrHandle,self:cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
+			AAdd(self:oPrintJob:aFIFO,self:cRTFHeader+AllTrim(Str(self:oPrintJob:iPointSize*2))+" ")
 		endif
 	endif
-		
+	
 	if !Empty(LineNbr).and.LineNbr==(self:row-1)
 		self:oPrintJob:aFIFO[Len(self:oPrintJob:aFIFO)]+=LineContent 
 		LineNbr++
 		return true
-	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0 .and.!lDelay 
+	elseif self:Destination == "File" .and.Len(self:oPrintJob:aFIFO)>0 .and.!lSuspend 
 		// print prepared lines
-		for i:=1 to Len(aFIFO)
-			FWriteLine(self:ptrHandle, aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',aFIFO[i])=0,"\par",'')) 
+		for i:=1 to Len(self:oPrintJob:aFIFO)
+			FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[i])=0,"\par",'')) 
 		next
-		self:oPrintJob:aFIFO:={} // reset fifo
+		self:oPrintJob:aFIFO:={} // reset fifo 
 	endif
 	IF self:_Beginreport
 		IF !self:lXls .and. (PageNbr>0.or.LineNbr>0).and. self:row +Max(skipcount,4)> Integer(self:oPrintJob:PaperHeight)
 			// When not first page and more than half of the page printed:
-			skippage:=TRUE
+			skippage:=true
 			IF self:Destination == "Printer"
-				AAdd(self:oPrintJob:aFIFO,PAGE_END)
+				AAdd(self:oPrintJob:aFIFO,PAGE_ENd)
 			elseif self:Destination == "File"
-				AAdd(aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
-				if !lDelay
-					FWriteLine(self:ptrHandle,aFIFO[Len(aFIFO)])
-				endif
-// 				IF self:lRTF
-// 					FWriteLine(self:ptrHandle,"\page")
-// 				ELSE						
-// 					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
-// 				ENDIF
+				AAdd(self:oPrintJob:aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
 			ENDIF
 		ENDIF
 		LineNbr:=self:row // reset to original value
 	ELSEIF (Empty(PageNbr) .or. ((self:row+skipcount+1) > self:oPrintJob:PaperHeight .or. Empty(LineNbr)).and.!self:lXls)
-		skippage:=TRUE
+		skippage:=true
 		IF (PageNbr>0.or.LineNbr>0)
 			if self:Destination == "Printer"
 				AAdd(self:oPrintJob:aFIFO,PAGE_ENd)
 			elseif self:Destination == "File"
-				AAdd(aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
-				if !lDelay
-					FWriteLine(self:ptrHandle,aFIFO[Len(aFIFO)])
-				endif
-// 				IF self:lRTF
-// 					FWriteLine(self:ptrHandle,"\page")
-// 				ELSE						
-// 					FWriteLine(self:ptrHandle,CHR(ASC_FF ))
-// 				ENDIF
+				AAdd(self:oPrintJob:aFIFO,iif(self:lRTF,"\page",CHR(ASC_FF )))
 			endif
 		ENDIF
 	ENDIF
@@ -2951,13 +2935,8 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 		ELSEIF LineNbr>0
 			// add two space lines:
 			if self:Destination == "File"
-				if lDelay
-					AAdd(aFIFO,iif(self:lRTF,'\par',''))
-					AAdd(aFIFO,iif(self:lRTF,'\par',''))
-				else
-					FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
-					FWriteLine(self:ptrHandle,iif(self:lRTF,'\par',''))
-				endif
+				AAdd(self:oPrintJob:aFIFO,iif(self:lRTF,'\par',''))
+				AAdd(self:oPrintJob:aFIFO,iif(self:lRTF,'\par',''))
 			else
 				AAdd(self:oPrintJob:aFIFO," ")
 				AAdd(self:oPrintJob:aFIFO," ")
@@ -2967,27 +2946,19 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 		IF .not.Empty(HeadingLines)
 			FOR i = 1 to Len(HeadingLines)
 				IF self:lXls
-					FWriteLine(self:ptrHandle, HeadingLines[i])
+					AAdd(self:oPrintJob:aFIFO,HeadingLines[i])
 				ELSE
 					IF LineNbr=0
-						kopdate:="  "+DToC(DATE())+' '+PageText+' '+;
+						kopdate:="  "+DToC(date())+' '+PageText+' '+;
 							LTrim(Str(PageNbr,4))
 						if self:Destination=="File"
-							if lDelay
-								AAdd(aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
-							else
-								FWriteLine(self:ptrHandle, Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
-							endif
+							AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate+iif(self:lRTF,"\par",''))
 						else
 							AAdd(self:oPrintJob:aFIFO,Pad(HeadingLines[1],Widthpage-Len(kopdate))+kopdate)
 						endif
 					ELSE
 						if self:Destination=="File"
-							if lDelay
-								AAdd(aFIFO,HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
-							else
-								FWriteLine(self:ptrHandle, HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
-							endif
+							AAdd(self:oPrintJob:aFIFO,HeadingLines[i]+iif(self:lRTF.and.(!i=Len(HeadingLines).or.AtC('\trowd',HeadingLines[i])=0),"\par",''))
 						else
 							AAdd(self:oPrintJob:aFIFO,SubStr(HeadingLines[i],1,Widthpage))
 						endif	
@@ -2999,7 +2970,7 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 	ENDIF
 	self:_Beginreport:=FALSE
 	IF Len(LineContent)>0
-			AAdd(self:oPrintJob:aFIFO,LineContent)
+		AAdd(self:oPrintJob:aFIFO,LineContent)
 		++LineNbr
 	ENDIF
 	self:row:=LineNbr
@@ -3008,7 +2979,7 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 	* self:lRTF:		true: a RTF-format is generated, i.e. at end of each line: /par and: at end }}
 	* cRTFHeading: start rtf-text for specifying format
 	LOCAL oPrintShow as Window
-	LOCAL i AS INT
+	LOCAL i as int
 	LOCAL MyFileName, RetFileName,cFileName as STRING
 	local aFIFO:=self:oPrintJob:aFIFO as array
 	LOCAL scrFont as myFont
@@ -3022,13 +2993,13 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 
 	self:Pointer := Pointer{POINTERHOURGLASS} 
 	* Starten van printer
-	IF SELF:Destination == "Printer"
+	IF self:Destination == "Printer"
 		self:oPrintJob:oWaitPrint := Wait_for_printer{self}
 		self:oPrintJob:oWaitPrint:Caption := self:Caption
 		self:oPrintJob:oWaitPrint:Show()
 		self:oPrintJob:Idle()
 		self:oPrintJob:Start(self:oRange)
-		SELF:Pointer := Pointer{POINTERARROW}
+		self:Pointer := Pointer{POINTERARROW}
 		
 		RetFileName:= "1"
 	ELSEIF self:Destination == "Screen" 
@@ -3052,10 +3023,10 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 	ELSE
 		*		write to file
 		if !Empty(self:ptrHandle)
-			IF Len(self:oPrintJob:aFIFO)>0
+			IF Len(aFIFO)>0
 				// print last lines: 
 				for i:=1 to Len(aFIFO)
-					FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[i])=0,"\par",'')) 
+					FWriteLine(self:ptrHandle, aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',aFIFO[i])=0,"\par",'')) 
 				next
 				self:oPrintJob:aFIFO:={} // reset fifo
 			endif
