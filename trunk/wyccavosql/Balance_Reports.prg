@@ -6640,11 +6640,11 @@ IF lPrint
 		RETURN FALSE
 	ENDIF
 ENDIF
-
+self:oReport:lSuspend:=false
 IF Lower(oReport:Extension) #"xls"
 	cTab:=Space(1)
 	Heading:={oLan:RGet('Trial Balance',,"!")}
-ENDIF
+ENDIF 
 self:Pointer := Pointer{POINTERHOURGLASS}
 self:STATUSMESSAGE(self:oLan:WGet("Collecting data, moment please"))
 
@@ -6698,7 +6698,7 @@ DO WHILE !oAcc:EoF
       totdeb:=Round(totdeb+PerDeb,DecAantal)
       totcre:=Round(totcre+PerCre,DecAantal)
       totBegin:=Round(totBegin+oAcc:PrvPer_deb-oAcc:prvper_cre,DecAantal)
-   	ENDIF
+   ENDIF
 
    oAcc:Skip()
 ENDDO
