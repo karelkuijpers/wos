@@ -3847,6 +3847,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	local oStmnt as SQLStatement 
 	LOCAL oDue,oPers as SQLSelect 
 	Local oAddInEx as AddToIncExp
+	Local oIbanConv as IbanConv
 	
 
 	if Empty(BANKNBRDEB)
@@ -4080,6 +4081,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 // 		dMaxReqCol:=Max(dMaxReqCol,dReqCol)
 		aSeqTp[SeqTp,2]:=dReqCol
 	next
+	oIbanConv:=IbanConv{}
 	for i:=1 to Len(aDue)
 		cBank:=aDue[i,11] 
 		cBic:=aDue[i,17]
@@ -4181,7 +4183,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		// add to aDD for mailing DD file:
 		// aDD: {{AmountInvoice,mandateidid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous,nGrpNbr},...
 		//               1         2           3         4           5      6            7      8    9    10             11            12
-		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],aDue[i,16],cBank,cDescr,cPersId+'-'+DToS(invoicedate)+'-'+aDue[i,1],SeqTp,cBic,aDue[i,21],aDue[i,22],nGrpNbr})
+		AAdd(aDD,{cAmnt,aDue[i,19],aDue[i,5],oIbanConv:IbanFormatText([i,16]),cBank,oIbanConv:IbanFormatText(cDescr),cPersId+'-'+DToS(invoicedate)+'-'+aDue[i,1],SeqTp,cBic,aDue[i,21],aDue[i,22],nGrpnbr})
 	next
 
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',134),headinglines,3)
@@ -4222,6 +4224,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	ENDIF
 	//	write	document	and group header:	
 	lSetAMPM:=SetAmPm(false)
+	cOrgName:=oIbanConv:IbanFormatText(cOrgName)
 	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
 		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8"?>'+CRLF+;
 		'<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
