@@ -1979,14 +1979,14 @@ METHOD FindIbanChar (cValue as string, nValue as int) as string  CLASS IbanConv
 
 	local i as int
 	local aIbanChar:=self:IbanChar as array	
-   if nValue>=97 .and. nValue<=122 .or. nValue=32 .or. nValue>=65 .and. nValue<=90
+   if nValue>=97 .and. nValue<=122 .or. nValue=32 .or. nValue>=65 .and. nValue<=90 .or. nValue>=39 .and. nValue<=58 .or. nValue=59  // allowed characters
    	return cValue
    endif 
 	i:= AScan(aIbanChar,{|x|x[1]==cValue})
 	if i>0
  		return aIbanChar[i,2]
 	else
- 		 return cValue
+ 		 return ' ' // space if not allowed and not convertable
 	endif 
  
 Method IbanFormatText(Iban as string) class IbanConv
