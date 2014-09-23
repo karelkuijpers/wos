@@ -1970,6 +1970,37 @@ function HtmlEncode(cText as string) as string
 
 
 
+CLASS IbanConv
+PROTECT  IbanChar:={{"À", "A"}, {"Á", "A"},{"Â", "A"},{"Ã", "A"},{"Ä", "A"},{"Å", "A"},{"Æ", "A"},{"Ç", "C"},{"È", "E"},{"É", "E"},{"Ê", "E"},{"Ë", "E"},{"Ì", "I"},{"Í", "I"},{"Î", "I"},{"Ï", "I"},{"Ð", "D"},{"Ñ", "N"},{"Ò", "O"},{"Ó", "O"},{"Ô", "O"},{"Õ", "O"},{"Ö", "O"},{"Ø", "O"},{"Ù", "U"},{"Ú", "U"},{"Û", "U"},{"Ü", "U"},{"Ý", "Y"},{"Þ", "T"},{"ß", "s"},{"à", "a"},{"á", "a"},{"â", "a"},{"ã", "a"},{"ä", "a"},{"å", "a"},{"æ", "a"},{"ç", "c"},{"è", "e"},{"é", "e"},{"ê", "e"},{"ë", "e"},{"ì", "i"},{"í", "i"},{"î", "i"},{"ï", "i"},{"ð", "d"},{"ñ", "n"},{"ò", "o"},{"ó", "o"},{"ô", "o"},{"õ", "o"},{"ö", "o"},{"ø", "o"},{"ù", "u"},{"ú", "u"},{"û", "u"},{"ü", "u"},{"ý", "y"},{"þ", "t"},{"ÿ", "y"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"A", "A"},{"a", "a"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"C", "C"},{"c", "c"},{"D", "D"},{"d", "d"},{"Ð", "D"},{"d", "d"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"E", "E"},{"e", "e"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"G", "G"},{"g", "g"},{"H", "H"},{"h", "h"},{"H", "H"},{"h", "h"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"I", "I"},{"i", "i"},{"?", "I"},{"?", "i"},{"J", "J"},{"j", "j"},{"K", "K"},{"k", "k"},{"L", "L"},{"l", "l"},{"L", "L"},{"l", "l"},{"?", "L"},{"?", "l"},{"L", "L"},{"l", "l"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"N", "N"},{"n", "n"},{"O", "O"},{"o", "o"},{"Œ", "O"},{"œ", "o"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"R", "R"},{"r", "r"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"S", "S"},{"s", "s"},{"Š", "S"},{"š", "s"},{"T", "T"},{"t", "t"},{"T", "T"},{"t", "t"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"U", "U"},{"u", "u"},{"W", "W"},{"w", "w"},{"Y", "Y"},{"y", "y"},{"Ÿ", "Y"},{"Z", "Z"},{"z", "z"},{"Z", "Z"},{"z", "z"},{"Ž", "Z"},{"ž", "z"},{"&","+"},{">","&&gt;"},{"<","&&lt;"},{"@","(at)"},{"_","-"}};
+ as array
+DECLARE Method FindIbanChar,IbanFormatText           
+
+METHOD FindIbanChar (cValue as string, nValue as int) as string  CLASS IbanConv    
+
+	local i as int
+	local aIbanChar:=self:IbanChar as array	
+   if nValue>=97 .and. nValue<=122 .or. nValue=32 .or. nValue>=65 .and. nValue<=90
+   	return cValue
+   endif 
+	i:= AScan(aIbanChar,{|x|x[1]==cValue})
+	if i>0
+ 		return aIbanChar[i,2]
+	else
+ 		 return cValue
+	endif 
+ 
+Method IbanFormatText(Iban as string) class IbanConv
+	// Convert a string to SEPA accepted characters
+	local IBanTemp as string                     
+	local oIban:=self as IbanConv 
+    	
+   SEval(Iban,{|c|IBanTemp+= oIban:FindIbanChar(CHR(c),c)}) 
+
+return IBanTemp
+
+Method INIT() CLASS Ibanconv
+Return self
+
 Function IbanFormat(Iban ref string) 
 	// standardize fromat of a Iban Bank account number
 	local IBanTemp as string
