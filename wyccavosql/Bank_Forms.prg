@@ -1646,7 +1646,8 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	Local aDir as array
 	local oPro as ProgressPer
 	LOCAL oBord as SQLSelect, oPers as SQLSelect, oPersBank, oSel as SQLSelect 
-	local oStmnt as SQLStatement
+	local oStmnt as SQLStatement 
+	local oSepa as SepaConv
 
 	if Empty(BANKNBRCRE)
 		(ErrorBox{self,"Bank account for payments not specified in system data"}):Show()
@@ -1792,7 +1793,9 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 		RETURN false
 	ENDIF
 	//	write	document	and group header:	
-	lSetAMPM:=SetAmPm(false)
+	lSetAMPM:=SetAmPm(false)  
+	oSepa:= SEPAConv{}
+	cOrgName:=oSepa:SEPAFormat(cOrgName)
 	//			'xmnls:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
 		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="UTF-8"?>'+CRLF+;
 		'<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+CRLF+;
@@ -1835,7 +1838,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			'<InstdAmt Ccy="EUR">'+str(oBord:amount,-1,2)+'</InstdAmt>'+CRLF+;
 			'</Amt>'+CRLF+;
 			'<Cdtr>'+CRLF+;
-			'<Nm>'+HtmlEncode(oBord:FullName)+'</Nm>'+CRLF+;
+			'<Nm>'+HtmlEncode(oSepa:SEPAFormat(oBord:FullName))+'</Nm>'+CRLF+;
 			'</Cdtr>'+CRLF+;
 			'<CdtrAcct>'+CRLF+;
 			'<Id>'+CRLF+;
@@ -1843,7 +1846,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			'</Id>'+CRLF+;
 			'</CdtrAcct>'+CRLF+;
 			'<RmtInf>'+CRLF+;
-			'<Ustrd>'+HtmlEncode(oBord:Description)+'</Ustrd>'+CRLF+;
+			'<Ustrd>'+HtmlEncode(oSepa:SEPAFormat(oBord:Description))+'</Ustrd>'+CRLF+;
 			'</RmtInf>'+CRLF+;
 			'</CdtTrfTxInf>')
 		oBord:skip()
