@@ -151,12 +151,15 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			"POST",;
 			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
 			/*INTERNET_FLAG_SECURE*/)
-		time1:=Seconds()   
-		iSt:=At3('xetrade/?',cPage,10050)
+		time1:=Seconds()            // XE Currency Table
+		iSt:=At3('XE Currency Table:',cPage,10050)
 		if iSt>0
 			cPage:=SubStr(cPage,iSt) 
-			iSt:=At3('<tbody>',cPage,28)+7 			
-			iEnd:=At3("</table>",cPage,iSt)+8
+			iSt:=At3('<table',cPage,28)+7
+			if iSt>7
+				iSt:=At3('<tr><td>',cPage,iSt) 			
+				iEnd:=At3("</table>",cPage,iSt)+8
+			endif
 			if iEnd>8 
 				table:="<table>"+SubStr(cPage,iSt,iEnd-iSt) 
 				iEnd:=2
