@@ -570,7 +570,7 @@ METHOD PrintReport() CLASS PMISsend
 		endif
 	next
 	// check distribution instructions:
-	oSel:=SqlSelect{"select mbrid,destacc from distributioninstruction d where destpp='AAA' and not exists (select 1 from personbank where banknumber= d.destacc)",oConn}
+	oSel:=SqlSelect{"select cast(mbrid as char) as mbrid,destacc from distributioninstruction d where destpp='AAA' and not exists (select 1 from personbank where banknumber= d.destacc)",oConn}
 	if oSel:Reccount>0
 		cError:=self:oLan:WGet("Following members contain an illegal distribution instruction")+':'
 		do while !oSel:EOF
@@ -580,7 +580,7 @@ METHOD PrintReport() CLASS PMISsend
 			endif
 			oSel:skip()
 		enddo
-		ErrorBox{self,cError}   
+		ErrorBox{self,cError}:Show()   
 		return
 	endif 
 	// collect destination persons:
