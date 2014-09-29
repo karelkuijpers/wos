@@ -1,48 +1,3 @@
-CLASS _PrintDialog INHERIT DialogWinDowExtra 
-
-	PROTECT oDCPrinterText as FIXEDTEXT
-	PROTECT oDCDestination as RADIOBUTTONGROUP
-	PROTECT oCCPrinterRadioButton as RADIOBUTTON
-	PROTECT oCCScreenRadioButton as RADIOBUTTON
-	PROTECT oCCToFileRadioButton as RADIOBUTTON
-	PROTECT oDCFileType as RADIOBUTTONGROUP
-	PROTECT oCCfiletype1 as RADIOBUTTON
-	PROTECT oCCfiletype2 as RADIOBUTTON
-	PROTECT oDCPageRange as RADIOBUTTONGROUP
-	PROTECT oCCAllButton as RADIOBUTTON
-	PROTECT oCCSelectionButton as RADIOBUTTON
-	PROTECT oDCFromPage as SINGLELINEEDIT
-	PROTECT oDCToPage as SINGLELINEEDIT
-	PROTECT oCCOkButton as PUSHBUTTON
-	PROTECT oCCCancelButton as PUSHBUTTON
-	PROTECT oCCSetupButton as PUSHBUTTON
-	PROTECT oDCFixedText1 as FIXEDTEXT
-	PROTECT oCCFontDialogButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT oDialFont as myDialFontDialog
-	EXPORT lPrintOk as LOGIC
-	EXPORT MaxWidth := 79 as int
-	EXPORT ToFileFS as FileSpec
-	EXPORT oPrinter	as PrintingDevice
-	EXPORT oPrintJob as PrintJob
-	EXPORT Heading as STRING
-	EXPORT Label as LOGIC
-	EXPORT Destination as STRING
-	EXPORT oRange, oOrigRange as Range
-	EXPORT Pagetext as STRING
-	PROTECT _Beginreport:=FALSE as LOGIC
-	PROTECT row:=0 as int
-	EXPORT Extension as STRING 
-	Protect ptrHandle
-	Protect LanguageDefault as string
-	Protect LanguageRus as string
-	Protect LanguageJap as string
-	Protect LanguageCZ as string
-	Protect LanguageTHD as string
-	Protect cRTFHeader as STRING
-	Protect RTFFormat as string
-	Export lRTF,lXls,lSuspend as logic
 RESOURCE _PrintDialog DIALOGEX  16, 31, 346, 133
 STYLE	DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Report"
@@ -68,6 +23,56 @@ BEGIN
 	CONTROL	"Choose Font", _PRINTDIALOG_FONTDIALOGBUTTON, "Button", WS_TABSTOP|WS_CHILD, 284, 77, 54, 12
 END
 
+CLASS _PrintDialog INHERIT DialogWinDowExtra 
+
+	PROTECT oDCPrinterText as FIXEDTEXT
+	PROTECT oDCDestination as RADIOBUTTONGROUP
+	PROTECT oCCPrinterRadioButton as RADIOBUTTON
+	PROTECT oCCScreenRadioButton as RADIOBUTTON
+	PROTECT oCCToFileRadioButton as RADIOBUTTON
+	PROTECT oDCFileType as RADIOBUTTONGROUP
+	PROTECT oCCfiletype1 as RADIOBUTTON
+	PROTECT oCCfiletype2 as RADIOBUTTON
+	PROTECT oDCPageRange as RADIOBUTTONGROUP
+	PROTECT oCCAllButton as RADIOBUTTON
+	PROTECT oCCSelectionButton as RADIOBUTTON
+	PROTECT oDCFromPage as SINGLELINEEDIT
+	PROTECT oDCToPage as SINGLELINEEDIT
+	PROTECT oCCOkButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oCCSetupButton as PUSHBUTTON
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oCCFontDialogButton as PUSHBUTTON
+
+	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+	PROTECT oDialFont as myDialFontDialog
+	EXPORT lPrintOk as LOGIC
+	EXPORT MaxWidth := 79 as int
+	EXPORT ToFileFS as FileSpec
+	EXPORT oPrinter	as PrintingDevice
+	EXPORT oPrintJob as PrintJob
+	EXPORT Heading as STRING
+	EXPORT Label as LOGIC
+	EXPORT Destination as STRING
+	EXPORT oRange, oOrigRange as Range
+	EXPORT Pagetext as STRING
+	PROTECT _Beginreport:=FALSE as LOGIC
+	PROTECT row:=0 as int
+	Protect Page:=0 as int
+	EXPORT Extension as STRING 
+	Protect ptrHandle
+	Protect LanguageDefault as string
+	Protect LanguageRus as string
+	Protect LanguageJap as string
+	Protect LanguageCZ as string
+	Protect LanguageTHD as string
+	Protect cRTFHeader as STRING
+	Protect RTFFormat as string
+	Export lRTF,lXls,lSuspend as logic 
+	Protect saveRow:=0 as int
+	Protect savePage:=0 as int 
+	Protect saveBeginReport as logic
+	protect FiFoPtr:=0 as int
 METHOD ButtonClick(oControlEvent) CLASS _PrintDialog
 	LOCAL oControl AS Control
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
@@ -258,6 +263,20 @@ STATIC DEFINE _PRINTERDIALOG_SETUPBUTTON := 106
 STATIC DEFINE _PRINTERDIALOG_THEFIXEDTEXT1 := 100
 STATIC DEFINE _PRINTERDIALOG_THEGROUPBOX1 := 102 
 DEFINE ACCEPT_START := "#22#"
+RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
+	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
+	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
+	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
+	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
+	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
+	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
+	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
+END
+
 class AcceptFormat inherit DataDialogMine 
 
 	protect oCCNewButton as PUSHBUTTON
@@ -275,20 +294,6 @@ class AcceptFormat inherit DataDialogMine
   EXPORT lCancel AS LOGIC
   EXPORT brief AS STRING
   EXPORT Lettername AS STRING
-RESOURCE AcceptFormat DIALOGEX  8, 7, 269, 107
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"New", ACCEPTFORMAT_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 129, 11, 53, 13
-	CONTROL	"Edit", ACCEPTFORMAT_EDITBUTTON, "Button", WS_TABSTOP|WS_CHILD, 128, 30, 54, 13
-	CONTROL	"Specifation text", ACCEPTFORMAT_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 1, 190, 53
-	CONTROL	"OK", ACCEPTFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 205, 65, 53, 12
-	CONTROL	"Cancel", ACCEPTFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 205, 82, 53, 12
-	CONTROL	"", ACCEPTFORMAT_BRIEVEN, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 13, 12, 107, 72
-	CONTROL	"Contents", ACCEPTFORMAT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 64, 190, 30
-	CONTROL	"Amount on OLA", ACCEPTFORMAT_M12_BD, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 12, 75, 80, 11
-END
-
 access Brieven() class AcceptFormat
 return self:FieldGet(#Brieven)
 
@@ -415,6 +420,15 @@ STATIC DEFINE ACCEPTFORMAT_GROUPBOX3 := 102
 STATIC DEFINE ACCEPTFORMAT_M12_BD := 107 
 STATIC DEFINE ACCEPTFORMAT_NEWBUTTON := 100 
 STATIC DEFINE ACCEPTFORMAT_OKBUTTON := 103 
+class AskLetterName inherit DialogWinDowExtra 
+
+	protect oDCLettername as SINGLELINEEDIT
+	protect oDCFixedText1 as FIXEDTEXT
+	protect oCCOKButton as PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  EXPORT cName AS STRING
+  PROTECT cExt AS STRING
 RESOURCE AskLetterName DIALOGEX  19, 50, 263, 33
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Give name of textformat to save"
@@ -425,15 +439,6 @@ BEGIN
 	CONTROL	"OK", ASKLETTERNAME_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 206, 11, 53, 13
 END
 
-class AskLetterName inherit DialogWinDowExtra 
-
-	protect oDCLettername as SINGLELINEEDIT
-	protect oDCFixedText1 as FIXEDTEXT
-	protect oCCOKButton as PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  EXPORT cName AS STRING
-  PROTECT cExt AS STRING
 METHOD Close(oEvent) CLASS AskLetterName
 	SUPER:Close(oEvent)
 	//Put your changes here
@@ -1212,29 +1217,6 @@ METHOD Init() CLASS LabelColCnt
 
 
 
-RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"Label format:", LABELFORMAT_FIXEDTEXT1, "Static", WS_CHILD, 20, 4, 100, 12
-	CONTROL	"Height:", LABELFORMAT_STCKR_HEIGHT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", LABELFORMAT_STCKR_WIDTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 42, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Height label:", LABELFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 10, 21, 56, 12
-	CONTROL	"Width label:", LABELFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 10, 42, 57, 12
-	CONTROL	"", LABELFORMAT_STCKR_TOPMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 64, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Top margin page:", LABELFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 10, 63, 72, 12
-	CONTROL	"", LABELFORMAT_STCKR_LEFTMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 83, 40, 13, WS_EX_CLIENTEDGE
-	CONTROL	"Left margin page:", LABELFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 10, 83, 58, 13
-	CONTROL	"", LABELFORMAT_STCKR_POINTSIZE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 102, 105, 54, 47
-	CONTROL	"OK", LABELFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 177, 20, 53, 13
-	CONTROL	"Cancel", LABELFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 177, 39, 53, 12
-	CONTROL	"Font pointsize", LABELFORMAT_FIXEDTEXT8, "Static", WS_CHILD, 10, 104, 54, 12
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT9, "Static", WS_CHILD, 152, 22, 16, 13
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT10, "Static", WS_CHILD, 152, 43, 16, 13
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT12, "Static", WS_CHILD, 152, 65, 16, 12
-	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
-END
-
 CLASS LabelFormat INHERIT DataDialogMine 
 
 	PROTECT oDCFixedText1 AS FIXEDTEXT
@@ -1258,6 +1240,29 @@ CLASS LabelFormat INHERIT DataDialogMine
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   EXPORT Pretesting AS LOGIC
   EXPORT lCancel AS LOGIC
+RESOURCE LabelFormat DIALOGEX  6, 6, 238, 165
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"Label format:", LABELFORMAT_FIXEDTEXT1, "Static", WS_CHILD, 20, 4, 100, 12
+	CONTROL	"Height:", LABELFORMAT_STCKR_HEIGHT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 100, 22, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", LABELFORMAT_STCKR_WIDTH, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 42, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Height label:", LABELFORMAT_FIXEDTEXT2, "Static", WS_CHILD, 10, 21, 56, 12
+	CONTROL	"Width label:", LABELFORMAT_FIXEDTEXT3, "Static", WS_CHILD, 10, 42, 57, 12
+	CONTROL	"", LABELFORMAT_STCKR_TOPMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 64, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Top margin page:", LABELFORMAT_FIXEDTEXT6, "Static", WS_CHILD, 10, 63, 72, 12
+	CONTROL	"", LABELFORMAT_STCKR_LEFTMARGIN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 102, 83, 40, 13, WS_EX_CLIENTEDGE
+	CONTROL	"Left margin page:", LABELFORMAT_FIXEDTEXT7, "Static", WS_CHILD, 10, 83, 58, 13
+	CONTROL	"", LABELFORMAT_STCKR_POINTSIZE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 102, 105, 54, 47
+	CONTROL	"OK", LABELFORMAT_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 177, 20, 53, 13
+	CONTROL	"Cancel", LABELFORMAT_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 177, 39, 53, 12
+	CONTROL	"Font pointsize", LABELFORMAT_FIXEDTEXT8, "Static", WS_CHILD, 10, 104, 54, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT9, "Static", WS_CHILD, 152, 22, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT10, "Static", WS_CHILD, 152, 43, 16, 13
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT12, "Static", WS_CHILD, 152, 65, 16, 12
+	CONTROL	"mm", LABELFORMAT_FIXEDTEXT13, "Static", WS_CHILD, 152, 84, 16, 12
+END
+
 METHOD CancelButton( ) CLASS LabelFormat
 	SELF:EndWindow()
 	lCancel := TRUE
@@ -2305,17 +2310,6 @@ STATIC DEFINE MARKUPGIFTSGROUP_OKBUTTON := 101
 STATIC DEFINE MARKUPGIFTSGROUPOLD_EDITLETTER := 100 
 STATIC DEFINE MARKUPGIFTSGROUPOLD_KEYWORD := 102 
 STATIC DEFINE MARKUPGIFTSGROUPOLD_SAVEBUTTON := 101 
-CLASS MarkupLetter INHERIT DialogWinDowExtra 
-
-	PROTECT oDCEditLetter AS MULTILINEEDIT
-	PROTECT oCCSaveButton AS PUSHBUTTON
-	PROTECT oDCKeyword AS COMBOBOX
-	PROTECT oCCRepeatButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  	PROTECT LetterName as STRING
-  	PROTECT cExt as STRING
-
 RESOURCE MarkupLetter DIALOGEX  13, 25, 366, 226
 STYLE	DS_3DLOOK|DS_MODALFRAME|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Markup Letter"
@@ -2326,6 +2320,17 @@ BEGIN
 	CONTROL	"", MARKUPLETTER_KEYWORD, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 8, 3, 144, 209
 	CONTROL	"Repeating group", MARKUPLETTER_REPEATBUTTON, "Button", WS_TABSTOP|WS_CHILD, 164, 3, 61, 13
 END
+
+CLASS MarkupLetter INHERIT DialogWinDowExtra 
+
+	PROTECT oDCEditLetter AS MULTILINEEDIT
+	PROTECT oCCSaveButton AS PUSHBUTTON
+	PROTECT oDCKeyword AS COMBOBOX
+	PROTECT oCCRepeatButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  	PROTECT LetterName as STRING
+  	PROTECT cExt as STRING
 
 METHOD Close(oEvent) CLASS MarkupLetter
 	SUPER:Close(oEvent)
@@ -2686,7 +2691,7 @@ METHOD Init() CLASS PointsSize
 DEFINE PRINT_END := "#21#"
 CLASS PrintDialog INHERIT _PrintDialog
 	
-	declare method prstart,ReInitPrint,RemovePrFile,PrintLine
+	declare method prstart,ReInitPrint,RemovePrFile,PrintLine,RollBack
 ACCESS Beginreport() CLASS PrintDialog
 RETURN SELF:FIELDGET(#_Beginreport)
 
@@ -2706,6 +2711,22 @@ METHOD CopyPers(oPerson) CLASS PrintDialog
 	self:oPrintJob:oPers := oPerson
 	RETURN TRUE
 
+Method Flush() Class PrintDialog
+	// Flushes print buffer to output device and record new save point 
+	local i as int
+	// print prepared lines
+	if self:Destination == "File" 
+		for i:=1 to Len(self:oPrintJob:aFIFO)
+			FWriteLine(self:ptrHandle, self:oPrintJob:aFIFO[i]+iif(self:lRTF.and.AtC('\trowd',self:oPrintJob:aFIFO[i])=0,"\par",'')) 
+		next
+		self:oPrintJob:aFIFO:={} // reset buffer 
+		self:lSuspend:=true
+	endif
+	self:savePage:=self:Page
+	self:saveRow:=self:row
+	self:FiFoPtr:=Len(self:oPrintJob:aFIFO)
+	self:saveBeginReport:=self:_Beginreport 
+	return
 METHOD INIT( oOwner, cCaption, lLabel, nMaxWidth,nOrientation,cExtension ) CLASS PrintDialog
 	* lLabel: true: printing of labels
 	* nMaxWidth: maximum width of a line in the report (not applicable for labels)
@@ -2860,7 +2881,7 @@ METHOD OkButton(cDest) CLASS PrintDialog
 	SELF:EndDialog()
 	
 	RETURN
-METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingLines as array,skipcount:=0 as int) as logic CLASS PrintDialog
+METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent:='' as string,HeadingLines:={} as array,skipcount:=0 as int) as logic CLASS PrintDialog
 	* Output to printer or window of LineContent
 	*
 	* Calling: PrintLine(@LineNbr,@PageNbr,LineContent,{heading1,heading2,...},skipcount)
@@ -2931,6 +2952,7 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent as string,HeadingL
 	IF skippage .or. self:_Beginreport.or.PageNbr=0 .or. self:lXls.and.Empty(LineNbr)
 		IF skippage.or.PageNbr=0
 			++PageNbr
+			self:Page:=PageNbr
 			LineNbr := 0
 		ELSEIF LineNbr>0
 			// add two space lines:
@@ -3067,6 +3089,16 @@ IF self:Destination == "File"
 	self:ToFileFS:DELETE()
 endif	 
 return true
+Method RollBack(LineNbr ref int,PageNbr ref int) as void Pascal class PrintDialog
+	// rolls back printed lines to save point set by latest Flush
+	ASize(self:oPrintJob:aFIFO,self:FiFoPtr)
+	self:row:=self:saveRow
+	self:Page:=self:savePage
+	LineNbr:=self:row
+	PageNbr:=self:Page
+	self:_Beginreport:=self:saveBeginReport
+	return 
+
 METHOD SetupButton( ) CLASS PrintDialog
 LOCAL structDevMode AS _WINDevMode
 	IF self:oPrinter:IsValid()
@@ -3436,12 +3468,6 @@ ENDIF
 RETURN
 
 STATIC DEFINE PRINTSCREEN_LISTPRINT := 100 
-CLASS PRINTSHOW INHERIT DIALOGWINDOW 
-
-	PROTECT oDCListPrint AS LISTBOX
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
-  protect oOwner as Window
 RESOURCE PRINTSHOW DIALOGEX  14, 22, 528, 350
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME
 CAPTION	"Preview Print"
@@ -3450,11 +3476,11 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 0, 538, 345
 END
 
-CLASS PrintShow2 INHERIT DATAWINDOW 
+CLASS PRINTSHOW INHERIT DIALOGWINDOW 
 
 	PROTECT oDCListPrint AS LISTBOX
 
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line) 
   protect oOwner as Window
 RESOURCE PrintShow2 DIALOGEX  4, 3, 537, 373
 STYLE	WS_CHILD
@@ -3463,6 +3489,12 @@ BEGIN
 	CONTROL	"Preview Print", PRINTSHOW2_LISTPRINT, "ListBox", LBS_NOTIFY|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 0, 11, 538, 345
 END
 
+CLASS PrintShow2 INHERIT DATAWINDOW 
+
+	PROTECT oDCListPrint AS LISTBOX
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  protect oOwner as Window
 METHOD Close(oEvent) CLASS PRINTSHOW2
 	SUPER:Close(oEvent)
 	//Put your changes here
