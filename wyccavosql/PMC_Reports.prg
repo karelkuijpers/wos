@@ -605,7 +605,7 @@ METHOD PrintReport() CLASS PMISsend
 	if Len(aAccDestOwn)>0
 		// collect own destination accounts
 		oSel:=SqlSelect{"select group_concat(cast(accid as char),'#$#',accnumber separator '#%#') as owndest from account where accnumber in ("+Implode(aAccDestOwn,'","',,,2)+") and active=1",oConn}
-		if oSel:Reccount>0
+		if oSel:Reccount>0 .and. !Empty(oSel:owndest)
 			aAccDestOwn:=AEvalA(Split(oSel:owndest,'#%#',,true),{|x|x:=Split(x,'#$#',,true)})
 		else
 			aAccDestOwn:={}
@@ -686,7 +686,7 @@ METHOD PrintReport() CLASS PMISsend
 	SQLStatement{"commit",oConn}:Execute()	
 	SQLStatement{"unlock tables",oConn}:Execute()
 	oSel:=SqlSelect{"select transid from transaction where lock_id='"+MYEMPID+"' and  bfm='' and dat<='"+SQLdate(self:closingDate)+"' and gc>''"+;
-	+iif(Empty(self:nMaxTransid),""," and transid<="+Str(self:nMaxTransid,-1))+" limit 1",oConn} 
+		+iif(Empty(self:nMaxTransid),""," and transid<="+Str(self:nMaxTransid,-1))+" limit 1",oConn} 
 	nTransSample:=ConI(oSel:transid)  // save sample transid for checking purposes later
 
 
@@ -702,7 +702,7 @@ METHOD PrintReport() CLASS PMISsend
 	// determine if previous year is closed for balances:
 	aYearStartEnd := GetBalYear(Year(self:closingDate),Month(self:closingDate))   // determine start of fiscal year                           
 	PrvYearNotClosed:=((aYearStartEnd[1]*12+aYearStartEnd[2])>(Year(LstYearClosed)*12+Month(LstYearClosed)))
-   aYearStartEnd:=null_array
+	aYearStartEnd:=null_array
 	// read balance of all members:
 	oMBal:cAccSelection:="a.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
 	oMBal:cTransSelection:="t.accid in ("+Implode(aAccidMbr,',',,,1)+")"	
@@ -768,7 +768,7 @@ METHOD PrintReport() CLASS PMISsend
 		if Len(aAccidRPP)>0
 			//	For all own members with remaining RPP distribution instruction: sum of all transactions fromRPP not yet sent to PMC
 			oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.rpptot as char) order by y.accid separator "#") as grrppsum from (select t.accid,sum(t.cre-t.deb) as rpptot from transaction t where t.fromrpp=1 and t.bfm="" and t.gc>"" and t.dat <="'+SQLdate(closingDate)+'" '+; 
-			  +iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransId,-1))+;
+			+iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransId,-1))+;
 				" and t.accid in ("+Implode(aAccidRPP,',',,,1)+") and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn}
 			if oSel:Reccount>0
 				aAccRPP:=AEvalA(Split(oSel:grrppsum,'#'),{|x|x:=Split(x,',') })  // make array of sums of rpp amounts per account  
@@ -787,8 +787,8 @@ METHOD PrintReport() CLASS PMISsend
 		endif
 	endif
 	// reset arrays:
-   aAccidRPP:=null_array
-   aDBBalValue:=null_array
+	aAccidRPP:=null_array
+	aDBBalValue:=null_array
 	aAssTot:=null_array 
 	aAccRPP:=null_array
 	
@@ -937,21 +937,23 @@ METHOD PrintReport() CLASS PMISsend
 				currentaccid:= aAccidMbrF[nAccmbr,1]
 				if (nTrans:=AScan(aTransF,{|x|x[1]==currentaccid}))>0
 					// process transactions:
-					do while nTrans<=Len(aTransF) .and. aTransF[nTrans,1]==currentaccid
-						me_amount:=Round(Val(aTransF[nTrans,7])-Val(aTransF[nTrans,6]),DecAantal)
-						me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(me_amount,-1) +"("+aTransF[nTrans,10]+")" 
-						me_gc:=aTransF[nTrans,8]
-						PMCco:=iif(me_gc=='AG','CN',iif(me_gc=='MG','MM','PC')) 
-						if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
-							me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,4]+Space(1)+aTransF[nTrans,11]
+					do while nTrans<=Len(aTransF) .and. aTransF[nTrans,1]==currentaccid 
+						if Len(aTransF[nTrans])>10
+							me_amount:=Round(Val(aTransF[nTrans,7])-Val(aTransF[nTrans,6]),DecAantal)
+							me_desc:=sCurrName+iif(Len(sCURRNAME)>1," ","")+Str(me_amount,-1) +"("+aTransF[nTrans,10]+")" 
+							me_gc:=aTransF[nTrans,8]
+							PMCco:=iif(me_gc=='AG','CN',iif(me_gc=='MG','MM','PC')) 
+							if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
+								me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,4]+Space(1)+aTransF[nTrans,11]
+							endif
+							if me_gc=='AG' .and.aTransF[nTrans,12]=='0' .and. me_stat!="Staf" 
+								me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
+								me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
+							endif
+							me_desc+=iif(Empty(me_desc),"","; ")+aTransF[nTrans,5]
+							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2])})				
+							AmntTrans:=Round(me_amount+AmntTrans,DecAantal)
 						endif
-						if me_gc=='AG' .and.aTransF[nTrans,12]=='0' .and. me_stat!="Staf" 
-							me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
-							me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
-						endif
-						me_desc+=iif(Empty(me_desc),"","; ")+aTransF[nTrans,5]
-						AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2])})				
-						AmntTrans:=Round(me_amount+AmntTrans,DecAantal)
 						nTrans++
 					enddo
 				endif
@@ -1311,10 +1313,10 @@ METHOD PrintReport() CLASS PMISsend
 				lStop:=true
 				FileStart(WorkDir()+"InsitePMCUpload.html",self)
 				if TextBox{,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Has file with transactions successfully been uploaded without errors into Insite")+'?'+;
-				CRLF+self:oLan:WGet("This is irrevocable",,'@!')+'!',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYYES
-// 				oAskUp:=AskUpld{self,,,cFilename}
-// 				oAskUp:Show() 
-// 				if oAskUp:Result==1
+						CRLF+self:oLan:WGet("This is irrevocable",,'@!')+'!',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYYES
+					// 				oAskUp:=AskUpld{self,,,cFilename}
+					// 				oAskUp:Show() 
+					// 				if oAskUp:Result==1
 					if !self:RefreshLocks(nTransSample,nTransLock)
 						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
 					else
@@ -1327,7 +1329,7 @@ METHOD PrintReport() CLASS PMISsend
 						FErase(cFilename)
 					endif
 					TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Nothing recorded as sent to PMC")+CRLF+CRLF+self:oLan:WGet("Remove from Insite file") +;
-					': '+SEntity+'_'+FileSpec{cFilename}:Filename+'.xml',BOXICONHAND}:Show()
+						': '+SEntity+'_'+FileSpec{cFilename}:Filename+'.xml',BOXICONHAND}:Show()
 				endif
 			endif
 		endif
@@ -1344,14 +1346,14 @@ METHOD PrintReport() CLASS PMISsend
 				RETURN
 			ENDIF
 		ENDIF 
-	
+		
 		if !maildirect		
 			oMapi := MAPISession{}
 		endif
 		self:Pointer := Pointer{POINTERHOURGLASS}
 		cStmsg:=self:oLan:WGet("Recording transactions, please wait")+"..." 
 		self:STATUSMESSAGE(cStmsg)  
-			// determine mbalance accounts to be locked for update 
+		// determine mbalance accounts to be locked for update 
 		cAccs:=sam+','+shb
 		if !Empty(samProj)
 			cAccs+=','+samProj
@@ -1545,7 +1547,7 @@ METHOD PrintReport() CLASS PMISsend
 			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
 		ENDIF
 		
-		                                                                    
+		
 		// 		(time1:=Seconds())
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:Execute()
@@ -1775,7 +1777,7 @@ METHOD PrintReport() CLASS PMISsend
 		endif
 	ENDIF
 	SetDecimalSep(Asc('.') )
-   aRecip:=null_array
+	aRecip:=null_array
 	if !PMCUpload .and.!lStop .and.!maildirect
 		oMapi:Close()
 	endif
