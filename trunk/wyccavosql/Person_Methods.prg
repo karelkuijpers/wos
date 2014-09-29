@@ -2348,20 +2348,20 @@ FOR i=oRange:Min TO oRange:Max
 	SkipPage:=FALSE
 	FOR tel=1 TO Max(if(brfNAW,brfregn+5,0),if(brfDAT,brfrega,0))
 		IF tel#if(brfDAT,brfrega,0).and.(tel<brfregn.or.tel>brfregn+5.or..not.brfNAW)
-			oReport:PrintLine(@Rij,@Blad,' ')
+			oReport:PrintLine(@Rij,@Blad,' ',{})
 		ELSEIF tel=if(brfDAT,brfrega,0).and.(tel<brfregn.or.tel>brfregn+5.or..not.brfNAW)
-			oReport:PrintLine(@Rij,@Blad,Space(if(brfDAT,brfCola,0))+kenmerk)
+			oReport:PrintLine(@Rij,@Blad,Space(if(brfDAT,brfCola,0))+kenmerk,{})
 		ELSEIF tel#if(brfDAT,brfrega,0).and.tel>=brfregn.and.tel<=brfregn+5.and.brfNAW
 			oReport:PrintLine(@Rij,@Blad,Space(brfCol)+self:m_AdressLines[teladdr])
 			++teladdr
 		ELSE
 			IF brfCol < if(brfDAT,brfCola,0) .and.brfNAW
 				oReport:PrintLine(@Rij,@Blad,Space(brfCol)+;
-				self:m_AdressLines[teladdr]+Space(if(brfDAT,brfCola,0)-brfCol+40)+kenmerk)
+				self:m_AdressLines[teladdr]+Space(if(brfDAT,brfCola,0)-brfCol+40)+kenmerk,{},0)
 				++teladdr
 			ELSE
 				oReport:PrintLine(@Rij,@blad,Space(if(brfDAT,brfCola,0))+kenmerk+;
-				IF(brfNAW,Space(brfCol-if(brfDAT,brfCola,0)+8)+self:m_AdressLines[teladdr],""))
+				IF(brfNAW,Space(brfCol-if(brfDAT,brfCola,0)+8)+self:m_AdressLines[teladdr],""),{},0)
 				++teladdr
 			ENDIF
 		ENDIF
@@ -2371,7 +2371,7 @@ FOR i=oRange:Min TO oRange:Max
 		m96_regels:= Min(m96_regels,38-rij)     // do not print more than 37 lines above acceptgiro
 	ENDIF	
 	
-	oReport:PrintLine(@Rij,@Blad,' ')
+	oReport:PrintLine(@Rij,@Blad,' ',{},0)
 	FOR tel = 1 TO m96_regels
 		cRegel:=MemoLine(brieftxt,brfWidth-brfColt,tel)
 		SkipPos:=At(PAGE_END,cRegel)
@@ -2379,7 +2379,7 @@ FOR i=oRange:Min TO oRange:Max
 			IF SkipPos>1
 				// print section before page skip:
 				oReport:PrintLine(@Rij,@Blad,Space(brfColt)+SubStr(cRegel,1,skipPos-1),;
-				{self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})],' '})
+				{self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})],' '},0)
 			ENDIF
 			cRegel:=SubStr(cRegel,SkipPos+Len(PAGE_END))
 			SkipPos:=0
@@ -2390,7 +2390,7 @@ FOR i=oRange:Min TO oRange:Max
 			rij:=0
 		ENDIF
 		oReport:PrintLine(@Rij,@Blad,Space(brfColt)+cRegel,;
-		{self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})],' '})
+		{self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%LASTNAME"})],' '},0)
 	NEXT
     IF lAcceptNorway
     	self:oDB:GetGiroNaw()
@@ -2618,13 +2618,13 @@ IF .not.Empty(oSel:FIELDGET(#firstname))
    hu  :=  Pad(hu,59)+Trim(oSel:FIELDGET(#firstname))
 ENDIF
 mopm := MemoLine(ht,73,1)
-oReport:PrintLine(@nRow,@nPage,mopm,Heading,if(Empty(hu),nil,2))
+oReport:PrintLine(@nRow,@nPage,mopm,Heading,if(Empty(hu),0,2))
 mopm := MemoLine(ht,73,2)
 IF .not.Empty(mopm)
-   oReport:PrintLine(@nRow,@nPage,Space(6) + AllTrim(mopm),Heading)
+   oReport:PrintLine(@nRow,@nPage,Space(6) + AllTrim(mopm),Heading,0)
 ENDIF
 IF .not.Empty(hu)
-   oReport:PrintLine(@nRow,@nPage,hu,Heading)
+   oReport:PrintLine(@nRow,@nPage,hu,Heading,0)
 ENDIF
 RETURN 
 METHOD NAW_Extended(nRow ref int, nPage ref int ,Heading as array, oReport as Printjob,oSel as SQLSelect) as void pascal CLASS Selpers
@@ -2636,25 +2636,25 @@ METHOD NAW_Extended(nRow ref int, nPage ref int ,Heading as array, oReport as Pr
 	inspring := Str(oSel:persid,-1)+' '
 	nWidth:=79-(nInspr:=Len(inspring))
 	m_AdressLines := MarkUpAddress(oSel,0,nWidth,0)
-	oReport:PrintLine(@nRow,@nPage,,Heading,6)
+	oReport:PrintLine(@nRow,@nPage,"",Heading,6)
 	FOR i = 1 to 6
 		regel := m_AdressLines[i]
 		IF .not. Empty(regel)
-			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(regel),Heading)
+			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(regel),Heading,0)
 			inspring:=Space(nInspr)
 		ENDIF
 		IF i=1 .and. .not.Empty(oSel:firstname) .and. !sFirstNmInAdr
-			oReport:PrintLine(@nRow,@nPage,inspring + oSel:firstname,Heading)
+			oReport:PrintLine(@nRow,@nPage,inspring + oSel:firstname,Heading,0)
 			inspring:=Space(nInspr)
 		ENDIF
 	NEXT
 	IF .not.Empty(oSel:telbusiness).or.!Empty(oSel:telhome)
 		oReport:PrintLine(@nRow,@nPage,inspring + self:cTel+" - "+;
-			self:cDay+":"+oSel:telbusiness+" - "+self:cNight+":"+oSel:telhome,Heading)
+			self:cDay+":"+oSel:telbusiness+" - "+self:cNight+":"+oSel:telhome,Heading,0)
 	ENDIF
 	IF .not.Empty(oSel:mobile).or.!Empty(oSel:fax)
 		oReport:PrintLine(@nRow,@nPage,inspring +;
-			self:cFax+":"+oSel:fax+" - "+self:cMobile+":"+oSel:mobile,Heading)
+			self:cFax+":"+oSel:fax+" - "+self:cMobile+":"+oSel:mobile,Heading,0)
 	ENDIF
 	IF .not.Empty(oSel:mailingcodes)
 		FOR i:=1 to 28 step 3
@@ -2679,20 +2679,20 @@ METHOD NAW_Extended(nRow ref int, nPage ref int ,Heading as array, oReport as Pr
 		i:=1
 		mopm:=MemoLine(cCodOms,nWidth,1)
 		DO WHILE !(mopm:=MemoLine(cCodOms,nWidth,i))==null_string
-			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(mopm),Heading)
+			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(mopm),Heading,0)
 			++i
 		ENDDO
 	ENDIF
 	FOR i=1 to 6
 		mopm:=MemoLine(oSel:remarks,nWidth,i)
 		IF .not.Empty(mopm)
-			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(mopm),Heading)
+			oReport:PrintLine(@nRow,@nPage,inspring + AllTrim(mopm),Heading,0)
 		ENDIF
 	NEXT
 	roud:=nRow
-	oReport:PrintLine(@nRow,@nPage,,Heading)
+	oReport:PrintLine(@nRow,@nPage,'',Heading,0)
 	IF nRow=roud
-		oReport:PrintLine(@nRow,@nPage,' ',Heading)
+		oReport:PrintLine(@nRow,@nPage,' ',Heading,0)
 	ENDIF
 
 	RETURN 
