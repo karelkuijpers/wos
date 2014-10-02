@@ -224,6 +224,8 @@ Function DeleteAccount(cAccId:="" as string ) as logic
 	LOCAL oMBal as Balances
 	LOCAL oDep as SQLSelect
 	Local oAcc as SQLSelect
+	local oSel as SqlSelect 
+	local oPers as SqlSelect
 	local oStmnt as SQLSTatement
 	LOCAL oTextbox as TextBox
 	local oLan as language
@@ -266,16 +268,28 @@ Function DeleteAccount(cAccId:="" as string ) as logic
 			return false
 		endif
 		// check if account not used as ROE-gain/loss:
-		oAcc:=SQLSelect{"select accnumber from account where gainlsacc="+cAccId,oConn}
-		if oAcc:RecCount>0
-			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oAcc:ACCNUMBER)+"!"}:Show()
+		oSel:=SqlSelect{"select accnumber from account where gainlsacc="+cAccId,oConn}
+		if oSel:RecCount>0
+			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used as Exchange rate Gain/loss account in account")+" "+AllTrim(oSel:ACCNUMBER)+"!"}:Show()
 			return false
 		endif
 		// check if account used in standorderline:
-		oAcc:=SQLSelect{"select stordrid from standingorderline where accountid="+cAccId,oConn}
-		if oAcc:RecCount>0
+		oSel:=SqlSelect{"select stordrid from standingorderline where accountid="+cAccId,oConn}
+		if oSel:RecCount>0
 			InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in standing orders")+"!"}:Show()
 			return false
+		endif
+		// check if account used as destination account of distribution instruction to own PP:
+		oSel:=SqlSelect{"SELECT mbrid  FROM `distributioninstruction` WHERE `destacc` = '"+oAcc:ACCNUMBER +"' AND `destpp` = '"+sEntity+"'",oConn} 
+		if oSel:RecCount>0
+			oPers:=SqlSelect{"select "+SQLFullName(0,'p')+" as fullname from person p, member m where p.persid=m.persid and m.mbrid="+ConS(oSel:mbrid),oConn}
+			if oPers:RecCount>0
+				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in distribution instruction of member"+' '+oPers:FullName)+"!"}:Show()
+				return false
+			else
+				InfoBox { , oLan:WGet("Delete Record"),oLan:WGet("Account used in distribution instruction of member")+' '+ConS(oSel:mbrid)+"!"}:Show()
+				return false
+			endif
 		endif
 		
 		oStmnt:=SQLStatement{"delete from account where accid='"+cAccId+"'",oConn}
@@ -570,6 +584,7 @@ METHOD ValidateAccount() CLASS EditAccount
 	local cGiftsAccs as string
 	local lActive:=self:mActive as logic
 	local oSel as SQLSelect
+	local oPers as SQLSelect
 	self:mAccNumber:=AllTrim(self:mAccNumber)
 	IF Empty(self:mAccNumber)
 		lValid := FALSE
@@ -684,23 +699,33 @@ METHOD ValidateAccount() CLASS EditAccount
 				if ConS(oSel:incomeacc) == self:mAccId  
 					cError:=self:oLan:WGet("Can't be inactive for it is used for Income in department:")+oSel:descriptn
 					lValid:=FALSE	
-					self:oDCmGIFTALWD:SetFocus()	
+					self:oDCmActive:SetFocus()	
 				endif
 				if ConS(oSel:expenseacc) == self:mAccId 
 					cError:=self:oLan:WGet("Can't be inactive for it is used for Expenses in department:")+oSel:descriptn
 					lValid:=FALSE	
-					self:oDCmGIFTALWD:SetFocus()	
+					self:oDCmActive:SetFocus()	
 				endif	
 				if ConS(oSel:netasset) == self:mAccId   
 					cError:=self:oLan:WGet("Can't be inactive for it is used for Netassets in department:")+oSel:descriptn
 					lValid:=FALSE	
-					self:oDCmGIFTALWD:SetFocus()	
+					self:oDCmActive:SetFocus()	
 				endif
 				
 			endif 
 		endif
 	endif	
-
+	// check if inactive is unchecked incase account is used in distribution instruction: 
+	if self:mActive = false
+   		// check if account used as destination account of distribution instruction to own PP:
+		oSel:=SqlSelect{"SELECT mbrid  FROM `distributioninstruction` WHERE `destacc` = '"+self:mAccNumber +"' AND `destpp` = '"+sEntity+"'",oConn} 
+		if oSel:Reccount>0
+			oPers:=SqlSelect{"select "+SQLFullName(0,'p')+" as fullname from person p, member m where p.persid=m.persid and m.mbrid="+ConS(oSel:mbrid),oConn}
+			cError:=self:oLan:WGet("Can't be inactive for it is used in distribution instruction of member")+': '+iif(oPers:Reccount>0,oPers:FullName,ConS(oSel:mbrid))
+			lValid:=FALSE	
+			self:oDCmActive:SetFocus()	
+		endif
+	endif
 	
 	IF ! lValid
 		(ErrorBox{self,cError}):Show()
