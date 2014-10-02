@@ -718,7 +718,7 @@ METHOD ValidateAccount() CLASS EditAccount
 	// check if inactive is unchecked incase account is used in distribution instruction: 
 	if self:mActive = false
    		// check if account used as destination account of distribution instruction to own PP:
-		oSel:=SqlSelect{"SELECT mbrid  FROM `distributioninstruction` WHERE `destacc` = '"+self:mAccNumber +"' AND `destpp` = '"+sEntity+"'",oConn} 
+		oSel:=SqlSelect{"SELECT mbrid  FROM `distributioninstruction` WHERE `destacc` = '"+AllTrim(self:oAcc:ACCNUMBER) +"' AND `destpp` = '"+sEntity+"'",oConn} 
 		if oSel:Reccount>0
 			oPers:=SqlSelect{"select "+SQLFullName(0,'p')+" as fullname from person p, member m where p.persid=m.persid and m.mbrid="+ConS(oSel:mbrid),oConn}
 			cError:=self:oLan:WGet("Can't be inactive for it is used in distribution instruction of member")+': '+iif(oPers:Reccount>0,oPers:FullName,ConS(oSel:mbrid))
