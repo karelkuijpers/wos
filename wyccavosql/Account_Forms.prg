@@ -1637,7 +1637,7 @@ METHOD OkButton CLASS EditAccount
 	LOCAL i, nPntr as int
 	local cExtra,cValue as string 
 	local amProp:=self:aProp as array
-	local oStmt,oBudUpd,oBudIns as SQLSTatement
+	local oStmt,oBudUpd,oBudIns,oDistr as SQLSTatement
 	local cStatement,cValues as string 
 	
 
@@ -1710,7 +1710,19 @@ METHOD OkButton CLASS EditAccount
 				(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
 				return nil 
 			endif
-		endif 
+		endif
+		IF !self:lNew .and. !self:mAccNumber == AllTrim(self:oAcc:ACCNUMBER) 
+			// if number changed update it too within distribution instructions using it:
+			oDistr:=SQLStatement{"update `distributioninstruction` set `destacc`='"+self:mAccNumber+"' WHERE `destacc` = '"+AllTrim(self:oAcc:ACCNUMBER) +"' AND `destpp` = '"+sEntity+"'",oConn}
+			oDistr:Execute()
+			if !Empty(oBudIns:status)
+				LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
+				SQLSTatement{"rollback",oConn}:execute()
+				(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
+				return nil 
+			endif		 	
+		endif
+
 		SQLSTatement{"commit",Oconn}:execute()
 // 		IF IsObject(oCaller).and.!oCaller==null_object .and.IsObject(self:oCaller:TreeView) .and.!self:oCaller:Treeview==null_object
 		IF IsObject(oCaller).and.!oCaller==null_object 
