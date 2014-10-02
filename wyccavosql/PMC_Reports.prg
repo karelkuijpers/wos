@@ -542,7 +542,7 @@ METHOD PrintReport() CLASS PMISsend
 		"coalesce(homeppname,''),'#$#',coalesce(distr,'') order by mbrid separator '#%#') as grMbr"+;
 		" from ("+cMbrSelect+") as y group by 1=1" 
 	oMbr:=SqlSelect{cMbrSelectArr,oConn}
-	if oMbr:Reccount<1
+	if oMbr:Reccount<1 .or. Empty(oMbr:grMbr)
 		LogEvent(self,oMbr:SQLString,"logerrors") 
 		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
 		return
