@@ -334,7 +334,7 @@ METHOD OKButton( ) CLASS EditStandingOrder
 		if oStmnt:NumSuccessfulRows>0 .or.Empty(oStmnt:Status)
 			// save Standing Order Lines: 
 			oStOrdLH:GoTop() 
-			if lNew 
+			if self:lNew 
 				self:curStordid:= Str(ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)),-1) 
 				cStatement:="insert into standingorderline (stordrid,accountid,seqnr,deb,cre,descriptn,gc,reference,creditor,bankacct) values "
 				do	while	!oStOrdLH:EoF
@@ -353,7 +353,7 @@ METHOD OKButton( ) CLASS EditStandingOrder
 		elseif Empty(oStmnt:Status)
 			lError:=true
 		endif
-		if !lError .and.lNew
+		if !lError .and. self:lNew
 			oStmnt:SQLString:=cStatement
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status) .or. oStmnt:NumSuccessfulRows<1
