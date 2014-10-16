@@ -90,6 +90,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	LOCAL cPostData	as STRING
 	local cAED as string
 	local cStatement,RateId as string
+	local DateXE as string
 	Local iSt,iEnd as int
 	local time0,time1 as float
 	local table as string
@@ -99,7 +100,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	LOCAL oXMLDoc as XMLDocument 
 	LOCAL oHttp			as cHttp
 	local oStmnt as SQLStatement 
-	local oROE as SQLSelect
+	local oROE, oSel as SQLSelect
 	
 	// check if ROE allready in currency rates:
 	if Empty(CodeROE) .or. CodeROE==self:cBaseCur
@@ -142,7 +143,17 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 		// try to read from internet   http://www.xe.com/currencytables/?from=EUR&date=2013-03-08                                        
       time0:=Seconds()
 		oHttp 	:= CHttp{"Wyccavo"}
-		cPostData	:= "from="+self:cBaseCur+"&date="+SQLdate(DateROE) 
+		if DateROE>=Today()
+			// get UTC date:
+			oSel:=SqlSelect{"select cast(UTC_DATE() as char) as UTC",oConn}
+			oSel:Execute()
+			if oSel:RecCount>0
+				DateXE:=oSel:UTC
+			else
+				DateXE:=SQLdate(DateROE)
+			endif
+		endif
+		cPostData	:= "from="+self:cBaseCur+"&date="+DateXE 
 
 		cPage 	:= oHttp:GetDocumentByGetOrPost( "www.xe.com",;
 			"/currencytables/",;
