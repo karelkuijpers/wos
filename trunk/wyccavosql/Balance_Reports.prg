@@ -3230,9 +3230,12 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	SQLStatement{"DROP TABLE IF EXISTS transmbr",oConn}:Execute()
 // 	time0:=Seconds()
 	
-	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind 
-	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(a.kind<4 and (t.gc='CH' or left(a.mbrid,1)='a'),3,a.kind))) as kind from "+;
-		'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'
+	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind  
+	// kind(1=income,2=net,3=expense,4=other,5=associated account)
+//	"if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(a.kind<4 and (t.gc='CH' or left(a.mbrid,1)='a'),3,a.kind))) as kind from "+;
+	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp, "+;
+	"if(a.kind>=4,a.kind,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(t.gc='CH' or left(a.mbrid,1)='a',3,a.kind)))) as kind from "+;
+	'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'
 //		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)' 
 	cStatement:=UnionTrans(cStatement)  // temporary
 	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2),kind char(1), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
@@ -5002,8 +5005,8 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	local cPeriod,cNAW,cAmntRPP,cDateRPP,cStartinMonth,cDescr as string
 	local cCurrSubKind,cCurrKind,cCurrKindGrp,cCurrAcc,cCurrOPP as string
 	local lFirstIncome,lColumnHeading,lColumnHeading as logic 
-	local aTransRPP:={},aDesc:={},aTransMG:={} as array 
 	local lMember:=!SubStr(mbrid,1,1)='a' as logic 
+	local aTransRPP:={},aDesc:={},aTransMG:={} as array 
 	
 	// Produce overview from aTrans:
 	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
@@ -5032,9 +5035,6 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	AAdd(aTrans,{,,,,,,,,,,,'9'})  // kind 6 as stop to print remaining totals
 	for nTrans:=1 to Len(aTrans) 
 		// preprocess gifts and collect gifts for later printing: 
-		if nTrans==35
-			nTrans:=nTrans
-		endif
 		if aTrans[nTrans,12]<='2'   //gift or own money 
 			if aTrans[nTrans,5]>'0'  // giver present?
 				// add to aGiftData:
