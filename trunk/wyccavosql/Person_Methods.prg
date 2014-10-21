@@ -681,15 +681,19 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	LOCAL nStart, nPos, nEnd as int
 	local nPos1,nPos2, nPos3,i,j as int
 	local time0,time1 as float
-	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string, aorder:={},abits:={} as array
 	local cBuffer as string
-	local cHeader as string
+	local cHeader as string 
+	local cError as string
+	local cAddressOrg as string
+	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string 
 	local lSuccess as logic                          
-	LOCAL aWord as ARRAY
+	LOCAL aWord as ARRAY 
+	local aAddr as array
 	if Empty(cAddress) .or. Empty(cPostcode).and.Empty(cCity)
 		return {cPostcode,cAddress,cCity}
 	endif
 	street:=AllTrim(cAddress)
+	cAddressOrg:=street
 	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
 	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2)) .or. IsPunctuationMark(SubStr(zipcode,5,2))
 		//illegal zipcode
@@ -703,30 +707,18 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	//cCity:=StrTran(cCity,'Y','IJ')
 	cityname:=cCity 
 
-//	housenrOrg:=StrTran((GetStreetHousnbr(cAddress))[2],' ','')
-	housenrOrg:=AllTrim(GetStreetHousnbr(cAddress)[2])
-
-	// remove housenbr addition from address:
-	aWord:=GetTokens(cAddress)
-	nEnd:=Len(aWord)
-	if nEnd>1
-		if Empty(aWord[nEnd-1,1])  // separation character?
-			nEnd-=2
-		elseif isnum(aWord[nEnd-1,1])
-			nEnd--
-		endif
-		cAddress:=""
-		for i:=1 to nEnd
-			cAddress+=aWord[i,1]+iif(i==nEnd,"",aWord[i,2])
-		next
-		cAddress:=AllTrim(cAddress)
+	aAddr:=GetStreetHousnbr(cAddress)
+ 	housenrOrg:=AllTrim(aAddr[2]) 
+ 	cAddress:=AllTrim(aAddr[1])
+	// remove housenbr addition from address: 
+	aAddr:=GetTokens(housenrOrg)
+	if Len(aAddr)>0
+		housenr:=AllTrim(aAddr[1,1])
+		cAddress+=' '+housenr
 	endif
-	housenr:=(GetStreetHousnbr(cAddress))[2]
 	if !Empty(zipcode) .and. !Empty(housenr)
 		cSearch:=zipcode+' '+housenr
 	elseif !Empty(cCity) .and. !Empty(cAddress)
-// 		aWord:=GetTokens(cCity)
-// 		cSearch:=cAddress+' '+aWord[1,1] 
 		cSearch:=cAddress+' '+cCity 
 		// check strange address:
 		if IsPunctuationMark(cSearch)
@@ -738,45 +730,25 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	else
 		return {cPostcode,cAddress,cCity}	                             
 	endif
-	cSearch:=StrTran(cSearch,' ','%20')
-	oHttp := CHttp{"WycOffSy",,true}
-// 	cHeader:="Content-Type: application/x-www-form-urlencoded" + CRLF + HEADER_ACCEPT +  "User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36"+CRLF
-// 	cHeader:='Content-Type: application/x-www-form-urlencoded'+CRLF+'User-Agent: Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36'+CRLF+;
-//   'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'+CRLF+;
-//   'Accept-Language: en-us,en;q=0.5'+CRLF+;
-//   'Accept-Encoding: gzip,deflate'+CRLF+;
-//   'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7'+CRLF+;
-//   'Keep-Alive: 115'+CRLF+;
-//   'Connection: keep-alive'+CRLF
-      time0:=Seconds()
-		cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
-			"/search/"+cSearch,;
-			/*cSearch*/,;
-			/*cHeader*/,;
-			"POST",;
-			/*INTERNET_DEFAULT_HTTPS_PORT*/,;
-			INTERNET_FLAG_SECURE)
-// 	cBuffer:= oHttp:GetDocumentByURL("www.postcode.nl/search/"+cSearch) 
-	time1:=Seconds()   
-	httpfile:=(UTF2String{cBuffer}):Outbuf
-	if AtC('class="alert warning"',httpfile)>0 
-		return {cPostcode,cAddress,cCity}	
-	endif		
-	nPos1:=At('<section id="main" role="main">',httpfile)
-	if nPos1>0
-		// search unique string before response
-		nPos1:=At3('<h1>',httpfile,nPos1+31)
-		if nPos1>0                                                
-			output:=SubStr(httpfile,nPos1+4,200) 
-		elseif AtC('Value is not a number',httpfile)=0 
-			// apparently website changed:
-			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+")"+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
+	cSearch:=StrTran(cSearch,' ','%20') 
+	if !GetPostcode(cSearch,@output,@cError)
+		// try again with original address: 
+		housenr:= housenrOrg
+		cAddress:=cAddressOrg
+		if !Empty(zipcode) .and. !Empty(housenr)
+			cSearch:=zipcode+' '+housenr
+		else
+			cSearch:=cAddress+' '+cCity
 		endif 
-	else 
-		// apparently website changed:
-		LogEvent(,"postcode.nl werkt niet voor:"+cSearch+'('+cAddress+", "+cPostcode+", "+cCity+"), user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
+		cSearch:=StrTran(cSearch,' ','%20') 
+		if !GetPostcode(cSearch,@output,@cError)
+			LogEvent(,cError,"LogErrors")
+		endif
 	endif
-	if !Empty(output)
+	if Empty(output)
+		// alert warning
+		return {cPostcode,cAddress,cCity}	
+	else
 		nPos2:=At3('<',output,5)
 		if nPos2>0
 			street:=AllTrim(SubStr(output,1,nPos2-1)) 
@@ -791,7 +763,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 				next                                      
 				street:=AllTrim(SubStr(street,1,nPos1)) 
 			else
-				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
+// 				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
+				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-1)
 				if nPos1>0
 					street:=AllTrim(SubStr(street,1,nPos1-1))
 				endif
@@ -820,12 +793,63 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
 		endif
 	endif	
-	oHttp:CloseRemote()
-	oHttp:Axit() 
+// 	oHttp:CloseRemote()
+// 	oHttp:Axit() 
 	RETURN {zipcode,street,cityname}
 function GENDERDSCR(cGnd as int) as string
 	// Return Gender description of a person:
 	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
+
+Function GetPostcode(cSearch as string,output ref string, cError ref string) as logic
+	// Get Dutch postal code: 
+	// cSearch: string to be sent to postcode.nl
+	// output: contains return string from postcode.nl 
+	// cError: error message when applicable
+	// returns true: successfull, false: not successfull 
+	local nPos1 as int 
+	local time0,time1 as float
+	local cBuffer,httpfile as string
+	LOCAL oHttp  as cHttp
+	oHttp := CHttp{"WycOffSy",,true}
+	time0:=Seconds()
+	cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
+		"/search/"+cSearch,;
+		/*cSearch*/,;
+		/*cHeader*/,;
+		"POST",;
+		/*INTERNET_DEFAULT_HTTPS_PORT*/,;
+		INTERNET_FLAG_SECURE)
+	time1:=Seconds()   
+	httpfile:=(UTF2String{cBuffer}):Outbuf
+	output:=''
+	cError:=''
+	oHttp:CloseRemote()
+	oHttp:Axit() 
+	if AtC('class="alert warning"',httpfile)>0 
+		return true  // return  cPostcode,cAddress,cCity
+	else
+		nPos1:=At('<section id="main" role="main">',httpfile) 
+		if nPos1>0
+			// search unique string before response
+			nPos1:=At3('<h1>',httpfile,nPos1+31)
+			if nPos1>0                                                
+				output:=SubStr(httpfile,nPos1+4,200)
+				if !SubStr(output,1,19) == 'Zoekresultaten</h1>'
+					return true
+				endif
+				output:=''
+			elseif AtC('Value is not a number',httpfile)=0 
+				// apparently website changed: 
+				cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
+// 				LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
+			endif 
+		else 
+			// apparently website changed:
+			cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
+// 			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
+		endif
+	endif
+	return false
 
 CLASS GFTNDGRP INHERIT FIELDSPEC
 
