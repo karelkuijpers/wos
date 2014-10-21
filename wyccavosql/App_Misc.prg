@@ -1742,20 +1742,20 @@ Function GetStreetHousnbr(Address as string) as array
 						nNumPosition:=l - 2
 					ENDIF
 				ENDIF
-				if nNumPosition=1
-					// number at begin
-					Housenbr := aWord[1,1] + aWord[1,2]
-					FOR j=2 to nEnd
-						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
-					NEXT
-				else
+// 				if nNumPosition=1
+// 					// number at begin
+// 					Housenbr := aWord[1,1] + aWord[1,2]
+// 					FOR j=2 to nEnd
+// 						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
+// 					NEXT
+// 				else
 					FOR j=1 to nNumPosition-1
 						StreetName:=StreetName+aWord[j,1]+aWord[j,2]
 					NEXT
 					FOR j = nNumPosition to nEnd
 						Housenbr := Housenbr +aWord[j,1] + aWord[j,2]
 					NEXT 
-				endif
+// 				endif
 				IF Len(AllTrim(Housenbr)) > 9
 					* Large deviation: all in streetname:
 					StreetName := Address
