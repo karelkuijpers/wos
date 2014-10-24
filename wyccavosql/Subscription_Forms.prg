@@ -999,7 +999,7 @@ Function ProlongateAll(oCall as Window ) as logic
 	LOCAL mSeqnr as int
 	local lError as logic
 	
-	LOCAL DueDate:=Today()+31, MinDate:=Today()-93 as date
+	LOCAL DueDate:=Today()+31, MinDate:=Today()-93, RemoveDate:=Today()-240 as date
 	local CurSubId as int, dDueDate as date 
 	local aValuesDue:={} as array // {{subscribid,invoicedate,seqnr,amountinvoice,SeqTp},..
 	LOCAL oSub as SQLSelect
@@ -1083,7 +1083,8 @@ Function ProlongateAll(oCall as Window ) as logic
 		endif
 		if !lError
 			* remove old due amounts:
-			oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
+// 			oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
+			oStmnt:=SQLStatement{'delete from dueamount where invoicedate<"'+SQLdate(RemoveDate)+'"',oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
 				lError:=true
