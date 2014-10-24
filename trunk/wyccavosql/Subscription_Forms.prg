@@ -999,18 +999,16 @@ Function ProlongateAll(oCall as Window ) as logic
 	LOCAL mSeqnr as int
 	local lError as logic
 	
-	LOCAL DueDate:=Today()+31, MinDate:=Today()-93, RemoveDate:=Today()-240 as date
 	local CurSubId as int, dDueDate as date 
 	local aValuesDue:={} as array // {{subscribid,invoicedate,seqnr,amountinvoice,SeqTp},..
 	LOCAL oSub as SQLSelect
 	local oStmnt as SQLStatement 
 
-
 	* last end date should be after next due date
 	* only donations and subscriptions 
 	oSub:=SqlSelect{"select s.subscribid,s.amount,cast(s.duedate as date) as duedate,s.term,cast(s.begindate as date) as begindate,cast(s.enddate as date) as enddate,"+;
 	"s.personid,count(dueid) as nbrdue from subscription s left join dueamount d on (s.subscribid=d.subscribid) "+; 
-	"where (s.category='D' or s.category='A') and s.duedate between '"+SQLdate(MinDate)+"' and '"+SQLdate(DueDate)+"' and s.enddate>s.duedate group by s.subscribid",oConn}       
+	"where (s.category='D' or s.category='A') and s.duedate between subdate(Now(),INTERVAL 3 MONTH) and adddate(Now(),INTERVAL 1 MONTH) and s.enddate>s.duedate group by s.subscribid",oConn}       
 	if oSub:RecCount<1
 		return false
 	endif
@@ -1058,8 +1056,6 @@ Function ProlongateAll(oCall as Window ) as logic
 			cError:="could not produce direct debit dueamounts:"+oStmnt:ErrInfo:errormessage
 			cErrorMessage:=cError+CRLF+"statement:"+oStmnt:SQLString
 		endif
-		// 		SQLStatement{"start transaction",oConn}:Execute()
-		// 		oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice) values "+SubStr(cValuesDue,2),oConn} 
 		if !lError
 			oStmnt:=SQLStatement{"insert ignore into dueamount (subscribid,invoicedate,seqnr,amountinvoice,seqtype) values "+Implode(aValuesDue,'","'),oConn}
 			oStmnt:Execute()
@@ -1083,8 +1079,7 @@ Function ProlongateAll(oCall as Window ) as logic
 		endif
 		if !lError
 			* remove old due amounts:
-// 			oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),240)",oConn}
-			oStmnt:=SQLStatement{'delete from dueamount where invoicedate<"'+SQLdate(RemoveDate)+'"',oConn}
+			oStmnt:=SQLStatement{"delete from dueamount where invoicedate<subdate(Now(),INTERVAL 8 MONTH)",oConn}
 			oStmnt:Execute()
 			if !Empty(oStmnt:Status)
 				lError:=true
