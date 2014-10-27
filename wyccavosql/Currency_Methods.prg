@@ -90,7 +90,6 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	LOCAL cPostData	as STRING
 	local cAED as string
 	local cStatement,RateId as string
-	local DateXE as string
 	Local iSt,iEnd as int
 	local time0,time1 as float
 	local table as string
@@ -142,18 +141,8 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 	if lnew
 		// try to read from internet   http://www.xe.com/currencytables/?from=EUR&date=2013-03-08                                        
       time0:=Seconds()
-		oHttp 	:= CHttp{"Wyccavo"}
-		if DateROE>=Today()
-			// get UTC date:
-			oSel:=SqlSelect{"select cast(UTC_DATE() as char) as UTC",oConn}
-			oSel:Execute()
-			if oSel:RecCount>0
-				DateXE:=oSel:UTC
-			else
-				DateXE:=SQLdate(DateROE)
-			endif
-		endif
-		cPostData	:= "from="+self:cBaseCur+"&date="+DateXE 
+		oHttp 	:= CHttp{"Wyccavo"} 
+		cPostData	:= "from="+self:cBaseCur+iif(DateROE>=Today(),"","&date="+SQLdate(DateROE)) 
 
 		cPage 	:= oHttp:GetDocumentByGetOrPost( "www.xe.com",;
 			"/currencytables/",;
@@ -207,7 +196,7 @@ Method GetROE(CodeROE as string, DateROE as date, lConfirm:=false as logic, lAsk
 			endif
 		endif
 		if !lFound
-			LogEvent(self,"exchange rate "+CodeROE+" can't be fetched from www.xe.com"+iif(Empty(cPage),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+cPostData+CRLF+cPage),"logerrors")
+			LogEvent(self,"exchange rate "+CodeROE+" can't be fetched from www.xe.com; date:"+SQLdate(DateROE)+iif(Empty(cPage),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+cPostData+CRLF+cPage),"logerrors")
 		endif
 	endif
 	if !lAsk
