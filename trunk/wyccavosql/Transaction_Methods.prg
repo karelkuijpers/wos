@@ -22,15 +22,15 @@ CLASS AccountStatements
 
 	declare method MonthPrint,Month_summary
 METHOD Init(DescrpWidth, MinimalInfo) CLASS AccountStatements
-	local oPPcd as SQLSelect  
+// 	local oPPcd as SQLSelect  
 	Default(@DescrpWidth,40)
 	Default(@MinimalInfo,true)
 	self:lMinimalInfo:=MinimalInfo
 	self:DescrWidth:=DescrpWidth
 	self:oBal:=Balances{} 
-	oPPcd := SqlSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
-	self:aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
-
+// 	oPPcd := SqlSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
+// 	self:aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
+   self:aPPCode:=FillPP(true)
 	RETURN SELF
 METHOD Month_summary(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,;
 mnd_debF as float,mnd_creF as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
