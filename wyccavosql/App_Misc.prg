@@ -1239,11 +1239,21 @@ return
 function FillPP(lDistribution:=false as logic) as array
 	local oPP as SQLSelect
 	local aPP:={} as array
-oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where ppcode<>'AAA' and ppcode<>'ACH'"),oConn}
-if oPP:RecCount>0
-	AEval(Split(oPP:ppgroup,'#$#'),{|x|AAdd(aPP,Split(x,'#%#'))})
-endif
-return aPP
+	oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where Is_Primary_Participant='Y'"),oConn}
+	if oPP:RecCount>0
+		AEval(Split(oPP:ppgroup,'#$#',,true),{|x|AAdd(aPP,Split(x,'#%#',,true))})
+	endif
+	return aPP
+function FillPPcode() as Array
+	// fill array with ppcode,ppname
+	local aPP:={} as array
+	local oPPcd as SQLSelect
+	oPPcd := SqlSelect{"select group_concat(ppcode,'#$#',ppname separator '#%#') as grPP from ppcodes order by ppcode",oConn}
+	oPPcd:Execute()
+	if oPPcd:RecCount>0 
+		AEval(Split(oPPcd:grPP,'#$#',,true),{|x|AAdd(aPP,Split(x,'#%#',,true))})
+	endif
+	return aPP
 FUNCTION FillPropTypes()
 * Fill Array with person property types
 prop_types:= {{"Text",TEXTBX},{"CheckBox",CHECKBX},{"DropDownList",DROPDOWN},{"Date",DATEFIELD} } 
@@ -2143,10 +2153,10 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 	EXCEL:= excelpath +"Excel.exe "
 	oReg:=null_object
 	oSys:=SQLSelect{"select `am`,`assproja`,`assfldac`,`defaultcod`,`fgmlcodes`,`capital`,`cash`,`donors`,`donors`,`creditors`,`projects`,`giftincac`,"+;
-	"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
-	"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
-	"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
-	"`yearclosed`,`debtors`,`currency`,`sysname`,`sepaenabled`,`maildirect`,`localbackup` from sysparms",oConn}
+		"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
+		"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
+		"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
+		"`yearclosed`,`debtors`,`currency`,`sysname`,`sepaenabled`,`maildirect`,`localbackup` from sysparms",oConn}
 	IF oSys:RecCount>0
 		oSel:=SQLSelect{"select yearstart,yearlength,monthstart from balanceyear order by yearstart desc, monthstart desc limit 1",oConn}
 		IF oSel:RecCount>0
@@ -2180,8 +2190,8 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		sInhdKntrM := oSys:withldoffm
 		sInhdKntrH := oSys:withldoffh
 		sInhdField := oSys:assmntfield 
-// 		CITYUPC := iif(oSys:CITYNMUPC==iif(IsNumeric(oSys:CITYNMUPC),1,'1'),true,false)
-// 		LSTNUPC := iif(oSys:LSTNMUPC==iif(IsNumeric(oSys:LSTNMUPC),1,'1'),true,false)
+		// 		CITYUPC := iif(oSys:CITYNMUPC==iif(IsNumeric(oSys:CITYNMUPC),1,'1'),true,false)
+		// 		LSTNUPC := iif(oSys:LSTNMUPC==iif(IsNumeric(oSys:LSTNMUPC),1,'1'),true,false)
 		CITYUPC := ConL(oSys:CITYNMUPC)
 		LSTNUPC := ConL(oSys:LSTNMUPC)
 		
@@ -2226,8 +2236,8 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		endif
 
 		CountryCode:=AllTrim(oSys:COUNTRYCOD)
-  		CountryCode:=DynToOldSpaceString(CountryCode)  // save in static memory outside garbage collector
- 		requiredemailclient:=ConI(oSys:MAILCLIENT)
+		CountryCode:=DynToOldSpaceString(CountryCode)  // save in static memory outside garbage collector
+		requiredemailclient:=ConI(oSys:MAILCLIENT)
 		maildirect:=ConL(oSys:maildirect)
 		BackupToLocal:=ConL(oSys:localbackup)
 		if !Empty(MYEMPID)
@@ -2246,15 +2256,15 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
 			oSel:=SQLSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
 			if oSel:RecCount=0
-				SQLStatement{"insert into ppcodes set ppcode='AAA',ppname='Bank:"+BANKNBRCRE+"'",oConn}:execute()
+				SQLStatement{"insert into ppcodes set ppcode='AAA',ppname='Bank:"+BANKNBRCRE+"',Is_Primary_Participant='N'",oConn}:Execute()
 			elseif !AllTrim(oSel:PPNAME)=="Bank:"+BANKNBRCRE
-				SQLStatement{"update ppcodes set ppname='Bank:"+BANKNBRCRE+"' where ppcode='AAA'",oConn}:execute()
+				SQLStatement{"update ppcodes set ppname='Bank:"+BANKNBRCRE+"' where ppcode='AAA',Is_Primary_Participant='N'",oConn}:Execute()
 			endif
 		endif 
-		oSel:=SQLSelect{"select ppcode from ppcodes where ppcode='ACH'",oConn}
-		if oSel:RecCount=0
-			SQLStatement{"insert into ppcodes set ppcode='ACH',ppname='ACH for member bank deposits'",oConn}:execute()
-		endif
+		// 		oSel:=SQLSelect{"select ppcode from ppcodes where ppcode='ACH'",oConn}
+		// 		if oSel:RecCount=0
+		// 			SQLStatement{"insert into ppcodes set ppcode='ACH',ppname='ACH for member bank deposits',Is_Primary_Participant='N'",oConn}:Execute()
+		// 		endif
 	ENDIF 
 	// determine available balance years: 
 	FillBalYears() 
