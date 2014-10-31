@@ -3833,7 +3833,8 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 	// produce XML file for SEPA Direct Debit to be imported into telebanking package
 	LOCAL cFilename, cOrgName,cOrgAddress, cDescr,cTransnr,m56_Payahead,m56_currency,cType,cAccMlCd,cPersId,cAccID,cAmnt as STRING 
 	LOCAL cBank,cBic,cCod,cErrMsg,cAccType,cDueIds,cAccs,CreditorID as STRING
-	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string
+	local cYear:=Str(Year(process_date),-1),cMonth:=Str(Month(process_date),-1) as string 
+	local cYearMonth:=Str(Year(begin_due),4)+StrZero(Month(begin_due),2) as string
 	local cTransDate:=SQLdate(process_date) as string
 	local cNextDD:=self:oLan:Rget("next direct debit in") as string 
 	local mInvoiceID as string
@@ -4015,10 +4016,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 						SQLStatement{"commit",oConn}:Execute()
 					endif
 				else
-					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+					cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+Space(1)+AllTrim(oDue:FullName)+"(intern ID "+Str(oDue:personid,-1)+")"
 				endif
 			else
-				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+space(1)+alltrim(oDue:fullname)+"(intern ID "+str(oDue:personid,-1)+")"
+				cErrMsg+=CRLF+PadR(oDue:BANKACCNT,20)+Space(1)+AllTrim(oDue:FullName)+"(intern ID "+Str(oDue:personid,-1)+")"
 			endif
 			oDue:skip()
 		enddo
@@ -4027,8 +4028,27 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			return false
 		endif
 	endif
-
-
+   // Check if all required due amounts are present:
+   oDue:=SqlSelect{'SELECT s.personid,'+SQLFullName(0,'p')+' as fullname,s.amount,s.term,a.accnumber,a.description as accname '+;
+   'FROM `subscription` s left join person p on(s.personid=p.persid) left join account a on(a.accid=s.accid) '+;
+   'where extract(year_month from begindate)<='+cYearMonth+' and `paymethod`="C" and extract(year_month from enddate)>'+cYearMonth+' and extract(year_month from duedate)>='+cYearMonth+;
+   ' and (`term`=1 or term between 1 and 12 and extract(year_month from subdate(duedate, INTERVAL term month))='+cYearMonth+') and '+;
+   'subscribid not in (select subscribid from dueamount where extract(year_month from invoicedate)='+cYearMonth+')',oConn}
+   if oDue:RecCount>0
+		Do while !oDue:EoF
+			cErrMsg+=CRLF+"personid="+ ConS(oDue:personid)+;
+						", personname="+oDue:FullName+; 
+						", account="+oDue:accnumber+' '+oDue:accname+;
+						", amount="+ConS(oDue:amount)+' per '+ConS(oDue:term)+" month"
+			oDue:skip()
+		enddo
+		if !Empty(cErrMsg)
+			ErrorBox{self,self:oLan:WGet("Of the following donations the required due amount can't be found for month")+' '+CMonth(begin_due) +':'+cErrMsg}:Show()
+			return false
+		endif
+   endif
+   
+   // select all due amounts to be invoiced
 	oDue:=SqlSelect{"select cast(group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',s.begindate"+;
 		",'#$#',case when s.term>=999 or s.term=0 then '4' when s.firstinvoicedate='0000-00-00' then '1' when s.firstinvoicedate>'0000-00-00' then if(extract(year_month from adddate(du.invoicedate,interval s.term month))<extract(year_month from s.enddate),'2','3') end"+;
 		",'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
@@ -4198,11 +4218,11 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		if aDue[i,20]="0000-00-00" .or.SeqTp=1
 			AAdd(aSubvalues,{aDue[i,2],aDue[i,8],aDue[i,19]}) // save invoice as firstinvoicedate : subscripid,invoicedate,mandateid
 		endif
-		if (nGrpNbr:=AScan(aGrp,{|x|x[1]==aSeqTp[SeqTp,1] .and.x[4]<1000}))==0
-			nGrpNbr:=Len(aGrp)+1
+		if (nGrpnbr:=AScan(aGrp,{|x|x[1]==aSeqTp[SeqTp,1] .and.x[4]<1000}))==0
+			nGrpnbr:=Len(aGrp)+1
 			AAdd(aGrp,{aSeqTp[SeqTp,1],'wosDD'+sEntity+DToS(Today())+Str(nSeq,-1)+Str(nGrpnbr,-1),aSeqTp[SeqTp,2],0,0.00}) //{type,groupid,reqcolldate,total transactions, ctrl sum}
 		endif
-		aGrp[nGrpNbr,4]++
+		aGrp[nGrpnbr,4]++
 		aGrp[nGrpNbr,5]:=Round(aGrp[nGrpNbr,5]+AmountInvoice,DecAantal)
 		// add to aDD for mailing DD file:
 		// aDD: {{AmountInvoice,mandateidid,begindate,PersonName,banknbr,description,invoiceid,seqtp,Bic,Iban previous,Bic previous,nGrpNbr},...
@@ -4521,7 +4541,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			if	!Empty(oStmnt:status)
 				SQLStatement{"rollback",oConn}:Execute() 
 				SQLStatement{"unlock tables",oConn}:Execute()
-				LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:sqlstring,"LogErrors")
+				LogEvent(self,"error:"+oStmnt:ErrInfo:ErrorMessage+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 				ErrorBox{,self:oLan:WGet("amendments could'nt be removed, nothing recorded")+":"+oStmnt:ErrInfo:ErrorMessage}:Show()
 				return false 
 			endif
