@@ -220,7 +220,7 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 						if	oFs:Extension=='.csv' .and.lFirstOfDay	
 							if	oFs:Size>10	//	!empty
 								//	drop corresponding table to force it to be loaded again with new data: 
-								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable','ppcodes',oFs:FileName)+'`',oConn}
+								oSel:=SQLStatement{'drop table `'+iif(oFs:FileName=='pptable-extended','ppcodes',oFs:FileName)+'`',oConn}
 								oSel:Execute()
 							endif
 						endif
@@ -979,7 +979,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	//	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database?
 	// check if new ppcodes, ipcaccounts, currencylist or bic should be imported: 
 	// (in that case the table has been dropped during import of corresponding csv file)
-	oDBFileSpec1:=FileSpec{cWorkdir+"\pptable.csv"}
+	oDBFileSpec1:=FileSpec{cWorkdir+"\pptable-extended.csv"}
 	lCopyPP:=false
 	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
 		if (oSel:=SqlSelect{"show tables like 'ppcodes'",oConn}):RecCount=0
@@ -1029,7 +1029,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	// fill eventually dropped tables with new values:
 	if lCopyPP 
 		// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
-		ImportCSV(cWorkdir+"\pptable.csv","ppcodes",2,{"ppcode","ppname"}) 
+		ImportCSV(cWorkdir+"\pptable-extended.csv","ppcodes",4,{"ppcode","ppname","WBT_or_SIL","Is_Primary_Participant"}) 
 	endif
 	if lCopyCur
 		ImportCSV(cWorkdir+"\currencylist.csv","currencylist",2,{}) 
@@ -1637,7 +1637,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"persontype","descrptn","char(30)","YES","NULL",""},;
 		{"persontype","abbrvtn","char(3)","YES","NULL",""},;
 		{"ppcodes","ppcode","char(3)","NO","",""},;
-		{"ppcodes","ppname","char(40)","NO","",""},;
+		{"ppcodes","ppname","char(40)","NO","",""},; 
+		{"ppcodes","WBT_or_SIL","char(1)","NO","W",""},; 
+		{"ppcodes","Is_Primary_Participant","char(1)","NO","Y",""},; 
 		{"standingorder","stordrid","int(11)","NO","NULL","auto_increment"},;
 		{"standingorder","idat","date","NO","0000-00-00",""},;
 		{"standingorder","edat","date","NO","0000-00-00",""},;
