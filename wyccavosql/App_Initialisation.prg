@@ -1616,7 +1616,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","creationdate","date","NO","0000-00-00",""},;
 		{"person","alterdate","date","NO","0000-00-00",""},;
 		{"person","datelastgift","date","NO","0000-00-00",""},;
-		{"person","opc","char(10)","NO","",""},;
+		{"person","opc","varchar(33)","NO","",""},;
 		{"person","remarks","mediumtext","YES","NULL",""},;
 		{"person","email","varchar(64)","NO","",""},;
 		{"person","mobile","char(18)","NO","",""},;
