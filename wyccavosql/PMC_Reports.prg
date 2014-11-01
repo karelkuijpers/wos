@@ -814,7 +814,7 @@ METHOD PrintReport() CLASS PMISsend
 		
 		// compile distribution instructions:
 		destinstr:={}
-		aDistr:={}
+		aDistr:={} 
 		mHomeAcc:=aMbr[nMbr,4]  //HOMEACC
 		if !Empty(aMbr[nMbr,27]) // distribution instructions?
 			aDistr:=aMbr[nMbr,27] 
@@ -903,7 +903,8 @@ METHOD PrintReport() CLASS PMISsend
 		// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
 		//              1      2         3             4           5             6              7                  8                9
 
-		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid .and.me_stat!="Staf" 
+// 		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid .and.me_stat!="Staf" 
+		IF nMbrAss<=Len(aAssMbr) .and. aAssMbr[nMbrAss,1]==me_mbrid 
 			me_assblAmount:=aAssMbr[nMbrAss,5]
 			me_asshome:=Round((me_assblAmount*OfficeRate)/100,DecAantal)
 			mbrint:=Round((me_assblAmount*(self:sPercAssInt+self:sAssmntField))/100,DecAantal) 
@@ -946,7 +947,8 @@ METHOD PrintReport() CLASS PMISsend
 							if !Empty(aTransF[nTrans,4]) .and.(me_gc=='AG'.or. me_gc=='MG')  // gift?
 								me_desc:=iif(Empty(me_desc),"",me_desc+" ")+"from "+aTransF[nTrans,4]+Space(1)+aTransF[nTrans,11]
 							endif
-							if me_gc=='AG' .and.aTransF[nTrans,12]=='0' .and. me_stat!="Staf" 
+// 							if me_gc=='AG' .and.aTransF[nTrans,12]=='0' .and. me_stat!="Staf" 
+							if me_gc=='AG' .and.aTransF[nTrans,12]=='0'  
 								me_amount:=Round((me_amount*TotAssrate)/100,DecAantal) // subtract assessment 
 								me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
 							endif
@@ -1008,7 +1010,8 @@ METHOD PrintReport() CLASS PMISsend
 			do while nMbrBal<Len(aBalMbr) .and. aBalMbr[nMbrBal,1]<me_mbrid
 				nMbrBal++
 			enddo
-			// calculate remaining amount:
+			// calculate remaining amount: 
+			
 			IF nMbrBal<=Len(aBalMbr) .and. aBalMbr[nMbrBal,1]==me_mbrid 
 				BalanceSend:=aBalMbr[nMbrBal,2]
 			ENDIF
