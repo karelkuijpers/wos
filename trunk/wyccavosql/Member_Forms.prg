@@ -2152,9 +2152,9 @@ METHOD OkButton()  CLASS EditMember
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
-		IF !self:lNewMember.and. self:oMbr:GRADE=="Staf".and.!self:mGrade=="Staf"
-			lResetBFM:=true
-		ENDIF
+// 		IF !self:lNewMember.and. self:oMbr:GRADE=="Staf".and.!self:mGrade=="Staf"
+// 			lResetBFM:=true
+// 		ENDIF
 		if !self:lNewMember
 			// 			mAccidPrv:=Transform(oMbr:accid,"") 
 			mAccidPrv:=self:mRekOrg                                                         
@@ -3229,29 +3229,29 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			endif
 		endif
 		// Clearing Person code
-		IF lValid 
-			if !self:lNewMember.and.!AllTrim(self:oMbr:GRADE) == AllTrim(self:mGrade)
-				IF AllTrim(self:mGrade)="Staf"
-					* Changed to staff:
-					oTextBox := TextBox{ self, oLan:WGet("Editing of a member"),;
-						oLan:WGet("No gifts will be assessed anymore")+"!"}
-					oTextBox:Type := BUTTONOKAYCANCEL
-					IF ( oTextBox:Show() == BOXREPLYCANCEL )
-						lValid := FALSE
-						cError := oLan:WGet("Choose other type than Staf")
-						self:oDCmGrade:SetFocus()
-					ENDIF
-				ELSEIF AllTrim(self:oMbr:GRADE)="Staf"
-					* from staff to other type:
-					uRet:=(ReportDateMember{self}):Show()
-					IF uRet=0
-						lValid := FALSE
-						cError := oLan:WGet("Keep type Staf")
-						self:oDCmGrade:SetFocus()
-					ENDIF
-				ENDIF
-			endif
-		ENDIF
+// 		IF lValid 
+// 			if !self:lNewMember.and.!AllTrim(self:oMbr:GRADE) == AllTrim(self:mGrade)
+// 				IF AllTrim(self:mGrade)="Staf"
+// 					* Changed to staff:
+// 					oTextBox := TextBox{ self, oLan:WGet("Editing of a member"),;
+// 						oLan:WGet("No gifts will be assessed anymore")+"!"}
+// 					oTextBox:Type := BUTTONOKAYCANCEL
+// 					IF ( oTextBox:Show() == BOXREPLYCANCEL )
+// 						lValid := FALSE
+// 						cError := oLan:WGet("Choose other type than Staf")
+// 						self:oDCmGrade:SetFocus()
+// 					ENDIF
+// 				ELSEIF AllTrim(self:oMbr:GRADE)="Staf"
+// 					* from staff to other type:
+// 					uRet:=(ReportDateMember{self}):Show()
+// 					IF uRet=0
+// 						lValid := FALSE
+// 						cError := oLan:WGet("Keep type Staf")
+// 						self:oDCmGrade:SetFocus()
+// 					ENDIF
+// 				ENDIF
+// 			endif
+// 		ENDIF
 	ENDIF
 	IF ! lValid
 		(ErrorBox{,cError}):Show()
