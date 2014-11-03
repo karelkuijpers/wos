@@ -96,9 +96,6 @@ method Start() class App
 			IF FirstOfDay
 				// Backup if needed:
 				BackupDatabase{oMainWindow}:MakeBackup() 
-				if BackupToLocal
-					BackupDatabase{oMainWindow}:MakeBackupToLocal(false) 
-				endif
 			endif
 			oInit:=null_object 
 			SetDeleted( true )
@@ -142,6 +139,9 @@ method Start() class App
 			oMainWindow:Menu:ToolBar:Hide()
 			// Run program
 			IF FirstOfDay
+				if BackupToLocal
+					BackupDatabase{oMainWindow}:MakeBackupToLocal(false) 
+				endif
 				oMainWindow:Pointer := Pointer{POINTERARROW}
 				* Process standing orders:
 				oStJournal:=StandingOrderJournal{}
