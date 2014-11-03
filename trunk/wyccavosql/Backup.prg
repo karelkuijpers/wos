@@ -91,7 +91,7 @@ method Init(oWindow,cBackupPath) class BackupDatabase
 			if Empty(self:backuppath)
 				self:backuppath:=WorkDir()+'\backup\'
 			endif
-			self:backupfilenameLocal:=self:backuppath+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql'
+			self:backupfilenameLocal:=self:backuppath+'\'+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql'
 			
 			SetTimeSep(nTimeSep)
 			SetAmPm(lAmPM)
