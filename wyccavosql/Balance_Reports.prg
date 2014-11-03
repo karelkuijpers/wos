@@ -2839,11 +2839,11 @@ BEGIN
 	CONTROL	"", GIFTREPORT_REPORTYEAR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 36, 96, 34, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", GIFTREPORT_MONTHSTART, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 128, 96, 19, 12, WS_EX_CLIENTEDGE
 	CONTROL	"", GIFTREPORT_MONTHEND, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 176, 96, 19, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 3, 377, 84
+	CONTROL	"Members/funds", GIFTREPORT_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|WS_CLIPSIBLINGS, 8, 3, 377, 89
 	CONTROL	"From:", GIFTREPORT_FIXEDTEXT1, "Static", WS_CHILD, 14, 52, 52, 10
 	CONTROL	"To:", GIFTREPORT_FIXEDTEXT2, "Static", WS_CHILD, 136, 51, 56, 9
-	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 13
-	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 13
+	CONTROL	"", GIFTREPORT_TEXTFROM, "Static", WS_CHILD, 13, 73, 111, 16
+	CONTROL	"", GIFTREPORT_TEXTTILL, "Static", WS_CHILD, 136, 73, 111, 16
 	CONTROL	"Subset:", GIFTREPORT_FIXEDTEXT7, "Static", WS_CHILD, 252, 8, 42, 9
 	CONTROL	"Requierd action:", GIFTREPORT_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 217, 196, 55
 	CONTROL	"Last month", GIFTREPORT_LASTMONTH, "Button", BS_AUTORADIOBUTTON|WS_CHILD, 12, 127, 53, 11
@@ -2869,7 +2869,7 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	// aMbr: {{mbrid,description,homepp,housholdid,co,deptmntnbr,rptdest,persid,persidcontact,emailmbr,emailcontact,contactname,isdepmbr},...}
 	//          1       2           3       4       5     6        7        8        9          10        11            12         13  
 	// aAccidMbr: {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
-	//              1    2                                               4          5         6         7                     8      9       10,1       10,2            10,3                   10,4          10,5         
+	//              1    2                                               4          5         6         7                     8      9         10,1        10,2            10,3                   10,4          10,5         
 	local i as int
 	local aAcc:={} as array  // selected accounts for the reports 
 	local aMbr:=self:aMbr as array 
@@ -3000,7 +3000,7 @@ Method AssmntOverView(mbrid as string,aAssMbr as array,aOutput as array) as void
 	endif
 	AAdd(aOutput,"</table>")        // end of first page
 	return
-method BeginOfTransGroupKind(newkind as string,newAcc as string,aOutput as array,aAccidMbr as array,accPtr as int,cCurrKindGrp ref string,cCurrKind ref string,cCurrSubKind ref string, cPeriod as string,fKindGrp ref float,fKind ref float,fSubKind ref float ) as void pascal class GiftReport
+method BeginOfTransGroupKind(newkind as string,newsubkind as string,aOutput as array,aAccidMbr as array,accPtr as int,cCurrKindGrp ref string,cCurrKind ref string,cCurrSubKind ref string, cPeriod as string,fKindGrp ref float,fKind ref float,fSubKind ref float ) as void pascal class GiftReport
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	//
 	// Begin processing of (sub)kind(grp)
@@ -3011,44 +3011,51 @@ method BeginOfTransGroupKind(newkind as string,newAcc as string,aOutput as array
 	//
 
 	local fBalance as float
-	local nMonth,nCurrMonth:=self:CalcMonthStart  as int
+	local p,nMonth,nCurrMonth:=self:CalcMonthStart  as int 
+	local cCurrOPP as string
 	local StartinMonth as date
 	
 	//
 	// Beginning of KindGroup (highest level)
 	if Empty(cCurrKindGrp) .or.;
-			cCurrKindGrp='1' .and. newkind>'2' .or.;
-			cCurrKindGrp='3' .and.newkind>'3' 
+			cCurrKindGrp='1' .and. newkind>'3' .or.;
+			cCurrKindGrp='2' .and.newkind>'4' 
 
-		if newkind<'3'
+		if newkind<'4'
 			cCurrKindGrp:='1'
-		elseif newkind='3'
-			cCurrKindGrp:='3'
+		elseif newkind='4'
+			cCurrKindGrp:='2'
 		else
-			cCurrKindGrp:='4'
+			cCurrKindGrp:='3'
 		endif
 		AAdd(aOutput,'<tr>'+;
-			'<td colspan="7" style="width:100%;border-bottom:2px solid black;"><h1>'+oLan:RGet(iif(cCurrKindGrp='1',"Income",iif(cCurrKindGrp='3',"Expense","Other accounts")),,'!')+cPeriod+"</h1></td></tr>")
+			'<td colspan="7" style="width:100%;border-bottom:2px solid black;"><h1>'+oLan:RGet(iif(cCurrKindGrp='1',"Income",iif(cCurrKindGrp='2',"Expense","Other accounts")),,'!')+cPeriod+"</h1></td></tr>")
 		cCurrKind:=''
+		cCurrSubKind:=''
 		fKindGrp:=0.00
+		fKind:=0.00
+		fSubKind:=0.00
 	endif
 	
 	// Beginning of Kind:
 	if cCurrKind<>newkind
 		fKind:=0.00
-		if newkind<'3'
-			if newkind=='1' 
-				if self:GiftDetails
-					AAdd(aOutput,'<tr><td	colspan="5"><h2>'+oLan:RGet("Income",,"!")+' '+sLand+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+		fSubKind:=0.00
+		//	print	column heading:
+		if newkind<'4'
+			if newkind<='2' 
+				if newkind='2' .or. self:GiftDetails
+					AAdd(aOutput,'<tr><td colspan="5"><h2>'+oLan:RGet(iif(newkind=='1',"Income","member gifts"),,"!")+' '+sLand+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
 						'<tr class="columnhd"><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
 						'<td style="width:40%">'+oLan:RGet("Description",,"!")+'</td><td style="width:25%">'+oLan:RGet("Name",,"!")+'</td><td>'+oLan:RGet("Id",,"!")+'</td></td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>')
 				endif
 			else
 				// fund:
-// 				AAdd(aOutput,'<tr><td ><h2>'+oLan:RGet("Fund",,"!")+'</h2></td><td colspan="4" style="font-weight:bold;">'+HtmlEncode(aAccidMbr[accPtr,4])+'</td><td colspan="2"></td></tr>')					
-				AAdd(aOutput,'<tr><td ><h2>'+oLan:RGet("Fund",,"!")+'</h2></td><td colspan="4"></td><td colspan="2"></td></tr>')					
+				AAdd(aOutput,'<tr><td  colspan="5"><h2>'+oLan:RGet("Fund",,"!")+' '+sLand+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+						'<tr class="columnhd"><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
+					'<td colspan="3">'+oLan:RGet("Description",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td	colspan="2"></td></tr>')
 			endif
-		elseif newkind='3' 
+		elseif newkind='4' 
 			//	print	column heading:
 			AAdd(aOutput,'<tr	class="columnhd"><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
 				'<td colspan="3">'+oLan:RGet("Description",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td	colspan="2"></td></tr>')
@@ -3058,10 +3065,22 @@ method BeginOfTransGroupKind(newkind as string,newAcc as string,aOutput as array
 	endif
 	
 	// Beginning of subkind:
-	if !cCurrSubKind==newAcc 
-		cCurrSubKind:=newAcc  // accid
+	if !cCurrSubKind==newsubkind 
 		fSubKind:=0.00
-		if cCurrKind>'3' 
+		if cCurrKind<='4'
+			if Empty(cCurrSubKind) 
+				AAdd(aOutput,'<tr><td colspan="5"><h2>'+oLan:RGet(iif(cCurrKind=='1',"Income",iif(cCurrKind=='2',"Member gifts",iif(cCurrKind=='3',"Fund","Expense")))+" from abroad",,"!")+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
+				'<tr class="columnhd"><td class="date">'+oLan:RGet("Date",,"!")+'</td>'+;
+				'<td>'+oLan:RGet("Description",,"!")+'</td><td class="date">'+oLan:RGet("Date (origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount (origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>')
+			endif
+			cCurrSubKind:=newsubkind  // accid or opp
+			// print Opp heading: 
+			cCurrOPP:= cCurrSubKind
+			p:=AScan(self:aPPCode,{|x|x[1]==cCurrOPP})
+			AAdd(aOutput,'<tr><td colspan="5" style="font-weight:bold;">'+oLan:RGet("From",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td colspan="2"></td></tr>')
+		elseif cCurrKind>'4'
+			// other accounts
+			cCurrSubKind:=newsubkind  // accid 
 			//	determine opening	balance:	
 			fBalance:=0.00
 			if	(nMonth:=AScan(aAccidMbr[accPtr,10],{|x|x[1]==nCurrMonth}))>0 
@@ -3162,7 +3181,8 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 	
 	oMBal:=Balances{}
 	// sort aAccidMbr on: mbrid,kind,accid
-	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3]).or.(x[3]=y[3].and.x[2]<=y[2]))}) 
+//	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3]).or.(x[3]=y[3].and.x[2]<=y[2]))}) 
+	ASort(aAccidMbr,,,{|x,y|x[1]<y[1].or.(x[1]=y[1].and.(x[3]<y[3].or.(x[3]=y[3].and.x[2]<=y[2])))}) 
 	oMBal:AccSelection:="a.accid in ("+Implode(aAccidMbr,",",,,2)+")"
 	// 	oMBal:AccSelection:="exists(select 1 from accidmbr m where a.accid=m.accid)"
 	for nCurrMonth:=self:CalcMonthStart to self:CalcMonthEnd
@@ -3215,34 +3235,33 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 	return true
 	
 Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string ) as logic class GiftReport
-	// Collect transactions with persons for all these accounts inor Otrans ans aPersData:  
+	// Collect transactions with persons for all these accounts in SQL object oTtrans and array aPersData:  
 	// lMbrDep: true: selection for member departments, false: for single account members
 	local i,p as int
 	local cStatement as string
 	local StartinMonth,EndInMonth as date
 	local oStmnt as SQLStatement 
 	local oSel as SqlSelect
-// 	local time0,time1 as float
+	local time0,time1 as float
 	
 	// Collect transactions:   
 	StartinMonth:=SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthStart,2,0)+'01')
 	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))  
 	SQLStatement{"DROP TABLE IF EXISTS transmbr",oConn}:Execute()
-// 	time0:=Seconds()
+	time0:=Seconds()
 	
 	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind  
-	// kind(1=income,2=net,3=expense,4=other,5=associated account)
-//	"if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(a.kind<4 and (t.gc='CH' or left(a.mbrid,1)='a'),3,a.kind))) as kind from "+;
+	// kind(1=income,2=mg,3=net,4=expense,5=other/associated account)
 	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp, "+;
-	"if(a.kind>=4,a.kind,if(t.gc='AG' or t.gc='MG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='PF',2,if(t.gc='CH' or left(a.mbrid,1)='a',3,a.kind)))) as kind from "+;
+	"if(a.kind>=4,5,if(t.gc='AG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='MG',2,if(t.gc='PF',3,if(t.gc='CH' or left(a.mbrid,1)='a',4,a.kind+1))))) as kind from "+;
 	'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'
 //		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)' 
 	cStatement:=UnionTrans(cStatement)  // temporary
 	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2),kind char(1), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
-		cStatement+' order by mbrid,kind,accid,dat,transid ',oConn}
+		cStatement+' order by mbrid,kind,opp,accid,dat,transid ',oConn}
 	oStmnt:Execute()
-// 	time1:=time0
-// 	LogEvent(self,"Collect trans create:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
+	time1:=time0
+	LogEvent(self,"Collect trans create:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	if !Empty(oStmnt:status)
 		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"logerrors")
 		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
@@ -3252,11 +3271,12 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	// retrieve all transaction data grouped per mbr, account and month
 	// This is a compromise between performance of mysql, data communication and processing of large strings and arrays by windows:   
 	oTrans:=SqlSelect{"select mbrid,group_concat(cast(accid as char),'#$#',cast(dat as char),'#$#',cast(transid as char),'#$#',cast(seqnr as char),'#$#',cast(persid as char),'#$#',cast(credeb as char),'#$#',description"+;
-		",'#$#',docid,'#$#',opp,'#$#',gc,'#$#',cast(fromrpp as char),'#$#',cast(kind as char) order by kind,accid,dat,transid,seqnr separator '#%#') as grTr from "+;
+		",'#$#',docid,'#$#',opp,'#$#',gc,'#$#',cast(fromrpp as char),'#$#',cast(kind as char) order by kind,gc,opp,accid,dat,transid,seqnr separator '#%#') as grTr from "+;
 		' transmbr group by mbrid',oConn}
+// 		",'#$#',docid,'#$#',opp,'#$#',gc,'#$#',cast(fromrpp as char),'#$#',cast(kind as char) order by kind,accid,dat,transid,seqnr separator '#%#') as grTr from "+;
 	oTrans:Execute()  
-// 	time1:=time0
-// 	LogEvent(self,"Collect trans read:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
+	time1:=time0
+	LogEvent(self,"Collect trans read:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	if !Empty(oTrans:status)
 		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oTrans:ErrInfo:errormessage,"logerrors")
 		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
@@ -3370,7 +3390,8 @@ METHOD EditFocusChange(oEditFocusChangeEvent) CLASS GiftReport
 		ENDIF
 	ENDIF
 	RETURN
-method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as string, aOutput as array,aAccidMbr as array,accPtr ref int,aTransRPP as array, aTransMG as array,aPersData as array,cCurrKindGrp ref string,cCurrKind ref string,cCurrSubKind ref string,cCurrAcc ref string, fKindGrp ref float,fKind ref float,fSubKind ref float) as void pascal class GiftReport
+method EndOfTransGroupKind(mbrid as string,newkind as string,newsubkind:='' as string, aOutput as array,aAccidMbr as array,accPtr ref int,aTransRPP as array, aTransMG as array,aPersData as array,;
+cCurrKindGrp ref string,cCurrKind ref string,cCurrSubKind ref string,cCurrAcc ref string, fKindGrp ref float,fKind ref float,fSubKind ref float) as void pascal class GiftReport
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	//
 	// End processing
@@ -3382,6 +3403,7 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	local cCurrOPP,cAmntRPP,cDateRPP,cDescr as string
 	local EndInMonth as date 
 	local aDesc as array
+	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	// End of subkind processing (lowest level)
 	// subkinds:
@@ -3389,11 +3411,27 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	// - mg gifts				 	(handled at end of kind 1)
 	// - account of "another account" 
 	// 
-	EndInMonth:=EndOfMonth(SToD(Str(self:CalcYear,4,0)+StrZero(self:CalcMonthEnd,2,0)+'01'))
 
-	if cCurrKind>'3'
-		if !Empty(cCurrSubKind) .and. !cCurrSubKind==newAcc
-		// print closing line previous account: 
+	if !cCurrSubKind==newsubkind .or.!Empty(cCurrKind).and.cCurrKind<>newkind
+// 	if !Empty(cCurrSubKind) .and. !cCurrSubKind==newsubkind
+		// print closing line previous subkind:
+		if cCurrKind<='4'
+			// print totals
+			if !self:GiftDetails .and.cCurrKind=='1' .and.Empty(cCurrSubKind)
+				// write one total line for all gifts
+				AAdd(aOutput,'<tr><td colspan="1">'+;
+					'<td colspan="3">'+self:oLan:RGet("Total gifts")+' '+sLand+' ('+self:oLan:RGet("see details in gifts overview at the end")+')</td><td class="amount">'+;
+					Str(fSubKind,12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+			endif
+			cCurrOPP:= cCurrSubKind
+			if Empty(cCurrOPP)
+				cCurrOPP:=sEntity
+			endif
+			p:=AScan(self:aPPCode,{|x|x[1]==cCurrOPP})
+			AAdd(aOutput,'<tr><td colspan="2"></td><td colspan="3" style="font-weight:bold;">'+oLan:RGet('Total '+iif(cCurrKind=='1',"Income",iif(cCurrKind=='2',"Member gifts",iif(cCurrKind=='3',"Fund","Expense"))),,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' )
+			fKind:=Round(fKind+fSubKind,DecAantal)
+			fSubKind:=0.00
+		else	 
 			//	determine closing	balance:	
 			nCurrMonth:=self:CalcMonthEnd	
 			fBalance:=0.00
@@ -3412,108 +3450,22 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	// End of kind processing: Kind:1, 2,3 
 	//
 	if !Empty(cCurrKind) .and.cCurrKind<>newkind
-		if cCurrKind=='1'
-			if !self:GiftDetails
-				// write one total line for all gifts
-				AAdd(aOutput,'<tr><td colspan="1">'+;
-					'<td colspan="3">'+self:oLan:RGet("Total gifts")+' ('+self:oLan:RGet("see details in gifts overview at the end")+')</td><td class="amount">'+;
-					Str(fSubKind,12,DecAantal)+'</td><td colspan="2"></td></tr>') 
-			endif
-			AAdd(aOutput,'<tr><td colspan="5"></td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' )
-			fKind:=Round(fKind+fSubKind,DecAantal)
-			fSubKind:=0.00
-			if Len(aTransRPP)>0
-				// print income from other WMO's:
-				ASort(aTransRPP,,,{|x,y|x[9]<y[9] .or. (x[9]=y[9].and.x[2]<=y[2])})
-				AAdd(aOutput,'<tr><td colspan="5"><h2>'+oLan:RGet("Income from abroad",,"!")+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
-					'<tr class="columnhd"><td class="date">'+oLan:RGet("Date",,"!")+'</td>'+;
-					'<td>'+oLan:RGet("Description",,"!")+'</td><td class="date">'+oLan:RGet("Date (origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount (origin)",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>') 
-				cCurrOPP:=''
-				for i:=1 to Len(aTransRPP)
-					if !aTransRPP[i,9]==cCurrOPP
-						if !Empty(cCurrOPP)
-							// print totals
-							AAdd(aOutput,'<tr><td colspan="2"></td><td colspan="3" style="font-weight:bold;">'+oLan:RGet("Total income",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' )
-							fKind:=Round(fKind+fSubKind,DecAantal)
-							fSubKind:=0.00
-						endif
-						cCurrOPP:=aTransRPP[i,9] 
-						// print Opp heading:
-						p:=AScan(self:aPPCode,{|x|x[1]==cCurrOPP})
-						AAdd(aOutput,'<tr><td colspan="5" style="font-weight:bold;">'+oLan:RGet("From",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td colspan="2"></td></tr>')
-					endif
-					// print transaction: 
-					aDesc:=Split(aTransRPP[i,7],'(')
-					cAmntRPP:='' 
-					fAmntRPP:=0
-					cDateRPP:=''
-					if Len(aDesc)>2
-						cDescr:= aDesc[Len(aDesc)-1]   // opp amount and date
-						aTransRPP[i,7]:=Compress(StrTran(aTransRPP[i,7],'('+cDescr,''))  // remove OPP amount and date
-						aDesc:=Split(cDescr,':')
-						if Len(aDesc)=3
-// 							cAmntRPP:=StrTran(SubStr(aDesc[2],1,At(',',aDesc[2])-1),'.',',')  // change decimal char to ,
- 							cAmntRPP:=SubStr(aDesc[2],1,At(',',aDesc[2])-1)
-							SetDecimalSep(Asc('.'))
-							fAmntRPP:=Val(cAmntRPP)
-							SetDecimalSep(Asc(DecSeparator)) 
-							cDateRPP:=StrTran(aDesc[3],')','')
-						endif
-					endif
-					// 								aadd(aOutput,'<tr><td>'+aTransRPP[i,8]+'</td><td class="date">'+DToC(SQLDate2Date(aTransRPP[i,2]))+'</td>'+;
-					AAdd(aOutput,'<tr><td class="date">'+DToC(SQLDate2Date(aTransRPP[i,2]))+'</td>'+;
-						'<td>'+HtmlEncode(aTransRPP[i,7])+'</td><td class=" date">'+cDateRPP+'</td><td class="amount">'+Str(fAmntRPP,-1,DecAantal)+;
-						'</td><td class="amount">'+Str(aTransRPP[i,6],12,DecAantal)+'</td><td colspan="2"></td></tr>')
-					fSubKind:=Round(fSubKind+aTransRPP[i,6],DecAantal) 													
-				next
-				if !Empty(cCurrOPP)
-					// print totals
-					AAdd(aOutput,'<tr><td colspan="2"></td><td colspan="3" style="font-weight:bold;">'+oLan:RGet("Total income",,"!")+' '+iif(p>0,self:aPPCode[p,2],'')+'</td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' )
-					fKind:=Round(fKind+fSubKind,DecAantal)
-					fSubKind:=0.00
-				endif
-			endif 
-			if Len(aTransMG)>0
-				// Print member gifts:
-				AAdd(aOutput,'<tr><td colspan="5"><h2>'+oLan:RGet("member gifts",,"!")+'</h2></td><td colspan="2"></td></tr>'+CRLF+;
-					'<tr class="columnhd"><td class=" date">'+oLan:RGet("Date",,"!")+'</td>'+;
-					'<td>'+oLan:RGet("Description",,"!")+'</td><td>'+oLan:RGet("Name",,"!")+'</td><td>'+oLan:RGet("Id",,"!")+'</td><td class="amount">'+oLan:RGet("Amount",,"!")+'</td><td colspan="2"></td></tr>') 
-				for i:=1 to Len(aTransMG)
-					// get person data:
-					// aPersdata: {{persid, fullname, fulladdress, email},...	
-					//                  1       2         3        4              
-					prsPtr:=AScan(aPersData,{|x|x[1]==aTransMG[i,5]})
-					// print transaction:
-					// aTransMG: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
-					//              1   2     3      4      5     6         7       8      9  10    11     12
-					AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTransMG[i,2]))+'</td>'+;
-						'<td>'+HtmlEncode(aTransMG[i,7])+'</td><td>'+aPersData[prsPtr,2]+'</td><td>'+aTransMG[i,5]+'</td><td class="amount">'+Str(aTransMG[i,6],12,DecAantal)+'</td><td colspan="2"></td></tr>')
-					fSubKind:=Round(fSubKind+aTransMG[i,6],DecAantal) 						
-				next				
-				// print total MG
-				AAdd(aOutput,'<tr><td colspan="5"></td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' )
-				fKind:=Round(fKind+fSubKind,DecAantal)
-				fSubKind:=0.00
-			endif
-			// print total gifts:
-			AAdd(aOutput,'<tr><td colspan="4"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total gifts",,"!")+'</td><td class="sumamountAcc">'+Str(fKind,12,DecAantal)+'</td></tr>' )
+		if cCurrKind=='1' .or. cCurrKind=='2'    // AG or MG
 			fKindGrp:=Round(fKindGrp+fKind,DecAantal) 
 			fKind:=0.00
-		elseif cCurrKind=='2'
+			if newkind>'2'
+				// print total gifts:
+				AAdd(aOutput,'<tr><td colspan="4"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total gifts",,"!")+'</td><td class="sumamountAcc">'+Str(fKindGrp,12,DecAantal)+'</td></tr>' )
+			endif
+		elseif cCurrKind=='3'
 			// fund:
 			// print total kind:
-			AAdd(aOutput,'<tr><td colspan="5"></td><td class="sumamountSub">'+Str(fSubKind,12,DecAantal)+'</td><td></td></tr>' ) 
-			// in case of fund also total account column: 
-			fKind:=fSubKind
-			fSubKind:=0.00
-			AAdd(aOutput,'<tr><td colspan="6"></td><td class="sumamountAcc">'+Str(fKind,12,DecAantal)+'</td></tr>' ) 							
+			AAdd(aOutput,'<tr><td colspan="4"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total fund",,"!")+'</td><td class="sumamountAcc">'+Str(fKind,12,DecAantal)+'</td></tr>' )
 			fKindGrp:=Round(fKindGrp+fKind,DecAantal)
-		elseif cCurrKind=='3'
-			// print total kind:
-			fKind:=fSubKind
-			fSubKind:=0.00
-			AAdd(aOutput,'<tr><td colspan="5"></td><td class="sumamountSub">'+Str(fKind,12,DecAantal)+'</td><td></td></tr>' ) 
-			fKindGrp:=Round(fKindGrp+fKind,DecAantal)
+			fKind:=0
+		elseif cCurrKind=='4'
+			fKindGrp:=Round(fKindGrp+fKind,DecAantal) 
+			fKind:=0.00
 		endif
 
 	endif 
@@ -3522,11 +3474,11 @@ method EndOfTransGroupKind(mbrid as string,newkind as string,newAcc:='' as strin
 	// End of kindgroup:
 	// - income(1)(in case of transition from kind 1 to another kind),expense(3),other(4)
 	// in case of transition from kind 1 to another kind 
-	if cCurrKindGrp='1' .and. newkind>'2' .or.;
-			cCurrKindGrp='3' .and.newkind>'3' 
+	if cCurrKindGrp='1' .and. newkind>'3' .or.;
+			cCurrKindGrp='2' .and.newkind>'4' 
 		//	print	totals kindgrp 
 		AAdd(aOutput,'<tr><td colspan="4"></td><td colspan="2" style="font-weight:bold;">'+oLan:RGet("Total",,"!")+' '+;
-			oLan:RGet(iif(cCurrKind<'3',"Income",iif(cCurrKind='3',"Expense","Other accounts")),,'!')+'</td><td class="sumamountKind">'+Str(fKindGrp,12,DecAantal)+'</td></tr>' ) 
+			oLan:RGet(iif(cCurrKindGrp=='1',"Income",iif(cCurrKindGrp='2',"Expense","Other accounts")),,'!')+'</td><td class="sumamountKind">'+Str(fKindGrp,12,DecAantal)+'</td></tr>' ) 
 		fKindGrp:=0.00
 	endif
 	
@@ -4096,7 +4048,7 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
 	// Read transactions into array aTrans
 	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
 	//              1   2     3      4      5     6         7       8      9  10    11     12 
-	// Transactions are in order of: kind,month,accid,dat
+	// Transactions are in order of: kind,accid,dat,transid,seqnr
 	// Read corresponding oTrans record for this member: 
 	SetDecimalSep(Asc('.'))
 	cCurrMbrId:=self:aMbr[mPtr,1]
@@ -4112,7 +4064,9 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
 			*  skip member without transaction in report period 
 			return false
 		endif
-	endif 
+	endif
+	// sort aTrans in order kind,gc,opp,accid,dat 
+//	ASort(aTrans,,,{|x,y| x[12] >=   
 	IF !Empty(self:SendingMethod) 
 		// rename filename to add member name:
 		cFileNameBasic:= self:oReport:ToFileFS:FileName                  
@@ -4156,9 +4110,9 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
    self:fFundUpt:=0.00
 	for i:= 1 to Len(aTrans)
 		aTrans[i,6]:=Val(aTrans[i,6])
-		if aTrans[i,12]=='1' // income
+		if aTrans[i,12]=='1' .or.aTrans[i,12]=='2' // income (AG and MG)
 			self:fIncomeUpt:=Round(fIncomeUpt+aTrans[i,6],DecAantal)			
-		elseif aTrans[i,12]=='2' 
+		elseif aTrans[i,12]=='3'  // PF
 			self:fFundUpt:=Round(fFundUpt+aTrans[i,6],DecAantal)			
 		endif
 	next
@@ -4656,12 +4610,12 @@ Method MonthOverView(mPtr as int,aAccidMbr as array,aTrans as array,aOutput as a
 			i:=0
 			cStartinMonth:=SQLdate(StartinMonth)
 			cEndInMonth:=SQLdate(EndInMonth) 
-			do while i<Len(aTrans) .and.(i:=AScan(aTrans,{|x|x[12]<'4' .and. x[2]>=cStartinMonth .and. x[2]<=cEndInMonth},i+1))>0
-				if aTrans[i,12]=='1' // income
+			do while i<Len(aTrans) .and.(i:=AScan(aTrans,{|x|x[12]<'5' .and. x[2]>=cStartinMonth .and. x[2]<=cEndInMonth},i+1))>0
+				if aTrans[i,12]<='2' // income
 					fIncome:=Round(fIncome+aTrans[i,6],DecAantal)
-				elseif aTrans[i,12]=='2' 
-					fFund:=Round(fFund+aTrans[i,6],DecAantal)
 				elseif aTrans[i,12]=='3' 
+					fFund:=Round(fFund+aTrans[i,6],DecAantal)
+				elseif aTrans[i,12]=='4' 
 					fExpense:=Round(fExpense-aTrans[i,6],DecAantal)
 				endif
 			enddo
@@ -4995,27 +4949,31 @@ RETURN uValue
 Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMbr as array,aOutput as array,aGiftsTotals ref array,aGiftdata ref array) as void pascal class GiftReport
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	//
-	// TRANSACTIANS OVERVIEWS for depratment members:
+	// TRANSACTIANS OVERVIEWS for (department) members:
 	//
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 	local nTrans,nMonth,nGift,prsPtr,p,i,accPtr,nAss,nCurrMonth:=self:CalcMonthStart as int
 	local fSubKind,fKind,fKindGrp as float
-	local fBalance as float 
-	local EndInMonth,StartinMonth as date
+	local fBalance,fAmntRPP,fAmnt as float 
 	local cPeriod,cNAW,cAmntRPP,cDateRPP,cStartinMonth,cDescr as string
-	local cCurrSubKind,cCurrKind,cCurrKindGrp,cCurrAcc,cCurrOPP as string
+	local cCurrKindGrp as string   // Kindgroup: groups of kinds: (1=AG,2=MG,3=PF},{4=CH},{5=other}
+	local cCurrKind as string      // kind: 1=AG,2=MG,3=PF,4=CH or 5=other
+	local cCurrSubKind as string   // opp/accid
+	local cCurrAcc,cCurrOPP as string
 	local lFirstIncome,lColumnHeading,lColumnHeading as logic 
 	local lMember:=!SubStr(mbrid,1,1)='a' as logic 
 	local aTransRPP:={},aDesc:={},aTransMG:={} as array 
+	local EndInMonth,StartinMonth as date
 	
 	// Produce overview from aTrans:
 	// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
 	//              1   2     3      4      5     6         7       8      9  10    11     12
-	// atrans in order of kind,accid,dat
+	// atrans in order of kind,opp,accid,dat
 	// kind: 1: income
-	//			2=fund
-	//       3=expense
-	//			4=other accounts 
+	//			2: member gift
+	//			3=fund
+	//       4=expense
+	//			5=other accounts 
 	//
 	// accounts in aAccidMbr in order of mbrid,kind,accid:
 	// {mbrid,accid,kind(1=income,2=net,3=expense,4=other),accnumber,description,currency,category(liability,..),yr_bud,yTd_bud,{month,per_cre-per_deb,prvper_cre-prvper_deb,prvyr_cre-prvyr_deb,pl_cre-pl_deb}},...
@@ -5035,7 +4993,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 	AAdd(aTrans,{,,,,,,,,,,,'9'})  // kind 6 as stop to print remaining totals
 	for nTrans:=1 to Len(aTrans) 
 		// preprocess gifts and collect gifts for later printing: 
-		if aTrans[nTrans,12]<='2'   //gift or own money 
+		if aTrans[nTrans,12]<='3'   //gift or own money 
 			if aTrans[nTrans,5]>'0'  // giver present?
 				// add to aGiftData:
 				// aGiftData: {{sortkey,persid,addressblock,{amount,gc },{amount,gc },...{amount,gc }}},...
@@ -5071,19 +5029,6 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 			if aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 				loop
 			endif
-// 			if !Empty(aTrans[nTrans,9])
-// 				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate
-// 				if Len(aTransRPP)=1 .and. nGift=0 // Force new group
-// 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
-// 				endif
-// 				loop 
-// 			elseif aTrans[nTrans,10]=='MG'
-// 				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate
-// 				if Len(aTransMG)=1 // Force new group
-// 					self:BeginOfTransGroupKind('1',ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
-// 				endif
-// 				loop
-// 			endif
 		elseif !Empty(aTrans[nTrans,2]) .and. aTrans[nTrans,2]< cStartinMonth    // skip when not in report period
 			loop
 		endif
@@ -5092,7 +5037,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 		// End processing
 		//
-		self:EndOfTransGroupKind(mbrid,aTrans[nTrans,12],ConS(aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,aTransRPP,aTransMG,aPersData,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,@cCurrAcc,@fKindGrp,@fKind,@fSubKind)
+		self:EndOfTransGroupKind(mbrid,aTrans[nTrans,12],iif(aTrans[nTrans,12]<='4',aTrans[nTrans,9],ConS(aTrans[nTrans,1])),aOutput,aAccidMbr,accPtr,aTransRPP,aTransMG,aPersData,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,@cCurrAcc,@fKindGrp,@fKind,@fSubKind)
 
 		
 		if aTrans[nTrans,12]='9' 
@@ -5108,34 +5053,52 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 		// Beginning of kindgroup,kind, subkind  processing   (not aTrans[nTrans,12]='9') 
 		//
-		self:BeginOfTransGroupKind(aTrans[nTrans,12],aTrans[nTrans,1],aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
+		self:BeginOfTransGroupKind(aTrans[nTrans,12],iif(aTrans[nTrans,12]<='4',aTrans[nTrans,9],aTrans[nTrans,1]),aOutput,aAccidMbr,accPtr,@cCurrKindGrp,@cCurrKind,@cCurrSubKind,cPeriod,@fKindGrp,@fKind,@fSubKind)
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 		// print transaction:
 		//
-		IF cCurrKind=='1'
-			if !Empty(aTrans[nTrans,9])
-				AAdd(aTransRPP,aTrans[nTrans])  // save to print gifts from other WMO's separate 
-			elseif aTrans[nTrans,10]=='MG'
-				AAdd(aTransMG,aTrans[nTrans])  // save to print gifts from other members separate 
-			else
-				if self:GiftDetails
-					// get person data:
-					// aPersdata: {{persid, fullname, fulladdress, email},...	
-					//                  1       2         3        4              
-					prsPtr:=AScan(aPersData,{|x|x[1]==aTrans[nTrans,5]})
-					// print transaction:
-					// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
-					//              1   2     3      4      5     6         7       8      9  10    11     12
-					AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
-						'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td>'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td>'+iif(prsPtr>0,"#"+aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+		if cCurrKind<'5' .and.!Empty(aTrans[nTrans,9])
+			// print transaction: 
+			aDesc:=Split(aTrans[nTrans,7],'(')
+			cAmntRPP:='' 
+			fAmntRPP:=0
+			cDateRPP:=''
+			if Len(aDesc)>2
+				cDescr:= aDesc[Len(aDesc)-1]   // opp amount and date
+				aTrans[nTrans,7]:=Compress(StrTran(aTrans[nTrans,7],'('+cDescr,''))  // remove OPP amount and date
+				aDesc:=Split(cDescr,':')
+				if Len(aDesc)=3
+					cAmntRPP:=SubStr(aDesc[2],1,At(',',aDesc[2])-1)
+					SetDecimalSep(Asc('.'))
+					fAmntRPP:=Val(cAmntRPP)
+					SetDecimalSep(Asc(DecSeparator)) 
+					cDateRPP:=StrTran(aDesc[3],')','')
 				endif
-				fSubKind:=Round(fSubKind+aTrans[nTrans,6],DecAantal) 						
 			endif
-		elseif cCurrKind>'1' .and. cCurrKind<='5'
+			fAmnt:=aTrans[nTrans,6]*iif(cCurrKind='4',-1,1)
+			AAdd(aOutput,'<tr><td class="date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
+				'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td class=" date">'+cDateRPP+'</td><td class="amount">'+Str(fAmntRPP,-1,DecAantal)+;
+				'</td><td class="amount">'+Str(fAmnt,12,DecAantal)+'</td><td colspan="2"></td></tr>')
+			fSubKind:=Round(fSubKind+fAmnt,DecAantal) 													
+			
+		ELSEIF cCurrKind<='2'
+			if cCurrKind='2' .or. self:GiftDetails
+				// get person data:
+				// aPersdata: {{persid, fullname, fulladdress, email},...	
+				//                  1       2         3        4              
+				prsPtr:=AScan(aPersData,{|x|x[1]==aTrans[nTrans,5]})
+				// print transaction:
+				// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
+				//              1   2     3      4      5     6         7       8      9  10    11     12
+				AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
+					'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td>'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td>'+iif(prsPtr>0,"#"+aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+			endif
+			fSubKind:=Round(fSubKind+aTrans[nTrans,6],DecAantal) 						
+		elseif cCurrKind>'2' .and. cCurrKind<='5'
 			AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
-				'<td colspan="3" style="width:70%">'+HtmlEncode(aTrans[nTrans,7])+'</td><td class="amount">'+Str(aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),12,DecAantal)+'</td><td colspan="2"></td></tr>')
-			fSubKind:=Round(fSubKind+aTrans[nTrans,6]*iif(cCurrKind='3',-1,1),DecAantal) 						
+				'<td colspan="3" style="width:70%">'+HtmlEncode(aTrans[nTrans,7])+'</td><td class="amount">'+Str(aTrans[nTrans,6]*iif(cCurrKind='4',-1,1),12,DecAantal)+'</td><td colspan="2"></td></tr>')
+			fSubKind:=Round(fSubKind+aTrans[nTrans,6]*iif(cCurrKind='4',-1,1),DecAantal) 						
 		endif 
 	next
 	AAdd(aOutput,"</table></td></tr></table>")
