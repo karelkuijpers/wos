@@ -3124,10 +3124,12 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 				if lv_kindorg=='00108'
 					lv_kind='AC'  // IBAN acceptgiro
 				elseif lv_kindorg=='00360' ; //acc equens
-					.or. lv_kindorg=='00300' .or. lv_kindorg=='00400' ; // crediteuren betaling equens 
+					 .or. lv_kindorg=='00400' ; // crediteuren betaling equens 
 					lv_kind:='BGC'
 				elseif lv_kindorg=='00106' .or.lv_kindorg=='00206' .or. lv_kindorg=='00305'  // ideal bijschrijving
-					lv_kind:='IDEAL'
+					lv_kind:='IDEAL' 
+				elseif lv_kindorg=='00300' .or.lv_kindorg=='00370' 
+					lv_kind:='OV'
 				elseif Left(lv_kindorg,2)=='01'
 					lv_kind:='COL'+iif(Left(lv_kindorg,3)=='011','REJ',"") 
 				elseif lv_kindorg=='00100'
@@ -4742,7 +4744,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	local oMBal as Balances
 	if Len(avalueTrans)=0
 		return true
-	endif  
+	endif
+	// sort imported transactions on bookingdate 
+	ASort(avalueTrans,,,{|x,y|x[2]<=y[2]})
 	if lCheckPerson
 		//
 		// check if persid's belongs to persons
