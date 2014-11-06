@@ -4029,24 +4029,24 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 	endif
    // Check if all required due amounts are present:
-   oDue:=SqlSelect{'SELECT s.personid,'+SQLFullName(0,'p')+' as fullname,s.amount,s.term,a.accnumber,a.description as accname '+;
-   'FROM `subscription` s left join person p on(s.personid=p.persid) left join account a on(a.accid=s.accid) '+;
-   'where extract(year_month from begindate)<='+cYearMonth+' and `paymethod`="C" and extract(year_month from enddate)>'+cYearMonth+' and extract(year_month from duedate)>='+cYearMonth+;
-   ' and (`term`=1 or term between 1 and 12 and extract(year_month from subdate(duedate, INTERVAL term month))='+cYearMonth+') and '+;
-   'subscribid not in (select subscribid from dueamount where extract(year_month from invoicedate)='+cYearMonth+')',oConn}
-   if oDue:RecCount>0
-		Do while !oDue:EoF
-			cErrMsg+=CRLF+"personid="+ ConS(oDue:personid)+;
-						", personname="+oDue:FullName+; 
-						", account="+oDue:accnumber+' '+oDue:accname+;
-						", amount="+ConS(oDue:amount)+' per '+ConS(oDue:term)+" month"
-			oDue:skip()
-		enddo
-		if !Empty(cErrMsg)
-			ErrorBox{self,self:oLan:WGet("Of the following donations the required due amount can't be found for month")+' '+CMonth(begin_due) +':'+cErrMsg}:Show()
-			return false
-		endif
-   endif
+//    oDue:=SqlSelect{'SELECT s.personid,'+SQLFullName(0,'p')+' as fullname,s.amount,s.term,a.accnumber,a.description as accname '+;
+//    'FROM `subscription` s left join person p on(s.personid=p.persid) left join account a on(a.accid=s.accid) '+;
+//    'where extract(year_month from begindate)<='+cYearMonth+' and `paymethod`="C" and extract(year_month from enddate)>'+cYearMonth+' and extract(year_month from duedate)>='+cYearMonth+;
+//    ' and (`term`=1 or term between 1 and 12 and extract(year_month from subdate(duedate, INTERVAL term month))='+cYearMonth+') and '+;
+//    'subscribid not in (select subscribid from dueamount where extract(year_month from invoicedate)='+cYearMonth+')',oConn}
+//    if oDue:RecCount>0
+// 		Do while !oDue:EoF
+// 			cErrMsg+=CRLF+"personid="+ ConS(oDue:personid)+;
+// 						", personname="+oDue:FullName+; 
+// 						", account="+oDue:accnumber+' '+oDue:accname+;
+// 						", amount="+ConS(oDue:amount)+' per '+ConS(oDue:term)+" month"
+// 			oDue:skip()
+// 		enddo
+// 		if !Empty(cErrMsg)
+// 			ErrorBox{self,self:oLan:WGet("Of the following donations the required due amount can't be found for month")+' '+CMonth(begin_due) +':'+cErrMsg}:Show()
+// 			return false
+// 		endif
+//    endif
    
    // select all due amounts to be invoiced
 	oDue:=SqlSelect{"select cast(group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',s.begindate"+;
@@ -4145,6 +4145,11 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 			cErrMsg+=CRLF+"Bankaccount "+cBank+" of person "+aDue[i,16]+"(Intern ID "+cPersId+") is not correct SEPA bank account!"
 			loop
 		endif
+		if SQLDate2Date(aDue[i,5]) > Today()
+			cErrMsg+=CRLF+self:oLan:WGet("Direct debit begin date of person")+' '+aDue[i,16]+"(Intern ID "+cPersId+") "+self:oLan:WGet("can not be in future")+'!'
+			loop
+		endif
+			
 		// aDue:
 		// dueid,subscribid,personid,accid,begindate,seqtype,AmountInvoice,invoicedate,seqnr,term,bankaccnt,accnumber,clc,category,type,personname,bic,mailingcodes,mandate id , firstinvoicedate,bankaccntprv,bicprv
 		//    1       2         3       4     5        6         7             8         9    10     11         12     13      14   15     16       17     18            19            20              21        22
