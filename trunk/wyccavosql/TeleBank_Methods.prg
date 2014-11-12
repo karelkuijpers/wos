@@ -1934,7 +1934,14 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 									if SubStr(lv_kind,1,3)=='COL'
 										if Len(Split(lv_EndtoEnd,'-'))>=3
 											lv_persid:=Split(lv_EndtoEnd,'-')[1]
-											lv_dueid:=Split(lv_EndtoEnd,'-')[3] 
+											if !isnum(lv_persid)
+												lv_persid:=''
+											else
+												lv_dueid:=Split(lv_EndtoEnd,'-')[3]
+												if !isnum(lv_dueid)
+													lv_dueid:=''
+												endif 
+											endif
 										endif
 									endif
 								endif
