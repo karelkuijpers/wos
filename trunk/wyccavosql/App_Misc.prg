@@ -188,7 +188,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	if lShow
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 	endif
-// 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
+	// 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
 
 	*	Select only monthbalances in years after last balance year for standard currency: 
 	time0:=Seconds()
@@ -196,39 +196,47 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,round(sum(deb),2) as debtot,round(sum(cre),2) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
-//       time1:=time0
-//       LogEvent(,"transsum:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsum:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SQLSelect{"alter table transsum add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
-//       time1:=time0
-//       LogEvent(,"transsum index:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsum index:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
-		cError:="No correspondence between transactions and month balances per account"+CRLF
-		lTrMError:=true
-		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
-			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,iif(empty(oSel:debtot),0.00,oSel:debtot),iif(empty(oSel:cretot),0.00,oSel:cretot)}) 
-			oSel:Skip()
-		enddo 
-	endif
-//       time1:=time0
-//       LogEvent(,"transsum <->mbalance:"+Str((time0:=Seconds())-time1,-1),"logsql")
-	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
-	if oSel:RECCOUNT>0
-		if Empty(cError)
+		if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
 			cError:="No correspondence between transactions and month balances per account"+CRLF
 		endif
 		lTrMError:=true
 		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
+			if !Empty(cError)
+				cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			endif
+			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,iif(empty(oSel:debtot),0.00,oSel:debtot),iif(empty(oSel:cretot),0.00,oSel:cretot)}) 
+			oSel:Skip()
+		enddo 
+	endif
+	//       time1:=time0
+	//       LogEvent(,"transsum <->mbalance:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
+	if oSel:RECCOUNT>0
+		if Empty(cError)
+			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+				cError:="No correspondence between transactions and month balances per account"+CRLF
+			endif
+		endif
+		lTrMError:=true
+		do while !oSel:EoF
+			if !Empty(cError)
+				cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			endif 
 			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,oSel:debtot,oSel:cretot}) 
 			oSel:Skip()
 		enddo
 	endif
-//       time1:=time0
-//       LogEvent(,"transsum <->mbalance2:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsum <->mbalance2:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	// Idem for foreign currencies:
 	*	Select only monthbalances in years after last balance year for foreign currency:
@@ -236,56 +244,64 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oStmnt:Execute()
 	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,round(sum(debforgn),2) as debtot,round(sum(creforgn),2) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
-//       time1:=time0
-//       LogEvent(,"transsumf:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsumf:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SQLSelect{"alter table transsumf add unique (accid,year,month)",oConn}
 	oSel:Execute()                                                                                    
-//       time1:=time0
-//       LogEvent(,"transsumf index:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsumf index:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.year,m.month,m.year,cast(m.`currency` as char) as currency,t.debtot,t.cretot,a.accnumber from mbalance m left join transsumf t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency<>'"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			cError:="No correspondence between transactions and month balances per account"+CRLF
+			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+				cError:="No correspondence between transactions and month balances per account"+CRLF
+			endif
 		endif
 		lTrMError:=true
-		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+		do	while	!oSel:EoF
+			if !Empty(cError)
+				cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+"	Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+";	mbal deb:"+Transform(oSel:deb,"")+"	cre:"+Transform(oSel:cre,"")+CRLF
+			endif
 			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,iif(Empty(oSel:debtot),0.00,oSel:debtot),iif(Empty(oSel:cretot),0.00,oSel:cretot),oSel:Currency}) 
 			oSel:Skip()
 		enddo
 	endif
-//       time1:=time0
-//       LogEvent(,"transsum <->mbalance3:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsum <->mbalance3:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	oSel:=SqlSelect{"select a.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber,a.`currency` from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			cError:="No correspondence between transactions and month balances per account"+CRLF
+			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+				cError:="No correspondence between transactions and month balances per account"+CRLF
+			endif
 		endif
 		lTrMError:=true
-		do while !oSel:EoF
-			cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF 
+		do	while	!oSel:EoF
+			if !Empty(cError)
+				cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
+			endif 
 			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,oSel:debtot,oSel:cretot,oSel:Currency}) 
 			oSel:Skip()
 		enddo
 	endif
-//       time1:=time0
-//       LogEvent(,"transsum <->mbalance4:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"transsum <->mbalance4:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
 	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
 	oSel:Execute()
-//       time1:=time0
-//       LogEvent(,"Transactions not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
-// 	if !oSel:totdebcre==0.00
+	//       time1:=time0
+	//       LogEvent(,"Transactions not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	if !oSel:totdebcre==0.00
 	if !Empty(oSel:totdebcre)
 		cError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
 		cFatalError+="Transactions not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF 
 	endif
 	oSel:=SqlSelect{"select sum(cre-deb) as totdebcre from mbalance where currency='"+sCurr+"' and (year*12+month)>="+Str(nFromYear,-1),oConn}
 	oSel:Execute()
-//       time1:=time0
-//       LogEvent(,"Montbalances not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
-// 	if !oSel:totdebcre==0.00
+	//       time1:=time0
+	//       LogEvent(,"Montbalances not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	// 	if !oSel:totdebcre==0.00
 	if !Empty(oSel:totdebcre)
 		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
 		lTrMError:=true
@@ -302,25 +318,30 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			oSel:Skip()
 		enddo
 	endif
-//       time1:=time0
-//       LogEvent(,"Check concistency:"+Str((time0:=Seconds())-time1,-1),"logsql")
+	//       time1:=time0
+	//       LogEvent(,"Check concistency:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	if lShow
 		oMainWindow:Pointer := Pointer{POINTERARROW} 
 	endif
-	if Empty(cError) 
+	//	if Empty(cError)
+	if !lTrMError .and. Empty(cFatalError) 
 		oMainWindow:STATUSMESSAGE(Space(100))
 		if lShow
 			TextBox{,"Checking consistency financial data","all data are correct"}:Show()
 		endif
 		return true
 	else
-		LogEvent(oWindow,cError,"LogErrors")
-		if lShow
-			TextBox{,"Checking consistency financial data: correspondence transactions and month balances, each transaction balanced",SubStr(cError,1,3000)}:Show()
-			lCorrect:=false
-			if lTrMError
-				lCorrect:=(TextBox{,"Checking consistency financial data",'Should balances be corrected?',BUTTONYESNO}:Show()=BOXREPLYYES) 
+		if !Empty(cError)
+			LogEvent(oWindow,cError,"LogErrors")
+			if	lShow
+				TextBox{,"Checking consistency financial data: correspondence transactions	and month balances, each transaction balanced",SubStr(cError,1,3000)}:Show()
+				lCorrect:=false
+				if	lTrMError
+					lCorrect:=(TextBox{,"Checking	consistency	financial data",'Should	balances	be	corrected?',BUTTONYESNO}:Show()=BOXREPLYYES)	
+				endif
 			endif
+		elseif lShow
+			lCorrect:=true   // correct rounding errors
 		endif
 		if	lTrMError .and.lCorrect
 			if lShow
@@ -351,9 +372,9 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if lShow
 				oMainWindow:Pointer := Pointer{POINTERARROW} 
 			endif
-// 			if !lFatal
-// 				return true    // after correction correct
-// 			endif
+			// 			if !lFatal
+			// 				return true    // after correction correct
+			// 			endif
 		endif
 		oMainWindow:STATUSMESSAGE(Space(100))
 	endif
