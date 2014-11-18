@@ -529,7 +529,6 @@ METHOD OKButton( ) CLASS CheckSuspense
 			ENDIF
 			nRow := 0
 			// 	nPage := 0  
-			// 			Betreft acceptgiro BGC. 51 acceptgiro'S RUNNR 4834
 			oSel:=SqlSelect{UnionTrans("select `dat` as datedif,sum(totdaykind) as diffval,sum(if(docid='ACC',-qtykind,qtybgc) ) as diffqty,"+;
 				"cast(group_concat(gr.docid,':€',lpad(cast(totdaykind as char),9,' '),lpad(concat(' (',if(docid='ACC',cast(qtykind as char),cast(qtybgc as char)),')'),6,' ') order by docid separator ' ') as char) as specification"+;
 				" from (SELECT `dat`,SubStr(`docid`,1,3) as docid,sum(cre-deb) as totdaykind,count(*) as qtykind,"+;
