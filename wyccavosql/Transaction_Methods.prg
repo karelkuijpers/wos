@@ -2192,7 +2192,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
 				",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
 					iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:cre>oHm:Deb,",bfm='O'","")
-//					",ppdest='"+SubStr(AllTrim(oHm:Amirror[i,15]),15)+"'"+; 
+				//					",ppdest='"+SubStr(AllTrim(oHm:Amirror[i,15]),15)+"'"+; 
 				oStmnt:=SQLStatement{cStatement,oConn}
 				oStmnt:Execute()
 				if Empty(oStmnt:Status) .and. oStmnt:NumSuccessfulRows>0
@@ -2393,15 +2393,19 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	SQLStatement{"commit",oConn}:execute()
 	SQLStatement{"unlock tables",oConn}:execute() 
 	SQLStatement{"set autocommit=1",oConn}:execute() 
-// 	if CountryCode=='7'
-// 		// log for russia: 
-// 		if !CheckConsistency(self,true,false,@cFatalError) 
-// 			LogEvent(self,"Update trans "+self:oDCmTRANSAKTNR:TEXTValue+' old:'+CRLF+;
-// 			Implode( oHm:aMIRROROrig ,',',,,,')'+CRLF+'(')+CRLF+;
-// 			' new: '+CRLF+Implode(oHm:Amirror,',',,,,')'+CRLF+'('),"logdebug")
-// 		endif
-// 	endif
+	// 	if CountryCode=='7'
+	// 		// log for russia: 
+	// 		if !CheckConsistency(self,true,false,@cFatalError) 
+	// 			LogEvent(self,"Update trans "+self:oDCmTRANSAKTNR:TEXTValue+' old:'+CRLF+;
+	// 			Implode( oHm:aMIRROROrig ,',',,,,')'+CRLF+'(')+CRLF+;
+	// 			' new: '+CRLF+Implode(oHm:Amirror,',',,,,')'+CRLF+'('),"logdebug")
+	// 		endif
+	// 	endif
 	self:Pointer := Pointer{POINTERARROW}
+	if !Empty(cWarning)
+		LogEvent(self,cWarning)
+		WarningBox{self,self:oLan:WGet("Update of transaction"),cWarning}:show()
+	endif
 	IF self:lTeleBank
 		self:oTmt:CloseMut(oHm,lSave,self:owner)   
 	elseif self:lImport
@@ -2413,10 +2417,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	lSave:=FALSE
 
 	IF self:lInqUpd 
-		if !Empty(cWarning)
-			LogEvent(self,cWarning)
-			WarningBox{self,self:oLan:WGet("Update of transaction"),cWarning}:show()
-		endif
 		if self:oOwner:lShowFind
 			self:oOwner:FindButton()
 		else
@@ -3300,7 +3300,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	if !IsObject(self:oTmt) .or.self:oTmt==null_object
 		return false
 	endif
-	* In case of automatic collection (CLIEOP03-file) and Acceptgiro via BGC look for pay ahead account:
+	* In case of automatic collection and Acceptgiro via National Clearance look for pay ahead account:
 	IF (self:oTmt:m56_kind="COL" .or.self:oTmt:m56_kind="KID" .or.self:oTmt:m56_kind="ACC")  .and.self:oTmt:m56_addsub ="B"
 		IF Empty(self:oTmt:m56_payahead)
 			(ErrorBox{self:owner,"No account for Payments en route specified for banknbr "+AllTrim(self:oTmt:m56_bankaccntnbr)}):show()
