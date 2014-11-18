@@ -3246,7 +3246,7 @@ CLASS SelPersOpen INHERIT DialogWinDowExtra
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
   PROTECT oCaller AS SelPers
   PROTECT cType as STRING 
-  declare method Abon_Con,MakeCliop03File,MakeKIDFile,SEPADirectDebit
+  declare method Abon_Con,MakeKIDFile,SEPADirectDebit
 RESOURCE SelPersOpen DIALOGEX  18, 34, 201, 156
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Select Persons with Unpaid Items"
@@ -3426,10 +3426,10 @@ METHOD OKButton( ) CLASS SelPersOpen
 				self:SEPADirectDebit(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
 			elseif CountryCode="47"
 				self:MakeKIDFile(begin_due,end_due,process_date)
-			elseif CountryCode="31"
-				if !self:MakeCliop03File(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
-					return
-				endif
+// 			elseif CountryCode="31"
+// 				if !self:MakeCliop03File(begin_due,end_due,process_date,if(IsNil(self:oDCselx_rek:VALUE),0,self:oDCselx_rek:VALUE))
+// 					return
+// 				endif
 			endif
 			self:EndDialog() 
 			RETURN nil
