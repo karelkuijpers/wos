@@ -395,7 +395,7 @@ METHOD OKButton( ) CLASS EditSubscription
 	local cmessage,cError as string
 	local LastDDdate,dNewDuedate,dThisMonthBegin,dInvoiceBegin as date 
 	local cLog as string
-	local lAmendmentdel,lAmendmentIns,lProlongate as logic 
+	local lAmendmentdel,lAmendmentIns,lProlongate,lChanged as logic 
 	local aMndt as array
 	local oDue,oSel as SQLSelect
 	local oStmnt,oStmntDue as SQLStatement
@@ -476,9 +476,9 @@ METHOD OKButton( ) CLASS EditSubscription
 			* check if subscription allready exists: 
 			if (oSel:=SqlSelect{"select subscribid from subscription where personid="+mCLN+" and accid="+mRek+" and category='"+self:mtype+"'"+;
 					" and term <=12 and extract(year_month from adddate(curdate(),interval term month))<extract(year_month from enddate)",oConn}):reccount>0 
-// 				LogEvent(self,oSel:SQLString,"loginfo")
+				// 				LogEvent(self,oSel:SQLString,"loginfo")
 				if (TextBox{self,self:oLan:WGet("Donations"),self:oLan:WGet("Warning")+': '+self:oLan:WGet(iif(self:mtype='D',"Donation","Subscription")+' of person already exists for this account')+;
-					'. '+self:oLan:WGet("Continue")+'?',BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
+						'. '+self:oLan:WGet("Continue")+'?',BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
 					RETURN nil
 				endif
 			ENDIF
@@ -600,7 +600,7 @@ METHOD OKButton( ) CLASS EditSubscription
 					endif
 					if !self:oDCmDueDate:SelectedDate==self:oSub:duedate 
 						lProlongate:=true
-// 						cmessage:=self:oLan:WGet("Next due date adapted")
+						// 						cmessage:=self:oLan:WGet("Next due date adapted")
 						cDueDeleteWhere+=iif(Empty(cDueDeleteWhere),'',' or ')+'invoicedate>="'+SQLdate(BeginOfMonth(self:oDCmDueDate:SelectedDate))+'"' 
 					endif
 				else
@@ -637,7 +637,7 @@ METHOD OKButton( ) CLASS EditSubscription
 				iif(self:mamount==self:oSub:amount,'','amount:'+Str(self:oSub:amount,-1)+'-> '+Str(self:mamount,-1)+CRLF)+;
 				iif(ConS(self:mInvoiceID)==self:oSub:InvoiceID,'',iif(SepaEnabled,"mandateid","invoiceid")+"="+self:oSub:InvoiceID+'-> '+ConS(self:mInvoiceID)+CRLF)+;
 				iif(ConS(self:mBankAccnt)==self:oSub:BANKACCNT,'','bankaccnt:'+self:oSub:BANKACCNT+'-> '+ConS(self:oDCmBankAccnt:TextValue)+CRLF)+;   
-				iif(iif(self:mblocked,"1","0")==self:oSub:blocked,'','blocked:'+;
+			iif(iif(self:mblocked,"1","0")==self:oSub:blocked,'','blocked:'+;
 				iif(ConI(self:oSub:blocked)=1,"true","false")+'-> '+ iif(self:mblocked,"true","false")+CRLF)
 			if Empty(cLog)
 				// nothing changed: 
@@ -669,7 +669,7 @@ METHOD OKButton( ) CLASS EditSubscription
 		",paymethod='"+iif(IsNil(self:mPayMethod),"",self:mPayMethod)+"'"+; 
 	",bankaccnt='"+iif(IsNil(self:oDCmBankAccnt:TextValue),"",self:oDCmBankAccnt:TextValue)+"'"+;
 		",bic='"+ConS(self:mBic)+"'"+;  
-		",blocked="+iif(self:mblocked,"1","0")+;
+	",blocked="+iif(self:mblocked,"1","0")+;
 		iif(self:lNew,''," where subscribid="+self:msubid)
 	// 		iif(self:lNew .or.!ConS(self:mBankAccnt)==self:oSub:BANKACCNT,',firstinvoicedate="0000-00-00"','')+;   // reset to first in case of bankaccount change
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
@@ -687,7 +687,7 @@ METHOD OKButton( ) CLASS EditSubscription
 			else
 				if oStmntDue:NumSuccessfulRows>0
 					lProlongate:=true
-// 					cmessage+=iif(Empty(CMessage),'',' and ')+self:oLan:WGet("corresponding due amounts removed")
+					// 					cmessage+=iif(Empty(CMessage),'',' and ')+self:oLan:WGet("corresponding due amounts removed")
 				endif
 			endif	 
 		endif
@@ -730,8 +730,9 @@ METHOD OKButton( ) CLASS EditSubscription
 	if !Empty(CMessage)
 		TextBox{self,self:oLan:WGet("Editing donation"),CMessage}:Show()
 	endif
-	if oStmnt:NumSuccessfulRows>0
+	if !Empty(cLog) 
 		self:oCaller:oSub:Execute()
+		self:oCaller:FindButton()
 		if self:lNew
 			self:oCaller:goTop()
 		else
@@ -813,7 +814,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	ENDIF
 
 	IF self:lNew
-		self:cPersonName :=""
+// 		self:cPersonName :="" 
+// 		self:cPersonName:=self:oCaller:cPersonName
+// 		self:mCLN:=self:oCaller:mCLN
+// 		self:oDCmPerson:TextValue := self:cPersonName
 		self:cAccountName :=""
 		self:oDCmbegindate:SelectedDate:=stod(substr(dtos(Today()),1,6)+'01')
 		IF self:mtype=="D" .and. self:dLastDDdate>=self:oDCmbegindate:SelectedDate  // allready collected?
@@ -837,6 +841,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 				self:mAccNumber:=oSel:ACCNUMBER
 			ENDIF			
 		ENDIF
+		self:RegPerson(self:oCaller)
 	ELSE
 		self:mRek := Str(self:oSub:accid,-1)                  
 		self:cAccountName := self:oSub:accountname
@@ -1134,9 +1139,9 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	PROTECT oSFSubscriptionBrowser_DETAIL AS SubscriptionBrowser_DETAIL
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  PROTECT cPersonName,cAccountName AS STRING
-	PROTECT mCLN AS STRING
-	PROTECT mREK AS STRING
+  Export cPersonName,cAccountName as STRING
+	Export mCLN,persid as STRING
+	Export mREK as STRING
 	EXPORT cType AS STRING
 	EXPORT mtype as STRING
 	export oSub as SQLSelectPagination
@@ -1522,6 +1527,7 @@ self:FIELDPUT(#mBlocked, uValue)
 RETURN uValue
                                                
 METHOD NewButton( ) CLASS SubscriptionBrowser
+	self:persid:=self:mCLN
 	SELF:EditButton(TRUE)
 	RETURN
 
