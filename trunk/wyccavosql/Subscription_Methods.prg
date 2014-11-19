@@ -13,7 +13,7 @@ METHOD GenerateInvoiceID() CLASS EditSubscription
 	IF !AutoGiro
 		IF self:mtype == "D" .or.self:mtype=="A"
 			if self:mPayMethod='C' .and. sepaenabled // direct debit 
-				if Empty(self:oDCmInvoiceID:TextValue) .or.(Left(self:oDCmInvoiceID:TextValue,6)=='WDD-A-'.and. Right(AllTrim(self:oDCmInvoiceID:TextValue),3+Len(self:mcln))=='-P-'+self:mcln)
+				if Empty(self:oDCmInvoiceID:TextValue) .or.(Left(self:oDCmInvoiceID:TextValue,6)=='WDD-A-'.and. Right(AllTrim(self:oDCmInvoiceID:TextValue),3+Len(self:mcln))=='-P-'+self:mcln) .or. self:lNew
 					// when new invoiceid (mandateid) .or. generated invoiceid change it in case of other account: 
 // 					cInvoice:='WDD-A-'+self:mAccNumber+'-P-'+self:mcln
 // 					// check if already present:
@@ -89,7 +89,7 @@ METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 	RETURN TRUE
 METHOD RegPerson(oCLN) CLASS EditSubscription
 	IF !Empty(oCLN)
-		self:mCLN :=  Str(oCLN:persid,-1)
+		self:mCLN :=  ConS(oCLN:persid)
 		self:cPersonName := GetFullName(self:mCLN)
 		SELF:oDCmPerson:TEXTValue := SELF:cPersonName
 		// 	SELF:mCod:=oPers:Cod
@@ -133,12 +133,13 @@ Local cFilter as string , lSuccess as logic
 		SELF:oDCmPerson:TEXTValue := ""
 		self:cOrder:="personname"
 	ELSE
-		self:mCLN :=  Str(oCLN:persid,-1)
+		self:mCLN :=  ConS(oCLN:persid)
 		self:cPersonName := GetFullName(self:mCLN)
 		SELF:oDCmPerson:TEXTValue := SELF:cPersonName
 		self:cOrder:="accountname"
-    ENDIF
-self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'"+iif(Empty(self:mCLN),''," and personid="+self:mCLN)+iif(Empty(self:mRek),''," and s.accid="+self:mRek) 
+	ENDIF
+
+self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'"+iif(Empty(self:mCLN),''," and personid="+self:mCLN)+iif(Empty(self:mRek),''," and s.accid="+self:mRek)) 
 self:oSub:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
 self:oSub:Execute()
 self:oSFSubscriptionBrowser_DETAIL:Browser:refresh()
