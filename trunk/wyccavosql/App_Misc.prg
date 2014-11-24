@@ -483,7 +483,7 @@ ENDDO
 RETURN AllTrim(f_tekst)
 function ConI(uValue as usual) as int
 // convert usual to int
-return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )
+return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )       
 function ConL(uValue as usual) as logic
 // convert usual to logic
 if IsLogic(uValue)
@@ -1587,6 +1587,13 @@ do while !oSel:Eof
 	oSel:Skip()
 enddo 
 return cText
+function GetFreq(nTerm as usual) as String
+// get description corresponding with donation term:
+Local i as int
+if (i:=AScan(GiftFrequency,{|x|x[2]==ConI(nTerm)}))>0
+	return GiftFrequency[i,1]
+endif
+return ConS(nTerm)
 Function GetFullName(PersNbr:="" as string ,Purpose:=0 as int) as string 
 // composition of full name of a person
 // PersNbr: Optional ID of person 
@@ -2286,7 +2293,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		// 		if oSel:RecCount=0
 		// 			SQLStatement{"insert into ppcodes set ppcode='ACH',ppname='ACH for member bank deposits',Is_Primary_Participant='N'",oConn}:Execute()
 		// 		endif
-	ENDIF 
+	ENDIF
 	// determine available balance years: 
 	FillBalYears() 
 	// determine local date format for retrieval with mysql:
@@ -2311,7 +2318,8 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		oLan:RGet("subscription",,"!")}
 	TeleBanking := FALSE 
 	AutoGiro:= FALSE
-	
+	GiftFrequency:={{oLan:WGet('One-off'),999},{oLan:WGet('Monthly'),1},{oLan:WGet('Quarterly'),3},{oLan:WGet('Half-yearly'),6},{oLan:WGet('Yearly'),12}}
+
 	oSel:=SQLSelect{"select accid from bankaccount where accid>0",oConn}
 	IF oSel:RecCount>0
 		// fill global array with bank accounts
@@ -3768,12 +3776,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -3781,6 +3783,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
