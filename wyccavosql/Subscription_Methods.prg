@@ -90,16 +90,17 @@ METHOD RegAccount(oAcc,ItemName) CLASS EditSubscription
 METHOD RegPerson(oCLN) CLASS EditSubscription
 	IF !Empty(oCLN)
 		self:mCLN :=  ConS(oCLN:persid)
-		self:cPersonName := GetFullName(self:mCLN)
-		SELF:oDCmPerson:TEXTValue := SELF:cPersonName
-		// 	SELF:mCod:=oPers:Cod
-		self:GenerateInvoiceID()
-		IF self:mtype == "D" .or. self:mtype=="A"
-			self:aBankaccs:=GetBankAccnts(self:mCLN)
-			self:oDCmBankAccnt:FillUsing(Split(Implode(self:aBankaccs,',',,,1),',') )
-			self:oDCmBankAccnt:CurrentItemNo:=1
-		endif	
-
+		if val(self:mcln)>0
+			self:cPersonName := GetFullName(self:mCLN)
+			SELF:oDCmPerson:TEXTValue := SELF:cPersonName
+			// 	SELF:mCod:=oPers:Cod
+			self:GenerateInvoiceID()
+			IF self:mtype == "D" .or. self:mtype=="A"
+				self:aBankaccs:=GetBankAccnts(self:mCLN)
+				self:oDCmBankAccnt:FillUsing(Split(Implode(self:aBankaccs,',',,,1),',') )
+				self:oDCmBankAccnt:CurrentItemNo:=1
+			endif	
+		endif
 	ENDIF
 	RETURN true
 METHOD RegAccount(omAcc,ItemName) CLASS SubscriptionBrowser
