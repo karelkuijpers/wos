@@ -1226,11 +1226,22 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	LOCAL posit as int
 	local lError as logic
 	local oStmnt as SQLStatement
+	local oSel as SqlSelect
 	
 	IF self:oSub:EOF.or.self:oSub:BOF
 		(ErrorBox{,self:oLan:WGet("Select a")+space(1)+self:cType+space(1)+self:oLan:WGet("first")}):Show()
 		RETURN
 	ENDIF
+	mSubid:=Str(self:oSub:subscribid,-1)
+	if SepaEnabled .and. self:oSub:PayMethod='C' 
+		if (oSel:=SqlSelect{"select cast(firstinvoicedate as char) as firstinvoicedate from subscription where subscribid="+mSubid,oConn}):reccount>0  
+			if !Empty(oSel:firstinvoicedate).and.oSel:firstinvoicedate>'0000-00-00'
+				(ErrorBox{,self:oLan:WGet("Donation can't be deleted because already sent to bank")}):Show()
+				RETURN
+			endif
+		endif
+	endif
+
 	oTextBox := TextBox{ self, self:oLan:WGet("Delete")+Space(1)+self:cType,;
 		self:oLan:WGet("Delete")+Space(1)+self:cType+Space(1)+self:oLan:WGet("for account")+Space(1)+self:oSub:AccountName+;
 		+Space(1)+self:oLan:WGet("of person")+' '+self:oSub:personname+"?"}	
@@ -1238,7 +1249,6 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	
 	IF ( oTextBox:Show() == BOXREPLYYES )
 
-		mSubid:=Str(self:oSub:subscribid,-1)
 		posit:=self:oSub:Recno 
 		mtype:=self:oSub:category
 		if mtype=="D" 
@@ -1597,7 +1607,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	
 	self:cFields:=SQLFullName(0,"p")+" as personname,a.description as accountname,cast(s.begindate as date) as begindate,"+;
 		"if(s.category='G','Periodic Gift',if(s.category='A','Subscription','Donation')) as catdesc,"+;
-		"cast(s.duedate as date) as duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid, if(s.blocked=0,' ','X') as blockeddescr,invoiceid,bankaccnt"
+		"cast(s.duedate as date) as duedate,s.term,s.amount,s.category,s.subscribid,s.personid,s.accid, if(s.blocked=0,' ','X') as blockeddescr,invoiceid,bankaccnt,s.paymethod"
 	self:cFrom:="person p, account a, subscription s" 
 	self:cWhere:="a.accid=s.accid and p.persid=s.personid"+iif(Empty(self:mtype),''," and category='"+self:mtype+"'" 
 	self:cOrder:="personname"
