@@ -1236,7 +1236,7 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	if SepaEnabled .and. self:oSub:PayMethod='C' 
 		if (oSel:=SqlSelect{"select cast(firstinvoicedate as char) as firstinvoicedate from subscription where subscribid="+mSubid,oConn}):reccount>0  
 			if !Empty(oSel:firstinvoicedate).and.oSel:firstinvoicedate>'0000-00-00'
-				(ErrorBox{,self:oLan:WGet("Donation can't be deleted because already sent to bank")}):Show()
+				(ErrorBox{,self:cType+Space(1)+self:oLan:WGet("can't be deleted because already sent to bank")}):Show()
 				RETURN
 			endif
 		endif
