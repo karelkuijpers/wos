@@ -3260,8 +3260,8 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2),kind char(1), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
 		cStatement+' order by mbrid,kind,opp,accid,dat,transid ',oConn}
 	oStmnt:Execute()
-	time1:=time0
-	LogEvent(self,"Collect trans create:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
+// 	time1:=time0
+// 	LogEvent(self,"Collect trans create:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	if !Empty(oStmnt:status)
 		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oStmnt:ErrInfo:errormessage+CRLF+"statement:"+oStmnt:SQLString,"logerrors")
 		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
@@ -3275,8 +3275,8 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 		' transmbr group by mbrid',oConn}
 // 		",'#$#',docid,'#$#',opp,'#$#',gc,'#$#',cast(fromrpp as char),'#$#',cast(kind as char) order by kind,accid,dat,transid,seqnr separator '#%#') as grTr from "+;
 	oTrans:Execute()  
-	time1:=time0
-	LogEvent(self,"Collect trans read:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
+// 	time1:=time0
+// 	LogEvent(self,"Collect trans read:"+Str((time0:=Seconds())-time1,-1,2),"logsql") 
 	if !Empty(oTrans:status)
 		LogEvent(self,self:oLan:WGet("could not retrieve transaction data")+':'+oTrans:ErrInfo:errormessage,"logerrors")
 		ErrorBox{self, self:oLan:WGet("could not retrieve transaction data")}:Show()
