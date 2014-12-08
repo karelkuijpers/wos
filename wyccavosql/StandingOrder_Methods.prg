@@ -701,11 +701,11 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 				TransCurr:=CurrFrom
 			endif	
 			// save in aTrans: 
-			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
+			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:poststatus,16:transid},...}
 			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),Deb,cre,DEBFORGN,CREFORGN,;
 				TransCurr,oStOrdL:gc,;
 				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>Deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
-				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,nTrans} ) 
+				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,'2',nTrans} ) 
 			if !Empty(mBank)
 				// save banknumber
 				AAdd(self:aBank,{Len(self:aTrans),mBank,Str(CurStOrdrid,-1)})
@@ -795,7 +795,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	// perform recording if transactions (when everything is OK:
 	if Len(self:aTrans)>1 
 		oBal:=Balances{}     
-	//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
+	//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:poststatus,16:transid},...}
 
 // 		SQLStatement{"start transaction",oConn}:execute()  
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
@@ -803,11 +803,11 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		oStmnt:=SQLStatement{'lock tables `bankorder` write,`mbalance` write,`standingorder` write,`transaction` write',oConn}       // alphabatic order
 		oStmnt:execute()
 		
-		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference"+;
+		oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,userid,seqnr,reference,poststatus"+;
 			") values ('"+self:aTrans[1,1]+"','"+self:aTrans[1,2]+"','"+self:aTrans[1,3]+"','"+self:aTrans[1,4]+;
 			"','"+Str(self:aTrans[1,5],-1)+"','"+Str(self:aTrans[1,6],-1)+;
 			"','"+Str(self:aTrans[1,7],-1)+"','"+Str(self:aTrans[1,8],-1)+;
-			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"')",oConn}
+			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"','2')",oConn}
 		oTrans:execute()
 		if oTrans:NumSuccessfulRows<1
 			cError:= "stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:Description
@@ -816,13 +816,12 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			nTrans:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 			for i:=1 to Len(self:aTrans)
 				// fill transid
-				aTrans[i,15]+=nTrans
+				aTrans[i,16]+=nTrans
 			next
 			cValuesTrans:=Implode(aTrans,'","',2)
-			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:transid},...}
-			//                                                         1   2      3        4     5   6     7       8        9      10   11
-			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,reference,seqnr,userid,transId) "+;
-				"values "+cValuesTrans,oConn}
+			//	{{1:accid,2:dat,3:description,4:docid,5:deb,6:cre,7:debforgn,8:creforgn,9:currency,10:gc,11:persid,12:reference,13:seqnr,14:userid,15:poststatus,16:transid},...}
+			oTrans:=SQLStatement{"insert into transaction (accid,dat,description,docid,deb,cre,debforgn,creforgn,currency,gc,persid,reference,seqnr,userid,poststatus,transId) "+;
+				"values "+cValuesTrans,oConn}                                                                                                              
 			oTrans:execute()
 			if !Empty(oTrans:status) 
 				cError:="stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:errinfo:errormessage
