@@ -742,7 +742,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		endif 
 		cSearch:=StrTran(cSearch,' ','%20') 
 		if !GetPostcode(cSearch,@output,@cError)
-			LogEvent(,cError,"LogErrors")
+			LogEvent(,"GetPostcode:"+cError,"LogErrors")
 		endif
 	endif
 	if Empty(output)
