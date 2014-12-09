@@ -1110,7 +1110,7 @@ Function ProlongateAll(oCall as Window ) as logic
 			SQLStatement{"rollback",oConn}:Execute()
 			SQLStatement{"unlock tables",oConn}:Execute() 
 			SQLStatement{"set autocommit=1",oConn}:Execute()
-			LogEvent(,cErrorMessage,"LogErrors")
+			LogEvent(,"ProlongateAll:"+cErrorMessage,"LogErrors")
 			ErrorBox{,cError}:Show()
 			return false		
 		endif
