@@ -4694,7 +4694,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		if j>0							
 			lProcAuto:=false
 			lv_gc:=''
-			if !Empty(aValueTrans[i,4]) .and.Empty(aValueTrans[i,7])   // contra_bankaccnt but no budgetcd
+			if val(aValueTrans[i,4])>0 .and.Empty(aValueTrans[i,7])   // contra_bankaccnt but no budgetcd
 				// check if cross banking?
 				IF !Empty(SKruis).and.!Empty(avalueTrans[i,4])
 					cBankAcc:=avalueTrans[i,4] 
@@ -4745,7 +4745,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						lProcAuto:=true
 					endif
 				endif
-			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]="COL" .or.aValueTrans[i,5]=="OCR") .and.val(aValueTrans[i,4])=0.and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]="COL" .or.aValueTrans[i,5]=="OCR") .and.Val(aValueTrans[i,4])=0 .and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
 				// in case of recording of automatic collections take payahead as contra account:
 				cDestAcc:=self:m57_bankacc[j,8]
 				lProcAuto:=true 
@@ -4753,6 +4753,14 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				// cross banking:
 				cDestAcc:=SKruis
 				lProcAuto:=true
+			elseif aValueTrans[i,5]=="587" .and.aValueTrans[i,9] =="A" .and. self:m57_bankacc[j,8]>'0'  //payahead 
+				// eurobetaling batch
+				// check if amount avalueTrans[i,8] on date aValueTrans[i,2] found in payahead self:m57_bankacc[j,8] transaction  
+				oSel:=SqlSelect{"select Count(*) from transaction where accid="+self:m57_bankacc[j,8]+" and docid='SEPACT' and cre="+Str(avalueTrans[i,8],-1)+" and dat between '"+avalueTrans[i,2]+"' and '"+SQLdate(SQLDate2Date(avalueTrans[i,2])+4)+"'",oConn} 
+				if oSel:Reccount=1
+					cDestAcc:=self:m57_bankacc[j,8]
+					lProcAuto:=true 
+				endif
 			endif
 			if lProcAuto
 				avalueTrans[i,19]:='X'   // record as processed 
