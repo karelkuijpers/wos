@@ -1091,16 +1091,26 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 		self:oCCSaveButton:Hide() 
 	endif
 	if Posting
-		if nOrigPost=2
-			self:oDCmPostStatus:FillUsing({{"Not Posted",0},{"Ready to Post",1},{"Posted",2}}) 
+		// 		if nOrigPost=2
+		if nOrigPost>0
+			if nOrigPost=2
+				self:oDCmPostStatus:FillUsing({{"Not Posted",0},{"Ready to Post",1},{"Posted",2}})
+			endif 
 			self:mPostStatus:=nOrigPost
 			self:oCCOKButton:Hide()
 			self:oCCSaveButton:Hide() 
+			IF	nOrigPost=1	.and.	AScan(aMenu,{|x| x[4]=="PostingBatch"})>0
+				self:oCCPostButton:Show()
+				self:oCCReturnButton:Show()
+			endif
+			self:oDCmPostStatus:Disable()
 		endif
-		IF nOrigPost=1 .and. AScan(aMenu,{|x| x[4]=="PostingBatch"})>0
-			self:oCCPostButton:Show()
-		endif
-	endif
+		// 	elseif nOrigPost=2
+	elseif nOrigPost>0
+		// when automatically recorded block for update
+		self:oCCOKButton:Hide()
+		self:oCCSaveButton:Hide() 
+	endif 
 	if OrigDat < MinDate
 		self:oCCOKButton:Hide()
 		self:oCCSaveButton:Hide() 
@@ -1934,6 +1944,10 @@ METHOD ValidateTempTrans(lNoMessage:=false as logic,ErrorLine:=0 ref int) as log
 	RETURN lValid
 METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL nErrRec as int
+	LOCAL curRec as int
+	LOCAL i,j,nSeqnbr as int
+	LOCAL ThisRec,nMir as int
+	local ErrorLine:=1,nSavRec as int 
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
@@ -1942,10 +1956,6 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	local cDueAccs as string	// accounts for locking dueamounts 
 	local mandateid,endtoend as string 
 	local cWarning as string
-	LOCAL curRec as int
-	LOCAL i,j,nSeqnbr as int
-	LOCAL ThisRec,nMir as int
-	local ErrorLine:=1,nSavRec as int 
 	local invoicedate as date
 	LOCAL lError,lOK as LOGIC
 	LOCAL CurValue as ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
@@ -2112,8 +2122,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	IF lInqUpd
 		* Save pointer to current transaction
-		if IsObject(oInqBrowse) .and. IsObject(oInqbrowse:owner) .and. IsObject(oInqBrowse:Owner:server)
-			nSavRec:=oInqBrowse:owner:server:RecNo 
+		if IsObject(self:oInqBrowse) .and. IsObject(self:oInqbrowse:owner) .and. IsObject(self:oInqBrowse:Owner:server)
+			nSavRec:=self:oInqBrowse:owner:server:RecNo 
 		endif
 	endif
 	oStmnt:=SQLStatement{"set autocommit=0",oConn}
@@ -4885,14 +4895,16 @@ METHOD ShowSelection() CLASS TransInquiry
 	ENDIF
 
 	self:oCCPostButton:Hide()
-	self:oCCReadyButton:Hide() 
+	self:oCCReadyButton:Hide()
+	self:oCCReturnButton:Hide() 
 	if Posting
 		if	!Empty(self:PostStatSelected)  .and. self:PostStatSelected<"4"
 			cFilter:=if(Empty(cFilter),'',cFilter+' and ')+'poststatus='+self:PostStatSelected
 			self:m54_selectTxt:=self:m54_selectTxt+" Post	status="+aPost[Val(self:PostStatSelected)+1]
 			IF	self:PostStatSelected="1"  .and. self:StartDate>=LstYearClosed.and. AScan(aMenu,{|x|x[4]=="PostingBatch"})>0 
 				// Ready to post selected by financial manager:
-				self:oCCPostButton:Show()
+				self:oCCPostButton:Show() 
+				self:oCCReturnButton:Show()
 			ELSEif	self:PostStatSelected="0" .and.self:StartDate>=LstYearClosed.and. AScan(aMenu,{|x|x[4]=="TransactionEdit"})>0 
 				// Not posted selected by financial operator:
 				self:oCCReadyButton:Show()
