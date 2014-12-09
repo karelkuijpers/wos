@@ -1691,7 +1691,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	self:oCCCancelButton:Enable()
 	self:oCCOKButton:Enable()
 	(InfoBox{self,"Producing Credit Transfer file","File "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders"}):Show() 
-	LogEvent(self, "Credit Ttransfer file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders; total:"+Str(Round(fSum,2),12,2),"Log")
+	LogEvent(self, "Credit Transfer file "+cFilename+" generated with "+Str(Len(aTrans),-1)+" bank orders; total:"+Str(Round(fSum,2),12,2),"Log")
 	RETURN true
 STATIC DEFINE SELBANKORDER_BEGIN_VERV := 101 
 STATIC DEFINE SELBANKORDER_CANCELBUTTON := 108 
