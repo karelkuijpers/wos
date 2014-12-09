@@ -29,7 +29,7 @@ Method Alert() Class AlertBankbalance
 	oLan:=Language{}
 	cReport:=oLan:WGet("There are differences between the bank statement around")+' '+DToC(ReportDate)+' '+oLan:WGet("and the following")+Space(1)+Str(Len(aDiff),-1)+Space(1)+oLan:WGet("bank account"+iif(len(aDiff)=1,'','s'))+':'
 	for i:=1 to Len(aDiff)
-		cReport+=iif(Mod(i,2)=1,CRLF,Space(15))+Pad(aDiff[i,1],15)+':'+Str(aDiff[i,4],14,2)												
+		cReport+=iif(Mod(i,2)=1,CRLF,Space(15))+Pad(aDiff[i,1],25)+':'+Str(aDiff[i,4],14,2)												
 	next	
 	cReport+=CRLF+CRLF+oLan:WGet("Goto Journal, Monitor Bank balance for details")
 	oErr:=ErrorBox{,cReport}
@@ -325,7 +325,7 @@ METHOD OKButton( ) CLASS CheckBankBalance
 	//                                                        1          2            3                4           5
 	local oAlert as AlertBankbalance
 
-	oReport := PrintDialog{self,oLan:RGet("Bank Balances"),,99,DMORIENT_PORTRAIT,"xls"}
+	oReport := PrintDialog{self,oLan:RGet("Bank Balances"),,109,DMORIENT_PORTRAIT,"xls"}
 
 	oReport:Show()
 	IF .not.oReport:lPrintOk
@@ -343,13 +343,13 @@ METHOD OKButton( ) CLASS CheckBankBalance
 	aHeading :={Str(Len(aDiff),-1)+Space(1)+oLan:RGet('Account Balance'+iif(Len(aDiff)=1,'','s'))+' '+oLan:RGet('different from bank statement around')+' '+DToC(self:odcReportdate:SelectedDate),' '}
 
 	AAdd(aHeading, ;
-		oLan:RGet("Bank account",15,"!")+cTab+oLan:RGet("Description",25,"!")+cTab+oLan:RGet("Date",10,"!")+cTab+oLan:RGet("Bank balance",15,"!",'R')+cTab+oLan:RGet("Account debit",15,"!",'R')+cTab+oLan:RGet("Difference",14,"!",'R'))
+		oLan:RGet("Bank account",25,"!")+cTab+oLan:RGet("Description",25,"!")+cTab+oLan:RGet("Date",10,"!")+cTab+oLan:RGet("Bank balance",15,"!",'R')+cTab+oLan:RGet("Account debit",15,"!",'R')+cTab+oLan:RGet("Difference",14,"!",'R'))
 	AAdd(aHeading,' ')
 	nRow := 0
 	nPage := 0
 
 	for i:=1 to Len(aDiff)
-		oReport:PrintLine(@nRow,@nPage,Pad(aDiff[i,1],15)+cTab+Pad(aDiff[i,5],25)+cTab+DToC(aDiff[i,6])+cTab+Str(aDiff[i,2],15,2)+cTab+Str(-aDiff[i,3],15,2)+cTab+ Str(aDiff[i,4],14,2),aHeading)												
+		oReport:PrintLine(@nRow,@nPage,Pad(aDiff[i,1],25)+cTab+Pad(aDiff[i,5],25)+cTab+DToC(aDiff[i,6])+cTab+Str(aDiff[i,2],15,2)+cTab+Str(-aDiff[i,3],15,2)+cTab+ Str(aDiff[i,4],14,2),aHeading)												
 	next
 	oReport:PrintLine(@nRow,@nPage,' ',aHeading)
 	SetDecimalSep(Asc('.'))
