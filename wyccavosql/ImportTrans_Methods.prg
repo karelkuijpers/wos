@@ -607,7 +607,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 	self:lOK:=true
 	CurDate:=oImpB:transdate
 	OrigBst:=oImpB:docid
-	nPostStatus:=oImpB:POSTSTATUS
+// 	nPostStatus:=oImpB:POSTSTATUS 
+	nPostStatus:=0
 	IF !self:oHM:Used
 		RETURN FALSE
 	ENDIF
@@ -677,7 +678,8 @@ METHOD GetNextBatch(dummy:=nil as logic) as logic CLASS ImportBatch
 		self:oHM:cOpp:=oImpB:Origin
 		self:oHM:PPDEST:= oImpB:PPDEST 
 		self:oHM:REFERENCE:=oImpB:REFERENCE 
-		self:oHM:POSTSTATUS:=oImpB:POSTSTATUS
+// 		self:oHM:POSTSTATUS:=oImpB:POSTSTATUS
+		self:oHM:POSTSTATUS:=0
 
 		IF !Empty(oImpB:GIVER)
 			cGiverName:=AllTrim(oImpB:GIVER)
@@ -1780,7 +1782,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 				oMBal:ChgBalance(aValuesTrans[i,1],SQLDate2Date(aValuesTrans[i,8]),aValuesTrans[i,2],aValuesTrans[i,4],aValuesTrans[i,3],;
-					aValuesTrans[i,5],aValuesTrans[i,6])
+					aValuesTrans[i,5],aValuesTrans[i,6],2)
 			next
 			oStmnt:=SQLStatement{"set autocommit=0",oConn}
 			oStmnt:Execute()
@@ -1987,7 +1989,7 @@ METHOD SaveImport(nCnt ref int,nProc ref int) as logic CLASS ImportBatch
 				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15     16
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
 				oMBal:ChgBalance(aValuesTrans[i,1],SQLDate2Date(aValuesTrans[i,8]),Val(aValuesTrans[i,2]),Val(aValuesTrans[i,4]),Val(aValuesTrans[i,3]),;
-					Val(aValuesTrans[i,5]),aValuesTrans[i,6])
+					Val(aValuesTrans[i,5]),aValuesTrans[i,6],2)
 			next
 		endif
 
