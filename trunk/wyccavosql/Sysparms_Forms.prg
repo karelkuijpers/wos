@@ -19,7 +19,7 @@ BEGIN
 	CONTROL	"", EDITLOG_SOURCE, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 44, 11, 112, 12, WS_EX_CLIENTEDGE
 	CONTROL	"Date & Time:", EDITLOG_FIXEDTEXT2, "Static", WS_CHILD, 276, 11, 40, 12
 	CONTROL	"", EDITLOG_LOGTIME, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 316, 11, 95, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITLOG_MMESSAGE, "Edit", ES_WANTRETURN|ES_READONLY|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|WS_TABSTOP|WS_GROUP|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 12, 30, 400, 243, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITLOG_MMESSAGE, "Edit", ES_WANTRETURN|ES_READONLY|ES_AUTOHSCROLL|ES_AUTOVSCROLL|ES_MULTILINE|WS_TABSTOP|WS_GROUP|WS_CHILD|WS_BORDER|WS_VSCROLL|WS_HSCROLL, 12, 29, 399, 243, WS_EX_CLIENTEDGE
 	CONTROL	"User:", EDITLOG_FIXEDTEXT3, "Static", WS_CHILD, 164, 11, 28, 13
 	CONTROL	"", EDITLOG_USERID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 192, 11, 76, 12, WS_EX_CLIENTEDGE
 END
@@ -28,7 +28,7 @@ method FillText() class EditLog
 	// distrubute text over lines in Multiline Edit
 	local n,nLines as int
 	self:nLineLength:= Ceil(self:Size:width/6.5)
-	nLines := MLCount(self:cMessage, self:nLineLength)
+	nLines := Min(300,MLCount(self:cMessage, self:nLineLength))
 	self:mMessage:=''
 	FOR n := 1 upto nLines
 		self:oDCmMessage:currenttext+= MemoLine(self:cMessage, nLineLength, n) + CRLF
@@ -55,6 +55,8 @@ oDClogtime:HyperLabel := HyperLabel{#logtime,NULL_STRING,NULL_STRING,NULL_STRING
 oDCmMessage := MultiLineEdit{SELF,ResourceID{EDITLOG_MMESSAGE,_GetInst()}}
 oDCmMessage:OwnerAlignment := OA_PWIDTH_PHEIGHT
 oDCmMessage:HyperLabel := HyperLabel{#mMessage,NULL_STRING,NULL_STRING,NULL_STRING}
+oDCmMessage:Ime(#OFF)
+oDCmMessage:TextLimit := 2000
 
 oDCFixedText3 := FixedText{SELF,ResourceID{EDITLOG_FIXEDTEXT3,_GetInst()}}
 oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"User:",NULL_STRING,NULL_STRING}
