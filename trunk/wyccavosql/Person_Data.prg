@@ -131,10 +131,22 @@ super:Init(HyperLabel{"nameext","nameext","","person_NA3"},"C",28,0)
 
 RETURN SELF
 CLASS Person_OPC INHERIT FIELDSPEC
-METHOD Init() CLASS Person_OPC
-super:Init(HyperLabel{"OPC","Opc","","person_OPC"},"C",10,0)
 
-RETURN SELF
+
+METHOD Init() CLASS Person_OPC
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#OPC, "Employee", "Employee ", "person_OPC" },  "C", 20, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS Person_OPM INHERIT FIELDSPEC
 METHOD Init() CLASS Person_OPM
 super:Init(HyperLabel{"remarks","remarks","","person_OPM"},"M",10,0)
