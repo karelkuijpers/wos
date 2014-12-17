@@ -62,8 +62,8 @@ method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre 
 			" values "+Implode(aTransIncExp,"','"),oConn}
 		oStmnt:Execute()
 		if oStmnt:NumSuccessfulRows>0 
-			if ChgBalance(aTransIncExp[1,1],mDAT,aTransIncExp[1,2],aTransIncExp[1,4],aTransIncExp[1,3],aTransIncExp[1,5],aTransIncExp[1,6])
-				if !ChgBalance(aTransIncExp[2,1],mDAT,aTransIncExp[2,2],aTransIncExp[2,4],aTransIncExp[2,3],aTransIncExp[2,5],aTransIncExp[2,6])
+			if ChgBalance(aTransIncExp[1,1],mDAT,aTransIncExp[1,2],aTransIncExp[1,4],aTransIncExp[1,3],aTransIncExp[1,5],aTransIncExp[1,6],poststatus)
+				if !ChgBalance(aTransIncExp[2,1],mDAT,aTransIncExp[2,2],aTransIncExp[2,4],aTransIncExp[2,3],aTransIncExp[2,5],aTransIncExp[2,6],poststatus)
 					lError:=true
 				endif
 			else
@@ -294,7 +294,7 @@ CLASS TeleMut
 
 	PROTECT m56_recnr as int
 	EXPORT m56_sgir,m56_kind,m56_description,m56_contra_name,m56_budgetcd,m56_cod_mut_r,;
-		m56_addsub, m56_accnumber,m56_accid:="   ", m56_Payahead,m56_persid as STRING,;
+		m56_addsub, m56_accnumber,m56_accid:="   ", m56_Payahead,m56_persid,m56_accnumber as STRING,;
 		m56_bookingdate as date,;
 		m56_amount as REAL,;
 		m56_seqnr:=0,m56_dueid as int 
@@ -392,10 +392,19 @@ METHOD AllreadyImported(transdate as date,transamount as float,codedebcre:="" as
 		ENDIF
 //    ENDIF
  	RETURN FALSE
-METHOD CheckPattern(dummy:=nil as logic) as logic  CLASS TeleMut
+METHOD CheckPattern(tG as usual,tS as usual, tN as usual, tC as usual,tD as usual) as logic  CLASS TeleMut
+// check againt telebankpatterns given transaction with:
+// tG: contra_bankaccnt
+// tS: kind, 
+// tN: contra_name, 
+// tC: addsub,
+// tD: description   
 LOCAL i AS INT
-LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub,tD:=self:m56_description  as STRING
-i := AScan(self:Teleptrn,{|x| (Empty(x[1]) .or. ;
+	local aTelePtr:=self:teleptrn as array
+//LOCAL tG:=self:m56_contra_bankaccnt, tS:= self:m56_kind, tN:= self:m56_contra_name, tC:= self:m56_addsub,tD:=self:m56_description  as STRING
+// {contra_bankaccnt,kind,contra_name,addsub,description,accid,ind_autmut,accnumber},...
+//        1            2     3           4       5          6        7        8
+    i := AScan(aTelePtr,{|x| (Empty(x[1]) .or. ;
 					tG	== x[1])	.and.;
 					tS	= x[2]	.and.;
 					tN	= x[3]	.and.;
@@ -404,13 +413,16 @@ i := AScan(self:Teleptrn,{|x| (Empty(x[1]) .or. ;
 IF i>0
 	self:m56_accid:= self:Teleptrn[i,6]
 	self:m56_recognised:=true
-	self:m56_autmut:=Logic(_cast,self:Teleptrn[i,7])
+	self:m56_autmut:=conl(self:Teleptrn[i,7])
+	self:m56_accnumber:=self:teleptrn[i,8]
 	if Empty(self:Teleptrn[i,1])
 		self:m56_autmut:=false         // in case of empty contra bankaccount no unique identification possible 
 	endif
 	RETURN TRUE
 ELSE
 	self:m56_accid:=Space(25)
+	self:m56_accnumber:=''
+	self:m56_autmut:=false 
 ENDIF
 RETURN FALSE
 
@@ -1496,7 +1508,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 								.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633'.or.lv_kind=='166' ;                     // terugboeking euro-incasso
 								.or. lv_kind=='629';      // euro incasso core equens
 								.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
-								lv_kind:='COL'+iif(lv_kindORG='166',"REJ",'') 
+								lv_kind:='COL'+iif(lv_kindORG='166',"REJ",'')  
 							endif 
 						endif
 					case oSub:Name==#NtryDtls .and.(lv_kindORG=='583' .or. lv_kindORG=='055' .or. lv_kindORG=='401')   // crediteuren betaling equens/rflp 
@@ -4068,6 +4080,7 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 		oBank:skip()
 	ENDDO
 	ASort(self:m57_BankAcc,,,{|x,y| x[1]<=y[1]} ) 
+	self:InitteleNonGift()   // fill self:teleptrn
 	self:m56_kind:=Space(6)
 	self:m56_contra_name:=Space(10)
 	self:oParent:=oOwner
@@ -4089,32 +4102,37 @@ METHOD INIT(Gift,oOwner) CLASS TeleMut
 		endif
 	endif
 
-	IF Gift
-		self:InitTeleGift()
-	ELSE
-		self:InitteleNonGift()
-	ENDIF
 	RETURN self
-METHOD InitTeleGift() CLASS TeleMut
-	//oBank:SetFilter("!Empty(telebankng)")
-	
 METHOD InitTeleNonGift() CLASS TeleMut
+local i as int
 	LOCAL lSuc as LOGIC
+	local aTelePtr:={} as array
 	local oTelPat as SQLSelect
 // 	oTelPat:=SQLSelect{"select * from TeleBankPatterns where accid>0 and kind<>'' and contra_bankaccnt<>'' and addsub<>'' and description<>''",oConn}
-	oTelPat:=SqlSelect{"select contra_bankaccnt,kind,contra_name,addsub,description,accid,cast(ind_autmut as signed) as ind_autmut from telebankpatterns where accid>0",oConn} 
+	oTelPat:=SqlSelect{"select group_concat(contra_bankaccnt,'#$#',kind,'#$#',contra_name,'#$#',addsub,'#$#',p.description,'#$#',cast(p.accid as char),'#$#',cast(ind_autmut as char),'#$#',a.accnumber separator '#%#')"+;
+	" as telepatgrp from telebankpatterns p, account a where a.accid>0 and a.accid=p.accid",oConn} 
 	oTelPat:execute()
-	DO WHILE !oTelPat:EOF
-		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
-			oTelPat:kind,;
-			oTelPat:contra_name,;
-			oTelPat:AddSub,;
-			Split(AllTrim(oTelPat:Description),space(1)),;
-			Str(oTelPat:accid,-1),;
-			iif(ConI(oTelPat:ind_autmut)==1,true,false)})
-		oTelPat:skip()
-	ENDDO
+	if oTelPat:Reccount>0
+		AEval(Split(oTelPat:telepatgrp,'#%#'),{|x|AAdd(aTelePtr,Split(x,'#$#')) }) 
+		for i:=1 to Len(aTelePtr)
+			aTelePtr[i,5]:=Split(aTelePtr[i,5],Space(1))
+		next
+      self:teleptrn:=aTelePtr  // {contra_bankaccnt,kind,contra_name,addsub,description,accid,ind_autmut,accnumber},...
+                               //        1            2     3           4       5          6        7        8
+	endif
+// 	DO WHILE !oTelPat:EOF
+// 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
+// 			oTelPat:kind,;
+// 			oTelPat:contra_name,;
+// 			oTelPat:AddSub,;
+// 			Split(AllTrim(oTelPat:Description),space(1)),;
+// 			oTelPat:accid,;
+// 			ConL(oTelPat:ind_autmut),
+// 			accnumber})
+// 		oTelPat:skip()
+// 	ENDDO
 	RETURN nil
+	
 METHOD NextTeleGift CLASS TeleMut
 	* Give next telebanking gift transaction from teletrans
 DO WHILE SELF:GetNxtMut(TRUE)
@@ -4156,7 +4174,7 @@ METHOD NextTeleNonGift(dummy:=nil as logic) as logic CLASS TeleMut
 			self:m56_autmut:=true 
 		endif
 		IF !self:m56_recognised
-			self:CheckPattern()
+			self:CheckPattern(self:m56_contra_bankaccnt ,self:m56_kind,self:m56_contra_name, self:m56_addsub,self:m56_description)
 		ENDIF
 		RETURN true
 	ENDDO
@@ -4415,16 +4433,19 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			cBankAcc:=avalueTrans[i,1] 
 			//m57_bankacc: banknumber, usedforgifts, datlaatst, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
 			//                 1            2           3          4         5          6      7      8           9		  10           11
-			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.(x[9]>'0'.or.x[4])})
+// 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc.and.(x[9]>'0'.or.x[4])})
+			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0
 				if self:m57_bankacc[j,9]>'0' 							
 					avalueTrans[i,7]:=self:m57_bankacc[j,9]
 				else
 					// save persid for analysing gifts pattern:
 					cPersid:=avalueTrans[i,11] 
-					AAdd(aValueSubPtr,i)  // save pntr into avalueTrans
-					if !Empty(cPersId) .and. AScanExact(aSubPersids,cPersId)=0
-						AAdd(aSubPersids,cPersid)
+					if !Empty(cPersid)
+						AAdd(aValueSubPtr,i)  // save pntr into avalueTrans
+						if AScanExact(aSubPersids,cPersid)=0
+							AAdd(aSubPersids,cPersid)
+						endif
 					endif
 				endif
 			endif
@@ -4455,10 +4476,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				k:= aValueSubPtr[i]
 				cPersid:=avalueTrans[k,11]
 				if (j:=AScan(aSubscrtn,{|x|x[1]==cPersid}))>0
-					// 					if Len(aSubscrtn[j,2])=1 .and.avalueTrans[k,8]== Val(aSubscrtn[j,2,1,2])
-					// 						// apply pattern in case of one destination:
-					// 						avalueTrans[k,7]:=aSubscrtn[j,2,1,1]
-					// 					else
 					if (l:=AScan(aSubscrtn[j,2],{|x|Val(x[2])== avalueTrans[k,8]}))>0
 						if l<Len(aSubscrtn[j,2])
 							// more left:
@@ -4470,6 +4487,16 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 							// only one with same amount:
 							avalueTrans[k,7]:=aSubscrtn[j,2,l,1]							
 						endif
+					elseif self:CheckPattern(avalueTrans[k,4] ,avalueTrans[k,5],avalueTrans[k,6], avalueTrans[k,9],avalueTrans[k,10])
+						// lookup telebankpattern 
+						if self:m56_autmut
+	      	         avalueTrans[k,7]:=self:m56_accnumber
+						endif
+					endif
+				elseif self:CheckPattern(avalueTrans[k,4] ,avalueTrans[k,5],avalueTrans[k,6], avalueTrans[k,9],avalueTrans[k,10])
+					// lookup telebankpattern 
+					if self:m56_autmut
+	               avalueTrans[k,7]:=self:m56_accnumber
 					endif
 				endif
 			next
@@ -4492,6 +4519,20 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 		next
 	endif
+	// Check telebankpatterns for non-gifts:
+	i:=0
+	do while i<Len(avalueTrans)
+		i:=AScan(avalueTrans,{|x|Empty(x[7]) .and.(x[9]='A' .or.Empty(x[11])) },i+1)
+		if i=0
+			exit
+		endif
+		if self:CheckPattern(avalueTrans[i,4] ,avalueTrans[i,5],avalueTrans[i,6], avalueTrans[i,9],avalueTrans[i,10])
+		// lookup telebankpattern 
+			if self:m56_autmut
+            avalueTrans[i,7]:=self:m56_accnumber
+			endif
+		endif
+	enddo	
 	// 	CollectForced() 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//      
@@ -4568,7 +4609,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16
 			j:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})
 			if j>0							
-				if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts?
+				if self:m57_bankacc[j,4].or.; // giftsall, i.e. automatic processing of all gifts? 
+					!self:m57_bankacc[j,2] .or.; // not used for gifts but credit amount from a giver coming in
 					self:m57_bankacc[j,2] .and. ;   // used for gifts
 					((self:m57_bankacc[j,8]>'0' .and.	(aValueTrans[i,5]='ACC'.or.aValueTrans[i,5]='KID'.or.aValueTrans[i,5]='COL')).or.;  // payahead filled for acceptgiro
 					(Trim(aValueTrans[i,5])="AC" .or.(SubStr(aValueTrans[i,10],17,2)=="AC").and.isnum(SubStr(aValueTrans[i,10],1,16))))
@@ -4593,7 +4635,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 									if !(Empty(avalueTrans[i,12]) .and.Empty(lv_address))
 										self:GetAddress(iif(Empty(avalueTrans[i,12]),lv_address,avalueTrans[i,12]),false)
 										if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7 .and.!Empty(self:m56_town)
-											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
+// 											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
+											IF !self:m56_zip==aZip[k,2] 
 												lAddressChanged:=true
 											ENDIF
 										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])  .and.!Empty(self:m56_town)
@@ -4694,9 +4737,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		if j>0							
 			lProcAuto:=false
 			lv_gc:=''
-			if val(aValueTrans[i,4])>0 .and.Empty(aValueTrans[i,7])   // contra_bankaccnt but no budgetcd
+			if aValueTrans[i,4]>='01' .and.Empty(aValueTrans[i,7])   // contra_bankaccnt but no budgetcd
 				// check if cross banking?
-				IF !Empty(SKruis).and.!Empty(avalueTrans[i,4])
+				IF !Empty(SKruis)
 					cBankAcc:=avalueTrans[i,4] 
 					// 					k:=AScan(self:m57_bankacc,{|x|x[1]==cBankAcc})  
 					if !sepaEnabled .or. IsIban(cBankAcc)
@@ -4745,7 +4788,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						lProcAuto:=true
 					endif
 				endif
-			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]="COL" .or.aValueTrans[i,5]=="OCR") .and.Val(aValueTrans[i,4])=0 .and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
+			ELSEIF (aValueTrans[i,5]=="IC" .or.aValueTrans[i,5]="COL" .or.aValueTrans[i,5]=="OCR") .and.aValueTrans[i,4]<'01' .and.aValueTrans[i,9] =="B" .and.self:m57_bankacc[j,8]>'0'  // payahead for OCR
 				// in case of recording of automatic collections take payahead as contra account:
 				cDestAcc:=self:m57_bankacc[j,8]
 				lProcAuto:=true 
@@ -4833,7 +4876,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 			oMBal:ChgBalance(aTrans[i,1],SQLDate2Date(aTrans[i,8]),aTrans[i,2],aTrans[i,4],aTrans[i,3],;
-				aTrans[i,5],aTrans[i,6])
+				aTrans[i,5],aTrans[i,6],ConI(aTrans[i,11]))
 		next
 		
 	endif	
@@ -4928,7 +4971,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
 				oMBal:ChgBalance(aTrans[i,1],SQLDate2Date(aTrans[i,8]),aTrans[i,2],aTrans[i,4],aTrans[i,3],;
-					aTrans[i,5],aTrans[i,6])
+					aTrans[i,5],aTrans[i,6],ConI(aTrans[i,11]))
 			next
 		endif
 	endif
