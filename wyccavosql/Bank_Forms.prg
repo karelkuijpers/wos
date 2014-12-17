@@ -1654,7 +1654,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 				lError:=true
 				exit
 			endif
-			if !ChgBalance(aTrans[i,3],process_date,fAmnt,0,fAmnt,0,sCURR)  //account payable deb
+			if !ChgBalance(aTrans[i,3],process_date,fAmnt,0,fAmnt,0,sCURR,2)  //account payable deb
 				cError:="Error updating month balance"
 				lError:=true
 				exit
@@ -1662,7 +1662,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 			nSeq:=2
 		next
 		if !lError
-			if !ChgBalance(m56_Payahead,process_date,0,fSum,0,fSum,sCURR) // payahead cre
+			if !ChgBalance(m56_Payahead,process_date,0,fSum,0,fSum,sCURR,2) // payahead cre
 				lError:=true
 				cError:="Error updating month balance"
 				lError:=true
