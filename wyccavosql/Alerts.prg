@@ -75,7 +75,7 @@ Method GetDiffernces(Reportdate as date) as array class AlertBankbalance
 
 //       time1:=time0
 //       LogEvent(self,"before transbalances("+Str(i-nSelStart,-1)+"):"+Str((time0:=Seconds())-time1,-1),"logsql")
-				cStatement:=oMBal:SQLGetBalanceDate(dCurDate,true)
+				cStatement:=oMBal:SQLGetBalanceDate(dCurDate,true,false)
 				oSel:=SqlSelect{cStatement,oConn}
 				oSel:Execute()
 //       time1:=time0
