@@ -1106,7 +1106,7 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 			self:oDCmPostStatus:Disable()
 		endif
 		// 	elseif nOrigPost=2
-	elseif nOrigPost>0
+	elseif nOrigPost>1
 		// when automatically recorded block for update
 		self:oCCOKButton:Hide()
 		self:oCCSaveButton:Hide() 
@@ -1671,11 +1671,11 @@ METHOD UpdateLine(oMutNew as TempTrans,nOrig as int,nNew as int,lGiver ref logic
 		// update balance:
 		if !Empty(aNew[7])
 			// update balance with old content:
-			IF !ChgBalance(aOrig[1],self:OrigDat,-aOrig[2],-aOrig[3],-aOrig[13],-aOrig[14],aOrig[11])
+			IF !ChgBalance(aOrig[1],self:OrigDat,-aOrig[2],-aOrig[3],-aOrig[13],-aOrig[14],aOrig[11],ConI(self:mPostStatus))
 				return "balance not changed"
 			endif
 		endif
-		if !ChgBalance(aNew[1],self:mDAT,aNew[2],aNew[3],aNew[13],aNew[14],aNew[11])
+		if !ChgBalance(aNew[1],self:mDAT,aNew[2],aNew[3],aNew[13],aNew[14],aNew[11],ConI(self:mPostStatus))
 			return "balance not changed"
 		endif
 	endif
@@ -1723,7 +1723,7 @@ METHOD UpdateTrans(cWarning ref string) as string CLASS General_Journal
 				return oStmnt:ErrInfo:errormessage
 			endif
 			* Update balance:
-			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11])
+			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11],ConI(self:mPostStatus))
 				return "balance not changed"
 			endif
 			cError:= self:ChgDueAmnts("D",nOrig,nNew, oNew,@cWarning)
@@ -1797,7 +1797,7 @@ METHOD UpdateTrans(cWarning ref string) as string CLASS General_Journal
 			endif
 			lDeleted:=true
 			* Update balance:
-			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11])
+			if !ChgBalance(aOrig[nOrig,1],self:OrigDat,-aOrig[nOrig,2],-aOrig[nOrig,3],-aOrig[nOrig,13],-aOrig[nOrig,14],aOrig[nOrig,11],ConI(oNew:PoststatusOrig))
 				return "balance not changed"
 			endif
 			cError:= self:ChgDueAmnts("D",nOrig,nNew, oNew,@cWarning)
@@ -1947,7 +1947,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	LOCAL curRec as int
 	LOCAL i,j,nSeqnbr as int
 	LOCAL ThisRec,nMir as int
-	local ErrorLine:=1,nSavRec as int 
+	local ErrorLine:=1,nSavRec as int
+	local nPoststatus as int 
 	LOCAL cTransnr, m54_pers_sta:="N", mbrRek as STRING
 	LOCAL mCLNGiverMbr, OmsMbr, cCod, cCodNew as STRING 
 	local cStatement as string
@@ -2177,7 +2178,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			oHm:GoTo(i)
 			if !oHm:aMirror[i,2]==oHm:aMirror[i,3]  // skip dummy lines
 				// 				if	!oHm:CRE==oHm:Deb // skip dummy lines
-				nSeqNbr++ 
+				nSeqNbr++
+				nPoststatus:=iif(IsNil(self:mPostStatus),iif(lImport,2,0),ConI(self:mPostStatus)) 
 				cStatement:="insert into transaction set "+;
 					iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
 					iif(oHm:aMIRROR[i,4]='PF'.or.oHm:aMIRROR[i,4] = 'AG' .or.oHm:aMIRROR[i,4] = 'MG'.or.oHm:aMIRROR[i,4] = 'CH';
@@ -2199,7 +2201,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 					",debforgn="+Str(oHm:aMIRROR[i,13],-1)+;
 					",creforgn="+Str(oHm:aMIRROR[i,14],-1)+;
 					",seqnr="+Str(nSeqnbr,-1)+;
-					iif(IsNil(self:mPostStatus),iif(lImport,",poststatus=2",""),; 
+					iif(IsNil(self:mPostStatus),"",; 
 				",poststatus="+iif(IsString(self:mPostStatus),self:mPostStatus,Str(self:mPostStatus,-1))) +;
 					iif(SPROJ == oHm:AccID.and..not.Empty(self:mCLNGiver).and.oHm:cre>oHm:Deb,",bfm='O'","")
 				//					",ppdest='"+SubStr(AllTrim(oHm:Amirror[i,15]),15)+"'"+; 
@@ -2210,7 +2212,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 						cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 					endif
 					*	Update monthbalance value of corresponding account:
-					if ChgBalance(oHm:aMIRROR[i,1],self:mDAT,oHm:aMIRROR[i,2],oHm:aMIRROR[i,3],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11]) //accid,deb,cre
+					if ChgBalance(oHm:aMIRROR[i,1],self:mDAT,oHm:aMIRROR[i,2],oHm:aMIRROR[i,3],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11],nPoststatus) //accid,deb,cre
 						if oHm:aMIRROR[i,4]='AG'
 							// if from bank account, payahead or pretty cash or accounts receivable:
 							j:=AScan(oHm:aMIRROR,{|x|x[2]>x[3] .and.Empty(x[4]).and. (AScanExact(aMyBank,x[1])>0 .or. AScanExact(aMyPayaHead,x[1])>0 .or.x[1]==SPROJ.or.x[1]=SKAS)})
@@ -2225,8 +2227,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 								// assessable gift not from income or expense account:
 								// 									lError:=!AddToIncome(oHm:aMirror[i,4],oHm:FROMRPP,oHm:aMirror[i,1],oHm:aMirror[i,3],oHm:aMirror[i,2],oHm:aMirror[i,13],oHm:aMirror[i,14],oHm:aMirror[i,11],oHm:aMirror[i,16],oHm:aMirror[i,18], self:mCLNGiver,;
 								// 										self:mDAT,Transform(self:mBST,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
-								lError:=!oAddInEx:AddToIncomeExp(oHm:aMIRROR[i,4],oHm:FROMRPP,oHm:aMIRROR[i,1],oHm:aMIRROR[i,3],oHm:aMIRROR[i,2],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11],oHm:aMIRROR[i,16],oHm:aMIRROR[i,18], self:mCLNGiver,;
-									self:mDAT,Transform(self:mBst,""),cTransnr,@nSeqnbr,iif(IsString(self:mPostStatus),Val(self:mPostStatus),self:mPostStatus))
+								lError:= !self:oAddInEx:AddToIncomeExp(oHm:aMIRROR[i,4],oHm:FROMRPP,oHm:aMIRROR[i,1],oHm:aMIRROR[i,3],oHm:aMIRROR[i,2],oHm:aMIRROR[i,13],oHm:aMIRROR[i,14],oHm:aMIRROR[i,11],oHm:aMIRROR[i,16],oHm:aMIRROR[i,18], self:mCLNGiver,;
+									self:mDAT,Transform(self:mBst,""),cTransnr,@nSeqNbr,nPoststatus)
 							endif
 						endif
 						if !lError
@@ -2236,7 +2238,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 									oAccFld:=SqlSelect{"select b.category from account a, balanceitem b where a.balitemid=b.balitemid and a.accnumber='"+;
 										AllTrim(oHm:REFERENCE)+"'",oConn}
 									if oAccFld:category==liability
-										if ChgBalance(SEXP, self:mDAT,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,sCURR)
+										if ChgBalance(SEXP, self:mDAT,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,Round(oHm:aMIRROR[i,3] - oHm:aMIRROR[i,2],DecAantal),0,sCURR,2)
 											nSeqnbr++ 
 											cStatement:="insert into transaction set "+;
 												"transid="+cTransnr+;
@@ -2250,11 +2252,11 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 												",debforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 												",currency='"+sCurr+"'"+;
 												",seqnr="+Str(nSeqnbr,-1)+;
-												",poststatus=2" 
+												",poststatus="+ConS(nPoststatus) 
 											oStmnt:=SQLStatement{cStatement,oConn}
 											oStmnt:Execute()
 											if oStmnt:NumSuccessfulRows>0
-												if ChgBalance(samFld,self:mDAT,0,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal), 0	,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal),sCURR)
+												if ChgBalance(samFld,self:mDAT,0,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal), 0	,Round(oHm:aMirror[i,3]	- oHm:aMirror[i,2],DecAantal),sCURR,2)
 													nSeqnbr++ 
 													cStatement:="insert into transaction set "+;
 														"transid="+cTransnr+;
@@ -2268,7 +2270,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 														",creforgn="+Str(oHm:aMirror[i,3]	- oHm:aMirror[i,2],-1)+;
 														",currency='"+sCurr+"'"+;
 														",seqnr="+Str(nSeqnbr,-1)+;
-														",poststatus=2" 
+														",poststatus="+ConS(nPoststatus) 
 													oStmnt:=SQLStatement{cStatement,oConn}
 													oStmnt:Execute()
 													if	!oStmnt:NumSuccessfulRows>0
@@ -3473,7 +3475,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 		endif
 		
 		IF !Empty(self:oTmt:m56_contra_bankaccnt) 
-			oPers:=SqlSelect{'select pb.persid,pb.banknumber,p.postalcode,p.address,p.externid from personbank pb, person p where p.persid=pb.persid and p.deleted=0 and '+;
+			oPers:=SqlSelect{'select pb.persid,pb.banknumber,p.postalcode,p.address,p.externid,p.lastname from personbank pb, person p where p.persid=pb.persid and p.deleted=0 and '+;
 			iif(!sepaenabled.or.IsIban(self:oTmt:m56_contra_bankaccnt),'pb.banknumber','right(pb.banknumber,'+Str(Len(self:oTmt:m56_contra_bankaccnt),-1)+')')+'="'+AllTrim(self:oTmt:m56_contra_bankaccnt)+'"',oConn}
 			if oPers:RecCount>0
 				self:Recognised:=true 
@@ -3481,10 +3483,12 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 				self:oTmt:m56_contra_bankaccnt:=oPers:banknumber     // can be different when non-IBan
 				oPersCnt:m56_banknumber:= self:oTmt:m56_contra_bankaccnt
 				// 					m51_assrec:=self:oPers:Recno
-				IF Len(oPersCnt:m51_pos)>=7 .and.!Empty(oPersCnt:m51_city)
-					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode) 
-						lAddressChanged:=true
-					ENDIF
+// 				IF Len(oPersCnt:m51_pos)>=7 .and.!Empty(oPersCnt:m51_city)
+// 					if !oPersCnt:m51_pos==oPers:postalcode .and.!Empty(oPers:postalcode) 
+				IF !Empty(oPersCnt:m51_pos) .and.!Empty(oPersCnt:m51_city) .and. !oPersCnt:m51_pos==oPers:postalcode  
+					lAddressChanged:=true
+				elseif !Empty(oPersCnt:m51_lastname) .and. Empty(oPers:lastname)
+					lAddressChanged:=true
 				elseif (!CountryCode=="31" .or. !Empty(oPersCnt:m51_country) .and.oPersCnt:m51_country<>'Nederland') .and. Len(oPersCnt:m51_ad1)>1 .and.!Lower(oPersCnt:m51_ad1)==Lower(oPers:address)  .and.!Empty(oPersCnt:m51_city) .and.!Empty(oPersCnt:m51_pos)
 					lAddressChanged:=true
 				endif
@@ -4125,7 +4129,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 			oPers:=SqlSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
 			if oPers:Reccount>0
 				cCod:=oPers:mailingcodes
-				cExtra:=oPers:PROPEXTR 
+				cExtra:=ConS(oPers:PROPEXTR) 
 				BDAT:=iif(Empty(oPers:creationdate),null_date,oPers:creationdate) 
 				dlg:=iif(Empty(oPers:datelastgift),null_date,oPers:datelastgift)
 			else
@@ -4234,7 +4238,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		if oStmnt:NumSuccessfulRows>0
 			cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			self:Owner:STATUSMESSAGE( "Recording transaction "+cTransnr)
-			if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency)
+			if ChgBalance(self:DebAccId,self:mDAT,self:mDebAmnt,0,self:mDebAmntF,0,self:DebCurrency,0)
 				DO	WHILE	! oHm:EOF 
 					nSeqnbr++ 
 					oStmnt:=SQLStatement{"insert into transaction set "+;
@@ -4254,7 +4258,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 						",gc='"+oHm:GC+"'",oConn} 
 					oStmnt:Execute()
 					if	oStmnt:NumSuccessfulRows>0
-						if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:Currency)
+						if ChgBalance(oHm:AccID,self:mDAT,0,oHm:Cre,0,oHm:CREFORGN,oHm:CURRENCY,0)
 							if !oHm:Cre==0 .and. (self:DebCategory==liability .or. self:DebCategory==asset)
 								// 									if !AddToIncome(oHm:GC,false,oHm:AccID,oHm:cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:Currency,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
 								if !self:oAddInEx:AddToIncomeExp(oHm:GC,false,oHm:AccID,oHm:Cre,oHm:DEB,oHm:DEBFORGN,oHm:CREFORGN,oHm:CURRENCY,oHm:DESCRIPTN,oHm:Amirror[oHm:Recno,13], self:mCLNGiver,self:mDAT,self:oDCmBST:TextValue,cTransnr,@nSeqnbr,0)
@@ -4842,9 +4846,13 @@ METHOD ShowSelection() CLASS TransInquiry
 		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.docid like '"+self:DocIdSelected+"%'"
 		self:m54_selectTxt:=self:m54_selectTxt+" Doc.id="+self:DocIdSelected
 	ENDIF
-	IF !Empty(self:ReferenceSelected)
-		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.reference like '%"+AddSlashes(self:ReferenceSelected)+"%'"
-		self:m54_selectTxt:=self:m54_selectTxt+" Reference="+self:ReferenceSelected
+	IF !Empty(self:DocIdSelected)
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.docid like '"+self:DocIdSelected+"%'"
+		self:m54_selectTxt:=self:m54_selectTxt+" Doc.id="+self:DocIdSelected
+	ENDIF
+	IF !Empty(self:Employee)
+		cFilter:=if(Empty(cFilter),'',cFilter+' and ')+"t.userid like '%"+AddSlashes(self:Employee)+"%'"
+		self:m54_selectTxt:=self:m54_selectTxt+" employee="+self:Employee
 	ENDIF
 	IF !Empty(self:DescrpSelected)
 		aKeyw:=GetTokens(AllTrim(self:DescrpSelected),,false)
