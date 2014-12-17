@@ -815,7 +815,8 @@ Method ReEvaluate() Class Reevaluation
 				",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
 				",userid='"+LOGON_EMP_ID +"'"+;
 				",seqnr=1"+;
-				",bfm='C'"   // regard as allready sent to CMS/AccPac
+				",bfm='C'"+;   // regard as allready sent to CMS/AccPac
+				",poststatus=2"
 			oTrans:=SQLStatement{cStatement,oConn}
 			oTrans:Execute()
 			if oTrans:NumSuccessfulRows>0
@@ -829,12 +830,13 @@ Method ReEvaluate() Class Reevaluation
 					",currency='"+cCur+"'"+;
 					",description='Reevaluation with ROE 1"+cCur+'='+Str(CurRate,-1)+' '+sCURR+"'"+;
 					",userid='"+LOGON_EMP_ID +"'"+;
-					",bfm='C'"   // regard as allready sent to CMS/AccPac
+					",bfm='C'"+;   // regard as allready sent to CMS/AccPac
+					",poststatus=2"
 				oTrans:=SQLStatement{cStatement,oConn}
 				oTrans:Execute()
 				if oTrans:NumSuccessfulRows>0
-					if ChgBalance(aAccnt[na,4],UltimoMonth,mDiff,0,0,0,sCURR)
-						if !ChgBalance(aAccnt[na,1],UltimoMonth,0,mDiff,0,0,cCur) 
+					if ChgBalance(aAccnt[na,4],UltimoMonth,mDiff,0,0,0,sCURR,2)
+						if !ChgBalance(aAccnt[na,1],UltimoMonth,0,mDiff,0,0,cCur,2) 
 							lError:=true
 						endif
 					else
