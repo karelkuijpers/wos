@@ -189,12 +189,18 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS} 
 	endif
 	// 	oMainWindow:STATUSMESSAGE("Checking consistency financial data"+'...')
-
+   // Correct partly posted transactions:
+   if Posting
+   	// give all status "not posted"
+   	oStmnt:=SQLStatement{"insert into transaction (transid,seqnr,accid,poststatus) select t.transid,t.seqnr,t.accid,0 from transaction t where t.transid in "+;
+   	"(select distinct transid from transaction group by transid having min(poststatus)<>max(poststatus) ) order by transid,seqnr ON DUPLICATE KEY UPDATE poststatus=values(poststatus)",oConn}
+   	oStmnt:Execute()
+   endif
 	*	Select only monthbalances in years after last balance year for standard currency: 
 	time0:=Seconds()
 	oStmnt:=SQLStatement{"drop temporary table if exists transsum",oConn}
 	oStmnt:Execute()
-	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,round(sum(deb),2) as debtot,round(sum(cre),2) as cretot from transaction group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:=SQLSelect{"create temporary table transsum as select accid,year(dat) as year,month(dat) as month,round(sum(deb),2) as debtot,round(sum(cre),2) as cretot from transaction "+iif(Posting," where poststatus=2","")+" group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	//       time1:=time0
 	//       LogEvent(,"transsum:"+Str((time0:=Seconds())-time1,-1),"logsql")
@@ -242,7 +248,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	*	Select only monthbalances in years after last balance year for foreign currency:
 	oStmnt:=SQLStatement{"drop temporary table if exists transsumf",oConn}
 	oStmnt:Execute()
-	oSel:=SQLSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,round(sum(debforgn),2) as debtot,round(sum(creforgn),2) as cretot from transaction where currency<>'"+sCurr+"' group by accid,year(dat),month(dat) order by accid,dat",oConn}
+	oSel:=SqlSelect{"create temporary table transsumf as select accid,year(dat) as year,month(dat) as month,round(sum(debforgn),2) as debtot,round(sum(creforgn),2) as cretot from transaction where currency<>'"+sCurr+"'"+iif(Posting," and poststatus=2","")+" group by accid,year(dat),month(dat) order by accid,dat",oConn}
 	oSel:Execute()
 	//       time1:=time0
 	//       LogEvent(,"transsumf:"+Str((time0:=Seconds())-time1,-1),"logsql")
@@ -288,7 +294,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	//       time1:=time0
 	//       LogEvent(,"transsum <->mbalance4:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	
-	oSel:=SQLSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
+	oSel:=SqlSelect{"select sum(cre-deb) as totdebcre from transaction",oConn}
 	oSel:Execute()
 	//       time1:=time0
 	//       LogEvent(,"Transactions not balanced:"+Str((time0:=Seconds())-time1,-1),"logsql")
@@ -306,7 +312,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		cError+="Month balances not balanced for "+sCurr+":"+Str(oSel:totdebcre,-1)+CRLF
 		lTrMError:=true
 	endif
-	oSel:=SQLSelect{"select transid,dat from transaction group by transid having sum(cre-deb)<>0 order by transid",oConn}
+	oSel:=SqlSelect{"select transid,dat from transaction group by transid having sum(cre-deb)<>0 order by transid",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		cError+="Not all transactions are balanced for "+sCurr+":"+CRLF
@@ -336,7 +342,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if	lShow
 				TextBox{,"Checking consistency financial data: correspondence transactions	and month balances, each transaction balanced",SubStr(cError,1,3000)}:Show()
 				lCorrect:=false
-				if	lTrMError
+				if	lTrMError .and. (Len(aMBal)>0 .or. Len(aMBalF)>0)
 					lCorrect:=(TextBox{,"Checking	consistency	financial data",'Should	balances	be	corrected?',BUTTONYESNO}:Show()=BOXREPLYYES)	
 				endif
 			endif
@@ -379,7 +385,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 		oMainWindow:STATUSMESSAGE(Space(100))
 	endif
 	return false
-Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string)  as logic
+Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string,poststatus as int)  as logic
 	******************************************************************************
 	*              Update of month balance values per account
 	*					Should be used between Start transaction and commit and  
@@ -392,7 +398,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 	local oStmnt as SQLStatement
 	local oMBal,oAcc as SQLSelect
 	local lError as logic 
-	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
+	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt) .and.(!Posting .or. poststatus=2)
 		// insert new one/update existing 
 		if !Currency==sCurr
 			if Empty(currency) .or. len(currency)<>3 
@@ -1198,6 +1204,16 @@ DO WHILE !oSQL:EOF
 ENDDO
 return
 
+Function FillOPC() as array
+	// fill array with employee-name, id
+	local oOPC as SQLSelect
+	local aOPC:={} as array
+	oOPC:=SqlSelect{"select group_concat(cast("+Crypt_Emp(false,"loginname")+" as char) separator '#$#') as opcgroup from employee",oConn}
+	if oOPC:RecCount>0
+		aOPC:=Split(oOPC:opcgroup,'#$#',,true)
+	endif
+	return aOPC
+	
 FUNCTION FillPersCode ()
 * Fill Array with description + code + abrv of Pers-codes
 // LOCAL aPersCd := {}
@@ -3776,6 +3792,12 @@ if iPtr>0
 else
 	return "1"
 endif
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -3783,12 +3805,6 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -4322,7 +4338,7 @@ Function Title(nTit as int) as string
 	endif
 	return null_string
 function UnionTrans(cStatement as string) as string
-	// combine select statemenst on transaction with unions on historic trnsaction tables
+	// combine select statemenst on transaction with unions on historic transaction tables
 	* 
 	* cStatement should be in terms of Transaction table as t  
 	* date conditions should be specified as: t.dat>='yyy-mm-dd' or t.dat<='yyy-mm-dd' or t.dat='yyyy-mm-dd'
@@ -4330,6 +4346,7 @@ function UnionTrans(cStatement as string) as string
 	Local nDat1, nDat2,i as int
 	Local BegDat, EndDat, Maxdat as date
 	local cDat, cCompStmnt as String
+
 	*/  
 
 	// determine required dates in cStatement: 
@@ -4380,7 +4397,7 @@ function UnionTrans(cStatement as string) as string
 // 		FillBalYears()
 		for i:=2 to Len(GlBalYears)
 			if BegDat<GlBalYears[i-1,1].and.EndDat>=GlBalYears[i,1]
-				cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(cStatement,"transaction",GlBalYears[i,2])+")"               
+				cCompStmnt+=iif(Empty(cCompStmnt),""," union ")+"("+StrTran(StrTran(cStatement,"transaction",GlBalYears[i,2]),' and t.poststatus=2','')+")"     // regard closed years always as posted           
 			endif
 		next
 	endif 
