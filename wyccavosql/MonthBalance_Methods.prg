@@ -129,7 +129,7 @@ class Balances
 	assign AccSelection(uValue) class Balances
 	self:cAccSelection:=uValue
 	return self:cAccSelection
-Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string)  as logic class Balances
+Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreAmnt as float,pDebFORGN as float,pCreFORGN as float,Currency as string,postingstatus as int)  as logic class Balances
 	******************************************************************************
 	*              Adding values per account and currency to string cMbalStmt to update Mbalance later with ChgBalanceExecute()
 	*					Should be used between Start transaction and commit and  
@@ -141,7 +141,7 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 	local lError as logic 
 	local cDate,cMonth,cYear as string 
 	local i as int
-	IF !Empty(pDebAmnt).or.!Empty(pCreAmnt)
+	IF (!Empty(pDebAmnt).or.!Empty(pCreAmnt)).and.(!Posting .or. postingstatus=2)
 		// insert new one/update existing
 		cDate:=DToS(pRecordDate)
 		cYear:=SubStr(cDate,1,4)
@@ -204,7 +204,7 @@ Method ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCreA
 METHOD GetBalance( pAccount as string  ,pPeriodStart:=nil as usual ,pPeriodEnd:=nil as usual, pCurrency:='' as string) as void pascal CLASS Balances
 	******************************************************************************
 	*  Name      : GetBalance
-	*              Calculation of balance values of a account during a certain period
+	*              Calculation of balance values of an account during a certain period
 	*  Author    : K. Kuijpers
 	*  Date      : 11-12-2010
 	******************************************************************************
@@ -703,7 +703,7 @@ Method SQLGetBalanceDate( dDate:=Today() as date, lForeignCurr:=false as logic, 
 	*
 	* dDate : Date, at which the required balance should be calculated; default: today
 	* lForeignCurr	: if true _debf and _creF values are also returned from the SQLSelect 
-	* lDetails: details of account are returned
+	* lDetails: details of account are returned 
 	* A extra selection to be used in the where clause to select accounts can be given by: Balances:cAccSelection:=<selection criteria>, 
 	*	e.g. a.department in(..,..,...) and a.balitemid in (..,..,..)  
 	* A extra selection to be used in the where clause to select transactions can be given by: Balances:cTransSelection:=<selection criteria>, 
@@ -884,7 +884,8 @@ Method SQLGetBalanceDate( dDate:=Today() as date, lForeignCurr:=false as logic, 
 	if	lBeforeUlt
 		* Before	ultimo of the month?
 		cmTransCondition:="t.dat>='"+Str(PeriodEndYear,4,0)+'-'+StrZero(PeriodEndMonth,2,0)+"-01' and t.dat<='"+SQLdate(dDate)+"'" +;
-			iif(Empty(self:cTransSelection),"",'and '+self:cTransSelection)
+			iif(Posting," and t.poststatus=2","")+;
+			iif(Empty(self:cTransSelection),"",' and '+self:cTransSelection)
 		* Calculate	sum of transactions in last month: 
 		cSelectt:=UnionTrans("select t.accid,"+'Round(sum(t.deb),2) as monthdeb,Round(sum(t.cre),2) as monthcre,'+;
 			"Round(sum(t.debforgn),2) as monthdebf,Round(sum(t.creforgn),2) as monthcref "+;
