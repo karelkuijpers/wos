@@ -60,7 +60,7 @@ CLASS EditTeleBankPattern INHERIT DataDialogMine
 	instance mkind
 	PROTECT lNew := FALSE as LOGIC
 	PROTECT oTele as Telemut
-	PROTECT cAccountName as STRING
+	PROTECT cAccountName,cAccnumber as STRING
 	EXPORT maccid,CurTelPatId as STRING
 	PROTECT oBrowse as SQLSelect 
 	protect oOwner as DataWindow
@@ -238,7 +238,7 @@ SELF:FieldPut(#mTEGENGIRO, uValue)
 RETURN uValue
 
 method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
-	//Put your PostInit additions here
+	//Put your PostInit additions here 
 	self:SetTexts()
 	SaveUse(self)
 	*	IF !Empty(uExtra).and.!IsNil(uExtra).and.!empty[uExtra[1])
@@ -259,7 +259,7 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditTeleBankPattern
 		self:mAddSub := self:Server:addsub
 		self:mInd_AutMut := ConL(self:Server:Ind_AutMut)
 		self:CurTelPatId:=str(self:server:telpatid,-1)
-		self:oDCmAccount:TextValue := Transform(self:Server:accountname,"")
+		self:oDCmAccount:TextValue := Transform(self:Server:accountname,"") 
 		self:oOwner:=uExtra
 	ENDIF
 	RETURN nil
@@ -280,9 +280,10 @@ METHOD RegAccount(oAcc,ItemName) CLASS EditTelebankPattern
 
 RETURN true
 METHOD SaveButton( ) CLASS EditTelebankPattern
-	LOCAL oMyServer as SQLStatement
-	local cStatement as string
+	local cStatement,cAccnumber as string
 	local nCurRec as int
+	LOCAL oMyServer as SQLStatement
+	local oSel as SQLSelect
 	
 	IF Empty(maccid)
 		(ErrorBox{self,"Account mandatory!"}):Show()
@@ -292,6 +293,13 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 	if !lNew .and.!Empty(self:oOwner)
 		nCurRec:=self:oOwner:Server:recno
 	endif
+	oSel:=SqlSelect{"select accnumber from account where accid="+self:maccid,oConn}
+	if oSel:reccount>0
+		cAccnumber:= oSel:accnumber
+	else
+		cAccnumber:=''
+	endif
+
 	cStatement:=iif(lNew,"insert into","update")+" telebankpatterns set "+;
 		"contra_bankaccnt='"+self:mcontra_bankaccnt+"'"+;
 		",accid ="+maccid+;
@@ -313,9 +321,10 @@ METHOD SaveButton( ) CLASS EditTelebankPattern
 				self:mAddSub,;
 				Split(AllTrim(self:mdescription),Space(1)),;
 				maccid,;
-				logic(_cast,self:mInd_AutMut)})
+				ConS(ConI(self:mInd_AutMut)),;
+				cAccnumber}) 
 			IF !oTele:oTelTr:EOF
-				IF oTele:CheckPattern()
+				IF oTele:CheckPattern(oTele:m56_contra_bankaccnt ,oTele:m56_kind,oTele:m56_contra_name, oTele:m56_addsub,oTele:m56_description)
 					oTele:oParent:ProcRecognised()
 				ENDIF
 			ENDIF				
