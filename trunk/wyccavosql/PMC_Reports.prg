@@ -1435,7 +1435,7 @@ METHOD PrintReport() CLASS PMISsend
 				nSeqnr++
 				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
 			endif 
-			oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11]) 
+			oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11],2) 
 			IF aMemberTrans[a_tel,4]==DT
 				if aMemberTrans[a_tel,7][5]==sCRE .and.aMemberTrans[a_tel,7][2]=="AAA" .and.me_balance>0.00 
 					// to account payable and local bank: make BankOrder: 
@@ -1448,7 +1448,7 @@ METHOD PrintReport() CLASS PMISsend
 				// add second line for direct transactions:
 				AAdd(aTransDT,{aMemberTrans[a_tel,7][5],'0','0',Str(me_balance,-1),Str(me_balanceF,-1),aMemberTrans[a_tel,11],me_desc,;
 					cClosingdate,'H','',LOGON_EMP_ID,'2','','PMC',''})
-				oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_balance, 0, me_balanceF,'') 
+				oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_balance, 0, me_balanceF,'',2) 
 			endif
 			// Also transaction for Office assessment:
 			IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
@@ -1474,7 +1474,7 @@ METHOD PrintReport() CLASS PMISsend
 				endif
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 				AAdd(aTransMT,{me_accid,Str(me_balance,-1),Str(me_balanceF,-1),'0','0',aMemberTrans[a_tel,11],me_desc,cClosingdate,'H','CH',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-				oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11])
+				oMBal:ChgBalance(me_accid, self:closingDate, me_balance,0, me_balanceF,0,aMemberTrans[a_tel,11],2)
 			ENDIF
 		NEXT
 		*Record Total amount AM:
@@ -1483,7 +1483,7 @@ METHOD PrintReport() CLASS PMISsend
 				nSeqnr++
 				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 				AAdd(aTransMT,{samProj,'0','0',Str(AssOfficeProj,-1),Str(AssOfficeProj,-1),sCurr,self:oLan:RGet("AM Office Projects Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-				oMBal:ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR)
+				oMBal:ChgBalance(samProj, self:closingDate, 0, AssOfficeProj, 0, AssOfficeProj,sCURR,2)
 			ENDIF
 		ELSE
 			AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
@@ -1492,49 +1492,49 @@ METHOD PrintReport() CLASS PMISsend
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{sam,'0','0',Str(AssOffice,-1),Str(AssOffice,-1),sCurr,self:oLan:RGet("AM Office Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR)
+			oMBal:ChgBalance(sam,	self:closingDate,	0,	AssOffice, 0, AssOffice,sCURR,2)
 		ENDIF 
 		// reverse add to income: 
 		if !Empty(AssIncHome) 
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SINCHOME,Str(AssIncHome,-1),Str(AssIncHome,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR)
+			oMBal:ChgBalance(SINCHOME, self:closingDate, AssIncHome, 0, AssIncHome,0,sCURR,2)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssIncHome,-1),Str(AssIncHome,-1),sCurr,self:oLan:RGet("Reversal income for office assessment home assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR)
+			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssIncHome, 0, AssIncHome,sCURR,2)
 		endif
 		if !Empty(AssInc) 
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SINC,Str(AssInc,-1),Str(AssInc,-1),'0','0',sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR)
+			oMBal:ChgBalance(SINC, self:closingDate, AssInc, 0, AssInc,0,sCURR,2)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SEXP,'0','0',Str(AssInc,-1),Str(AssInc,-1),sCurr,self:oLan:RGet("Reversal income for office assessment assigned"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR) 
+			oMBal:ChgBalance(SEXP, self:closingDate,0, AssInc, 0, AssInc,sCURR,2) 
 		endif
 		// add to expense assessment field + int: 
 		if!Empty(AssFldInt)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{samFld,Str(AssFldInt,-1),Str(AssFldInt,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR)
+			oMBal:ChgBalance(samFld, self:closingDate, AssFldInt, 0, AssFldInt,0,sCURR,2)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SEXP,'0','0',Str(AssFldInt,-1),Str(AssFldInt,-1),sCurr,self:oLan:RGet("Expense for assessment field&int"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR)
+			oMBal:ChgBalance(SEXP, self:closingDate,0, AssFldInt, 0, AssFldInt,sCURR,2)
 		endif
 		if !Empty(AssFldIntHome)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{samFld,Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),'0','0',sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR)
+			oMBal:ChgBalance(samFld, self:closingDate, AssFldIntHome, 0, AssFldIntHome,0,sCURR,2)
 			nSeqnr++
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{SEXPHOME,'0','0',Str(AssFldIntHome,-1),Str(AssFldIntHome,-1),sCurr,self:oLan:RGet("Expense for assessment field&int for home assigned members"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCURR)
+			oMBal:ChgBalance(SEXPHOME, self:closingDate,0, AssFldIntHome, 0, AssFldIntHome,sCURR,2)
 		endif
 
 		// 		Record total amount to PMC 
@@ -1547,7 +1547,7 @@ METHOD PrintReport() CLASS PMISsend
 			endif
 			//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 			AAdd(aTransMT,{shb,'0','0',Str(mo_tot,-1),Str(mo_totF,-1),self:cPMCCurr,self:oLan:RGet("PMC Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
-			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr)
+			oMBal:ChgBalance(shb,	self:closingDate,	0,	mo_tot, 0, mo_totF,self:cPMCCurr,2)
 		ENDIF
 		
 		
