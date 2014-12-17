@@ -2251,7 +2251,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 		oAcc:Execute()
 		oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,a.accnumber,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
 			'from transaction t,account a where a.accid=t.accid and'+;
-			" t.dat>='"+SQLdate(startdategifts)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
+			" t.dat>='"+SQLdate(startdategifts)+"' and t.dat<='"+SQLdate(enddate)+"'"+iif(Posting," and t.poststatus=2","")+;
 			" and t.accid in ("+cAccs+")")+" order by a.accnumber,t.dat,t.transid,t.seqnr",oConn}
 		oTrans:Execute() 
 		aGiversdata:={}
@@ -2282,7 +2282,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 			oAccAss:=SqlSelect{"select accnumber,accid,description,currency,a.giftalwd,b.category from account a,balanceitem b where a.balitemid=b.balitemid and accid in ("+Implode(aASS,"','")+")",oConn}
 			oAccAss:Execute()
 			oTransAss:=	SqlSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
-				'from transaction t where t.dat>="'+SQLdate(startdate)+'" and t.dat<="'+SQLdate(enddate)+'"'+;
+				'from transaction t where t.dat>="'+SQLdate(startdate)+'" and t.dat<="'+SQLdate(enddate)+'"'+iif(Posting," and t.poststatus=2","")+;
 				" and t.accid in ("+Implode(aASS,",")+") order by t.accid,t.dat"),oConn}
 			oTransAss:Execute() 
 			Do While !oAccAss:Eof
@@ -3235,7 +3235,7 @@ Method CollectBalances(aAccidMbr as array,cMess ref string) as logic Class GiftR
 	return true
 	
 Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string ) as logic class GiftReport
-	// Collect transactions with persons for all these accounts in SQL object oTtrans and array aPersData:  
+	// Collect transactions with persons for all these accounts in SQL object oTrans and array aPersData:  
 	// lMbrDep: true: selection for member departments, false: for single account members
 	local i,p as int
 	local cStatement as string
@@ -3254,7 +3254,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	// kind(1=income,2=mg,3=net,4=expense,5=other/associated account)
 	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp, "+;
 	"if(a.kind>=4,5,if(t.gc='AG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='MG',2,if(t.gc='PF',3,if(t.gc='CH' or left(a.mbrid,1)='a',4,a.kind+1))))) as kind from "+;
-	'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'
+	'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'+iif(Posting,' and t.poststatus=2','')
 //		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)' 
 	cStatement:=UnionTrans(cStatement)  // temporary
 	oStmnt:=SQLStatement{"create temporary table transmbr (credeb decimal(19,2),kind char(1), index (mbrid,kind,accid,dat,transid), index (persid) ) "+;
@@ -3637,7 +3637,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 	oTrans:=SqlSelect{UnionTrans('select t.docid,t.transid,t.seqnr,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description'+;
 		+iif(self:SendingMethod="SeperateFile",",a.accnumber",'')+;
 		' from transaction t'+iif(self:SendingMethod="SeperateFile",', account a where a.accid=t.accid and',' where')+;
-		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+;
+		" t.dat>='"+SQLdate(startdate)+"' and t.dat<='"+SQLdate(enddate)+"'"+iif(Posting," and t.poststatus=2","")+;
 		" and t.accid in ("+Implode(aAcc,"','")+")")+" order by "+iif(self:SendingMethod="SeperateFile","accnumber","accid")+",dat,transid,seqnr",oConn} 
 	oTrans:Execute() 
 	time1:=time0
@@ -3755,7 +3755,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 					"where b.balitemid=a.balitemid and accid in ("+oAcc:assacc+") order by accid",oConn}
 				oAccAss:Execute()
 				oTransAss:=	SqlSelect{UnionTrans('select t.docid,t.transid,t.accid,t.persid,t.dat,t.deb,t.cre,t.debforgn,t.creforgn,t.fromrpp,bfm,t.opp,t.gc,t.description '+;
-					'from transaction t where t.dat>="'+SQLdate(SToD(Str(ReportYear,4,0)+StrZero(ASsStart,2,0)+'01'))+'" and t.dat<="'+SQLdate(enddate)+'"'+;
+					'from transaction t where t.dat>="'+SQLdate(SToD(Str(ReportYear,4,0)+StrZero(ASsStart,2,0)+'01'))+'" and t.dat<="'+SQLdate(enddate)+'"'+iif(Posting," and poststatus=2","")+;
 					" and t.accid in ("+oAcc:assacc+") order by t.accid,t.dat"),oConn}
 				oTransAss:Execute() 
 
@@ -6858,10 +6858,19 @@ METHOD OKButton( ) CLASS YearClosing
 		self:EndWindow()
 		RETURN true
 	ENDIF
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:Pointer := Pointer{POINTERHOURGLASS} 
+	if Posting
+		// are there still non-posted transactions?
+		oSel:= SqlSelect{"select count(*) as total from transaction where postStatus<2 and dat <='"+SQLdate(self:BalanceEndDate)+"'",oConn}
+		if oSel:reccount>0 .and. ConI(oSel:total)>0
+			(ErrorBox{self:OWNER,self:oLan:WGet('Let the manager first post all')+' '+ConS(oSel:total)+' '+self:oLan:WGet('transactions')}):Show()
+			self:EndWindow()
+			RETURN true			
+		endif 
+	endif
 	if !Empty(SPROJ)
 		* Are there still non-earmarekd gifts?
-		if SQLSelect{"select transid from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:BalanceEndDate)+"' and accid='"+SPROJ+"'",oConn}:reccount>0
+		if SqlSelect{"select transid from transaction where bfm='O' and cre>deb and dat <='"+SQLdate(self:BalanceEndDate)+"' and accid='"+SPROJ+"'",oConn}:reccount>0
 			(ErrorBox{self:OWNER,self:oLan:WGet('Allot first non-designated gifts in year')+':'+YearBalance}):Show()
 			self:EndWindow()
 			RETURN true
