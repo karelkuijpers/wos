@@ -463,6 +463,18 @@ METHOD SetState() CLASS EditPerson
 		IF !Empty(self:oPersCnt:m51_city)
 			self:ODCmCity:TextValue := self:oPersCnt:m51_city
 		ENDIF
+		if Empty(self:mlastname) 
+			self:oDCmLastname:TextValue:=self:oPersCnt:m51_lastname
+		endif
+		if Empty(self:mInitials) 
+			self:oDCmInitials:TextValue:=self:oPersCnt:m51_initials
+		endif
+		if Empty(self:mGender) .and.!Empty(oPersCnt:m51_gender) 
+			self:mGender:=self:oPersCnt:m51_gender
+		endif
+		if Empty(self:mGender) .and.!Empty(oPersCnt:m51_prefix) 
+			self:ODCmPrefix:TextValue:=self:oPersCnt:m51_prefix
+		endif
 	ENDIF
 
 	* Fill aBankAcc:
@@ -2090,6 +2102,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	AAdd(aExpF,{#BIRTHDATE,"cast(p.birthdate as date) as birthdate", ExportPerson_BIRTHDAT{} })
 	AAdd(aExpF,{#persid,"p.persid", ExportPerson_CLN{} })
 	AAdd(aExpF,{#EXTERNID, "p.externid", Person_EXTERNID{} })
+	AAdd(aExpF,{#opc, "p.opc", Person_OPC{} })
 	AAdd(aExpF,{#BANKNUMBER,"",Bank{} })
 	IF self:selx_keus1=4.or.self:selx_keus1=5   && selectie op gift aan bestemming
 		AAdd(aExpF,{#GIFTSGROUP,"", Gifts_group{} })
@@ -2991,7 +3004,7 @@ METHOD Show() CLASS SelPers
 				self:selx_keus1 := 5
 			ENDIF
 			self:cFrom+=",transaction as t"
-			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid" 
+			self:cWhereOther+=iif(Empty(self:cWhereOther),""," and ")+"p.persid=t.persid"+iif(Posting," and t.poststatus=2","") 
 		ENDIF
 	ELSE
 		self:Close()
