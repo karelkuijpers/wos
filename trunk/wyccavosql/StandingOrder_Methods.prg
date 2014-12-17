@@ -620,17 +620,19 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 	*          .f. : no transaction made
 	*****************************************************************
 	// LOCAL deb_ind AS LOGIC
-	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
-	local MultiFrom, lError as logic 
 	local Deb,cre, DEBFORGN,CREFORGN,total as float
+	local i as int
+	local nDep as int
 	local CurStOrdrid,nTransLenOrg:=Len(self:aTrans),nBankLenOrg:=Len(self:aBank) as int
+	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
+	local MultiFrom, lError as logic
+	local lPosted:=true as logic 
 	local oPersBank,oBal as sqlselect 
 	// 	local oTrans,oBord,oStmnt as SQLStatement
-	local i as int
 	*Check validity of standing order:
 	CurStOrdrid:=oStOrdL:stordrid
 	IF !Empty(dat_controle(datum,true))
-// 		lError:=true
+		// 		lError:=true
 		return true  // skip to next date
 	elseIF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
 		lError:=true
@@ -652,11 +654,14 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 		endif
 		If !lError
 			mBank:=""
+			if empty(nDep) .and. !empty(oStOrdL:department)
+				nDep:=oStOrdL:department
+			endif
 			if Str(oStOrdL:ACCOUNTID,-1)== sCRE .and. !Empty(oStOrdL:CREDITOR)
 				// payment to creditor
 				if CountryCode="31"
 					if !Empty(oStOrdL:BANKACCT) .and. !Empty(!Empty(oStOrdL:BANKACCT)) .and. oStOrdL:BANKACCT==oStOrdL:banknumber
-						mBank:=oStOrdL:BANKACCT
+						mBank:=oStOrdL:BANKACCT 
 					else 
 						if Empty(oStOrdL:banknumber)
 							LogEvent(self,"Bank account "+oStOrdL:BANKACCT+" does not belang to person "+Str(oStOrdL:CREDITOR,-1)+" in standing order: "+Str(CurStOrdrid,-1)+" (skipped)")
@@ -676,6 +681,8 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 						endif
 					endif
 				endif
+			elseif Empty(oStOrdL:gc) .and.nDep>0 .and. !oStOrdL:department==nDep
+				lPosted:=false
 			endif
 		ENDIF
 		if !lError
@@ -705,7 +712,8 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),Deb,cre,DEBFORGN,CREFORGN,;
 				TransCurr,oStOrdL:gc,;
 				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>Deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
-				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,'1',nTrans} ) 
+				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,1,nTrans} ) 
+			// 				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,iif(Empty(mBank),1,2),nTrans} ) 
 			if !Empty(mBank)
 				// save banknumber
 				AAdd(self:aBank,{Len(self:aTrans),mBank,Str(CurStOrdrid,-1)})
@@ -720,6 +728,12 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 	endif		
 	if !lError
 		nTrans++
+		if lPosted
+			// set poststatus to 2 because check is done when sending to bank:
+			for i:=(nTransLenOrg+1) to Len(aTrans)
+				aTrans[i,15]:=2
+			next
+		endif
 	else
 		// discard added entries:
 		ASize(self:aTrans,nTransLenOrg)
@@ -748,7 +762,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	oStOrdL:=SqlSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
 		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,b.banknumber,l.reference,l.seqnr,"+; 
-	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active"+;
+	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active,a.department"+;
 		" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) "+; 
 	"left join personbank b on (b.persid=l.creditor and b.banknumber=l.bankacct) "+;
 		"where l.stordrid=s.stordrid and "+;
@@ -807,7 +821,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			") values ('"+self:aTrans[1,1]+"','"+self:aTrans[1,2]+"','"+self:aTrans[1,3]+"','"+self:aTrans[1,4]+;
 			"','"+Str(self:aTrans[1,5],-1)+"','"+Str(self:aTrans[1,6],-1)+;
 			"','"+Str(self:aTrans[1,7],-1)+"','"+Str(self:aTrans[1,8],-1)+;
-			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"','1')",oConn}
+			"','"+self:aTrans[1,9]+"','"+self:aTrans[1,10]+"','"+Str(self:aTrans[1,11],-1)+"','"+self:aTrans[1,14]+"','"+self:aTrans[1,13]+"','"+AllTrim(self:aTrans[1,12])+"',"+ConS(aTrans[1,15])+")",oConn}
 		oTrans:execute()
 		if oTrans:NumSuccessfulRows<1
 			cError:= "stmnt:"+oTrans:SQLString+CRLF+"error:"+oTrans:status:Description
@@ -830,7 +844,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		endif
 		if !lError
 			for i:=1 to Len(self:aTrans)
-				oBal:ChgBalance(self:aTrans[i,1], SQLDate2Date(self:aTrans[i,2]), self:aTrans[i,5], self:aTrans[i,6], self:aTrans[i,7], self:aTrans[i,8],self:aTrans[i,9])
+				oBal:ChgBalance(self:aTrans[i,1], SQLDate2Date(self:aTrans[i,2]), self:aTrans[i,5], self:aTrans[i,6], self:aTrans[i,7], self:aTrans[i,8],self:aTrans[i,9],self:aTrans[i,15])
 			next 
 			if !oBal:ChgBalanceExecute()
 				lError:=true
