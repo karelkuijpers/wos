@@ -672,36 +672,36 @@ RETURN uValue
 
 METHOD OKButton( ) CLASS DonorFollowingReport 
 	local nP as int
-	FromYear:=Year(self:oDCFromdate:SelectedDate)
-	FromMonth:=Month(self:oDCFromdate:SelectedDate)
-	ToYear:=Year(self:oDCTodate:SelectedDate)
-	ToMonth:=Month(self:oDCTodate:SelectedDate)
+	self:FromYear:=Year(self:oDCFromdate:SelectedDate)
+	self:FromMonth:=Month(self:oDCFromdate:SelectedDate)
+	self:ToYear:=Year(self:oDCTodate:SelectedDate)
+	self:ToMonth:=Month(self:oDCTodate:SelectedDate)
 	IF self:oDCSubSet:SelectedCount<1
 		(ErrorBox{self,self:oLan:Wget("Select at least one Fund/Member!")}):Show()
 		self:oDCFromAccount:SetFocus()
 		RETURN
 	ENDIF
-	IF FromYear<1980 .or.FromYear>Year(Today())+1
+	IF self:FromYear<1980 .or. self:FromYear>Year(Today())+1
 		(ErrorBox{self,self:oLan:Wget("Non valid from month!")}):Show()
-		self:oDCFromYear:SetFocus()
+		self:oDCFromdate:SetFocus()
 		RETURN
 	ENDIF
-	IF ToYear<1980 .or.ToYear>Year(Today())+1
+	IF self:ToYear<1980 .or. self:ToYear>Year(Today())+1
 		(ErrorBox{self,self:oLan:Wget("Non valid To month!")}):Show()
-		self:oDCToYear:SetFocus()
+		self:oDCTodate:SetFocus()
 		RETURN
 	ENDIF
 	IF self:oDCFromdate:SelectedDate > self:oDCTodate:SelectedDate
 		(ErrorBox{self,self:oLan:Wget("To Date must be behind From Date")}):Show()
-		self:oDCFromYear:SetFocus()
+		self:oDCFromdate:SetFocus()
 		RETURN
 	ENDIF
-	IF StatBox7 .and. NumberRanges<2
+	IF self:StatBox7 .and. self:NumberRanges<2
 		(ErrorBox{self,self:oLan:Wget("Number of ranges must be at least 2")}):Show()
 		self:oDCNumberRanges:SetFocus()
 		RETURN
 	ENDIF
-	IF !(StatBox1.or.StatBox2.or.StatBox3.or.StatBox4.or.StatBox5.or.StatBox6.or.StatBox7)
+	IF !(self:StatBox1.or.self:StatBox2.or.self:StatBox3.or.self:StatBox4.or.self:StatBox5.or.self:StatBox6.or.self:StatBox7)
 		(ErrorBox{self,self:oLan:Wget("Select at least one type of statistical data!")}):Show()
 		self:oDCStatBox1:SetFocus()
 		RETURN
@@ -953,10 +953,11 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	// Make followingtrans contain all the relevant transactions
 	if self:SqlDoAndTest("CREATE TEMPORARY TABLE followingtrans (subperiod int) " ;
 			+ UnionTrans("SELECT transid,seqnr,persid,accid," + sqlStr2 + " subperiod,cre-deb amount FROM transaction AS t"; 
-		+ " WHERE t.accid in " + accStr + " AND t.persid IS NOT NULL AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-			+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' AND" ;
-			+ " t.dat<='" + SQLdate(EndDate-1) + "' AND";
-			+ " t.CRE>t.DEB"))
+		+ " WHERE t.accid in " + accStr + " and t.persid is not null and t.gc<>'PF' AND t.gc<>'CH' and" ;
+			+ " t.dat>='" +  SQLdate(aPeriod[1]) + "' and" ;
+			+ " t.dat<='" + SQLdate(EndDate-1) + "' and"; 
+			+ iif(Posting," t.poststatus=2 and ","");
+			+ " t.cre>t.deb"))
 		return nil
 	endif                     
 	
@@ -1048,8 +1049,9 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		if self:SqlDoAndTest("CREATE TEMPORARY TABLE freqtrans (freq1 int, freq2 int) AS " ;
 				+ UnionTrans("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			+ " WHERE t.persid in (" + Implode(aPersFr,',') + ") " ;
-				+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
-				+ " t.dat<'" + SQLdate(FrequencyEnd) + "' AND t.CRE>t.DEB "))        // Begin at a very old date 
+				+ " and t.gc<>'PF' and t.gc<>'CH' and" ;
+				+ iif(Posting," t.poststatus=2 and ","");
+				+ " t.dat<'" + SQLdate(FrequencyEnd) + "' and t.cre>t.deb "))        // Begin at a very old date 
 			// 			+ UnionTrans2("SELECT t.transid,t.seqnr,t.persid," + freqStr1 + "," + freqStr2 + " FROM transaction as t";  
 			// 			+ " WHERE t.accid IN " + accStr + " AND t.persid>=" + Str(aPers[1],-1) + " and t.persid<=" + Str(aPers[Len(aPers)],-1) + " " ;
 			// 			+ " AND t.GC<>'PF' AND t.GC<>'CH' AND" ;
@@ -2647,10 +2649,11 @@ METHOD PrintReport() CLASS DonorProject
 	local sqlStr as STRING
 
 	sqlStr:=UnionTrans("select t.transid,t.accid,p.type,sum(t.cre-t.deb) as summa from transaction as t left join person as p on t.persid=p.persid ";
-		+ "where p.type is not null and t.GC<>'PF' and t.GC<>'CH' and ";
+		+ "where p.type is not null and t.gc<>'PF' and t.gc<>'CH' and ";
 		+ "t.dat>='" +  SQLdate(self:oDCFromdate:SelectedDate) + "' and " ;
-		+ "t.dat<='" + SQLdate(self:oDCTodate:SelectedDate) + "' and ";
-		+ "t.CRE>t.DEB group by t.accid,p.type") // t.transid is required to ensure uniqueness when UnionTrans is performed 
+		+ "t.dat<='" + SQLdate(self:oDCTodate:SelectedDate) + "' and "; 
+		+ iif(Posting,"t.poststatus=2 and ","");
+		+ "t.cre>t.deb group by t.accid,p.type") // t.transid is required to ensure uniqueness when UnionTrans is performed 
 // 		+ "t.dat>='" +  Str(nFromYear,4) + "-" + StrZero(nFromMonth,2) + "-01' and " ;
 // 		+ "t.dat<='" + Str(nToYear,4) + "-" + StrZero(nToMonth,2) + "-" + StrZero(MonthEnd(nToMonth,nToYear),2) + "' and ";
 // 		+ "t.CRE>t.DEB group by t.accid,p.type") // t.transid is required to ensure uniqueness when UnionTrans is performed 
