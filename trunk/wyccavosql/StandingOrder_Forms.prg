@@ -1,3 +1,5 @@
+FUNCTION __DBG_EXP( ) AS USUAL PASCAL
+RETURN ( NIL )
 STATIC DEFINE EDITPERIODIC_CANCELBUTTON := 109 
 STATIC DEFINE EDITPERIODIC_DATLTSBOEK := 121 
 STATIC DEFINE EDITPERIODIC_FIXEDTEXT10 := 120 
@@ -25,6 +27,40 @@ STATIC DEFINE EDITPERIODIC_SC_TOTAL := 117
 STATIC DEFINE EDITPERIODIC_STORDERLINES := 116 
 STATIC DEFINE EDITPERIODIC_STORDRID := 123 
 STATIC DEFINE EDITPERIODIC_TOTALTEXT := 118 
+RESOURCE EditStandingOrder DIALOGEX  41, 37, 399, 234
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"18-12-2014", EDITSTANDINGORDER_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
+	CONTROL	"18-12-2014", EDITSTANDINGORDER_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
+	CONTROL	"", EDITSTANDINGORDER_MDAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 44, 36, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Period", EDITSTANDINGORDER_MPERIOD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 36, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSTANDINGORDER_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 264, 81, 96, 111
+	CONTROL	"", EDITSTANDINGORDER_MDOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 104, 12, WS_EX_CLIENTEDGE
+	CONTROL	"", EDITSTANDINGORDER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 99, 94, 13, WS_EX_CLIENTEDGE
+	CONTROL	"v", EDITSTANDINGORDER_PERSONBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 172, 99, 13, 13
+	CONTROL	"OK", EDITSTANDINGORDER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 284, 214, 53, 12
+	CONTROL	"Cancel", EDITSTANDINGORDER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 214, 53, 12
+	CONTROL	"Starting Date", EDITSTANDINGORDER_SC_IDAT, "Static", WS_CHILD, 12, 11, 49, 12
+	CONTROL	"Ending date:", EDITSTANDINGORDER_SC_EDAT, "Static", WS_CHILD, 12, 25, 52, 13
+	CONTROL	"Record day in month:", EDITSTANDINGORDER_SC_BOEKDAG, "Static", WS_CHILD, 12, 44, 68, 12
+	CONTROL	"Period (months):", EDITSTANDINGORDER_FIXEDTEXT7, "Static", WS_CHILD, 12, 59, 64, 12
+	CONTROL	"Giver:", EDITSTANDINGORDER_GIVERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 99, 53, 13
+	CONTROL	"Document id:", EDITSTANDINGORDER_SC_BST, "Static", WS_CHILD, 12, 81, 43, 12
+	CONTROL	"", EDITSTANDINGORDER_STORDERLINES, "static", WS_CHILD|WS_BORDER, 4, 118, 388, 86
+	CONTROL	"Total:", EDITSTANDINGORDER_SC_TOTAL, "Static", WS_CHILD, 4, 211, 22, 12
+	CONTROL	"", EDITSTANDINGORDER_TOTALTEXT, "Static", WS_CHILD|WS_BORDER, 36, 210, 73, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Currency:", EDITSTANDINGORDER_FIXEDTEXT13, "Static", WS_CHILD, 216, 81, 43, 12
+	CONTROL	"Last booked:", EDITSTANDINGORDER_FIXEDTEXT10, "Static", WS_CHILD, 296, 22, 53, 12
+	CONTROL	"", EDITSTANDINGORDER_DATLTSBOEK, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 22, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Order#:", EDITSTANDINGORDER_FIXEDTEXT11, "Static", WS_CHILD, 296, 7, 53, 12
+	CONTROL	"", EDITSTANDINGORDER_STORDRID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 7, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"Changed:", EDITSTANDINGORDER_FIXEDTEXT12, "Static", WS_CHILD, 296, 37, 54, 12
+	CONTROL	"", EDITSTANDINGORDER_LSTCHANGED, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 37, 40, 12, WS_EX_CLIENTEDGE
+	CONTROL	"By:", EDITSTANDINGORDER_FIXEDTEXT14, "Static", WS_CHILD, 296, 52, 54, 12
+	CONTROL	"", EDITSTANDINGORDER_USERID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 51, 40, 13, WS_EX_CLIENTEDGE
+END
+
 CLASS EditStandingOrder INHERIT DataWindowExtra 
 
 	PROTECT oDCmIDAT AS DATETIMEPICKER
@@ -50,6 +86,10 @@ CLASS EditStandingOrder INHERIT DataWindowExtra
 	PROTECT oDCDATLTSBOEK AS SINGLELINEEDIT
 	PROTECT oDCFixedText11 AS FIXEDTEXT
 	PROTECT oDCSTORDRID AS SINGLELINEEDIT
+	PROTECT oDCFixedText12 AS FIXEDTEXT
+	PROTECT oDCLstChanged AS SINGLELINEEDIT
+	PROTECT oDCFixedText14 AS FIXEDTEXT
+	PROTECT oDCUserid AS SINGLELINEEDIT
 	PROTECT oSFStOrderLines AS StOrderLines
 
 	//{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
@@ -76,36 +116,6 @@ CLASS EditStandingOrder INHERIT DataWindowExtra
 	
 	declare method UpdateStOrd,UpdStOrdLn,ValidateHelpLine, ValidateBooking
 	
-RESOURCE EditStandingOrder DIALOGEX  41, 37, 399, 234
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"30-12-2013", EDITSTANDINGORDER_MIDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 11, 74, 13
-	CONTROL	"30-12-2013", EDITSTANDINGORDER_MEDAT, "SysDateTimePick32", WS_TABSTOP|WS_CHILD, 80, 29, 74, 14
-	CONTROL	"", EDITSTANDINGORDER_MDAY, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 44, 36, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Period", EDITSTANDINGORDER_MPERIOD, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 59, 36, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITSTANDINGORDER_MCURRENCY, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 264, 81, 96, 111
-	CONTROL	"", EDITSTANDINGORDER_MDOCID, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 81, 104, 12, WS_EX_CLIENTEDGE
-	CONTROL	"", EDITSTANDINGORDER_MPERSON, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 80, 99, 94, 13, WS_EX_CLIENTEDGE
-	CONTROL	"v", EDITSTANDINGORDER_PERSONBUTTON, "Button", WS_CHILD|NOT WS_VISIBLE, 172, 99, 13, 13
-	CONTROL	"OK", EDITSTANDINGORDER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 284, 214, 53, 12
-	CONTROL	"Cancel", EDITSTANDINGORDER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 214, 53, 12
-	CONTROL	"Starting Date", EDITSTANDINGORDER_SC_IDAT, "Static", WS_CHILD, 12, 11, 49, 12
-	CONTROL	"Ending date:", EDITSTANDINGORDER_SC_EDAT, "Static", WS_CHILD, 12, 25, 52, 13
-	CONTROL	"Record day in month:", EDITSTANDINGORDER_SC_BOEKDAG, "Static", WS_CHILD, 12, 44, 68, 12
-	CONTROL	"Period (months):", EDITSTANDINGORDER_FIXEDTEXT7, "Static", WS_CHILD, 12, 59, 64, 12
-	CONTROL	"Giver:", EDITSTANDINGORDER_GIVERTEXT, "Static", WS_CHILD|NOT WS_VISIBLE, 12, 99, 53, 13
-	CONTROL	"Document id:", EDITSTANDINGORDER_SC_BST, "Static", WS_CHILD, 12, 81, 43, 12
-	CONTROL	"", EDITSTANDINGORDER_STORDERLINES, "static", WS_CHILD|WS_BORDER, 4, 118, 388, 86
-	CONTROL	"Total:", EDITSTANDINGORDER_SC_TOTAL, "Static", WS_CHILD, 4, 211, 22, 12
-	CONTROL	"", EDITSTANDINGORDER_TOTALTEXT, "Static", WS_CHILD|WS_BORDER, 36, 210, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Currency:", EDITSTANDINGORDER_FIXEDTEXT13, "Static", WS_CHILD, 216, 81, 43, 12
-	CONTROL	"Last booked:", EDITSTANDINGORDER_FIXEDTEXT10, "Static", WS_CHILD, 296, 22, 53, 12
-	CONTROL	"", EDITSTANDINGORDER_DATLTSBOEK, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 22, 40, 12, WS_EX_CLIENTEDGE
-	CONTROL	"Order#:", EDITSTANDINGORDER_FIXEDTEXT11, "Static", WS_CHILD, 296, 7, 53, 12
-	CONTROL	"", EDITSTANDINGORDER_STORDRID, "Edit", ES_READONLY|ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 352, 7, 40, 12, WS_EX_CLIENTEDGE
-END
-
 METHOD CancelButton( ) CLASS EditStandingOrder
 SELF:ENDWindow()
 RETURN NIL
@@ -233,6 +243,18 @@ oDCSTORDRID := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_STORDRID,_GetIns
 oDCSTORDRID:FieldSpec := PeriodicRec_STORDRID{}
 oDCSTORDRID:HyperLabel := HyperLabel{#STORDRID,NULL_STRING,NULL_STRING,NULL_STRING}
 
+oDCFixedText12 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT12,_GetInst()}}
+oDCFixedText12:HyperLabel := HyperLabel{#FixedText12,"Changed:",NULL_STRING,NULL_STRING}
+
+oDCLstChanged := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_LSTCHANGED,_GetInst()}}
+oDCLstChanged:HyperLabel := HyperLabel{#LstChanged,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCFixedText14 := FixedText{SELF,ResourceID{EDITSTANDINGORDER_FIXEDTEXT14,_GetInst()}}
+oDCFixedText14:HyperLabel := HyperLabel{#FixedText14,"By:",NULL_STRING,NULL_STRING}
+
+oDCUserid := SingleLineEdit{SELF,ResourceID{EDITSTANDINGORDER_USERID,_GetInst()}}
+oDCUserid:HyperLabel := HyperLabel{#Userid,NULL_STRING,NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Edit Standing Order"
 SELF:HyperLabel := HyperLabel{#EditStandingOrder,"Edit Standing Order",NULL_STRING,NULL_STRING}
 SELF:PreventAutoLayout := True
@@ -250,6 +272,13 @@ oSFStOrderLines:show()
 self:PostInit(oWindow,iCtlID,oServer,uExtra)
 
 return self
+
+ACCESS LstChanged() CLASS EditStandingOrder
+RETURN SELF:FieldGet(#LstChanged)
+
+ASSIGN LstChanged(uValue) CLASS EditStandingOrder
+SELF:FieldPut(#LstChanged, uValue)
+RETURN uValue
 
 ACCESS lstrecording() CLASS EditStandingOrder
 RETURN self:FIELDGET(#LstRecording)
@@ -294,13 +323,14 @@ SELF:FieldPut(#mPerson, uValue)
 RETURN uValue
 
 METHOD OKButton( ) CLASS EditStandingOrder
-	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp 
 	Local nSeq:=1,nErr,nCH,nAG,nPF,nMG as int
-	local cStatement,cSep as string
-	local oStmnt as SQLStatement
-	local lError as logic
-	local aGCAcc:={} as array  // array with assessment codes and account id's of lines 
 	local cPersid as string
+	local cStatement,cSep as string 
+	local lError as logic
+	local lChanged as logic
+	local aGCAcc:={} as array  // array with assessment codes and account id's of lines 
+	local oStmnt as SQLStatement
+	LOCAL oStOrdLH:=self:oSFStOrderLines:server as StOrdLineHelp 
 	IF self:ValidatePeriodic() .and. self:ValidateHelpLine(false,@nErr) .and. self:ValidateBooking(oStOrdLH)
 		if Len(oStOrdLH:aMirror)=0 .or. AScan(oStOrdLH:aMirror,{|x|x[2]<>x[1]})=0
 			if !lNew
@@ -313,7 +343,7 @@ METHOD OKButton( ) CLASS EditStandingOrder
 			cPersid:=self:mCLNFrom
 		else
 			cPersid:=self:mCLN
-		endif
+		endif 
 		oStmnt:=SQLStatement{"set autocommit=0",oConn}
 		oStmnt:execute()
 		oStmnt:=SQLStatement{'lock tables `standingorder` write,`standingorderline` write',oConn} 
@@ -327,11 +357,14 @@ METHOD OKButton( ) CLASS EditStandingOrder
 			",`period`="+Str(self:mperiod,-1)+;
 			",currency='"+self:mCurrency+"'"+;
 			",persid='"+Str(val(cPersid),-1)+"'"+;
-			iif(lNew,""," where stordrid="+ self:curStordid)
+			iif(lNew,",userid='"+LOGON_EMP_ID+"',lstchange=CURDATE()"," where stordrid="+ self:curStordid)
 		// 		iif(!Empty(self:mCLN),",persid="+self:mCLN,iif(!Empty(self:mCLNFrom),",persid="+self:mCLNFrom,""))+;
 		oStmnt:=SQLStatement{cStatement,oConn}
 		oStmnt:Execute()
-		if oStmnt:NumSuccessfulRows>0 .or.Empty(oStmnt:Status)
+		if oStmnt:NumSuccessfulRows>0 .or.Empty(oStmnt:Status) 
+			if oStmnt:NumSuccessfulRows>0
+				lChanged:=true
+			endif 
 			// save Standing Order Lines: 
 			oStOrdLH:GoTop() 
 			if self:lNew 
@@ -346,7 +379,7 @@ METHOD OKButton( ) CLASS EditStandingOrder
 					oStOrdLH:Skip()
 				enddo				
 			else
-				if !self:UpdateStOrd()
+				if !self:UpdateStOrd(@lChanged)
 					lError:=true
 				endif
 			endif
@@ -360,6 +393,10 @@ METHOD OKButton( ) CLASS EditStandingOrder
 				lError:=true
 			endif
 		endif
+		if !lError .and. !self:lNew .and. lChanged
+			oStmnt:=SQLStatement{"update `standingorder` set `userid`='"+LOGON_EMP_ID+"',`lstchange`=curdate() where stordrid="+ self:curStordid,oConn}
+			oStmnt:Execute()
+		endif  
 		if !lError
 			SQLStatement{"commit",oConn}:execute()
 			SQLStatement{"unlock tables",oConn}:execute()
@@ -414,7 +451,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditStandingOrder
 		self:oDCmEDAT:SelectedDate := oPer:Edat
 		self:mday := oPer:day
 		self:mdocid := oPer:docid 
-		self:DATLTSBOEK:=oPer:lstrecording
+		self:DATLTSBOEK:=oPer:lstrecording 
+		self:LstChanged:=oPer:LstChange
+		self:Userid:=oPer:Userid
 		self:oStOrdL := SqlSelect{"Select l.*,a.accnumber,a.description as accountname,a.department as depid,"+SQLAccType()+" as accounttype,"+SQLIncExpFd()+" as incexpfd,m.co,m.persid as persid"+;
 			" from standingorderline as l left join account as a on (a.accid=l.accountid) left join member m on (a.accid=m.accid or m.depid=a.department)"+;
 			" left join department d on (d.depid=a.department)"+;
@@ -462,7 +501,8 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditStandingOrder
    self:lNew:=uExtra
 	if !self:lNew 
 		self:curStordid:=Str(oServer:stordrid,-1)
-		self:oStOrdr:=SqlSelect{"select s.stordrid,s.persid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,s.currency from standingorder s where s.stordrid="+self:curStordid,oConn} 
+		self:oStOrdr:=SqlSelect{"select s.stordrid,s.persid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
+		"s.currency,cast(s.lstchange as date) as lstchange,s.userid from standingorder s where s.stordrid="+self:curStordid,oConn} 
 		self:oStOrdr:Execute()
 	endif
 	return nil
@@ -473,13 +513,23 @@ ASSIGN STORDRID(uValue) CLASS EditStandingOrder
 SELF:FieldPut(#STORDRID, uValue)
 RETURN uValue
 
+ACCESS Userid() CLASS EditStandingOrder
+RETURN SELF:FieldGet(#Userid)
+
+ASSIGN Userid(uValue) CLASS EditStandingOrder
+SELF:FieldPut(#Userid, uValue)
+RETURN uValue
+
 STATIC DEFINE EDITSTANDINGORDER_CANCELBUTTON := 109 
 STATIC DEFINE EDITSTANDINGORDER_DATLTSBOEK := 121 
 STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT10 := 120 
 STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT11 := 122 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT12 := 124 
 STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT13 := 119 
+STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT14 := 126 
 STATIC DEFINE EDITSTANDINGORDER_FIXEDTEXT7 := 113 
 STATIC DEFINE EDITSTANDINGORDER_GIVERTEXT := 114 
+STATIC DEFINE EDITSTANDINGORDER_LSTCHANGED := 125 
 STATIC DEFINE EDITSTANDINGORDER_MCURRENCY := 104 
 STATIC DEFINE EDITSTANDINGORDER_MDAY := 102 
 STATIC DEFINE EDITSTANDINGORDER_MDOCID := 105 
@@ -497,6 +547,7 @@ STATIC DEFINE EDITSTANDINGORDER_SC_TOTAL := 117
 STATIC DEFINE EDITSTANDINGORDER_STORDERLINES := 116 
 STATIC DEFINE EDITSTANDINGORDER_STORDRID := 123 
 STATIC DEFINE EDITSTANDINGORDER_TOTALTEXT := 118 
+STATIC DEFINE EDITSTANDINGORDER_USERID := 127 
 STATIC DEFINE PERIODICBROWSER_ACCBUTTONFROM := 109 
 STATIC DEFINE PERIODICBROWSER_CANCELBUTTON := 104 
 STATIC DEFINE PERIODICBROWSER_CANCELBUTTON5 := 102 
@@ -539,28 +590,6 @@ STATIC DEFINE PERIODICBROWSER_SEARCHREK6 := 104
 STATIC DEFINE PERIODICBROWSER_SEARCHREKOLD := 106 
 STATIC DEFINE PERIODICBROWSER_SEARCHUNI := 114 
 STATIC DEFINE PROGRESSPER_CANCELBUTTON := 100 
-RESOURCE StandingOrderBrowser DIALOGEX  10, 11, 561, 262
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"", STANDINGORDERBROWSER_PERIODICBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 12, 51, 461, 197
-	CONTROL	"Edit", STANDINGORDERBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 488, 70, 53, 12
-	CONTROL	"New", STANDINGORDERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 108, 53, 13
-	CONTROL	"Delete", STANDINGORDERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 147, 53, 12
-	CONTROL	"Cancel", STANDINGORDERBROWSER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 185, 52, 13
-	CONTROL	"Account:", STANDINGORDERBROWSER_SC_REK, "Static", WS_CHILD, 12, 8, 40, 12
-	CONTROL	"Periodic amounts", STANDINGORDERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 40, 544, 217
-	CONTROL	"", STANDINGORDERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 7, 72, 12, WS_EX_CLIENTEDGE
-	CONTROL	"v", STANDINGORDERBROWSER_ACCBUTTONFROM, "Button", WS_CHILD, 132, 7, 16, 12
-	CONTROL	"lines", STANDINGORDERBROWSER_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 328, 3, 53, 13
-	CONTROL	"", STANDINGORDERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 3, 36, 13
-	CONTROL	"Found:", STANDINGORDERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 3, 27, 13
-	CONTROL	"Find", STANDINGORDERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 192, 3, 53, 13
-	CONTROL	"", STANDINGORDERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 22, 116, 12
-	CONTROL	"Universal:", STANDINGORDERBROWSER_FIXEDTEXT5, "Static", WS_CHILD, 12, 22, 44, 12
-	CONTROL	"Search", STANDINGORDERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 184, 40
-END
-
 CLASS StandingOrderBrowser INHERIT DataWindowExtra 
 
 	PROTECT oDBSEARCHREKOLD as DataColumn
@@ -588,6 +617,28 @@ CLASS StandingOrderBrowser INHERIT DataWindowExtra
 	export cWhere,cOrder,cFields,cFrom as string 
 	protect cAccId as string 
 	protect aFields:={} as array
+RESOURCE StandingOrderBrowser DIALOGEX  10, 11, 561, 262
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"", STANDINGORDERBROWSER_PERIODICBROWSER_DETAIL, "static", WS_CHILD|WS_BORDER, 12, 51, 461, 197
+	CONTROL	"Edit", STANDINGORDERBROWSER_EDITBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 488, 70, 53, 12
+	CONTROL	"New", STANDINGORDERBROWSER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 108, 53, 13
+	CONTROL	"Delete", STANDINGORDERBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 147, 53, 12
+	CONTROL	"Cancel", STANDINGORDERBROWSER_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 488, 185, 52, 13
+	CONTROL	"Account:", STANDINGORDERBROWSER_SC_REK, "Static", WS_CHILD, 12, 8, 40, 12
+	CONTROL	"Periodic amounts", STANDINGORDERBROWSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 40, 544, 217
+	CONTROL	"", STANDINGORDERBROWSER_SEARCHREK, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 7, 72, 12, WS_EX_CLIENTEDGE
+	CONTROL	"v", STANDINGORDERBROWSER_ACCBUTTONFROM, "Button", WS_CHILD, 132, 7, 16, 12
+	CONTROL	"lines", STANDINGORDERBROWSER_FIXEDTEXT4, "Static", SS_CENTERIMAGE|WS_CHILD, 328, 3, 53, 13
+	CONTROL	"", STANDINGORDERBROWSER_FOUND, "Static", SS_CENTERIMAGE|WS_CHILD, 288, 3, 36, 13
+	CONTROL	"Found:", STANDINGORDERBROWSER_FOUNDTEXT, "Static", SS_CENTERIMAGE|WS_CHILD, 260, 3, 27, 13
+	CONTROL	"Find", STANDINGORDERBROWSER_FINDBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 192, 3, 53, 13
+	CONTROL	"", STANDINGORDERBROWSER_SEARCHUNI, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 60, 22, 116, 12
+	CONTROL	"Universal:", STANDINGORDERBROWSER_FIXEDTEXT5, "Static", WS_CHILD, 12, 22, 44, 12
+	CONTROL	"Search", STANDINGORDERBROWSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 4, 0, 184, 40
+END
+
 METHOD AccButtonFrom(lUnique ) CLASS StandingOrderBrowser 
 	Default(@lUnique,FALSE)	
 	AccountSelect(self,AllTrim(self:oDCSearchRek:TEXTValue ),"Account from",lUnique,"a.active=1")
@@ -681,7 +732,7 @@ LOCAL nBlad AS INT
 LOCAL oReport AS PrintDialog
 LOCAL cTab:=CHR(9) as STRING
 
-oReport := PrintDialog{self,self:oLan:WGet("Standing Orders"),,138,,"xls"}
+oReport := PrintDialog{self,self:oLan:WGet("Standing Orders"),,158,,"xls"}
 oReport:Show()
 IF .not.oReport:lPrintOk
 	RETURN FALSE
@@ -698,12 +749,14 @@ ENDIF
 AAdd(aHeading,;
 oLan:RGet("Order#",6,"@!")+cTab+oLan:RGet("account",21,"@!")+cTab+oLan:RGet("STARTDATE",10,"@!")+cTab;
 +oLan:RGet("RECORDDAY",9,"@!")+cTab+oLan:RGet("PERIOD",6,"@!")+cTab+oLan:RGet("Deb",11,"@!","R")+cTab+oLan:RGet("Cre",11,"@!","R")+cTab+oLan:RGet("ENDDATE",10,"@!")+cTab+oLan:RGet("LST BOOKED",10,"@!")+cTab;
-+oLan:RGet("DESCRIPTION",,"@!")) 
++oLan:RGet("Changed",10,'@!')+cTab+oLan:RGet("Employee",8,'@!')+cTab+oLan:RGet("DESCRIPTION",,"@!")) 
 self:oStOrd:goTop()
 do WHILE !self:oStOrd:EOF
 	oReport:PrintLine(@nRij,@nBlad,Str(self:oStOrd:STORDRID,6,0)+cTab+ Pad(Transform(self:oStOrd:ACCNUMBER,"")+Space(1)+Transform(self:oStOrd:accountname,""),21)+cTab+;
 	DToC(self:oStOrd:IDAT)+cTab+PadC(Transform(self:oStOrd:day,'999'),9)+cTab+PadC(Transform(self:oStOrd:period,'999'),6)+cTab+;
-	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+DToC(iif(Empty(self:oStOrd:edat),null_date,self:oStOrd:edat))+cTab+DToC(iif(Empty(self:oStOrd:lstrecording),null_date,self:oStOrd:lstrecording))+cTab+self:oStOrd:DESCRIPTN,aHeading,0)
+	Str(self:oStOrd:deb,11,2)+cTab+Str(self:oStOrd:cre,11,2)+cTab+DToC(iif(Empty(self:oStOrd:edat),null_date,self:oStOrd:edat))+cTab+;
+	DToC(iif(Empty(self:oStOrd:lstrecording),null_date,self:oStOrd:lstrecording))+;
+	cTab+DToC(iif(Empty(self:oStOrd:lstchange),null_date,self:oStOrd:lstchange))+cTab+PadL(self:oStOrd:userid,8)+cTab+ self:oStOrd:DESCRIPTN,aHeading,0)
 	self:oStOrd:skip()
 ENDDO
 oReport:prstart()
@@ -860,9 +913,9 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser
 	self:cWhere:=""
 	self:cOrder:="l.stordrid,l.seqnr" 
 	self:cFields:="s.stordrid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
-	 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber"
+	 		"l.accountid,l.deb,l.cre,l.descriptn,l.accountid,a.description as accountname,a.accnumber,cast(s.lstchange as date) as lstchange,s.userid"
 	self:aFields:={"s.stordrid","s.day","s.period","s.idat","s.edat","s.lstrecording","s.docid",""+;
-		"l.accountid","l.deb","l.cre","l.descriptn","l.accountid","a.description","a.accnumber"}
+		"l.accountid","l.deb","l.cre","l.descriptn","l.accountid","a.description","a.accnumber","s.userid","s.lstchange"}
 	self:cFrom:="standingorder s, standingorderline l left join account a on (a.accid=l.accountid)"
 // 	self:oStOrd:=SQLSelect{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder,oConn}
 	self:oStOrd:=SQLSelectPagination{"select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid order by "+self:cOrder,oConn}
