@@ -212,8 +212,9 @@ METHOD Totalise(lDelete) CLASS EditStandingOrder
 	ENDIF
 
 	RETURN
-METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditStandingOrder
-	* Update order lines of an existing Standing Order with the modified data in StOrdLineHelp:
+METHOD UpdateStOrd(lChanged ref logic) as logic CLASS EditStandingOrder
+	* Update order lines of an existing Standing Order with the modified data in StOrdLineHelp: 
+	// lChanged returned : true if something has been changed in the database
 	LOCAL oOrig,oNew:=self:oSFStOrderLines:server as StOrdLineHelp
 
 	LOCAL  NewMut,OrigSpec as FileSpec, NewIndex, OrigMut, OrigIndex as string
@@ -356,6 +357,9 @@ METHOD UpdateStOrd(dummy:=nil as logic) as logic CLASS EditStandingOrder
 	if lError
 		return false
 	else
+		if lUpdated .or. lDeleted
+			lChanged:=true
+		endif
 		RETURN true
 	endif
 	
@@ -392,10 +396,10 @@ METHOD ValidateBooking( oStOrdLH as StOrdLineHelp) as logic CLASS EditStandingOr
 	dNextBookDate := Getvaliddate(self:mday,Month(oDCmIDAT:SelectedDate),Year(oDCmIDAT:SelectedDate))
 	//If there where earlier bookings, find out when the next booking is
 	IF !IsNil(oPer) 
-		IF IsObject(oPer:lstrecording)
+		IF IsObject(oPer) .and. IsDate(oPer:lstrecording)
 			dNextBookDate := Getvaliddate(self:mday,Month(oPer:lstrecording)+self:mperiod,Year(oPer:lstrecording)) 
-		END IF
-	END IF  	             
+		ENDIF
+	ENDIF  	             
 	
 	
 	// check startdate < today, enddate in the future and latestbooking longer then one period ago
@@ -712,7 +716,7 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 			AAdd(self:aTrans,{Str(oStOrdL:ACCOUNTID,-1),SQLdate(datum),AddSlashes(oStOrdL:DESCRIPTN),AddSlashes(oStOrdL:DOCID),Deb,cre,DEBFORGN,CREFORGN,;
 				TransCurr,oStOrdL:gc,;
 				iif(ConI(oStOrdL:GIFTALWD)==1.and.!Empty(oStOrdL:persid).and.cre>Deb.and.!Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:persid,iif(Str(oStOrdL:ACCOUNTID,-1)==sCRE,oStOrdL:CREDITOR,0)),;
-				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,1,nTrans} ) 
+				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),iif(Empty(oStOrdL:userid),LOGON_EMP_ID,oStOrdL:userid),1,nTrans} ) 
 			// 				AddSlashes(oStOrdL:REFERENCE),Str(oStOrdL:seqnr,-1),LOGON_EMP_ID,iif(Empty(mBank),1,2),nTrans} ) 
 			if !Empty(mBank)
 				// save banknumber
@@ -760,7 +764,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		self:oCurr:=Currency{"Recording standing orders"}
 	endif
 	oStOrdL:=SqlSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
-		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,"+;
+		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,s.userid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,b.banknumber,l.reference,l.seqnr,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active,a.department"+;
 		" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) "+; 
