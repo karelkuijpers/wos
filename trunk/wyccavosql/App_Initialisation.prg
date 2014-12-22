@@ -1649,6 +1649,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""},; 
+		{"standingorder","userid","varchar(33)","NO","",""},;
+		{"standingorder","lstchange","date","NO","0000-00-00",""},;
 	{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
