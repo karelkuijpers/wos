@@ -685,7 +685,7 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 						endif
 					endif
 				endif
-			elseif Empty(oStOrdL:gc) .and.nDep>0 .and. !oStOrdL:department==nDep
+			elseif Empty(oStOrdL:gc) .or.(nDep>0 .and. !oStOrdL:department==nDep)
 				lPosted:=false
 			endif
 		ENDIF
