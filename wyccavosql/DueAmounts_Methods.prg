@@ -45,9 +45,11 @@ METHOD RegPerson(oCLN) CLASS DueAmountBrowser
 		self:cOrder:="a.description"
 	endif
 	self:oDue:SQLString:="select "+self:cFields+" from "+self:cFrom+" where "+self:cWhere+" order by "+self:cOrder 
-	self:oDue:Execute() 
-	self:oSFDueAmountBrowser_DETAIL:Browser:Refresh()
-	self:GoTop()
-	self:oDCFound:TEXTValue:=Str(self:oDue:RecCount,-1)
+	self:oDue:Execute()
+	if IsObject(self:oSFDueAmountBrowser_DETAIL:Browser) .and.!Empty(self:oSFDueAmountBrowser_DETAIL:Browser) 
+		self:oSFDueAmountBrowser_DETAIL:Browser:Refresh()
+		self:GoTop()
+		self:oDCFound:TEXTValue:=Str(self:oDue:RecCount,-1)
+	endif
 
 RETURN TRUE
