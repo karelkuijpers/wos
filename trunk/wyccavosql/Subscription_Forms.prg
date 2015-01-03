@@ -1727,6 +1727,7 @@ self:SetTexts()
 	if self:oOwner:mtype="G"
 		self:Browser:RemoveColumn(self:odbduedate)
 		self:Browser:RemoveColumn(self:oDBFREQ)
+		self:Browser:removecolumn(self:oDBBLOCKEDDESCR)
 	endif
 	self:Browser:RemoveColumn(self:oDBCATDESC)
 	
