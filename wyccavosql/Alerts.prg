@@ -237,13 +237,15 @@ Method CollectSuspense(lAlert:=false as logic) as array class AlertSuspense
 			AAdd(aSuspense,{oSel:accid,oSel:accnumber,oSel:description,'n'})
 		endif
 	endif
-	// add accounts to be monitored:
-	oSel:=SqlSelect{"select accid,accnumber,description from account where monitor=1 "+iif(Empty(aSuspense),''," and accid not in ("+Implode(aSuspense,',',,,1)+')') ,oConn}   
-	if oSel:RecCount>0 
-		do while !oSel:EOF
-			AAdd(aSuspense,{oSel:accid,oSel:accnumber,oSel:description,'m'})
-			oSel:skip()
-		enddo
+	if !lAlert
+		// add accounts to be monitored:
+		oSel:=SqlSelect{"select accid,accnumber,description from account where monitor=1 "+iif(Empty(aSuspense),''," and accid not in ("+Implode(aSuspense,',',,,1)+')') ,oConn}   
+		if oSel:RecCount>0 
+			do while !oSel:EOF
+				AAdd(aSuspense,{oSel:accid,oSel:accnumber,oSel:description,'m'})
+				oSel:skip()
+			enddo
+		endif 
 	endif
 	ASort(aSuspense,,,{|x,y|x[2]<=y[2]})
 	return aSuspense
