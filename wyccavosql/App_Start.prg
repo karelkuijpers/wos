@@ -28,6 +28,7 @@ method Start() class App
 	local oNew as NewPasswordDialog 
 	local oStJournal as StandingOrderJournal
 	local oUpg as CheckUPGRADE
+	local oYrCl as YearClosing
 
 	// cbError := ErrorBlock( {|e|_Break(e)} )
 	BEGIN SEQUENCE
@@ -160,6 +161,7 @@ method Start() class App
 			IF AScan(aMenu,{|x| x[4]=="Reevaluation"})>0
 				Reevaluation{oMainWindow}:ReEvaluate()				
 			ENDIF 
+
 			// Idem for alert: 
 			IF AScan(aMenu,{|x| x[4]=="CheckSuspense"})>0
 				AlertSuspense{}:Alert()				
@@ -170,6 +172,13 @@ method Start() class App
 			if FirstLogin
 				AlertNew{}:ShowNew()
 			endif
+			// Idem for year closing:
+			IF AScan(aMenu,{|x| x[4]=="YearClosing"})>0
+				oYrCl:=YearClosing{}
+				if oYrCl:CheckYearClosing(oMainWindow)
+					oYrCl:Show()
+				endif				
+			ENDIF 
 			oMainWindow:Pointer := Pointer{POINTERARROW}
 			self:Exec()
 			// RECOVER USING oError	 
