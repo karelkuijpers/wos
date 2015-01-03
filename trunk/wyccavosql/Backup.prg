@@ -81,7 +81,7 @@ method Init(oWindow,cBackupPath) class BackupDatabase
 			// determine backfilename 
 			nTimeSep:=SetTimeSep(Asc('_'))
 			lAmPM:=SetAmPm(false) 
-			if Admin=="WO" .and. !sEntity=="NED" .and. (servername=="localhost" .or. servername=="127.0.0.1") 
+			if Admin=="WO" .and. !sEntity=="NED" .and. (servername=="localhost" .or. servername=="127.0.0.1") .and. !Superuser
 // 			if Admin=="WO" .and. (servername=="localhost" .or. servername=="127.0.0.1") 
 				GetHelpDir()
 				self:backupfilename:=HelpDir+'\'+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql.gz'
