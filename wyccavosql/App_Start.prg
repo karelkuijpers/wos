@@ -82,29 +82,25 @@ method Start() class App
 			// Open main shell window
 
 			WycIniFS := IniFileSpec{ "WYC" }
-// 			if oMainWindow==null_object
-// 				oMainWindow := StandardWycWindow{self}
-// 			endif
+			// 			if oMainWindow==null_object
+			// 				oMainWindow := StandardWycWindow{self}
+			// 			endif
 			mainsize:=oMainWindow:Size
 			WinScale:=mainsize:Width/808.00
-// 			IF (WycIniFS:GetInt( "Runtime", "Maximized" ) # 1 )
-// 				oMainWindow:Show(SHOWCENTERED)
-// 				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
-// 			ENDIF
+			// 			IF (WycIniFS:GetInt( "Runtime", "Maximized" ) # 1 )
+			// 				oMainWindow:Show(SHOWCENTERED)
+			// 				mainsize:=Dimension{WycIniFS:GetInt( "Runtime", "Maximized" )}
+			// 			ENDIF
 			oInit:Initialize(oUpg:DBVers,oUpg:PrgVers,oUpg:DBVersDate,oUpg:PrgVersDate) 
 			oUpg:=null_object
 			FirstOfDay:=oInit:FirstOfDay 
-			IF FirstOfDay
-				// Backup if needed:
-				BackupDatabase{oMainWindow}:MakeBackup() 
-			endif
 			oInit:=null_object 
 			SetDeleted( true )
 			
 			#IFNDEF __debug__
 				// 		(SplashScreen{self}):Show()
 			#ENDIF		 
- 			oMainWindow:Pointer := Pointer{POINTERARROW}
+			oMainWindow:Pointer := Pointer{POINTERARROW}
 
 			If IsFirstUse( (cUser:=self:GetUser()))
 				( FirstUser{ oMainWindow ,,, cUser } ):Show()
@@ -140,6 +136,8 @@ method Start() class App
 			oMainWindow:Menu:ToolBar:Hide()
 			// Run program
 			IF FirstOfDay
+				// Backup if needed:
+				BackupDatabase{oMainWindow}:MakeBackup() 
 				if BackupToLocal
 					BackupDatabase{oMainWindow}:MakeBackupToLocal(false) 
 				endif
@@ -163,22 +161,22 @@ method Start() class App
 			ENDIF 
 
 			// Idem for alert: 
-			IF AScan(aMenu,{|x| x[4]=="CheckSuspense"})>0
-				AlertSuspense{}:Alert()				
-			ENDIF 
-			IF FirstLogin.and.AScan(aMenu,{|x| x[4]=="CheckBankBalance"})>0
-				AlertBankbalance{}:Alert()				
-			ENDIF
-			if FirstLogin
-				AlertNew{}:ShowNew()
-			endif
-			// Idem for year closing:
-			IF AScan(aMenu,{|x| x[4]=="YearClosing"})>0
-				oYrCl:=YearClosing{}
-				if oYrCl:CheckYearClosing(oMainWindow)
-					oYrCl:Show()
+			IF FirstLogin .or. FirstOfDay
+				IF	AScan(aMenu,{|x| x[4]=="CheckSuspense"})>0
+					AlertSuspense{}:Alert()				
+				ENDIF 
+				if AScan(aMenu,{|x| x[4]=="CheckBankBalance"})>0
+					AlertBankbalance{}:Alert()
 				endif				
-			ENDIF 
+				AlertNew{}:ShowNew()
+				//	Idem for	year closing:
+				IF AScan(aMenu,{|x| x[4]=="YearClosing"})>0
+					oYrCl:=YearClosing{}
+					if oYrCl:CheckYearClosing(oMainWindow)
+						oYrCl:Show()
+					endif				
+				ENDIF 
+			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
 			self:Exec()
 			// RECOVER USING oError	 
