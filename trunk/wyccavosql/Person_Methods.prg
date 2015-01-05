@@ -2599,15 +2599,15 @@ METHOD INIT(oParent , uExtra , oPerson ) CLASS SelPers
 		self:oPers:=oPerson
 	ENDIF                                                  
 	self:oLan:=Language{} 
-	cCouple:= oLan:Rget("Mr&Mrs")
-	cMr:= oLan:Rget("Mr",,"!")
-	cMrs:= oLan:Rget("Mrs",,"!")
-	cTel:=oLan:Rget("Telephone",,"!")
-	cDay:=oLan:Rget('at day')
-	cNight:=oLan:Rget("at night")
-	cAbrv:=oLan:Rget("Abbreviated mailingcodes")
-	cFax:=oLan:Rget("fax")
-	cMobile:=oLan:Rget("mobile")
+	cCouple:= self:oLan:Rget("Mr&Mrs")
+	cMr:= self:oLan:Rget("Mr",,"!")
+	cMrs:= self:oLan:Rget("Mrs",,"!")
+	cTel:=self:oLan:Rget("Telephone",,"!")
+	cDay:=self:oLan:Rget('at day')
+	cNight:=self:oLan:Rget("at night")
+	cAbrv:=self:oLan:Rget("Abbreviated mailingcodes")
+	cFax:=self:oLan:Rget("fax")
+	cMobile:=self:oLan:Rget("mobile")
 
 	RETURN SELF
 	
