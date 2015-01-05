@@ -1,3 +1,91 @@
+FUNCTION __OpenErrorLog() as ptr PASCAL
+
+	LOCAL cFile                     as STRING
+	LOCAL cBuffer                   as STRING
+	LOCAL hfRet                     as ptr
+
+	cFile := WorkDir() + FILE_ERRORLOG
+
+	hfRet := FOpen2(cFile, FO_WRITE)
+
+	IF hfRet != F_ERROR
+		FSeek3( hfRet, 0, FS_END)
+		FPutS3( hfRet, "", 0)
+	ELSE
+		hfRet := FCreate2(cFile, FC_ARCHIVED)
+
+		IF FError() = 3                          // path not found
+
+			cFile :=""
+
+			IF !GetDefaultDir() ==""
+				cBuffer :="SetDefaultDir: " +GetDefaultDir()
+				SetDefaultDir(null_psz)
+			ELSE
+				cBuffer :="SetDefault: " +GetDefault()
+				SetDefault(null_string)
+			ENDIF
+
+			_IError(EG_ARG, .F., Cast2Psz(cBuffer))
+
+		ENDIF
+	ENDIF
+
+	RETURN hfRet
+FUNCTION __WriteErrorLog (hf as ptr, cMsg as STRING, oError as OBJECT) as void PASCAL
+   LOCAL cExe		as STRING
+   
+	FPutS(hf, "***********************ERROR********************************")
+// 	FPutS(hf, Version() )
+	FPutS(hf, DToC(Today()) + " " + Time() )
+	cExe	:= _ExecName() 
+	FPutS(hf, "Application: " + cExe )
+	FPutS(hf, " " )
+	FPutS(hf, "Error message:" )
+	FPutS(hf, "--------------" )
+	FPutS(hf, cMsg)
+
+	FPutS(hf, "Error Object created:" )
+	FPutS(hf, "--------------------" )
+	FPutS(hf, "SubSystem       :" + AsString(oError:SubSystem) )
+	FPutS(hf, "SubCode         :" + AsString(oError:SubCode  ) )
+	FPutS(hf, "GenCode         :" + ErrString(oError:GenCode ) )
+
+	IF oError:SubCode = E_EXCEPTION
+		FPutS(hf, "ExceptionCode   :" + AsHexString(oError:OsCode) )
+		FPutS(hf, "ExceptionFlags  :" + AsHexString(oError:ArgType) )
+		FPutS(hf, "ExceptionAddress:" + AsHexString(oError:FuncPtr) )
+		FPutS(hf, "ParamNumber     :" + AsString(oError:ArgNum   ) )
+		FPutS(hf, "ExceptionInfo   :" + AsHexString(oError:FuncSym) )
+
+	ELSE
+
+		FPutS(hf, "OsCode          :" + AsString(oError:OsCode   ) )
+		FPutS(hf, "ArgType         :" + TypeString(oError:ArgType    ) )
+		FPutS(hf, "FuncPtr         :" + AsString(oError:FuncPtr  ) )
+		FPutS(hf, "ArgNum          :" + AsString(oError:ArgNum   ) )
+		FPutS(hf, "FuncSym         :" + AsString(oError:FuncSym  ) )
+
+	ENDIF
+
+	FPutS(hf, "Severity        :" + AsString(oError:Severity ) )
+	FPutS(hf, "CanDefault      :" + AsString(oError:CanDefault))
+	FPutS(hf, "CanRetry        :" + AsString(oError:CanRetry ) )
+	FPutS(hf, "CanSubstitute   :" + AsString(oError:CanSubstitute))
+	FPutS(hf, "Operation       :" + AsString(oError:Operation) )
+	FPutS(hf, "Description     :" + AsString(oError:Description))
+	FPutS(hf, "FileName        :" + AsString(oError:FileName ) )
+	FPutS(hf, "Tries           :" + AsString(oError:Tries    ) )
+	FPutS(hf, "FileHandle      :" + AsString(oError:FileHandle))
+	FPutS(hf, "SubCodeText     :" + AsString(oError:SubCodeText))
+	FPutS(hf, "Arg             :" + AsString(oError:Arg) )
+	FPutS(hf, "ArgTypeReq      :" + TypeString(oError:ArgTypeReq) )
+	FPutS(hf, "MaxSize         :" + AsString(oError:MaxSize      ) )
+	FPutS(hf, "SubstituteType  :" + TypeString(oError:SubstituteType))
+	FPutS(hf, "CallFuncSym     :" + AsString(oError:CallFuncSym ) )
+	FPutS(hf, "--------------------" )
+
+	RETURN
 function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
 	// add new mailing NewCodes to current string of mailing codes cCod
 	LOCAL aPCod,aNCod as ARRAY, iStart as int
@@ -1003,7 +1091,122 @@ METHOD CellDoubleClick() CLASS EditBrowser
 Function EndOfMonth(DateInMonth as date) as date
 // get date of end of month given a certain date
 return SToD(Str(Year(DateInMonth),4,0)+StrZero(Month(DateInMonth),2,0)+StrZero(MonthEnd(Month(DateInMonth),Year(DateInMonth)),2,0))
+FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
+
+	LOCAL cMessage      as STRING
+	LOCAL cArg          as STRING
+	LOCAL dwArgType     as DWORD
+	LOCAL cMessage1     as STRING
+   LOCAL hOldRuntime   as ptr
+
+	IF oError:Severity = ES_WARNING
+		cMessage := "WARNING : "
+	ELSE
+		cMessage := "Error Code: "
+	ENDIF
+
+	cMessage    :=  cMessage + " "
+
+	IF oError:GenCode == 0
+		cMessage +=  oError:Description
+	ELSE
+		cMessage +=  NTrim(oError:GenCode)
+		cMessage += " [ "
+		cMessage +=  Upper(ErrString(oError:GenCode))
+		cMessage += " ]"
+	ENDIF
+
+	cMessage +=  CRLF
+
+	IF !(oError:SubSystem == "")
+		cMessage += "Subsystem: "
+		cMessage += oError:SubSystem
+		cMessage += CRLF
+	ENDIF
+
+	IF oError:SubCode <> 0
+		cMessage1 := "Error Subcode: "
+		cMessage1 += NTrim(oError:SubCode)
+
+		IF SLen(oError:SubCodeText) > 0
+			cMessage1 += " (" + oError:SubCodeText + ")"
+		ENDIF
+
+		cMessage += cMessage1
+		cMessage += CRLF
+
+	ENDIF
+
+	IF SLen(oError:Operation) > 0
+		cMessage += "Operation: "
+		cMessage += oError:Operation
+		cMessage += CRLF
+	ENDIF
+
+	IF oError:FuncSym <> null_symbol
+		cMessage += "Function: "
+		cMessage += Symbol2String(oError:FuncSym)
+		cMessage += CRLF
+	ENDIF
+
+	IF  SLen(oError:FileName) > 0
+		cMessage += "Filename: "
+		cMessage += SubStr(oError:Filename, 1, 40)
+		cMessage += CRLF
+	ENDIF
+
+
+	dwArgType:=DWORD(_cast, oError:ArgType)
+
+	cArg := oError:Arg
+
+	IF SLen(cArg) > 0
+		cMessage += "Argument: "
+		cMessage += cArg
+		cMessage += CRLF
+
+		IF dwArgType <>0
+			cMessage += "Type: "
+			cMessage += TypeString(int(_cast, dwArgType))
+			cMessage += CRLF
+		ENDIF
+	ENDIF
+
+	IF oError:ArgNum <>0
+		cMessage += "Argument Number: "
+		cMessage += NTrim(oError:ArgNum)
+		cMessage += CRLF
+	ENDIF
+
+
+	IF oError:ArgTypeReq <>0 .and. oError:ArgTypeReq <>oError:ArgType
+		cMessage += "Requested type: "
+		cMessage += TypeString(oError:ArgTypeReq)
+		cMessage += CRLF
+	ENDIF
+
+	IF SLen(oError:Description) > 0
+		cMessage += "Description: "
+		cMessage += oError:Description
+		cMessage += CRLF
+	ENDIF
+
+	hOldRuntime := GetModuleHandle(Cast2Psz("CAVORT20.DLL"))
+	IF (hOldRuntime != null_ptr)
+		cMessage += CRLF+"PLEASE NOTE:"+CRLF+"The old runtime CAVORT20.DLL was found in memory"+CRLF
+		cMessage += "This may be the cause of the current runtime error !!"+CRLF+CRLF
+	ELSE
+		hOldRuntime := GetModuleHandle(Cast2Psz("VO27RUN.DLL"))
+		IF (hOldRuntime != null_ptr)
+			cMessage += CRLF+"PLEASE NOTE:"+CRLF+"The Visual Objects 2.7 runtime file VO27RUN.DLL was found in memory"+CRLF
+		ENDIF		
+	ENDIF
+	IF (hOldRuntime != null_ptr)
+		cMessage += "This may be the cause of the current runtime error !!"+CRLF+CRLF
+	ENDIF
+	RETURN cMessage
 DEFINE FEMALE := 1
+DEFINE FILE_ERRORLOG := "VOERROR.LOG"
 function FileStart(cFilename as string, OwnerWindow as Window, cParameters:='' as string ) as dword
 	// start application for processing given filename, e.g word document 
 	LOCAL lpShellInfo is _winShellExecuteInfo
@@ -2834,16 +3037,16 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
 		return true
 	endif 
-// 	if oConn=null_object
-// 		lDBError:=true
-// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
+	// 	if oConn=null_object
+	// 		lDBError:=true
+	// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
 	elseif Logname=='LogFile'
 		lFile:=true  // forced to log to File
 	else
 		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
-		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
 		oStmnt:execute()
 		If !Empty(oStmnt:status)
 			lDBError:=true
@@ -2874,15 +3077,15 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	endif
 	if lDBError.or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
 		ErrorBox{,"MySQL server has gone away:"+CRLF+strText}:Show()
-// 		if !Empty(oStmnt:status) 
-			break
-// 		endif
+		// 		if !Empty(oStmnt:status) 
+		break
+		// 		endif
 	endif
 	if Lower(Logname)=="logerrors"
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
-		iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
 	endif
@@ -3387,6 +3590,175 @@ IF f_month == 2
    ENDIF
 ENDIF
 RETURN f_day
+FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
+
+	LOCAL dwChoice			as DWORD
+	LOCAL cMessage			as STRING
+	LOCAL cTitle			as STRING
+	Local cOs				as string
+	LOCAL dwButtonIgnore	as DWORD
+	LOCAL dwButtonRetry	as DWORD
+	LOCAL dwButtonCancel	as DWORD
+	LOCAL lChoice			as LOGIC
+	LOCAL hf					as ptr
+	LOCAL cStack			as STRING
+	LOCAL oReg 				as CLASS_HKLM
+
+	STATIC LOCAL dwDefError 		as DWORD
+
+	~"PROCLINE-"
+	~"PROCNAME-"
+
+	IF !(IsInstanceOf(oError, #ERROR))
+
+		ClearstrucErrInfo()
+		strucErrInfo.dwGenCode   := EG_WRONGCLASS
+		strucErrInfo.dwSeverity  := ES_ERROR
+		strucErrInfo.symFuncSym  := #DefError
+		strucErrInfo.pszArg      := AsPsz(oError)
+		strucErrInfo.dwArgNum    :=  1
+		strucErrInfo.lCanDefault := .T.
+		oError                   := ErrorBuild(@strucErrInfo)
+
+	ENDIF
+
+	IF oError:CanDefault
+		// network open error?
+		IF (oError:GenCode = EG_OPEN)
+			IF (oError:OsCode  = ERROR_SHARING_VIOLATION) .or.;
+					(oError:OsCode  = ERROR_LOCK_VIOLATION)    .or.;
+					(oError:GenCode = EG_APPENDLOCK)
+				NetErr(.T.)
+				RETURN E_DEFAULT                // continue with default behavior
+			ENDIF
+		ENDIF
+	ENDIF
+
+	IF oError:Severity = ES_WARNING
+		cTitle := "WARNING"
+	ELSE
+		cTitle := "ERROR"
+	ENDIF
+
+	IF oError:SubstituteType = ptr
+		oError:Severity := ES_CATASTROPHIC
+	ENDIF
+
+	cMessage := ErrorMessage(oError) 
+	//FdW//20060916-Begin
+	IF IVarGetInfo(oError,#Stack)<>0
+		IF Empty(oError:Stack)
+			oError:Stack:=ErrorStack(1)
+		ENDIF
+		cStack:=AsString(oError:Stack)
+	ELSE
+		cStack:=ErrorStack(1)
+	ENDIF
+	IF !Empty(cStack)
+		cMessage+="CallStack:"
+		cMessage+=CRLF
+		cMessage+=cStack
+	ENDIF
+	//FdW//20060916-End
+
+
+	IF SetBeep()
+		Tone(440, 1)
+		Tone(494, 1)
+		Tone(523, 1)
+	ENDIF
+
+	dwButtonIgnore := 0
+	dwButtonRetry  := 0
+	dwButtonCancel := 0
+
+	IF oError:CanDefault .or. oError:CanSubstitute
+		dwButtonIgnore := SE_IGNORE
+	ENDIF
+
+	IF oError:CanRetry
+		IF oError:GenCode = EG_NOVAR
+			oError:CanRetry := .F.
+		ELSE
+			dwButtonRetry := SE_RETRY
+		ENDIF
+	ENDIF
+
+	IF CanBreak()
+		dwButtonCancel := SE_CANCEL + SE_DEFAULT
+	ELSE
+		dwButtonCancel := SE_ABORT  + SE_DEFAULT
+	ENDIF
+
+	IF dwChoice > 3
+		dwChoice := 3
+	ENDIF
+
+	lChoice := .F.
+	IF SetErrorLog()
+		hf := __OpenErrorLog()
+		oReg:=Class_HKLM{}
+		cOs:="OS: "+oReg:getstring('SOFTWARE\Microsoft\Windows NT\CurrentVersion','ProductName')+CRLF
+		IF hf != F_ERROR
+			FSeek3(hf, 0, FS_END)
+			__WriteErrorLog(hf, "User: "+LOGON_EMP_ID+CRLF+cOs+cMessage, oError)
+			FClose(hf)
+		ENDIF
+		LogEvent(,cOs+cMessage,"logerrors")
+	ENDIF
+
+	DO CASE
+	CASE dwChoice = EC_IGNORE
+		IF dwButtonIgnore = 0
+			lChoice := .T.
+		ENDIF
+
+	CASE dwChoice = EC_RETRY
+		IF dwButtonRetry = 0
+			lChoice := .T.
+		ENDIF
+
+	CASE dwChoice = EC_BREAK
+		IF dwButtonCancel = 0
+			lChoice := .T.
+		ENDIF
+
+	ENDCASE
+
+
+	IF (dwChoice = EC_ALERT) .or. (lChoice)
+		dwChoice := ErrorMessageBox( Cast2Psz(CMessage), Cast2Psz(cTitle), dwButtonIgnore, dwButtonRetry, dwButtonCancel)
+	ENDIF
+
+	DO CASE
+	CASE dwChoice = EC_IGNORE
+		IF oError:CanSubstitute
+			RETURN EmptyUsual(oError:SubstituteType)
+		ELSE
+			RETURN E_DEFAULT
+		ENDIF
+
+	CASE dwChoice = EC_RETRY
+		RETURN E_RETRY
+	ENDCASE
+
+
+	MathInit()
+
+	IF CanBreak()
+		BREAK oError
+	ENDIF
+
+	ErrorLevel(oError:GenCode)
+
+	dwDefError := 0
+
+	//  UH 12/23/1999
+	VODBCloseAll()
+
+	_Quit()
+
+	RETURN nil
 FUNCTION MyError(oError as Error,SymMethod as symbol)
 LOCAL cMessage as STRING
 // 	IF oError:Canretry .and.oError:Subcode==1101
