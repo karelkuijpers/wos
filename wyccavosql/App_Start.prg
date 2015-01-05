@@ -30,7 +30,7 @@ method Start() class App
 	local oUpg as CheckUPGRADE
 	local oYrCl as YearClosing
 
-	// cbError := ErrorBlock( {|e|_Break(e)} )
+	cbError := ErrorBlock( {|oError|MyDefError(oError)} )
 	BEGIN SEQUENCE
 		Enable3dControls()
 		DynSize(256) // (not more possible = 16MB)
@@ -82,9 +82,6 @@ method Start() class App
 			// Open main shell window
 
 			WycIniFS := IniFileSpec{ "WYC" }
-			// 			if oMainWindow==null_object
-			// 				oMainWindow := StandardWycWindow{self}
-			// 			endif
 			mainsize:=oMainWindow:Size
 			WinScale:=mainsize:Width/808.00
 			// 			IF (WycIniFS:GetInt( "Runtime", "Maximized" ) # 1 )
@@ -171,7 +168,7 @@ method Start() class App
 				AlertNew{}:ShowNew()
 				//	Idem for	year closing:
 				IF AScan(aMenu,{|x| x[4]=="YearClosing"})>0
-					oYrCl:=YearClosing{}
+					oYrCl:=YearClosing{oMainWindow}
 					if oYrCl:CheckYearClosing(oMainWindow)
 						oYrCl:Show()
 					endif				
@@ -179,9 +176,10 @@ method Start() class App
 			endif
 			oMainWindow:Pointer := Pointer{POINTERARROW}
 			self:Exec()
-			// RECOVER USING oError	 
-			//   	GetError(self, "Error in Wycliffe Office System")
-			//   	ShowError( oError )
 		endif
+	RECOVER USING oError	 
+// 		GetError(self, "Error in Wycliffe Office System")
+// 		ShowError( oError )
+		Eval(ErrorBlock(),oError)
 	end SEQUENCE
 	self:Quit()
