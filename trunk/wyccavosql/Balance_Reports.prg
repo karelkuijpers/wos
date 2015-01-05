@@ -7162,13 +7162,12 @@ METHOD OKButton( ) CLASS YearClosing
 
 	* Record transfer of profit/Loss to netasset accounts:
 	self:STATUSMESSAGE(self:oLan:WGet("Recording profit/loss transactions, moment please"))
-
 	FOR i = 1 to Len(ProfitLossAccount)
 		IF ProfitLossDeb[i]#0 .or. ProfitLossCre[i]#0
 			nSeqNbr++
 			cStatement:="insert into transaction set "+;
-			"transid="+cTransnr+;
-			",dat='"+SQLdate(self:BalanceEndDate)+"'"+;
+			iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
+			"dat='"+SQLdate(self:BalanceEndDate)+"'"+;
 			",docid='CL"+StrZero(self:YearClose,4)+StrZero(self:MonthClose,2)+"'"+;
 			",description='"+self:oLan:RGet('Closing year',,"!")+'	'+self:oDCStartYearText:TEXTvalue+"'"+; 
 			",accid='"+Str(ProfitLossAccount[i],-1)+"'"+;
@@ -7189,7 +7188,11 @@ METHOD OKButton( ) CLASS YearClosing
 				self:Pointer := Pointer{POINTERARROW}
 				(ErrorBox{self:OWNER,self:cError}):Show()
 				return
+			endif 
+			if	Empty(cTransnr)
+				cTransnr:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			endif
+
 		ENDIF
 	NEXT
 
