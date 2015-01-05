@@ -3704,7 +3704,7 @@ FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
 			__WriteErrorLog(hf, "User: "+LOGON_EMP_ID+CRLF+cOs+cMessage, oError)
 			FClose(hf)
 		ENDIF
-		LogEvent(,cOs+cMessage,"logerrors")
+		LogEvent(,cOs+"Used: "+Str(DynInfoUsed(),-1)+' bytes and free '+Str(DynInfoFree(),-1)+' bytes free'+CRLF+cMessage,"logerrors")
 	ENDIF
 
 	DO CASE
