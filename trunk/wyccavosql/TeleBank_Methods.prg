@@ -788,7 +788,7 @@ METHOD Import() CLASS TeleMut
 	AEval(Directory("*CAMT*053*.xml"),{|x|AAdd(aFileCamT,x)})          // CamT053 file
 	aFilePB:=Directory(CurPath+"\*-20??.CSV")
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
-	aFileRO:=Directory(CurPath+"\RO??BTRL????????N?????XX-??.??.????-??.??.????.csv")
+	aFileRO:=Directory(CurPath+"\RO??BTRL????????N???????-??.??.????-??.??.????.csv")  //RO38BTRLRONCRT00N3407802-01.07.2014-31.07.2014
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
 	aFileSA2:=Directory(CurPath+"\multiple*.dat") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
@@ -2563,6 +2563,8 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 	local aWord:={} as array 
 	local aCntp:={} as array
 	local aRemi:={} as array
+	local aMarf:={} as array 
+	local aEref:={} as array
 	local aKey:={'/RTRN/','/EREF/','/PREF/','/MARF/','/CSID/','/CNTP/','/REMI/','/PURP/','/ULTC/','/ULTD/'} as array
 	local oBank as SQLSelect, oBord as SQLSelect 
 	LOCAL oHlp as FileSpec
@@ -2696,26 +2698,34 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 						do case
 						case cKey=='/RTRN/'
 							// Return reason
-							lv_rtrn:=aWord[i,1]
+							lv_rtrn:=StrTran(aWord[i,1],'/','')
 						case cKey=='/PREF/'
 							// Payment Information ID / Batch ID
 							if Left(lv_kindorg,2)=='01'   // sepa direct debit  or reject
-								lv_budget:=Cur_enRoute  //???
-								//lv_kind:='COL'  // ????
+// 								lv_budget:=Cur_enRoute  //???
+// 								lv_kind:='COL'  // ????
 							endif
 						case cKey=='/EREF/'
 							// End to End Reference 
-							lv_eref:=aWord[i,1]
-							if Left(lv_kind,2)='01'
-								// sepa DD
-								if Len(Split(lv_eref,'-'))>=3
-									lv_persid:=Split(lv_eref,'-')[1]
-									lv_dueid:=Split(lv_eref,'-')[3] 
+							lv_eref:=StrTran(aWord[i,1],'/','')
+							if Left(lv_kindorg,2)=='01'
+								// sepa DD 
+								aEref:= Split(lv_eref,'-')
+								if Len(aEref)>=3
+									lv_persid:=aEref[1]
+									lv_dueid:=aEref[3] 
 								endif
 							endif
 						case cKey=='/MARF/' 
 							//  Mandate Reference (Machtigingskenmerk):
-							lv_marf:=aWord[i,1]
+							lv_marf:=StrTran(aWord[i,1],'/','')
+							if Left(lv_kindorg,2)=='01'
+								// sepa DD
+								aMarf:= Split(lv_marf,'-')
+								if Len(aMarf)>=5 .and. aMarf[2]=='A'
+									lv_budget:=aMarf[3]
+								endif
+							endif
 						case cKey=='/CSID/' 
 							//  Creditor ID (Incassant ID):  ignored
 						case cKey=='/CNTP/' 
@@ -4112,7 +4122,7 @@ local i as int
 	oTelPat:=SqlSelect{"select group_concat(contra_bankaccnt,'#$#',kind,'#$#',contra_name,'#$#',addsub,'#$#',p.description,'#$#',cast(p.accid as char),'#$#',cast(ind_autmut as char),'#$#',a.accnumber separator '#%#')"+;
 	" as telepatgrp from telebankpatterns p, account a where a.accid>0 and a.accid=p.accid",oConn} 
 	oTelPat:execute()
-	if oTelPat:Reccount>0
+	if oTelPat:Reccount>0 .and. !Empty(oTelPat:telepatgrp)
 		AEval(Split(oTelPat:telepatgrp,'#%#'),{|x|AAdd(aTelePtr,Split(x,'#$#')) }) 
 		for i:=1 to Len(aTelePtr)
 			aTelePtr[i,5]:=Split(aTelePtr[i,5],Space(1))
@@ -4120,17 +4130,6 @@ local i as int
       self:teleptrn:=aTelePtr  // {contra_bankaccnt,kind,contra_name,addsub,description,accid,ind_autmut,accnumber},...
                                //        1            2     3           4       5          6        7        8
 	endif
-// 	DO WHILE !oTelPat:EOF
-// 		AAdd(self:teleptrn,{oTelPat:contra_bankaccnt,;
-// 			oTelPat:kind,;
-// 			oTelPat:contra_name,;
-// 			oTelPat:AddSub,;
-// 			Split(AllTrim(oTelPat:Description),space(1)),;
-// 			oTelPat:accid,;
-// 			ConL(oTelPat:ind_autmut),
-// 			accnumber})
-// 		oTelPat:skip()
-// 	ENDDO
 	RETURN nil
 	
 METHOD NextTeleGift CLASS TeleMut
