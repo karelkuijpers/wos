@@ -31,6 +31,7 @@ GLOBAL DistributionTypes:={'fixed amount','proportional amount','remaining','rem
 global emailclient as string
 GLOBAL EXCEL as STRING
 global FirstLogin as logic  // first login user this day?
+Global GiftFrequency as array
 global GlBalYears:={} as Array
 GLOBAL HelpDir:="C:\Windows\Temp" as STRING
 global iban_registry as array
@@ -124,7 +125,7 @@ GLOBAL TeleBanking as LOGIC
 Global TITELINADR as logic
 GLOBAL UserType as STRING
 Global USRTypes as array
-global Version:="3.0.0.181" as string 
+global Version:="3.0.0.183" as string 
 global Versiondate:= __date__+' '+ __time__ as string
 GLOBAL WinIniFS as WinIniFileSpec
 GLOBAL WinScale as FLOAT
