@@ -994,10 +994,11 @@ method ColumnFocusChange(oColumn, lHasFocus)   CLASS StOrdLnBrowser
 	Local myValue as float
 	LOCAL myColumn:=oColumn as DataColumn
 	SUPER:ColumnFocusChange(oColumn, lHasFocus)
-	IF  Empty(oStOrdLH:aMirror)  && still empty ?   ingore change column during filling screen
+	ThisRec:=oStOrdLH:RecNo
+	IF  Empty(oStOrdLH:aMirror) ; && still empty ?   ingore change column during filling screen
+		.or. Len(oStOrdLH:aMirror)<ThisRec
 		RETURN
 	ENDIF
-	ThisRec:=oStOrdLH:RecNo
 	IF myColumn:NameSym == #ACCOUNTNBR
 		IF Len(oStOrdLH:aMirror[ThisRec])>=7 .and.!AllTrim(myColumn:TEXTValue) == ;
 				AllTrim(oStOrdLH:aMirror[ThisRec,7]) && value changed?
