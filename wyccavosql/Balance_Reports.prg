@@ -6838,30 +6838,31 @@ return self
 
 METHOD OKButton( ) CLASS YearClosing
 	* Balancing and closing a year
-	LOCAL oWarn as warningbox, lSuc as LOGIC
+	LOCAL i, Dep_Ptr as int
+	LOCAL AfterBalance as int
+	local nMindate as int
+	local nSeqNbr as int // sequence number of generated transaction lines 
+	LOCAL min_balance as FLOAT
+	local fTotal as float  // to check if year is correct in balance 
+	LOCAL cTransnr,backup,cWarning as STRING
+	LOCAL cCurrency as STRING
+	local cName as string
+	local cStatement as string
+	local cMess as string
+	local cFatalError as string
+	local lSuc as LOGIC
+	local dLstReeval as date 
 	LOCAL ProfitLossCre:={}, ProfitLossDeb:={},  ProfitLossAccount:={} as ARRAY
 	LOCAL ProfitLossCreF:={}, ProfitLossDebF:={},  ProfitLossCurrency:={} as ARRAY  // deficit/profit foreign currency
-
-	LOCAL cTransnr,backup,cWarning as STRING
-	LOCAL min_balance as FLOAT
-	LOCAL i, Dep_Ptr as int
-	LOCAL cCurrency as STRING
-	LOCAL AfterBalance as int
+	
+	LOCAL oWarn as warningbox
 	Local oBord as SQLSelect
-	local nMindate as int
 	local oSel as SQLSelect
 	local oTrans as SQLSelect
 	local oDep as SQLSelect
 	local oMBal as SQLSelect
 	local oBal as balances
-	local cName as string
-	local cStatement as string
 	local oStmnt as SQLStatement
-	local nSeqNbr as int // sequence number of generated transaction lines 
-	local fTotal as float  // to check if year is correct in balance 
-	local cMess as string
-	local dLstReeval as date 
-	local cFatalError as string
 
 	IF Today() <= self:BalanceEndDate
 		(ErrorBox{self:OWNER,self:oLan:WGet('End of year not yet reached')}):Show()
@@ -6921,9 +6922,12 @@ METHOD OKButton( ) CLASS YearClosing
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	// Check if all reevaluations has been done:
-	dLstReeval:=SQLSelect{"select lstreeval from sysparms",oConn}:LSTREEVAL 
+	oSel:=SqlSelect{"select cast(lstreeval as date) as lstreeval from sysparms",oConn}
+	if oSel:reccount>0 .and. !Empty(oSel:LSTREEVAL)
+		dLstReeval:=oSel:LSTREEVAL
+	endif 
 	if dLstReeval <  self:BalanceEndDate 
-		if SQLSelect{"select accid from account where multicurr=0 and currency<>'"+sCURR+"'",oConn}:reccount>0
+		if SqlSelect{"select accid from account where multcurr=0 and currency<>'"+sCURR+"'",oConn}:reccount>0
 			(ErrorBox{self:OWNER,self:oLan:WGet('perform first required reevaluations')}):Show()
 			self:EndWindow()
 			RETURN true
