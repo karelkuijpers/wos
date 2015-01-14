@@ -1,4 +1,4 @@
-FUNCTION __OpenErrorLog() as ptr PASCAL
+STATIC FUNCTION __OpenErrorLog() as ptr PASCAL
 
 	LOCAL cFile                     as STRING
 	LOCAL cBuffer                   as STRING
@@ -32,7 +32,7 @@ FUNCTION __OpenErrorLog() as ptr PASCAL
 	ENDIF
 
 	RETURN hfRet
-FUNCTION __WriteErrorLog (hf as ptr, cMsg as STRING, oError as OBJECT) as void PASCAL
+STATIC FUNCTION __WriteErrorLog (hf as ptr, cMsg as STRING, oError as OBJECT) as void PASCAL
    LOCAL cExe		as STRING
    
 	FPutS(hf, "***********************ERROR********************************")
@@ -1091,7 +1091,7 @@ METHOD CellDoubleClick() CLASS EditBrowser
 Function EndOfMonth(DateInMonth as date) as date
 // get date of end of month given a certain date
 return SToD(Str(Year(DateInMonth),4,0)+StrZero(Month(DateInMonth),2,0)+StrZero(MonthEnd(Month(DateInMonth),Year(DateInMonth)),2,0))
-FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
+STATIC FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
 
 	LOCAL cMessage      as STRING
 	LOCAL cArg          as STRING
@@ -1191,22 +1191,9 @@ FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
 		cMessage += CRLF
 	ENDIF
 
-	hOldRuntime := GetModuleHandle(Cast2Psz("CAVORT20.DLL"))
-	IF (hOldRuntime != null_ptr)
-		cMessage += CRLF+"PLEASE NOTE:"+CRLF+"The old runtime CAVORT20.DLL was found in memory"+CRLF
-		cMessage += "This may be the cause of the current runtime error !!"+CRLF+CRLF
-	ELSE
-		hOldRuntime := GetModuleHandle(Cast2Psz("VO27RUN.DLL"))
-		IF (hOldRuntime != null_ptr)
-			cMessage += CRLF+"PLEASE NOTE:"+CRLF+"The Visual Objects 2.7 runtime file VO27RUN.DLL was found in memory"+CRLF
-		ENDIF		
-	ENDIF
-	IF (hOldRuntime != null_ptr)
-		cMessage += "This may be the cause of the current runtime error !!"+CRLF+CRLF
-	ENDIF
 	RETURN cMessage
 DEFINE FEMALE := 1
-DEFINE FILE_ERRORLOG := "VOERROR.LOG"
+STATIC DEFINE FILE_ERRORLOG := "VOERROR.LOG"
 function FileStart(cFilename as string, OwnerWindow as Window, cParameters:='' as string ) as dword
 	// start application for processing given filename, e.g word document 
 	LOCAL lpShellInfo is _winShellExecuteInfo
