@@ -236,7 +236,7 @@ METHOD UpdateStOrd(lChanged ref logic) as logic CLASS EditStandingOrder
 	oNew:SetOrder(NewMut)
 	oNew:GoTop()
 
-	OrigMut:=HelpDir+"\STOR"+StrTran(Time(),":")
+	OrigMut:=HelpDir+"\STOR"+StrTran(StrTran(Time(),":"),' ','')
 	oOrig:=StOrdLineHelp{OrigMut+'.dbf'}
 	IF !oOrig:Used.or.!oNew:Used.or.!lSucc
 		(ErrorBox{self:owner,'Not able to make helpfile for updates'}):show()
