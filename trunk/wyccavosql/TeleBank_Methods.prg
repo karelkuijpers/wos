@@ -1213,7 +1213,7 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 			oSel:Skip()
 		enddo
 	endif
-	oHlM :=HLPMT940{HelpDir+"\HBBI"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlM :=HLPMT940{HelpDir+"\HBBI"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
 	oHlM:Zap()
 	
 	*Look for NY090020: record with accountnumber
@@ -1827,7 +1827,7 @@ METHOD ImportGiro(oFs as MyFileSpec) as logic CLASS TeleMut
 
 	cSep:=CHR(SetDecimalSep())
 	//oHlG := Hulpgiro{,DBEXCLUSIVE}
-	oHlG :=Hulpgiro{HelpDir+"\HGiro"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	oHlG :=Hulpgiro{HelpDir+"\HGiro"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
 	* Clear HulpGiro
 	oHlG:Zap()
 	// lSuccess:=oFs:FileLock()       
@@ -3202,7 +3202,7 @@ METHOD ImportPGAutoGiro(oFm as MyFileSpec) as logic CLASS TeleMut
 	// 	RETURN FALSE
 	// ENDIF
 	
-	oHlM :=HLPMT940{HelpDir+"\HPG"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM :=HLPMT940{HelpDir+"\HPG"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE} 
 	oHlM:Zap()
 	
 	lSuccess:=oHlM:AppendSDF(oFm)
@@ -3799,7 +3799,7 @@ METHOD ImportTL1(oFm as MyFileSpec) as logic CLASS TeleMut
 	local oStmnt as SQLStatement
 
 	
-	oHlM :=HLPMT940{HelpDir+"\HTL1"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE} 
+	oHlM :=HLPMT940{HelpDir+"\HTL1"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE} 
 	oHlM:Zap()
 	*Look for 2: record with transction record
 	*			add record to teletrans
