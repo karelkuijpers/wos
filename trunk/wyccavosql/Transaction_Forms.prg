@@ -15,7 +15,7 @@ METHOD Init() CLASS BedragStr
 
 
 
-
+
 CLASS General_Journal INHERIT DataWindowExtra 
 
 	PROTECT oDBMBST as DataColumn
@@ -851,7 +851,7 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS General_Journal
 	//Put your PreInit additions here
 IF (oServer = nil)
 	GetHelpDir()
-	self:oHlpMut:=TempTrans{HelpDir+"\HU"+StrTran(Time(),":","")+".DBF",DBEXCLUSIVE}
+	self:oHlpMut:=TempTrans{HelpDir+"\HU"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
 	self:oHlpMut:lExisting:=false 
 ELSE
 	self:oHlpMut:=oServer
@@ -3336,7 +3336,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PaymentJournal
 method PreInit(oWindow,iCtlID,oServer,uExtra) class PaymentJournal
 	//Put your PreInit additions here
 	GetHelpDir()
-	self:oHlpMut:=TempGift{HelpDir+"\HG"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE,DBREADWRITE}
+	self:oHlpMut:=TempGift{HelpDir+"\HG"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE,DBREADWRITE}
 	return nil
 METHOD ShowDebBal() CLASS PaymentJournal 
 	local lSucc as logic
@@ -3908,7 +3908,7 @@ METHOD EditButton( ) CLASS TransInquiry
 	OrigUser:=AllTrim(self:Server:USERID) 
 	OrigPost:=ConI(self:Server:PostStatus)
 	GetHelpDir()
-	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(Time(),":")+".DBF",DBEXCLUSIVE}
+	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
 	//	self:oHm := TempTrans{}
 	IF !self:oHm:Used
 		RETURN
