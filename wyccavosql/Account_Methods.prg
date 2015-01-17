@@ -392,11 +392,13 @@ METHOD FillBudgets() CLASS EditAccount
 				endif
 			next
 		endif
-		if !lEmpty .and. nPntr>0
+		if !lEmpty .and. nPntr>0 .and. Len(self:aBudget)>=nPntr
 			CurAmnt:= self:aBudget[nPntr,3]
 			FOR i:=1 to 12
-				BudAmnt:=self:aBudget[nPntr,3]		
-				self:FillBudget(self:aBudget[nPntr,3],i,aContr,BudMonth,BudYear) 
+				if Len(self:aBudget[nPntr])>=3
+					BudAmnt:=self:aBudget[nPntr,3]
+				endif		
+				self:FillBudget(BudAmnt,i,aContr,BudMonth,BudYear) 
 				if lAdd
 					AAdd(self:aBudget,{BudYear,BudMonth,BudAmnt})
 				endif
