@@ -395,9 +395,9 @@ METHOD PrintReport() CLASS PMISsend
 	local nTransLock as Dword,nTransSample as int
 	local nRow, nPage as int
 	LOCAL i,j,k,nMbr,nMbrAss,nMbrRPP,nMbrBal,nAccmbr,nTrans,nTransnrDT,a_tel, batchcount, directcount, iDest, iType,nSeqnr,nSeqnrDT,nRowCnt,CurrentMbrID as int
-	LOCAL AssInt,AssOffice,AssOfficeProj,AssField,AssFldInt,AssFldIntHome,me_balance,me_balanceF,OfficeRate,TotAssrate as FLOAT
+	LOCAL AssInt,AssOffice,AssOfficeProj,AssOfficeOFR,AssField,AssFldInt,AssFldIntHome,me_balance,me_balanceF,OfficeRate,TotAssrate as FLOAT
 	local AssInc,AssIncHome as float  // to be reversed assement income totals
-	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj as FLOAT
+	LOCAL mbrint,mbrfield,mbroffice,mbrofficeProj,mbrofficeOFR as FLOAT
 	local fExChRate as float
 	LOCAL DestAmnt as FLOAT
 	local time1,time0 as float
@@ -424,7 +424,8 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL datelstafl as date
 	LOCAL uRet as USUAL
 	local heading as ARRAY
-	local oCurr as CURRENCY 
+	local oCurr as CURRENCY
+	local aAcc:={} as array 
 	LOCAL aMemberTrans:={} as ARRAY
 	LOCAL destinstr:={} as ARRAY 
 	local aDistr:={} as array 
@@ -467,6 +468,8 @@ METHOD PrintReport() CLASS PMISsend
 	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
 	local oMBal as Balances
 	local oStmnt,oStmntDistr as SQLStatement
+	local oGetDep as GetDepAccount
+
 
 	oWindow:=GetParentWindow(self) 
 	// Import first account change list 
@@ -491,7 +494,7 @@ METHOD PrintReport() CLASS PMISsend
 	PMCUpload:= iif(ConI(self:oSys:PMCUPLD)=1,true,false)
 	// fExChRate:=self:mxrate 
 
-	store 0 to AssInt,AssOffice,AssOfficeProj,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
+	store 0 to AssInt,AssOffice,AssOfficeProj,AssOfficeOFR,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome
 	cClosingdate:=SQLdate(self:closingDate)
 	cDueDate:=SQLdate(Today())
 
@@ -528,7 +531,7 @@ METHOD PrintReport() CLASS PMISsend
 		"an.accid as accidnet,an.accnumber as accnumbernet,an.description as descriptionnet,an.currency as currencynet,"+;
 		"pp.ppname as homeppname,"+;
 		"group_concat(cast(d.desttyp as char),'##',cast(d.destamt as char),'##',d.destpp,'##',d.destacc,'##',cast(d.lstdate as char),'##',cast(d.seqnbr as char),'##',"+;
-		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr" +;
+		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr,if(isnull(m.depid),'0',cast(m.depid as char)) as depid " +;
 		" from member m left join ppcodes pp on (pp.ppcode=m.homepp) "+;
 		" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) left join ppcodes pd on (d.destpp=pd.ppcode) "+;
 		" left join account ad on (ad.accid=m.accid) left join balanceitem b on (b.balitemid=ad.balitemid) left join department dm on (dm.depid=m.depid) left join account ai on (ai.accid=dm.incomeacc) "+;
@@ -539,7 +542,7 @@ METHOD PrintReport() CLASS PMISsend
 		"if(isnull(accidinc),'#$##$##$##$#',concat(cast(accidinc as char),'#$#',accnumberinc,'#$#',descriptioninc,'#$#',currencyinc,'#$#')),"+;
 		"if(isnull(accidexp),'#$##$##$##$#',concat(cast(accidexp as char),'#$#',accnumberexp,'#$#',descriptionexp,'#$#',currencyexp,'#$#')),"+;
 		"if(isnull(accidnet),'#$##$##$##$#',concat(cast(accidnet as char),'#$#',accnumbernet,'#$#',descriptionnet,'#$#',currencynet,'#$#')),"+;
-		"coalesce(homeppname,''),'#$#',coalesce(distr,'') order by mbrid separator '#%#') as grMbr"+;
+		"coalesce(homeppname,''),'#$#',coalesce(distr,''),'#$#',depid order by mbrid separator '#%#') as grMbr"+;
 		" from ("+cMbrSelect+") as y group by 1=1" 
 	oMbr:=SqlSelect{cMbrSelectArr,oConn}
 	if oMbr:Reccount<1 .or. Empty(oMbr:grMbr)
@@ -548,8 +551,8 @@ METHOD PrintReport() CLASS PMISsend
 		return
 	endif
 	// add to aMbr:
-	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr,depid},...}
+	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27    28
 	// with cDistr: {{desttyp,destamt,destpp,destacc,lstdate,seqnbr,descrptn,currency,amntsnd, singleuse,ppname},...
 	//                   1       2       3      4        5      6      7         8      9         10       11
 	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#',,true),{|x|x:=Split(x,'#$#',,true) })
@@ -611,10 +614,10 @@ METHOD PrintReport() CLASS PMISsend
 			aAccDestOwn:={}
 		endif
 	endif
-
 	// make array of all accids:
+	oGetDep :=GetDepAccount{}   // get structure of departments for determinining expense accounts in hierarchy
 	for i:=1 to Len(aMbr)
-		if !Empty(aMbr[i,10])
+		if !Empty(aMbr[i,10])     // account member
 			AAdd(aAccidMbr,{aMbr[i,10],aMbr[i,1],aMbr[i,13]}) 
 			if !aMbr[i,3]==SEntity
 				// add to accids foreign members:
@@ -623,7 +626,23 @@ METHOD PrintReport() CLASS PMISsend
 				// add to accids members with remaining RPP instruction:
 				AAdd(aAccidRPP,{aMbr[i,10],aMbr[i,1]})				
 			endif 
-		else
+		else  // department member
+// 			if Empty(aMbr[i,18])
+// 				aAcc:=oGetDep:GetAccount(aMbr[i,28],expense)
+// 				if Len(aAcc)>=3
+// 					aMbr[i,18]:= aAcc[1]
+// 					aMbr[i,19]:= aAcc[2]
+// 					aMbr[i,20]:= aAcc[3]
+// 				endif
+// 			endif						
+// 			if Empty(aMbr[i,22])
+// 				aAcc:=oGetDep:GetAccount(aMbr[i,28],liability)
+// 				if Len(aAcc)>=3
+// 					aMbr[i,22]:= aAcc[1]
+// 					aMbr[i,23]:= aAcc[2]
+// 					aMbr[i,24]:= aAcc[3]
+// 				endif
+// 			endif						
 			AAdd(aAccidMbr,{aMbr[i,14],aMbr[i,1],income})
 			AAdd(aAccidMbr,{aMbr[i,18],aMbr[i,1],expense})
 			AAdd(aAccidMbr,{aMbr[i,22],aMbr[i,1],liability})
@@ -799,18 +818,21 @@ METHOD PrintReport() CLASS PMISsend
 	// Process members:
 	for nMbr:=1 to Len(aMbr)
 		// aMbr:
-		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr},...}
-		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27
+	// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr,depid},...}
+	//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27    28
 		me_mbrid:=aMbr[nMbr,1]
+		me_co:=aMbr[nMbr,6]   // co
+		me_rate:=Upper(aMbr[nMbr,9])
 		me_accid:= iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,18],aMbr[nMbr,10])       // accid or accidexp
+		if !me_accid>'0'
+			me_accid:=oGetDep:GetAccount(aMbr[nMbr,28],expense)
+		endif
 		me_accnbr:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,19],aMbr[nMbr,11])       // accnumberexp or ACCNUMBER
 		me_currency:=iif(Empty(aMbr[nMbr,10]),aMbr[nMbr,21],aMbr[nMbr,12])       // currencyexp or currency
 		me_type:=iif(Empty(aMbr[nMbr,10]),EXPENSE,aMbr[nMbr,13])    // expense or type  
 		me_pers:=StrTran(StrTran(aMbr[nMbr,2],","," "),"-"," ")        // description 
 		me_stat:=aMbr[nMbr,8]  // Grade 
 		me_has:=iif(ConI(aMbr[nMbr,7])=1,true,false)   // has 
-		me_co:=aMbr[nMbr,6]   // co
-		me_rate:=Upper(aMbr[nMbr,9])
 		
 		// compile distribution instructions:
 		destinstr:={}
@@ -891,7 +913,8 @@ METHOD PrintReport() CLASS PMISsend
 		mbrfield:= 0
 		mbrint:= 0
 		mbroffice:= 0
-		mbrofficeProj:=0.00 
+		mbrofficeProj:=0.00
+		mbrofficeOFR:=0.00 		 
 		AmntFromRPP:=0.00
 		me_asshome:=0.00 
 		me_assblAmount:=0.00
@@ -953,7 +976,7 @@ METHOD PrintReport() CLASS PMISsend
 								me_amounttot:=Round(me_amounttot+me_amount,DecAantal)
 							endif
 							me_desc+=iif(Empty(me_desc),"","; ")+aTransF[nTrans,5]
-							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2])})				
+							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,me_amount,PMCco,{iif(Empty(aTransF[nTrans,9]).and.me_co="S",mHomeAcc,aTransF[nTrans,9]),me_homePP,me_householdid,,,me_co},,me_desc,,me_currency,Val(aTransF[nTrans,2]),me_mbrid})				
 							AmntTrans:=Round(me_amount+AmntTrans,DecAantal)
 						endif
 						nTrans++
@@ -970,10 +993,15 @@ METHOD PrintReport() CLASS PMISsend
 		endif			
 
 		AssInt:=Round(AssInt+mbrint,DecAantal)
-		IF me_co="S" 
-			mbrofficeProj:=me_asshome
-			AssOfficeProj:=Round(AssOfficeProj+me_asshome,DecAantal) 
-		ELSE
+		IF me_co="S"
+			if me_stat='OFR'
+				mbrofficeOFR:=me_asshome
+				AssOfficeOFR:= Round(AssOfficeOFR+me_asshome,DecAantal)
+			else 
+				mbrofficeProj:=me_asshome
+				AssOfficeProj:=Round(AssOfficeProj+me_asshome,DecAantal)
+			endif 
+		ELSE 
 			mbroffice:=me_asshome
 			AssOffice:=Round(AssOffice+me_asshome,DecAantal)
 		endif
@@ -982,24 +1010,24 @@ METHOD PrintReport() CLASS PMISsend
 		// calculate reversal for ministry income: 
 		if !Empty(SINC).and. me_type==LIABILITY 
 			if !me_has
-				AssInc:=Round(AssInc+mbroffice+mbrofficeProj,DecAantal)
+				AssInc:=Round(AssInc+mbroffice+mbrofficeProj+mbrofficeOFR,DecAantal)
 				if !Empty(samFld)
 					AssFldInt:=Round(AssFldInt+mbrfield+mbrint,DecAantal)
 				endif
 			else
-				AssIncHome:=Round(AssIncHome+mbroffice+mbrofficeProj,DecAantal)
+				AssIncHome:=Round(AssIncHome+mbroffice+mbrofficeProj+mbrofficeOFR,DecAantal)
 				if !Empty(samFld)
 					AssFldIntHome:=Round(AssFldIntHome+mbrfield+mbrint,DecAantal)
 				endif
 			endif
 		endif
 		
-		* Save: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
-		//        1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
+		* Save: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid,mbrid 
+		//        1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12      13
 		// 1: assessment int+field:
 		IF mbrint # 0
-			AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,me_co},iif(me_co="M",mbroffice,mbrofficeProj),,,me_currency,0})  
-			//                      1      2        3      4    5     6      7,1          7,2                          7,3                       7,6                   8                     9 10   11      12
+			AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, AG,mbrint,"",{me_accnbr,if(me_co="M","",me_homePP),if(me_co="M",me_householdid,""),,,iif(me_stat='OFR',me_stat,me_co)},iif(me_co="M",mbroffice,iif(me_stat='OFR',mbrofficeOFR,mbrofficeProj)),,,me_currency,0,me_mbrid})  
+			//                      1      2        3      4    5     6      7,1          7,2                          7,3                                     7,6                       8                                                              9 10    11     12
 		ENDIF
 
 		// Transfer balance conform distribution instructions:
@@ -1016,7 +1044,7 @@ METHOD PrintReport() CLASS PMISsend
 				BalanceSend:=aBalMbr[nMbrBal,2]
 			ENDIF
 			
-			remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrint,DecAantal)
+			remainingAmnt:=Round(BalanceSend-mbroffice-mbrofficeProj-mbrofficeOFR-mbrint,DecAantal)
 			IF me_homePP!=SEntity .and.self:closingDate= Today() 
 				// for transactions to be send to homepp:
 				AmntCorrection:=Round(remainingAmnt-AmntTrans,DecAantal)
@@ -1062,11 +1090,11 @@ METHOD PrintReport() CLASS PMISsend
 								DestAmnt:=Round(destinstr[iDest,4]*fExChRate,DecAantal)
 							ENDIF
 							IF remainingAmnt>=DestAmnt
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})  
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,DestAmnt,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,destinstr[iDest,6],destAcc,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})  
 								// aDisLock: {{mbrid,seqnr,amountsent,singleuse,lastdate},...}
 								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],DestAmnt,iif(destinstr[iDest,11],'1','0'),cClosingdate})
 								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-DestAmnt,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})				
 								endif
 								remainingAmnt:=Round(remainingAmnt-DestAmnt,DecAantal)
 							ELSE
@@ -1077,10 +1105,10 @@ METHOD PrintReport() CLASS PMISsend
 					ELSEIF destinstr[iDest,3]=1 // proportional amount
 						me_amount:=Min(Round((destinstr[iDest,4]*availableAmnt)/100,DecAantal),remainingAmnt)
 						IF me_amount>0
-							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+							AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,me_amount,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})
 							remainingAmnt:=Round(remainingAmnt-me_amount,DecAantal)
 							IF me_homePP!=SEntity
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-me_amount,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})				
 							endif
 							if destinstr[iDest,11]														//lock distribution record:
 								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],me_amount,iif(destinstr[iDest,11],'1','0'),cClosingdate})
@@ -1109,9 +1137,9 @@ METHOD PrintReport() CLASS PMISsend
 								amntlimited:=Min(amntlimited, Round(DestAmnt-destinstr[iDest,9],DecAantal))
 								if amntlimited>0.00  
 									AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],Round(destinstr[iDest,9]+amntlimited,DecAantal),iif(destinstr[iDest,11],'1','0'),cClosingdate})
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})
 									IF me_homePP!=SEntity
-										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+										AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})				
 									endif
 								endif
 							ENDIF
@@ -1122,9 +1150,9 @@ METHOD PrintReport() CLASS PMISsend
 								amntlimited:=remainingAmnt
 							endif 
 							if amntlimited>0.00  
-								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})
+								AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, iType,amntlimited,"",{destinstr[iDest,2],destinstr[iDest,1],me_householdid,,destAcc,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})
 								IF me_homePP!=SEntity
-									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,me_co},,destinstr[iDest,7],cDestPersonId,me_currency,0})				
+									AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,Round(-amntlimited,DecAantal),"PC",{mHomeAcc,me_homePP,me_householdid,,,iif(me_stat='OFR',me_stat,me_co)},,destinstr[iDest,7],cDestPersonId,me_currency,0,me_mbrid})				
 								endif
 								AAdd(aDisLock,{me_mbrid,destinstr[iDest,6],amntlimited,iif(destinstr[iDest,11],'1','0'),cClosingdate})
 								remainingAmnt:=Round(remainingAmnt-amntlimited,DecAantal)
@@ -1137,7 +1165,7 @@ METHOD PrintReport() CLASS PMISsend
 			IF me_homePP!=SEntity .and.self:closingDate=Today()
 				IF !AmntCorrection=0.00
 					// send if applicable remaining balance to PMC
-					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"PC",{"",me_homePP,me_householdid,,,me_co},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0})
+					AAdd(aMemberTrans,{me_accid,me_accnbr,me_pers, MT,AmntCorrection,"PC",{"",me_homePP,me_householdid,,,iif(me_stat='OFR',me_stat,me_co)},,"Transfer of remaining balance to home office",cDestPersonId,me_currency,0,me_mbrid})
 				ENDIF
 			ENDIF
 		endif
@@ -1172,8 +1200,8 @@ METHOD PrintReport() CLASS PMISsend
 		RETURN
 	ENDIF 
 	self:STATUSMESSAGE(self:oLan:WGet('Producing report')+'...')
-	// aMemberTrans: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid 
-	//                1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12
+	// aMemberTrans: accid,accnbr,mbrname, type transactie, amount, PMCcode, destination{destacc,destPP,household code,destnbr,destaccID,assmcode},homeassamnt, description,cDestPersonId,currency, transid, mbrid 
+	//                1       2      3          4            5        6         7          7,1    7,2      7,3         7,4      7,5         7,6      8            9              10        11        12         13
 
 	ASort(aMemberTrans,,,{|x,y| x[3]<y[3] .or.x[3]==y[3].and.x[12]<=y[12]})  // sort on name member  and transid
 	FOR i=1 to batchcount
@@ -1199,8 +1227,8 @@ METHOD PrintReport() CLASS PMISsend
 		Pad('MEMBER',20,' ')+PadL('AMOUNT',12,' ')+' DESCRIPTION',separatorline}
 	FOR a_tel=1 to batchcount
 		* Print member data:
-		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency,transid.mbrid]:
+		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11          12     13
 		me_accid:=aMemberTrans[a_tel,1]
 		me_balance:=aMemberTrans[a_tel,5]
 		* Omschrijving:
@@ -1233,6 +1261,7 @@ METHOD PrintReport() CLASS PMISsend
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment intern.+field',40)+Str(AssInt+AssField,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO standard',40)+Str(AssOffice,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO Projects',40)+Str(AssOfficeProj,11,2),null_array,0)
+	oReport:PrintLine(@nRow,@nPage,Space(6)+Pad('Total Assessment WO Funds Raising',40)+Str(AssOfficeOFR,11,2),null_array,0)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
 	IF mo_direct#0
 		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:RGet("lines")+")",heading,0)
@@ -1288,6 +1317,8 @@ METHOD PrintReport() CLASS PMISsend
 			FWriteLineUni(ptrHandle,"</Header>")
 			
 			* detail records:
+		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
+		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
 			datestr:=Str(Year(self:closingDate),4)+"-"+StrZero(Month(self:closingDate),2)+"-"+StrZero(Day(self:closingDate),2)
 			FOR a_tel=1 to batchcount
 				* Write member data:
@@ -1389,10 +1420,12 @@ METHOD PrintReport() CLASS PMISsend
 		//aTransM/DT: accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
 		//             1    2     3      4      5      6            7      8   9  10    11        12    13     14     15  
 		FOR a_tel = 1 to batchcount
-			* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
-			*               1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
+			* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency,transid,mbrid]:
+			*               1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11          12      13
 			me_accid:=aMemberTrans[a_tel,1]
-			me_balance:=aMemberTrans[a_tel,5] 
+			me_balance:=aMemberTrans[a_tel,5]
+			me_pers:=aMemberTrans[a_tel,3]
+			me_co:=aMemberTrans[a_tel,7][6] 
 			nMbrAss:=0
 			nMbr:=0
 			me_mbrid:=''
@@ -1400,13 +1433,13 @@ METHOD PrintReport() CLASS PMISsend
 			// aAssmbr: {{mbrid,calcdate,periodbegin,periodend,amountassessed,amountofficeassmnt,amountintassmnt,percofficeassmnt,percintassmnt},...  
 			//              1      2         3             4           5             6              7                  8                9
 			IF aMemberTrans[a_tel,4]=AG
-				nMbr:=AScan(aAccidMbr,{|x|x[1]==me_accid})
-				if nMbr>0
-					me_mbrid:=aAccidMbr[nMbr,2]
-					nMbrAss:=AScan(aAssMbr,{|x|x[1]==me_mbrid})
-				endif 			 
+// 				nMbr:=AScan(aAccidMbr,{|x|x[1]==me_accid})
+// 				if nMbr>0
+// 					me_mbrid:=aAccidMbr[nMbr,2] 
+				me_mbrid:=aMemberTrans[a_tel,13]
+				nMbrAss:=AScan(aAssMbr,{|x|x[1]==me_mbrid})
 				me_desc:=self:oLan:RGet("Assessment Intern+Field of gifts from")+Space(1)+Country+' '+self:AssPeriod + ' ('+Str(self:sPercAssInt+self:sAssmntField,-1)+'%'+Space(1)+self:oLan:RGet('of total gift amount')+' '+;
-					iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+')'
+					iif(nMbrAss>0,Str(aAssMbr[nMbrAss,5],-1),'0')+iif(me_co='OFR',' '+self:oLan:RGet("for")+' '+me_pers,'')+')'
 			ELSE
 				me_desc:=aMemberTrans[a_tel,9]
 				IF aMemberTrans[a_tel,4]=MT
@@ -1450,10 +1483,14 @@ METHOD PrintReport() CLASS PMISsend
 					cClosingdate,'H','',LOGON_EMP_ID,'2','','PMC',''})
 				oMBal:ChgBalance(aMemberTrans[a_tel,7][5], self:closingDate, 0, me_balance, 0, me_balanceF,'',2) 
 			endif
+		* aMemberTrans[reknr,accnbr, accname, type transaction, transaction amount,assmntcode, destination{destacc,destPP,housecode,destnbr,destaccID,mbrtype},homeassamnt,tr.description,Dest.Persid,membercurrency]:
+		*                1      2        3           4                 5                  6           7         ,1    ,2      ,3        ,4       ,5       ,6        8           9            10             11
 			// Also transaction for Office assessment:
 			IF aMemberTrans[a_tel,4]=AG .and.aMemberTrans[a_tel,8]#0
 				IF aMemberTrans[a_tel,7][6]="M"
 					me_desc:=self:oLan:RGet("Assessment office of gifts from")+Space(1)+Country +' '+self:AssPeriod
+				elseif aMemberTrans[a_tel,7][6]="OFR" 
+					me_desc:=self:oLan:RGet("Assessment office own funds raising of gifts from")+Space(1)+Country+' '+self:AssPeriod
 				ELSE
 					me_desc:=self:oLan:RGet("Assessment office projects of gifts from")+Space(1)+Country+' '+self:AssPeriod
 				ENDIF
@@ -1487,6 +1524,16 @@ METHOD PrintReport() CLASS PMISsend
 			ENDIF
 		ELSE
 			AssOffice:=Round(AssOffice+AssOfficeProj,DecAantal)
+		ENDIF
+		IF !Empty(samOFR)
+			IF !AssOfficeOFR==0.00
+				nSeqnr++
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,bfm,gc,userid,poststatus,seqnr,docid,transid 
+				AAdd(aTransMT,{samOFR,'0','0',Str(AssOfficeOFR,-1),Str(AssOfficeOFR,-1),sCurr,self:oLan:RGet("AM Office Own Funds Raising Total"),cClosingdate,'H','',LOGON_EMP_ID,'2',Str(nSeqnr,-1),'PMC',''})
+				oMBal:ChgBalance(samOFR, self:closingDate, 0, AssOfficeOFR, 0, AssOfficeOFR,sCurr,2)
+			ENDIF
+		ELSE
+			AssOffice:=Round(AssOffice+AssOfficeOFR,DecAantal)
 		ENDIF
 		IF AssOffice#0
 			nSeqnr++
