@@ -938,7 +938,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	// turn off strict mode:
-	//	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
+	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
 	if !self:lNewDb
 		if self:FirstOfDay .and.SqlSelect{"show tables like 'employee'",oConn}:RecCount>0 
 			// check if not some else has logged in parallel
@@ -1765,6 +1765,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","versiondate","date","NO","0000-00-00",""},; 
 		{"sysparms","localbackup","tinyint(1)","NO","0",""},; 
 		{"sysparms","backuppath","varchar(150)","NO","",""},;
+		{"sysparms","assofra","int(11)","NO","0",""},;
 	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
