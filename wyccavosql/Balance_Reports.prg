@@ -6940,7 +6940,7 @@ METHOD OKButton( ) CLASS YearClosing
 		self:EndWindow()
 		RETURN true
 	ENDIF
-	IF SQLSelect{"select accid from account where accid='"+skap+"'",oConn}:reccount<1
+	IF SqlSelect{"select accid from account where accid='"+skap+"'",oConn}:reccount<1
 		(ErrorBox{self:OWNER,self:oLan:WGet('Account for net assets not found')}):Show()
 		self:EndWindow()
 		RETURN true
@@ -6956,7 +6956,7 @@ METHOD OKButton( ) CLASS YearClosing
 	self:d_depnbr:={''}     	
 	self:d_PLdeb:={0.00}
 	self:d_PLcre:={0.00}
-	oDep:=SQLSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,b.category from department d "+;
+	oDep:=SqlSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,b.category from department d "+;
 		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}
 	if oDep:reccount>0
 		
@@ -7018,7 +7018,7 @@ METHOD OKButton( ) CLASS YearClosing
 		RETURN true
 	ENDIF 
 	// check if there is someone else in the system: 
-	oSel:=SQLSelect{'select e.empid,'+SQLFullName(2)+' as fullname';
+	oSel:=SqlSelect{'select e.empid,'+SQLFullName(2)+' as fullname';
 	+' from employee as e, person as p where p.persid='+Crypt_Emp(false,"e.persid")+" and online=1" + ;
 	" and "+Crypt_Emp(false,"e.loginname")+"<>'"+LOGON_EMP_ID+"' order by lastname",oConn}
 	do while oSel:reccount>0
@@ -7051,7 +7051,7 @@ METHOD OKButton( ) CLASS YearClosing
 	* save balances of profit/loss accounts over year to be closed into arrays ProfitLossDeb/Cre
 	AfterBalance :=Year(self:BalanceEndDate+1)*100+Month(self:BalanceEndDate+1) 
    oBal:=Balances{}
-   oMBal:=SQLSelect{oBal:SQLGetBalance(self:YearStart*100+self:MonthStart,self:YearClose*100+self:MonthClose,false,true,,true),oConn}
+   oMBal:=SqlSelect{oBal:SQLGetBalance(self:YearStart*100+self:MonthStart,self:YearClose*100+self:MonthClose,false,true,,true),oConn}
    oMBal:Gotop()
    self:cError:=""
 	DO WHILE !oMBal:EOF 
@@ -7111,18 +7111,18 @@ METHOD OKButton( ) CLASS YearClosing
 					oStmnt:Execute()
 					if	!Empty(oStmnt:Status)
 						self:cError:=self:oLan:WGet("could	not update accountbalanceyear")+":"+oMBal:ACCNUMBER+"	- "+oMBal:Description
-						LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 						SQLStatement{"rollback",oConn}:Execute()
 						self:Pointer := Pointer{POINTERARROW}
+						LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 						(ErrorBox{self:OWNER,self:cError}):Show()
 						return
 					endif
 				endif
 			else
 				self:cError:=self:oLan:WGet("could	not update accountbalanceyear")+":"+oMBal:ACCNUMBER+"	- "+oMBal:Description 
-				LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 				SQLStatement{"rollback",oConn}:Execute()
 				self:Pointer := Pointer{POINTERARROW}
+				LogEvent(self,self:cError+"; statement:"+oStmnt:SQLString+CRLF+"Error:"+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
 				(ErrorBox{self:OWNER,self:cError}):Show()
 				return
 			ENDIF
@@ -7187,9 +7187,9 @@ METHOD OKButton( ) CLASS YearClosing
 			oStmnt:Execute()
 			if	oStmnt:NumSuccessfulRows<1
 				self:cError:=self:oLan:WGet("could not add transaction")+";Error:"+oStmnt:ErrInfo:ErrorMessage
-				LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
 				SQLStatement{"rollback",oConn}:Execute()
 				self:Pointer := Pointer{POINTERARROW}
+				LogEvent(self,self:cError+CRLF+"statement:"+oStmnt:SQLString,"LogErrors")
 				(ErrorBox{self:OWNER,self:cError}):Show()
 				return
 			endif 
