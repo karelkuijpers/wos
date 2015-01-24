@@ -832,7 +832,7 @@ CLASS EditDistribution INHERIT DataWindowExtra
 	instance CheckBoxActive 
 	PROTECT lNew as LOGIC
 	PROTECT nCurRec AS INT
-	PROTECT mMbrId,mSeq as STRING
+	PROTECT mMbrId,mSeq,mGrade as STRING
 	PROTECT oCaller as Window 
 	protect OwnPPCode as string 
 	protect oDis as SQLSelect
@@ -1171,7 +1171,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDistribution
 	self:oDCMemberText:TextValue:=oCaller:cMemberName
 	if !self:OwnPPCode==SEntity
 		oPP:= SqlSelect{"select ppcode,ppname from ppcodes where ppcode='AAA' or ppcode='"+SEntity+"'",oConn} 
-		self:oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE)
+		self:oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE) 
+	elseif self:mGrade=='OFR'
+		oPP:= SqlSelect{"select ppcode,ppname from ppcodes where ppcode='"+SEntity+"'",oConn} 
+		self:oDCmDestPP:FillUsing(oPP,#PPNAME,#PPCODE) 		
 	endif
 	IF !lNew
 		self:mDescription := self:aDis[DESCRPTN]
@@ -1254,12 +1257,13 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditDistribution
 	local aDistrb as array
 	local nSeq as int
 	if IsArray(uExtra) 
-		if Len(uExtra)=5
+		if Len(uExtra)=6
 			self:lNew:=uExtra[1]
 			self:oCaller:=uExtra[2]
 			self:OwnPPCode:=uExtra[3]
 			self:mMbrId:=uExtra[4]
 			self:mSeq:=uExtra[5]
+			self:mGrade:=uExtra[6]
 		endif
 	endif
 	if !self:lNew 
@@ -1453,11 +1457,11 @@ BEGIN
 	CONTROL	"", EDITMEMBER_MACCDEPT, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 131, 14, 93, 12, WS_EX_CLIENTEDGE
 	CONTROL	"v", EDITMEMBER_ACCBUTTON, "Button", WS_CHILD, 223, 14, 15, 12
 	CONTROL	"Is person:", EDITMEMBER_SC_CLN, "Static", SS_CENTERIMAGE|WS_CHILD, 12, 0, 38, 12
-	CONTROL	"Type:", EDITMEMBER_SC_GRADE, "Static", WS_CHILD, 20, 49, 23, 13
-	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 48, 156, 72
+	CONTROL	"Type:", EDITMEMBER_SC_GRADE, "Static", WS_CHILD, 20, 65, 24, 13
 	CONTROL	"", EDITMEMBER_MHBN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 350, 49, 73, 12, WS_EX_CLIENTEDGE
-	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 66, 156, 208
+	CONTROL	"PP Codes", EDITMEMBER_MPPCODE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 48, 156, 208
 	CONTROL	"", EDITMEMBER_WITHLDOFFRATE, "ComboBox", CBS_DISABLENOSCROLL|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 352, 66, 72, 57
+	CONTROL	"Status", EDITMEMBER_MGRADE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWNLIST|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 112, 66, 156, 72
 	CONTROL	"Home assigned?", EDITMEMBER_MHAS, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 352, 66, 68, 12
 	CONTROL	"", EDITMEMBER_MHOMEACC, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 112, 81, 166, 12, WS_EX_CLIENTEDGE
 	CONTROL	"New", EDITMEMBER_NEWBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 88, 42, 12
@@ -1465,7 +1469,7 @@ BEGIN
 	CONTROL	"Delete", EDITMEMBER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 364, 162, 42, 12
 	CONTROL	"Distribution instructions for received gifts", EDITMEMBER_GROUPBOX3, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 15, 78, 401, 102
 	CONTROL	"Household id", EDITMEMBER_HOUSECODETXT, "Static", WS_CHILD, 276, 48, 52, 12
-	CONTROL	"Primary Finance PO", EDITMEMBER_SC_FINANCEPO, "Static", WS_CHILD, 20, 65, 70, 13
+	CONTROL	"Primary Finance PO", EDITMEMBER_SC_FINANCEPO, "Static", WS_CHILD, 20, 48, 70, 12
 	CONTROL	"Pension amount:", EDITMEMBER_SC_AOW, "Static", WS_CHILD, 11, 281, 61, 12
 	CONTROL	"Health Insurance saving amount:", EDITMEMBER_SC_ZKV, "Static", WS_CHILD, 159, 281, 106, 13
 	CONTROL	"Partner Monetary Clearing house", EDITMEMBER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 12, 36, 416, 149
@@ -1506,10 +1510,10 @@ CLASS EditMember INHERIT DataWindowExtra
 	PROTECT oCCAccButton AS PUSHBUTTON
 	PROTECT oDCSC_CLN AS FIXEDTEXT
 	PROTECT oDCSC_GRADE AS FIXEDTEXT
-	PROTECT oDCmGrade AS COMBOBOX
 	PROTECT oDCmHBN AS SINGLELINEEDIT
 	PROTECT oDCmPPCode AS COMBOBOX
 	PROTECT oDCwithldoffrate AS COMBOBOX
+	PROTECT oDCmGrade AS COMBOBOX
 	PROTECT oDCmHAS AS CHECKBOX
 	PROTECT oDCmHomeAcc AS SINGLELINEEDIT
 	PROTECT oCCNewButton AS PUSHBUTTON
@@ -1568,6 +1572,8 @@ CLASS EditMember INHERIT DataWindowExtra
 	export cCurBal, cCurDep,cCurType as STRING 
 	protect aAssOrg:={} as array
 	export oCaller as MemberBrowser
+	protect oGetDep as GetDepAccount
+
 	export aDistr:={},aDistrOrg as array  // content of all corresponding distribution instructions:
 	//{1:mbrid,2:SEQNBR,3:DESTACC,4:DESTPP,5:DESTTYP,6:DESTAMT,7:LSTDATE,8:DESCRPTN,9:CURRENCY,10:DISABLED,11:AMNTSND,12:DFIR,13:DFIA,14:CHECKSAVE,15:SINGLEUSE}
 	export maxseq as int // next available sequence number within distribution instructions of this member
@@ -1706,7 +1712,7 @@ METHOD EditButton(lNewDis ) CLASS EditMember
 	IF !lNewDis
 		mSeq:=Str(oItem:GetValue(#DestPP),-1)
 	ENDIF
-	EditDistribution := EditDistribution{ self:Owner,,,{lNewDis,self,self:mPPCode,self:mMbrId,mSeq} }
+	EditDistribution := EditDistribution{ self:Owner,,,{lNewDis,self,self:mPPCode,self:mMbrId,mSeq,self:mGrade} }
 	EditDistribution:Show()
 	RETURN 
 METHOD EditFocusChange(oEditFocusChangeEvent )  CLASS EditMember
@@ -1815,10 +1821,6 @@ oDCSC_CLN:HyperLabel := HyperLabel{#SC_CLN,"Is person:",NULL_STRING,NULL_STRING}
 oDCSC_GRADE := FixedText{SELF,ResourceID{EDITMEMBER_SC_GRADE,_GetInst()}}
 oDCSC_GRADE:HyperLabel := HyperLabel{#SC_GRADE,"Type:",NULL_STRING,NULL_STRING}
 
-oDCmGrade := combobox{SELF,ResourceID{EDITMEMBER_MGRADE,_GetInst()}}
-oDCmGrade:HyperLabel := HyperLabel{#mGrade,"Status",NULL_STRING,NULL_STRING}
-oDCmGrade:FillUsing(Self:Memberstates( ))
-
 oDCmHBN := SingleLineEdit{SELF,ResourceID{EDITMEMBER_MHBN,_GetInst()}}
 oDCmHBN:HyperLabel := HyperLabel{#mHBN,NULL_STRING,"Personal System unique code of the member",NULL_STRING}
 oDCmHBN:UseHLforToolTip := True
@@ -1833,6 +1835,9 @@ oDCmPPCode:TooltipText := "PP code of Primary Finance PO of member"
 oDCwithldoffrate := combobox{SELF,ResourceID{EDITMEMBER_WITHLDOFFRATE,_GetInst()}}
 oDCwithldoffrate:FillUsing(Self:OffRates())
 oDCwithldoffrate:HyperLabel := HyperLabel{#withldoffrate,NULL_STRING,NULL_STRING,NULL_STRING}
+
+oDCmGrade := combobox{SELF,ResourceID{EDITMEMBER_MGRADE,_GetInst()}}
+oDCmGrade:HyperLabel := HyperLabel{#mGrade,"Status",NULL_STRING,NULL_STRING}
 
 oDCmHAS := CheckBox{SELF,ResourceID{EDITMEMBER_MHAS,_GetInst()}}
 oDCmHAS:HyperLabel := HyperLabel{#mHAS,"Home assigned?",NULL_STRING,NULL_STRING}
@@ -1986,15 +1991,18 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD ListBoxSelect(oControlEvent) CLASS EditMember
-	LOCAL oControl AS Control, uValue AS USUAL
+	LOCAL oControl as Control, uValue as USUAL
+	local cGrade:=self:oDCmGrade:currenttext as string
 	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
 	SUPER:ListBoxSelect(oControlEvent)
 	//Put your changes here
 	IF oControlEvent:NameSym==#mGrade .or. oControlEvent:NameSym==#mPPCode
-		IF SELF:oDCmPPCode:Value=SEntity
+		self:oDCmGrade:FillUsing(self:MemberStates())
+		self:oDCmGrade:TextValue:=cGrade
+		IF self:oDCmPPCode:Value=SEntity
 			SELF:oDCHomeAccTxt:Hide()
 			self:oDCmHomeAcc:Hide() 
-			SELF:ShowDistribution(TRUE)
+			self:ShowDistribution(true)
 		ELSE
 			self:oDCmAOW:Hide()
 			self:oDCmZKV:Hide()
@@ -2009,7 +2017,7 @@ METHOD ListBoxSelect(oControlEvent) CLASS EditMember
 			ENDIF
 		ENDIF		
 		self:showpensionhealth()
-		IF self:oDCmGrade:Value="Entity"
+		IF self:oDCmGrade:Value="Entity" .or.self:oDCmGrade:Value="OFR"
 			self:oDCmHBN:Hide()
 			oDCHousecodetxt:Hide()
 			self:oDCwithldoffrate:show()
@@ -2048,8 +2056,13 @@ ASSIGN mAOW(uValue) CLASS EditMember
 SELF:FieldPut(#mAOW, uValue)
 RETURN uValue
 
-METHOD MemberStates(lDummy:=nil as logic ) as array CLASS EditMember
-	RETURN {{"Entity","Entity"},{"Senior member","SM"},{"Junior member","JM"},{"Member in training","MIT"},{"Trainy","Sta"},{"Staff","Staf"}}
+METHOD MemberStates(lInitial:=false as logic ) as array CLASS EditMember
+local aType:={{"Entity","Entity"},{"Senior member","SM"},{"Junior member","JM"},{"Member in training","MIT"},{"Trainy","Sta"},{"Staff","Staf"}}
+// 	IF self:oMbr:HomePP==SEntity 
+	if self:oDCmPPCode:value ==SEntity
+		AAdd(aType,{"Own Funds Raising","OFR"})
+	endif
+	RETURN aType
 ACCESS mGrade() CLASS EditMember
 RETURN SELF:FieldGet(#mGrade)
 
@@ -2138,12 +2151,14 @@ METHOD OkButton()  CLASS EditMember
 	local cIncAccNbr,cExpAccNbr,cNetAccNbr,cIncAccPrvNbr,cExpAccPrvNbr,cNetAccPrvNbr,cAccPrvNbr as string
 	LOCAL oLVI	as ListViewItem, x as int, cAss, mCLNPrv, mAccidPrv,mCOPrv,mDepPrv as STRING
 	local cFatalError as string
-	local cError,cErrMessage,cPrvname as string
+	local cError,cErrMessage,cPrvname,cReplace as string
 	local cStatement as string
+	local cMessage as string
 	LOCAL lResetBFM:=false as LOGIC 
 	local lError as logic
 	local lCheckCons as logic
 	local aAss:={} as array
+	local aName:={} as array
 	local aDistrm:=self:aDistr,aDistrOrgm:=self:aDistrOrg,aContact:={'0','0','0'} as array 
 	local oDep,oSel,oSel2 as SQLSelect
 	local oStmnt as SQLStatement
@@ -2152,9 +2167,9 @@ METHOD OkButton()  CLASS EditMember
 	IF self:ValidateMember()
 		self:Pointer := Pointer{POINTERHOURGLASS}
 
-// 		IF !self:lNewMember.and. self:oMbr:GRADE=="Staf".and.!self:mGrade=="Staf"
-// 			lResetBFM:=true
-// 		ENDIF
+		// 		IF !self:lNewMember.and. self:oMbr:GRADE=="Staf".and.!self:mGrade=="Staf"
+		// 			lResetBFM:=true
+		// 		ENDIF
 		if !self:lNewMember
 			// 			mAccidPrv:=Transform(oMbr:accid,"") 
 			mAccidPrv:=self:mRekOrg                                                         
@@ -2195,7 +2210,7 @@ METHOD OkButton()  CLASS EditMember
 			",contact3='"+aContact[3]+"'"+;
 			",rptdest='"+iif(IsNil(self:StatemntsDest).or.Empty(self:StatemntsDest),"0",self:StatemntsDest)+"'"+;
 			",grade='"+if(self:mGRADE='Entity','',self:mGRADE)+"'" +;
-			",co='"+iif(self:mGrade='Entity',if(self:mGrade=='Entity','S','6'),'M')+"'"+;
+			",co='"+iif(self:mGrade='OFR'.or.self:mGrade='Entity','S','M')+"'"+;
 			",homepp='"+self:mPPCode+"'"+;
 			",offcrate='"+iif(self:mGrade='Entity',self:withldoffrate,"")+"'"+;
 			",householdid ='"+iif(self:mGrade='Entity'," ",AllTrim(self:mHBN))+"'"+;
@@ -2533,7 +2548,7 @@ METHOD OkButton()  CLASS EditMember
 			ENDIF
 		else
 			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == self:mCLN
-				* New Department 
+				* New or changed Department 
 				* Connect new Department:
 				oStmnt:SQLString:="update account set giftalwd=1 where accid in (select incomeacc from department where depid="+self:mDepId+")"
 				oStmnt:execute()
@@ -2557,106 +2572,113 @@ METHOD OkButton()  CLASS EditMember
 							if (oSel:=SqlSelect{"select lastname from person where persid='"+mCLNPrv+"'",oConn}):reccount>0
 								cPrvname:=oSel:lastname
 							endif
-						endif	
-						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(ConS(oSel2:lastname))+'"," ",replace(description,"'+AddSlashes(cPrvname)+'","")) where department='+self:mDepId,oConn}
-						oStmnt:Execute()
-						if !Empty(oStmnt:Status)
-							lError:=true
-							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
 						endif
+						lError:=UpdateAccountDescription(self:mDepId,oSel2:lastname,cPrvname,@cError)
 					endif
 				endif
 			endif
 		endif
-		// remove associated accounts:
-		for i:=1 to Len(self:aAssOrg)
-			if AScan(aAss,self:aAssOrg[i])=0
-				// remove:
-				oStmnt:=SQLStatement{"delete from memberassacc where mbrid="+self:mMbrId+" and accid="+self:aAssOrg[i],oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					lError:=true
-					cError:=oStmnt:ErrInfo:errormessage 
+		if !lError
+			// remove associated accounts:
+			for i:=1 to Len(self:aAssOrg)
+				if AScan(aAss,self:aAssOrg[i])=0
+					// remove:
+					oStmnt:=SQLStatement{"delete from memberassacc where mbrid="+self:mMbrId+" and accid="+self:aAssOrg[i],oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 				endif
-			endif
-		next
-		// add associated accounts:
-		for i:=1 to Len(aAss)
-			if AScan(self:aAssOrg,aAss[i])=0
-				// add:
-				oStmnt:=SQLStatement{"insert into memberassacc set mbrid="+self:mMbrId+",accid="+aAss[i],oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					lError:=true
-					cError:=oStmnt:ErrInfo:errormessage 
-				endif
-			endif
-		next
-		// remove distribution instructions:
-		for i:=1 to Len(self:aDistrOrg)
-			if AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]})=0
-				// remove:
-				oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistrOrg[i,SEQNBR],-1),oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					lError:=true
-					cError:=oStmnt:ErrInfo:errormessage 
-				endif
-			endif
-		next
-		// add distribution instructions: 
-		if !Empty(self:mDepId)
-			oDep:=SqlSelect{"select incomeacc,expenseacc,netasset from department where depid="+self:mDepId,oConn}
-			cExpAcc:=Str(oDep:expenseacc,-1) 
-		else
-			cExpAcc:=self:mREK
+			next
 		endif
-		for i:=1 to Len(self:aDistr)
-			// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;  
-			j:=0
-			cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"', ",;
-				"update distributioninstruction set ")+;
-				"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
-				",destpp='"+ self:aDistr[i,DESTPP]+"'"+;                      
-			",destacc='"+ self:aDistr[i,DESTACC]+"'"+;
-				",destamt  ="+ Str(self:aDistr[i,DESTAMT],-1) +;
-				",desttyp  ="+ str(self:aDistr[i,Desttyp],-1)+;
-				",currency="+Str(self:aDistr[i,CURRENCY],-1)+;
-				",disabled="+Str(self:aDistr[i,DISABLED],-1)+; 
-			",singleuse="+Str(self:aDistr[i,SINGLEUSE],-1) +;
-				iif(self:lNew.or.(j:=AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]}))=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
-			oStmnt:=SQLStatement{cStatement,oConn}
-			oStmnt:Execute()
-			if !Empty(oStmnt:Status)
-				lError:=true
-				cError:=oStmnt:ErrInfo:errormessage
-				exit  
-			endif
-			// check if dest acc changed
-			if j>0 .and. self:aDistr[i,DESTPP]=='AAA' .and. !aDistrOrgm[j,DESTACC]==aDistrm[i,DESTACC]
-				// dest acc changed, change also corresponding bankorders:
-				oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aDistrm[i,DESTACC]+"' where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[j,DESTACC]+"'",oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					lError:=true
-					cError:=oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
-					exit  
+		if !lError
+			// add associated accounts:
+			for i:=1 to Len(aAss)
+				if AScan(self:aAssOrg,aAss[i])=0
+					// add:
+					oStmnt:=SQLStatement{"insert into memberassacc set mbrid="+self:mMbrId+",accid="+aAss[i],oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
 				endif
+			next
+		endif
+		if !lError
+			// remove distribution instructions:
+			for i:=1 to Len(self:aDistrOrg)
+				if AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]})=0
+					// remove:
+					oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistrOrg[i,SEQNBR],-1),oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage 
+					endif
+				endif
+			next
+		endif
+		if !lError
+			// add distribution instructions: 
+			if !Empty(self:mDepId)
+				oDep:=SqlSelect{"select incomeacc,expenseacc,netasset from department where depid="+self:mDepId,oConn}
+				cExpAcc:=Str(oDep:expenseacc,-1) 
+			else
+				cExpAcc:=self:mREK
 			endif
-		next
-		// Remove bankorders of deleted distribution instructions:
-		for i:=1 to Len(aDistrOrgm)
-			if (j:=AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]}))=0 // not in current distr instr?
-				// delete bank orders:
-				oStmnt:=SQLStatement{"delete from bankorder where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[i,DESTACC]+"'",oConn}
-				oStmnt:Execute()				
+		endif
+		if !lError		
+			for i:=1 to Len(self:aDistr)
+				// 			",dfir='"+self:aDistr[i,DFIR]+"',dfia='"+self:aDistr[i,DFIA]+"',checksave='"+self:aDistr[i,CHECKSAVE]+"'"+;  
+				j:=0
+				cStatement:=iif(self:lNew.or.AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]})=0, "insert into distributioninstruction set mbrid='"+self:mMbrId+"', seqnbr='" +Str(self:aDistr[i,SEQNBR],-1)+"', ",;
+					"update distributioninstruction set ")+;
+					"descrptn='"+self:aDistr[i,DESCRPTN]+"'"+;
+					",destpp='"+ self:aDistr[i,DESTPP]+"'"+;                      
+				",destacc='"+ self:aDistr[i,DESTACC]+"'"+;
+					",destamt  ="+ Str(self:aDistr[i,DESTAMT],-1) +;
+					",desttyp  ="+ str(self:aDistr[i,Desttyp],-1)+;
+					",currency="+Str(self:aDistr[i,CURRENCY],-1)+;
+					",disabled="+Str(self:aDistr[i,DISABLED],-1)+; 
+				",singleuse="+Str(self:aDistr[i,SINGLEUSE],-1) +;
+					iif(self:lNew.or.(j:=AScan(aDistrOrgm,{|x|x[SEQNBR]=aDistrm[i,SEQNBR]}))=0,""," where mbrid="+self:mMbrId+" and seqnbr="+Str(self:aDistr[i,SEQNBR],-1)) 
+				oStmnt:=SQLStatement{cStatement,oConn}
+				oStmnt:Execute()
 				if !Empty(oStmnt:Status)
 					lError:=true
 					cError:=oStmnt:ErrInfo:errormessage
 					exit  
 				endif
-			endif
-		next
+				// check if dest acc changed
+				if j>0 .and. self:aDistr[i,DESTPP]=='AAA' .and. !aDistrOrgm[j,DESTACC]==aDistrm[i,DESTACC]
+					// dest acc changed, change also corresponding bankorders:
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aDistrm[i,DESTACC]+"' where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[j,DESTACC]+"'",oConn}
+					oStmnt:Execute()
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage+CRLF+"Statement:"+oStmnt:SQLString
+						exit  
+					endif
+				endif
+			next
+		endif
+		if !lError
+			// Remove bankorders of deleted distribution instructions:
+			for i:=1 to Len(aDistrOrgm)
+				if (j:=AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]}))=0 // not in current distr instr?
+					// delete bank orders:
+					oStmnt:=SQLStatement{"delete from bankorder where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[i,DESTACC]+"'",oConn}
+					oStmnt:Execute()				
+					if !Empty(oStmnt:Status)
+						lError:=true
+						cError:=oStmnt:ErrInfo:errormessage
+						exit  
+					endif
+				endif
+			next
+		endif
 		if lError
 			SQLStatement{"rollback",oConn}:Execute()
 			self:Pointer := Pointer{POINTERARROW}
@@ -2666,7 +2688,8 @@ METHOD OkButton()  CLASS EditMember
 			ErrorBox{self,"member could not be stored:"+cError}:Show()
 			return false
 		endif 
-		SQLStatement{"commit",oConn}:Execute()
+		SQLStatement{"commit",oConn}:Execute() 
+		LogEvent(self,cMessage)
 		self:Pointer := Pointer{POINTERARROW}
 		self:aDistrOrg:=self:aDistr    // for close
 		if lCheckCons
@@ -2815,18 +2838,6 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 		self:oDCwithldoffrate:Hide()
 		self:oDCwithldofftxt:Hide()
 	ELSE 
-		self:oMbr:=SqlSelect{"select m.householdid,m.mbrid,m.aow,m.zkv,m.homeacc,m.has,m.contact,m.contact2,m.contact3,m.rptdest,m.homepp,m.co,m.grade,m.offcrate,"+;
-			"m.accid,m.depid,m.persid,a.description,p.mailingcodes,"+SQLFullName(0,"p")+" as membername, "+; 
-		"d.depid,d.deptmntnbr,d.descriptn as depname, ";
-			+SQLFullName(0,"c")+" as contactname,"+SQLFullName(0,"c2")+" as contactname2,"+SQLFullName(0,"c3")+" as contactname3,b.category as type, group_concat(cast(am.accid as char),']',am.accnumber,']',am.description separator '|') as assoctd "+;
-			" from person p,member m "+;
-			" left join account a on (a.accid=m.accid) left join balanceitem as b on ( b.balitemid=a.balitemid)"+;
-			" left join department d on (d.depid=m.depid) "+;
-			"left join person as c on (c.persid=m.contact) "+; 
-		"left join person as c2 on (c2.persid=m.contact2) "+; 
-		"left join person as c3 on (c3.persid=m.contact3) "+; 
-		"left join memberassacc ass on (m.mbrid=ass.mbrid) left join account am on (am.accid=ass.accid) " +;
-			" where p.persid=m.persid and m.mbrid="+self:mMbrId,oConn} 
 		self:cCurDep:=AllTrim(Transform(self:oMbr:depid,""))
 		self:mDepid:=self:cCurDep
 		self:cCurType:=Transform(self:oMbr:Type,"")
@@ -2933,8 +2944,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 
 		// fill distribution instructions:
 		self:FillDistribution()
+		self:mGRADE := self:oMbr:Grade
 		IF self:oMbr:CO=='M'
-			self:mGRADE := self:oMbr:Grade
 			IF self:mPPCode=SEntity
 				self:oDCmHAS:Show() 
 			else
@@ -2959,11 +2970,11 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 			ENDIF
 			self:oDCwithldoffrate:show()
 			self:oDCwithldofftxt:show()			
-			IF self:oMbr:CO='S'
-				self:mGRADE:='Entity'
-			ELSE
-				self:mGRADE:='Entity 19999'
-			ENDIF
+// 			IF self:oMbr:CO='S'
+// 				self:mGRADE:='Entity'
+// 			ELSE
+// 				self:mGRADE:='Entity 19999'
+// 			ENDIF
 		ENDIF
 		self:mGradeOrg:=self:mGRADE
 		self:oDCmGrade:SetFocus()
@@ -2991,6 +3002,9 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditMember
 	else
 		self:showpensionhealth()
 	ENDIF 
+	self:oDCmGrade:FillUsing(self:MemberStates())
+	self:mGRADE:=self:mGradeOrg
+	self:oGetDep:=GetDepAccount{}
 	if AScan(aMenu,{|x|x[4]=="MemberEdit"})=0
 		self:oCCNewButton:Hide()
 		self:oCCEditButton:Hide()
@@ -3016,7 +3030,23 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditMember
 			self:lNew:=uExtra
    	ENDIF
    	self:lNewMember:=lNew
-	ENDIF
+   ENDIF
+   if !self:lNewMember
+		self:oMbr:=SqlSelect{"select m.householdid,m.mbrid,m.aow,m.zkv,m.homeacc,m.has,m.contact,m.contact2,m.contact3,m.rptdest,m.homepp,m.co,if(m.grade='','Entity',m.grade) as grade,m.offcrate,"+;
+			"m.accid,m.depid,m.persid,a.description,p.mailingcodes,"+SQLFullName(0,"p")+" as membername, "+; 
+		"d.depid,d.deptmntnbr,d.descriptn as depname, ";
+			+SQLFullName(0,"c")+" as contactname,"+SQLFullName(0,"c2")+" as contactname2,"+SQLFullName(0,"c3")+" as contactname3,b.category as type, group_concat(cast(am.accid as char),']',am.accnumber,']',am.description separator '|') as assoctd "+;
+			" from person p,member m "+;
+			" left join account a on (a.accid=m.accid) left join balanceitem as b on ( b.balitemid=a.balitemid)"+;
+			" left join department d on (d.depid=m.depid) "+;
+			"left join person as c on (c.persid=m.contact) "+; 
+		"left join person as c2 on (c2.persid=m.contact2) "+; 
+		"left join person as c3 on (c3.persid=m.contact3) "+; 
+		"left join memberassacc ass on (m.mbrid=ass.mbrid) left join account am on (am.accid=ass.accid) " +;
+			" where p.persid=m.persid and m.mbrid="+self:mMbrId,oConn}
+		self:mPPCode:=self:oMbr:HomePP
+ 
+   endif
 	return nil
 
 METHOD Refresh() CLASS EditMember
@@ -3143,12 +3173,12 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			cError :=  oLan:WGet("Type is obliged")+"!"
 			SELF:oDCmGrade:SetFocus()
 		ENDIF
-		IF lValid.and. self:mGRADE # "Entity" .and. Empty(self:mHBN)
+		IF lValid.and. (self:mGRADE # "Entity" .and.self:mGRADE # "OFR") .and. Empty(self:mHBN)
 			lValid := FALSE
 			cError :=  oLan:WGet("Household id is obliged")+"!"
-			SELF:oDCmHBN:SetFocus()
+			self:oDCmHBN:SetFocus()
 		ENDIF
-		IF lValid .and.self:mGRADE # "Entity"
+		IF lValid .and.self:mGRADE # "Entity" .and.self:mGRADE # "OFR"
 			// check unique household code:
 			// 			oMem:=SQLSelect{"select a.accid,m.persid from member m, account a where a.accid=m.accid and householdid='"+AllTrim(self:mHBN)+"'"+iif(self:lNewMember,""," and accid<>"+self:mRekOrg),oConn}
 			oMem:=SQLSelect{"select m.persid from member m where householdid='"+AllTrim(self:mHBN)+"'"+iif(self:lNewMember,""," and mbrid<>"+self:mMbrId),oConn}
@@ -3158,7 +3188,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 				self:oDCmHBN:SetFocus()
 			ENDIF
 		ENDIF
-		IF lValid .and.self:mGRADE # "Entity" .and. self:mPPCode # Sentity
+		IF lValid .and.self:mGRADE # "Entity".and.self:mGRADE # "OFR" .and. self:mPPCode # Sentity
 			// check legal distribution codes for foreign members 
 			if AScan(aDistrm,{|x|x[mbrid]=myMbrId.and. !x[DESTPP]==Sentity .and.!x[DESTPP]=='AAA' }) >0
 				// 			if SQLSelect{"select destpp,accid from DistributionInstruction where (accid="+self:mRek+iif(self:lNewMember,""," or accid="+self:mRekOrg)+") and DESTPP<>'"+Sentity+"' and DESTPP<>'AAA'",oConn}:RecCount>0
@@ -3169,7 +3199,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			endif			
 		endif
 		IF lValid .and. self:AccDepSelect=='account'
-			cError:=ValidateMemberType(iif(self:mGRADE='Entity','S','M'),self:mPPCode,self:cCurType)
+			cError:=ValidateMemberType(iif(self:mGRADE='Entity'.or.self:mGRADE # "OFR",'S','M'),self:mPPCode,self:cCurType)
 			if !Empty(cError)
 				lValid := FALSE
 				self:oDCmAccDept:SetFocus()
@@ -3178,8 +3208,8 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 		// Check if name allready exists of the account: 
 		if lValid .and. self:AccDepSelect=='account'
 			if self:lNewMember .or. !AllTrim(self:cMemberName)== AllTrim(self:oMbr:membername)
-				if SqlSelect{"select description from account where accid<>"+self:mRek +iif(self:lNewMember.or.!Empty(self:cCurDep),""," and accid<>'"+self:mRekOrg+"'")+" and description='"+AllTrim(cMemberName)+"'",oConn}:RecCount>0
-					cError:=self:oLan:WGet('Account description')+' "'+AllTrim(cMemberName)+'" '+self:oLan:WGet('allready exist')
+				if SqlSelect{"select description from account where accid<>"+self:mRek +iif(self:lNewMember.or.!Empty(self:cCurDep),""," and accid<>'"+self:mRekOrg+"'")+" and description='"+substr(AllTrim(cMemberName),1,40)+"'",oConn}:RecCount>0
+					cError:=self:oLan:WGet('Account description')+' "'+SubStr(AllTrim(cMemberName),1,40)+'" '+self:oLan:WGet('allready exist')
 					lValid:=FALSE
 					self:oDCmAccDept:SetFocus()
 				ENDIF
@@ -3196,7 +3226,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			// 				endif
 			// 			endif
 			if lValid
-				oDep:=SQLSelect{"select d.incomeacc,d.expenseacc,ai.description as incname,ae.description as expname from department d "+;
+				oDep:=SqlSelect{"select d.incomeacc,d.expenseacc,d.netasset,ai.description as incname,ae.description as expname,d.depid from department d "+;
 					"left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where d.depid="+self:mDepId,oConn}
 				if oDep:RecCount>0
 					if Empty(oDep:incomeacc)
@@ -3208,13 +3238,29 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 						// 						lValid:=FALSE
 						// 						self:oDCmAccDept:SetFocus() 
 					elseif Empty(oDep:expenseacc)
-						cError:=self:oLan:WGet('Account expense obliged for department member')
-						lValid:=FALSE
-						self:oDCmAccDept:SetFocus()
-						// 					ELSEif self:lNewMember.and.AtC(cLastname,oDep:expname)=0
-						// 						cError:=self:oLan:WGet('Description of Account Expense  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
-						// 						lValid:=FALSE
-						// 						self:oDCmAccDept:SetFocus() 
+						if self:mGrade # "OFR" .or. self:mPPCode # Sentity
+							cError:=self:oLan:WGet('Account expense obliged for department member')
+							lValid:=FALSE
+							self:oDCmAccDept:SetFocus()
+						else
+							if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),expense))
+								cError:=self:oLan:WGet("Expense account obliged for this member department because parent has no expense account" )
+								lValid:=FALSE
+								self:oDCmAccDept:SetFocus()
+							endif					
+						endif
+					elseif Empty(oDep:netasset)
+						if self:mGrade # "OFR" .or. self:mPPCode # Sentity
+							cError:=self:oLan:WGet('Account netasset obliged for department member')
+							lValid:=FALSE
+							self:oDCmAccDept:SetFocus()
+// 						else
+// 							if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),liability))
+// 								cError:=self:oLan:WGet("Netasset account obliged for this member department because parent has no netasset account" )
+// 								lValid:=FALSE
+// 								self:oDCmAccDept:SetFocus()
+// 							endif					
+						endif
 					ENDIF
 					if lValid 
 						// check if only Income account is Gifts receivable:
@@ -3287,15 +3333,15 @@ STATIC DEFINE EDITMEMBER_HOUSECODETXT := 116
 STATIC DEFINE EDITMEMBER_LISTVIEWASSACC := 123 
 STATIC DEFINE EDITMEMBER_MACCDEPT := 102 
 STATIC DEFINE EDITMEMBER_MAOW := 130 
-STATIC DEFINE EDITMEMBER_MGRADE := 106 
+STATIC DEFINE EDITMEMBER_MGRADE := 109 
 STATIC DEFINE EDITMEMBER_MHAS := 110 
-STATIC DEFINE EDITMEMBER_MHBN := 107 
+STATIC DEFINE EDITMEMBER_MHBN := 106 
 STATIC DEFINE EDITMEMBER_MHOMEACC := 111 
 STATIC DEFINE EDITMEMBER_MPERSON := 100 
 STATIC DEFINE EDITMEMBER_MPERSONCONTACT := 133 
 STATIC DEFINE EDITMEMBER_MPERSONCONTACT2 := 135 
 STATIC DEFINE EDITMEMBER_MPERSONCONTACT3 := 138 
-STATIC DEFINE EDITMEMBER_MPPCODE := 108 
+STATIC DEFINE EDITMEMBER_MPPCODE := 107 
 STATIC DEFINE EDITMEMBER_MZKV := 131 
 STATIC DEFINE EDITMEMBER_NEWBUTTON := 112 
 STATIC DEFINE EDITMEMBER_OKBUTTON := 145 
@@ -3312,7 +3358,7 @@ STATIC DEFINE EDITMEMBER_SC_GRADE := 105
 STATIC DEFINE EDITMEMBER_SC_REK := 104 
 STATIC DEFINE EDITMEMBER_SC_ZKV := 119 
 STATIC DEFINE EDITMEMBER_STATEMNTSDEST := 140 
-STATIC DEFINE EDITMEMBER_WITHLDOFFRATE := 109 
+STATIC DEFINE EDITMEMBER_WITHLDOFFRATE := 108 
 STATIC DEFINE EDITMEMBER_WITHLDOFFTXT := 127 
 STATIC DEFINE EDITMEMBERNEW_DELETEBUTTON := 100 
 STATIC DEFINE EDITMEMBERNEW_EDITBUTTON := 101 
