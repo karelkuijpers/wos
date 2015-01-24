@@ -1,13 +1,16 @@
 CLASS DepartmentExplorer INHERIT CustomExplorer 
 	declare method BuildListViewItems,PrintSubItem,ValidateTransition
 METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentExplorer
-	LOCAL oListView			AS BalanceListView
-	LOCAL oListViewItem		AS ListViewItem
+	LOCAL oListView			as BalanceListView
+	LOCAL oListViewItem		as ListViewItem
 	LOCAL FieldValue		as USUAL
 	local nCurrentRec,nCurAcc as int
 	local category as string
 	// store list view locally for faster access
-	oListView := SELF:ListView
+	oListView := self:ListView
+	if oListView==null_object
+		return
+	endif
 	oListView:DeleteAll()
 	// position the customer server on the specified value
 	// 	oSubItemServer:Seek(#DepId,ParentNum)
@@ -21,7 +24,7 @@ METHOD BuildListViewItems(ParentNum:=0 as int ) as void pascal CLASS DepartmentE
 		oListViewItem:ImageIndex	:= 1
 
 		// for each field, set the value in the item
-		Fieldvalue:="department"
+		FieldValue:="department"
 		oListViewItem:SetValue(self:aItem[nCurrentRec,1], self:sListIdentify)  //id
 		oListViewItem:SetText(self:aItem[nCurrentRec,4], self:sListIdentify)   // number
 		oListViewItem:SetValue(self:aItem[nCurrentRec,3], self:sListDescription)
@@ -378,45 +381,45 @@ RETURN nCurrentRec
  
 CLASS EditDepartment INHERIT DataWindowExtra 
 
-	PROTECT oDCFixedText1 AS FIXEDTEXT
-	PROTECT oDCmDepartmntNbr AS SINGLELINEEDIT
-	PROTECT oDCFixedText2 AS FIXEDTEXT
-	PROTECT oDCmDescription AS SINGLELINEEDIT
-	PROTECT oDCFixedText3 AS FIXEDTEXT
-	PROTECT oDCmParentDep AS SINGLELINEEDIT
-	PROTECT oCCOKButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCmCAPITAL AS SINGLELINEEDIT
-	PROTECT oCCCAPButton AS PUSHBUTTON
-	PROTECT oDCSC_SKAP AS FIXEDTEXT
-	PROTECT oDCmincomeacc AS SINGLELINEEDIT
-	PROTECT oCCIncButton AS PUSHBUTTON
-	PROTECT oDCmexpenseacc AS SINGLELINEEDIT
-	PROTECT oCCExpButton AS PUSHBUTTON
-	PROTECT oDCmpayableacc AS SINGLELINEEDIT
-	PROTECT oCCCreditorsButton AS PUSHBUTTON
-	PROTECT oDCmreceivableacc AS SINGLELINEEDIT
-	PROTECT oCCDebtorsButton AS PUSHBUTTON
-	PROTECT oDCGroupBox2 AS GROUPBOX
-	PROTECT oDCmAccount1 AS SINGLELINEEDIT
-	PROTECT oCCRek1Button AS PUSHBUTTON
-	PROTECT oDCmAccount2 AS SINGLELINEEDIT
-	PROTECT oCCRek2Button AS PUSHBUTTON
-	PROTECT oDCmAccount3 AS SINGLELINEEDIT
-	PROTECT oCCRek3Button AS PUSHBUTTON
-	PROTECT oDCGroupBox1 AS GROUPBOX
-	PROTECT oDCSC_Inc AS FIXEDTEXT
-	PROTECT oDCSC_Exp AS FIXEDTEXT
-	PROTECT oDCmPerson1 AS SINGLELINEEDIT
-	PROTECT oCCPersonButton1 AS PUSHBUTTON
-	PROTECT oDCmPerson2 AS SINGLELINEEDIT
-	PROTECT oCCPersonButton2 AS PUSHBUTTON
-	PROTECT oDCMemberText AS FIXEDTEXT
-	PROTECT oDCIPCProject AS SINGLELINEEDIT
-	PROTECT oDCIPCText AS FIXEDTEXT
-	PROTECT oDCSC_Debtors AS FIXEDTEXT
-	PROTECT oDCSC_Creditors AS FIXEDTEXT
-	PROTECT oDCmActive AS CHECKBOX
+	PROTECT oDCFixedText1 as FIXEDTEXT
+	PROTECT oDCmDepartmntNbr as SINGLELINEEDIT
+	PROTECT oDCFixedText2 as FIXEDTEXT
+	PROTECT oDCmDescription as SINGLELINEEDIT
+	PROTECT oDCFixedText3 as FIXEDTEXT
+	PROTECT oDCmParentDep as SINGLELINEEDIT
+	PROTECT oCCOKButton as PUSHBUTTON
+	PROTECT oCCCancelButton as PUSHBUTTON
+	PROTECT oDCmCAPITAL as SINGLELINEEDIT
+	PROTECT oCCCAPButton as PUSHBUTTON
+	PROTECT oDCSC_SKAP as FIXEDTEXT
+	PROTECT oDCmincomeacc as SINGLELINEEDIT
+	PROTECT oCCIncButton as PUSHBUTTON
+	PROTECT oDCmexpenseacc as SINGLELINEEDIT
+	PROTECT oCCExpButton as PUSHBUTTON
+	PROTECT oDCmpayableacc as SINGLELINEEDIT
+	PROTECT oCCCreditorsButton as PUSHBUTTON
+	PROTECT oDCmreceivableacc as SINGLELINEEDIT
+	PROTECT oCCDebtorsButton as PUSHBUTTON
+	PROTECT oDCGroupBox2 as GROUPBOX
+	PROTECT oDCmAccount1 as SINGLELINEEDIT
+	PROTECT oCCRek1Button as PUSHBUTTON
+	PROTECT oDCmAccount2 as SINGLELINEEDIT
+	PROTECT oCCRek2Button as PUSHBUTTON
+	PROTECT oDCmAccount3 as SINGLELINEEDIT
+	PROTECT oCCRek3Button as PUSHBUTTON
+	PROTECT oDCGroupBox1 as GROUPBOX
+	PROTECT oDCSC_Inc as FIXEDTEXT
+	PROTECT oDCSC_Exp as FIXEDTEXT
+	PROTECT oDCmPerson1 as SINGLELINEEDIT
+	PROTECT oCCPersonButton1 as PUSHBUTTON
+	PROTECT oDCmPerson2 as SINGLELINEEDIT
+	PROTECT oCCPersonButton2 as PUSHBUTTON
+	PROTECT oDCMemberText as FIXEDTEXT
+	PROTECT oDCIPCProject as SINGLELINEEDIT
+	PROTECT oDCIPCText as FIXEDTEXT
+	PROTECT oDCSC_Debtors as FIXEDTEXT
+	PROTECT oDCSC_Creditors as FIXEDTEXT
+	PROTECT oDCmActive as CHECKBOX
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
 	instance mDepartmntNbr 
@@ -430,22 +433,24 @@ CLASS EditDepartment INHERIT DataWindowExtra
 	instance mAccount3 
    PROTECT cCAPITALName,cIncName,cExpname,cPayableName,cReceivablename as STRING
 	PROTECT NbrCAPITAL,NbrIncome,IdIncomeOrg,NbrExpense,NbrPayable,NbrReceivable as STRING
-  	PROTECT lNew AS LOGIC
+  	PROTECT lNew as LOGIC
 	PROTECT oCaller as DepartmentExplorer
-	PROTECT OrgDescription AS STRING
-	PROTECT OrgParent AS STRING
+	PROTECT OrgDescription as STRING
+	PROTECT OrgParent as STRING
 	PROTECT OrgDepNbr as STRING
 	protect OrgActive as logic
-	PROTECT nCurRec AS INT
-	PROTECT mDepId AS STRING
-	PROTECT cContactName1,mCLN1,cContactName2,mCLN2 AS STRING
-	PROTECT mAcc1 AS STRING
-	PROTECT cAccount1Name AS STRING
-	PROTECT mAcc2 AS STRING
-	PROTECT cAccount2Name AS STRING
-	PROTECT mAcc3 AS STRING
+	PROTECT nCurRec as int
+	PROTECT mDepId as STRING
+	PROTECT cContactName1,mCLN1,cContactName2,mCLN2 as STRING
+	PROTECT mAcc1 as STRING
+	PROTECT cAccount1Name as STRING
+	PROTECT mAcc2 as STRING
+	PROTECT cAccount2Name as STRING
+	PROTECT mAcc3 as STRING
 	PROTECT cAccount3Name as STRING 
-	protect oDep as SQLSelect
+	protect oDep as SQLSelect 
+	protect oGetDep as GetDepAccount
+
                                  
 declare method RekButton                                 
 RESOURCE EditDepartment DIALOGEX  24, 22, 352, 240
@@ -514,32 +519,29 @@ METHOD CancelButton( ) CLASS EditDepartment
 METHOD CAPButton( lUnique) CLASS EditDepartment
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrCAPITAL},{liability},,,,{self:NbrIncome,self:NbrExpense})
 	if !self:lNew 
-		cfilter+= " and department="+self:mDepId
+		cfilter:= 'b.category="'+liability+'" and department='+self:mDepId +iif(Empty(self:NbrPayable),''," and a.accid not in ("+self:NbrPayable+")")
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmCAPITAL:TextValue ),"Net Asset",lUnique,cfilter,self:owner,false)
 	endif
-	RETURN NIL
+	RETURN nil
 METHOD CreditorsButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrPayable},{liability},,,,{self:NbrCAPITAL})
 	if !self:lNew 
-		cfilter+= " and department="+self:mDepId
+		cfilter:= 'b.category="'+liability+'" and department='+self:mDepId +iif(Empty(self:NbrCAPITAL),''," and a.accid not in ("+self:NbrCAPITAL+")")
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmpayableacc:TextValue ),"Payable",lUnique,cfilter,self:owner,false)
 	endif
 
-RETURN NIL
+RETURN nil
 METHOD DebtorsButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrReceivable},{asset},,,,)
 	if !self:lNew 
-		cfilter+= " and department="+self:mDepId
+		cfilter:= 'b.category="'+asset+'" and department='+self:mDepId 
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmreceivableacc:TextValue ),"Receivable",lUnique,cfilter,self:owner,false)
 	endif
 
-RETURN NIL
+RETURN nil
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS EditDepartment
 	LOCAL oControl AS Control
 	LOCAL lGotFocus AS LOGIC
@@ -617,22 +619,21 @@ ENDIF
 METHOD ExpButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrExpense},{expense},,,,{self:NbrCAPITAL,self:NbrIncome})
 	if !self:lNew 
-		cfilter+= " and department="+self:mDepId
+		cfilter:= 'b.category="'+expense+'" and department='+self:mDepId 
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmexpenseacc:TextValue ),"Expense",lUnique,cfilter,self:owner,false)
 	endif
 
-RETURN NIL
+RETURN nil
 METHOD IncButton(lUnique ) CLASS EditDepartment 
 	LOCAL cfilter as string
 	Default(@lUnique,FALSE)
-	cfilter:=MakeFilter({self:NbrIncome},{income},,,,{self:NbrCAPITAL,self:NbrExpense})
+// 	cfilter:=MakeFilter({self:NbrIncome},{income},,,,{self:NbrCAPITAL,self:NbrExpense})
 	if !self:lNew 
-		cfilter+= " and department="+self:mDepId
+		cfilter:= 'b.category="'+income+'" and department='+self:mDepId
 		AccountSelect(self,iif(Val(self:mDepId)=0,"",self:oDCmincomeacc:TextValue ),"Income",lUnique,cfilter,self:owner,false)
 	endif
-RETURN NIL
+RETURN nil
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -917,20 +918,20 @@ METHOD OKButton( ) CLASS EditDepartment
 	local cLastname as string
 	local cGiftsAccs as string
 
-	IF Empty(self:mDepartmntNbr)
+	IF Empty(AllTrim(self:oDCmDepartmntNbr:TextValue))
 		(ErrorBox{,"Please fill number of department"}):Show()
 		RETURN
 	ENDIF
 	IF lNew.or.!AllTrim(self:mDepartmntNbr)==AllTrim(self:OrgDepNbr)
 		*Check if Number allready exist:
-		IF SQLSelect{"select depid from department where deptmntnbr='"+AllTrim(mDepartmntNbr)+"'",oConn}:Reccount>0
+		IF SqlSelect{"select depid from department where deptmntnbr='"+AllTrim(mDepartmntNbr)+"'",oConn}:reccount>0
 			(ErrorBox{,"department number "+ mDepartmntNbr+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
 	ENDIF
 	IF lNew.or.!AllTrim(self:mDescription)==AllTrim(self:OrgDescription)
 		*Check if description allready exist:
-		IF SQLSelect{"select depid from department where descriptn='"+AllTrim(self:mDescription)+"'",oConn}:Reccount>0
+		IF SqlSelect{"select depid from department where descriptn='"+AllTrim(self:mDescription)+"'",oConn}:Reccount>0
 			(ErrorBox{,"department name "+ self:mDescription+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
@@ -944,30 +945,45 @@ METHOD OKButton( ) CLASS EditDepartment
 		// making department inactive
 		* Check presence of childitems:
 		oSel:=SqlSelect{"select	count(*) as ChildCount from department where parentdep='"+self:mDepId+"'",oConn}
-		if	oSel:Reccount>0 .and. ConI(oSel:childcount)>0
+		if	oSel:reccount>0 .and. ConI(oSel:childcount)>0
 			(ErrorBox{,self:oLan:WGet('Make child departments inactive first')}):Show()
 			RETURN
 		endif
 	endif
 	if !self:lNew .and. !Empty(self:oDep:mpersid) 
 		// member department
-		cLastname:=SQLSelect{"select lastname from person where persid="+Str(self:oDep:mpersid,-1),oConn}:lastname
+		cLastname:=SqlSelect{"select lastname from person where persid="+Str(self:oDep:mpersid,-1),oConn}:lastname
 		if AtC(cLastname,self:mDescription)=0
 			(ErrorBox{,self:oLan:WGet('Department description should contain lastname of corresponding member')+': "'+AllTrim(cLastname)+'" '}):Show()
 			self:oDCmDescription:SetFocus()
 			return 
 		endif		
 		IF Empty(self:NbrCAPITAL)
-			(ErrorBox{,"Net asset account obliged for this member department"}):Show()
+			if !self:oDep:grade=='OFR' .or. !self:oDep:homepp== sEntity 
+				(ErrorBox{,"Net asset account obliged for this member department"}):Show()
+				RETURN
+// 			else
+// 				if Empty(self:oGetDep:GetAccount(ConS(self:oDep:depid),liability))
+// 					(ErrorBox{,"Net asset account obliged for this member department because parent has no Net asset account"}):Show()
+// 					RETURN
+// 				endif					
+			endif
 			RETURN
 		ENDIF		
 		IF ConI(self:NbrIncome) =0
 			(ErrorBox{,"Income account obliged for this member department"}):Show()
 			RETURN
 		ENDIF		
-		IF Empty(self:NbrExpense)
-			(ErrorBox{,"Expense account obliged for this member department"}):Show()
-			RETURN
+		IF Empty(self:NbrExpense) 
+			if !self:oDep:grade=='OFR' .or. !self:oDep:homepp== sEntity 
+				(ErrorBox{,"Expense account obliged for this member department"}):Show()
+				RETURN
+			else
+				if Empty(self:oGetDep:GetAccount(ConS(self:oDep:depid),expense))
+					(ErrorBox{,"Expense account obliged for this member department because parent has no expense account"}):Show()
+					RETURN
+				endif					
+			endif
 		ENDIF
 		// check if only Income account is Gifts receivable: 
 		IF ConI(self:NbrIncome) >0
@@ -979,24 +995,6 @@ METHOD OKButton( ) CLASS EditDepartment
 			endif 
 		endif
 	endif
-	// 	IF SELF:lNew
-	// 		IF !Empty(SELF:NbrCAPITAL)
-	// 			(ErrorBox{,"Net asset account "+self:cCAPITALName+" does not belong to department"+ mDepartmntNbr}):Show()
-	// 			RETURN
-	// 		ENDIF		
-	// 	ENDIF
-	// 	IF self:lNew
-	// 		IF !Empty(self:NbrIncome)
-	// 			(ErrorBox{,"Income account "+self:cIncName+" does not belong to department"+ mDepartmntNbr}):Show()
-	// 			RETURN
-	// 		ENDIF		
-	// 	ENDIF
-	// 	IF self:lNew
-	// 		IF !Empty(self:NbrExpense)
-	// 			(ErrorBox{,"Expense account "+self:cExpname+" does not belong to department"+ mDepartmntNbr}):Show()
-	// 			RETURN
-	// 		ENDIF		
-	// 	ENDIF
 	
 	cSQLStatement:=iif(self:lNew,"insert into ","update ")+" department set "+; 
 	"deptmntnbr='"+AddSlashes(AllTrim(self:mDepartmntNbr))+"',"+;
@@ -1016,15 +1014,15 @@ METHOD OKButton( ) CLASS EditDepartment
 		",active="+iif(self:mactive,"1","0")+;
 		iif(self:lNew,""," where depid='"+self:mDepId+"'")
 	oStmnt:=SQLStatement{cSQLStatement,oConn}
-	oStmnt:Execute()
+	oStmnt:execute()
 	if oStmnt:NumSuccessfulRows>0
 		if !self:lNew .and. !self:mactive==self:OrgActive
 			// adapt active of corresponding account also:
-			SQLStatement{"update account set active="+iif(self:mactive,"1","0")+" where department='"+self:mDepId+"'",oConn}:Execute() 			
+			SQLStatement{"update account set active="+iif(self:mactive,"1","0")+" where department='"+self:mDepId+"'",oConn}:execute() 			
 		endif
 		if !self:NbrIncome==self:idIncomeOrg .and. !Empty(self:idIncomeOrg) .and.!Empty(self:NbrIncome)
-			SQLStatement{"update account set giftalwd=0 where accid="+self:idIncomeOrg,oConn}:Execute() 
-			SQLStatement{"update account set giftalwd=1 where accid="+self:NbrIncome,oConn}:Execute() 
+			SQLStatement{"update account set giftalwd=0 where accid="+self:idIncomeOrg,oConn}:execute() 
+			SQLStatement{"update account set giftalwd=1 where accid="+self:NbrIncome,oConn}:execute() 
 		endif
 		
 		Departments:=true
@@ -1033,13 +1031,13 @@ METHOD OKButton( ) CLASS EditDepartment
 				self:oCaller:RefreshTree()
 			ENDIF
 		else
-			self:mDepId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
+			self:mDepId:=ConS(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			self:oCaller:Treeview:AddTreeItem(Val(cMainId),Val(self:mDepId),AllTrim(self:mDepartmntNbr)+":"+self:mDescription,false) 
 			AAdd(self:oCaller:aItem,{Val(self:mDepId),Val(cMainId),self:mDescription,AllTrim(mDepartmntNbr)})
 		ENDIF
 		self:oCaller:Refresh() 
 	elseif !Empty(oStmnt:Status)
-		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:errorMessage}:Show()
+		ErrorBox{self,self:oLan:WGet("Error")+': '+oStmnt:ErrInfo:ErrorMessage}:Show()
 	endif
 	self:EndWindow()
 
@@ -1068,7 +1066,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 	self:mactive:=true
 
 	IF lNew
-		SELF:oDCmDepartmntNbr:SetFocus()
+		self:oDCmDepartmntNbr:SetFocus()
 		cMainId:=uExtra[2]
 		self:NbrCAPITAL :=""
 		self:cCAPITALName :="" 
@@ -1085,8 +1083,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			mParentDep:=0
 			OrgParent :="0"
 		ELSE
-			oSel:=SQLSelect{"select deptmntnbr from department where depid='"+cMainId+"'",oConn}
-			IF oSel:Reccount>0
+			oSel:=SqlSelect{"select deptmntnbr from department where depid='"+cMainId+"'",oConn}
+			IF oSel:reccount>0
 				mParentDep:=oSel:deptmntnbr
 				OrgParent :=mParentDep
 			endif
@@ -1103,7 +1101,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			"ass1.description as ass1,ass2.description as ass2,ass3.description as ass3,";
 			+SQLFullName(0,"p1")+" as person1," +;
 			SQLFullName(0,"p2")+" as person2,"+;
-			"m.mbrid,m.persid as mpersid "+;
+			"m.mbrid,m.persid as mpersid,m.co,m.grade,m.homepp "+;
 			"from department d "+;
 			"left join account an on (an.accid=d.netasset) "+; 
 		"left join account ainc on (ainc.accid=d.incomeacc) "+; 
@@ -1120,19 +1118,19 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 			"where d.depid='"+self:mDepId+"'",oConn} 
 		IF !Empty(self:oDep:NetAsset)
 			self:NbrCAPITAL :=  Str(self:oDep:NetAsset,-1)
-			self:oDCmCAPITAL:TEXTValue := Transform(self:oDep:captital,"")
-			self:cCAPITALName := AllTrim(self:oDCmCAPITAL:TEXTValue)
+			self:oDCmCAPITAL:TextValue := Transform(self:oDep:captital,"")
+			self:cCAPITALName := AllTrim(self:oDCmCAPITAL:TextValue)
 		ENDIF
 		IF !Empty(self:oDep:incomeacc)
 			self:NbrIncome :=  Str(self:oDep:incomeacc,-1) 
 			self:IdIncomeOrg:=self:NbrIncome
-			self:oDCmincomeacc:TEXTValue := Transform(self:oDep:incname,"")
-			self:cIncName := AllTrim(self:oDCmincomeacc:TEXTValue)
+			self:oDCmincomeacc:TextValue := Transform(self:oDep:incname,"")
+			self:cIncName := AllTrim(self:oDCmincomeacc:TextValue)
 		ENDIF
 		IF !Empty(self:oDep:expenseacc)
 			self:NbrExpense :=  Str(self:oDep:expenseacc,-1)
-			self:oDCmexpenseacc:TEXTValue := Transform(self:oDep:expname,"")
-			self:cExpname := AllTrim(self:oDCmexpenseacc:TEXTValue)
+			self:oDCmexpenseacc:TextValue := Transform(self:oDep:expname,"")
+			self:cExpname := AllTrim(self:oDCmexpenseacc:TextValue)
 		ENDIF
 		IF !Empty(self:oDep:payableacc)
 			self:NbrPayable :=  Str(self:oDep:payableacc,-1)
@@ -1190,6 +1188,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 	else
 		self:oDCmActive:TextColor:=Color{COLORRED}
 	endif		
+	self:oGetDep :=GetDepAccount{}
    self:OrgActive:= self:mactive // save original value of active
 	if (!Empty(self:oCaller:cTYPE).and. AtC("member",self:oCaller:cTYPE)>0) .or.(!lNew .and. !Empty(self:oDep:mbrid))
 		self:oDCMemberText:Show()
@@ -1210,7 +1209,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDepartment
 		self:oDCSC_Debtors:Hide()
 		self:oDCmreceivableacc:Hide()
 		self:oCCDebtorsButton:Hide()
-		self:oDCSC_Creditors:TEXTValue:=self:oLan:WGet("Work expenses payable")
+		self:oDCSC_Creditors:TextValue:=self:oLan:WGet("Work expenses payable")
 	else
 		self:oDCMemberText:Hide()
 	endif
