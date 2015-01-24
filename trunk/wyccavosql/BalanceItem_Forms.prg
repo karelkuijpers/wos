@@ -671,7 +671,10 @@ METHOD DELETE() CLASS CustomExplorer
 
 RETURN nil
 METHOD DeleteListViewItems() CLASS CustomExplorer
-	RETURN self:ListView:DeleteAll()
+	if IsObject(self:ListView) .and. !self:listview==null_object
+		RETURN self:listview:DeleteAll()
+	endif
+	return false
 METHOD DeleteTreeViewItems() CLASS CustomExplorer
 	RETURN SELF:TreeView:DeleteAll()
 
@@ -1002,39 +1005,42 @@ RETURN
 METHOD Refresh() CLASS CustomExplorer
 
 	// clear and rebuild the list view items
-*	SELF:DeleteTreeViewItems()
-*	SELF:BuildTreeViewItems()
+	*	SELF:DeleteTreeViewItems()
+	*	SELF:BuildTreeViewItems()
 	self:DeleteListViewItems() 
-// 	self:aItem:={}
+	// 	self:aItem:={}
 	Send(self,#BuildListViewItems,Val(Transform(self:uCurrentMain,"")))
-RETURN
+	RETURN
 METHOD RefreshTree()  CLASS CustomExplorer
 	// clear and rebuild the tree view items
 	LOCAL cursym as SYMBOL
 	LOCAL oTreeViewItem, oCurItem as TreeViewItem
 	LOCAL oTreeView as BalanceTreeView
 	oTreeView:=self:TreeView
-	oCurItem:=oTreeView:GetSelectedItem()
-	self:DeleteTreeViewItems()
-	self:BuildTreeViewItems()
-// 	cursym:=String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))
-// 	DO WHILE TRUE
-// 		self:TreeView:Expand(cursym)
-// 		oTreeViewItem:=SELF:TreeView:GetParentItem(cursym)
-// 		IF Empty(oTreeViewItem)
-// 			EXIT
-// 		ENDIF
-// 		cursym:=oTreeViewItem:NameSym
-// 	ENDDO
-	*	oTreeView:SelectItem(String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))) 
-	if oCurItem==null_object
-		oCurItem:=oTreeView:GetRootItem()
-		oTreeView:ExpandTree(oCurItem,0,nMaxLevel)
-	else
-		self:oTreeView:SelectItem(oCurItem)
-		self:TreeView:Expand(oCurItem)
-	endif 
+	if IsObject(oTreeView) .and. !oTreeView==null_object
+		oCurItem:=oTreeView:GetSelectedItem()
+		self:DeleteTreeViewItems()
+		self:BuildTreeViewItems()
+		// 	cursym:=String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))
+		// 	DO WHILE TRUE
+		// 		self:TreeView:Expand(cursym)
+		// 		oTreeViewItem:=SELF:TreeView:GetParentItem(cursym)
+		// 		IF Empty(oTreeViewItem)
+		// 			EXIT
+		// 		ENDIF
+		// 		cursym:=oTreeViewItem:NameSym
+		// 	ENDDO
+		*	oTreeView:SelectItem(String2Symbol("Parent_" + AllTrim(AsString(uCurrentMain)))) 
+		if oCurItem==null_object
+			oCurItem:=oTreeView:GetRootItem()
+			oTreeView:ExpandTree(oCurItem,0,nMaxLevel)
+		else
+			self:oTreeView:SelectItem(oCurItem)
+			self:TreeView:Expand(oCurItem)
+		endif
+	endif
 	RETURN
+
 METHOD Search(lFirst,cSearchText) CLASS  CustomExplorer
 * Search of an item within the tree
 LOCAL nPntr AS INT
