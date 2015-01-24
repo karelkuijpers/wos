@@ -241,7 +241,7 @@ local lError as logic
 Local oHm as TempTrans
 	super:DateTimeSelectionChanged(oDateTimeSelectionEvent)
 	//Put your changes here
-	IF !self:mDat == self:CurDate 
+	IF IsObject(self:oSFGeneralJournal1:Browser).and.!self:oSFGeneralJournal1:Browser==null_object.and.!self:mDat == self:CurDate 
 		oHm:= self:server
 		self:oSFGeneralJournal1:Browser:SuspendUpdate()
 
