@@ -1186,14 +1186,15 @@ METHOD OkButton CLASS EditPerson
 // 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
 					endif
 					if !lError
-						// change names of connected department accounts:
-						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
-						oStmnt:Execute()
-						if !Empty(oStmnt:Status)
-							lError:=true
-							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
-// 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
-						endif
+						// change names of connected department accounts: 
+						lError:=UpdateAccountDescription(ConS(self:oPerson:depid),AllTrim(self:mlastname),self:oPerson:lastname,@cError)
+// 						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
+// 						oStmnt:Execute()
+// 						if !Empty(oStmnt:Status)
+// 							lError:=true
+// 							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
+// // 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+// 						endif
 					endif
 				endif
 			ENDIF
