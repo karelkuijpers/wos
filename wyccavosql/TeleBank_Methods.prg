@@ -4776,9 +4776,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 					if aAccnbrDb[l,3]='1'  // is member
 						if !Empty(avalueTrans[i,11])  // giver connected?
 							lv_gc:='CH'
-							if lv_accid==aAccnbrDb[i,5]   // income account?
+							if lv_accid==aAccnbrDb[l,5]   // income account?
 								lv_gc:='AG'
-							elseif lv_accid==aAccnbrDb[i,7]  // net asset account?
+							elseif lv_accid==aAccnbrDb[l,7]  // net asset account?
 								lv_gc:='PF'
 							endif											
 							lProcAuto:=true
