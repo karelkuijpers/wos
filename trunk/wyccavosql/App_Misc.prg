@@ -102,8 +102,8 @@ function ADDMLCodes(NewCodes as string, cCod ref string) as string pascal
 	return cCod
 	
 Function AddSlashes(cString as string) as string
-// add backslashes for special characters ',",\,%,_
-return StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"')
+	// add backslashes for special characters ',",\,%,_
+	return StrTran(StrTran(StrTran(cString,'\','\\'),"'","\'"),'"','\"')
 Function AddSubBal(a_bal as array,ParentNum as int, nCurrentRec as int,aBalIncl ref array) as int
 	* Find subdepartments and add to arrays with balance items
 	local nSubRec as int
@@ -299,7 +299,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
-		if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+		if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
 			cError:="No correspondence between transactions and month balances per account"+CRLF
 		endif
 		lTrMError:=true
@@ -307,7 +307,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if !Empty(cError)
 				cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
 			endif
-			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,iif(empty(oSel:debtot),0.00,oSel:debtot),iif(empty(oSel:cretot),0.00,oSel:cretot)}) 
+			AAdd(aMBal,{oSel:accid,oSel:Year,oSel:Month,ConF(oSel:debtot),ConF(oSel:cretot)}) 
 			oSel:Skip()
 		enddo 
 	endif
@@ -316,7 +316,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
@@ -325,7 +325,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if !Empty(cError)
 				cError+=Space(4)+"Account:"+Transform(oSel:accnumber,"")+"("+sCurr+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
 			endif 
-			aadd(aMBal,{oSel:accid,oSel:year,oSel:month,oSel:debtot,oSel:cretot}) 
+			AAdd(aMBal,{oSel:accid,oSel:Year,oSel:Month,ConF(oSel:debtot),ConF(oSel:cretot)}) 
 			oSel:Skip()
 		enddo
 	endif
@@ -348,16 +348,16 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
 		lTrMError:=true
 		do	while	!oSel:EoF
 			if !Empty(cError)
-				cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+"	Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+";	mbal deb:"+Transform(oSel:deb,"")+"	cre:"+Transform(oSel:cre,"")+CRLF
+				cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+"	Tr.deb:"+Transform(oSel:debtot,"")+" cre:"+Transform(oSel:cretot,"")+";	mbal deb:"+Transform(ConF(oSel:deb),"")+"	cre:"+Transform(oSel:cre,"")+CRLF
 			endif
-			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,iif(Empty(oSel:debtot),0.00,oSel:debtot),iif(Empty(oSel:cretot),0.00,oSel:cretot),oSel:Currency}) 
+			AAdd(aMBalF,{oSel:accid,oSel:year,oSel:month,ConF(oSel:debtot),ConF(oSel:cretot),oSel:Currency}) 
 			oSel:Skip()
 		enddo
 	endif
@@ -366,7 +366,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select a.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber,a.`currency` from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(oSel:deb - oSel:debtot) > 0.02 .or.Abs(oSel:deb - oSel:debtot) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
@@ -375,7 +375,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 			if !Empty(cError)
 				cError+=Space(4)+"Account:"+oSel:accnumber+"("+oSel:currency+") month:"+Str(oSel:Year,-1)+StrZero(oSel:Month,2)+" Tr.deb:"+Str(oSel:debtot,-1)+" cre:"+Str(oSel:cretot,-1)+"; mbal deb:"+Transform(oSel:deb,"")+" cre:"+Transform(oSel:cre,"")+CRLF
 			endif 
-			AAdd(aMBalF,{oSel:accid,oSel:Year,oSel:Month,oSel:debtot,oSel:cretot,oSel:Currency}) 
+			AAdd(aMBalF,{oSel:accid,oSel:year,oSel:month,ConF(oSel:debtot),ConF(oSel:cretot),oSel:Currency}) 
 			oSel:Skip()
 		enddo
 	endif
@@ -575,6 +575,9 @@ DO WHILE At("  ",f_tekst)>0
    f_tekst:=StrTran(f_tekst,"  "," ")
 ENDDO
 RETURN AllTrim(f_tekst)
+function ConF(uValue as usual) as float
+// convert usual to int
+return iif(Empty(uValue),0.00,iif(IsNumeric(uValue),float(uValue),iif(IsLogic(uValue),1.00, Val(uValue))) )       
 function ConI(uValue as usual) as int
 // convert usual to int
 return iif(Empty(uValue),0,iif(IsNumeric(uValue),int(uValue),iif(IsLogic(uValue),1, Val(uValue))) )       
@@ -1762,6 +1765,68 @@ Function GetDelimiter(cBuffer as string, aStruct ref array, cLim:="" ref string,
 		endif
 	endif 
 	return true
+Class GetDepAccount
+	protect aDep:={} as array // {{depid,parentdep,netasset,expenseacc[,netnumber,netname,expnumber,expname]},...} 
+									 //      1      2        3         4         5          6        7        8
+	protect Extended as logic
+	declare method GetAccount
+method Close() class GetDepAccount
+self:aDep:=null_array
+return 
+method GetAccount(depid as string,category as string) as usual class GetDepAccount
+	local accid as string 
+	local nptr as int
+	local aDeps:=self:aDep as array 
+	local aAcc:={} as array
+	// get an account of a department of a certain category 
+	// if not found then the one of the parent department
+	if (nptr:=AScan(aDeps,{|x|x[1]==depid}))>0
+		do case 
+		case category==EXPENSE
+			if aDeps[nptr,4]>'0'
+				if self:Extended
+					return {aDeps[nptr,4],aDeps[nptr,7],aDeps[nptr,8]} 
+				else
+					return aDeps[nptr,4]
+				endif
+			else
+				return self:GetAccount(aDeps[nptr,2],category)
+			endif
+		case category== LIABILITY
+			if aDeps[nptr,3]>'0'
+				if self:Extended
+					return {aDeps[nptr,3],aDeps[nptr,5],aDeps[nptr,6]} 
+				else
+					return aDeps[nptr,3]
+				endif
+				return aDeps[nptr,3]
+			else
+				return self:GetAccount(aDeps[nptr,2],category)
+			endif
+		endcase
+	endif
+	return accid
+method init(lExtended) class GetDepAccount
+	local oSel as SQLSelect
+	local aDeps:=self:aDep as array
+	Default(@lExtended,false) 
+	self:Extended:=lExtended
+	if lExtended
+		// get also account number and description:	
+		oSel:=SqlSelect{"select group_concat(cast(dm.depid as char),'#%#',cast(dm.parentdep as char),'#%#',cast(dm.netasset as char),'#%#',cast(dm.expenseacc as char),'#%#',"+;
+			"if(isnull(an.accid),' #%# ',concat(an.accnumber,'#%#',ae.description)),'#%#',"+;
+			"if(isnull(ae.accid),' #%# ',concat(ae.accnumber,'#%#',ae.description)) separator '#$#') as depgrp "+;
+			"from department dm "+;
+			"left join account ae ON (ae.accid=dm.expenseacc) left join account an ON (an.accid=dm.netasset) "+;   
+		"where dm.active=1" ,oConn}  
+	else
+		oSel:=SqlSelect{"select group_concat(cast(depid as char),'#%#',cast(parentdep as char),'#%#',cast(netasset as char),'#%#',cast(expenseacc as char) separator '#$#') as depgrp "+;
+			"from department where active=1" ,oConn}  // and m.co='S'
+	endif  
+	if oSel:RECCOUNT>0 .and. !Empty(oSel:depgrp)
+		AEval(Split(oSel:depgrp,'#$#',,true),{|x|AAdd(aDeps,Split(x,'#%#',,true))})
+	endif
+	return self
 FUNCTION GetError    (oSELF as OBJECT, cDescription as STRING)  as ERROR     PASCAL
     LOCAL oError as ERROR
 
@@ -2386,7 +2451,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 	ENDIF	
 	EXCEL:= excelpath +"Excel.exe "
 	oReg:=null_object
-	oSys:=SQLSelect{"select `am`,`assproja`,`assfldac`,`defaultcod`,`fgmlcodes`,`capital`,`cash`,`donors`,`donors`,`creditors`,`projects`,`giftincac`,"+;
+	oSys:=SQLSelect{"select `am`,`assproja`,`assofra`,`assfldac`,`defaultcod`,`fgmlcodes`,`capital`,`cash`,`donors`,`donors`,`creditors`,`projects`,`giftincac`,"+;
 		"`giftexpac`,`homeincac`,`homeexpac`,`assmntoffc`,`withldoffl`,`withldoffm`,`withldoffh`,`assmntfield`,`citynmupc`,`lstnmupc`,`entity`,`hb`,"+;
 		"`crossaccnt`,`postage`,`toppacct`,`currname`,`posting`,`lstcurrt`,`banknbrcol`,`banknbrcre`,`idorg`,`admintype`,`mailclient`,`firstname`,"+;
 		"`countryown`,`owncntry`,`surnmfirst`,`nosalut`,`nosalut`,`titinadr`,`strzipcity`,`closemonth`,`crlanguage`,`mindate`,`countrycod`,"+;
@@ -2406,6 +2471,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 
 		sam		:= iif(Empty(oSys:AM),'',Str(oSys:AM,-1))
 		samProj	:= iif(Empty(oSys:ASSPROJA),'',Str(oSys:ASSPROJA,-1))
+		samOFR	:= ConS(oSys:ASSOFRA)
 		samFld	:= iif(Empty(oSys:ASSFLDAC),'',Str(oSys:ASSFLDAC,-1))
 		SCLC	:= AllTrim(iif(IsNil(oSys:DEFAULTCOD),'',oSys:DEFAULTCOD))
 		SFGC	:= AllTrim(iif(IsNil(oSys:FGMLCODES),'',oSys:FGMLCODES))
@@ -2488,7 +2554,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		endif
 		if !Empty(BANKNBRCRE) .and. SEntity="NED"
 			// add to PPcodes as destination for distribution instructions for outgooing payments to bank: 
-			oSel:=SQLSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
+			oSel:=SqlSelect{"select ppname from ppcodes where ppcode='AAA'",oConn}
 			if oSel:RecCount=0
 				SQLStatement{"insert into ppcodes set ppcode='AAA',ppname='Bank:"+BANKNBRCRE+"',Is_Primary_Participant='N'",oConn}:Execute()
 			elseif !AllTrim(oSel:PPNAME)=="Bank:"+BANKNBRCRE
@@ -2526,7 +2592,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 	AutoGiro:= FALSE
 	GiftFrequency:={{oLan:WGet('One-off'),999},{oLan:WGet('Monthly'),1},{oLan:WGet('Quarterly'),3},{oLan:WGet('Half-yearly'),6},{oLan:WGet('Yearly'),12}}
 
-	oSel:=SQLSelect{"select accid from bankaccount where accid>0",oConn}
+	oSel:=SqlSelect{"select accid from bankaccount where accid>0",oConn}
 	IF oSel:RecCount>0
 		// fill global array with bank accounts
 		BankAccs:={}
@@ -2536,7 +2602,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		ENDDO 
 		BankAccs:=DynToOldSpaceArray(BankAccs)  // to avoid that they are moved around in dynamic memory and reduce use of dymamic memory
 
-		oSel:=SQLSelect{"select count(*) from bankaccount where telebankng>0 and accid",oConn}
+		oSel:=SqlSelect{"select count(*) from bankaccount where telebankng>0 and accid",oConn}
 		IF oSel:RecCount>0
 			TeleBanking:=true
 		else
@@ -2560,7 +2626,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 	aAsmt:={{"assessable","AG"},{"charge","CH"},{"membergift","MG"},{"pers.fund","PF"}}
 	LENPRSID:=11
 	LENEXTID:=11
-	if !ConI(SQLSelect{"select count(*) as total from department",oConn}:total)==0
+	if !ConI(SqlSelect{"select count(*) as total from department",oConn}:total)==0
 		Departments:=true
 	endif
 
@@ -3160,69 +3226,69 @@ DO WHILE true
 ENDDO
 RETURN ptrHandle
 Function MakeFilter(aAccIncl:=null_array as array,aTypeAllwd:=null_array as array,IsMember:="B" as string,giftalwd:=2 as int,;
-SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
-// make filter condition for account
-// aTypeAllwd: arrays with allowed balance catagories: Income, expense, asset, liability
-// IsMember: M: member, N: not member, B: both (default), E: entity member(project)
-// giftalwd: 1=true / 0=false/2: don't care
-// SubscriptionAllowed: true/false
-// aAccIncl: accounts to be included (id as string)
-// aAccExcl: extra accounts to be excluded (id as string) 
-// returns array with filter expression text
-LOCAL cFilter, cType, cAcc, cIncl as STRING, i,j as int
-// LOCAL bFilter as _CODEBLOCK
-LOCAL aType:={"AK","PA","BA","KO"} as ARRAY
-LOCAL aTypeAcc:={{SDEB,SKAS,SKruis},{SHB,SKAP,SPROJ},{SAM,SAMProj,SDON,SINC,SPROJ},{SEXP,SPOSTZ}} as ARRAY 
-// if Empty(aTypeAllwd)
-// 	aTypeAllwd:={"AK","PA","BA","KO"}
-// endif
-IF !Empty(aTypeAllwd)
-	FOR i:=1 to Len(aTypeAllwd)
-		j:=AScan(aType,aTypeAllwd[i])
-		IF j>0 
-			cType+=' or b.category="'+aType[j]+'"'        // function rejected in VO28
-			AEval(aTypeAcc[j],{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
+		SubscriptionAllowed:=false as logic,aAccExcl:=null_array as array) as string
+	// make filter condition for account
+	// aTypeAllwd: arrays with allowed balance catagories: Income, expense, asset, liability
+	// IsMember: M: member, N: not member, B: both (default), E: entity member(project)
+	// giftalwd: 1=true / 0=false/2: don't care
+	// SubscriptionAllowed: true/false
+	// aAccIncl: accounts to be included (id as string)
+	// aAccExcl: extra accounts to be excluded (id as string) 
+	// returns array with filter expression text
+	LOCAL cFilter, cType, cAcc, cIncl as STRING, i,j as int
+	// LOCAL bFilter as _CODEBLOCK
+	LOCAL aType:={"AK","PA","BA","KO"} as ARRAY
+	LOCAL aTypeAcc:={{SDEB,SKAS,SKruis},{SHB,SKAP,SPROJ},{sam,samProj,SDON,SINC,SPROJ},{SEXP,SPOSTZ}} as ARRAY 
+	// if Empty(aTypeAllwd)
+	// 	aTypeAllwd:={"AK","PA","BA","KO"}
+	// endif
+	IF !Empty(aTypeAllwd)
+		FOR i:=1 to Len(aTypeAllwd)
+			j:=AScan(aType,aTypeAllwd[i])
+			IF j>0 
+				cType+=' or b.category="'+aType[j]+'"'        // function rejected in VO28
+				AEval(aTypeAcc[j],{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
+			ENDIF
+		NEXT
+		IF !Empty(cType)
+			cFilter+=' and ('+SubStr(cType,5)+')'
+			//		self:ForBlock:=SubStr(cType,5)
 		ENDIF
-	NEXT
-	IF !Empty(cType)
-		cFilter+=' and ('+SubStr(cType,5)+')'
-//		self:ForBlock:=SubStr(cType,5)
+		// ELSE
+		// 	AEval(aAccExcl,{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
 	ENDIF
-// ELSE
-// 	AEval(aAccExcl,{|x|cFilter+=iif(Val(x)=0,'',iif(AScan(aAccIncl,x)>0,'',' and a.accid<>'+x))})
-ENDIF
-AEval(aAccExcl,{|x|cAcc+=iif(Val(x)=0,'',iif(AScanExact(aAccIncl,x)>0,'',','+x))})
-IF !Empty(cAcc)
-	cFilter+=iif(Empty(cFilter),'',' and ')+"a.accid not in ("+SubStr(cAcc,2)+")"
-ENDIF
+	AEval(aAccExcl,{|x|cAcc+=iif(Val(x)=0,'',iif(AScanExact(aAccIncl,x)>0,'',','+x))})
+	IF !Empty(cAcc)
+		cFilter+=iif(Empty(cFilter),'',' and ')+"a.accid not in ("+SubStr(cAcc,2)+")"
+	ENDIF
 
-IF !Empty(aAccIncl)
-	AEval(aAccIncl,{|x|cIncl+=iif(Val(x)=0,'',iif(Empty(cIncl),"",' or ')+'a.accid='+x)})
-ENDIF	
-IF IsMember=="M"
-	cFilter+=' and (a.accid in (select accid from member where accid IS NOT NULL) or a.department in (select depid from member where depid IS NOT NULL))'
-ELSEIF IsMember=="N"
-	cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL) and a.department not in (select depid from member where depid IS NOT NULL)'
-ENDIF
-IF giftalwd=0
-	cFilter+=' and a.giftalwd<>1'
-elseif giftalwd=1	
-	cFilter+=' and a.giftalwd=1'
-ENDIF
-IF !SubscriptionAllowed
-	cFilter+=' and a.subscriptionprice=0'
-ENDIF	
-IF SubStr(cFilter,1,5)==' and '
-	cFilter:=SubStr(cFilter,6)
-ENDIF
-IF !Empty(cIncl)
-	cFilter+=' or '+cIncl 
-ENDIF
-if !Empty(cFilter) 
-	Return "("+cFilter +")"
-else
-	Return ''
-endif
+	IF !Empty(aAccIncl)
+		AEval(aAccIncl,{|x|cIncl+=iif(Val(x)=0,'',iif(Empty(cIncl),"",' or ')+'a.accid='+x)})
+	ENDIF	
+	IF IsMember=="M"
+		cFilter+=' and (a.accid in (select accid from member where accid IS NOT NULL) or a.department in (select depid from member where depid IS NOT NULL))'
+	ELSEIF IsMember=="N"
+		cFilter+=' and a.accid not in (select accid from member where accid IS NOT NULL) and a.department not in (select depid from member where depid IS NOT NULL)'
+	ENDIF
+	IF giftalwd=0
+		cFilter+=' and a.giftalwd<>1'
+	elseif giftalwd=1	
+		cFilter+=' and a.giftalwd=1'
+	ENDIF
+	IF !SubscriptionAllowed
+		cFilter+=' and a.subscriptionprice=0'
+	ENDIF	
+	IF SubStr(cFilter,1,5)==' and '
+		cFilter:=SubStr(cFilter,6)
+	ENDIF
+	IF !Empty(cIncl)
+		cFilter+=' or '+cIncl 
+	ENDIF
+	if !Empty(cFilter) 
+		Return "("+cFilter +")"
+	else
+		Return ''
+	endif
 FUNCTION MarkUpAddress(oPers as SQLSelect,p_recnr:=0 as int,p_width:=0 as int,p_lines:=0 as int) as array
 ******************************************************************************
 *  Name      : MarkUpAddress
@@ -4151,12 +4217,6 @@ if iPtr>0
 else
 	return "1"
 endif
-CLASS ProgressPer INHERIT DIALOGWINDOW 
-
-	PROTECT oDCProgressBar AS PROGRESSBAR
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-   PROTECT oServer as OBJECT
 RESOURCE ProgressPer DIALOGEX  5, 17, 263, 34
 STYLE	DS_3DLOOK|WS_POPUP|WS_CAPTION|WS_SYSMENU
 FONT	8, "MS Shell Dlg"
@@ -4164,6 +4224,12 @@ BEGIN
 	CONTROL	" ", PROGRESSPER_PROGRESSBAR, "msctls_progress32", PBS_SMOOTH|WS_CHILD, 44, 11, 190, 12
 END
 
+CLASS ProgressPer INHERIT DIALOGWINDOW 
+
+	PROTECT oDCProgressBar AS PROGRESSBAR
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+   PROTECT oServer as OBJECT
 METHOD AdvancePro(iAdv) CLASS ProgressPer
 	ApplicationExec( EXECWHILEEVENT ) 	// This is add to allow closing of the dialogwindow
 										// while processing.
@@ -4802,6 +4868,46 @@ else
 endif 
 return cCompStmnt
  
+function	UpdateAccountDescription(mDepId as string,cNewname as string,cPrvname as string,cError ref string) as logic 
+// Update account belonging to a member because change of member name
+//
+// mDepid: department id of concerning department
+// cNewname: new name of the member
+// cPrvname: old name of the member
+
+// returns true and error message in cError if error; otherwise false
+
+local i,j as int
+local cReplace,cSearch as string
+local aName:={} as array 
+local oSel as SQLSelect
+local oStmnt as SQLStatement
+	aName:=GetTokens(cPrvname)
+	oSel:=SqlSelect{"select accid,description from account where department="+mDepId,oConn}
+	if oSel:reccount<1
+		return false
+	endif
+	do while ! oSel:EoF
+		cReplace:=Compress(oSel:Description)
+		for i:=1 to Len(aName)
+			cSearch:=aName[i,1]
+			j:=AtC(cSearch,cReplace)
+			do while j>0
+				cReplace:=Stuff(cReplace,j,Len(cSearch),'')
+				j:=AtC(cSearch,cReplace)
+			enddo
+		next
+		cReplace:=AddSlashes(SubStr(Compress(cNewname+' '+cReplace),1,40))
+		oStmnt:=SQLStatement{"update account set description='"+cReplace+"' where accid="+ConS(oSel:accid),oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:Status)
+			cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
+			return true   // error
+		endif
+		oSel:Skip()
+	enddo
+	return false // no error
+
 Function	UpdatemandateId(mAccNumber	as	string,mcln	as	string,msubid:='' as string) as string
 	// Check if mandate based on mAccNumber and mcln already exists and in that case returns new one with sequence number added 
 	// parameters:
