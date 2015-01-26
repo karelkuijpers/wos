@@ -660,7 +660,7 @@ Method Init(oWindow) class Reevaluation
 
 	return self
 Method ReEvaluate() Class Reevaluation
-	local UltimoMonth,UltimoYear as date
+	local UltimoMonth,UltimoYear,lstreeval as date
 	local oAccnt,oSys,oBal as SQLSelect, oMBal as Balances, oTrans,oStmnt as SQLStatement
 	Local oCurr as Currency 
 	Local CurRate,mDiff, mDiff1, mDiff2 as float 
@@ -675,15 +675,18 @@ Method ReEvaluate() Class Reevaluation
 	Local cSm:="Busy with reevaluation foreign currency accounts" as string
 	local cFatalError as string
 	
-	oSys:=SQLSelect{"select cast(lstreeval as date) as lstreeval from sysparms where DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
+	oSys:=SQLSelect{"select cast(lstreeval as date) as lstreeval from sysparms where isnull(lstreeval) or DATE_ADD(lstreeval,INTERVAL 38 DAY)<curdate()",oConn} 
 	if oSys:RecCount<1
 		self:Close()
 		Return
 	endif
+	if !Empty(oSys:lstreeval)
+		lstreeval:=oSys:lstreeval
+	endif
 	UltimoMonth:=SToD(SubStr(DToS(Today()),1,6)+"01")-1 
 	aBalYr:=GetBalYear(Year(Today())-1,Month(Today()))
 	UltimoYear:=stod(str(aBalYr[3],4,0)+strzero(aBalYr[4],2)+strzero(MonthEnd(aBalYr[3],aBalYr[4]),2))	
-	if oSys:lstreeval < UltimoYear .and. UltimoMonth> UltimoYear
+	if lstreeval < UltimoYear .and. UltimoMonth> UltimoYear
 		UltimoMonth:=UltimoYear
 	else
 		if Day(Today()) < 9
