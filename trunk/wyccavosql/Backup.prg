@@ -270,8 +270,10 @@ METHOD BackupFolderButton( ) CLASS BackupNow
  	LOCAL oFileDialog as SaveAsDialog
 	oFileDialog := SaveAsDialog{self,dbname+'.sql'}
 	oFileDialog:Caption:="Select required folder for backup files"
-	oFileDialog:SetFilter("*.gz","gzip")
-	oFileDialog:InitialDirectory:=self:BackupFolder
+	oFileDialog:SetFilter("*.gz","gzip") 
+	if !Empty(self:oDCBackupFolder:TextValue)
+		oFileDialog:InitialDirectory:=AllTrim(self:oDCBackupFolder:TextValue)
+	endif
 	oFileDialog:SetStyle(OFN_HIDEREADONLY+OFN_LONGNAMES+OFN_EXPLORER)
 	IF !oFileDialog:Show()
 		RETURN FALSE
@@ -416,7 +418,7 @@ METHOD BackupFolderButton( ) CLASS Restore
  	LOCAL oFileDialog as OpenDialog
 	oFileDialog := OpenDialog{self,""}
 	oFileDialog:Caption:="Select required backup file for restoring database "+dbname+" on server "+servername
-	oFileDialog:SetFilter({"*"+dbname+"*.gz","*"+dbname+"*.sql"},{"gzip","sql"},1)
+ 	oFileDialog:SetFilter({"*.gz","*.sql","*.*"},{"gzip files","sql files","all files"},1)
 	oFileDialog:InitialDirectory:=self:oDCBackupFolder:Value
 	oFileDialog:SetStyle(OFN_HIDEREADONLY+OFN_LONGNAMES+OFN_EXPLORER)
 	IF !oFileDialog:Show()
