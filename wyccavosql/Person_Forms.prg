@@ -1839,17 +1839,18 @@ METHOD FindButton( ) CLASS PersonBrowser
 	LOCAL cMyFrom as STRING
 	local aKeyw:={} as array
 	local i,j,nCount as int
-	local lStart, lPersid as logic 
+	local lStart, lDeleted as logic 
 	local oSel as SQLSelect
 	local aFields:={"lastname","firstname","postalcode","address","initials","nameext","prefix","city","country","attention","email","remarks","telbusiness","telhome","mobile","externid"} as array 
 	self:cWhere:=""
 	cMyFrom:="person as p"
 	if !Empty(self:SearchCLN)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.persid = '"+AllTrim(self:SearchCLN)+"'" 
-		lPersid:=true
+		lDeleted:=true  // unique found: also deleted person
 	elseif !Empty(self:SearchBank)
 		self:cWhere+=	iif(Empty(self:cWhere),""," and")+" b.banknumber = '"+AllTrim(self:SearchBank)+"' and p.persid=b.persid " 
 		cMyFrom+=",personbank as b"
+		lDeleted:=true  // unique found: also deleted person
 	else
 		if !Empty(self:SearchUni) 
 			aKeyw:=GetTokens(AllTrim(self:SearchUni))
@@ -1881,7 +1882,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 			self:cWhere+=	iif(Empty(self:cWhere),""," and")+" p.postalcode like '"+StandardZip(self:SearchSZP)+"%'"
 		endif 
 	endif
-	if !lPersid
+	if !lDeleted
 		self:cWhere+=iif(Empty(self:cWhere),'',' and ')+"p.deleted=0"
 	endif
 	if !Empty(self:cFilter)
