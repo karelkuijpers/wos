@@ -2153,7 +2153,6 @@ METHOD OkButton()  CLASS EditMember
 	local cFatalError as string
 	local cError,cErrMessage,cPrvname,cReplace as string
 	local cStatement as string
-	local cMessage as string
 	LOCAL lResetBFM:=false as LOGIC 
 	local lError as logic
 	local lCheckCons as logic
@@ -2689,7 +2688,6 @@ METHOD OkButton()  CLASS EditMember
 			return false
 		endif 
 		SQLStatement{"commit",oConn}:Execute() 
-		LogEvent(self,cMessage)
 		self:Pointer := Pointer{POINTERARROW}
 		self:aDistrOrg:=self:aDistr    // for close
 		if lCheckCons
