@@ -697,14 +697,16 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	local cHeader as string 
 	local cError as string
 	local cAddressOrg as string
-	local street,zipcode, cityname,housenr,housenrOrg, order, output, bits, httpfile, cSearch as string 
+	local street,zipcode, cityname,housenr,housenrOrg,housenradd, output, cSearch as string
+	local StreetFound,PostalCodeFound,CityFound as string 
 	local lSuccess as logic                          
 	LOCAL aWord as ARRAY 
-	local aAddr as array
-	if Empty(cAddress) .or. Empty(cPostcode).and.Empty(cCity)
+	local aAddr:={} as array
+	local aHsnr:={} as array
+	street:=AllTrim(MLine(cAddress,1))
+	if Empty(street) .or. Empty(cPostcode).and.Empty(cCity)
 		return {cPostcode,cAddress,cCity}
 	endif
-	street:=AllTrim(cAddress)
 	cAddressOrg:=street
 	zipcode:=AllTrim(StrTran(cPostcode,' ',''))  
 	if !Len(zipcode)==6 .or. !isnum(SubStr(zipcode,1,4)) .or.!IsAlphabetic(SubStr(zipcode,5,2)) .or. IsPunctuationMark(SubStr(zipcode,5,2))
@@ -719,19 +721,22 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	//cCity:=StrTran(cCity,'Y','IJ')
 	cityname:=cCity 
 
-	aAddr:=GetStreetHousnbr(cAddress)
+	aAddr:=GetStreetHousnbr(street)
  	housenrOrg:=AllTrim(aAddr[2]) 
- 	cAddress:=AllTrim(aAddr[1])
+ 	street:=AllTrim(aAddr[1])
 	// remove housenbr addition from address: 
-	aAddr:=GetTokens(housenrOrg)
-	if Len(aAddr)>0
-		housenr:=AllTrim(aAddr[1,1])
-		cAddress+=' '+housenr
+	aHsnr:=GetTokens(housenrOrg)
+	if Len(aHsnr)>1
+		housenr:=AllTrim(aHsnr[1,1])
+		housenradd:=AllTrim(SubStr(housenrOrg,Len(housenr)+1)) 
+	else
+		housenr:=housenrOrg
 	endif
+	street+=' '+housenr
 	if !Empty(zipcode) .and. !Empty(housenr)
 		cSearch:=zipcode+' '+housenr
 	elseif !Empty(cCity) .and. !Empty(cAddress)
-		cSearch:=cAddress+' '+cCity 
+		cSearch:=street+' '+cCity 
 		// check strange address:
 		if IsPunctuationMark(cSearch)
 			return {cPostcode,cAddress,cCity}
@@ -742,67 +747,95 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	else
 		return {cPostcode,cAddress,cCity}	                             
 	endif
-	cSearch:=StrTran(cSearch,' ','%20') 
-	if !GetPostcode(cSearch,@output,@cError)
-		// try again with original address: 
-		housenr:= housenrOrg
-		cAddress:=cAddressOrg
+	cSearch:=StrTran(cSearch,' ','%20')
+	lSuccess:=GetPostcode(cSearch,@output,@StreetFound,@PostalCodeFound,@CityFound,@cError)
+	if lSuccess
+		if !Empty(zipcode)
+			if Len(aHsnr)>1 .and. !aHsnr[1,1]==aHsnr[2,1].and. isnum(aHsnr[2,1]) 
+				if SubStr(StreetFound,-Len(housenr))==housenr
+					lSuccess:=false
+				endif
+			endif
+		endif		
+	endif 
+	if !lSuccess 
+// 		.or. !Empty(zipcode) .and. !housenr==housenradd .and. SubStr(StreetFound,-Len(housenr))==housenr 
+		// try again with second housenbr or original address:
+		if Len(aHsnr)>1
+			housenradd:=AllTrim(SubStr(housenradd,Len(housenr)+1))
+			housenr:=aHsnr[2,1]
+			street+= ' '+housenr
+		else 
+			housenr:= housenrOrg
+			street:=cAddressOrg
+		endif
 		if !Empty(zipcode) .and. !Empty(housenr)
 			cSearch:=zipcode+' '+housenr
 		else
-			cSearch:=cAddress+' '+cCity
+			cSearch:=street+' '+cCity
 		endif 
 		cSearch:=StrTran(cSearch,' ','%20') 
-		if !GetPostcode(cSearch,@output,@cError)
+		if !GetPostcode(cSearch,@output,@StreetFound,@PostalCodeFound,@CityFound,@cError)
 			LogEvent(,"GetPostcode:"+cError,"LogErrors")
 		endif
+// 	elseif !Empty(zipcode) 
+// 		if !housenr==housenradd 
+// 			if SubStr(StreetFound,-Len(housenr))==housenr
+// 				zipcode:=zipcode
+// 			endif
+// 		endif
 	endif
 	if Empty(output)
 		// alert warning
 		return {cPostcode,cAddress,cCity}	
 	else
-		nPos2:=At3('<',output,5)
-		if nPos2>0
-			street:=AllTrim(SubStr(output,1,nPos2-1)) 
-			nPos1:=AtC('t/m',street)
-			if nPos1>0
-				// look for preceding number: 
-				for i:=nPos1-2 downto 2 step 1
-					if !IsDigit(SubStr(street,i,1))
-						nPos1:=i
-						exit
-					endif
-				next                                      
-				street:=AllTrim(SubStr(street,1,nPos1)) 
-			else
-// 				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
-				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-1)
-				if nPos1>0
-					street:=AllTrim(SubStr(street,1,nPos1-1))
-				endif
+// 		nPos2:=At3('<',output,5)
+		if !Empty(PostalCodeFound)
+			zipcode:=StandardZip(PostalCodeFound)
+			street:=StrTran(StrTran(StrTran(StrTran(StreetFound,CRLF,''),TAB,''),LF,''),'&#039;',"'")+' '+housenr+iif(Empty(housenradd),'',' '+housenradd)
+			cityname:=StrTran(AllTrim(CityFound),'&#039;',"'")
+			
+// 		if nPos2>0
+// 			street:=AllTrim(SubStr(output,1,nPos2-1)) 
+// 			nPos1:=AtC('t/m',street)
+// 			if nPos1>0
+// 				// look for preceding number: 
+// 				for i:=nPos1-2 downto 2 step 1
+// 					if !IsDigit(SubStr(street,i,1))
+// 						nPos1:=i
+// 						exit
+// 					endif
+// 				next                                      
+// 				street:=AllTrim(SubStr(street,1,nPos1)) 
+// 			else
+// // 				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-5)
+// 				nPos1:=At3(housenr,street,Len(street)-Len(housenr)-1)
+// 				if nPos1>0
+// 					street:=AllTrim(SubStr(street,1,nPos1-1))
+// 				endif
+// 			endif
+// 			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
+// 			street+=" "+housenrOrg 
+// 			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
+// 			if SubStr(output,nPos1+1,1)=='('
+// 				// look for second <small..>:
+// 				if (nPos2:=At3('<small',output,nPos1+9))>0
+// 					nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
+// 				endif
+// 			endif
+// 			if nPos1=0
+// 				return {cPostcode,cAddress,cCity}
+// 			endif	
+// 			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
+// 			nPos1:=At3(',',output,nPos1+1)+1
+// 			nPos2:=At3('<',output,nPos1)
+// 			cityname:=StrTran(AllTrim(SubStr(output,nPos1,nPos2-nPos1)),'&#039;',"'") 
+			if (cityname=="'s-Gravenhage")
+				cityname:='Den Haag'
+			elseif (cityname=="'s-Hertogenbosch")
+				cityname:="Den Bosch" 
 			endif
-			street:=StrTran(StrTran(StrTran(StrTran(street,CRLF,''),TAB,''),LF,''),'&#039;',"'")
-			street+=" "+housenrOrg 
-			nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
-			if SubStr(output,nPos1+1,1)=='('
-				// look for second <small..>:
-				if (nPos2:=At3('<small',output,nPos1+9))>0
-					nPos1:=At3('>',output,nPos2+1)  // search end of <small ...>  
-				endif
-			endif
-			if nPos1=0
-				return {cPostcode,cAddress,cCity}
-			endif	
-			zipcode:=StandardZip(SubStr(output,nPos1+1,6))
-			nPos1:=At3(',',output,nPos1+1)+1
-			nPos2:=At3('<',output,nPos1)
-			cityname:=StrTran(AllTrim(SubStr(output,nPos1,nPos2-nPos1)),'&#039;',"'") 
-			if (cityname=="'S-GRAVENHAGE")
-				cityname:='DEN HAAG'
-			elseif (cityname=="'S-HERTOGENBOSCH")
-				cityname:="DEN BOSCH" 
-			endif
-			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
+// 			cityname:=Upper(SubStr(cityname,1,1))+Lower(SubStr(cityname,2))				
 		endif
 	endif	
 // 	oHttp:CloseRemote()
@@ -812,13 +845,13 @@ function GENDERDSCR(cGnd as int) as string
 	// Return Gender description of a person:
 	RETURN pers_gender[AScan(pers_gender,{|x|x[2]==cGnd}),1]
 
-Function GetPostcode(cSearch as string,output ref string, cError ref string) as logic
+Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPostalCode ref string, cCity ref string, cError ref string) as logic
 	// Get Dutch postal code: 
 	// cSearch: string to be sent to postcode.nl
 	// output: contains return string from postcode.nl 
 	// cError: error message when applicable
 	// returns true: successfull, false: not successfull 
-	local nPos1 as int 
+	local nPos1,nPos2 as int 
 	local time0,time1 as float
 	local cBuffer,httpfile as string
 	LOCAL oHttp  as cHttp
@@ -846,7 +879,29 @@ Function GetPostcode(cSearch as string,output ref string, cError ref string) as 
 			nPos1:=At3('<h1>',httpfile,nPos1+31)
 			if nPos1>0                                                
 				output:=SubStr(httpfile,nPos1+4,200)
-				if !SubStr(output,1,19) == 'Zoekresultaten</h1>'
+				if !SubStr(output,1,19) == 'Zoekresultaten</h1>' .and. !AtC('t/m',output)>0
+					if (nPos1:=AtC("<dt>Postcode</dt>",httpfile))>0
+						cBuffer:=SubStr(httpfile,nPos1+17,300)
+						if (nPos1:=AtC("<dd><a href=",cBuffer))>0
+							cPostalCode:=SubStr(cBuffer,nPos1+21,6)
+							if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
+								cBuffer:=SubStr(cBuffer,nPos1+19)
+								if (nPos1:=AtC("<dd>",cBuffer))>0
+									if (nPos2:=AtC("</dd>",cBuffer))>0
+										cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+										if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
+											cBuffer:=SubStr(cBuffer,nPos1+19)
+											if (nPos1:=AtC("<dd>",cBuffer))>0
+												if (nPos2:=AtC("</dd>",cBuffer))>0
+													cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+												endif
+											endif
+										endif
+									endif
+								endif
+							endif
+						endif
+					endif
 					return true
 				endif
 				output:=''
@@ -3432,19 +3487,19 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 	oReport:prstop()
 	SetDecimal(Asc('.'))
 	if (TextBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"+CRLF+"Is File OK to be send to the bank?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
-		// reconcile due amounts: 
+/*		// reconcile due amounts: 
 		SQLStatement{"start transaction",oConn}:Execute()
 		oStmnt:=sqlStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+implode(aDue,',')+")",oConn}
 		oStmnt:Execute()
 		if Empty(oStmnt:status)
-			sqlStatement{"commit",oConn}:execute() 
+			sqlStatement{"commit",oConn}:execute()  */
 			LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
-		else
+/*		else
 			SQLStatement{"rollback",oConn}:Execute()
 			// erase file
 			FErase(cFilename)
 			ErrorBox{self,"making kid file failed"}:Show()
-		endif
+		endif  */
 	else
 		// erase file:
 		FErase(cFilename)
