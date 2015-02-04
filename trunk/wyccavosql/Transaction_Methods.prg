@@ -3645,7 +3645,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					oSub:SKIP()
 				ENDDO 
 			endif
-			********** place due amounts into tempgift ***********
+/*			********** place due amounts into tempgift ***********
 			oDue:=SQLSelect{"select dueid,s.personid as persid,round(amountinvoice - amountrecvd,2) as cre,s.accid,cast(invoicedate as date) as invoicedate,d.seqnr,b.category as acctype "+;
 				"from dueamount d,account a, balanceitem b,subscription s "+;
 				"where amountinvoice>amountrecvd and d.subscribid=s.subscribid and a.accid=s.accid and a.active=1 and  b.balitemid=a.balitemid and s.paymethod<>'C' and s.personid="+self:mCLNGiver,oConn}     // direct debit
@@ -3676,7 +3676,7 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 					++self:m51_apost
 					oDue:SKIP()
 				ENDDO
-			endif
+			endif */
 		ENDIF
 		IF self:lTeleBank
 			self:AssignTo()
