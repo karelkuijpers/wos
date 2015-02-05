@@ -1182,21 +1182,23 @@ METHOD ImportBBS(oFb as MyFileSpec) as logic CLASS TeleMut
 
 METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	*	Import of one BBS Innbetaling transaction file (with KID numbers)
-	LOCAL oHlM as HlpMT940
-	LOCAL lv_bankAcntOwn, lv_description, lv_addsub, lv_AmountStr, lv_Budgetcd,  lv_reference, lv_persid,lv_NameContra,lv_dueid as STRING
-	local lv_InvoiceID as usual
-	LOCAL lv_loaded as LOGIC
 	LOCAL lv_Amount as FLOAT
+	local fSum as float
+	local nTrans,nImp,nSub,nProc,nPos,nTot as int  
+	LOCAL lv_bankAcntOwn, lv_description, lv_addsub, lv_AmountStr, lv_Budgetcd,  lv_reference, lv_persid,lv_NameContra,lv_dueid as STRING
+	LOCAL AccSDON as STRING 
+	local cWarning as string
+	local lv_InvoiceID as usual
 	LOCAL lSuccess:=true as LOGIC
-	LOCAL AccSDON as STRING
-	LOCAL oHlp as FileSpec
+	LOCAL lv_loaded as LOGIC
 	LOCAL ld_bookingdate as date 
 	local startdate,enddate as date
+	local aSubscr:={} as array // array with persid's in donation subscriptions {persid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd,fullname},... 
+	LOCAL oHlp as FileSpec
 	local oStmnt as SQLStatement
 	local oSel as SQLSelect
 	local oStmnt as SQLStatement
-	local nTrans,nImp,nSub,nProc as int  // {{persid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd},...} 
-	local aSubscr:={} as array // array with persid's in donation subscriptions {persid,invoiceid,amount,destination},... 
+	LOCAL oHlM as HlpMT940
 
 	
 	IF Empty(SDON)
@@ -1230,12 +1232,13 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 		return false
 	endif
 	// find corresponding due amounts:
-	oSel:=SqlSelect{"select group_concat(cast(COALESCE(gr.personid,0) as char),'#$#',COALESCE(gr.invoiceid,''),'#$#',cast(COALESCE(gr.accid,0) as char),'#$#',COALESCE(gr.accnumber,''),'#$#',gr.dueid,'#$#',cast(gr.amountinvoice as char),'#$#',cast(gr.amountrecvd as char) separator '#%#') as grdueamnts from "+;
-	"(select s.personid,s.invoiceid,a.accid,a.accnumber,d.dueid,d.amountinvoice,d.amountrecvd from dueamount d left join subscription s on (d.subscribid=s.subscribid) left join account a on (a.accid=s.accid) "+;
+	oSel:=SqlSelect{"select group_concat(cast(COALESCE(gr.personid,0) as char),'#$#',COALESCE(gr.invoiceid,''),'#$#',cast(COALESCE(gr.accid,0) as char),'#$#',COALESCE(gr.accnumber,''),'#$#',gr.dueid,'#$#',cast(gr.amountinvoice as char),'#$#',cast(gr.amountrecvd as char),'#$#',gr.fullname separator '#%#') as grdueamnts from "+;
+	"(select s.personid,s.invoiceid,a.accid,a.accnumber,d.dueid,d.amountinvoice,d.amountrecvd,"+SQLFullName(0,'p')+" as fullname from dueamount d left join subscription s on (d.subscribid=s.subscribid) left join account a on (a.accid=s.accid) "+; 
+	'left join person p on(p.persid=s.personid) '+;
 	'where d.amountinvoice>d.amountrecvd and d.invoicedate between "'+SQLdate(startdate)+'" and "'+SQLdate(enddate)+'") as gr',oConn}   
 	if oSel:Reccount>0 .and.!Empty(oSel:grdueamnts)
-		// aSubscr: {{personid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd},...}
-		//                1       2        3      4        5          6           7
+		// aSubscr: {{personid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd,fullname},...}
+		//                1       2        3      4        5          6           7         8
 		AEval(Split(oSel:grdueamnts,'#%#'),{|x|AAdd(aSubscr,Split(x,'#$#')) }) 
 	endif
 // 	oSel:=SqlSelect{"select group_concat(cast(s.personid as char),,invoiceid,cast(a.accid as char).a.accnumber,
@@ -1280,8 +1283,8 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 				lv_Budgetcd:=ZeroTrim(SubStr(lv_InvoiceID,7,6))
 				lv_persid:=ZeroTrim(SubStr(lv_InvoiceID,1,6)) 
 				lv_dueid:=''
-				// aSubscr: {{personid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd},...}
-				//                1       2        3      4        5          6           7
+				// aSubscr: {{personid,invoiceid,accid,accnumber,dueid,amountinvoice,amountrcvd,fullname},...}
+				//                1       2        3      4        5          6           7         8
 				nSub:=AScan(aSubscr,{|x|x[2]==lv_InvoiceID.and.lv_Amount==round((Val(x[6])-val(x[7])),2)})
 				if nSub>0
 					lv_persid:=aSubscr[nSub,1]
@@ -1322,6 +1325,18 @@ METHOD ImportBBSInnbetal(oFm as MyFileSpec) as logic CLASS TeleMut
 	lSuccess:=self:SaveTeleTrans(false,true,"Innbetalinger fra BBS file:"+oFm:FileName,nTrans)
 // 	AAdd(self:aMessages,"Imported Innbetalinger fra BBS file:"+oFm:FileName+" "+Str(self:lv_aant_toe -nImp,-1)+" imported of "+Str(nTrans,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
 	if lSuccess
+		// show missing direct debits:
+		ASort(aSubscr,,,{|x,y|x[8]<=y[8]})
+		do while (nPos:=AScan(aSubscr,{|x|x[7]='0.00'},nPos+1))>0
+			cWarning+=CRLF+aSubscr[nPos,8]+' -> '+aSubscr[nPos,4]+': '+aSubscr[nPos,6]+' '+sCurr
+			nTot++
+			fSum:=round(fSum+val(aSubscr[nPos,6]),2)
+		enddo
+		if !Empty(cWarning)
+			cWarning:="The following "+str(nTot,-1)+" direct debits ("+str(fSum,-1)+' '+sCurr+") are missing:"+cWarning
+			LogEvent(self,cWarning)
+			WarningBox{,"Innbetalinger fra BBS",cWarning}:Show()
+		endif 
 		return true
 	else
 		return false                                              
@@ -4222,7 +4237,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	//  
 	local i,j,k,l,m,nProc,nTransId,nTele,maxTeleId,nSeqnbr as int
 	local nAddrEnd as int
-	local fDeb,fDebForgn,fCre,fCreForgn as float 
+	local fDeb,fDebForgn,fCre,fCreForgn,fDirecDebit as float 
 	local cPersids,cPersid,cBudgetcds,cBudgetcd,cBankAcc,cBankAcc2,lv_description,lv_specmessage,lv_gc,lv_persid,cBankAccOwn,lv_accid,cDestAcc,cTransid as string 
 	local cDueids,cDueidsInv,cDueid,endtoend,lv_address as string
 	local cBankContrNotIBAN,cBankContr,cBankAcctContr as string 
@@ -4420,6 +4435,9 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			if !Empty(cDueid) 
 				if AScanExact(aDueid,cDueid)=0
 					AAdd(aDueid,cDueid)
+				endif
+				if aValueTrans[i,9]=='B'
+					fDirecDebit:=Round(fDirecDebit+avalueTrans[i,8],2)
 				endif
 			endif
 		next
@@ -5155,7 +5173,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		LogEvent(self,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+;
 		iif(nTele>0", processed automatically:"+Str(nProc,-1)+;
 		iif(Len(aAccnbrDue)>0,' including '+Str(Len(aAccnbrDue),-1)+' direct debit reversals','')+;
-		iif(!sepaEnabled.and.Len(aDueid)>0,' including '+Str(Len(aDueid),-1)+' direct debits',''),"")) 
+		iif(!sepaEnabled.and.Len(aDueid)>0,' including '+Str(Len(aDueid),-1)+' direct debits('+Str(fDirecDebit,-1)+' '+sCurr+')',''),"")) 
 		// 	else
 		// 		AAdd(self:aMessages,"Imported "+cFilename+" "+Str(nTele,-1)+" imported of "+Str(nTot,-1)+" transactions"+iif(nTele>0", processed automatically:"+Str(nProc,-1),""))
 	endif
