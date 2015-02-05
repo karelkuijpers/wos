@@ -74,7 +74,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					cCurrentVersion , ;
 					@cbData )
 				IF !nResult == ERROR_SUCCESS
-					LogEvent(,"Currentversion:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"MailError")
+					LogEvent(,"Currentversion:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 				else
 					lVista:=iif(AtC('XP',cCurrentVersion)>0,false,true)
 				endif
@@ -87,7 +87,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					cRequired:="Mapi2Xml"
 				else
 					MyClient:=-1  // switch to current client					
-					LogEvent(,"Mapi2Xml-1:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"MailError")
+					LogEvent(,"Mapi2Xml-1:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"logerrors")
 				endif				
 			endif 
 			if MyClient == 3   // Determine if Windows Live Mail present:
@@ -97,7 +97,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					cRequired:="Windows Live Mail"
 				else
 					MyClient:=-1  // switch to current client					
-					LogEvent(," Live Mail-2:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"MailError")
+					LogEvent(," Live Mail-2:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"logerrors")
 				endif				
 			endif 
 			if MyClient == 2   // Determine if Thunderbird present:
@@ -109,7 +109,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					// 					MyClient:=-1  // switch to current client
 					// it is possible that Thunderbird is copied and not installed					
 					cRequired:="Mozilla Thunderbird"
-					LogEvent(,"Thunderbird-3:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"MailError")
+					LogEvent(,"Thunderbird-3:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"logerrors")
 				endif				
 			endif 
 
@@ -119,10 +119,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					0,KEY_QUERY_VALUE, @mailResult )
 				IF ( nResult == ERROR_SUCCESS )
 					cRequired:="Microsoft Outlook" 
-					// 					LogEvent(,"3:"+Str(nResult,-1),"MailError")
+					// 					LogEvent(,"3:"+Str(nResult,-1),"logerrors")
 				else
 					MyClient:=-1  // switch to current client
-					LogEvent(,"Outlook_4:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"MailError")
+					LogEvent(,"Outlook_4:"+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1))),"logerrors")
 				endif
 			endif
 			If MyClient==0
@@ -153,10 +153,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"HKCU Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"MailError")
+						LogEvent(,"HKCU Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 					endif
 				else
-					LogEvent(,"HKCU Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"MailError")					
+					LogEvent(,"HKCU Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
 				endif
 			else
 				// read HKLM
@@ -172,10 +172,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"HKLM Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"MailError")
+						LogEvent(,"HKLM Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 					endif
 				else
-					LogEvent(,"HKLM Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"MailError")					
+					LogEvent(,"HKLM Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
 				endif
 				
 			endif
@@ -193,10 +193,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			// 						cCurrent , ;
 			// 						@cbData )
 			// 					IF !nResult == ERROR_SUCCESS
-			// 						LogEvent(,"HKLM Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"MailError")
+			// 						LogEvent(,"HKLM Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 			// 					endif
 			// 				else
-			// 					LogEvent(,"HKLM Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"MailError")
+			// 					LogEvent(,"HKLM Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"logerrors")
 			// 				endif				
 			// 			endif
 			if MyClient<0
@@ -219,10 +219,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 					IF nResult == ERROR_SUCCESS
 						cCurrent:=cRequired
 					else
-						LogEvent(,"HKCU "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"MailError")							
+						LogEvent(,"HKCU "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"logerrors")							
 					endif
 				else
-					LogEvent(,"HKCU /mail "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"MailError")							
+					LogEvent(,"HKCU /mail "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"logerrors")							
 				endif
 				if !lVista 
 					// Write required client also to HKLM
@@ -238,10 +238,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						IF nResult == ERROR_SUCCESS
 							cCurrent:=cRequired
 						else
-							LogEvent(,"HKLM "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"MailError")							
+							LogEvent(,"HKLM "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"logerrors")							
 						endif
 					else
-						LogEvent(,"HKLM /mail "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"MailError")							
+						LogEvent(,"HKLM /mail "+cRequired+" not set:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cCurrent,"logerrors")							
 					endif
 				endif
 			endif
@@ -250,7 +250,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			lFatal:=true
 		endif
 	else 
-		LogEvent(,"Windows Messaging Subsystem-12:"+Str(nResult,-1),"MailError") 							
+		LogEvent(,"Windows Messaging Subsystem-12:"+Str(nResult,-1),"logerrors") 							
 		cError:=  "You have no permission to read register for mail parameters: "+DosErrString(nResult)+";"+CRLF+"the default email client will be used."
 		
 	endif
@@ -261,10 +261,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			cError:="You have no permission to change email client to "+cRequired+";"+CRLF+"the default email client will be used."
 		endif
 // 	else
-// 		LogEvent(,"Required client: "+cRequired+" and current: "+cCurrent,"MailError")									
+// 		LogEvent(,"Required client: "+cRequired+" and current: "+cCurrent,"logerrors")									
 	endif
 	if !Empty(cError)
-		LogEvent(,cError,"MailError") 							
+		LogEvent(,cError,"logerrors") 							
 		WarningBox{,"Sending by email",cError}:Show()
 	endif
 	EmailClient:=cCurrent
