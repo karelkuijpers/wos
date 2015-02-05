@@ -620,6 +620,7 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 	self:oClick:Resume()
 	if Empty(self:hSession)
 		IF !self:Open( "" , "" )  //reinitialize hSession
+			LogEvent(self,"MAPI-Services not available, Problem","logerrors")
 			MessageBox( 0 , "MAPI-Services not available" , "Problem" , MB_ICONEXCLAMATION )
 			RETURN false
 		ENDIF		
@@ -632,10 +633,9 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		0 )
 	self:oClick:Suspend() 
 	if !nResult == SUCCESS_SUCCESS
+			LogEvent(self,"Error when emailing, Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult)+"; last error:"+GetSystemMessage(GetLastError()) ,"logerrors")
 			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION ) 
-			LogEvent(self,"Error when emailing, Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult),"logerror")
 			RETURN false
-		
 	endif
 	MemFree( sMessage )
 	MemFree( pszSubject )
