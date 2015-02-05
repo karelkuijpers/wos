@@ -776,7 +776,9 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		endif 
 		cSearch:=StrTran(cSearch,' ','%20') 
 		if !GetPostcode(cSearch,@output,@StreetFound,@PostalCodeFound,@CityFound,@cError)
-			LogEvent(,"GetPostcode:"+cError,"LogErrors")
+			if !Empty(cError)
+				LogEvent(,"GetPostcode:"+cError,"LogErrors")
+			endif
 		endif
 // 	elseif !Empty(zipcode) 
 // 		if !housenr==housenradd 
@@ -1974,7 +1976,7 @@ CLASS Selpers INHERIT DataWindowExtra
 
 
 
-	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters,RemovePersons
+	declare method ChangeMailCodes,FillText,MarkUpDestination,AnalyseTxt ,NAW_Compact,NAW_Extended,PrintLetters,RemovePersons,FillLetters
 METHOD AnalyseTxt(template as string,DueRequired ref logic,GiftsRequired ref logic,AddressRequired ref logic,RepeatingPossible ref logic,selectionType as int,selx_accid:=0 as int) as void pascal CLASS Selpers
 	* Analyse content of template
 	LOCAL h1,h2,i as int,repeatedtxt as STRING
@@ -2368,7 +2370,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	SetPath(CurPath)
 
 	RETURN true
-METHOD FillLetters(brief,oRange,lAcceptNorway,oReport) CLASS Selpers
+METHOD FillLetters(brief as string,oRange as Range,lAcceptNorway:=false as logic,oReport as PrintDialog) as void pascal  CLASS Selpers
 	* Filling of letters
 LOCAL  ind_openpost,ind_gift,ind_naw,ind_herh,brfNAW,brfDAT AS LOGIC
 LOCAL brfWidth,	brfCol,	brfregn,brfrega,brfCola,brfColt,i,tel,Rij,Blad,teladdr AS INT
@@ -2377,7 +2379,7 @@ LOCAL kenmerk,brieftxt,cRegel AS STRING
 LOCAL Aantal AS INT
 LOCAL SkipPage:=FALSE AS LOGIC
 // LOCAL oLan AS Language
-Default(@lAcceptNorway,FALSE)
+// Default(@lAcceptNorway,FALSE)
 
 // self:oDue := DueAmount{}
 // IF !oDue:Used
@@ -2446,7 +2448,7 @@ FOR i=oRange:Min TO oRange:Max
 		ELSEIF tel=if(brfDAT,brfrega,0).and.(tel<brfregn.or.tel>brfregn+5.or..not.brfNAW)
 			oReport:PrintLine(@Rij,@Blad,Space(if(brfDAT,brfCola,0))+kenmerk,{})
 		ELSEIF tel#if(brfDAT,brfrega,0).and.tel>=brfregn.and.tel<=brfregn+5.and.brfNAW
-			oReport:PrintLine(@Rij,@Blad,Space(brfCol)+self:m_AdressLines[teladdr])
+			oReport:PrintLine(@Rij,@Blad,Space(brfCol)+self:m_AdressLines[teladdr],{})
 			++teladdr
 		ELSE
 			IF brfCol < if(brfDAT,brfCola,0) .and.brfNAW
