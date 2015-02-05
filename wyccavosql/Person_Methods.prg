@@ -3457,7 +3457,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 				Space(11)+StrZero(oDue:AmountInvoice*100,17,0)+Space(12)+PadR(AllTrim(oDue:INVOICEID),19,"0"))
 			FWriteLine(ptrHandle,"NY210231"+StrZero(nSeq,7,0)+PadR(oDue:lastname,60)+"00000")
 			nLine+=2
-			fSum+=oDue:AmountInvoice
+			fSum:=Round(fSum+oDue:AmountInvoice,2)
 			IF DueDateFirst>DueDate
 				DueDateFirst:=DueDate
 			ENDIF
@@ -3486,14 +3486,14 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 	oReport:prstart()
 	oReport:prstop()
 	SetDecimal(Asc('.'))
-	if (TextBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts"+CRLF+"Is File OK to be send to the bank?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
+	if (TextBox{self,"Producing KID file","File "+cFilename+" generated with "+Str(nSeq,-1)+" amounts, total amount: "+Str(fSum,-1)+' '+sCURR+CRLF+"Is File OK to be send to the bank?",BUTTONYESNO+BOXICONQUESTIONMARK}):Show()==BOXREPLYYES
 /*		// reconcile due amounts: 
 		SQLStatement{"start transaction",oConn}:Execute()
 		oStmnt:=sqlStatement{"update dueamount set amountrecvd=amountinvoice where dueid in ("+implode(aDue,',')+")",oConn}
 		oStmnt:Execute()
 		if Empty(oStmnt:status)
 			sqlStatement{"commit",oConn}:execute()  */
-			LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts")
+			LogEvent(self, "KID file "+cFilename+" generated with "+Str(nSeq,-1)+" amounts, total amount: "+Str(fSum,-1)+' '+sCURR)
 /*		else
 			SQLStatement{"rollback",oConn}:Execute()
 			// erase file
