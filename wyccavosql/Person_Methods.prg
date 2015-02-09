@@ -4404,6 +4404,9 @@ local i,j as int
 		endif
 		if AtC(cSortOrder,cFields)=0
 			cFields+=",p."+cSortOrder
+			if AtC(cSortOrder,cGrFields)=0
+				cGrFields+=",gr."+cSortOrder
+			endif
 		endif
 	endif
 	cFields:=SubStr(cFields,2)
