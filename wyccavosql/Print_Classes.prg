@@ -2906,7 +2906,7 @@ METHOD PrintLine (LineNbr ref int,PageNbr ref int,LineContent:='' as string,Head
 	LOCAL cFileName as STRING
 	IF Destination == "File" .and.Empty(self:ptrHandle)
 		cFileName:= self:ToFileFS:FullPath
-		self:ptrHandle:=MakeFile(,@cFileName,"Printing to file")
+		self:ptrHandle:=MakeFile(@cFileName,"Printing to file")
 		IF Empty(self:ptrHandle)
 			RETURN FALSE
 		ELSEIF self:ptrHandle = F_ERROR
