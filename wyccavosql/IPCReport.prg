@@ -140,7 +140,7 @@ METHOD OKButton( ) CLASS IPCReport
 				return
 			endif
 			cFilename:=ToFileFS:FullPath
-			ptrHandle:=MakeFile(,@cFilename,self:oLan:WGet("Generating")+" "+self:oLan:WGet("IPC report"))
+			ptrHandle:=MakeFile(@cFilename,self:oLan:WGet("Generating")+" "+self:oLan:WGet("IPC report"))
 
 			Period:=SubStr(Period,3)
 			for i:=1 to Len(aMIpc)
