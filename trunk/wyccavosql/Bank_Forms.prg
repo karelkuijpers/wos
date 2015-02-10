@@ -1502,7 +1502,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	self:Owner:STATUSMESSAGE("Producing Credit Transfer file, moment please")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	* Prepare Datafile:
-	ptrHandle := MakeFile(self,cFilename,"Creating Credit	Transfer-file")
+	ptrHandle := MakeFile(cFilename,"Creating Credit	Transfer-file")
 	IF	ptrHandle =	F_ERROR .or. ptrHandle==nil
 		RETURN false
 	ENDIF
