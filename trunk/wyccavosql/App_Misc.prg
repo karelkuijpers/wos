@@ -3187,7 +3187,7 @@ FUNCTION MakeCodes(Codes as ARRAY)
 		ENDIF
 	NEXT
 RETURN aCod
-FUNCTION MakeFile(oOwner:=null_object as window,cFileName ref string,cDescription as string) as ptr
+FUNCTION MakeFile(cFileName ref string,cDescription as string) as ptr
 * Create a file Filename and return handler; in case of error return doserror, in case of cancel returns nil
 LOCAL ptrHandle as ptr
 LOCAL oFileSpec as Filespec
@@ -3205,11 +3205,11 @@ DO WHILE true
 		oFileSpec:=FileSpec{cFileName}
 		MyFileName:=oFileSpec:FileName+oFileSpec:Extension
 		MyPath:=StrTran(oFileSpec:FullPath,MyFileName,'')
-		oTextBox:=TextBox{oOwner,cDescription,"Could not create file "+MyFileName+" at "+MyPath+CRLF+"; Error:"+fileerror,;
+		oTextBox:=TextBox{,cDescription,"Could not create file "+MyFileName+" at "+MyPath+CRLF+"; Error:"+fileerror,;
 		BUTTONRETRYCANCEL}
 		nReturn:=oTextBox:Show()
 		IF nReturn== BOXREPLYRETRY	
-			oFileDialog := SaveAsDialog{ oOwner, cFileName  }
+			oFileDialog := SaveAsDialog{ , cFileName  }
 			oFileDialog:SetStyle(OFN_HIDEREADONLY)
 			IF oFileDialog:Show()
 				cFileName:=oFileDialog:FileName
