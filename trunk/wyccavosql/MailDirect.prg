@@ -767,7 +767,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	// remove mailbody files:
 	AEval(Directory(HelpDir+"\mailbody*.html"), {|aFile|FErase(HelpDir+"\"+aFile[F_NAME])})
 	//
-	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for mailing")
+	ptrHandleBatch := MakeFile(@cbatchfile,"Creating batch file for mailing")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
 		self:cError:=self:oLan:WGet("Couldn't compose email")
 		self:lError:=true
@@ -779,7 +779,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	//             1    2       3           4
 	for i:=1 to Len(self:aEmail)
 		cFileContent:=self:cFileContentBase+Str(i,-1)+".html"
-		ptrHandleBody := MakeFile(self,@cFileContent,"Creating mailbody file")
+		ptrHandleBody := MakeFile(@cFileContent,"Creating mailbody file")
 		IF ptrHandleBody = F_ERROR .or. Empty(ptrHandleBody)
 			self:lError:=true
 			self:cError:=self:oLan:WGet("Couldn't compose email")
