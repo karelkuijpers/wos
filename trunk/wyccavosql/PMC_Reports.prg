@@ -1302,7 +1302,7 @@ METHOD PrintReport() CLASS PMISsend
 		// refresh locks
 		* Produce first Datafile: 
 		self:STATUSMESSAGE(self:oLan:WGet('Producing PMC file')+'...')
-		ptrHandle := MakeFile(self,cFilename,self:oLan:WGet("Creating PMC-file"))
+		ptrHandle := MakeFile(cFilename,self:oLan:WGet("Creating PMC-file"))
 		IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 			* header record:
 			//		FWriteLineUni(ptrHandle,'<?xml version="1.0" encoding="ISO-8859-1" ?>')
