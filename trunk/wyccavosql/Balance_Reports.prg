@@ -4072,7 +4072,7 @@ Method InitializeMbrStmntReport(mPtr as int,aAccidMbr as array,oTrans as SqlSele
 		cFileNameBasic:= self:oReport:ToFileFS:FileName                  
 		oFileSpec:FileName:= cFileNameBasic+Space(1)+CleanFileName(StrTran(self:aMbr[mPtr,2],'.',' '))
 		cFileMember:=oFileSpec:FullPath
-		ptrHandle := MakeFile(self,@cFileMember,"Creating member statements")
+		ptrHandle := MakeFile(@cFileMember,"Creating member statements")
 		IF ptrHandle = F_ERROR .or. Empty(ptrHandle)
 			return false 
 		ENDIF
@@ -4434,7 +4434,7 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 			oFileSpec:Extension:='html' 			
 		endif 
 		cFileMember:=oFileSpec:FullPath
-		ptrHandle := MakeFile(self,@cFileMember,"Creating member statements")
+		ptrHandle := MakeFile(@cFileMember,"Creating member statements")
 		IF ptrHandle = F_ERROR .or. Empty(ptrHandle)
 			return 
 		ENDIF
@@ -5861,7 +5861,7 @@ METHOD OKButton( ) CLASS ReImbursement
 		return false
 	endif
 	cFileName:=ToFileFS:FullPath
-	ptrHandle:=MakeFile(self,cFileName,cTask)
+	ptrHandle:=MakeFile(cFileName,cTask)
 	IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 		* Write heading TO file:
 		FWriteLine(ptrHandle,'"TRANSDATE"'+cDelim+'"DOCID"'+cDelim+'"TRANSACTNR"'+cDelim+'"ACCOUNTNR"'+cDelim+'"ACCNAME"'+cDelim+'"DESCRIPTN"'+cDelim+'"DEBITAMNT"'+cDelim+'"CREDITAMNT"'+cDelim+'"REFERENCE"')
@@ -6182,7 +6182,7 @@ if oTrans:RecCount<1
 ENDIF
 
 cFileName:=ToFileFS:FullPath
-ptrHandle:=MakeFile(,@cFileName,"Exporting Report to text file")
+ptrHandle:=MakeFile(@cFileName,"Exporting Report to text file")
 
 //FWriteLine(ptrHandle,PadR("22100980334600Wycliffe                      Postboks 6625 St. Olavs plass 0129 OSLO                     22932780Kjell-Arne Haldorsen          229327822"+Str(TaxYear,4,0)+DToS(Today())+" 1",200))
 FWriteLine(ptrHandle,PadR(cHeader,200))
