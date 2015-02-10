@@ -4040,7 +4040,7 @@ METHOD ExportButton( ) CLASS TransInquiry
 		IF lAppend
 			ptrHandle := FOpen(cFilename,FO_READWRITE	)
 		ELSE
-			ptrHandle:=MakeFile(self,@cFilename,"Exporting to spreadsheet")
+			ptrHandle:=MakeFile(@cFilename,"Exporting to spreadsheet")
 		ENDIF
 		IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
 			IF !lAppend
