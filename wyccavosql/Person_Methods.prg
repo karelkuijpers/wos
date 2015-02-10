@@ -2238,7 +2238,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	IF lAppend
 		ptrHandle := FOpen(cFileName,FO_READWRITE	)
 	else
-		ptrHandle:=MakeFile(,@cFileName,"Exporting to spreadsheet")
+		ptrHandle:=MakeFile(@cFileName,"Exporting to spreadsheet")
 	endif
 	IF ptrHandle==nil
 		RETURN FALSE
@@ -3433,7 +3433,7 @@ METHOD MakeKIDFile(begin_due as date,end_due as date, process_date as date) as l
 		return false
 	endif
 	cFilename:=ToFileFS:FullPath
-	ptrHandle := MakeFile(self,@cFilename,oLan:WGet("Creating KID-file"))
+	ptrHandle := MakeFile(@cFileName,oLan:WGet("Creating KID-file"))
 	IF ptrHandle = F_ERROR .or. ptrHandle==nil
 		RETURN false
 	ENDIF
@@ -3946,7 +3946,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		return false
 	endif
 	cFilename:=ToFileFS:FullPath 
-	ptrHandle := MakeFile(self,@cFilename,"Creating SEPA_DD-file")
+	ptrHandle := MakeFile(@cFileName,"Creating SEPA_DD-file")
 	IF ptrHandle = F_ERROR .or. ptrHandle==nil
 		self:Pointer := Pointer{POINTERARROW}
 		RETURN false
