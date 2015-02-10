@@ -125,15 +125,15 @@ Method MakeBackup() class BackupDatabase
 	cbatchfile:=HelpDir+'\'+"batchbackup.vbs"  
 	cCmdfile:=HelpDir+'\'+"cmdbackup.cmd"
 	cFtpfile:=HelpDir+'\'+"ftpput.txt"
-	ptrHandleCmd := MakeFile(self,@cCmdfile,"Creating cmd file for backup")
+	ptrHandleCmd := MakeFile(@cCmdfile,"Creating cmd file for backup")
 	IF ptrHandleCmd = F_ERROR .or. Empty(ptrHandleCmd)
 		return false 
 	ENDIF
-	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for backup")
+	ptrHandleBatch := MakeFile(@cbatchfile,"Creating batch file for backup")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
 		return false 
 	ENDIF
-	ptrHandleFtp := MakeFile(self,@cFtpfile,"Creating ftp text file for backup")
+	ptrHandleFtp := MakeFile(@cFtpfile,"Creating ftp text file for backup")
 	IF ptrHandleFtp = F_ERROR .or. Empty(ptrHandleFtp)
 		return false 
 	ENDIF
@@ -195,11 +195,11 @@ Method MakeBackupToLocal(lWait:=true as logic) as logic class BackupDatabase
 	GetHelpDir()
 	cbatchfile:=HelpDir+'\'+"batchbackuplocal.vbs"  
 	cCmdfile:=HelpDir+'\'+"cmdbackuplocal.cmd"
-	ptrHandleCmd := MakeFile(self,@cCmdfile,"Creating cmd file for backup to local")
+	ptrHandleCmd := MakeFile(@cCmdfile,"Creating cmd file for backup to local")
 	IF ptrHandleCmd = F_ERROR .or. Empty(ptrHandleCmd)
 		return false 
 	ENDIF
-	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for backup to local")
+	ptrHandleBatch := MakeFile(@cbatchfile,"Creating batch file for backup to local")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
 		return false 
 	ENDIF
@@ -534,11 +534,11 @@ endif
 // restore database:
 	cbatchfile:=HelpDir+'\'+"batchrestorelocal.vbs"  
 	cCmdfile:=HelpDir+'\'+"cmdrestorelocal.cmd"
-	ptrHandleCmd := MakeFile(self,@cCmdfile,"Creating cmd file for restore from local")
+	ptrHandleCmd := MakeFile(@cCmdfile,"Creating cmd file for restore from local")
 	IF ptrHandleCmd = F_ERROR .or. Empty(ptrHandleCmd)
 		return false 
 	ENDIF
-	ptrHandleBatch := MakeFile(self,@cbatchfile,"Creating batch file for restore from local")
+	ptrHandleBatch := MakeFile(@cbatchfile,"Creating batch file for restore from local")
 	IF ptrHandleBatch = F_ERROR .or. Empty(ptrHandleBatch)
 		return false 
 	ENDIF
