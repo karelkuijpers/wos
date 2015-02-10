@@ -217,13 +217,13 @@ method Sync() class Synchronize
 	RemoveDat:=SToD(Str(Year(Today())-1,4,0)+"0101")
 // 	RemoveDat:=Min(MinDate,RemoveDat)  //no realy removal
 	cFileNonEx := CurPath + "\Gevers niet in persoonsadministratie"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.xls'
-	ptrNonEx := MakeFile(self,cFileNonEx,"Creating report file")
+	ptrNonEx := MakeFile(cFileNonEx,"Creating report file")
 	IF ptrNonEx = F_ERROR .or. Empty(ptrNonEx)
 		RETURN false
 	ENDIF
 	FWriteLine(ptrNonEx,"Persoon"+CHR(9)+"Datum laatste gift")
 	cFileAddrCh:= CurPath + "\Adres anders in giften- dan in persoonsadministratie"+StrZero(Day(Today()),2)+StrZero(Month(Today()),2)+SubStr(StrZero(Year(Today()),4),1,4)+'.xls'
-	ptrAdrCh := MakeFile(self,cFileAddrCh,"Creating report file")
+	ptrAdrCh := MakeFile(cFileAddrCh,"Creating report file")
 	IF ptrAdrCh = F_ERROR .or. Empty(ptrAdrCh)
 		RETURN false
 	ENDIF
