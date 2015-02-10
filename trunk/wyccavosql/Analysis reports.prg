@@ -1586,7 +1586,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 		return nil
 	ENDIF
 	cFileName:=oFileSpec:FullPath
-	ptrHandle := MakeFile(self,@cFileName,"Creating DonorFollowing-report")
+	ptrHandle := MakeFile(@cFileName,"Creating DonorFollowing-report")
 
 	IF ptrHandle = F_ERROR .or. ptrHandle==nil
 		return nil
@@ -2683,7 +2683,7 @@ METHOD PrintReport() CLASS DonorProject
 		RETURN FALSE
 	ENDIF
 	cFileName:=oFileSpec:FullPath
-	ptrHandle := MakeFile(self,@cFileName,"Creating DonorProject-report")
+	ptrHandle := MakeFile(@cFileName,"Creating DonorProject-report")
 	AEvalA(ColTotal,{||0.00})
 
 	IF !ptrHandle = F_ERROR .and. !ptrHandle==nil
