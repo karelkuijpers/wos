@@ -1,5 +1,5 @@
 METHOD ACCOUNTProc(cAccValue) CLASS EditStandingOrder
-	AccountSelect(self,AllTrim(cAccValue),"Account",true,"a.active=1")
+	AccountSelect(self,AllTrim(cAccValue),"Account",true,"a.active=1"+iif(!Empty(SPROJ)," and a.accid<>'"+SPROJ+"'",''))
 	RETURN nil 
 METHOD append() CLASS EditStandingOrder
 	LOCAL cDesc,cOpp as STRING
@@ -111,8 +111,12 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditStandingOrder
 METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder 
 local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
 LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
-LOCAL ThisRec:=oStOrdLH:RecNo as int 
+LOCAL ThisRec as int 
 
+if Empty(oStordLH)
+	return true
+endif
+ThisRec:=oStordLH:RecNo
 IF !Empty(oPers) .and. !IsNil(oPers).and.!oPers:EoF
 	if  ItemName="Creditor"
 		// check bank account available:
