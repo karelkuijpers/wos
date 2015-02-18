@@ -697,10 +697,10 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 	p_amount:=round(p_cre - p_deb,decaantal)
 	if p_amount>0
 		*  Look for due amounts:
-// 		oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountinvoice,dueamount.amountrecvd from dueamount, subscription where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and amountrecvd<amountinvoice order by dueamount.invoicedate,dueamount.seqnr for update",oConn}
+		// 		oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountinvoice,dueamount.amountrecvd from dueamount, subscription where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and amountrecvd<amountinvoice order by dueamount.invoicedate,dueamount.seqnr for update",oConn}
 		oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountinvoice,dueamount.amountrecvd,account.accnumber,"+SQLFullName()+" as fullname,cast(invoicedate as date) as invoicedate from dueamount, subscription, account, person "+;
-		"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid"+;
-		" and amountrecvd<amountinvoice order by dueamount.invoicedate,dueamount.seqnr",oConn}
+			"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid"+;
+			" and amountrecvd<amountinvoice order by dueamount.invoicedate,dueamount.seqnr",oConn}
 		if !Empty(oDue:Status)
 			LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
 			return oDue:ErrInfo:errormessage					
@@ -726,18 +726,18 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 		ENDIF
 	ELSE
 		if Val(p_DueIds)=0 
-		*  Look for last assigned due amount to reverse assignment of received amounts:
+			*  Look for last assigned due amount to reverse assignment of received amounts:
 			oDue:=SqlSelect{"select dueamount.dueid,dueamount.amountrecvd,account.accnumber,"+SQLFullName()+" as fullname,cast(invoicedate as date) as invoicedate from dueamount, subscription, account, person "+;
-			"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid"+;
-			" and dueamount.amountrecvd>0 order by dueamount.invoicedate desc,dueamount.seqnr desc",oConn}
+				"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid"+;
+				" and dueamount.amountrecvd>0 order by dueamount.invoicedate desc,dueamount.seqnr desc",oConn}
 			if !Empty(oDue:Status)
 				LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
 				return oDue:ErrInfo:errormessage
 			endif
 		else
 			oDue:=SqlSelect{"select dueid,amountrecvd,account.accnumber,"+SQLFullName()+" as fullname,cast(invoicedate as date) as invoicedate from dueamount, subscription, account, person "+;
-			"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid "+;
-			"and dueid in ("+p_DueIds+") and amountrecvd>0 order by invoicedate desc,seqnr desc",oConn}
+				"where subscription.subscribid=dueamount.subscribid and subscription.personid="+p_cln+" and subscription.accid="+p_rek+" and person.persid=subscription.personid and account.accid=subscription.accid "+;
+				"and dueid in ("+p_DueIds+") and amountrecvd>0 order by invoicedate desc,seqnr desc",oConn}
 			if !Empty(oDue:Status)
 				LogEvent(,"could not lock due amounts, statement:"+oDue:sqlstring+"; error:"+oDue:ErrInfo:errormessage,"log") 
 				return oDue:ErrInfo:errormessage
@@ -833,36 +833,38 @@ METHOD ChgDueAmnts(action as string,nOrig as int,nNew as int,oNew as TempTrans, 
 	* nNew : pointer to row in oNew:aMirror with new transaction values 
 	*
 	local cError as string 
-	local aOrig,aNew as array
-	if nNew<=Len(oNew:aMirror)
-		aNew:=oNew:aMirror[nNew]
-	endif
-	if nOrig<=Len(oNew:aMirrorOrig)
-		aOrig:= oNew:aMirrorOrig[nOrig]
-		// aOrig {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
-		//           1    2   3  4    5       6        7           8        9        10     11      12      13       14         15      16          17     18      19     20
-		IF (aOrig[5]=="D".or.aOrig[5]=="A".or.aOrig[5]=="F".or.aOrig[5]=="M".or.aOrig[5]=="G");
-				.and..not.Empty(self:OrigPerson)
-			IF action=="WB" .and. !Empty(aNew)
-				* Update amount received of due amount:
-				return ChgDueAmnt(self:OrigPerson,aNew[1],aNew[2] - aOrig[2],;
-					oNew:cre - aOrig[3],'',@cWarning)
-			ELSEIF action=="W".or.action=="D"
-				* Reverse amount received:
-				cError:= ChgDueAmnt(self:OrigPerson,aOrig[1],-aOrig[2],-aOrig[3],,@cWarning)
-				if !Empty(cError)
-					return cError
-				endif
+	local aOrig,aNew as array 
+	if !Empty(self:mCLNGiver)
+		if nNew<=Len(oNew:aMirror)
+			aNew:=oNew:aMirror[nNew]
+		endif
+		if nOrig<=Len(oNew:aMirrorOrig)
+			aOrig:= oNew:aMirrorOrig[nOrig]
+			// aOrig {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+			//           1    2   3  4    5       6        7           8        9        10     11      12      13       14         15      16          17     18      19     20
+			IF (aOrig[5]=="D".or.aOrig[5]=="A".or.aOrig[5]=="F".or.aOrig[5]=="M".or.aOrig[5]=="G");
+					.and..not.Empty(self:OrigPerson)
+				IF action=="WB" .and. !Empty(aNew) 
+					* Update amount received of due amount:
+					return ChgDueAmnt(self:OrigPerson,aNew[1],aNew[2] - aOrig[2],;
+						oNew:cre - aOrig[3],'',@cWarning)
+				ELSEIF action=="W".or.action=="D" 
+					* Reverse amount received:
+					cError:= ChgDueAmnt(self:OrigPerson,aOrig[1],-aOrig[2],-aOrig[3],,@cWarning)
+					if !Empty(cError)
+						return cError
+					endif
+				ENDIF
+			ENDIF
+		endif
+		IF action=="W".or.action=="T" .and. !Empty(aNew)
+			* record new amount received:
+			IF (aNew[5]=="D".or.aNew[5]=="A".or.aNew[5]=="F".or.aNew[5]=="M".or.aNew[5]=="G");
+					.and..not.Empty(self:mCLNGiver)
+				return ChgDueAmnt(self:mCLNGiver,aNew[1],aNew[2],aNew[3],,@cWarning)
 			ENDIF
 		ENDIF
 	endif
-	IF action=="W".or.action=="T" .and. !Empty(aNew)
-		* record new amount received:
-		IF (aNew[5]=="D".or.aNew[5]=="A".or.aNew[5]=="F".or.aNew[5]=="M".or.aNew[5]=="G");
-				.and..not.Empty(self:mCLNGiver)
-			return ChgDueAmnt(self:mCLNGiver,aNew[1],aNew[2],aNew[3],,@cWarning)
-		ENDIF
-	ENDIF
 
 	RETURN ""
 METHOD DELETE() CLASS General_Journal
@@ -1696,22 +1698,22 @@ METHOD UpdateTrans(cWarning ref string) as string CLASS General_Journal
 	local aOrig:=oNew:aMirrorOrig,aNew:=oNew:aMirror as array 
 	local oTransH:=self:oOwner:oMyTrans as SQLSelect
 	local oStmnt as SQLStatement
-// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
-//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
+	// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+	//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
 
 	
 	AEval(aOrig,{|x|m:=Max(m,x[7])})
 	self:nLstSEqNr:=m
 	self:cOrgAccs:=Implode(aOrig,',',,,1) 
-// 	if (i:=AScan(aOrig,{|x|!Empty(x[17])})) >0
-// 		self:OrigPerson:=aOrig[i,17]
-// 	endif
+	// 	if (i:=AScan(aOrig,{|x|!Empty(x[17])})) >0
+	// 		self:OrigPerson:=aOrig[i,17]
+	// 	endif
 
 	nOrig:=1
 	nNew:=1
 	Do while nOrig<= Len(aOrig) 
-// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
-//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
+		// amirror {accID,deb,cre,gc,category,recno,SeqNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference, description,persid,type, incexpfd,depid}
+		//            1    2   3  4    5      6     7         8        9        10     11      12      13        14      15         16         17     18      19      20
 		DO CASE
 		CASE nNew>Len(aNew).or. aOrig[nOrig,7]< aNew[nNew,7] .or. ;
 				(aOrig[nOrig,7]== aNew[nNew,7] .and. aNew[nNew,2]== aNew[nNew,3] )
@@ -1764,11 +1766,11 @@ METHOD UpdateTrans(cWarning ref string) as string CLASS General_Journal
 				* Update fields of the transaction line:
 				IF	OrigBst # mBST .or.;
 						!aOrig[nOrig,4]== aNew[nNew,4].or.;   //GC
-						!aOrig[nOrig,16]== aNew[nNew,16].or.;  //DESCRIPTN <>
-						!aOrig[nOrig,15]==aNew[nNew,15] .or.; // REFERENCE <>
-						!aOrig[nOrig,5]== aNew[nNew,5].or.;  //KIND <>
-						!aOrig[nOrig,11]== aNew[nNew,11].or.;//CURRENCY <>
-						self:mCLNGiver # self:OrigPerson .or. ;
+					!aOrig[nOrig,16]== aNew[nNew,16].or.;  //DESCRIPTN <>
+					!aOrig[nOrig,15]==aNew[nNew,15] .or.; // REFERENCE <>
+					!aOrig[nOrig,5]== aNew[nNew,5].or.;  //KIND <>
+					!aOrig[nOrig,11]== aNew[nNew,11].or.;//CURRENCY <>
+					self:mCLNGiver # self:OrigPerson .or. ;
 						(Posting .and. oNew:PoststatusOrig # self:mPostStatus)
 					cError:= self:UpdateLine(oNew,nOrig,nNew,@lGiver)
 					if !Empty(cError)
@@ -1842,7 +1844,7 @@ METHOD UpdateTrans(cWarning ref string) as string CLASS General_Journal
 		
 		nNew++
 	enddo
- 	aNew:=null_array
+	aNew:=null_array
 	aOrig:=null_array
 
 	oNew:ClearIndex(NewIndex)
@@ -4038,7 +4040,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 	LOCAL lError, recordfound as LOGIC
 	local cError as string
 	LOCAL curPntr:=1, i,nSeqnbr as int
-	LOCAL fCreTot as FLOAT
+	LOCAL fCreTot,fNonEarm as FLOAT
 	LOCAL oXMLDocAcc,oXMLDocPrs as XMLDocument 
 	local ChildName, cValue, cExtra,cCod as string 
 	local cAccs as string   // accounts used in transaction 
@@ -4105,6 +4107,17 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 				ENDIF
 			ENDIF
 		ENDIF
+		// Check allotting non-earmarked gift:
+		if self:lEarmarking      
+			fNonEarm:=0.00
+			AEval(oHm:Amirror,{|x| fNonEarm += iif(AllTrim(x[1])==SPROJ,x[3],0.00)})
+			fNonEarm:=Round(fNonEarm,DecAantal)
+			if fNonEarm = fCreTot
+				// all assigned to non-earmarked gifts:
+				(errorbox{self:Owner,self:oLan:WGet("useless to assign all again to non-earmaked gifts")}):Show()
+				return false
+			endif
+		endif
 		oHm:SuspendNotification()	
 		* add transaction:
 		oHm:ClearFilter()
