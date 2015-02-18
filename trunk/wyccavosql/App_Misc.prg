@@ -1469,7 +1469,7 @@ return
 function FillPP(lDistribution:=false as logic) as array
 	local oPP as SQLSelect
 	local aPP:={} as array
-	oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where Is_Primary_Participant='Y'"),oConn}
+	oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where Is_Primary_Participant='Y' or WBT_or_SIL='S'"),oConn}
 	if oPP:RecCount>0
 		AEval(Split(oPP:ppgroup,'#$#',,true),{|x|AAdd(aPP,Split(x,'#%#',,true))})
 	endif
