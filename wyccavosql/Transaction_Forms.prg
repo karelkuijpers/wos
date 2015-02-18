@@ -3199,7 +3199,7 @@ METHOD OKButton( ) CLASS PaymentJournal
 	IF !lOK
 		RETURN NIL
 	ENDIF	
-	IF lEarmarking
+	IF self:lEarmarking
 		IF !SELF:NonEarmarked()
 			SELF:oCCNonEarmarked:Show()
 			IF TeleBanking .or. AutoGiro
