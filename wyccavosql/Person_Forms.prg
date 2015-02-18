@@ -2625,11 +2625,11 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 	SaveUse(self)
 	cFields:=QueryRTRegString( cRoot, "ExpFields")
 	
-	FOR i = 1 TO Len(myFields)
-		AAdd(afill,{myFields[i,3]:Hyperlabel:Description})
+	FOR i = 1 to Len(self:MyFields)
+		AAdd(afill,{self:MyFields[i,3]:Hyperlabel:Description})
 	NEXT
 	SELF:oDCSubSet:FillUsing(aFill)
-	IF Empty(cFields)
+	IF IsNil(cFields) .or.Empty(cFields)
 		FOR i = 1 TO Len(aFill)
 			SELF:oDCSubSet:SelectItem(i)		
 		NEXT
