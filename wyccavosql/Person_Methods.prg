@@ -4290,31 +4290,31 @@ STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON3 := 103
 STATIC DEFINE SELPERSPRIMARY_SELPERSPRBUTTON4 := 104 
 STATIC DEFINE SELPERSPRIMARY_SELX_KEUZE1 := 100 
 function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSortOrder:="" as string, cMarkupText:="" as string,fMinAmnt:=0 as float,fMaxAmnt:=0 as float,fMinIndVidAmnt:=0 as float) as string 
-// Generation of SQLString to select persons with all their fields 
-// 
-// Parameters:
-/*	myFields:	array with {fieldsymbolic,tablefield}...  e.g.{#FIRSTNAME,"p.firstname"}  ; p.:person t.: transaction  
-																			groupfields like giftsgroup or banknumbers should have an empty tablefield
+	// Generation of SQLString to select persons with all their fields 
+	// 
+	// Parameters:
+	/*	myFields:	array with {fieldsymbolic,tablefield}...  e.g.{#FIRSTNAME,"p.firstname"}  ; p.:person t.: transaction  
+	groupfields like giftsgroup or banknumbers should have an empty tablefield
 	cFrom:		
 	cWherep:		conditions for selection persons
 	cSortOrder:	required sortorder
 	cMarkupText: template with reserved fields like  %AMOUNTGIFT to be returned. This can be a letter or email body
 	
-*/
-//
-local cFields as string   // all direct required fields
-local cGrFields as string // all required fields on group level 
-local cGroup as string   // grouping specification 
-local cField as string   // text with one field
-local cHaving as string  // having conditions
-local cSQLString as string // sqlstring to be returned
-local lPropXtr as logic  // are extra properties within the fields? 
-local lDestination as logic  // is destination of gift required?
-local lDistinct as logic   // is DISTINCT required
-local lgrDat as logic  // is selection of <= date required
-local lBankacc as logic  // is selection bankaccounts required 
-local i,j as int
-  
+	*/
+	//
+	local cFields as string   // all direct required fields
+	local cGrFields as string // all required fields on group level 
+	local cGroup as string   // grouping specification 
+	local cField as string   // text with one field
+	local cHaving as string  // having conditions
+	local cSQLString as string // sqlstring to be returned
+	local lPropXtr as logic  // are extra properties within the fields? 
+	local lDestination as logic  // is destination of gift required?
+	local lDistinct as logic   // is DISTINCT required
+	local lgrDat as logic  // is selection of <= date required
+	local lBankacc as logic  // is selection bankaccounts required 
+	local i,j as int
+	
 	lPropXtr:=(AScan(myFields,{|x|x[2]="p.propextr"})>0)
 	// determine group fields:
 	if AScan(myFields,{|x|x[1]== #BANKNUMBER})>0
@@ -4344,7 +4344,7 @@ local i,j as int
 		endif
 		cMarkupText:="CONCAT('"+StrTran(StrTran(StrTran(StrTran(StrTran(cMarkupText,"%AMOUNTGIFT","',gr.AmountGift,'"),"%DATEGIFT","',date_format(gr.dat,'"+LocalDateFormat+"'),'"),"%DESTINATION","',gr.description,'"),"%REFERENCEGIFT","',gr.reference,'"),"%DOCUMENTID","',gr.docid,'")+"')"
 		cMarkupText:=StrTran(StrTran(cMarkupText,"'',",""),",''","")
-// 		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as "+myFields[j,2]:HyperLabel:Name 
+		// 		cGrFields+=",GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as "+myFields[j,2]:HyperLabel:Name 
 		cGrFields+=",cast(GROUP_CONCAT("+cMarkupText+iif(lgrDat," order by gr.dat","")+" separator '') as char) as giftsgroup" 
 		cGroup:=" group by gr.persid"
 	endif
@@ -4398,15 +4398,14 @@ local i,j as int
 				cSortOrder+=",persid"
 			endif
 		endif
-	ELSE
-		if AtC(",p.persid",cFields)=0
-			cFields+=",p.persid"
-		endif
-		if AtC(cSortOrder,cFields)=0
-			cFields+=",p."+cSortOrder
-			if AtC(cSortOrder,cGrFields)=0
-				cGrFields+=",gr."+cSortOrder
-			endif
+	endif
+	if AtC(",p.persid",cFields)=0
+		cFields+=",p.persid"
+	endif
+	if AtC(cSortOrder,cFields)=0
+		cFields+=",p."+cSortOrder
+		if AtC(cSortOrder,cGrFields)=0
+			cGrFields+=",gr."+cSortOrder
 		endif
 	endif
 	cFields:=SubStr(cFields,2)
