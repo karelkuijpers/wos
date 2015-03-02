@@ -747,7 +747,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 	else
 		return {cPostcode,cAddress,cCity}	                             
 	endif
-	cSearch:=StrTran(cSearch,' ','%20')
+	cSearch:=StrTran(cSearch,' ','%20') 
 	lSuccess:=GetPostcode(cSearch,@output,@StreetFound,@PostalCodeFound,@CityFound,@cError)
 	if lSuccess
 		if !Empty(zipcode)
@@ -762,8 +762,8 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 // 		.or. !Empty(zipcode) .and. !housenr==housenradd .and. SubStr(StreetFound,-Len(housenr))==housenr 
 		// try again with second housenbr or original address:
 		if Len(aHsnr)>1
-			housenradd:=AllTrim(SubStr(housenradd,Len(housenr)+1))
 			housenr:=aHsnr[2,1]
+			housenradd:=AllTrim(SubStr(housenradd,Len(housenr)+1))
 			street+= ' '+housenr
 		else 
 			housenr:= housenrOrg
@@ -774,7 +774,7 @@ Function ExtractPostCode(cCity:="" as string,cAddress:="" as string, cPostcode:=
 		else
 			cSearch:=street+' '+cCity
 		endif 
-		cSearch:=StrTran(cSearch,' ','%20') 
+		cSearch:=StrTran(cSearch,' ','%20')
 		if !GetPostcode(cSearch,@output,@StreetFound,@PostalCodeFound,@CityFound,@cError)
 			if !Empty(cError)
 				LogEvent(,"GetPostcode:"+cError,"LogErrors")
@@ -853,10 +853,11 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 	// output: contains return string from postcode.nl 
 	// cError: error message when applicable
 	// returns true: successfull, false: not successfull 
-	local nPos1,nPos2 as int 
+	local nPos1,nPos2,nPos3 as int 
 	local time0,time1 as float
 	local cBuffer,httpfile as string
 	LOCAL oHttp  as cHttp
+	local aBuf:={} as array
 	oHttp := CHttp{"WycOffSy",,true}
 	time0:=Seconds()
 	cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
@@ -881,21 +882,23 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 			nPos1:=At3('<h1>',httpfile,nPos1+31)
 			if nPos1>0                                                
 				output:=SubStr(httpfile,nPos1+4,200)
-				if !SubStr(output,1,19) == 'Zoekresultaten</h1>' .and. !AtC('t/m',output)>0
-					if (nPos1:=AtC("<dt>Postcode</dt>",httpfile))>0
-						cBuffer:=SubStr(httpfile,nPos1+17,300)
-						if (nPos1:=AtC("<dd><a href=",cBuffer))>0
-							cPostalCode:=SubStr(cBuffer,nPos1+21,6)
-							if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
-								cBuffer:=SubStr(cBuffer,nPos1+19)
-								if (nPos1:=AtC("<dd>",cBuffer))>0
-									if (nPos2:=AtC("</dd>",cBuffer))>0
-										cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
-										if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
-											cBuffer:=SubStr(cBuffer,nPos1+19)
-											if (nPos1:=AtC("<dd>",cBuffer))>0
-												if (nPos2:=AtC("</dd>",cBuffer))>0
-													cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+				if !SubStr(output,1,19) == 'Zoekresultaten</h1>' 
+					if !(nPos3:=AtC('t/m',output))>0
+						if (nPos1:=AtC("<dt>Postcode</dt>",httpfile))>0
+							cBuffer:=SubStr(httpfile,nPos1+17,300)
+							if (nPos1:=AtC("<dd><a href=",cBuffer))>0
+								cPostalCode:=SubStr(cBuffer,nPos1+21,6)
+								if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
+									cBuffer:=SubStr(cBuffer,nPos1+19)
+									if (nPos1:=AtC("<dd>",cBuffer))>0
+										if (nPos2:=AtC("</dd>",cBuffer))>0
+											cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+											if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
+												cBuffer:=SubStr(cBuffer,nPos1+19)
+												if (nPos1:=AtC("<dd>",cBuffer))>0
+													if (nPos2:=AtC("</dd>",cBuffer))>0
+														cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+													endif
 												endif
 											endif
 										endif
@@ -903,19 +906,34 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 								endif
 							endif
 						endif
+						return true
+					else
+						// apparently more than one:
+						if (nPos1:=AtC('<small class="range-subtitle">',output))>0
+							if (nPos2:=At3('</small',output,nPos1+6))>0
+								aBuf:=Split(SubStr(output,nPos1+30,nPos2-nPos1-30),',')
+								if Len(aBuf)>1 
+									cPostalCode:=aBuf[1]
+									cCity:=aBuf[2]
+									cStreet:=AllTrim(SubStr(output,1,nPos3-2))
+									aBuf:=Split(cStreet)
+									cStreet:=implode(aBuf,,,len(aBuf)-1)
+									return true
+								endif
+							endif
+						endif
 					endif
-					return true
 				endif
 				output:=''
 			elseif AtC('Value is not a number',httpfile)=0 
 				// apparently website changed: 
 				cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
-// 				LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
+				// 				LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
 			endif 
 		else 
 			// apparently website changed:
 			cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
-// 			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
+			// 			LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)+CRLF+httpfile,"LogErrors")
 		endif
 	endif
 	return false
