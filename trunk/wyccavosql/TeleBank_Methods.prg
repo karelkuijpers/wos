@@ -976,7 +976,7 @@ METHOD Import() CLASS TeleMut
 				* no postbank file
 				loop
 			ENDIF
-			IF !isnum(aFileN[1]) .and. !aFileN[1]=="ING"
+			IF !isnum(aFileN[1]) .and. !SubStr(aFileN[1],5,4)=="INGB"
 				* no postbank file
 				loop
 			ENDIF
