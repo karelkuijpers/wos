@@ -109,53 +109,63 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditStandingOrder
 	ENDIF
 	RETURN nil
 METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder 
-local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
-LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
-LOCAL ThisRec as int 
+	LOCAL ThisRec,i as int 
+	local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
+	local	oSel as SQLSelect	
+	LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
 
-if Empty(oStordLH)
-	return true
-endif
-ThisRec:=oStordLH:RecNo
-IF !Empty(oPers) .and. !IsNil(oPers).and.!oPers:EoF
-	if  ItemName="Creditor"
-		// check bank account available:
-		if (oPerB:=SQLSelect{"select banknumber from personbank where persid="+Str(oPers:persid,-1)+" limit 1",oConn}):reccount<1
-			(ErrorBox{self,"This creditor does not have a bank account"}):Show()
-			return false
-		endif
-		oStOrdLH:CREDITOR:=oPers:persid
-		oStOrdLH:CREDTRNAM:=GetFullName(Str(oPers:persid,-1)) 
-	   oStOrdLH:aMirror[ThisRec,8]:=Str(oPers:persid,-1) 
-   	oStOrdLH:BANKACCT:=oPerB:banknumber
-		oStOrdLH:aMirror[ThisRec,8]:= oStOrdLH:CREDTRNAM 
+	if Empty(oStordLH)
+		return true
+	endif
+	ThisRec:=oStordLH:RecNo
+	IF !Empty(oPers) .and. !IsNil(oPers).and.!oPers:EoF
+		if  ItemName="Creditor"
+			// check bank account available:
+			if (oPerB:=SQLSelect{"select banknumber from personbank where persid="+Str(oPers:persid,-1)+" limit 1",oConn}):reccount<1
+				(ErrorBox{self,"This creditor does not have a bank account"}):Show()
+				return false
+			endif
+			oStOrdLH:CREDITOR:=oPers:persid
+			oStOrdLH:CREDTRNAM:=GetFullName(Str(oPers:persid,-1)) 
+			oStOrdLH:aMirror[ThisRec,8]:=Str(oPers:persid,-1) 
+			oStOrdLH:BANKACCT:=oPerB:banknumber
+			oStOrdLH:aMirror[ThisRec,8]:= oStOrdLH:CREDTRNAM 
 
-// 		self:oDCmBankAccnt:FillUsing(oPers:GetBankAccnts()) 
-// 		self:oDCmBankAccnt:CurrentItemNo:=1
-	elseif ItemName="Giver"
-		if Empty(oPers:accid)
-			self:lMemberGiver:=false
-		else
-			self:lMemberGiver:=true
+			// 		self:oDCmBankAccnt:FillUsing(oPers:GetBankAccnts()) 
+			// 		self:oDCmBankAccnt:CurrentItemNo:=1
+		elseif ItemName="Giver"
+			self:mCLN :=  Str(oPers:persid,-1)
+			oSel:=SqlSelect{"select "+SQLFullName() +" as fullname,type from person where persid="+self:mCLN,oConn}
+			oSel:Execute()
+			if oSel:RecCount>0
+				self:cGiverName:=oSel:fullname 
+				self:lMemberGiver := FALSE
+				if (i:=AScan(pers_types_abrv,{|x|x[2]==oSel:TYPE}))>0
+					if pers_types_abrv[i,1]=='DIR'
+						self:lDirectIncome:=true 
+					elseif pers_types_abrv[i,1]=='MBR' .or. pers_types_abrv[i,1]=='ENT' 
+						self:lMemberGiver := true
+					endif
+				endif
+				self:oDCmPerson:TextValue := self:cGiverName 
+				// 			self:cGiverName := GetFullName(self:mCLN)
+				// 			self:oDCmPerson:TextValue := self:cGiverName
+			endif
 		endif
-		self:mCLN :=  Str(oPers:persid,-1)
-		self:cGiverName := GetFullName(self:mCLN)
-		self:oDCmPerson:TextValue := self:cGiverName
-	endif
-else
-	// nothing selected:
-	if ItemName="Giver"
-		if Empty(self:cGiverName)
-			self:mCLN:=""
-			self:lMemberGiver:=false
+	else
+		// nothing selected:
+		if ItemName="Giver"
+			if Empty(self:cGiverName)
+				self:mCLN:=""
+				self:lMemberGiver:=false
+			endif
+		elseif  ItemName="Creditor"
+			oStOrdLH:CREDITOR:=0
+			oStOrdLH:CREDTRNAM:=""
+			oStOrdLH:aMirror[ThisRec,8]:=""
 		endif
-	elseif  ItemName="Creditor"
-		oStOrdLH:CREDITOR:=0
-		oStOrdLH:CREDTRNAM:=""
-		oStOrdLH:aMirror[ThisRec,8]:=""
-	endif
-ENDIF
-RETURN true
+	ENDIF
+	RETURN true
 method ShowAssGift() class EditStandingOrder 
 	LOCAL oPer:=self:oStOrdr as SQLSelect
 	local oOrdLnH:=self:oSFStOrderLines:Server as StOrdLineHelp 
