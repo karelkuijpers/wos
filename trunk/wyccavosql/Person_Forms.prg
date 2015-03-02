@@ -2636,8 +2636,9 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 			SELF:oDCSubSet:SelectItem(i)		
 		NEXT
 	ELSE
-// 		aFields := MExec(MCompile("{" + cFields + "}"))
-		aFields := Evaluate("{" + cFields + "}")
+// 		aFields := MExec(MCompile("{" + cFields + "}")) 
+		aFields:=Split(cFields,',')
+// 		aFields := Evaluate("{" + cFields + "}")
 		FOR i =1 to Len(AFields)
 			SELF:oDCSubSet:SelectItem(aFields[i])	
 		NEXT
