@@ -1857,7 +1857,7 @@ METHOD FindButton( ) CLASS PersonBrowser
 			for i:=1 to Len(aKeyw)
 				self:cWhere+=iif(i>1," and ("," (") 
 				lStart:=false 
-// 				aKeyw[i,1]:=StrTran(aKeyw[i,1],"'","\'") 
+				// 				aKeyw[i,1]:=StrTran(aKeyw[i,1],"'","\'") 
 				aKeyw[i,1]:=AddSlashes(aKeyw[i,1])
 				for j:=1 to Len(AFields)
 					// 				if isnum(aKeyw[i,1]) .and. j<12 .or.j>11 .and.IsAlphabetic(aKeyw[i,1])
@@ -1892,26 +1892,28 @@ METHOD FindButton( ) CLASS PersonBrowser
 	oSel:Execute()
 	if !Empty(oSel:status)
 		LogEvent(self,"Error:"+oSel:ErrInfo:ErrorMessage+CRLF+oSel:SQLString,"logerrors")
-// 	else	
-// 		nCount:=ConI(oSel:nCount)
-// 		if nCount> 1000
-// 			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
-// 					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
-// 				return nil
-// 			endif
-// 		endif
+		// 	else	
+		// 		nCount:=ConI(oSel:nCount)
+		// 		if nCount> 1000
+		// 			if TextBox{self,self:oLan:WGet("selection of persons"),self:oLan:WGet("Do you really want to retrieve")+Space(1)+Str(nCount,-1)+Space(1)+;
+		// 					self:oLan:WGet("persons")+'?',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYNO
+		// 				return nil
+		// 			endif
+		// 		endif
 	endif
 	self:oPers:SQLString :="Select "+self:cFields+" from "+cMyFrom+iif(Empty(self:cWhere),""," where "+self:cWhere)+" order by "+self:cOrder+Collate
-// 	LogEvent(self,"search uni:"+self:oPers:SQLString,"loginfo")
+	// 	LogEvent(self,"search uni:"+self:oPers:SQLString,"loginfo")
 	self:oPers:Execute()
 
-	self:FOUND :=Str(self:oPers:Reccount,-1) 
-	if self:oPers:Reccount>0
-		self:oSFPersonSubForm:Browser:refresh()
-		self:oCCOKButton:Enable()
-	else
-		self:oSFPersonSubForm:Browser:refresh()
-		self:oCCOKButton:Disable()
+	self:FOUND :=Str(self:oPers:Reccount,-1)
+	if IsObject(self:oSFPersonSubForm) .and.!self:oSFPersonSubForm==null_object 
+		if self:oPers:Reccount>0
+			self:oSFPersonSubForm:Browser:refresh()
+			self:oCCOKButton:Enable()
+		else
+			self:oSFPersonSubForm:Browser:refresh()
+			self:oCCOKButton:Disable()
+		endif
 	endif
 	// 	if self:oPers:Reccount=1  
 	// 		self:lFoundUnique := true
