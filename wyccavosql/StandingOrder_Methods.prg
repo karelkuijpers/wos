@@ -109,7 +109,7 @@ METHOD RegAccount(omAcc, cItemname) CLASS EditStandingOrder
 	ENDIF
 	RETURN nil
 METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder 
-	LOCAL ThisRec,i as int 
+	LOCAL ThisRec,i,recnr as int 
 	local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
 	local	oSel as SQLSelect	
 	LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
@@ -145,11 +145,32 @@ METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder
 						self:lDirectIncome:=true 
 					elseif pers_types_abrv[i,1]=='MBR' .or. pers_types_abrv[i,1]=='ENT' 
 						self:lMemberGiver := true
+						self:mCLNFrom:=self:mCLN
 					endif
 				endif
-				self:oDCmPerson:TextValue := self:cGiverName 
-				// 			self:cGiverName := GetFullName(self:mCLN)
-				// 			self:oDCmPerson:TextValue := self:cGiverName
+				self:oDCmPerson:TextValue := self:cGiverName
+				self:mPerson:=self:cGiverName 
+				if	self:lMemberGiver
+					//	replace AG with MG if needed
+					recnr	:=	0
+					do	WHILE	(recnr:=AScan(oStOrdLH:aMirror,{|x| x[4]	=='AG'},recnr+1))>0
+						oStOrdLH:Goto(recnr)
+						oStOrdLH:gc := 'MG'
+						oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc	&&	save in mirror
+						oStOrdLH:Goto(ThisRec)
+					ENDDO
+				else
+					if	AScan(oStOrdLH:aMirror,{|x| x[4] =='CH'})=0
+						//	replace MG if needed: 
+						recnr	:=	0
+						do	WHILE	(recnr:=AScan(oStOrdLH:aMirror,{|x| x[4]	=='MG'},recnr+1))>0
+							oStOrdLH:Goto(recnr)
+							oStOrdLH:gc := 'AG'
+							oStOrdLH:aMirror[recnr,4]:=oStOrdLH:gc	&&	save in mirror
+						ENDDO
+						oStOrdLH:Goto(ThisRec)
+					endif
+				endif	
 			endif
 		endif
 	else
