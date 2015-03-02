@@ -2125,7 +2125,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	IF lInqUpd
 		* Save pointer to current transaction
-		if IsObject(self:oInqBrowse) .and. IsObject(self:oInqbrowse:owner) .and. IsObject(self:oInqBrowse:Owner:server)
+		if IsObject(self:oInqBrowse).and.!self:oInqBrowse==NULL_OBJECT .and. IsObject(self:oInqbrowse:owner).and.!self:oInqbrowse:owner==NULL_OBJECT .and. IsObject(self:oInqBrowse:Owner:server)
 			nSavRec:=self:oInqBrowse:owner:server:RecNo 
 		endif
 	endif
