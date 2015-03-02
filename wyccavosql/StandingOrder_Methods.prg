@@ -112,12 +112,12 @@ METHOD RegPerson(oCLN,ItemName) CLASS EditStandingOrder
 	LOCAL ThisRec,i,recnr as int 
 	local oPers:=oCLN as SQLSelect, oPerB as SQLSelect 
 	local	oSel as SQLSelect	
-	LOCAL oStOrdLH:=self:oSFStOrderLines:Server as StOrdLineHelp
-
-	if Empty(oStordLH)
+	LOCAL oStOrdLH as StOrdLineHelp
+	if !IsObject(self:oSFStOrderLines) .or. self:oSFStOrderLines==null_object 
 		return true
 	endif
-	ThisRec:=oStordLH:RecNo
+   oStOrdLH:=self:oSFStOrderLines:Server
+	ThisRec:=oStOrdLH:RecNo
 	IF !Empty(oPers) .and. !IsNil(oPers).and.!oPers:EoF
 		if  ItemName="Creditor"
 			// check bank account available:
