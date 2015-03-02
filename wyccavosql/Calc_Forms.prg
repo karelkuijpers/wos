@@ -133,7 +133,7 @@ METHOD OKButton( ) CLASS Calculator
 			self:fMemory:=self:fMemory-fValue
 		ELSEIF self:cFunction="*"
 			self:fMemory:=self:fMemory*fValue
-		ELSEIF self:cFunction="/"
+		ELSEIF self:cFunction="/" .and. !Empty(fValue)
 			self:fMemory:=self:fMemory/fValue
 		ELSE
 // 			self:fMemory:=fValue
