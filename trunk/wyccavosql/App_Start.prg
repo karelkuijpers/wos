@@ -32,6 +32,9 @@ method Start() class App
 
 	cbError := ErrorBlock( {|oError|MyDefError(oError)} )
 	BEGIN SEQUENCE
+		myApp:=self 
+		oMainWindow := StandardWycWindow{self}
+		oMainWindow:Show(SHOWZOOMED )
 		Enable3dControls()
 		DynSize(256) // (not more possible = 16MB)
 		SetMaxDynSize(268435456)   //256MB max dynamic memory  
@@ -44,12 +47,9 @@ method Start() class App
 		CurPath:= iif(Empty(CurDrive()),CurDir(CurDrive()),CurDrive()+":"+if(Empty(CurDir(CurDrive())),"","\"+CurDir(CurDrive())))
 		SetDefault(CurPath)
 		SetPath(CurPath)
-		myApp:=self 
 		HelpDir:=GetEnv("Temp")
 		
 		cWorkdir:=WorkDir() 
-		oMainWindow := StandardWycWindow{self}
-		oMainWindow:Show(SHOWZOOMED )
 		LOGON_EMP_ID:=self:GetUser()   // prelimninary
 		oInit:=Initialize{}  // make connection with mysql and database   
 		oUpg:=CheckUPGRADE{}
