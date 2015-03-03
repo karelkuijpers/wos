@@ -499,7 +499,9 @@ method ListBoxSelect(oControlEvent) class CurrRateEditor
 	super:ListBoxSelect(oControlEvent)
 	//Put your changes here 
 	IF oControl:NameSym==#CurrencySelect
-	   self:oROE:SQLString:="select rateid,aed,cast(daterate as date) as daterate,roe,aedunit from currencyrate where aed='"+oControl:Value+"' and daterate<=Now() order by aed asc,aedunit asc, daterate desc"
+		self:GoBottom()
+		self:GoTop()
+	   self:oROE:=SqlSelect{"select rateid,aed,cast(daterate as date) as daterate,roe,aedunit from currencyrate where aed='"+oControl:Value+"' and daterate<=Now() order by aed asc,aedunit asc, daterate desc",oConn}
 		self:oROE:Execute()
 		self:GoTop()
 		self:oSFSub_Rates:Browser:refresh()
