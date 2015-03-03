@@ -4780,7 +4780,6 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		if i=0                //          !Empty(x[4]).or.!Empty(x[7]))
 			exit
 		endif
-		
 		cBankAcc:=avalueTrans[i,1] 
 		//m57_bankacc: banknumber, usedforgifts, datelatest, giftsall,singledst,destname,accid,payahead,singlenumber,fgmlcodes,syscodover
 		//                 1            2           3          4         5          6      7      8          9          10        11
@@ -4813,6 +4812,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			elseif avalueTrans[i,5]='COL'.and.avalueTrans[i,9]=='A' .and.!Empty(avalueTrans[i,7]) .and.!Empty(avalueTrans[i,11]).and.!Empty(avalueTrans[i,15])
 				// reversal of direct debit:
 				cBudgetcd:=avalueTrans[i,7]
+				// aAccnbrDb: {{accnumber, accid, ismember, member persid, incomeacc,expenseacc,netasset)
 				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
 					cDestAcc:=aAccnbrDb[l,2]
 					if aAccnbrDb[l,3]='1'  // is member
@@ -4824,13 +4824,14 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				.or.avalueTrans[i,9]=='A') //debit with known destination?
 				cBudgetcd:=avalueTrans[i,7]
 				if (l:=AScan(aAccnbrDb,{|x|x[1]==cBudgetcd}))>0
+					// aAccnbrDb: {{accnumber, accid, ismember, member persid, incomeacc,expenseacc,netasset)
 					cDestAcc:=aAccnbrDb[l,2]
 					if aAccnbrDb[l,3]='1'  // is member
 						if !Empty(avalueTrans[i,11])  // giver connected?
 							lv_gc:='CH'
-							if lv_accid==aAccnbrDb[l,5]   // income account?
+							if cDestAcc==aAccnbrDb[l,5]   // income account?
 								lv_gc:='AG'
-							elseif lv_accid==aAccnbrDb[l,7]  // net asset account?
+							elseif cDestAcc==aAccnbrDb[l,7]  // net asset account?
 								lv_gc:='PF'
 							endif											
 							lProcAuto:=true
