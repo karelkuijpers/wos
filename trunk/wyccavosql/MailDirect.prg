@@ -644,13 +644,14 @@ method AddEmail(subject as string,mailbody as string,aRecip as array,aFiles:={} 
 	local oResName as ResolveName 
 	for i:=1 to Len(aRecip)
 		if Empty(aRecip[i,2])
-			oResName:=ResolveName{self:oOwner,aRecip[i,1]}
+// 			oResName:=ResolveName{self:oOwner,aRecip[i,1]}
+			oResName:=ResolveName{,aRecip[i,1]}
 			oResName:Show()
 			if Empty(oResName:recipemail)
 				loop
 			endif
 			aRecip[i,2]:=oResName:recipemail
-			if !Empty(aRecip[i,3]) // person known in database? 
+			if !Empty(aRecip[i,3]) .and. IsObject(oConn).and. !oConn==null_object // person known in database? 
 				// update database:
 				SQLStatement{'update person set email="'+oResName:recipemail+'" where persid='+ConS(aRecip[i,3]),oConn}:execute()
 			endif
@@ -818,8 +819,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 		self:cError:=self:oLan:WGet("No internet connection")
 		return false
 	endif
-	// 	nRet:=FileStart(self:cbatchfile,self:oOwner)
-	nRet:=FileStart(self:cbatchfile,iif( IsObject(self:oOwner),self:oOwner,oMainWindow))
+	nRet:=FileStart(self:cbatchfile,iif( IsObject(self:oOwner).and.!self:oOwner==null_object,self:oOwner,oMainWindow))
 	if nRet>0 .and. nRet<33
 		self:lError:=true 
 		self:cError:=self:oLan:WGet("Email send failed")+': '+Str(nRet,-1)			
