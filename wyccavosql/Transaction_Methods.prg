@@ -2777,7 +2777,7 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	Local myValue as float 
 	local myOwnerOwner:=self:owner:owner as PaymentJournal
 	local myOwner:=self:owner as PaymentDetails
-//	LOCAL myColumn AS JapDataColumn
+	//	LOCAL myColumn AS JapDataColumn
 	LOCAL myColumn as DataColumn
 	Local ThisRec as int
 	SUPER:ColumnFocusChange(oColumn, lHasFocus)
@@ -2789,53 +2789,59 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	ENDIF
 	myColumn:= oColumn 
 	ThisRec:=oHm:RECNO
-// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO})
-	IF myColumn:NameSym == #AccNumber
-		IF !AllTrim(myColumn:TextValue) == ;
-		AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
-			oHm:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
-			myOwnerOwner:AccntProc(myColumn:VALUE)
-		ENDIF
-	ELSEIF myColumn:NameSym == #DEBFORGN .or. myColumn:NameSym == #DEB
-		IF !Round(myColumn:VALUE,2) == Round(oHm:aMirror[ThisRec,13],2)
-			myOwner:DebCreProc(false)
-			myOwnerOwner:Totalise(false,false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #CREFORGN 
-			myValue:=Round(oHm:aMirror[ThisRec,9],2)
-		IF !Round(myColumn:VALUE,2) == myValue
-			myOwner:DebCreProc(false)
-			myOwnerOwner:Totalise(false,false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #CURRENCY
-		IF !AllTrim(myColumn:VALUE) == oHm:aMirror[ThisRec,11]
-			oHm:aMirror[ThisRec,11]:=AllTrim(myColumn:VALUE)
-			myColumn:TextValue:= myColumn:VALUE
-			oHm:CURRENCY:=myColumn:VALUE
-			myOwner:DebCreProc(false)
-		ENDIF
-	ELSEIF myColumn:NameSym == #GC
-		IF !AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,4])
-			oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
-// 			myColumn:TextValue:= myColumn:VALUE
-			oHm:gc:=myColumn:VALUE
-// 			IF !oHm:CheckUpdates()
-// 				* Reset to previuos values
-// 				oHm:gc:=oHm:aMirror[ThisRec,4]  && reset
-// 				RETURN
-// 			ELSE
+	// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO}) 
+	if ThisRec <=Len(oHm:Mirror)
+		IF myColumn:NameSym == #AccNumber
+			IF Len(oHm:aMirror[ThisRec])>=8 .and. !AllTrim(myColumn:TextValue) == ;
+					AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
+				oHm:aMirror[ThisRec,8]:= AllTrim(myColumn:TextValue) 
+				myOwnerOwner:AccntProc(myColumn:VALUE)
+			ENDIF
+		ELSEIF myColumn:NameSym == #DEBFORGN .or. myColumn:NameSym == #DEB
+			IF Len(oHm:aMirror[ThisRec])>=13 .and. !Round(myColumn:VALUE,2) == Round(oHm:aMirror[ThisRec,13],2)
+				myOwner:DebCreProc(false)
+				myOwnerOwner:Totalise(false,false)
+			ENDIF
+		ELSEIF myColumn:NameSym == #CREFORGN
+			if Len(oHm:aMirror[ThisRec])>=9
+				myValue:=Round(oHm:aMirror[ThisRec,9],2)
+			endif
+			IF !Round(myColumn:VALUE,2) == myValue
+				myOwner:DebCreProc(false)
+				myOwnerOwner:Totalise(false,false)
+			ENDIF
+		ELSEIF myColumn:NameSym == #CURRENCY
+			IF Len(oHm:aMirror[ThisRec])>=11 .and. !AllTrim(myColumn:VALUE) == oHm:aMirror[ThisRec,11]
+				oHm:aMirror[ThisRec,11]:=AllTrim(myColumn:VALUE)
+				myColumn:TextValue:= myColumn:VALUE
+				oHm:CURRENCY:=myColumn:VALUE
+				myOwner:DebCreProc(false)
+			ENDIF
+		ELSEIF myColumn:NameSym == #GC
+			IF Len(oHm:aMirror[ThisRec])>=4 .and. !AllTrim(myColumn:VALUE) == AllTrim(oHm:aMirror[ThisRec,4])
+				oHm:aMirror[ThisRec,4]:=AllTrim(myColumn:VALUE)
+				// 			myColumn:TextValue:= myColumn:VALUE
+				oHm:gc:=myColumn:VALUE
+				// 			IF !oHm:CheckUpdates()
+				// 				* Reset to previuos values
+				// 				oHm:gc:=oHm:aMirror[ThisRec,4]  && reset
+				// 				RETURN
+				// 			ELSE
 				oHm:aMirror[ThisRec,4]:=oHm:gc  && save in mirror
 				myOwnerOwner:ValidateTempGift()
-// 			ENDIF
+				// 			ENDIF
+			ENDIF
+		ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
+			self:SetColumnFocus(#Descriptn)
+		ELSEIF myColumn:NameSym== #ORIGINAL .and. lHasFocus
+			self:SetColumnFocus(#CREFORGN)
+		elseif myColumn:NameSym == #Descriptn
+			if Len(oHm:aMirror[ThisRec])>=14
+				oHm:aMirror[ThisRec,14]:=alltrim(myColumn:textValue)
+			endif
 		ENDIF
- 	ELSEIF myColumn:NameSym== #AccDesc .and. lHasFocus
- 		self:SetColumnFocus(#Descriptn)
- 	ELSEIF myColumn:NameSym== #ORIGINAL .and. lHasFocus
- 		self:SetColumnFocus(#CREFORGN)
-	elseif myColumn:NameSym == #Descriptn
-		oHm:aMirror[ThisRec,14]:=alltrim(myColumn:textValue)
-	ENDIF
-RETURN 
+	endif
+	RETURN 
 METHOD DebCreProc(NoConvert:=false as logic) as void pascal CLASS PaymentDetails
 	LOCAL oHm as TempGift
 	Local ROE:=1 as float 
