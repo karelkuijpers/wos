@@ -1957,7 +1957,7 @@ ENDIF
 RETURN AllTrim(f_row)
 function GetHelpDir()
 
-	if Len(Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0
+	if IsObject(myApp) .and. !myApp==null_object .and. Len(Directory("C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp",FA_DIRECTORY))>0
 		//if nLen>0 
 		HelpDir:="C:\Users\"+myApp:GetUser()+"\AppData\Local\Temp"
 	elseIF Len(Directory("C:\WINDOWS\TEMP",FA_DIRECTORY))>0
@@ -3090,10 +3090,10 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		ErrorBox{,"Access denied to database"+':'+dbname+CRLF+strText}:Show()
 		return true
 	endif 
-	// 	if oConn=null_object
-	// 		lDBError:=true
-	// 	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
-	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
+	if !IsObject(oConn) .or. oConn==null_object
+		lDBError:=true
+	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
+// 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
 	elseif Logname=='LogFile'
 		lFile:=true  // forced to log to File
@@ -3121,7 +3121,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		ENDIF
 		* position file at end:
 		FSeek(ptrHandle, 0, FS_END)
-		selftext:=DToS(Today())+" "+Time()+" -	"+strText
+		selftext:=DToS(Today())+" "+Time()+",userid=" +LOGON_EMP_ID+" -	"+strText
 		IF	IsObject(oWindow)
 			selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
 		ENDIF
@@ -3131,10 +3131,10 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	if lDBError.or.(Lower(Logname)=="logerrors" .and. AtC("MySQL server has gone away",strText) >0)
 		ErrorBox{,"MySQL server has gone away:"+CRLF+strText}:Show()
 		// 		if !Empty(oStmnt:status) 
-		break
+// 		break
 		// 		endif
 	endif
-	if Lower(Logname)=="logerrors"
+	if Lower(Logname)=="logerrors" .and. !oMainWindow==null_object
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
@@ -3667,7 +3667,7 @@ FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
 		ClearstrucErrInfo()
 		strucErrInfo.dwGenCode   := EG_WRONGCLASS
 		strucErrInfo.dwSeverity  := ES_ERROR
-		strucErrInfo.symFuncSym  := #DefError
+		strucErrInfo.symFuncSym  := #MyDefError
 		strucErrInfo.pszArg      := AsPsz(oError)
 		strucErrInfo.dwArgNum    :=  1
 		strucErrInfo.lCanDefault := .T.
