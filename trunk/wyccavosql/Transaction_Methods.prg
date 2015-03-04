@@ -2774,7 +2774,7 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS JournalBrowser
 CLASS PaymentBrowser INHERIT GeneralBrowser
 METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	LOCAL oHm as TempGift
-	Local myValue as float 
+	Local myValue as float
 	local myOwnerOwner:=self:owner:owner as PaymentJournal
 	local myOwner:=self:owner as PaymentDetails
 	//	LOCAL myColumn AS JapDataColumn
@@ -2790,7 +2790,7 @@ METHOD ColumnFocusChange(oColumn , lHasFocus )  CLASS PaymentBrowser
 	myColumn:= oColumn 
 	ThisRec:=oHm:RECNO
 	// 	ThisRec:=AScan(oHm:aMirror, {|x| x[6]==oHm:RECNO}) 
-	if ThisRec <=Len(oHm:Mirror)
+	if ThisRec <=Len(oHm:aMirror)
 		IF myColumn:NameSym == #AccNumber
 			IF Len(oHm:aMirror[ThisRec])>=8 .and. !AllTrim(myColumn:TextValue) == ;
 					AllTrim(oHm:aMirror[ThisRec,8]) && waarde veranderd?
