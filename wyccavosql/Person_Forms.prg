@@ -2640,7 +2640,7 @@ METHOD PostInit(oParent,uExtra) CLASS SelPersExport
 		aFields:=Split(cFields,',')
 // 		aFields := Evaluate("{" + cFields + "}")
 		FOR i =1 to Len(AFields)
-			SELF:oDCSubSet:SelectItem(aFields[i])	
+			self:oDCSubSet:SelectItem(Val(AFields[i]))	
 		NEXT
 	ENDIF
 	IF IsArray(uExtra) .and.Len(uExtra)>1
