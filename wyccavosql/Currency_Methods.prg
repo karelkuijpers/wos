@@ -691,9 +691,13 @@ Method ReEvaluate() Class Reevaluation
 	if lstreeval < UltimoYear .and. UltimoMonth> UltimoYear
 		UltimoMonth:=UltimoYear
 	else
-		if Day(Today()) < 9
-			self:Close()
-			Return
+		if Day(Today()) < 11
+			if lstreeval >= UltimoMonth
+				self:Close()
+				Return
+			elseif !Empty(lstreeval)
+				UltimoMonth:= EndOfMonth(lstreeval+1)
+			endif
 		endif
 	endif
 	oCurr:=Currency{"Reevaluation"}
