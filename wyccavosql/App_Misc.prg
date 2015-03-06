@@ -2008,6 +2008,12 @@ IF !IsInstanceOf(oWindow,#Window)
 ENDIF
 
 RETURN oWindow
+Function GetPCName() as string
+// get PC name
+	LOCAL oReg as Class_HKLM
+	oReg:=Class_HKLM{}
+	return oReg:getstring('SYSTEM\CurrentControlSet\Control\ComputerName\ActiveComputerName','ComputerName')
+
 function GetServername(fullpathname as string) as string 
 	// get server name from a path
 	local cSearch,cServerName:="localhost" as string
@@ -3099,7 +3105,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		lFile:=true  // forced to log to File
 	else
 		oStmnt:=SQLStatement{"insert into log set `collection`='"+Lower(Logname)+"',logtime=now(),`source`='"+;
-			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+"'",oConn}
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+"',`message`='"+AddSlashes(strText)+"',`userid`='" +LOGON_EMP_ID+" - "+GetPCName()+"'",oConn}
 		oStmnt:execute()
 		If !Empty(oStmnt:status)
 			lDBError:=true
@@ -3121,7 +3127,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		ENDIF
 		* position file at end:
 		FSeek(ptrHandle, 0, FS_END)
-		selftext:=DToS(Today())+" "+Time()+",userid=" +LOGON_EMP_ID+" -	"+strText
+		selftext:=DToS(Today())+" "+Time()+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+" -	"+strText
 		IF	IsObject(oWindow)
 			selftext:=Symbol2String(ClassName(oWindow))+": "+selftext
 		ENDIF
@@ -3138,7 +3144,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
-			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
 		oMl:SendEmails()
 		
 	endif
