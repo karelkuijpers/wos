@@ -3663,7 +3663,9 @@ FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
 	~"PROCNAME-"
 
 	IF !(IsInstanceOf(oError, #ERROR))
-
+      if Empty(oError)
+      	return nil
+      endif
 		ClearstrucErrInfo()
 		strucErrInfo.dwGenCode   := EG_WRONGCLASS
 		strucErrInfo.dwSeverity  := ES_ERROR
