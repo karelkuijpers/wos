@@ -25,6 +25,7 @@ CLASS StandardWycWindow INHERIT SHELLWINDOW
 
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+ Protect oPrinter as PrintingDevice 
 METHOD ChangeMailCode() CLASS StandardWycWindow
 	(SelPers{self,"CHANGEMAILINGCODE"}):Show()
 	RETURN
