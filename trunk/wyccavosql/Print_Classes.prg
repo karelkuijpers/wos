@@ -1353,39 +1353,54 @@ self:PostInit(oWindow,iCtlID,oServer,uExtra)
 return self
 
 METHOD OKButton( ) CLASS LabelFormat
-	LOCAL lError AS LOGIC
 	LOCAL nPoint:= 254/10 AS FLOAT
-	LOCAL cRoot := "WYC\Runtime" AS STRING
+	LOCAL cRoot := "WYC\Runtime" as STRING
+	local cError as string
+	LOCAL lError AS LOGIC
 	IF IsNil(self:stckr_PointSize).or.Empty(self:stckr_PointSize).or.!IsNumeric(self:stckr_PointSize)
 		(ErrorBox{self,self:oLan:Wget("Pointsize is mandatory")+"!"}):show()
 		RETURN TRUE
 	ENDIF
-	
-	* Check if number of rows below minimum (4 of 3 +KIXcode-row):
-	IF CountryCode="31"
-		IF Integer((self:stckr_height - 7 ) / ( self:stckr_PointSize * nPoint / 72)) < 3
-			* fout
-			lError := TRUE
+	if self:stckr_height <10 	
+		cError:="height to small"
+		lError:=true
+	elseif self:stckr_height >200 	
+		cError:="height to large"
+		lError:=true
+	elseif self:stckr_width<20 
+		cError:="Width too small"
+		lError:=true
+	elseif self:stckr_width>120
+		cError:="width to large"
+		lError:=true
+	else	
+		* Check if number	of	rows below minimum (4 of 3	+KIXcode-row):
+		IF	CountryCode="31"
+			IF	Integer((self:stckr_height	- 7 )	/ ( self:stckr_PointSize *	nPoint /	72)) < 3
+				* error
+				cError:="Too less	lines	per label"
+				lError := true
+			ENDIF
+		ELSE
+			IF	Integer(self:stckr_height	/ ( self:stckr_PointSize *	nPoint /	72)) < 4
+				* error
+				cError:="Too less	lines	per label"
+				lError := true
+			ENDIF
 		ENDIF
-	ELSE
-		IF Integer(self:stckr_height  / ( self:stckr_PointSize * nPoint / 72)) < 4
-			* fout
-			lError := TRUE
-		ENDIF
-	ENDIF
+	endif
 	IF lError
-		(errorbox{SELF,"Too less lines per label"}):show()
+		(ErrorBox{self,cError}):show()
 	ELSE
-
 		SetRTRegInt( cRoot, "stckr_height", self:stckr_height )
 		SetRTRegInt( cRoot, "stckr_width", self:stckr_width)
 		SetRTRegInt( cRoot, "stckr_TopMargin", self:stckr_TopMargin )
 		SetRTRegInt( cRoot, "stckr_LeftMargin", self:stckr_LeftMargin )
 		SetRTRegInt( cRoot, "stckr_PointSize", self:stckr_PointSize )
-		SELF:EndWindow()
+		self:EndWindow()
 	ENDIF
 
-	RETURN TRUE
+	RETURN true
 	
 
 
@@ -3294,11 +3309,11 @@ METHOD Initialize( nMaxWidth) CLASS Printjob
 	IF self:Label
 		nTop := self:CanvasArea:Height - nTopM
 		* calculate  Height,width and margin label in canvas coordinates:
-		nLblHeight := Round((WycIniFS:GetInt( "Runtime", "stckr_height" )*nResolution)/25.4,0)
-		nLblWidth  := Round((WycIniFS:GetInt( "Runtime", "stckr_width" )*nResolution)/25.4,0)
+		nLblHeight := Max(Round((WycIniFS:GetInt( "Runtime", "stckr_height" )*nResolution)/25.4,0),1)
+		nLblWidth  := Max(Round((WycIniFS:GetInt( "Runtime", "stckr_width" )*nResolution)/25.4,0),1)
 		* Calculate number of rows and columns:
-	    nLblVertical := Round((self:CanvasArea:Height-nTopM)/nLblHeight,0)
-	    nLblColCnt := Round((self:CanvasArea:Width-nLeft)/nLblWidth,0)
+	    nLblVertical := Max(Round((self:CanvasArea:Height-nTopM)/nLblHeight,0),1)
+	    nLblColCnt := Max(Round((self:CanvasArea:Width-nLeft)/nLblWidth,0),1)
 	    * calculate margins within label:
 	    nLblBottom := Round((nLblVertical*nLblHeight)-(self:CanvasArea:Height-nTopM),0)
 	    nLblBottom := Max(nLblBottom,nResolution/25.4) && minimaal 1 mm ondermarge
