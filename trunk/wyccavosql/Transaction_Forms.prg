@@ -848,10 +848,13 @@ METHOD PostInit() CLASS General_Journal
 
 	RETURN NIL
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS General_Journal
-	//Put your PreInit additions here
+	//Put your PreInit additions here 
+	local lAMPM as logic
 IF (oServer = nil)
 	GetHelpDir()
-	self:oHlpMut:=TempTrans{HelpDir+"\HU"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
+	lAMPM:=SetAmPm(false)
+	self:oHlpMut:=TempTrans{HelpDir+"\HU"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE} 
+	SetAmPm(lAMPM)
 	self:oHlpMut:lExisting:=false 
 ELSE
 	self:oHlpMut:=oServer
@@ -3892,7 +3895,8 @@ METHOD EditButton( ) CLASS TransInquiry
 	LOCAL cTransnr as STRING
 	LOCAL OrigPerson,OrigBst, OrigUser as STRING,Origdat as date, OrigPost as int
 	LOCAL cSavFilter, cSavOrder as STRING, nSavRec as int
-	local lLocked as logic 
+	local lLocked as logic
+	local lAMPM as logic 
 	IF self:NoUpdate
 		RETURN
 	ENDIF 
@@ -3907,8 +3911,10 @@ METHOD EditButton( ) CLASS TransInquiry
 	Origdat:=self:Server:Dat
 	OrigUser:=AllTrim(self:Server:USERID) 
 	OrigPost:=ConI(self:Server:PostStatus)
-	GetHelpDir()
+	GetHelpDir() 
+	lAMPM:=SetAmPm(false)
 	self:oHm := TempTrans{HelpDir+"\HU"+StrTran(StrTran(Time(),":"),' ','')+".DBF",DBEXCLUSIVE}
+	SetAmPm(lAMPM)
 	//	self:oHm := TempTrans{}
 	IF !self:oHm:Used
 		RETURN
