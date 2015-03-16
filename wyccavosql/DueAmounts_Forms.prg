@@ -51,7 +51,7 @@ METHOD AccButton(lUnique ) CLASS DueAmountBrowser
 	IF !Empty(sdeb)
 		AAdd(aIncl,SDEB)
 	ENDIF
-	cFilter:=MakeFilter(aIncl,{"AK","PA","BA","KO"},"B",1,true)
+	cFilter:=MakeFilter(aIncl,{"AK","PA","BA","KO"},"B",,true)
 
 // 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"Account",lUnique,cFilter,pFilter,oAcc)
 	AccountSelect(self,AllTrim(oDCmAccount:TEXTValue ),"Account",lUnique,cFilter)
