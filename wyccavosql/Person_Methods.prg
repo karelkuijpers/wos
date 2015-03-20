@@ -3407,8 +3407,9 @@ METHOD Abon_Con(dummy:=nil as logic) as array CLASS SelPersOpen
 
 	cStatement:="select distinct concat(a.description,' ',a.accnumber) as accdescr, a.accid from account a,subscription s "+;
 	"where s.accid=a.accid and active=1 and "+; 
-	iif(self:cType=="SUBSCRIPTIONS","a.subscriptionprice>0 and s.category='A'","giftalwd=1 and category='D'")
-	oAcc:=SQLSelect{cStatement,oConn}
+	iif(self:cType=="SUBSCRIPTIONS","a.subscriptionprice>0 and s.category='A'","category='D'")
+// 	iif(self:cType=="SUBSCRIPTIONS","a.subscriptionprice>0 and s.category='A'","giftalwd=1 and category='D'")
+	oAcc:=SqlSelect{cStatement,oConn}
 	aAcc:=oAcc:GetLookupTable(1000)
 	aSize(aAcc,len(aAcc)+1)
 	AIns(aAcc,1)
