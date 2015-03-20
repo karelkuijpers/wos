@@ -1108,7 +1108,7 @@ METHOD FillRecord(cTransnr as string,oBrowse as JournalBrowser,mOrigPers as stri
 			self:oDCmPostStatus:Disable()
 		endif
 		// 	elseif nOrigPost=2
-	elseif nOrigPost>1
+	elseif nOrigPost>1 .and.!USERTYPE='A'
 		// when automatically recorded block for update
 		self:oCCOKButton:Hide()
 		self:oCCSaveButton:Hide() 
