@@ -97,7 +97,7 @@ METHOD AccButton(lUnique ) CLASS EditSubscription
 	ELSEIF cType=="SUBSCRIPTIONS"
 		cFilter:=MakeFilter(,,,0,false,{SDON})
 	ELSEIF cType=="DONATIONS"
-		cFilter:=MakeFilter({SDON},,,1,false,)
+		cFilter:=MakeFilter({SDON},,,,false,)
 	ELSE
 		cFilter:=MakeFilter({SDON},,,1,true,)
 	ENDIF	
