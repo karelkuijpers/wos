@@ -698,54 +698,56 @@ RETURN uValue
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TAB_PARM1
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
+	local cValue as string
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
-	//Put your changes here
+	//Put your changes here 
+	cValue:=AllTrim(ConS(oControl:VALUE))
 	IF !lGotFocus
-		IF oControl:Name == "MCASH".and.!AllTrim(oControl:VALUE)==AllTrim(cCASHName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		IF oControl:Name == "MCASH".and.!cValue==AllTrim(cCASHName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrCASH:="  "
 				self:cCASHName := ""
 				self:oDCmCASH:TEXTValue := ""
             ELSE
-				cCASHName:=AllTrim(oControl:VALUE)
+				cCASHName:=cValue
 				self:CASHButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MCAPITAL".and.!AllTrim(oControl:VALUE)==AllTrim(cCAPITALName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MCAPITAL".and.!cValue==AllTrim(cCAPITALName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrCAPITAL:="  "
 				self:cCAPITALName := ""
 				self:oDCmCAPITAL:TEXTValue := ""
             ELSE
-				cCAPITALName:=AllTrim(oControl:VALUE)
+				cCAPITALName:=cValue
 				self:CAPButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MKRUISPSTN".and.!AllTrim(oControl:VALUE)==AllTrim(cCROSSName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MKRUISPSTN".and.!cValue==AllTrim(cCROSSName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrCROSS:="  "
 				self:cCROSSName := ""
 				self:oDCmKRUISPSTN:TEXTValue := ""
             ELSE
-				cCROSSName:=AllTrim(oControl:VALUE)
+				cCROSSName:=cValue
 				self:CROSSButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPERSONCONTACT".and.!AllTrim(oControl:VALUE)==AllTrim(self:cContactName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MPERSONCONTACT".and.!cValue==AllTrim(self:cContactName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:mCLNContact:="  "
 				self:cContactName := ""
 				self:oDCmPersonContact:TEXTValue := ""
             ELSE
-				cContactName:=AllTrim(oControl:VALUE)
+				cContactName:=cValue
 				self:PersonButtonContact(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPERSONOWN".and.!AllTrim(oControl:VALUE)==AllTrim(self:cOrgName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MPERSONOWN".and.!cValue==AllTrim(self:cOrgName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:mCLNOrg:="  "
 				self:cOrgName := ""
 				self:oDCmPersonOwn:TEXTValue := ""
             ELSE
-				cOrgName:=AllTrim(oControl:VALUE)
+				cOrgName:=cValue
 				self:PersonButtonOrg(true)
 			ENDIF
 		ENDIF
@@ -1316,101 +1318,103 @@ method ButtonClick(oControlEvent) class Tab_Parm2
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm2
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
+	local cValue as string
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
+	cValue:=AllTrim(ConS(oControl:VALUE))
 	IF !lGotFocus
-		IF oControl:Name == "MHB".and.!AllTrim(oControl:VALUE)==AllTrim(self:cHBName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		IF oControl:Name == "MHB".and.!cValue==AllTrim(self:cHBName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrHB := "  "
 				self:cHBName := ""
 				self:oDCmHB:TEXTValue := ""
 			ELSE
-				cHBName:=AllTrim(oControl:VALUE)
+				cHBName:=cValue
 				self:HBButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MAM".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAMName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MAM".and.!cValue==AllTrim(self:cAMName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrAM := "  "
 				self:cAMName := ""
 				self:oDCmAM:TEXTValue := ""
 			ELSE
-				cAMName:=AllTrim(oControl:VALUE)
+				cAMName:=cValue
 				self:AMButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MAMPROJ".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAMNameProj)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MAMPROJ".and.!cValue==AllTrim(self:cAMNameProj)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrAMProj := "  "
 				self:cAMNameProj := ""
 				self:oDCmAMProj:TEXTValue := ""
 			ELSE
-				cAMNameProj:=AllTrim(oControl:VALUE)
+				cAMNameProj:=cValue
 				self:AMProjButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MAMOFR".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAMNameOFR)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MAMOFR".and.!cValue==AllTrim(self:cAMNameOFR)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrAMOFR := "  "
 				self:cAMNameOFR := ""
 				self:oDCmAMOFR:TEXTValue := ""
 			ELSE
-				cAMNameOFR:=AllTrim(oControl:VALUE)
+				cAMNameOFR:=cValue
 				self:AMOFRButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MASSFLDAC".and.!AllTrim(oControl:VALUE)==AllTrim(self:cAssFldAccName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MASSFLDAC".and.!cValue==AllTrim(self:cAssFldAccName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrAssFldAc := "  "
 				self:cAssFldAccName := ""
 				self:oDCmAssFldAc:TEXTValue := ""
 			ELSE
-				self:cAssFldAccName:=AllTrim(oControl:VALUE)
+				self:cAssFldAccName:=cValue
 				self:AssFldAcButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MGIFTINCAC".and.!AllTrim(oControl:VALUE)==AllTrim(cGIFTINCACName)
+		ELSEIF oControl:Name == "MGIFTINCAC".and.!cValue==AllTrim(cGIFTINCACName)
 			IF Empty(alltrim(oControl:Value)) && leeg gemaakt?
 				self:NbrInc := ''
 				self:cGIFTINCACName := ""
 				self:oDCmGIFTINCAC:TEXTValue := ""
 				self:ShowAssAcc()
 			ELSE
-				cGIFTINCACName:=AllTrim(oControl:VALUE)
+				cGIFTINCACName:=cValue
 				self:IncButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MGIFTEXPAC".and.!AllTrim(oControl:VALUE)==AllTrim(cGIFTEXPACName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MGIFTEXPAC".and.!cValue==AllTrim(cGIFTEXPACName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrExp := "  "
 				self:cGIFTEXPACName := ""
 				self:oDCmGIFTEXPAC:TEXTValue := ""
 			ELSE
-				cGIFTEXPACName:=AllTrim(oControl:VALUE)
+				cGIFTEXPACName:=cValue
 				self:ExpButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MHOMEINCAC".and.!AllTrim(oControl:VALUE)==AllTrim(cHOMEINCACName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MHOMEINCAC".and.!cValue==AllTrim(cHOMEINCACName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrIncHome := "  "
 				self:cHOMEINCACName := ""
 				self:oDCmHOMEINCAC:TEXTValue := ""
 			ELSE
-				cHOMEINCACName:=AllTrim(oControl:VALUE)
+				cHOMEINCACName:=cValue
 				self:IncButtonHome(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPERSONPMCMAN".and.!AllTrim(oControl:VALUE)==AllTrim(self:cPMCManName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MPERSONPMCMAN".and.!cValue==AllTrim(self:cPMCManName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:mCLNPMCMan:="  "
 				self:cPMCManName := ""
 				self:oDCmPersonPMCMan :TEXTValue := ""
 			ELSE
-				cPMCManName:=AllTrim(oControl:VALUE)
+				cPMCManName:=cValue
 				self:PersonButtonContact(true)
 			ENDIF
 
-		ELSEIF oControl:Name == "MHOMEEXPAC".and.!AllTrim(oControl:VALUE)==AllTrim(cHOMEEXPACName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MHOMEEXPAC".and.!cValue==AllTrim(cHOMEEXPACName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NBREXPHOME := "  "
 				self:cHOMEEXPACName := ""
 				self:oDCmHOMEEXPAC:TEXTValue := ""
 			ELSE
-				cHOMEEXPACName:=AllTrim(oControl:VALUE)
+				cHOMEEXPACName:=cValue
 				self:ExpButtonHome(true)
 			ENDIF
 		ENDIF
@@ -2148,36 +2152,38 @@ METHOD DebButton(lUnique ) CLASS TAB_PARM3
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm3
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
+	local cValue as string
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
+	cValue:=AllTrim(ConS(oControl:VALUE))
 	IF !lGotFocus
-		IF oControl:Name == "MPOSTAGE".and.!AllTrim(oControl:VALUE)==AllTrim(cPostageName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		IF oControl:Name == "MPOSTAGE".and.!cValue==AllTrim(cPostageName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrPostage := "  "
 				self:cPostageName := ""
 				self:oDCmPostage:TEXTValue := ""
             ELSE
-				cPostageName:=AllTrim(oControl:VALUE)
+				cPostageName:=cValue
 				self:PostageButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MDEBTORS".and.!AllTrim(oControl:VALUE)==AllTrim(cDEBTORSName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MDEBTORS".and.!cValue==AllTrim(cDEBTORSName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrDEBTORS:="  "
 				self:cDEBTORSName := ""
 				self:oDCmDEBTORS:TEXTValue := ""
             ELSE
-				cDEBTORSName:=AllTrim(oControl:VALUE)
+				cDEBTORSName:=cValue
 				self:DEBButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MCREDITORS".and.!AllTrim(oControl:VALUE)==AllTrim(cCREDITORSName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MCREDITORS".and.!cValue==AllTrim(cCREDITORSName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrCreditors:="  "
 				self:cCREDITORSName := ""
 				self:oDCmCREDITORS:TEXTValue := ""
             ELSE
-				cCREDITORSName:=AllTrim(oControl:VALUE)
+				cCREDITORSName:=cValue
 				self:CreButton(true)
 			ENDIF
 		ENDIF
@@ -2467,27 +2473,29 @@ METHOD DonorsButton(lUnique ) CLASS Tab_Parm4
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS Tab_Parm4
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
+	local cValue as string
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
+	cValue:=AllTrim(ConS(oControl:VALUE))
 	IF !lGotFocus
-		IF oControl:Name == "MDONORS".and.!AllTrim(oControl:VALUE)==AllTrim(cDONORSName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		IF oControl:Name == "MDONORS".and.!cValue==AllTrim(cDONORSName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrDONORS := "  "
 				self:cDONORSName := ""
 				self:oDCmDONORS:TEXTValue := ""
             ELSE
-				cDONORSName:=AllTrim(oControl:VALUE)
+				cDONORSName:=cValue
 				self:DONORSButton(true)
 			ENDIF
-		ELSEIF oControl:Name == "MPROJECTS".and.!AllTrim(oControl:VALUE)==AllTrim(cPROJECTSName)
-			IF Empty(oControl:VALUE) && leeg gemaakt?
+		ELSEIF oControl:Name == "MPROJECTS".and.!cValue==AllTrim(cPROJECTSName)
+			IF Empty(cValue) && leeg gemaakt?
 				self:NbrPROJECTS := "  "
 				self:cPROJECTSName := ""
 				self:oDCmPROJECTS:TEXTValue := ""
             ELSE
-				cPROJECTSName:=AllTrim(oControl:VALUE)
+				cPROJECTSName:=cValue
 				self:PROJECTSButton(true)
 			ENDIF
 		ENDIF
@@ -3187,18 +3195,20 @@ END
 METHOD EditFocusChange(oEditFocusChangeEvent) CLASS TabParm_Page10
 	LOCAL oControl as Control
 	LOCAL lGotFocus as LOGIC
+	local cValue as string
 	oControl := iif(oEditFocusChangeEvent == null_object, null_object, oEditFocusChangeEvent:Control)
 	lGotFocus := iif(oEditFocusChangeEvent == null_object, FALSE, oEditFocusChangeEvent:GotFocus)
 	SUPER:EditFocusChange(oEditFocusChangeEvent)
 	//Put your changes here
+	cValue:=AllTrim(ConS(oControl:VALUE))
 	IF !lGotFocus
-		IF oControl:Name == "MTOPPACCT".and.!AllTrim(oControl:VALUE)==AllTrim(cToPPname)
+		IF oControl:Name == "MTOPPACCT".and.!cValue==AllTrim(cToPPName)
 			IF Empty(oControl:VALUE) && leeg gemaakt?
 				self:NbrToPP := "  "
 				self:cToPPname := ""
 				self:oDCmToPPAcct:TEXTValue := ""
 			ELSE
-				cToPPName:=AllTrim(oControl:VALUE)
+				cToPPname:=cValue
 				self:ToPPButton(true)
 			ENDIF
 		endif
