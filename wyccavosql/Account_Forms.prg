@@ -1764,6 +1764,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 	LOCAL CurYear:=Year(Today())*100+Month(Today()) as int
 	LOCAL cCaller as STRING 
 	local cGrade as string
+	local OldestYear as date 
 	LOCAL oAccG as SQLSelect
 	LOCAL oXMLDoc as XMLDocument
 	local osel as SQLSelect
@@ -1855,7 +1856,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 				self:ShowIPC(osel:IPCPROJECT)
 			endif
 		ENDIF
-		self:cCurDep:=self:mDepartment
+		self:cCurDep:=ConS(self:mDepartment)
 	ELSE
 		// 		time1:=Seconds()
 
@@ -2020,6 +2021,14 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 		// 		LogEvent(self,"read budget:"+Str((time1:=Seconds())-time0,-1)+"sec","logtime")
 
 	ENDIF
+	// set limits for date selection:
+	if !Empty(GlBalYears)
+		OldestYear:=GlBalYears[Len(GlBalYears),1] 
+	else
+		OldestYear:=MinDate
+	endif
+	self:oDCBalanceDate:DateRange:=DateRange{OldestYear,Today()+31}
+
 	if self:mactive
 		self:oDCmActive:TextColor:=Color{COLORBLACK}		
 	else
