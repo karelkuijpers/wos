@@ -931,7 +931,7 @@ METHOD OKButton( ) CLASS EditDepartment
 	ENDIF
 	IF lNew.or.!AllTrim(self:mDescription)==AllTrim(self:OrgDescription)
 		*Check if description allready exist:
-		IF SqlSelect{"select depid from department where descriptn='"+AllTrim(self:mDescription)+"'",oConn}:Reccount>0
+		IF SqlSelect{"select depid from department where descriptn='"+AddSlashes(AllTrim(self:mDescription))+"'",oConn}:Reccount>0
 			(ErrorBox{,"department name "+ self:mDescription+ " allready exist!"}):Show()
 			RETURN
 		ENDIF
