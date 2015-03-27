@@ -1785,7 +1785,7 @@ method GetAccount(depid as string,category as string) as usual class GetDepAccou
 		case category==EXPENSE
 			if aDeps[nptr,4]>'0'
 				if self:Extended
-					return {aDeps[nptr,4],aDeps[nptr,7],aDeps[nptr,8]} 
+					return {aDeps[nptr,4],aDeps[nptr,7],aDeps[nptr,8],aDeps[nptr,9]} 
 				else
 					return aDeps[nptr,4]
 				endif
@@ -1795,7 +1795,7 @@ method GetAccount(depid as string,category as string) as usual class GetDepAccou
 		case category== LIABILITY
 			if aDeps[nptr,3]>'0'
 				if self:Extended
-					return {aDeps[nptr,3],aDeps[nptr,5],aDeps[nptr,6]} 
+					return {aDeps[nptr,3],aDeps[nptr,5],aDeps[nptr,6],aDeps[nptr,9]} 
 				else
 					return aDeps[nptr,3]
 				endif
@@ -1812,12 +1812,14 @@ method init(lExtended) class GetDepAccount
 	Default(@lExtended,false) 
 	self:Extended:=lExtended
 	if lExtended
-		// get also account number and description:	
+		// get also account number,description and ismember(0,1):	
 		oSel:=SqlSelect{"select group_concat(cast(dm.depid as char),'#%#',cast(dm.parentdep as char),'#%#',cast(dm.netasset as char),'#%#',cast(dm.expenseacc as char),'#%#',"+;
 			"if(isnull(an.accid),' #%# ',concat(an.accnumber,'#%#',ae.description)),'#%#',"+;
-			"if(isnull(ae.accid),' #%# ',concat(ae.accnumber,'#%#',ae.description)) separator '#$#') as depgrp "+;
+			"if(isnull(ae.accid),' #%# ',concat(ae.accnumber,'#%#',ae.description)),'#%#',"+;
+			"if(isnull(m.mbrid),'0','1') separator '#$#') as depgrp "+;
 			"from department dm "+;
-			"left join account ae ON (ae.accid=dm.expenseacc) left join account an ON (an.accid=dm.netasset) "+;   
+			"left join account ae ON (ae.accid=dm.expenseacc) left join account an ON (an.accid=dm.netasset) "+;
+			"left join member as m on (m.depid=dm.depid) "+; 
 		"where dm.active=1" ,oConn}  
 	else
 		oSel:=SqlSelect{"select group_concat(cast(depid as char),'#%#',cast(parentdep as char),'#%#',cast(netasset as char),'#%#',cast(expenseacc as char) separator '#$#') as depgrp "+;
