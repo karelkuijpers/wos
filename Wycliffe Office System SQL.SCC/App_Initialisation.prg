@@ -1588,6 +1588,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"member","depid","int(11)","YES","NULL",""},;
 		{"member","contact2","int(11)","NO","0",""},;
 		{"member","contact3","int(11)","NO","0",""},;
+		{"member","overdrawallowed","tinyint(1)","NO","0",""},;
 		{"memberassacc","mbrid","int(11)","NO","NULL",""},;
 		{"memberassacc","accid","int(11)","NO","NULL",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
@@ -1766,7 +1767,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","localbackup","tinyint(1)","NO","0",""},; 
 		{"sysparms","backuppath","varchar(150)","NO","",""},;
 		{"sysparms","assofra","int(11)","NO","0",""},;
-	{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
+		{"sysparms","creditlimitmember","decimal(10,2)","NO","0",""},;
+		{"sysparms","creditlimitallmembers","decimal(10,2)","NO","0",""},;
+		{"telebankpatterns","telpatid","int(11)","NO","NULL","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
