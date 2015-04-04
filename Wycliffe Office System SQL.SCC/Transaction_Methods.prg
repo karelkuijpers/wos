@@ -30,7 +30,7 @@ METHOD Init(DescrpWidth, MinimalInfo) CLASS AccountStatements
 	self:oBal:=Balances{} 
 // 	oPPcd := SqlSelect{"select ppcode,ppname from ppcodes order by ppcode",oConn} 
 // 	self:aPPCode:=oPPcd:GetLookupTable(200,#ppcode,#ppname)
-   self:aPPCode:=FillPP(true)
+   self:aPPCode:=FillPP()
 	RETURN SELF
 METHOD Month_summary(aHeading as array,oMyBal as balances,m57_giftbed as float,nRow ref int,nPage ref int,oLan as Language,mnd_cur as int,mnd_deb as float,mnd_cre as float,;
 mnd_debF as float,mnd_creF as float,m58_rek as string,me_type as string,jr_cur as int,oReport as PrintDialog,aOPP as array) CLASS AccountStatements
@@ -1348,7 +1348,7 @@ METHOD RegAccount(omAcc as SQLSelect, cItemname:="" as string) CLASS General_Jou
 				self:mCLNGiver:=cPersId
 			endif
 		endif
-		if oHm:KIND=="M" .or.(oHm:KIND='K' .and.(oHm:INCEXPFD='I'.or.oHm:INCEXPFD='F')) .or.oHm:KIND=="G" .or. oHm:KIND=="D"
+		if oHm:cre>oHm:deb .and.(oHm:KIND=="M" .or.(oHm:KIND='K' .and.(oHm:INCEXPFD='I'.or.oHm:INCEXPFD='F')) .or.oHm:KIND=="G" .or. oHm:KIND=="D")
 			if AtC(oLan:WGet("Gift"),AllTrim(oHm:DESCRIPTN))=0
 				oHm:DESCRIPTN:=oLan:WGet("Gift")+' '+AllTrim(oHm:DESCRIPTN)
 			endif
@@ -2125,7 +2125,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	IF lInqUpd
 		* Save pointer to current transaction
-		if IsObject(self:oInqBrowse).and.!self:oInqBrowse==NULL_OBJECT .and. IsObject(self:oInqbrowse:owner).and.!self:oInqbrowse:owner==NULL_OBJECT .and. IsObject(self:oInqBrowse:Owner:server)
+		if IsObject(self:oInqBrowse).and.!self:oInqBrowse==null_object .and. IsObject(self:oInqBrowse:owner).and.!self:oInqBrowse:owner==null_object .and. IsObject(self:oInqBrowse:owner:server.and.!self:oInqBrowse:owner:server==null_object)
 			nSavRec:=self:oInqBrowse:owner:server:RecNo 
 		endif
 	endif
@@ -2184,10 +2184,10 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 				nPoststatus:=iif(IsNil(self:mPostStatus),iif(lImport,2,0),ConI(self:mPostStatus)) 
 				cStatement:="insert into transaction set "+;
 					iif(Empty(cTransnr),'',"transid="+cTransnr+",")+;
-					iif(oHm:Amirror[i,4]=='PF'.or.oHm:Amirror[i,4] == 'AG' .or.oHm:Amirror[i,4] == 'MG'.or.oHm:Amirror[i,4] == 'CH';
+					iif(oHm:Amirror[i,4]=='PF'.or.oHm:Amirror[i,4] == 'AG' .or.oHm:Amirror[i,4] == 'MG';
 					.or. oHm:aMIRROR[i,5]== 'G'.or. oHm:aMirror[i,5]== 'D';
 					.or. oHm:Amirror[i,5]== 'A' .or. oHm:Amirror[i,5] == 'F'.or. oHm:Amirror[i,5]=="C";
-					.or.(empty(oHm:aMIRROR[i,19]).and.oHm:aMIRROR[i,3]>oHm:aMIRROR[i,2]),"persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
+					,"persid='"+Str(Val(self:mCLNGiver),-1)+"',","")+;
 					"dat='"+SQLdate(self:mDAT)+"'"+;
 					",docid='"+AddSlashes(ConS(self:mBst))+"'"+;
 					",description='"+AddSlashes(AllTrim(oHm:aMIRROR[i,16]))+"'"+; 
