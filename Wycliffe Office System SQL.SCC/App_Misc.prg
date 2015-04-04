@@ -316,7 +316,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.06     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
@@ -1466,10 +1466,17 @@ Pers_Types:= oPersTp:GetLookupTable(500,#DESCRPTN,#ID)
 oPersTp:GoTop()
 pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
 return
-function FillPP(lDistribution:=false as logic) as array
+function FillPP(nGrade:='' as string) as array 
+// lMember: true: only primary wycliffe organisations
 	local oPP as SQLSelect
 	local aPP:={} as array
-	oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+iif(lDistribution,""," where Is_Primary_Participant='Y' or WBT_or_SIL='S'"),oConn}
+	local cWhere as string
+	if nGrade=="OFR"
+		cWhere:=" where ppcode='"+sEntity+"'"
+	elseif !Empty(nGrade) .and. !nGrade=='Entity'
+		cWhere:=" where Is_Primary_Participant='Y' and WBT_or_SIL='W'"
+	endif		
+	oPP:=SqlSelect{"select group_concat(concat(ppname,if(ppcode='','',concat(' (',ppcode,')'))),'#%#',ppcode separator '#$#') as ppgroup from ppcodes "+cWhere,oConn}
 	if oPP:RecCount>0
 		AEval(Split(oPP:ppgroup,'#$#',,true),{|x|AAdd(aPP,Split(x,'#%#',,true))})
 	endif
