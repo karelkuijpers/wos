@@ -451,12 +451,16 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS AccountBrowser
 		time1:=time0
 // 		LogEvent(self,"init sqlselect:"+Str((time0:=Seconds())-time1,-1)+' sec: '+self:oAcc:sqlstring,"loginfo")
 	RETURN nil
-METHOD Refresh() CLASS AccountBrowser 
-	self:oAcc:Execute() 
-	self:FOUND :=Str(self:oAcc:Reccount,-1)
-	self:EnableSelect()
-	self:oSFAccountBrowser_DETAIL:Browser:Refresh()
-RETURN nil
+METHOD Refresh() CLASS AccountBrowser
+	if !self==null_object .and. !self:oSFAccountBrowser_DETAIL==null_object 
+		self:oAcc:Execute() 
+		self:FOUND :=Str(self:oAcc:Reccount,-1)
+		self:EnableSelect() 
+		if !self:oSFAccountBrowser_DETAIL:Browser==null_object
+			self:oSFAccountBrowser_DETAIL:Browser:Refresh()
+		endif 
+	endif
+	RETURN nil
 
 ACCESS SearchOMS() CLASS AccountBrowser
 RETURN SELF:FieldGet(#SearchOMS)
