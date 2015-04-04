@@ -3153,18 +3153,46 @@ METHOD OKButton( ) CLASS TotalsMembers
 		cTab +self:oLan:RGet("Member Gifts",12,,"R")+cTab +self:oLan:RGet("Persnl Funds",12,,"R") + cTab +;
 		self:oLan:RGet("Charges",12,,"R")+cTab +self:oLan:RGet("Assmnt Off",12,,"R")+cTab +self:oLan:RGet("Assmnt Int/F",12,,"R"))
 
-	sqlStr:=UnionTrans("select ";
-		+ "t.cre-t.deb as balance,t.transid,t.seqnr,if(m.mbrid is null,t.accid,m.mbrid) as accid,"; 
-		+ 'if(a.accid is null,7,if(m.co is null,6,if(m.homepp="'+sEntity+'",if(m.co="M",1,if(a.department='+Str(MainDeP,-1)+',2,3)),if(m.co="M",4,5)))) as category,'+; 
-		+ 'if(t.gc="AG",if(t.fromrpp=0,3,4),if(gc="MG",5,if(gc="PF",6,if(instr(t.description,"assessment")=0 or instr(t.description,"Transfer of PC")>0,7,if(instr(t.description,"office")>0,8,9))))) as type,'; 
-		+ 'if(a.accid is null,"unknown",if(a.department='+Str(MainDeP,-1)+',a.description,d.descriptn)) as descr ';
-		+ "from transaction as t ";
-		+ "left join account as a on a.accid=t.accid "; 
-		+ "left join department as d on d.depid=a.department ";
-		+ "left join member as m on (m.accid=t.accid or m.depid=d.depid and (a.accid=d.incomeacc or a.accid=expenseacc or a.accid=d.netasset))";
-		+ "where t.dat>='" +  Str(self:FromYear,4) + "-" + StrZero(self:FromMonth,2) + "-01' and " ;
-		+ "t.dat<='" + Str(self:ToYear,4) + "-" + StrZero(self:ToMonth,2) + "-" + StrZero(MonthEnd(self:ToMonth,self:ToYear),2) + "' and t.gc>''") //;
-
+*/ 
+sqlStr:=UnionTrans('select t.cre-t.deb as balance,t.transid,t.seqnr,if(m.mbrid is null,t.accid,m.mbrid) as accid,'; 
++'if(a.accid is null,8, if(m.co is null,7, if(m.grade="ofr",6, if(m.homepp="'+sEntity+'", if(m.co="m",1, if(a.Department='+Str(MainDeP,-1)+',2,3) ) ,if(m.co="m",4,5) ) ) ) ) as category ,';
++'if(t.gc="ag", if(t.fromrpp=0,3,4), if(t.gc="mg",5, if(t.gc="pf",6, if(Instr(t.description,"transfer of pc")>0,7, if(Instr(t.description,"assessment")>0, if(Instr(t.description,"office")>0,8, if(Instr(t.description,"field")>0,9,7) ) ,7) ) ) ) ) as TYPE ,';
++'if(a.accid is null,"unknown",if(a.Department='+Str(MainDeP,-1)+',a.description,d.descriptn)) as descr'; 
++' from transaction as t left join account as a on a.accid=t.accid left join department as d on d.depid=a.department left join member as m on (m.accid=t.accid or m.depid=d.depid and (a.accid=d.incomeacc or a.accid=expenseacc or a.accid=d.netasset))';
++ "where t.dat>='" +  Str(self:FromYear,4) + "-" + StrZero(self:FromMonth,2) + "-01' and " ;
++ "t.dat<='" + Str(self:ToYear,4) + "-" + StrZero(self:ToMonth,2) + "-" + StrZero(MonthEnd(self:ToMonth,self:ToYear),2)+"' and t.gc>''") 
+ 
+/* 
+select t.cre-t.deb as balance,t.transid,t.seqnr,if(m.mbrid is null,t.accid,m.mbrid) as accid,
+if(a.accid is null,8,
+	if(m.co is null,7,
+		if(m.grade="ofr",6,
+			if(m.homepp="ned",
+				if(m.co="m",1,
+					if(a.department=0,2,3)
+				)
+			,if(m.co="m",4,5)
+			)
+		)
+	)
+) as category
+,if(t.gc="ag",
+	if(t.fromrpp=0,3,4),
+	if(t.gc="mg",5,
+		if(t.gc="pf",6,
+			if(instr(t.description,"transfer of pc")>0,7,
+				if(instr(t.description,"assessment")>0,
+					if(instr(t.description,"office")>0,8,
+						if(instr(t.description,"field")>0,9,7)
+					)
+				,7)
+			)
+		)
+	)
+) as type
+,if(a.accid is null,"unknown",if(a.department=0,a.description,d.descriptn)) as descr from transaction as t left join account as a on a.accid=t.accid left join department as d on d.depid=a.department left join member as m on (m.accid=t.accid or m.depid=d.depid and (a.accid=d.incomeacc or a.accid=expenseacc or a.accid=d.netasset))where t.dat>='2014-01-01' and t.dat<='2014-12-31' and t.gc>'' 
+*/
+   LogEvent(self,sqlStr,"loginfo")
 	oTransH:=SqlSelect{'select z.accid,z.category,z.type,z.descr,sum(z.balance) as balance from ('+sqlStr+') as z group by z.accid,z.type', oConn} 
 	oTransH:Execute() 
 
@@ -3189,9 +3217,14 @@ METHOD OKButton( ) CLASS TotalsMembers
 	if Len(aTotM)>0
 		CurCat:=aTotM[1,2]
 	endif
-	aGroupName:={self:oLan:RGet("Members",,"@!")+" "+sEntity,self:oLan:RGet("Projects",,"@!")+" "+sEntity,;
+	aGroupName:={self:oLan:RGet("Members",,"@!")+" "+sEntity,;
+		self:oLan:RGet("Projects",,"@!")+" "+sEntity,;
 		self:oLan:RGet("Projects",,"@!")+" "+sEntity+" "+oLan:RGet("separate department",,"@!"),;
-		self:oLan:RGet("Members",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,self:oLan:RGet("Projects",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,self:oLan:RGet("Unknown Members",,"@!"),self:oLan:RGet("Unknown Account",,"@!")}      
+		self:oLan:RGet("Members",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity, ;
+		self:oLan:RGet("Projects",,"@!")+" "+self:oLan:RGet("not",,"@!")+" "+sEntity,; 
+		self:oLan:RGet("Own Funds Raising",,"@!"),;
+		self:oLan:RGet("Unknown Members",,"@!"),;
+		self:oLan:RGet("Unknown Account",,"@!")}      
 	oReport:PrintLine(@nRow,@nPage,aGroupName[CurCat],headingtext,5)
 	for i:=1	to	Len(aTotM)
 		if !CurCat==aTotM[i,2]  
