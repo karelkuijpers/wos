@@ -89,9 +89,13 @@ method Init(oWindow,cBackupPath) class BackupDatabase
 			// make backupfilename for backup to local: 
 			self:backuppath:=cBackupPath
 			if Empty(self:backuppath)
-				self:backuppath:=WorkDir()+'\backup\'
+				self:backuppath:=WorkDir()+'backup'+'\'
 			endif
-			self:backupfilenameLocal:=self:backuppath+'\'+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql'
+			if !Right(self:backuppath,1)=='\'
+				self:backuppath+='\'
+			endif 
+			self:backuppath
+			self:backupfilenameLocal:=self:backuppath+dbname+'_'+Str(Year(Today()),4)+'_'+StrZero(Month(Today()),2)+'_'+StrZero(Day(Today()),2)+'_'+SubStr(Time(),1,5)+'.sql'
 			
 			SetTimeSep(nTimeSep)
 			SetAmPm(lAmPM)
@@ -204,9 +208,7 @@ Method MakeBackupToLocal(lWait:=true as logic) as logic class BackupDatabase
 		return false 
 	ENDIF
 	//create local backup folder:
-	IF Len(Directory(self:backuppath))==0
-		DirMake(self:backuppath)
-	endif	
+	MakeDir(FileSpec{self:backuppath})
 	aBackup:=GetbackupSite()
 
 	// make cmd file	
