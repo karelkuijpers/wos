@@ -1636,6 +1636,11 @@ METHOD AddButton( ) as void pascal CLASS EditMember
 		(ErrorBox{,"maximum of 30 associated accounts!"}):Show()
 		RETURN 
 	ENDIF
+	if self:lNew
+		ErrorBox{self,self:oLan:WGet("Create first a member")}:show()
+		return
+	endif
+		
 	// add all existing ass.accounts:  
 	if Empty(self:oMbr:depid)
 		aAccExcl:={self:mRek}
