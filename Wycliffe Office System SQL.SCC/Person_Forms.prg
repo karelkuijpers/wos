@@ -1175,7 +1175,7 @@ METHOD OkButton CLASS EditPerson
 					if !Empty(oStmnt:Status)
 						lError:=true
 						cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description '+GetFullName(self:mPersId)+' already exists',oStmnt:ErrInfo:ErrorMessage)
-// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
 					endif
 				elseif !Empty(self:oPerson:depid)
 					// change member department name:
@@ -1184,18 +1184,18 @@ METHOD OkButton CLASS EditPerson
 					if !Empty(oStmnt:Status)
 						lError:=true
 						cError:='Update department Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'name '+GetFullName(self:mPersId)+' already exists',oStmnt:ErrInfo:ErrorMessage)
-// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						// 						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
 					endif
 					if !lError
 						// change names of connected department accounts: 
 						lError:=UpdateAccountDescription(ConS(self:oPerson:depid),AllTrim(self:mlastname),self:oPerson:lastname,@cError)
-// 						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
-// 						oStmnt:Execute()
-// 						if !Empty(oStmnt:Status)
-// 							lError:=true
-// 							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
-// // 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
-// 						endif
+						// 						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
+						// 						oStmnt:Execute()
+						// 						if !Empty(oStmnt:Status)
+						// 							lError:=true
+						// 							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
+						// // 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						// 						endif
 					endif
 				endif
 			ENDIF
@@ -1257,14 +1257,16 @@ METHOD OkButton CLASS EditPerson
 		ENDIF
 		self:EndWindow()
 		// refresh owner: 
-		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser) 
+		if !Empty(self:oCaller) .and. IsInstanceOf(self:oCaller,#PersonBrowser) .and.!self:oCaller==null_object 
 			if !self:oCaller:oCaller==null_object .and. IsMethod(self:oCaller:oCaller,#Regperson)
 				self:oCaller:SearchCLN:=self:mPersId
 			endif
-			self:oCaller:ReFind()
-			if self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
+			if IsMethod(self:ocaller,#ReFind)
+				self:oCaller:ReFind()
+			endif
+			if !self:oCaller:oPers==null_object .and. self:oCaller:oPers:Reccount==1 .and. !self:oCaller:oCaller==null_object
 				self:oCaller:SELECT()   // go direct to
-			endif 
+			endif
 		endif
 		self:Close()
 	ENDIF
@@ -1794,10 +1796,10 @@ IF SELF:IsVisible() .and. !SELF:oCaller==NULL_OBJECT
 	ENDIF
 ENDIF
 
-IF !SELF:oEditPersonWindow==NULL_OBJECT
-	SELF:oEditPersonWindow:Close()
-	SELF:oEditPersonWindow:Destroy()
-ENDIF
+// IF !SELF:oEditPersonWindow==NULL_OBJECT
+// 	SELF:oEditPersonWindow:Close()
+// 	SELF:oEditPersonWindow:Destroy()
+// ENDIF
 
 if !self:oSelpers == null_object
 	self:oSelpers:Close()
@@ -2086,11 +2088,13 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 METHOD PrintButton( ) CLASS PersonBrowser
 	SELF:FilePrint()
 	RETURN
-method ReFind() class PersonBrowser 
-if self:cWhere<>'p.deleted=0'
-	self:FindButton()
-else
-	self:oSFPersonSubForm:Browser:refresh()
+method ReFind() class PersonBrowser
+if !self:oSFPersonSubForm:Browser==null_object 
+	if	self:cWhere<>'p.deleted=0'
+		self:FindButton()
+	else
+		self:oSFPersonSubForm:Browser:refresh()
+	endif
 endif
 return 
 
