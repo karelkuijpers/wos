@@ -3202,6 +3202,30 @@ FUNCTION MakeCodes(Codes as ARRAY)
 		ENDIF
 	NEXT
 RETURN aCod
+Function MakeDir(oFilespec as FileSpec) as logic
+// make a directory including its full path
+local i,nRes as int
+local cDrive as string
+local cPath as string 
+local cPathCreated as string
+local ADir:={} as array
+
+cDrive:= oFilespec:Drive
+cPath := oFilespec:Path
+
+ADir:=Split(SubStr(cPath,2),'\')
+cPathCreated:=cDrive
+for i:=1 to Len(ADir)
+	if Empty(ADir[i])
+		loop
+	endif
+	cPathCreated+='\'+ADir[i]
+	if Len(Directory(cPathCreated+'\'))<1
+		nRes:=DirMake(cPathCreated)
+	endif
+next
+return true
+
 FUNCTION MakeFile(cFileName ref string,cDescription as string) as ptr
 * Create a file Filename and return handler; in case of error return doserror, in case of cancel returns nil
 LOCAL ptrHandle as ptr
