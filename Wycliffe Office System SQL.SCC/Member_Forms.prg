@@ -3267,39 +3267,48 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 				oDep:=SqlSelect{"select d.incomeacc,d.expenseacc,d.netasset,ai.description as incname,ae.description as expname,d.depid from department d "+;
 					"left join account ai on (ai.accid=d.incomeacc) left join account ae on (ae.accid=d.expenseacc) where d.depid="+self:mDepId,oConn}
 				if oDep:RecCount>0
-					if Empty(oDep:incomeacc)
-						cError:=self:oLan:WGet('Account income obliged for department member')
-						lValid:=FALSE
-						self:oDCmAccDept:SetFocus()
-						// 					ELSEif self:lNewMember.and.AtC(cLastname,oDep:incname)=0 
-						// 						cError:=self:oLan:WGet('Description of Account Income  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
-						// 						lValid:=FALSE
-						// 						self:oDCmAccDept:SetFocus() 
-					elseif Empty(oDep:expenseacc)
-						if self:mGrade # "OFR" .or. self:mPPCode # Sentity
-							cError:=self:oLan:WGet('Account expense obliged for department member')
+					if self:mGRADE== "OFR" 
+						// check if at least one income, expense or netasset account is specified:
+						if Empty(oDep:incomeacc) .and.Empty(oDep:expenseacc) .and.Empty(oDep:netasset) 
+							cError:=self:oLan:WGet('At least one of the accounts for income, expense or netasset is obliged for own fund raising department')
 							lValid:=FALSE
 							self:oDCmAccDept:SetFocus()
-						else
-							if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),expense))
-								cError:=self:oLan:WGet("Expense account obliged for this member department because parent has no expense account" )
+						endif
+					else
+						if Empty(oDep:incomeacc)
+							cError:=self:oLan:WGet('Account income obliged for department member')
+							lValid:=FALSE
+							self:oDCmAccDept:SetFocus()
+							// 					ELSEif self:lNewMember.and.AtC(cLastname,oDep:incname)=0 
+							// 						cError:=self:oLan:WGet('Description of Account Income  of the Department should contain lastname of member')+': "'+AllTrim(cLastname)+'" '
+							// 						lValid:=FALSE
+							// 						self:oDCmAccDept:SetFocus() 
+						elseif Empty(oDep:expenseacc)
+							if self:mGrade # "OFR" .or. self:mPPCode # Sentity
+								cError:=self:oLan:WGet('Account expense obliged for department member')
 								lValid:=FALSE
 								self:oDCmAccDept:SetFocus()
-							endif					
-						endif
-					elseif Empty(oDep:netasset)
-						if self:mGrade # "OFR" .or. self:mPPCode # Sentity
-							cError:=self:oLan:WGet('Account netasset obliged for department member')
-							lValid:=FALSE
-							self:oDCmAccDept:SetFocus()
-// 						else
-// 							if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),liability))
-// 								cError:=self:oLan:WGet("Netasset account obliged for this member department because parent has no netasset account" )
-// 								lValid:=FALSE
-// 								self:oDCmAccDept:SetFocus()
-// 							endif					
-						endif
-					ENDIF
+							else
+								if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),expense))
+									cError:=self:oLan:WGet("Expense account obliged for this member department because parent has no expense account" )
+									lValid:=FALSE
+									self:oDCmAccDept:SetFocus()
+								endif					
+							endif
+						elseif Empty(oDep:netasset)
+							if self:mGrade # "OFR" .or. self:mPPCode # Sentity
+								cError:=self:oLan:WGet('Account netasset obliged for department member')
+								lValid:=FALSE
+								self:oDCmAccDept:SetFocus()
+								// 						else
+								// 							if Empty(self:oGetDep:GetAccount(ConS(oDep:depid),liability))
+								// 								cError:=self:oLan:WGet("Netasset account obliged for this member department because parent has no netasset account" )
+								// 								lValid:=FALSE
+								// 								self:oDCmAccDept:SetFocus()
+								// 							endif					
+							endif
+						ENDIF
+					endif
 					if lValid 
 						// check if only Income account is Gifts receivable:
 						cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+" and giftalwd=1 and accid<>"+ConS(oDep:incomeacc),oConn}:giftsaccs)
@@ -3313,29 +3322,29 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 			endif
 		endif
 		// Clearing Person code
-// 		IF lValid 
-// 			if !self:lNewMember.and.!AllTrim(self:oMbr:GRADE) == AllTrim(self:mGrade)
-// 				IF AllTrim(self:mGrade)="Staf"
-// 					* Changed to staff:
-// 					oTextBox := TextBox{ self, oLan:WGet("Editing of a member"),;
-// 						oLan:WGet("No gifts will be assessed anymore")+"!"}
-// 					oTextBox:Type := BUTTONOKAYCANCEL
-// 					IF ( oTextBox:Show() == BOXREPLYCANCEL )
-// 						lValid := FALSE
-// 						cError := oLan:WGet("Choose other type than Staf")
-// 						self:oDCmGrade:SetFocus()
-// 					ENDIF
-// 				ELSEIF AllTrim(self:oMbr:GRADE)="Staf"
-// 					* from staff to other type:
-// 					uRet:=(ReportDateMember{self}):Show()
-// 					IF uRet=0
-// 						lValid := FALSE
-// 						cError := oLan:WGet("Keep type Staf")
-// 						self:oDCmGrade:SetFocus()
-// 					ENDIF
-// 				ENDIF
-// 			endif
-// 		ENDIF
+		// 		IF lValid 
+		// 			if !self:lNewMember.and.!AllTrim(self:oMbr:GRADE) == AllTrim(self:mGrade)
+		// 				IF AllTrim(self:mGrade)="Staf"
+		// 					* Changed to staff:
+		// 					oTextBox := TextBox{ self, oLan:WGet("Editing of a member"),;
+		// 						oLan:WGet("No gifts will be assessed anymore")+"!"}
+		// 					oTextBox:Type := BUTTONOKAYCANCEL
+		// 					IF ( oTextBox:Show() == BOXREPLYCANCEL )
+		// 						lValid := FALSE
+		// 						cError := oLan:WGet("Choose other type than Staf")
+		// 						self:oDCmGrade:SetFocus()
+		// 					ENDIF
+		// 				ELSEIF AllTrim(self:oMbr:GRADE)="Staf"
+		// 					* from staff to other type:
+		// 					uRet:=(ReportDateMember{self}):Show()
+		// 					IF uRet=0
+		// 						lValid := FALSE
+		// 						cError := oLan:WGet("Keep type Staf")
+		// 						self:oDCmGrade:SetFocus()
+		// 					ENDIF
+		// 				ENDIF
+		// 			endif
+		// 		ENDIF
 	ENDIF
 	IF ! lValid
 		(ErrorBox{,cError}):Show()
