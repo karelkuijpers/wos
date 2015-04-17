@@ -958,39 +958,40 @@ METHOD OKButton( ) CLASS EditDepartment
 			self:oDCmDescription:SetFocus()
 			return 
 		endif		
-		IF Empty(self:NbrCAPITAL)
-			if !self:oDep:grade=='OFR' .or. !self:oDep:homepp== sEntity 
-				(ErrorBox{,"Net asset account obliged for this member department"}):Show()
-				RETURN
-// 			else
-// 				if Empty(self:oGetDep:GetAccount(ConS(self:oDep:depid),liability))
-// 					(ErrorBox{,"Net asset account obliged for this member department because parent has no Net asset account"}):Show()
-// 					RETURN
-// 				endif					
+		if oDep:grade=="OFR"
+			if ConI(self:NbrIncome) =0 .and.ConI(self:NbrExpense)=0 .and.ConI(self:NbrCAPITAL)=0
+				ErrorBox{self,"At least one income, expense or net asset account should be scpeicfied for this Own Funds Raising department"}:show()
+				return
 			endif
-			RETURN
-		ENDIF		
-		IF ConI(self:NbrIncome) =0
-			(ErrorBox{,"Income account obliged for this member department"}):Show()
-			RETURN
-		ENDIF		
-		IF Empty(self:NbrExpense) 
-			if !self:oDep:grade=='OFR' .or. !self:oDep:homepp== sEntity 
-				(ErrorBox{,"Expense account obliged for this member department"}):Show()
-				RETURN
-			else
-				if Empty(self:oGetDep:GetAccount(ConS(self:oDep:depid),expense))
-					(ErrorBox{,"Expense account obliged for this member department because parent has no expense account"}):Show()
+		else
+			IF Empty(self:NbrCAPITAL)
+				if !self:oDep:homepp== sEntity 
+					(ErrorBox{,"Net asset account obliged for this member department"}):Show()
 					RETURN
-				endif					
-			endif
-		ENDIF
+				endif
+			ENDIF
+			IF ConI(self:NbrIncome) =0
+				ErrorBox{self,"Income account obliged for this member department"}:show()
+				RETURN
+			ENDIF		
+			IF Empty(self:NbrExpense) 
+				if !self:oDep:grade=='OFR' .or. !self:oDep:homepp== sEntity 
+					ErrorBox{,"Expense account obliged for this member department"}:show()
+					RETURN
+				else
+					if Empty(self:oGetDep:GetAccount(ConS(self:oDep:depid),expense))
+						ErrorBox{,"Expense account obliged for this member department because parent has no expense account"}:show()
+						RETURN
+					endif					
+				endif
+			ENDIF
+		endif
 		// check if only Income account is Gifts receivable: 
 		IF ConI(self:NbrIncome) >0
 			cGiftsAccs:=ConS(SqlSelect{" select group_concat(description separator ', ') as giftsaccs from account where department="+self:mDepId+;
 				" and giftalwd=1 and accid<>"+self:NbrIncome+iif(!Empty(self:idIncomeOrg),' and accid<>'+self:idIncomeOrg,''),oConn}:giftsaccs)
 			if !Empty(cGiftsAccs)
-				(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):Show()
+				(ErrorBox{,self:oLan:WGet("Following accounts should not be gift receivable")+': '+cGiftsAccs}):show()
 				RETURN			
 			endif 
 		endif
