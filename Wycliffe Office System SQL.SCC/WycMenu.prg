@@ -718,9 +718,7 @@ METHOD Init(oOwner) CLASS WOMenu
 	LOCAL oTB AS ToolBar
 	LOCAL i, nSub:=0 AS INT
 SUPER:Init(oOwner)
-*aMenu:=InitMenu()
 AEval(aMenu,{|x| nSub:=nSub+if(x[MPARENTID]==0,1,0)})
-*InitSystemMenu()
 
 SELF:AddSubItem(0)
 * Determine last submenu (Windows) and make it autoupdate:
@@ -735,7 +733,6 @@ FOR i:=1 TO Len(aMenu)
 			* Toolbar icon:
 			oTB:AppendItem(aMenu[i,MICON],aMenu[i,MACCEL])
 			oTB:AddTipText(aMenu[i,MICON],aMenu[i,MACCEL],aMenu[i,MTIP])
-*			oTB:AppendItem(IDT_SEPARATOR)
 		ENDIF
 	ENDIF
 NEXT
