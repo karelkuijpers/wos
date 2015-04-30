@@ -964,8 +964,8 @@ method ListViewMouseButtonDown(oListViewMouseEvent) class CustomExplorer
 	endif
    return
 METHOD OKButton CLASS CustomExplorer
-Local cItem as string
-	cItem:=self:GetIdFromSymbol((oTreeView:GetSelectedItem()):NameSym)
+//Local cItem as string
+//	cItem:=self:GetIdFromSymbol((self:oTreeView:GetSelectedItem()):NameSym)
 	IF !self:oCaller==null_object
 		IF self:cType="Balance"
 		    IF IsMethod(SELF:oCaller, #RegBalance)
