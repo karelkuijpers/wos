@@ -2146,8 +2146,8 @@ endif
 Method ShowDefaults() class EditAccount
 // HO:homefront; WO:Wycliffe Office;GI: general gift admin; GE: general accounting; WA: wycliffe area
 if ADMIN="GE" .or. ADMIN="WA"
+	self:oDCmGIFTALWD:Checked:=false
 	self:oDCmGIFTALWD:Hide()
-	self:mGIFTALWD:=false
 endif
 if self:mGIFTALWD
 	self:oDCDefaultBox:Show()
