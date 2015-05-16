@@ -769,7 +769,7 @@ Method ReEvaluate() Class Reevaluation
 		aAccnt[na,6]:=0.00
 		// determine balance in foreign currency: 
 		nb:=AScan(aBalAcc,{|x|x[1]==aAccnt[na,1]})
-		if nb=0 .or. (val(aBalAcc[nb,4])=0.00 .and.val(aBalAcc[nb,5])=0.00)  
+		if nb=0 .or. (Val(aBalAcc[nb,2])=Val(aBalAcc[nb,3]) .and. Val(aBalAcc[nb,4])=Val(aBalAcc[nb,5]))  
 			loop
 		endif
 		// calculate new balance in local currency: 
