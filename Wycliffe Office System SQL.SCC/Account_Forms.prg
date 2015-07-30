@@ -1695,10 +1695,15 @@ METHOD OkButton CLASS EditAccount
 		nPntr:=1
 		do while nPntr<Len(self:aBudget)  
 			nPntr:=AScan(self:aBudget,{|x|x[1]*12+x[2]>=nYM},nPntr)
-			if nPntr>0
+			if nPntr>0  
 				for i:=1 to 12
-					cValues+=',('+self:mAccId+','+Str(self:aBudget[nPntr,1],-1)+','+Str(self:aBudget[nPntr,2],-1)+','+Str(self:aBudget[nPntr,3],-1)+')'
+					if nPntr<=Len(self:aBudget) .and.Len(self:aBudget[nPntr])>=3
+						cValues+=',('+self:mAccId+','+Str(self:aBudget[nPntr,1],-1)+','+Str(self:aBudget[nPntr,2],-1)+','+Str(self:aBudget[nPntr,3],-1)+')'
+					endif
 					nPntr++
+					if nPntr>Len(self:aBudget)
+						exit
+					endif 
 				next
 			else
 				exit						
