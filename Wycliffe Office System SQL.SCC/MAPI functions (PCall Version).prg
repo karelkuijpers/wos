@@ -153,10 +153,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"HKCU Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
+						LogEvent(,"HKCU Current client key "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 					endif
 				else
-					LogEvent(,"HKCU Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
+					LogEvent(,"HKCU Current client "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
 				endif
 			else
 				// read HKLM
@@ -172,10 +172,10 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"HKLM Current client key:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
+						LogEvent(,"HKLM Current client key "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
 					endif
 				else
-					LogEvent(,"HKLM Current client:("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
+					LogEvent(,"HKLM Current client "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
 				endif
 				
 			endif

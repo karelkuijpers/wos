@@ -42,7 +42,7 @@ CLASS EditSubscription INHERIT DataWindowExtra
 	protect mBic,mCurBic as string 
 	protect mTermOrig as int
 	protect aBankaccs:={} as array 
-	protect oCaller as object
+	protect oCaller as SubScriptionBrowser
 *  	PROTECT lNew AS LOGIC
 	PROTECT mCod as STRING
 	PROTECT nCurRec as int
@@ -728,7 +728,8 @@ METHOD OKButton( ) CLASS EditSubscription
 	endif
 	SQLStatement{"commit",oConn}:Execute()
 	SQLStatement{"unlock tables",oConn}:Execute() 
-	SQLStatement{"set autocommit=1",oConn}:Execute()
+	SQLStatement{"set autocommit=1",oConn}:Execute() 
+	self:oCaller:nTerm := term
 	if lProlongate
 		ProlongateAll(self)
 		cmessage+=iif(Empty(CMessage),'',' '+self:oLan:WGet('and')+' ')+self:oLan:WGet("corresponding due amounts adapted")
@@ -852,7 +853,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		endif	
 		self:oDCmDueDate:SelectedDate:=SToD(SubStr(DToS(self:oDCmbegindate:SelectedDate),1,6)+'20')
 		self:oDCmEndDate:SelectedDate:=self:oDCmDueDate:SelectedDate+365*100
-		self:mterm   := 1
+		self:mterm   := self:oCaller:nTerm
 		self:mamount   := 0  
 		self:mBlocked:= false  
 		self:oDCmBlocked:hide()
@@ -1178,6 +1179,7 @@ CLASS SubscriptionBrowser INHERIT DataWindowExtra
 	Export mREK as STRING
 	EXPORT cType AS STRING
 	EXPORT mtype as STRING
+	Export nTerm:=1 as int
 	export oSub as SQLSelectPagination
 	export cFields,cFrom,cWhere,cOrder, cFilterWhere as string
 	export dLastDDdate as date 

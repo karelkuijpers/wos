@@ -3715,7 +3715,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 				nRow := 0
 			ENDIF
 			self:oTransMonth:oReport:=self:oReport
-			self:oTransMonth:SkipInactive:=self:SkipInactive
+			self:oTransMonth:SkipInactive:=ConL(self:SkipInactive)
 			myLang:=Alg_taal
 			me_hbn:=Transform(oAcc:householdid,"")
 			IF !Empty(oAcc:HOMEPP) .and.oAcc:HOMEPP!=sEntity
@@ -3730,7 +3730,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 
 			self:oTransMonth:MonthPrint(oAcc,oTrans,ReportYear,ASsStart,ReportYear,ReportMonth,@nRow,@nPage,cHeading1,self:oLan,aGiversdata,aAssmntAmount,iif(self:SendingMethod="SeperateFile","accnumber","accid"))
 			nRow:=0  && force page skip 
-			IF self:SkipInactive .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
+			IF ConL(self:SkipInactive) .and. Len(self:oReport:oPrintJob:aFiFo)== nBeginmember
 				*  skip member without transactions
 				* remove added member lines:
 				lSkip:=true 
@@ -3771,7 +3771,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 
 			// Print gifts matrix:
 			nRow:=0  // force page skip
-			oGftRpt:GiftsOverview(ReportYear,ReportMonth,Footnotes, aGiversdata,aAssmntAmount,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,me_hbn,@nRow,@nPage) 
+			oGftRpt:GiftsOverview(ReportYear,ReportMonth,ConS(Footnotes), aGiversdata,aAssmntAmount,self:oReport, oAcc:ACCNUMBER+Space(1)+oAcc:description,me_hbn,@nRow,@nPage) 
 		endif
 		if lPrintFile.and.!Empty(self:SendingMethod)
 			// separate files:

@@ -661,7 +661,8 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 	// LOCAL deb_ind AS LOGIC
 	local Deb,cre, DEBFORGN,CREFORGN,total as float
 	local i as int
-	local nDep as int
+	local nDep as int 
+	local nOrder as int
 	local CurStOrdrid,nTransLenOrg:=Len(self:aTrans),nBankLenOrg:=Len(self:aBank) as int
 	LOCAL soortvan, soortnaar, PrsnVan, PrsnNaar, cTrans, mBank,CurrFrom, CurrTo,TransCurr as STRING
 	local MultiFrom, lError as logic
@@ -785,7 +786,8 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	* Daily execution of Standing Orders
 	LOCAL nwdat, checkdate,idat,edat,curdat as date, tel:=0 as int, first:=true,lError as LOGIC
-	LOCAL iPeriod,nCurRec,nAdv,nDay,i,j,CurStOrdrid as int
+	LOCAL iPeriod,nCurRec,nAdv,nDay,i,j,CurStOrdrid as int 
+	local nOrder as DWord
 	local nTrans as DWord 
 	local oStOrdL as sqlselect
 	// 	local CurStOrdrid:='',cTrans as string 
@@ -812,7 +814,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	if oStOrdL:reccount <1 
 		return false
 	endif 
-	self:oLan:=Language{}
+	self:oLan:=Language{} 
+	self:aTrans:={}
 	DO WHILE !oStOrdL:EOF
 		checkdate:=Today()
 		iPeriod:=Max(oStOrdL:period,1) 
@@ -845,6 +848,7 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 			endif
 		enddo
 	ENDDO
+	
 	// perform recording if transactions (when everything is OK:
 	if Len(self:aTrans)>1 
 		oBal:=Balances{}     
@@ -915,7 +919,9 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 				oStmnt:execute()
 				if!Empty(oStmnt:status)
 					lError:=true
-					cError:="stmnt:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:errinfo:errormessage				
+					cError:="stmnt:"+oStmnt:SQLString+CRLF+"error:"+oStmnt:errinfo:errormessage
+				else
+					nOrder:=oStmnt:NumSuccessfulRows
 				endif
 			endif
 		endif
@@ -924,7 +930,8 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		if !lError
 			SQLStatement{"commit",oConn}:execute()
 			SQLStatement{"unlock tables",oConn}:execute()
-			SQLStatement{"set autocommit=1",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute() 
+			logevent(self,str(nOrder,-1)+space(1)+ self:oLan:WGet("standingorders processed")+space(1)+ self:oLan:WGet("with")+space(1)+str(len(self:aTrans),-1)+space(1)+ self:oLan:WGet("transactions"))
 		else
 			SQLStatement{"rollback",oConn}:execute()
 			SQLStatement{"unlock tables",oConn}:execute()

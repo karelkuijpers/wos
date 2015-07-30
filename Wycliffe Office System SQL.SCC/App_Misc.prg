@@ -316,7 +316,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select t.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber from transsum t left join mbalance m  on (m.accid=t.accid and m.year=t.year and m.month=t.month and m.currency='"+sCurr+"') left join account a on (a.accid=t.accid) where (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.06     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.10 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.12     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
@@ -4039,18 +4039,22 @@ function PersonUnion(id1 as string, id2 as string)
 	4. transfer all givers/creditors in standing orders from id2 to id1
 	5. members?? not allowed 
 	*/ 
-	Local oPers1,oPers2,oTrans,oSel as SQLSelect
-	LOCAL oXMLDocPrs2,oXMLDocPrs1 as XMLDocument 
-	local ChildName, cValue as string, recordfound, lSuccess as logic 	
-	local oStmt as SQLStatement 
-	local cAccId as string
-	local cStatement as string 
-	local cError as string 
-	local aTrTable:={} as array
 	local i,nTrans as int
-   if !Val(id1)>0 .or. !Val(id2)>0
-   	return false
-   endif
+	local nEmpid as int
+	local ChildName, cValue as string 	
+	local cAccId as string
+	local cLoginname,cType as string 
+	local cStatement as string 
+	local cError as string
+	local recordfound, lSuccess as logic 
+	local aTrTable:={} as array
+	Local oPers1,oPers2,oTrans,oSel as SQLSelect
+	local oStmt as SQLStatement
+	LOCAL oXMLDocPrs2,oXMLDocPrs1 as XMLDocument 
+
+	if !Val(id1)>0 .or. !Val(id2)>0
+		return false
+	endif
 
 	// transactions:
 	// 	cStatement:=UnionTrans("select persid,transid,seqnr from transaction t where t.dat>='"+SQLdate(Today()+80)+"' and persid="+id2)
@@ -4065,15 +4069,20 @@ function PersonUnion(id1 as string, id2 as string)
 	oStmt:=SQLStatement{'',oConn}
 	// Unify persons self:
 	oPers1:=SqlSelect{"select p.gender,firstname,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-	"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
-	"address,city,postalcode,country,attention,propextr"+;
-	",m.mbrid,m.accid,m.depid"+;
-	" from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
+		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+		"address,city,postalcode,country,attention,propextr"+;
+		",m.mbrid,m.accid,m.depid"+;
+		" from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
 	oPers2:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-	"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
-	"address,city,postalcode,country,attention,propextr"+;
-	" from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
-
+		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+		"address,city,postalcode,country,attention,propextr"+;
+		" from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
+	oSel:=SqlSelect{"select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname,cast("+Crypt_Emp(false,"type") +" as char) as type from employee where "+Crypt_Emp(false,"persid")+"='"+id2+"'",oConn}
+	if oSel:RecCount>0
+		nEmpid:=ConI(oSel:empid)
+		cLoginname:=ConS(oSel:loginname)
+		cType:=ConS(oSel:TYPE)
+	endif
 	if oPers1:RecCount<1 .or. oPers2:RecCount<1
 		return false
 	endif
@@ -4223,31 +4232,51 @@ function PersonUnion(id1 as string, id2 as string)
 			cError:=oStmt:ErrInfo:ErrorMessage
 			LogEvent(,"could not merge persons:"+oStmt:ErrInfo:ErrorMessage+CRLF+oStmt:SQLString,"logerrors") 
 		endif
-		if Empty(cError)
-			if !Empty(oPers2:mbrid) 
-				oStmt:=SQLStatement{"update member set persid="+id1+" where persid="+id2,oConn}:Execute()
-				if oStmt:NumSuccessfulRows>0
-					if !Empty(oPers2:accid) 
-						oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute()
-					elseif !Empty(oPers2:depid)
-						oStmt:=SQLStatement{"update department set description='"+GetFullName(id1)+" where depid="+Str(oPers2:depid,-1),oConn}:Execute()
-					endif	
-				endif
+	endif
+	if Empty(cError)
+		if !Empty(oPers2:mbrid) 
+			oStmt:=SQLStatement{"update member set persid="+id1+" where persid="+id2,oConn}:Execute()
+			if oStmt:NumSuccessfulRows>0
+				if !Empty(oPers2:accid) 
+					oStmt:=SQLStatement{"update account set description='"+GetFullName(id1)+" where accid="+Str(oPers2:accid,-1),oConn}:Execute()
+				elseif !Empty(oPers2:depid)
+					oStmt:=SQLStatement{"update department set description='"+GetFullName(id1)+" where depid="+Str(oPers2:depid,-1),oConn}:Execute()
+				endif	
+			endif
+			if !Empty(oStmt:status)
+				cError:=oStmt:ErrInfo:ErrorMessage
 			endif 
-			
-			// update employee if applicable
-			SQLStatement{"update employee set persid='"+Crypt_Emp(true,"persid",id1)+"' where persid='"+Crypt_Emp(true,"persid",id2)+"'",oConn}:Execute()
-			// delete person id2:
-			SQLStatement{"delete from person where persid="+id2,oConn}:Execute() 
-			SQLStatement{"commit",oConn}:Execute()
 		endif
 	endif
-	if !Empty(cError)
+	if Empty(cError)
+		if !Empty(nEmpid)
+			// update employee if applicable
+			oStmt:=SQLStatement{"update employee set persid="+Crypt_Emp(true,"persid",id1,nEmpid)+",loginname="+Crypt_Emp(true,"loginname",cLoginname)+",type="+Crypt_Emp(true,"type",cType)+" where "+Crypt_Emp(false,"persid")+"='"+id2+"'",oConn}
+			oStmt:Execute()
+			if !Empty(oStmt:status)
+				cError:=oStmt:ErrInfo:ErrorMessage
+			endif 
+		endif
+	endif
+	if Empty(cError)
+		// delete person id2:
+		oStmt:=SQLStatement{"delete from person where persid="+id2,oConn}
+		oStmt:Execute()
+		if !Empty(oStmt:status)
+			cError:=oStmt:ErrInfo:ErrorMessage
+		endif 
+	endif
+	if Empty(cError)
+		SQLStatement{"commit",oConn}:Execute() 
+		if !Empty(nEmpid)  // employee changed?
+	   	SaveCheckDigit() // recalculate checkdigit for employee database
+		endif
+	else
 		SQLStatement{"rollback",oConn}:Execute() 
 		ErrorBox{,"could not merge persons: "+cError}:Show()
 		return false
 	endif
-   TextBox{,"Person merge","Person merged"}:Show()
+	TextBox{,"Person merge","Person merged"}:Show()
 	return true
 Function PersTypeValue(abrv as string) as string
 // get id of person type with abbriviation abrv

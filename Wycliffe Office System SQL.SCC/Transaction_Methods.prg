@@ -750,25 +750,25 @@ function ChgDueAmnt(p_cln as string,p_rek as string,p_deb as float,p_cre as floa
 				oStmnt:=SQLStatement{"update dueamount set amountrecvd="+Str( Max(0,oDue:AmountRecvd-p_amount),-1)+" where dueid="+Str(oDue:dueid,-1),oConn}
 				oStmnt:Execute()
 				if oStmnt:NumSuccessfulRows>0
+					cWarning+="Due amount reversed for donation of "+oDue:fullname+", account: "+oDue:accnumber+", date due: "+DToC(oDue:invoicedate)+" with "+Str(Min(payed_amount,p_amount),-1)+CRLF 
 					p_amount:=p_amount-Min(payed_amount,p_amount) 
-					cWarning+="Due amount reversed for donation of "+oDue:fullname+", account: "+oDue:accnumber+", date due: "+DToC(oDue:invoicedate)+CRLF 
 				elseif !Empty(oStmnt:Status)
 					return oStmnt:ErrInfo:errormessage					
 				endif
 				oDue:skip()
 			ENDDO
 		endif
-		IF p_amount>0
-			* Create new due amount:
-			oSub:=SqlSelect{"select subscribid from subscription where personid="+p_cln+" and accid="+p_rek,oConn}
-			if oSub:RecCount>0   
-				oStmnt:=SQLStatement{"insert into dueamount (subscribid,invoicedate,seqnr,amountrecvd) values ("+Str(oSub:subscribid,-1)+",Now(),1,"+Str(p_amount,-1)+")",oConn}
-				oStmnt:Execute()
-				if !Empty(oStmnt:Status)
-					return oStmnt:ErrInfo:errormessage					
-				endif
-			endif
-		ENDIF
+// 		IF p_amount>0
+// 			* Create new due amount:
+// 			oSub:=SqlSelect{"select subscribid from subscription where personid="+p_cln+" and accid="+p_rek,oConn}
+// 			if oSub:RecCount>0   
+// 				oStmnt:=SQLStatement{"insert into dueamount (subscribid,invoicedate,seqnr,amountrecvd) values ("+Str(oSub:subscribid,-1)+",Now(),1,"+Str(p_amount,-1)+")",oConn}
+// 				oStmnt:Execute()
+// 				if !Empty(oStmnt:Status)
+// 					return oStmnt:ErrInfo:errormessage					
+// 				endif
+// 			endif
+// 		ENDIF
 	ENDIF
 	RETURN ""
 
@@ -2304,10 +2304,38 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			if !lError
 				//	Update balances of subscriptions/due amounts/ donations:
 				// 					IF	!Empty(self:mCLNGiver)
+// mirror {accID,deb,cre,gc,category,recno,Trans:RecNbr,accnumber,AccDesc,balitemid,curr,multicur,debforgn,creforgn,reference,description,persid,type, incexpfd,depid}
+//          1     2   3  4    5       6        7           8        9        10     11      12      13        14     15         16          17    18      19      20
 				IF	!Empty(cDueAccs)
-					IF	oHm:Amirror[i,5]= 'D'	.or. oHm:Amirror[i,5]=	'A' .or.	oHm:Amirror[i,5]	= 'F'	;
-							.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
-						.or. (self:lTeleBank .and. self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
+// 					IF	oHm:Amirror[i,5]= 'D'	.or. oHm:Amirror[i,5]=	'A' .or.	oHm:Amirror[i,5]	= 'F'	;
+// 							.or.(oHm:aMIRROR[i,2] >	oHm:aMIRROR[i,3] .and.oHm:aMIRROR[i,4]<>'CH' );		 // storno also
+// 						.or. (self:lTeleBank .and. self:oTmt:m56_kind="COL" .and. self:oTmt:m56_addsub="A") // storno
+// 						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:Amirror[i,1]),oHm:Amirror[i,2],oHm:Amirror[i,3],iif(self:lTeleBank,ConS(self:oTmt:m56_dueid),""),@cWarning)
+// 						if !Empty(cError)
+// 							lError:=true
+// 						else
+// 							// check if rejection of first sepa DD or invalid mandate id:
+// 							if sepaenabled .and. self:lTeleBank .and. self:mBst="COLREJ".and.oHm:Amirror[i,2] >	oHm:Amirror[i,3] 
+// 								if(j:=AtC('WDD-A-',oHm:Amirror[i,16]))>0
+// 									mandateid:=AllTrim(SubStr(oHm:Amirror[i,16],j))
+// 									if (j:=AtC('EndtoEnd:',oHm:Amirror[i,16]))>0
+// 										endtoend:=SubStr(oHm:Amirror[i,16],j+9,30)
+// 										if Len(Split(endtoend,'-'))>2
+// 											invoicedate:=SToD(Split(endtoend,'-')[2])
+// 											oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+;
+// 												'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and firstinvoicedate="'+SQLdate(invoicedate)+'"',''),oConn}
+// 											oStmnt:execute()
+// 											if !Empty(oStmnt:Status)
+// 												lError:=true 
+// 												cError:=oStmnt:ErrInfo:errormessage
+// 											endif
+// 										endif
+// 									endif
+// 								endif
+// 							endif 
+// 						endif
+// 					ENDIF
+					IF	self:lTeleBank.and.!self:oTmt==null_object.and.(self:oTmt:m56_kind="COL" .or.self:oTmt:m56_kind="KID") 
 						cError:= ChgDueAmnt(self:mCLNGiver,AllTrim(oHm:Amirror[i,1]),oHm:Amirror[i,2],oHm:Amirror[i,3],iif(self:lTeleBank,ConS(self:oTmt:m56_dueid),""),@cWarning)
 						if !Empty(cError)
 							lError:=true
@@ -2489,7 +2517,10 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	local oTransH as SQLSelect
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
-			self:Owner:lwaitingForExchrate:=true 
+			self:Owner:lwaitingForExchrate:=true
+			if self:oCurr==null_object
+				self:oCurr:=Currency{}
+			endif 
 			ROE:=self:oCurr:GetROE(oHm:CURRENCY,self:Owner:mDat)
 			self:Owner:lwaitingForExchrate:=false 
 			if oCurr:lStopped
@@ -2523,13 +2554,14 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	if !oHm:lFilling
 		self:Owner:lStop:=false  // give warning when cancel
 	endif
-
-	oHm:aMirror[ThisRec,2]:=oHm:deb
-	oHm:aMirror[ThisRec,3]:=oHm:cre
-	oHm:aMirror[ThisRec,13]:=oHm:DEBFORGN
-	oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
-	oHm:aMirror[ThisRec,19]:=oHm:INCEXPFD 
-	oHm:aMirror[ThisRec,20]:=oHm:DEPID
+	if isarray(oHm:aMirror) .and. len(oHm:aMirror)>=ThisRec .and.len(oHm:aMirror[ThisRec])>=20 
+		oHm:aMirror[ThisRec,2]:=oHm:deb
+		oHm:aMirror[ThisRec,3]:=oHm:cre
+		oHm:aMirror[ThisRec,13]:=oHm:DEBFORGN
+		oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
+		oHm:aMirror[ThisRec,19]:=oHm:INCEXPFD 
+		oHm:aMirror[ThisRec,20]:=oHm:DEPID 
+	endif
 	IF oHm:KIND == 'M'		
 		IF oHm:deb > oHm:cre
 			if self:oParent:mBST="COL"     // inverse direct debit
@@ -2587,7 +2619,7 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 				// change to MG if needed 
 				cPersId:=self:Owner:mCLNGiver 
 				// 			i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.or.x[20]==nDepId.or.x[17]==cPersId)})
-				i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0) .and.(Empty(cPersid).or.x[17]==cPersId)})
+				i:=AScan(oHm:aMirror,{|x|x[4]=="CH".and.x[3]<x[2].and.!(x[1]==cAccId.and.!cAccId=='0'.or.x[20]==nDepId.and.!nDepId=0) .and.(Empty(cPersId).or.x[17]==cPersId)})
 				IF (self:Owner:lMemberGiver.and.!(self:Owner:mCLNGiver==oHm:aMirror[ThisRec,17])) ;
 						.or.i>0
 					oHm:gc := 'MG'

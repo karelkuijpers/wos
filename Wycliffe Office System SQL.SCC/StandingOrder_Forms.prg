@@ -922,11 +922,12 @@ METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS StandingOrderBrowser
 
 	RETURN NIL
 Method Refresh() class StandingOrderBrowser
-	self:Server:sqlstring:="select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder
-	self:Server:Execute() 
-	self:oSFPeriodicBrowser_DETAIL:Browser:Refresh()
-  	self:oDCFound:TextValue :=Str(self:oStOrd:RecCount,-1)
-
+	if IsObject(self:Server) .and. !self:Server==null_object .and. CheckInstanceOf(self:Server, #SQLSelectPagination) 
+		self:Server:sqlstring:="select "+self:cFields+" from "+self:cFrom+" where l.stordrid=s.stordrid"+iif(Empty(self:cWhere),""," and "+self:cWhere)+" order by "+self:cOrder
+		self:Server:Execute() 
+		self:oSFPeriodicBrowser_DETAIL:Browser:Refresh()
+	  	self:oDCFound:TextValue :=Str(self:oStOrd:RecCount,-1)
+	endif
 	return
 ACCESS SearchRek() CLASS StandingOrderBrowser
 RETURN SELF:FieldGet(#SearchRek)

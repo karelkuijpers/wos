@@ -1001,6 +1001,12 @@ METHOD ImportAustria(oFr as FileSpec,dBatchDate as date,cOrigin as string,Testfo
 			else
 				cDecDelim:=''
 			endif
+		elseif Empty(cThousandDelim)
+			if cDecDelim=='.'
+				cThousandDelim:=','
+			elseif cDecDelim==','
+				cThousandDelim:='.'
+			endif			
 		endif
 		if !Empty(cDecDelim)
 			cAmount:= StrTran(StrTran(AFields[ptCre],cThousandDelim,''),cDecDelim,".") 

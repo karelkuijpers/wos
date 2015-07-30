@@ -592,8 +592,8 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditEmployeeWindow
 			LogEvent(self,"Error:"+oEmp:ErrInfo:ErrorMessage+"(Statement:"+cEmpStmnt+")","LogErrors")
 			return		
 		endif
-		self:mLogon_name := oEmp:LOGINNAME
-		self:cLoginNameOrg := self:mLogon_name 
+		self:oDCmLOGON_NAME:Value := ConS(oEmp:LOGINNAME)
+		self:cLoginNameOrg := ConS(self:mLogon_name) 
 		// 		PasswordOrg   := AllTrim(Crypt(oEmp:Password,oEmp:EmpId+"er45pofDOIoiijodsoi*)mxcd eDFP456^)_fghj=") )
 		PasswordOrg   := oEmp:PASSWORD
 		// 		self:oDCmTYPE:Value		:= oEmp:mType

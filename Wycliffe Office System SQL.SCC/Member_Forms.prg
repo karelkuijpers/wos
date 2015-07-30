@@ -316,7 +316,7 @@ METHOD OKButton( ) CLASS ConvertMembers
 	local oSel,oAss as SQLSelect
 	local oStmnt as SQLStatement 
 	local cSelect,cSQLStatement,mDepId,maccidInc,mAccidExp,mAccidPrv,cAccPrvNbr,cIncAccNbr,cExpAccNbr,cNetAccNbr as string
-	local cFatalError as string
+	local cFatalError,cErrormessage as string
 	local nCount as int
 	local oWindow as Window 
 	local mAlgTaal:=Alg_Taal as string 
@@ -382,7 +382,13 @@ METHOD OKButton( ) CLASS ConvertMembers
 			alg_taal:=mAlgTaal
 		else
 			alg_taal:='E'  // for foreign members foreign texts
-		endif
+		endif 
+		if (Len(LTrimZero(self:IncomeAcc))+1+Len(cAccPrvNbr))>12
+			lError=true
+			cErrormessage+=self:oLan:WGet("new account number longer than 12")+": "+LTrimZero(self:IncomeAcc)+'-'+cAccPrvNbr +CRLF 
+			oSel:Skip()
+			loop
+		endif 
 		SQLStatement{"start transaction",oConn}:Execute() 
 		lError:=false
 		// create department: 
@@ -610,6 +616,9 @@ METHOD OKButton( ) CLASS ConvertMembers
 		endif			
 		oSel:Skip()
 	enddo
+	if !Empty(cErrormessage)
+		ErrorBox{self,cErrormessage}:show()
+	endif
 	Alg_Taal:=mAlgTaal
 	self:STATUSMESSAGE(self:oLan:WGet('Updating balances')+'...')
 	// correct month balances data

@@ -3077,9 +3077,11 @@ METHOD prstart(lModeless:=true as logic) as usual CLASS PrintDialog
 	self:oPrintJob:lLblFinish:=true
 	self:Pointer := Pointer{POINTERARROW} 
 	SetDecimalSep(Asc('.'))      //back to .
-
-
-	RETURN(self:ToFileFS:FullPath)
+   if IsObject(self:ToFileFS) .and. !Empty(self:ToFileFS)
+		RETURN(self:ToFileFS:FullPath)
+   else
+   	return ''
+   endif
 METHOD prstop(Noskip) CLASS PrintDialog
 
 IF IsObject(oPrintJob)

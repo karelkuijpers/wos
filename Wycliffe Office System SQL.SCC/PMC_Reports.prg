@@ -528,7 +528,8 @@ METHOD PrintReport() CLASS PMISsend
 	endif  
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-	self:oSys:EXCHRATE := fExChRate 
+	//self:oSys:EXCHRATE := fExChRate  
+	SQLStatement{"update sysparms set exchrate="+Str(fExchRate,-1),oConn}:Execute()
 
 	// Select member data:
 	cMbrSelect:="select m.mbrid,m.homepp,m.homeacc,m.householdid,m.co,m.has,m.grade,m.offcrate,m.overdrawallowed,"+;

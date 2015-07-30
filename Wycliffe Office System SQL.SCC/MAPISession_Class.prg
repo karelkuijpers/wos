@@ -633,7 +633,7 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		0 )
 	self:oClick:Suspend() 
 	if !nResult == SUCCESS_SUCCESS
-			LogEvent(self,"Error when emailing, Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult)+"; last error:"+GetSystemMessage(GetLastError()) ,"logerrors")
+			LogEvent(self,"Error when emailing via "+EmailClient+", Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult)+"; recip:"+oRecip1:Name+' '+oRecip1:Address+"; message:"+cNoteText+"; last error:"+GetSystemMessage(GetLastError()) ,"logerrors")
 			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION ) 
 			RETURN false
 	endif
