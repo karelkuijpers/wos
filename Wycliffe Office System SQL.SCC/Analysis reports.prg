@@ -811,7 +811,8 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	LOCAL aDropValues as ARRAY
 	LOCAL oCheck as CheckBox
 	LOCAL cSearch,cSearchOrg,cSep,insSep,cClassName as STRING
-	LOCAL uFieldValue as USUAL, nFreq as int
+	LOCAL uFieldValue as USUAL, nFreq as int 
+	local dDate as date
 	LOCAL nClassPtr,nClassPtr1,nClassPtr2,nCount,nAge,nPersPtr as int
 	LOCAL aClassPtr as ARRAY // ptrs to rows in aClass
 	LOCAL aMatrix1,aMatrix2,aMatrix3,aMatrix4,aMatrix5,aMatrix6,aMatrix7,aMatrix8 as ARRAY // matrix to fill with calculated values Stat1,Stat2, ...
@@ -1280,14 +1281,20 @@ METHOD PrintReport() CLASS DonorFollowingReport
 				uFieldValue:=oPers:FIELDGET(cName)
 			ENDIF
 			IF cName=="BIRTHDATE"
-				// convert birthdate to age:
-				IF Empty(uFieldValue)
+				// convert birthdate to age: 
+				IF empty(uFieldValue) .or. !isdate(uFieldValue) .or. !uFieldValue > null_date
 					nAge:=0
 					nClassPtr:=aClassIndex[i,2]
 				ELSE
-					nAge:=(Integer(Year(Today())*12+Month(Today()) - Year(uFieldValue)*12*Month(uFieldValue)+ iif(Day(Today())<Day(uFieldValue),-1,0))/12)
-					// search nAge in aClass:
-					nClassPtr:=AScan(aClass,{|x|nAge>=x[3] .and.nAge<x[4]},aClassIndex[i,2],nCount)
+					dDate:=oPers:birthdate 
+					if !Empty(dDate) .and. dDate > SToD("1800-01-01") .and. dDate < Today() 
+						nAge:=(Integer(Year(Today())*12+Month(Today()) - Year(dDate)*12-Month(dDate)+ iif(Day(Today())<Day(dDate),-1,0))/12)
+						// search nAge in aClass:
+						nClassPtr:=AScan(aClass,{|x|nAge>=x[3] .and.nAge<x[4]},aClassIndex[i,2],nCount)
+					else
+						nAge:=0
+						nClassPtr:=aClassIndex[i,2]
+					endif						
 				ENDIF
 			ELSEIF cName=="ALL"
 				nClassPtr:=1
