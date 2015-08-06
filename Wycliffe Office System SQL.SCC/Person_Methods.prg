@@ -572,7 +572,7 @@ METHOD ValidatePerson() CLASS EditPerson
 	self:mAddress:=AllTrim(self:oDCmAddress:VALUE)
 	IF lValid.and.(self:lNew.or. !AllTrim(self:mLastName) = ConS(self:oPerson:lastname) .or. ConS(self:oPerson:postalcode) # self:mPostalcode.or.ConS(self:oPerson:firstname) # self:mFirstname.or.ConS(self:oPerson:address) # self:mAddress.or. ZeroTrim(ConS(self:oPerson:EXTERNID)) # self:mExternid)
 		* Check duplicate NAC:
-		oSel:=SqlSelect{"select persid from person where deleted=0 and lastname='"+AddSlashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+self:mFirstname+"%') and address like '";
+		oSel:=SqlSelect{"select persid from person where deleted=0 and lastname='"+AddSlashes(self:mLastName)+"' and postalcode like '"+self:mPostalcode+"%' and (firstname='' or firstname like '"+AddSlashes(self:mFirstname)+"%') and address like '";
 		+AddSlashes(self:mAddress)+"%'"+iif(self:lNew,""," and persid<>'"+self:mPersid+"'"),oConn}
 		oSel:GoTop()
 		IF oSel:RecCount>0
