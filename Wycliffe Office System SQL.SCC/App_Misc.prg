@@ -299,7 +299,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
-		if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.07 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.07     // no message for rounding errors
+		if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.10 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.12     // no message for rounding errors
 			cError:="No correspondence between transactions and month balances per account"+CRLF
 		endif
 		lTrMError:=true
@@ -348,7 +348,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:Execute()
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.10 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.12     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
@@ -366,7 +366,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select a.accid,m.deb,m.cre,t.year,t.month,t.debtot,t.cretot,a.accnumber,a.`currency` from account a,transsumf t left join mbalance m  on (m.year=t.year and m.month=t.month and m.accid=t.accid and m.currency<>'"+sCurr+"') where a.accid=t.accid and a.currency<>'"+sCurr+"' and a.multcurr=0 and (m.deb IS NULL and m.cre IS NULL and (t.debtot<>0 or t.cretot<>0)) and (t.year*12+t.month)>="+Str(nFromYear,-1),oConn}
 	if oSel:RECCOUNT>0
 		if Empty(cError)
-			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
+			if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.12 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.12     // no message for rounding errors
 				cError:="No correspondence between transactions and month balances per account"+CRLF
 			endif
 		endif
