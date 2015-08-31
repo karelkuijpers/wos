@@ -153,8 +153,8 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		oFTP:CloseRemote() 
 	else
 		// 			__RaiseFTPError(oFTP) 
-		LogEvent(self,"No internet connection available to check for upgrades","logerrors")
-		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
+		LogEvent(self,"Could not connect with update server via internet to check for upgrades","logerrors")
+		WarningBox{,"Check upgrades","Could not connect with update server via internet to check for upgrades"}:Show()
 	endif
 	return false
 
