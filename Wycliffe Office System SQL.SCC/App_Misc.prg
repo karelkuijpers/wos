@@ -299,7 +299,7 @@ function CheckConsistency(oWindow as object,lCorrect:=false as logic,lShow:=fals
 	oSel:=SqlSelect{"select m.accid,m.deb,m.cre,m.month,m.year,t.debtot,t.cretot,a.accnumber from mbalance m left join transsum t on (m.accid=t.accid and m.year=t.year and m.month=t.month) left join account a on (a.accid=m.accid) where (t.debtot IS NULL and t.cretot IS NULL and (m.deb<>0 or m.cre<>0) or (m.deb<>t.debtot or m.cre<>t.cretot)) and (m.year*12+m.month)>="+Str(nFromYear,-1)+" and m.currency='"+sCurr+"'",oConn}
 	oSel:Execute()
 	if oSel:RECCOUNT>0
-		if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.02 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.02     // no message for rounding errors
+		if Abs(ConF(oSel:deb) - ConF(oSel:debtot)) > 0.07 .or.Abs(ConF(oSel:deb) - ConF(oSel:debtot)) >0.07     // no message for rounding errors
 			cError:="No correspondence between transactions and month balances per account"+CRLF
 		endif
 		lTrMError:=true
@@ -2476,11 +2476,13 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 		IF oSel:RecCount>0
 			nMindate:=oSel:YEARSTART*12+oSel:YEARLENGTH+oSel:MONTHSTART 
 			LstYearClosed:=SToD(Str(Integer(nMindate/12),4)+StrZero(nMindate%12,2)+"01")
-			if oSys:Mindate < LstYearClosed
+			if !oSys:Mindate == LstYearClosed
 				oSys:Mindate:=LstYearClosed
+				SQLStatement{'update sysparms set mindate="'+SQLdate(LstYearClosed)+'"',oConn}:Execute()
 			endif
-			if oSys:yearclosed < oSel:YEARSTART
+			if !oSys:yearclosed == oSel:YEARSTART
 				oSys:yearclosed:= oSel:YEARSTART
+				SQLStatement{'update sysparms set yearclosed="'+ConS(oSel:YEARSTART)+'"',oConn}:Execute()
 			endif
 		ENDIF
 
@@ -4968,7 +4970,7 @@ local oStmnt as SQLStatement
 			enddo
 		next
 		cReplace:=AddSlashes(SubStr(Compress(cNewname+' '+cReplace),1,40))
-		oStmnt:=SQLStatement{"update account set description='"+cReplace+"' where accid="+ConS(oSel:accid),oConn}
+		oStmnt:=SQLStatement{"update account set description='"+AddSlashes(cReplace)+"' where accid="+ConS(oSel:accid),oConn}
 		oStmnt:Execute()
 		if !Empty(oStmnt:Status)
 			cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
