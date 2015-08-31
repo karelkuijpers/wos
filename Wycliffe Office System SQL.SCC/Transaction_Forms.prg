@@ -4143,7 +4143,7 @@ local oSel as SQLSelect
 		LogEvent(self,"Could not find last "+ConS(self:NbrTrans)+" transactions, error:"+self:oTrans:ErrInfo:ErrorMessage,"LogErrors") 
 	else
 		self:GoTop()
-		if self:oTrans:reccount<1
+		if self:oTrans:reccount<1 .and. IsObject(self:oSFTransInquiry_DETAIL:Browser) .and.!Empty(self:oSFTransInquiry_DETAIL:Browser)
 			self:oSFTransInquiry_DETAIL:Browser:refresh()
 		endif 
 	endif
