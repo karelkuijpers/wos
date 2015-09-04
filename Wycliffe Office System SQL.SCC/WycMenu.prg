@@ -18,41 +18,43 @@ METHOD Init(oOwner) CLASS BalListViewMenu
 
 	SELF:RegisterItem(IDM_BalListViewMenu_X_ID,	;
 		HyperLabel{#_X,	;
-			"X",	;
-			,	;
-			,},SELF:Handle( ),0)
+		"X",	;
+		,	;
+		,},SELF:Handle( ),0)
 	SELF:RegisterItem(IDM_BalListViewMenu_X_Edit_this_record_ID,	;
 		HyperLabel{#Editbutton,	;
-			"&Edit this record",	;
-			,	;
-			,})
+		"&Edit this record",	;
+		,	;
+		,})
 	SELF:RegisterItem(IDM_BalListViewMenu_X_Insert_a_record_ID,	;
 		HyperLabel{#Append,	;
-			"&Insert a record",	;
-			,	;
-			,},GetSubMenu(SELF:Handle( ),0),1)
+		"&Insert a record",	;
+		,	;
+		,},GetSubMenu(SELF:Handle( ),0),1)
 	SELF:RegisterItem(IDM_BalListViewMenu_X_Insert_a_record_Balance__Item_ID,	;
 		HyperLabel{#Append,	;
-			"Balance  Item",	;
-			,	;
-			,})
-   	IF AScan(aMenu,{|x| x[4]=="AccountEdit"})>0	
-		SELF:RegisterItem(IDM_BalListViewMenu_X_Insert_a_record_Account_ID,	;
+		"Balance  Item",	;
+		,	;
+		,})
+	IF AScan(aMenu,{|x| x[4]=="AccountEdit"})>0	
+		self:RegisterItem(IDM_BalListViewMenu_X_Insert_a_record_Account_ID,	;
 			HyperLabel{#AppendAccount,	;
 			"Account",	;
 			,	;
 			,})
-	ENDIF
+	else
+		self:DeleteItem(IDM_BalListViewMenu_X_Insert_a_record_Account_ID)
+	endif
 	SELF:RegisterItem(IDM_BalListViewMenu_X_Delete_this_record_ID,	;
 		HyperLabel{#Delete,	;
-			"&Delete this record",	;
-			,	;
-			,})
+		"&Delete this record",	;
+		,	;
+		,})
 	SELF:RegisterItem(IDM_BalListViewMenu_X_Refresh_ID,	;
 		HyperLabel{#Refresh,	;
-			"&Refresh",	;
-			,	;
-			,})
+		"&Refresh",	;
+		,	;
+		,})
 
 	RETURN SELF
 CLASS DepartmentListViewMenu INHERIT Menu
@@ -87,6 +89,8 @@ METHOD Init(oOwner) CLASS DepartmentListViewMenu
 			"Account",	;
 			,	;
 			,})
+   	else
+   		self:DeleteItem(IDM_DepartmentListViewMenu_X_Insert_a_record_Account_ID)
 	ENDIF
 	SELF:RegisterItem(IDM_DepartmentListViewMenu_X_Delete_this_record_ID,	;
 		HyperLabel{#Delete,	;
