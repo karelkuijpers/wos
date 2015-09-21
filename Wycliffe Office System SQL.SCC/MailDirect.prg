@@ -250,12 +250,8 @@ method PostInit(oWindow,iCtlID,oServer,uExtra) class EditEmailAccount
 			// prefill fields:
 			cMailaddress:= oSel:email
 			self:emailaddress:= cMailaddress
-			self:username:=StrTran(cMailaddress,'@wycliffe.net','@wycliffe.org')
-			if AtC('@wycliffe.',cMailaddress)>0 .or.AtC('@sil.',cMailaddress)>0 
-				self:outgoingserver:='mail.jaars.org'
-				self:port:=587
-				self:protocol:='ssl'
-			elseif AtC('@gmail.',cMailaddress)>0 
+			self:username:=cMailaddress
+			if AtC('@wycliffe.',cMailaddress)>0 .or.AtC('@sil.',cMailaddress)>0  .or. AtC('@gmail.',cMailaddress)>0 
 				self:outgoingserver:='smtp.gmail.com'
 				self:port:=587
 				self:protocol:='ssl'
@@ -306,8 +302,8 @@ METHOD TestButton( ) CLASS EditEmailAccount
 	GetHelpDir()
 	cbatchfile:=HelpDir+'\'+"batchtest"+Str(GetTickCountLow(),-1)+".bat"
 	clogfile:=HelpDir+'\'+"logtest"+Str(GetTickCountLow(),-1)+".txt"
-	cRun:= 'cmd.exe /c '+HelpDir+'\senditquiet.exe -s '+self:outgoingserver+' -port '+ConS(self:port)+' -u '+self:username+iif(Empty(self:protocol),'',' -protocol '+self:protocol)+;
-		' -p '+self:password+' -f '+self:emailaddress+' -t '+self:emailaddress+' -subject "test WOS email" -body "Hi<br><strong>This is a  test email</strong>.<br>Thanks." >"';
+	cRun:= 'cmd.exe /c '+HelpDir+'\senditquiet.exe -s '+ConS(self:outgoingserver)+' -port '+ConS(self:port)+' -u '+ConS(self:username)+iif(Empty(self:protocol),'',' -protocol '+ConS(self:protocol))+;
+		' -p '+ConS(self:password)+' -f '+ConS(self:emailaddress)+' -t '+ConS(self:emailaddress)+' -subject "test WOS email" -body "Hi<br><strong>This is a  test email</strong>.<br>Thanks." >"';
 		+clogfile+'"'
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	Run(cRun) 
