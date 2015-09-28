@@ -3255,7 +3255,7 @@ METHOD ValidateMember(dummy:=nil as logic) as logic CLASS EditMember
 		// Check if name allready exists of the account: 
 		if lValid .and. self:AccDepSelect=='account'
 			if self:lNewMember .or. !AllTrim(self:cMemberName)== AllTrim(self:oMbr:membername)
-				if SqlSelect{"select description from account where accid<>"+self:mRek +iif(self:lNewMember.or.!Empty(self:cCurDep),""," and accid<>'"+self:mRekOrg+"'")+" and description='"+substr(AllTrim(cMemberName),1,40)+"'",oConn}:RecCount>0
+				if SqlSelect{"select description from account where accid<>"+self:mRek +iif(self:lNewMember.or.!Empty(self:cCurDep),""," and accid<>'"+self:mRekOrg+"'")+" and description='"+AddSlashes(SubStr(AllTrim(cMemberName),1,40))+"'",oConn}:RecCount>0
 					cError:=self:oLan:WGet('Account description')+' "'+SubStr(AllTrim(cMemberName),1,40)+'" '+self:oLan:WGet('allready exist')
 					lValid:=FALSE
 					self:oDCmAccDept:SetFocus()
