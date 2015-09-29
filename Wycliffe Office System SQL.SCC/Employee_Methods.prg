@@ -166,7 +166,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			ErrorBox{ , "Somebody has manipulated the Employee database. Restore it first from backup!" }:Show()
 			logonOk:=false
 		else
-			oSQL:=SqlSelect{'select `persid` from `person` where `persid`="'+oEmp:persid+'"',oConn} 
+			oSQL:=SqlSelect{'select `persid` from `person` where `persid`="'+ConS(oEmp:persid)+'"',oConn} 
 			oSQL:Execute()
 			If oSQL:RecCount=0
 				LogEvent(,"Employee database corrupted. Restore it first from backup!" ,"logerrors")
@@ -177,7 +177,6 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		if logonOk
 			LOGON_EMP_ID:=cUser
 			MYEMPID := Str(oEmp:EmpId,-1)
-			UserType:=Transform(oEmp:mTYPE,"")
 			if Lower(LOGON_EMP_ID)=='karel'
 				SUPERUSER:=true
 			endif
