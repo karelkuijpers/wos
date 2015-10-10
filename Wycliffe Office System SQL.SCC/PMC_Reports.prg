@@ -469,7 +469,6 @@ METHOD PrintReport() CLASS PMISsend
 	// 	LOCAL noIES as LOGIC
 	LOCAL oAfl as UpdateHouseHoldID
 	local oAsk as AskSend 
-	local oAskUp as AskUpld 
 	local oTrans,oMbr,oAccD,oPers,oPersB,oBal, oAccBal,oSel as SQLSelect	 
 	local oMBal as Balances
 	local oStmnt,oStmntDistr as SQLStatement
@@ -1337,8 +1336,8 @@ METHOD PrintReport() CLASS PMISsend
 			lStop:=false
 		endif
 	endif 
-	if !lStop .and. !self:RefreshLocks(nTransSample,nTransLock)
-		TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+	if !lStop .and. !self:RefreshLocks(nTransSample,nTransLock,@cError,cFilename)
+		TextBox{self,self:oLan:WGet("Sending to PMC"),cError,BOXICONEXCLAMATION}:Show()
 		lStop:=true
 	endif
 
@@ -1393,11 +1392,8 @@ METHOD PrintReport() CLASS PMISsend
 				FileStart(WorkDir()+"InsitePMCUpload.html",self)
 				if TextBox{,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("Has file with transactions successfully been uploaded without errors into Insite")+'?'+;
 						CRLF+self:oLan:WGet("This is irrevocable",,'@!')+'!',BUTTONYESNO+BOXICONQUESTIONMARK}:Show()==BOXREPLYYES
-					// 				oAskUp:=AskUpld{self,,,cFilename}
-					// 				oAskUp:Show() 
-					// 				if oAskUp:Result==1
-					if !self:RefreshLocks(nTransSample,nTransLock)
-						TextBox{self,self:oLan:WGet("Sending to PMC"),self:oLan:WGet("someone else has manipulated transactions to be sent to PMC"),BOXICONEXCLAMATION}:Show()
+					if !self:RefreshLocks(nTransSample,nTransLock,@cError,cFilename)
+						TextBox{self,self:oLan:WGet("Sending to PMC"),cError,BOXICONEXCLAMATION}:Show()
 					else
 						lStop:=false
 					endif
@@ -1879,7 +1875,7 @@ METHOD PrintReport() CLASS PMISsend
 
 	self:Pointer := Pointer{POINTERARROW}
 	RETURN
-method RefreshLocks(TransIdsample as int,nTransLock as Dword) as logic class PMISsend 
+method RefreshLocks(TransIdsample as int,nTransLock as Dword, cError:='' ref string,cFilename as string) as logic class PMISsend 
 	// refresh locks of PMC-transactions so they are long enough locked to complete PMC processing
 	// TransIdsample: transid of a locked record to check remaining lock time
 	// nTransLock: number of locked transactions to check if they ar all still available
@@ -1891,7 +1887,8 @@ method RefreshLocks(TransIdsample as int,nTransLock as Dword) as logic class PMI
 	if nTransLock>0
 		oSel:=SqlSelect{"select TIMESTAMPDIFF(MINUTE,`lock_time`,CURRENT_TIMESTAMP()) as timeshift from transaction where transid="+Str(TransIdsample,-1)+" and lock_id="+MYEMPID,oConn}
 		if oSel:Reccount<1 
-			LogEvent(self,"lock not more available:"+oSel:SQLString+CRLF+oSel:ErrInfo:errormessage,"logerrors")
+			LogEvent(self,"lock not more available:"+oSel:SQLString+CRLF+oSel:ErrInfo:errormessage+" when sending file:"+cFilename,"logerrors")
+			cError:=self:oLan:WGet("Too much time delay(>2hour) between sending of file "+cFilename+" and this confirmation")
 			return false
 		endif
 		if ConI(oSel:timeshift)>=110
@@ -1899,7 +1896,8 @@ method RefreshLocks(TransIdsample as int,nTransLock as Dword) as logic class PMI
 			oStmnt:=SQLStatement{"update transaction set lock_time=CURRENT_TIMESTAMP() where lock_id="+MYEMPID,oConn}
 			oStmnt:Execute()
 			if !oStmnt:NumSuccessfulRows=nTransLock
-				LogEvent(self,"can't refresh locks:"+oStmnt:SQLString+CRLF+"Qty:"+Str(oStmnt:NumSuccessfulRows,-1)+'; error:'+oStmnt:ErrInfo:errormessage,"logerrors")
+				LogEvent(self,"can't refresh locks:"+oStmnt:SQLString+CRLF+"Qty:"+Str(oStmnt:NumSuccessfulRows,-1)+'; error:'+oStmnt:ErrInfo:errormessage+" when sending file:"+cFilename,"logerrors") 
+				cError:=self:oLan:WGet("someone else has manipulated transactions to be sent to PMC during sending of file "+cFilename)
 				return false
 			endif
 		endif
