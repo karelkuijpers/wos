@@ -179,6 +179,8 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			MYEMPID := Str(oEmp:EmpId,-1)
 			if Lower(LOGON_EMP_ID)=='karel'
 				SUPERUSER:=true
+			elseif Empty(oEmp:mtype)
+				LogEvent(,"Something wrong with decrypt of role of "+cUser,"logerrors")
 			endif
 			if !IsNil(oEmp:maildirect)  // not null thus specified seperately per employee
 				maildirect:=ConL(oEmp:maildirect)
