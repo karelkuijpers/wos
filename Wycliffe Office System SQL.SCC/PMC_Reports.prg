@@ -1432,6 +1432,9 @@ METHOD PrintReport() CLASS PMISsend
 		cAccs:=sam+','+shb
 		if !Empty(samProj)
 			cAccs+=','+samProj
+		endif 
+		if !Empty(samOFR)
+			cAccs+=','+samOFR
 		endif
 		if !Empty(SINCHOME)
 			cAccs+=','+SINCHOME+","+SEXPHOME
