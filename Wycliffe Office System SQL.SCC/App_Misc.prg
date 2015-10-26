@@ -2488,7 +2488,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 
 		sam		:= iif(Empty(oSys:AM),'',Str(oSys:AM,-1))
 		samProj	:= iif(Empty(oSys:ASSPROJA),'',Str(oSys:ASSPROJA,-1))
-		samOFR	:= ConS(oSys:ASSOFRA)
+		samOFR	:= iif(Empty(oSys:ASSOFRA),'',Str(oSys:ASSOFRA,-1))
 		samFld	:= iif(Empty(oSys:ASSFLDAC),'',Str(oSys:ASSFLDAC,-1))
 		SCLC	:= AllTrim(iif(IsNil(oSys:DEFAULTCOD),'',oSys:DEFAULTCOD))
 		SFGC	:= AllTrim(iif(IsNil(oSys:FGMLCODES),'',oSys:FGMLCODES))
