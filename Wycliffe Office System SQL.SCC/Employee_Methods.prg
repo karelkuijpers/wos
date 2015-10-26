@@ -141,10 +141,11 @@ endif
 return true
 FUNCTION GetUserMenu(cUserName as string) as logic
 	* Determine menu array for given user
-	LOCAL oEmp as SQLSelect
-	LOCAL lFirstuse, logonOk:=true as logic,  cUser:=Lower(AllTrim(cUserName)) as string 
-	local oSQL as SQLSelect, oStmt as SQLStatement 
 	local cEmpStmnt as string
+	local cUser:=Lower(AllTrim(cUserName)) as string
+	LOCAL lFirstuse, logonOk:=true as logic
+	local oSQL as SQLSelect, oStmt as SQLStatement 
+	LOCAL oEmp as SQLSelect
 	IF Empty(cUser)
 		return true
 	endif
@@ -177,10 +178,13 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 		if logonOk
 			LOGON_EMP_ID:=cUser
 			MYEMPID := Str(oEmp:EmpId,-1)
+			UserType:= ConS(oEmp:mtype)
 			if Lower(LOGON_EMP_ID)=='karel'
 				SUPERUSER:=true
-			elseif Empty(oEmp:mtype)
-				LogEvent(,"Something wrong with decrypt of role of "+cUser,"logerrors")
+			else
+				if Empty(UserType)
+					LogEvent(,"Something wrong with decrypt of role of "+cUser+CRLF+oEmp:SQLString,"logerrors")
+				endif
 			endif
 			if !IsNil(oEmp:maildirect)  // not null thus specified seperately per employee
 				maildirect:=ConL(oEmp:maildirect)
