@@ -4826,8 +4826,10 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS GiftReport
 	// '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+CRLF+;   //		'@page{size:landscape;}'+CRLF+; 
 	cHtmlHeader:='<!DOCTYPE html><html><head><title>%%title%%</title><style type="text/css">'+CRLF+;
 		'h1{color:navy;font-size:14px;font-weight:bold;margin-top:2px;margin-bottom:3px;} h2{color:navy;font-size:12px;font-weight:bold;margin-top:2px;margin-bottom:3px;}'+CRLF+;
-		'td.date{width:9%;white-space: nowrap;}'+CRLF+;
-		'td.amount{text-align:right;width:100px;white-space:nowrap;}'+CRLF+;
+		'td.date{width:9%;white-space: nowrap;vertical-align:top;}'+CRLF+;
+		'td.amount{text-align:right;width:100px;white-space:nowrap;vertical-align:top;}'+CRLF+;  
+		'td.name{vertical-align:top;}'+CRLF+;
+		'td.nr{vertical-align:top;}'+CRLF+;
 		'td.sumamount{text-align:right;width:100px;border:1px solid;border-right:0;border-left:0;white-space: nowrap;}'+CRLF+; 
 	'td.sumamountSub{text-align:right;width:100px;border-top:1px solid;border-right:0;border-left:0;font-size:12px;font-weight:bold;white-space: nowrap;}'+CRLF+; 
 	'td.sumamountAcc{text-align:right;width:100px;border:1px solid;border-right:0;border-left:0;font-size:12px;font-weight:bold;white-space: nowrap;}'+CRLF+; 
@@ -5092,7 +5094,7 @@ Method TransOverView(mbrid as string,aTrans as array,aPersData as array,aAccidMb
 				// aTrans: {{accid,dat,transid,seqnr,persid,cre-deb,description,docid,opp,gc,fromrpp,kind},...
 				//              1   2     3      4      5     6         7       8      9  10    11     12
 				AAdd(aOutput,'<tr><td class=" date">'+DToC(SQLDate2Date(aTrans[nTrans,2]))+'</td>'+;
-					'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td>'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td>'+iif(prsPtr>0,"#"+aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
+					'<td>'+HtmlEncode(aTrans[nTrans,7])+'</td><td class="name">'+iif(prsPtr>0,aPersData[prsPtr,2],'')+'</td><td class="nr">'+iif(prsPtr>0,"#"+aTrans[nTrans,5],'')+'</td><td class="amount">'+Str(aTrans[nTrans,6],12,DecAantal)+'</td><td colspan="2"></td></tr>') 
 			endif
 			fSubKind:=Round(fSubKind+aTrans[nTrans,6],DecAantal) 						
 		elseif cCurrKind>'2' .and. cCurrKind<='5'
