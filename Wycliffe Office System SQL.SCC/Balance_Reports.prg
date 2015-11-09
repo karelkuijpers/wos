@@ -2880,7 +2880,9 @@ Method Acc2Mbr(aAccidMbr as array,cMess ref string) as logic class GiftReport
 	aAcc:=self:oDCSubSet:GetSelectedItems() 
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-
+   if Empty(aAcc)
+   	return false
+   endif
 	cMbrSelect:= "select coalesce(m.mbrid,a.accid) as membrid,a.description,"+SQLFullName(2,"p")+" as membername,m.homepp,m.householdid,m.co,d.deptmntnbr,m.rptdest,if(isnull(p.persid),'',p.persid) as persid,"+;
 	"if(isnull(pc.persid),'',pc.persid) as persidcontact,"+;
 		"p.email,if(isnull(pc.email),'',pc.email) as emailcontact,if(isnull(pc.persid),'',"+SQLFullName(2,"pc")+") as contactname,if(isnull(m.depid) or m.depid=0,'0','1') as isdepmbr,"+; 
