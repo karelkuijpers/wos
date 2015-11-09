@@ -3596,7 +3596,9 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 		RETURN false
 	ENDIF
 	self:mCLNGiver:=AllTrim(mCLNGiver)
-	self:oSFPaymentDetails:Browser:SuspendUpdate()
+	if IsObject(self:oSFPaymentDetails:Browser) .and. !Empty(self:oSFPaymentDetails:Browser)
+		self:oSFPaymentDetails:Browser:SuspendUpdate()
+	endif
 	IF self:Server:Lastrec > 0
 		self:Reset()
 	ENDIF
@@ -3740,8 +3742,10 @@ METHOD InitGifts(cExtraText:="" as String) as logic CLASS PaymentJournal
 	ENDIF
 	self:CurDebAmnt := self:mDebAmnt
 	self:oDCmDebAmntF:Value:=self:mDebAmntF
-	self:oSFPaymentDetails:Browser:RestoreUpdate()
-	self:oSFPaymentDetails:Browser:Refresh()
+	if IsObject(self:oSFPaymentDetails:Browser) .and. !Empty(self:oSFPaymentDetails:Browser)
+		self:oSFPaymentDetails:Browser:RestoreUpdate()
+		self:oSFPaymentDetails:Browser:Refresh()
+	endif
 	self:oCCOKButton:SetFocus()
 	RETURN true
 METHOD RegAccount(oAcc,ItemName) CLASS PaymentJournal
