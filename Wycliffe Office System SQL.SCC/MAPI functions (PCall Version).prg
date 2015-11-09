@@ -141,7 +141,7 @@ FUNCTION IsMAPIAvailable() as logic pascal
 			// Read current email client:
 			// read HKCU
 			if lVista 
-				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,"",REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
+				nResult:=RegCreateKeyEx(HKEY_CURRENT_USER,String2Psz('SOFTWARE\Clients\Mail'),0,'',REG_OPTION_NON_VOLATILE,KEY_ALL_ACCESS,0,@phkResult,@cbData)
 				IF nResult == ERROR_SUCCESS
 					lpData  := Space(256)
 					cbData  := 256			
@@ -153,7 +153,17 @@ FUNCTION IsMAPIAvailable() as logic pascal
 						@cbData )
 					cCurrent:=lpData
 					IF !nResult == ERROR_SUCCESS
-						LogEvent(,"HKCU Current client key "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
+						nResult := RegQueryValueEx( HKEY_CURRENT_USER , ;
+						String2Psz('SOFTWARE\Clients\Mail'), ;
+						null_ptr , ;
+						null_ptr , ;
+						lpData , ;
+						@cbData )
+						IF !nResult == ERROR_SUCCESS						
+							LogEvent(,"HKCU Current client key "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+lpData,"logerrors")
+						else
+							cCurrent:=lpData
+						endif
 					endif
 				else
 					LogEvent(,"HKCU Current client "+cRequired+":("+iif(nResult==2,"not found",iif(nResult==5,"access denied",Str(nResult,-1)))+") "+cRequired,"logerrors")					
