@@ -858,6 +858,7 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 	local cBuffer,httpfile as string
 	LOCAL oHttp  as cHttp
 	local aBuf:={} as array
+	local aWord:={} as array
 	oHttp := CHttp{"WycOffSy",,true}
 	time0:=Seconds()
 	cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
@@ -883,23 +884,19 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 			if nPos1>0                                                
 				output:=SubStr(httpfile,nPos1+4,200)
 				if !SubStr(output,1,19) == 'Zoekresultaten</h1>' 
-					if !(nPos3:=AtC('t/m',output))>0
-						if (nPos1:=AtC("<dt>Postcode</dt>",httpfile))>0
-							cBuffer:=SubStr(httpfile,nPos1+17,300)
-							if (nPos1:=AtC("<dd><a href=",cBuffer))>0
-								cPostalCode:=SubStr(cBuffer,nPos1+21,6)
-								if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
-									cBuffer:=SubStr(cBuffer,nPos1+19)
-									if (nPos1:=AtC("<dd>",cBuffer))>0
-										if (nPos2:=AtC("</dd>",cBuffer))>0
-											cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
-											if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
-												cBuffer:=SubStr(cBuffer,nPos1+19)
-												if (nPos1:=AtC("<dd>",cBuffer))>0
-													if (nPos2:=AtC("</dd>",cBuffer))>0
-														cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
-													endif
-												endif
+					cBuffer:=SubStr(httpfile,nPos1+17,700)
+					if (nPos1:=AtC("<dd><a href=",cBuffer))>0
+						cPostalCode:=SubStr(cBuffer,nPos1+21,6)
+						if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
+							cBuffer:=SubStr(cBuffer,nPos1+19)
+							if (nPos1:=AtC("<dd>",cBuffer))>0
+								if (nPos2:=AtC("</dd>",cBuffer))>0
+									cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+									if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
+										cBuffer:=SubStr(cBuffer,nPos1+19)
+										if (nPos1:=AtC("<dd>",cBuffer))>0
+											if (nPos2:=AtC("</dd>",cBuffer))>0
+												cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
 											endif
 										endif
 									endif
@@ -907,29 +904,29 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 							endif
 						endif
 						return true
-					else
-						// apparently more than one:
-						if (nPos1:=AtC('<small class="range-subtitle">',output))>0
-							if (nPos2:=At3('</small',output,nPos1+6))>0
-								aBuf:=Split(SubStr(output,nPos1+30,nPos2-nPos1-30),',')
-								if Len(aBuf)>1 
-									cPostalCode:=aBuf[1]
-									cCity:=aBuf[2]
-									cStreet:=AllTrim(SubStr(output,1,nPos3-2))
-									aBuf:=Split(cStreet)
-									cStreet:=implode(aBuf,,,len(aBuf)-1)
-									return true
-								endif
+					endif
+				else
+					// apparently more than one:
+					output:=SubStr(httpfile,nPos1+4,500)
+					if (nPos1:=AtC('<td><a class="view"',output))>0
+						if (nPos1:=At3('>',output,nPos1+25))>0
+							cPostalCode:=SubStr(output,nPos1+1,6)
+							aWord:=GetTokensEx(SubStr(output,nPos1+20),{'<td>','</td>'},4)
+							cStreet:=aWord[1,1]
+							cCity:=aWord[5,1]
+							if Lower(cStreet)==lower(substr(strtran(cSearch,'%20',' '),1,len(cStreet)))
+								return true
 							endif
+							cPostalCode:=''
 						endif
 					endif
 				endif
 				output:=''
-			elseif AtC('Value is not a number',httpfile)=0 
-				// apparently website changed: 
-				cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
-				// 				LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
-			endif 
+			endif
+		elseif AtC('Value is not a number',httpfile)=0 
+			// apparently website changed: 
+			cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
+			// 				LogEvent(,"postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile),"LogErrors")
 		else 
 			// apparently website changed:
 			cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
