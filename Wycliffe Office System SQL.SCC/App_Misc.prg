@@ -2803,7 +2803,7 @@ ENDIF
 p_str:=AllTrim(m_str) 
 FOR p_num_tel:=1 to Len(p_str)
 	mchar:= psz(_cast,SubStr(p_str,p_num_tel,1))
-    IF !Empty(mchar) .and. !IsAlpha(mchar) .and. !IsDigit(mchar)	
+    IF !Empty(mchar) .and. !IsAlpha(mchar) .and. !IsDigit(mchar) .and. !mchar=='-'	
        RETURN true
     ENDIF
 NEXT
