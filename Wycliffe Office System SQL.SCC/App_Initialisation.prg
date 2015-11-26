@@ -781,7 +781,8 @@ method init() class Initialize
 		dbname:=akeyval[1]
 	endif
 	dbname:=Lower(dbname)
-	if Empty(akeyval[4]) .or.Empty(akeyval[2])
+//	if Empty(akeyval[4]) .or.Empty(akeyval[2])
+	if Empty(akeyval[4])
 		self:cUIDPW:=GetSQLUIDPW()
 		aWord:=Split(self:cUIDPW,'=')
 		if Len(aWord)>2
@@ -792,10 +793,11 @@ method init() class Initialize
 			sqlpwd:=strtran(sqlpwd,';',,len(sqlpwd),1)
 		endif
 	else
-		self:cUIDPW:=';UID='+Lower(akeyval[4])+';PWD='+akeyval[2] 
+		self:cUIDPW:=';UID='+Lower(akeyval[4])+iif(Empty(akeyval[2]),'',';PWD='+akeyval[2]) 
 		sqluid:=Lower(akeyval[4])
 		sqlpwd:=akeyval[2]
 	endif 
+// 		self:cUIDPW:=';UID='+Lower(akeyval[4]) 
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 	do while !lConnected
