@@ -4546,22 +4546,22 @@ function SQLAccType() as string
 // G=project
 // D=donation
 // K=member department
-	return ;
+
+ 	return ;
 		"upper(if(a.subscriptionprice>0,'A',"+;                          // subscribtion
 			"if(a.accid='"+SDEB+"','F',"+;              //invoice
 				"if(a.accid='"+scre+"','C',"+;           // bankorder
 					"if(a.giftalwd=1 and m.depid IS NULL,"+;
 						"if(m.co IS NOT NULL and m.co<>'','M','G')"+;        // member, else project
 					","+; // else
-						"if(a.accid='"+SDON+"','D'"+;  // donation, 
+						"if(m.depid=a.department,if(d.incomeacc=a.accid,'M',if(d.expenseacc=a.accid or d.netasset=a.accid,'K',''))"+;  // income account: member, else member department
 						","+;		//else 
-							"if(m.depid=a.department,if(d.incomeacc=a.accid,'M',if(d.expenseacc=a.accid or d.netasset=a.accid,'K','')),'')"+;  // income account: member, else member department
+							"if(a.accid='"+SDON+"','D','')"+;  // donation, 
 						")"+;
 					")"+;
 				")"+;
 			")"+;
 		"))"
-
 Function SQLAddress(country:="" as string,alias:="" as string,cSep:=',' as string) as string 
 // composition of SQL code for getting address of a person
 // -	country: default country (optional) 
