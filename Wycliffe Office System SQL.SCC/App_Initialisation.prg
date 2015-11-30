@@ -810,16 +810,13 @@ method init() class Initialize
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 			// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
-			if AtC("Microsoft",oConn:ERRINFO:errormessage)>0 .and. AtC("ODBC",oConn:ERRINFO:errormessage)>0
-				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and it will be downloaded"+CRLF+"Run it and accept all defaults"}:Show() 
+			if AtC("ODBC",oConn:ERRINFO:errormessage)>0
+				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
 				if oMainWindow==null_object
 					oMainWindow := StandardWycWindow{self}
 				endif
-				FileStart(WorkDir()+iif(Empty(GetEnv('ProgramFiles(x86)')),"ODBCInstall.html","ODBCInstall64.html"),oMainWindow)
-				if TextBox{oMainWindow,"Installation ODBC Connector","Did you install the Mysql ODBC Connector successfully?",BOXICONQUESTIONMARK + BUTTONYESNO}:Show()=BOXREPLYYES
-					loop
-				endif
-				break
+				FileStart(WorkDir()+"mysql-connector-odbc-5.1.13-win32.msi",oMainWindow)
+				loop
 			endif
 			// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
 			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0 
