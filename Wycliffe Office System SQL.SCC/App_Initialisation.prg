@@ -937,7 +937,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	// turn off strict mode:
-	SQLStatement{"SET @@global.sql_mode= '';",oConn}:execute()
+	SQLStatement{"SET session sql_mode= '';",oConn}:Execute()
 	if !self:lNewDb
 		if self:FirstOfDay .and.SqlSelect{"show tables like 'employee'",oConn}:RecCount>0 
 			// check if not some else has logged in parallel
@@ -1363,7 +1363,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","active","tinyint(1)","NO","1",""},;
 		{"account","qtymailing","int(10) unsigned","NO","0",""},;
 		{"account","monitor","tinyint(1)","NO","0",""},;
-		{"account","altertime","timestamp","NO","0000-00-00","ON UPDATE CURRENT_TIMESTAMP"},; 
+		{"account","altertime","timestamp","YES","NULL","ON UPDATE CURRENT_TIMESTAMP"},; 
 	{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
@@ -1379,7 +1379,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","purchaseprice","decimal(12,2)","NO","0",""},;
 		{"article","soldqty","int(7)","NO","0",""},;
 		{"article","sellingprice","decimal(12,2)","NO","0",""},;
-		{"article","datelastsold","date","NO","0000-00-00",""},;
+		{"article","datelastsold","date","YES","NULL",""},;
 		{"article","soldamount","decimal(15,2)","NO","0",""},;
 		{"article","accountyield","int(11)","NO","0",""},;
 		{"article","supplier","char(30)","NO","",""},;
@@ -1387,9 +1387,9 @@ method InitializeDB() as void Pascal  class Initialize
 		{"article","accountpurchase","int(11)","NO","0",""},;   
 	{"assessmnttotal","assid","int(11)","NO","NULL","auto_increment"},;
 		{"assessmnttotal","mbrid","int(11)","NO","NULL",""},;
-		{"assessmnttotal","calcdate","date","NO","0000-00-00",""},;
-		{"assessmnttotal","periodbegin","date","NO","0000-00-00",""},;
-		{"assessmnttotal","periodend","date","NO","0000-00-00",""},;
+		{"assessmnttotal","calcdate","date","YES","NULL",""},;
+		{"assessmnttotal","periodbegin","date","YES","NULL",""},;
+		{"assessmnttotal","periodend","date","YES","NULL",""},;
 		{"assessmnttotal","amountassessed","decimal(15,2)","NO","0",""},;
 		{"assessmnttotal","amountofficeassmnt","decimal(12,2)","NO","0",""},;
 		{"assessmnttotal","amountintassmnt","decimal(12,2)","NO","0",""},;
@@ -1427,8 +1427,8 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankorder","accntfrom","int(11)","YES","NULL",""},;
 		{"bankorder","banknbrcre","varchar(64)","NO","",""},;
 		{"bankorder","amount","decimal(15,2)","NO","0",""},;
-		{"bankorder","datedue","date","NO","0000-00-00",""},;
-		{"bankorder","datepayed","date","NO","0000-00-00",""},;
+		{"bankorder","datedue","date","YES","NULL",""},;
+		{"bankorder","datepayed","date","YES","NULL",""},;
 		{"bankorder","description","varchar(511)","NO","",""},;
 		{"bankorder","idfrom","int(11)","NO","0",""},;
 		{"bankorder","stordrid","int(11)","NO","0",""},;
@@ -1441,7 +1441,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"currencylist","united_ara","varchar(59)","NO","",""},;
 		{"currencyrate","rateid","int(11)","NO","NULL","auto_increment"},;           
 	{"currencyrate","aed","char(3)","NO","NULL",""},;
-		{"currencyrate","daterate","date","NO","0000-00-00",""},;
+		{"currencyrate","daterate","date","YES","NULL",""},;
 		{"currencyrate","roe","decimal(16,10)","NO","0",""},;
 		{"currencyrate","aedunit","char(3)","NO","",""},;
 		{"department","depid","int(11)","NO","NULL","auto_increment"},;
@@ -1466,7 +1466,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","destpp","char(3)","NO","",""},;
 		{"distributioninstruction","desttyp","int(1)","NO","0",""},;
 		{"distributioninstruction","destamt","decimal(12,2)","NO","0",""},;
-		{"distributioninstruction","lstdate","date","NO","0000-00-00",""},;
+		{"distributioninstruction","lstdate","date","YES","NULL",""},;
 		{"distributioninstruction","descrptn","varchar(70)","NO","",""},;
 		{"distributioninstruction","currency","tinyint(1)","NO","0",""},;
 		{"distributioninstruction","disabled","tinyint(1)","NO","0",""},;
@@ -1476,11 +1476,11 @@ method InitializeDB() as void Pascal  class Initialize
 		{"distributioninstruction","checksave","char(1)","NO","",""},; 
 	{"distributioninstruction","singleuse","tinyint(1)","NO","0",""},; 
 	{"dueamount","dueid","int(11)","NO","NULL","auto_increment"},;
-		{"dueamount","invoicedate","date","NO","0000-00-00",""},;
+		{"dueamount","invoicedate","date","YES","NULL",""},;
 		{"dueamount","seqnr","int(2)","NO","0",""},;
 		{"dueamount","amountinvoice","decimal(13,2)","NO","0",""},;
 		{"dueamount","amountrecvd","decimal(13,2)","NO","0",""},;
-		{"dueamount","datelstreminder","date","NO","0000-00-00",""},;
+		{"dueamount","datelstreminder","date","YES","NULL",""},;
 		{"dueamount","remindercnt","int(1)","NO","0",""},;
 		{"dueamount","subscribid","int(11)","NO","NULL",""},;
 		{"dueamount","seqtype","char(4)","NO","",""},;
@@ -1489,16 +1489,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","password","varchar(64)","NO","",""},;
 		{"employee","persid","varchar(32)","NO","",""},;
 		{"employee","type","varbinary(32)","NO","",""},;
-		{"employee","lstupdpw","date","NO","0000-00-00",""},;
+		{"employee","lstupdpw","date","YES","NULL",""},;
 		{"employee","pswprv1","varchar(64)","NO","",""},;
 		{"employee","pswprv2","varchar(64)","NO","",""},;
 		{"employee","pswprv3","varchar(64)","NO","",""},;
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
-		{"employee","lstreimb","date","NO","0000-00-00",""},;
+		{"employee","lstreimb","date","YES","NULL",""},;
 		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
-		{"employee","lstnews","date","NO","0000-00-00",""},;
+		{"employee","lstnews","date","YES","NULL",""},;
 		{"employee","maildirect","tinyint(1)","YES","NULL",""},; 
 		{"employee","mailclient","tinyint(1)","YES","NULL","","0=Express/Windows Mail,1=Microsoft Outlook,2=Thunderbird,3=Windows Live Mail,4=Mapi2Xml"},;
 		{"emplacc","empid","int(11)","NO","NULL",""},;
@@ -1510,17 +1510,17 @@ method InitializeDB() as void Pascal  class Initialize
 		{"functionusage","frequency","int(11)","NO","0",""},; 
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
-		{"importlock","lock_time","timestamp","NO","0000-00-00",""},; 
+		{"importlock","lock_time","timestamp","YES","NULL",""},; 
 		{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
 		{"importpattern","descriptn","varchar(511)","NO","",""},;
 		{"importpattern","origin","char(11)","NO","",""},;
 		{"importpattern","assmntcd","char(2)","NO","",""},;
 		{"importpattern","debcre","char(1)","NO","",""},;
 		{"importpattern","accid","int(11)","NO","0",""},;
-		{"importpattern","recdate","date","NO","0000-00-00",""},;
+		{"importpattern","recdate","date","YES","NULL",""},;
 		{"importpattern","automatic","tinyint(1)","NO","0",""},;
 		{"importtrans","imptrid","int(11)","NO","NULL","auto_increment"},;
-		{"importtrans","transdate","date","NO","0000-00-00",""},;
+		{"importtrans","transdate","date","YES","NULL",""},;
 		{"importtrans","docid","varchar(31)","NO","",""},;
 		{"importtrans","transactnr","varchar(31)","NO","",""},;
 		{"importtrans","accountnr","varchar(20)","NO","",""},;
@@ -1543,7 +1543,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"importtrans","poststatus","int(1)","NO","0",""},; 
 	{"importtrans","ppdest","char(3)","NO","",""},; 
 	{"importtrans","lock_id","int(11)","NO","0",""},;
-		{"importtrans","lock_time","timestamp","NO","0000-00-00",""},;
+		{"importtrans","lock_time","timestamp","YES","NULL",""},;
 		{"ipcaccounts","ipcaccount","int(7)","NO","NULL",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
 		{"language","sentenceen","varchar(512)","NO","",""},;
@@ -1553,7 +1553,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"log","logid","int(11)","NO","NULL","auto_increment"},;
 		{"log","collection","varchar(20)","NO","log",""},;
 		{"log","source","varchar(40)","NO","",""},;
-		{"log","logtime","datetime","NO","0000-00-00",""},;
+		{"log","logtime","datetime","YES","NULL",""},;
 		{"log","message","mediumtext","NO","",""},;
 		{"log","userid","varchar(64)","NO","",""},;
 		{"mailaccount","empid","int(11)","NO","0",""},;
@@ -1613,15 +1613,15 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","fax","char(18)","NO","",""},;
 		{"person","prefix","char(8)","NO","",""},;
 		{"person","mailingcodes","varchar(100)","NO","",""},;
-		{"person","creationdate","date","NO","0000-00-00",""},;
-		{"person","alterdate","date","NO","0000-00-00",""},;
-		{"person","datelastgift","date","NO","0000-00-00",""},;
+		{"person","creationdate","date","YES","NULL",""},;
+		{"person","alterdate","date","YES","NULL",""},;
+		{"person","datelastgift","date","YES","NULL",""},;
 		{"person","opc","varchar(33)","NO","",""},;
 		{"person","remarks","mediumtext","YES","NULL",""},;
 		{"person","email","varchar(64)","NO","",""},;
 		{"person","mobile","char(18)","NO","",""},;
 		{"person","type","smallint(6)","NO","1",""},;
-		{"person","birthdate","date","NO","0000-00-00",""},;
+		{"person","birthdate","date","YES","NULL",""},;
 		{"person","gender","smallint(6)","NO","0",""},;
 		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
@@ -1641,16 +1641,16 @@ method InitializeDB() as void Pascal  class Initialize
 		{"ppcodes","WBT_or_SIL","char(1)","NO","W",""},; 
 		{"ppcodes","Is_Primary_Participant","char(1)","NO","Y",""},; 
 		{"standingorder","stordrid","int(11)","NO","NULL","auto_increment"},;
-		{"standingorder","idat","date","NO","0000-00-00",""},;
-		{"standingorder","edat","date","NO","0000-00-00",""},;
+		{"standingorder","idat","date","YES","NULL",""},;
+		{"standingorder","edat","date","YES","NULL",""},;
 		{"standingorder","day","int(3)","NO","1",""},;
-		{"standingorder","lstrecording","date","NO","0000-00-00",""},;
+		{"standingorder","lstrecording","date","YES","NULL",""},;
 		{"standingorder","period","int(2)","NO","1",""},;
 		{"standingorder","persid","int(11)","NO","0",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""},; 
 		{"standingorder","userid","varchar(33)","NO","",""},;
-		{"standingorder","lstchange","date","NO","0000-00-00",""},;
+		{"standingorder","lstchange","date","YES","NULL",""},;
 	{"standingorderline","stordrid","int(11)","NO","0",""},;
 		{"standingorderline","seqnr","smallint(4)","NO","0",""},;
 		{"standingorderline","accountid","int(11)","NO","0",""},;
@@ -1664,24 +1664,24 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","subscribid","int(11)","NO","NULL","auto_increment"},;
 		{"subscription","personid","int(11)","YES","NULL",""},;
 		{"subscription","accid","int(11)","YES","NULL",""},;
-		{"subscription","begindate","date","NO","0000-00-00",""},;
-		{"subscription","enddate","date","NO","0000-00-00",""},;
-		{"subscription","duedate","date","NO","0000-00-00",""},;
+		{"subscription","begindate","date","YES","NULL",""},;
+		{"subscription","enddate","date","YES","NULL",""},;
+		{"subscription","duedate","date","YES","NULL",""},;
 		{"subscription","term","int(4)","NO","0",""},;
 		{"subscription","amount","decimal(10,2)","NO","0",""},;
-		{"subscription","lstchange","date","NO","0000-00-00",""},;
+		{"subscription","lstchange","date","YES","NULL",""},;
 		{"subscription","category","char(1)","NO","",""},;
 		{"subscription","gc","char(2)","NO","",""},;
 		{"subscription","paymethod","char(1)","NO","",""},;
 		{"subscription","invoiceid","varchar(35)","NO","",""},;
 		{"subscription","bankaccnt","varchar(64)","NO","",""},;
 		{"subscription","reference","varchar(127)","NO","",""},;
-		{"subscription","firstinvoicedate","date","NO","0000-00-00",""},;
+		{"subscription","firstinvoicedate","date","YES","NULL",""},;
 		{"subscription","bic","varchar(11)","NO","",""},;   
 		{"subscription","blocked","tinyint(1)","NO","0",""},;
 		{"sysparms","yearclosed","int(4)","NO","0",""},;
 		{"sysparms","lstreportmonth","int(6)","NO","0",""},;
-		{"sysparms","mindate","date","NO","0000-00-00",""},;
+		{"sysparms","mindate","date","YES","NULL",""},;
 		{"sysparms","projects","int(11)","NO","0",""},;
 		{"sysparms","debtors","int(11)","NO","0",""},;
 		{"sysparms","donors","int(11)","NO","0",""},;
@@ -1718,7 +1718,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","pswdura","int(4)","NO","0",""},;
 		{"sysparms","decmgift","tinyint(1)","NO","0",""},;
 		{"sysparms","expmailacc","varchar(100)","NO","",""},;
-		{"sysparms","pmislstsnd","date","NO","0000-00-00",""},;
+		{"sysparms","pmislstsnd","date","YES","NULL",""},;
 		{"sysparms","assmntint","decimal(5,2)","NO","0",""},;
 		{"sysparms","destgrps","mediumtext","NO","",""},;
 		{"sysparms","nosalut","tinyint(1)","NO","0",""},;
@@ -1733,7 +1733,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","banknbrcol","int(11)","NO","0",""},;
 		{"sysparms","idorg","int(11)","NO","0",""},;
 		{"sysparms","idcontact","int(11)","NO","0",""},;
-		{"sysparms","datlstafl","date","NO","0000-00-00",""},;
+		{"sysparms","datlstafl","date","YES","NULL",""},;
 		{"sysparms","surnmfirst","tinyint(1)","NO","0",""},;
 		{"sysparms","strzipcity","tinyint(1)","NO","0",""},;
 		{"sysparms","sysname","varchar(150)","NO","",""},;
@@ -1743,7 +1743,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","creditors","int(11)","NO","0",""},;
 		{"sysparms","countrycod","char(3)","NO","",""},;
 		{"sysparms","banknbrcre","int(11)","NO","0",""},;
-		{"sysparms","lstreeval","date","NO","0000-00-00",""},;
+		{"sysparms","lstreeval","date","YES","NULL",""},;
 		{"sysparms","citynmupc","tinyint(1)","NO","0",""},;
 		{"sysparms","pmcmancln","int(11)","NO","0",""},;
 		{"sysparms","version","char(10)","NO","",""},;
@@ -1756,13 +1756,13 @@ method InitializeDB() as void Pascal  class Initialize
 	{"sysparms","toppacct","int(11)","NO","0",""},;
 		{"sysparms","lstcurrt","tinyint(1)","NO","0",""},; 
 	{"sysparms","pmcupld","tinyint(1)","NO","0",""},; 
-	{"sysparms","accpacls","date","NO","0000-00-00",""},; 
+	{"sysparms","accpacls","date","YES","NULL",""},; 
 	{"sysparms","assfldac","int(11)","NO","0",""},;
 		{"sysparms","sepaenabled","tinyint(1)","NO","0",""},; 
 	{"sysparms","ddmaxindvdl","decimal(10,2)","NO","0",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","0",""},;
 		{"sysparms","maildirect","tinyint(1)","NO","0",""},; 
-		{"sysparms","versiondate","date","NO","0000-00-00",""},; 
+		{"sysparms","versiondate","date","YES","NULL",""},; 
 		{"sysparms","localbackup","tinyint(1)","NO","0",""},; 
 		{"sysparms","backuppath","varchar(150)","NO","",""},;
 		{"sysparms","assofra","int(11)","NO","0",""},;
@@ -1776,10 +1776,10 @@ method InitializeDB() as void Pascal  class Initialize
 		{"telebankpatterns","description","varchar(128)","NO","",""},;
 		{"telebankpatterns","accid","int(11)","NO","0",""},;
 		{"telebankpatterns","ind_autmut","tinyint(1)","NO","0",""},;
-		{"telebankpatterns","recdate","date","NO","0000-00-00",""},;
+		{"telebankpatterns","recdate","date","YES","NULL",""},;
 		{"teletrans","teletrid","int(11)","NO","NULL","auto_increment"},;
 		{"teletrans","bankaccntnbr","varchar(64)","NO","",""},;
-		{"teletrans","bookingdate","date","NO","0000-00-00",""},;
+		{"teletrans","bookingdate","date","YES","NULL",""},;
 		{"teletrans","seqnr","int(10)","NO","0",""},;
 		{"teletrans","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"teletrans","kind","char(6)","NO","",""},;
@@ -1792,7 +1792,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","processed","char(1)","NO","",""},;
 		{"teletrans","persid","int(11)","NO","0",""},;
 		{"teletrans","lock_id","int(11)","NO","0",""},;
-		{"teletrans","lock_time","timestamp","NO","0000-00-00",""},;
+		{"teletrans","lock_time","timestamp","YES","NULL",""},;
 		{"teletrans","bic","varchar(11)","NO","",""},;
 		{"teletrans","country","char(2)","NO","",""},;
 		{"teletrans","adrline","varchar(70)","NO","",""},;
@@ -1805,7 +1805,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","persid","int(11)","YES","NULL",""},;
 		{"transaction","accid","int(11)","NO","NULL",""},;
 		{"transaction","docid","varchar(31)","NO","",""},;
-		{"transaction","dat","date","NO","0000-00-00",""},;
+		{"transaction","dat","date","YES","NULL",""},;
 		{"transaction","description","varchar(511)","YES","",""},;
 		{"transaction","deb","decimal(19,2)","NO","0",""},;
 		{"transaction","cre","decimal(19,2)","NO","0",""},;
@@ -1823,7 +1823,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
 		{"transaction","ppdest","char(3)","NO","",""},;
 		{"transaction","lock_id","int(11)","NO","0",""},;
-		{"transaction","lock_time","timestamp","NO","0000-00-00",""};
+		{"transaction","lock_time","timestamp","YES","NULL",""};
 		} as array  
 	
 	// specify indexes per table:
