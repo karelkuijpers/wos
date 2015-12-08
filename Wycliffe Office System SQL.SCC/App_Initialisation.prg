@@ -781,7 +781,7 @@ method init() class Initialize
 		dbname:=akeyval[1]
 	endif
 	dbname:=Lower(dbname)
-//	if Empty(akeyval[4]) .or.Empty(akeyval[2])
+	//	if Empty(akeyval[4]) .or.Empty(akeyval[2])
 	if Empty(akeyval[4])
 		self:cUIDPW:=GetSQLUIDPW()
 		aWord:=Split(self:cUIDPW,'=')
@@ -797,7 +797,7 @@ method init() class Initialize
 		sqluid:=Lower(akeyval[4])
 		sqlpwd:=akeyval[2]
 	endif 
-// 		self:cUIDPW:=';UID='+Lower(akeyval[4]) 
+	// 		self:cUIDPW:=';UID='+Lower(akeyval[4]) 
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 	do while !lConnected
@@ -810,14 +810,6 @@ method init() class Initialize
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 			// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
-			if AtC("ODBC",oConn:ERRINFO:errormessage)>0
-				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
-				if oMainWindow==null_object
-					oMainWindow := StandardWycWindow{self}
-				endif
-				FileStart(WorkDir()+"mysql-connector-odbc-5.1.13-win32.msi",oMainWindow)
-				loop
-			endif
 			// MySQL inactive: [MySQL][ODBC 5.1 Driver]Can't connect to MySQL server on 'localhost' (10061)
 			if AtC("Can't connect to MySQL server",oConn:ERRINFO:errormessage)>0 
 				if Lower(servername)=='localhost' .or. servername=='127.0.0.1'
@@ -850,13 +842,22 @@ method init() class Initialize
 				ErrorBox{,"Your wos.ini contains a wrong userid/password for accessing the WOS database "+dbname+" in MYSQL"}:Show()
 				break
 			endif
+			if AtC("ODBC 5.1",oConn:ERRINFO:errormessage)>0
+				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
+				if oMainWindow==null_object
+					oMainWindow := StandardWycWindow{self}
+				endif
+				FileStart(WorkDir()+"mysql-connector-odbc-5.1.13-win32.msi",oMainWindow)
+				loop
+			endif
+			
 			ShowError(oConn:ERRINFO)
 			Break
 		endif
 	enddo
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset
-// 	oConn:=DynToOldSpace(oConn) 
+	// 	oConn:=DynToOldSpace(oConn) 
 	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)
