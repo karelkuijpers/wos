@@ -799,6 +799,15 @@ METHOD Init() CLASS employee_LSTLOGIN
 super:Init(HyperLabel{"LSTLOGIN","Lstlogin","","employee_LSTLOGIN"},"C",19,0)
 
 RETURN SELF
+CLASS EmployeeBrowser INHERIT DataWindowExtra 
+
+	PROTECT oCCEditButton AS PUSHBUTTON
+	PROTECT oCCNewButton AS PUSHBUTTON
+	PROTECT oCCDeleteButton AS PUSHBUTTON
+	PROTECT oSFEmployeeBrowser_DETAIL AS EmployeeBrowser_DETAIL
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
+  export oSelEmp as SQLSelect 
 RESOURCE EmployeeBrowser DIALOGEX  18, 17, 398, 195
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -809,15 +818,6 @@ BEGIN
 	CONTROL	"&Delete", EMPLOYEEBROWSER_DELETEBUTTON, "Button", WS_TABSTOP|WS_CHILD, 340, 109, 53, 12
 END
 
-CLASS EmployeeBrowser INHERIT DataWindowExtra 
-
-	PROTECT oCCEditButton AS PUSHBUTTON
-	PROTECT oCCNewButton AS PUSHBUTTON
-	PROTECT oCCDeleteButton AS PUSHBUTTON
-	PROTECT oSFEmployeeBrowser_DETAIL AS EmployeeBrowser_DETAIL
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-  export oSelEmp as SQLSelect 
 METHOD Close( oE ) CLASS EmployeeBrowser
 SELF:oSFEmployeeBrowser_DETAIL:Close()
 SELF:oSFEmployeeBrowser_DETAIL:Destroy()
@@ -964,6 +964,12 @@ method Refresh() class EmployeeBrowser
 self:oSFEmployeeBrowser_DETAIL:Browser:Refresh()
 return
 STATIC DEFINE EMPLOYEEBROWSER_DELETEBUTTON := 103 
+RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+END
+
 CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra 
 
 	PROTECT oDBLOGINNAME as DataColumn
@@ -973,12 +979,6 @@ CLASS EmployeeBrowser_DETAIL INHERIT DataWindowExtra
 	PROTECT oDBMONLINE as DataColumn
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
-RESOURCE EmployeeBrowser_DETAIL DIALOGEX  21, 19, 325, 164
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-END
-
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS EmployeeBrowser_DETAIL 
 
 self:PreInit(oWindow,iCtlID,oServer,uExtra)
@@ -1081,6 +1081,50 @@ STATIC DEFINE EMPLOYEESUBFORM_SC_STATE_ID := 111
 STATIC DEFINE EMPLOYEESUBFORM_SC_ZIP := 113 
 STATIC DEFINE EMPLOYEESUBFORM_STATE_ID := 110 
 STATIC DEFINE EMPLOYEESUBFORM_ZIP := 112 
+RESOURCE FirstUser DIALOGEX  36, 35, 425, 254
+STYLE	WS_CHILD
+FONT	8, "MS Shell Dlg"
+BEGIN
+	CONTROL	"User Id:", FIRSTUSER_THEFIXEDTEXT2, "Static", WS_CHILD, 16, 78, 44, 12
+	CONTROL	"Password:", FIRSTUSER_THEFIXEDTEXT1, "Static", WS_CHILD, 16, 96, 44, 12
+	CONTROL	"Retype Password:", FIRSTUSER_THEFIXEDTEXT3, "Static", WS_CHILD, 16, 116, 62, 12
+	CONTROL	"Lastname:", FIRSTUSER_SC_NA1, "Static", WS_CHILD, 14, 13, 35, 12
+	CONTROL	"Prefix:", FIRSTUSER_SC_HISN, "Static", WS_CHILD, 219, 13, 43, 12
+	CONTROL	"First name:", FIRSTUSER_SC_VRN, "Static", WS_CHILD, 15, 27, 36, 12
+	CONTROL	"Initials:", FIRSTUSER_SC_NA2, "Static", WS_CHILD, 218, 27, 24, 12
+	CONTROL	"Street+number:", FIRSTUSER_SC_AD1, "Static", WS_CHILD, 15, 41, 48, 12
+	CONTROL	"Zip code:", FIRSTUSER_SC_POS, "Static", WS_CHILD, 218, 41, 32, 12
+	CONTROL	"City:", FIRSTUSER_SC_PLA, "Static", WS_CHILD, 300, 40, 15, 12
+	CONTROL	"", FIRSTUSER_MNA1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 13, 143, 12
+	CONTROL	"", FIRSTUSER_MHISN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 11, 140, 12
+	CONTROL	"", FIRSTUSER_MVRN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 27, 143, 12
+	CONTROL	"", FIRSTUSER_MNA2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 25, 140, 13
+	CONTROL	"", FIRSTUSER_MAD1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 41, 143, 12
+	CONTROL	"", FIRSTUSER_MPOS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 40, 36, 12
+	CONTROL	"", FIRSTUSER_MPLA, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 316, 40, 83, 12
+	CONTROL	"Your logon data:", FIRSTUSER_THEGROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 65, 176, 69
+	CONTROL	"Logon Name:", FIRSTUSER_MLOGON_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 77, 88, 12
+	CONTROL	"Password:", FIRSTUSER_MPASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 96, 88, 12
+	CONTROL	"Password:", FIRSTUSER_MPASSWORD2, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 114, 88, 12
+	CONTROL	"Your personal data", FIRSTUSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 3, 398, 57
+	CONTROL	"Administration data", FIRSTUSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 137, 399, 93
+	CONTROL	"", FIRSTUSER_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 93, 148, 120, 61
+	CONTROL	"Type of Administration:", FIRSTUSER_FIXEDTEXT5, "Static", WS_CHILD, 15, 150, 75, 13
+	CONTROL	"Lastname:", FIRSTUSER_MNA1MBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 177, 143, 12
+	CONTROL	"Prefix:", FIRSTUSER_MHISNMBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 177, 133, 12
+	CONTROL	"First name:", FIRSTUSER_MVRNMBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 192, 143, 12
+	CONTROL	"Initials:", FIRSTUSER_MNA2MBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 192, 133, 12
+	CONTROL	"Bank/Giro:", FIRSTUSER_MBANKNUMMER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 206, 143, 13
+	CONTROL	"Telebanking?", FIRSTUSER_MTELEBANKNG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 216, 206, 80, 11
+	CONTROL	"Initials:", FIRSTUSER_SC_NA2MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 192, 23, 12
+	CONTROL	"Prefix:", FIRSTUSER_SC_HISNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 177, 36, 12
+	CONTROL	"First name:", FIRSTUSER_SC_VRNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 192, 36, 12
+	CONTROL	"Lastname:", FIRSTUSER_SC_NA1MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 177, 34, 12
+	CONTROL	"Bank/Giro gifts:", FIRSTUSER_SC_BANKNUMMER, "Static", WS_CHILD, 16, 206, 52, 13
+	CONTROL	"OK", FIRSTUSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 352, 235, 54, 12
+	CONTROL	"Member data", FIRSTUSER_MEMBERBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 10, 163, 391, 59
+END
+
 CLASS FirstUser INHERIT DataDialogMine 
 
 	PROTECT oDCtheFixedText2 AS FIXEDTEXT
@@ -1128,50 +1172,6 @@ CLASS FirstUser INHERIT DataDialogMine
 // 	PROTECT cEntityCode, cEntityName, cCurrencyCode, cCurrencyName,cUser as STRING  
 	Protect cUser as string
 
-
-RESOURCE FirstUser DIALOGEX  36, 35, 425, 254
-STYLE	WS_CHILD
-FONT	8, "MS Shell Dlg"
-BEGIN
-	CONTROL	"User Id:", FIRSTUSER_THEFIXEDTEXT2, "Static", WS_CHILD, 16, 78, 44, 12
-	CONTROL	"Password:", FIRSTUSER_THEFIXEDTEXT1, "Static", WS_CHILD, 16, 96, 44, 12
-	CONTROL	"Retype Password:", FIRSTUSER_THEFIXEDTEXT3, "Static", WS_CHILD, 16, 116, 62, 12
-	CONTROL	"Lastname:", FIRSTUSER_SC_NA1, "Static", WS_CHILD, 14, 13, 35, 12
-	CONTROL	"Prefix:", FIRSTUSER_SC_HISN, "Static", WS_CHILD, 219, 13, 43, 12
-	CONTROL	"First name:", FIRSTUSER_SC_VRN, "Static", WS_CHILD, 15, 27, 36, 12
-	CONTROL	"Initials:", FIRSTUSER_SC_NA2, "Static", WS_CHILD, 218, 27, 24, 12
-	CONTROL	"Street+number:", FIRSTUSER_SC_AD1, "Static", WS_CHILD, 15, 41, 48, 12
-	CONTROL	"Zip code:", FIRSTUSER_SC_POS, "Static", WS_CHILD, 218, 41, 32, 12
-	CONTROL	"City:", FIRSTUSER_SC_PLA, "Static", WS_CHILD, 300, 40, 15, 12
-	CONTROL	"", FIRSTUSER_MNA1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 13, 143, 12
-	CONTROL	"", FIRSTUSER_MHISN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 11, 140, 12
-	CONTROL	"", FIRSTUSER_MVRN, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 27, 143, 12
-	CONTROL	"", FIRSTUSER_MNA2, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 25, 140, 13
-	CONTROL	"", FIRSTUSER_MAD1, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 69, 41, 143, 12
-	CONTROL	"", FIRSTUSER_MPOS, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 260, 40, 36, 12
-	CONTROL	"", FIRSTUSER_MPLA, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 316, 40, 83, 12
-	CONTROL	"Your logon data:", FIRSTUSER_THEGROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 65, 176, 69
-	CONTROL	"Logon Name:", FIRSTUSER_MLOGON_NAME, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 77, 88, 12
-	CONTROL	"Password:", FIRSTUSER_MPASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 96, 88, 12
-	CONTROL	"Password:", FIRSTUSER_MPASSWORD2, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 80, 114, 88, 12
-	CONTROL	"Your personal data", FIRSTUSER_GROUPBOX1, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 8, 3, 398, 57
-	CONTROL	"Administration data", FIRSTUSER_GROUPBOX2, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD, 7, 137, 399, 93
-	CONTROL	"", FIRSTUSER_MADMINTYPE, "ComboBox", CBS_DISABLENOSCROLL|CBS_SORT|CBS_DROPDOWN|WS_TABSTOP|WS_CHILD|WS_VSCROLL, 93, 148, 120, 61
-	CONTROL	"Type of Administration:", FIRSTUSER_FIXEDTEXT5, "Static", WS_CHILD, 15, 150, 75, 13
-	CONTROL	"Lastname:", FIRSTUSER_MNA1MBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 177, 143, 12
-	CONTROL	"Prefix:", FIRSTUSER_MHISNMBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 177, 133, 12
-	CONTROL	"First name:", FIRSTUSER_MVRNMBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 68, 192, 143, 12
-	CONTROL	"Initials:", FIRSTUSER_MNA2MBR, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER, 260, 192, 133, 12
-	CONTROL	"Bank/Giro:", FIRSTUSER_MBANKNUMMER, "Edit", ES_AUTOHSCROLL|WS_TABSTOP|WS_CHILD|WS_BORDER, 68, 206, 143, 13
-	CONTROL	"Telebanking?", FIRSTUSER_MTELEBANKNG, "Button", BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD, 216, 206, 80, 11
-	CONTROL	"Initials:", FIRSTUSER_SC_NA2MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 192, 23, 12
-	CONTROL	"Prefix:", FIRSTUSER_SC_HISNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 220, 177, 36, 12
-	CONTROL	"First name:", FIRSTUSER_SC_VRNMBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 192, 36, 12
-	CONTROL	"Lastname:", FIRSTUSER_SC_NA1MBR, "Static", WS_CHILD|NOT WS_VISIBLE, 16, 177, 34, 12
-	CONTROL	"Bank/Giro gifts:", FIRSTUSER_SC_BANKNUMMER, "Static", WS_CHILD, 16, 206, 52, 13
-	CONTROL	"OK", FIRSTUSER_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 352, 235, 54, 12
-	CONTROL	"Member data", FIRSTUSER_MEMBERBOX, "Button", BS_GROUPBOX|WS_GROUP|WS_CHILD|NOT WS_VISIBLE, 10, 163, 391, 59
-END
 
 METHOD Init(oWindow,iCtlID,oServer,uExtra) CLASS FirstUser 
 
@@ -1755,7 +1755,7 @@ STATIC DEFINE FIRSTUSER_THEFIXEDTEXT1 := 101
 STATIC DEFINE FIRSTUSER_THEFIXEDTEXT2 := 100 
 STATIC DEFINE FIRSTUSER_THEFIXEDTEXT3 := 102 
 STATIC DEFINE FIRSTUSER_THEGROUPBOX1 := 117 
-RESOURCE LogonDialog DIALOGEX  5, 17, 227, 51
+RESOURCE LogonDialog DIALOGEX  5, 19, 227, 53
 STYLE	DS_3DLOOK|DS_MODALFRAME|DS_CENTER|WS_POPUP|WS_CAPTION|WS_SYSMENU
 CAPTION	"Login"
 FONT	8, "MS Shell Dlg"
@@ -1766,6 +1766,8 @@ BEGIN
 	CONTROL	"", LOGONDIALOG_PASSWORD, "Edit", ES_AUTOHSCROLL|ES_PASSWORD|WS_TABSTOP|WS_CHILD|WS_BORDER, 52, 29, 94, 14
 	CONTROL	"OK", LOGONDIALOG_OKBUTTON, "Button", BS_DEFPUSHBUTTON|WS_TABSTOP|WS_CHILD, 164, 7, 53, 13
 	CONTROL	"Cancel", LOGONDIALOG_CANCELBUTTON, "Button", WS_TABSTOP|WS_CHILD, 164, 27, 53, 13
+	CONTROL	"As user", LOGONDIALOG_LISTUSERS, "ListBox", LBS_DISABLENOSCROLL|LBS_NOINTEGRALHEIGHT|LBS_NOTIFY|WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE|WS_BORDER|WS_VSCROLL, 4, 73, 206, 148, WS_EX_CLIENTEDGE
+	CONTROL	"As user:", LOGONDIALOG_FIXEDUSER, "Static", WS_CHILD|NOT WS_VISIBLE, 8, 59, 55, 13
 END
 
 CLASS LogonDialog INHERIT DialogWinDowExtra 
@@ -1776,6 +1778,8 @@ CLASS LogonDialog INHERIT DialogWinDowExtra
 	PROTECT oDCPassword AS SINGLELINEEDIT
 	PROTECT oCCOkButton AS PUSHBUTTON
 	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCListUsers AS LISTBOX
+	PROTECT oDCFixedUser AS FIXEDTEXT
 
   //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)
    EXPORT  logonOk, ChangePsw as LOGIC
@@ -1793,6 +1797,51 @@ METHOD Close(oEvent) CLASS LogonDialog
 	//Put your changes here
 	self:Destroy()
 	RETURN nil
+method EditChange(oControlEvent) class LogonDialog
+	local aUsers:={}, amUsers:={} as array
+	local oControl as Control 
+	local myDim as Dimension 
+	local myOrg as Point 
+	local oEmp as SQLSelect
+	oControl := IIf(oControlEvent == NULL_OBJECT, NULL_OBJECT, oControlEvent:Control)
+	//Put your changes here
+	if oControl:NameSym==#NAME
+		if IsSuperUser(oControl:TextValue)
+			if !self:oDCFixedUser:IsVisible()
+				// enlarge window
+				myDim:=self:Size
+				myDim:Height+=280
+				self:Size:=myDim
+				myOrg:=self:Origin
+				myOrg:y-=260
+				self:Origin:=myOrg
+				oEmp:= SqlSelect{"select group_concat(cast(empid as char),'#$#', cast("+Crypt_Emp(false,"type") +" as char),'#$#',cast("+Crypt_Emp(false,"loginname")+" as char) separator '#%#') as grusers from employee",oConn}
+				AEval(Split(oEmp:grUsers,'#%#',,true),{|x|AAdd(aUsers,Split(x,'#$#',,true)) })
+            ASort(aUsers,,,{|x,y|x[2]<y[2] .or. (x[2]==y[2] .and. x[3]<y[3])})
+            AEval(aUsers,{|x|,AAdd(amUsers,{x[3]+" ("+x[2]+")",x[1]})})
+            self:oDCListUsers:FillUsing(amUsers)
+            self:oDCListUsers:CurrentItemNo:=1 
+				self:oDCFixedUser:Show()
+				self:oDCListUsers:Show()				
+			endif
+		else
+			if self:oDCFixedUser:IsVisible()
+				// diminish window
+				myDim:=self:Size
+				myDim:Height-=280
+				self:Size:=myDim
+				myOrg:=self:Origin
+				myOrg:y+=260
+				self:Origin:=myOrg
+				self:oDCFixedUser:Hide()
+				self:oDCListUsers:Hide()				
+			endif
+		endif
+	endif
+	super:EditChange(oControlEvent)
+return nil
+
+
 METHOD Init(oParent,uExtra) CLASS LogonDialog 
 
 self:PreInit(oParent,uExtra)
@@ -1817,6 +1866,13 @@ oCCOkButton:HyperLabel := HyperLabel{#OkButton,"OK",NULL_STRING,NULL_STRING}
 oCCCancelButton := PushButton{SELF,ResourceID{LOGONDIALOG_CANCELBUTTON,_GetInst()}}
 oCCCancelButton:HyperLabel := HyperLabel{#CancelButton,"Cancel",NULL_STRING,NULL_STRING}
 
+oDCListUsers := ListBox{SELF,ResourceID{LOGONDIALOG_LISTUSERS,_GetInst()}}
+oDCListUsers:HyperLabel := HyperLabel{#ListUsers,"As user",NULL_STRING,NULL_STRING}
+oDCListUsers:TooltipText := "select a user"
+
+oDCFixedUser := FixedText{SELF,ResourceID{LOGONDIALOG_FIXEDUSER,_GetInst()}}
+oDCFixedUser:HyperLabel := HyperLabel{#FixedUser,"As user:",NULL_STRING,NULL_STRING}
+
 SELF:Caption := "Login"
 SELF:HyperLabel := HyperLabel{#LogonDialog,"Login",NULL_STRING,NULL_STRING}
 
@@ -1826,11 +1882,13 @@ return self
 
 METHOD OkButton() CLASS LogonDialog
 
-	LOCAL oEmp as SQLSelect
 	LOCAL nDuration, Cnt as int 
-	Local cUser:=Lower(AllTrim(oDCName:Textvalue)),MyCLN,cEmpStmnt  as string
+	Local cUser:=Lower(AllTrim(oDCName:TextValue)),MyCLN,cEmpStmnt  as string
+	LOCAL myDim as Dimension
+	LOCAL myOrg as Point
 	local oSys as SQLSelect
-	Cnt:= ConI(SQLSelect{"select count(*) as nbr from employee",oConn}:nbr)
+	LOCAL oEmp as SQLSelect
+	Cnt:= ConI(SqlSelect{"select count(*) as nbr from employee",oConn}:nbr)
 	if Cnt=0
 		InfoBox{ self, "Logon", "Employee database is empty! Restore Employee.dbf from backup first!"}:Show()
 		self:logonOk := false
@@ -1872,21 +1930,26 @@ METHOD OkButton() CLASS LogonDialog
 				ENDIF
 			ENDIF
 		ELSE
-			if IsAdminUser(cUser,AllTrim( Transform(self:oDCPassword:Textvalue,"" ) ) )
+			if IsAdminUser(cUser,AllTrim( Transform(self:oDCPassword:TextValue,"" ) ) )
 				SuperUser:=true
-				cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname from employee where ";
-					+ Crypt_Emp(false,"type")+"='A'"
-				oEmp := SQLSelect{cEmpStmnt,oConn} 
-				UserType:="A"
 				self:logonOk:=true 
-				IF oEmp:Reccount>0
-					oEmp:GoTop()
-					MYEMPID := Str(oEmp:EMPID,-1) 
-					self:logonID := AllTrim(oEmp:LOGINNAME)
-					LOGON_EMP_ID := AllTrim(self:logonID)
-				else
-					MYEMPID:='0'
-				endif
+// 				cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname from employee where ";
+// 					+ Crypt_Emp(false,"type")+"='A'"
+// 				oEmp := SQLSelect{cEmpStmnt,oConn} 
+// 				UserType:="A"
+// 				IF oEmp:Reccount>0
+// 					oEmp:GoTop()
+// 					MYEMPID := Str(oEmp:EMPID,-1) 
+// 					self:logonID := AllTrim(oEmp:LOGINNAME)
+// 					LOGON_EMP_ID := AllTrim(self:logonID)
+// 				else
+// 					MYEMPID:='0'
+// 				endif
+				MYEMPID:=self:oDCListUsers:GetItemValue(0)
+				LOGON_EMP_ID := ConS(self:oDCListUsers:CurrentItem)
+				UserType := Left(Right(LOGON_EMP_ID,2),1)
+				LOGON_EMP_ID := Left(LOGON_EMP_ID,Len(LOGON_EMP_ID)-4)
+				self:logonID := LOGON_EMP_ID
 				aMenu:=InitMenu(Val(MYEMPID),UserType)
 				InitSystemMenu()
 				oMainWindow:SetCaption(oSys:SYSNAME) 
@@ -1925,23 +1988,13 @@ self:SetTexts()
 
 RETURN self
 STATIC DEFINE LOGONDIALOG_CANCELBUTTON := 105 
+STATIC DEFINE LOGONDIALOG_FIXEDUSER := 107 
+STATIC DEFINE LOGONDIALOG_LISTUSERS := 106 
 STATIC DEFINE LOGONDIALOG_NAME := 101 
 STATIC DEFINE LOGONDIALOG_OKBUTTON := 104 
 STATIC DEFINE LOGONDIALOG_PASSWORD := 103 
 STATIC DEFINE LOGONDIALOG_THEFIXEDTEXT1 := 100 
 STATIC DEFINE LOGONDIALOG_THEFIXEDTEXT2 := 102 
-CLASS MyEmailClient INHERIT DataDialogMine 
-
-	PROTECT oCCOkButton AS PUSHBUTTON
-	PROTECT oCCCancelButton AS PUSHBUTTON
-	PROTECT oDCMailClient AS COMBOBOX
-	PROTECT oDCEmailing AS RADIOBUTTONGROUP
-	PROTECT oCCDirectButton AS RADIOBUTTON
-	PROTECT oCCClientButton AS RADIOBUTTON
-	PROTECT oCCAccountButton AS PUSHBUTTON
-
-  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
-  export oEmlAcc as EditEmailAccount
 RESOURCE MyEmailClient DIALOGEX  4, 3, 304, 104
 STYLE	WS_CHILD
 FONT	8, "MS Shell Dlg"
@@ -1955,6 +2008,18 @@ BEGIN
 	CONTROL	"My E-mail account", MYEMAILCLIENT_ACCOUNTBUTTON, "Button", WS_TABSTOP|WS_CHILD|NOT WS_VISIBLE, 8, 62, 71, 13
 END
 
+CLASS MyEmailClient INHERIT DataDialogMine 
+
+	PROTECT oCCOkButton AS PUSHBUTTON
+	PROTECT oCCCancelButton AS PUSHBUTTON
+	PROTECT oDCMailClient AS COMBOBOX
+	PROTECT oDCEmailing AS RADIOBUTTONGROUP
+	PROTECT oCCDirectButton AS RADIOBUTTON
+	PROTECT oCCClientButton AS RADIOBUTTON
+	PROTECT oCCAccountButton AS PUSHBUTTON
+
+  //{{%UC%}} USER CODE STARTS HERE (do NOT remove this line)  
+  export oEmlAcc as EditEmailAccount
 METHOD AccountButton( ) CLASS MyEmailClient 
 (self:oEmlAcc:=EditEmailAccount{}):show() 
 RETURN NIL
