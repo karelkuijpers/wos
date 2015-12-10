@@ -3254,7 +3254,7 @@ Method CollectTransPers(oTrans ref SqlSelect,aPersData as array,cMess ref string
 	
 	// create temporary table with all required transactions:accid,transid,seqnr, persid, deb, cre, description, from-rpp, date, docid, opp, gc, kind  
 	// kind(1=income,2=mg,3=net,4=expense,5=other/associated account)
-	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,opp,gc,fromrpp, "+;
+	cStatement:="select a.mbrid,t.accid,dat,t.transid,t.seqnr,COALESCE(t.persid,0) as persid,cre-deb as credeb,t.description,docid,if(fromrpp=1,opp,'') as opp,gc,fromrpp, "+;
 	"if(a.kind>=4,5,if(t.gc='AG' or (left(a.mbrid,1)='a' and (t.persid>0 or cre>deb)),1,if(t.gc='MG',2,if(t.gc='PF',3,if(t.gc='CH' or left(a.mbrid,1)='a',4,a.kind+1))))) as kind from "+;
 	'transaction t,accidmbr a where t.accid=a.accid and t.dat<="'+SQLdate(EndInMonth)+'" and t.dat>="'+Str(self:CalcYear,-1)+'-01-01"'+iif(Posting,' and t.poststatus=2','')
 //		' and (t.dat>="'+SQLdate(StartinMonth)+'" or t.persid>0)' 
