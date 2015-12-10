@@ -385,16 +385,20 @@ Method GirotelContinue() class General_Journal
 	return nil	
 	
 METHOD ImportButton( ) CLASS General_Journal
+	LOCAL oHm:=self:Server as TempTrans
 	IF Empty(self:oImpB)
 		self:oImpB:=ImportBatch{self,self:Server}
 	ENDIF
 	self:oImpB:Import()
 	IF self:oImpB:GetNextBatch()
 		IF self:oImpB:lOK
-			SELF:OKButton()
+			self:OKButton()
 		ENDIF
 	ELSE
 		SELF:lImport := FALSE
+		oHm:OPP:=''
+		oHm:cOpp:=''
+		oHm:FROMRPP:=false
 		self:oImpB:Close()
 		self:oImpB:=null_object
 		(WarningBox{self,"Journaling Records","No more Import batches found"}):Show()
@@ -609,11 +613,11 @@ SELF:FieldPut(#mTRANSAKTNR, uValue)
 RETURN uValue
 
 METHOD OKButton(lMySave ) CLASS General_Journal
-	LOCAL oHm as TempTrans
 	LOCAL CurValue as ARRAY   // 1: nw value, 2: old value, 3: name of columnfield
 	LOCAL ThisRec as int
 	LOCAL CurBankSave:=self:CurBankAcc as STRING
 	local lSave as logic 
+	local oHm:=self:Server as TempTrans
 local oAcc as SQLSelect
 local cWhere:="a.balitemid=b.balitemid"
 local cFrom:="balanceitem as b,account as a left join member m on (m.accid=a.accid or m.depid=a.department) left join department d on (m.depid=d.depid) " 
@@ -621,7 +625,6 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 	Default(@lMySave,false)
 	lSave:=lMySave
 
-	oHm := self:Server
 	IF self:ValStore(lSave)
 		self:CurBankAcc:="" 
 		DO WHILE lTeleBank
@@ -642,10 +645,10 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLAccType()+" 
 
 		DO WHILE lImport
 // 			oImpB:CloseBatch()
-			mCLNGiver := ""
-			cGiverName := ""
-			mPerson := ""
-			mBst:= " "
+			self:mCLNGiver := ""
+			self:cGiverName := ""
+			self:mPerson := ""
+			self:mBST:= " "
 			IF self:oImpB:GetNextBatch()
 				IF !self:oImpB:lOK .or.!self:ValStore()
 					RETURN nil
@@ -882,6 +885,7 @@ METHOD SaveButton( ) CLASS General_Journal
 	SELF:OKButton(TRUE)
 	RETURN
 METHOD TeleBankButton( ) CLASS General_Journal
+	LOCAL oHm:=self:Server as TempTrans
 	IF !self:oTmt==null_object
 		self:oTmt:Close()
 	endif
@@ -891,6 +895,9 @@ METHOD TeleBankButton( ) CLASS General_Journal
 		return nil
 	endif
 	IF self:oTmt:NextTeleNonGift()
+		oHm:OPP:=''
+		oHm:cOpp:=''
+		oHm:FROMRPP:=false
 		self:oCCTeleBankButton:Hide()
 		self:lTeleBank := true
 		self:FillTeleBanking()
