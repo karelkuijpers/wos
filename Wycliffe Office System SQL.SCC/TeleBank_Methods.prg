@@ -5025,8 +5025,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			// setup again chgbalance:
 			oMBal:=Balances{}
 			for i:=1 to Len(aTrans) 
-				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16
-				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,transid 
+				//  1    2      3     4     5        6          7       8   9   10        11      12    13      14       15    16     17   18
+				//accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp,transid 
 				oMBal:ChgBalance(aTrans[i,1],SQLDate2Date(aTrans[i,8]),aTrans[i,2],aTrans[i,4],aTrans[i,3],;
 					aTrans[i,5],aTrans[i,6],ConI(aTrans[i,11]))
 			next
@@ -5035,8 +5035,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 	if nTele>0 .and.Len(aTrans)>0  // telebank transactions imported?
 		// insert autmaticallly processed transactions:
 		// insert first line:
-		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp) "+;
-			" values ("+Implode(aTrans[1],"','",1,16)+')',oConn}
+		oStmnt:=SQLStatement{"insert into transaction (accid,deb,debforgn,cre,creforgn,currency,description,dat,gc,userid,poststatus,seqnr,docid,reference,persid,fromrpp,opp) "+;
+			" values ("+Implode(aTrans[1],"','",1,17)+')',oConn}
 		oStmnt:execute()
 		nTransId:=ConI(SqlSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1)) 
 		aTrans[2,18]:=nTransId
