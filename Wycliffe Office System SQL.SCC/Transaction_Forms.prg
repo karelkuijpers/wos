@@ -2774,6 +2774,7 @@ IF self:lTeleBank .and. !self:oTmt==null_object
 ENDIF
 //Erase(cServer)  */
 	self:oSFPaymentDetails:Close()
+	self:EndWindow()
 
 	RETURN SUPER:Close(oEvent)
 	
