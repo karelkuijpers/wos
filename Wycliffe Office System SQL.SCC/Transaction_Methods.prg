@@ -3879,6 +3879,13 @@ METHOD RegPerson(oCLN,cItemname,lOK,oPersBr) CLASS PaymentJournal
 	local oSel as SQLSelect
 	Default(@cItemname,NULL_STRING)
 	Default(@lOK,FALSE)
+	if IsObject(self:Server) .and.!self:Server==null_object 
+		if !self:Server:Used
+			return true
+		endif
+	else
+		return true		
+	endif
 	IF Empty(oCLN) .or. (IsInstanceOf(oCLN,#SQLSELECT) .and. oCLN:RecCount<1) .or.Empty(oCLN:persid)
 		//	self:cGiverName:=self:cOrigName
 		self:oDCmPerson:Value:=self:cOrigName
