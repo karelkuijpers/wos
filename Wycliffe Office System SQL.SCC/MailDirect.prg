@@ -683,7 +683,7 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 	local oSel as SQLSelect
 	local oEditAccount as EditEmailAccount 
 	Default(@lSystem,false)
-	self:oLan:=Language{} 
+// 	self:oLan:=Language{} 
 	self:oOwner:=oWindow 
 	self:IsSystem:=lSystem
 	if lSystem
@@ -704,14 +704,16 @@ Method Init(oWindow,lSystem) class SendEmailsDirect
 			oEditAccount:=EditEmailAccount{} 
 			oEditAccount:Show()
 			if !oEditAccount:lSuccess 
-				self:cError:=self:oLan:WGet("No email account settings available")
+// 				self:cError:=self:oLan:WGet("No email account settings available")
+				self:cError:="No email account settings available"
 				self:lError:=true
 				return self
 			endif			
 			oSel:Execute()
 			if oSel:RecCount<1
 				self:lError:=true
-				self:cError:=self:oLan:WGet("No email account settings available")
+// 				self:cError:=self:oLan:WGet("No email account settings available")
+				self:cError:="No email account settings available"
 				return self
 			endif 
 		endif
