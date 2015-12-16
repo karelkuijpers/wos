@@ -1364,7 +1364,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"account","active","tinyint(1)","NO","1",""},;
 		{"account","qtymailing","int(10) unsigned","NO","0",""},;
 		{"account","monitor","tinyint(1)","NO","0",""},;
-		{"account","altertime","timestamp","YES","NULL","ON UPDATE CURRENT_TIMESTAMP"},; 
+		{"account","altertime","timestamp","NO","0","ON UPDATE CURRENT_TIMESTAMP"},; 
 	{"accountbalanceyear","accid","int(11)","NO","NULL",""},;
 		{"accountbalanceyear","yearstart","smallint(6)","NO","0",""},;
 		{"accountbalanceyear","monthstart","smallint(6)","NO","0",""},;
@@ -1511,7 +1511,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"functionusage","frequency","int(11)","NO","0",""},; 
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
-		{"importlock","lock_time","timestamp","YES","NULL",""},; 
+		{"importlock","lock_time","timestamp","NO","0",""},; 
 		{"importpattern","imppattrnid","int(11)","NO","NULL","auto_increment"},;
 		{"importpattern","descriptn","varchar(511)","NO","",""},;
 		{"importpattern","origin","char(11)","NO","",""},;
@@ -1544,7 +1544,7 @@ method InitializeDB() as void Pascal  class Initialize
 	{"importtrans","poststatus","int(1)","NO","0",""},; 
 	{"importtrans","ppdest","char(3)","NO","",""},; 
 	{"importtrans","lock_id","int(11)","NO","0",""},;
-		{"importtrans","lock_time","timestamp","YES","NULL",""},;
+		{"importtrans","lock_time","timestamp","NO","0",""},;
 		{"ipcaccounts","ipcaccount","int(7)","NO","NULL",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
 		{"language","sentenceen","varchar(512)","NO","",""},;
@@ -1793,7 +1793,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","processed","char(1)","NO","",""},;
 		{"teletrans","persid","int(11)","NO","0",""},;
 		{"teletrans","lock_id","int(11)","NO","0",""},;
-		{"teletrans","lock_time","timestamp","YES","NULL",""},;
+		{"teletrans","lock_time","timestamp","NO","0",""},;
 		{"teletrans","bic","varchar(11)","NO","",""},;
 		{"teletrans","country","char(2)","NO","",""},;
 		{"teletrans","adrline","varchar(70)","NO","",""},;
@@ -1824,7 +1824,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","poststatus","tinyint(1)","NO","0",""},;
 		{"transaction","ppdest","char(3)","NO","",""},;
 		{"transaction","lock_id","int(11)","NO","0",""},;
-		{"transaction","lock_time","timestamp","YES","NULL",""};
+		{"transaction","lock_time","timestamp","NO","0",""};
 		} as array  
 	
 	// specify indexes per table:
