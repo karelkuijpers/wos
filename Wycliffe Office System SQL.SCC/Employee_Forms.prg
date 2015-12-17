@@ -1816,11 +1816,13 @@ method EditChange(oControlEvent) class LogonDialog
 				myOrg:y-=260
 				self:Origin:=myOrg
 				oEmp:= SqlSelect{"select group_concat(cast(empid as char),'#$#', cast("+Crypt_Emp(false,"type") +" as char),'#$#',cast("+Crypt_Emp(false,"loginname")+" as char) separator '#%#') as grusers from employee",oConn}
-				AEval(Split(oEmp:grUsers,'#%#',,true),{|x|AAdd(aUsers,Split(x,'#$#',,true)) })
-            ASort(aUsers,,,{|x,y|x[2]<y[2] .or. (x[2]==y[2] .and. x[3]<y[3])})
-            AEval(aUsers,{|x|,AAdd(amUsers,{x[3]+" ("+x[2]+")",x[1]})})
-            self:oDCListUsers:FillUsing(amUsers)
-            self:oDCListUsers:CurrentItemNo:=1 
+				if oEmp:RecCount>0 .and.!Empty(oEmp:grUsers)
+					AEval(Split(oEmp:grUsers,'#%#',,true),{|x|AAdd(aUsers,Split(x,'#$#',,true)) })
+					ASort(aUsers,,,{|x,y|x[2]<y[2] .or. (x[2]==y[2] .and. x[3]<y[3])})
+					AEval(aUsers,{|x|,AAdd(amUsers,{x[3]+" ("+x[2]+")",x[1]})})
+					self:oDCListUsers:FillUsing(amUsers)
+				endif
+				self:oDCListUsers:CurrentItemNo:=1 
 				self:oDCFixedUser:Show()
 				self:oDCListUsers:Show()				
 			endif
@@ -1839,7 +1841,7 @@ method EditChange(oControlEvent) class LogonDialog
 		endif
 	endif
 	super:EditChange(oControlEvent)
-return nil
+	return nil
 
 
 METHOD Init(oParent,uExtra) CLASS LogonDialog 
