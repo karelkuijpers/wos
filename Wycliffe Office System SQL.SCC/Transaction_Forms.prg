@@ -3685,6 +3685,15 @@ METHOD OKButton( ) CLASS TransactionMonth
 	self:FromMonth:=oDCFromMonth:Value
 	self:ToYear:=oDCToYear:Value
 	self:ToMonth:=oDCToMonth:Value
+	if self:FromMonth<1 .or. self:FromMonth>12
+		(ErrorBox{self,self:oLan:WGet("Illegal From month")}):show()
+		return
+	endif
+	if self:ToMonth<1 .or. self:ToMonth>12
+		(ErrorBox{self,self:oLan:WGet("Illegal To month")}):show()
+		return
+	endif
+ 
 	IF self:FromYear*100+self:FromMonth > self:ToYear*100+self:ToMonth
 		(ErrorBox{self,self:oLan:WGet("To Month must be behind From month")}):show()
 	ELSEIF Empty(self:nFromAccount)
