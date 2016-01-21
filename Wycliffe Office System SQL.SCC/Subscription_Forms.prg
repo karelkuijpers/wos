@@ -786,7 +786,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 	IF !self:lNew
 		self:msubid:=Str(oServer:subscribid,-1) 
 		self:nCurRec:=oServer:RecNo
-		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,cast(s.firstinvoicedate as date) as firstinvoicedate,"+;
+		self:oSub:=SqlSelect{"select s.accid,s.personid,cast(s.begindate as date) as begindate, cast(s.duedate as date) as duedate,cast(ifnull(s.firstinvoicedate,'0000-00-00') as date) as firstinvoicedate,"+;
 			"cast(s.enddate as date) as enddate,s.paymethod,s.bankaccnt,s.bic,s.term,s.amount, cast(s.lstchange as date) as lstchange,s.category,s.invoiceid,s.reference,s.blocked,"+;
 			SQLFullName(0,"p")+" as personname,a.description as accountname,a.accnumber,group_concat(b.banknumber,'#%#',b.bic separator ',') as bankaccs "+;
 			"from subscription s, account a,person p "+; 
@@ -947,7 +947,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditSubscription
 		if !lNew
 			self:oDCmInvoiceID:Show() 
 			self:oDCInvoiceText:Show()
-			if (oSel:=SqlSelect{"select cast(firstinvoicedate as char) as firstinvoicedate from subscription where subscribid="+self:msubid,oConn}):reccount>0  
+			if (oSel:=SqlSelect{"select cast(ifnull(firstinvoicedate,'0000-00-00') as char) as firstinvoicedate from subscription where subscribid="+self:msubid,oConn}):reccount>0  
 				if !Empty(oSel:firstinvoicedate).and.oSel:firstinvoicedate>'0000-00-00'
 					self:oDCmInvoiceID:Disable() 
 					if ConI(oSub:term) >=999
@@ -1236,7 +1236,7 @@ METHOD DeleteButton( ) CLASS SubscriptionBrowser
 	ENDIF
 	mSubid:=Str(self:oSub:subscribid,-1)
 	if SepaEnabled .and. self:oSub:PayMethod='C' 
-		if (oSel:=SqlSelect{"select cast(firstinvoicedate as char) as firstinvoicedate from subscription where subscribid="+mSubid,oConn}):reccount>0  
+		if (oSel:=SqlSelect{"select cast(ifnull(firstinvoicedate,'0000-00-00') as char) as firstinvoicedate from subscription where subscribid="+mSubid,oConn}):reccount>0  
 			if !Empty(oSel:firstinvoicedate).and.oSel:firstinvoicedate>'0000-00-00'
 				(ErrorBox{,self:cType+Space(1)+self:oLan:WGet("can't be deleted because already sent to bank")}):Show()
 				RETURN
