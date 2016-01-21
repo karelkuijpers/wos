@@ -247,9 +247,9 @@ method Sync() class Synchronize
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	//  Read all givers and visitors from WOS:
-	oPers:=SqlSelect{"select persid,lastname,initials,postalcode,city,date_format(datelastgift,'%e-%m-%Y') as datelastgift,"+ SQLFullNAC(3)+" as fullnac"+;
+	oPers:=SqlSelect{"select persid,lastname,initials,postalcode,city,date_format(ifnull(s.datelastgift,'0000-00-00'),'%e-%m-%Y') as datelastgift,"+ SQLFullNAC(3)+" as fullnac"+;
 		",postalcode,address,externid,mailingcodes "+;
-		"from person where datelastgift>'0000-00-00' or instr(mailingcodes,'"+MlcdBezoeker+"')>0 order by lastname",oConn}
+		"from person where ifnull(s.datelastgift,'0000-00-00')>'0000-00-00' or instr(mailingcodes,'"+MlcdBezoeker+"')>0 order by lastname",oConn}
 	oPers:Execute() 
 	// Place all wospersons into array aWosPers: 
 	do while !oPers:Eof
@@ -274,7 +274,7 @@ method Sync() class Synchronize
 			cNameSearch:=SubStr(GetTokens(oPers:lastname)[1,1],1,10)
 
 			oParPers:=SqlSelect{'select tp.id,tp.achternaam,tp.voornamen,tp.roepnaam,tp.tussenvoegsel,a.straatnaam,a.huisnummer,a.postcode,a.woonplaats'+;
-				',date_format(tp.geboortedatum,"%e-%m-%Y") as geboortedatum'+;
+				',date_format(ifnull(tp.geboortedatum,"0000-00-00"),"%e-%m-%Y") as geboortedatum'+;
 				',concat(tpartner.roepnaam," ",tpartner.tussenvoegsel," ",tpartner.achternaam) as partnernaam'+;
 				' from parousia_typo3.adres a,parousia_typo3.persoon tp'+;
 				' left join parousia_typo3.persoon as tpartner on (tp.id_partner=tpartner.id and tpartner.verwijderd="nee")'+;
@@ -283,7 +283,7 @@ method Sync() class Synchronize
 				' and ('+iif(!Empty(oPers:postalcode) .and.!Empty(oPers:address),'a.postcode="'+oPers:postalcode+'" and a.huisnummer="'+hsnr+'" or ','')+;
 				'tp.achternaam like "'+cNameSearch+'%")'+;
 				' and tp.persoon_op_adreslijst="persoon op adreslijst"'+;
-				' and (tp.geboortedatum="0000-00-00" or datediff(now(),tp.geboortedatum)> (15*365))'+;
+				' and (ifnull(tp.geboortedatum,"0000-00-00")="0000-00-00" or datediff(now(),ifnull(tp.geboortedatum,"0000-00-00"))> (15*365))'+;
 				' and tp.verwijderd="nee" and a.verwijderd="nee"'+;
 				' order by a.postcode,a.huisnummer,tp.burgerlijke_staat,tp.geslacht',oConn}
 // 				'not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary tp.id) and ('+;
@@ -415,7 +415,7 @@ method Sync() class Synchronize
 	self:STATUSMESSAGE("Adding all other addresses from person administration, please wait...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	
-	oParPers:=SqlSelect{'select p.id,p.id_partner,cast(p.geboortedatum as date) as geboortedatum,p.achternaam,p.tussenvoegsel,p.geslacht,p.roepnaam'+;
+	oParPers:=SqlSelect{'select p.id,p.id_partner,cast(ifnull(p.geboortedatum,"0000-00-00") as date) as geboortedatum,p.achternaam,p.tussenvoegsel,p.geslacht,p.roepnaam'+;
 		", cast(AES_DECRYPT(p.emailadres,'"+parsl+"' ) as char) as emailadres"+;
 		", cast(AES_DECRYPT(telefoonnr_vast,'"+parsl+"' ) as char) as telefoonnr_vast"+;
 		", cast(AES_DECRYPT(p.mobieltelnr,'"+parsl+"' ) as char) as mobieltelnr"+;
@@ -425,7 +425,7 @@ method Sync() class Synchronize
 		' and not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary p.id or binary pw.externid=binary p.id_partner'+;
 		' or (pw.postalcode=a.postcode and pw.address=concat(a.straatnaam," ",a.huisnummer)))'+;
 		' and p.persoon_op_adreslijst="persoon op adreslijst"'+;
-		' and (p.geboortedatum>"0000-00-00" and datediff(now(),p.geboortedatum)> (18*365))'+;
+		' and (ifnull(p.geboortedatum,"0000-00-00")>"0000-00-00" and datediff(now(),ifnull(p.geboortedatum,"0000-00-00"))> (18*365))'+;
 		' and p.verwijderd="nee" and a.verwijderd="nee" order by postcode,huisnummer,p.burgerlijke_staat,p.geslacht',oConn}
 	oParPers:Execute()
 	nAdd:=0	  
@@ -472,7 +472,7 @@ method Sync() class Synchronize
 	self:STATUSMESSAGE(self:oLan:wget("Deleting all addresses who are no giver and not in person administration, please wait")+"...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
-	oStmnt:=SQLStatement{"delete from person where deleted=0 and mailingcodes like '%"+MlcdBezoeker+"%' and externid='' and datelastgift='0000-00-00'",oConn}
+	oStmnt:=SQLStatement{"delete from person where deleted=0 and mailingcodes like '%"+MlcdBezoeker+"%' and externid='' and ifnull(datelastgift,'0000-00-00')='0000-00-00'",oConn}
 	oStmnt:Execute()
 	if oStmnt:NumSuccessfulRows>0
 		(TextBox{self,"Synchronisation Parousia",Str(oStmnt:NumSuccessfulRows,-1)+' '+self:oLan:wget('persons removed')}):show()
