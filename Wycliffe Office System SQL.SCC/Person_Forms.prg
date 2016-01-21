@@ -3072,16 +3072,16 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	IF !Empty(oDCBdat_End:VALUE)
 		self:oCaller:cWherep +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.creationdate<="'+DToC(self:oDCBdat_End:VALUE)+'"'
 		if Empty(oDCBdat_Start:VALUE)
-			self:oCaller:cWherep +=' and p.creationdate>"0000-00-00"'
+			self:oCaller:cWherep +=' and ifnull(p.creationdate,"0000-00-00")>"0000-00-00"'
 		ENDIF
 	ENDIF
 	IF !empty(oDCMutd_Start:Value)
-		self:oCaller:cWherep +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate>="'+DToC(oDCMutd_Start:VALUE)+'"'
+		self:oCaller:cWherep +=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'ifnull(p.alterdate,"0000-00-00")>="'+DToC(oDCMutd_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCMutd_End:VALUE)
-		self:oCaller:cWherep+=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.alterdate<="'+DToC(oDCMutd_End:VALUE)+'"'
+		self:oCaller:cWherep+=iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'ifnull(p.alterdate,"0000-00-00")<="'+DToC(oDCMutd_End:VALUE)+'"'
 		if Empty(oDCMutd_Start:VALUE)
-			self:oCaller:cWherep := self:oCaller:cWherep+' and p.creationdate>"0000-00-00"'
+			self:oCaller:cWherep := self:oCaller:cWherep+' and ifnull(p.creationdate,"0000-00-00")>"0000-00-00"'
 		ENDIF
 	ENDIF
 	if self:oDCDeleted:Checked
