@@ -2691,7 +2691,7 @@ METHOD OkButton()  CLASS EditMember
 				// check if dest acc changed
 				if j>0 .and. self:aDistr[i,DESTPP]=='AAA' .and. !aDistrOrgm[j,DESTACC]==aDistrm[i,DESTACC]
 					// dest acc changed, change also corresponding bankorders:
-					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aDistrm[i,DESTACC]+"' where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[j,DESTACC]+"'",oConn}
+					oStmnt:=SQLStatement{"update bankorder set banknbrcre='"+aDistrm[i,DESTACC]+"' where ifnull(datepayed,'0000-00-00')='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[j,DESTACC]+"'",oConn}
 					oStmnt:Execute()
 					if !Empty(oStmnt:Status)
 						lError:=true
@@ -2706,7 +2706,7 @@ METHOD OkButton()  CLASS EditMember
 			for i:=1 to Len(aDistrOrgm)
 				if (j:=AScan(aDistrm,{|x|x[SEQNBR]=aDistrOrgm[i,SEQNBR]}))=0 // not in current distr instr?
 					// delete bank orders:
-					oStmnt:=SQLStatement{"delete from bankorder where datepayed='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[i,DESTACC]+"'",oConn}
+					oStmnt:=SQLStatement{"delete from bankorder where ifnull(datepayed,'0000-00-00')='0000-00-00' and idfrom="+cExpAcc+" and banknbrcre='"+aDistrOrgm[i,DESTACC]+"'",oConn}
 					oStmnt:Execute()				
 					if !Empty(oStmnt:Status)
 						lError:=true
