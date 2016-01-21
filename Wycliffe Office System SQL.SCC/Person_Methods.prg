@@ -3746,10 +3746,10 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
    
    // select all due amounts to be invoiced
 	oDue:=SqlSelect{"select cast(group_concat(cast(du.dueid as char),'#$#',cast(du.subscribid as char),'#$#',cast(s.personid as char),'#$#',cast(s.accid as char),'#$#',s.begindate"+;
-		",'#$#',case when s.term>=999 or s.term=0 then '4' when s.firstinvoicedate='0000-00-00' then '1' when s.firstinvoicedate>'0000-00-00' then if(extract(year_month from adddate(du.invoicedate,interval s.term month))<extract(year_month from s.enddate),'2','3') end"+;
+		",'#$#',case when s.term>=999 or s.term=0 then '4' when ifnull(s.firstinvoicedate,'0000-00-00')='0000-00-00' then '1' when ifnull(s.firstinvoicedate,'0000-00-00')>'0000-00-00' then if(extract(year_month from adddate(du.invoicedate,interval s.term month))<extract(year_month from s.enddate),'2','3') end"+;
 		",'#$#',cast(du.amountinvoice as char),'#$#',du.invoicedate,'#$#',cast(du.seqnr as char),'#$#',"+;
 		"cast(s.term as char),'#$#',s.bankaccnt,'#$#',a.accnumber,'#$#',a.clc,'#$#',b.category,'#$#',"+;
-		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid,'#$#',s.firstinvoicedate,'#$#',ifnull(am.banknumber,''),'#$#',ifnull(am.bic,'')"+;
+		SQLAccType()+",'#$#',"+SQLFullName(0,'p')+",'#$#',pb.bic,'#$#',p.mailingcodes,'#$#',s.invoiceid,'#$#',ifnull(s.firstinvoicedate,'0000-00-00'),'#$#',ifnull(am.banknumber,''),'#$#',ifnull(am.bic,'')"+;
 		" separator '#%#') as char) as grDue " +;
 		" from account a left join member m on (a.accid=m.accid or m.depid=a.department) left join department d on (d.depid=a.department),"+;
 		"balanceitem b,person p, dueamount du,subscription s left join amendment am on(am.subscribid=s.subscribid),personbank pb "+;
@@ -3757,6 +3757,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
 		" and '"+SQLdate(end_due)+"' and extract(year_month from invoicedate)<extract(year_month from s.enddate) and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid and s.blocked='0' order by p.lastname",oConn}
+	LogEvent(,oDue:sqlstring)
 	oDue:Execute()
 	IF oDue:RecCount<1 .or. Empty(oDue:grDue)
 		(WarningBox{self,"Producing SEPA Direct Debit file","No due amounts to be debited direct!"}):Show()
