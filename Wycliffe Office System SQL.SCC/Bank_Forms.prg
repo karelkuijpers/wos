@@ -1403,7 +1403,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	// Check validity of recipient bankaccounts from standing orders:
 	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.stordrid,s.bankacct, group_concat(p.banknumber separator '#%#') as banknumbers from bankorder o "+;
 		"right join standingorderline s on(s.stordrid=o.stordrid and creditor>0) left join personbank p on (p.persid=s.creditor ) "+; 
-	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) group by s.creditor",oConn}
+	"where ifnull(datepayed,'0000-00-00')='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) group by s.creditor",oConn}
 	if oBord:Reccount>0
 		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
@@ -1430,7 +1430,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	endif	
 	// Check validity of recipient bankaccounts from distribution instructions:
 	oBord:=SqlSelect{"select o.banknbrcre, a.accnumber,a.description from bankorder o right join account a on (a.accid=o.idfrom) "+; 
-	"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) ",oConn}
+	"where ifnull(datepayed,'0000-00-00')='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' and banknbrcre not in (select b.banknumber from personbank b) ",oConn}
 	if oBord:Reccount>0
 		//cErrMsg:=self:oLan:WGet("The following bank accounts are not found in person data")+":"
 		do while !oBord:EoF
@@ -1448,7 +1448,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	oBord:=SqlSelect{"select o.id,o.banknbrcre,o.accntfrom,o.amount,cast(o.datedue as date) as datedue,o.description,"+SQLFullName(0,"p")+"as fullname "+;
 		"from bankorder o,personbank b,person p "+;
 		" where o.banknbrcre=b.banknumber and b.persid=p.persid "+;
-		"and datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
+		"and ifnull(datepayed,'0000-00-00')='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"' order by fullname",oConn}
 	IF oBord:Reccount<1
 		(WarningBox{self,"Producing Credit Transfer file","No bank orders to be sent to the bank!"}):Show()
 		RETURN FALSE
@@ -1601,7 +1601,7 @@ Method SepaCreditTransfer(begin_due as date,end_due as date, process_date as dat
 	// 	endif	  
 	// Reconcile Bank Order:
 	oStmnt:=SQLStatement{"update bankorder set datepayed='"+SQLdate(process_date)+"' "+;
-		"where datepayed='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'",oConn}
+		"where ifnull(datepayed,'0000-00-00')='0000-00-00' and datedue between '"+SQLdate(begin_due)+"' and '"+SQLdate(end_due)+"'",oConn}
 	oStmnt:execute()
 	oPro:AdvancePro()
 	if !Empty(oStmnt:Status)
