@@ -1038,7 +1038,7 @@ METHOD Import() CLASS TeleMut
 		SQLStatement{"rollback",oConn}:execute() 
 		return
 	endif
-	oStmnt:=SQLStatement{"update importlock set lock_id='0',lock_time='0000-00-00' where importfile='telelock'",oConn}
+	oStmnt:=SQLStatement{"update importlock set lock_id='0',lock_time= NULL where importfile='telelock'",oConn}
 	oStmnt:execute()
 	if !Empty(oStmnt:Status)
 		ErrorBox{,self:oLan:WGet("could not unlock required transactions")}:Show()
@@ -5105,8 +5105,8 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			cDueidsInv:=''
 			AEval(aAccnbrDue,{|x|iif(x[3]='0',cDueids+=','+x[2],cDueidsInv+=','+x[2]) })
 			if !Empty(cDueids)
-				oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+; 
-				'and dueid in ('+SubStr(cDueids,2)+') and firstinvoicedate=dueamount.invoicedate',oConn}
+				oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate= NULL where subscription.subscribid=dueamount.subscribid '+; 
+				'and dueid in ('+SubStr(cDueids,2)+') and ifnull(firstinvoicedate,"0000-00-00")=dueamount.invoicedate',oConn}
 				oStmnt:execute()
 				if	!Empty(oStmnt:Status)
 					SQLStatement{"rollback",oConn}:execute() 
@@ -5119,7 +5119,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 			endif
 			if !Empty(cDueidsInv)
 				// set all invalid mandate ids to FRST
-				oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+; 
+				oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate= NULL where subscription.subscribid=dueamount.subscribid '+; 
 				'and dueid in ('+SubStr(cDueidsInv,2)+') ',oConn}
 				oStmnt:execute()
 				if	!Empty(oStmnt:Status)
