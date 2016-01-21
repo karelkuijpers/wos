@@ -2348,8 +2348,8 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 										endtoend:=SubStr(oHm:Amirror[i,16],j+9,30)
 										if Len(Split(endtoend,'-'))>2
 											invoicedate:=SToD(Split(endtoend,'-')[2])
-											oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate="0000-00-00" where subscription.subscribid=dueamount.subscribid '+;
-												'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and firstinvoicedate="'+SQLdate(invoicedate)+'"',''),oConn}
+											oStmnt:=SQLStatement{'update subscription,dueamount set firstinvoicedate= NULL where subscription.subscribid=dueamount.subscribid '+;
+												'and dueid='+ConS(self:oTmt:m56_dueid)+iif(AtC('MD01',oHm:Amirror[i,16])=0,' and ifnull(firstinvoicedate,"0000-00-00")="'+SQLdate(invoicedate)+'"',''),oConn}
 											oStmnt:execute()
 											if !Empty(oStmnt:Status)
 												lError:=true 
