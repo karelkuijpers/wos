@@ -537,8 +537,8 @@ METHOD PrintReport() CLASS PMISsend
 		"ae.accid as accidexp,ae.accnumber as accnumberexp,ae.description as descriptionexp,ae.currency as currencyexp,"+;
 		"an.accid as accidnet,an.accnumber as accnumbernet,an.description as descriptionnet,an.currency as currencynet,"+;
 		"pp.ppname as homeppname,"+;
-		"group_concat(cast(d.desttyp as char),'##',cast(d.destamt as char),'##',d.destpp,'##',d.destacc,'##',cast(d.lstdate as char),'##',cast(d.seqnbr as char),'##',"+;
-		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr,if(isnull(m.depid),'0',cast(m.depid as char)) as depid " +;
+		"group_concat(cast(d.desttyp as char),'##',cast(d.destamt as char),'##',d.destpp,'##',d.destacc,'##',cast(ifnull(d.lstdate,'00-00-0000') as char),'##',cast(d.seqnbr as char),'##',"+;
+		"d.descrptn,'##',d.currency,'##',cast(d.amntsnd as char),'##',cast(d.singleuse as char),'##',pd.ppname separator '#;#') as distr,cast(ifnull(m.depid,0) as char) as depid " +;
 		" from member m left join ppcodes pp on (pp.ppcode=m.homepp) "+;
 		" left join distributioninstruction d on (d.mbrid=m.mbrid and d.disabled=0) left join ppcodes pd on (d.destpp=pd.ppcode) "+;
 		" left join account ad on (ad.accid=m.accid) left join balanceitem b on (b.balitemid=ad.balitemid) left join department dm on (dm.depid=m.depid) left join account ai on (ai.accid=dm.incomeacc) "+;
@@ -552,6 +552,7 @@ METHOD PrintReport() CLASS PMISsend
 		"coalesce(homeppname,''),'#$#',coalesce(distr,''),'#$#',depid,'#$#',cast(overdrawallowed as char) order by mbrid separator '#%#') as grMbr"+;
 		" from ("+cMbrSelect+") as y group by 1=1" 
 	oMbr:=SqlSelect{cMbrSelectArr,oConn}
+		LogEvent(self,oMbr:SQLString,"logerrors") 
 	if oMbr:Reccount<1 .or. Empty(oMbr:grMbr)
 		LogEvent(self,oMbr:SQLString,"logerrors") 
 		WarningBox{oWindow,self:oLan:WGet("Send to PMC"),self:oLan:WGet("No members specified")}:Show()
@@ -564,7 +565,7 @@ METHOD PrintReport() CLASS PMISsend
 	//                   1       2       3      4        5      6      7         8      9         10       11
 	aMbr:=AEvalA(Split(oMbr:grMbr,'#%#',,true),{|x|x:=Split(x,'#$#',,true) })
 	// expand distribution instructions:
-	for i:=1 to Len(aMbr)
+	for i:=1 to Len(aMbr) 
 		if !Empty(aMbr[i,27]) 
 			aMbr[i,27]:=AEvalA(Split(aMbr[i,27],"#;#"),{|x|x:=Split(x,'##')})
 			// collect own destination accounts: 
@@ -827,7 +828,7 @@ METHOD PrintReport() CLASS PMISsend
 		// aMbr:
 		// {{mbrid,description,homepp,homeacc,housholdid,co,has,grade,offcrate,accid,accnumber,currency,type,accidinc,accnumberinc,descriptioninc,currencyinc,accidexp,accnumberexp,descriptionexp,currencyexp,accidnet,accnumbernet,descriptionnet,currencynet,homeppname,distr,depid,overdrawallowed},...}
 		//     1       2         3       4        5       6  7     8      9      10       11     12     13       14          15        16             17           18         19         20            21           22        23          24           25          26        27    28         29
-		me_mbrid:=aMbr[nMbr,1]
+		me_mbrid:=aMbr[nMbr,1] 
 		me_co:=aMbr[nMbr,6]   // co
 		me_overdrwalwd:=ConL(aMbr[nMbr,29])
 		me_rate:=Upper(aMbr[nMbr,9])
@@ -1782,7 +1783,7 @@ METHOD PrintReport() CLASS PMISsend
 				LogEvent(self,self:oLan:WGet('Uploaded file')+Space(1)+cFilename+Space(1)+self:oLan:WGet("via Insite to PMC")+'; '+self:oLan:WGet('total amount')+": "+Str(mo_totF,-1)+' USD ( '+Str(mo_tot,-1)+' '+sCurr+'); '+Str(batchcount-directcount,-1)+	Space(1)+self:oLan:WGet("transactions")+'; '+self:oLan:WGet('Exchange rate')+': 1 USD='+Str(fExChRate,-1,8)+sCURR	)
 			endif
 			self:STATUSMESSAGE(self:oLan:WGet('unlocking member transactions')+'...')
-			oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
+			oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time=NULL where lock_id="+MYEMPID,oConn}
 			oStmnt:Execute()
 			SQLStatement{"commit",oConn}:Execute()
 		else
@@ -1915,7 +1916,7 @@ Method ResetLocks() class PMISsend
 
 	SQLStatement{"start transaction",oConn}:Execute()    // to unlock all transactions and distribution instructions read
 	// select the transaction data
-	oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time='0000-00-00' where lock_id="+MYEMPID,oConn}
+	oStmnt:=SQLStatement{"update transaction set lock_id=0,lock_time=NULL where lock_id="+MYEMPID,oConn}
 	oStmnt:Execute()
 	SQLStatement{"commit",oConn}:Execute() 
 	SetDecimalSep(Asc('.'))
