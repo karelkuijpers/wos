@@ -832,7 +832,7 @@ METHOD Import() CLASS ImportBatch
 		SQLStatement{"rollback",oConn}:Execute() 
 		return
 	endif
-	oStmnt:=SQLStatement{"update importlock set lock_id='0',lock_time='0000-00-00' where importfile='batchlock'",oConn}
+	oStmnt:=SQLStatement{"update importlock set lock_id='0',lock_time= NULL where importfile='batchlock'",oConn}
 	oStmnt:Execute()
 	if !Empty(oStmnt:Status)
 		ErrorBox{self,self:oLan:WGet("could not unlock required transactions")}:Show()
@@ -2053,7 +2053,7 @@ METHOD SaveImport(nCnt ref int,nProc ref int) as logic CLASS ImportBatch
 			if !Empty(aValuesPers)
 				ASort(aValuesPers,1,,{|x,y|x[1]<=y[1]},)
 				oStmnt:=SQLStatement{"insert into person (persid,datelastgift) values "+Implode(aValuesPers,"','")+" on duplicate key update mailingcodes="+;
-					"if(datelastgift='0000-00-00',concat(mailingcodes,' ','FI'),mailingcodes),datelastgift=if(datelastgift<values(datelastgift),values(datelastgift),datelastgift)",oConn} 
+					"if(ifnull(datelastgift,'0000-00-00')='0000-00-00',concat(mailingcodes,' ','FI'),mailingcodes),datelastgift=if(ifnull(datelastgift,'0000-00-00')<values(datelastgift),values(datelastgift),datelastgift)",oConn} 
 				oStmnt:Execute()
 			endif
 		endif
