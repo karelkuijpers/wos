@@ -632,7 +632,7 @@ do while (i:=AScan(aColumn,{|x|x[1]==table_name},i+1))>0
 	cCreate+=iif(Empty(cCreate),"CREATE TABLE "+sIdentChar+instance_name+sIdentChar+ " (",","+CRLF)+sIdentChar+aColumn[i,2]+sIdentChar+;
 	aColumn[i,3]+;
 	iif(aColumn[i,4]=="NO"," NOT NULL"," NULL")+;
-	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL"),iif(AtC("text",aColumn[i,3])>0,""," DEFAULT '"+aColumn[i,5]+"'"))+;
+	iif(aColumn[i,5]=="NULL",iif(aColumn[i,4]=="NO",""," DEFAULT NULL"),iif(Empty(aColumn[i,5]),""," DEFAULT '"+aColumn[i,5]+"'"))+;
 	" "+aColumn[i,6]+iif(Len(aColumn[i])>6," COMMENT '"+aColumn[i,7]+"'","") 
 enddo
 cIndex:=" "
@@ -1422,7 +1422,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankaccount","bic","varchar(11)","NO","",""},;
 		{"bankaccount","syscodover","char(1)","NO","",""},;
 		{"bankbalance","accid","int(11)","NO","NULL",""},;
-		{"bankbalance","datebalance","date","NO","0000-00-00",""},;
+		{"bankbalance","datebalance","date","NO","",""},;
 		{"bankbalance","balance","decimal(15,2)","NO","0",""},;
 		{"bankorder","id","int(11)","NO","NULL","auto_increment"},;
 		{"bankorder","accntfrom","int(11)","YES","NULL",""},;
@@ -1497,7 +1497,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","depid","varbinary(32)","NO","",""},;
 		{"employee","insiteuid","char(40)","NO","",""},; 
 		{"employee","lstreimb","date","YES","NULL",""},;
-		{"employee","lstlogin","datetime","YES","0000-00-00 00:00:00",""},;
+		{"employee","lstlogin","datetime","YES","NULL",""},;
 		{"employee","online","tinyint(1)","NO","0",""},;
 		{"employee","lstnews","date","YES","NULL",""},;
 		{"employee","maildirect","tinyint(1)","YES","NULL",""},; 
@@ -1507,7 +1507,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"emplacc","type","tinyint(1)","NO","0",""},; 
 		{"functionusage","functionid","varchar(32)","NO","",""},;
 		{"functionusage","userid","varchar(64)","NO","",""},;
-		{"functionusage","usedate","date","NO","0000-00-00",""},;
+		{"functionusage","usedate","date","NO","",""},;
 		{"functionusage","frequency","int(11)","NO","0",""},; 
 		{"importlock","importfile","char(40)","NO","NULL",""},;
 		{"importlock","lock_id","int(11)","NO","0",""},;
@@ -1806,7 +1806,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"transaction","persid","int(11)","YES","NULL",""},;
 		{"transaction","accid","int(11)","NO","NULL",""},;
 		{"transaction","docid","varchar(31)","NO","",""},;
-		{"transaction","dat","date","YES","NULL",""},;
+		{"transaction","dat","date","NO","",""},;
 		{"transaction","description","varchar(511)","YES","",""},;
 		{"transaction","deb","decimal(19,2)","NO","0",""},;
 		{"transaction","cre","decimal(19,2)","NO","0",""},;
@@ -2399,12 +2399,6 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 								// ignore zeroes behind decimal point 
 								loop
 							endif
-						else
-//							if Upper(aReqColumn[nPosReq,4])=='NO' .and.Empty(aReqColumn[nPosReq,5]).and.Upper(aCurColumn[nPosCur,5])=='NULL'
-							if Upper(aReqColumn[nPosReq,4])=='NO' .and.Empty(aReqColumn[nPosReq,5])
-								// ignore empty and null 
-								loop
-							endif
 						endif
 					endif
 					aStatReq[nPosReq]:={"c",nPosCur} // specifications changed
@@ -2456,6 +2450,9 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	enddo
 	// compose other changes: 
 	for nPosReq:=1 to nLenReq
+		if nPosReq=13
+			nPosReq:=nPosReq
+		endif
 		if aStatReq[nPosReq,1]="r"
 			// renamed:
 			cStatement+=iif(Empty(cStatement),'',', ')+"change "+sIdentChar+aCurColumn[aStatReq[nPosReq,2],2]+sIdentChar+' '
@@ -2472,7 +2469,7 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 		endif
 		// Table name, Field,Type,Null,Default,Extra 
 		cStatement+=sIdentChar+aReqColumn[nPosReq,2]+sIdentChar+' '+aReqColumn[nPosReq,3]+' '+iif(Upper(aReqColumn[nPosReq,4])=="NO","NOT NULL","NULL")+;
-			iif(AtC('text',aReqColumn[nPosReq,3])>0,'',iif(Upper(aReqColumn[nPosReq,5])=="NULL",iif(Upper(aReqColumn[nPosReq,4])=="NO",""," DEFAULT NULL")," DEFAULT '"+aReqColumn[nPosReq,5]+"'"))+;
+			iif(Empty(aReqColumn[nPosReq,5]),iif(Upper(aReqColumn[nPosReq,4])=="YES"," DEFAULT NULL",'')," DEFAULT "+iif(Upper(aReqColumn[nPosReq,5])=="NULL","NULL","'"+aReqColumn[nPosReq,5]+"'"))+;
 			" "+aReqColumn[nPosReq,6]+iif(Len(aReqColumn[nPosReq])>6," COMMENT '"+aReqColumn[nPosReq,7]+"'","")+;
 			iif(aStatReq[nPosReq,1]="a"," "+iif(nPosReq=1,"FIRST","AFTER "+aReqColumn[nPosReq-1,2]),"")
 	next
@@ -2552,10 +2549,6 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	do while nPosReq>0 .and. nPosReq<=nLenReq
 		cIndex:=aReqIndex[nPosReq,3] 
 		//	process all	lines	of	this index
-// 		nPosReq:=AScan(aReqIndex,{|x|x[3]==cIndex})
-// 		if nPosReq=0
-// 			exit
-// 		endif
 		if AtC(cIndex,cAddIndex)=0 
 			if (nPosCur:=AScan(aCurIndex,{|x|x[3]==cIndex}))>0 .and. AtC(cIndex,cDropIndex)=0
 				// add to drop index
