@@ -2373,7 +2373,7 @@ METHOD DepartmentStmntPrint(aDep as array,nRow:=0 ref int,nPage:=0 ref int) as l
 				IF oRecip1 != null_object                         
 					IF !Empty(self:oEMLFrm:Template)
 						oSelpers:oDB:=SQLSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
-							"attention,cast(datelastgift as date) as datelastgift from person "+;
+							"attention,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift from person "+;
 							"where persid='"+iif( !Empty(aPersid[1]),Str(aPersid[1],-1),Str(aPersid[2],-1))+"'",oConn} 
 						mailcontent:=oSelpers:FillText(self:oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,RepeatingPossible,60)
 					ELSE
@@ -4198,7 +4198,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			cMess:=self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")
 			self:STATUSMESSAGE(cMess)
 			oSelpers:oDB:=SqlSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
-				"attention,cast(datelastgift as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
+				"attention,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
 			oSelpers:oDB:Execute()
 			if !Empty(oSelpers:oDB:status)
 				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage+CRLF+oSelpers:DB:sqlstring,"logerrors")
@@ -4310,7 +4310,7 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 			cMess:=self:oLan:WGet("Placing mail messages in outbox of mailing system, please wait")
 			self:STATUSMESSAGE(cMess)
 			oSelpers:oDB:=SqlSelect{"select persid,gender,title,initials,prefix,lastname,firstname,nameext,address,postalcode,city,country,"+;
-				"attention,cast(datelastgift as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
+				"attention,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift from person where persid in ("+Implode(aPers,',')+')',oConn} 
 			oSelpers:oDB:Execute()
 			if !Empty(oSelpers:oDB:status)
 				LogEvent(self,self:oLan:WGet("could not retrieve email data")+':'+oSelpers:oDB:ErrInfo:errormessage,"logerrors")
