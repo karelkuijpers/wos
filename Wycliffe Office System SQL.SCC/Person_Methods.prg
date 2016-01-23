@@ -388,7 +388,7 @@ METHOD SetState() CLASS EditPerson
 	
 	self:oPerson:=SQLSelect{ "select lastname,prefix,title,initials,firstname,nameext,attention,address,postalcode,city,"+;
 		"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
-		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift,cast(birthdate as date) as birthdate,"+;
+		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,cast(ifnull(birthgift,'0000-00-00') as date) as birthdate,"+;
 		"externid,gender,opc,propextr,p.`deleted` as removed,"+;
 		"m.mbrid,m.accid,m.depid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
 		"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
@@ -1754,7 +1754,7 @@ FUNCTION PersonSelect(oCaller:=null_object as window,pValue:="" as string,lUniqu
 		cItemname:="" as string,oPersCnt:=null_object as PersonContainer) as void pascal
 	LOCAL iEnd := At(",",pValue) as int
 	local cWhere,cFrom:="person as p", cOrder:="lastname",cValue:=pValue as string
-	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country" as string  
+	local cFields:= "p.persid,lastname,initials,firstname,prefix,type,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,address,postalcode,city,country" as string  
 	local oMyWindow as window
 	LOCAL lSuccess,lParmUni,lPersid as LOGIC 
 	LOCAL oPersBw as PersonBrowser
@@ -1969,7 +1969,7 @@ CLASS Selpers INHERIT DataWindowExtra
 	PROTECT m_fieldnames,m_values,m_AdressLines as ARRAY 
 	Export Ann as ARRAY
 	PROTECT pKondp, pKondA AS _CODEBLOCK
-	PROTECT pKond AS _CODEBLOCK
+//	PROTECT pKond AS _CODEBLOCK
 	PROTECT splaats AS STRING
 	PROTECT oExtServer AS OBJECT
 	PROTECT oEditPersonWindow as 
@@ -2165,7 +2165,7 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	AAdd(aExpF,{#EMAIL,"p.email", ExportPerson_EMAIL{} })
 	AAdd(aExpF,{#CREATIONDATE,"cast(p.creationdate as date) as creationdate", ExportPerson_BDAT{} })
 	AAdd(aExpF,{#ALTERDATE,"cast(p.alterdate as date) as alterdate", ExportPerson_MUTD{} })
-	AAdd(aExpF,{#DATELASTGIFT,"cast(p.datelastgift as date) as datelastgift", ExportPerson_DLG{} })
+	AAdd(aExpF,{#DATELASTGIFT,"cast(ifnull(p.datelastgift,'0000-00-00') as date) as datelastgift", ExportPerson_DLG{} })
 	AAdd(aExpF,{#REMARKS,"p.remarks", ExportPerson_OPM{} })
 	AAdd(aExpF,{#MAILCODE,"p.mailingcodes", ExportPerson_MAILCODE{} })
 	AAdd(aExpF,{#MAILABBR,"p.mailingcodes", ExportPerson_MAILABBR{} })
@@ -2211,7 +2211,8 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 	oSel:=SqlSelect{SQLGetPersons(self:myFields,self:cFrom,self:cWherep,self:SortOrder,cGiftsLine,self:selx_MinAmnt,self:selx_MaxAmnt,self:selx_minindamnt),oConn}
 // 	fSecStart:=Seconds() 
 // 	LogEvent(self,oSel:SQlString,"logsql") 
-	self:Pointer := Pointer{POINTERHOURGLASS}
+	self:Pointer := Pointer{POINTERHOURGLASS}   
+	LogEvent(self,oSel:sqlstring)
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 	self:Pointer := Pointer{POINTERARROW}
@@ -2589,25 +2590,25 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			repeatTxt:=SubStr(Content,h1+1,h2-h1-1)
 			IF selectionType=4.or.selectionType=5  && selectie op gift aan bestemming
 				IF GiftsRequired
-					DO WHILE !oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
-						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=DToC(oTransH:dat)
-						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=Str(oTransH:amountgift,-1)
-						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=oTransH:DOCID
-						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%REFERENCE"})]:=oTransH:REFERENCE
-						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oTransH:Destination)
+					DO WHILE !self:oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
+						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=DToC(self:oTransH:dat)
+						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=Str(self:oTransH:amountgift,-1)
+						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=self:oTransH:DOCID
+						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%REFERENCE"})]:=self:oTransH:REFERENCE
+						self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(self:oTransH:Destination)
 						// 								self:MarkUpDestination(oAcc:persid)
 						repeatSection:=repeatTxt
-						repeatSection:=StrTran(repeatSection,"%DATEGIFT",AllTrim(DToC(oTransH:dat)))
-						repeatSection:=StrTran(repeatSection,"%AMOUNTGIFT",Str(oTransH:amountgift,-1))
-						repeatSection:=StrTran(repeatSection,"%DOCID",AllTrim(oTransH:DOCID))
-						repeatSection:=StrTran(repeatSection,"%REFERENCE",AllTrim(oTransH:REFERENCE))
-						repeatSection:=StrTran(repeatSection,"%DESTINATION",oTransH:Destination)
-						repeatSection:=StrTran(repeatSection,"%FRSTNAMEDESTINATION",oTransH:FirstnameDestination)
-						repeatSection:=StrTran(repeatSection,"%LSTNAMEDESTINATION",oTransH:lastnameDestination)
+						repeatSection:=StrTran(repeatSection,"%DATEGIFT",AllTrim(DToC(self:oTransH:dat)))
+						repeatSection:=StrTran(repeatSection,"%AMOUNTGIFT",Str(self:oTransH:amountgift,-1))
+						repeatSection:=StrTran(repeatSection,"%DOCID",AllTrim(self:oTransH:DOCID))
+						repeatSection:=StrTran(repeatSection,"%REFERENCE",AllTrim(self:oTransH:REFERENCE))
+						repeatSection:=StrTran(repeatSection,"%DESTINATION",self:oTransH:Destination)
+						repeatSection:=StrTran(repeatSection,"%FRSTNAMEDESTINATION",self:oTransH:FirstnameDestination)
+						repeatSection:=StrTran(repeatSection,"%LSTNAMEDESTINATION",self:oTransH:lastnameDestination)
 						// 								repeatSection:=StrTran(repeatSection,"%SALUTDESTINATION",self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%SALUTDESTINATION"})])
 						repeatSection:=StrTran(repeatSection,"%PAGESKIP",PAGE_ENd)
 						repeatGroup := repeatGroup + repeatSection
-						oTransH:skip()
+						self:oTransH:skip()
 					ENDDO
 					self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%TOTALAMOUNT"})]:=Str(self:oDB:totamnt,-1)
 				ENDIF
@@ -2619,21 +2620,21 @@ METHOD FillText(Template as string,selectionType as int,DueRequired as logic,Gif
 			* cWhereOther: string met selektiekonditie
 			* selx_accid: gewenste bestemming
 			IF GiftsRequired
-				oTransH:GoTop()
-				DO WHILE !oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
-					IF oTransH:Eval(pKond,,,1) && &oSelPers:cWhereOther
-						IF Empty(self:cWhereOtherA).or.AScan(self:cWhereOtherA,oTransH:accid)>0
-							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(oTransH:dat))
-							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=AllTrim(Str(oTransH:cre-oTransH:deb,10,DecAantal))
-							TotalAmnt+=oTransH:cre-oTransH:deb
-							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%transid"})]:=AllTrim(oTransH:transid)
-							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=AllTrim(oTransH:DOCID)
-							oAcc:seek(oTransH:accid)
+				self:oTransH:GoTop()
+				DO WHILE !self:oTransH:EOF .and.self:oTransH:persid==self:oDB:persid
+//					IF self:oTransH:Eval(self:pKond,,,1) && &oSelPers:cWhereOther
+						IF Empty(self:cWhereOtherA).or.AScan(self:cWhereOtherA,self:oTransH:accid)>0
+							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DATEGIFT"})]:=AllTrim(DToC(self:oTransH:dat))
+							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%AMOUNTGIFT"})]:=AllTrim(Str(self:oTransH:cre-self:oTransH:deb,10,DecAantal))
+							TotalAmnt+=self:oTransH:cre-self:oTransH:deb
+							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%transid"})]:=AllTrim(self:oTransH:transid)
+							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DOCID"})]:=AllTrim(self:oTransH:DOCID)
+							self:oAcc:seek(self:oTransH:accid)
 							self:m_values[AScan(self:m_fieldnames,{|x| x[1]=="%DESTINATION"})]:=AllTrim(oAcc:Description)
 							self:MarkUpDestination(oAcc:persid)
 						ENDIF
-					ENDIF
-					oTransH:skip()
+//					ENDIF
+					self:oTransH:skip()
 				ENDDO
 			ENDIF
 		ENDIF
@@ -2671,15 +2672,15 @@ METHOD INIT(oParent , uExtra , oPerson ) CLASS SelPers
 		self:oPers:=oPerson
 	ENDIF                                                  
 	self:oLan:=Language{} 
-	cCouple:= self:oLan:Rget("Mr&Mrs")
-	cMr:= self:oLan:Rget("Mr",,"!")
-	cMrs:= self:oLan:Rget("Mrs",,"!")
-	cTel:=self:oLan:Rget("Telephone",,"!")
-	cDay:=self:oLan:Rget('at day')
-	cNight:=self:oLan:Rget("at night")
-	cAbrv:=self:oLan:Rget("Abbreviated mailingcodes")
-	cFax:=self:oLan:Rget("fax")
-	cMobile:=self:oLan:Rget("mobile")
+	self:cCouple:= self:oLan:Rget("Mr&Mrs")
+	self:cMr:= self:oLan:Rget("Mr",,"!")
+	self:cMrs:= self:oLan:Rget("Mrs",,"!")
+	self:cTel:=self:oLan:Rget("Telephone",,"!")
+	self:cDay:=self:oLan:Rget('at day')
+	self:cNight:=self:oLan:Rget("at night")
+	self:cAbrv:=self:oLan:Rget("Abbreviated mailingcodes")
+	self:cFax:=self:oLan:Rget("fax")
+	self:cMobile:=self:oLan:Rget("mobile")
 
 	RETURN SELF
 	
@@ -2863,7 +2864,7 @@ METHOD PrintLetters(oParent as window,nType:=4 as int,cTitel:="" as string,lAcce
 	
 	self:splaats:=SQLSelect{"select cityletter from sysparms",oConn}:cityletter
 	cFields:="p.persid, p.lastname,p.gender,p.title,p.attention,p.initials,p.nameext,p.prefix,p.firstname,p.address,p.postalcode,p.city,p.country,"+;
-	"cast(p.datelastgift as date) as datelastgift"   	
+	"cast(ifnull(p.datelastgift,'0000-00-00') as date) as datelastgift"   	
 	IF self:selx_keus1=4.or.self:selx_keus1=5   && selection gifts
 		cFields+=",t.cre-t.deb as amountgift"
 		cGrFields:="gr.*,sum(gr.amountgift) as totamnt"
@@ -4331,6 +4332,7 @@ function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSort
 	local lgrDat as logic  // is selection of <= date required
 	local lBankacc as logic  // is selection bankaccounts required 
 	local i,j as int
+	local aOrder:={} as array
 	
 	lPropXtr:=(AScan(myFields,{|x|x[2]="p.propextr"})>0)
 	// determine group fields:
@@ -4408,23 +4410,26 @@ function SQLGetPersons(myFields as array,cFrom as string,cWherep as string,cSort
 			endif
 		endif 
 	next
+	if AtC(",p.persid",cFields)=0
+		cFields+=",p.persid"
+	endif
 	IF Empty(cGroup)
 		lDistinct:=AScan(myFields,{|x|x[1]=#AmountGift.or.x[1]=#Dat.or.x[1]=#Reference.or.x[1]=#DOCID.or.x[1]=#Description})=0
 		if !lDistinct
 			if AtC("persid",cSortOrder)=0
-				cSortOrder+=",persid"
+				cSortOrder+=",persid" 
 			endif
 		endif
 	endif
-	if AtC(",p.persid",cFields)=0
-		cFields+=",p.persid"
-	endif
-	if AtC(cSortOrder,cFields)=0
-		cFields+=",p."+cSortOrder
-		if AtC(cSortOrder,cGrFields)=0
-			cGrFields+=",gr."+cSortOrder
+	aOrder:=Split(cSortOrder,',')
+	for i:=1 to Len(aOrder)
+		if AtC(aOrder[i],cFields)=0
+			cFields+=",p."+cSortOrder
+			if AtC(cSortOrder,cGrFields)=0
+				cGrFields+=",gr."+cSortOrder
+			endif
 		endif
-	endif
+	next
 	cFields:=SubStr(cFields,2)
 	cGrFields:=SubStr(cGrFields,2)
 	lDestination:=(AtC("a.description",cFields)>0)
