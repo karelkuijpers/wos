@@ -2381,7 +2381,7 @@ METHOD ValStore(lSave:=false as logic ) as logic CLASS General_Journal
 			*  update data of giver:
 			i:= AScan(oHm:aMirror,{|x| (x[3]-x[2])>0.and.(x[5]=="G" .or.x[5]=="M" .or.x[5]=="D")})
 			IF i>0 
-				oPers:=SqlSelect{"select mailingcodes,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
+				oPers:=SqlSelect{"select mailingcodes,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
 				if oPers:Reccount>0
 					cCodNew:=oPers:mailingcodes
 					DO WHILE i>0
@@ -3021,7 +3021,10 @@ METHOD AssignTo() as void pascal CLASS PaymentJournal
 			else
 				oHm:CREFORGN:=Round( oHm:cre/self:oCurr:GetROE(oHm:CURRENCY,self:mDAT),DecAantal)
 			endif
-			* save in mirror-array 
+			* save in mirror-array
+			if Len(oHm:aMirror)<oHm:RECNO
+				ASize(oHm:aMirror,oHm:RECNO)
+			endif 
 			oHm:aMirror[oHm:RECNO]:=;
 				{oHm:AccID,oHm:Original,oHm:cre,oHm:GC,oHm:KIND,oHm:RECNO,oHm:AccID,oHm:ACCNUMBER,oHm:CREFORGN,oHm:CURRENCY, self:DefMulti,0,self:deftype,oHm:DESCRIPTN,oHm:INCEXPFD}
 		ENDIF
@@ -4189,7 +4192,7 @@ METHOD ValStore(lNil:=nil as logic) as logic CLASS PaymentJournal
 		self:Pointer := Pointer{POINTERHOURGLASS}   
 		IF !Empty(self:mCLNGiver) 
 			// prepare values of person fields to be updated:
-			oPers:=SqlSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(datelastgift as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
+			oPers:=SqlSelect{"select mailingcodes,propextr,cast(creationdate as date) as creationdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift from person where persid="+self:mCLNGiver,oConn}
 			if oPers:Reccount>0
 				cCod:=oPers:mailingcodes
 				cExtra:=ConS(oPers:PROPEXTR) 
