@@ -1743,7 +1743,7 @@ CLASS PersonBrowser INHERIT DataWindowMine
 	EXPORT oPers as SQLSelectPagination
 	PROTECT m_namen,m_waarden,Ann,m_adressen AS ARRAY
 	PROTECT pKondp, pKondA AS _CODEBLOCK
-	PROTECT pKond AS _CODEBLOCK
+//	PROTECT pKond AS _CODEBLOCK
 	PROTECT splaats AS STRING
 	PROTECT oExtServer as SQLSelect
 	PROTECT oEditPersonWindow as EditPerson
@@ -2071,7 +2071,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS PersonBrowser
 	//Put your PreInit additions here
 // 	SELF:oExtServer:=oServer && save external server 
-	self:cFields:= 'p.persid,lastname,initials,firstname,prefix,type,cast(datelastgift as date) as datelastgift,address,postalcode,city,country'
+	self:cFields:= 'p.persid,lastname,initials,firstname,prefix,type,cast(ifnull(datelastgift,"0000-00-00") as date) as datelastgift,address,postalcode,city,country'
 	self:cFrom:='person as p'
 	self:cOrder:="lastname,firstname,city"
 	self:cWhere:='p.deleted=0' 
@@ -3057,10 +3057,10 @@ METHOD OKButton( ) CLASS SelPersMailCd
 	cDat:=GetDateFormat()
 	SetDateFormat("YYYY-MM-DD")
 	IF !empty(oDCDLG_Start:Value)
-		self:oCaller:cWherep +=	iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
+		self:oCaller:cWherep +=	iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'ifnull(datelastgift,"0000-00-00")>="'+DToC(self:oDCDLG_Start:VALUE)+'"'
 	ENDIF
 	IF !Empty(oDCDLG_End:VALUE)
-		self:oCaller:cWherep += iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'p.datelastgift<="'+DToC(oDCDLG_End:VALUE)+'"'
+		self:oCaller:cWherep += iif(.not.Empty(self:oCaller:cWherep),' and ',"")+'ifnull(datelastgift,"0000-00-00")<="'+DToC(oDCDLG_End:VALUE)+'"'
 // 		if empty(oDCDLG_Start:Value)
 // 			self:oCaller:cWherep +=' and p.datelastgift>"0000-00-00"'
 // 		ENDIF
@@ -4243,7 +4243,7 @@ method PostInit(oParent,uExtra) class SelPersRemovePers
 	local apers:={} as array 
 	local oPers as SQLSelect
 	local nTot,nRem as int
-	self:cWhereExtra:=" and datediff(curdate(),p.datelastgift)>243 "+; 
+	self:cWhereExtra:=" and datediff(curdate(),ifnull(p.datelastgift,'0000-00-00'))>243 "+; 
 	" and p.persid not in (select cast("+Crypt_Emp(false,'persid')+" as unsigned) as persid from employee "+;
 		"where "+Crypt_Emp(false,'persid')+" IS NOT NULL)"+;
 		" and p.persid not in (select persid from member)"+;
