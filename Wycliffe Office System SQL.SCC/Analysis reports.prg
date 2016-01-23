@@ -1223,7 +1223,7 @@ METHOD PrintReport() CLASS DonorFollowingReport
 	insCount:=0
 	insSep:=""
 	sqlStr2:=""
-	oPers:=SQLSelect{"select persid,cast(birthdate as date) as birthdate,gender,type,propextr from person where persid in ("+Implode(aPers,",")+")",oConn}
+	oPers:=SqlSelect{"select persid,cast(ifnull(birthdate,'0000-00-00') as date) as birthdate,gender,type,propextr from person where persid in ("+Implode(aPers,",")+")",oConn}
 	IF oPers:RECCOUNT=0
 		(ErrorBox{self,"Database table 'person' is empty"}):Show()
 		oPers:Close()
