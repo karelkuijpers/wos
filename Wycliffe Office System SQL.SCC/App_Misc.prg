@@ -4070,13 +4070,13 @@ function PersonUnion(id1 as string, id2 as string)
 	SQLStatement{"start transaction",oConn}:Execute()
 	oStmt:=SQLStatement{'',oConn}
 	// Unify persons self:
-	oPers1:=SqlSelect{"select p.gender,firstname,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	oPers1:=SqlSelect{"select p.gender,firstname,initials,title,telbusiness,telhome,mobile,fax,email,cast(ifnull(birthdate,'0000-00-00') as date) as birthdate,"+;
+		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,"+;
 		"address,city,postalcode,country,attention,propextr"+;
 		",m.mbrid,m.accid,m.depid"+;
 		" from person p left join member m on (m.persid=p.persid) where p.persid="+id1,oConn}
-	oPers2:=SQLSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(birthdate as date) as birthdate,"+;
-		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(datelastgift as date) as datelastgift,"+;
+	oPers2:=SqlSelect{"select p.gender,firstname,m.mbrid,initials,title,telbusiness,telhome,mobile,fax,email,cast(ifnull(birthdate,'0000-00-00') as date) as birthdate,"+;
+		"cast(remarks as char) as remarks,mailingcodes,cast(creationdate as date) as creationdate,cast(alterdate as date) as alterdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,"+;
 		"address,city,postalcode,country,attention,propextr"+;
 		" from person p left join member m on (m.persid=p.persid) where p.persid="+id2,oConn}
 	oSel:=SqlSelect{"select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname,cast("+Crypt_Emp(false,"type") +" as char) as type from employee where "+Crypt_Emp(false,"persid")+"='"+id2+"'",oConn}
@@ -4183,7 +4183,7 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",email='"+ AddSlashes(oPers2:EMAIL)+"'"
 		endif
 		if Empty( oPers1:birthdate)
-			cStatement+=",birthdate='"+ SQLdate(iif(Empty(oPers2:birthdate),null_date,oPers2:birthdate))+"'"
+			cStatement+=",ifnull(birthdate,'0000-00-00')='"+ SQLdate(iif(Empty(oPers2:birthdate),null_date,oPers2:birthdate))+"'"
 		endif
 		if !Empty(oPers2:remarks)
 			cStatement+=",remarks=concat(remarks,' ','"+AddSlashes(oPers2:remarks)+"')"
@@ -4196,7 +4196,7 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",alterdate='"+SQLdate(iif(Empty(oPers2:alterdate),null_date,oPers2:alterdate))+"'"
 		endif
 		if !Empty(oPers2:datelastgift) .and. (Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift)
-			cStatement+=",datelastgift='"+SQLdate(iif(Empty(oPers2:datelastgift),null_date,oPers2:datelastgift))+"'"
+			cStatement+=",ifnull(datelastgift,'0000-00-00')='"+SQLdate(iif(Empty(oPers2:datelastgift),null_date,oPers2:datelastgift))+"'"
 		endif
 		if Empty(oPers1:address) .and. Empty(oPers1:city)
 			cStatement+=",address='"+AddSlashes(oPers2:address) +"'"
