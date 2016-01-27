@@ -3653,11 +3653,11 @@ endif
 RETURN NIL
 METHOD DeleteButton() as void pascal CLASS MemberBrowser
 	LOCAL oTextBox as TextBox
-	LOCAL mMbrId,mAccid,mDepid,mNetasset,mExpAcc,mIncAcc,cMemName as STRING
+	LOCAL mMbrId,mAccid,mDepid,mNetasset,mExpAcc,mIncAcc,cMemName, cError,cStords as STRING
 	local oStmnt as SQLStatement
 	local oMBAL as Balances
 	local fBal as float
-	local oDep as SQLSelect
+	local oDep, oSel as SQLSelect
 	IF self:Server:EOF.or.self:Server:BOF
 		(ErrorBox{,"Select a member first"}):Show()
 		RETURN
@@ -3699,40 +3699,120 @@ METHOD DeleteButton() as void pascal CLASS MemberBrowser
 				endif					
 			endif		
 		endif
-		* Delete this member:
+		// Determine corresponding standing orders:
+		oSel:=SqlSelect{"select group_concat(cast(stordrid as char) separator ',') as stordrids from standingorderline where accountid in ("+iif(Empty(mAccid),mIncAcc+","+mExpAcc,mAccid)+")",oConn} 
+		if oSel:RecCount=1
+			cStords:=oSel:stordrids
+		endif
+		* Delete this member:  
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:execute()
+		oStmnt:=SQLStatement{'lock tables `account` write, `department` write,`distributioninstruction` write, `member` write, `memberassacc` write, `person` write,`standingorder` write,`standingorderline` write, `subscription` write',oConn}        // alphabetic order
+		oStmnt:execute()
+
 		oStmnt:=SQLStatement{"delete from member where MbrId='"+mMbrId+"'",oConn}
 		oStmnt:execute()
 		if oStmnt:NumSuccessfulRows<1
-			(ErrorBox{,"Could not delete member"}):Show()
-			RETURN
-		endif			                                   
-		* Disconnect corresponding person:
-		SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
-			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(self:oSFMemberBrowser_DETAIL:Server:persid,-1)+"'",oConn}:execute()
-		// delete corresponding Distribution Instructions:
-		oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid='"+mMbrId+"'",oConn}
-		oStmnt:execute()
-		// remove associated accounts:
-		SQLStatement{"delete from memberassacc where mbrid="+mMbrId,oConn}:execute() 
-		if !Empty(mAccid)
-			* disconnect corresponding account 
-			SQLStatement{"update account set description=concat('disconnected:',description),giftalwd=0 where accid="+mAccid,oConn}:execute()
-			// delete corresponding subscription? 
-			oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mAccid+" and (category='G' or category='D')",oConn}
-			oStmnt:execute()
-
-		else
-			* disconnect corresponding department 
-			SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepid,oConn}:execute() 
-			// set all its accounts on no gifts
-			SQLStatement{"update account set giftalwd=0 where department="+mDepid,oConn}:execute()      	
-			// delete corresponding subscription?
-			oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mIncAcc+" and (category='G' or category='D')",oConn}
-			oStmnt:execute()
+			//(ErrorBox{,"Could not delete member"}):Show()
+			cError:="Could not delete member"
+		//	RETURN
 		endif
-		LogEvent(self,"member "+cMemName+" deleted")
-		self:oMem:execute()
-		self:oSFMemberBrowser_DETAIL:GoTop()
+		if Empty(cError)
+			* Disconnect corresponding person:
+			SQLStatement{"update person set mailingcodes=replace(replace(mailingcodes,'MW ',''),'MW',''),type='"+;
+			iif(Empty(self:Server:grade),PersTypeValue("COM"),"1")+"' where persid='"+Str(self:oSFMemberBrowser_DETAIL:Server:persid,-1)+"'",oConn}:execute()
+			if !Empty(oStmnt:Status)
+				cError:="Could not update person"
+			endif
+		endif
+		if Empty(cError)
+				// delete corresponding Distribution Instructions:
+			oStmnt:=SQLStatement{"delete from distributioninstruction where mbrid='"+mMbrId+"'",oConn}
+			oStmnt:execute()
+			if !Empty(oStmnt:Status)
+				cError:="Could not delete distributioninstruction"
+			endif
+		endif
+		if Empty(cError) .and. !Empty(cStords)
+			oStmnt:=SQLStatement{"delete from standingorderline where stordrid in ("+cStords+")",oConn}
+			oStmnt:execute()
+			if oStmnt:NumSuccessfulRows<1
+				cError:="Could not delete standing orders"
+			else
+				oStmnt:=SQLStatement{"delete from standingorder where stordrid in ("+cStords+")",oConn}
+				oStmnt:execute()
+				if oStmnt:NumSuccessfulRows<1
+					cError:="Could not delete standing orders"
+				endif
+			endif
+		endif
+			
+		if Empty(cError)
+			// remove associated accounts:
+			SQLStatement{"delete from memberassacc where mbrid="+mMbrId,oConn}:execute() 
+			if !Empty(oStmnt:Status)
+				cError:="Could not delete memberassacc"
+			endif
+		endif
+		
+		if Empty(cError)
+			if !Empty(mAccid)
+				* disconnect corresponding account 
+				SQLStatement{"update account set description=concat('disconnected:',description),giftalwd=0 where accid="+mAccid,oConn}:execute()
+				if !Empty(oStmnt:Status)
+					cError:="Could not update account"
+				else				    		
+					// delete corresponding subscription? 
+					oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mAccid+" and (category='G' or category='D')",oConn}
+					oStmnt:execute()
+					if !Empty(oStmnt:Status)
+						cError:="Could not delete subscription"
+					endif
+				endif
+			else
+				* disconnect corresponding department 
+				SQLStatement{"update department set descriptn=concat('disconnected:',descriptn) where depid="+mDepid,oConn}:execute()
+				if !Empty(oStmnt:Status)
+					cError:="Could not update department"
+				endif 
+				if Empty(cError)
+					// set all its accounts on no gifts
+					SQLStatement{"update account set giftalwd=0 where department="+mDepid,oConn}:execute()
+					if !Empty(oStmnt:Status)
+						cError:="Could not update account"
+					endif 
+				endif	      	
+				if Empty(cError)
+					// delete corresponding subscription?
+					oStmnt:=SQLStatement{"delete from subscription where "+sIdentChar+"accid"+sIdentChar+"="+mIncAcc+" and (category='G' or category='D')",oConn}
+					oStmnt:execute()
+					if !Empty(oStmnt:Status)
+						cError:="Could not delete subscription"
+					endif
+				endif
+			endif
+		endif
+		if Empty(cError)
+			oStmnt:=SQLStatement{"commit",oConn}
+			oStmnt:execute()
+			IF !Empty(oStmnt:Status) 
+				cError:="Could not delete Member"
+			else				
+	      	SQLStatement{"unlock tables",oConn}:execute()
+				SQLStatement{"set autocommit=1",oConn}:execute()
+				LogEvent(self,"member "+cMemName+" deleted")
+				self:oMem:execute()
+				self:oSFMemberBrowser_DETAIL:GoTop()
+			endif
+		endif
+		if !Empty(cError)
+			SQLStatement{"rollback",oConn}:execute()
+			SQLStatement{"unlock tables",oConn}:execute()
+			SQLStatement{"set autocommit=1",oConn}:execute()
+			LogEvent(self,oStmnt:SQLString+CRLF+"Error:"+cError+CRLF+oStmnt:ErrInfo:ErrorMessage,"LogErrors")
+			ErrorBox{,self:oLan:WGet('Member could not be deleted')+":"+cError}:show()
+		endif
+
 	ENDIF
 
 	RETURN 
