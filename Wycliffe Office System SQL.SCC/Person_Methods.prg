@@ -388,7 +388,7 @@ METHOD SetState() CLASS EditPerson
 	
 	self:oPerson:=SQLSelect{ "select lastname,prefix,title,initials,firstname,nameext,attention,address,postalcode,city,"+;
 		"country,telbusiness,telhome,fax,mobile,p.persid,mailingcodes,email,remarks,type,"+;
-		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,cast(ifnull(birthgift,'0000-00-00') as date) as birthdate,"+;
+		"cast(alterdate as date) as alterdate,cast(creationdate as date) as creationdate,cast(ifnull(datelastgift,'0000-00-00') as date) as datelastgift,cast(ifnull(birthdate,'0000-00-00') as date) as birthdate,"+;
 		"externid,gender,opc,propextr,p.`deleted` as removed,"+;
 		"m.mbrid,m.accid,m.depid,group_concat(b.banknumber,'#$#',b.bic separator ',') as bankaccounts from person as p "+;
 		"left join member m on (m.persid=p.persid) left join personbank b on (p.persid=b.persid) "+;
