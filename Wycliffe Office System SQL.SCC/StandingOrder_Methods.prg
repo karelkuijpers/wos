@@ -807,16 +807,18 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) "+; 
 	"left join personbank b on (b.persid=l.creditor and b.banknumber=l.bankacct) "+;
 		"where l.stordrid=s.stordrid and "+;
-		"(edat is null or edat>=CurDate()) and "+;
+		"(edat ='0000-00-00' or edat>=CurDate()) and "+;
 		"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
-		"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
+		"(edat ='0000-00-00' or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
 		" order by s.stordrid,l.seqnr",oConn} 
-	if oStOrdL:reccount <1 
+	if oStOrdL:reccount <1
+		logevent(self,oStOrdL:sqlstring,"logerrors") 
 		return false
 	endif 
 	self:oLan:=Language{} 
 	self:aTrans:={}
-	DO WHILE !oStOrdL:EOF
+	DO WHILE !oStOrdL:EOF 
+		CurStOrdrid:=oStOrdL:stordrid
 		checkdate:=Today()
 		iPeriod:=Max(oStOrdL:period,1) 
 		nDay:=oStOrdL:day
