@@ -2091,7 +2091,6 @@ METHOD ChangeMailCodes(dummy as string) as logic CLASS Selpers
 			
 			oStmnt:=SQLStatement{"update "+self:cFrom+" set p.mailingcodes="+cStatmnt+self:cWherep,oConn}
 			// fSecStart:=Seconds()
-			// LogEvent(self,oStmnt:SQLString,"logsql")
 			oStmnt:Execute()  
 			IF !Empty(oStmnt:Status)
 				ErrorBox{self:oWindow,"Update failed:"+oStmnt:Status:Description}:Show()
@@ -2212,7 +2211,6 @@ METHOD ExportPersons(oParent,nType,cTitel,cVoorw) CLASS Selpers
 // 	fSecStart:=Seconds() 
 // 	LogEvent(self,oSel:SQlString,"logsql") 
 	self:Pointer := Pointer{POINTERHOURGLASS}   
-	LogEvent(self,oSel:sqlstring)
 	oSel:Execute() 
 // 	LogEvent(self,"elapsed time for query:"+Str(Seconds()-fSecStart,-1),"LogSql")
 	self:Pointer := Pointer{POINTERARROW}
