@@ -1020,12 +1020,12 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 		endif
 	endif
 	//	endif
-	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
-		if !self:lNewDb
-			LogEvent(self,"Initialize DB:"+iif(self:FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
-		endif
+// 	if self:FirstOfDay.or.self:lNewDb .or. (!Empty(PrgVers).and. PrgVers>DBVers)       // first logged in or program newer than database? 
+// 		if !self:lNewDb
+// 			LogEvent(self,"Initialize DB:"+iif(self:FirstOfDay,'FirstOfDay ','')+iif(self:lNewDb,'New DB','')+iif(PrgVers>DBVers,'Prg '+Str(PrgVers,-1)+'> DB '+Str(DBVers,-1),'')+'; Prg date:'+versiondate,"loginfo")
+// 		endif
 		self:InitializeDB()
-	endif
+// 	endif
 	// fill eventually dropped tables with new values:
 	if lCopyPP 
 		// 			self:ConVertOneTable("ppcodes","ppcode","ppcodes",cWorkdir,{})
@@ -1424,7 +1424,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"bankbalance","accid","int(11)","NO","NULL",""},;
 		{"bankbalance","datebalance","date","NO","",""},;
 		{"bankbalance","balance","decimal(15,2)","NO","0",""},;
-		{"bankorder","id","int(11)","NO","NULL","auto_increment"},;
+		{"bankorder","id","int(11)","NO","","auto_increment"},;
 		{"bankorder","accntfrom","int(11)","YES","NULL",""},;
 		{"bankorder","banknbrcre","varchar(64)","NO","",""},;
 		{"bankorder","amount","decimal(15,2)","NO","0",""},;
@@ -2004,7 +2004,7 @@ method InitializeDB() as void Pascal  class Initialize
 	endif
 	//read current columns:
 	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,';', COLUMN_NAME,';', COLUMN_TYPE,';', IS_NULLABLE,';', COLUMN_DEFAULT,';', ExTRA,';', lower(COLLATION_NAME) separator '##') as columngroup "+;
-		"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,'NULL',cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
+		"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,if(IS_NULLABLE='YES','NULL',''),cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
 		" if(COLLATION_NAME IS NULL,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
@@ -2383,9 +2383,6 @@ method SyncColumns(aReqColumn as array, aCurColumn as array,cTableName as string
 	aStatReq:=AReplicate({'',0},nLenReq)
 	aStatCur:=AReplicate('',nLenCur) 
 	// first search for columns with changed specifications:  
-   if cTableName='employee'
-   	cTableName:=cTableName
-   endif
 	for nPosReq:=1 to nLenReq
 		cReqname:=Lower(aReqColumn[nPosReq,2])       // first position is table name, second column name
 		nPosCur:=AScan(aCurColumn,{|x|Lower(x[2])==cReqname})
