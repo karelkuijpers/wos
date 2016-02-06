@@ -812,7 +812,6 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 		"(edat ='0000-00-00' or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
 		" order by s.stordrid,l.seqnr",oConn} 
 	if oStOrdL:reccount <1
-		logevent(self,oStOrdL:sqlstring,"logerrors") 
 		return false
 	endif 
 	self:oLan:=Language{} 
