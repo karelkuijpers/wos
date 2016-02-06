@@ -664,8 +664,8 @@ METHOD DeleteButton( ) CLASS StandingOrderBrowser
 		RETURN
 	ENDIF
 	curStorId:=Str(self:oStOrd:STORDRID,-1)
-	oTextBox := TextBox{ self, "Delete Standing Order",;
-		"Delete Order "+curStorId+" with all its lines?" }	
+	oTextBox := TextBox{ self, self:oLan:WGet("Delete Standing Order"),;
+		self:oLan:WGet("Delete Order with number")+Space(1)+curStorId+Space(1)+self:oLan:WGet("with all its lines")+"?" }	
 	oTextBox:Type := BUTTONYESNO + BOXICONQUESTIONMARK
 	
 	IF ( oTextBox:Show() == BOXREPLYYES )
