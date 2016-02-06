@@ -760,6 +760,7 @@ METHOD PrintReport() CLASS PMISsend
 		oSel:=SqlSelect{'select group_concat(cast(y.accid as char),",",cast(y.asstot as char) order by y.accid separator "#") as grasssum from (select t.accid,sum(t.cre-t.deb) as asstot from transaction t where t.fromrpp=0 and t.bfm="" and t.gc="AG" and t.dat <="'+SQLdate(closingDate)+'" '+; 
 		+iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransid,-1)) +;
 			" and "+oMBal:cTransSelection+" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by t.accid) as y group by 1=1",oConn} 
+//			Logevent(self,oSel:sqlstring,"logerrors")  
 		if oSel:Reccount>0
 			aAssTot:=AEvalA(Split(oSel:grasssum,'#'),{|x|x:=Split(x,',') })  // make array of sums of assessable amounts per account
 			// add to total assessable amount per member:
@@ -785,7 +786,7 @@ METHOD PrintReport() CLASS PMISsend
 				"reference,'&&',cast(dat as char),'&&',ifnull("+SQLFullNAC(0,sLand,'p')+",''),'&&',cast(fromrpp as char) order by accid,transid,seqnr separator '##') as grtrans from transaction t left join person p on (p.persid=t.persid) "+;
 				"where t.accid in ("+Implode(aAccidMbrF,',',,,1)+') and bfm="" and dat<="'+SQLdate(closingDate)+'" and gc>""'+;
 				iif(Empty(self:nMaxTransid),""," and t.transid<="+Str(self:nMaxTransid,-1))+;
-				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}  
+				" and t.lock_id="+MYEMPID+" and t.lock_time > subdate(now(),interval 10 minute) group by 1=1",oConn}
 			if oSel:Reccount>0
 				aTransF:=AEvalA(Split(oSel:grtrans,'##'),{|x|x:=Split(x,'&&')})
 			endif 
