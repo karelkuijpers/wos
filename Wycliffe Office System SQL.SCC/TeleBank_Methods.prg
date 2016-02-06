@@ -70,7 +70,7 @@ method AddToIncome(gc:="" as string,FROMRPP:=false as logic,accid as string,cre 
 				lError:=true
 			endif
 		else
-			LogEvent(self,"add to income error:"+oStmnt:ErrInfo:errormessage,"logerrors")
+			LogEvent(self,"add to income ("+oStmnt:SQLString+") error:"+oStmnt:ErrInfo:errormessage,"logerrors")
 			lError:=true
 		endif
 	endif
