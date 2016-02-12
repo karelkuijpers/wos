@@ -3949,7 +3949,12 @@ METHOD FReadLine(dummy:=nil as logic) as string CLASS MyFile
 	self:nStart:=nPos
 	RETURN SubStr(self:cBuffer,nSt,nLen) 
 	
-METHOD Init(oFr) CLASS MyFile
+METHOD Init(oFr,nEncoding:=0) CLASS MyFile 
+//////////////////////////////////
+// nEncoding: 0: standard ascii (default)
+//            1: UTF8 without BOM
+//            2: UTF16  without BOM
+//////////////////////////////////
 	LOCAL UTF8:=_chr(0xEF)+_chr(0xBB)+_chr(0xBF), UTF16:=_chr(0xFF)+_chr(0xFE) as string
 	local bufferPtr as string  
 	self:ptrHandle:=FOpen2(oFr:FullPath,FO_READ + FO_SHARED)
@@ -3959,14 +3964,23 @@ METHOD Init(oFr) CLASS MyFile
 		RETURN self
 	ENDIF
 	bufferPtr:= FReadStr(self:ptrHandle,4096)
-	if SubStr(bufferPtr,1,3) == UTF8
+	if nEncoding==1
 		self:CP:=1
-		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
-	elseif SubStr(bufferPtr,1,2)==UTF16
+		self:cBuffer:=(UTF2String{bufferPtr}):Outbuf
+	elseif nEncoding==2
 		self:CP:=2
-		self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
+		self:cBuffer:=(UTF2String{bufferPtr}):Outbuf
 	else
-		self:cBuffer:=bufferPtr
+		if SubStr(bufferPtr,1,3) == UTF8
+			self:CP:=1
+			self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
+		elseif SubStr(bufferPtr,1,2)==UTF16
+			self:CP:=2
+			self:cBuffer:=(UTF2String{SubStr(bufferPtr,4)}):Outbuf
+		else
+			self:cBuffer:=bufferPtr
+			self:CP:=0
+		endif
 	endif
 	IF self:ptrHandle = F_ERROR.or.(self:cBuffer==null_string .and.FEof(self:ptrHandle))
 		(ErrorBox{,"Could not read file: "+oFr:FullPath+"; Error:("+Str(FError(),-1)+")"+DosErrString(FError())+iif(NetErr(),"; used by someone else","")}):Show()
