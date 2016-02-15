@@ -1781,7 +1781,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","teletrid","int(11)","NO","","auto_increment"},;
 		{"teletrans","bankaccntnbr","varchar(64)","NO","",""},;
 		{"teletrans","bookingdate","date","YES","NULL",""},;
-		{"teletrans","seqnr","int(10)","NO","",""},;
+		{"teletrans","seqnr","char(16)","NO","",""},;
 		{"teletrans","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"teletrans","kind","char(6)","NO","",""},;
 		{"teletrans","contra_name","varchar(64)","NO","",""},;
