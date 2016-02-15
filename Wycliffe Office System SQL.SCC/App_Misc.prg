@@ -4197,7 +4197,7 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",email='"+ AddSlashes(oPers2:EMAIL)+"'"
 		endif
 		if Empty( oPers1:birthdate)
-			cStatement+=",ifnull(birthdate,'0000-00-00')='"+ SQLdate(iif(Empty(oPers2:birthdate),null_date,oPers2:birthdate))+"'"
+			cStatement+=",birthdate='"+ SQLdate(iif(Empty(oPers2:birthdate),null_date,oPers2:birthdate))+"'"
 		endif
 		if !Empty(oPers2:remarks)
 			cStatement+=",remarks=concat(remarks,' ','"+AddSlashes(oPers2:remarks)+"')"
