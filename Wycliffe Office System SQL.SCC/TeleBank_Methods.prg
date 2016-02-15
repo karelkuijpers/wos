@@ -294,10 +294,10 @@ CLASS TeleMut
 
 	PROTECT m56_recnr as int
 	EXPORT m56_sgir,m56_kind,m56_description,m56_contra_name,m56_budgetcd,m56_cod_mut_r,;
-		m56_addsub, m56_accnumber,m56_accid:="   ", m56_Payahead,m56_persid,m56_accnumber as STRING,;
+		m56_addsub, m56_accnumber,m56_accid:="   ", m56_Payahead,m56_persid,m56_accnumber,m56_seqnr as STRING,;
 		m56_bookingdate as date,;
 		m56_amount as REAL,;
-		m56_seqnr:=0,m56_dueid as int 
+		m56_dueid as int 
 	export m56_contra_bankaccnt, m56_bankaccntnbr as USUAL,;
 		m56_processed,m56_recognised, m56_autmut,m56_mode_aut:=true,m56_autom as LOGIC
 	export m56_address, m56_zip, m56_town, m56_country,m56_bic as string
@@ -336,7 +336,7 @@ CLASS TeleMut
 
 	declare method TooOldTeleTrans,ImportBBS,ImportPGAutoGiro ,ImportPostbank,ImportBBSInnbetal,;
 		ImportGiro,ImportKB,ImportSA,ImportTL1,ImportUA,CheckPattern,NextTeleNonGift,GetPaymentPattern, AddTeleTrans,SaveTeleTrans,;
-		GetAddress,AllreadyImported,ImportSA2, ImportCAMT053,GetTeleSelect,ImportMT940,ImportMT940ING,ImportMT940IBANING
+		GetAddress,AllreadyImported,ImportSA2, ImportCAMT053,GetTeleSelect,ImportMT940,ImportMT940ING,ImportMT940IBANING,ImportHU
 method AddTeleTrans(bankaccntnbr as string,;
 		bookingdate as date,; 
 	seqnr as string,;
@@ -365,7 +365,7 @@ method AddTeleTrans(bankaccntnbr as string,;
 			// aValuesTrans:
 			// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,lv_rtrn,lv_eref,lv_marfl,processed 
 			//      1            2        3          4           5      6           7      8      9        10        11       12     13    14   15    16        17     18      19
-			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),AllTrim(contra_bankaccnt),kind,contra_name,AllTrim(budgetcd),amount,addsub,Description,persid,adrline,country,bic,dueid,lv_rtrn,lv_eref,lv_marf,''})
+			AAdd(self:aValuesTrans,{bankaccntnbr,SQLdate(bookingdate),ZeroTrim(seqnr+iif(self:nSubSeqnr>1,Str(self:nSubSeqnr,-1),'')),AllTrim(contra_bankaccnt),SubStr(kind,1,6),contra_name,AllTrim(budgetcd),amount,addsub,description,persid,adrline,country,bic,dueid,lv_rtrn,lv_eref,lv_marf,''})
 			// 			LogEvent(self,Str(Len(self:aValuesTrans),-1)+':'+contra_name+'('+ contra_bankaccnt+')',"logsql")
 		endif 
 	endif
@@ -735,7 +735,7 @@ METHOD Import() CLASS TeleMut
 	LOCAL lv_eind as date
 	LOCAL lSuccess,lFilesFound as LOGIC
 	local aFiles:={} as array  // files to be deleted 
-	LOCAL aFileMT:={},aFileMTING:={},aFileMTIBANING:={}, aFilePB:={}, aFileSA,aFileSA2, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileTL,aFileKB,aFileRO,aFileCamT:={} as ARRAY
+	LOCAL aFileMT:={},aFileMTING:={},aFileMTIBANING:={}, aFilePB:={}, aFileSA,aFileSA2, aFileN, aFileUA, aFileBBS, aFileINN, aFilePG, aFileTL,aFileKB,aFileRO,aFileHU,aFileCamT:={} as ARRAY
 	LOCAL oFs, oFrabo as MyFileSpec
 	LOCAL oBF as MyFileSpec
 	LOCAL oPF as FileSpec
@@ -789,6 +789,7 @@ METHOD Import() CLASS TeleMut
 	aFilePB:=Directory(CurPath+"\*-20??.CSV")
 	aFileKB:=Directory(CurPath+"\*KTO*_*.CSV")
 	aFileRO:=Directory(CurPath+"\RO??BTRL????????N???????-??.??.????-??.??.????.csv")  //RO38BTRLRONCRT00N3407802-01.07.2014-31.07.2014
+	aFileHU:=Directory(CurPath+"\szamlatortenet_20??????_20??????.csv")   // szamlatortenet_20160101_20160123.csv
 	aFileSA:=Directory(CurPath+"\statement-*-20??????.txt") 
 	aFileSA2:=Directory(CurPath+"\multiple*.dat") 
 	aFileUA:=Directory(CurPath+"\x*statements.TXT")
@@ -806,7 +807,7 @@ METHOD Import() CLASS TeleMut
 	IF oFs:Find() .or.!Empty(aFileMT).or.!Empty(aFileMTIBANING);
 		.or.!Empty(aFilePB).or.!Empty(aFileSA).or.!Empty(aFileSA2).or.!Empty(aFileKB).or.;
 		!Empty(aFileUA).or.!Empty(aFileBBS).or.!Empty(aFileINN).or.!Empty(aFilePG);
-		.or.!Empty(aFileTL).or.!Empty(aFileRO) .or. !Empty(aFileCamT)
+		.or.!Empty(aFileTL).or.!Empty(aFileRO) .or. !Empty(aFileCamT) .or.!Empty(aFileHU) 
 		lFilesFound:=true 
 		self:oParent:Pointer := Pointer{POINTERHOURGLASS}
 
@@ -944,6 +945,15 @@ METHOD Import() CLASS TeleMut
 			cFileName:=aFileRO[nf,F_NAME]
 			oBF := MyFileSpec{cFileName}
 			if	self:ImportRO(oBF)
+				AAdd(aFiles,oBF)
+			endif				
+		NEXT
+
+		// Hungarian Bank:
+		FOR nf:=1 to Len(aFileHU)
+			cFileName:=aFileHU[nf,F_NAME]
+			oBF := MyFileSpec{cFileName}
+			if	self:ImportHU(oBF)
 				AAdd(aFiles,oBF)
 			endif				
 		NEXT
@@ -1976,6 +1986,110 @@ METHOD ImportGiro(oFs as MyFileSpec) as logic CLASS TeleMut
 
 	ENDIF
 	RETURN true
+METHOD ImportHU(oFb as MyFileSpec) as logic CLASS TeleMut
+	* Import of K&H bank in to teletrans
+	LOCAL i as int
+	LOCAL lv_description, lv_bankAcntOwn,lv_addsub,lv_BankAcntContra,lv_persid,lv_kind,lv_NameContra,lv_budget,lv_transid as STRING
+	LOCAL lSuccess:=true as LOGIC
+	LOCAL cDelim:=CHR(9) as STRING
+	LOCAL ptrHandle as MyFile
+	LOCAL cBuffer as STRING, nRead as int
+	LOCAL aStruct:={} as ARRAY // array with fieldnames
+	LOCAL aFields:={} as ARRAY // array with fieldvalues
+	LOCAL ptDate, ptDebCre, ptDesc, ptType,ptOwnBank,ptContrAcc,ptContrName,ptTransid,  nVnr,nCnt,nTot,nProc as int
+	LOCAL pbType as STRING
+	LOCAL lv_Amount, Hl_balan as FLOAT
+	LOCAL ld_bookingdate as date
+	local oStmnt as SQLStatement 
+
+	ptrHandle:=MyFile{oFb,1}
+	pbType:=Upper(oFb:Extension) 
+	if Empty(ptrHandle)
+		return false
+	endif
+	cBuffer:=ptrHandle:FReadLine()   // read first line with column headers
+	cBuffer:=StrTran(StrTran(cBuffer,';',''),':','')
+	
+	if !GetDelimiter(cBuffer,@aStruct,@cDelim,10,21)
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from K&H Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		ptrHandle:Close()
+		RETURN FALSE
+	ENDIF
+	ptDate:=AScan(aStruct,{|x| "KÖNYVELÉS DÁTUMA" $ x})
+	ptDesc:=AScan(aStruct,{|x| "KÖZLEMÉNY" $ x})
+	ptDebCre:=AScan(aStruct,{|x| "ÖSSZEG" $ x}) 
+	ptOwnBank:=AScan(aStruct,{|x| "KÖNYVELÉSI SZÁMLA" $ x}) 
+	ptContrAcc:=AScan(aStruct,{|x| "PARTNER SZÁMLA" $ x}) 
+	ptContrName:=AScan(aStruct,{|x| "PARTNER ELNEVEZÉSE" $ x}) 
+	ptType:=AScan(aStruct,{|x| "TÍPUS" $ x})
+	ptTransid:=AScan(aStruct,{|x| "TRANZAKCIÓ AZONOSÍTÓ" $ x}) 
+	
+	IF ptDate==0 .or. ptDesc==0 .or. ptDebCre==0 .or.ptOwnBank==0  .or.ptContrAcc==0.or.ptContrName==0.or.ptType==0
+		(ErrorBox{,self:oLan:Wget("Wrong fileformat of importfile from K&H Bank")+": "+oFb:FullPath+"("+self:oLan:Wget("See help")+")"}):show()
+		RETURN FALSE
+	ENDIF
+	SaveUse("ImportHU")
+
+	cBuffer:=ptrHandle:FReadLine()   // read first transaction
+	cBuffer:=StrTran(cBuffer,'""','"')
+	aFields:=Split(cBuffer,cDelim)
+	if Empty(AFields[ptDate])
+		cBuffer:=ptrHandle:FReadLine()                                       
+		cBuffer:=StrTran(cBuffer,'""','"')
+		aFields:=Split(cBuffer,cDelim)
+	endif
+
+	DO WHILE Len(AFields)>3
+		lv_bankAcntOwn := AllTrim(AFields[ptOwnBank]) 
+		ld_bookingdate:=SToD(StrTran(SubStr(AFields[ptDate],1,10),'.',''))        //   2016.01.22
+		IF self:TooOldTeleTrans(lv_bankAcntOwn,ld_bookingdate)
+			cBuffer:=ptrHandle:FReadLine()
+			cBuffer:=StrTran(cBuffer,'""','"')
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		lv_kind:=AllTrim(AFields[ptType])
+		lv_description:=Compress(StrTran(AllTrim(AFields[ptDesc]),'"','')) +' ('+lv_kind+')'
+		lv_Amount:=Round(Val(StrTran(StrTran(AFields[ptDebCre],'"',''),',','')),DecAantal) 
+		if lv_kind == 'Készpénz befizetés' .or. lv_kind == 'Konv. devizaátut. jóváírás b.kívül' .or. lv_kind== 'Átutalás jóváírás'
+			lv_description:= self:oLan:RGet("Gift")+Space(1)+lv_description
+		elseif lv_kind == 'Csoportos beszedés'
+		endif
+		IF Empty(lv_Amount)  && skip empty transactions
+			cBuffer:=ptrHandle:FReadLine()
+			cBuffer:=StrTran(cBuffer,'""','"')
+			aFields:=Split(cBuffer,cDelim)
+			loop
+		ENDIF
+		IF lv_Amount>=0
+			lv_addsub:="B"
+		ELSE
+			lv_addsub:="A" 
+			lv_Amount:=-lv_Amount
+		ENDIF
+		lv_Amount:=Round(lv_Amount,DecAantal)
+		lv_BankAcntContra:=AllTrim(AFields[ptContrAcc])
+		lv_NameContra:=AllTrim(AFields[ptContrName]) 
+		lv_transid:=AllTrim(AFields[ptTransid]) 
+		nTot++
+		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,lv_transid,lv_BankAcntContra,;
+			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+		lv_description:=""
+		cBuffer:=ptrHandle:FReadLine()
+		cBuffer:=StrTran(cBuffer,'""','"')
+		aFields:=Split(cBuffer,cDelim)
+	ENDDO
+	ptrHandle:Close()
+	ptrHandle:=null_object 
+// 	nCnt:=self:lv_aant_toe
+// 	nProc:=self:lv_processed 
+	lSuccess:=self:SaveTeleTrans(true,false,"K&H Bank file:"+oFb:FileName,nTot)
+// 	AAdd(self:aMessages,"Imported silvanTrania file:"+oFb:FileName+" "+Str(self:lv_aant_toe -nCnt,-1)+" imported of "+Str(nTot,-1)+" transactions, processed automatically:"+Str(self:lv_processed-nProc,-1))
+	if lSuccess
+		return true
+	else
+		return false                                              
+	endif
 METHOD ImportKB(oFb as MyFileSpec) as logic CLASS TeleMut
 	* Import of KB Bank data into teletrans.dbf
 	LOCAL oHlS as HulpSA
