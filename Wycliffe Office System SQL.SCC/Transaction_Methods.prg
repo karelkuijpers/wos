@@ -1150,7 +1150,7 @@ local cFields:="a.*,b.category as type,m.co,m.persid as persid,"+SQLIncExpFd()+"
 	self:cGiverName := ""
 	self:mPerson := ""
 	self:mDAT:=self:oTmt:m56_bookingdate
-	self:mBst:=AllTrim(self:oTmt:m56_kind)+Str(self:oTmt:m56_seqnr,-1)
+	self:mBst:=AllTrim(self:oTmt:m56_kind)+ConS(self:oTmt:m56_seqnr)
 	oHm:AccID := self:oTmt:m56_sgir
 	IF Empty(self:oTmt:m56_contra_name).or.Empty(self:oTmt:m56_description)
 		m53_komma:=''
@@ -3399,7 +3399,7 @@ METHOD FillTeleBanking(lNil:=nil as logic) as logic CLASS PaymentJournal
 	endif	
 	self:ShowDebbal()
 	self:mDAT := self:oTmt:m56_bookingdate
-	self:mBst := AllTrim(self:oTmt:m56_kind)+AllTrim(Str(self:oTmt:m56_seqnr,-1)) 
+	self:mBst := AllTrim(self:oTmt:m56_kind)+ConS(self:oTmt:m56_seqnr)
 	self:oDCmBST:Value:=self:mBst
 	if !self:DebCurrency==sCurr
 		if self:oCurr==null_object
