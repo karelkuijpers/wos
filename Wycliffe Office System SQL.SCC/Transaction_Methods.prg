@@ -948,7 +948,7 @@ METHOD FilePrint() CLASS General_Journal
 	oReport:PrintLine(@nRow,@nPage,;
 		Pad(oLan:RGet("date",,"!")+":",20)+DToC(self:mDAT),aHeader)
 	oReport:PrintLine(@nRow,@nPage,;
-		Pad(oLan:RGet("document id",,"!")+":",20)+mBst,aHeader)
+		Pad(oLan:RGet("document id",,"!")+":",20)+ConS(self:mBST),aHeader)
 	IF !Empty(mCLNGiver)
 		oReport:PrintLine(@nRow,@nPage,self:oLan:RGet("Person",,"!")+":",aHeader)
 		oReport:PrintLine(@nRow,@nPage,self:cGiverName,aHeader)
