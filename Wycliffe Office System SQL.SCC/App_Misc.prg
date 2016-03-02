@@ -574,6 +574,12 @@ f_tekst:=AllTrim(StrTran(f_tekst,CHR(160),Space(1)))         // replace non-brea
 DO WHILE At("  ",f_tekst)>0
    f_tekst:=StrTran(f_tekst,"  "," ")
 ENDDO
+DO WHILE At(" ,",f_tekst)>0
+   f_tekst:=StrTran(f_tekst," ,",",")
+ENDDO
+DO WHILE At(",,",f_tekst)>0
+   f_tekst:=StrTran(f_tekst,",,",",")
+ENDDO
 RETURN AllTrim(f_tekst)
 function ConF(uValue as usual) as float
 // convert usual to int
@@ -4965,10 +4971,11 @@ function	UpdateAccountDescription(mDepId as string,cNewname as string,cPrvname a
 
 local i,j as int
 local cReplace,cSearch as string
-local aName:={} as array 
+local aName:={},aNew:={} as array 
 local oSel as SQLSelect
 local oStmnt as SQLStatement
 	aName:=GetTokens(cPrvname)
+	aNew:=GetTokens(cNewname)
 	oSel:=SqlSelect{"select accid,description from account where department="+mDepId,oConn}
 	if oSel:reccount<1
 		return false
@@ -4983,6 +4990,16 @@ local oStmnt as SQLStatement
 				j:=AtC(cSearch,cReplace)
 			enddo
 		next
+		// check if new name allready in current name:
+		for i:=1 to Len(aNew)
+			cSearch:=aNew[i,1]
+			j:=AtC(cSearch,cReplace)
+			do while j>0
+				cReplace:=Stuff(cReplace,j,Len(cSearch),'')
+				j:=AtC(cSearch,cReplace)
+			enddo
+		next
+		
 		cReplace:=AddSlashes(SubStr(Compress(cNewname+' '+cReplace),1,40))
 		oStmnt:=SQLStatement{"update account set description='"+AddSlashes(cReplace)+"' where accid="+ConS(oSel:accid),oConn}
 		oStmnt:Execute()
