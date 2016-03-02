@@ -1884,16 +1884,18 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditAccount
 // 		"where a.accid="+self:mAccId+" and b.balitemid=a.balitemid",oConn}
 
 		self:mAccNumber := self:oAcc:ACCNUMBER 
-		self:mAccId:= Str(self:oAcc:accid,-1)
+		self:mAccId:= ConS(self:oAcc:accid)
 		self:mDescription := self:oAcc:Description
-		self:mNumSave := Str(self:oAcc:balitemid,-1)
+		self:mNumSave := ConS(self:oAcc:balitemid)
 		self:nCurNum:=mNumSave
-		self:mDep:=Str(self:oAcc:Department,-1) 
+		self:mDep:=ConS(self:oAcc:Department) 
 		if ConI(self:oAcc:GAINLSACC)>0 
-			oAccG:=SQLSelect{"select accid,description from account where accid="+Str(self:oAcc:GAINLSACC,-1),oConn}
-			self:cCurGainLossAcc:=AllTrim(oAccG:Description)
-			self:oDCmGainLossacc:textValue:= oAccG:Description
-			self:mGainLsacc:=Str(oAccG:accid,-1)
+			oAccG:=SqlSelect{"select accid,description from account where accid="+ConS(self:oAcc:GAINLSACC),oConn}
+			if oAccG:Reccount>0
+				self:cCurGainLossAcc:=AllTrim(oAccG:Description)
+				self:oDCmGainLossacc:textValue:= oAccG:Description
+				self:mGainLsacc:=ConS(oAccG:accid)
+			endif
 		else
 			self:mGainLossacc:=""
 		endif
