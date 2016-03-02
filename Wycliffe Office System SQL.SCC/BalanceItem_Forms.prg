@@ -737,16 +737,18 @@ METHOD EditButton(lNew,lAccount, lListView) CLASS CustomExplorer
 			else
 				oTreeView:=self:TreeView
 				oTreeViewItem:=oTreeView:GetSelectedItem()
-				nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
-// 				lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
-				lAccount:=(oTreeViewItem:ImageIndex==3)				
+				if !Empty(oTreeViewItem)
+					nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
+					lAccount:=(oTreeViewItem:ImageIndex==3)
+				endif				
 			endif
 		else
 			oTreeView:=self:TreeView
 			oTreeViewItem:=oTreeView:GetSelectedItem()
-			nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
-			lAccount:=(oTreeViewItem:ImageIndex==3)				
-// 			lAccount:=self:IsAccountSymbol(oTreeViewItem:NameSym)				
+			if !Empty(oTreeViewItem)
+				nNum:=self:GetIdFromSymbol(oTreeViewItem:NameSym)
+				lAccount:=(oTreeViewItem:ImageIndex==3)
+			endif				
 		endif
 		IF Empty(nNum)
 			(ErrorBox{,"Select a record within the right pane first"}):Show()
