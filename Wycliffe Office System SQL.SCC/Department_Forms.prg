@@ -960,7 +960,7 @@ METHOD OKButton( ) CLASS EditDepartment
 		endif		
 		if oDep:grade=="OFR"
 			if ConI(self:NbrIncome) =0 .and.ConI(self:NbrExpense)=0 .and.ConI(self:NbrCAPITAL)=0
-				ErrorBox{self,"At least one income, expense or net asset account should be scpeicfied for this Own Funds Raising department"}:show()
+				ErrorBox{self,"At least one income, expense or net asset account should be scpecified for this Own Funds Raising department"}:show()
 				return
 			endif
 		else
