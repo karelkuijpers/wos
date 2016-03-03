@@ -1189,13 +1189,9 @@ METHOD OkButton CLASS EditPerson
 					if !lError
 						// change names of connected department accounts: 
 						lError:=UpdateAccountDescription(ConS(self:oPerson:depid),AllTrim(self:mlastname),self:oPerson:lastname,@cError)
-						// 						oStmnt:=SQLStatement{'update account set description=concat("'+AddSlashes(AllTrim(self:mlastname))+'"," ",replace(description,"'+AddSlashes(self:oPerson:lastname)+'","")) where department='+ConS(self:oPerson:depid),oConn}
-						// 						oStmnt:Execute()
-						// 						if !Empty(oStmnt:Status)
-						// 							lError:=true
-						// 							cError:='Update account Error:'+iif(AtC('Duplicate',oStmnt:ErrInfo:ErrorMessage)>0,'description already exists:','')+oStmnt:ErrInfo:ErrorMessage
-						// // 							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
-						// 						endif
+						if lError
+							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						endif
 					endif
 				endif
 			ENDIF
@@ -1236,8 +1232,10 @@ METHOD OkButton CLASS EditPerson
 		else
 			SQLStatement{"rollback",oConn}:Execute()
 			SQLStatement{"unlock tables",oConn}:Execute() 
-			SQLStatement{"set autocommit=1",oConn}:Execute()
-			LogEvent(self,cErrorMessage,"LogErrors")
+			SQLStatement{"set autocommit=1",oConn}:Execute() 
+			if !Empty(cErrorMessage)
+				LogEvent(self,cErrorMessage,"LogErrors")
+			endif
 			ErrorBox{self,cError}:Show()
 			return false		
 		endif
