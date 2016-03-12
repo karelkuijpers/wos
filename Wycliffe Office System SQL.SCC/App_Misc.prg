@@ -4216,7 +4216,7 @@ function PersonUnion(id1 as string, id2 as string)
 			cStatement+=",alterdate='"+SQLdate(iif(Empty(oPers2:alterdate),null_date,oPers2:alterdate))+"'"
 		endif
 		if !Empty(oPers2:datelastgift) .and. (Empty(oPers1:datelastgift) .or.oPers1:datelastgift< oPers2:datelastgift)
-			cStatement+=",ifnull(datelastgift,'0000-00-00')='"+SQLdate(iif(Empty(oPers2:datelastgift),null_date,oPers2:datelastgift))+"'"
+			cStatement+=",datelastgift='"+SQLdate(iif(Empty(oPers2:datelastgift),null_date,oPers2:datelastgift))+"'"
 		endif
 		if Empty(oPers1:address) .and. Empty(oPers1:city)
 			cStatement+=",address='"+AddSlashes(oPers2:address) +"'"
