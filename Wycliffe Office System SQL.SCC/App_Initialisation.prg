@@ -158,7 +158,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 	endif
 	return false
 
-Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic class CheckUPGRADE
+Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic,lNewDb:=false as logic) as logic class CheckUPGRADE
 	// check if there are new tables or files
 	local i,j as int 
 	local cDirname as string 
@@ -224,12 +224,14 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic) as logic cl
 								oSel:Execute()
 							endif
 						endif
-						LogEvent(self,"File "+oFs:FullPath+"	successfull	loaded from	internet; local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'loginfo')	
+						if !lNewDb
+							LogEvent(self,"File "+oFs:FullPath+' successfull loaded from internet; local date:'+DToC(LocalDate)+' '+LocalTime+' remote date:'+DToC(RemoteDate)+' '+Remotetime,'loginfo')
+						endif	
 					else
-						LogEvent(self,"File "+oFs:FullPath+"	could	not be find after loading from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+						LogEvent(self,"File "+oFs:FullPath+' could not be find after loading from internet: local date:'+DToC(LocalDate)+' '+LocalTime+' remote date:'+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 					endif
 				else
-					LogEvent(self,"File "+aInsRem[i,F_NAME]+" could not be loaded from internet: local date:"+DToC(LocalDate)+' '+LocalTime+" remote date:"+DToC(RemoteDate)+' '+Remotetime,'logerrors')
+					LogEvent(self,"File "+aInsRem[i,F_NAME]+' could not be loaded from internet: local date:'+DToC(LocalDate)+' '+LocalTime+' remote date:'+DToC(RemoteDate)+' '+Remotetime,'logerrors')
 				endif
 			endif					 
 		next
