@@ -4423,7 +4423,10 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////		
 	cMess:=self:oLan:WGet('Printing the reports.')
 	self:STATUSMESSAGE(cMess)
-	
+	if !IsObject(self:oReport) .or. self:oReport==null_object
+		self:Pointer := Pointer{POINTERARROW}
+		return
+	endif
 	if Empty(self:oReport:ToFileFS:FileName)
 		self:oReport:ToFileFS:FileName:= self:oLan:RGet("Giftreport")+Str(self:CalcYear,4)+StrZero(self:CalcMonthEnd,2)
 	endif
