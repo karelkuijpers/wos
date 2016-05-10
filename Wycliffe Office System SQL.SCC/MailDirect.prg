@@ -814,7 +814,7 @@ method SendEmails(lConfirm:=false as logic) as logic class SendEmailsDirect
 	oTCPIP:Ping('www.google.com')
 	if AtC("timeout",oTCPIP:Response)>0
 		self:lError:=true
-		self:cError:=self:oLan:WGet("No internet connection")
+		self:cError:="No internet connection"
 		return false
 	endif
 	nRet:=FileStart(self:cbatchfile,iif( IsObject(self:oOwner).and.!self:oOwner==null_object,self:oOwner,oMainWindow))
