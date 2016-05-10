@@ -560,7 +560,8 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 	LOCAL sRecip as MAPIRecipDesc
 	LOCAL l:=1 as int
 	LOCAL oMsg as MapiMsg 
-	Local PtrRecip as ptr 
+	Local PtrRecip as ptr
+	local cLasterror as string 
 
 	IF !Empty(oRecip2) .and.! IsNil(oRecip2)
 		l:=2
@@ -631,12 +632,13 @@ METHOD SendDocument( oFs as Filespec , oRecip1 as MAPIRecip, oRecip2 as MAPIReci
 		sMessage , ;
 		0 , ;
 		0 )
-	self:oClick:Suspend() 
 	if !nResult == SUCCESS_SUCCESS
-			LogEvent(self,"Error when emailing via "+EmailClient+", Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult)+"; recip:"+oRecip1:Name+' '+oRecip1:Address+"; message:"+cNoteText+"; last error:"+GetSystemMessage(GetLastError()) ,"logerrors")
-			MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION ) 
-			RETURN false
+		cLasterror := GetSystemMessage(GetLastError())
+		LogEvent(self,"Error when emailing via "+EmailClient+", Error:"+Str(nResult,-1)+' - ' +DosErrString(nResult)+"; recip:"+oRecip1:Name+' '+oRecip1:Address+"; message:"+cNoteText+"; last error:"+cLasterror ,"logerrors")
+		MessageBox( 0 , "Error when emailing" , "Error:"+Str(nResult,-1)+'- ' +DosErrString(nResult), MB_ICONEXCLAMATION ) 
+		RETURN false
 	endif
+	self:oClick:Suspend() 
 	MemFree( sMessage )
 	MemFree( pszSubject )
 
