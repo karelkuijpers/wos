@@ -2515,6 +2515,10 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 	LOCAL nDepId as int, cAccId,cPersId as string
 	Local ROE:=1 as float
 	local oTransH as SQLSelect
+	if !IsObject(oHm) .or. oHm==null_object
+		return false
+	endif
+	ThisRec:=oHm:RECNO
 	if oHm:CURRENCY # sCurr
 		if Round(oHm:CREFORGN- oHm:DEBFORGN,DecAantal)<>0
 			self:Owner:lwaitingForExchrate:=true
