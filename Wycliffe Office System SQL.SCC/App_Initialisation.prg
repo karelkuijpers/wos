@@ -153,7 +153,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		oFTP:CloseRemote() 
 	else
 		// 			__RaiseFTPError(oFTP) 
-		LogEvent(self,"Could not connect with update server via internet to check for upgrades","logerrors")
+		LogEvent(self,"Could not connect with update server via internet to check for upgrades","loginfo")
 		WarningBox{,"Check upgrades","Could not connect with update server via internet to check for upgrades"}:Show()
 	endif
 	return false
@@ -241,7 +241,7 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic,lNewDb:=fals
 		oFs:=null_object
 	else
 		// 			__RaiseFTPError(oFTP) 
-		LogEvent(self,"No internet connection available to check for upgrades","logerrors")
+		LogEvent(self,"No internet connection available to check for upgrades","loginfo")
 		WarningBox{,"Check upgrades","No internet connection available to check for upgrades"}:Show()
 	endif
 	return false
@@ -842,6 +842,10 @@ method init() class Initialize
 			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
 				ErrorBox{,"Your wos.ini contains a wrong userid/password for accessing the WOS database "+dbname+" in MYSQL"}:Show()
+				break
+			endif
+			if AtC("is not allowed to connect to this MySQL server",oConn:ERRINFO:errormessage)>0 
+				ErrorBox{,"Your PC is not allowed to access this MYSQL-server on "+servername}:Show()
 				break
 			endif
 			if AtC("ODBC 5.1",oConn:ERRINFO:errormessage)>0
