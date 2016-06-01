@@ -121,11 +121,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					endif
 				next         
 
-				// 				if File("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft\windows\Temporary Internet Files\wosupgradeinstaller.exe") 
-				// 					FErase("C:\Users\"+myApp:GetUser()+"\AppData\Local\Microsoft|windows\Temporary Internet Files\wosupgradeinstaller.exe")
-				// 				endif
 				// load first latest version of install program: 
-				// 				FileSpec{oFs:FullPath}:Rename("wosupgradeinstallerold.exe")
 				IF !oFTP:GetFile("wosupgradeinstaller.exe",cWorkdir+"wosupgradeinstaller.exe",false,INTERNET_FLAG_DONT_CACHE + INTERNET_FLAG_RELOAD + ;
 						INTERNET_FLAG_NO_CACHE_WRITE )
 					WarningBox{,"Download upgrades","Problems with downloading new version of WOS. Maybe it timed out or you don't have write access to "+cWorkdir}:Show()
@@ -137,11 +133,9 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 					if oFs:Find()
 						// change date to remote date: 
 						SetFDateTime(cWorkdir+'wosupgradeinstaller.exe',RemoteDate,Remotetime )
-						// 						startfile:=cWorkdir+'wosupgradeinstaller.exe /STARTUP="'+CurPath+'"' 
-						startfile:='"'+oFs:FullPath+'" /STARTUP="'+CurPath+'"' 
-						// 						FileSpec{cWorkdir+"wosupgradeinstallerold.exe"}}:DELETE()
+// 						startfile:='"'+oFs:FullPath+'" /STARTUP="'+CurPath+'"'
+						startfile:='"'+cWorkdir+'wosupgradeinstaller.exe" /STARTUP="'+CurPath+'"'
 					endif
-					*/
 					oFTP:CloseRemote() 
 					SetAmPm(lAMPM)
 					return true 
