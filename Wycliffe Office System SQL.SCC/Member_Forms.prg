@@ -2233,7 +2233,12 @@ METHOD OkButton()  CLASS EditMember
 			i++
 			aContact[i]:=ConS(self:mCLNContact3)
 		endif
-		oStmnt:=SQLStatement{"start transaction",oConn}
+//		oStmnt:=SQLStatement{"start transaction",oConn}   
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `account` write, `bankaccount` write,`bankorder` write,`department` write,`distributioninstruction` write'+;
+		',`importpattern` write,`importtrans` write,`member` write,`memberassacc` write,`person` write'+                                              ;
+		',`standingorderline` write,`subscription` write,`telebankpatterns` write,`transaction` write',oConn} 
 		oStmnt:Execute()
 		cStatement:=iif(self:lNewMember,"insert into member ","update member ")+;
 			"set accid="+iif( self:AccDepSelect=='account',self:mREK,'DEFAULT')+",depid="+iif( self:AccDepSelect=='department',self:mDepId,'DEFAULT')+;
@@ -2549,7 +2554,7 @@ METHOD OkButton()  CLASS EditMember
 				endif
 			endif 
 		ENDIF
-		IF self:lNewMember
+		IF self:lNewMember .and. !lError
 			self:mMbrId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 			* Connect person to member: 
 			// 			oStmnt:SQLString:="update person set accid="+self:mREK+",type='"+iif(self:mGrade='Entity',PersTypeValue("ENT"),PersTypeValue("MBR"))+"'"+;
@@ -2563,7 +2568,7 @@ METHOD OkButton()  CLASS EditMember
 				cError:=oStmnt:ErrInfo:errormessage 
 			endif
 		ENDIF
-		IF self:AccDepSelect=='account'
+		IF self:AccDepSelect=='account'  .and. !lError
 			if self:lNewMember .or. !mAccidPrv == self:mREK .or. !mCLNPrv == self:mCLN
 				* New Account or new description?
 				* Connect new Account:
@@ -2584,7 +2589,7 @@ METHOD OkButton()  CLASS EditMember
 				endif
 			ENDIF
 		else
-			if self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == self:mCLN
+			if (self:lNewMember .or. !mDepPrv == self:mDepId   .or. !mCLNPrv == self:mCLN)  .and. !lError
 				* New or changed Department 
 				* Connect new Department:
 				oStmnt:SQLString:="update account set giftalwd=1 where accid in (select incomeacc from department where depid="+self:mDepId+")"
@@ -2717,7 +2722,9 @@ METHOD OkButton()  CLASS EditMember
 			next
 		endif
 		if lError
-			SQLStatement{"rollback",oConn}:Execute()
+			SQLStatement{"rollback",oConn}:Execute()  
+			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
 			self:Pointer := Pointer{POINTERARROW}
 			if !Empty(cError)
 				LogEvent(self,"Error:"+cError,"LogErrors")
@@ -2726,6 +2733,8 @@ METHOD OkButton()  CLASS EditMember
 			return false
 		endif 
 		SQLStatement{"commit",oConn}:Execute() 
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
 		self:Pointer := Pointer{POINTERARROW}
 		self:aDistrOrg:=self:aDistr    // for close
 		if lCheckCons
