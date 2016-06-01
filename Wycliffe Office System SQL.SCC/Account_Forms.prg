@@ -1633,16 +1633,16 @@ SELF:FieldPut(#mSubscriptionprice, uValue)
 RETURN uValue
 
 METHOD OkButton CLASS EditAccount
-	LOCAL oListViewItem as ListViewItem
 	LOCAL cCurId as STRING
-	LOCAL AmntMonth as FLOAT
-	LOCAL BudYear,BudMonth,nYM as int
-	LOCAL BudChanged:=FALSE as LOGIC
-	LOCAL i, nPntr as int
-	local cExtra,cValue as string 
-	local amProp:=self:aProp as array
-	local oStmt,oBudUpd,oBudIns,oDistr as SQLSTatement
+	local cExtra,cValue, cError,cLogError as string 
 	local cStatement,cValues as string 
+	LOCAL BudYear,BudMonth,nYM as int
+	LOCAL i, nPntr as int
+	LOCAL AmntMonth as FLOAT
+	LOCAL BudChanged:=FALSE, lError as LOGIC
+	local amProp:=self:aProp as array
+	local oStmnt,oBudUpd,oBudIns,oDistr as SQLStatement
+	LOCAL oListViewItem as ListViewItem
 	
 
 	IF self:ValidateAccount()
@@ -1677,17 +1677,19 @@ METHOD OkButton CLASS EditAccount
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0"),;
 			", currency='"+sCURR+"',reevaluate=0,gainlsacc=0")+;
 			iif(self:lNew,""," where accid="+self:mAccId)
-		SQLStatement{"start transaction",oConn}:Execute()
-		oStmt:=SQLStatement{cStatement,oConn}
-		oStmt:Execute()
-		if !Empty(oStmt:status)
-			LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
-			SQLSTatement{"rollback",oConn}:execute()
-			(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
-			return nil
+		oStmnt:=SQLStatement{"set autocommit=0",oConn}
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{'lock tables `account` write,`budget` write,`distributioninstruction` write',oConn} 
+		oStmnt:Execute()
+		oStmnt:=SQLStatement{cStatement,oConn}
+		oStmnt:Execute()
+		if !Empty(oStmnt:status)
+			lError:=true
+			cError:= "Error:"+AllTrim(oStmnt:status:Description)+CRLF+oStmnt:SQLString 
+			cLogError := "Error:"+oStmnt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement
 		endif
 
-		if self:lNew
+		if !lError .and.self:lNew
 			self:mAccId:=ConS(SQLSelect{"select LAST_INSERT_ID()",oConn}:FIELDGET(1))
 		endif
 		// Save also Budget:
@@ -1709,30 +1711,38 @@ METHOD OkButton CLASS EditAccount
 				exit						
 			endif
 		enddo 
-		if !Empty(cValues)
+		if !lError .and. !Empty(cValues)
 			oBudIns:=SQLStatement{"insert into budget (accid,year,month,amount) values "+SubStr(cValues,2)+;
 				" ON DUPLICATE KEY UPDATE amount=values(amount)",oConn}
 			oBudIns:Execute()
 			if !Empty(oBudIns:status)
-				LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
-				SQLSTatement{"rollback",oConn}:execute()
-				(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
-				return nil 
+				lError :=true
+				cLogError :="Error:"+oStmnt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement
+				cError:="Error:"+AllTrim(oStmnt:status:Description)+CRLF+oStmnt:SQLString
 			endif
 		endif
-		IF !self:lNew .and. !self:mAccNumber == AllTrim(self:oAcc:ACCNUMBER) 
+		IF !lError .and.!self:lNew .and. !self:mAccNumber == AllTrim(self:oAcc:ACCNUMBER) 
 			// if number changed update it too within distribution instructions using it:
 			oDistr:=SQLStatement{"update `distributioninstruction` set `destacc`='"+self:mAccNumber+"' WHERE `destacc` = '"+AllTrim(self:oAcc:ACCNUMBER) +"' AND `destpp` = '"+sEntity+"'",oConn}
 			oDistr:Execute()
 			if !Empty(oBudIns:status)
-				LogEvent(self,"Error:"+oStmt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement,"LogErrors") 
-				SQLSTatement{"rollback",oConn}:execute()
-				(ErrorBox{self,"Error:"+AllTrim(oStmt:status:Description)+CRLF+oStmt:SQLString}):Show()
+				lError :=true
+				cLogError :="Error:"+oStmnt:ErrInfo:errormessage+CRLF+"stmnt:"+cStatement
+				cError:="Error:"+AllTrim(oStmnt:status:Description)+CRLF+oStmnt:SQLString
 				return nil 
 			endif		 	
 		endif
+      if lError
+			SQLSTatement{"rollback",oConn}:execute()
+  			SQLStatement{"unlock tables",oConn}:Execute() 
+			SQLStatement{"set autocommit=1",oConn}:Execute()
+			LogEvent(self,cLogError,"logerrors"):Show()
+			return nil
+      endif
 
 		SQLSTatement{"commit",Oconn}:execute()
+		SQLStatement{"unlock tables",oConn}:Execute() 
+		SQLStatement{"set autocommit=1",oConn}:Execute()
 // 		IF IsObject(oCaller).and.!oCaller==null_object .and.IsObject(self:oCaller:TreeView) .and.!self:oCaller:Treeview==null_object
 		IF IsObject(oCaller).and.!oCaller==null_object 
 			IF IsMethod(oCaller,#RefreshTree)
