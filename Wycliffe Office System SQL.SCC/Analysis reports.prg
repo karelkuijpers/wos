@@ -3199,7 +3199,7 @@ if(a.accid is null,8,
 ) as type
 ,if(a.accid is null,"unknown",if(a.department=0,a.description,d.descriptn)) as descr from transaction as t left join account as a on a.accid=t.accid left join department as d on d.depid=a.department left join member as m on (m.accid=t.accid or m.depid=d.depid and (a.accid=d.incomeacc or a.accid=expenseacc or a.accid=d.netasset))where t.dat>='2014-01-01' and t.dat<='2014-12-31' and t.gc>'' 
 */
-   LogEvent(self,sqlStr,"loginfo")
+  // LogEvent(self,sqlStr,"loginfo")
 	oTransH:=SqlSelect{'select z.accid,z.category,z.type,z.descr,sum(z.balance) as balance from ('+sqlStr+') as z group by z.accid,z.type', oConn} 
 	oTransH:Execute() 
 
