@@ -4446,7 +4446,7 @@ LOCAL lError as LOGIC
 LOCAL nCurRec, nNextRec,nRemn as int
 local oAccFrom,oAccTo as SQLSelect
 local cCurrorg,cCurrDest as string, lMultiOrg, lMultiDest as logic
-local cFromText, cToText as string 
+local cFromText, cToText,cError as string 
 local oStmnt as SQLStatement
 local dCurrDate:=null_date as date
 local oCurr as Currency 
@@ -4517,10 +4517,14 @@ endif
 
 self:STATUSMESSAGE("Transfering data, moment please")
 self:Pointer := Pointer{POINTERHOURGLASS}
-SQLStatement{"start transaction",oConn}:Execute() 
-oStmnt:=SQLStatement{"update transaction t set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
+oStmnt:=SQLStatement{"set autocommit=0",oConn}
+oStmnt:Execute()
+oStmnt:=SQLStatement{'lock tables `mbalance` write,`transaction` write',oConn}        // alphabetic order
+oStmnt:Execute()
+
+oStmnt:=SQLStatement{"update transaction set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
 iif(lMultiDest,"",",debforgn=deb*"+Str(fExRate,-1)+",creforgn=cre*"+Str(fExRate,-1)+",currency='"+cCurrDest+"'")+;
-" where "+self:cWhereSpec+' and t.bfm<>"H"',oConn}
+" where "+StrTran(self:cWhereSpec,'t.','')+' and bfm<>"H"',oConn}
 oStmnt:Execute()
 if oStmnt:NumSuccessfulRows>0 
 	oTrans:GoTop()
@@ -4539,15 +4543,18 @@ if oStmnt:NumSuccessfulRows>0
 	ENDDO
 elseif !Empty(oStmnt:status)
 	lError:=true
-	LogEvent(self,"error:"+oStmnt:errinfo:errormessage+CRLF+"stmnt:"+oStmnt:sqlstring,"LogErrors")
+	cError:= "error:"+oStmnt:errinfo:errormessage+CRLF+"stmnt:"+oStmnt:sqlstring
 endif
 if lError
 	SQLStatement{"rollback",oConn}:Execute()
+	SQLStatement{"unlock tables",oConn}:Execute()
 	ErrorBox{self,self:oLan:WGet("Transfer failed")}:Show() 
+	LogEvent(self,cError,"LogErrors")
 	oTrans:ResetNotification()
 	return
 else
 	SQLStatement{"commit",oConn}:Execute() 
+	SQLStatement{"unlock tables",oConn}:Execute()
 	nRemn:=self:oTrans:reccount - oStmnt:NumSuccessfulRows 
 	TextBox{self,self:oLan:WGet("Transfer of transactions"),Str(oStmnt:NumSuccessfulRows,-1)+' '+self:oLan:WGet("transferred")+;
 	iif(nRemn>0,'; '+self:oLan:WGet("remaining allready sent to PMC"),"")}:Show() 
