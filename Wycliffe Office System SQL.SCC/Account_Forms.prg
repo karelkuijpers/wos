@@ -1745,7 +1745,7 @@ METHOD OkButton CLASS EditAccount
 		SQLStatement{"set autocommit=1",oConn}:Execute()
 // 		IF IsObject(oCaller).and.!oCaller==null_object .and.IsObject(self:oCaller:TreeView) .and.!self:oCaller:Treeview==null_object
 		IF IsObject(oCaller).and.!oCaller==null_object 
-			IF IsMethod(oCaller,#RefreshTree)
+			IF IsMethod(oCaller,#RefreshTree) .and. IsObject(self:oCaller:TreeView) .and. !self:oCaller:Treeview==null_object
 				IF lNew 
 					// 					oAcc:seek(#ACCNUMBER,LTrimZero(self:mAccNumber))
 					IF Empty(self:nCurNum).and.!Empty(self:nCurDep)
