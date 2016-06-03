@@ -1591,15 +1591,16 @@ self:SetTexts()
 METHOD PreInit(oWindow,iCtlID,oServer,uExtra) CLASS SubscriptionBrowser
 	//Put your PreInit additions here   
 	// uExtra can contain extra filter
-	local cFilter as string 
+	local cFilter,myType as string 
 	Default(@uExtra,null_string)
 	if !empty(uExtra) .and. isstring(uExtra)
-		self:cType:=AllTrim(uExtra)
-		IF self:cType=="SUBSCRIPTIONS"
+		myType:= AllTrim(uExtra)
+		self:cType:= myType
+		IF myType=="SUBSCRIPTIONS"
 			self:mtype:="A"
-		ELSEIF self:cType=="DONATIONS"
+		ELSEIF myType=="DONATIONS"
 			self:mtype:="D"
-		ELSEIF self:cType=="STANDARD GIFTS"
+		ELSEIF myType=="STANDARD GIFTS"
 			self:mtype:="G"
 		else
 			// apparently filter
