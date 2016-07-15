@@ -4389,7 +4389,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// aValuesTrans:
 		// bankaccntnbr,bookingdate,seqnr,contra_bankaccnt,kind,contra_name,budgetcd,amount,addsub,description,persid,adrline,country,bic,dueid,lv_rtrn,lv_eref,lv_marf,processed, 
 		//      1            2        3          4           5      6           7      8      9        10        11       12     13    14    15    16      17      18     19
-		cPersids:=Implode(avalueTrans,',',,,11)
+		cPersids:=Implode(avalueTrans,'","',,,11)
 		if !Empty(cPersids)
 			aPersidsDb:={}
 			oSel:=SqlSelect{"select group_concat(cast(persid as char)) as grpersids from person where deleted=0 and persid in ("+cPersids+")",oConn}
@@ -4622,7 +4622,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		// Lookup gift patterns: 
 		oSel:=SqlSelect{"select group_concat(persid,'#$#',subsc separator '#%#') as subscrs from "+; 
 		"(select cast(personid as char) as persid,group_concat(a.accnumber,'&&',cast(amount as char)  separator '$$') as subsc from subscription s, account a "+;
-			"where category='G' and s.accid=a.accid and personid in ("+Implode(aSubPersids,',')+") group by personid order by personid) as sub",oConn}
+			"where category='G' and s.accid=a.accid and personid in ("+Implode(aSubPersids,'","')+") group by personid order by personid) as sub",oConn}
 		// 		oSel:=SqlSelect{"select group_concat(cast(personid as char),'#$#',cast(accid as char),'#$#',cast(amount as char) order by personid separator '#%#') as subscrs from subscription where category='G' and personid in ("+Implode(aSubPersids,',')+")",oConn}
 		if oSel:Reccount>0 
 			AEval(Split(oSel:subscrs,'#%#'),{|x|AAdd(aSubscr,Split(x,'#$#')) }) 
@@ -5203,7 +5203,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		endif
 		// update dueamounts because of direct debit reversals:
 		if Len(aAccnbrDue)>0
-			cDueids:=Implode(aAccnbrDue,",",,,2)
+			cDueids:=Implode(aAccnbrDue,'","',,,2)
 			oStmnt:=SQLStatement{"update dueamount set amountrecvd:=0.00 where dueid in ("+cDueids+")",oConn}
 			oStmnt:execute()
 			if	!Empty(oStmnt:Status)
