@@ -2874,7 +2874,7 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 							if Left(lv_kindorg,2)=='01'
 								// sepa DD 
 								aEref:= Split(lv_eref,'-')
-								if Len(aEref)>=3
+								if Len(aEref)>=3 .and. isnum(aEref[1])
 									lv_persid:=aEref[1]
 									lv_dueid:=aEref[3] 
 								endif
