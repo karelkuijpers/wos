@@ -3496,13 +3496,14 @@ METHOD PostInit(oWindow,uExtra) CLASS SelPersOpen
 			self:oDCFixedTextTo:TextValue:=self:oLan:WGet("Month")
 			self:oDCInvoiceMonth:Show() 
 			self:oDCInvoiceMonth:DateRange:=DateRange{Max(mindate, Getvaliddate(1,Month(Today())-1,Year(Today()))),Getvaliddate(28,Month(Today())+1,Year(Today()))} 
-			// determine last direct debited month:
-			oSel:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d, subscription s where s.subscribid=d.subscribid and s.category="D" and paymethod="C" and d.amountrecvd>0.00 order by d.invoicedate desc limit 1',oConn}
-			oSel:Execute()
-			if oSel:RecCount=1
-				dLastDDdate:=oSel:invoicedate
-				self:oDCInvoiceMonth:DateRange:= DateRange{dLastDDdate,Getvaliddate(28,Month(dLastDDdate)+1,Year(dLastDDdate))}
-			endif
+			// determine last direct debited month: 
+			// skipped because sometimes it returns month+1????? 
+// 			oSel:=SqlSelect{'select cast(invoicedate as date) as invoicedate from dueamount d, subscription s where s.subscribid=d.subscribid and s.category="D" and paymethod="C" and d.amountrecvd>0.00 order by d.invoicedate desc limit 1',oConn}
+// 			oSel:Execute()
+// 			if oSel:RecCount=1
+// 				dLastDDdate:=oSel:invoicedate
+// 				self:oDCInvoiceMonth:DateRange:= DateRange{dLastDDdate,Getvaliddate(28,Month(dLastDDdate)+1,Year(dLastDDdate))}
+// 			endif
 			// determine last direct debit date:
 			oSel:=SqlSelect{'select cast(logtime as date) as logdate from log where collection="log" and source="SELPERSOPEN" and message like "SEPA Direct Debit file%" order by logtime desc limit 1',oConn}
 			if oSel:RecCount=1
