@@ -1660,7 +1660,7 @@ METHOD OKButton( ) CLASS EditBalanceItem
 			mParent:=ConS(oSel:balitemid)
 		endif
 	endif
-	cError:=self:oCaller:ValidateBalanceTransition(mParent,self:mHFDRBRNUM,self:mBalId,@mType)
+	cError:=self:oCaller:ValidateBalanceTransition(mParent,ConS(self:mHFDRBRNUM),self:mBalId,@mType)
 	IF !Empty(cError)
 		(ErrorBox{,cError}):Show()
 		RETURN
