@@ -4606,7 +4606,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 				else
 					// save persid for analysing gifts pattern:
 					cPersid:=avalueTrans[i,11] 
-					if !Empty(cPersid)
+					if !Empty(cPersid).and.Val(cPersid)>0
 						AAdd(aValueSubPtr,i)  // save pntr into avalueTrans
 						if AScanExact(aSubPersids,cPersid)=0
 							AAdd(aSubPersids,cPersid)
@@ -4624,7 +4624,7 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 		"(select cast(personid as char) as persid,group_concat(a.accnumber,'&&',cast(amount as char)  separator '$$') as subsc from subscription s, account a "+;
 			"where category='G' and s.accid=a.accid and personid in ("+Implode(aSubPersids,'","')+") group by personid order by personid) as sub",oConn}
 		// 		oSel:=SqlSelect{"select group_concat(cast(personid as char),'#$#',cast(accid as char),'#$#',cast(amount as char) order by personid separator '#%#') as subscrs from subscription where category='G' and personid in ("+Implode(aSubPersids,',')+")",oConn}
-		if oSel:Reccount>0 
+		if oSel:Reccount>0 .and.!Empty(oSel:subscrs) 
 			AEval(Split(oSel:subscrs,'#%#'),{|x|AAdd(aSubscr,Split(x,'#$#')) }) 
 			for i:=1 to Len(aSubscr)
 				aSub:=aevala(Split(aSubscr[i,2],'$$'),{|x|split(x,'&&')})
