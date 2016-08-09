@@ -4143,9 +4143,11 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 	local oFileSpec as FileSpec
 	local i,j,m,mCnt as int
 	LOCAL mailcontent,memberName,cPers,cPeriod,cMess,cClient as STRING 
+	LOCAL cBuffer as STRING
 	LOCAL oSelpers as Selpers
 	LOCAL DueRequired,GiftsRequired,AddressRequired,repeatingGroup  as LOGIC
 	local aOneMember:={}, aPers:={} as ARRAY
+	LOCAL ptrHandle as MyFile
 	LOCAL oMapi as MAPISession
 	LOCAL oRecip1, oRecip2 as MAPIRecip
 	LOCAL oEMLFrm as eMailFormat
@@ -4181,11 +4183,11 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 		self:Pointer := Pointer{POINTERHOURGLASS}
 		// aMailMember:	aMailMember:	{{mbrid,membername,FileName,{{persid,email,name},...}} 
 		//                                  1        2        3         4:1    4:2   4:3   
-// 		for i:=1 to Len(self:aMailMember)
-// 			if !Empty(self:aMailMember[i,4])      // member/contact
-// 				AAdd(aPers,self:aMailMember[i,4,1,1])
-// 			endif
-// 		next
+		// 		for i:=1 to Len(self:aMailMember)
+		// 			if !Empty(self:aMailMember[i,4])      // member/contact
+		// 				AAdd(aPers,self:aMailMember[i,4,1,1])
+		// 			endif
+		// 		next
 		for i:=1 to Len(self:aMailMember)
 			for j:=1 to Len(self:aMailMember[i,4])   // member/contact
 				if	!Empty(self:aMailMember[i,4,j,1])		//	persid
@@ -4222,15 +4224,29 @@ method MailStatements(ReportYear as int,ReportMonth as int) as void pascal class
 								oRecip1 := oMapi:ResolveName(iif(i==1,oSelpers:oDB:lastname,self:aMailMember[m,4,i,3]),Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
 								IF	!Empty(oEMLFrm:Template) .and. i=1
 									mailcontent:=oSelpers:FillText(oEMLFrm:Template,1,DueRequired,GiftsRequired,AddressRequired,repeatingGroup,60)
+// 									if self:html_format
+// 										// no html attachement accepted by gmail, so inline message:
+// 										ptrHandle:=MyFile{oFileSpec}
+// 										mailcontent+="<p><p>"
+// 										cBuffer:=ptrHandle:FReadLine()  // skip first line
+// 										do while !ptrHandle:FEof
+// 											cBuffer:=ptrHandle:FReadLine()
+// 											if !ptrHandle:FEof 
+// 												mailcontent+=cBuffer
+// 											endif
+// 										enddo
+// 										ptrHandle:Close()
+// 										oFileSpec:=null_object
+// 									endif
 								ENDIF 
 							else
 								oRecip2 := oMapi:ResolveName(self:aMailMember[m,4,i,3],Val(self:aMailMember[m,4,i,1]),self:aMailMember[m,4,i,3],self:aMailMember[m,4,i,2]) 
 							endif    
-							IF	oRecip1 != null_object .and. (Mod(i,2)=0 .or.i=Len(self:aMailMember[m,4]))
+							IF	oRecip1 != null_object .and. (Mod(i,2)=0 .or.i=Len(self:aMailMember[m,4])) 
 								if	!oMapi:SendDocument(	oFileSpec,oRecip1,oRecip2,oLan:RGet('Giftreport')+Space(1)+memberName+": "+oSelpers:ReportMonth,mailcontent)
-									LogEvent(self,'Could not mail Giftreport '+cPeriod+' to '+memberName,"logerrors")
+									LogEvent(self,'Could not mail Giftreport '+cPeriod+' to '+memberName)
 									ErrorBox{self,'Could not mail Giftreport '+cPeriod+' to '+memberName}:Show() 
-// 								elseif i<=3
+									// 								elseif i<=3
 								else
 									mCnt++
 									oRecip1:=null_object
@@ -4431,7 +4447,8 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 		self:oReport:ToFileFS:FileName:= self:oLan:RGet("Giftreport")+Str(self:CalcYear,4)+StrZero(self:CalcMonthEnd,2)
 	endif
 	oFileSpec:=FileSpec{self:oReport:ToFileFS:FullPath}
-	oFileSpec:Extension:='html' 
+//	oFileSpec:Extension:='html' 
+	oFileSpec:Extension:='xls'   // Gmail removes html attachements from august 2016, so rename it to xls 
 	IF Empty(self:SendingMethod)
 		// make one file for all reports
 		if !self:oReport:Destination=='File'
