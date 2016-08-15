@@ -4447,8 +4447,8 @@ METHOD MemberStatementHtml(FromAccount as string,ToAccount as string,ReportYear 
 		self:oReport:ToFileFS:FileName:= self:oLan:RGet("Giftreport")+Str(self:CalcYear,4)+StrZero(self:CalcMonthEnd,2)
 	endif
 	oFileSpec:=FileSpec{self:oReport:ToFileFS:FullPath}
-//	oFileSpec:Extension:='html' 
-	oFileSpec:Extension:='xls'   // Gmail removes html attachements from august 2016, so rename it to xls 
+	oFileSpec:Extension:='html' 
+//	oFileSpec:Extension:='xls'   // Gmail removes html attachements from august 2016, so rename it to xls 
 	IF Empty(self:SendingMethod)
 		// make one file for all reports
 		if !self:oReport:Destination=='File'
