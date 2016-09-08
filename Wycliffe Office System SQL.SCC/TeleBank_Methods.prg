@@ -354,7 +354,8 @@ method AddTeleTrans(bankaccntnbr as string,;
 		IF self:TooOldTeleTrans(bankaccntnbr,bookingdate) 
 			// 			LogEvent(self,"Skipped:"+ bankaccntnbr +' on '+DToC(bookingdate)+", contra_bankaccnt:"+contra_bankaccnt+", contra_name:"+contra_name+", amount:"+Str(amount,-1)+",description:"+description,"logsql")
 		else
-			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
+//			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.(!Empty(seqnr) .or.self:CurDate==bookingdate)
+			if self:CurBank==bankaccntnbr .and. seqnr==self:CurSeq .and.self:CurDate==bookingdate
 				self:nSubSeqnr++
 			else
 				self:nSubSeqnr:=1
@@ -2433,6 +2434,9 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 							endif
 						endif
 					ENDIF
+					if lv_BankAcntContra == "NL94ABNA0476004446"
+						lv_BankAcntContra:=lv_BankAcntContra
+					endif
 					cBuffer:=oMyFile:FReadLine() 
 				endif				 
 				lv_description:=""
