@@ -2564,7 +2564,9 @@ METHOD DebCreProc(lNil:=false as logic) as logic CLASS GeneralJournal1
 		oHm:aMirror[ThisRec,13]:=oHm:DEBFORGN
 		oHm:aMirror[ThisRec,14]:=oHm:CREFORGN
 		oHm:aMirror[ThisRec,19]:=oHm:INCEXPFD 
-		oHm:aMirror[ThisRec,20]:=oHm:DEPID 
+		oHm:aMirror[ThisRec,20]:=oHm:DEPID
+	else
+		Return false
 	endif
 	IF oHm:KIND == 'M'		
 		IF oHm:deb > oHm:cre
