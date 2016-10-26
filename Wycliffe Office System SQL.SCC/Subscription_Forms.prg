@@ -519,7 +519,7 @@ METHOD OKButton( ) CLASS EditSubscription
 			self:mInvoiceID:=AllTrim(self:mInvoiceID)
 			// 			if	SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"' and personid<>"+mCLN+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
 			// 			if SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"' and bankaccnt='"+AllTrim(self:mBankAccnt)+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
-			if SqlSelect{"select subscribid from subscription where invoiceid='"+self:mInvoiceID+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
+			if SqlSelect{"select subscribid from subscription where invoiceid='"+AddSlashes(self:mInvoiceID)+"'"+iif(self:lNew,''," and subscribid<>"+self:msubid),oConn}:reccount>0
 				(ErrorBox{,self:oLan:WGet("Mandate id allready exists")}):Show()
 				self:oDCmInvoiceID:SetFocus()
 				RETURN nil
