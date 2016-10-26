@@ -3756,7 +3756,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		iif(Empty(accid),''," and s.accid='"+Str(accid,-1)+"'")+;
 		" and invoicedate between '"+SQLdate(begin_due)+"'"+;
 		" and '"+SQLdate(end_due)+"' and extract(year_month from invoicedate)<extract(year_month from s.enddate) and amountrecvd<amountinvoice and p.persid=s.personid and a.accid=s.accid and s.blocked='0' order by p.lastname",oConn}
-	LogEvent(,oDue:sqlstring)
+	//LogEvent(,oDue:sqlstring)
 	oDue:Execute()
 	IF oDue:RecCount<1 .or. Empty(oDue:grDue)
 		(WarningBox{self,"Producing SEPA Direct Debit file","No due amounts to be debited direct!"}):Show()
