@@ -1063,7 +1063,7 @@ METHOD OkButton CLASS EditPerson
 	LOCAL oContr as Control
 	LOCAL oTextBox as TextBox
 	LOCAL myCombo as COMBOBOX
-	LOCAL oPers,oStmnt as SQLStatement
+	LOCAL oPers,oSel,oStmnt as SQLStatement
 	local oPersCnt as PersonContainer 
 
 	self:mCodInt := MakeCod({self:mCod1,self:mCod2,self:mCod3,self:mCod4,self:mCod5,self:mCod6,self:mCod7,self:mCod8,self:mCod9,self:mCod10})
@@ -1197,6 +1197,7 @@ METHOD OkButton CLASS EditPerson
 			ENDIF
 		endif
 
+		// delete specified bank accounts first:
 		FOR i=1 to Len(self:aBankAcc) 
 			if lError
 				exit
@@ -1204,18 +1205,49 @@ METHOD OkButton CLASS EditPerson
 			IF i<=Len(OrigaBank)
 				IF !self:aBankAcc[i,1] ==OrigaBank[i,1] .or.!self:aBankAcc[i,2] ==OrigaBank[i,2]  // change of value banknumber or bic? 
 					IF Empty(self:aBankAcc[i,1]) // removed?
-						oStmnt:=SQLStatement{"delete from personbank where banknumber='"+self:OrigaBank[i,1]+"'",oConn}
-					else   // changed
-						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+self:aBankAcc[i,1]+"',bic='"+GetBIC(self:aBankAcc[i,1],self:aBankAcc[i,2])+"' where banknumber='"+self:OrigaBank[i,1]+"'",oConn}
+						oStmnt:=SQLStatement{"delete from personbank where banknumber='"+self:OrigaBank[i,1]+"'",oConn} 
+						oStmnt:Execute()
+						if !Empty(oStmnt:Status)
+							lError:=true
+							cError:='Delete/update personbank Error:'+oStmnt:ErrInfo:ErrorMessage
+							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						endif
 					endif
-					oStmnt:Execute()
-					if !Empty(oStmnt:Status)
-						lError:=true
-						cError:='Delete/update personbank Error:'+oStmnt:ErrInfo:ErrorMessage
-						cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+				endif
+			endif
+		Next
+		
+		FOR i=1 to Len(self:aBankAcc) 
+			if lError
+				exit
+			endif
+			IF i<=Len(OrigaBank)
+				IF !self:aBankAcc[i,1] ==OrigaBank[i,1] .or.!self:aBankAcc[i,2] ==OrigaBank[i,2]  // change of value banknumber or bic? 
+					IF !Empty(self:aBankAcc[i,1]) 
+						// check if new bank account already exists:
+						oSel:=SQLStatement{"select persid from personbank where banknumber='"+self:aBankAcc[i,1]+"'",oConn}
+						if ( oSel:RECCOUNT >0)
+							lError:=true
+							cError:='Update bankaccount Error: '+self:aBankAcc[i,1]+' already exists for '+GetFullName(self:mPersId) 
+							exit
+						endif						
+						oStmnt:=SQLStatement{"update personbank set persid='"+self:mPersId+"',banknumber='"+self:aBankAcc[i,1]+"',bic='"+GetBIC(self:aBankAcc[i,1],self:aBankAcc[i,2])+"' where banknumber='"+self:OrigaBank[i,1]+"'",oConn}
+						oStmnt:Execute()
+						if !Empty(oStmnt:Status)
+							lError:=true
+							cError:='Delete/update personbank Error:'+oStmnt:ErrInfo:ErrorMessage
+							cErrorMessage:=cError+CRLF+'statement:'+oStmnt:SQLString
+						endif
 					endif
 				ENDIF
-			ELSEIF Len(self:aBankAcc[i,1])>1 
+			ELSEIF Len(self:aBankAcc[i,1])>1
+				// check if new bank account already exists:
+				oSel:=SQLStatement{"select persid from personbank where banknumber='"+self:aBankAcc[i,1]+"'",oConn}
+				if ( oSel:RECCOUNT >0)
+					lError:=true
+					cError:='Add bankaccount Error: '+self:aBankAcc[i,1]+' already exists for '+GetFullName(self:mPersId) 
+					exit
+				endif						
 				oStmnt:=SQLStatement{"Insert into personbank set persid="+self:mPersId+",banknumber='"+self:aBankAcc[i,1]+"',bic='"+GetBIC(self:aBankAcc[i,1],self:aBankAcc[i,2])+"'",oConn}
 				oStmnt:Execute() 
 				if !Empty(oStmnt:Status)
