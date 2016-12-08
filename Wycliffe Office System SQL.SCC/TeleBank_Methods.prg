@@ -1377,7 +1377,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	// 	LOCAL i, nEndAmnt, nDC, nOffset, nTrans,nImp,nNumPos,nSepPos,nLenLine1,nBGCSeq,nProc as int
 	// 	LOCAL lv_Oms, lv_AmountStr,lv_referenceCur  as STRING
 	LOCAL lv_loaded as LOGIC 
-	local Cur_RekNrOwn as string
+//	local Cur_RekNrOwn as string
 	LOCAL lSuccess:=true as LOGIC
 	LOCAL ld_bookingdate as date 
 	local lMTExtended as logic
@@ -1779,9 +1779,9 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 							endif 
 							
 							* save transaction: 
-							if Empty(lv_budget) .and.(lv_kind=='CLR' .or. (SubStr(lv_kind,1,3)=='COL' .and.lv_addsub='B')) 
+							if Empty(lv_budget) .and.(lv_kind=='CLR' .or. (SubStr(lv_kind,1,3)=='COL' .and.lv_addsub='B' .and. Empty(lv_rtrn))) 
 								if Empty(Cur_enRoute)
-									(ErrorBox{,"for bank account "+ Cur_RekNrOwn+" no 'Account payments en route' specified; import aborted2"}):show()
+									(ErrorBox{,"for bank account "+ lv_bankAcntOwn+" no 'Account payments en route' specified; import aborted"}):show()
 									return false 
 								endif
 								lv_budget:=Cur_enRoute
