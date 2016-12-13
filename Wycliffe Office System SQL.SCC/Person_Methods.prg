@@ -877,52 +877,46 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 	if AtC('class="alert warning"',httpfile)>0 
 		return true  // return  cPostcode,cAddress,cCity
 	else
-		nPos1:=At('<section id="main" role="main">',httpfile) 
-		if nPos1>0
-			// search unique string before response
-			nPos1:=At3('<h1>',httpfile,nPos1+31)
-			if nPos1>0                                                
-				output:=SubStr(httpfile,nPos1+4,200)
-				if !SubStr(output,1,19) == 'Zoekresultaten</h1>' 
-					cBuffer:=SubStr(httpfile,nPos1+17,700)
-					if (nPos1:=AtC("<dd><a href=",cBuffer))>0
-						cPostalCode:=SubStr(cBuffer,nPos1+21,6)
-						if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
-							cBuffer:=SubStr(cBuffer,nPos1+19)
-							if (nPos1:=AtC("<dd>",cBuffer))>0
-								if (nPos2:=AtC("</dd>",cBuffer))>0
-									cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
-									if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
-										cBuffer:=SubStr(cBuffer,nPos1+19)
-										if (nPos1:=AtC("<dd>",cBuffer))>0
-											if (nPos2:=AtC("</dd>",cBuffer))>0
-												cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
-											endif
-										endif
+		nPos1:=At3('<dt>Postcode</dt>',httpfile,1)     
+		if nPos1>0                                                
+			output:=SubStr(httpfile,nPos1+4,200)
+			cBuffer:=SubStr(httpfile,nPos1+17,700)
+			if (nPos1:=AtC("<dd><a href=",cBuffer))>0
+				cPostalCode:=SubStr(cBuffer,nPos1+21,6)
+				if (nPos1:=AtC("<dt>Straatnaam</dt>",cBuffer))>0
+					cBuffer:=SubStr(cBuffer,nPos1+19)
+					if (nPos1:=AtC("<dd>",cBuffer))>0
+						if (nPos2:=AtC("</dd>",cBuffer))>0
+							cStreet:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
+							if (nPos1:=AtC("<dt>Woonplaats</dt>",cBuffer))>0
+								cBuffer:=SubStr(cBuffer,nPos1+19)
+								if (nPos1:=AtC("<dd>",cBuffer))>0
+									if (nPos2:=AtC("</dd>",cBuffer))>0
+										cCity:=SubStr(cBuffer,nPos1+4,nPos2-nPos1-4)
 									endif
 								endif
 							endif
 						endif
-						return true
-					endif
-				else
-					// apparently more than one:
-					output:=SubStr(httpfile,nPos1+4,500)
-					if (nPos1:=AtC('<td><a class="view"',output))>0
-						if (nPos1:=At3('>',output,nPos1+25))>0
-							cPostalCode:=SubStr(output,nPos1+1,6)
-							aWord:=GetTokensEx(SubStr(output,nPos1+20),{'<td>','</td>'},4)
-							cStreet:=aWord[1,1]
-							cCity:=aWord[5,1]
-							if Lower(cStreet)==lower(substr(strtran(cSearch,'%20',' '),1,len(cStreet)))
-								return true
-							endif
-							cPostalCode:=''
-						endif
 					endif
 				endif
-				output:=''
+				return true
+			else
+				// apparently more than one:
+				output:=SubStr(httpfile,nPos1+4,500)
+				if (nPos1:=AtC('<td><a class="view"',output))>0
+					if (nPos1:=At3('>',output,nPos1+25))>0
+						cPostalCode:=SubStr(output,nPos1+1,6)
+						aWord:=GetTokensEx(SubStr(output,nPos1+20),{'<td>','</td>'},4)
+						cStreet:=aWord[1,1]
+						cCity:=aWord[5,1]
+						if Lower(cStreet)==lower(substr(strtran(cSearch,'%20',' '),1,len(cStreet)))
+							return true
+						endif
+						cPostalCode:=''
+					endif
+				endif
 			endif
+			output:=''
 		elseif AtC('Value is not a number',httpfile)=0 
 			// apparently website changed: 
 			cError:= "postcode.nl werkt niet voor:"+cSearch+", user:"+LOGON_EMP_ID+iif(Empty(httpfile),", timed out after "+Str(time1-time0,-1)+' sec',CRLF+httpfile)
