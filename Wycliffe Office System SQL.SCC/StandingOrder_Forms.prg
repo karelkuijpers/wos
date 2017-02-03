@@ -498,7 +498,7 @@ method PreInit(oWindow,iCtlID,oServer,uExtra) class EditStandingOrder
 	//Put your PreInit additions here
    self:lNew:=uExtra
 	if !self:lNew 
-		self:curStordid:=Str(oServer:stordrid,-1)
+		self:curStordid:=ConS(oServer:stordrid)
 		self:oStOrdr:=SqlSelect{"select s.stordrid,s.persid,s.`day`,s.`period`,cast(s.idat as date) as idat,cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.docid,"+;
 		"s.currency,cast(s.lstchange as date) as lstchange,s.userid from standingorder s where s.stordrid="+self:curStordid,oConn} 
 		self:oStOrdr:Execute()
