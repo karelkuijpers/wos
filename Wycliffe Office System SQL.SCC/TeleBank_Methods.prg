@@ -2074,7 +2074,7 @@ METHOD ImportHU(oFb as MyFileSpec) as logic CLASS TeleMut
 		lv_transid:=AllTrim(AFields[ptTransid]) 
 		nTot++
 		self:AddTeleTrans(lv_bankAcntOwn,ld_bookingdate,lv_transid,lv_BankAcntContra,;
-			lv_kind,lv_NameContra,lv_budget,lv_Amount,lv_addsub,lv_description,lv_persid)
+			lv_kind,AddSlashes(lv_NameContra),lv_budget,lv_Amount,lv_addsub,AddSlashes(lv_description),lv_persid)
 		lv_description:=""
 		cBuffer:=ptrHandle:FReadLine()
 		cBuffer:=StrTran(cBuffer,'""','"')
