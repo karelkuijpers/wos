@@ -1579,15 +1579,17 @@ Method SyncPerson(aWord as array,oPersCnt as PersonContainer ) as logic class Im
 				aCod:=Split(AllTrim(cMlCod)+" "+MakeCod(MakeAbrvCod(StrTran(cTargetStr,',',' ')))+" "+AllTrim(DefaultCod))
 				AAdd(aValueRow,AddSlashes(MakeCod(aCod)))
 			ELSEIF IDs=#Title
-				titPtr:=1
-				if isnum(cTargetStr)
-					titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
-				else
-					cTargetStr:=Lower(cTargetStr)
-					titPtr:=AScan(pers_titles,{|x|x[1]==cTargetStr})
+				titPtr:=1 
+				if !Empty(pers_titles)
+					if	isnum(cTargetStr)
+						titPtr:=AScan(pers_titles,{|x|x[2]==Val(cTargetStr)})
+					else
+						cTargetStr:=Lower(cTargetStr)
+						titPtr:=AScan(pers_titles,{|x|x[1]==cTargetStr})
+					endif
+					titPtr:=Max(1,titPtr)
+					AAdd(aValueRow,ConS(pers_titles[titPtr,2]))
 				endif
-				titPtr:=Max(1,titPtr)
-				AAdd(aValueRow,Str(pers_titles[titPtr,2],-1))
 			ELSEIF IDs=#type
 				typPtr:=0
 				if isnum(cTargetStr)
