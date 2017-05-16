@@ -6807,8 +6807,11 @@ CLASS YearClosing INHERIT DataWindowMine
 	PROTECT YearClose, MonthClose, BalanceYearEnd, YearStart, MonthStart as int
 	EXPORT BalanceEndDate as date
 	PROTECT YearBalance as STRING
-	Protect cError,cWarning as string 
-	PROTECT d_netasset:={},;
+	Protect cError,cWarning as string
+	Protect aWarning:={} as array 
+ 
+	PROTECT d_netasset:={},; 
+		d_expenseacc:={},;
 		d_dep:={},;
 		d_depnbr:={},;
 		d_depname:={},;
@@ -6862,7 +6865,7 @@ return self
 
 METHOD OKButton( ) CLASS YearClosing
 	* Balancing and closing a year
-	LOCAL i, Dep_Ptr as int
+	LOCAL i,j, Dep_Ptr as int
 	LOCAL AfterBalance as int
 	local nMindate as int
 	local nSeqNbr as int // sequence number of generated transaction lines 
@@ -6980,13 +6983,14 @@ METHOD OKButton( ) CLASS YearClosing
 	self:d_depnbr:={''}     	
 	self:d_PLdeb:={0.00}
 	self:d_PLcre:={0.00}
-	oDep:=SqlSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,b.category from department d "+;
+	oDep:=SqlSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,d.expenseacc,b.category from department d "+;
 		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}
 	if oDep:reccount>0
 		
 		DO WHILE !oDep:EOF
 			AAdd(self:d_dep,oDep:DepId)
 			AAdd(self:d_netasset,oDep:netasset)
+			AAdd(self:d_expenseacc,oDep:expenseacc)
 			AAdd(self:d_parentdep,oDep:ParentDep)
 			AAdd(self:d_depname,oDep:Descriptn) 
 			AAdd(self:d_depnbr,oDep:DEPTMNTNBR)
@@ -7083,8 +7087,8 @@ METHOD OKButton( ) CLASS YearClosing
 
 		* balance of year to be closed = balance of previous versus following year:
 		* balances of expense and income accounts have to be added to corresponding netassets and zero balanced:
-		IF oMBal:category == Expense .or. oMBal:category == Income
-			* saldo van V&W verminderen met stand afgelopen jaar:
+		IF oMBal:category == Expense .or. oMBal:category == Income  
+			* Substract balance of income&expense from balance last year:
 			AAdd(ProfitLossAccount,oMBal:accid)
 			Dep_Ptr:=AScan(self:d_dep,oMBal:Department)
 			IF Dep_Ptr=0
@@ -7168,7 +7172,7 @@ METHOD OKButton( ) CLASS YearClosing
 		
 	* Make records to netassetaccounts per department:
 	self:STATUSMESSAGE(self:oLan:WGet("Recording to netasset accounts, moment please"))
-	self:cWarning:=''
+	self:aWarning:={}
 	if !self:SubDepartment(1,@cTransnr,@nSeqNbr,AfterBalance)
 		SQLStatement{"rollback",oConn}:Execute()
 		self:Pointer := Pointer{POINTERARROW}
@@ -7177,10 +7181,21 @@ METHOD OKButton( ) CLASS YearClosing
 		endif
 		return
 	ENDIF
-	if !Empty(self:cWarning)
-		self:Pointer := Pointer{POINTERARROW}
-		IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Departments')+': '+CRLF+;
-			self:cWarning+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
+	if !Empty(self:aWarning)
+		self:Pointer := Pointer{POINTERARROW} 
+		cWarning=''
+		for i:=1 to Min(Len(self:aWarning),90) step 2  
+			cWarning+=iif(Empty(cWarning),'',CRLF
+			cWarning+=PadR(self:aWarning[i],30)+Space(1) 
+			if i<Len(self:aWarning) 
+				cWarning+=Trim(substr(self:aWarning[i+1],1,30))
+			endif 
+		next
+		if (i<Len(self:aWarning))
+			cWarning+=CRLF+"and more..."
+		endif
+		if (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for')+Space(1)+Str(Len(self:aWarning),-1)+Space(1)+self:oLan:WGet('Departments')+': '+CRLF+;
+			cWarning+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
 			SQLStatement{"rollback",oConn}:Execute()
 			RETURN FALSE
 		else
@@ -7367,7 +7382,9 @@ METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterB
 	* Make records to netassetaccount of the  department:
 	if !Round(self:d_PLcre[p_depptr]-self:d_PLdeb[p_depptr],DecAantal)==0.00
 		IF Empty(self:d_netasset[p_depptr])
-			self:cWarning+=self:d_depnbr[p_depptr]+":"+self:d_depname[p_depptr]+CRLF
+			if !Empty(self:d_expenseacc[p_depptr])   // no warning voor own funding
+				AAdd(self:aWarning,self:d_depnbr[p_depptr]+":"+self:d_depname[p_depptr])
+			endif
 // 			self:Pointer := Pointer{POINTERARROW}
 // 			IF (TextBox{self:OWNER,self:oLan:WGet("Year balancing"),self:oLan:WGet('Warning: Net Asset account not defined for Department')+': '+self:d_depnbr[p_depptr]+":";
 // 				+self:d_depname[p_depptr]+CRLF+self:oLan:WGet("Is this correct")+"?",BUTTONYESNO+BOXICONHAND}):Show()==BOXREPLYNO
