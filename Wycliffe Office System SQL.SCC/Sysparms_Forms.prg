@@ -2289,6 +2289,7 @@ oDCFixedText2:HyperLabel := HyperLabel{#FixedText2,"Id Contract direct debit:",N
 oDCCNTRNRCOLL := SingleLineEdit{SELF,ResourceID{TAB_PARM3_CNTRNRCOLL,_GetInst()}}
 oDCCNTRNRCOLL:HyperLabel := HyperLabel{#CNTRNRCOLL,NULL_STRING,"Contract number automatic collection (KID files) or Chamber of Commerce Id",NULL_STRING}
 oDCCNTRNRCOLL:UseHLforToolTip := True
+oDCCNTRNRCOLL:FieldSpec := memberaccount{}
 
 oDCFixedText3 := FixedText{SELF,ResourceID{TAB_PARM3_FIXEDTEXT3,_GetInst()}}
 oDCFixedText3:HyperLabel := HyperLabel{#FixedText3,"Bank account direct debit:",NULL_STRING,NULL_STRING}
@@ -2352,7 +2353,7 @@ oDBMDEBTORS:HyperLabel := oDCMDEBTORS:HyperLabel
 oDBMDEBTORS:Caption := ""
 self:Browser:AddColumn(oDBMDEBTORS)
 
-oDBCNTRNRCOLL := DataColumn{12}
+oDBCNTRNRCOLL := DataColumn{memberaccount{}}
 oDBCNTRNRCOLL:Width := 12
 oDBCNTRNRCOLL:HyperLabel := oDCCNTRNRCOLL:HyperLabel 
 oDBCNTRNRCOLL:Caption := ""
@@ -3926,9 +3927,9 @@ METHOD OKButton( ) CLASS TabSysParms
 			",postage='"+self:oTPTAB_PARM3:NbrPostage+"'"+;
 			",debtors='"+self:oTPTAB_PARM3:NbrDEBTORS+"'"+;
 			",creditors='"+self:oTPTAB_PARM3:NbrCreditors+"'"+;
-			",cntrnrcoll='"+self:oTPTAB_PARM3:CNTRNRCOLL+"'" +;
-			",banknbrcol='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCOL),'0',self:oTPTAB_PARM3:BANKNBRCOL)+"'" + ;
-			",banknbrcre='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCRE),'0',self:oTPTAB_PARM3:BANKNBRCRE)+"'"+;
+			",cntrnrcoll='"+AllTrim(self:oTPTAB_PARM3:CNTRNRCOLL)+"'" +;
+			",banknbrcol='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCOL),'0',AllTrim(self:oTPTAB_PARM3:BANKNBRCOL))+"'" + ;
+			",banknbrcre='"+iif(Empty(self:oTPTAB_PARM3:BANKNBRCRE),'0',AllTrim(self:oTPTAB_PARM3:BANKNBRCRE))+"'"+;
 			",sepaenabled="+iif(self:oTPTAB_PARM3:sepaenabled,'1','0')+;
 	 		",ddmaxindvdl="+Str(self:oTPTAB_PARM3:ddmaxindvdl,-1)+;
 			",ddmaxbatch="+Str(self:oTPTAB_PARM3:ddmaxbatch,-1)) +; 
