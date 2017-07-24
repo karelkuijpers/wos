@@ -3604,7 +3604,7 @@ Method SEPADirectDebit(begin_due as date,end_due as date, process_date as date,a
 		endif
 		m56_currency:=oSel:currency
 	endif
-	CreditorID:=(oSel:=SqlSelect{"select cntrnrcoll,ddmaxindvdl,ddmaxbatch from sysparms",oConn}):cntrnrcoll
+	CreditorID:=AllTrim((oSel:=SqlSelect{"select cntrnrcoll,ddmaxindvdl,ddmaxbatch from sysparms",oConn}):cntrnrcoll)
 	if Empty(CreditorID)
 		(ErrorBox{self,self:oLan:WGet("no chamber of commerce number specified in system data")}):Show() 
 		return false
