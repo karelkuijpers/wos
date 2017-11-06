@@ -715,20 +715,23 @@ Local oPP as SQLSelect
 		
 return {COUNTRYCOD, CountryName,PPCode,PPNAME, CurrencyCode,cCurrSym}
 method init() class Initialize
+	local cLine as string 
+	local port:='3306' as string
+	local dbserver:='MYSQL' as string
+	local dim akeyval[6] as string 
+	local cOdbc := 'MySQL ODBC 5.1 Driver'
+	local i,j,nptr as int
+	local time0,time1 as float
+	local lConnected as logic
+	local aDB:={} as array 
+	local adBserver:={{'MYSQL','MySQL ODBC 5.1 Driver','mysql-connector-odbc-5.1.13-win32.msi'},{'MARIADB','MariaDB ODBC 3.0 Driver','mariadb-connector-odbc-3.0.2-win32.msi'}} as array
+	local aWord:={} as array
+	local aIniKey:={'database','password','server','username','port','dbserver'} as array
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
-	local aDB:={} as array 
 	local cWosIni as MyFileSpec
 	local	ptrHandle as MyFile
 
-	local cLine as string 
-	local port:='3306' as string
-	local aWord:={} as array
-	local i,j as int
-	local aIniKey:={'database','password','server','username','port'} as array
-	local dim akeyval[5] as string
-	local lConnected as logic
-	local time0,time1 as float
 	local oTCPIP as TCPIP
 	
 
@@ -776,6 +779,11 @@ method init() class Initialize
 	else
 		dbname:=akeyval[1]
 	endif
+	if Empty(akeyval[6])
+		dbserver:='MYSQL'
+	else
+		dbserver:=Upper(akeyval[6])
+	endif
 	dbname:=Lower(dbname)
 	//	if Empty(akeyval[4]) .or.Empty(akeyval[2])
 	if Empty(akeyval[4])
@@ -797,11 +805,16 @@ method init() class Initialize
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
 	do while !lConnected
-		oConn:=SQLConnection{} 
+		oConn:=SQLConnection{}
+		nptr:=AScan(adBserver,{|x| x[1]==DbServer})
+		if Empty(nptr) 
+			ErrorBox{,"Unknown database server "+DbServer}:Show()
+			break
+		endif
 		if IsClass(#ADOCONNECTION)
-			lConnected:=oConn:connect("DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+';Port='+port+self:cUIDPW)
+			lConnected:=oConn:connect("DRIVER={"+adBserver[nptr,2]+"};SERVER="+servername+';Port='+port+self:cUIDPW)
 		else
-			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+';Port='+port+self:cUIDPW) 
+			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER={"+adBserver[nptr,2]+"};SERVER="+servername+';Port='+port+self:cUIDPW) 
 		endif
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
@@ -824,30 +837,31 @@ method init() class Initialize
 								break
 							endif
 						else
-							ErrorBox{,"You have first to make a (VPN)-connection with "+servername}:Show() 
+							ErrorBox{,"You have first to make a (VPN)-connection with "+servername+" ("+oConn:ERRINFO:errormessage+")"}:Show() 
 							break							
 						endif
 					endif 
-					ErrorBox{,"There is something wrong with the database manager on "+servername+" or your connection is to slow"}:Show()
+					ErrorBox{,"There is something wrong with the database manager on "+servername+" or your connection is to slow"+" ("+oConn:ERRINFO:errormessage+")"}:Show()
 				endif
 				break
 			endif
 			
 			// Wrong userid/pw: [MySQL][ODBC 5.1 Driver]Access denied for user 'parousia_typ32'@'localhost' (using password: YES)
 			if AtC("Access denied for user",oConn:ERRINFO:errormessage)>0 
-				ErrorBox{,"Your wos.ini contains a wrong userid/password for accessing the WOS database "+dbname+" in MYSQL"}:Show()
+				ErrorBox{,"Your wos.ini contains a wrong userid/password for accessing the WOS database "+dbname+" in MYSQL on server "+servername+" ("+oConn:ERRINFO:errormessage+")"}:Show()
 				break
 			endif
 			if AtC("is not allowed to connect to this MySQL server",oConn:ERRINFO:errormessage)>0 
 				ErrorBox{,"Your PC is not allowed to access this MYSQL-server on "+servername}:Show()
 				break
 			endif
-			if AtC("ODBC 5.1",oConn:ERRINFO:errormessage)>0
-				ErrorBox{,"You have first to install the MYSQL ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
+			if AtC("ODBC ",oConn:ERRINFO:errormessage)>0
+				ErrorBox{,"You have first to install the "+dbserver+" ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
 				if oMainWindow==null_object
 					oMainWindow := StandardWycWindow{self}
 				endif
-				FileStart(WorkDir()+"mysql-connector-odbc-5.1.13-win32.msi",oMainWindow)
+//				FileStart(WorkDir()+"mysql-connector-odbc-5.1.13-win32.msi",oMainWindow) 
+				FileStart(WorkDir()+adBserver[nptr,3],oMainWindow)     
 				loop
 			endif
 			
