@@ -944,7 +944,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	LOCAL oMyFileSpec1,oMyFileSpec2,oDBFileSpec1 as FileSpec
 	LOCAL oReg as CLASS_HKCU
 
-	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability
+	SetDecimalSep(Asc('.')) //  set decimal separator to . to enforce interoperability    h
 	AdoDateTimeAsDate(true)
 	SET OPTIMIZE ON
 
