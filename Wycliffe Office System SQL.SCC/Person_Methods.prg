@@ -863,7 +863,7 @@ Function GetPostcode(cSearch as string,output ref string,cStreet ref string,cPos
 	oHttp := CHttp{"WycOffSy",,true}
 	time0:=Seconds()
 	cBuffer 	:= oHttp:GetDocumentByGetOrPost( "www.postcode.nl",;
-		"/search/"+cSearch,;
+		"/zoek/"+cSearch,;
 		/*cSearch*/,;
 		/*cHeader*/,;
 		"POST",;
