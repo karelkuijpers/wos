@@ -1100,7 +1100,7 @@ METHOD CellDoubleClick() CLASS EditBrowser
 Function EndOfMonth(DateInMonth as date) as date
 // get date of end of month given a certain date
 return SToD(Str(Year(DateInMonth),4,0)+StrZero(Month(DateInMonth),2,0)+StrZero(MonthEnd(Month(DateInMonth),Year(DateInMonth)),2,0))
-STATIC FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
+STATIC FUNCTION ErrorMessage(oError as Error) as STRING PASCAL
 
 	LOCAL cMessage      as STRING
 	LOCAL cArg          as STRING
@@ -1138,7 +1138,10 @@ STATIC FUNCTION ErrorMessage(oError as OBJECT) as STRING PASCAL
 		cMessage1 += NTrim(oError:SubCode)
 
 		IF SLen(oError:SubCodeText) > 0
-			cMessage1 += " (" + oError:SubCodeText + ")"
+			cMessage1 += " (" + oError:SubCodeText + ")" 
+			
+		ELSEIF oError:SubCode=5333
+			cMessage1 += " ("+ "the virtual memory management subsystem gets overloaded and cannot find enough memory to continue execution"+" )"
 		ENDIF
 
 		cMessage += cMessage1
@@ -3690,7 +3693,7 @@ IF f_month == 2
    ENDIF
 ENDIF
 RETURN f_day
-FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
+FUNCTION MyDefError(oError as Error) as USUAL PASCAL
 
 	LOCAL dwChoice			as DWORD
 	LOCAL cMessage			as STRING
@@ -3762,8 +3765,6 @@ FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
 		cMessage+=cStack
 	ENDIF
 	//FdW//20060916-End 
-	cMessage+="Error text: "+oError:SubCodeText
-
 
 	IF SetBeep()
 		Tone(440, 1)
