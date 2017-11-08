@@ -3161,7 +3161,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
-			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net",''}},{})
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net,anton_barashenkov@sil.org",''}},{})
 		oMl:SendEmails()
 		
 	endif
@@ -3761,7 +3761,8 @@ FUNCTION MyDefError(oError as OBJECT) as USUAL PASCAL
 		cMessage+=CRLF
 		cMessage+=cStack
 	ENDIF
-	//FdW//20060916-End
+	//FdW//20060916-End 
+	cMessage+="Error text: "+oError:SubCodeText
 
 
 	IF SetBeep()
