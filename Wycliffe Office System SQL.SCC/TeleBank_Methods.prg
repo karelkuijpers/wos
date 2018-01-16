@@ -698,9 +698,9 @@ method GetPaymentPattern(lv_Oms as string,lv_addsub as string,lv_budget ref stri
 			endif                                      
 		endif
 		if	lv_kind=="AC"
-			if	lv_addsub =	"B" .and.isnum(cText)                                //9824060000051254
+			if	lv_addsub =	"B" .and.isnum(cText) .and. SEntity="NED"            //9824060000051254
 				if Len(cText)>11                                                 //4000008240163516
-					lv_persid:=Str(Val(SubStr(cText,-5)),-1)
+					lv_persid:=Str(Val(SubStr(cText,-5)),-1)                      //1234567890123456
 				endif
 				lv_bankid:=SubStr(cText,2,6)
 				lv_budget:=SubStr(cText,2,Max(5,Len(cText)-6.00))
@@ -2839,7 +2839,7 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 				IF Len(cBuffer)>nEndAmnt+3 .and. !SubStr(cBuffer,nEndAmnt+4,6)=="NONREF" 
 					cText:=  SubStr(cBuffer,nEndAmnt+4,16)
 					IF	isnum(cText)
-						lv_reference=' '+cText 
+						lv_reference:=' '+cText 
 						// payment pattern:
 						self:GetPaymentPattern(cText,lv_addsub,@lv_budget,@lv_persid,@lv_bankid,@lv_kind)
 					ENDIF
