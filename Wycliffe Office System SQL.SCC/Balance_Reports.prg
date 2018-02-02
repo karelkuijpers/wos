@@ -6983,6 +6983,7 @@ METHOD OKButton( ) CLASS YearClosing
 	self:d_depnbr:={''}     	
 	self:d_PLdeb:={0.00}
 	self:d_PLcre:={0.00}
+	self:d_expenseacc:={0}
 	oDep:=SqlSelect{"select d.parentdep,d.deptmntnbr,d.descriptn,d.depid,d.netasset,d.expenseacc,b.category from department d "+;
 		"left join account a on (a.accid=d.netasset) left join balanceitem b on (a.balitemid=b.balitemid)",oConn}
 	if oDep:reccount>0
@@ -7358,13 +7359,14 @@ self:SetTexts()
 METHOD SubDepartment(p_depptr as int, cTransnr ref string,nSeqNbr ref int,AfterBalance as int) as logic pascal CLASS YearClosing
 	* Recursive processing of a department with its subdeparments
 	*
-	LOCAL subDepPtr as int
+	LOCAL subDepPtr as int 
+	local subnr:=self:d_dep[p_depptr] as int
 	LOCAL min_balance, PL_totdeb, PL_totcre as FLOAT
 	local cStatement as string
 	local oStmnt as SQLStatement
-
+   	
 	subDepPtr:=0
-	DO WHILE true
+	do WHILE true
 		subDepPtr:=AScan(self:d_parentdep,self:d_dep[p_depptr],subDepPtr+1)
 		IF Empty(subDepPtr)
 			exit
