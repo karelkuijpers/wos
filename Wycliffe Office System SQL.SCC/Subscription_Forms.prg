@@ -1435,7 +1435,7 @@ METHOD FindButton( ) CLASS SubscriptionBrowser
 		next
 	endif               
 	
-	if self:mBlocked
+	if ConL(self:mBlocked)== .T.
 		cFilterWhere +=" and s.blocked = 1"  
 	end if
 	
