@@ -1148,9 +1148,9 @@ METHOD OkButton CLASS EditPerson
 			iif(!self:lNew.or.!Empty(self:mRemarks),",remarks='"+AddSlashes(self:mRemarks)+"'","")+;
 			",opc='"+LOGON_EMP_ID+"'"+;
 			",creationdate='"+SQLdate(self:mCreationDate)+"'"+;
-			iif(self:oDCmType:CurrentItemNo>0,",type='"+Str(self:oDCmType:GetItemValue(self:oDCmType:CurrentItemNo),-1)+"'","")+;
+			iif(self:oDCmType:CurrentItemNo>0,",type='"+ConS(self:oDCmType:GetItemValue(self:oDCmType:CurrentItemNo))+"'","")+;
 			",birthdate='"+SQLdate(self:mBirthDate)+"'"+;
-			iif(self:oDCmGENDER:CurrentItemNo>0,",gender='"+Str(self:oDCmGENDER:GetItemValue(self:oDCmGENDER:CurrentItemNo),-1)+"'","")+; 
+			iif(self:oDCmGENDER:CurrentItemNo>0,",gender='"+ConS(self:oDCmGENDER:GetItemValue(self:oDCmGENDER:CurrentItemNo))+"'","")+; 
 		",propextr='"+StrTran(cExtra,"'","\'")+"'"+;
 			",alterdate='"+SQLdate(self:mAlterDate)+"'"+;
 			",datelastgift ='"+SQLdate(self:mDateLastGift)+"'"+;
