@@ -3574,7 +3574,7 @@ METHOD GiftsPrint(FromAccount as string,ToAccount as string,ReportYear as int,Re
 		RedOff:="\cf0 "
 	ENDIF
 
-	IF !self:oReport:lPrintOk
+	IF Empty(self:oReport) .or. !self:oReport:lPrintOk
 		RETURN 
 	ENDIF
 	lPrintFile:=(self:oReport:Destination=="File")
