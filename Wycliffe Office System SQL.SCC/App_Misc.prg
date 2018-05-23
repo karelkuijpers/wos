@@ -514,7 +514,7 @@ Function ChgBalance(pAccount as string,pRecordDate as date,pDebAmnt as float,pCr
 			oStmnt:=SQLStatement{"INSERT INTO mbalance (`accid`,`year`,`month`,`currency`,`deb`,`cre`) VALUES "+cValues+;
 				" ON DUPLICATE KEY UPDATE deb=round(deb+values(deb),2),cre=round(cre+values(cre),2)",oConn}
 			oStmnt:Execute() 
-			SetDecimalSep(wCurrSep)
+			//SetDecimalSep(wCurrSep)
 			if !Empty(oStmnt:status)
 				LogEvent(,"ChgBalance error:"+oStmnt:Status:description+CRLF+"stmnt:"+oStmnt:SQLString,"LogErrors")
 				return false
