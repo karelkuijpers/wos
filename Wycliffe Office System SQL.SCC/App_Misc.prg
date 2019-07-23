@@ -1425,13 +1425,22 @@ FUNCTION FillPersCode ()
 LOCAL oMailCd as SQLSelect
 pers_codes:={}
 mail_abrv:={}
-oMailCd := SQLSelect{"select pers_code,description,abbrvtn from perscod",oConn}
-pers_codes:=oMailCd:GetLookupTable(500,#description,#PERS_CODE)
+	oMailCd := SqlSelect{"select group_concat(description,'#$#',pers_code separator '#%#') as grPP from perscod order by pers_code",oConn}
+	oMailCd:Execute()
+	if oMailCd:RecCount>0 
+		AEval(Split(oMailCd:grPP,'#%#',,true),{|x|AAdd(pers_codes,Split(x,'#$#',,true))})
+	endif
+
+
 ASize(pers_codes,Len(pers_codes)+1)
 AIns(pers_codes,1) 
 pers_codes[1]:={' ',''}
-oMailCd:GoTop()
-mail_abrv:=oMailCd:GetLookupTable(500,#ABBRVTN,#PERS_CODE) 
+	oMailCd := SqlSelect{"select group_concat(abbrvtn,'#$#',pers_code separator '#%#') as grPP from perscod order by pers_code",oConn}
+	oMailCd:Execute()
+	if oMailCd:RecCount>0 
+		AEval(Split(oMailCd:grPP,'#%#',,true),{|x|AAdd(mail_abrv,Split(x,'#$#',,true))})
+	endif
+ 
 ASize(mail_abrv,Len(mail_abrv)+1)
 AIns(mail_abrv,1) 
 mail_abrv[1]:={' ',''}
@@ -1468,15 +1477,36 @@ FUNCTION FillPersProp ()
 
 FUNCTION FillPersTitle ()
 	* Fill global Array pers_titles with description + id of Titles
-	pers_titles:= SQLSelect{"select descrptn,id from titles",oConn}:GetLookupTable(100)
+LOCAL oPersTp as SQLSelect
+	//pers_titles:= SQLSelect{"select descrptn,id from titles",oConn}:GetLookupTable(100)
+	pers_titles:={}
+	oPersTp := SqlSelect{"select group_concat(descrptn,'#$#',`id` separator '#%#') as grPP from titles order by `id`",oConn}
+	oPersTp:Execute()
+	if oPersTp:RecCount>0 
+		AEval(Split(oPersTp:grPP,'#%#',,true),{|x|AAdd(pers_titles,Split(x,'#$#',,true))})
+	endif
 	RETURN 
 FUNCTION FillPersType ()
 * Fill global Array with description + id  and abbriviation, id
 LOCAL oPersTp as SQLSelect
-oPersTp:=SQLSelect{"select lower(descrptn) as descrptn,abbrvtn,id from persontype",oConn} 
+oPersTp:=SqlSelect{"select lower(descrptn) as descrptn,abbrvtn,id from persontype",oConn} 
 Pers_Types:= oPersTp:GetLookupTable(500,#DESCRPTN,#ID) 
+/*	Pers_Types:={}	
+	oPersTp := SqlSelect{"select group_concat(descrptn,'#$#',id separator '#%#') as grPP from persontype order by id",oConn}
+	oPersTp:Execute()
+	if oPersTp:RecCount>0 
+		AEval(Split(oPersTp:grPP,'#%#',,true),{|x|AAdd(Pers_Types,Split(x,'#$#',,true))})
+	endif      */
+
 oPersTp:GoTop()
 pers_types_abrv:=oPersTp:GetLookupTable(500,#ABBRVTN,#ID)
+/*	pers_types_abrv:={}
+	oPersTp := SqlSelect{"select group_concat(abbrvtn,'#$#',`id` separator '#%#') as grPP from persontype order by `id`",oConn}
+	oPersTp:Execute()
+	if oPersTp:RecCount>0 
+		AEval(Split(oPersTp:grPP,'#%#',,true),{|x|AAdd(pers_types_abrv,Split(x,'#$#',,true))})
+	endif */
+
 return
 function FillPP(nGrade:='' as string) as array 
 // lMember: true: only primary wycliffe organisations
