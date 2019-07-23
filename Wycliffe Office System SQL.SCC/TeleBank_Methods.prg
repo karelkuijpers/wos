@@ -627,7 +627,7 @@ METHOD GetNxtMut(LookingForGifts) CLASS TeleMut
 			self:m56_budgetcd:=""
 		endif
 		self:m56_description:= self:oTelTr:Description
-		self:GetAddress(iif(Empty(self:oTelTr:adrline),self:oTelTr:Description,self:oTelTr:adrline))
+//		self:GetAddress(iif(Empty(self:oTelTr:adrline),self:oTelTr:Description,self:oTelTr:adrline))
 		//    if !Empty(Val(AllTrim(oTelTr:persid))) .and. oTelTr:addsub="B"
 		if !Empty(self:oTelTr:persid) .and. self:oTelTr:persid>0 
 			self:m56_persid:=Str(self:oTelTr:persid,-1)
@@ -4789,38 +4789,38 @@ method SaveTeleTrans(lCheckPerson:=true as logic,lCheckAccount:=true as logic, c
 						if !CountryCode=="31" .or.;
 								!SpecialMessage(avalueTrans[i,10], self:m57_bankacc[j,6],@lv_specmessage)  // with special message manually processed
 							lAddressChanged:=false
-							if (CountryCode=="31" .or.avalueTrans[i,13]=='NL') ;  
-								.and. !(Empty(avalueTrans[i,10]) .and.Empty(avalueTrans[i,12]))
-								// check no address change
-								k:=AScan(aZip,{|x|x[1]==lv_persid})
-								if k>0
-									lv_address:=avalueTrans[i,10] 
-									if (nAddrEnd:=At('%%',lv_address))=0
-										if (nAddrEnd:=AtC('EndToEnd',lv_address))=0
-											nAddrEnd:=Len(lv_address)+1
-										endif
-									endif  
-									lv_address:=AllTrim(SubStr(lv_address,1,nAddrEnd-1))
-									if !(Empty(avalueTrans[i,12]) .and.Empty(lv_address))
-										self:GetAddress(iif(Empty(avalueTrans[i,12]),lv_address,avalueTrans[i,12]),false)
-										if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7 .and.!Empty(self:m56_town)
-											// 											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
-											IF !self:m56_zip==aZip[k,2] 
-												lAddressChanged:=true
-											ENDIF
-										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])  .and.!Empty(self:m56_town)
-											aAddr:=GetStreetHousnbr(self:m56_address)
-											aAddrDB:=GetStreetHousnbr(aZip[k,3])
-											if !Val(aAddr[2])==Val(aAddrDB[2])      // unequal housenumbers-> moved
-												lAddressChanged:=true
-											endif
-										endif
-										if Empty(avalueTrans[i,12]) .and.!(Empty(self:m56_zip).and.Empty(self:m56_town))
-											aValuesTrans[i,12]:=self:m56_address+' '+self:m56_zip+' '+self:m56_town  // as determined by getaddress
-										endif
-									endif
-								endif
-							endif
+// 							if (CountryCode=="31" .or.avalueTrans[i,13]=='NL') ;  
+// 								.and. !(Empty(avalueTrans[i,10]) .and.Empty(avalueTrans[i,12]))
+// 								// check no address change
+// 								k:=AScan(aZip,{|x|x[1]==lv_persid})
+// 								if k>0
+// 									lv_address:=avalueTrans[i,10] 
+// 									if (nAddrEnd:=At('%%',lv_address))=0
+// 										if (nAddrEnd:=AtC('EndToEnd',lv_address))=0
+// 											nAddrEnd:=Len(lv_address)+1
+// 										endif
+// 									endif  
+// 									lv_address:=AllTrim(SubStr(lv_address,1,nAddrEnd-1))
+// 									if !(Empty(avalueTrans[i,12]) .and.Empty(lv_address))
+// 										self:GetAddress(iif(Empty(avalueTrans[i,12]),lv_address,avalueTrans[i,12]),false)
+// 										if !Empty(self:m56_zip) .and.Len(self:m56_zip)>=7 .and.!Empty(self:m56_town)
+// 											// 											IF !self:m56_zip==aZip[k,2] .and.!Empty(aZip[k,2]) 
+// 											IF !self:m56_zip==aZip[k,2] 
+// 												lAddressChanged:=true
+// 											ENDIF
+// 										elseif Len(self:m56_address)>1 .and.!Lower(self:m56_address)==Lower(aZip[k,3])  .and.!Empty(self:m56_town)
+// 											aAddr:=GetStreetHousnbr(self:m56_address)
+// 											aAddrDB:=GetStreetHousnbr(aZip[k,3])
+// 											if !Val(aAddr[2])==Val(aAddrDB[2])      // unequal housenumbers-> moved
+// 												lAddressChanged:=true
+// 											endif
+// 										endif
+// 										if Empty(avalueTrans[i,12]) .and.!(Empty(self:m56_zip).and.Empty(self:m56_town))
+// 											aValuesTrans[i,12]:=self:m56_address+' '+self:m56_zip+' '+self:m56_town  // as determined by getaddress
+// 										endif
+// 									endif
+// 								endif
+// 							endif
 							if !lAddressChanged 
 								cBudgetcd:=avalueTrans[i,7] 
 								// aAccnbrDb: {{accnumber, accid, ismember, member persid, incomeacc,expenseacc,netasset) 
