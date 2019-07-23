@@ -54,10 +54,10 @@ method Start() class App
 		oInit:=Initialize{}  // make connection with mysql and database   
 		oUpg:=CheckUPGRADE{}
 		oMainWindow:Pointer := Pointer{POINTERHOURGLASS}
-		oUpg:LoadNewTables(cWorkdir,oInit:FirstOfDay,oInit:lNewDb)
+		//oUpg:LoadNewTables(cWorkdir,oInit:FirstOfDay,oInit:lNewDb)
 		if !oInit:lNewDB .and. (oInit:FirstOfDay .or. oUpg:DBVers>oUpg:PrgVers .or. oUpg:DBVersDate>oUpg:PrgVersDate) 
 			// 			lStop:=oUpg:LoadUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
-			lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
+			//lStop:=oUpg:LoadInstallerUpgrade(@startfile,cWorkdir,oInit:FirstOfDay)
 		endif
 
 		if lStop .and.!Empty(startfile)
