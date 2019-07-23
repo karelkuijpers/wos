@@ -62,7 +62,7 @@ Method LoadInstallerUpgrade(startfile ref string,cWorkdir as string, lFirstOfDay
 		// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 	endif
-	for i:=1 to 9   // try 3 seconds
+	for i:=1 to 3   // try 3 seconds
 		if !lSuc
 			// try again:
 			Tone(30000,6) // wait 6/18 sec
@@ -174,7 +174,7 @@ Method LoadNewTables(cWorkdir as string,lFirstOfDay:=false as logic,lNewDb:=fals
 		// 		lSuc:=oFTP:ConnectRemote('weu-web.dyndns.org','anonymous',"any")
 		lSuc:=oFTP:ConnectRemote('ftp.eu.wycliffe.net','anonymous',"any")
 	endif
-	for i:=1 to 9   // try 3 seconds
+	for i:=1 to 3   // try 3 seconds
 		if !lSuc
 			// try again:
 			Tone(30000,6) // wait 6/18 sec
