@@ -1482,8 +1482,8 @@ LOCAL oPersTp as SQLSelect
 	pers_titles:={}
 	oPersTp := SqlSelect{"select group_concat(descrptn,'#$#',`id` separator '#%#') as grPP from titles order by `id`",oConn}
 	oPersTp:Execute()
-	if oPersTp:RecCount>0 
-		AEval(Split(oPersTp:grPP,'#%#',,true),{|x|AAdd(pers_titles,Split(x,'#$#',,true))})
+	if oPersTp:RecCount>0 .and. !Empty(oPersTp:grPP)  
+		AEval(Split(ConS(oPersTp:grPP),'#%#',,true),{|x|AAdd(pers_titles,Split(x,'#$#',,true))})
 	endif
 	RETURN 
 FUNCTION FillPersType ()
@@ -4883,9 +4883,9 @@ Function Title(nTit as int) as string
 	// Return Title of a person:
 	LOCAL nPtr as int
 	if nTit>0
-		nPtr:=AScan(pers_titles,{|x|x[2]==nTit})
+		nPtr:=AScan(pers_titles,{|x|ConI(x[2])==nTit})
 		if nPtr >0 
-			return pers_titles[nPtr,1]
+			return ConS(pers_titles[nPtr,1])
 		endif
 	endif
 	return null_string
