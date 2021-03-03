@@ -206,7 +206,8 @@ method Sync() class Synchronize
 	local oStmnt as SQLStatement
 	local cMailingcodes as string 
 	local cNameSearch as string  
-	local parsl as string
+	local parsl as string 
+	local stmnt as string
 	If (i:=AScan( mail_abrv,{|x| x[1]="BZ"}))=0
 		(ErrorBox{,"Mailcode bezoeker (BZ) is missing, add it first"}):show()
 		return false
@@ -238,18 +239,16 @@ method Sync() class Synchronize
 
 	*/  
 
-	oSel:=SqlSelect{"show databases like 'parousia_typo3'",oConn}
-	oSel:Execute()
-	if !Empty(oSel:Status).or. oSel:RecCount<1
-		ErrorBox{self,"database parousia_typo3 not avialbale"}:show()
+	if SqlSelect{"select cast(schema_name as char) from information_schema.schemata where schema_name = 'parousia_typo3'",oConn}:Reccount<1
+		ErrorBox{self,"database parousia_typo3 not available"}:show()
 		return
 	endif
 	self:Pointer := Pointer{POINTERHOURGLASS}
 
 	//  Read all givers and visitors from WOS:
-	oPers:=SqlSelect{"select persid,lastname,initials,postalcode,city,date_format(ifnull(s.datelastgift,'0000-00-00'),'%e-%m-%Y') as datelastgift,"+ SQLFullNAC(3)+" as fullnac"+;
+	oPers:=SqlSelect{"select persid,lastname,initials,postalcode,city,date_format(ifnull(datelastgift,'0000-00-00'),'%e-%m-%Y') as datelastgift,"+ SQLFullNAC(3)+" as fullnac"+;
 		",postalcode,address,externid,mailingcodes "+;
-		"from person where ifnull(s.datelastgift,'0000-00-00')>'0000-00-00' or instr(mailingcodes,'"+MlcdBezoeker+"')>0 order by lastname",oConn}
+		"from person where ifnull(datelastgift,'0000-00-00')>'0000-00-00' or instr(mailingcodes,'"+MlcdBezoeker+"')>0 order by lastname",oConn}
 	oPers:Execute() 
 	// Place all wospersons into array aWosPers: 
 	do while !oPers:Eof
@@ -273,18 +272,18 @@ method Sync() class Synchronize
 			hsnr:=GetStreetHousnbr(oPers:address)[2] 
 			cNameSearch:=SubStr(GetTokens(oPers:lastname)[1,1],1,10)
 
-			oParPers:=SqlSelect{'select tp.id,tp.achternaam,tp.voornamen,tp.roepnaam,tp.tussenvoegsel,a.straatnaam,a.huisnummer,a.postcode,a.woonplaats'+;
+			oParPers:=SqlSelect{'select tp.uid,tp.achternaam,tp.voornamen,tp.roepnaam,tp.tussenvoegsel,a.straatnaam,a.huisnummer,a.postcode,a.woonplaats'+;
 				',date_format(ifnull(tp.geboortedatum,"0000-00-00"),"%e-%m-%Y") as geboortedatum'+;
 				',concat(tpartner.roepnaam," ",tpartner.tussenvoegsel," ",tpartner.achternaam) as partnernaam'+;
 				' from parousia_typo3.adres a,parousia_typo3.persoon tp'+;
-				' left join parousia_typo3.persoon as tpartner on (tp.id_partner=tpartner.id and tpartner.verwijderd="nee")'+;
-				' where AES_DECRYPT(tp.id_adres,"'+parsl+'" )=a.id'+;
-				' and not exists (select 1 from '+dbname+'.person pw where  binary pw.externid = binary tp.id or binary pw.externid = binary tp.id_partner)'+;
+				' left join parousia_typo3.persoon as tpartner on (tp.id_partner=tpartner.uid and tpartner.deleted=0)'+;
+				' where AES_DECRYPT(tp.id_adres,"'+parsl+'" )=a.uid'+;
+				' and not exists (select 1 from '+dbname+'.person pw where  binary pw.externid = binary tp.uid or binary pw.externid = binary tp.id_partner)'+;
 				' and ('+iif(!Empty(oPers:postalcode) .and.!Empty(oPers:address),'a.postcode="'+oPers:postalcode+'" and a.huisnummer="'+hsnr+'" or ','')+;
 				'tp.achternaam like "'+cNameSearch+'%")'+;
 				' and tp.persoon_op_adreslijst="persoon op adreslijst"'+;
 				' and (ifnull(tp.geboortedatum,"0000-00-00")="0000-00-00" or datediff(now(),ifnull(tp.geboortedatum,"0000-00-00"))> (15*365))'+;
-				' and tp.verwijderd="nee" and a.verwijderd="nee"'+;
+				' and tp.deleted=0 and a.deleted=0'+;
 				' order by a.postcode,a.huisnummer,tp.burgerlijke_staat,tp.geslacht',oConn}
 // 				'not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary tp.id) and ('+;
 // 				'tp.achternaam regexp "'+oPers:lastname+'" or "'+oPers:lastname+'" regexp tp.achternaam)'+;
@@ -296,7 +295,7 @@ method Sync() class Synchronize
 					cWebPerson:=oParPers:achternaam+', '+GetInitials(oParPers:voornamen)+', '+oParPers:roepnaam+' - '+oParPers:geboortedatum+') '+;
 					oParPers:tussenvoegsel+'; '+oParPers:straatnaam+;
 						' '+oParPers:huisnummer+' '+oParPers:postcode+' '+oParPers:woonplaats+iif(Empty(oParPers:partnernaam),'',' (partner:'+oParPers:partnernaam+")")	
-					AAdd(aCorPers,{ cWebPerson,oParPers:id})
+					AAdd(aCorPers,{ cWebPerson,oParPers:uid})
 					cIntl:=StrTran(oPers:initials," ","") 
 					if	!Empty(cIntl) .and.cIntl=GetInitials(oParPers:voornamen)
 						if	Empty(GivPtr) .or.(!Empty(oPers:Postalcode) .and. oParPers:postcode==oPers:Postalcode).or.;
@@ -330,7 +329,7 @@ method Sync() class Synchronize
 				self:Pointer := Pointer{POINTERHOURGLASS}
 				if !Empty(CorID)     // a person selected by the user?
 					// check if it has to be merged with a partner (in WOS all on one address as one person, in typo3 distinct persons)  
-					idPartner:=ConI(SqlSelect{"select id_partner from  parousia_typo3.persoon where id="+Str(CorID,-1),oConn}:id_partner)
+					idPartner:=ConI(SqlSelect{"select id_partner from  parousia_typo3.persoon where uid="+Str(CorID,-1),oConn}:id_partner)
 					if !Empty(idPartner)
 						oPersChg:=SqlSelect{'select persid,mailingcodes,'+SQLFullName()+' as fullname from person where deleted=0 and externid="'+Str(idPartner,-1)+'"',oConn}
 						if oPersChg:RecCount>0 
@@ -362,27 +361,29 @@ method Sync() class Synchronize
 				',concat(tpartner.roepnaam," ",tpartner.tussenvoegsel," ",tpartner.achternaam) as partnernaam'+;
 				',straatnaam,huisnummer,postcode,woonplaats,land,cast(ta.datum_wijziging as date) as datum_adreswijziging'+;
 				",cast(AES_DECRYPT(telefoonnr_vast,'"+parsl+"') as char) as telefoonnr_vast"+;
-				',tp.id, tp.id_partner'+;
+				',tp.uid, tp.id_partner'+;
 				',tpartner.roepnaam as partnerroepnaam'+;
 				' FROM parousia_typo3.persoon as tp'+;
-				' left join parousia_typo3.persoon as tpartner on tp.id_partner=tpartner.id,'+;
+				' left join parousia_typo3.persoon as tpartner on tp.id_partner=tpartner.uid,'+;
 				+'parousia_typo3.adres as ta'+;
-				' where tp.verwijderd="nee" and ta.verwijderd="nee" and AES_DECRYPT(tp.id_adres,"'+parsl+'")=ta.id and tp.id='+Str(CorID,-1),oConn}
+				' where tp.deleted=0 and ta.deleted=0 and AES_DECRYPT(tp.id_adres,"'+parsl+'")=ta.uid and tp.uid='+Str(CorID,-1),oConn}
 				oPersTypo3:Execute()
 				if oPersTypo3:RecCount>0
 					cMailingcodes:= oPers:mailingcodes
-					ADDMLCodes(MlcdBezoeker,@cMailingcodes)		
-					oStmnt:=SQLStatement{"update person set birthdate='"+SQLdate(iif(Empty(oPersTypo3:geboortedatum),null_date,oPersTypo3:geboortedatum))+"'"+;
-						",lastname='"+oPersTypo3:achternaam+"',prefix='"+oPersTypo3:tussenvoegsel+"'"+;
-						",firstname='"+iif(Empty(oPersTypo3:id_partner),oPersTypo3:roepnaam,iif(oPersTypo3:geslacht=='man',oPersTypo3:roepnaam+" en "+Transform(oPersTypo3: partnerroepnaam,""),Transform(oPersTypo3:partnerroepnaam,"")+" en "+oPersTypo3:roepnaam))+"'"+;
-						",gender="+iif(!Empty(oPersTypo3:id_partner),'3',iif(oPersTypo3:geslacht="vrouw",'1','2'))+",email='"+oPersTypo3:emailadres+"'"+;
-						",externid='"+ iif(Empty(oPersTypo3:id_partner).or.oPersTypo3:geslacht="man",Str(oPersTypo3:id,-1),Str(oPersTypo3:id_partner,-1))+"'" +;
-						iif(!Empty(oPersTypo3:titel).and. (i:=AScan( pers_titles,{|x|x[1]==Lower(oPersTypo3:titel)}))>0,",title='"+Str(pers_titles[i,2],-1)+"'","")+;
-						",mobile='"+oPersTypo3:mobieltelnr+"',telhome='"+oPersTypo3:telefoonnr_vast+"'" +;
-						iif(Empty(oPers:address) .or.Empty(oPers:postalcode) .or.oPersTypo3:datum_adreswijziging>CToD(oPers:datelastgift) .and.(Today()-CToD(oPers:datelastgift))< 365,;
+					ADDMLCodes(MlcdBezoeker,@cMailingcodes)
+					stmnt:="update person set birthdate='"+SQLdate(iif(Empty(oPersTypo3:geboortedatum),null_date,oPersTypo3:geboortedatum))+"'"+;
+					",lastname='"+oPersTypo3:achternaam+"',prefix='"+oPersTypo3:tussenvoegsel+"'"+;
+					",firstname='"+iif(Empty(oPersTypo3:id_partner),oPersTypo3:roepnaam,iif(oPersTypo3:geslacht=='man',oPersTypo3:roepnaam+" en "+Transform(oPersTypo3: partnerroepnaam,""),Transform(oPersTypo3:partnerroepnaam,"")+" en "+oPersTypo3:roepnaam))+"'"
+					stmnt+=	",gender="+iif(!Empty(oPersTypo3:id_partner),'3',iif(oPersTypo3:geslacht="vrouw",'1','2'))+",email='"+oPersTypo3:emailadres+"'"+;
+						",externid='"+ iif(Empty(oPersTypo3:id_partner).or.oPersTypo3:geslacht="man",Str(oPersTypo3:uid,-1),Str(oPersTypo3:id_partner,-1))+"'" +;
+						iif(!Empty(oPersTypo3:titel).and. (i:=AScan( pers_titles,{|x|x[1]==Lower(oPersTypo3:titel)}))>0,",title='"+Str(Val(pers_titles[i,2]),-1)+"'","")+;
+						iif(!Empty(oPersTypo3:mobieltelnr),",mobile='"+oPersTypo3:mobieltelnr+"'","")+iif(!Empty(oPersTypo3:telefoonnr_vast),",telhome='"+oPersTypo3:telefoonnr_vast+"'","")
+					stmnt+=	iif(Empty(oPers:address) .or.Empty(oPers:postalcode) .or.oPersTypo3:datum_adreswijziging>CToD(oPers:datelastgift) .and.(Today()-CToD(oPers:datelastgift))< 365,+;
 						",address='"+oPersTypo3:straatnaam+" "+oPersTypo3:huisnummer+"',city='"+oPersTypo3:woonplaats+"',postalcode='"+oPersTypo3:postcode+"',country='"+oPersTypo3:land+"'","")+;
-						",mailingcodes='"+cMailingcodes+"',externid='"+Str(CorID,-1)+"'"+;
-						" where persid="+Str(oPers:persid,-1),oConn}
+						",mailingcodes='"+cMailingcodes+"'"+;
+						" where persid="+Str(oPers:persid,-1)
+//					+",externid='"+Str(CorID,-1)+"'" 
+					oStmnt:=SQLStatement{stmnt,oConn}
 					oStmnt:Execute()
 					// address:
 					if !(Empty(oPers:address) .or.Empty(oPers:postalcode) .or.(oPersTypo3:datum_adreswijziging>CToD(oPers:datelastgift) .and.(Today()-CToD(oPers:datelastgift))< 365))
@@ -392,7 +393,7 @@ method Sync() class Synchronize
 								' '+oPersTypo3:huisnummer+' '+oPersTypo3:postcode+' '+oPersTypo3:woonplaats+iif(Empty(oPersTypo3:id_partner),"",' (partner: '+Transform(oPersTypo3:partnernaam,"")+")") 
 							FWriteLine(ptrAdrCh,cWebPerson+CHR(9)+oPers:FullNAc)
 						endif
-					endi
+					endif      
 				else
 				endif
 			else
@@ -415,18 +416,18 @@ method Sync() class Synchronize
 	self:STATUSMESSAGE("Adding all other addresses from person administration, please wait...")
 	self:Pointer := Pointer{POINTERHOURGLASS}
 	
-	oParPers:=SqlSelect{'select p.id,p.id_partner,cast(ifnull(p.geboortedatum,"0000-00-00") as date) as geboortedatum,p.achternaam,p.tussenvoegsel,p.geslacht,p.roepnaam'+;
+	oParPers:=SqlSelect{'select p.uid,p.id_partner,cast(ifnull(p.geboortedatum,"0000-00-00") as date) as geboortedatum,p.achternaam,p.tussenvoegsel,p.geslacht,p.roepnaam'+;
 		", cast(AES_DECRYPT(p.emailadres,'"+parsl+"' ) as char) as emailadres"+;
 		", cast(AES_DECRYPT(telefoonnr_vast,'"+parsl+"' ) as char) as telefoonnr_vast"+;
 		", cast(AES_DECRYPT(p.mobieltelnr,'"+parsl+"' ) as char) as mobieltelnr"+;
 		',p.voornamen,p.titel,straatnaam,huisnummer,postcode,woonplaats,land,tpartner.roepnaam as roepnaampartner '+;
-		'from parousia_typo3.adres a, parousia_typo3.persoon p left join parousia_typo3.persoon tpartner on (tpartner.id=p.id_partner and tpartner.verwijderd="nee")'+;
-		' where AES_DECRYPT(p.id_adres,"'+parsl+'" )=a.id '+;
-		' and not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary p.id or binary pw.externid=binary p.id_partner'+;
+		'from parousia_typo3.adres a, parousia_typo3.persoon p left join parousia_typo3.persoon tpartner on (tpartner.uid=p.id_partner and tpartner.deleted=0)'+;
+		' where cast(AES_DECRYPT(p.id_adres,"'+parsl+'" ) as signed) =a.uid '+;
+		' and not exists (select 1 from '+dbname+'.person pw where binary pw.externid=binary p.uid or binary pw.externid=binary p.id_partner'+;
 		' or (pw.postalcode=a.postcode and pw.address=concat(a.straatnaam," ",a.huisnummer)))'+;
 		' and p.persoon_op_adreslijst="persoon op adreslijst"'+;
 		' and (ifnull(p.geboortedatum,"0000-00-00")>"0000-00-00" and datediff(now(),ifnull(p.geboortedatum,"0000-00-00"))> (18*365))'+;
-		' and p.verwijderd="nee" and a.verwijderd="nee" order by postcode,huisnummer,p.burgerlijke_staat,p.geslacht',oConn}
+		' and p.deleted=0 and a.deleted=0 order by postcode,huisnummer,p.burgerlijke_staat,p.geslacht',oConn}
 	oParPers:Execute()
 	nAdd:=0	  
 	do while !oParPers:Eof
@@ -437,7 +438,7 @@ method Sync() class Synchronize
 				oStmnt:=SQLStatement{"insert into person set "+;                                                      
 				"creationdate=now()"+;
 					",opc='"+LOGON_EMP_ID+"'"+;
-					",externid='"+Str(oParPers:id,-1)+"'"+;
+					",externid='"+Str(oParPers:uid,-1)+"'"+;
 					",birthdate='"+SQLdate(iif(Empty(oParPers:geboortedatum),null_date,oParPers:geboortedatum))+"'"+;
 					",lastname='"+oParPers:achternaam+"'"+;
 					",prefix='"+oParPers:tussenvoegsel+"'"+;
@@ -451,9 +452,9 @@ method Sync() class Synchronize
 				",postalcode='"+oParPers:postcode+"'"+;
 					",country='"+oParPers:land+"'"+;		   	 
 				",mailingcodes='"+MlcdBezoeker+"'"+;
-					",mobile='"+oParPers:mobieltelnr+"'"+; 
-				",telhome='"+ oParPers:telefoonnr_vast+"'"+;
-					iif(!Empty(oParPers:titel).and. (i:=AScan( pers_titles,{|x|x[1]==Lower(oParPers:titel)}))>0,",title="+Str(pers_titles[i,2],-1),""),oConn}			
+					",mobile='"+ConS(oParPers:mobieltelnr)+"'"+; 
+				",telhome='"+ ConS(oParPers:telefoonnr_vast)+"'"+;
+					iif(!Empty(oParPers:titel).and. (i:=AScan( pers_titles,{|x|x[1]==Lower(oParPers:titel)}))>0,",title="+Str(Val(pers_titles[i,2]),-1),""),oConn}			 
 				oStmnt:Execute( )
 				if oStmnt:NumSuccessfulRows>0 
 					nAdd++
