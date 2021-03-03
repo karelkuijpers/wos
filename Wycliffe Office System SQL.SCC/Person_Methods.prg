@@ -279,7 +279,7 @@ METHOD SetPropExtra( count, Left) CLASS EditPerson
 	LOCAL EditX:=152, FixX:=17 as int
 	Default(@left,true)
 	Name:=pers_propextra[count,1]
-	nType:=pers_propextra[count,3]
+	nType:=Val(pers_propextra[count,3])
 	Values:=pers_propextra[count,4]
 	ID := pers_propextra[count,2]
 	IF left
