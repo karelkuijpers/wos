@@ -14,27 +14,20 @@ class CheckUPGRADE
 	export DBVers, PrgVers as float
 	export DBVersDate,PrgVersDate as date  
 	declare method LoadInstallerUpgrade,LoadNewTables 
-method Init() class CheckUPGRADE
+method init() class CheckUPGRADE
 	local oSys as SqlSelect
 	local DBVers, PrgVers as float
 	// determine program version as float:
 	AEval(AEvalA(Split(Version,"."),{|x|Val(x)}),{|x|PrgVers:=1000*PrgVers+x})
 	self:PrgVers:=PrgVers
-	// determine database version as float: 
-	if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0 
-		if SqlSelect{"show columns from `sysparms` like 'versiondate'",oConn}:RecCount>0
-			oSys:=SqlSelect{"select	`version`,cast(`versiondate` as char) as versiondate from sysparms",oConn}
-			if oSys:RecCount>0
-				AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x}) 
-				self:DBVersdate:= SQLDate2Date(ConS(oSys:Versiondate))
-			endif
-		else
-			oSys:=SqlSelect{"select	`version` from sysparms",oConn}
-			if oSys:RecCount>0
-				AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x}) 
-				self:DBVersdate:=null_date
-			endif
-		endif
+	// determine database version as float:  
+	
+	if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'sysparms'",oConn}:RecCount>0
+      oSys:=SqlSelect{"select `version`,cast(`versiondate` as char) as versiondate from sysparms",oConn}
+      if oSys:RecCount>0  
+         AEval(AEvalA(Split(oSys:Version,"."),{|x|Val(x)}),{|x|DBVers:=1000*DBVers+x}) 
+         self:DBVersdate:= SQLDate2Date(ConS(oSys:Versiondate))
+      endif
 	endif
 	self:DBVers:=DBVers
 	self:PrgVersDate:=SToD(SubStr(versiondate,1,8)) 
@@ -871,8 +864,11 @@ method init() class Initialize
 	enddo
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset
-	// 	oConn:=DynToOldSpace(oConn) 
-	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
+	// 	oConn:=DynToOldSpace(oConn)  
+	SQLStatement{"SET NAMES utf8;",oConn}:Execute()
+
+//	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
+	oSel:=SqlSelect{"select cast(schema_name as char) from information_schema.schemata where schema_name = '"+dbname+"'",oConn}
 	oSel:Execute()
 	if !Empty(oSel:Status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
@@ -901,7 +897,7 @@ method init() class Initialize
 	endif
 	if !self:lNewDb
 		// check if empty database:
-		if SqlSelect{"show tables like 'employee'",oConn}:RecCount>0
+		if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'employee'",oConn}:RecCount>0
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
 			if Empty(oSel:Status).and. oSel:RecCount>0
 				self:FirstOfDay:=FALSE
@@ -916,8 +912,9 @@ method init() class Initialize
 			self:lNewDb:=true    // apparently partly new database which need to be converted			
 		endif
 		if !lNewDb
-			// check if programversion is newer than db
-			if !SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
+			// check if programversion is newer than db  
+			if !SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'sysparms'",oConn}:RecCount>0
+			//if !SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
 				self:lNewDb:=true
 			endif
 		endif
@@ -953,8 +950,9 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	SQLStatement{"SET group_concat_max_len := @@max_allowed_packet",oConn}:Execute()
 	// turn off strict mode:
 	SQLStatement{"SET session sql_mode= '';",oConn}:Execute()
+	SQLStatement{"SET NAMES utf8;",oConn}:Execute()
 	if !self:lNewDb
-		if self:FirstOfDay .and.SqlSelect{"show tables like 'employee'",oConn}:RecCount>0 
+		if self:FirstOfDay .and.SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'employee'",oConn}:RecCount>0
 			// check if not some else has logged in parallel
 			oSel:=SqlSelect{"select cast(lstlogin as date) as lstlogin from employee where lstlogin >= curdate()",oConn}
 			if Empty(oSel:status).and. oSel:RecCount>0
@@ -996,7 +994,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	oDBFileSpec1:=FileSpec{cWorkdir+"\pptable-extended.csv"}
 	lCopyPP:=false
 	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-		if (oSel:=SqlSelect{"show tables like 'ppcodes'",oConn}):RecCount=0
+		if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'ppcodes'",oConn}:RecCount=0
 			lCopyPP:=true
 		else
 			if (oSel:=SqlSelect{"select count(*) as cnt from `ppcodes`",oConn}):cnt=0
@@ -1007,7 +1005,7 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	oDBFileSpec1:=FileSpec{cWorkdir+"\currencylist.csv"}
 	lCopyCur:=false
 	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-		if (oSel:=SqlSelect{"show tables like 'currencylist'",oConn}):RecCount=0
+		if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'currencylist'",oConn}:RecCount=0
 			lCopyCur:=true
 		else
 			if (oSel:=SqlSelect{"select count(*) as cnt from `currencylist`",oConn}):cnt=0
@@ -1018,14 +1016,14 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 	oDBFileSpec1:=FileSpec{cWorkdir+"\ipcaccounts.csv"}
 	lCopyIPC:=false
 	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-		if (oSel:=SqlSelect{"show tables like 'ipcaccounts'",oConn}):RecCount=0
+		if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'ipcaccounts'",oConn}:RecCount=0
 			lCopyIPC:=true
 		endif
 	endif
 	oMyFileSpec1:=FileSpec{cWorkdir+"\bic.csv"}
 	lCopyBIC:=false
 	IF oDBFileSpec1:Find() .and. oDBFileSpec1:Size>0  // not empty?
-		if (oSel:=SqlSelect{"show tables like 'bic'",oConn}):RecCount=0
+		if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'bic'",oConn}:RecCount=0
 			lCopyBIC:=true
 		else
 			if (oSel:=SqlSelect{"select count(*) as cnt from `bic`",oConn}):cnt=0
@@ -1120,7 +1118,9 @@ Method Initialize(DBVers:=0.00 as float, PrgVers:=0.00 as float,DBVersdate as da
 
 	oSys := SQLSelect{"select version,hb,lstreportmonth,pswrdlen,pswdura,assmntint,admintype,closemonth,mindate,yearclosed,countrycod,sysname from sysparms",oConn}
 
-	oSys:Execute()
+	oSys:Execute() 
+	oMainWindow:SetCaption() 
+
 
 	cStatement:=""
 	IF self:FirstOfDay .or.self:lNewDb
@@ -1287,7 +1287,7 @@ method InitializeDB() as void Pascal  class Initialize
 	local i,j,nTargetPos,nSourceStart,nSourceEnd,nTrCount,nLenTable as int, cRow, cTable,cTableCol as string
 	local aRequiredCol,aCurrentCol,aRequiredIndex,aCurrentIndex as array
 	// 	local cCollation:='ascii_general_ci' as string
-	local cCollation:='utf8_unicode_ci' as string 
+	local cCollation:='utf8_general_ci' as string 
 	LOCAL nTbl as int
 	local cTableCollation as string 
 	local currentSQLMode as string
@@ -1352,56 +1352,56 @@ method InitializeDB() as void Pascal  class Initialize
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// Table name, Field,Type,Null,Default,Extra 
-	//		{"dueamount","persid","int(11)","NO","",""},;
-	//		{"dueamount","accid","int(11)","YES","NULL",""},;
+	//		{"dueamount","persid","int","NO","",""},;
+	//		{"dueamount","accid","int","YES","NULL",""},;
 	// 	{"dueamount","paymethod","char(1)","NO","",""},;
 	// 	{"dueamount","category","char(1)","NO","",""},;
 
 	// Table name, Field,Type,Null,Default,Extra[,Comment] 
 
 	local aColumn:={;
-		{"account","accid","int(11)","NO","","auto_increment"},;
-		{"account","balitemid","int(11)","YES","NULL",""},;
+		{"account","accid","int","NO","","auto_increment"},;
+		{"account","balitemid","int","YES","NULL",""},;
 		{"account","description","char(40)","YES","NULL",""},;
 		{"account","subscriptionprice","decimal(12,2)","NO","",""},;
-		{"account","giftalwd","tinyint(1)","NO","",""},;
+		{"account","giftalwd","tinyint","NO","",""},;
 		{"account","clc","char(8)","NO","",""},;
 		{"account","accnumber","char(12)","YES","NULL",""},;
-		{"account","department","int(11)","NO","",""},;
+		{"account","department","int","NO","",""},;
 		{"account","propxtra","mediumtext","YES","NULL",""},;
 		{"account","currency","char(3)","NO","",""},;
-		{"account","multcurr","tinyint(1)","NO","",""},;
-		{"account","reevaluate","tinyint(1)","NO","",""},;
-		{"account","gainlsacc","int(11)","NO","",""},;
-		{"account","ipcaccount","int(7)","NO","",""},;
-		{"account","reimb","tinyint(1)","NO","",""},;
-		{"account","active","tinyint(1)","NO","1",""},;
-		{"account","qtymailing","int(10) unsigned","NO","",""},;
-		{"account","monitor","tinyint(1)","NO","",""},;
+		{"account","multcurr","tinyint","NO","",""},;
+		{"account","reevaluate","tinyint","NO","",""},;
+		{"account","gainlsacc","int","NO","",""},;
+		{"account","ipcaccount","int","NO","",""},;
+		{"account","reimb","tinyint","NO","",""},;
+		{"account","active","tinyint","NO","1",""},;
+		{"account","qtymailing","int unsigned","NO","",""},;
+		{"account","monitor","tinyint","NO","",""},;
 		{"account","altertime","timestamp","YES","NULL","ON UPDATE CURRENT_TIMESTAMP"},; 
-	{"accountbalanceyear","accid","int(11)","NO","",""},;
-		{"accountbalanceyear","yearstart","smallint(6)","NO","",""},;
-		{"accountbalanceyear","monthstart","smallint(6)","NO","",""},;
+	{"accountbalanceyear","accid","int","NO","",""},;
+		{"accountbalanceyear","yearstart","smallint","NO","",""},;
+		{"accountbalanceyear","monthstart","smallint","NO","",""},;
 		{"accountbalanceyear","svjd","decimal(20,2)","NO","",""},;
 		{"accountbalanceyear","svjc","decimal(20,2)","NO","",""},;
 		{"accountbalanceyear","currency","char(3)","NO","",""},;
-		{"amendment","subscribid","int(11)","NO","",""},;
+		{"amendment","subscribid","int","NO","",""},;
 		{"amendment","banknumber","varchar(64)","NO","","","previous bank number"},;
 		{"amendment","bic","varchar(11)","NO","","","previous bic"},;
-		{"article","articleid","int(11)","NO","","auto_increment"},;
+		{"article","articleid","int","NO","","auto_increment"},;
 		{"article","description","char(30)","YES","NULL",""},;
-		{"article","purchaseqty","int(7)","NO","",""},;
+		{"article","purchaseqty","int","NO","",""},;
 		{"article","purchaseprice","decimal(12,2)","NO","",""},;
-		{"article","soldqty","int(7)","NO","",""},;
+		{"article","soldqty","int","NO","",""},;
 		{"article","sellingprice","decimal(12,2)","NO","",""},;
 		{"article","datelastsold","date","YES","NULL",""},;
 		{"article","soldamount","decimal(15,2)","NO","",""},;
-		{"article","accountyield","int(11)","NO","",""},;
+		{"article","accountyield","int","NO","",""},;
 		{"article","supplier","char(30)","NO","",""},;
-		{"article","accountstock","int(11)","NO","",""},;
-		{"article","accountpurchase","int(11)","NO","",""},;   
-	{"assessmnttotal","assid","int(11)","NO","","auto_increment"},;
-		{"assessmnttotal","mbrid","int(11)","NO","",""},;
+		{"article","accountstock","int","NO","",""},;
+		{"article","accountpurchase","int","NO","",""},;   
+	{"assessmnttotal","assid","int","NO","","auto_increment"},;
+		{"assessmnttotal","mbrid","int","NO","",""},;
 		{"assessmnttotal","calcdate","date","YES","NULL",""},;
 		{"assessmnttotal","periodbegin","date","YES","NULL",""},;
 		{"assessmnttotal","periodend","date","YES","NULL",""},;
@@ -1410,96 +1410,96 @@ method InitializeDB() as void Pascal  class Initialize
 		{"assessmnttotal","amountintassmnt","decimal(12,2)","NO","",""},;
 		{"assessmnttotal","percofficeassmnt","decimal(4,1)","NO","",""},;
 		{"assessmnttotal","percintassmnt","decimal(4,1)","NO","",""},;
-		{"authfunc","empid","int(11)","NO","",""},;
+		{"authfunc","empid","int","NO","",""},;
 		{"authfunc","funcname","char(32)","NO","",""},;
-		{"balanceitem","balitemid","int(11)","NO","","auto_increment"},;
+		{"balanceitem","balitemid","int","NO","","auto_increment"},;
 		{"balanceitem","heading","char(25)","NO","",""},;
 		{"balanceitem","footer","char(25)","NO","",""},;
-		{"balanceitem","balitemidparent","int(11)","NO","",""},;
+		{"balanceitem","balitemidparent","int","NO","",""},;
 		{"balanceitem","category","char(2)","NO","",""},;
 		{"balanceitem","number","varchar(20)","YES","NULL",""},;
-		{"balanceyear","yearstart","smallint(6)","NO","",""},;
-		{"balanceyear","monthstart","smallint(6)","NO","",""},;
-		{"balanceyear","yearlength","smallint(6)","NO","",""},;
+		{"balanceyear","yearstart","smallint","NO","",""},;
+		{"balanceyear","monthstart","smallint","NO","",""},;
+		{"balanceyear","yearlength","smallint","NO","",""},;
 		{"balanceyear","state","char(1)","NO","",""},;
-		{"bankaccount","bankid","int(11)","NO","","auto_increment"},;
+		{"bankaccount","bankid","int","NO","","auto_increment"},;
 		{"bankaccount","banknumber","varchar(64)","NO","",""},;
-		{"bankaccount","accid","int(11)","YES","NULL",""},;
-		{"bankaccount","usedforgifts","tinyint(1)","NO","",""},;
-		{"bankaccount","telebankng","tinyint(1)","NO","",""},;
+		{"bankaccount","accid","int","YES","NULL",""},;
+		{"bankaccount","usedforgifts","tinyint","NO","",""},;
+		{"bankaccount","telebankng","tinyint","NO","",""},;
 		{"bankaccount","teledatdir","char(40)","NO","",""},;
-		{"bankaccount","giftsall","tinyint(1)","NO","",""},;
-		{"bankaccount","openall","tinyint(1)","NO","",""},;
-		{"bankaccount","payahead","int(11)","NO","",""},;
-		{"bankaccount","singledst","int(11)","NO","",""},;
+		{"bankaccount","giftsall","tinyint","NO","",""},;
+		{"bankaccount","openall","tinyint","NO","",""},;
+		{"bankaccount","payahead","int","NO","",""},;
+		{"bankaccount","singledst","int","NO","",""},;
 		{"bankaccount","fgmlcodes","char(30)","NO","",""},;
 		{"bankaccount","bic","varchar(11)","NO","",""},;
 		{"bankaccount","syscodover","char(1)","NO","",""},;
-		{"bankbalance","accid","int(11)","NO","",""},;
+		{"bankbalance","accid","int","NO","",""},;
 		{"bankbalance","datebalance","date","NO","",""},;
 		{"bankbalance","balance","decimal(15,2)","NO","",""},;
-		{"bankorder","id","int(11)","NO","","auto_increment"},;
-		{"bankorder","accntfrom","int(11)","YES","NULL",""},;
+		{"bankorder","id","int","NO","","auto_increment"},;
+		{"bankorder","accntfrom","int","YES","NULL",""},;
 		{"bankorder","banknbrcre","varchar(64)","NO","",""},;
 		{"bankorder","amount","decimal(15,2)","NO","",""},;
 		{"bankorder","datedue","date","YES","NULL",""},;
 		{"bankorder","datepayed","date","YES","NULL",""},;
 		{"bankorder","description","varchar(511)","NO","",""},;
-		{"bankorder","idfrom","int(11)","NO","",""},;
-		{"bankorder","stordrid","int(11)","NO","",""},;
+		{"bankorder","idfrom","int","NO","",""},;
+		{"bankorder","stordrid","int","NO","",""},;
 		{"bic","bic","char(8)","NO","",""},;
-		{"budget","accid","int(11)","NO","",""},;
-		{"budget","year","smallint(4)","NO","",""},;
-		{"budget","month","tinyint(2)","NO","",""},;
+		{"budget","accid","int","NO","",""},;
+		{"budget","year","smallint","NO","",""},;
+		{"budget","month","tinyint","NO","",""},;
 		{"budget","amount","decimal(18,2)","NO","",""},;
 		{"currencylist","aed","char(3)","NO","",""},;
 		{"currencylist","united_ara","varchar(59)","NO","",""},;
-		{"currencyrate","rateid","int(11)","NO","","auto_increment"},;           
+		{"currencyrate","rateid","int","NO","","auto_increment"},;           
 	{"currencyrate","aed","char(3)","NO","",""},;
 		{"currencyrate","daterate","date","YES","NULL",""},;
 		{"currencyrate","roe","decimal(16,10)","NO","",""},;
 		{"currencyrate","aedunit","char(3)","NO","",""},;
-		{"department","depid","int(11)","NO","","auto_increment"},;
+		{"department","depid","int","NO","","auto_increment"},;
 		{"department","descriptn","char(40)","YES","NULL",""},;
 		{"department","deptmntnbr","varchar(20)","YES","NULL",""},;
-		{"department","netasset","int(11)","NO","",""},;
-		{"department","parentdep","int(11)","NO","",""},;
-		{"department","persid","int(11)","NO","",""},;
-		{"department","persid2","int(11)","NO","",""},;
-		{"department","assacc1","int(11)","NO","",""},;
-		{"department","assacc2","int(11)","NO","",""},;
-		{"department","assacc3","int(11)","NO","",""},;
-		{"department","ipcproject","int(5)","NO","",""},;
-		{"department","incomeacc","int(11)","NO","",""},;
-		{"department","expenseacc","int(11)","NO","",""},;
-		{"department","payableacc","int(11)","NO","",""},;
-		{"department","receivableacc","int(11)","NO","",""},;
-		{"department","active","tinyint(1)","NO","1",""},;
-		{"distributioninstruction","mbrid","int(11)","NO","",""},;
-		{"distributioninstruction","seqnbr","int(3)","NO","",""},;
+		{"department","netasset","int","NO","",""},;
+		{"department","parentdep","int","NO","",""},;
+		{"department","persid","int","NO","",""},;
+		{"department","persid2","int","NO","",""},;
+		{"department","assacc1","int","NO","",""},;
+		{"department","assacc2","int","NO","",""},;
+		{"department","assacc3","int","NO","",""},;
+		{"department","ipcproject","int","NO","",""},;
+		{"department","incomeacc","int","NO","",""},;
+		{"department","expenseacc","int","NO","",""},;
+		{"department","payableacc","int","NO","",""},;
+		{"department","receivableacc","int","NO","",""},;
+		{"department","active","tinyint","NO","1",""},;
+		{"distributioninstruction","mbrid","int","NO","",""},;
+		{"distributioninstruction","seqnbr","int","NO","",""},;
 		{"distributioninstruction","destacc","varchar(70)","NO","",""},;
 		{"distributioninstruction","destpp","char(3)","NO","",""},;
-		{"distributioninstruction","desttyp","int(1)","NO","",""},;
+		{"distributioninstruction","desttyp","tinyint","NO","",""},;
 		{"distributioninstruction","destamt","decimal(12,2)","NO","",""},;
 		{"distributioninstruction","lstdate","date","YES","NULL",""},;
 		{"distributioninstruction","descrptn","varchar(70)","NO","",""},;
-		{"distributioninstruction","currency","tinyint(1)","NO","",""},;
-		{"distributioninstruction","disabled","tinyint(1)","NO","",""},;
+		{"distributioninstruction","currency","tinyint","NO","",""},;
+		{"distributioninstruction","disabled","tinyint","NO","",""},;
 		{"distributioninstruction","amntsnd","decimal(12,2)","NO","",""},;
 		{"distributioninstruction","dfir","char(9)","NO","",""},;
 		{"distributioninstruction","dfia","char(17)","NO","",""},;
 		{"distributioninstruction","checksave","char(1)","NO","",""},; 
-	{"distributioninstruction","singleuse","tinyint(1)","NO","",""},; 
-	{"dueamount","dueid","int(11)","NO","","auto_increment"},;
+	{"distributioninstruction","singleuse","tinyint","NO","",""},; 
+	{"dueamount","dueid","int","NO","","auto_increment"},;
 		{"dueamount","invoicedate","date","YES","NULL",""},;
-		{"dueamount","seqnr","int(2)","NO","",""},;
+		{"dueamount","seqnr","int","NO","",""},;
 		{"dueamount","amountinvoice","decimal(13,2)","NO","",""},;
 		{"dueamount","amountrecvd","decimal(13,2)","NO","",""},;
 		{"dueamount","datelstreminder","date","YES","NULL",""},;
-		{"dueamount","remindercnt","int(1)","NO","",""},;
-		{"dueamount","subscribid","int(11)","NO","",""},;
+		{"dueamount","remindercnt","tinyint","NO","",""},;
+		{"dueamount","subscribid","int","NO","",""},;
 		{"dueamount","seqtype","char(4)","NO","",""},;
-		{"employee","empid","int(11)","NO","","auto_increment"},;
+		{"employee","empid","int","NO","","auto_increment"},;
 		{"employee","loginname","varbinary(64)","NO","",""},;
 		{"employee","password","varchar(64)","NO","",""},;
 		{"employee","persid","varchar(32)","NO","",""},;
@@ -1512,29 +1512,29 @@ method InitializeDB() as void Pascal  class Initialize
 		{"employee","insiteuid","char(40)","NO","",""},; 
 		{"employee","lstreimb","date","YES","NULL",""},;
 		{"employee","lstlogin","datetime","YES","NULL",""},;
-		{"employee","online","tinyint(1)","NO","",""},;
+		{"employee","online","tinyint","NO","",""},;
 		{"employee","lstnews","date","YES","NULL",""},;
-		{"employee","maildirect","tinyint(1)","YES","NULL",""},; 
-		{"employee","mailclient","tinyint(1)","YES","NULL","","0=Express/Windows Mail,1=Microsoft Outlook,2=Thunderbird,3=Windows Live Mail,4=Mapi2Xml"},;
-		{"emplacc","empid","int(11)","NO","",""},;
-		{"emplacc","accid","int(11)","NO","",""},;
-		{"emplacc","type","tinyint(1)","NO","",""},; 
+		{"employee","maildirect","tinyint","YES","NULL",""},; 
+		{"employee","mailclient","tinyint","YES","NULL","","0=Express/Windows Mail,1=Microsoft Outlook,2=Thunderbird,3=Windows Live Mail,4=Mapi2Xml"},;
+		{"emplacc","empid","int","NO","",""},;
+		{"emplacc","accid","int","NO","",""},;
+		{"emplacc","type","tinyint","NO","",""},; 
 		{"functionusage","functionid","varchar(32)","NO","",""},;
 		{"functionusage","userid","varchar(64)","NO","",""},;
 		{"functionusage","usedate","date","NO","",""},;
-		{"functionusage","frequency","int(11)","NO","",""},; 
+		{"functionusage","frequency","int","NO","",""},; 
 		{"importlock","importfile","char(40)","NO","",""},;
-		{"importlock","lock_id","int(11)","NO","",""},;
+		{"importlock","lock_id","int","NO","",""},;
 		{"importlock","lock_time","timestamp","YES","NULL",""},; 
-		{"importpattern","imppattrnid","int(11)","NO","","auto_increment"},;
+		{"importpattern","imppattrnid","int","NO","","auto_increment"},;
 		{"importpattern","descriptn","varchar(511)","NO","",""},;
 		{"importpattern","origin","char(11)","NO","",""},;
 		{"importpattern","assmntcd","char(2)","NO","",""},;
 		{"importpattern","debcre","char(1)","NO","",""},;
-		{"importpattern","accid","int(11)","NO","",""},;
+		{"importpattern","accid","int","NO","",""},;
 		{"importpattern","recdate","date","YES","NULL",""},;
-		{"importpattern","automatic","tinyint(1)","NO","",""},;
-		{"importtrans","imptrid","int(11)","NO","","auto_increment"},;
+		{"importpattern","automatic","tinyint","NO","",""},;
+		{"importtrans","imptrid","int","NO","","auto_increment"},;
 		{"importtrans","transdate","date","YES","NULL",""},;
 		{"importtrans","docid","varchar(31)","NO","",""},;
 		{"importtrans","transactnr","varchar(31)","NO","",""},;
@@ -1543,53 +1543,53 @@ method InitializeDB() as void Pascal  class Initialize
 		{"importtrans","debitamnt","decimal(15,2)","NO","",""},;
 		{"importtrans","creditamnt","decimal(15,2)","NO","",""},;
 		{"importtrans","assmntcd","char(2)","NO","",""},;
-		{"importtrans","processed","tinyint(1)","NO","",""},;
+		{"importtrans","processed","tinyint","NO","",""},;
 		{"importtrans","origin","char(11)","NO","",""},;
 		{"importtrans","accname","char(40)","NO","",""},;
 		{"importtrans","giver","varchar(127)","NO","",""},;
 		{"importtrans","transtyp","char(2)","NO","",""},;
-		{"importtrans","fromrpp","tinyint(1)","NO","",""},;
+		{"importtrans","fromrpp","tinyint","NO","",""},;
 		{"importtrans","externid","varchar(24)","NO","",""},;
 		{"importtrans","debforgn","decimal(15,2)","NO","",""},;
 		{"importtrans","creforgn","decimal(15,2)","NO","",""},;
 		{"importtrans","currency","char(3)","NO","",""},;
 		{"importtrans","reference","varchar(127)","NO","",""},;
-		{"importtrans","seqnr","int(4)","NO","",""},; 
-	{"importtrans","poststatus","int(1)","NO","",""},; 
+		{"importtrans","seqnr","int","NO","",""},; 
+	{"importtrans","poststatus","tinyint","NO","",""},; 
 	{"importtrans","ppdest","char(3)","NO","",""},; 
-	{"importtrans","lock_id","int(11)","NO","",""},;
+	{"importtrans","lock_id","int","NO","",""},;
 		{"importtrans","lock_time","timestamp","YES","NULL",""},;
-		{"ipcaccounts","ipcaccount","int(7)","NO","",""},;
+		{"ipcaccounts","ipcaccount","int","NO","",""},;
 		{"ipcaccounts","descriptn","varchar(50)","NO","",""},;
 		{"language","sentenceen","varchar(512)","NO","",""},;
 		{"language","sentencemy","varchar(512)","NO","",""},;
-		{"language","length","int(3)","NO","80",""},;
+		{"language","length","int","NO","80",""},;
 		{"language","location","char(1)","NO","",""},;
-		{"log","logid","int(11)","NO","","auto_increment"},;
+		{"log","logid","int","NO","","auto_increment"},;
 		{"log","collection","varchar(20)","NO","log",""},;
 		{"log","source","varchar(40)","NO","",""},;
 		{"log","logtime","datetime","YES","NULL",""},;
 		{"log","message","mediumtext","NO","",""},;
 		{"log","userid","varchar(64)","NO","",""},;
-		{"mailaccount","empid","int(11)","NO","",""},;
+		{"mailaccount","empid","int","NO","",""},;
 		{"mailaccount","emailaddress","varchar(64)","NO","",""},;
 		{"mailaccount","username","varchar(64)","NO","",""},;
 		{"mailaccount","password","varbinary(64)","NO","",""},;
 		{"mailaccount","outgoingserver","varchar(64)","NO","",""},;
-		{"mailaccount","port","int(5)","NO","587",""},;
+		{"mailaccount","port","int","NO","587",""},;
 		{"mailaccount","protocol","char(3)","NO","",""},;
-		{"mbalance","mbalid","int(11)","NO","","auto_increment"},;
-		{"mbalance","accid","int(11)","NO","",""},;
-		{"mbalance","year","smallint(6)","NO","",""},;
-		{"mbalance","month","smallint(6)","NO","",""},;
+		{"mbalance","mbalid","int","NO","","auto_increment"},;
+		{"mbalance","accid","int","NO","",""},;
+		{"mbalance","year","smallint","NO","",""},;
+		{"mbalance","month","smallint","NO","",""},;
 		{"mbalance","currency","char(3)","NO","",""},;
 		{"mbalance","deb","decimal(20,2)","NO","",""},;
 		{"mbalance","cre","decimal(20,2)","NO","",""},;
-		{"member","mbrid","int(11)","NO","","auto_increment"},;
-		{"member","accid","int(11)","YES","NULL",""},;
-		{"member","persid","int(11)","NO","",""},;
+		{"member","mbrid","int","NO","","auto_increment"},;
+		{"member","accid","int","YES","NULL",""},;
+		{"member","persid","int","NO","",""},;
 		{"member","householdid","char(20)","NO","",""},;
-		{"member","has","tinyint(1)","NO","",""},;
+		{"member","has","tinyint","NO","",""},;
 		{"member","aow","decimal(8,2)","NO","",""},;
 		{"member","zkv","decimal(8,2)","NO","",""},;
 		{"member","co","char(1)","NO","m",""},;
@@ -1597,14 +1597,14 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","homepp","char(3)","NO","",""},;
 		{"member","homeacc","varchar(70)","NO","",""},;
 		{"member","offcrate","char(1)","NO","m",""},;
-		{"member","contact","int(11)","NO","",""},;
-		{"member","rptdest","int(2)","NO","",""},; 
-		{"member","depid","int(11)","YES","NULL",""},;
-		{"member","contact2","int(11)","NO","",""},;
-		{"member","contact3","int(11)","NO","",""},;
-		{"member","overdrawallowed","tinyint(1)","NO","",""},;
-		{"memberassacc","mbrid","int(11)","NO","",""},;
-		{"memberassacc","accid","int(11)","NO","",""},;
+		{"member","contact","int","NO","",""},;
+		{"member","rptdest","int","NO","",""},; 
+		{"member","depid","int","YES","NULL",""},;
+		{"member","contact2","int","NO","",""},;
+		{"member","contact3","int","NO","",""},;
+		{"member","overdrawallowed","tinyint","NO","",""},;
+		{"memberassacc","mbrid","int","NO","",""},;
+		{"memberassacc","accid","int","NO","",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
 		{"perscod","description","char(20)","YES","NULL",""},;
 		{"perscod","abbrvtn","char(3)","NO","",""};
@@ -1612,8 +1612,8 @@ method InitializeDB() as void Pascal  class Initialize
 	// additional required tables structure:
 	// Table name, Field,Type,Null,Default,Extra 
 	local aColumn2:={;
-		{"person","persid","int(11)","NO","","auto_increment"},;
-		{"person","title","smallint(6)","NO","",""},;
+		{"person","persid","int","NO","","auto_increment"},;
+		{"person","title","smallint","NO","",""},;
 		{"person","lastname","char(28)","NO","",""},;
 		{"person","address","varchar(240)","NO","",""},;
 		{"person","attention","char(28)","NO","",""},;
@@ -1635,54 +1635,54 @@ method InitializeDB() as void Pascal  class Initialize
 		{"person","remarks","mediumtext","YES","NULL",""},;
 		{"person","email","varchar(64)","NO","",""},;
 		{"person","mobile","char(18)","NO","",""},;
-		{"person","type","smallint(6)","NO","1",""},;
+		{"person","type","smallint","NO","1",""},;
 		{"person","birthdate","date","YES","NULL",""},;
-		{"person","gender","smallint(6)","NO","",""},;
+		{"person","gender","smallint","NO","",""},;
 		{"person","propextr","mediumtext","YES","NULL",""},;
 		{"person","externid","char(10)","NO","",""},; 
-	{"person","deleted","tinyint(1)","NO","",""},; 
-	{"person_properties","id","int(3)","NO","","auto_increment"},;
+	{"person","deleted","tinyint","NO","",""},; 
+	{"person_properties","id","int","NO","","auto_increment"},;
 		{"person_properties","name","char(30)","YES","NULL",""},;
-		{"person_properties","type","int(1)","NO","",""},;
+		{"person_properties","type","tinyint","NO","0",""},;
 		{"person_properties","values","mediumtext","NO","",""},;
-		{"personbank","persid","int(11)","NO","",""},;
+		{"personbank","persid","int","NO","",""},;
 		{"personbank","banknumber","varchar(64)","NO","",""},;
 		{"personbank","bic","varchar(11)","NO","",""},;
-		{"persontype","id","smallint(6)","NO","","auto_increment"},;
+		{"persontype","id","smallint","NO","","auto_increment"},;
 		{"persontype","descrptn","char(30)","YES","NULL",""},;
 		{"persontype","abbrvtn","char(3)","YES","NULL",""},;
 		{"ppcodes","ppcode","char(3)","NO","",""},;
 		{"ppcodes","ppname","char(40)","NO","",""},; 
 		{"ppcodes","WBT_or_SIL","char(1)","NO","W",""},; 
 		{"ppcodes","Is_Primary_Participant","char(1)","NO","Y",""},; 
-		{"standingorder","stordrid","int(11)","NO","","auto_increment"},;
+		{"standingorder","stordrid","int","NO","","auto_increment"},;
 		{"standingorder","idat","date","YES","NULL",""},;
 		{"standingorder","edat","date","YES","NULL",""},;
-		{"standingorder","day","int(3)","NO","1",""},;
+		{"standingorder","day","int","NO","1",""},;
 		{"standingorder","lstrecording","date","YES","NULL",""},;
-		{"standingorder","period","int(2)","NO","1",""},;
-		{"standingorder","persid","int(11)","NO","",""},;
+		{"standingorder","period","int","NO","1",""},;
+		{"standingorder","persid","int","NO","",""},;
 		{"standingorder","currency","char(3)","NO","",""},;
 		{"standingorder","docid","char(10)","NO","",""},; 
 		{"standingorder","userid","varchar(33)","NO","",""},;
 		{"standingorder","lstchange","date","YES","NULL",""},;
-	{"standingorderline","stordrid","int(11)","NO","",""},;
-		{"standingorderline","seqnr","smallint(4)","NO","",""},;
-		{"standingorderline","accountid","int(11)","NO","",""},;
+	{"standingorderline","stordrid","int","NO","",""},;
+		{"standingorderline","seqnr","smallint","NO","",""},;
+		{"standingorderline","accountid","int","NO","",""},;
 		{"standingorderline","deb","decimal(19,2)","NO","",""},;
 		{"standingorderline","cre","decimal(19,2)","NO","",""},;
 		{"standingorderline","descriptn","varchar(511)","NO","",""},;
 		{"standingorderline","gc","char(2)","NO","",""},;
 		{"standingorderline","reference","varchar(127)","NO","",""},;
 		{"standingorderline","bankacct","varchar(64)","NO","",""},;
-		{"standingorderline","creditor","int(11)","NO","",""},;
-		{"subscription","subscribid","int(11)","NO","","auto_increment"},;
-		{"subscription","personid","int(11)","YES","NULL",""},;
-		{"subscription","accid","int(11)","YES","NULL",""},;
+		{"standingorderline","creditor","int","NO","",""},;
+		{"subscription","subscribid","int","NO","","auto_increment"},;
+		{"subscription","personid","int","YES","NULL",""},;
+		{"subscription","accid","int","YES","NULL",""},;
 		{"subscription","begindate","date","YES","NULL",""},;
 		{"subscription","enddate","date","YES","NULL",""},;
 		{"subscription","duedate","date","YES","NULL",""},;
-		{"subscription","term","int(4)","NO","",""},;
+		{"subscription","term","int","NO","",""},;
 		{"subscription","amount","decimal(10,2)","NO","",""},;
 		{"subscription","lstchange","date","YES","NULL",""},;
 		{"subscription","category","char(1)","NO","",""},;
@@ -1693,106 +1693,106 @@ method InitializeDB() as void Pascal  class Initialize
 		{"subscription","reference","varchar(127)","NO","",""},;
 		{"subscription","firstinvoicedate","date","YES","NULL",""},;
 		{"subscription","bic","varchar(11)","NO","",""},;   
-		{"subscription","blocked","tinyint(1)","NO","",""},;
-		{"sysparms","yearclosed","int(4)","NO","",""},;
-		{"sysparms","lstreportmonth","int(6)","NO","",""},;
+		{"subscription","blocked","tinyint","NO","",""},;
+		{"sysparms","yearclosed","int","NO","",""},;
+		{"sysparms","lstreportmonth","int","NO","",""},;
 		{"sysparms","mindate","date","YES","NULL",""},;
-		{"sysparms","projects","int(11)","NO","",""},;
-		{"sysparms","debtors","int(11)","NO","",""},;
-		{"sysparms","donors","int(11)","NO","",""},;
-		{"sysparms","cash","int(11)","NO","",""},;
-		{"sysparms","capital","int(11)","NO","",""},;
-		{"sysparms","crossaccnt","int(11)","NO","",""},;
-		{"sysparms","hb","int(11)","NO","",""},;
-		{"sysparms","am","int(11)","NO","",""},;
+		{"sysparms","projects","int","NO","",""},;
+		{"sysparms","debtors","int","NO","",""},;
+		{"sysparms","donors","int","NO","",""},;
+		{"sysparms","cash","int","NO","",""},;
+		{"sysparms","capital","int","NO","",""},;
+		{"sysparms","crossaccnt","int","NO","",""},;
+		{"sysparms","hb","int","NO","",""},;
+		{"sysparms","am","int","NO","",""},;
 		{"sysparms","assmntfield","decimal(5,2)","NO","",""},;
 		{"sysparms","assmntoffc","decimal(5,2)","NO","",""},;
 		{"sysparms","entity","char(3)","NO","",""},;
 		{"sysparms","stocknbr","char(2)","NO","",""},;
-		{"sysparms","postage","int(11)","NO","",""},;
-		{"sysparms","purchase","int(11)","NO","",""},;
+		{"sysparms","postage","int","NO","",""},;
+		{"sysparms","purchase","int","NO","",""},;
 		{"sysparms","countryown","char(20)","NO","",""},;
 		{"sysparms","currency","char(3)","NO","",""},;
 		{"sysparms","currname","char(25)","NO","",""},;
-		{"sysparms","firstname","tinyint(1)","NO","",""},;
+		{"sysparms","firstname","tinyint","NO","",""},;
 		{"sysparms","crlanguage","char(1)","NO","",""},;
 		{"sysparms","defaultcod","char(30)","NO","",""},;
-		{"sysparms","topmargin","int(2)","NO","",""},;
-		{"sysparms","leftmargin","int(2)","NO","",""},;
-		{"sysparms","rightmargn","int(2)","NO","",""},;
-		{"sysparms","bottommarg","int(2)","NO","",""},;
+		{"sysparms","topmargin","int","NO","",""},;
+		{"sysparms","leftmargin","int","NO","",""},;
+		{"sysparms","rightmargn","int","NO","",""},;
+		{"sysparms","bottommarg","int","NO","",""},;
 		{"sysparms","cityletter","char(18)","NO","",""},;
 		{"sysparms","ownmailacc","varchar(100)","NO","",""},;
 		{"sysparms","smtpserver","char(30)","NO","",""},;
 		{"sysparms","iesmailacc","varchar(100)","NO","",""},;
 		{"sysparms","exchrate","decimal(12,8)","NO","",""},;
-		{"sysparms","closemonth","int(2)","NO","",""},;
+		{"sysparms","closemonth","int","NO","",""},;
 		{"sysparms","admintype","char(2)","NO","",""},;
-		{"sysparms","pswrdlen","int(2)","NO","8",""},;
-		{"sysparms","pswalnum","tinyint(1)","NO","",""},;
-		{"sysparms","pswdura","int(4)","NO","",""},;
-		{"sysparms","decmgift","tinyint(1)","NO","",""},;
+		{"sysparms","pswrdlen","int","NO","8",""},;
+		{"sysparms","pswalnum","tinyint","NO","",""},;
+		{"sysparms","pswdura","int","NO","",""},;
+		{"sysparms","decmgift","tinyint","NO","",""},;
 		{"sysparms","expmailacc","varchar(100)","NO","",""},;
 		{"sysparms","pmislstsnd","date","YES","NULL",""},;
 		{"sysparms","assmntint","decimal(5,2)","NO","",""},;
 		{"sysparms","destgrps","mediumtext","NO","",""},;
-		{"sysparms","nosalut","tinyint(1)","NO","",""},;
+		{"sysparms","nosalut","tinyint","NO","",""},;
 		{"sysparms","withldoffl","decimal(5,2)","NO","",""},;
 		{"sysparms","withldoffm","decimal(5,2)","NO","",""},;
 		{"sysparms","withldoffh","decimal(5,2)","NO","",""},;
-		{"sysparms","assproja","int(11)","NO","",""},;
+		{"sysparms","assproja","int","NO","",""},;
 		{"sysparms","owncntry","mediumtext","NO","",""},;
-		{"sysparms","giftincac","int(11)","NO","",""},;
-		{"sysparms","giftexpac","int(11)","NO","",""},;
+		{"sysparms","giftincac","int","NO","",""},;
+		{"sysparms","giftexpac","int","NO","",""},;
 		{"sysparms","cntrnrcoll","varchar(32)","NO","",""},;
-		{"sysparms","banknbrcol","int(11)","NO","",""},;
-		{"sysparms","idorg","int(11)","NO","",""},;
-		{"sysparms","idcontact","int(11)","NO","",""},;
+		{"sysparms","banknbrcol","int","NO","",""},;
+		{"sysparms","idorg","int","NO","",""},;
+		{"sysparms","idcontact","int","NO","",""},;
 		{"sysparms","datlstafl","date","YES","NULL",""},;
-		{"sysparms","surnmfirst","tinyint(1)","NO","",""},;
-		{"sysparms","strzipcity","tinyint(1)","NO","",""},;
+		{"sysparms","surnmfirst","tinyint","NO","",""},;
+		{"sysparms","strzipcity","tinyint","NO","",""},;
 		{"sysparms","sysname","varchar(150)","NO","",""},;
-		{"sysparms","homeincac","int(11)","NO","",""},;
-		{"sysparms","homeexpac","int(11)","NO","",""},;
+		{"sysparms","homeincac","int","NO","",""},;
+		{"sysparms","homeexpac","int","NO","",""},;
 		{"sysparms","fgmlcodes","char(30)","NO","",""},;
-		{"sysparms","creditors","int(11)","NO","",""},;
+		{"sysparms","creditors","int","NO","",""},;
 		{"sysparms","countrycod","char(3)","NO","",""},;
-		{"sysparms","banknbrcre","int(11)","NO","",""},;
+		{"sysparms","banknbrcre","int","NO","",""},;
 		{"sysparms","lstreeval","date","YES","NULL",""},;
-		{"sysparms","citynmupc","tinyint(1)","NO","",""},;
-		{"sysparms","pmcmancln","int(11)","NO","",""},;
+		{"sysparms","citynmupc","tinyint","NO","",""},;
+		{"sysparms","pmcmancln","int","NO","",""},;
 		{"sysparms","version","char(10)","NO","",""},;
-		{"sysparms","lstnmupc","tinyint(1)","NO","",""},;
-		{"sysparms","titinadr","tinyint(1)","NO","",""},;
+		{"sysparms","lstnmupc","tinyint","NO","",""},;
+		{"sysparms","titinadr","tinyint","NO","",""},;
 		{"sysparms","docpath","mediumtext","NO","",""},;
 		{"sysparms","checkemp","char(32)","NO","",""},;
-		{"sysparms","mailclient","tinyint(1)","NO","",""},;
-		{"sysparms","posting","tinyint(1)","NO","",""},; 
-	{"sysparms","toppacct","int(11)","NO","",""},;
-		{"sysparms","lstcurrt","tinyint(1)","NO","",""},; 
-	{"sysparms","pmcupld","tinyint(1)","NO","",""},; 
+		{"sysparms","mailclient","tinyint","NO","",""},;
+		{"sysparms","posting","tinyint","NO","",""},; 
+	{"sysparms","toppacct","int","NO","",""},;
+		{"sysparms","lstcurrt","tinyint","NO","",""},; 
+	{"sysparms","pmcupld","tinyint","NO","",""},; 
 	{"sysparms","accpacls","date","YES","NULL",""},; 
-	{"sysparms","assfldac","int(11)","NO","",""},;
-		{"sysparms","sepaenabled","tinyint(1)","NO","",""},; 
+	{"sysparms","assfldac","int","NO","",""},;
+		{"sysparms","sepaenabled","tinyint","NO","",""},; 
 	{"sysparms","ddmaxindvdl","decimal(10,2)","NO","",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","",""},;
-		{"sysparms","maildirect","tinyint(1)","NO","",""},; 
+		{"sysparms","maildirect","tinyint","NO","",""},; 
 		{"sysparms","versiondate","date","YES","NULL",""},; 
-		{"sysparms","localbackup","tinyint(1)","NO","",""},; 
+		{"sysparms","localbackup","tinyint","NO","",""},; 
 		{"sysparms","backuppath","varchar(150)","NO","",""},;
-		{"sysparms","assofra","int(11)","NO","",""},;
+		{"sysparms","assofra","int","NO","",""},;
 		{"sysparms","creditlimitmember","decimal(10,2)","NO","",""},;
 		{"sysparms","creditlimitallmembers","decimal(10,2)","NO","",""},;
-		{"telebankpatterns","telpatid","int(11)","NO","","auto_increment"},;
+		{"telebankpatterns","telpatid","int","NO","","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
 		{"telebankpatterns","contra_name","char(32)","NO","",""},;
 		{"telebankpatterns","addsub","char(1)","NO","",""},;
 		{"telebankpatterns","description","varchar(128)","NO","",""},;
-		{"telebankpatterns","accid","int(11)","NO","",""},;
-		{"telebankpatterns","ind_autmut","tinyint(1)","NO","",""},;
+		{"telebankpatterns","accid","int","NO","",""},;
+		{"telebankpatterns","ind_autmut","tinyint","NO","",""},;
 		{"telebankpatterns","recdate","date","YES","NULL",""},;
-		{"teletrans","teletrid","int(11)","NO","","auto_increment"},;
+		{"teletrans","teletrid","int","NO","","auto_increment"},;
 		{"teletrans","bankaccntnbr","varchar(64)","NO","",""},;
 		{"teletrans","bookingdate","date","YES","NULL",""},;
 		{"teletrans","seqnr","char(16)","NO","",""},;
@@ -1805,39 +1805,39 @@ method InitializeDB() as void Pascal  class Initialize
 		{"teletrans","code_mut_r","char(1)","NO","",""},;
 		{"teletrans","description","mediumtext","NO","",""},;
 		{"teletrans","processed","char(1)","NO","",""},;
-		{"teletrans","persid","int(11)","NO","",""},;
-		{"teletrans","lock_id","int(11)","NO","",""},;
+		{"teletrans","persid","int","NO","",""},;
+		{"teletrans","lock_id","int","NO","",""},;
 		{"teletrans","lock_time","timestamp","YES","NULL",""},;
 		{"teletrans","bic","varchar(11)","NO","",""},;
 		{"teletrans","country","char(2)","NO","",""},;
 		{"teletrans","adrline","varchar(70)","NO","",""},;
-		{"teletrans","dueid","int(11)","YES","NULL",""},;
+		{"teletrans","dueid","int","YES","NULL",""},;
 		{"teletrans","rtrn","char(4)","NO","","","return reason"},;
 		{"teletrans","eref","varchar(35)","NO","","","end to end reference"},;
 		{"teletrans","marf","varchar(35)","NO","","","mandate reference"},;
-		{"titles","id","smallint(6)","NO","","auto_increment"},;
+		{"titles","id","smallint","NO","","auto_increment"},;
 		{"titles","descrptn","char(12)","NO","",""},;
-		{"transaction","persid","int(11)","YES","NULL",""},;
-		{"transaction","accid","int(11)","NO","",""},;
+		{"transaction","persid","int","YES","NULL",""},;
+		{"transaction","accid","int","NO","",""},;
 		{"transaction","docid","varchar(31)","NO","",""},;
 		{"transaction","dat","date","NO","",""},;
-		{"transaction","description","varchar(511)","YES","",""},;
+		{"transaction","description","varchar(511)","YES","NULL",""},;
 		{"transaction","deb","decimal(19,2)","NO","",""},;
 		{"transaction","cre","decimal(19,2)","NO","",""},;
 		{"transaction","gc","char(2)","NO","",""},;
 		{"transaction","bfm","char(1)","NO","",""},;
-		{"transaction","transid","int(11)","NO","","auto_increment"},;
+		{"transaction","transid","int","NO","","auto_increment"},;
 		{"transaction","userid","varchar(32)","NO","",""},;
-		{"transaction","fromrpp","tinyint(1)","NO","",""},;
+		{"transaction","fromrpp","tinyint","NO","",""},;
 		{"transaction","opp","char(3)","NO","",""},;
 		{"transaction","debforgn","decimal(19,2)","NO","",""},;
 		{"transaction","creforgn","decimal(19,2)","NO","",""},;
 		{"transaction","currency","char(3)","NO","",""},; 
 	{"transaction","reference","varchar(127)","NO","",""},;
-		{"transaction","seqnr","smallint(4)","NO","",""},;
-		{"transaction","poststatus","tinyint(1)","NO","",""},;
+		{"transaction","seqnr","smallint","NO","",""},;
+		{"transaction","poststatus","tinyint","NO","",""},;
 		{"transaction","ppdest","char(3)","NO","",""},;
-		{"transaction","lock_id","int(11)","NO","",""},;
+		{"transaction","lock_id","int","NO","",""},;
 		{"transaction","lock_time","timestamp","YES","NULL",""};
 		} as array  
 	
@@ -1996,6 +1996,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// 		{"teletrans","0","telecontent","9","seqnr"},;
 	// 		{"teletrans","0","telecontent","10","description (120)"},;
 	local aMyCurTable:=self:aCurTable as array
+	local status
 
 
 	
@@ -2007,7 +2008,7 @@ method InitializeDB() as void Pascal  class Initialize
 	// check database 
 	// read current database structure:
 	dbname:=AddSlashes(dbname) 
-	oSel:=SqlSelect{"SELECT group_concat(lower(TABLE_NAME),',', upper(ENGINE),',', lower(TABLE_COLLATION) SEPARATOR '##') as tablegroup FROM (select TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
+	oSel:=SqlSelect{"SELECT group_concat(lower(TABLE_NAME),',', upper(ENGINE),',', lower(TABLE_COLLATION) SEPARATOR '##') as tablegroup FROM (select cast(TABLE_NAME as char) as TABLE_NAME, ENGINE, TABLE_COLLATION FROM information_schema.TABLES "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by table_name) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
 		ErrorBox{self,"Error:"+oSel:ERRINFO:errormessage}:Show()
@@ -2015,10 +2016,17 @@ method InitializeDB() as void Pascal  class Initialize
 	endif 
 	if oSel:RecCount>0	
 		AEval(Split(oSel:tablegroup,'##',true),{|x|AAdd(aMyCurTable,Split(x,','))}) 
-	endif
+	endif     
+	
+	// ALTER TABLE `person` CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci
+	
+// 	oSel:=SqlSelect{"SELECT cast(TABLE_NAME as char) as TABLE_NAME, cast(COLUMN_NAME as char) as COLUMN_NAME, cast(COLUMN_TYPE as char) as COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,if(IS_NULLABLE='YES','NULL',''),cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
+//  " if(COLLATION_NAME is null,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS"+; 
+// " WHERE TABLE_SCHEMA = 'parousia_wos' order by TABLE_NAME,ORDINAL_POSITION",oConn}
+// 	status:=oSel:status
 	//read current columns:
 	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,';', COLUMN_NAME,';', COLUMN_TYPE,';', IS_NULLABLE,';', COLUMN_DEFAULT,';', ExTRA,';', lower(COLLATION_NAME) separator '##') as columngroup "+;
-		"from (SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,if(IS_NULLABLE='YES','NULL',''),cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
+		"from (SELECT cast(TABLE_NAME as char) as TABLE_NAME, cast(COLUMN_NAME as char) as COLUMN_NAME, cast(COLUMN_TYPE as char) as COLUMN_TYPE, IS_NULLABLE,  if(COLUMN_DEFAULT IS NULL,if(IS_NULLABLE='YES','NULL',''),cast(COLUMN_DEFAULT as char)) as COLUMN_DEFAULT, ExTRA,"+;
 		" if(COLLATION_NAME IS NULL,'',COLLATION_NAME) as COLLATION_NAME FROM information_schema.COLUMNS "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' order by TABLE_NAME,ORDINAL_POSITION) as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
@@ -2045,9 +2053,9 @@ method InitializeDB() as void Pascal  class Initialize
 				j++
 			enddo							
 		next
-	endif
+	endif                     // convert(`COLUMN_NAME` using utf8)
 	// read current indexes:
-	oSel:=SqlSelect{"SELECT group_concat(TABLE_NAME,',',NON_UNIQUE,',',INDEX_NAME,',',SEQ_IN_INDEX,',',COLUMN_NAME separator '##' ) as indexgroup "+;
+	oSel:=SqlSelect{"SELECT convert(group_concat(TABLE_NAME,',',NON_UNIQUE,',',INDEX_NAME,',',SEQ_IN_INDEX,',',COLUMN_NAME separator '##' ) using utf8) as indexgroup "+;
 		"from (select TABLE_NAME,cast(NON_UNIQUE as char) as NON_UNIQUE,INDEX_NAME,cast(SEQ_IN_INDEX as char) as SEQ_IN_INDEX,concat(COLUMN_NAME,if(SUB_PART is null,'',concat(' (',cast(SUB_PART as char),')'))) as COLUMN_NAME "+;
 		"from information_schema.statistics where TABLE_SCHEMA='"+dbname+"') as gr group by 1=1",oConn}
 	if !Empty(oSel:status)
@@ -2081,7 +2089,8 @@ method InitializeDB() as void Pascal  class Initialize
 			// compare current db engine and collation with required: 
 			if Upper(aTable[i,2])<>aCurTable[j,2] .or. aTable[i,3]<>aCurTable[j,3]
 				// alter statement
-				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],""," collate="+aTable[i,3]),oConn}:Execute()
+//				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],""," collate="+aTable[i,3]),oConn}:Execute()
+				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],"",iif(Lower(substr(aTable[i,3],1,4))=="utf8"," convert to utf8","")+" collate="+aTable[i,3]),oConn}:Execute()
 			endif
 			//compare current columns with required columns
 			// and compare current indexes with required:
