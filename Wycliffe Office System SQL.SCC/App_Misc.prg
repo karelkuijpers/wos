@@ -2691,7 +2691,7 @@ function InitGlobals(lRefreshAllowed:=true as logic)
 
 	IF lRefreshAllowed .and. lRefreshMenu .and. !Empty(MYEMPID)  // reason to refresh menu and already logged in?
 		oMainWindow:RefreshMenu()
-		oMainWindow:SetCaption(oSys:sysname)
+		oMainWindow:Caption:=oSys:sysname
 	ENDIF
 	RETURN nil
 	
@@ -3151,7 +3151,7 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 	endif 
 	if !IsObject(oConn) .or. oConn==null_object
 		lDBError:=true
-	elseif SqlSelect{"show tables like 'log'",oConn}:RecCount<1 
+	elseif SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'log'",oConn}:RecCount<1
 // 	if SqlSelect{"show tables like 'log'",oConn}:RecCount<1
 		lDBError:=true
 	elseif Logname=='LogFile'
@@ -3197,7 +3197,8 @@ FUNCTION LogEvent(oWindow:=null_object as Window,strText as string, Logname:="Lo
 		// email error to system administrator:
 		oMl:=SendEmailsDirect{oMainWindow,true} 
 		oMl:AddEmail("Wos error "+sEntity+' - '+dbname+' - '+servername,;
-			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net,anton_barashenkov@sil.org",''}},{})
+			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karelkuijpers@gmail.com",''}},{})
+//			iif(IsObject(oWindow),Symbol2String(ClassName(oWindow)),"")+",userid=" +LOGON_EMP_ID+" on "+GetPCName()+",server="+servername+",database="+dbname+",message="+strText,{{'',"karel_kuijpers@wycliffe.net,anton_barashenkov@sil.org",''}},{})
 		oMl:SendEmails()
 		
 	endif
@@ -4147,7 +4148,7 @@ function PersonUnion(id1 as string, id2 as string)
 		(ErrorBox{,"Not possible to unify two members"}):Show()
 		return false
 	endif
-	oSel:=SQLSelect{"SELECT TABLE_NAME FROM information_schema.TABLES "+;
+	oSel:=SqlSelect{"SELECT cast(TABLE_NAME as char) as TABLE_NAME FROM information_schema.TABLES "+;
 		"WHERE TABLE_SCHEMA = '"+dbname+"' and TABLE_NAME like 'tr%' order by TABLE_NAME",oConn}
 	aTrTable:=oSel:GetLookupTable(50, #table_name, #table_name) 
 	for i:=1 to Len(aTrTable)
