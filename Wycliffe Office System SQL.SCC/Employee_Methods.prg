@@ -196,7 +196,7 @@ FUNCTION GetUserMenu(cUserName as string) as logic
 			// record login date and set user online: 
 			InitSystemMenu()
 			cDepmntIncl:=SetDepFilter(ConI(oEmp:mDepId))
-			oMainWindow:SetCaption()
+			//oMainWindow:Caption()
 			cAccAlwd:=""
 			if !Empty(cDepmntIncl)
 				oSQL:=SQLSelect{"select accid from emplacc where empid='"+MYEMPID+"'",oConn} 
