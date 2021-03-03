@@ -1890,6 +1890,7 @@ METHOD OkButton() CLASS LogonDialog
 	LOCAL myOrg as Point
 	local oSys as SQLSelect
 	LOCAL oEmp as SQLSelect
+	local systemname as string
 	Cnt:= ConI(SqlSelect{"select count(*) as nbr from employee",oConn}:nbr)
 	if Cnt=0
 		InfoBox{ self, "Logon", "Employee database is empty! Restore Employee.dbf from backup first!"}:Show()
@@ -1901,8 +1902,10 @@ METHOD OkButton() CLASS LogonDialog
 			+ Crypt_Emp(false,"loginname")+'="'+cUser+'"'
 
 		oEmp := SQLSelect{cEmpStmnt,oConn}
-		oSys:=SQLSelect{"select pswdura,sysname from sysparms",oConn}
-		oSys:Execute()
+		oSys:=SQLSelect{"select sysname,pswdura,sysname from sysparms",oConn}
+		oSys:Execute() 
+		systemname := oSys:SYSNAME
+		oMainWindow:SetCaption() 
 		IF oEmp:Reccount==1
 			self:logonOk := ( HashPassword(oEmp:EMPID,AllTrim(oDCPassword:Textvalue)) == oEmp:Password)
 			self:logonID := AllTrim(oEmp:LOGINNAME)
@@ -1954,7 +1957,6 @@ METHOD OkButton() CLASS LogonDialog
 				self:logonID := LOGON_EMP_ID
 				aMenu:=InitMenu(Val(MYEMPID),UserType)
 				InitSystemMenu()
-				oMainWindow:SetCaption(oSys:SYSNAME) 
 			else
 				self:logonOk := FALSE
 			endif
