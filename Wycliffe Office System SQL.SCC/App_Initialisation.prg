@@ -2089,7 +2089,13 @@ method InitializeDB() as void Pascal  class Initialize
 			// compare current db engine and collation with required: 
 			if Upper(aTable[i,2])<>aCurTable[j,2] .or. aTable[i,3]<>aCurTable[j,3]
 				// alter statement
-//				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],""," collate="+aTable[i,3]),oConn}:Execute()
+//				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],""," collate="+aTable[i,3]),oConn}:Execute()   
+				IF cTable=='person'
+					// replace dates with "0000-00-00"
+					SQLStatement{"UPDATE `person` SET `alterdate`= NULL WHERE `alterdate`<'1000-01-01'",oConn}:Execute()
+					SQLStatement{"UPDATE `person` SET `datelastgift`= NULL WHERE `datelastgift`<'1000-01-01'",oConn}:Execute()
+					SQLStatement{"UPDATE `person` SET `birthdate`= NULL WHERE `birthdate`<'1000-01-01'",oConn}:Execute()
+				endif
 				SQLStatement{"ALTER TABLE "+aTable[i,1]+iif(Upper(aTable[i,2])==aCurTable[j,2],""," ENGINE = "+aTable[i,2])+iif(aTable[i,3]==aCurTable[j,3],"",iif(Lower(substr(aTable[i,3],1,4))=="utf8"," convert to utf8","")+" collate="+aTable[i,3]),oConn}:Execute()
 			endif
 			//compare current columns with required columns
