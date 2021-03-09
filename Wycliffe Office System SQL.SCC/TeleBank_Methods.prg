@@ -732,7 +732,7 @@ METHOD Import() CLASS TeleMut
 	* Import of telebanking data into table teletrans
 	LOCAL i, nf as int
 	local cFileName as STRING 
-	local nOld:=12 as int   // after Nold months imported transactions are removed
+	local nOld:=18 as int   // after Nold months imported transactions are removed
 	LOCAL lv_eind as date
 	LOCAL lSuccess,lFilesFound as LOGIC
 	local aFiles:={} as array  // files to be deleted 
@@ -1015,7 +1015,7 @@ METHOD Import() CLASS TeleMut
 		* Removing old transactions:
 		IF self:lv_aant_toe>0
 			* Calculate date too old (6 months old):
-			nOld:=Min(nOld,12)
+			//nOld:=Min(nOld,12)
 			lv_mm := Month(Today())
 			lv_jj := Year(Today())
 			if lv_mm < (nOld+1)
@@ -5319,7 +5319,7 @@ METHOD SkipMut()  CLASS TeleMut
 	* Skip of telebanking transaction aftre showing it
 	SQLStatement{"update teletrans set lock_id=0 where teletrid="+Str(self:CurTelId,-1),oConn}:execute()
 return
-METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) as logic CLASS TeleMut
+METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=360 as int) as logic CLASS TeleMut
 	// check if found banknumber is part of telebanking accounts within the system
 	// 	Default(@NbrDays,120) 
 	local oStMnt as SQLStatement
@@ -5370,11 +5370,11 @@ METHOD TooOldTeleTrans(banknbr as string,transdate as date,NbrDays:=240 as int) 
 	// temporary:
 // 	NbrDays:=1000
 	// check if transaction is too old in comparison with latest recorded for this bankaccount
-// 	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3]
-// 		RETURN true 
-// 	else
-		if transdate <(Today() - NbrDays) .or. transdate < mindate        // tolder than 240 days or before month closed 
-			// too old:
+ 	IF transdate +NbrDays < self:m57_BankAcc[self:CurTelePtr,3] .or. transdate < mindate // older than 240 days compared to oldest transaction or before month closed 
+//  		RETURN true 
+//  	else
+// 		if transdate <(Today() - NbrDays) .or. transdate < mindate        // older than 240 days or before month closed      
+// 			// too old:
 			self:nTooOld++
 			return true
 		endif
