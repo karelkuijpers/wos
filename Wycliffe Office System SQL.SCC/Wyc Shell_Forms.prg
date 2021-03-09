@@ -246,7 +246,7 @@ METHOD SetCaption() CLASS StandardWycWindow
 	local oSys as SQLSelect
 	if IsObject(oConn) .and.!oConn== null_object 
 		if oConn:Connected
-			if SqlSelect{"show tables like 'sysparms'",oConn}:RecCount>0
+			if SqlSelect{"select cast(table_name as char) from information_schema.tables where table_schema = '"+dbname+"' and table_name = 'sysparms'",oConn}:RecCount>0
 				oSys:=SqlSelect{"select sysname from sysparms",oConn}
 				if oSys:RecCount>0
 					sysname:=oSys:sysname
