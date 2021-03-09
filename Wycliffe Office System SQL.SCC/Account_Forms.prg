@@ -2108,12 +2108,12 @@ method PropValueShow(PropId as int, cValue as string) as void pascal class EditA
 	local i as int
 	i:=AScan(pers_propextra,{|x|x[2]= PropId}) 
 	if i> 0
-		if pers_propextra[i,3]=2  //dropdown
+		if ConI(pers_propextra[i,3])=2  //dropdown
 			self:oDCPropValueCombo:Show()
 			self:oDCPropValueSingle:Hide()
 			self:oDCPropValueCombo:FillUsing(Split(pers_propextra[i,4],","))
 			self:oDCPropValueCombo:Value:=AllTrim(cValue)
-		elseif pers_propextra[i,3]=0  //textbox
+		elseif ConI(pers_propextra[i,3])=0  //textbox
 			self:oDCPropValueCombo:Hide()
 			self:oDCPropValueSingle:Show()
 			self:oDCPropValueSingle:Value:=cValue
