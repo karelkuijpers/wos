@@ -1207,7 +1207,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS EditDistribution
 		endif
 		
 		self:oDCmDestTyp:FillUsing(self:FillDestTypes())
-		it:= self:aDis[DESTTYP]
+		it:= ConI(self:aDis[DESTTYP])
 		// 		self:mDestTyp := DistributionTypes[self:aDis[DESTTYP]+1]
 		self:mDestTyp := self:aDis[DESTTYP]
 		IF it!=1
@@ -1797,7 +1797,7 @@ METHOD FillDistribution() as void pascal CLASS EditMember
 		oItem:SetValue(self:aDistr[i,SEQNBR],#DestPP)
 		oItem:SetText(AllTrim(self:aDistr[i,DESTACC]),#DestAcc)
 		oItem:SetText(AllTrim(self:aDistr[i,DESCRPTN]),#Descrptn)
-		oItem:SetText(DistributionTypes[self:aDistr[i,DESTTYP]+1],#DestTyp)
+		oItem:SetText(DistributionTypes[ConI(self:aDistr[i,DESTTYP])+1],#DestTyp)
 		oItem:SetText(Str(self:aDistr[i,DESTAMT],-1,DecAantal),#DestAmt)
 		self:oDCDistrListView:AddItem(oItem)
 
