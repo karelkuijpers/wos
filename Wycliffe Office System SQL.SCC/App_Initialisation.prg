@@ -1603,6 +1603,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"member","contact2","int","NO","",""},;
 		{"member","contact3","int","NO","",""},;
 		{"member","overdrawallowed","tinyint","NO","",""},;
+		{"member","secondmentpp","char(3)","NO","",""},;
 		{"memberassacc","mbrid","int","NO","",""},;
 		{"memberassacc","accid","int","NO","",""},;
 		{"perscod","pers_code","char(2)","NO","","collate ascii_bin"},;
@@ -2103,7 +2104,10 @@ method InitializeDB() as void Pascal  class Initialize
 			aRequiredCol:={}
 			aCurrentCol:={}
 			aRequiredIndex:={} 
-			aCurrentIndex:={}
+			aCurrentIndex:={} 
+			if Lower(cTable)='member'
+				cTable:=cTable
+			endif
 			cTableCol:=cTable
 			if Lower(cTable)='tr'.and.len(cTable)=8.and. isnum(substr(ctable,3))
 				cTableCol:='transaction'
