@@ -4524,7 +4524,8 @@ oStmnt:Execute()
 
 oStmnt:=SQLStatement{"update transaction set accid='"+self:cTransferAcc+"',userid='"+LOGON_EMP_ID+"'"+;
 iif(lMultiDest,"",",debforgn=deb*"+Str(fExRate,-1)+",creforgn=cre*"+Str(fExRate,-1)+",currency='"+cCurrDest+"'")+;
-" where "+StrTran(self:cWhereSpec,'t.','')+' and bfm<>"H"',oConn}
+" where "+StrTran(self:cWhereSpec,'t.',''),oConn}
+//" where "+StrTran(self:cWhereSpec,'t.','')+' and bfm<>"H"',oConn}
 oStmnt:Execute()
 if oStmnt:NumSuccessfulRows>0 
 	oTrans:GoTop()
