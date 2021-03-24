@@ -2714,7 +2714,8 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 	LOCAL lv_bankAcntOwn, lv_description, lv_Oms, lv_addsub, lv_AmountStr, lv_reference, lv_NameContra as STRING
 	local lv_BankAcntContra,lv_BIC, cText,lv_budget,lv_budgethlp,lv_kind,lv_persid,lv_bankid,lv_country as STRING
 	local lv_rtrn,lv_eref,lv_marf,cKey,lv_kindorg as string 
-	local Cur_RekNrOwn, Cur_enRoute as string 
+	local Cur_RekNrOwn, Cur_enRoute as string
+	local Cur_bank as string // name of bank: INGB or RABO 
 	local lv_AdrLine,cSep as string
 	local cBuffer as string
 	local lv_dueid as string
@@ -2790,6 +2791,7 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 			if oBank:Reccount>0
 				Cur_enRoute:=oBank:ACCNUMBER
 			endif
+			Cur_bank:=Upper(SubStr(Cur_RekNrOwn,5,4))
 		endif
 		cBuffer:=oMyFile:FReadLine()
 		DO WHILE !oMyFile:FEof
@@ -2931,26 +2933,45 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 						endcase
 					next
 				ENDIF 
-				// Translate ing transaction code to general code:
-				if lv_kindorg=='00108'
-					lv_kind='AC'  // IBAN acceptgiro
-				elseif lv_kindorg=='00360' ; //acc equens
-					 .or. lv_kindorg=='00400' ; // crediteuren betaling equens 
-					lv_kind:='CLR'
-				elseif lv_kindorg=='00106' .or.lv_kindorg=='00206' .or. lv_kindorg=='00305'  // ideal bijschrijving
-					lv_kind:='IDEAL' 
-				elseif lv_kindorg=='00300' .or.lv_kindorg=='00370' 
-					lv_kind:='OV'
-				elseif Left(lv_kindorg,2)=='01'
-					lv_kind:='COL'+iif(Left(lv_kindorg,3)=='011','REJ',"") 
-				elseif lv_kindorg=='00100'
-					lv_kind:='GT'
-				elseif lv_kindorg=='05000'
-					lv_kind:='FL'
-				elseif Left(lv_kindorg,2)=='09'
-					lv_kind:='DV'
-				elseif Empty(lv_kind)
-					lv_kind:=lv_kindorg
+				// Translate ing transaction code to general code: 
+				if Cur_bank="INGB"
+					if lv_kindorg=='00108'
+						lv_kind='AC'  // IBAN acceptgiro
+					elseif lv_kindorg=='00360' ; //acc equens
+						 .or. lv_kindorg=='00400' ; // crediteuren betaling equens 
+						lv_kind:='CLR'
+					elseif lv_kindorg=='00106' .or.lv_kindorg=='00206' .or. lv_kindorg=='00305'  // ideal bijschrijving
+						lv_kind:='IDEAL' 
+					elseif lv_kindorg=='00300' .or.lv_kindorg=='00370' 
+						lv_kind:='OV'
+					elseif Left(lv_kindorg,2)=='01'
+						lv_kind:='COL'+iif(Left(lv_kindorg,3)=='011','REJ',"") 
+					elseif lv_kindorg=='00100' .or.lv_kindorg=='00112' 
+						lv_kind:='GT'
+					elseif lv_kindorg=='05000'
+						lv_kind:='FL'
+					elseif Left(lv_kindorg,2)=='09'
+						lv_kind:='DV'
+					elseif Empty(lv_kind)
+						lv_kind:=lv_kindorg
+					endif
+				elseif  Cur_bank="RABO"
+					lv_kindorg:=lv_kind
+					if lv_kind=='123' ;     // bijschrijving acceptgiro equens
+						.or. lv_kind=='583' .or. lv_kind=='055' .or. lv_kind=='401'  // crediteuren betaling equens/rflp
+						lv_kind:='CLR'
+					elseif lv_kind=='134'   // bijschrijving acceptgiro
+						lv_kind:='AC' 
+					elseif lv_kind=='100' .or. lv_kind=='103' //ideal bijschrijving 
+						lv_kind:='IDEAL' 
+					elseif lv_kind=='640' // doorlopende machtiging     (eigen)
+						lv_kind:='COL' 
+					elseif lv_kind=='104' .or.lv_kind=='106'.or.lv_kind=='107' .or.lv_kind=='108' .or.lv_kind=='110'.or.lv_kind=='111' ; // terugboeking euro-incasso
+						.or.lv_kind=='631'.or.lv_kind=='632'.or.lv_kind=='633'.or.lv_kind=='166' ;                     // terugboeking euro-incasso
+						.or. lv_kind=='629';      // euro incasso core equens
+						.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
+						lv_kind:='COL'+iif(lv_kindorg='166',"REJ",'')  
+					endif 					
 				endif
 				if Empty(lv_budget) .and.(lv_kind=='CLR' .or. (SubStr(lv_kind,1,3)=='COL' .and.lv_addsub='B')) 
 					if Empty(Cur_enRoute)
