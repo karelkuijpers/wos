@@ -1865,7 +1865,7 @@ METHOD ImportCAMT053(oFm as MyFileSpec) as logic CLASS TeleMut
 	//    LogEvent(self,"all transactions loaded","logsql")
 
 	// store read data into database:
-	lResult:= self:SaveTeleTrans(true,true,"CAMT.053 file "+oFm:FileName,nTrans)
+	lResult:= self:SaveTeleTrans(true,true,"CAMT.053 file "+oFm:FileName+'.'+oFm:Extension,nTrans)
 	// 	time1:=time0
 	// 	LogEvent(self,"save:"+Str((time0:=Seconds())-time1,-1),"logsql")
 	return lResult
@@ -2701,7 +2701,7 @@ METHOD ImportMT940(oFm as MyFileSpec) as logic CLASS TeleMut
 	oMyFile:Close()
 	oMyFile:=null_object 
 	// store read data into database:
-	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName,nTrans)
+	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName+'.'+oFm:Extension,nTrans)
 	if lSuccess
 		return true
 	else
@@ -2971,6 +2971,8 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 						.or. lv_kind=='629';      // euro incasso core equens
 						.or. lv_kind=='680'.or. lv_kind=='681'     // euro-incasso rflp bijschrijving
 						lv_kind:='COL'+iif(lv_kindorg='166',"REJ",'')  
+					elseif Empty(lv_kind)
+						lv_kind:=lv_kindorg
 					endif 					
 				endif
 				if Empty(lv_budget) .and.(lv_kind=='CLR' .or. (SubStr(lv_kind,1,3)=='COL' .and.lv_addsub='B')) 
@@ -3036,7 +3038,7 @@ METHOD ImportMT940IBANING(oFm as MyFileSpec) as logic CLASS TeleMut
 	oMyFile:Close()
 	oMyFile:=null_object 
 	// store read data into database:
-	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName,nTrans)
+	lSuccess:=self:SaveTeleTrans(true,true,"MT940 IBAN file "+oFm:FileName+'.'+oFm:Extension,nTrans)
 	if lSuccess
 		return true
 	else
@@ -3367,7 +3369,7 @@ METHOD ImportMT940ING(oFm as MyFileSpec) as logic CLASS TeleMut
 	oMyFile:Close()
 	oMyFile:=null_object 
 	// store read data into database:
-	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName,nTrans)
+	lSuccess:=self:SaveTeleTrans(true,true,"MT940 file "+oFm:FileName+'.'+oFm:Extension,nTrans)
 	if lSuccess
 		return true
 	else
@@ -3622,7 +3624,7 @@ METHOD ImportPostbank( oFs as MyFileSpec ) as logic CLASS TeleMut
 	ptrHandle:Close()
 	ptrHandle:=null_object 
 	SetDecimalSep('.')  // restore decimal separator
-	lSuccess:=self:SaveTeleTrans(true,true,"ING file:"+oFs:FileName,nTrans)
+	lSuccess:=self:SaveTeleTrans(true,true,"ING file:"+oFs:FileName+'.'+oFs:Extension,nTrans)
 	if lSuccess
 		return true
 	else
