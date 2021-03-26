@@ -1576,14 +1576,14 @@ FUNCTION FWriteLineUni(pFile as ptr, c as string) as int
 // write line c to pFile converted to Unicode
 LOCAL oUni as Unicode
 //local Start:=_chr(0xFF)+_chr(0xFE) as psz 
-local Start:=psz(_cast,_chr(0xEF)+_chr(0xBB)+_chr(0xBF)) as psz
+//local Start:=psz(_cast,_chr(0xEF)+_chr(0xBB)+_chr(0xBF)) as psz
 oUni:=Unicode{c+CRLF}
 if oUni:Error
 	Return 0
 ELSE
-	if FTell(pFile)==0
-		FWrite(pFile,Start,3) // start of unicode
-	endif
+// 	if FTell(pFile)==0
+// 		FWrite(pFile,Start,3) // start of unicode
+// 	endif
 	Return FWrite(pFile,Mem2String(oUni:BSTR,oUni:Len))
 endif
 //Return FWriteLine(pFile,c) 
