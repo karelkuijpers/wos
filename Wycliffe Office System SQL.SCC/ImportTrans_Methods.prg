@@ -529,12 +529,15 @@ METHOD GetImportFiles()  CLASS ImportBatch
 
 	// Import also xml-files from PMIS
 	aPMIS:=Directory(CurPath+"\"+sEntity+"_*.xml")
-	FOR nf:=1 TO Len(aPMIS)
+//HUN_Apr_Parcs_Download_2021-04-05_08.40.19
+	FOR nf:=1 to Len(aPMIS)
 		cFileName:=aPMIS[nf,F_NAME]
 		IF Len(cFileName)>=19
-			nImportDate:=SubStr(cFileName,5,8)
+			//nImportDate:=SubStr(cFileName,5,8)
+			nImportDate:=SubStr(cFileName,-23,10)
 			IF IsDigit(nImportDate)
-				dBatchDate:=SToD(nImportDate)
+				dBatchDate:= SQLDate2Date(nImportDate)
+				//dBatchDate:=SToD(nImportDate)
 				IF !dBatchDate==NULL_DATE
 					IF !(dBatchDate<Today()-365 .or. dBatchdate>Today()+31)
 						LOOP
@@ -1549,7 +1552,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				else
 					cExId:=origin+cExId
 				endif
-			elseif origin=='NED' .or.origin=='SWE' .or. origin=='SAF' .or. origin=='NOR' .or. origin=='ASD' .or. origin=='CZR' .or. origin=='FRN' .or. origin=='ROM' .or. origin=='SPN' .or. origin=='SKD' .or. origin=='THD'
+			elseif origin=='NED' .or.origin=='SWE' .or. origin=='SAF' .or. origin=='NOR' .or. origin=='ASD' .or. origin=='CZR' .or. origin=='FRN' .or. origin=='ROM' .or. origin=='SPN' .or. origin=='SKD' .or. origin=='THD'  origin=='HUN'
 				nPtr:=AtC(' from ',transdescription)
 				if nPtr>0
 					cExId:=Str(Val(Split(AllTrim(SubStr(transdescription,nPtr+6))," ")[1]),-1)
@@ -1599,12 +1602,12 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				accnbrdest:=aAccDest[nAcc,1] 
 				acciddest:=aAccDest[nAcc,2] 
 			ELSE
-				IF transtype="AT"
+				IF transtype="AT" .or. transtype="AD"
 					accnbrdest:=samnbr
 					acciddest:=sam
 				ENDIF
 			endif
-		ELSEIF transtype="AT"
+		ELSEIF transtype="AT" .or. transtype="AD"
 			accnbrdest:=samnbr
 			acciddest:=sam
 		ENDIF
@@ -1644,7 +1647,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 				if transtype="CN" .or. transtype="CP".or.transtype="MM"
 					accnbrdest:=aAccMbr[nMbr,2]   //accincome 
 					acciddest:=aAccMbr[nMbr,5]
-				elseif transtype="PC" .and. amount<0
+				elseif (transtype="PC" .or.transtype="MC")  .and. amount<0
 					accnbrdest:=aAccMbr[nMbr,4]   //netasset
 					acciddest:=aAccMbr[nMbr,7]
 				else							
@@ -1663,7 +1666,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		iif(USDAmount<0,-amount,0.00),; //debitamnt
 		iif(USDAmount<0,0.00,USDAmount),; //creforgn
 		iif(USDAmount<0,-USDAmount,0.00),; //debgorgn
-		cPmisCurrency,AddSlashes(cDescription),iif((transtype="PC" .or. transtype="AT") .and.!Empty(accnbrdest),"2","1"),'','0'})
+		cPmisCurrency,AddSlashes(cDescription),iif((transtype="PC".or.transtype="MC".or.transtype="AD" .or. transtype="AT") .and.!Empty(accnbrdest),"2","1"),'','0'})
 		// totalize transactions 
 		TotAmount:=Round(TotAmount+amount,DecAantal)
 		TotUSDAmount:=Round(TotUSDAmount+USDAmount,DecAantal)
@@ -1683,7 +1686,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 			'AG';
 			,;
 			iif(transtype="MM","MG",;
-			iif(transtype="PC",;
+			iif(transtype="PC".or.transtype="MC",;
 			iif(amount<0,"PF","CH");
 			,;
 			"";
@@ -1696,7 +1699,7 @@ METHOD ImportPMC(oFr as FileSpec,dBatchDate as date) as logic CLASS ImportBatch
 		iif(amount<0,0.00,amount),; //debitamnt
 		iif(amount<0,-amount,0.00),; //creforgn
 		iif(amount<0,0.00,amount),; //debforgn
-		sCURR,AddSlashes(cDescription),iif(transtype="PC" .and.!Empty(accnbrdest),"2","1"),reference,'0'})
+		sCURR,AddSlashes(cDescription),iif((transtype="PC".or.transtype="MC") .and.!Empty(accnbrdest),"2","1"),reference,'0'})
 		nPtr++ 
 		recordfound:=PMISDocument:GetNextSibbling()
 	ENDDO
