@@ -416,6 +416,23 @@ super:Init(HyperLabel{"OWNMAILACC","Ownmailacc","","sysparms_OWNMAILACC"},"C",10
 self:SetRequired(.T.,)
 
 RETURN SELF
+CLASS sysparms_PMCCURRENCY INHERIT sysparms_PMCUPLD
+
+
+METHOD Init() CLASS sysparms_PMCCURRENCY
+    LOCAL   cPict                   AS STRING
+
+    SUPER:Init( HyperLabel{#PMCCURRENCY, "", "", "sysparms_PMCCURRENCY" },  "N", 12, 0 )
+    cPict       := ""
+    IF SLen(cPict) > 0
+        SELF:Picture := cPict
+    ENDIF
+
+    RETURN SELF
+
+
+
+
 CLASS sysparms_PMCMANCLN INHERIT FIELDSPEC
 METHOD Init() CLASS sysparms_PMCMANCLN
 super:Init(HyperLabel{"PMCMANCLN","Pmcmancln","","sysparms_PMCMANCLN"},"N",11,0)
