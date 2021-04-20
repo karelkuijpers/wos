@@ -363,7 +363,7 @@ METHOD PostInit(oWindow,iCtlID,oServer,uExtra) CLASS PMISsend
 self:SetTexts()                                   
 	SaveUse(self)
 self:oSys := SQLSelect{"select assmntfield,assmntoffc,withldoffl,withldoffm,withldoffh,assmntint,"+;
-"exchrate,cast(pmislstsnd as date) as pmislstsnd,cast(datlstafl as date) as datlstafl,pmcupld,pmcmancln,iesmailacc,ownmailacc from sysparms",oConn}
+"exchrate,cast(pmislstsnd as date) as pmislstsnd,cast(datlstafl as date) as datlstafl,pmcupld,pmccurrency,pmcmancln,iesmailacc,ownmailacc from sysparms",oConn}
 IF self:oSys:Reccount <1
 	self:ENDWindow()
 ENDIF
@@ -402,7 +402,7 @@ METHOD PrintReport() CLASS PMISsend
 	LOCAL DestAmnt as FLOAT
 	local time1,time0 as float
 	LOCAL AmntTrans,remainingAmnt,AmntFromRPP,me_amount,availableAmnt,me_asshome,me_amounttot,me_assblAmount, amntlimited,AmntCorrection,fDiff as FLOAT
-	LOCAL mo_tot,mo_totF, AmountDue,mo_direct, BalanceSend,BalanceSendEoM,mSIL_totAT,mWBT_totAT,mWBT_amount,mField_amount,PercInt  as FLOAT
+	LOCAL mo_tot,mo_totF,mo_totUSD, AmountDue,mo_direct, BalanceSend,BalanceSendEoM,mSIL_totAT,mWBT_totAT,mWBT_amount,mField_amount,PercInt  as FLOAT
 	local fcreditlimitmember,fcreditlimitallmembers as float
 	local fTotalOverdrawn,fmemberoverdrawn as float
 	local separatorline as STRING
@@ -424,7 +424,7 @@ METHOD PrintReport() CLASS PMISsend
 	local me_overdrwalwd,lacceptoverdrawmember as logic
 	LOCAL lSent as LOGIC
 	LOCAL PrvYearNotClosed as LOGIC
-	local lStop:=true,PMCUpload as logic
+	local lStop:=true,PMCUpload,PMCCurrency as logic
 	LOCAL datelstafl as date
 	LOCAL uRet as USUAL
 	local heading as ARRAY
@@ -499,6 +499,7 @@ METHOD PrintReport() CLASS PMISsend
 	fcreditlimitallmembers:=SqlSelect{"select creditlimitallmembers from sysparms",oConn}:FIELDGET(1)
 
 	PMCUpload:= iif(ConI(self:oSys:PMCUPLD)=1,true,false)
+	PMCCurrency:= iif(ConI(self:oSys:PMCCurrency)=1,true,false)
 	// fExChRate:=self:mxrate 
 
 	store 0 to AssInt,AssOffice,AssOfficeProj,AssOfficeOFR,AssField,AssInc,AssIncHome,AssFldInt,AssFldIntHome,AssFieldOwn
@@ -1271,6 +1272,7 @@ METHOD PrintReport() CLASS PMISsend
 	batchcount:=Len(aMemberTrans)
 	directcount:=0
 	mo_tot:=0
+	mo_totUSD:=0
 	mo_direct:=0 
 	ownfieldcount:=0
 	IF batchcount=0
@@ -1335,7 +1337,8 @@ METHOD PrintReport() CLASS PMISsend
 			ENDIF
 		ENDIF
 		IF !(aMemberTrans[a_tel,4]=AG .and.(me_destPP='SIL' .or.me_destPP==SEntity))
-			mo_tot:=Round(mo_tot+aMemberTrans[a_tel,5],DecAantal) 
+			mo_tot:=Round(mo_tot+aMemberTrans[a_tel,5],DecAantal)
+			mo_totUSD:=Round(mo_totUSD+aMemberTrans[a_tel,5]/fExChRate,DecAantal) 
 			batchcountreport++
 	      oReport:PrintLine(@nRow,@nPage,Pad(aMemberTrans[a_tel,3],20)+Str(me_balance,12,2)+' '+Pad(me_desc,127),heading,3-nRowCnt)
 	      IF Len(heading)>6  && kop aanpassen voor nPage >=2
@@ -1349,6 +1352,7 @@ METHOD PrintReport() CLASS PMISsend
 	if !Empty(mSIL_totAT)
 			batchcountreport++
 			mo_tot:=Round(mo_tot+mSIL_totAT,DecAantal) 
+			mo_totUSD:=Round(mo_totUSD+mSIL_totAT/fExChRate,DecAantal) 
 	      oReport:PrintLine(@nRow,@nPage,;
 	         Pad('SIL',20)+Str(mSIL_totAT,12,2)+' '+Pad('Assessment Int+Field from '+Country+' '+self:AssPeriod,127),heading,3-nRowCnt)
 	endif
@@ -1356,10 +1360,12 @@ METHOD PrintReport() CLASS PMISsend
 	if !Empty(mWBT_totAT)
 			batchcountreport++ 
 			mo_tot:=Round(mo_tot+mWBT_totAT,DecAantal) 
+			mo_totUSD:=Round(mo_totUSD+mWBT_totAT/fExChRate,DecAantal) 
 	      oReport:PrintLine(@nRow,@nPage,;
 	         Pad('WBT',20)+Str(mWBT_totAT,12,2)+' '+Pad('Assessment International from '+Country+' '+self:AssPeriod,127),heading,3-nRowCnt)
 	endif
-	AmountDue:= mo_tot
+//	AmountDue:= mo_tot
+	AmountDue:= mo_totUSD
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,3) 
 	oReport:PrintLine(@nRow,@nPage,;
 		Pad('Subtotal:',20)+" "+Str(mo_tot+mo_direct,11,2)+"  ("+AllTrim(Str(batchcountreport,-1,0))+" "+oLan:RGet("lines")+")",heading,3-nRowCnt)
@@ -1372,7 +1378,8 @@ METHOD PrintReport() CLASS PMISsend
 	IF mo_direct#0
 		oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be recorded direct to '+SEntity,40)+Str(mo_direct,11,2)+"  ("+AllTrim(Str(directcount,-1,0))+" "+oLan:RGet("lines")+")",heading,0)
 	ENDIF
-	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(mo_tot/fExChRate,11,2),heading)
+//	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(mo_tot/fExChRate,11,2),heading)
+	oReport:PrintLine(@nRow,@nPage,Space(10)+Pad('Amount to be send to PMC (US DOLLARS) $',40)+Str(AmountDue,11,2),heading)
 	oReport:PrintLine(@nRow,@nPage,Replicate('-',80),heading,4)
 	self:Pointer := Pointer{POINTERARROW}
 	uRet:=nil
@@ -1418,6 +1425,11 @@ METHOD PrintReport() CLASS PMISsend
 			FWriteLineUni(ptrHandle,"<Header>")
 			FWriteLineUni(ptrHandle,"<BatchCount>"+AllTrim(Str(batchcountreport-directcount))+"</BatchCount>")
 			FWriteLineUni(ptrHandle,"<BatchTotal>"+Str(-AmountDue,-1,DecAantal)+"</BatchTotal>")
+// 			if PMCCurrency 
+// 				FWriteLineUni(ptrHandle,"<BatchTotal>"+Str(-(AmountDue/fExChRate),-1,2)+"</BatchTotal>")
+// 			else
+// 				FWriteLineUni(ptrHandle,"<BatchTotal>"+Str(-AmountDue,-1,DecAantal)+"</BatchTotal>")
+// 			endif
 			FWriteLineUni(ptrHandle,"<Originating_PP>"+SEntity+"</Originating_PP>")
 			FWriteLineUni(ptrHandle,"<Exchange_Rate>"+AllTrim(Str(fExChRate,,8))+"</Exchange_Rate>")
 			FWriteLineUni(ptrHandle,"</Header>")
@@ -1430,34 +1442,37 @@ METHOD PrintReport() CLASS PMISsend
 				* Write member data:
 				* reknr,accnbr, accname, type transactie, bedrag,assmntcode, destination{destacc,destPP,housecode,distrseqnbr,destAcc,CO},homeassamnt,description:"
 				IF !aMemberTrans[a_tel,4]==DT
-					me_accnbr:=aMemberTrans[a_tel,2]
-					me_balance:=aMemberTrans[a_tel,5]
-					me_householdid:=AllTrim(aMemberTrans[a_tel,7][3])
-
-					IF !Empty(aMemberTrans[a_tel,9])
-						me_pers:=aMemberTrans[a_tel,9]
-						IF !Empty(aMemberTrans[a_tel,3])
-							me_pers+=" ("+AllTrim(aMemberTrans[a_tel,3])+")"
-						ENDIF
-					ELSE
-						me_pers:=AllTrim(aMemberTrans[a_tel,3])
-					ENDIF
-					me_destAcc:=aMemberTrans[a_tel,7][1]
 					me_destPP:=aMemberTrans[a_tel,7][2] 
 					// cumulate at to SIL 
 					IF !(aMemberTrans[a_tel,4]=AG .and.(me_destPP='SIL' .or.me_destPP==SEntity))
-					//IF !(aMemberTrans[a_tel,4]=AG .and. me_destPP='SIL') 
+						me_accnbr:=aMemberTrans[a_tel,2]
+						if PMCCurrency
+							me_balance:=Round(aMemberTrans[a_tel,5]/fExChRate,2) 
+						else
+							me_balance:=aMemberTrans[a_tel,5]							
+						endif
+						me_householdid:=AllTrim(aMemberTrans[a_tel,7][3])
+	
+						IF !Empty(aMemberTrans[a_tel,9])
+							me_pers:=aMemberTrans[a_tel,9]
+							IF !Empty(aMemberTrans[a_tel,3])
+								me_pers+=" ("+AllTrim(aMemberTrans[a_tel,3])+")"
+							ENDIF
+						ELSE
+							me_pers:=AllTrim(aMemberTrans[a_tel,3])
+						ENDIF
+						me_destAcc:=aMemberTrans[a_tel,7][1]
 						self:WritePMCTrans(ptrHandle,aMemberTrans[a_tel,4],me_accnbr,me_balance,me_pers,me_householdid,datestr,aMemberTrans[a_tel,6],me_destAcc,me_destPP)
 					endif
 				ENDIF
 			NEXT
 			if !Empty(mSIL_totAT)
               //WritePMCTrans(ptrHandle,me_kind,me_acc,me_amnt,   me_oms,                              me_percd,me_date,me_type,              me_destAcc,me_destPP)
-				self:WritePMCTrans(ptrHandle,AG,'',mSIL_totAT,"Total assessment for SIL members from "+Country+' '+self:AssPeriod,,datestr,'',,'SIL')
+				self:WritePMCTrans(ptrHandle,AG,'',iif(PMCCurrency,Round(mSIL_totAT/fExChRate,2),mSIL_totAT),"Total assessment for SIL members from "+Country+' '+self:AssPeriod,,datestr,'',,'SIL')
 			endif   
 			if !Empty(mWBT_totAT)
               //WritePMCTrans(ptrHandle,me_kind,me_acc,me_amnt,   me_oms,                              me_percd,me_date,me_type,              me_destAcc,me_destPP)
-				self:WritePMCTrans(ptrHandle,AG,'',mWBT_totAT,"Total assessment for international  from "+Country+' '+self:AssPeriod,,datestr,'',,'WBT')
+				self:WritePMCTrans(ptrHandle,AG,'',iif(PMCCurrency,Round(mWBT_totAT/fExChRate,2),mWBT_totAT),"Total assessment for international  from "+Country+' '+self:AssPeriod,,datestr,'',,'WBT')
 			endif   mWBT_totAT
 			FWriteLineUni(ptrHandle,"</PMISBatch>")
 			* closing record:
@@ -1717,7 +1732,8 @@ METHOD PrintReport() CLASS PMISsend
 		IF mo_tot # 0
 			nSeqnr++
 			if !self:cPMCCurr==sCurr .and. fExChRate>0
-				mo_totF:=Round(mo_tot/fExChRate,DecAantal)
+//				mo_totF:=Round(mo_tot/fExChRate,DecAantal)
+				mo_totF:=AmountDue
 			else
 				mo_totF:=mo_tot
 			endif
