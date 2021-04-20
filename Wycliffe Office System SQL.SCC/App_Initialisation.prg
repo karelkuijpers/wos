@@ -1769,13 +1769,13 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","checkemp","char(32)","NO","",""},;
 		{"sysparms","mailclient","tinyint","NO","",""},;
 		{"sysparms","posting","tinyint","NO","",""},; 
-	{"sysparms","toppacct","int","NO","",""},;
+		{"sysparms","toppacct","int","NO","",""},;
 		{"sysparms","lstcurrt","tinyint","NO","",""},; 
-	{"sysparms","pmcupld","tinyint","NO","",""},; 
-	{"sysparms","accpacls","date","YES","NULL",""},; 
-	{"sysparms","assfldac","int","NO","",""},;
+		{"sysparms","pmcupld","tinyint","NO","",""},; 
+		{"sysparms","accpacls","date","YES","NULL",""},; 
+		{"sysparms","assfldac","int","NO","",""},;
 		{"sysparms","sepaenabled","tinyint","NO","",""},; 
-	{"sysparms","ddmaxindvdl","decimal(10,2)","NO","",""},;
+		{"sysparms","ddmaxindvdl","decimal(10,2)","NO","",""},;
 		{"sysparms","ddmaxbatch","decimal(12,2)","NO","",""},;
 		{"sysparms","maildirect","tinyint","NO","",""},; 
 		{"sysparms","versiondate","date","YES","NULL",""},; 
@@ -1784,6 +1784,7 @@ method InitializeDB() as void Pascal  class Initialize
 		{"sysparms","assofra","int","NO","",""},;
 		{"sysparms","creditlimitmember","decimal(10,2)","NO","",""},;
 		{"sysparms","creditlimitallmembers","decimal(10,2)","NO","",""},;
+		{"sysparms","pmccurrency","tinyint","NO","",""},; 
 		{"telebankpatterns","telpatid","int","NO","","auto_increment"},;
 		{"telebankpatterns","kind","char(6)","NO","",""},;
 		{"telebankpatterns","contra_bankaccnt","varchar(64)","NO","",""},;
@@ -2105,7 +2106,7 @@ method InitializeDB() as void Pascal  class Initialize
 			aCurrentCol:={}
 			aRequiredIndex:={} 
 			aCurrentIndex:={} 
-			if Lower(cTable)='member'
+			if Lower(cTable)='sysparms'
 				cTable:=cTable
 			endif
 			cTableCol:=cTable
