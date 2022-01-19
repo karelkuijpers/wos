@@ -711,15 +711,16 @@ method init() class Initialize
 	local cLine as string 
 	local port:='3306' as string
 	local dbserver:='MYSQL' as string
-	local dim akeyval[6] as string 
-	local cOdbc := 'MySQL ODBC 5.1 Driver'
+	local dim akeyval[7] as string 
+	local cOdbc := 'MySQL ODBC 5.1 Driver' 
+	local dsn:='' as string
 	local i,j,nptr as int
 	local time0,time1 as float
 	local lConnected as logic
 	local aDB:={} as array 
 	local adBserver:={{'MYSQL','MySQL ODBC 5.1 Driver','mysql-connector-odbc-5.1.13-win32.msi'},{'MARIADB','MariaDB ODBC 3.0 Driver','mariadb-connector-odbc-3.0.2-win32.msi'}} as array
 	local aWord:={} as array
-	local aIniKey:={'database','password','server','username','port','dbserver'} as array
+	local aIniKey:={'database','password','server','username','port','dbserver','dsn'} as array
 	local oSel as SQLSelect
 	local oStmt as SQLStatement
 	local cWosIni as MyFileSpec
@@ -777,6 +778,9 @@ method init() class Initialize
 	else
 		dbserver:=Upper(akeyval[6])
 	endif
+	if !Empty(akeyval[7])
+		dsn:=akeyval[7]
+	endif
 	dbname:=Lower(dbname)
 	//	if Empty(akeyval[4]) .or.Empty(akeyval[2])
 	if Empty(akeyval[4])
@@ -794,6 +798,10 @@ method init() class Initialize
 		sqluid:=Lower(akeyval[4])
 		sqlpwd:=akeyval[2]
 	endif 
+	//LogEvent(self,"start inloggen met: "+servername+" "+self:cUIDPW,"logsql")
+	//ErrorBox{,"start inloggen met: "+servername+" "+self:cUIDPW}:Show() 
+
+
 	// 		self:cUIDPW:=';UID='+Lower(akeyval[4]) 
 	SQLConnectErrorMsg(FALSE) 
 	// 	do while !oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER=MySQL ODBC 5.1 Driver;SERVER="+servername+cUIDPW) 
@@ -805,10 +813,17 @@ method init() class Initialize
 			break
 		endif
 		if IsClass(#ADOCONNECTION)
-			lConnected:=oConn:connect("DRIVER={"+adBserver[nptr,2]+"};SERVER="+servername+';Port='+port+self:cUIDPW)
+			if Empty(dsn)
+				lConnected:=oConn:connect("DRIVER={"+adBserver[nptr,2]+"};SERVER="+servername+';Port='+port+self:cUIDPW)
+			else
+				lConnected:=oConn:connect("DSN="+dsn)			
+			endif
 		else
 			lConnected:=oConn:DriverConnect(self,SQL_DRIVER_NOPROMPT,"DRIVER={"+adBserver[nptr,2]+"};SERVER="+servername+';Port='+port+self:cUIDPW) 
 		endif
+//		ErrorBox{,"start inloggen connected: "+ConS(lConnected)+" error:"+oConn:ERRINFO:errormessage}:Show()
+		//LogEvent(self,"start inloggen connected: "+ConS(lConnected)+" error:"+oConn:ERRINFO:errormessage,"logsql")
+
 		if !lConnected
 			// No ODBC: [Microsoft][ODBC Driver Manager] Data source name not found and no default driver specified
 			// 			if AtC("[Microsoft][ODBC",oConn:ERRINFO:errormessage)>0
@@ -819,7 +834,7 @@ method init() class Initialize
 					ErrorBox{,"You have first to install MYSQL"}:Show() 
 				else
 					oTCPIP:=TCPIP{}
-					oTCPIP:timeout:=2000
+					oTCPIP:timeout:=200
 					oTCPIP:Ping(servername)
 					if AtC("timeout",oTCPIP:Response)>0
 						if servername=="192.168.16.2"
@@ -848,7 +863,8 @@ method init() class Initialize
 				ErrorBox{,"Your PC is not allowed to access this MYSQL-server on "+servername}:Show()
 				break
 			endif
-			if AtC("ODBC ",oConn:ERRINFO:errormessage)>0
+			//ErrorBox{,"Fout overig:"+oConn:ERRINFO:errormessage}:Show()
+			if AtC("ODBC",oConn:ERRINFO:errormessage)>0
 				ErrorBox{,"You have first to install the "+dbserver+" ODBC connector"+CRLF+"Click OK and install it typically"}:Show() 
 				if oMainWindow==null_object
 					oMainWindow := StandardWycWindow{self}
@@ -865,6 +881,7 @@ method init() class Initialize
 	// 	oStmt:=SQLStatement{"SET character_set_results =  ascii",oConn}
 	// 	oStmt:Execute()   // set interface with client to local charset
 	// 	oConn:=DynToOldSpace(oConn)  
+	//ErrorBox{,"Succesvol connected: "}:Show()
 	SQLStatement{"SET NAMES utf8;",oConn}:Execute()
 
 //	oSel:=SqlSelect{"show databases like '"+dbname+"'",oConn}
