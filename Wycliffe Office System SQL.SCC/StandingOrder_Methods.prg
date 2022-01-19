@@ -672,8 +672,8 @@ method journal(datum as date, oStOrdL as sqlselect,nTrans ref DWORD) as logic  c
 	*Check validity of standing order:
 	CurStOrdrid:=oStOrdL:stordrid
 	IF !Empty(dat_controle(datum,true))
-		// 		lError:=true
-		return true  // skip to next date
+		lError:=true
+		//return true  // skip to next date
 	elseIF !((Empty(oStOrdL:edat).or.datum <=oStOrdL:edat) .and.datum <=Today())
 		lError:=true
 	endif
@@ -792,28 +792,30 @@ METHOD recordstorders(dummy:=nil as logic) as logic CLASS StandingOrderJournal
 	local oStOrdL as sqlselect
 	// 	local CurStOrdrid:='',cTrans as string 
 	local oBal as balances 
-	local cValuesBankOrd,cValuesStOrd,cValuesTrans as string 
+	local cValuesBankOrd,cValuesStOrd,cValuesTrans,statement as string 
 	local oTrans,oBord,oStmnt as SQLStatement   
 	local cError as string
 	self:aTrans:={}
 
 	if self:oCurr==null_object
 		self:oCurr:=Currency{"Recording standing orders"}
-	endif
-	oStOrdL:=SqlSelect{"select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
+	endif 
+	statement:= "select s.stordrid,s.day,s.period,s.docid,s.currency,cast(s.idat as date) as idat,"+;
 		"cast(s.edat as date) as edat,cast(s.lstrecording as date) as lstrecording,s.persid,s.userid,"+;
 		"l.accountid,l.deb,l.cre,l.descriptn,l.gc,l.creditor,l.bankacct,b.banknumber,l.reference,l.seqnr,"+; 
 	"a.currency as currfrom,a.multcurr,a.giftalwd,a.accnumber,a.active,a.department"+;
 		" from standingorder s,standingorderline l left join account a on (a.accid=l.accountid) "+; 
 	"left join personbank b on (b.persid=l.creditor and b.banknumber=l.bankacct) "+;
 		"where l.stordrid=s.stordrid and "+;
-		"(edat ='0000-00-00' or edat>=CurDate()) and "+;
+		"(edat is null or edat>=CurDate()) and "+;
 		"(lstrecording is null or (DATE_ADD(lstrecording,INTERVAL period MONTH)<=curdate() and "+;
-		"(edat ='0000-00-00' or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
-		" order by s.stordrid,l.seqnr",oConn} 
+		"(edat is null or DATE_ADD(lstrecording,INTERVAL period MONTH)<=edat))) and idat<=CurDate()"+;
+		" order by s.stordrid,l.seqnr"
+	oStOrdL:=SqlSelect{statement,oConn} 
 	if oStOrdL:reccount <1
 		return false
-	endif 
+	endif
+	//LogEvent(self,"recordstorders statement:"+statement+"; aantal:"+cons(oStOrdL:reccount),"loginfo")
 	self:oLan:=Language{} 
 	self:aTrans:={}
 	DO WHILE !oStOrdL:EOF 
