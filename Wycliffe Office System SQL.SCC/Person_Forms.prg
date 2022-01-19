@@ -1117,7 +1117,7 @@ METHOD OkButton CLASS EditPerson
 			cTit:=Str(self:mTitle,-1)  
 		ELSE
 			IF self:oDCmTitle:CurrentItemNo>0
-				cTit:=Str(self:oDCmTitle:GetItemValue(self:oDCmTitle:CurrentItemNo),-1)
+				cTit:=ConS(self:oDCmTitle:GetItemValue(self:oDCmTitle:CurrentItemNo))
 			else
 				cTit:="1"
 			ENDIF
