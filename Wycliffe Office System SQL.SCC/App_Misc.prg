@@ -1437,7 +1437,7 @@ AIns(pers_codes,1)
 pers_codes[1]:={' ',''}
 	oMailCd := SqlSelect{"select group_concat(abbrvtn,'#$#',pers_code separator '#%#') as grPP from perscod order by pers_code",oConn}
 	oMailCd:Execute()
-	if oMailCd:RecCount>0 
+	if oMailCd:RecCount >0   .and. !Empty(oMailCd:grPP)
 		AEval(Split(oMailCd:grPP,'#%#',,true),{|x|AAdd(mail_abrv,Split(x,'#$#',,true))})
 	endif
  
@@ -2243,8 +2243,8 @@ IF pDay > 31
    pDay:=31
 ENDIF
 IF pMonth > 12
-   pYear:=pYear+Integer(pMonth/12)
-   pMonth := pMonth%12
+   pYear:=pYear+Integer((pMonth-1)/12)
+	pMonth:=Mod(pMonth-1,12)+1
 ELSEIF pMonth<=0
 	pYear:=pYear+Round((pMonth-12)/12,0)
 	pMonth:=Mod(pMonth-1,12)+1
