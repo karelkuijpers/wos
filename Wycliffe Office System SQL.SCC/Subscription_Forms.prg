@@ -1387,12 +1387,12 @@ ENDIF
 
 
 AAdd(aHeading, ;
-self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",13,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
+self:oLan:RGet("account",20,"@!")+cTab+self:oLan:RGet("PERSON",30,"@!")+cTab+iif(CountryCode=="47",self:oLan:RGet("KID",13,"@!"),self:oLan:RGet("Bankaccount",20,"@!"))+cTab+self:oLan:RGet("amount",12,"@!","R")+;
 +cTab+self:oLan:RGet("Frequency",9,"@!")+cTab+self:oLan:RGet("due date",12,"@!")+cTab+self:oLan:RGet("type",12,"@!")+cTab+self:oLan:RGet("blocked",7,"@!")) 
 SetDecimalSep(Asc(DecSeparator))
 
 do WHILE !oSel:EOF
-	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,13))+;
+	oReport:PrintLine(@nRow,@nPage,Pad(oSel:accountname,20)+cTab+Pad(oSel:PersonName,30)+cTab+iif(CountryCode=="47",Pad(oSel:INVOICEID,13),Pad(oSel:BANKACCNT,20))+;
 	cTab+Str(oSel:amount,12,DecAantal)+cTab+PadR(GetFreq(oSel:term),9)+cTab+;
 	PadC(DToC(iif(Empty(oSel:DueDate),null_date,oSel:DueDate)),12," ")+cTab+;
 	iif(oSel:category=="A",aDescription[1],;
