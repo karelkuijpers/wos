@@ -1938,22 +1938,22 @@ METHOD OkButton() CLASS LogonDialog
 			if IsAdminUser(cUser,AllTrim( Transform(self:oDCPassword:TextValue,"" ) ) )
 				SuperUser:=true
 				self:logonOk:=true 
-// 				cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname from employee where ";
-// 					+ Crypt_Emp(false,"type")+"='A'"
-// 				oEmp := SQLSelect{cEmpStmnt,oConn} 
-// 				UserType:="A"
-// 				IF oEmp:Reccount>0
+				cEmpStmnt:="select empid,cast("+Crypt_Emp(false,"loginname")+" as char) as loginname from employee where ";
+					+ Crypt_Emp(false,"type")+"='A'"
+				oEmp := SQLSelect{cEmpStmnt,oConn} 
+				UserType:="A"
+				IF oEmp:Reccount>0
+					MYEMPID:=self:oDCListUsers:GetItemValue(0)
+					LOGON_EMP_ID := ConS(self:oDCListUsers:CurrentItem)
+					UserType := Left(Right(LOGON_EMP_ID,2),1)
+					LOGON_EMP_ID := Left(LOGON_EMP_ID,Len(LOGON_EMP_ID)-4)
 // 					oEmp:GoTop()
 // 					MYEMPID := Str(oEmp:EMPID,-1) 
 // 					self:logonID := AllTrim(oEmp:LOGINNAME)
 // 					LOGON_EMP_ID := AllTrim(self:logonID)
-// 				else
-// 					MYEMPID:='0'
-// 				endif
-				MYEMPID:=self:oDCListUsers:GetItemValue(0)
-				LOGON_EMP_ID := ConS(self:oDCListUsers:CurrentItem)
-				UserType := Left(Right(LOGON_EMP_ID,2),1)
-				LOGON_EMP_ID := Left(LOGON_EMP_ID,Len(LOGON_EMP_ID)-4)
+				else
+					MYEMPID:='0'
+				endif
 				self:logonID := LOGON_EMP_ID
 				aMenu:=InitMenu(Val(MYEMPID),UserType)
 				InitSystemMenu()
